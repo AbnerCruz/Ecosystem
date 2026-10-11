@@ -20,6 +20,9 @@ internal static class IsolatedPreviewFiles
 
     public static string Assembly(Context context) => System.IO.Path.Combine(Directory(context), "game.dll");
 
+    /// <summary>Última captura textual do Profiler, auxiliar e descartável como o console.</summary>
+    public static string Profiler(Context context) => System.IO.Path.Combine(Directory(context), "profiler.txt");
+
     public static string Symbols(Context context) => System.IO.Path.Combine(Directory(context), "game.pdb");
 
     /// <summary>Existe enquanto o Preview isolado roda; se sobrar depois que ele fecha, o processo morreu.</summary>
@@ -88,6 +91,23 @@ public sealed class IsolatedPreviewActivity : Activity
     {
         base.OnResume();
         _host?.Resume();
+    }
+
+    public override void Finish()
+    {
+        // Gravar antes de retornar ao IDE: OnDestroy pode acontecer depois do OnResume dele.
+        if (_host?.CaptureProfilerReport() is { } report)
+        {
+            try { File.WriteAllText(IsolatedPreviewFiles.Profiler(this), report); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Write(LogLevel.Warning, "Não foi possível retornar a captura do Profiler: " + ex.Message);
+            }
+        }
+        // A marca deve sair antes do OnResume da IDE, e não apenas no OnDestroy deste processo.
+        try { File.Delete(IsolatedPreviewFiles.Marker(this)); }
+        catch (IOException) { /* O IDE já informa quando a marca não pode ser removida. */ }
+        base.Finish();
     }
 
     protected override void OnDestroy()

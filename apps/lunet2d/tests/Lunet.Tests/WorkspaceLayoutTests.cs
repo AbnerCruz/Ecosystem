@@ -26,6 +26,25 @@ public sealed class WorkspaceLayoutTests : IDisposable
     }
 
     [Fact]
+    public void ProfilerTabRoundTripsThroughCurrentAndSavedLayoutsWithoutLosingDockOrSize()
+    {
+        var path = Path.Combine(_root, "layouts.json");
+        var store = new LayoutStore(path);
+        store.Current = new WorkspaceLayout { PanelTab = "profiler", Dock = PanelDock.Right, PanelFraction = 0.42 };
+        Assert.True(store.SaveAs("Performance"));
+        store.Save();
+        var again = new LayoutStore(path);
+        again.Load();
+        Assert.Equal("profiler", again.Current.PanelTab);
+        Assert.Equal(0.42, again.Current.PanelFraction);
+        Assert.True(again.Apply("Padrão"));
+        Assert.Equal("problems", again.Current.PanelTab);
+        Assert.True(again.Apply("Performance"));
+        Assert.Equal("profiler", again.Current.PanelTab);
+        Assert.Equal(PanelDock.Right, again.Current.Dock);
+    }
+
+    [Fact]
     public void Store_PersistsCurrentAndNamedLayouts_ProtectsPresets_AndSurvivesCorruption()
     {
         var path = Path.Combine(_root, "layouts.json");

@@ -428,6 +428,15 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - 2026-10-10 — ChatGPT / LUNET-414 (#343): complemento do Profiler previsto na Fase 4, contando somente texturas RGBA8 conhecidas pelo GlesBackend; pico e recursos liberados no overlay do Preview. Contagem não promete VRAM nativa, GPU time ou audio underruns. CI e DEVICE pendentes; sem alterações em outros produtos ou projetos salvos.
 
 
+### 20261011-codex-lunet-profiler-workspace — Codex → integrador — review
+- LUNET-414 / Issue #492, continuação do Profiler básico da Fase 4 (§7/§23), base main 0aa4de26. Física/Laboratório #480/#484 e texturas #485 já integrados; não duplicados.
+- Aba Profiler no workspace, captura textual da última janela real ao Stop, exportação pelo compartilhamento nativo e retorno pelo cache auxiliar do Preview isolado antes de Finish. Coleta ainda opt-in; formatter único no Runtime para overlay/workspace/export.
+- Seleção de aba salva aditivamente no layout; configurações antigas continuam válidas. Nenhum arquivo de jogo, formato de projeto, ProjectStore, permissão ou componente externo alterado.
+- Testes do formatter (métricas, fases ausentes, percentis, cultura, pausado) e round-trip do layout. CI/APK e DEVICE devem ser conferidos; não concluir gate da Fase 4 nem inventar GPU time/audio underruns.
+
+- Verificado localmente: build sem avisos/erros, 661/661 testes e 22/22 consistency. Overlay passa a rolar dentro da altura disponível no celular; saída normal do isolado remove marcador antes de retornar à IDE, evitando race com OnDestroy. CI/APK/DEVICE ainda pendentes.
+
+
 ### 2026-10-11 — ChatGPT / LUNET-436 / Issue #495
 
 - Pedido do proprietário: concluir o roadmap sem incrementos arbitrários. Branch `feat/lunet-f4-audit-20261011`, base main `c68b9ae82a1b354351625319d60042fadea29e9f`; PR #493 do painel workspace já existe e não foi duplicado.

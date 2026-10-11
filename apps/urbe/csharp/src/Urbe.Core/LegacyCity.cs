@@ -917,6 +917,66 @@ public sealed partial class LegacyCity
         return null;
     }
 
+    // ------------------------------------------------------------------ new note (v21CreateFileInRegion)
+
+    private const string TextAlt = "md|markdown|txt|html?|js|mjs|css|json|ya?ml|csv";
+    private static readonly System.Text.RegularExpressions.Regex TextRe =
+        new(@"\.(" + TextAlt + ")$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    private static readonly System.Text.RegularExpressions.Regex SplitTextRe =
+        new(@"^(.*?)(\.(?:" + TextAlt + "))$", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline);
+
+    private static string FileNameOf(LegacyCityBuilding b) => b.Path[(b.Path.LastIndexOf('/') + 1)..];
+
+    /// <summary>v21UniqueName: the typed name with its extension (.md when none), with " (2)", " (3)"…
+    /// when a note of the same neighbourhood already has it.</summary>
+    public string UniqueNoteName(string raw, string? regionId)
+    {
+        var txt = System.Text.RegularExpressions.Regex.Replace((raw ?? "").Trim(), @"[\\/]", "-");
+        if (txt.Length == 0) txt = "Nota.md";
+        // v21ExtFromName
+        var m = System.Text.RegularExpressions.Regex.Match(txt, @"(\.[A-Za-z0-9]+)$");
+        var ext = m.Success && TextRe.IsMatch(m.Groups[1].Value.ToLowerInvariant()) ? m.Groups[1].Value.ToLowerInvariant() : ".md";
+        // v21Stem
+        var stemSource = TextRe.Match(txt) is { Success: true } tm ? txt[..^tm.Length] : txt;
+        var stem = ArtifactModel.SafeName(stemSource.Length > 0 ? stemSource : "Nota");
+        var taken = new HashSet<string>(Buildings.Where(b => b.IsNote && b.RegionId == regionId).Select(b => FileNameOf(b).ToLowerInvariant()), StringComparer.Ordinal);
+        var candidate = stem + ext;
+        for (int n = 2; taken.Contains(candidate.ToLowerInvariant()); n++) candidate = stem + " (" + n + ")" + ext;
+        return candidate;
+    }
+
+    /// <summary>separarNomeExtNota(valor, {ext:'.md'}): name and text extension of a file name.</summary>
+    public static (string Name, string Ext) SplitNoteName(string full)
+    {
+        var v = System.Text.RegularExpressions.Regex.Replace(full.Trim(), @"[\\/]", "-");
+        if (SplitTextRe.Match(v) is { Success: true } sm && sm.Groups[1].Value.Trim().Length > 0)
+            return (ArtifactModel.SafeName(sm.Groups[1].Value.Trim()), sm.Groups[2].Value.ToLowerInvariant());
+        return (ArtifactModel.SafeName(System.Text.RegularExpressions.Regex.Replace(v, @"\.[^.]+$", "")), ".md");
+    }
+
+    /// <summary>
+    /// v21CreateFileInRegion: the house of a new note typed in the "Nova nota" dialog, in the
+    /// neighbourhood (or loose), placed with vagaNaRegiao/vagaAleatoria seeded by name + Date.now.
+    /// Returns null when no free lot exists ("Não encontrei lote livre.").
+    /// </summary>
+    public (LegacyCityBuilding House, string Content)? CreateNote(LegacyCityRegion? region, string typedName, long nowMs)
+    {
+        var full = UniqueNoteName(typedName, region?.Id);
+        var (name, ext) = SplitNoteName(full);
+        double seed = LegacyJsMath.Seed(full + nowMs.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        var pos = region is not null ? PlaceInRegion(region, seed) : PlaceLoose(seed);
+        if (pos is null) return null;
+        var folder = region is not null ? RegionPaths().GetValueOrDefault(region.Id, region.Name) : "";
+        var path = (folder.Length > 0 ? folder + "/" : "") + name + ext;
+        var b = new LegacyCityBuilding(_newId("b"), path, name, region?.Id, pos.Value.X, pos.Value.Y, "house" + (Buildings.Count % 3 + 1));
+        Buildings.Add(b);
+        // v21DefaultContent
+        return (b, ext is ".md" or ".markdown" ? "# " : "");
+    }
+
+    /// <summary>Undo a house that could not be written to the vault.</summary>
+    public void RemoveBuilding(LegacyCityBuilding b) => Buildings.Remove(b);
+
     /// <summary>urbeCasaParaDocumento: every document becomes a house in its folder's neighbourhood.</summary>
     public LegacyCityBuilding AddDocument(string path, string name)
     {

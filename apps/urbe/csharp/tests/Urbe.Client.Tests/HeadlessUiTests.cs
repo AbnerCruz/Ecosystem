@@ -3,6 +3,8 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
+using Avalonia.LogicalTree;
 using Urbe.Client;
 using Urbe.Client.World;
 using Urbe.Core;
@@ -24,7 +26,9 @@ public static class HeadlessApp
 /// </summary>
 public sealed class HeadlessUiTests : IDisposable
 {
-    private static readonly HeadlessUnitTestSession Session = HeadlessUnitTestSession.StartNew(typeof(HeadlessApp));
+    // One application for the whole run: per-test isolation re-ran AppBuilder setup on every
+    // dispatch and intermittently built the compositor off the dispatcher thread (CI flake).
+    private static readonly HeadlessUnitTestSession Session = HeadlessUnitTestSession.StartNew(typeof(HeadlessApp), AvaloniaTestIsolationLevel.PerAssembly);
 
     public void Dispose() { }
 
@@ -344,6 +348,180 @@ public sealed class HeadlessUiTests : IDisposable
         public Task<VaultSnapshot?> RestoreAsync(CancellationToken cancellationToken = default) => Task.FromResult<VaultSnapshot?>(snapshot);
         public Task SaveExistingNoteAsync(string path, string content, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("read-only test storage");
+        public Task CreateTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("read-only test storage");
+        public Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("read-only test storage");
+    }
+
+    [Fact]
+    public async Task NewNote_FromThePlusMenuIsBuiltInTheCityWrittenToTheVaultAndEdited() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-new-note-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(Path.Combine(vault, "Bairro"));
+            File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n\n[[Um]]\n");
+            File.WriteAllText(Path.Combine(vault, "Bairro", "Um.md"), "# Um\n");
+            try
+            {
+                var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
+                var view = new MainView(storage);
+                var window = new Window { Width = 1280, Height = 760, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                int houses = view.World.City!.Buildings.Count;
+
+                // + → Criar → Nova nota
+                var menu = view.ShowCreateMenuAsync();
+                Dispatcher.UIThread.RunJobs();
+                Assert.True(view.Dialogs.IsOpen);
+                Snapshot(window, "native-create-menu.png");
+                ClickButtonWithText(view.Dialogs, "Nova nota");
+                Dispatcher.UIThread.RunJobs();
+                await Task.Delay(50);
+                Dispatcher.UIThread.RunJobs();
+                var input = view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single();
+                input.Text = "Ideias";
+                Snapshot(window, "native-new-note-dialog.png");
+                ClickButtonWithText(view.Dialogs, "Criar nota");
+                await menu;
+
+                var path = Path.Combine(vault, "Ideias.md");
+                Assert.Equal("# ", File.ReadAllText(path));
+                var house = view.World.City!.Buildings.Single(b => b.Path == "Ideias.md");
+                Assert.Equal(houses + 1, view.World.City.Buildings.Count);
+                Assert.Same(house, view.World.Selected);
+                Assert.True(view.Editor.IsVisible);
+                Assert.Equal("# ", view.Editor.Editor.Text);
+
+                // the new note is an ordinary vault file from now on
+                view.Editor.Editor.Text = "# Ideias\n\nPrimeira.\n";
+                Assert.True(await view.Editor.SaveAsync());
+                Assert.Equal("# Ideias\n\nPrimeira.\n", File.ReadAllText(path));
+
+                // a second note with the same name in the same place gets " (2)", never overwriting
+                view.Editor.IsVisible = false;
+                var again = view.CreateNoteAsync(null);
+                Dispatcher.UIThread.RunJobs();
+                view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single().Text = "Ideias";
+                ClickButtonWithText(view.Dialogs, "Criar nota");
+                await again;
+                Assert.Equal("# ", File.ReadAllText(Path.Combine(vault, "Ideias (2).md")));
+                Assert.Equal("# Ideias\n\nPrimeira.\n", File.ReadAllText(path));
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task NewNote_WithoutAWritableVaultIsNotCreatedInMemory() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var view = new MainView();
+            var window = new Window { Width = 412, Height = 860, Content = view };
+            window.Show();
+            await view.LoadAsync(TutorialNotes.Load());
+            await Settle(window, view);
+            int houses = view.World.City!.Buildings.Count;
+            var create = view.CreateNoteAsync(null);
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(view.Dialogs.IsOpen);
+            Assert.Empty(view.Dialogs.GetVisualDescendants().OfType<TextBox>());   // an explanation, not a name field
+            Snapshot(window, "native-new-note-readonly.png");
+            ClickButtonWithText(view.Dialogs, "Ok");
+            await create;
+            Assert.Equal(houses, view.World.City.Buildings.Count);
+            window.Close();
+            return true;
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task Customize_CityOptionsAreAppliedAndKeptInTemaJsonOfTheVault() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-customize-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(vault);
+            File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n");
+            var tema = Path.Combine(vault, "Personalização", "tema.json");
+            try
+            {
+                var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
+                var view = new MainView(storage);
+                var window = new Window { Width = 1280, Height = 760, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                Assert.True(view.World.Life.Options.Fauna);
+                Assert.Equal("ciclo", view.World.LightingMode);
+
+                view.Customize.Open();
+                Assert.Equal("aparencia", view.Customize.Section);
+                ClickButtonWithText(view.Customize, "Cidade");
+                Assert.Equal("cidade", view.Customize.Section);
+                Dispatcher.UIThread.RunJobs();
+                Snapshot(window, "native-customize-city.png");
+
+                // Animais off → tema.json is created with only what differs, and it is a house of the city
+                var animals = view.Customize.GetLogicalDescendants().OfType<Border>()
+                    .First(b => b.Tag as string == "row" && Avalonia.Automation.AutomationProperties.GetName(b) == "Animais");
+                await view.Customization.SetAsync(new System.Text.Json.Nodes.JsonObject { ["cidade"] = new System.Text.Json.Nodes.JsonObject { ["fauna"] = false } });
+                Assert.NotNull(animals);
+                Assert.Equal("{\n  \"$schema\": \"urbe-tema-1\",\n  \"versao\": 1,\n  \"cidade\": {\n    \"fauna\": false\n  }\n}\n", File.ReadAllText(tema));
+                Assert.False(view.World.Life.Options.Fauna);
+                Assert.Contains(view.World.City!.Buildings, b => b.Path == "Personalização/tema.json");
+                Assert.Contains(view.World.City.Regions, r => r.Name == "Personalização");
+
+                // Luz → Noite
+                ClickButtonWithText(view.Customize, "Noite");
+                await Task.Delay(50);
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal("noite", view.World.LightingMode);
+                Assert.Contains("\"ambiente\": \"noite\"", File.ReadAllText(tema));
+
+                // Arquivo: what is typed is validated, then applied and written as typed
+                ClickButtonWithText(view.Customize, "Arquivo");
+                var box = view.Customize.GetLogicalDescendants().OfType<TextBox>().Single();
+                box.Text = "{\"cidade\":{\"nomes\":5}}";
+                Dispatcher.UIThread.RunJobs();
+                Assert.Contains(view.Customize.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.Contains("cidade.nomes use true ou false") == true);
+                Snapshot(window, "native-customize-file.png");
+                var typed = "{\n  \"$schema\": \"urbe-tema-1\",\n  \"cidade\": { \"nomes\": false }\n}\n";
+                box.Text = typed;
+                Dispatcher.UIThread.RunJobs();
+                ClickButtonWithText(view.Customize, "Aplicar");
+                await Task.Delay(50);
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal(typed, File.ReadAllText(tema));
+                Assert.False(view.World.ShowHouseNames);
+                Assert.True(view.World.Life.Options.Fauna);   // the file no longer turns the animals off
+                window.Close();
+
+                // reopening the vault keeps the configuration
+                var again = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window2 = new Window { Width = 412, Height = 860, Content = again };
+                window2.Show();
+                await again.InitializeAsync();
+                await Settle(window2, again);
+                Assert.False(again.World.ShowHouseNames);
+                again.Customize.Open("cidade");
+                Dispatcher.UIThread.RunJobs();
+                Snapshot(window2, "native-customize-phone.png");
+                window2.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
+    private static void ClickButtonWithText(Control root, string text)
+    {
+        var button = root.GetLogicalDescendants().OfType<Button>()
+            .First(b => b.Content as string == text || b.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == text));
+        button.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
     }
 
     private static async Task Settle(Window window, MainView view)

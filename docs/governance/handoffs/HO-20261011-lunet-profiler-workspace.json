@@ -1,0 +1,127 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-lunet-profiler-workspace",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T08:40:56.430513Z",
+  "agent": {
+    "id": "codex-lunet-profiler",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-414",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "feat/lunet-profiler-workspace-20261011",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/493",
+  "base_commit": "0aa4de266615d4206be900a3a31f77dcf26237cc",
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/src/Lunet.Android/IsolatedPreview.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Isolated.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Layout.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/PreviewHost.cs",
+    "apps/lunet2d/src/Lunet.Core/WorkspaceLayout.cs",
+    "apps/lunet2d/tests/Lunet.Tests/WorkspaceLayoutTests.cs",
+    "apps/lunet2d/docs/guides/profiler-workspace.md",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Profiler.cs",
+    "apps/lunet2d/src/Lunet.Runtime/Profiling/PreviewProfilerReport.cs",
+    "apps/lunet2d/tests/Lunet.Tests/PreviewProfilerReportTests.cs",
+    "docs/governance/handoffs/HO-20261011-lunet-profiler-workspace.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: continua Profiler básico da Fase 4 (§7/§23), Issue #492; captura real retornada ao workspace rápido/isolado e exportável por seleção explícita no Android.",
+    "Formatter único para sobreposição, workspace e relatório; coleta ainda opt-in e nenhuma métrica GPU/audio fictícia.",
+    "Aba Profiler salva aditivamente nos layouts; projetos/jogos/ProjectStore intactos."
+  ],
+  "verification": [
+    {
+      "check": "Lunet.Tests, regressão e layout",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Build .NET 10 sem avisos/erros; Lunet.Tests 661/661, nenhuma falha/skip. Inclui 5 regressões novas de formatter/layout."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 locais; CI consistency concluído com success: https://github.com/AbnerCruz/Ecosystem/actions/runs/38125806321",
+      "tested_commit": "d33f9505d0b08ff3d4e69ca1bb63e39bfa5b1f6d"
+    },
+    {
+      "check": "APK Android CI",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "test e apk success; assinatura estável conferida no job Collect APK. https://github.com/AbnerCruz/Ecosystem/actions/runs/38125806159",
+      "tested_commit": "d33f9505d0b08ff3d4e69ca1bb63e39bfa5b1f6d"
+    },
+    {
+      "check": "Profiler no workspace, rápido/isolado, Stop, pausa, export e relayout",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/profiler-workspace.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Captura temporária; encerrar processo descarta a captura, a preferência de aba permanece.",
+    "GPU total/tempo e audio underruns continuam sem medição; gate da Fase 4 aberto."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Confirmar integração automática do PR #493 e development release; fila do integrador ainda processa PRs anteriores.",
+    "Validar roteiro Android não crítico publicado no portal.",
+    "Prosseguir nas lacunas reais restantes da Fase 4, sem avançar fases nem inventar funcionalidades."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "ecosystem.json",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/decisions.json",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/architecture/local-first.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Só Product Lunet, sem dependência Urbe/Hub."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #492, branch e handoff rastreáveis."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação humana não crítica separada; fase aberta."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Review, não done sem CI e integração."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Reuso interno ao Lunet, sem extração transversal."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-preview-profiler-report",
+      "status": "product-specific",
+      "rationale": "Mesma janela do renderer Lunet; consumidores overlay e workspace dentro do mesmo Product."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

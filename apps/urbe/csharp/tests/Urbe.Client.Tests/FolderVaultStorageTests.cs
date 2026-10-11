@@ -96,4 +96,40 @@ public sealed class FolderVaultStorageTests : IDisposable
         Assert.False(storage.IsConnected);
         Assert.Null(await storage.RestoreAsync(Ct));
     }
+
+    [Fact]
+    public async Task CreatingANoteAndThePersonalizationFileWritesOnlyTheNewFiles()
+    {
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        var before = Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).ToDictionary(f => f, File.ReadAllBytes);
+        await storage.CreateTextFileAsync("Bairro/Nova nota.md", "# Nova nota\n", Ct);
+        await storage.CreateTextFileAsync("Personalização/tema.json", "{\n  \"$schema\": \"urbe-tema-1\"\n}\n", Ct);
+        Assert.Equal("# Nova nota\n", File.ReadAllText(Path.Combine(Vault, "Bairro", "Nova nota.md")));
+        Assert.True(File.Exists(Path.Combine(Vault, "Personalização", "tema.json")));
+        foreach (var (file, bytes) in before) Assert.Equal(bytes, File.ReadAllBytes(file));
+        Assert.Equal(before.Count + 2, Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).Length);
+
+        // then it is an existing file: rewritten, never created twice
+        await storage.SaveExistingTextFileAsync("Personalização/tema.json", "{\n  \"tema\": \"oceano\"\n}\n", Ct);
+        Assert.Contains("oceano", File.ReadAllText(Path.Combine(Vault, "Personalização", "tema.json")));
+        await Assert.ThrowsAsync<IOException>(() => storage.CreateTextFileAsync("Bairro/Nova nota.md", "x", Ct));
+        Assert.Equal("# Nova nota\n", File.ReadAllText(Path.Combine(Vault, "Bairro", "Nova nota.md")));
+    }
+
+    [Theory]
+    [InlineData(".urbe/mapa.json")]
+    [InlineData(".obsidian/app.json")]
+    [InlineData("../fora.md")]
+    [InlineData("foto.png")]
+    [InlineData("Bairro/script.exe")]
+    public async Task CreationRefusesInternalHiddenUnsafeOrBinaryPaths(string path)
+    {
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        int count = Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).Length;
+        await Assert.ThrowsAnyAsync<Exception>(() => storage.CreateTextFileAsync(path, "x", Ct));
+        Assert.Equal(count, Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).Length);
+        Assert.False(File.Exists(Path.Combine(_dir, "fora.md")));
+    }
 }

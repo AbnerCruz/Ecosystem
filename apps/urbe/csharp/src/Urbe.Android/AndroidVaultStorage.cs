@@ -73,69 +73,89 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
-    public async Task SaveExistingNoteAsync(string path, string content, CancellationToken cancellationToken = default)
+    public Task SaveExistingNoteAsync(string path, string content, CancellationToken cancellationToken = default)
+    {
+        if (!IsSupportedNote(path)) throw new NotSupportedException("Esta etapa grava somente notas Markdown existentes.");
+        return WriteTextFileAsync(path, content, create: false, cancellationToken);
+    }
+
+    public Task CreateTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
+        WriteTextFileAsync(path, content, create: true, cancellationToken);
+
+    public Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
+        WriteTextFileAsync(path, content, create: false, cancellationToken);
+
+    /// <summary>Writes ONE user text file: creates it when <paramref name="create"/> and absent,
+    /// else rewrites the existing one; same checks and verification for both.</summary>
+    private async Task WriteTextFileAsync(string path, string content, bool create, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(content);
-        if (!IsSupportedNote(path)) throw new NotSupportedException("Esta etapa grava somente notas Markdown existentes.");
-        // Disallow traversal, malformed and hidden/metadata targets before any I/O.
-        Segments(path);
-        if (path.StartsWith(".urbe/", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Arquivos internos não podem ser editados como notas.");
+        IUrbeVaultStorage.EnsureWritableTextPath(path);
 
         await _gate.WaitAsync(cancellationToken);
         try
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            if (!baseline.ContainsKey(path))
-                throw new FileNotFoundException("Nota não existe na pasta; criação virá na próxima etapa.", path);
+            if (create && baseline.ContainsKey(path))
+                throw new IOException("Já existe um arquivo com esse nome: " + path);
+            if (!create && !baseline.ContainsKey(path))
+                throw new FileNotFoundException("O arquivo não existe na pasta.", path);
             var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
             EnsureUnchanged(baseline, files);
             var snapshot = VaultReader.Read(files);
             if (snapshot.IsReadOnly || snapshot.FutureFiles.Contains(path, StringComparer.OrdinalIgnoreCase))
-                throw new InvalidOperationException("Formato futuro de vault ou nota protegida: escrita recusada.");
-            var note = snapshot.Documents.SingleOrDefault(d =>
+                throw new InvalidOperationException("Formato futuro de vault ou arquivo protegido: escrita recusada.");
+            var existing = snapshot.Documents.SingleOrDefault(d =>
                 string.Equals(d.Path, path, StringComparison.OrdinalIgnoreCase));
-            if (note?.Text is null)
-                throw new InvalidDataException("Nota não pôde ser lida como Markdown seguro.");
+            if (!create && existing?.Text is null)
+                throw new InvalidDataException("O arquivo não pôde ser lido como texto seguro.");
+            var target = existing?.Path ?? path;
 
             // The canonical writer must agree that the document is writable. This is a single-file
-            // edit: do NOT apply unrelated migration, journal or delete operations from the plan.
+            // write: do NOT apply unrelated migration, journal or delete operations from the plan.
             var documents = snapshot.Documents.Where(d => d.Text is not null)
                 .Select(d => new VaultWriteDocument(d.Id, d.Path,
-                    string.Equals(d.Path, path, StringComparison.OrdinalIgnoreCase) ? content : d.Text!))
-                .ToArray();
+                    string.Equals(d.Path, target, StringComparison.OrdinalIgnoreCase) ? content : d.Text!))
+                .ToList();
+            if (create) documents.Add(new VaultWriteDocument("doc-" + Guid.NewGuid().ToString("N"), target, content));
             var plan = VaultWriter.Plan(new VaultWriteRequest
             {
                 Files = files,
                 Documents = documents,
                 AppVersion = "urbe-native-preview"
             });
-            if (!plan.Writable || !plan.Files.ContainsKey(path))
-                throw new InvalidOperationException("O plano canônico recusou a nota.");
+            if (!plan.Writable || !plan.Files.ContainsKey(target))
+                throw new InvalidOperationException("O plano canônico recusou o arquivo.");
             var expected = Encoding.UTF8.GetBytes(content);
             // The writer can preserve UTF-8 BOM from an existing note; use its canonical bytes.
-            var plannedBytes = plan.Files[path].Bytes.ToArray();
+            var plannedBytes = plan.Files[target].Bytes.ToArray();
             if (!plannedBytes.AsSpan().SequenceEqual(expected) &&
                 !(plannedBytes.Length == expected.Length + 3 && plannedBytes[0] == 0xef &&
                   plannedBytes[1] == 0xbb && plannedBytes[2] == 0xbf &&
                   plannedBytes.AsSpan(3).SequenceEqual(expected)))
-                throw new InvalidDataException("O plano canônico modificaria o conteúdo Markdown inesperadamente.");
+                throw new InvalidDataException("O plano canônico modificaria o conteúdo inesperadamente.");
 
             await Task.Run(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                WriteVerified(tree, path, plannedBytes);
+                if (create && FindDocument(tree, target) is not null)
+                    throw new IOException("Já existe um arquivo com esse nome: " + target);
+                WriteVerified(tree, target, plannedBytes);
                 var persisted = ReadFiles(tree, cancellationToken);
                 var observed = Snapshot(persisted);
                 foreach (var pair in baseline)
                 {
                     if (!observed.TryGetValue(pair.Key, out var actual) ||
                         !actual.Bytes.Span.SequenceEqual(
-                            string.Equals(pair.Key, path, StringComparison.OrdinalIgnoreCase)
+                            string.Equals(pair.Key, target, StringComparison.OrdinalIgnoreCase)
                                 ? plannedBytes : pair.Value.Bytes.Span))
                         throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
                 }
+                if (create && (!observed.TryGetValue(target, out var made) || !made.Bytes.Span.SequenceEqual(plannedBytes)))
+                    throw new IOException("O arquivo criado não passou na verificação: " + target);
+                if (observed.Count != baseline.Count + (create ? 1 : 0))
+                    throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
                 _baseline = observed;
             }, cancellationToken);
         }

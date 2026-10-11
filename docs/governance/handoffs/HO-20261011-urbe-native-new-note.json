@@ -1,0 +1,64 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-urbe-native-new-note",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T08:26:03Z",
+  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-native-create-files",
+  "base_commit": "13d9bf1345f8309b2010863be646cc18eede59a6",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
+    "apps/urbe/csharp/tools/note-name-oracle.mjs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyNewNoteNameOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultStorageTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "docs/governance/handoffs/HO-20261011-urbe-native-new-note.json"
+  ],
+  "work_completed": [
+    "Armazenamento (Android e Windows/desktop): CreateTextFileAsync e SaveExistingTextFileAsync gravam UM arquivo de texto do usuário (nota ou JSON da Personalização), criando pastas se faltarem; recusam .urbe/, pastas ocultas, travessia e tipos binários; mesmas verificações (mudança externa, plano canônico, cópia de recuperação, verificação de todos os arquivos e da contagem).",
+    "Diálogos nativos (UrbeDialogs) com o visual udlg/explorerActionSheet da 1.8.4: menu, campo de texto com validação, aviso; um por vez; folha inferior no celular e cartão central a partir de 720 px.",
+    "Botão + abre o menu Criar (v23MenuCriar). Nova nota porta v21CreateFileInRegion: v21UniqueName, separarNomeExtNota e safeName (oráculo com o JS original), lote por vagaNaRegiao/vagaAleatoria, arquivo gravado no vault, câmera na casa e editor aberto. Sem vault gravável nada é criado em memória."
+  ],
+  "verification": [
+    { "kind": "automated", "check": "dotnet test Urbe.Core.Tests (492) e Urbe.Client.Tests (33) locais; build Urbe.Desktop; dotnet run tests/consistency/Check.cs", "result": "passed", "evidence": "LegacyNewNoteNameOracleTests (17 nomes contra o JS), FolderVaultStorageTests (criação e recusas), NewNote_FromThePlusMenu… (pasta real: arquivo '# ', casa, editor, salvar, '(2)' sem sobrescrever), NewNote_WithoutAWritableVault…." },
+    { "kind": "automated", "check": "urbe-checks no PR (inclui build do APK Android)", "result": "pending", "evidence": "AndroidVaultStorage só compila no CI (sem Android SDK local)." }
+  ],
+  "known_issues": [
+    "Os demais itens do menu Criar (Nova pasta, Desenhar pasta no mapa, Adicionar construção, Importar) mostram que ainda estão em portabilidade.",
+    "A posição da casa nova ainda não é gravada no .urbe/mapa.json (a gravação do mapa é a próxima fatia crítica); ao reabrir, a nota é posicionada pela regra de abertura da 1.8.4.",
+    "Depende do PR #489 (FolderVaultStorage), cuja branch está na base desta."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar no Android e no Windows reais: criar nota, editar, reabrir (DEVICE).",
+    "Gravar .urbe/mapa.json com o formato v:4 (estadoDesejado) para persistir a cidade.",
+    "Personalização: ler/gravar Personalização/tema.json usando CreateTextFileAsync/SaveExistingTextFileAsync."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md", "AGENTS.md", "apps/urbe/AGENTS.md", "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md", "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "docs/governance/integration-policy.json", "apps/urbe/src/app.js", "apps/urbe/src/ui/dialogs.js", "apps/urbe/src/core/artifacts.js"
+  ],
+  "invariants": [
+    { "id": "NN-001", "evidence": "Pasta do usuário é a autoridade; nada criado só em memória." },
+    { "id": "NN-017", "evidence": "Testes em pasta temporária e headless não substituem aparelho." },
+    { "id": "NN-018", "evidence": "UC-19 segue em progresso." }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Armazenamento de vault (zona *Vault*.cs): passa a criar arquivos de texto do usuário no Android e no Windows/desktop, com as mesmas salvaguardas de gravação."
+  }
+}
