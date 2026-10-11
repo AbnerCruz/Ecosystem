@@ -13,7 +13,7 @@
   "state": "review",
   "branch": "agent/p6-r4-task-evidence-20261011",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/498",
   "base_commit": "cfb19a3846c625ac73b54a306ab230b2c054e5da",
   "files_changed": [
     "apps/ecosystem-ai/src/EcosystemAi.Cli/CliPlannedTaskEvidence.cs",
