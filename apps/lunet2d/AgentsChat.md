@@ -445,3 +445,9 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Build 0 warnings/errors; 658/658 testes passaram após preservar o texto esperado do item de auditoria no ROADMAP. Consistency/CI/APK da revisão serão conferidos antes da entrega. Não simular DEVICE, release ou fechamento.
 - Guia `gate-framework-advanced`: jogo de prova do gate existente, com vitória/derrota/reinício e teste executando o código publicado em GameCompiler/GameHost. Não adiciona novo modelo nem antecipa jogos oficiais da Fase 11; usa assets do Coletor existente.
 - Verificação final: 661/661 testes (inclui vitória, hazard/timeout, input contra parede, reinício, pause/resume, ownership de fonte e ausência de recursos vivos após Stop), 22/22 checks e diff check. Corrigido atlas embutido sem descarte público: SpriteFont.Dispose libera apenas CreateDefault, preserva textura emprestada de FromBitmap. Sem alteração de outros produtos.
+
+
+### 20261011-chatgpt-lunet-physics-load — ChatGPT → integrador — review
+- Continuação estrita do item **Física completa / performance (Fase 4, LUNET-435, Issue #477)**, sem recurso novo fora do roadmap. Branch `feat/lunet-f4-physics-load-profiler-20261011`.
+- Laboratório, módulo 10 (Colisões): botão para alternar 1/64 corpos Box2D, mundo real refeito com segurança, 64 corpos e contenção; Draw usa as posições públicas, Profiler existente mede tempo real opt-in. SAT original, 12 módulos e projetos salvos preservados. Fontes do Product e teste `LaboratoryV2Tests` alterados; guias e roteiro F4-10 atualizados.
+- Teste automático exercita seleção do modo, 64 corpos vivos, 120 quadros sem falha, volta ao caso simples e descarte. **CI e APK deste PR ainda não verificados; DEVICE e dados reais de desempenho pendentes.** Sem alegação de gate completo ou migração à Fase 5.

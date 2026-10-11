@@ -22,7 +22,7 @@
 | F4-07 | Repita captura/Stop no Preview isolado; depois rode novamente com Perf desligado. | Captura retorna à IDE; não há falso aviso de crash; captura velha não é apresentada como execução nova. |
 | F4-08 | Execute o roteiro do backend instrumentado de áudio quando estiver implementado, tocando efeitos/música, pausando e retomando. | Contador representa underruns reais com suporte declarado. **Bloqueado no backend atual:** “não medido” é honesto, mas não aprova este requisito do gate. |
 | F4-09 | Execute um jogo completo de teste que combine física, câmera, animação, partículas, UI, conteúdo e áudio pelas APIs oficiais, com condição de vitória/derrota e reinício. | Jogo é jogável offline, reinicia sem vazar recursos e usa somente APIs públicas. Os 12 módulos isolados do Lab não substituem este caso. Projeto reproduzível: guia offline `gate-framework-advanced` (crie novo Coletor de moedas e substitua a classe principal pelo código do guia). |
-| F4-10 | Durante simulação física e jogo completo, capture Perf por 60 segundos, informando versão/aparelho/quantidade de corpos e relatório. | Tempos, GC e memória ficam registrados com carga e aparelho; sem números de desempenho inventados por CI. |
+| F4-10 | No Laboratório novo, página Colisões → Física Box2D, alterne **CARGA: 1 CORPO** e **CARGA: 64 CORPOS**; capture ▥ Perf por 60 segundos em cada modo e durante o jogo completo. Informe versão, aparelho e relatório. | Tempos, GC e memória ficam registrados sob as duas cargas no aparelho; reiniciar/alternar deve funcionar sem crash ou recursos vazados. Sem números de desempenho inventados por CI. |
 
 ## Falhas e regressão
 
