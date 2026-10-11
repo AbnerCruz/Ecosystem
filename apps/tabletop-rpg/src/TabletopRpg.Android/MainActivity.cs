@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Path = System.IO.Path;
 using Android.App;
 using Android.Content.PM;
 using Android.Graphics;
@@ -225,7 +226,7 @@ public sealed class MainActivity : Activity
             throw new InvalidOperationException(outcome.Message);
         await SaveAsync();
         RenderSession();
-        Toast.MakeText(this, outcome.Success ? "Teste bem-sucedido" : "Teste falhou",
+        Toast.MakeText(this, outcome.Success == true ? "Teste bem-sucedido" : "Teste falhou",
             ToastLength.Short)?.Show();
     }
 
@@ -251,7 +252,7 @@ public sealed class MainActivity : Activity
     private void Heading(LinearLayout root, string name, string sub)
     {
         var title = Label(name, 27, Foreground);
-        title.SetTypeface(null, Android.Graphics.TypefaceStyle.Bold);
+        title.SetTypeface(null, global::Android.Graphics.TypefaceStyle.Bold);
         root.AddView(title, Match());
         root.AddView(Label(sub, 11, Accent), Match());
         Divider(root);
@@ -260,7 +261,7 @@ public sealed class MainActivity : Activity
     private void Subheading(LinearLayout root, string text)
     {
         var view = Label(text, 15, Accent);
-        view.SetTypeface(null, Android.Graphics.TypefaceStyle.Bold);
+        view.SetTypeface(null, global::Android.Graphics.TypefaceStyle.Bold);
         view.SetPadding(0, Dp(20), 0, Dp(8));
         root.AddView(view, Match());
     }
