@@ -1,0 +1,306 @@
+using System.Text;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Input;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
+using Urbe.Client;
+using Urbe.Client.World;
+using Urbe.Core;
+
+namespace Urbe.Client.Tests;
+
+/// <summary>The rest of the "Criar" (+) menu, driven through the real native UI against a real folder vault.</summary>
+public sealed partial class HeadlessUiTests
+{
+    private static async Task<(MainView View, Window Window, string Vault, string Dir)> OpenCreateVault()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "urbe-create-" + Guid.NewGuid().ToString("N"));
+        var vault = Path.Combine(dir, "vault");
+        Directory.CreateDirectory(Path.Combine(vault, "Bairro"));
+        File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n\n[[Um]]\n");
+        File.WriteAllText(Path.Combine(vault, "Bairro", "Um.md"), "# Um\n");
+        var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
+        var view = new MainView(storage);
+        var window = new Window { Width = 1280, Height = 760, Content = view };
+        window.Show();
+        await view.OpenVaultAsync();
+        await Settle(window, view);
+        return (view, window, vault, dir);
+    }
+
+    private static async Task PickFromCreateMenu(MainView view, string item, Func<Task> next)
+    {
+        var menu = view.ShowCreateMenuAsync();
+        Dispatcher.UIThread.RunJobs();
+        ClickButtonWithText(view.Dialogs, item);
+        await Task.Delay(30);
+        Dispatcher.UIThread.RunJobs();
+        await next();
+        await menu;
+    }
+
+    private static Point ScreenOf(Window window, MainView view, double tileX, double tileY) =>
+        view.World.TranslatePoint(view.World.Camera.WorldToScreen(tileX * 32, tileY * 32), window)!.Value;
+
+    [Fact]
+    public async Task NewFolder_IsARegionOnTheMapAndAFolderInTheVault() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var (view, window, vault, dir) = await OpenCreateVault();
+            try
+            {
+                var city = view.World.City!;
+                int regions = city.Regions.Count;
+                var before = Directory.GetFiles(vault, "*", SearchOption.AllDirectories).Order().ToArray();
+                await PickFromCreateMenu(view, "Nova pasta", () =>
+                {
+                    Snapshot(window, "native-new-folder-dialog.png");
+                    var input = view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single();
+                    input.Text = "  Projetos ";
+                    ClickButtonWithText(view.Dialogs, "Criar pasta");
+                    return Task.CompletedTask;
+                });
+                Assert.True(Directory.Exists(Path.Combine(vault, "Projetos")));
+                Assert.Equal(regions + 1, city.Regions.Count);
+                Assert.Equal("Projetos", city.Regions.Last().Name);
+                Assert.Equal(before, Directory.GetFiles(vault, "*", SearchOption.AllDirectories).Order().ToArray());   // no file touched or added
+
+                // the same name again: "Projetos (2)" (v21UniqueRegionName), never the same folder
+                await PickFromCreateMenu(view, "Nova pasta", () =>
+                {
+                    view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single().Text = "projetos";
+                    ClickButtonWithText(view.Dialogs, "Criar pasta");
+                    return Task.CompletedTask;
+                });
+                Assert.Equal("projetos (2)", city.Regions.Last().Name);
+                Assert.True(Directory.Exists(Path.Combine(vault, "projetos (2)")));
+
+                // and a note can be made inside the new neighbourhood (the folder is a real place)
+                var made = city.CreateNote(city.Regions.Single(r => r.Name == "Projetos"), "Ideias", 1);
+                Assert.Equal("Projetos/Ideias.md", made!.Value.House.Path);
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task CreateMenu_WithoutAWritableVaultCreatesNothingInMemory() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var view = new MainView();
+            var window = new Window { Width = 412, Height = 860, Content = view };
+            window.Show();
+            await view.LoadAsync(TutorialNotes.Load());
+            await Settle(window, view);
+            int regions = view.World.City!.Regions.Count, houses = view.World.City.Buildings.Count;
+            foreach (var item in new[] { "Nova pasta", "Desenhar pasta no mapa", "Adicionar construção", "Importar" })
+                await PickFromCreateMenu(view, item, () =>
+                {
+                    Assert.Empty(view.Dialogs.GetVisualDescendants().OfType<TextBox>());
+                    ClickButtonWithText(view.Dialogs, "Ok");
+                    return Task.CompletedTask;
+                });
+            Assert.False(view.ToolActive);
+            Assert.Equal(regions, view.World.City.Regions.Count);
+            Assert.Equal(houses, view.World.City.Buildings.Count);
+            window.Close();
+            return true;
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task DrawFolderOnTheMap_DragsARectangleNamesItAndMakesTheFolder() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var (view, window, vault, dir) = await OpenCreateVault();
+            try
+            {
+                var city = view.World.City!;
+                var (x0, y0) = FindDryRect(city, 6);
+                view.World.Camera.X = (x0 + 3) * 32;
+                view.World.Camera.Y = (y0 + 3) * 32;
+                view.World.InvalidateVisual();
+                Dispatcher.UIThread.RunJobs();
+                int regions = city.Regions.Count;
+
+                await PickFromCreateMenu(view, "Desenhar pasta no mapa", () => Task.CompletedTask);
+                Assert.True(view.ToolActive);
+                Assert.Equal("Arraste no mapa para delimitar a nova pasta.", view.ToolDockText);
+
+                // too small a rectangle: "A região precisa ser maior." and the tool stays
+                var a = ScreenOf(window, view, x0 + .5, y0 + .5);
+                window.MouseDown(a, MouseButton.Left);
+                window.MouseUp(ScreenOf(window, view, x0 + 1.5, y0 + 1.5), MouseButton.Left);
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal("A região precisa ser maior.", view.LifeNoticeText);
+                Assert.True(view.ToolActive);
+                Assert.False(view.Dialogs.IsOpen);
+
+                // a real drag: 6x6 tiles; the camera did not pan
+                double cx = view.World.Camera.X;
+                window.MouseDown(a, MouseButton.Left);
+                window.MouseMove(ScreenOf(window, view, x0 + 3.5, y0 + 3.5));
+                window.MouseMove(ScreenOf(window, view, x0 + 5.5, y0 + 5.5));
+                Snapshot(window, "native-draw-region-draft.png");
+                window.MouseUp(ScreenOf(window, view, x0 + 5.5, y0 + 5.5), MouseButton.Left);
+                Dispatcher.UIThread.RunJobs();
+                await Task.Delay(30);
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal(cx, view.World.Camera.X);
+                Assert.True(view.Dialogs.IsOpen);
+                var input = view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single();
+                input.Text = "Rascunhos";
+                ClickButtonWithText(view.Dialogs, "Criar");
+                await Task.Delay(100);
+                Dispatcher.UIThread.RunJobs();
+
+                var made = city.Regions.Last();
+                Assert.Equal(regions + 1, city.Regions.Count);
+                Assert.Equal("Rascunhos", made.Name);
+                Assert.Equal((x0, y0, 6, 6), (made.X, made.Y, made.W, made.H));
+                Assert.All(made.Cells, c => Assert.InRange(c.X, x0, x0 + 5));
+                Assert.True(Directory.Exists(Path.Combine(vault, "Rascunhos")));
+                Assert.False(view.ToolActive);
+                Assert.StartsWith("Região criada com prioridade territorial", view.LifeNoticeText);
+                Snapshot(window, "native-draw-region-done.png");
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
+    private static (int X, int Y) FindDryRect(LegacyCity city, int size)
+    {
+        var c = city.Buildings.First();
+        for (int r = 6; r < 60; r++)
+        for (int dy = -r; dy <= r; dy++)
+        for (int dx = -r; dx <= r; dx++)
+        {
+            if (Math.Max(Math.Abs(dx), Math.Abs(dy)) != r) continue;
+            int x = c.X + dx, y = c.Y + dy;
+            if (city.DrawRegionMask(x, y, size, size).Cells.Count == size * size && city.RegionAt(x, y) is null) return (x, y);
+        }
+        throw new InvalidOperationException("sem terra livre");
+    }
+
+    [Fact]
+    public async Task AddBuilding_PlacesTheGhostOnTheMapAndBuildsTheNoteWhereItWasPut() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var (view, window, vault, dir) = await OpenCreateVault();
+            try
+            {
+                var city = view.World.City!;
+                // a free lot outside every neighbourhood, with road access
+                (int X, int Y)? lot = null;
+                var c = city.Buildings.First();
+                for (int r = 6; r < 40 && lot is null; r++)
+                for (int dy = -r; dy <= r && lot is null; dy++)
+                for (int dx = -r; dx <= r && lot is null; dx++)
+                    if (Math.Max(Math.Abs(dx), Math.Abs(dy)) == r && city.CanHouse(c.X + dx, c.Y + dy)) lot = (c.X + dx, c.Y + dy);
+                Assert.NotNull(lot);
+                var (lx, ly) = lot!.Value;
+                view.World.Camera.X = (lx + 1.5) * 32;
+                view.World.Camera.Y = (ly + 1.5) * 32;
+                view.World.InvalidateVisual();
+                Dispatcher.UIThread.RunJobs();
+                int houses = city.Buildings.Count;
+
+                await PickFromCreateMenu(view, "Adicionar construção", () => Task.CompletedTask);
+                Assert.True(view.ToolActive);
+                Assert.StartsWith("Posicione a construção", view.ToolDockText);
+                var spot = ScreenOf(window, view, lx + .5, ly + .5);
+                window.MouseDown(spot, MouseButton.Left);
+                window.MouseUp(spot, MouseButton.Left);
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal($"Posicione a construção · {lx},{ly}", view.ToolDockText);
+                Snapshot(window, "native-place-building-ghost.png");
+
+                var ok = view.GetVisualDescendants().OfType<Button>().First(b => b.Content as string == "Construir");
+                Assert.True(ok.IsEnabled);
+                var confirm = view.ConfirmPlacementAsync();
+                Dispatcher.UIThread.RunJobs();
+                view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single().Text = "Casa nova.txt";
+                ClickButtonWithText(view.Dialogs, "Construir");
+                await confirm;
+
+                Assert.Equal("", File.ReadAllText(Path.Combine(vault, "Casa nova.txt")));
+                var house = city.Buildings.Single(b => b.Path == "Casa nova.txt");
+                Assert.Equal((lx, ly), (house.X, house.Y));
+                Assert.Equal(houses + 1, city.Buildings.Count);
+                Assert.Same(house, view.World.Selected);
+                Assert.False(view.ToolActive);
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
+    private static ImportSelection Files(bool directory, params (string Path, string Text)[] files) =>
+        new(files.Select(f => new ImportSource(f.Path, _ => ValueTask.FromResult<Stream>(new MemoryStream(Encoding.UTF8.GetBytes(f.Text))))).ToList(), directory);
+
+    [Fact]
+    public async Task Import_WritesNewDocumentsIntoTheVaultAndKeepsWhatIsThereOnConflict() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var (view, window, vault, dir) = await OpenCreateVault();
+            try
+            {
+                var city = view.World.City!;
+                int houses = city.Buildings.Count;
+                view.ImportPicker = folder => Task.FromResult<ImportSelection?>(Files(folder,
+                    ("Novo.md", "# Novo\n"), ("Pacote/Dentro.md", "# Dentro\n"), ("Comece.md", "# OUTRO\n"), ("Bairro/Um.md", "# Um\n"),
+                    ("foto.bin", "x"), (".obsidian/app.json", "{}")));
+                await PickFromCreateMenu(view, "Importar", async () =>
+                {
+                    ClickButtonWithText(view.Dialogs, "Pasta inteira");
+                    await Task.Delay(50);
+                    Dispatcher.UIThread.RunJobs();
+                    Snapshot(window, "native-import-confirm.png");
+                    ClickButtonWithText(view.Dialogs, "Continuar");
+                    await Task.Delay(300);
+                    Dispatcher.UIThread.RunJobs();
+                });
+                Assert.Equal("# Novo\n", File.ReadAllText(Path.Combine(vault, "Novo.md")));
+                Assert.Equal("# Dentro\n", File.ReadAllText(Path.Combine(vault, "Pacote", "Dentro.md")));
+                Assert.Equal("# Comece\n\n[[Um]]\n", File.ReadAllText(Path.Combine(vault, "Comece.md")));   // different content: kept
+                Assert.False(File.Exists(Path.Combine(vault, "foto.bin")));
+                Assert.False(Directory.Exists(Path.Combine(vault, ".obsidian")));
+                Assert.Equal(houses + 2, city.Buildings.Count);
+                Assert.NotNull(city.RegionByPath("Pacote"));
+                Assert.StartsWith("Importação concluída. 2 arquivo(s) gravado(s); 1 preservado(s)", view.LifeNoticeText);
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task Import_RefusesUnsafePathsAndBackupsWithoutTouchingTheVault() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var (view, window, vault, dir) = await OpenCreateVault();
+            try
+            {
+                var before = Directory.GetFiles(vault, "*", SearchOption.AllDirectories).Order().ToArray();
+                foreach (var selection in new[] { Files(false, ("../fora.md", "x")), Files(true, (".urbe/vault.json", "{\"formatVersion\":2}"), ("n.md", "x")) })
+                {
+                    view.ImportPicker = _ => Task.FromResult<ImportSelection?>(selection);
+                    await PickFromCreateMenu(view, "Importar", async () =>
+                    {
+                        ClickButtonWithText(view.Dialogs, "Arquivos");
+                        await Task.Delay(50);
+                        Dispatcher.UIThread.RunJobs();
+                        Assert.Contains("Não foi possível importar", view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text));
+                        ClickButtonWithText(view.Dialogs, "Ok");
+                    });
+                }
+                Assert.Equal(before, Directory.GetFiles(vault, "*", SearchOption.AllDirectories).Order().ToArray());
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+}

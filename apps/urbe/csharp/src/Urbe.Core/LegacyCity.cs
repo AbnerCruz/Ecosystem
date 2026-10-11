@@ -35,6 +35,8 @@ public sealed class LegacyCityRegion
     public string Name { get; }
     public string? ParentId { get; }
     public string Color { get; internal set; }
+    /// <summary>r.description (empty for a folder made by the Explorer / "Nova pasta").</summary>
+    public string Description { get; internal set; } = "";
     public int X { get; internal set; }
     public int Y { get; internal set; }
     public int W { get; internal set; }

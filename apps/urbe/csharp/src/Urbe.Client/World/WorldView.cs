@@ -229,6 +229,23 @@ public sealed class WorldView : Control
     /// <summary>Raised when the camera moves (biome pill refresh).</summary>
     public event EventHandler? CameraChanged;
 
+    private MapTool? _tool;
+    private bool _toolGesture;
+    /// <summary>The active modal tool (draw a region, place a building); null = the normal pan/select.</summary>
+    public MapTool? Tool
+    {
+        get => _tool;
+        set { _tool?.Cancel(); _tool = value; _toolGesture = false; InvalidateVisual(); }
+    }
+
+    /// <summary>The house art of the placement ghost (v21 overlay: A.house1 at the candidate tile).</summary>
+    public Bitmap? GhostArt(int x, int y)
+    {
+        if (World is null) return null;
+        var biome = World.At(x + 1, y + 1).Biome;
+        return _sprites.Building("house", LegacyWorldBuildings.StyleForBiome(LegacyBiomeRules.Id(biome)), 0, false);
+    }
+
     public void Load(LegacyWorld world, LegacyCity city)
     {
         _worldGeneration++;
@@ -321,6 +338,7 @@ public sealed class WorldView : Control
         _lifeArt.Glow(context, _life, _lifeHost.People, life);
         DrawWorldLabels(context);
         RequestChunks(missing);
+        Tool?.Render(context, this);
     }
 
     /// <summary>app.js drawGround (v0.41): near chunk, or far chunk with neighbourhoods cut from the near one.</summary>
@@ -740,8 +758,16 @@ public sealed class WorldView : Control
         var p = e.GetPosition(this);
         _pointers[e.Pointer] = p;
         e.Pointer.Capture(this);
-        if (_pointers.Count == 1) { _pressAt = p; _dragged = false; }
-        else { _pressAt = null; _pinchDistance = PinchDistance(); }
+        if (_pointers.Count == 1 && Tool is { } tool && City is not null)
+        {
+            var (tx, ty) = Camera.TileAt(p);
+            _toolGesture = true;
+            _pressAt = null;
+            tool.Down(tx, ty);
+            InvalidateVisual();
+        }
+        else if (_pointers.Count == 1) { _pressAt = p; _dragged = false; }
+        else { _pressAt = null; _pinchDistance = PinchDistance(); if (_toolGesture) { _toolGesture = false; Tool?.Cancel(); } }
         e.Handled = true;
     }
 
@@ -757,6 +783,11 @@ public sealed class WorldView : Control
             if (_pinchDistance > 0 && d > 0) Camera.ZoomAt(PinchCentre(), d / _pinchDistance);
             _pinchDistance = d;
         }
+        else if (_toolGesture && Tool is { } active)
+        {
+            var (tx, ty) = Camera.TileAt(p);
+            active.Move(tx, ty);
+        }
         else
         {
             if (_pressAt is { } start && Distance(start, p) > TapSlop) _dragged = true;
@@ -771,7 +802,14 @@ public sealed class WorldView : Control
         base.OnPointerReleased(e);
         _pointers.Remove(e.Pointer);
         e.Pointer.Capture(null);
-        if (_pointers.Count == 0 && _pressAt is { } start && !_dragged && City is not null)
+        if (_toolGesture && _pointers.Count == 0)
+        {
+            _toolGesture = false;
+            var (tx, ty) = Camera.TileAt(e.GetPosition(this));
+            Tool?.Up(tx, ty);
+            InvalidateVisual();
+        }
+        else if (_pointers.Count == 0 && _pressAt is { } start && !_dragged && City is not null)
         {
             var (tx, ty) = Camera.TileAt(start);
             Select(City.BuildingAt(tx, ty) is { IsNote: true } house ? house : null);

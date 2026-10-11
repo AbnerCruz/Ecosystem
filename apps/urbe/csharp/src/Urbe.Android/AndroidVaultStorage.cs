@@ -85,6 +85,32 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     public Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
         WriteTextFileAsync(path, content, create: false, cancellationToken);
 
+    public async Task CreateDirectoryAsync(string path, CancellationToken cancellationToken = default)
+    {
+        IUrbeVaultStorage.EnsureWritableFolderPath(path);
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            if (_baseline is null) throw new InvalidOperationException("Reabra a pasta do vault.");
+            await Task.Run(() =>
+            {
+                // a segment that exists as a file is refused (EnsureDirectory would walk into it)
+                var parent = Root(tree);
+                foreach (var segment in Segments(path))
+                {
+                    var child = Children(tree, parent).FirstOrDefault(x => string.Equals(x.Name, segment, StringComparison.Ordinal));
+                    if (child is null) break;
+                    if (child.MimeType != DirectoryMime) throw new IOException("Já existe um arquivo com esse nome: " + path);
+                    parent = DocumentUri(tree, child.DocumentId);
+                }
+                EnsureDirectory(tree, path);
+                if (FindDocument(tree, path) is null) throw new IOException("A pasta criada não passou na verificação: " + path);
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     /// <summary>Writes ONE user text file: creates it when <paramref name="create"/> and absent,
     /// else rewrites the existing one; same checks and verification for both.</summary>
     private async Task WriteTextFileAsync(string path, string content, bool create, CancellationToken cancellationToken)

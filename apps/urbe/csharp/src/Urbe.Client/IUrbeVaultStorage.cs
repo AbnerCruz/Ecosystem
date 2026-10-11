@@ -20,6 +20,21 @@ public interface IUrbeVaultStorage
     /// <summary>Rewrites ONE existing user text file of any editable text type (e.g. tema.json).</summary>
     Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default);
 
+    /// <summary>Creates ONE user folder (a "Nova pasta" / drawn region), and the folders above it, inside
+    /// the vault. Never inside .urbe/ or any hidden folder; an existing folder is accepted, a file with
+    /// that name is refused. No file of the vault is touched. Hosts must override it.</summary>
+    Task CreateDirectoryAsync(string path, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não cria pastas.");
+
+    /// <summary>A folder path Urbe may create: vault-relative, no traversal, drive syntax, or hidden segment.</summary>
+    static void EnsureWritableFolderPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || path.StartsWith('/') || path.Contains('\\') || path.Contains(':'))
+            throw new InvalidDataException("Caminho inválido no vault: " + path);
+        if (path.Split('/').Any(s => s.Length == 0 || s is "." or ".." || s.StartsWith('.') || s.EndsWith(' ') || s.EndsWith('.')))
+            throw new InvalidOperationException("Caminho interno ou inseguro no vault: " + path);
+    }
+
     /// <summary>The user files Urbe may write: the 1.8.4 text types, inside the vault, never in
     /// .urbe/ or any hidden folder, never with traversal or drive syntax.</summary>
     static void EnsureWritableTextPath(string path)

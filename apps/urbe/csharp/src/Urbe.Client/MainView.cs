@@ -13,7 +13,7 @@ namespace Urbe.Client;
 /// The 1.8.4 screen: the city fills everything; navigation rail (wide) or dock (narrow),
 /// the top pill with the biome, the round buttons, the "+" and the panels sit on top of it.
 /// </summary>
-public sealed class MainView : Grid
+public sealed partial class MainView : Grid
 {
     private const double WideBreakpoint = 760;
 
@@ -76,6 +76,7 @@ public sealed class MainView : Grid
         _stage.Children.Add(TopBar());
         _stage.Children.Add(Fab());
         _stage.Children.Add(LifeNotice());
+        _stage.Children.Add(ToolDock());
         _stage.Children.Add(HousePanel());
         _stage.Children.Add(LoadingLabel());
         _stage.Children.Add(CityMap);
@@ -425,14 +426,13 @@ public sealed class MainView : Grid
     public Task ShowCreateMenuAsync()
     {
         if (Dialogs.IsOpen) return Task.CompletedTask;
-        Task Later(string what) => Dialogs.AlertAsync(what, "Esta ação ainda está em portabilidade para o app nativo.");
         return Dialogs.MenuAsync("Criar",
         [
             new DialogItem("Nova nota", UrbeTheme.Icons.Plus, Run: () => CreateNoteAsync(null)),
-            new DialogItem("Nova pasta", UrbeTheme.Icons.Folder, Run: () => Later("Nova pasta")),
-            new DialogItem("Desenhar pasta no mapa", UrbeTheme.Icons.Region, Run: () => Later("Desenhar pasta no mapa")),
-            new DialogItem("Adicionar construção", UrbeTheme.Icons.House, Run: () => Later("Adicionar construção")),
-            new DialogItem("Importar", UrbeTheme.Icons.Upload, Run: () => Later("Importar"))
+            new DialogItem("Nova pasta", UrbeTheme.Icons.Folder, Run: () => CreateFolderAsync()),
+            new DialogItem("Desenhar pasta no mapa", UrbeTheme.Icons.Region, Run: BeginDrawRegionAsync),
+            new DialogItem("Adicionar construção", UrbeTheme.Icons.House, Run: BeginPlacementAsync),
+            new DialogItem("Importar", UrbeTheme.Icons.Upload, Run: () => ImportAsync())
         ]);
     }
 
