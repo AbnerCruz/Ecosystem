@@ -10,16 +10,14 @@ Objetivo: provar o modelo de mesa sem UI e sem provedor real.
 
 - [x] **RPG-001 — Fundação do Product e slice headless.** Registrar Product, SPEC/roadmap, participantes, perspectivas, intents, regras e Agent Turn Runner dirigido por evento, com testes.
 - [x] RPG-002 — Persistência local v1: campanha/sessão, versionamento, save atômico, export/import e recuperação. Integrado no PR #168 (`46c295a`), com 22 testes e consistency/simulação verdes; Issue #159.
-- [~] RPG-003 — Modelo de cena, relógio de campanha, quests, inventário, condições e recursos.
-  - Issue #308: Core headless e codec v2 com leitura segura de v1; testes de semântica, round-trip e corrupção. CI, revisão e integração **critical/user-data** ainda pendentes; não marcar [x] antes dos gates.
-- [~] RPG-004 — Runtime de combate independente de sistema específico.
-  - Issue #314: encontros headless com ICombatRules, ações e turnos autorizados, HP na campanha e testes de determinismo. **Branch empilhada sobre RPG-003 PR #310 ainda crítico**, não integrável antes da dependência. CI/revisão/integrador pendentes; o cursor de turno é transitório (RPG-032 aprofunda a persistência tática).
+- [x] RPG-003 — Modelo de cena, relógio de campanha, quests, inventário, condições e recursos. PR #310 integrado em 08/10/2026 (Issue #308); schema v2 mantém importação v1.
+- [x] RPG-004 — Runtime de combate independente de sistema específico. PR #315 integrado em 10/10/2026 (Issue #314); cursor de turno permanece transitório até RPG-032.
 
 **Gate G-R0:** Core salva/retoma uma campanha e executa um fluxo solo determinístico sem UI nem rede.
 
 ## R1 — Mesa solo com IA
 
-- [ ] RPG-010 — Contrato local de Model Gateway do Product, configuração de provedor e segredo fora dos dados da campanha.
+- [~] RPG-010 — Contrato local de Model Gateway do Product, configuração de provedor e segredo fora dos dados da campanha. Issue #504: contrato C# isolado e fonte de credencial por variável de ambiente em implementação; integração e CI pendentes.
 - [ ] RPG-011 — Player Agent: persona, goals, relationships, knowledge, memory e intents estruturadas.
 - [ ] RPG-012 — Game Master Agent com visão própria e ferramentas limitadas.
 - [ ] RPG-013 — Director: tensão, ameaças, pistas, promessas e consequências sem roteiro rígido.
