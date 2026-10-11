@@ -75,57 +75,76 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
-    public async Task SaveExistingNoteAsync(string path, string content, CancellationToken cancellationToken = default)
+    public Task SaveExistingNoteAsync(string path, string content, CancellationToken cancellationToken = default)
+    {
+        if (!IsSupportedNote(path)) throw new NotSupportedException("Esta etapa grava somente notas Markdown existentes.");
+        return WriteTextFileAsync(path, content, create: false, cancellationToken);
+    }
+
+    public Task CreateTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
+        WriteTextFileAsync(path, content, create: true, cancellationToken);
+
+    public Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
+        WriteTextFileAsync(path, content, create: false, cancellationToken);
+
+    /// <summary>Writes ONE user text file (a note, or a Personalização JSON): creates it when
+    /// <paramref name="create"/> and it does not exist yet, else rewrites the existing one.</summary>
+    private async Task WriteTextFileAsync(string path, string content, bool create, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(content);
-        if (!IsSupportedNote(path)) throw new NotSupportedException("Esta etapa grava somente notas Markdown existentes.");
-        Segments(path);
-        if (path.StartsWith(".urbe/", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Arquivos internos não podem ser editados como notas.");
+        IUrbeVaultStorage.EnsureWritableTextPath(path);
 
         await _gate.WaitAsync(cancellationToken);
         try
         {
             var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            if (!baseline.ContainsKey(path))
-                throw new FileNotFoundException("Nota não existe na pasta; criação virá na próxima etapa.", path);
+            if (create && baseline.ContainsKey(path))
+                throw new IOException("Já existe um arquivo com esse nome: " + path);
+            if (!create && !baseline.ContainsKey(path))
+                throw new FileNotFoundException("O arquivo não existe na pasta.", path);
             var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
             EnsureUnchanged(baseline, files);
             var snapshot = VaultReader.Read(files);
             if (snapshot.IsReadOnly || snapshot.FutureFiles.Contains(path, StringComparer.OrdinalIgnoreCase))
-                throw new InvalidOperationException("Formato futuro de vault ou nota protegida: escrita recusada.");
-            var note = snapshot.Documents.SingleOrDefault(d => string.Equals(d.Path, path, StringComparison.OrdinalIgnoreCase));
-            if (note?.Text is null)
-                throw new InvalidDataException("Nota não pôde ser lida como Markdown seguro.");
+                throw new InvalidOperationException("Formato futuro de vault ou arquivo protegido: escrita recusada.");
+            var existing = snapshot.Documents.SingleOrDefault(d => string.Equals(d.Path, path, StringComparison.OrdinalIgnoreCase));
+            if (!create && existing?.Text is null)
+                throw new InvalidDataException("O arquivo não pôde ser lido como texto seguro.");
+            var target = existing?.Path ?? path;
 
-            // The canonical writer must agree that the document is writable; single-file edit only.
+            // The canonical writer must agree; only this one file is written.
             var documents = snapshot.Documents.Where(d => d.Text is not null)
                 .Select(d => new VaultWriteDocument(d.Id, d.Path,
-                    string.Equals(d.Path, path, StringComparison.OrdinalIgnoreCase) ? content : d.Text!))
-                .ToArray();
+                    string.Equals(d.Path, target, StringComparison.OrdinalIgnoreCase) ? content : d.Text!))
+                .ToList();
+            if (create) documents.Add(new VaultWriteDocument("doc-" + Guid.NewGuid().ToString("N"), target, content));
             var plan = VaultWriter.Plan(new VaultWriteRequest { Files = files, Documents = documents, AppVersion = "urbe-native-preview" });
-            if (!plan.Writable || !plan.Files.ContainsKey(path))
-                throw new InvalidOperationException("O plano canônico recusou a nota.");
+            if (!plan.Writable || !plan.Files.ContainsKey(target))
+                throw new InvalidOperationException("O plano canônico recusou o arquivo.");
             var expected = Encoding.UTF8.GetBytes(content);
-            var planned = plan.Files[path].Bytes.ToArray();
+            var planned = plan.Files[target].Bytes.ToArray();
             if (!planned.AsSpan().SequenceEqual(expected) &&
                 !(planned.Length == expected.Length + 3 && planned[0] == 0xef && planned[1] == 0xbb && planned[2] == 0xbf &&
                   planned.AsSpan(3).SequenceEqual(expected)))
-                throw new InvalidDataException("O plano canônico modificaria o conteúdo Markdown inesperadamente.");
+                throw new InvalidDataException("O plano canônico modificaria o conteúdo inesperadamente.");
 
             await Task.Run(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                WriteVerified(root, note.Path, planned);
+                WriteVerified(root, target, planned, create);
                 var observed = Snapshot(ReadFiles(root, cancellationToken));
                 foreach (var pair in baseline)
                 {
                     if (!observed.TryGetValue(pair.Key, out var actual) ||
-                        !actual.Bytes.Span.SequenceEqual(string.Equals(pair.Key, path, StringComparison.OrdinalIgnoreCase)
+                        !actual.Bytes.Span.SequenceEqual(string.Equals(pair.Key, target, StringComparison.OrdinalIgnoreCase)
                             ? planned : pair.Value.Bytes.Span))
                         throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
                 }
+                if (create && (!observed.TryGetValue(target, out var made) || !made.Bytes.Span.SequenceEqual(planned)))
+                    throw new IOException("O arquivo criado não passou na verificação: " + target);
+                if (observed.Count != baseline.Count + (create ? 1 : 0))
+                    throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
                 _baseline = observed;
             }, cancellationToken);
         }
@@ -193,11 +212,23 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
 
     // ---------------------------------------------------------------- writing
 
-    private static void WriteVerified(string root, string path, byte[] content)
+    private static void WriteVerified(string root, string path, byte[] content, bool create)
     {
         var full = Path.GetFullPath(Path.Combine([root, .. Segments(path)]));
         if (!full.StartsWith(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.Ordinal))
             throw new InvalidDataException("Caminho fora do vault: " + path);
+        if (create)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(full)!);
+            using (var stream = new FileStream(full, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            {
+                stream.Write(content);
+                stream.Flush(flushToDisk: true);
+            }
+            if (!File.ReadAllBytes(full).AsSpan().SequenceEqual(content))
+                throw new IOException("O arquivo criado não passou na verificação: " + path);
+            return;
+        }
         var previous = File.ReadAllBytes(full);
         if (previous.AsSpan().SequenceEqual(content)) return;
 

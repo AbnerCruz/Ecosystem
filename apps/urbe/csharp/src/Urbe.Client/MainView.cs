@@ -81,6 +81,7 @@ public sealed class MainView : Grid
         _stage.Children.Add(CityMap);
         _stage.Children.Add(Explorer);
         _stage.Children.Add(Editor);
+        _stage.Children.Add(Dialogs);
         SetColumn(_stage, 1);
         Children.Add(_stage);
 
@@ -228,7 +229,7 @@ public sealed class MainView : Grid
             throw new InvalidOperationException("Selecione uma pasta real para gravar.");
         if (_snapshot.IsReadOnly)
             throw new InvalidOperationException("Vault em modo somente leitura.");
-        await _vault.SaveExistingNoteAsync(note.Path, note.Content);
+        await _vault.SaveExistingTextFileAsync(note.Path, note.Content);
         _contents[note.Path] = note.Content;
     }
 
@@ -357,7 +358,64 @@ public sealed class MainView : Grid
         return b;
     }
 
-    private static Control Fab()
+    /// <summary>UrbeDialogs: one dialog at a time over everything.</summary>
+    public UrbeDialogs Dialogs { get; } = new();
+
+    /// <summary>v23MenuCriar: the primary action of the + button.</summary>
+    public Task ShowCreateMenuAsync()
+    {
+        if (Dialogs.IsOpen) return Task.CompletedTask;
+        Task Later(string what) => Dialogs.AlertAsync(what, "Esta ação ainda está em portabilidade para o app nativo.");
+        return Dialogs.MenuAsync("Criar",
+        [
+            new DialogItem("Nova nota", UrbeTheme.Icons.Plus, Run: () => CreateNoteAsync(null)),
+            new DialogItem("Nova pasta", UrbeTheme.Icons.Folder, Run: () => Later("Nova pasta")),
+            new DialogItem("Desenhar pasta no mapa", UrbeTheme.Icons.Region, Run: () => Later("Desenhar pasta no mapa")),
+            new DialogItem("Adicionar construção", UrbeTheme.Icons.House, Run: () => Later("Adicionar construção")),
+            new DialogItem("Importar", UrbeTheme.Icons.Upload, Run: () => Later("Importar"))
+        ]);
+    }
+
+    /// <summary>
+    /// v21CreateFileInRegion: name dialog, the house in the neighbourhood (or loose), the file
+    /// written to the vault, the camera on the house and the editor open. Nothing is created in
+    /// memory only: without a writable vault folder the note is not created.
+    /// </summary>
+    public async Task CreateNoteAsync(LegacyCityRegion? region)
+    {
+        if (World.City is not { } city) return;
+        if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly)
+        {
+            await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (botão Cidades) para criar notas. O Tutorial desta prévia é só leitura.");
+            return;
+        }
+        var typed = await Dialogs.PromptAsync(new PromptOptions("Nova nota", Label: "Nome", Placeholder: "Ex.: Ideias",
+            Hint: "Sem extensão, vira .md. Também aceita .txt, .html, .css, .js, .json, .yaml e .csv.", Confirm: "Criar nota"));
+        if (typed is null) return;
+        if (city.CreateNote(region, typed, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) is not { } made)
+        {
+            await Dialogs.AlertAsync("Nova nota", "Não encontrei lote livre.");
+            return;
+        }
+        try
+        {
+            await _vault.CreateTextFileAsync(made.House.Path, made.Content);
+        }
+        catch (Exception ex)
+        {
+            city.RemoveBuilding(made.House);
+            World.InvalidateVisual();
+            await Dialogs.AlertAsync("Não foi possível criar a nota", ex.Message);
+            return;
+        }
+        _contents[made.House.Path] = made.Content;
+        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+        World.CenterOn(made.House);
+        World.Select(made.House);
+        Editor.Open(new CityNote(made.House.Path, made.Content));
+    }
+
+    private Control Fab()
     {
         var b = new Button
         {
@@ -372,7 +430,8 @@ public sealed class MainView : Grid
             VerticalContentAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 20, 20)
         };
-        ToolTip.SetTip(b, "Nova nota (em portabilidade)");
+        ToolTip.SetTip(b, "Criar");
+        b.Click += async (_, _) => await ShowCreateMenuAsync();
         return b;
     }
 
