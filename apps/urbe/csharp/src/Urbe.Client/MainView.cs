@@ -102,6 +102,7 @@ public sealed class MainView : Grid
             SetColumnSpan(overlay, 2);
             Children.Add(overlay);
         }
+        Search = new SearchFeature(this, () => _contents.Select(n => new CityNote(n.Key, n.Value)).ToList());
 
         World.CityVisible = () => !Editor.IsVisible && !Explorer.IsVisible;
         World.Notice += (_, text) => ShowLifeNotice(text);
@@ -110,6 +111,17 @@ public sealed class MainView : Grid
     }
 
     public WorldView World { get; }
+
+    /// <summary>quick-open.js / command-palette.js / keymap.js: Buscar notas, Comandos and their shortcuts.</summary>
+    public SearchFeature Search { get; }
+
+    /// <summary>document.open for a note of the vault: the editor over the city.</summary>
+    public void OpenNoteByPath(string path)
+    {
+        CityMap.IsVisible = false;
+        Explorer.IsVisible = false;
+        Editor.Open(new CityNote(path, _contents.GetValueOrDefault(path, "")));
+    }
 
     // ---- life.js avisar(): a discreet pill under the top bar, 4.5 s, fading in .6 s
     private readonly Border _notice = new();
@@ -329,13 +341,21 @@ public sealed class MainView : Grid
             Orientation = Orientation.Horizontal,
             Spacing = 10,
             HorizontalAlignment = HorizontalAlignment.Right,
-            Children = { RoundButton(UrbeTheme.Icons.Search, "Buscar"), MapButton(), CustomizeButton(), VaultButton() }
+            Children = { SearchButton(), MapButton(), CustomizeButton(), VaultButton() }
         };
         var bar = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"), Margin = new Thickness(12, 10), VerticalAlignment = VerticalAlignment.Top };
         SetColumn(buttons, 2);
         bar.Children.Add(pill);
         bar.Children.Add(buttons);
         return bar;
+    }
+
+    private Button SearchButton()
+    {
+        var button = RoundButton(UrbeTheme.Icons.Search, "Buscar");
+        ToolTip.SetTip(button, "Buscar notas");
+        button.Click += (_, _) => Search.OpenQuickOpen();
+        return button;
     }
 
     private Button MapButton()
@@ -441,7 +461,7 @@ public sealed class MainView : Grid
     /// written to the vault, the camera on the house and the editor open. Nothing is created in
     /// memory only: without a writable vault folder the note is not created.
     /// </summary>
-    public async Task CreateNoteAsync(LegacyCityRegion? region)
+    public async Task CreateNoteAsync(LegacyCityRegion? region, string? typedName = null)
     {
         if (World.City is not { } city) return;
         if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly)
@@ -449,7 +469,7 @@ public sealed class MainView : Grid
             await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (botão Cidades) para criar notas. O Tutorial desta prévia é só leitura.");
             return;
         }
-        var typed = await Dialogs.PromptAsync(new PromptOptions("Nova nota", Label: "Nome", Placeholder: "Ex.: Ideias",
+        var typed = typedName ?? await Dialogs.PromptAsync(new PromptOptions("Nova nota", Label: "Nome", Placeholder: "Ex.: Ideias",
             Hint: "Sem extensão, vira .md. Também aceita .txt, .html, .css, .js, .json, .yaml e .csv.", Confirm: "Criar nota"));
         if (typed is null) return;
         if (city.CreateNote(region, typed, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) is not { } made)
