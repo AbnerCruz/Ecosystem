@@ -116,7 +116,8 @@ public sealed class LegacyCityBuilding
     public string Path { get; internal set; }
     /// <summary>b.name; changes only with a rename.</summary>
     public string Name { get; internal set; }
-    public string? RegionId { get; }
+    /// <summary>b.regionId; changes when the house is moved to another neighbourhood.</summary>
+    public string? RegionId { get; internal set; }
     public int X { get; internal set; }
     public int Y { get; internal set; }
     public int W { get; }
@@ -1014,6 +1015,47 @@ public sealed partial class LegacyCity
         b.Name = plan.Name;
         b.Path = plan.Path;
         b.Modified = JsonValue.Create(NowDate(nowMs));
+    }
+
+    /// <summary>
+    /// The Explorer's "Mover para…" (v21MoveEntry → moverEntradaPara, app.js ≈2084) for a note house: a free lot
+    /// in the destination (vagaNaRegiao with the house ignored, or vagaAleatoria(…,3,3) for the root), seeded by
+    /// semente(b.id+Date.now()). Returns the lot and the path its document will have at the next save
+    /// (urbeReconcileWorld): the destination folder + the house's file name, except that a house moved to the root
+    /// keeps a document that is inside a folder where it is. Null: no free lot ("Sem espaço construível no
+    /// destino."). Nothing changes; <see cref="ApplyMove"/> moves the house once its file is in place.
+    /// </summary>
+    public (int X, int Y, string Path)? PlanMove(LegacyCityBuilding b, LegacyCityRegion? destination, long nowMs, string? documentPath)
+    {
+        ArgumentNullException.ThrowIfNull(b);
+        if (!b.IsNote) return null;
+        double seed = LegacyJsMath.Seed(b.Id + nowMs.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        var pos = destination is not null
+            ? PlaceInRegion(destination, seed, new HashSet<string>(StringComparer.Ordinal) { b.Id })
+            : PlaceLoose(seed, 3, 3);
+        if (pos is null) return null;
+        var file = ArtifactModel.SafeName(b.Name) + ExtNota(b);
+        string path;
+        if (destination is not null)
+        {
+            var dir = RegionPaths().TryGetValue(destination.Id, out var d) ? d : "";
+            path = (dir.Length > 0 ? dir + "/" : "") + file;
+        }
+        else path = documentPath is { } dp && dp.Contains('/') ? dp : file;
+        return (pos.Value.X, pos.Value.Y, path);
+    }
+
+    /// <summary>moverEntradaPara for a note: the lot, atualizarPastaFisicaConstrucao (regionId, modified=nowDate)
+    /// and indexar.</summary>
+    public void ApplyMove(LegacyCityBuilding b, LegacyCityRegion? destination, (int X, int Y, string Path) plan, long nowMs)
+    {
+        ArgumentNullException.ThrowIfNull(b);
+        b.X = plan.X;
+        b.Y = plan.Y;
+        b.RegionId = destination?.Id;
+        b.Path = plan.Path;
+        b.Modified = JsonValue.Create(NowDate(nowMs));
+        Reindex();
     }
 
     /// <summary>
