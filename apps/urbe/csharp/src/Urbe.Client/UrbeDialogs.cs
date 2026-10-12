@@ -201,6 +201,21 @@ public sealed class UrbeDialogs : Grid
         return (new StackPanel { Children = { Head(title, message, () => finish(false)), ok } }, false, () => finish(true), ok);
     });
 
+    /// <summary>UrbeDialogs.confirm: true when confirmed (Enter confirms; Escape, the backdrop and Cancelar do not).
+    /// A danger confirmation uses .ui-btn-danger.</summary>
+    public Task<bool> ConfirmAsync(string title, string? message, string confirm = "Confirmar", bool danger = false, string cancel = "Cancelar") => Open<bool>(finish =>
+    {
+        var no = Action(cancel, false);
+        no.Click += (_, _) => finish(false);
+        var yes = Action(confirm, !danger, danger);
+        yes.Click += (_, _) => finish(true);
+        var actions = new Grid { ColumnDefinitions = new ColumnDefinitions("*,10,*"), Margin = new Thickness(0, 20, 0, 0) };
+        Grid.SetColumn(yes, 2);
+        actions.Children.Add(no);
+        actions.Children.Add(yes);
+        return (new StackPanel { Children = { Head(title, message, () => finish(false)), actions } }, false, () => finish(true), yes);
+    });
+
     /// <summary>UrbeDialogs.choose: the index chosen, or null.</summary>
     public Task<int?> ChooseAsync(string title, IReadOnlyList<DialogItem> options, string? message = null) => Open<int?>(finish =>
     {

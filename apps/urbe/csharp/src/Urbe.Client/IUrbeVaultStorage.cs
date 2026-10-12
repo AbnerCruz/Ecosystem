@@ -62,6 +62,46 @@ public interface IUrbeVaultStorage
         return (source.Path, source.Bytes.ToArray(), caseOnly);
     }
 
+    /// <summary>
+    /// Moves ONE user text file to the trash like the 1.8.4 flush after trash.trash: .urbe/trash.v2.json is written
+    /// (<paramref name="trashJson"/>, which must hold that file's document with its current text) and verified FIRST,
+    /// then the file is removed and every file of the vault is verified. A trash of another version or a vault that
+    /// may not be written is refused. Hosts must override it.
+    /// </summary>
+    Task TrashTextFileAsync(string path, string trashJson, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não usa a lixeira.");
+
+    /// <summary>
+    /// The checks of a move to the trash on these files: <paramref name="path"/> a readable text document of a vault
+    /// that may be written, the trash file not of a future/unknown version, and <paramref name="trashJson"/> a version 2
+    /// trash with an item for that path holding exactly its text. Returns the file's path on disk, the trash file's
+    /// path (its case on disk, or the default) and the trash bytes.
+    /// </summary>
+    static (string Path, string TrashPath, byte[] TrashBytes) PlanTrash(IReadOnlyList<VaultFile> files, string path, string trashJson)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(trashJson);
+        EnsureWritableTextPath(path);
+        var snapshot = VaultReader.Read(files);
+        var trashPath = files.FirstOrDefault(f => string.Equals(f.Path, LegacyTrash.Path, StringComparison.OrdinalIgnoreCase))?.Path ?? LegacyTrash.Path;
+        if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal ||
+            snapshot.FutureFiles.Any(f => string.Equals(f, path, StringComparison.OrdinalIgnoreCase) || string.Equals(f, trashPath, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Formato futuro de vault, lixeira protegida ou operação interrompida: exclusão recusada.");
+        var source = files.SingleOrDefault(f => string.Equals(f.Path, path, StringComparison.Ordinal))
+                     ?? throw new FileNotFoundException("O arquivo não existe na pasta.", path);
+        var text = snapshot.Documents.SingleOrDefault(d => string.Equals(d.Path, path, StringComparison.Ordinal))?.Text
+                   ?? throw new InvalidDataException("O arquivo não pôde ser lido como texto seguro.");
+        System.Text.Json.Nodes.JsonObject? root;
+        try { root = System.Text.Json.Nodes.JsonNode.Parse(trashJson) as System.Text.Json.Nodes.JsonObject; }
+        catch (System.Text.Json.JsonException) { root = null; }
+        bool held = root?["version"]?.GetValue<int>() == 2 && root["items"] is System.Text.Json.Nodes.JsonArray items &&
+                    items.Any(i => i?["document"] is System.Text.Json.Nodes.JsonObject d &&
+                                   (string?)d["path"] == path && (string?)d["content"] == text);
+        if (!held)
+            throw new InvalidDataException("A lixeira não guarda o texto atual do arquivo: exclusão recusada.");
+        return (source.Path, trashPath, System.Text.Encoding.UTF8.GetBytes(trashJson));
+    }
+
     /// <summary>A folder path Urbe may create: vault-relative, no traversal, drive syntax, or hidden segment.</summary>
     static void EnsureWritableFolderPath(string path)
     {

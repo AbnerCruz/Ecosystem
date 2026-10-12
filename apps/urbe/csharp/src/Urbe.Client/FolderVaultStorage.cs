@@ -227,6 +227,42 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public async Task TrashTextFileAsync(string path, string trashJson, CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, files);
+            var (source, trashPath, trashBytes) = IUrbeVaultStorage.PlanTrash(files, path, trashJson);
+            bool create = !baseline.ContainsKey(trashPath);
+
+            await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                // the trash holds the text before the file goes
+                WriteVerified(root, trashPath, trashBytes, create);
+                File.Delete(Inside(root, source));
+                var observed = Snapshot(ReadFiles(root, cancellationToken));
+                if (observed.Count != baseline.Count - 1 + (create ? 1 : 0) || observed.ContainsKey(source))
+                    throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
+                foreach (var pair in baseline)
+                {
+                    if (string.Equals(pair.Key, source, StringComparison.OrdinalIgnoreCase)) continue;
+                    var expected = string.Equals(pair.Key, trashPath, StringComparison.OrdinalIgnoreCase) ? trashBytes : pair.Value.Bytes.ToArray();
+                    if (!observed.TryGetValue(pair.Key, out var actual) || !actual.Bytes.Span.SequenceEqual(expected))
+                        throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
+                }
+                if (!observed.TryGetValue(trashPath, out var written) || !written.Bytes.Span.SequenceEqual(trashBytes))
+                    throw new IOException("A lixeira não passou na verificação: " + trashPath);
+                _baseline = observed;
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     /// <summary>The full path of a vault path, refused when it leaves the vault.</summary>
     private static string Inside(string root, string path)
     {
