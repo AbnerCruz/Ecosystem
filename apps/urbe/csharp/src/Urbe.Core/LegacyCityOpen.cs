@@ -374,6 +374,43 @@ public sealed partial class LegacyCity
     }
 
     /// <summary>
+    /// scheduleRoadRebuild after a change (a note's [[link]] signature, a house created, moved or removed): the
+    /// streets are redrawn from the documents as they are now, unless no document links another — the RoadGraph
+    /// (world/roads.js) then has no pending edge and the 1.8.4 only redraws, keeping the streets it had.
+    /// Returns whether the streets were rebuilt.
+    /// </summary>
+    public bool RebuildRoadsAfterChange(DocumentStore store, string? editingId = null, string? editingContent = null)
+    {
+        ArgumentNullException.ThrowIfNull(store);
+        if (editingId is not null && editingContent is not null && store.Get(editingId) is { } edited && edited.Content != editingContent)
+        {
+            // the note being typed: the 1.8.4 document store already has its text (editor.input)
+            var current = new DocumentStore();
+            foreach (var d in store.List())
+                current.Upsert(new DocumentInput { Id = d.Id, Path = d.Path, Title = d.Title, Content = d.Id == edited.Id ? editingContent : d.Content,
+                    Created = d.Created, Modified = d.Modified });
+            store = current;
+        }
+        using var index = new KnowledgeIndex(store);
+        if (!store.List().Any(d => index.Links(d.Id).Count > 0)) return false;
+        RebuildRoadsByDocument(store, index);
+        return true;
+    }
+
+    /// <summary>assinaturaLinks: the note's [[link]] targets (before | and #, trimmed, lower case), sorted.</summary>
+    public static string LinkSignature(string? markdown)
+    {
+        var links = new List<string>();
+        foreach (Match m in Regex.Matches(markdown ?? "", @"\[\[([^\]\n]+)\]\]"))
+        {
+            var target = m.Groups[1].Value.Split('|')[0].Split('#')[0].Trim().ToLowerInvariant();
+            if (target.Length > 0) links.Add(target);
+        }
+        links.Sort(StringComparer.Ordinal);
+        return string.Join('\u001f', links);
+    }
+
+    /// <summary>
     /// rebuildRoadNetwork with linksFromContent/buildingByLinkName as in 1.8.4: the house's document is
     /// docs.get(b.documentId), the target house is the first one whose documentId is the target's id.
     /// </summary>

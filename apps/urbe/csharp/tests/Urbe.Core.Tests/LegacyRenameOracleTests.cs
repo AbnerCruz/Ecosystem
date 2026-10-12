@@ -310,6 +310,51 @@ public sealed class LegacyRenameOracleTests
         return (city, store, writer, files.ToDictionary(f => f.Item1, f => f.Item2, StringComparer.Ordinal));
     }
 
+    /// <summary>
+    /// The streets after an edit (markChanged → scheduleRoadRebuild → rebuildRoadNetwork), recorded from the 1.8.4
+    /// (csharp/tools/legacy-roads-oracle.mjs) on the same vault: a new [[link]] adds its street, links removed take the
+    /// street pairs out, and the same links with other text change nothing. Tiles and links are the original's.
+    /// </summary>
+    [Fact]
+    public void AnEditThatChangesTheLinksRedrawsTheStreetsOfTheOriginal()
+    {
+        using var json = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(Root().FullName, "csharp", "tests", "fixtures", "legacy-city", "roads-edit-run-a.json")));
+        // the city as the 1.8.4 saved it right after the open (its first layout depends on timing)
+        var open0 = json.RootElement.GetProperty("open");
+        var files = json.RootElement.GetProperty("files").EnumerateObject().Select(p => (p.Name, p.Value.GetString()!)).ToList();
+        int n = 0;
+        var city = new LegacyCity(new LegacyCityTerrain((x, y) => World.Value.At(x, y).Biome), p => p + (++n));
+        var store = city.Open(files, open0.GetProperty("mapaWritten").GetString(),
+            open0.GetProperty("documents").EnumerateArray().ToDictionary(d => d.GetProperty("path").GetString()!, d => d.GetProperty("id").GetString()!),
+            open0.GetProperty("now").GetInt64());
+        List<string> Tiles() => city.Roads.Select(r => r.X + "," + r.Y).Order(StringComparer.Ordinal).ToList();
+        List<string> Links()
+        {
+            string PathOf(string id) => city.Buildings.Find(b => b.Id == id) is { } b ? store.Get(b.DocumentId!)?.Path ?? b.Name : id;
+            return city.Links.Select(l => string.Join(" | ", new[] { PathOf(l.From), PathOf(l.To) }.Order(StringComparer.Ordinal)))
+                .Order(StringComparer.Ordinal).ToList();
+        }
+        static List<string> Strings(JsonElement e) => e.EnumerateArray().Select(x => x.GetString()!).Order(StringComparer.Ordinal).ToList();
+        var open = json.RootElement.GetProperty("open");
+        Assert.Equal(Strings(open.GetProperty("roads")), Tiles());
+        Assert.Equal(Strings(open.GetProperty("links")), Links());
+
+        foreach (var step in json.RootElement.GetProperty("steps").EnumerateObject().Select(p => p.Value))
+        {
+            var doc = store.Get(step.GetProperty("path").GetString()!)!;
+            var text = step.GetProperty("text").GetString()!;
+            bool changed = LegacyCity.LinkSignature(doc.Content) != LegacyCity.LinkSignature(text);
+            // the text typed in the editor (not saved yet), then the save
+            if (changed) Assert.True(city.RebuildRoadsAfterChange(store, doc.Id, text));
+            var early = step.GetProperty("early");
+            Assert.Equal(Strings(early.GetProperty("roads")), Tiles());
+            Assert.Equal(Strings(early.GetProperty("links")), Links());
+            store.Upsert(new DocumentInput { Id = doc.Id, Path = doc.Path, Title = doc.Title, Content = text, Created = doc.Created, Modified = doc.Modified });
+            Assert.Equal(Strings(step.GetProperty("closed").GetProperty("roads")), Tiles());
+        }
+        Assert.Equal("ideias\u001fplano", LegacyCity.LinkSignature("Veja [[Plano|o plano]] e [[ Ideias#topo ]] e [[]]"));
+    }
+
     /// <summary>CopyNoteAt names the copy as the 1.8.4 names a placed clone (v21ConfirmPlacement 'copy').</summary>
     [Fact]
     public void ACopyIsNamedAsTheOriginalNamesItsCloneAndIsANewHouse()

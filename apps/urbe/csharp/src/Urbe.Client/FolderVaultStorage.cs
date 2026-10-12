@@ -117,6 +117,19 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public string? VaultName => _root is null ? null : Path.GetFileName(Path.GetFullPath(_root).TrimEnd(Path.DirectorySeparatorChar));
+
+    public async Task<IReadOnlyList<VaultFile>> ReadAllFilesAsync(CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            return await Task.Run(() => ReadFiles(root, cancellationToken, includeAll: true), cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     public async Task<bool> RemoveEmptyDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureWritableFolderPath(path);
@@ -293,7 +306,15 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
-    public async Task SaveTrashAsync(string trashJson, CancellationToken cancellationToken = default)
+    public Task SaveTrashAsync(string trashJson, CancellationToken cancellationToken = default) =>
+        SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanTrashWrite(files, trashJson), "A lixeira", cancellationToken);
+
+    public Task SaveTutorialMarkAsync(string json, CancellationToken cancellationToken = default) =>
+        SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanTutorialMarkWrite(files, json), "A marca do Tutorial", cancellationToken);
+
+    /// <summary>One internal file of .urbe/ (the trash, the Tutorial's mark), planned on the files as they are now,
+    /// written with verification of it and of every other file.</summary>
+    private async Task SaveUrbeFileAsync(Func<IReadOnlyList<VaultFile>, (string, byte[])> plan, string what, CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken);
         try
@@ -302,7 +323,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
             var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
             EnsureUnchanged(baseline, files);
-            var (target, planned) = IUrbeVaultStorage.PlanTrashWrite(files, trashJson);
+            var (target, planned) = plan(files);
             bool create = !baseline.ContainsKey(target);
             await Task.Run(() =>
             {
@@ -317,7 +338,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 }
                 if (!observed.TryGetValue(target, out var made) || !made.Bytes.Span.SequenceEqual(planned) ||
                     observed.Count != baseline.Count + (create ? 1 : 0))
-                    throw new IOException("A lixeira não passou na verificação: " + target);
+                    throw new IOException(what + " não passou na verificação: " + target);
                 _baseline = observed;
             }, cancellationToken);
         }
@@ -383,7 +404,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
 
     // ---------------------------------------------------------------- reading
 
-    private static List<VaultFile> ReadFiles(string root, CancellationToken token)
+    private static List<VaultFile> ReadFiles(string root, CancellationToken token, bool includeAll = false)
     {
         var files = new List<VaultFile>();
         long entries = 0;
@@ -400,7 +421,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 if (entry.LinkTarget is not null) continue;
                 var path = prefix + entry.Name;
                 if (entry is DirectoryInfo sub) { Walk(sub.FullName, path + "/", depth + 1); continue; }
-                if (!IsIncluded(path)) continue;
+                if (!includeAll && !IsIncluded(path)) continue;
                 var file = (FileInfo)entry;
                 if (file.Length > MaxFileBytes) throw new IOException("Arquivo grande demais para esta beta: " + path);
                 files.Add(new VaultFile(path, File.ReadAllBytes(file.FullName)));

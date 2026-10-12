@@ -1,0 +1,104 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-export-zip",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T20:05:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "ceda2fd2",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ExportUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultStorageTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-export-zip.json",
+    "docs/governance/handoffs/HO-20261012-urbe-native-city-top.json"
+  ],
+  "work_completed": [
+    "Exportar tudo (.zip) como exportarVault da 1.8.4, em Configurações e em Notas ⋯ (com o detalhe 'Cópia de segurança de todas as notas'): grava antes a nota aberta e o mapa pendente, lê todos os arquivos físicos do vault (notas e anexos), deixa .urbe/journal*.json de fora, acrescenta urbe-export.json (VaultArchive.Export, REQ-044) e salva 'Urbe-vault.zip' onde a pessoa escolher; 'Vault completo exportado.' ou 'Falhou ao exportar: …'.",
+    "IUrbeVaultStorage.ReadAllFilesAsync (desktop e Android): leitura de todos os arquivos, sem seguir links e com os mesmos limites da abertura; não escreve nada. IUrbeVaultStorage.VaultName: nome da pasta do vault.",
+    "IUrbeVaultStorage.SaveTutorialMarkAsync (desktop e Android): grava só .urbe/tutorial.json (marcar do tutorial.js: {versao, em}), com as mesmas proteções e verificação da lixeira (SaveTrashAsync passou a usar o mesmo caminho interno). Prepara o Tutorial (abrir, restaurar e criar na primeira abertura), que entra num PR seguinte sem mexer no armazenamento.",
+    "A marca do topo mostra o nome da pasta do vault (Disco.cidade), 'Urbe' sem vault, com a dica 'Salvo na pasta escolhida no dispositivo'.",
+    "Notas ⋯ na ordem da 1.8.4: Recentes, Favoritos, Importar arquivos (na pasta aberta), Exportar tudo (.zip), Lixeira e Pasta do Urbe no dispositivo.",
+    "Avisos de 'Abra a pasta do seu vault' apontam para Configurações → Pasta no dispositivo (o botão Cidades saiu no PR #541)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (Export_ZipsTheWholeVaultLikeTheOriginal, ReadAllFilesReturnsEveryFileAndTheFolderName, TheTutorialMarkIsWrittenAloneAndVerified) e suíte completa",
+      "result": "passed",
+      "evidence": "Zip com notas, anexo e manifesto, sem diário; edição pendente gravada antes; falha mostra 'Falhou ao exportar'; leitura não altera o vault."
+    },
+    {
+      "kind": "human",
+      "check": "Exportar no Android (seletor de arquivo) e no Windows",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.cs"
+    }
+  ],
+  "known_issues": [
+    "Menu Configurações ainda sem Tutorial, Organizar os bairros, Assistente, Páginas, Diagnóstico de toques e Procurar atualização.",
+    "Notas ⋯ sem Páginas e Composições."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Autorização do proprietário (zona user-data: *Vault*.cs).",
+    "DEVICE: exportar no Android e no Windows."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/explorer/mobile-ui.js",
+    "apps/urbe/src/explorer/model.js",
+    "apps/urbe/src/explorer/operations.js",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/styles/theme.css",
+    "apps/urbe/src/styles/explorer-mobile.css",
+    "apps/urbe/src/ui/icons.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Formato do zip e manifesto só no Urbe.Core (VaultArchive); o cliente só lê arquivos e salva o resultado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-18/UC-19 seguem em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "export-zip",
+      "status": "product-specific",
+      "rationale": "Exportação do vault do Urbe; o formato já está no Urbe.Core."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Toca o armazenamento do vault (IUrbeVaultStorage, FolderVaultStorage, AndroidVaultStorage): zona user-data. Só leitura, mas a política exige autorização do proprietário."
+  }
+}

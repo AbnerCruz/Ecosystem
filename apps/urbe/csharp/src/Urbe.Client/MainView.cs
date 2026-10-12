@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Urbe.Client.World;
 using Urbe.Core;
@@ -93,6 +94,7 @@ public sealed partial class MainView : Grid
             }
         };
         if (_vault is not null) Editor.SaveRequested += SaveNoteAsync;
+        Editor.Editor.TextChanged += (_, _) => EditorLinksChanged();
         Editor.MoreRequested += ShowEditorMenuAsync;
 
         _stage.Children.Add(World);
@@ -287,9 +289,14 @@ public sealed partial class MainView : Grid
             return true;
         });
         _vaultName.Text = snapshot.IsReadOnly ? "Vault: somente leitura" : "";
+        // v23Atualizar: the brand is Disco.cidade (the vault folder's name), 'Urbe' without one
+        _brandName.Text = _vault?.VaultName is { Length: > 0 } folder ? folder : "Urbe";
+        if (_brandPill is not null) ToolTip.SetTip(_brandPill, "Salvo na pasta escolhida no dispositivo");
         if (store is null || opened is null || !ReferenceEquals(World.City, opened)) return;
         _store = store;
         StartMapSaves(snapshot, opened);
+        // tutorial.js: workspace:loaded → setTimeout(semear, 300)
+        if (SeedsTutorial) _ = SeedTutorialLaterAsync(snapshot);
     }
 
     /// <summary>
@@ -334,6 +341,52 @@ public sealed partial class MainView : Grid
 
     /// <summary>flushPending: write a pending map now (window closing, app going to the background).</summary>
     public Task FlushMapAsync() => _mapSave?.FlushAsync() ?? Task.CompletedTask;
+
+    private DispatcherTimer? _roadTimer;
+    private string? _roadNote, _roadSignature;
+
+    /// <summary>
+    /// scheduleRoadRebuild: 120 ms after the last call the streets are redrawn from the documents (with the text being
+    /// typed in the editor, which the 1.8.4 already holds in its document store), unless no note links another; the
+    /// villagers' routes go with them (v25: v25Rotas.clear(), v25Povo=[]).
+    /// </summary>
+    public void ScheduleRoadRebuild()
+    {
+        if (_roadTimer is null)
+        {
+            _roadTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(120) };
+            _roadTimer.Tick += (_, _) => { _roadTimer!.Stop(); RebuildRoadsNow(); };
+        }
+        _roadTimer.Stop();
+        _roadTimer.Start();
+    }
+
+    /// <summary>The pending scheduleRoadRebuild at once (tests).</summary>
+    public bool RebuildRoadsNow()
+    {
+        _roadTimer?.Stop();
+        if (World.City is not { } city || _store is null) return false;
+        var editing = Editor.IsVisible && Editor.Current is { } open && _store.Get(open.Path) is { } doc ? (doc.Id, open.Content) : default;
+        if (!city.RebuildRoadsAfterChange(_store, editing.Id, editing.Content)) return false;
+        World.RoadsChanged();
+        return true;
+    }
+
+    /// <summary>markChanged / syncVisualToMarkdown: a change of the note's [[link]] signature redraws the streets.</summary>
+    private void EditorLinksChanged()
+    {
+        if (Editor.Current is not { } note) return;
+        var signature = LegacyCity.LinkSignature(note.Content);
+        if (_roadNote != note.Path)
+        {
+            _roadNote = note.Path;   // the note just opened: its text is the baseline
+            _roadSignature = signature;
+            return;
+        }
+        if (signature == _roadSignature) return;
+        _roadSignature = signature;
+        ScheduleRoadRebuild();
+    }
 
     private async Task SaveNoteAsync(CityNote note)
     {
@@ -383,7 +436,7 @@ public sealed partial class MainView : Grid
         {
             var (world, city, ownCamera) = await Task.Run(() =>
             {
-                var w = new LegacyWorld(seed);
+                var w = LegacyWorld.Shared(seed);
                 int next = 0;
                 // app.js id(): ids seed lot order and growth; deterministic here so the same files give the same city.
                 var city = new LegacyCity(new LegacyCityTerrain((x, y) => w.At(x, y).Biome), prefix => prefix + (++next).ToString("x"));
@@ -421,6 +474,8 @@ public sealed partial class MainView : Grid
 
     private readonly Border _vaultDot = new() { Width = 8, Height = 8, CornerRadius = new CornerRadius(4), VerticalAlignment = VerticalAlignment.Center };
     private string _saveState = "ok";
+    private TextBlock _brandName = new();
+    private Border? _brandPill;
 
     /// <summary>
     /// #v23Top: the brand pill (#v23VaultDot: green, warn while writing, danger on an error — statusSinc; the vault name;
@@ -430,7 +485,7 @@ public sealed partial class MainView : Grid
     /// </summary>
     private Control TopBar()
     {
-        var name = new TextBlock { Text = "Urbe", FontWeight = FontWeight.SemiBold, FontSize = 14, Foreground = UrbeTheme.Brush(UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center };
+        var name = _brandName = new TextBlock { Text = "Urbe", FontWeight = FontWeight.SemiBold, FontSize = 14, Foreground = UrbeTheme.Brush(UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center };
         _vaultName.Text = "Tutorial · prévia";
         _vaultName.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
         _vaultName.FontSize = 11;
@@ -456,6 +511,7 @@ public sealed partial class MainView : Grid
             Height = 44,
             Child = new StackPanel { Orientation = Orientation.Horizontal, Children = { _vaultDot, name, sep, _biome, _vaultName } }
         };
+        _brandPill = pill;
         ToolTip.SetTip(pill, "Estado da gravação");
         var buttons = new StackPanel
         {
@@ -483,9 +539,9 @@ public sealed partial class MainView : Grid
     public string SaveDotState => _saveState;
 
     /// <summary>
-    /// settings.js: "Configurações" with what the native app has — Personalização, Importar arquivos and Pasta no
-    /// dispositivo (the vault folder). Tutorial, Organizar os bairros, Exportar tudo, Assistente, Páginas, Diagnóstico de
-    /// toques and Procurar atualização join as they are ported.
+    /// settings.js: "Configurações" with what the native app has — Personalização, Tutorial, Exportar tudo (.zip),
+    /// Importar arquivos and Pasta no dispositivo (the vault folder). Organizar os bairros, Assistente, Páginas,
+    /// Diagnóstico de toques and Procurar atualização join as they are ported.
     /// </summary>
     public Task ShowSettingsAsync()
     {
@@ -493,8 +549,11 @@ public sealed partial class MainView : Grid
         var items = new List<DialogItem>
         {
             new("Personalização", UrbeTheme.Icons.Brush, "Tema, cores, fontes, cidade, texturas, estilos e plugins", Run: () => { Customize.Open(); return Task.CompletedTask; }),
-            new("Importar arquivos", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync())
+            new("Tutorial", UrbeTheme.Icons.Book, "Guia completo de tudo o que o Urbe faz", Run: ShowTutorialMenuAsync)
         };
+        if (_vault is not null)
+            items.Add(new("Exportar tudo (.zip)", UrbeTheme.Icons.Download, "Cópia de segurança de todas as notas", Run: () => ExportAsync()));
+        items.Add(new("Importar arquivos", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync()));
         if (_vault is not null)
             items.Add(new("Pasta no dispositivo", UrbeTheme.Icons.Storage, "Onde os arquivos ficam salvos", Run: () => OpenVaultAsync()));
         return Dialogs.MenuAsync("Configurações", items);
@@ -615,7 +674,7 @@ public sealed partial class MainView : Grid
         if (World.City is not { } city) return;
         if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly)
         {
-            await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (botão Cidades) para criar notas. O Tutorial desta prévia é só leitura.");
+            await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar notas. O Tutorial desta prévia é só leitura.");
             return;
         }
         var typed = typedName ?? await Dialogs.PromptAsync(new PromptOptions("Nova nota", Label: "Nome", Placeholder: "Ex.: Ideias",
@@ -651,6 +710,7 @@ public sealed partial class MainView : Grid
             _store.Upsert(new DocumentInput { Path = made.House.Path, Content = made.Content, Created = today, Modified = today }, "world.create");
             _mapSave?.MarkSync();
         }
+        ScheduleRoadRebuild();   // v21CreateFileInRegion: scheduleRoadRebuild
         RefreshNotes();
         World.CenterOn(made.House);
         World.Select(made.House);
@@ -686,7 +746,7 @@ public sealed partial class MainView : Grid
         if (World.City is not { } city || city.Buildings.Find(b => b.IsNote && b.Path == path) is not { } house) return;
         if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly)
         {
-            await Dialogs.AlertAsync("Renomear", "Abra a pasta do seu vault (botão Cidades) para renomear notas. O Tutorial desta prévia é só leitura.");
+            await Dialogs.AlertAsync("Renomear", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para renomear notas. O Tutorial desta prévia é só leitura.");
             return;
         }
         var typed = typedName ?? await Dialogs.PromptAsync(new PromptOptions("Renomear", Label: "Nome do arquivo",
@@ -715,7 +775,8 @@ public sealed partial class MainView : Grid
         city.ApplyRename(house, plan, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         if (_store?.Get(path) is { } doc && !string.Equals(doc.Path, plan.Path, StringComparison.Ordinal))
             LegacyCity.MoveDocument(_store, doc, plan.Path);
-        // aplicarNomeCompletoNota: buildTree, agendarSalvar + marcarSinc, pedirDesenho; v21RefreshEditorChrome
+        // aplicarNomeCompletoNota: buildTree, scheduleRoadRebuild, agendarSalvar + marcarSinc, pedirDesenho; v21RefreshEditorChrome
+        ScheduleRoadRebuild();
         _mapSave?.MarkSync();
         RefreshNotes();
         if (ReferenceEquals(World.Selected, house)) ShowHouse(house);
@@ -738,7 +799,7 @@ public sealed partial class MainView : Grid
         if (World.City is not { } city || city.Buildings.Find(b => b.IsNote && b.Path == path) is not { } house) return false;
         if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly || _store is null)
         {
-            await Dialogs.AlertAsync("Excluir", "Abra a pasta do seu vault (botão Cidades) para excluir notas. O Tutorial desta prévia é só leitura.");
+            await Dialogs.AlertAsync("Excluir", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para excluir notas. O Tutorial desta prévia é só leitura.");
             return false;
         }
         if (_trashReadOnly)
@@ -775,7 +836,9 @@ public sealed partial class MainView : Grid
             Editor.IsVisible = false;
             _editorOpenedFromNotes = false;
         }
-        // removerNota: marcarIndice, indexar, scheduleRoadRebuild, counts, buildTree, agendarSalvar + marcarSinc
+        // removerNota (house panel, editor): marcarIndice, indexar, scheduleRoadRebuild, counts, buildTree, agendarSalvar +
+        // marcarSinc. From Notas it is explorer.delete → document:removed, which does not redraw the streets.
+        if (!confirmed) ScheduleRoadRebuild();
         _mapSave?.MarkSync();
         RefreshNotes();
         World.InvalidateVisual();
@@ -822,7 +885,7 @@ public sealed partial class MainView : Grid
         if (World.City is not { } city || _store is null) return;
         if (!VaultWritable)
         {
-            await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (botão Cidades) para criar notas. O Tutorial desta prévia é só leitura.");
+            await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar notas. O Tutorial desta prévia é só leitura.");
             return;
         }
         var folder = Explorer.CurrentFolder;
@@ -914,6 +977,7 @@ public sealed partial class MainView : Grid
         }
         if (city.RegionByPath(folder) is { } region)
             foreach (var p in city.DeleteRegion(region)) dirs.Add(p);
+        ScheduleRoadRebuild();        // apagarRegiao
         ExplorerState.Forget(folder); // explorer.forgetFolder
         _mapSave?.Schedule();
         _mapSave?.MarkSync();
@@ -929,8 +993,9 @@ public sealed partial class MainView : Grid
     }
 
     /// <summary>
-    /// mobile-ui.js moreMenu ("Notas") with the items the native app already has: Lixeira (n item(ns)). Recentes,
-    /// Favoritos, Páginas, Composições, Importar, Exportar and the device folder join as their screens are ported.
+    /// mobile-ui.js moreMenu ("Notas") with the items the native app already has, in its order: Recentes, Favoritos,
+    /// Importar arquivos (into the open folder), Exportar tudo (.zip), Lixeira (n item(ns)) and Pasta do Urbe no
+    /// dispositivo. Páginas and Composições join as their screens are ported.
     /// </summary>
     public Task ShowNotesMenuAsync()
     {
@@ -940,9 +1005,66 @@ public sealed partial class MainView : Grid
         [
             new DialogItem("Recentes", UrbeTheme.Icons.Clock, Run: () => { ShowCollection("recent"); return Task.CompletedTask; }),
             new DialogItem("Favoritos", UrbeTheme.Icons.Star, Run: () => { ShowCollection("favorites"); return Task.CompletedTask; }),
+            new DialogItem("Importar arquivos", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho",
+                Run: () => ImportAsync(World.City?.RegionByPath(Explorer.CurrentFolder)?.Id)),
+            new DialogItem("Exportar tudo (.zip)", UrbeTheme.Icons.Download, "Cópia de segurança de todas as notas", Run: () => ExportAsync()),
             new DialogItem("Lixeira", UrbeTheme.Icons.Trash, Detail: (n > 0 ? n.ToString(System.Globalization.CultureInfo.InvariantCulture) : "Nenhum") + " item(ns)",
-                Run: () => { ShowTrashView(); return Task.CompletedTask; })
+                Run: () => { ShowTrashView(); return Task.CompletedTask; }),
+            .. (_vault is null ? Array.Empty<DialogItem>() :
+                [new DialogItem("Pasta do Urbe no dispositivo", UrbeTheme.Icons.Storage, "Escolher onde os arquivos ficam salvos", Run: () => OpenVaultAsync())])
         ]);
+    }
+
+    /// <summary>Where the .zip goes (a save dialog); the tests replace it. Null = cancelled.</summary>
+    public Func<byte[], Task<bool?>>? SaveExport { get; set; }
+
+    /// <summary>
+    /// app.js exportarVault: the pending note and map are written first, then every physical file of the vault except
+    /// the journals goes into "Urbe-vault.zip" with the urbe-export.json manifest (VaultArchive.Export, REQ-044).
+    /// "Vault completo exportado." or "Falhou ao exportar: …". Only reads the vault.
+    /// </summary>
+    public async Task ExportAsync()
+    {
+        if (_vault is not { IsConnected: true } vault || _snapshot is null)
+        {
+            ShowLifeNotice("Abra o Urbe antes de exportar.");
+            return;
+        }
+        try
+        {
+            if (Editor.HasChanges && Editor.SaveOnClose && !await Editor.SaveAsync()) throw new IOException("a nota aberta não foi salva");
+            await FlushMapAsync();
+            var files = await vault.ReadAllFilesAsync();
+            var zip = VaultArchive.Export(files, new VaultArchiveExportOptions
+            {
+                AppVersion = "urbe-native-preview",
+                VaultName = vault.VaultName,
+                VaultFormatVersion = _snapshot.VaultFormatVersion
+            });
+            var saved = await (SaveExport ?? SaveZipAsync)(zip.Bytes.ToArray());
+            if (saved == true) ShowLifeNotice("Vault completo exportado.");
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            ShowLifeNotice("Falhou ao exportar: " + ex.Message);
+        }
+    }
+
+    private async Task<bool?> SaveZipAsync(byte[] bytes)
+    {
+        if (TopLevel.GetTopLevel(this)?.StorageProvider is not { CanSave: true } storage)
+            throw new NotSupportedException("este aparelho não permite salvar arquivos");
+        var file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Exportar tudo (.zip)",
+            SuggestedFileName = "Urbe-vault.zip",
+            DefaultExtension = "zip",
+            FileTypeChoices = [new FilePickerFileType("ZIP") { Patterns = ["*.zip"], MimeTypes = ["application/zip"] }]
+        });
+        if (file is null) return null;
+        await using var stream = await file.OpenWriteAsync();
+        await stream.WriteAsync(bytes);
+        return true;
     }
 
     /// <summary>show('recent') / show('favorites'): model.listRecent / listFavorites (notes that still exist).</summary>
@@ -1073,6 +1195,7 @@ public sealed partial class MainView : Grid
             var copy = LegacyCity.DuplicateDocument(_store, doc with { Content = content });
             city.DuplicateHouse(house, copy, now);
             _contents[copy.Path] = content;
+            if (LegacyCity.LinkSignature(content).Length > 0) ScheduleRoadRebuild();   // urbeCasaParaDocumento
         }
         _mapSave?.Schedule();
         _mapSave?.MarkSync();
@@ -1087,7 +1210,7 @@ public sealed partial class MainView : Grid
     private bool TrashWritable(out string? problem)
     {
         problem = _vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly || _store is null
-            ? "Abra a pasta do seu vault (botão Cidades) para usar a lixeira."
+            ? "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para usar a lixeira."
             : _trashReadOnly ? "A lixeira deste vault é de outra versão do Urbe e foi preservada." : null;
         return problem is null;
     }
@@ -1117,7 +1240,8 @@ public sealed partial class MainView : Grid
         var doc = _trash.Restore(_store!, id)!;
         city.AddDocumentHouse(doc, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         _contents[doc.Path] = doc.Content;
-        // document:created → urbeCasaParaDocumento → marcarSinc; persistence schedule()
+        // document:created → urbeCasaParaDocumento (scheduleRoadRebuild when it has links) → marcarSinc; persistence schedule()
+        if (LegacyCity.LinkSignature(doc.Content).Length > 0) ScheduleRoadRebuild();
         _mapSave?.Schedule();
         _mapSave?.MarkSync();
         RefreshNotes();
