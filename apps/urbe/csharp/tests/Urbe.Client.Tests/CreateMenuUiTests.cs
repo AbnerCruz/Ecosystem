@@ -234,6 +234,77 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal(houses + 1, city.Buildings.Count);
                 Assert.Same(house, view.World.Selected);
                 Assert.False(view.ToolActive);
+                // the new note has its document: the map is saved with it (it used to be refused)
+                await UntilMapSaved(view);
+                using (var m = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(vault, ".urbe", "mapa.json"))))
+                {
+                    var n = m.RootElement.GetProperty("notas").GetProperty("Casa nova.txt");
+                    Assert.Equal((lx, ly), (n.GetProperty("x").GetInt32(), n.GetProperty("y").GetInt32()));
+                }
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
+    /// <summary>
+    /// The house panel's Copiar: tap the map, ✓, "Configurar cópia" → a NEW file with the source's text in the
+    /// neighbourhood under the tile, its own document, the source untouched, and the map saved with both (owner's
+    /// decision: a real copy, unlike the 1.8.4).
+    /// </summary>
+    [Fact]
+    public async Task Copy_PlacesARealCopyOfTheNoteWhereItWasPut() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var (view, window, vault, dir) = await OpenCreateVault();
+            try
+            {
+                var city = view.World.City!;
+                await UntilMapSaved(view);
+                var source = city.Buildings.Single(b => b.Path == "Bairro/Um.md");
+                (int X, int Y)? lot = null;
+                for (int r = 4; r < 40 && lot is null; r++)
+                for (int dy = -r; dy <= r && lot is null; dy++)
+                for (int dx = -r; dx <= r && lot is null; dx++)
+                    if (Math.Max(Math.Abs(dx), Math.Abs(dy)) == r && city.CanHouse(source.X + dx, source.Y + dy)) lot = (source.X + dx, source.Y + dy);
+                var (lx, ly) = lot!.Value;
+                view.World.Camera.X = (lx + 1.5) * 32;
+                view.World.Camera.Y = (ly + 1.5) * 32;
+                view.World.Select(source);
+                Dispatcher.UIThread.RunJobs();
+                ClickButtonWithText(view, "Copiar");
+                await Task.Delay(30);
+                Dispatcher.UIThread.RunJobs();
+                Assert.True(view.ToolActive);
+                Assert.StartsWith("Posicione a cópia", view.ToolDockText);
+                Assert.Null(view.World.Selected);
+                var spot = ScreenOf(window, view, lx + .5, ly + .5);
+                window.MouseDown(spot, MouseButton.Left);
+                window.MouseUp(spot, MouseButton.Left);
+                Dispatcher.UIThread.RunJobs();
+                var ok = view.GetVisualDescendants().OfType<Button>().First(b => b.Content as string == "Copiar" && b.IsVisible && b.IsEnabled);
+                var confirm = view.ConfirmPlacementAsync();
+                Dispatcher.UIThread.RunJobs();
+                Assert.Contains(view.Dialogs.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "Configurar cópia");
+                view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single().Text = "Um cópia";
+                ClickButtonWithText(view.Dialogs, "Copiar");
+                await confirm;
+
+                var region = city.RegionAt(lx, ly);
+                var folder = region is null ? "" : city.RegionPaths()[region.Id] + "/";
+                var copy = city.Buildings.Single(b => b.Path == folder + "Um cópia.md");
+                Assert.Equal((lx, ly), (copy.X, copy.Y));
+                Assert.Equal("# Um\n", File.ReadAllText(Path.Combine(vault, folder.Replace('/', Path.DirectorySeparatorChar) + "Um cópia.md")));
+                Assert.Equal("# Um\n", File.ReadAllText(Path.Combine(vault, "Bairro", "Um.md")));
+                Assert.Same(copy, view.World.Selected);
+                Assert.NotEqual(view.Documents!.Get("Bairro/Um.md")!.Id, view.Documents.Get(copy.Path)!.Id);
+                await UntilMapSaved(view);
+                using (var m = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(vault, ".urbe", "mapa.json"))))
+                {
+                    var notas = m.RootElement.GetProperty("notas");
+                    Assert.Equal((source.X, source.Y), (notas.GetProperty("Bairro/Um.md").GetProperty("x").GetInt32(), notas.GetProperty("Bairro/Um.md").GetProperty("y").GetInt32()));
+                    Assert.Equal((lx, ly), (notas.GetProperty(copy.Path).GetProperty("x").GetInt32(), notas.GetProperty(copy.Path).GetProperty("y").GetInt32()));
+                }
                 window.Close();
                 return true;
             }

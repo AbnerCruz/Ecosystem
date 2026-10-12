@@ -289,6 +289,40 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    /// <summary>Rewrites .urbe/trash.v2.json only; the same checks and verification as the map.</summary>
+    public async Task SaveTrashAsync(string trashJson, CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, files);
+            var (target, plannedBytes) = IUrbeVaultStorage.PlanTrashWrite(files, trashJson);
+            var create = !baseline.ContainsKey(target);
+            await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (create && FindDocument(tree, target) is not null)
+                    throw new IOException("A pasta foi modificada fora do Urbe: " + target);
+                WriteVerified(tree, target, plannedBytes);
+                var observed = Snapshot(ReadFiles(tree, cancellationToken));
+                foreach (var pair in baseline)
+                {
+                    if (!observed.TryGetValue(pair.Key, out var actual) ||
+                        !actual.Bytes.Span.SequenceEqual(string.Equals(pair.Key, target, StringComparison.OrdinalIgnoreCase) ? plannedBytes : pair.Value.Bytes.Span))
+                        throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
+                }
+                if (!observed.TryGetValue(target, out var made) || !made.Bytes.Span.SequenceEqual(plannedBytes) ||
+                    observed.Count != baseline.Count + (create ? 1 : 0))
+                    throw new IOException("A lixeira não passou na verificação: " + target);
+                _baseline = observed;
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     /// <summary>Writes .urbe/mapa.json only; the same checks and verification as a note.</summary>
     public async Task SaveMapAsync(string json, CancellationToken cancellationToken = default)
     {
