@@ -1,0 +1,108 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-roads-live",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T20:40:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "67a9ef9a",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCityOpen.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "apps/urbe/csharp/tools/legacy-roads-oracle.mjs",
+    "apps/urbe/csharp/tests/fixtures/legacy-city/roads-edit-run-a.json",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyRenameOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/RoadsUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-roads-live.json"
+  ],
+  "work_completed": [
+    "As ruas acompanham as edições como na 1.8.4: mudar a assinatura de [[links]] de uma nota no editor (markChanged/syncVisualToMarkdown → assinaturaLinks) agenda scheduleRoadRebuild (120 ms) e as ruas são refeitas com o texto que está sendo digitado, antes de salvar; os moradores e rotas recomeçam (v25).",
+    "LegacyCity.RebuildRoadsAfterChange e LinkSignature (Core): sem nenhum link entre notas o RoadGraph da 1.8.4 não tem aresta pendente e as ruas ficam como estavam.",
+    "Renomear, excluir pelo painel/editor (removerNota), excluir pasta (apagarRegiao), criar (v21CreateFileInRegion/v21ConfirmPlacement), copiar, duplicar e restaurar nota com links também refazem as ruas; excluir pela tela Notas (explorer.delete) não refaz, como no original.",
+    "Antes as ruas só mudavam ao reabrir o vault."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Oráculo legacy-roads-oracle.mjs (1.8.4 no Chromium) → LegacyRenameOracleTests.AnEditThatChangesTheLinksRedrawsTheStreetsOfTheOriginal",
+      "result": "passed",
+      "evidence": "Ruas e links idênticos à 1.8.4 após criar um link, remover links e editar sem mudar links; Core 556/556."
+    },
+    {
+      "kind": "automated",
+      "check": "Urbe.Client.Tests Editor_ALinkTypedBecomesAStreet e suíte completa",
+      "result": "passed",
+      "evidence": "O link digitado vira rua sem salvar."
+    },
+    {
+      "kind": "human",
+      "check": "Ruas ao editar links no Android e no Windows",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.cs"
+    }
+  ],
+  "known_issues": [
+    "Arrastar uma casa no mapa (finalizarMovimentoMundo) ainda não existe no nativo."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI e integração junto do PR #542.",
+    "DEVICE: ruas ao editar."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/explorer/mobile-ui.js",
+    "apps/urbe/src/explorer/model.js",
+    "apps/urbe/src/explorer/operations.js",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/styles/theme.css",
+    "apps/urbe/src/styles/explorer-mobile.css",
+    "apps/urbe/src/ui/icons.js",
+    "apps/urbe/src/world/roads.js",
+    "apps/urbe/src/world/system.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A regra das ruas fica no Urbe.Core (LegacyCity); o cliente só agenda."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-18/UC-19 seguem em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "roads-live",
+      "status": "product-specific",
+      "rationale": "Regra de ruas do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Regra da cidade e interface; não toca o armazenamento."
+  }
+}

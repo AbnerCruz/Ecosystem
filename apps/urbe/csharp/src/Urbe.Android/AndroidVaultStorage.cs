@@ -111,6 +111,31 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public string? VaultName
+    {
+        get
+        {
+            if (_tree is not { } tree) return null;
+            try
+            {
+                using var cursor = Resolver.Query(Root(tree), [DisplayNameColumn], null, null, null);
+                return cursor is not null && cursor.MoveToFirst() ? cursor.GetString(0) : null;
+            }
+            catch (Exception ex) when (ex is IOException or Java.Lang.Exception) { return null; }
+        }
+    }
+
+    public async Task<IReadOnlyList<VaultFile>> ReadAllFilesAsync(CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            return await Task.Run(() => ReadFiles(tree, cancellationToken, includeAll: true), cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     public async Task<bool> RemoveEmptyDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureWritableFolderPath(path);
@@ -316,7 +341,15 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     }
 
     /// <summary>Rewrites .urbe/trash.v2.json only; the same checks and verification as the map.</summary>
-    public async Task SaveTrashAsync(string trashJson, CancellationToken cancellationToken = default)
+    public Task SaveTrashAsync(string trashJson, CancellationToken cancellationToken = default) =>
+        SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanTrashWrite(files, trashJson), "A lixeira", cancellationToken);
+
+    public Task SaveTutorialMarkAsync(string json, CancellationToken cancellationToken = default) =>
+        SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanTutorialMarkWrite(files, json), "A marca do Tutorial", cancellationToken);
+
+    /// <summary>One internal file of .urbe/ (the trash, the Tutorial's mark), planned on the files as they are now,
+    /// written with verification of it and of every other file.</summary>
+    private async Task SaveUrbeFileAsync(Func<IReadOnlyList<VaultFile>, (string, byte[])> plan, string what, CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken);
         try
@@ -325,7 +358,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
             var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
             EnsureUnchanged(baseline, files);
-            var (target, plannedBytes) = IUrbeVaultStorage.PlanTrashWrite(files, trashJson);
+            var (target, plannedBytes) = plan(files);
             var create = !baseline.ContainsKey(target);
             await Task.Run(() =>
             {
@@ -342,7 +375,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 }
                 if (!observed.TryGetValue(target, out var made) || !made.Bytes.Span.SequenceEqual(plannedBytes) ||
                     observed.Count != baseline.Count + (create ? 1 : 0))
-                    throw new IOException("A lixeira não passou na verificação: " + target);
+                    throw new IOException(what + " não passou na verificação: " + target);
                 _baseline = observed;
             }, cancellationToken);
         }
@@ -427,7 +460,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         DocumentsContract.BuildDocumentUriUsingTree(tree, id)
         ?? throw new IOException("URI do documento não pôde ser construída.");
 
-    private static List<VaultFile> ReadFiles(AndroidUri tree, CancellationToken token)
+    private static List<VaultFile> ReadFiles(AndroidUri tree, CancellationToken token, bool includeAll = false)
     {
         var files = new List<VaultFile>();
         long total = 0;
@@ -453,7 +486,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
 
                 // Read canonical text and metadata; assets stay untouched on
                 // disk, and are not rewritten/deleted by a text-only beta.
-                if (!IsIncluded(path))
+                if (!includeAll && !IsIncluded(path))
                     continue;
 
                 var bytes = ReadBytes(uri);

@@ -26,6 +26,17 @@ public interface IUrbeVaultStorage
     Task CreateDirectoryAsync(string path, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException("Este armazenamento ainda não cria pastas.");
 
+    /// <summary>The name of the vault's folder (Disco.cidade in the 1.8.4: the brand shows it), or null.</summary>
+    string? VaultName => null;
+
+    /// <summary>
+    /// Every file of the vault as it is on disk now, notes and attachments alike (exportarVault reads them all for the
+    /// .zip), without following links out of the folder and within the same limits as the open. Read only: nothing is
+    /// written. Hosts must override it.
+    /// </summary>
+    Task<IReadOnlyList<VaultFile>> ReadAllFilesAsync(CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não exporta o vault.");
+
     /// <summary>Removes ONE user folder when it is empty (the 1.8.4 sync's FS.apagarPasta after a folder is deleted in
     /// Notas: removeEntry of a folder that still holds anything fails and is ignored). A folder holding any entry, a
     /// link, a file with that name or a missing folder is left as it is and false returned; nothing else is touched.</summary>
@@ -128,6 +139,34 @@ public interface IUrbeVaultStorage
         LegacyTrash.Read(trashJson, null, out var unreadable);
         if (unreadable) throw new InvalidDataException("A lixeira a gravar não é da versão 2.");
         return (trashPath, System.Text.Encoding.UTF8.GetBytes(trashJson));
+    }
+
+    /// <summary>
+    /// Writes .urbe/tutorial.json (tutorial.js marcar: {"versao","em"}), the mark that the Tutorial was already created in
+    /// this vault, with the same safeguards and verification as the trash. Hosts must override it.
+    /// </summary>
+    Task SaveTutorialMarkAsync(string json, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não grava a marca do Tutorial.");
+
+    /// <summary>The checks of the Tutorial's mark on these files: a JSON object with "versao", never on a protected vault.</summary>
+    static (string Path, byte[] Bytes) PlanTutorialMarkWrite(IReadOnlyList<VaultFile> files, string json)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(json);
+        const string mark = ".urbe/tutorial.json";
+        var snapshot = VaultReader.Read(files);
+        var path = files.FirstOrDefault(f => string.Equals(f.Path, mark, StringComparison.OrdinalIgnoreCase))?.Path ?? mark;
+        if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal ||
+            snapshot.FutureFiles.Any(f => string.Equals(f, path, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Formato futuro de vault ou operação interrompida: escrita recusada.");
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind != System.Text.Json.JsonValueKind.Object || !doc.RootElement.TryGetProperty("versao", out _))
+                throw new InvalidDataException("Marca do Tutorial inválida.");
+        }
+        catch (System.Text.Json.JsonException) { throw new InvalidDataException("Marca do Tutorial inválida."); }
+        return (path, System.Text.Encoding.UTF8.GetBytes(json));
     }
 
     /// <summary>A folder path Urbe may create: vault-relative, no traversal, drive syntax, or hidden segment.</summary>

@@ -17,7 +17,7 @@ namespace Urbe.Client;
 /// </summary>
 public sealed partial class MainView
 {
-    private const string NoVaultMessage = "Abra a pasta do seu vault (botão Cidades) para criar pastas, construções e importar. O Tutorial desta prévia é só leitura.";
+    private const string NoVaultMessage = "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar pastas, construções e importar. O Tutorial desta prévia é só leitura.";
 
     private readonly Border _toolDock = new();
     private readonly TextBlock _toolText = new();
@@ -267,6 +267,7 @@ public sealed partial class MainView
             _mapSave?.Schedule();
             _mapSave?.MarkSync();
         }
+        ScheduleRoadRebuild();   // v21ConfirmPlacement (copy and new): scheduleRoadRebuild
         RefreshNotes();
     }
 
