@@ -188,6 +188,65 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    /// <summary>Moves ONE text file (a renamed note): the new file is written and verified before the old
+    /// one is deleted; a change of case only goes through a temporary copy; then every file is verified.</summary>
+    public async Task MoveTextFileAsync(string from, string to, CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, files);
+            var (source, bytes, caseOnly) = IUrbeVaultStorage.PlanMove(files, from, to);
+
+            await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var sourceUri = FindDocument(tree, source)
+                    ?? throw new FileNotFoundException("O arquivo não existe na pasta.", source);
+                if (caseOnly)
+                {
+                    // the providers' folders ignore case: through a temporary copy the vault does not list
+                    var pieces = Segments(source);
+                    var directory = pieces.Length == 1 ? Root(tree) : EnsureDirectory(tree, string.Join("/", pieces[..^1]));
+                    var temp = DocumentsContract.CreateDocument(Resolver, directory, "application/octet-stream",
+                        pieces[^1] + ".urbe-move-" + Guid.NewGuid().ToString("N"))
+                        ?? throw new IOException("Não foi possível criar a cópia temporária: " + source);
+                    PutBytes(temp, bytes);
+                    if (!ReadBytes(temp).AsSpan().SequenceEqual(bytes))
+                        throw new IOException("Cópia temporária inválida: " + source);
+                    if (!DocumentsContract.DeleteDocument(Resolver, sourceUri))
+                        throw new IOException("O provedor não removeu o nome antigo: " + source);
+                    if (FindDocument(tree, to) is not null) throw new IOException("Já existe um arquivo com esse nome: " + to);
+                    WriteVerified(tree, to, bytes);
+                    DocumentsContract.DeleteDocument(Resolver, temp);
+                }
+                else
+                {
+                    if (FindDocument(tree, to) is not null) throw new IOException("Já existe um arquivo com esse nome: " + to);
+                    WriteVerified(tree, to, bytes);
+                    if (!DocumentsContract.DeleteDocument(Resolver, sourceUri))
+                        throw new IOException("O provedor não removeu o arquivo antigo: " + source);
+                }
+                var observed = Snapshot(ReadFiles(tree, cancellationToken));
+                if (observed.Count != baseline.Count)
+                    throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
+                foreach (var pair in baseline)
+                {
+                    var key = string.Equals(pair.Key, source, StringComparison.OrdinalIgnoreCase) ? to : pair.Key;
+                    if (!observed.TryGetValue(key, out var actual) || !actual.Bytes.Span.SequenceEqual(pair.Value.Bytes.Span))
+                        throw new IOException("Verificação pós-gravação detectou divergência em: " + key);
+                }
+                if (!observed.Keys.Contains(to, StringComparer.Ordinal))
+                    throw new IOException("O arquivo movido não passou na verificação: " + to);
+                _baseline = observed;
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     /// <summary>Writes .urbe/mapa.json only; the same checks and verification as a note.</summary>
     public async Task SaveMapAsync(string json, CancellationToken cancellationToken = default)
     {

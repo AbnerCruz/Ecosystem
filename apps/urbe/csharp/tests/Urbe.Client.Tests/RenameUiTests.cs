@@ -1,0 +1,142 @@
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Threading;
+using Avalonia.LogicalTree;
+using Avalonia.VisualTree;
+using Urbe.Client;
+
+namespace Urbe.Client.Tests;
+
+/// <summary>"Renomear" from the editor's "Mais ações", driven through the real native UI against a real folder vault.</summary>
+public sealed partial class HeadlessUiTests
+{
+    private static async Task UntilMapSaved(MainView v)
+    {
+        for (int i = 0; i < 300 && (v.MapSave!.HasPending || v.MapSave.IsBusy); i++)
+        {
+            Dispatcher.UIThread.RunJobs();
+            await Task.Delay(20);
+        }
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(v.MapSave!.HasPending);
+        Assert.Equal("saved", v.MapSave.State);
+    }
+
+    private static async Task RenameThroughTheEditorMenu(MainView view, string typed)
+    {
+        var more = view.Editor.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == "Mais ações");
+        more.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+        ClickButtonWithText(view.Dialogs, "Renomear");
+        await Task.Delay(30);
+        Dispatcher.UIThread.RunJobs();
+        var input = view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single();
+        input.Text = typed;
+        ClickButtonWithText(view.Dialogs, "Renomear");
+        for (int i = 0; i < 100 && view.Dialogs.IsOpen; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+        for (int i = 0; i < 20; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+    }
+
+    /// <summary>
+    /// The file is moved in the vault with the text being edited, the old name disappears, the editor and the
+    /// house follow, the document keeps its id, and .urbe/mapa.json is rewritten with the new path; a name taken in
+    /// the same neighbourhood becomes " (2)"; reopening the folder finds the house at the same place.
+    /// </summary>
+    [Fact]
+    public async Task Rename_MovesTheFileAndTheMapFollows() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-rename-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(Path.Combine(vault, "Bairro"));
+            File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n\n[[Um]]\n");
+            File.WriteAllText(Path.Combine(vault, "Bairro", "Um.md"), "# Um\n");
+            File.WriteAllText(Path.Combine(vault, "Bairro", "Dois.md"), "# Dois\n");
+            File.WriteAllBytes(Path.Combine(vault, "foto.png"), [1, 2, 3]);
+            var mapa = Path.Combine(vault, ".urbe", "mapa.json");
+            try
+            {
+                var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
+                var view = new MainView(storage);
+                var window = new Window { Width = 1280, Height = 760, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                await UntilMapSaved(view);
+                var house = view.World.City!.Buildings.Single(b => b.Path == "Bairro/Um.md");
+                var id = view.Documents!.Get("Bairro/Um.md")!.Id;
+                var place = (house.X, house.Y);
+
+                // editing, not yet saved: the text goes with the file
+                view.OpenNoteByPath("Bairro/Um.md");
+                Dispatcher.UIThread.RunJobs();
+                view.Editor.SetMode(EditorMode.Fonte);
+                view.Editor.Editor.Text = "# Um\n\nTexto novo.\n";
+                Dispatcher.UIThread.RunJobs();
+                await RenameThroughTheEditorMenu(view, "Primeiro");
+
+                Assert.False(File.Exists(Path.Combine(vault, "Bairro", "Um.md")));
+                Assert.Equal("# Um\n\nTexto novo.\n", File.ReadAllText(Path.Combine(vault, "Bairro", "Primeiro.md")));
+                Assert.Equal("Bairro/Primeiro.md", house.Path);
+                Assert.Equal("Primeiro", house.Name);
+                Assert.Equal("Bairro/Primeiro.md", view.Editor.Current!.Path);
+                Assert.Equal(id, view.Documents.Get("Bairro/Primeiro.md")!.Id);
+                Assert.Null(view.Documents.Get("Bairro/Um.md"));
+                await UntilMapSaved(view);
+                using (var m = System.Text.Json.JsonDocument.Parse(File.ReadAllText(mapa)))
+                {
+                    var notas = m.RootElement.GetProperty("notas");
+                    Assert.False(notas.TryGetProperty("Bairro/Um.md", out _));
+                    var p = notas.GetProperty("Bairro/Primeiro.md");
+                    Assert.Equal(id, p.GetProperty("id").GetString());
+                    Assert.Equal(place, (p.GetProperty("x").GetInt32(), p.GetProperty("y").GetInt32()));
+                }
+
+                // a name another note of the neighbourhood has: v21UniqueName gives " (2)", nothing is overwritten
+                await RenameThroughTheEditorMenu(view, "Dois");
+                Assert.Equal("Bairro/Dois (2).md", house.Path);
+                Assert.Equal("# Dois\n", File.ReadAllText(Path.Combine(vault, "Bairro", "Dois.md")));
+                Assert.Equal("# Um\n\nTexto novo.\n", File.ReadAllText(Path.Combine(vault, "Bairro", "Dois (2).md")));
+                await UntilMapSaved(view);
+                var files = Directory.GetFiles(vault, "*", SearchOption.AllDirectories)
+                    .Select(f => Path.GetRelativePath(vault, f).Replace('\\', '/')).Order(StringComparer.Ordinal);
+                Assert.Equal([".urbe/mapa.json", "Bairro/Dois (2).md", "Bairro/Dois.md", "Comece.md", "foto.png"], files);
+                Snapshot(window, "native-rename-editor.png");
+                window.Close();
+
+                // a new app on the same folder: the renamed house where it was
+                var reopened = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app2", "sel.json")));
+                var window2 = new Window { Width = 1280, Height = 760, Content = reopened };
+                window2.Show();
+                await reopened.OpenVaultAsync();
+                await Settle(window2, reopened);
+                var again = reopened.World.City!.Buildings.Single(b => b.Path == "Bairro/Dois (2).md");
+                Assert.Equal(place, (again.X, again.Y));
+                Assert.Equal(id, reopened.Documents!.Get("Bairro/Dois (2).md")!.Id);
+                window2.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task Rename_WithoutAWritableVaultRenamesNothing() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var view = new MainView();
+            var window = new Window { Width = 412, Height = 860, Content = view };
+            window.Show();
+            await view.LoadAsync(TutorialNotes.Load());
+            await Settle(window, view);
+            var house = view.World.City!.Buildings.First(b => b.IsNote);
+            var (path, name) = (house.Path, house.Name);
+            var rename = view.RenameNoteAsync(path);
+            Dispatcher.UIThread.RunJobs();
+            Assert.Empty(view.Dialogs.GetVisualDescendants().OfType<TextBox>());
+            ClickButtonWithText(view.Dialogs, "Ok");
+            await rename;
+            Assert.Equal((path, name), (house.Path, house.Name));
+            window.Close();
+            return true;
+        }, CancellationToken.None));
+}

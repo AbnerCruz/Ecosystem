@@ -142,6 +142,24 @@ public sealed class EditorOverlay : Grid
         if (Mode == EditorMode.Fonte) Dispatcher.UIThread.Post(() => Editor.Focus(), DispatcherPriority.Loaded);
     }
 
+    /// <summary>The "Mais ações" button (v23 overflow): the host shows the note's menu.</summary>
+    public event Func<EditorOverlay, Task>? MoreRequested;
+
+    /// <summary>The open note's file was renamed (renomearNota → v21RefreshEditorChrome): the same text,
+    /// what was saved and the editor state are kept; only its path and the title change.</summary>
+    public void Renamed(string path)
+    {
+        if (_note is null) return;
+        _note = _note with { Path = path };
+        _title.Text = System.IO.Path.GetFileName(path);
+        RebuildIndex();
+        var canVisual = CanVisual(path);
+        _segment.IsVisible = canVisual;
+        if (!canVisual && Mode == EditorMode.Visual) ShowMode(EditorMode.Fonte);
+        UpdateChrome();
+        UpdateStatus(changed: HasChanges);
+    }
+
     /// <summary>Text currently in the editor, as a note.</summary>
     public CityNote? Current => _note is null ? null : _note with { Content = Editor.Text ?? "" };
 
@@ -238,7 +256,14 @@ public sealed class EditorOverlay : Grid
             CornerRadius = new CornerRadius(9)
         };
         save.Click += async (_, _) => { _visual.FinishEdit(); await SaveAsync(); };
-        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { save, _segment } };
+        // v23: the overflow "Mais ações" after Visual/Fonte (abrirMenuExplorer with the note's actions)
+        var more = IconButton(UrbeTheme.Icons.More, "Mais ações");
+        more.Click += async (_, _) =>
+        {
+            _visual.FinishEdit();
+            if (MoreRequested is not null && _note is not null) await MoreRequested(this);
+        };
+        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { save, _segment, more } };
         DockPanel.SetDock(right, Dock.Right);
         bar.Children.Add(back);
         bar.Children.Add(right);
@@ -389,7 +414,8 @@ public sealed class EditorOverlay : Grid
         finally { _saving = false; }
     }
 
-    private void Notify(string message)
+    /// <summary>A short message in the status line (toast of the editor), then the status again.</summary>
+    public void Notify(string message)
     {
         _saveState.Text = message;
         var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(2600) };

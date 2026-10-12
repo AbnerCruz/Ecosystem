@@ -1,0 +1,76 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-rename-note",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T00:23:00Z",
+  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "5a2fdb3775d314856abda2e462302b2c4347ecea",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tools/legacy-rename-oracle.mjs",
+    "apps/urbe/csharp/tests/fixtures/legacy-city/rename-note-run-a.json",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyRenameOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultStorageTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/RenameUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-rename-note.json"
+  ],
+  "work_completed": [
+    "Urbe.Core LegacyCity: PlanRename porta o renomearNota final da 1.8.4 (app.js ≈2397: v21UniqueName no bairro da casa ignorando ela mesma, separarNomeExtNota com a extensão atual como reserva), ApplyRename porta aplicarNomeCompletoNota (name, ext, modified=nowDate) e MoveDocument porta o upsert {...doc, path} de urbeReconcileWorld ('world.move': mesmo id, título, tags e datas). FullNoteName = nomeCompletoNota. UniqueNoteName ganhou o parâmetro ignore do v21UniqueName.",
+    "Oráculo tools/legacy-rename-oracle.mjs roda a 1.8.4-beta sem modificação no Chromium: abre a nota, Mais ações → Renomear, digita o nome no diálogo do próprio app e lê todo o vault do IndexedDB após o salvamento (arquivo novo gravado, antigo removido, mapa.json). Quatro casos na mesma sessão: nome simples, nome ocupado no bairro (' (2)'), outra extensão (.txt) e só maiúsculas/minúsculas.",
+    "IUrbeVaultStorage.MoveTextFileAsync + PlanMove (checagens comuns) com implementação no FolderVaultStorage (Windows/desktop) e AndroidVaultStorage (SAF): mesmos bytes (BOM/CRLF preservados), nunca sobre outro arquivo (comparação sem caixa), troca só de caixa por cópia temporária fora da listagem do vault, arquivo novo gravado e verificado antes de remover o antigo (uma interrupção deixa cópia, nunca perda), pasta modificada fora do Urbe recusa, e todos os arquivos do vault verificados depois.",
+    "Cliente nativo: botão 'Mais ações' no editor (overflow da v23, depois de Visual/Fonte) com 'Renomear'; diálogo 'Renomear' / 'Nome do arquivo' com o nome completo e a dica da 1.8.4. MainView.RenameNoteAsync salva antes o texto não salvo da nota aberta, move o arquivo no vault e só então renomeia casa, documento, editor e Explorer e agenda o mapa (marcarSinc). Sem vault gravável, nada é renomeado em memória."
+  ],
+  "verification": [
+    { "kind": "automated", "check": "node csharp/tools/legacy-rename-oracle.mjs (1.8.4-beta real em Chromium)", "result": "passed", "evidence": "Fixture rename-note-run-a.json gravada: os 4 renomeios removem o arquivo antigo e regravam mapa.json." },
+    { "kind": "automated", "check": "dotnet test Urbe.Core.Tests (LegacyRenameOracleTests + LegacyCityMapOracleTests)", "result": "passed", "evidence": "19/19: nome, extensão e caminho de cada casa, conjunto de arquivos e texto de .urbe/mapa.json idênticos byte a byte aos da 1.8.4 em cada passo; o salvamento dos oráculos anteriores segue idêntico." },
+    { "kind": "automated", "check": "dotnet test Urbe.Client.Tests (FolderVaultStorageTests)", "result": "passed", "evidence": "44/44, incl. mover com BOM/CRLF, troca só de caixa, recusa sobre arquivo existente/caixa diferente/caminho inseguro/binário/inexistente e pasta alterada fora do Urbe." },
+    { "kind": "automated", "check": "dotnet test Urbe.Client.Tests (Rename_MovesTheFileAndTheMapFollows, Rename_WithoutAWritableVaultRenamesNothing)", "result": "passed", "evidence": "2/2 pela UI real (menu do editor, diálogo): texto não salvo vai junto, arquivo antigo some, mapa.json com o caminho novo e o mesmo id/posição, ' (2)' sem sobrescrever, reabertura acha a casa no mesmo lugar." },
+    { "kind": "automated", "check": "Build do APK Android (Urbe.Android)", "result": "pending", "evidence": "Este contêiner não tem Android SDK; o urbe-checks do PR compila o head Android com MoveTextFileAsync." },
+    { "kind": "human", "check": "Renomear uma nota em Android e Windows reais e reabrir na 1.8.4 instalada", "result": "not-applicable", "evidence": "Depende de aparelho (DEVICE); SAF de provedores diferentes pode tratar nomes de forma distinta.", "object": "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs" }
+  ],
+  "known_issues": [
+    "Ordem diferente da 1.8.4, mesmo resultado: a 1.8.4 renomeia a casa e move o arquivo no salvamento seguinte (≈1 s, com diário .urbe/journal.v2.json por mexer em 2 arquivos); o nativo move o arquivo antes, sem diário, criando e verificando o novo antes de remover o antigo. O estado final dos arquivos e do mapa é o do oráculo.",
+    "As ruas não são refeitas após o renomeio (scheduleRoadRebuild), como já acontece após editar uma nota no nativo; um [[link]] pelo nome antigo deixa de ligar casas só na próxima abertura, como na 1.8.4.",
+    "O menu Mais ações do editor lista só Renomear; Assistente, Mostrar nas notas, Versões anteriores, Estrutura e backlinks e Mover para a lixeira entram quando suas telas forem portadas.",
+    "Renomear pelo Explorer (segurar/duplo toque) e Mover/Copiar/Excluir do painel da casa ainda não estão portados; Excluir depende da lixeira (.urbe/trash.v2.json).",
+    "Um vault aberto com nota cujo caminho a 1.8.4 normalizaria (ex.: 'X.MD' → 'X.md') continua com o mapa recusado; MoveTextFileAsync é a base para remover essa recusa numa próxima fatia."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI do PR: urbe-checks (Android/Windows) e consistency.",
+    "DEVICE: renomear nota no Android e no Windows, fechar, reabrir; abrir o mesmo vault na 1.8.4.",
+    "Usar MoveTextFileAsync para remover a recusa de mapa por caminho normalizado e portar Mover (para outro bairro) do painel da casa/Explorer."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md", "AGENTS.md", "apps/urbe/AGENTS.md", "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md", "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md", "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "docs/governance/integration-policy.json",
+    "apps/urbe/src/app.js", "apps/urbe/src/persistence/workspace.js", "apps/urbe/src/core/documents.js"
+  ],
+  "invariants": [
+    { "id": "NN-001", "evidence": "Regras de nome/caminho só em Urbe.Core; o vault físico continua a única autoridade dos arquivos." },
+    { "id": "NN-017", "evidence": "Headless e oráculo não substituem aparelho; validação DEVICE registrada como pendente." },
+    { "id": "NN-018", "evidence": "UC-19 segue em progresso; nenhuma conclusão declarada." }
+  ],
+  "reuse_assessment": [
+    { "subject": "vault-file-move", "status": "product-specific", "rationale": "Regras de renomear e mover arquivo da 1.8.4 sobre o vault do Urbe; nenhum outro Product as consome." }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Toca a zona user-data da política (apps/urbe/csharp/**/*Vault*.cs): novo movimento de arquivo do usuário no vault em desktop e Android."
+  }
+}

@@ -112,8 +112,10 @@ public sealed class LegacyCityBuilding
     }
 
     public string Id { get; }
-    public string Path { get; }
-    public string Name { get; }
+    /// <summary>The file of the house; changes only with a rename (<see cref="LegacyCity.ApplyRename"/>).</summary>
+    public string Path { get; internal set; }
+    /// <summary>b.name; changes only with a rename.</summary>
+    public string Name { get; internal set; }
     public string? RegionId { get; }
     public int X { get; internal set; }
     public int Y { get; internal set; }
@@ -951,8 +953,8 @@ public sealed partial class LegacyCity
     private static string FileNameOf(LegacyCityBuilding b) => b.Path[(b.Path.LastIndexOf('/') + 1)..];
 
     /// <summary>v21UniqueName: the typed name with its extension (.md when none), with " (2)", " (3)"…
-    /// when a note of the same neighbourhood already has it.</summary>
-    public string UniqueNoteName(string raw, string? regionId)
+    /// when another note of the same neighbourhood (not <paramref name="ignore"/>) already has it.</summary>
+    public string UniqueNoteName(string raw, string? regionId, LegacyCityBuilding? ignore = null)
     {
         var txt = System.Text.RegularExpressions.Regex.Replace((raw ?? "").Trim(), @"[\\/]", "-");
         if (txt.Length == 0) txt = "Nota.md";
@@ -962,19 +964,71 @@ public sealed partial class LegacyCity
         // v21Stem
         var stemSource = TextRe.Match(txt) is { Success: true } tm ? txt[..^tm.Length] : txt;
         var stem = ArtifactModel.SafeName(stemSource.Length > 0 ? stemSource : "Nota");
-        var taken = new HashSet<string>(Buildings.Where(b => b.IsNote && b.RegionId == regionId).Select(b => FileNameOf(b).ToLowerInvariant()), StringComparer.Ordinal);
+        var taken = new HashSet<string>(Buildings.Where(b => b.IsNote && b != ignore && b.RegionId == regionId).Select(b => FileNameOf(b).ToLowerInvariant()), StringComparer.Ordinal);
         var candidate = stem + ext;
         for (int n = 2; taken.Contains(candidate.ToLowerInvariant()); n++) candidate = stem + " (" + n + ")" + ext;
         return candidate;
     }
 
     /// <summary>separarNomeExtNota(valor, {ext:'.md'}): name and text extension of a file name.</summary>
-    public static (string Name, string Ext) SplitNoteName(string full)
+    public static (string Name, string Ext) SplitNoteName(string full) => SplitNoteName(full, ".md");
+
+    /// <summary>separarNomeExtNota(valor, atual): the extension of <paramref name="fallbackExt"/> (extNota(atual))
+    /// when the name has no text extension.</summary>
+    private static (string Name, string Ext) SplitNoteName(string full, string fallbackExt)
     {
         var v = System.Text.RegularExpressions.Regex.Replace(full.Trim(), @"[\\/]", "-");
         if (SplitTextRe.Match(v) is { Success: true } sm && sm.Groups[1].Value.Trim().Length > 0)
             return (ArtifactModel.SafeName(sm.Groups[1].Value.Trim()), sm.Groups[2].Value.ToLowerInvariant());
-        return (ArtifactModel.SafeName(System.Text.RegularExpressions.Regex.Replace(v, @"\.[^.]+$", "")), ".md");
+        return (ArtifactModel.SafeName(System.Text.RegularExpressions.Regex.Replace(v, @"\.[^.]+$", "")), fallbackExt);
+    }
+
+    /// <summary>
+    /// renomearNota (final, app.js ≈2397) after its dialog ("Nome do arquivo", the current
+    /// nomeCompletoNota as value): v21UniqueName(typed, b.regionId, b), then separarNomeExtNota(u, b).
+    /// Returns the house's new name, extension and file path, without changing anything (the file is
+    /// moved first; <see cref="ApplyRename"/> then renames the house). Null for a file building.
+    /// </summary>
+    public (string Name, string Ext, string Path)? PlanRename(LegacyCityBuilding b, string typed)
+    {
+        ArgumentNullException.ThrowIfNull(b);
+        if (!b.IsNote) return null;
+        var unique = UniqueNoteName(typed ?? "", b.RegionId, b);
+        var (name, ext) = SplitNoteName(unique, ExtNota(b));
+        var dir = b.RegionId is not null && RegionPaths().TryGetValue(b.RegionId, out var d) ? d : "";
+        return (name, ext, (dir.Length > 0 ? dir + "/" : "") + name + ext);
+    }
+
+    /// <summary>nomeCompletoNota (final ≈2395): the name and the text extension, what the rename dialog shows.</summary>
+    public static string FullNoteName(LegacyCityBuilding b)
+    {
+        ArgumentNullException.ThrowIfNull(b);
+        return (b.Name.Length > 0 ? b.Name : "arquivo") + ExtNota(b);
+    }
+
+    /// <summary>aplicarNomeCompletoNota: b.name, b.ext and b.modified=nowDate(). The 1.8.4 moves the file
+    /// on its next save (urbeReconcileWorld, 'world.move'); the caller moves it before.</summary>
+    public void ApplyRename(LegacyCityBuilding b, (string Name, string Ext, string Path) plan, long nowMs)
+    {
+        ArgumentNullException.ThrowIfNull(b);
+        b.Name = plan.Name;
+        b.Path = plan.Path;
+        b.Modified = JsonValue.Create(NowDate(nowMs));
+    }
+
+    /// <summary>
+    /// urbeReconcileWorld for a house whose file moved ({...doc, path, content}, source 'world.move'):
+    /// the same document (id, title, tags, dates) at the new path.
+    /// </summary>
+    public static UrbeDocument MoveDocument(DocumentStore store, UrbeDocument doc, string path)
+    {
+        ArgumentNullException.ThrowIfNull(store);
+        ArgumentNullException.ThrowIfNull(doc);
+        return store.Upsert(new DocumentInput
+        {
+            Id = doc.Id, Path = path, Title = doc.Title, Content = doc.Content, Properties = doc.Properties,
+            Tags = doc.Tags, Links = doc.Links, Created = doc.Created, Modified = doc.Modified
+        }, "world.move");
     }
 
     /// <summary>

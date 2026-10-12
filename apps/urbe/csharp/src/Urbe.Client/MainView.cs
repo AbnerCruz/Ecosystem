@@ -74,6 +74,7 @@ public sealed partial class MainView : Grid
             }
         };
         if (_vault is not null) Editor.SaveRequested += SaveNoteAsync;
+        Editor.MoreRequested += ShowEditorMenuAsync;
 
         _stage.Children.Add(World);
         _stage.Children.Add(TopBar());
@@ -579,6 +580,75 @@ public sealed partial class MainView : Grid
         World.CenterOn(made.House);
         World.Select(made.House);
         Editor.Open(new CityNote(made.House.Path, made.Content));
+    }
+
+    /// <summary>
+    /// The editor's "Mais ações" (v23 overflow → abrirMenuExplorer(nomeCompletoNota(currentFile), …)) with the
+    /// actions the native app already has. The 1.8.4 also lists Assistente, Mostrar nas notas, Versões
+    /// anteriores, Estrutura e backlinks and Mover para a lixeira; they join as their screens are ported.
+    /// </summary>
+    private Task ShowEditorMenuAsync(EditorOverlay editor)
+    {
+        if (Dialogs.IsOpen || editor.Current is not { } note) return Task.CompletedTask;
+        var house = World.City?.Buildings.Find(b => b.IsNote && b.Path == note.Path);
+        var title = house is not null ? LegacyCity.FullNoteName(house) : System.IO.Path.GetFileName(note.Path);
+        return Dialogs.MenuAsync(title,
+        [
+            new DialogItem("Renomear", UrbeTheme.Icons.Pencil, Run: () => RenameNoteAsync(note.Path))
+        ]);
+    }
+
+    /// <summary>
+    /// renomearNota (final, app.js ≈2397): UD.prompt "Renomear" with the full file name, v21UniqueName in the
+    /// house's neighbourhood and aplicarNomeCompletoNota. The 1.8.4 moves the file at its next save
+    /// (urbeReconcileWorld 'world.move' + flush: new path written, old one removed); here the file is moved
+    /// in the vault FIRST, verified, and only then the house, the document and the map follow, so nothing is
+    /// renamed in memory only. Unsaved text of the open note is saved before the move.
+    /// </summary>
+    public async Task RenameNoteAsync(string path, string? typedName = null)
+    {
+        if (World.City is not { } city || city.Buildings.Find(b => b.IsNote && b.Path == path) is not { } house) return;
+        if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly)
+        {
+            await Dialogs.AlertAsync("Renomear", "Abra a pasta do seu vault (botão Cidades) para renomear notas. O Tutorial desta prévia é só leitura.");
+            return;
+        }
+        var typed = typedName ?? await Dialogs.PromptAsync(new PromptOptions("Renomear", Label: "Nome do arquivo",
+            Value: LegacyCity.FullNoteName(house), Hint: "Mantenha a extensão (.md, .txt, .html…) para preservar o tipo.", Confirm: "Renomear"));
+        if (typed is null) return;
+        if (city.PlanRename(house, typed) is not { } plan) return;
+        var editing = Editor.IsVisible && Editor.Current?.Path == path;
+        if (editing && Editor.HasChanges && !await Editor.SaveAsync())
+        {
+            await Dialogs.AlertAsync("Não foi possível renomear", "A nota tem alterações que não foram salvas no vault.");
+            return;
+        }
+        if (!string.Equals(plan.Path, path, StringComparison.Ordinal))
+        {
+            try
+            {
+                await _vault.MoveTextFileAsync(path, plan.Path);
+            }
+            catch (Exception ex)
+            {
+                await Dialogs.AlertAsync("Não foi possível renomear", ex.Message);
+                return;
+            }
+            if (_contents.Remove(path, out var content)) _contents[plan.Path] = content;
+        }
+        city.ApplyRename(house, plan, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        if (_store?.Get(path) is { } doc && !string.Equals(doc.Path, plan.Path, StringComparison.Ordinal))
+            LegacyCity.MoveDocument(_store, doc, plan.Path);
+        // aplicarNomeCompletoNota: buildTree, agendarSalvar + marcarSinc, pedirDesenho; v21RefreshEditorChrome
+        _mapSave?.MarkSync();
+        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+        if (ReferenceEquals(World.Selected, house)) ShowHouse(house);
+        World.InvalidateVisual();
+        if (editing)
+        {
+            Editor.Renamed(plan.Path);
+            Editor.Notify("Arquivo renomeado.");
+        }
     }
 
     private Control Fab()

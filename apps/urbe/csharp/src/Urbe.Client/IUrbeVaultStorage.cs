@@ -26,6 +26,42 @@ public interface IUrbeVaultStorage
     Task CreateDirectoryAsync(string path, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException("Este armazenamento ainda não cria pastas.");
 
+    /// <summary>
+    /// Moves ONE existing user text file to <paramref name="to"/>, its bytes unchanged (a note renamed: the
+    /// 1.8.4 writes the new path and removes the old one in its flush). Never over another file; a change
+    /// of case only is done through a temporary name. The new file is written and verified before the old
+    /// one is removed, so an interruption leaves a copy, never a loss; every file of the vault is verified
+    /// afterwards. Hosts must override it.
+    /// </summary>
+    Task MoveTextFileAsync(string from, string to, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não move arquivos.");
+
+    /// <summary>
+    /// The checks of a move on these files: both paths writable text files, <paramref name="from"/> a
+    /// readable document of a vault that may be written, <paramref name="to"/> free (or the same file
+    /// with another case). Returns the source path as it is on disk and its exact bytes.
+    /// </summary>
+    static (string From, byte[] Bytes, bool CaseOnly) PlanMove(IReadOnlyList<VaultFile> files, string from, string to)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        EnsureWritableTextPath(from);
+        EnsureWritableTextPath(to);
+        if (string.Equals(from, to, StringComparison.Ordinal))
+            throw new InvalidOperationException("O arquivo já tem esse nome: " + to);
+        var snapshot = VaultReader.Read(files);
+        if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal ||
+            snapshot.FutureFiles.Any(f => string.Equals(f, from, StringComparison.OrdinalIgnoreCase) || string.Equals(f, to, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Formato futuro de vault, arquivo protegido ou operação interrompida: escrita recusada.");
+        var source = files.SingleOrDefault(f => string.Equals(f.Path, from, StringComparison.Ordinal))
+                     ?? throw new FileNotFoundException("O arquivo não existe na pasta.", from);
+        if (snapshot.Documents.SingleOrDefault(d => string.Equals(d.Path, from, StringComparison.Ordinal))?.Text is null)
+            throw new InvalidDataException("O arquivo não pôde ser lido como texto seguro.");
+        bool caseOnly = string.Equals(from, to, StringComparison.OrdinalIgnoreCase);
+        if (!caseOnly && files.Any(f => string.Equals(f.Path, to, StringComparison.OrdinalIgnoreCase)))
+            throw new IOException("Já existe um arquivo com esse nome: " + to);
+        return (source.Path, source.Bytes.ToArray(), caseOnly);
+    }
+
     /// <summary>A folder path Urbe may create: vault-relative, no traversal, drive syntax, or hidden segment.</summary>
     static void EnsureWritableFolderPath(string path)
     {
