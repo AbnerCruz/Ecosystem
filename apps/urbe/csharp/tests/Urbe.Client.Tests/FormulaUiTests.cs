@@ -67,6 +67,73 @@ public sealed partial class HeadlessUiTests
         return true;
     }
 
+    /// <summary>
+    /// The formula bar of Fonte (#mathDock): it shows while the caret is inside a formula, with its preview and the
+    /// \command suggestions; Tab goes to the next empty {} and then out of the formula; outside one it hides, and ∑ shows
+    /// the symbols, a symbol going in as $symbol$ with the caret inside.
+    /// </summary>
+    [Fact]
+    public async Task Editor_FormulaBarFollowsTheCaretInFonte() =>
+        Assert.True(await Session.Dispatch(FormulaBarScenario, CancellationToken.None));
+
+    private static async Task<bool> FormulaBarScenario()
+    {
+        var view = new MainView();
+        var window = new Window { Width = 1280, Height = 760, Content = view };
+        window.Show();
+        view.Editor.Open(new CityNote("Fórmulas.md", "Área $x^2$ e $\\fr$ fim."));
+        view.Editor.SetMode(EditorMode.Fonte);
+        Dispatcher.UIThread.RunJobs();
+        var ed = view.Editor.Editor;
+        var dock = view.Editor.MathBar;
+        ed.Focus();
+        Dispatcher.UIThread.RunJobs();
+
+        ed.CaretIndex = 0;                                         // outside: no bar
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(dock.IsVisible);
+        ed.CaretIndex = "Área $x".Length;                          // inside $x^2$: the bar and its preview
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(dock.IsVisible);
+        Assert.Equal("x^2", dock.Current!.Tex);
+        Assert.False(dock.SymbolsShown);                           // a mouse device: the symbols wait for ∑
+        ed.CaretIndex = "Área $x^2$ e $\\fr".Length;               // after \fr: the suggestions
+        Dispatcher.UIThread.RunJobs();
+        Assert.Contains("\\frac", dock.Suggestions);
+        window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);   // accepts the first
+        Dispatcher.UIThread.RunJobs();
+        Assert.StartsWith("Área $x^2$ e $\\frac{", ed.Text);
+        var inner = ed.CaretIndex;
+        Assert.Equal('}', ed.Text![inner]);                        // the caret in the first {}
+        window.KeyPress(Key.Tab, RawInputModifiers.None, PhysicalKey.Tab, null);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(ed.CaretIndex > inner && ed.Text[ed.CaretIndex] == '}');  // the next {}
+        window.KeyPress(Key.Tab, RawInputModifiers.None, PhysicalKey.Tab, null);   // no {} left: out of the formula
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(' ', ed.Text[ed.CaretIndex]);                 // before " fim."
+        Assert.True(ed.IsFocused);
+        Assert.Null(dock.Current);
+
+        // ∑ outside a formula: the bar with its hint and the symbols; x² goes in as $^{}$ with the caret inside
+        dock.ToggleSymbols();
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(dock.IsVisible);
+        Assert.True(dock.SymbolsShown);
+        var at = ed.CaretIndex;
+        var sym = dock.GetLogicalDescendants().OfType<Button>().First(b => b.Content is TextBlock { Text: "x²" });
+        sym.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal("$^{}$", ed.Text!.Substring(at, 5));
+        Assert.Equal(at + 3, ed.CaretIndex);
+        Snapshot(window, "native-math-dock.png");
+
+        view.Editor.SetMode(EditorMode.Visual);                    // never in Visual
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(dock.IsVisible);
+        window.Close();
+        return true;
+    }
+
     private static async Task<bool> FormulaScenario()
     {
         var dir = Path.Combine(Path.GetTempPath(), "urbe-formula-" + Guid.NewGuid().ToString("N"));

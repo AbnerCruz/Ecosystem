@@ -10,11 +10,11 @@
   },
   "task_id": "UC-18",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "ccr-2e1b58fa-7mhpmx",
   "base_commit": "3dea97f915ce679640f4aec9bc30353263af9a35",
-  "commit": null,
-  "pr": null,
+  "commit": "ea4b5a4b4b28c2ac0fe247fc521f80caf8cc7832",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/539",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/LegacyEditorTools.cs",
     "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
@@ -54,8 +54,7 @@
   "blockers": [],
   "next_actions": [
     "#mathDock no Fonte.",
-    "DEVICE: fórmulas no Android e no Windows.",
-    "CI do PR e integração."
+    "DEVICE: fórmulas no Android e no Windows."
   ],
   "decisions_required": [],
   "normative_sources": [

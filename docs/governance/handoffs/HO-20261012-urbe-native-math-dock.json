@@ -1,0 +1,98 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-math-dock",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T19:05:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "ea4b5a4b4b28c2ac0fe247fc521f80caf8cc7832",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/MathDock.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MathSymbolsPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FormulaPane.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FormulaUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-math-dock.json",
+    "docs/governance/handoffs/HO-20261012-urbe-native-formula-edit.json"
+  ],
+  "work_completed": [
+    "Barra de fórmula do Fonte (#mathDock, math/editor.js updateDock): aparece com o cursor dentro de uma fórmula ($…$, $$…$$), com a prévia (ou 'Fórmula vazia', ou o erro), as sugestões de \\comando em linha (setas, Enter/Tab, Esc) e, num aparelho de toque ou depois de ∑, os símbolos; fora de uma fórmula some, e ∑ a mostra com a dica 'Toque num símbolo para inserir · $…$ cria uma fórmula'; um símbolo entra na fórmula ou, fora dela, como $símbolo$ com o cursor dentro.",
+    "Tab dentro da fórmula vai ao próximo {} vazio e depois sai dela (jumpNext + saída); fora de fórmula o Tab segue o padrão.",
+    "Celular: atravessa a largura no pé, cantos de cima arredondados (pointer:coarse); demais: flutua a 12 px do canto inferior esquerdo do texto, com até 760 px. Nunca no Visual.",
+    "Abas e grade de símbolos extraídas para MathSymbolsPanel, usado pelo painel e pela barra (symbolsHtml compartilhado, a aba escolhida também)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (Editor_FormulaBarFollowsTheCaretInFonte, Editor_FormulaPaneInsertsLikeTheOriginal, Editor_TappingAFormulaEditsOrRemovesIt) e suítes completas",
+      "result": "passed",
+      "evidence": "Core 555/555 e Client 101/101 (11m07s) localmente."
+    },
+    {
+      "kind": "human",
+      "check": "Barra de fórmula com teclado virtual no Android e no Windows",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/MathDock.cs"
+    }
+  ],
+  "known_issues": [
+    "No Android a barra fica no pé do editor; a 1.8.4 a sobe acima do teclado pelo visualViewport (a posição exata com teclado virtual depende do aparelho, DEVICE)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "DEVICE: barra de fórmula com teclado virtual.",
+    "CI do PR e integração."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/explorer/mobile-ui.js",
+    "apps/urbe/src/explorer/model.js",
+    "apps/urbe/src/explorer/operations.js",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/styles/theme.css",
+    "apps/urbe/src/styles/explorer-mobile.css",
+    "apps/urbe/src/ui/icons.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Pastas abertas fora do vault, como na 1.8.4; regras de casa só no Urbe.Core (AddDocumentHouse)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-18/UC-19 seguem em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "math-dock",
+      "status": "product-specific",
+      "rationale": "Barra de fórmula do editor do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Só interface do editor; usa MathRenderer/MathEditing já integrados."
+  }
+}
