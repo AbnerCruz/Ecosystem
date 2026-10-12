@@ -142,7 +142,10 @@ public sealed class EditorOverlay : Grid
         _sourceColumn = new StackPanel { Children = { _properties, Editor, _wiki }, HorizontalAlignment = HorizontalAlignment.Stretch };
         _sourceScroll = Column(_sourceColumn);
         _visualScroll = Column(_visual);
-        var body = new Grid { Children = { _sourceScroll, _visualScroll } };
+        // #mathDock: the formula bar of Fonte, over the bottom of the text
+        MathBar = new MathDock(Editor, () => Mode == EditorMode.Fonte && IsVisible);
+        var body = new Grid { Children = { _sourceScroll, _visualScroll, MathBar } };
+        body.SizeChanged += (_, e) => MathBar.Place(e.NewSize.Width);
         AddRow(body, 2);
         AddRow(Footer(), 3);
         _autosave.Tick += async (_, _) => await AutosaveTickAsync();
@@ -181,6 +184,9 @@ public sealed class EditorOverlay : Grid
         var sn = MathEditing.Snippet(block ? pre + "$$\n" + (txt.Length > 0 ? txt : "●") + "\n$$\n" : "$" + (txt.Length > 0 ? txt : "●") + "$");
         ApplyEdit(new LegacyEditorTools.TextEdit(text[..a] + sn.Text + text[b..], a + sn.Caret, a + sn.Caret));
     }
+
+    /// <summary>The formula bar of Fonte (math/editor.js #mathDock).</summary>
+    public MathDock MathBar { get; }
 
     /// <summary>"Localizar e substituir" (ui.find.open, Ctrl+F).</summary>
     public EditorFindBar FindBar { get; }
@@ -259,6 +265,7 @@ public sealed class EditorOverlay : Grid
         if (Mode == EditorMode.Visual && mode != EditorMode.Visual) _visual.FinishEdit();   // serialise what was edited
         Mode = mode;
         UpdateProperties();
+        MathBar?.Update();
         var visual = mode == EditorMode.Visual;
         _visualScroll.IsVisible = visual;
         _sourceScroll.IsVisible = !visual;

@@ -27,11 +27,9 @@ public sealed class FormulaPane : Grid
     private readonly TextBlock _errorText = new() { FontSize = 12.5, TextWrapping = TextWrapping.Wrap };
     private readonly StackPanel _sugs = new() { Spacing = 2 };
     private readonly Border _sugsBox = new() { IsVisible = false };
-    private readonly StackPanel _tabs = new() { Orientation = Orientation.Horizontal, Spacing = 4 };
-    private readonly WrapPanel _grid = new() { Orientation = Orientation.Horizontal };
+    private readonly MathSymbolsPanel _symbols = new(170) { Margin = new Thickness(12, 10) };
     private TaskCompletionSource<Result?>? _answer;
     private bool _block;
-    private int _tab;
     private List<MathCommand> _list = [];
     private int _active, _from;
 
@@ -121,10 +119,8 @@ public sealed class FormulaPane : Grid
         var input = new StackPanel { Margin = new Thickness(12, 10, 12, 0), Children = { Input, _sugsBox } };
 
         // .mth-syms: tabs then the grid
-        var tabs = new ScrollViewer { Content = _tabs, HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled, Margin = new Thickness(0, 0, 0, 8) };
-        var grid = new ScrollViewer { Content = _grid, MaxHeight = 170, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
-        var syms = new StackPanel { Margin = new Thickness(12, 10), Children = { tabs, grid } };
-        grid.SizeChanged += (_, e) => { _gridWidth = e.NewSize.Width; LayoutGrid(); };
+        _symbols.Picked += tex => InsertSnippet(tex);
+        var syms = _symbols;
 
         // footer: Remover … Cancelar Inserir
         _remove = FooterButton("Remover", UrbeTheme.Danger, Brushes.Transparent, Brushes.Transparent);
@@ -155,7 +151,6 @@ public sealed class FormulaPane : Grid
         Children.Add(_card);
         PointerPressed += (_, e) => { if (ReferenceEquals(e.Source, this)) Finish(null); };
         SizeChanged += (_, e) => Place(e.NewSize);
-        BuildTabs();
     }
 
     /// <summary>The LaTeX field (the pane's textarea).</summary>
@@ -175,8 +170,7 @@ public sealed class FormulaPane : Grid
         _remove.IsVisible = editing;
         Input.Text = tex;
         IsVisible = true;
-        _tab = Math.Min(_tab, MathEditing.Symbols.Count);
-        BuildTabs();
+        _symbols.Build();
         Render();
         Avalonia.Threading.Dispatcher.UIThread.Post(() => { Input.Focus(); Input.CaretIndex = Input.Text?.Length ?? 0; }, Avalonia.Threading.DispatcherPriority.Loaded);
         return _answer.Task;
@@ -229,8 +223,8 @@ public sealed class FormulaPane : Grid
         _card.CornerRadius = phone ? new CornerRadius(22, 22, 0, 0) : new CornerRadius(22);
         _card.MaxHeight = phone ? size.Height * .92 : size.Height - 52;
         _card.Margin = phone ? new Thickness(0) : new Thickness(16);
-        _cellMin = phone ? 44 : 46;
-        LayoutGrid();
+        _symbols.CellMin = phone ? 44 : 46;
+        _symbols.LayoutGrid();
     }
 
     // ------------------------------------------------------------------ preview
@@ -355,86 +349,6 @@ public sealed class FormulaPane : Grid
         }
         if (e.Key == Key.Enter && !e.KeyModifiers.HasFlag(KeyModifiers.Shift)) { e.Handled = true; Commit(); return; }
         if (e.Key == Key.Escape) { e.Handled = true; Finish(null); }
-    }
-
-    // ------------------------------------------------------------------ symbols and templates
-
-    private void BuildTabs()
-    {
-        _tabs.Children.Clear();
-        var names = MathEditing.Symbols.Select(g => g.Name).Append("Modelos").ToList();
-        for (int i = 0; i < names.Count; i++)
-        {
-            int index = i;
-            bool on = i == _tab;
-            var b = new Button
-            {
-                Content = new TextBlock { Text = names[i], FontSize = 12.5, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(on ? UrbeTheme.AccentInk : UrbeTheme.Text2) },
-                Padding = new Thickness(12, 6), CornerRadius = new CornerRadius(99), Focusable = false, BorderThickness = new Thickness(1),
-                Background = on ? UrbeTheme.Brush(UrbeTheme.Accent) : UrbeTheme.Brush(UrbeTheme.Surface2),
-                BorderBrush = on ? UrbeTheme.Brush(UrbeTheme.Accent) : UrbeTheme.Brush(UrbeTheme.Line)
-            };
-            b.Click += (_, _) => { _tab = index; BuildTabs(); };
-            _tabs.Children.Add(b);
-        }
-        BuildGrid();
-    }
-
-    private void BuildGrid()
-    {
-        _grid.Children.Clear();
-        if (_tab < MathEditing.Symbols.Count)
-        {
-            foreach (var s in MathEditing.Symbols[_tab].Items)
-            {
-                var sym = s;
-                var b = new Button
-                {
-                    Content = new TextBlock { Text = sym.Label, FontFamily = new FontFamily("Times New Roman, Georgia, serif"), FontSize = 17, Foreground = UrbeTheme.Brush(UrbeTheme.Text), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center },
-                    Height = 42, Padding = new Thickness(0), CornerRadius = new CornerRadius(10), Focusable = false, BorderThickness = new Thickness(1),
-                    BorderBrush = UrbeTheme.Brush(UrbeTheme.Line), Background = UrbeTheme.Brush(UrbeTheme.Surface2),
-                    HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
-                };
-                ToolTip.SetTip(b, MathEditing.Snippet(sym.Tex).Text);
-                b.Click += (_, _) => InsertSnippet(sym.Tex);
-                _grid.Children.Add(b);
-            }
-        }
-        else
-        {
-            foreach (var t in MathEditing.Templates)
-            {
-                var tpl = t;
-                var prev = Formula("\\displaystyle " + MathEditing.Snippet(tpl.Tex).Text.Replace("{}", "{\\square}", StringComparison.Ordinal), false, 15, out _) ?? new TextBlock();
-                var b = new Button
-                {
-                    Content = new StackPanel { Spacing = 4, HorizontalAlignment = HorizontalAlignment.Center, Children = { prev, new TextBlock { Text = tpl.Label, FontSize = 11.5, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), HorizontalAlignment = HorizontalAlignment.Center } } },
-                    MinHeight = 74, Padding = new Thickness(6), CornerRadius = new CornerRadius(12), Focusable = false, BorderThickness = new Thickness(1),
-                    BorderBrush = UrbeTheme.Brush(UrbeTheme.Line), Background = UrbeTheme.Brush(UrbeTheme.Surface2),
-                    HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
-                };
-                b.Click += (_, _) => InsertSnippet(tpl.Tex);
-                _grid.Children.Add(b);
-            }
-        }
-        LayoutGrid();
-    }
-
-    private double _gridWidth, _cellMin = 46;
-
-    /// <summary>grid-template-columns: repeat(auto-fill, minmax(46px or 118px, 1fr)) with a 6px gap.</summary>
-    private void LayoutGrid()
-    {
-        if (_gridWidth <= 0) return;
-        double min = _tab < MathEditing.Symbols.Count ? _cellMin : 118, gap = 6;
-        int columns = Math.Max(1, (int)Math.Floor((_gridWidth + gap) / (min + gap)));
-        double w = Math.Floor((_gridWidth - gap * (columns - 1)) / columns);
-        for (int i = 0; i < _grid.Children.Count; i++)
-        {
-            var c = (Control)_grid.Children[i];
-            c.Width = w;
-            c.Margin = new Thickness(0, 0, (i + 1) % columns == 0 ? 0 : gap, gap);
-        }
     }
 
     private Button ModeButton(string label, bool block)
