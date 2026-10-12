@@ -11,9 +11,11 @@ public sealed class MapSaveSchedulerTests
     private sealed class Clock
     {
         public readonly List<(TimeSpan Delay, TaskCompletionSource Done)> Timers = [];
+        /// <summary>A timer that fires runs what waits on it at once (no thread-pool hop), so the order is exact.</summary>
+        public bool Inline { get; init; }
         public Task Delay(TimeSpan t)
         {
-            var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var done = new TaskCompletionSource(Inline ? TaskCreationOptions.None : TaskCreationOptions.RunContinuationsAsynchronously);
             Timers.Add((t, done));
             return done.Task;
         }
@@ -84,7 +86,9 @@ public sealed class MapSaveSchedulerTests
     [Fact]
     public async Task ARequestDuringAWriteMakesTheFlushLoopAgain()
     {
-        var clock = new Clock();
+        // the timer's continuation must run before the write is released; with an inline timer it does, without guessing
+        // a delay (30 ms was not always enough on a loaded machine and the flush wrote a third time)
+        var clock = new Clock { Inline = true };
         var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         int produced = 0;
         var written = new List<string>();
@@ -95,8 +99,8 @@ public sealed class MapSaveSchedulerTests
         var flushing = s.FlushAsync();
         await Until(() => written.Count == 1 && s.IsBusy);
         s.Schedule();                                        // a change while writing
-        clock.Timers[^1].Done.SetResult();                   // its timer fires: busy → pending
-        await Task.Delay(30, TestContext.Current.CancellationToken);
+        clock.Timers[^1].Done.SetResult();                   // its timer fires: busy → pending, synchronously
+        Assert.True(s.HasPending);
         gate.SetResult();
         await flushing;
         await first;

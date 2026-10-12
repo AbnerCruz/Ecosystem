@@ -313,17 +313,77 @@ public sealed class VisualSurface : StackPanel
     /// </summary>
     public void Toolbar(string id)
     {
+        EnsureBox();
+        if (_box is null) return;
+        Run(id);
+    }
+
+    /// <summary>v23GarantirBloco: the block being edited, else the first one (caret at its start), else a new paragraph.</summary>
+    private void EnsureBox()
+    {
         if (_box is null)
         {
             if (_blocks.Count > 0)
             {
                 Edit(_blocks[0].Start);
-                if (_box is not null) _box.SelectionStart = _box.SelectionEnd = _box.CaretIndex = 0;
+                // the caret at the start of the block's text: after its Markdown mark (# , > , - , - [ ] , 1. )
+                if (_box is not null)
+                {
+                    var mark = System.Text.RegularExpressions.Regex.Match(_box.Text ?? "", @"^(#{1,6}\s+|>\s?|[-*+]\s+(\[[ xX]\]\s+)?|\d+[.)]\s+)");
+                    _box.SelectionStart = _box.SelectionEnd = _box.CaretIndex = mark.Success ? mark.Length : 0;
+                }
             }
             else AppendBlock();
         }
+    }
+
+    /// <summary>
+    /// math/editor.js startFormula in the Visual mode, then insertAtom: the pane opens with the selected text; a formula in
+    /// the text goes in place of the selection as $tex$ (with a space before it when it follows a letter, as the original
+    /// does after a text node); a display formula ($$…$$) takes the block when it is empty, else goes after it, and the
+    /// caret moves to a new paragraph below.
+    /// </summary>
+    public async Task FormulaAsync(Func<string, bool, Task<FormulaPane.Result?>> ask, bool block)
+    {
+        EnsureBox();
         if (_box is null) return;
-        Run(id);
+        var (text, a, b) = Selection();
+        FormulaPane.Result? r;
+        _prompting = true;
+        try { r = await ask(text[a..b].Trim(), block); }
+        finally { _prompting = false; }
+        if (r is null || r.Remove || r.Tex.Length == 0 || _box is null) { _box?.Focus(); return; }
+        if (!r.Block)
+        {
+            var raw = "$" + r.Tex + "$";
+            var insert = a > 0 && !System.Text.RegularExpressions.Regex.IsMatch(text[a - 1].ToString(), @"[\s\u200b(\[{]") ? " " + raw : raw;
+            Apply(new LegacyEditorTools.TextEdit(text[..a] + insert + text[b..], a + insert.Length, a + insert.Length));
+            _box?.Focus();
+            return;
+        }
+        var display = "$$\n" + r.Tex + "\n$$";
+        var at = _editStart;
+        if (text.Trim().Length == 0)
+        {
+            _box.Text = display;
+            FinishEdit();
+        }
+        else
+        {
+            FinishEdit();
+            var current = _blocks.FirstOrDefault(x => x.Start == at);
+            var after = current?.End ?? _text.Length;
+            _text = _text[..after] + "\n\n" + display + _text[after..];
+            Rebuild();
+            at = after + 2;
+        }
+        var mathBlock = _blocks.FirstOrDefault(x => x.Start >= at);
+        var end = mathBlock?.End ?? _text.Length;
+        _text = _text[..end] + "\n\n" + _text[end..];
+        Rebuild();
+        TextEdited?.Invoke(_text);
+        _editStart = _editEnd = end + 2;
+        StartBox("", end + 2, end + 2);
     }
 
     /// <summary>A "/" menu choice, or a bubble/toolbar action by id (h1, h2, h3, list, task, quote, rule, noteLink, link, bold, italic, code, wiki).</summary>
