@@ -105,7 +105,9 @@ public sealed class EditorOverlay : Grid
         _visual.AskUrl = AskUrlAsync;
 
         AddRow(TopBar(), 0);
-        AddRow(Toolbars(), 1);
+        // find-ui.js: the bar is prepended to #editorMain, above #mdToolbar
+        FindBar = new EditorFindBar(() => Editor, () => SetMode(EditorMode.Fonte));
+        AddRow(new StackPanel { Children = { FindBar, Toolbars() } }, 1);
         _sourceColumn = new StackPanel { Children = { Editor, _wiki }, HorizontalAlignment = HorizontalAlignment.Center };
         _sourceScroll = Column(_sourceColumn);
         _visualScroll = Column(_visual);
@@ -119,6 +121,9 @@ public sealed class EditorOverlay : Grid
 
     public TextBox Editor { get; }
     public event EventHandler? Closed;
+
+    /// <summary>"Localizar e substituir" (ui.find.open, Ctrl+F).</summary>
+    public EditorFindBar FindBar { get; }
 
     // ------------------------------------------------------------------ open / close
 

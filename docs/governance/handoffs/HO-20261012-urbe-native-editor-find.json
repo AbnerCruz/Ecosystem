@@ -1,0 +1,112 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-editor-find",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T16:25:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "ad2f3d0f56c66967a864210f44e2414b586d6f85",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyEditorFind.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorFindBar.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/QuickOpen.cs",
+    "apps/urbe/csharp/tools/legacy-find-oracle.mjs",
+    "apps/urbe/csharp/tests/fixtures/editor-find.json",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyEditorFindOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorFindUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-editor-find.json"
+  ],
+  "work_completed": [
+    "'Localizar e substituir' (find-ui.js + workspace.js find/replace) no editor nativo: barra no topo do editor (acima da barra de formatação, como o prepend em #editorMain) com Localizar, contagem ('n resultados'/'Nenhum resultado'), Substituir, Próximo, Substituir, Todos e ×; abre em Fonte; Enter = Próximo; Escape fecha; até 600 px os campos dividem a primeira linha e os botões vão para baixo.",
+    "Ctrl+F (keymap Mod+F) e o comando 'Localizar e substituir' na paleta, ativos com o editor aberto.",
+    "Core: LegacyEditorFind.Find/Replace (minúsculas, até 1000 ocorrências, avanço de pelo menos 1 caractere, linha de cada ocorrência).",
+    "Oráculo tools/legacy-find-oracle.mjs: find/replace da 1.8.4 real em Chromium para 11 casos (acentos, sobreposição, metacaracteres, emoji, consulta vazia, limite de 1000)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (LegacyEditorFindOracleTests)",
+      "result": "passed",
+      "evidence": "Ocorrências e textos após Substituir/Todos idênticos aos da 1.8.4 nos 11 casos do oráculo."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (Editor_FindAndReplaceAsTheOriginal) e suítes completas",
+      "result": "passed",
+      "evidence": "Core 554/554 e Client 97/97 localmente."
+    },
+    {
+      "kind": "automated",
+      "check": "Comparação por captura com a barra da 1.8.4 real (1280 px)",
+      "result": "passed",
+      "evidence": "Mesma ordem, alturas de 36 px, bordas e contagem; diferenças vistas fora da barra (botão Salvar e trilho no editor) ficam para a fatia do cabeçalho do editor."
+    },
+    {
+      "kind": "human",
+      "check": "Localizar/substituir com teclado virtual no Android e no Windows",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/EditorFindBar.cs"
+    }
+  ],
+  "known_issues": [
+    "Cabeçalho do editor ainda difere da 1.8.4 (botão Salvar no nativo; trilho marca Cidade com o editor aberto): próxima fatia."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "DEVICE: Localizar e substituir no Android e no Windows.",
+    "CI do PR e integração."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/explorer/mobile-ui.js",
+    "apps/urbe/src/explorer/model.js",
+    "apps/urbe/src/explorer/operations.js",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/styles/theme.css",
+    "apps/urbe/src/styles/explorer-mobile.css",
+    "apps/urbe/src/ui/icons.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Pastas abertas fora do vault, como na 1.8.4; regras de casa só no Urbe.Core (AddDocumentHouse)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-18/UC-19 seguem em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "editor-find",
+      "status": "product-specific",
+      "rationale": "Barra de localizar do editor do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Só interface e regra de texto; a gravação continua pelo SaveAsync já integrado."
+  }
+}

@@ -348,6 +348,7 @@ public sealed class SearchFeature
         Register("city.fit", "Enquadrar todas as notas", "Cidade", view.World.FitNotes);
         Register("ui.customize", "Personalização", "Aplicativo", () => view.Customize.Open());
         Register("workspace.save", "Salvar workspace", "Workspace", () => _ = view.Editor.SaveAsync(), () => view.Editor.IsVisible);
+        Register("ui.find.open", "Localizar e substituir", "Editor", view.Editor.FindBar.Open, () => view.Editor.IsVisible);
 
         // document.addEventListener('keydown'): on the top level, so it works with nothing focused too
         void Hook()
