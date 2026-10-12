@@ -251,6 +251,47 @@ public sealed class LegacyRenameOracleTests
         Check(del);
     }
 
+    /// <summary>
+    /// Excluir a pasta in Notas (operations.js removeFolder → trash.trash for every note under it, then apagarRegiao):
+    /// the files, the trash and mapa.json are the 1.8.4's, for a folder with a sub-folder and for a folder with a note.
+    /// </summary>
+    [Fact]
+    public void DeletingAFolderLeavesTheFilesTheMapAndTheTrashOfTheOriginal()
+    {
+        using var json = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(Root().FullName, "csharp", "tests", "fixtures", "legacy-city", "folder-delete-run-a.json")));
+        var (city, store, writer, disk) = OpenFixture(json.RootElement);
+        var trash = LegacyTrash.Read(null, null, out _);
+        foreach (var name in new[] { "folder", "mixed" })
+        {
+            var step = json.RootElement.GetProperty("steps").GetProperty(name);
+            long now = step.GetProperty("now").GetInt64();
+            var notes = step.GetProperty("paths").EnumerateArray().Select(p => p.GetString()!).ToList();
+            foreach (var folder in step.GetProperty("folders").EnumerateArray().Select(p => p.GetString()!))
+            {
+                foreach (var doc in LegacyCity.FolderDocuments(store, folder))
+                {
+                    trash.Trash(store, doc.Id, now, "explorer.delete");
+                    disk.Remove(doc.Path);
+                }
+                var gone = city.DeleteRegion(city.RegionByPath(folder)!);
+                Assert.Contains(folder, gone);
+            }
+            foreach (var path in notes)
+            {
+                var doc = store.Get(path)!;
+                trash.Trash(store, doc.Id, now, "explorer.delete");
+                city.DeleteNote(city.Buildings.Single(b => b.IsNote && b.DocumentId == doc.Id));
+                disk.Remove(path);
+            }
+            Assert.Equal(step.GetProperty("regions").EnumerateArray().Select(r => r.GetProperty("id").GetString()), city.Regions.Select(r => r.Id));
+            Assert.Equal(step.GetProperty("buildings").EnumerateArray().Select(b => b.GetProperty("id").GetString()), city.Buildings.Select(b => b.Id));
+            Assert.Equal(step.GetProperty("trashWritten").GetString(), trash.Export());
+            Assert.Equal(step.GetProperty("mapaWritten").GetString(), Produce(writer, city, store, step));
+            Assert.Equal(step.GetProperty("files").EnumerateObject().Select(p => (p.Name, p.Value.GetString())),
+                disk.OrderBy(p => p.Key, StringComparer.Ordinal).Select(p => (p.Key, (string?)p.Value)));
+        }
+    }
+
     /// <summary>The vault of a fixture opened like the original (ids fed back) and its first map checked.</summary>
     private static (LegacyCity City, DocumentStore Store, LegacyCityMap Writer, Dictionary<string, string> Disk) OpenFixture(JsonElement rootEl) => OpenFixture(rootEl, out _);
 

@@ -111,6 +111,32 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public async Task<bool> RemoveEmptyDirectoryAsync(string path, CancellationToken cancellationToken = default)
+    {
+        IUrbeVaultStorage.EnsureWritableFolderPath(path);
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            if (_baseline is null) throw new InvalidOperationException("Reabra a pasta do vault.");
+            return await Task.Run(() =>
+            {
+                // every step must be a folder with exactly that name; the folder itself must hold nothing
+                var parent = Root(tree);
+                foreach (var segment in Segments(path))
+                {
+                    var child = Children(tree, parent).FirstOrDefault(x => string.Equals(x.Name, segment, StringComparison.Ordinal));
+                    if (child is null || child.MimeType != DirectoryMime) return false;
+                    parent = DocumentUri(tree, child.DocumentId);
+                }
+                if (Children(tree, parent).Count > 0) return false;
+                if (!DocumentsContract.DeleteDocument(Resolver, parent)) return false;
+                return FindDocument(tree, path) is null;
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     /// <summary>Writes ONE user text file: creates it when <paramref name="create"/> and absent,
     /// else rewrites the existing one; same checks and verification for both.</summary>
     private async Task WriteTextFileAsync(string path, string content, bool create, CancellationToken cancellationToken)

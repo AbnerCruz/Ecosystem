@@ -81,7 +81,7 @@ public sealed partial class MainView : Grid
             if (_editorOpenedFromNotes)
             {
                 _editorOpenedFromNotes = false;
-                Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+                RefreshNotes();
                 Explorer.IsVisible = true;
             }
         };
@@ -212,7 +212,7 @@ public sealed partial class MainView : Grid
         if (Editor.IsVisible) return;
         CityMap.IsVisible = false;
         Explorer.ShowTrash(null);
-        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+        RefreshNotes();
         _housePanel.IsVisible = false;
         Explorer.IsVisible = true;
     }
@@ -380,7 +380,7 @@ public sealed partial class MainView : Grid
             });
             World.Load(world, city);
             CityMap.IsVisible = false;
-            Explorer.SetNotes(files);
+            Explorer.SetNotes(files, city.RegionPaths().Values);
             if (ownCamera) World.ShowCityCamera();
             else World.FitNotes();
             // workspace:loaded → customize recarregar(); it writes only with a writable vault folder
@@ -527,7 +527,7 @@ public sealed partial class MainView : Grid
             }
         }
         _contents[path] = content;
-        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+        RefreshNotes();
     }
 
     /// <summary>UrbeDialogs: one dialog at a time over everything.</summary>
@@ -593,7 +593,7 @@ public sealed partial class MainView : Grid
             _store.Upsert(new DocumentInput { Path = made.House.Path, Content = made.Content, Created = today, Modified = today }, "world.create");
             _mapSave?.MarkSync();
         }
-        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+        RefreshNotes();
         World.CenterOn(made.House);
         World.Select(made.House);
         Editor.Open(new CityNote(made.House.Path, made.Content));
@@ -659,7 +659,7 @@ public sealed partial class MainView : Grid
             LegacyCity.MoveDocument(_store, doc, plan.Path);
         // aplicarNomeCompletoNota: buildTree, agendarSalvar + marcarSinc, pedirDesenho; v21RefreshEditorChrome
         _mapSave?.MarkSync();
-        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+        RefreshNotes();
         if (ReferenceEquals(World.Selected, house)) ShowHouse(house);
         World.InvalidateVisual();
         if (editing)
@@ -675,29 +675,29 @@ public sealed partial class MainView : Grid
     /// removes the file at its next save. Here the trash is written and verified first, then the file is removed,
     /// and only then the city, the document and the map follow. Nothing is deleted in memory only.
     /// </summary>
-    public async Task DeleteNoteAsync(string path, bool confirmed = false)
+    public async Task<bool> DeleteNoteAsync(string path, bool confirmed = false)
     {
-        if (World.City is not { } city || city.Buildings.Find(b => b.IsNote && b.Path == path) is not { } house) return;
+        if (World.City is not { } city || city.Buildings.Find(b => b.IsNote && b.Path == path) is not { } house) return false;
         if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly || _store is null)
         {
             await Dialogs.AlertAsync("Excluir", "Abra a pasta do seu vault (botão Cidades) para excluir notas. O Tutorial desta prévia é só leitura.");
-            return;
+            return false;
         }
         if (_trashReadOnly)
         {
             await Dialogs.AlertAsync("Excluir", "A lixeira deste vault é de outra versão do Urbe e foi preservada; nada é excluído.");
-            return;
+            return false;
         }
         if (!confirmed && !await Dialogs.ConfirmAsync("Mover para a lixeira?",
                 "“" + LegacyCity.FullNoteName(house) + "” poderá ser restaurada pela Lixeira, em Notas.", "Mover para a lixeira", danger: true))
-            return;
+            return false;
         var editing = Editor.IsVisible && Editor.Current?.Path == path;
         if (editing && Editor.HasChanges && !await Editor.SaveAsync())
         {
             await Dialogs.AlertAsync("Não foi possível excluir", "A nota tem alterações que não foram salvas no vault.");
-            return;
+            return false;
         }
-        if (_store.Get(path) is not { } doc) return;
+        if (_store.Get(path) is not { } doc) return false;
         // the trash as it will be: nothing changes in memory until the vault holds it
         long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         try
@@ -707,7 +707,7 @@ public sealed partial class MainView : Grid
         catch (Exception ex)
         {
             await Dialogs.AlertAsync("Não foi possível excluir", ex.Message);
-            return;
+            return false;
         }
         _trash.Trash(_store, doc.Id, now, "explorer.delete");
         city.DeleteNote(house);
@@ -719,8 +719,87 @@ public sealed partial class MainView : Grid
         }
         // removerNota: marcarIndice, indexar, scheduleRoadRebuild, counts, buildTree, agendarSalvar + marcarSinc
         _mapSave?.MarkSync();
-        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+        RefreshNotes();
         World.InvalidateVisual();
+        return true;
+    }
+
+    /// <summary>Notas shows the notes and, like model.folders, every neighbourhood's folder even without notes.</summary>
+    private void RefreshNotes() =>
+        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)), World.City?.RegionPaths().Values);
+
+    /// <summary>
+    /// mobile-ui.js deleteSelected: folders inside another selected folder and notes inside a selected folder are
+    /// dropped; one confirmation ("Excluir a pasta “X”?" / "Excluir 1 pasta e 2 notas?" with how many notes go to the
+    /// Lixeira, or "Mover para a lixeira?" for notes only); then explorer.deleteFolder for each folder and
+    /// explorer.delete for the notes.
+    /// </summary>
+    private async Task DeleteSelectionAsync(IReadOnlyList<string> selection)
+    {
+        var folders = selection.Where(x => x.StartsWith(NotesExplorer.FolderPrefix, StringComparison.Ordinal))
+            .Select(x => x[NotesExplorer.FolderPrefix.Length..]).Where(f => f.Length > 0).ToList();
+        folders = folders.Where(f => !folders.Any(g => g != f && f.StartsWith(g + "/", StringComparison.Ordinal))).ToList();
+        bool Within(string path) => folders.Any(f => path.StartsWith(f + "/", StringComparison.Ordinal));
+        var notes = selection.Where(x => !x.StartsWith(NotesExplorer.FolderPrefix, StringComparison.Ordinal) && !Within(x)).ToList();
+        if (notes.Count == 0 && folders.Count == 0) return;
+        static string Plural(int n, string one, string many) => n.ToString(System.Globalization.CultureInfo.InvariantCulture) + " " + (n == 1 ? one : many);
+        string title, message;
+        if (folders.Count > 0)
+        {
+            if (!TrashWritable(out var problem)) { await Dialogs.AlertAsync("Excluir", problem!); return; }
+            int total = notes.Count + folders.Sum(f => LegacyCity.FolderDocuments(_store!, f).Count);
+            title = folders.Count == 1 && notes.Count == 0
+                ? "Excluir a pasta “" + folders[0][(folders[0].LastIndexOf('/') + 1)..] + "”?"
+                : "Excluir " + string.Join(" e ", new[] { Plural(folders.Count, "pasta", "pastas"), notes.Count > 0 ? Plural(notes.Count, "nota", "notas") : "" }.Where(x => x.Length > 0)) + "?";
+            message = (total > 0
+                ? Plural(total, "nota vai", "notas vão") + " para a Lixeira e " + (total == 1 ? "pode" : "podem") + " ser restaurada" + (total == 1 ? "" : "s") + ". "
+                : "A pasta está vazia. ") + "A pasta também sai da cidade.";
+        }
+        else
+        {
+            title = "Mover para a lixeira?";
+            message = notes.Count == 1 ? "A nota poderá ser restaurada pela Lixeira." : notes.Count + " notas poderão ser restauradas pela Lixeira.";
+        }
+        if (!await Dialogs.ConfirmAsync(title, message, folders.Count > 0 ? "Excluir" : "Mover para a lixeira", danger: true)) return;
+        foreach (var f in folders)
+            if (!await DeleteFolderAsync(f)) break;
+        foreach (var p in notes) await DeleteNoteAsync(p, confirmed: true);
+        Explorer.ClearSelection();
+    }
+
+    /// <summary>
+    /// explorer.deleteFolder (operations.js removeFolder): every note under the folder goes to the trash as a note
+    /// deleted alone (the trash written and verified before each file leaves), then 'explorer:folderRemoved' →
+    /// apagarRegiao removes the neighbourhood and its sub-neighbourhoods from the city and the map is saved; the
+    /// emptied folders are removed, deepest first, like the sync's FS.apagarPasta. Deliberate deviation for the
+    /// user's data: the 1.8.4 sync also deletes the attached files (images, PDFs…) of that folder for good; here any
+    /// file that is not a note stays in the vault, and a folder that still holds something stays too.
+    /// If a note cannot go to the trash, nothing more is done and the neighbourhood stays.
+    /// </summary>
+    private async Task<bool> DeleteFolderAsync(string folder)
+    {
+        if (World.City is not { } city || _store is null || _vault is null) return false;
+        var docs = LegacyCity.FolderDocuments(_store, folder);
+        var dirs = new HashSet<string>(StringComparer.Ordinal) { folder };
+        foreach (var d in docs)
+        {
+            for (var dir = d.Path[..d.Path.LastIndexOf('/')]; dir.Length > folder.Length; dir = dir[..dir.LastIndexOf('/')]) dirs.Add(dir);
+            if (city.Buildings.Find(b => b.IsNote && b.Path == d.Path) is null) return false;
+            if (!await DeleteNoteAsync(d.Path, confirmed: true)) return false;
+        }
+        if (city.RegionByPath(folder) is { } region)
+            foreach (var p in city.DeleteRegion(region)) dirs.Add(p);
+        _mapSave?.Schedule();
+        _mapSave?.MarkSync();
+        foreach (var dir in dirs.Where(d => d == folder || d.StartsWith(folder + "/", StringComparison.Ordinal))
+                     .OrderByDescending(d => d.Count(c => c == '/')).ThenBy(d => d, StringComparer.Ordinal))
+        {
+            try { await _vault.RemoveEmptyDirectoryAsync(dir); }
+            catch (Exception) { /* FS.apagarPasta: a folder that cannot be removed stays (removeEntry errors are ignored) */ }
+        }
+        RefreshNotes();
+        World.InvalidateVisual();
+        return true;
     }
 
     /// <summary>
@@ -757,8 +836,16 @@ public sealed partial class MainView : Grid
     /// and Mover para a lixeira (explorer.delete, one confirmation for all). Files are written (and verified) before the
     /// city, the documents and the map change; the selection is cleared after the action (model.clear()).
     /// </summary>
-    public async Task SelectionActionAsync(string action, IReadOnlyList<string> paths)
+    public async Task SelectionActionAsync(string action, IReadOnlyList<string> selection)
     {
+        if (selection.Count == 0) return;
+        if (action == "delete")
+        {
+            await DeleteSelectionAsync(selection);
+            return;
+        }
+        // the actions that only apply to notes (renderBar disables them when only folders are selected)
+        var paths = selection.Where(x => !x.StartsWith(NotesExplorer.FolderPrefix, StringComparison.Ordinal)).ToList();
         if (paths.Count == 0) return;
         switch (action)
         {
@@ -781,13 +868,6 @@ public sealed partial class MainView : Grid
                 return;
             case "duplicate":
                 await DuplicateNotesAsync(paths);
-                return;
-            case "delete":
-                var title = "Mover para a lixeira?";
-                var message = paths.Count == 1 ? "A nota poderá ser restaurada pela Lixeira." : paths.Count + " notas poderão ser restauradas pela Lixeira.";
-                if (!await Dialogs.ConfirmAsync(title, message, "Mover para a lixeira", danger: true)) return;
-                foreach (var p in paths) await DeleteNoteAsync(p, confirmed: true);
-                Explorer.ClearSelection();
                 return;
         }
     }
@@ -841,7 +921,7 @@ public sealed partial class MainView : Grid
         }
         _mapSave?.Schedule();
         _mapSave?.MarkSync();
-        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+        RefreshNotes();
         World.InvalidateVisual();
     }
 
@@ -870,7 +950,7 @@ public sealed partial class MainView : Grid
         }
         _mapSave?.Schedule();
         _mapSave?.MarkSync();
-        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+        RefreshNotes();
         World.InvalidateVisual();
     }
 
@@ -914,7 +994,7 @@ public sealed partial class MainView : Grid
         // document:created → urbeCasaParaDocumento → marcarSinc; persistence schedule()
         _mapSave?.Schedule();
         _mapSave?.MarkSync();
-        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+        RefreshNotes();
         ShowTrashView();
         World.InvalidateVisual();
     }

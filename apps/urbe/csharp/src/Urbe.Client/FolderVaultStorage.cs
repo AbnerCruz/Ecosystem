@@ -117,6 +117,36 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public async Task<bool> RemoveEmptyDirectoryAsync(string path, CancellationToken cancellationToken = default)
+    {
+        IUrbeVaultStorage.EnsureWritableFolderPath(path);
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            if (_baseline is null) throw new InvalidOperationException("Reabra a pasta do vault.");
+            return await Task.Run(() =>
+            {
+                var rootFull = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar);
+                var full = Path.GetFullPath(Path.Combine([root, .. Segments(path)]));
+                if (!full.StartsWith(rootFull + Path.DirectorySeparatorChar, StringComparison.Ordinal)) return false;
+                // the exact folder (same case), a real folder on every step, never a link
+                var current = rootFull;
+                foreach (var segment in Segments(path))
+                {
+                    var parent = current;
+                    current = Path.Combine(current, segment);
+                    if (!Directory.Exists(current) || new DirectoryInfo(current).LinkTarget is not null) return false;
+                    if (!Directory.EnumerateDirectories(parent).Any(d => Path.GetFileName(d) == segment)) return false;
+                }
+                if (Directory.EnumerateFileSystemEntries(full).Any()) return false;
+                Directory.Delete(full, recursive: false);
+                return !Directory.Exists(full);
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     /// <summary>Writes ONE user text file (a note, or a Personalização JSON): creates it when
     /// <paramref name="create"/> and it does not exist yet, else rewrites the existing one.</summary>
     private async Task WriteTextFileAsync(string path, string content, bool create, CancellationToken cancellationToken)

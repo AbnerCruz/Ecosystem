@@ -1,0 +1,122 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-folder-delete",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T14:13:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "bfb233d9d7424cb1ff877a7a0c01b187ca841868",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/tools/legacy-folder-delete-oracle.mjs",
+    "apps/urbe/csharp/tests/fixtures/legacy-city/folder-delete-run-a.json",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyRenameOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderDeleteUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-folder-delete.json"
+  ],
+  "work_completed": [
+    "Seleção de pastas na tela Notas como a 1.8.4 (mobile-ui.js): segurar 430 ms uma pasta a seleciona (id 'folder:'+caminho do model.js), tocar com seleção alterna; a barra conta '1 pasta', '1 pasta · 1 nota' e desativa Abrir/Favoritar/Mover/Duplicar quando só há pastas (renderBar).",
+    "Excluir pasta (deleteSelected → explorer.deleteFolder): títulos/mensagens da 1.8.4 ('Excluir a pasta “X”?', 'Excluir 1 pasta e 1 nota?', 'n notas vão para a Lixeira…', 'A pasta está vazia.'), pastas aninhadas e notas dentro de pastas selecionadas descartadas; cada nota vai para a lixeira pelo mesmo caminho verificado da exclusão de nota (lixeira gravada antes de o arquivo sair); depois apagarRegiao remove bairro e sub-bairros e o mapa é salvo; as pastas esvaziadas saem do vault da mais funda para a raiz (FS.apagarPasta).",
+    "Core: LegacyCity.FolderDocuments, RegionDescendants (descendentesRegiao) e DeleteRegion (apagarRegiao, incluindo o filtro de arquivos de construções de arquivo).",
+    "Armazenamento: IUrbeVaultStorage.RemoveEmptyDirectoryAsync em desktop e Android (SAF): só remove pasta vazia, com nome exato, nunca atalho; caso contrário não toca em nada.",
+    "Notas mostra também as pastas de bairros sem notas (model.folders / loadFolders), inclusive logo após 'Nova pasta'.",
+    "Oráculo tools/legacy-folder-delete-oracle.mjs: a 1.8.4 real em Chromium excluindo uma pasta com subpasta e uma pasta com uma nota."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "node csharp/tools/legacy-folder-delete-oracle.mjs (1.8.4-beta real em Chromium)",
+      "result": "passed",
+      "evidence": "Fixture folder-delete-run-a.json gravada (diálogos, barra, regiões, casas, lixeira, arquivos e mapa.json)."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (DeletingAFolderLeavesTheFilesTheMapAndTheTrashOfTheOriginal)",
+      "result": "passed",
+      "evidence": "Regiões, casas, .urbe/trash.v2.json, arquivos e mapa.json idênticos byte a byte aos da 1.8.4 nos dois passos."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (Notes_DeletingAFolderSendsItsNotesToTheTrashAndRemovesTheNeighbourhood)",
+      "result": "passed",
+      "evidence": "Vault real em disco: pasta e subpasta removidas, notas na lixeira, imagem preservada com sua pasta, mapa salvo sem os bairros, restaurar traz nota e pasta de volta."
+    },
+    {
+      "kind": "automated",
+      "check": "Suítes completas Core/Client e consistency",
+      "result": "passed",
+      "evidence": "Core 553/553 e Client 95/95 localmente; consistency sem falhas do repositório (apenas worktrees locais ignoradas pelo git). Build Android não executado localmente (workload android do SDK 10.0.100 x SDK 10.0.112): fica com o CI."
+    },
+    {
+      "kind": "human",
+      "check": "Selecionar e excluir pasta em Android e Windows reais",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs"
+    }
+  ],
+  "known_issues": [
+    "Desvio deliberado de segurança: a 1.8.4 apaga de vez, no sync, os arquivos que não são notas (imagens, PDFs…) da pasta excluída; o nativo os mantém no vault e a pasta que ainda os contém também fica (apenas as entradas de construções de arquivo saem do mapa, como na 1.8.4).",
+    "Se uma nota da pasta não puder ir para a lixeira, a operação para ali: notas já movidas ficam na lixeira e o bairro permanece.",
+    "A tela Notas nativa navega por pastas (não é a árvore expansível da 1.8.4), herdado de sessões anteriores."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "DEVICE: selecionar/excluir pasta em Android e Windows.",
+    "CI do PR e integração."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/explorer/mobile-ui.js",
+    "apps/urbe/src/explorer/model.js",
+    "apps/urbe/src/explorer/operations.js",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Regras de pasta/bairro só em Urbe.Core; lixeira única em .urbe/trash.v2.json."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-19 segue em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "notes-folder-delete",
+      "status": "product-specific",
+      "rationale": "Exclusão de pasta/bairro da tela Notas do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Reutiliza TrashTextFileAsync já integrado; a única operação nova de armazenamento remove somente pastas vazias e nunca arquivos."
+  }
+}
