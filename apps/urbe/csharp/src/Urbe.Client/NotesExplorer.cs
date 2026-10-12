@@ -179,15 +179,19 @@ public sealed class NotesExplorer : Grid
     public TimeSpan HoldDelay { get; set; } = TimeSpan.FromMilliseconds(430);
 
     /// <summary>An action of the selection bar (.ume-actions): "open", "favorite", "move", "duplicate" or "delete",
-    /// with the selected notes' paths.</summary>
+    /// with the selection: notes by path, folders as "folder:" + their path (model.js folderId).</summary>
     public event Action<string, IReadOnlyList<string>>? SelectionAction;
 
     private readonly List<string> _selected = [];
     private readonly Border _bar = new();
     private readonly TextBlock _count = new() { FontSize = 14, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center };
 
-    /// <summary>The selected notes (model.selection), in the order they were selected.</summary>
+    /// <summary>The selection (model.selection), in the order it was made: notes by path, folders as "folder:" + path.</summary>
     public IReadOnlyList<string> SelectedPaths => _selected.ToList();
+
+    /// <summary>model.js folderId: how a folder is kept in the selection.</summary>
+    public const string FolderPrefix = "folder:";
+    private readonly List<Button> _noteActions = [];
 
     /// <summary>model.clear().</summary>
     public void ClearSelection()
@@ -213,6 +217,8 @@ public sealed class NotesExplorer : Grid
                 HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
             ToolTip.SetTip(b, tip);
             b.Click += (_, _) => { if (_selected.Count > 0) SelectionAction?.Invoke(action, _selected.ToList()); };
+            // renderBar: the actions that only apply to notes are disabled when only folders are selected
+            if (action != "delete") _noteActions.Add(b);
             return b;
         }
         var clear = new Button { Content = UrbeTheme.Icon(UrbeTheme.Icons.Close, 20, UrbeTheme.Text2), Width = 44, Height = 44, Background = Brushes.Transparent, Padding = new Thickness(0),
@@ -246,7 +252,10 @@ public sealed class NotesExplorer : Grid
     private void UpdateBar()
     {
         _bar.IsVisible = _selected.Count > 0 && _trash is null;
-        _count.Text = _selected.Count == 1 ? "1 nota" : _selected.Count + " notas";
+        int f = _selected.Count(x => x.StartsWith(FolderPrefix, StringComparison.Ordinal)), d = _selected.Count - f;
+        static string Plural(int n, string one, string many) => n + " " + (n == 1 ? one : many);
+        _count.Text = string.Join(" · ", new[] { f > 0 ? Plural(f, "pasta", "pastas") : "", d > 0 ? Plural(d, "nota", "notas") : "" }.Where(x => x.Length > 0));
+        foreach (var b in _noteActions) b.IsEnabled = d > 0;
     }
     public string CurrentFolder => _folder;
     public string SearchText
@@ -261,9 +270,15 @@ public sealed class NotesExplorer : Grid
     public IReadOnlyList<string> VisibleNotePaths => _visibleNotes.Select(n => n.Path).ToArray();
     public IReadOnlyList<string> VisibleFolderPaths => _visibleFolders.ToArray();
 
-    public void SetNotes(IEnumerable<CityNote> notes)
+    /// <summary>Folders the tree shows even without notes (model.folders: the neighbourhoods' paths, as loadFolders reads
+    /// them from mapa.json regioes).</summary>
+    private readonly HashSet<string> _extraFolders = new(StringComparer.OrdinalIgnoreCase);
+
+    public void SetNotes(IEnumerable<CityNote> notes, IEnumerable<string>? folders = null)
     {
         ArgumentNullException.ThrowIfNull(notes);
+        _extraFolders.Clear();
+        foreach (var f in folders ?? []) if (!string.IsNullOrEmpty(f)) _extraFolders.Add(f);
         _notes.Clear();
         _notes.AddRange(notes.Where(n => !string.IsNullOrWhiteSpace(n.Path))
             .OrderBy(n => n.Path, StringComparer.OrdinalIgnoreCase));
@@ -277,6 +292,8 @@ public sealed class NotesExplorer : Grid
     {
         if (!_visibleFolders.Contains(folder, StringComparer.OrdinalIgnoreCase))
             return false;
+        // activate(): while a selection exists a tap toggles the folder
+        if (_selected.Count > 0) { Toggle(FolderPrefix + folder); return true; }
         _folder = folder;
         _search.Text = string.Empty;
         Rebuild();
@@ -300,6 +317,14 @@ public sealed class NotesExplorer : Grid
         var note = _visibleNotes.FirstOrDefault(n => string.Equals(n.Path, path, StringComparison.OrdinalIgnoreCase));
         if (note is null) return false;
         Toggle(note.Path);
+        return true;
+    }
+
+    /// <summary>The hold of a visible folder row: model.select('folder:' + path, 'toggle').</summary>
+    public bool HoldFolder(string folder)
+    {
+        if (!_visibleFolders.Contains(folder, StringComparer.OrdinalIgnoreCase)) return false;
+        Toggle(FolderPrefix + folder);
         return true;
     }
 
@@ -365,6 +390,12 @@ public sealed class NotesExplorer : Grid
                 if (slash < 0) direct.Add(note);
                 else if (slash > 0) folders.Add(prefix + suffix[..slash]);
             }
+            foreach (var f in _extraFolders)
+            {
+                if (!f.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) || f.Length == prefix.Length) continue;
+                var suffix = f[prefix.Length..];
+                folders.Add(prefix + (suffix.Contains('/') ? suffix[..suffix.IndexOf('/')] : suffix));
+            }
             _visibleFolders = folders.ToArray();
             _visibleNotes = direct.ToArray();
         }
@@ -380,7 +411,7 @@ public sealed class NotesExplorer : Grid
             var folder = path;
             _entries.Children.Add(Item(
                 System.IO.Path.GetFileName(folder),
-                "PASTA", () => TryEnterFolder(folder)));
+                "PASTA", () => TryEnterFolder(folder), () => HoldFolder(folder), () => HoldDelay, _selected.Contains(FolderPrefix + folder)));
         }
         foreach (var note in _visibleNotes)
         {

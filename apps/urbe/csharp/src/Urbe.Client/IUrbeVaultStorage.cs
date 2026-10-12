@@ -26,6 +26,11 @@ public interface IUrbeVaultStorage
     Task CreateDirectoryAsync(string path, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException("Este armazenamento ainda não cria pastas.");
 
+    /// <summary>Removes ONE user folder when it is empty (the 1.8.4 sync's FS.apagarPasta after a folder is deleted in
+    /// Notas: removeEntry of a folder that still holds anything fails and is ignored). A folder holding any entry, a
+    /// link, a file with that name or a missing folder is left as it is and false returned; nothing else is touched.</summary>
+    Task<bool> RemoveEmptyDirectoryAsync(string path, CancellationToken cancellationToken = default) => Task.FromResult(false);
+
     /// <summary>
     /// Moves ONE existing user text file to <paramref name="to"/>, its bytes unchanged (a note renamed: the
     /// 1.8.4 writes the new path and removes the old one in its flush). Never over another file; a change

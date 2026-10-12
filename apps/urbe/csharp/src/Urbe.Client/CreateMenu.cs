@@ -122,6 +122,7 @@ public sealed partial class MainView
         try
         {
             await _vault!.CreateDirectoryAsync(city.RegionPaths()[region.Id]);
+            RefreshNotes(); // model.addFolder: the folder is in Notas even before it has a note
             return true;
         }
         catch (Exception ex)
@@ -266,7 +267,7 @@ public sealed partial class MainView
             _mapSave?.Schedule();
             _mapSave?.MarkSync();
         }
-        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+        RefreshNotes();
     }
 
     /// <summary>v21ConfirmPlacement (new): "Configurar arquivo", the house at the tile, its file in the vault.</summary>
