@@ -67,6 +67,9 @@ public sealed partial class MainView : Grid
         // v23Atualizar: v23Dock.hidden = editor (the rail of a wide window stays)
         Editor.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) _dock.IsVisible = !Editor.IsVisible && !(Bounds.Width >= WideBreakpoint); };
         Explorer.Closed += () => Explorer.IsVisible = false;
+        Explorer.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty && !Explorer.IsVisible) Explorer.ZIndex = 0; };
+        // a backlink opens its note; the panel then shows that note's context (document:updated → renderContext)
+        Editor.Context.BacklinkChosen += path => { OpenNoteByPath(path); ShowEditorContext(); };
         Explorer.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateNav(); };
         Explorer.SelectionAction += (action, paths) => _ = SelectionActionAsync(action, paths);
         Explorer.MoreRequested += () => _ = ShowNotesMenuAsync();
@@ -85,6 +88,7 @@ public sealed partial class MainView : Grid
         };
         Editor.Closed += (_, _) =>
         {
+            Editor.Context.IsVisible = false;
             SaveEditorToMemory();
             if (_editorOpenedFromNotes)
             {
@@ -227,6 +231,32 @@ public sealed partial class MainView : Grid
         RefreshNotes();
         _housePanel.IsVisible = false;
         Explorer.IsVisible = true;
+    }
+
+    /// <summary>
+    /// ui.explorer.open from the editor ("Mostrar nas notas"): Notas over the open editor (theme.css: z-index 52 while
+    /// #editorFull is open); closing it shows the editor again, a note tapped there opens in it.
+    /// </summary>
+    public void ShowNotesOverEditor()
+    {
+        CityMap.IsVisible = false;
+        Explorer.ShowTrash(null);
+        RefreshNotes();
+        Explorer.ZIndex = 1;
+        Explorer.IsVisible = true;
+    }
+
+    /// <summary>editor.contextPanel: Outline of the text being edited and the notes that link to it (knowledge.backlinks).</summary>
+    public void ShowEditorContext()
+    {
+        if (Editor.Current is not { } note) return;
+        var backlinks = new List<(string, string)>();
+        if (_store?.Get(note.Path) is { } doc)
+        {
+            using var index = new KnowledgeIndex(_store);
+            backlinks.AddRange(index.Backlinks(doc.Id).Select(d => (d.Title, d.Path)));
+        }
+        Editor.Context.Show(note.Content, backlinks);
     }
 
     public async Task InitializeAsync()
@@ -719,8 +749,8 @@ public sealed partial class MainView : Grid
 
     /// <summary>
     /// The editor's "Mais ações" (v23 overflow → abrirMenuExplorer(nomeCompletoNota(currentFile), …)) with the
-    /// actions the native app already has. The 1.8.4 also lists Assistente, Mostrar nas notas, Versões
-    /// anteriores, Estrutura e backlinks and Mover para a lixeira; they join as their screens are ported.
+    /// actions the native app already has, in the 1.8.4's order: Renomear, Mostrar nas notas, Estrutura e backlinks
+    /// and Mover para a lixeira. Assistente and Versões anteriores join as their screens are ported.
     /// </summary>
     private Task ShowEditorMenuAsync(EditorOverlay editor)
     {
@@ -730,6 +760,8 @@ public sealed partial class MainView : Grid
         return Dialogs.MenuAsync(title,
         [
             new DialogItem("Renomear", UrbeTheme.Icons.Pencil, Run: () => RenameNoteAsync(note.Path)),
+            new DialogItem("Mostrar nas notas", UrbeTheme.Icons.Notes, Run: () => { ShowNotesOverEditor(); return Task.CompletedTask; }),
+            new DialogItem("Estrutura e backlinks", UrbeTheme.Icons.List, Run: () => { ShowEditorContext(); return Task.CompletedTask; }),
             new DialogItem("Mover para a lixeira", UrbeTheme.Icons.Trash, Danger: true, Run: () => DeleteNoteAsync(note.Path))
         ]);
     }

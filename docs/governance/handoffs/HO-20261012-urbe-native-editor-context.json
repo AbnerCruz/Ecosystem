@@ -1,0 +1,105 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-editor-context",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T22:00:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "98a49d2a",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyEditorContext.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorContextPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyTutorialTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/RoadsUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-editor-context.json",
+    "docs/governance/handoffs/HO-20261012-urbe-native-export-zip.json",
+    "docs/governance/handoffs/HO-20261012-urbe-native-roads-live.json",
+    "docs/governance/handoffs/HO-20261012-urbe-native-tutorial.json"
+  ],
+  "work_completed": [
+    "Editor → Mais ações na ordem da 1.8.4: Renomear, Mostrar nas notas, Estrutura e backlinks, Mover para a lixeira.",
+    "Estrutura e backlinks (editor/chrome.js renderContext + editor/context.js): painel 'Contexto' com Outline (títulos # do texto que está sendo editado, recuo por nível; tocar põe o cursor na linha e fecha) e Backlinks (knowledge.backlinks; tocar abre a nota e o painel mostra a dela); 320 px à direita, largura toda até 600 px.",
+    "Mostrar nas notas (ui.explorer.open do editor): Notas por cima do editor aberto, como o z-index 52 do theme.css.",
+    "Handoffs do PR #542 marcados done."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests LegacyEditorContextTests (outline igual ao context.js) e Urbe.Client.Tests Editor_ALinkTypedBecomesAStreet (agora também o painel e Mostrar nas notas)",
+      "result": "passed",
+      "evidence": "Core 559/559."
+    },
+    {
+      "kind": "human",
+      "check": "Estrutura e backlinks no Android e no Windows",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/EditorContextPanel.cs"
+    }
+  ],
+  "known_issues": [
+    "Mais ações ainda sem Assistente e Versões anteriores; abas do editor (uec-tabs) ainda não portadas."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI e integração (rotina).",
+    "DEVICE: painel de contexto."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/explorer/mobile-ui.js",
+    "apps/urbe/src/explorer/model.js",
+    "apps/urbe/src/explorer/operations.js",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/styles/theme.css",
+    "apps/urbe/src/styles/explorer-mobile.css",
+    "apps/urbe/src/ui/icons.js",
+    "apps/urbe/src/editor/chrome.js",
+    "apps/urbe/src/editor/context.js",
+    "apps/urbe/src/styles/editor-chrome.css"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Outline no Urbe.Core (LegacyEditorContext); backlinks do KnowledgeIndex existente."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-18/UC-19 seguem em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "editor-context",
+      "status": "product-specific",
+      "rationale": "Painel do editor do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Só interface do editor."
+  }
+}
