@@ -153,9 +153,14 @@ public sealed class EditorOverlay : Grid
     public TextBox Editor { get; }
     public event EventHandler? Closed;
 
-    /// <summary>The formula pane (math/editor.js openPane) the host shows: the selected text and whether it is a display
-    /// formula in, the answer out.</summary>
-    public Func<string, bool, Task<FormulaPane.Result?>>? AskFormula { get; set; }
+    /// <summary>The formula pane (math/editor.js openPane) the host shows: the LaTeX, whether it is a display formula and
+    /// whether an existing one is edited in, the answer out.</summary>
+    public Func<string, bool, bool, Task<FormulaPane.Result?>>? AskFormula
+    {
+        get => _askFormula;
+        set { _askFormula = value; _visual.AskFormula = value; }
+    }
+    private Func<string, bool, bool, Task<FormulaPane.Result?>>? _askFormula;
 
     /// <summary>
     /// startFormula (∑ in the bar, Ctrl+M; Ctrl+Shift+M for a display formula): in the Visual mode the pane opens; in Fonte
@@ -166,7 +171,7 @@ public sealed class EditorOverlay : Grid
         if (_note is null) return;
         if (Mode == EditorMode.Visual)
         {
-            if (AskFormula is { } ask) await _visual.FormulaAsync(ask, block);
+            if (AskFormula is { } ask) await _visual.FormulaAsync((t, b) => ask(t, b, false), block);
             return;
         }
         var text = Editor.Text ?? "";

@@ -121,7 +121,7 @@ public sealed partial class MainView : Grid
 
         // .uc and .udlg are position:fixed over the whole app, bottom navigation included
         // #mathPane (z-index 10400), under the dialogs
-        Editor.AskFormula = (tex, block) => Formula.ShowAsync(tex, block);
+        Editor.AskFormula = (tex, block, editing) => Formula.ShowAsync(tex, block, editing);
         foreach (var overlay in new Control[] { Customize, Formula, Dialogs })
         {
             SetRowSpan(overlay, 2);

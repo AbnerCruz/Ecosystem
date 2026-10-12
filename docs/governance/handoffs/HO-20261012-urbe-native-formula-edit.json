@@ -1,0 +1,101 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-formula-edit",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T18:42:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "3dea97f915ce679640f4aec9bc30353263af9a35",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyEditorTools.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorPopups.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyEditorFindOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FormulaUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-formula-edit.json",
+    "docs/governance/handoffs/HO-20261012-urbe-native-formula.json"
+  ],
+  "work_completed": [
+    "Tocar numa fórmula do texto Visual abre 'Editar fórmula' (math/editor.js: click em .umath → openPane com Salvar e Remover): Salvar mantém os delimitadores com o novo LaTeX (updateAtom); trocar No texto/Destaque transforma a fórmula em destaque num parágrafo com $tex$ ou tira a do texto do parágrafo e põe $$ … $$ depois dele; Remover (ou fórmula esvaziada) a retira, e o bloco de uma fórmula em destaque sai junto (removeAtom), juntando só as linhas em branco daquele ponto.",
+    "Menu '/': 'Fórmula' (∑) e 'Fórmula em destaque' (∫), os itens que math/editor.js acrescenta depois dos de visual-tools.js (VT.addItem), com o mesmo filtro; escolher um limpa o bloco e abre o painel. Core: LegacyEditorTools.MathSlashItems/FilterSlashWithAddons (a lista-base continua igual à do oráculo)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (LegacySlashAddonsTests) e Urbe.Client.Tests (Editor_TappingAFormulaEditsOrRemovesIt, Editor_FormulaPaneInsertsLikeTheOriginal) e suítes completas",
+      "result": "passed",
+      "evidence": "Core 555/555 e Client 100/100 localmente."
+    },
+    {
+      "kind": "human",
+      "check": "Tocar e editar fórmula no Android e no Windows",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs"
+    }
+  ],
+  "known_issues": [
+    "A barra de fórmula do Fonte (#mathDock: prévia ao seguir o cursor dentro de $…$, símbolos e sugestões) ainda não portada.",
+    "Digitar $…$ no Visual não vira fórmula na hora como na 1.8.4 (a conversão acontece ao sair do bloco, quando o Markdown é redesenhado)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "#mathDock no Fonte.",
+    "DEVICE: fórmulas no Android e no Windows.",
+    "CI do PR e integração."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/explorer/mobile-ui.js",
+    "apps/urbe/src/explorer/model.js",
+    "apps/urbe/src/explorer/operations.js",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/styles/theme.css",
+    "apps/urbe/src/styles/explorer-mobile.css",
+    "apps/urbe/src/ui/icons.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Pastas abertas fora do vault, como na 1.8.4; regras de casa só no Urbe.Core (AddDocumentHouse)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-18/UC-19 seguem em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "formula-edit",
+      "status": "product-specific",
+      "rationale": "Edição de fórmula no editor do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Só interface do editor; usa MathRenderer/MathEditing já integrados."
+  }
+}

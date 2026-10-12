@@ -108,7 +108,7 @@ internal sealed class SlashMenu : Border
 
     public void Show(string query)
     {
-        _filtered = LegacyEditorTools.FilterSlash(query);
+        _filtered = LegacyEditorTools.FilterSlashWithAddons(query);
         _index = Math.Min(_index, Math.Max(0, _filtered.Count - 1));
         Render();
         IsVisible = true;
