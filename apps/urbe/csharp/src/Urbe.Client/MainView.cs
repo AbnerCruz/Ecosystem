@@ -94,6 +94,7 @@ public sealed partial class MainView : Grid
             }
         };
         if (_vault is not null) Editor.SaveRequested += SaveNoteAsync;
+        Editor.Editor.TextChanged += (_, _) => EditorLinksChanged();
         Editor.MoreRequested += ShowEditorMenuAsync;
 
         _stage.Children.Add(World);
@@ -294,6 +295,8 @@ public sealed partial class MainView : Grid
         if (store is null || opened is null || !ReferenceEquals(World.City, opened)) return;
         _store = store;
         StartMapSaves(snapshot, opened);
+        // tutorial.js: workspace:loaded → setTimeout(semear, 300)
+        if (SeedsTutorial) _ = SeedTutorialLaterAsync(snapshot);
     }
 
     /// <summary>
@@ -338,6 +341,52 @@ public sealed partial class MainView : Grid
 
     /// <summary>flushPending: write a pending map now (window closing, app going to the background).</summary>
     public Task FlushMapAsync() => _mapSave?.FlushAsync() ?? Task.CompletedTask;
+
+    private DispatcherTimer? _roadTimer;
+    private string? _roadNote, _roadSignature;
+
+    /// <summary>
+    /// scheduleRoadRebuild: 120 ms after the last call the streets are redrawn from the documents (with the text being
+    /// typed in the editor, which the 1.8.4 already holds in its document store), unless no note links another; the
+    /// villagers' routes go with them (v25: v25Rotas.clear(), v25Povo=[]).
+    /// </summary>
+    public void ScheduleRoadRebuild()
+    {
+        if (_roadTimer is null)
+        {
+            _roadTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(120) };
+            _roadTimer.Tick += (_, _) => { _roadTimer!.Stop(); RebuildRoadsNow(); };
+        }
+        _roadTimer.Stop();
+        _roadTimer.Start();
+    }
+
+    /// <summary>The pending scheduleRoadRebuild at once (tests).</summary>
+    public bool RebuildRoadsNow()
+    {
+        _roadTimer?.Stop();
+        if (World.City is not { } city || _store is null) return false;
+        var editing = Editor.IsVisible && Editor.Current is { } open && _store.Get(open.Path) is { } doc ? (doc.Id, open.Content) : default;
+        if (!city.RebuildRoadsAfterChange(_store, editing.Id, editing.Content)) return false;
+        World.RoadsChanged();
+        return true;
+    }
+
+    /// <summary>markChanged / syncVisualToMarkdown: a change of the note's [[link]] signature redraws the streets.</summary>
+    private void EditorLinksChanged()
+    {
+        if (Editor.Current is not { } note) return;
+        var signature = LegacyCity.LinkSignature(note.Content);
+        if (_roadNote != note.Path)
+        {
+            _roadNote = note.Path;   // the note just opened: its text is the baseline
+            _roadSignature = signature;
+            return;
+        }
+        if (signature == _roadSignature) return;
+        _roadSignature = signature;
+        ScheduleRoadRebuild();
+    }
 
     private async Task SaveNoteAsync(CityNote note)
     {
@@ -387,7 +436,7 @@ public sealed partial class MainView : Grid
         {
             var (world, city, ownCamera) = await Task.Run(() =>
             {
-                var w = new LegacyWorld(seed);
+                var w = LegacyWorld.Shared(seed);
                 int next = 0;
                 // app.js id(): ids seed lot order and growth; deterministic here so the same files give the same city.
                 var city = new LegacyCity(new LegacyCityTerrain((x, y) => w.At(x, y).Biome), prefix => prefix + (++next).ToString("x"));
@@ -490,9 +539,9 @@ public sealed partial class MainView : Grid
     public string SaveDotState => _saveState;
 
     /// <summary>
-    /// settings.js: "Configurações" with what the native app has — Personalização, Exportar tudo (.zip), Importar arquivos
-    /// and Pasta no dispositivo (the vault folder). Tutorial, Organizar os bairros, Assistente, Páginas, Diagnóstico de
-    /// toques and Procurar atualização join as they are ported.
+    /// settings.js: "Configurações" with what the native app has — Personalização, Tutorial, Exportar tudo (.zip),
+    /// Importar arquivos and Pasta no dispositivo (the vault folder). Organizar os bairros, Assistente, Páginas,
+    /// Diagnóstico de toques and Procurar atualização join as they are ported.
     /// </summary>
     public Task ShowSettingsAsync()
     {
@@ -500,6 +549,7 @@ public sealed partial class MainView : Grid
         var items = new List<DialogItem>
         {
             new("Personalização", UrbeTheme.Icons.Brush, "Tema, cores, fontes, cidade, texturas, estilos e plugins", Run: () => { Customize.Open(); return Task.CompletedTask; }),
+            new("Tutorial", UrbeTheme.Icons.Book, "Guia completo de tudo o que o Urbe faz", Run: ShowTutorialMenuAsync)
         };
         if (_vault is not null)
             items.Add(new("Exportar tudo (.zip)", UrbeTheme.Icons.Download, "Cópia de segurança de todas as notas", Run: () => ExportAsync()));
@@ -660,6 +710,7 @@ public sealed partial class MainView : Grid
             _store.Upsert(new DocumentInput { Path = made.House.Path, Content = made.Content, Created = today, Modified = today }, "world.create");
             _mapSave?.MarkSync();
         }
+        ScheduleRoadRebuild();   // v21CreateFileInRegion: scheduleRoadRebuild
         RefreshNotes();
         World.CenterOn(made.House);
         World.Select(made.House);
@@ -724,7 +775,8 @@ public sealed partial class MainView : Grid
         city.ApplyRename(house, plan, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         if (_store?.Get(path) is { } doc && !string.Equals(doc.Path, plan.Path, StringComparison.Ordinal))
             LegacyCity.MoveDocument(_store, doc, plan.Path);
-        // aplicarNomeCompletoNota: buildTree, agendarSalvar + marcarSinc, pedirDesenho; v21RefreshEditorChrome
+        // aplicarNomeCompletoNota: buildTree, scheduleRoadRebuild, agendarSalvar + marcarSinc, pedirDesenho; v21RefreshEditorChrome
+        ScheduleRoadRebuild();
         _mapSave?.MarkSync();
         RefreshNotes();
         if (ReferenceEquals(World.Selected, house)) ShowHouse(house);
@@ -784,7 +836,9 @@ public sealed partial class MainView : Grid
             Editor.IsVisible = false;
             _editorOpenedFromNotes = false;
         }
-        // removerNota: marcarIndice, indexar, scheduleRoadRebuild, counts, buildTree, agendarSalvar + marcarSinc
+        // removerNota (house panel, editor): marcarIndice, indexar, scheduleRoadRebuild, counts, buildTree, agendarSalvar +
+        // marcarSinc. From Notas it is explorer.delete → document:removed, which does not redraw the streets.
+        if (!confirmed) ScheduleRoadRebuild();
         _mapSave?.MarkSync();
         RefreshNotes();
         World.InvalidateVisual();
@@ -923,6 +977,7 @@ public sealed partial class MainView : Grid
         }
         if (city.RegionByPath(folder) is { } region)
             foreach (var p in city.DeleteRegion(region)) dirs.Add(p);
+        ScheduleRoadRebuild();        // apagarRegiao
         ExplorerState.Forget(folder); // explorer.forgetFolder
         _mapSave?.Schedule();
         _mapSave?.MarkSync();
@@ -1140,6 +1195,7 @@ public sealed partial class MainView : Grid
             var copy = LegacyCity.DuplicateDocument(_store, doc with { Content = content });
             city.DuplicateHouse(house, copy, now);
             _contents[copy.Path] = content;
+            if (LegacyCity.LinkSignature(content).Length > 0) ScheduleRoadRebuild();   // urbeCasaParaDocumento
         }
         _mapSave?.Schedule();
         _mapSave?.MarkSync();
@@ -1184,7 +1240,8 @@ public sealed partial class MainView : Grid
         var doc = _trash.Restore(_store!, id)!;
         city.AddDocumentHouse(doc, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         _contents[doc.Path] = doc.Content;
-        // document:created → urbeCasaParaDocumento → marcarSinc; persistence schedule()
+        // document:created → urbeCasaParaDocumento (scheduleRoadRebuild when it has links) → marcarSinc; persistence schedule()
+        if (LegacyCity.LinkSignature(doc.Content).Length > 0) ScheduleRoadRebuild();
         _mapSave?.Schedule();
         _mapSave?.MarkSync();
         RefreshNotes();

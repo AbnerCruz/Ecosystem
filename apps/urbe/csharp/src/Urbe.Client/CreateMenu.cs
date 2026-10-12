@@ -267,6 +267,7 @@ public sealed partial class MainView
             _mapSave?.Schedule();
             _mapSave?.MarkSync();
         }
+        ScheduleRoadRebuild();   // v21ConfirmPlacement (copy and new): scheduleRoadRebuild
         RefreshNotes();
     }
 

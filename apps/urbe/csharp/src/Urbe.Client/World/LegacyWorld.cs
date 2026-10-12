@@ -28,6 +28,23 @@ public sealed class LegacyWorld
         Vegetation = new LegacyVegetation(Terrain);
     }
 
+    private static readonly Dictionary<(string, int), Lazy<LegacyWorld>> SharedWorlds = [];
+
+    /// <summary>
+    /// The world of this seed, generated once per process (app.js creates MUNDO once per page: every city opened
+    /// afterwards stands on the same terrain). Pure function of (seed, gridSize); its chunk cache is locked.
+    /// </summary>
+    public static LegacyWorld Shared(string seed = "urbe", int gridSize = 512)
+    {
+        Lazy<LegacyWorld> lazy;
+        lock (SharedWorlds)
+        {
+            if (!SharedWorlds.TryGetValue((seed, gridSize), out lazy!))
+                SharedWorlds[(seed, gridSize)] = lazy = new Lazy<LegacyWorld>(() => new LegacyWorld(seed, gridSize));
+        }
+        return lazy.Value;
+    }
+
     public LegacyWorldSpawn Spawn { get; }
     public LegacyTileSampler Terrain { get; }
     public LegacyTileChunks Chunks { get; }

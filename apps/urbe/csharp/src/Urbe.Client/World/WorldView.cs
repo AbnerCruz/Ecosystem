@@ -285,6 +285,13 @@ public sealed class WorldView : Control
         InvalidateVisual();
     }
 
+    /// <summary>rebuildRoadNetwork just ran: v25 drops the villagers and their routes (v25Rotas.clear(), v25Povo=[]).</summary>
+    public void RoadsChanged()
+    {
+        _villagers.Reset();
+        InvalidateVisual();
+    }
+
     internal bool ChunkReady(int x, int y) =>
         _chunks.ContainsKey((FloorDiv(x, LegacyWorld.ChunkTiles), FloorDiv(y, LegacyWorld.ChunkTiles)));
 

@@ -1,0 +1,102 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-tutorial",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T21:30:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "67a9ef9a",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyTutorial.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Tutorial.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/LegacyWorld.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyTutorialTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/TutorialUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/TestSetup.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-tutorial.json"
+  ],
+  "work_completed": [
+    "Tutorial como tutorial.js: na primeira abertura de uma cidade sem Tutorial/ e sem .urbe/tutorial.json, cria a pasta inteira (bairros dimensionados antes, prepararBairros/ensureFolders; uma casa por nota), grava a marca {versao, em} com a versão do content.js (sha256 de JSON.stringify, LegacyTutorial.Version) e, numa cidade vazia, enquadra as casas e abre 'Comece aqui'; senão avisa 'Nova pasta Tutorial…'. Vault somente leitura nunca recebe nada.",
+    "Configurações → Tutorial → Abrir o Tutorial / Restaurar o Tutorial (recria o que falta, pergunta 'Substituir' / 'Manter as minhas' para notas mudadas, 'Tutorial restaurado' ou 'O Tutorial já está completo').",
+    "Vaults da 1.8.4 já têm a marca: nada é criado neles.",
+    "LegacyWorld.Shared: o mundo 'urbe' é gerado uma vez por processo, como o MUNDO da 1.8.4; reabrir uma cidade não o regenera (suíte de interface de 18 para ~15 min localmente)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests LegacyTutorialTests (versão igual à do content.js; marca e comparação) e Urbe.Client.Tests Tutorial_IsCreatedOnceLikeTheOriginal",
+      "result": "passed",
+      "evidence": "Cidade vazia recebe os 48 arquivos idênticos, a marca e abre Comece aqui; cidade com marca não recebe nada."
+    },
+    {
+      "kind": "human",
+      "check": "Tutorial ao abrir uma pasta nova no Android e no Windows",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.Tutorial.cs"
+    }
+  ],
+  "known_issues": [
+    "A disposição das casas do Tutorial numa cidade que já tem notas não foi comparada por oráculo (a da cidade vazia é a de OpenFirstTime, já provada)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI e integração junto do PR #542.",
+    "DEVICE: Tutorial numa pasta nova."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/explorer/mobile-ui.js",
+    "apps/urbe/src/explorer/model.js",
+    "apps/urbe/src/explorer/operations.js",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/styles/theme.css",
+    "apps/urbe/src/styles/explorer-mobile.css",
+    "apps/urbe/src/ui/icons.js",
+    "apps/urbe/src/tutorial/tutorial.js",
+    "apps/urbe/tools/build-tutorial.mjs"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Versão, marca e comparação no Urbe.Core (LegacyTutorial); conteúdo único em apps/urbe/tutorial."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-18/UC-19 seguem em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "tutorial",
+      "status": "product-specific",
+      "rationale": "Conteúdo e regra do Tutorial do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Regra da cidade e interface; não toca o armazenamento."
+  }
+}
