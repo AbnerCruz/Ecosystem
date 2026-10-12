@@ -117,6 +117,73 @@ public sealed class FolderVaultStorageTests : IDisposable
         Assert.Equal("# Nova nota\n", File.ReadAllText(Path.Combine(Vault, "Bairro", "Nova nota.md")));
     }
 
+    [Fact]
+    public async Task MovingANoteKeepsItsExactBytesAndRemovesOnlyTheOldName()
+    {
+        var bom = new byte[] { 0xef, 0xbb, 0xbf }.Concat(Encoding.UTF8.GetBytes("# Um\r\n")).ToArray();
+        File.WriteAllBytes(Path.Combine(Vault, "Bairro", "Um.md"), bom);
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        var before = Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).ToDictionary(f => f, File.ReadAllBytes);
+        await storage.MoveTextFileAsync("Bairro/Um.md", "Bairro/Primeiro.md", Ct);
+        Assert.False(File.Exists(Path.Combine(Vault, "Bairro", "Um.md")));
+        Assert.Equal(bom, File.ReadAllBytes(Path.Combine(Vault, "Bairro", "Primeiro.md")));
+        foreach (var (file, bytes) in before)
+            if (!file.EndsWith("Um.md", StringComparison.Ordinal)) Assert.Equal(bytes, File.ReadAllBytes(file));
+        Assert.Equal(before.Count, Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).Length);   // no temporary copy left
+
+        // then it is the file at its new name: saved there, and moved again (another extension)
+        await storage.SaveExistingNoteAsync("Bairro/Primeiro.md", "# Primeiro\n", Ct);
+        await storage.MoveTextFileAsync("Bairro/Primeiro.md", "Bairro/Primeiro.txt", Ct);
+        Assert.Equal("# Primeiro\n", File.ReadAllText(Path.Combine(Vault, "Bairro", "Primeiro.txt")));
+        await Assert.ThrowsAsync<FileNotFoundException>(() => storage.MoveTextFileAsync("Bairro/Primeiro.md", "Bairro/X.md", Ct));
+    }
+
+    [Fact]
+    public async Task AChangeOfCaseOnlyRenamesTheSameFile()
+    {
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        await storage.MoveTextFileAsync("Comece.md", "comece.md", Ct);
+        var names = Directory.GetFiles(Vault).Select(Path.GetFileName).ToArray();
+        Assert.Contains("comece.md", names);
+        Assert.DoesNotContain("Comece.md", names);
+        Assert.DoesNotContain(names, n => n!.Contains(".urbe-move-", StringComparison.Ordinal));
+        Assert.Equal("# Comece\n\n[[Bairro/Um]]\n", File.ReadAllText(Path.Combine(Vault, "comece.md")));
+    }
+
+    [Theory]
+    [InlineData("Comece.md", "Bairro/Um.md")]        // never over another file
+    [InlineData("Comece.md", "bairro/UM.md")]        // nor over one that differs only in case
+    [InlineData("Comece.md", "Comece.md")]
+    [InlineData("Comece.md", "../fora.md")]
+    [InlineData("Comece.md", ".urbe/x.md")]
+    [InlineData("Comece.md", "Comece.png")]
+    [InlineData("foto.png", "foto2.png")]
+    [InlineData("Nada.md", "Algo.md")]
+    public async Task UnsafeMovesAreRefusedAndTouchNothing(string from, string to)
+    {
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        var before = Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).ToDictionary(f => f, File.ReadAllBytes);
+        await Assert.ThrowsAnyAsync<Exception>(() => storage.MoveTextFileAsync(from, to, Ct));
+        var after = Directory.GetFiles(Vault, "*", SearchOption.AllDirectories);
+        Assert.Equal(before.Keys.Order(), after.Order());
+        foreach (var (file, bytes) in before) Assert.Equal(bytes, File.ReadAllBytes(file));
+        Assert.False(File.Exists(Path.Combine(_dir, "fora.md")));
+    }
+
+    [Fact]
+    public async Task AChangeOutsideUrbeBlocksTheMove()
+    {
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        File.WriteAllText(Path.Combine(Vault, "Bairro", "Um.md"), "# Um\n\nEditado em outro app.\n");
+        await Assert.ThrowsAsync<IOException>(() => storage.MoveTextFileAsync("Bairro/Um.md", "Bairro/Dois.md", Ct));
+        Assert.True(File.Exists(Path.Combine(Vault, "Bairro", "Um.md")));
+        Assert.False(File.Exists(Path.Combine(Vault, "Bairro", "Dois.md")));
+    }
+
     [Theory]
     [InlineData(".urbe/mapa.json")]
     [InlineData(".obsidian/app.json")]

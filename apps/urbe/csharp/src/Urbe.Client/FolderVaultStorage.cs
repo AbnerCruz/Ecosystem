@@ -181,6 +181,74 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public async Task MoveTextFileAsync(string from, string to, CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, files);
+            var (source, bytes, caseOnly) = IUrbeVaultStorage.PlanMove(files, from, to);
+
+            await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var sourceFull = Inside(root, source);
+                if (caseOnly)
+                {
+                    // the same file on a case-insensitive disk: through a temporary copy the vault does not list
+                    var temp = sourceFull + ".urbe-move-" + Guid.NewGuid().ToString("N");
+                    CreateVerified(temp, bytes, source);
+                    File.Delete(sourceFull);
+                    CreateVerified(Inside(root, to), bytes, to);
+                    File.Delete(temp);
+                }
+                else
+                {
+                    CreateVerified(Inside(root, to), bytes, to);
+                    File.Delete(sourceFull);
+                }
+                var observed = Snapshot(ReadFiles(root, cancellationToken));
+                if (observed.Count != baseline.Count)
+                    throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
+                foreach (var pair in baseline)
+                {
+                    var key = string.Equals(pair.Key, source, StringComparison.OrdinalIgnoreCase) ? to : pair.Key;
+                    if (!observed.TryGetValue(key, out var actual) || !actual.Bytes.Span.SequenceEqual(pair.Value.Bytes.Span))
+                        throw new IOException("Verificação pós-gravação detectou divergência em: " + key);
+                }
+                if (!observed.Keys.Contains(to, StringComparer.Ordinal))
+                    throw new IOException("O arquivo movido não passou na verificação: " + to);
+                _baseline = observed;
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
+    /// <summary>The full path of a vault path, refused when it leaves the vault.</summary>
+    private static string Inside(string root, string path)
+    {
+        var full = Path.GetFullPath(Path.Combine([root, .. Segments(path)]));
+        if (!full.StartsWith(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+            throw new InvalidDataException("Caminho fora do vault: " + path);
+        return full;
+    }
+
+    /// <summary>A new file with exactly these bytes, never over an existing one, read back.</summary>
+    private static void CreateVerified(string full, byte[] content, string path)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(full)!);
+        using (var stream = new FileStream(full, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+        {
+            stream.Write(content);
+            stream.Flush(flushToDisk: true);
+        }
+        if (!File.ReadAllBytes(full).AsSpan().SequenceEqual(content))
+            throw new IOException("O arquivo criado não passou na verificação: " + path);
+    }
+
     public async Task SaveMapAsync(string json, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(json);
