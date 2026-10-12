@@ -286,7 +286,7 @@ public sealed partial class MainView : Grid
             opened = city;
             return true;
         });
-        _vaultName.Text = snapshot.IsReadOnly ? "Vault: somente leitura" : "Pasta conectada";
+        _vaultName.Text = snapshot.IsReadOnly ? "Vault: somente leitura" : "";
         if (store is null || opened is null || !ReferenceEquals(World.City, opened)) return;
         _store = store;
         StartMapSaves(snapshot, opened);
@@ -313,11 +313,12 @@ public sealed partial class MainView : Grid
             if (text is null) scheduler!.Refused(refusal ?? "");
             return text;
         }, json => _vault.SaveMapAsync(json), snapshot.MapJson);
-        scheduler.StateChanged += (_, _) => _vaultName.Text = scheduler.State switch
+        scheduler.StateChanged += (_, _) =>
         {
-            "error" => "Erro ao salvar o mapa",
-            "refused" => "Mapa não salvo",
-            _ => "Pasta conectada"
+            _vaultName.Text = scheduler.State switch { "error" => "Erro ao salvar o mapa", "refused" => "Mapa não salvo", _ => "" };
+            // statusSinc: 'gravando' while writing, 'erro' on a failure, else ok
+            _saveState = scheduler.State switch { "saving" => "gravando", "error" => "erro", _ => "ok" };
+            PaintDot();
         };
         _mapWriter = writer;
         _mapSave = scheduler;
@@ -418,43 +419,90 @@ public sealed partial class MainView : Grid
 
     // ---------------- city chrome ----------------
 
+    private readonly Border _vaultDot = new() { Width = 8, Height = 8, CornerRadius = new CornerRadius(4), VerticalAlignment = VerticalAlignment.Center };
+    private string _saveState = "ok";
+
+    /// <summary>
+    /// #v23Top: the brand pill (#v23VaultDot: green, warn while writing, danger on an error — statusSinc; the vault name;
+    /// "· biome") and the three round buttons Buscar notas, Mapa da cidade and Configurações. Both 44px tall, surface at
+    /// 82 %, a faint line and shadow-1. The native-only notices (Tutorial preview, read-only vault, a refused map) follow
+    /// the biome in small text; the normal state shows none, as the original.
+    /// </summary>
     private Control TopBar()
     {
-        var dot = new Border { Width = 8, Height = 8, CornerRadius = new CornerRadius(4), Background = UrbeTheme.Brush(UrbeTheme.Ok), VerticalAlignment = VerticalAlignment.Center };
         var name = new TextBlock { Text = "Urbe", FontWeight = FontWeight.SemiBold, FontSize = 14, Foreground = UrbeTheme.Brush(UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center };
         _vaultName.Text = "Tutorial · prévia";
         _vaultName.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
         _vaultName.FontSize = 11;
         _vaultName.VerticalAlignment = VerticalAlignment.Center;
-        var sep = new TextBlock { Text = "·", Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center };
+        _vaultName.Margin = new Thickness(8, 0, 0, 0);
+        // #urbeBiome::before{content:'·';margin:0 7px 0 1px;color:text-3}; 500 13px text-2
+        var sep = new TextBlock { Text = "·", Foreground = UrbeTheme.Brush(UrbeTheme.Text3), FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 7, 0) };
         _biome.Foreground = UrbeTheme.Brush(UrbeTheme.Text2);
-        _biome.FontSize = 14;
+        _biome.FontSize = 13;
+        _biome.FontWeight = FontWeight.Medium;
         _biome.VerticalAlignment = VerticalAlignment.Center;
+        _biome.TextTrimming = TextTrimming.CharacterEllipsis;
+        PaintDot();
+        _vaultDot.Margin = new Thickness(0, 0, 10, 0);
         var pill = new Border
         {
-            Background = UrbeTheme.Brush(UrbeTheme.Surface, .92),
+            Background = UrbeTheme.Brush(UrbeTheme.Surface, .82),
+            BorderBrush = UrbeTheme.Brush("#ffffff", .06),
+            BorderThickness = new Thickness(1),
+            BoxShadow = BoxShadows.Parse("0 1 2 0 #59000000, 0 6 20 0 #47000000"),
             CornerRadius = new CornerRadius(22),
-            Padding = new Thickness(14, 0, 16, 0),
-            Height = 42,
-            Child = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { dot, name, sep, _biome, _vaultName } }
+            Padding = new Thickness(12, 0, 14, 0),
+            Height = 44,
+            Child = new StackPanel { Orientation = Orientation.Horizontal, Children = { _vaultDot, name, sep, _biome, _vaultName } }
         };
+        ToolTip.SetTip(pill, "Estado da gravação");
         var buttons = new StackPanel
         {
             Orientation = Orientation.Horizontal,
-            Spacing = 10,
+            Spacing = 8,
             HorizontalAlignment = HorizontalAlignment.Right,
-            Children = { SearchButton(), MapButton(), CustomizeButton(), VaultButton() }
+            Children = { SearchButton(), MapButton(), SettingsButton() }
         };
-        var bar = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"), Margin = new Thickness(12, 10), VerticalAlignment = VerticalAlignment.Top };
+        var bar = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"), Margin = new Thickness(12, 10, 12, 0), VerticalAlignment = VerticalAlignment.Top };
         SetColumn(buttons, 2);
         bar.Children.Add(pill);
         bar.Children.Add(buttons);
         return bar;
     }
 
+    /// <summary>#v23VaultDot: ok (green), gravando (warn) or erro (danger), with a 3px ring of the same colour at 15 %.</summary>
+    private void PaintDot()
+    {
+        var color = _saveState switch { "gravando" => UrbeTheme.Warn, "erro" => UrbeTheme.Danger, _ => UrbeTheme.Ok };
+        _vaultDot.Background = UrbeTheme.Brush(color);
+        _vaultDot.BoxShadow = BoxShadows.Parse("0 0 0 3 #26" + color[1..]);   // the ring: the colour at 15 %
+    }
+
+    /// <summary>The state of the dot (statusSinc), for the tests.</summary>
+    public string SaveDotState => _saveState;
+
+    /// <summary>
+    /// settings.js: "Configurações" with what the native app has — Personalização, Importar arquivos and Pasta no
+    /// dispositivo (the vault folder). Tutorial, Organizar os bairros, Exportar tudo, Assistente, Páginas, Diagnóstico de
+    /// toques and Procurar atualização join as they are ported.
+    /// </summary>
+    public Task ShowSettingsAsync()
+    {
+        if (Dialogs.IsOpen) return Task.CompletedTask;
+        var items = new List<DialogItem>
+        {
+            new("Personalização", UrbeTheme.Icons.Brush, "Tema, cores, fontes, cidade, texturas, estilos e plugins", Run: () => { Customize.Open(); return Task.CompletedTask; }),
+            new("Importar arquivos", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync())
+        };
+        if (_vault is not null)
+            items.Add(new("Pasta no dispositivo", UrbeTheme.Icons.Storage, "Onde os arquivos ficam salvos", Run: () => OpenVaultAsync()));
+        return Dialogs.MenuAsync("Configurações", items);
+    }
+
     private Button SearchButton()
     {
-        var button = RoundButton(UrbeTheme.Icons.Search, "Buscar");
+        var button = RoundButton(UrbeTheme.Icons.SearchUi, "Buscar");
         ToolTip.SetTip(button, "Buscar notas");
         button.Click += (_, _) => Search.OpenQuickOpen();
         return button;
@@ -462,42 +510,37 @@ public sealed partial class MainView : Grid
 
     private Button MapButton()
     {
-        var button = RoundButton(UrbeTheme.Icons.Map, "Mapa da cidade");
+        var button = RoundButton(UrbeTheme.Icons.MapUi, "Mapa da cidade");
         ToolTip.SetTip(button, "Mapa da cidade");
         button.Click += (_, _) => ShowMap();
         return button;
     }
 
-    private Button VaultButton()
+    private Button SettingsButton()
     {
-        var button = RoundButton(UrbeTheme.Icons.Notes, "Cidades · selecionar pasta do vault");
-        button.IsEnabled = _vault is not null;
-        button.Click += async (_, _) => await OpenVaultAsync();
-        return button;
-    }
-
-    private Button CustomizeButton()
-    {
-        var b = RoundButton(UrbeTheme.Icons.Sliders, "Personalizar");
-        ToolTip.SetTip(b, "Personalização");
-        b.Click += (_, _) => Customize.Open();
+        var b = RoundButton(UrbeTheme.Icons.Settings, "Configurações");
+        ToolTip.SetTip(b, "Configurações");
+        b.Click += (_, _) => _ = ShowSettingsAsync();
         return b;
     }
 
     private static Button RoundButton(string icon, string tip)
     {
+        // .v23TopBtn: 44px circle, surface at 82 %, a faint line, shadow-1, a 20px icon
         var b = new Button
         {
             Width = 44,
             Height = 44,
             CornerRadius = new CornerRadius(22),
-            Background = UrbeTheme.Brush(UrbeTheme.Surface, .92),
-            Content = UrbeTheme.Icon(icon, 20),
+            Background = UrbeTheme.Brush(UrbeTheme.Surface, .82),
+            BorderBrush = UrbeTheme.Brush("#ffffff", .06),
+            BorderThickness = new Thickness(1),
+            Content = UrbeTheme.Icon(icon, 20, UrbeTheme.Text, 1.8),
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
             Padding = new Thickness(0)
         };
-        ToolTip.SetTip(b, tip + " (em portabilidade)");
+        ToolTip.SetTip(b, tip);
         return b;
     }
 
