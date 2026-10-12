@@ -206,6 +206,30 @@ public sealed class LegacyRenameOracleTests
         return (city, store, writer, files.ToDictionary(f => f.Item1, f => f.Item2, StringComparer.Ordinal));
     }
 
+    /// <summary>CopyNoteAt names the copy as the 1.8.4 names a placed clone (v21ConfirmPlacement 'copy').</summary>
+    [Fact]
+    public void ACopyIsNamedAsTheOriginalNamesItsCloneAndIsANewHouse()
+    {
+        var city = new LegacyCity(new LegacyCityTerrain((x, y) => World.Value.At(x, y).Biome), p => p + Guid.NewGuid().ToString("N")[..6]);
+        city.Open([("Nota.txt", "texto"), ("Nota cópia.txt", "outra")],
+            """{"v":4,"mundo":"placas-1","notas":{"Nota.txt":{"id":"doc_n","x":40,"y":30,"sprite":"house2","tags":["a"],"aiLocal":{"memory":"m"}},"Nota cópia.txt":{"id":"doc_c","x":46,"y":30}}}""",
+            new Dictionary<string, string> { ["Nota.txt"] = "doc_n", ["Nota cópia.txt"] = "doc_c" });
+        var source = city.Buildings.Single(b => b.Path == "Nota.txt");
+        (int X, int Y) lot = default;
+        for (int r = 4; r < 60 && lot == default; r++)
+        for (int dy = -r; dy <= r && lot == default; dy++)
+        for (int dx = -r; dx <= r && lot == default; dx++)
+            if (city.CanHouse(source.X + dx, source.Y + dy) && city.RegionAt(source.X + dx, source.Y + dy) is null) lot = (source.X + dx, source.Y + dy);
+        Assert.Null(city.CopyNoteAt(source, source.X, source.Y, "x", 0));            // not on a taken lot
+
+        var copy = city.CopyNoteAt(source, lot.X, lot.Y, "Nota cópia", 1760000000000)!;
+        Assert.Equal("Nota cópia (2).txt", copy.Path);                               // the source's extension, unique in the root
+        Assert.Equal("house2", copy.Sprite);
+        Assert.NotSame(source, copy);
+        Assert.Null(copy.DocumentId);                                                // its own document, given by the caller
+        Assert.Equal((lot.X, lot.Y), (copy.X, copy.Y));
+    }
+
     [Fact]
     public void ARenameOfAFileBuildingIsNotPlanned()
     {

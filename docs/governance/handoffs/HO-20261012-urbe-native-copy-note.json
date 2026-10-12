@@ -1,0 +1,104 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-copy-note",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T11:23:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "ac3fd575703e52b330f5958e86d1d4cb7f4799b5",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCityCreate.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CreateMenuUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyRenameOracleTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-copy-note.json"
+  ],
+  "work_completed": [
+    "Decisão do proprietário registrada no ROADMAP (UC-19, 12/10/2026): o Copiar do cliente nativo faz cópia real, ao contrário da 1.8.4 (oráculo legacy-copy-oracle.mjs mostra que a 1.8.4 não grava cópia).",
+    "LegacyCity.CopyNoteAt: nome como a 1.8.4 nomeia o clone (nome digitado em 'Configurar cópia', extensão da origem quando falta, v21UniqueName no bairro sob o lote), sprite, tags e aiLocal da origem, created/modified = nowDate, sem anexos.",
+    "Cliente: botão Copiar do painel da casa (antes morto) → modo de posicionar ('Posicione a cópia', ✓ 'Copiar') → 'Configurar cópia' → arquivo NOVO com o texto da origem (CreateTextFileAsync, verificado), documento próprio e mapa salvo; 'Cópia posicionada.'.",
+    "Correção do 'Adicionar construção' (CreateMenu, sessão anterior): a casa nova não ganhava documento, então o salvamento seguinte do mapa era recusado ('Mapa não salvo'); agora o documento é registrado como urbeReconcileWorld faz ('world.create') e a casa ganha tags/created/modified/aiLocal como v21ConfirmPlacement."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (Copy_PlacesARealCopyOfTheNoteWhereItWasPut, AddBuilding_PlacesTheGhostOnTheMapAndBuildsTheNoteWhereItWasPut)",
+      "result": "passed",
+      "evidence": "Cópia: arquivo novo com o texto, origem intacta, ids distintos, mapa salvo com as duas posições. Adicionar construção: mapa volta a ser salvo com a casa nova."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (ACopyIsNamedAsTheOriginalNamesItsCloneAndIsANewHouse)",
+      "result": "passed",
+      "evidence": "Extensão da origem, ' (2)' na raiz, sprite, lote ocupado recusado."
+    },
+    {
+      "kind": "automated",
+      "check": "Suítes completas Core/Client e consistency",
+      "result": "passed",
+      "evidence": "Core 551/551 e Client 94/94 localmente; consistency 22/22."
+    },
+    {
+      "kind": "human",
+      "check": "Copiar nota no Android e no Windows reais",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs"
+    }
+  ],
+  "known_issues": [
+    "O diálogo 'Configurar cópia' começa vazio e exige nome, como o da 1.8.4.",
+    "Casa copiada não refaz ruas (scheduleRoadRebuild), como as demais edições do nativo."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI do PR e integração.",
+    "DEVICE: copiar nota no Android e no Windows."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "Decisão do proprietário (chat) persistida no ROADMAP antes da implementação."
+    },
+    {
+      "id": "NN-001",
+      "evidence": "Regras de nome só em Urbe.Core."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "note-copy",
+      "status": "product-specific",
+      "rationale": "Cópia de casa/nota da cidade do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "UI e regras de nome; a escrita usa CreateTextFileAsync já existente (sem mudar armazenamento)."
+  }
+}

@@ -12,9 +12,9 @@
   "component": "urbe",
   "state": "review",
   "branch": "ccr-2e1b58fa-7mhpmx",
-  "base_commit": "f42a569a471f559fde213849a5ce41407360771d",
+  "base_commit": "ac3fd575703e52b330f5958e86d1d4cb7f4799b5",
   "commit": null,
-  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/531",
+  "pr": null,
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/LegacyTrash.cs",
     "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",

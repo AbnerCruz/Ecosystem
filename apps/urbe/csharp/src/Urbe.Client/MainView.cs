@@ -991,7 +991,13 @@ public sealed partial class MainView : Grid
             World.Select(null);
             await DeleteNoteAsync(house.Path);
         };
-        ToolTip.SetTip(copy, "Em portabilidade: o Copiar da 1.8.4 não grava a cópia (ver handoff)");
+        ToolTip.SetTip(copy, "Copiar");
+        // copyBtn → v21BeginCopyPlacement (a real copy: owner's decision, ROADMAP UC-19)
+        copy.Click += async (_, _) =>
+        {
+            if (World.Selected is not { IsNote: true } house) return;
+            await BeginCopyAsync(house);
+        };
         Grid.SetColumn(delete, 2);
         actions.Children.Add(copy);
         actions.Children.Add(delete);
