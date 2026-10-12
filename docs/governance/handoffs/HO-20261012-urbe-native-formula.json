@@ -10,11 +10,11 @@
   },
   "task_id": "UC-18",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "ccr-2e1b58fa-7mhpmx",
   "base_commit": "df3ceda3f2498dc55610a838b41c4206607d7e5a",
-  "commit": null,
-  "pr": null,
+  "commit": "3dea97f915ce679640f4aec9bc30353263af9a35",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/538",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Client/FormulaPane.cs",
     "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
@@ -61,8 +61,7 @@
   "blockers": [],
   "next_actions": [
     "Editar fórmula tocando nela; #mathDock no Fonte; itens do menu '/'.",
-    "DEVICE: fórmula no Android e no Windows.",
-    "CI do PR e integração."
+    "DEVICE: fórmula no Android e no Windows."
   ],
   "decisions_required": [],
   "normative_sources": [

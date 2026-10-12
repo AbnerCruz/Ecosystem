@@ -122,7 +122,8 @@ public sealed class VisualSurface : StackPanel
         var reader = new MarkdownReader
         {
             WikiLinkTapped = name => WikiLinkTapped?.Invoke(name),
-            TaskToggled = (line, on) => ToggleTask(block, line, on)
+            TaskToggled = (line, on) => ToggleTask(block, line, on),
+            MathTapped = index => _ = EditFormulaAsync(block.Start, index)
         };
         var holder = new Border { Background = Brushes.Transparent, Child = reader.Build(MarkdownTree.Parse(source)) };
         if (block.Kind != "frontmatter")
@@ -343,6 +344,49 @@ public sealed class VisualSurface : StackPanel
     /// does after a text node); a display formula ($$…$$) takes the block when it is empty, else goes after it, and the
     /// caret moves to a new paragraph below.
     /// </summary>
+    /// <summary>The host's formula pane: the LaTeX, whether it is a display formula, and whether it edits one already there.</summary>
+    public Func<string, bool, bool, Task<FormulaPane.Result?>>? AskFormula { get; set; }
+
+    /// <summary>
+    /// A tap on a formula of a drawn block (math/editor.js: click on .umath → openPane "Editar fórmula"): Salvar keeps its
+    /// delimiters with the new LaTeX (updateAtom); switching No texto/Destaque turns a display formula into a paragraph with
+    /// $tex$, or takes an inline one out of its paragraph and puts $$ … $$ after it; Remover (or an emptied formula) takes it
+    /// out (removeAtom: a display formula leaves its block empty, which then goes).
+    /// </summary>
+    private async Task EditFormulaAsync(int blockStart, int index)
+    {
+        if (AskFormula is not { } ask) return;
+        var before = _text.Length;
+        var editingStart = _editStart;
+        FinishEdit();
+        var shift = _text.Length - before;
+        var start = blockStart > editingStart && editingStart >= 0 ? blockStart + shift : blockStart;
+        var block = _blocks.FirstOrDefault(b => b.Start == start);
+        if (block is null) return;
+        var source = _text[block.Start..block.End];
+        var formulas = MathEditing.Scan(source);
+        if (index < 0 || index >= formulas.Count) return;
+        var f = formulas[index];
+        FormulaPane.Result? r;
+        _prompting = true;
+        try { r = await ask(f.Tex, f.Block, true); }
+        finally { _prompting = false; }
+        if (r is null) return;
+        // the block's new text, and a display formula that goes after it (an inline one switched to Destaque)
+        string text, after = "";
+        if (r.Remove || r.Tex.Length == 0) text = source[..f.Start] + source[f.End..];
+        else if (r.Block == f.Block) text = source[..f.Start] + f.Open + r.Tex + f.Close + source[f.End..];
+        else if (!r.Block) text = source[..f.Start] + "$" + r.Tex + "$" + source[f.End..];
+        else { text = source[..f.Start] + source[f.End..]; after = "$$\n" + r.Tex + "\n$$"; }
+        if (text.Trim().Length == 0) { text = after; after = ""; }
+        var insert = text + (after.Length > 0 ? "\n\n" + after : "");
+        _text = _text[..block.Start] + insert + _text[block.End..];
+        // an emptied block leaves no trace: only the blank lines at that spot are joined (never elsewhere in the note)
+        if (insert.Length == 0) Collapse(block.Start);
+        Rebuild();
+        TextEdited?.Invoke(_text);
+    }
+
     public async Task FormulaAsync(Func<string, bool, Task<FormulaPane.Result?>> ask, bool block)
     {
         EnsureBox();
@@ -429,6 +473,8 @@ public sealed class VisualSurface : StackPanel
         if (act == "rule") { InsertRule(); return; }
         // the block is cleared, then the tool runs on the empty block
         _box.Text = "";
+        // math/editor.js items: startFormula(false / true) on the emptied block
+        if (act is "formula" or "formulaBlock") { if (AskFormula is { } ask) _ = FormulaAsync((t, b) => ask(t, b, false), act == "formulaBlock"); return; }
         Apply(LegacyVisualEdit.Slash(act));
         if (act == "link") { _box.Text = ""; Run("link"); }
     }

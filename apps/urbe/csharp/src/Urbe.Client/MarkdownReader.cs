@@ -25,6 +25,10 @@ public sealed class MarkdownReader
     public Action<string>? WikiLinkTapped { get; set; }
     /// <summary>A task checkbox was toggled: index of the list line inside the block, new state.</summary>
     public Action<int, bool>? TaskToggled { get; set; }
+    /// <summary>A formula was tapped: its index among the formulas of this text, in order (math/editor.js: a click on .umath
+    /// opens the pane to edit it).</summary>
+    public Action<int>? MathTapped { get; set; }
+    private int _math;
 
     private int _listLine;
 
@@ -348,7 +352,17 @@ public sealed class MarkdownReader
 
     // ------------------------------------------------------------------ math (MathRenderer SVG → native paths)
 
-    private static Control MathNode(RichNode atom, double size, bool display)
+    private Control MathNode(RichNode atom, double size, bool display)
+    {
+        var view = MathView(atom, size, display);
+        int index = _math++;
+        if (MathTapped is not { } tapped) return view;
+        var holder = new Border { Background = Brushes.Transparent, Child = view, HorizontalAlignment = view.HorizontalAlignment, Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand) };
+        holder.PointerPressed += (_, e) => { e.Handled = true; tapped(index); };
+        return holder;
+    }
+
+    private static Control MathView(RichNode atom, double size, bool display)
     {
         var tex = atom.Attr("data-tex");
         try

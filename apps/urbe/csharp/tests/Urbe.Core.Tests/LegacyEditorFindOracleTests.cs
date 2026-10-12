@@ -30,3 +30,17 @@ public sealed class LegacyEditorFindOracleTests
         }
     }
 }
+
+/// <summary>The "/" menu with the items math/editor.js adds after visual-tools.js (VT.addItem).</summary>
+public sealed class LegacySlashAddonsTests
+{
+    [Fact]
+    public void TheFormulaItemsFollowTheMenuAndUseItsFilter()
+    {
+        var all = LegacyEditorTools.FilterSlashWithAddons("").Select(x => x.Act).ToList();
+        Assert.Equal(LegacyEditorTools.FilterSlash("").Select(x => x.Act).Concat(["formula", "formulaBlock"]), all);
+        Assert.Equal(["formula", "formulaBlock"], LegacyEditorTools.FilterSlashWithAddons("formula").Select(x => x.Act));
+        Assert.Equal(["formulaBlock"], LegacyEditorTools.FilterSlashWithAddons("destaque").Select(x => x.Act));
+        Assert.Equal(["formula", "formulaBlock"], LegacyEditorTools.FilterSlashWithAddons("EQUAÇÃO").Select(x => x.Act)); // fold()
+    }
+}

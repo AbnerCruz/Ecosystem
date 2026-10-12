@@ -182,6 +182,21 @@ public static partial class LegacyEditorTools
         return SlashItems.Where(x => q.Length == 0 || Fold(x.Label + " " + x.Keys).Contains(q, StringComparison.Ordinal)).ToArray();
     }
 
+    /// <summary>The items math/editor.js adds to the menu after visual-tools.js (VT.addItem, in that order): Fórmula (∑) and
+    /// Fórmula em destaque (∫).</summary>
+    public static IReadOnlyList<SlashItem> MathSlashItems { get; } =
+    [
+        new("formula", "Fórmula", "LaTeX no meio do texto", "formula latex matematica equacao math", Text: "∑"),
+        new("formulaBlock", "Fórmula em destaque", "Equação centralizada", "formula destaque bloco equacao latex math display", Text: "∫"),
+    ];
+
+    /// <summary>The menu the app shows: the visual-tools.js items and then the added ones, with the same filter.</summary>
+    public static IReadOnlyList<SlashItem> FilterSlashWithAddons(string query)
+    {
+        var q = Fold(query);
+        return SlashItems.Concat(MathSlashItems).Where(x => q.Length == 0 || Fold(x.Label + " " + x.Keys).Contains(q, StringComparison.Ordinal)).ToArray();
+    }
+
     /// <summary>slashQuery(): the block text (U+200B removed) must be "/" + up to 24 characters without space or "/".</summary>
     public static string? SlashQuery(string blockText)
     {

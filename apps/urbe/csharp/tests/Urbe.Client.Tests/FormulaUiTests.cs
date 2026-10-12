@@ -1,8 +1,10 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.LogicalTree;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Urbe.Client;
 
 namespace Urbe.Client.Tests;
@@ -13,6 +15,57 @@ public sealed partial class HeadlessUiTests
     [Fact]
     public async Task Editor_FormulaPaneInsertsLikeTheOriginal() =>
         Assert.True(await Session.Dispatch(FormulaScenario, CancellationToken.None));
+
+    /// <summary>A tap on a formula of the Visual text opens "Editar fórmula": Salvar keeps its delimiters with the new LaTeX,
+    /// Remover takes it out (a display formula's block goes with it); "/" lists Fórmula and Fórmula em destaque.</summary>
+    [Fact]
+    public async Task Editor_TappingAFormulaEditsOrRemovesIt() =>
+        Assert.True(await Session.Dispatch(FormulaEditScenario, CancellationToken.None));
+
+    private static async Task<bool> FormulaEditScenario()
+    {
+        var view = new MainView();
+        var window = new Window { Width = 412, Height = 860, Content = view };
+        window.Show();
+        async Task Settled() { for (int i = 0; i < 30; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); } }
+        view.Editor.Open(new CityNote("Fórmulas.md", "# Fórmulas\n\nÁrea $x^2$ aqui.\n\n$$\n\\int f\n$$\n\nFim.\n"));
+        await Settled();
+        var editor = view.Editor;
+        Assert.Equal(EditorMode.Visual, editor.Mode);
+        Control[] Atoms() => editor.Surface.GetVisualDescendants().OfType<Border>()
+            .Where(b => b.Cursor is not null && b.Background == Avalonia.Media.Brushes.Transparent && b.Child is not TextBlock).ToArray();
+        async Task Tap(Control c)
+        {
+            var p = c.TranslatePoint(new Avalonia.Point(c.Bounds.Width / 2, c.Bounds.Height / 2), window)!.Value;
+            window.MouseDown(p, MouseButton.Left);
+            window.MouseUp(p, MouseButton.Left);
+            await Settled();
+        }
+        Assert.Equal(2, Atoms().Length);
+
+        // the inline one: "Editar fórmula", its LaTeX, Salvar
+        await Tap(Atoms()[0]);
+        var pane = view.Formula;
+        Assert.True(pane.IsOpen);
+        Assert.Contains(pane.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Editar fórmula");
+        Assert.Contains(pane.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Salvar");
+        Assert.Equal("x^2", pane.Input.Text);
+        pane.Input.Text = "y^3";
+        pane.Commit();
+        await Settled();
+        Assert.Contains("Área $y^3$ aqui.", editor.Editor.Text);
+
+        // the display one: Remover takes its block out
+        await Tap(Atoms()[1]);
+        Assert.True(pane.IsOpen);
+        Assert.Equal("\\int f", pane.Input.Text);
+        pane.GetLogicalDescendants().OfType<Button>().Single(b => b.Content is TextBlock { Text: "Remover" })
+            .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        await Settled();
+        Assert.Equal("# Fórmulas\n\nÁrea $y^3$ aqui.\n\nFim.\n", editor.Editor.Text);
+        window.Close();
+        return true;
+    }
 
     private static async Task<bool> FormulaScenario()
     {
