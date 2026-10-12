@@ -208,7 +208,15 @@ public sealed class VisualSurface : StackPanel
         }, DispatcherPriority.Loaded);
     }
 
-    private Control EditorFor() => new StackPanel { Children = { _bubble, _box!, _slash, _wiki } };
+    private Control EditorFor()
+    {
+        // the bubble, the box and the menus are reused: take them out of the panel of the previous build first
+        Control[] parts = [_bubble, _box!, _slash, _wiki];
+        foreach (var c in parts) if (c.Parent is Panel old) old.Children.Remove(c);
+        var panel = new StackPanel();
+        panel.Children.AddRange(parts);
+        return panel;
+    }
 
     // ------------------------------------------------------------------ editing
 
@@ -296,6 +304,26 @@ public sealed class VisualSurface : StackPanel
         if (_box is null) return;
         Apply(LegacyEditorTools.CommitWiki(_box.Text ?? "", _box.CaretIndex, name));
         _wiki.Hide();
+    }
+
+    /// <summary>
+    /// A button of the formatting bar in the Visual mode (app.js .mdBtn handler when editorViewMode is 'preview'): it acts
+    /// on the block being edited; with none, v23GarantirBloco focuses the text, which puts the caret at the start of its
+    /// first block, or adds an empty paragraph to an empty note.
+    /// </summary>
+    public void Toolbar(string id)
+    {
+        if (_box is null)
+        {
+            if (_blocks.Count > 0)
+            {
+                Edit(_blocks[0].Start);
+                if (_box is not null) _box.SelectionStart = _box.SelectionEnd = _box.CaretIndex = 0;
+            }
+            else AppendBlock();
+        }
+        if (_box is null) return;
+        Run(id);
     }
 
     /// <summary>A "/" menu choice, or a bubble/toolbar action by id (h1, h2, h3, list, task, quote, rule, noteLink, link, bold, italic, code, wiki).</summary>

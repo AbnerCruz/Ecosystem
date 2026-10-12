@@ -36,7 +36,7 @@ public sealed class EditorOverlay : Grid
     /// file has no house; the host supplies it.</summary>
     public Func<string, string?>? PropertiesFor { get; set; }
     private readonly Border _toolbarHost = new();
-    private readonly StackPanel _markdownTools = new() { Orientation = Orientation.Horizontal, Spacing = 2, Margin = new Thickness(10, 0) };
+    private readonly StackPanel _markdownTools = new() { Orientation = Orientation.Horizontal, Spacing = 2, Margin = new Thickness(8, 0) };
     private readonly StackPanel _codeTools = new() { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(10, 0) };
     private Button _visualButton = null!, _sourceButton = null!;
     private Border _segment = null!;
@@ -310,7 +310,7 @@ public sealed class EditorOverlay : Grid
         };
     }
 
-    // #mdToolbar (Fonte, Markdown) or .v21CodeTools (other text files); hidden in Visual, where the bubble and "/" menu act
+    // #mdToolbar (Markdown, in Fonte and in Visual, where it acts on the block of the caret) or .v21CodeTools (other text files, Fonte)
     private Control Toolbars()
     {
         foreach (var button in LegacyEditorTools.Toolbar)
@@ -336,7 +336,8 @@ public sealed class EditorOverlay : Grid
         var scroll = new ScrollViewer
         {
             Content = new Grid { Children = { _markdownTools, _codeTools } },
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+            // #mdToolbar{scrollbar-width:none}: it scrolls sideways with no bar
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
             VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
             VerticalContentAlignment = VerticalAlignment.Center,
             Height = 52
@@ -384,7 +385,8 @@ public sealed class EditorOverlay : Grid
     private void UpdateChrome()
     {
         var fonte = Mode == EditorMode.Fonte;
-        _toolbarHost.IsVisible = fonte;
+        // v23AtualizarToolbar: #mdToolbar shows for Markdown in both modes; the code tools only in Fonte
+        _toolbarHost.IsVisible = fonte || IsMarkdown;
         _markdownTools.IsVisible = IsMarkdown;
         _codeTools.IsVisible = !IsMarkdown;
     }
@@ -478,6 +480,8 @@ public sealed class EditorOverlay : Grid
 
     private async Task RunToolAsync(LegacyEditorTools.ToolbarButton tool)
     {
+        // v23: in the Visual mode the bar acts on the block of the caret
+        if (Mode == EditorMode.Visual) { _visual.Toolbar(tool.Id); return; }
         var text = Editor.Text ?? "";
         var (a, b) = (Editor.SelectionStart, Editor.SelectionEnd);
         if (tool.Special == "noteLink")
@@ -562,9 +566,11 @@ public sealed class EditorOverlay : Grid
     {
         var b = new Button
         {
-            Content = UrbeTheme.Icon(icon, 20),
-            Width = 40,
-            Height = 40,
+            // #editorTop .iconBtn: 44×44, radius 12, text-2, a 22px icon of stroke 1.8
+            Content = UrbeTheme.Icon(icon == UrbeTheme.Icons.More ? UrbeTheme.Icons.MoreUi : icon, 22, UrbeTheme.Text2, 1.8),
+            Width = 44,
+            Height = 44,
+            CornerRadius = new CornerRadius(12),
             Background = Brushes.Transparent,
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center

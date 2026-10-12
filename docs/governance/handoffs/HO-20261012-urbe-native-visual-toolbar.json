@@ -1,0 +1,105 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-visual-toolbar",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T18:06:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "e9049639",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorChromeUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-visual-toolbar.json",
+    "docs/governance/handoffs/HO-20261012-urbe-native-editor-chrome.json"
+  ],
+  "work_completed": [
+    "Barra de formatação também no Visual (v23AtualizarToolbar / .mdBtn em 'preview'): age no bloco do cursor com as mesmas ações da bolha e do menu '/' (títulos, negrito, itálico, código, lista, tarefa, citação, vincular nota, link, linha); sem bloco em edição, v23GarantirBloco: o cursor vai ao início do primeiro bloco, ou um parágrafo vazio é criado.",
+    "Correção: a bolha, a caixa e os menus do Visual eram reaproveitados entre reconstruções sem sair do painel anterior (InvalidOperationException 'already has a visual parent'); agora são retirados antes.",
+    "Títulos do Visual com o peso da 1.8.4 (h1 750, h3 650): os trechos de texto sem marca forçavam peso normal e anulavam o negrito do título.",
+    "Barra de formatação rola de lado sem barra visível (scrollbar-width:none); botões do topo do editor 44×44, cor text-2, ícone de 22 px (Mais ações com os pontos de icons.js).",
+    "Handoff do PR #536 marcado como done."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (Editor_ChromeIsTheOriginals: Título 2 no Visual sem bloco em edição transforma o H1 em H2 e volta a parágrafo) e suítes completas",
+      "result": "passed",
+      "evidence": "Core 554/554 e Client 98/98 (8m13s) localmente."
+    },
+    {
+      "kind": "automated",
+      "check": "Comparação por captura com a 1.8.4 real em 412×860 (Visual)",
+      "result": "passed",
+      "evidence": "Cabeçalho, barra de formatação, título 'Casa' em negrito e parágrafo coincidem; o link [[Outra]] fica ~10 px mais abaixo (altura de linha)."
+    },
+    {
+      "kind": "human",
+      "check": "Barra de formatação no Visual no Android e no Windows",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs"
+    }
+  ],
+  "known_issues": [
+    "Botão Fórmula (∑) da barra ainda não portado (math.insert).",
+    "Pílula Assistente do rodapé vem com a IA (UC-21)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "DEVICE: editor no Android e no Windows.",
+    "CI do PR e integração."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/explorer/mobile-ui.js",
+    "apps/urbe/src/explorer/model.js",
+    "apps/urbe/src/explorer/operations.js",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/styles/theme.css",
+    "apps/urbe/src/styles/explorer-mobile.css",
+    "apps/urbe/src/ui/icons.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Pastas abertas fora do vault, como na 1.8.4; regras de casa só no Urbe.Core (AddDocumentHouse)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-18/UC-19 seguem em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "visual-toolbar",
+      "status": "product-specific",
+      "rationale": "Barra de formatação do editor do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Só interface do editor."
+  }
+}

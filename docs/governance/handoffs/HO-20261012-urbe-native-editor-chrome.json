@@ -10,11 +10,11 @@
   },
   "task_id": "UC-18",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "ccr-2e1b58fa-7mhpmx",
   "base_commit": "e055ff3d",
-  "commit": null,
-  "pr": null,
+  "commit": "e9049639a16d0450f0916fa74eeb26904211dfe9",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/536",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
     "apps/urbe/csharp/src/Urbe.Core/LegacyEditorTools.cs",
@@ -63,7 +63,6 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Barra de formatação no Visual.",
     "DEVICE: editor no Android e no Windows."
   ],
   "decisions_required": [],
