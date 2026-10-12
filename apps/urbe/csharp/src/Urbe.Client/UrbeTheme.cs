@@ -128,6 +128,7 @@ public static class UrbeTheme
         public const string Folder = "M3.5 7.5a2 2 0 0 1 2-2h3.8l2 2h7.2a2 2 0 0 1 2 2v7.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z";
         public const string Region = "M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z";
         public const string House = "M4 11l8-6.5 8 6.5 M6 9.5v10h12v-10 M10 19.5v-5h4v5";
+        public const string Download = "M12 4.5v11M7.5 11l4.5 4.5 4.5-4.5 M4.5 15v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3";
         public const string Upload = "M12 15.5V4.5M7.5 9l4.5-4.5L16.5 9 M4.5 15v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3";
         public const string File = "M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z M14 3.5V8h4.5";
         public const string Pencil = "M4 20h4L19 9l-4-4L4 16z M14 6l4 4";

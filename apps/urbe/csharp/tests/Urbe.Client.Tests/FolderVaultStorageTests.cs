@@ -44,6 +44,42 @@ public sealed class FolderVaultStorageTests : IDisposable
     }
 
     [Fact]
+    public async Task ReadAllFilesReturnsEveryFileAndTheFolderName()
+    {
+        var storage = Storage();
+        Assert.Null(storage.VaultName);
+        await storage.PickAsync(Ct);
+        var before = Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).ToDictionary(f => f, File.ReadAllBytes);
+        Assert.Equal("vault", storage.VaultName);                 // Disco.cidade: the folder's name
+        var files = await storage.ReadAllFilesAsync(Ct);
+        // notes and attachments alike (the open reads only the notes and .urbe)
+        Assert.Equal(new[] { "Bairro/Um.md", "Comece.md", "foto.png" }, files.Select(f => f.Path).Order(StringComparer.Ordinal));
+        Assert.Equal(new byte[] { 1, 2, 3 }, files.Single(f => f.Path == "foto.png").Bytes.ToArray());
+        // read only
+        Assert.Equal(before.Keys.Order(), Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).Order());
+        foreach (var (file, bytes) in before) Assert.Equal(bytes, File.ReadAllBytes(file));
+    }
+
+    [Fact]
+    public async Task TheTutorialMarkIsWrittenAloneAndVerified()
+    {
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        var before = Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).ToDictionary(f => f, File.ReadAllBytes);
+        await Assert.ThrowsAsync<InvalidDataException>(() => storage.SaveTutorialMarkAsync("{\"x\":1}", Ct));
+        const string json = "{\"versao\":\"1\",\"em\":\"2026-10-12T00:00:00.000Z\"}";
+        await storage.SaveTutorialMarkAsync(json, Ct);
+        Assert.Equal(json, File.ReadAllText(Path.Combine(Vault, ".urbe", "tutorial.json")));
+        foreach (var (file, bytes) in before) Assert.Equal(bytes, File.ReadAllBytes(file));
+        Assert.Equal(before.Count + 1, Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).Length);
+        await storage.SaveTutorialMarkAsync(json.Replace("\"1\"", "\"2\""), Ct);   // rewritten on the new baseline
+        Assert.Contains("\"2\"", File.ReadAllText(Path.Combine(Vault, ".urbe", "tutorial.json")));
+        // something changed outside Urbe: refused
+        File.WriteAllText(Path.Combine(Vault, "Comece.md"), "# fora\n");
+        await Assert.ThrowsAnyAsync<Exception>(() => storage.SaveTutorialMarkAsync(json, Ct));
+    }
+
+    [Fact]
     public async Task SavingAnExistingNoteWritesOnlyThatFileAndLeavesNoRecoveryCopy()
     {
         var storage = Storage();
