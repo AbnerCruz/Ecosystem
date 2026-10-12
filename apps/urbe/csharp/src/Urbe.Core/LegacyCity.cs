@@ -1213,6 +1213,30 @@ public sealed partial class LegacyCity
         Reindex();
     }
 
+    /// <summary>
+    /// renderProps(b) with propertiesFor(b) (app.js ≈33 and ≈947), the box over the text in Fonte:
+    /// "---\ntítulo: {name}\ncategoria: {neighbourhood path by names, or raiz}\ntags: [{tags, ", "}]\ncriado: …\nmodificado: …\n---",
+    /// with nowDate() when created/modified are empty (JS truthiness).
+    /// </summary>
+    public string PropertiesText(LegacyCityBuilding b, long nowMs)
+    {
+        ArgumentNullException.ThrowIfNull(b);
+        static string Js(System.Text.Json.Nodes.JsonNode? v) =>
+            v is System.Text.Json.Nodes.JsonValue jv && jv.TryGetValue<string>(out var str) ? str : LegacyJson.Stringify(v);
+        // caminhoRegiao(r): the region and its parents, from the root down
+        var chain = new List<string>();
+        for (var r = b.RegionId is null ? null : Regions.Find(x => x.Id == b.RegionId); r is not null && chain.Count < 24;
+             r = r.ParentId is null ? null : Regions.Find(x => x.Id == r.ParentId))
+            chain.Insert(0, r.Name ?? "");
+        var categoria = b.RegionId is not null && Regions.Exists(x => x.Id == b.RegionId) ? string.Join("/", chain) : "raiz";
+        var tags = b.Tags is System.Text.Json.Nodes.JsonArray arr ? string.Join(", ", arr.Select(t => t is null ? "" : Js(t)))
+            : LegacyCityMap.Truthy(b.Tags) ? Js(b.Tags) : "";
+        var today = NowDate(nowMs);
+        var criado = LegacyCityMap.Truthy(b.Created) ? Js(b.Created) : today;
+        var modificado = LegacyCityMap.Truthy(b.Modified) ? Js(b.Modified) : today;
+        return "---\ntítulo: " + b.Name + "\ncategoria: " + categoria + "\ntags: [" + tags + "]\ncriado: " + criado + "\nmodificado: " + modificado + "\n---";
+    }
+
     /// <summary>operations.js removeFolder: the documents under the folder (path + '/'), in the store's order.</summary>
     public static List<UrbeDocument> FolderDocuments(DocumentStore store, string folder)
     {
