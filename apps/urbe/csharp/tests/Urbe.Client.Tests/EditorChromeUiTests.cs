@@ -27,6 +27,22 @@ public sealed partial class HeadlessUiTests
             window.Show();
             await view.OpenVaultAsync();
             await Settle(window, view);
+            Snapshot(window, "native-city-phone.png");
+            // #v23Top: the brand and three buttons (Buscar notas, Mapa da cidade, Configurações); settings.js menu
+            var tops = view.GetLogicalDescendants().OfType<Button>().Where(b => b.Width == 44 && b.CornerRadius.TopLeft == 22).Select(b => ToolTip.GetTip(b) as string).ToList();
+            Assert.Equal(new[] { "Buscar notas", "Mapa da cidade", "Configurações" }, tops);
+            Assert.Equal("ok", view.SaveDotState);
+            _ = view.ShowSettingsAsync();
+            Dispatcher.UIThread.RunJobs();
+            var menu = view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
+            Assert.Contains("Configurações", menu);
+            Assert.Contains("Personalização", menu);
+            Assert.Contains("Importar arquivos", menu);
+            Assert.Contains("Pasta no dispositivo", menu);
+            Snapshot(window, "native-settings-menu.png");
+            window.KeyPress(Avalonia.Input.Key.Escape, Avalonia.Input.RawInputModifiers.None, Avalonia.Input.PhysicalKey.Escape, null);
+            for (int i = 0; i < 20 && view.Dialogs.IsOpen; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+            Assert.False(view.Dialogs.IsOpen);
             view.OpenNoteByPath("Casa.md");
             Dispatcher.UIThread.RunJobs();
             var editor = view.Editor;

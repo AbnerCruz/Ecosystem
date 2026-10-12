@@ -142,6 +142,10 @@ public static class UrbeTheme
         public const string Page = "M6.5 3.5h11a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3h-11a3 3 0 0 1-3-3v-11a3 3 0 0 1 3-3z M3.5 9h17 M9 20.5V9";
         public const string Restore = "M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9 M4.5 4.5V9H9";
         public const string Layers = "M12 3.5l8.5 4.5-8.5 4.5L3.5 8z M3.5 12.5l8.5 4.5 8.5-4.5";
+        public const string MapUi = "M9 4.5L3.5 6.5v13l5.5-2 6 2 5.5-2v-13l-5.5 2z M9 4.5v13M15 6.5v13";
+        public const string Settings = "M4 7h9M17 7h3M4 17h3M11 17h9 M15 5a2 2 0 1 0 0 4a2 2 0 1 0 0-4z M9 15a2 2 0 1 0 0 4a2 2 0 1 0 0-4z";
+        public const string Brush = "M18.4 3.6a2 2 0 0 1 2.9 2.9l-8.8 8.8-2.9-2.9z M9.6 12.4c-2 0-3.6 1.6-3.6 3.6 0 1.4-1 2.5-2.5 2.5 1 1.6 2.8 2.5 4.6 2.5 2.8 0 5-2.2 5-5z";
+        public const string Storage = "M5 6.5a7 2.8 0 1 0 14 0a7 2.8 0 1 0-14 0z M5 6.5v11c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-11 M5 12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8";
         public const string SearchUi = "M11 4.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13z M20 20l-4.2-4.2";
         public const string CloseUi = "M6.5 6.5l11 11M17.5 6.5l-11 11";
         public const string MoreUi = "M5.5 10.7a1.3 1.3 0 1 0 0 2.6a1.3 1.3 0 1 0 0-2.6z M12 10.7a1.3 1.3 0 1 0 0 2.6a1.3 1.3 0 1 0 0-2.6z M18.5 10.7a1.3 1.3 0 1 0 0 2.6a1.3 1.3 0 1 0 0-2.6z";

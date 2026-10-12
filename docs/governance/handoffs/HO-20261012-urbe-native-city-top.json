@@ -1,0 +1,102 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-city-top",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T19:21:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "aa7a5593571402c8fd777725f22b943669d6ad28",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorChromeUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-city-top.json",
+    "docs/governance/handoffs/HO-20261012-urbe-native-math-dock.json"
+  ],
+  "work_completed": [
+    "Topo da cidade como #v23Top da 1.8.4: a marca (ponto #v23VaultDot verde, amarelo ao gravar e vermelho num erro, como statusSinc; 'Urbe'; '· bioma' em 500 13px text-2) e três botões redondos — Buscar notas, Mapa da cidade e Configurações (antes eram quatro: Buscar, Mapa, Personalizar e Cidades) —, todos com fundo surface a 82 %, linha fina, sombra e ícones de icons.js.",
+    "Configurações (settings.js) abre o menu com o que o nativo tem: Personalização, Importar arquivos e Pasta no dispositivo (a pasta do vault); os outros itens entram conforme forem portados.",
+    "Os avisos só do nativo (prévia do Tutorial, vault somente leitura, mapa recusado ou com erro) seguem o bioma em texto pequeno; no estado normal nada aparece, como na 1.8.4 ('Pasta conectada' saiu)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (Editor_ChromeIsTheOriginals: três botões, menu Configurações, ponto ok) e suítes completas",
+      "result": "passed",
+      "evidence": "Core 555/555 e Client 101/101 (9m16s) localmente."
+    },
+    {
+      "kind": "automated",
+      "check": "Comparação por captura com a 1.8.4 real (412×860): topo da cidade e menu Configurações",
+      "result": "passed",
+      "evidence": "Marca, botões e menu coincidem; o menu nativo tem só os 3 itens já portados."
+    },
+    {
+      "kind": "human",
+      "check": "Topo e Configurações no Android e no Windows",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.cs"
+    }
+  ],
+  "known_issues": [
+    "Menu Configurações sem Tutorial, Organizar os bairros, Exportar tudo (.zip), Assistente, Páginas, Diagnóstico de toques e Procurar atualização (não portados).",
+    "O nome do vault na marca continua 'Urbe' (a 1.8.4 mostra o nome da cidade, Disco.cidade): o armazenamento nativo ainda não expõe o nome da pasta."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "DEVICE: topo e Configurações.",
+    "CI do PR e integração."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/explorer/mobile-ui.js",
+    "apps/urbe/src/explorer/model.js",
+    "apps/urbe/src/explorer/operations.js",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/styles/theme.css",
+    "apps/urbe/src/styles/explorer-mobile.css",
+    "apps/urbe/src/ui/icons.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Pastas abertas fora do vault, como na 1.8.4; regras de casa só no Urbe.Core (AddDocumentHouse)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-18/UC-19 seguem em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "city-top",
+      "status": "product-specific",
+      "rationale": "Topo da cidade do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Só interface."
+  }
+}
