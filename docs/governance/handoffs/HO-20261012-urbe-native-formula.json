@@ -1,0 +1,108 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-formula",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T18:21:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "df3ceda3f2498dc55610a838b41c4206607d7e5a",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/FormulaPane.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FormulaUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-formula.json",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/MapSaveSchedulerTests.cs",
+    "docs/governance/handoffs/HO-20261012-urbe-native-visual-toolbar.json"
+  ],
+  "work_completed": [
+    "Botão ∑ no fim da barra de formatação (separador + mdMath, 'Fórmula (LaTeX) — Ctrl+M'), Ctrl+M e Ctrl+Shift+M com o foco no texto (math/editor.js startFormula).",
+    "Painel de fórmula nativo (#mathPane, math.css): 'Nova fórmula', No texto/Destaque, ×, prévia ao vivo pelo renderizador do Urbe.Core (ou 'A prévia aparece aqui', ou a linha de erro), campo LaTeX com sugestões de \\comando (setas, Enter/Tab, Esc), Tab para o próximo {} vazio, Enter insere, abas Básico/Grego/Cálculo/Conjuntos/Setas/Modelos com a grade auto-fill, Cancelar/Inserir; folha inferior no celular (≤640 px), cartão centralizado no desktop.",
+    "Visual: a fórmula vai no lugar da seleção como $tex$ (espaço antes quando segue uma letra), ou em destaque ($$…$$) no bloco vazio ou depois dele, com um parágrafo novo abaixo; sem bloco em edição, o cursor vai ao início do texto do primeiro bloco, depois do marcador Markdown.",
+    "Fonte: o trecho entra na seleção, $…$ ou, em linhas próprias, $$ … $$, com o cursor no lugar da fórmula (insertSnippet com ●).",
+    "Teste instável corrigido na causa: MapSaveSchedulerTests.ARequestDuringAWriteMakesTheFlushLoopAgain esperava 30 ms para a continuação do temporizador falso rodar antes de liberar a gravação; sob carga às vezes não bastava e o laço gravava uma terceira vez. O temporizador desse teste agora roda a continuação na hora (ordem exata), sem remover nenhuma verificação."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (Editor_FormulaPaneInsertsLikeTheOriginal) e suítes completas",
+      "result": "passed",
+      "evidence": "Core 554/554; Client 98/99 numa execução sob carga (falha só no MapSaveSchedulerTests instável, independente desta fatia), corrigido e 3× verde isolado; Editor_FormulaPaneInsertsLikeTheOriginal verde."
+    },
+    {
+      "kind": "automated",
+      "check": "Comparação por captura com o painel da 1.8.4 real (412×860, \\frac{a}{b})",
+      "result": "passed",
+      "evidence": "Cabeçalho, alternância, prévia, campo, abas, grade de 7 colunas e rodapé coincidem; os símbolos usam a fonte serifada do sistema (Times New Roman ausente no ambiente de teste)."
+    },
+    {
+      "kind": "human",
+      "check": "Inserir fórmula com teclado virtual no Android e no Windows",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/FormulaPane.cs"
+    }
+  ],
+  "known_issues": [
+    "Editar uma fórmula existente tocando nela no Visual (Editar fórmula / Salvar / Remover) e a barra de fórmula do Fonte (#mathDock, prévia ao seguir o cursor dentro de $…$) ainda não portados.",
+    "Itens 'Fórmula' e 'Fórmula em destaque' do menu '/' ainda não portados."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Editar fórmula tocando nela; #mathDock no Fonte; itens do menu '/'.",
+    "DEVICE: fórmula no Android e no Windows.",
+    "CI do PR e integração."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/explorer/mobile-ui.js",
+    "apps/urbe/src/explorer/model.js",
+    "apps/urbe/src/explorer/operations.js",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/styles/theme.css",
+    "apps/urbe/src/styles/explorer-mobile.css",
+    "apps/urbe/src/ui/icons.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Pastas abertas fora do vault, como na 1.8.4; regras de casa só no Urbe.Core (AddDocumentHouse)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-18/UC-19 seguem em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "formula-pane",
+      "status": "product-specific",
+      "rationale": "Painel de fórmula do editor do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Só interface do editor; usa MathRenderer/MathEditing já integrados."
+  }
+}

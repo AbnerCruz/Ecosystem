@@ -98,6 +98,14 @@ public sealed class EditorOverlay : Grid
         Editor.TextChanged += (_, _) => OnTextChanged();
         Editor.PropertyChanged += (_, e) => { if (e.Property == TextBox.CaretIndexProperty) UpdateWiki(); };
         Editor.AddHandler(KeyDownEvent, (object? _, KeyEventArgs e) => { if (_wiki.HandleKey(e.Key)) e.Handled = true; }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        // math/editor.js: Ctrl+M inserts a formula, Ctrl+Shift+M a display formula, with the focus in the text
+        AddHandler(KeyDownEvent, (object? _, KeyEventArgs e) =>
+        {
+            var mod = e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.KeyModifiers.HasFlag(KeyModifiers.Meta);
+            if (!mod || e.KeyModifiers.HasFlag(KeyModifiers.Alt) || e.Key != Key.M || _note is null) return;
+            e.Handled = true;
+            _ = StartFormulaAsync(e.KeyModifiers.HasFlag(KeyModifiers.Shift));
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         _wiki.Chosen += CommitWiki;
 
         _visual.TextEdited += md =>
@@ -144,6 +152,30 @@ public sealed class EditorOverlay : Grid
 
     public TextBox Editor { get; }
     public event EventHandler? Closed;
+
+    /// <summary>The formula pane (math/editor.js openPane) the host shows: the selected text and whether it is a display
+    /// formula in, the answer out.</summary>
+    public Func<string, bool, Task<FormulaPane.Result?>>? AskFormula { get; set; }
+
+    /// <summary>
+    /// startFormula (∑ in the bar, Ctrl+M; Ctrl+Shift+M for a display formula): in the Visual mode the pane opens; in Fonte
+    /// the snippet goes in at the selection, $…$ or, on its own lines, $$ … $$, with the caret where the formula goes.
+    /// </summary>
+    public async Task StartFormulaAsync(bool block)
+    {
+        if (_note is null) return;
+        if (Mode == EditorMode.Visual)
+        {
+            if (AskFormula is { } ask) await _visual.FormulaAsync(ask, block);
+            return;
+        }
+        var text = Editor.Text ?? "";
+        int a = Math.Min(Editor.SelectionStart, Editor.SelectionEnd), b = Math.Max(Editor.SelectionStart, Editor.SelectionEnd);
+        var txt = text[a..b];
+        var pre = block && a > 0 && text[a - 1] != '\n' ? "\n" : "";
+        var sn = MathEditing.Snippet(block ? pre + "$$\n" + (txt.Length > 0 ? txt : "●") + "\n$$\n" : "$" + (txt.Length > 0 ? txt : "●") + "$");
+        ApplyEdit(new LegacyEditorTools.TextEdit(text[..a] + sn.Text + text[b..], a + sn.Caret, a + sn.Caret));
+    }
 
     /// <summary>"Localizar e substituir" (ui.find.open, Ctrl+F).</summary>
     public EditorFindBar FindBar { get; }
@@ -319,6 +351,18 @@ public sealed class EditorOverlay : Grid
             if (LegacyEditorTools.SeparatorAfter.Contains(button.Id))
                 _markdownTools.Children.Add(new Border { Width = 1, Height = 20, Margin = new Thickness(6, 0), Background = UrbeTheme.Brush(UrbeTheme.Line2) });
         }
+        // math/editor.js: a separator and the ∑ button (mdMath) at the end of the bar
+        _markdownTools.Children.Add(new Border { Width = 1, Height = 20, Margin = new Thickness(6, 0), Background = UrbeTheme.Brush(UrbeTheme.Line2) });
+        var math = new Button
+        {
+            Content = new TextBlock { Text = "∑", FontFamily = new FontFamily("Georgia, serif"), FontWeight = FontWeight.SemiBold, FontSize = 16 },
+            Width = 40, Height = 40, Padding = new Thickness(0), CornerRadius = new CornerRadius(8), Focusable = false,
+            Background = Brushes.Transparent, Foreground = UrbeTheme.Brush(UrbeTheme.Text2),
+            HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
+        };
+        ToolTip.SetTip(math, "Fórmula (LaTeX) — Ctrl+M");
+        math.Click += async (_, _) => await StartFormulaAsync(false);
+        _markdownTools.Children.Add(math);
         foreach (var (label, run) in new (string, Action)[]
                  {
                      ("⇥ Indentar", () => ApplyEdit(LegacyEditorTools.IndentSelection(Editor.Text ?? "", Editor.SelectionStart, Editor.SelectionEnd))),

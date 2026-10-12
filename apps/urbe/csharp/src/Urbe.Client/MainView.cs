@@ -120,7 +120,9 @@ public sealed partial class MainView : Grid
         Children.Add(_dock);
 
         // .uc and .udlg are position:fixed over the whole app, bottom navigation included
-        foreach (var overlay in new Control[] { Customize, Dialogs })
+        // #mathPane (z-index 10400), under the dialogs
+        Editor.AskFormula = (tex, block) => Formula.ShowAsync(tex, block);
+        foreach (var overlay in new Control[] { Customize, Formula, Dialogs })
         {
             SetRowSpan(overlay, 2);
             SetColumnSpan(overlay, 2);
@@ -542,6 +544,9 @@ public sealed partial class MainView : Grid
 
     /// <summary>UrbeDialogs: one dialog at a time over everything.</summary>
     public UrbeDialogs Dialogs { get; } = new();
+
+    /// <summary>The formula pane of the editor (math/editor.js #mathPane).</summary>
+    public FormulaPane Formula { get; } = new();
 
     /// <summary>v23MenuCriar: the primary action of the + button.</summary>
     public Task ShowCreateMenuAsync()
