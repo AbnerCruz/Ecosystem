@@ -1,0 +1,118 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-move-note",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T09:04:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "d134525c5394fab0e5364e2fa6d2d25353495a34",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tools/legacy-move-oracle.mjs",
+    "apps/urbe/csharp/tests/fixtures/legacy-city/move-note-run-a.json",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyRenameOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/RenameUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-move-note.json"
+  ],
+  "work_completed": [
+    "Urbe.Core LegacyCity.PlanMove/ApplyMove portam moverEntradaPara (app.js ≈2084) para notas: lote livre por vagaNaRegiao (casa ignorada) ou vagaAleatoria(…,3,3) na raiz, semente(b.id+Date.now()), atualizarPastaFisicaConstrucao (regionId, modified) e indexar; caminho do documento como urbeReconcileWorld o deixa (para a raiz, um documento dentro de pasta fica onde está).",
+    "Oráculo tools/legacy-move-oracle.mjs: a 1.8.4 sem modificação em Chromium, linha do Explorer segurada (v21BindEntry 520 ms) → 'Mover para…' → destino; arquivos e mapa.json lidos do IndexedDB após o salvamento, em 3 movimentos (outro bairro, raiz, raiz → bairro).",
+    "Cliente nativo: segurar uma nota no Explorer (520 ms sem mover 9 px; o soltar não abre a nota) abre 'Mover para…' com a raiz (nome do vault) e os bairros por caminho; MainView.MoveNoteAsync salva o texto pendente, move o arquivo no vault com MoveTextFileAsync (verificado) e só então casa, documento, editor e mapa (marcarSinc)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "node csharp/tools/legacy-move-oracle.mjs (1.8.4-beta real em Chromium)",
+      "result": "passed",
+      "evidence": "Fixture move-note-run-a.json gravada."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (LegacyRenameOracleTests.EveryMoveLeavesTheLotTheFilesAndTheMapOfTheOriginal)",
+      "result": "passed",
+      "evidence": "Lote (x,y), caminho, conjunto de arquivos e texto de .urbe/mapa.json idênticos byte a byte aos da 1.8.4 nos 3 movimentos."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (Move_HoldInTheExplorerMovesTheHouseAndItsFile, Explorer_HoldingANoteRowAsksWhereToMoveItAndATapOpensIt)",
+      "result": "passed",
+      "evidence": "Arquivo movido em disco e mapa com o caminho novo; raiz mantém o arquivo na pasta; nome existente no destino recusado sem sobrescrever; gesto real de 520 ms abre o menu e o toque curto abre a nota."
+    },
+    {
+      "kind": "automated",
+      "check": "Suítes completas Core/Client e consistency",
+      "result": "pending",
+      "evidence": "Core 545/545; Client 87/88 na primeira volta: o teste do toque curto media tempo de parede sob carga e foi tornado robusto (HoldDelay configurável); nova volta completa em execução ao registrar."
+    },
+    {
+      "kind": "human",
+      "check": "Segurar e mover nota em Android e Windows reais",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs"
+    }
+  ],
+  "known_issues": [
+    "Desvio de segurança deliberado: na 1.8.4, mover para um bairro que já tem um arquivo com o mesmo nome faz o salvamento gravar por cima dele (urbeReconcileWorld + flush); o nativo recusa o movimento e avisa.",
+    "Achado da 1.8.4 (não portado): ao abrir um vault com nomes que nomeSeguro altera (ex.: 'Pergunta?.md', espaços duplos), o salvamento cria uma CÓPIA no nome seguro e mantém o original; o nativo continua recusando gravar o mapa nesse caso em vez de duplicar arquivos. Só extensões em maiúsculas ('Nota.MD') são movidas pela 1.8.4.",
+    "Suspeita a confirmar por oráculo: o 'Copiar' do painel da casa (v21ConfirmPlacement) clona a casa com o documentId da original, o que no salvamento moveria a nota original; por isso Copiar ainda não foi portado.",
+    "A raiz do menu usa o nome da pasta do vault no desktop e 'Raiz' no Android (o SAF não expõe o nome aqui); a 1.8.4 usa Disco.cidade.",
+    "Mover vários itens (multisseleção), arrastar no Explorer e mover arquivos (construções) não foram portados."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI do PR e autorização do proprietário (zona user-data).",
+    "DEVICE: segurar/mover nota no Android e no Windows; reabrir na 1.8.4.",
+    "Oráculo do Copiar do painel da casa antes de portá-lo; Excluir depende da lixeira (.urbe/trash.v2.json)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "docs/governance/integration-policy.json",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/persistence/workspace.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Regras de lote e caminho só em Urbe.Core; o vault físico é a autoridade dos arquivos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação em aparelho registrada como pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-19 segue em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "vault-file-move",
+      "status": "product-specific",
+      "rationale": "Regras de mover nota entre bairros da 1.8.4; nenhum outro Product as consome."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Mesma zona user-data do PR #529: move arquivos do usuário no vault."
+  }
+}

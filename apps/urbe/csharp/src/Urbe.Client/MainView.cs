@@ -57,6 +57,7 @@ public sealed partial class MainView : Grid
         Explorer = new NotesExplorer { IsVisible = false };
         Editor = new EditorOverlay { IsVisible = false, Dialogs = Dialogs, Notes = () => _contents.Select(n => new CityNote(n.Key, n.Value)) };
         Explorer.Closed += () => Explorer.IsVisible = false;
+        Explorer.NoteHeld += note => _ = ShowMoveMenuAsync(note.Path);
         Explorer.NoteRequested += note =>
         {
             _editorOpenedFromNotes = true;
@@ -649,6 +650,83 @@ public sealed partial class MainView : Grid
             Editor.Renamed(plan.Path);
             Editor.Notify("Arquivo renomeado.");
         }
+    }
+
+    /// <summary>
+    /// v21MoveEntry → v21ChooseDestination: "Mover para…" with the root (named after the vault, Disco.cidade) and every
+    /// neighbourhood by its folder path, sorted (localeCompare).
+    /// </summary>
+    public Task ShowMoveMenuAsync(string path)
+    {
+        if (Dialogs.IsOpen || World.City is not { } city) return Task.CompletedTask;
+        var paths = city.RegionPaths();
+        var items = new List<DialogItem> { new(VaultName, UrbeTheme.Icons.House, Run: () => MoveNoteAsync(path, null)) };
+        foreach (var r in city.Regions.OrderBy(r => paths.GetValueOrDefault(r.Id, r.Name), StringComparer.CurrentCulture))
+        {
+            var region = r;
+            items.Add(new DialogItem(paths.GetValueOrDefault(r.Id, r.Name), UrbeTheme.Icons.Folder, Run: () => MoveNoteAsync(path, region.Id)));
+        }
+        return Dialogs.MenuAsync("Mover para…", items);
+    }
+
+    /// <summary>Disco.cidade: the name of the open vault folder ("Raiz" when the host does not tell it).</summary>
+    private string VaultName => _vault is FolderVaultStorage { Folder: { } folder } && Path.GetFileName(folder.TrimEnd('/', '\\')) is { Length: > 0 } name ? name : "Raiz";
+
+    /// <summary>
+    /// moverEntradaPara (app.js ≈2084) for a note: a free lot in the destination and the house's neighbourhood; the
+    /// 1.8.4 moves its file at the next save (urbeReconcileWorld), here the file is moved in the vault first,
+    /// verified, and only then the house, the document and the map follow. Moved to the root, the file stays in
+    /// its folder (urbeReconcileWorld keeps a root house's folder document). A file of the same name in the
+    /// destination is never overwritten: the move is refused.
+    /// </summary>
+    public async Task MoveNoteAsync(string path, string? regionId)
+    {
+        if (World.City is not { } city || city.Buildings.Find(b => b.IsNote && b.Path == path) is not { } house) return;
+        if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly)
+        {
+            await Dialogs.AlertAsync("Mover", "Abra a pasta do seu vault (botão Cidades) para mover notas. O Tutorial desta prévia é só leitura.");
+            return;
+        }
+        var destination = regionId is null ? null : city.Regions.Find(r => r.Id == regionId);
+        if (regionId is not null && destination is null) return;
+        if (Editor.IsVisible && Editor.Current?.Path == path && Editor.HasChanges && !await Editor.SaveAsync())
+        {
+            await Dialogs.AlertAsync("Não foi possível mover", "A nota tem alterações que não foram salvas no vault.");
+            return;
+        }
+        // app.js has one camera: a lot in the root is searched where the person is looking (centroBuscaRaiz)
+        city.CameraX = World.Camera.X;
+        city.CameraY = World.Camera.Y;
+        city.CameraZoom = World.Camera.Zoom;
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var doc = _store?.Get(path);
+        if (city.PlanMove(house, destination, now, doc?.Path ?? path) is not { } plan)
+        {
+            await Dialogs.AlertAsync("Mover", "Sem espaço construível no destino.");
+            return;
+        }
+        if (!string.Equals(plan.Path, path, StringComparison.Ordinal))
+        {
+            try
+            {
+                await _vault.MoveTextFileAsync(path, plan.Path);
+            }
+            catch (Exception ex)
+            {
+                await Dialogs.AlertAsync("Não foi possível mover", ex.Message);
+                return;
+            }
+            if (_contents.Remove(path, out var content)) _contents[plan.Path] = content;
+        }
+        city.ApplyMove(house, destination, plan, now);
+        if (doc is not null && !string.Equals(doc.Path, plan.Path, StringComparison.Ordinal))
+            LegacyCity.MoveDocument(_store!, doc, plan.Path);
+        if (Editor.IsVisible && Editor.Current?.Path == path) Editor.Renamed(plan.Path);
+        // moverEntradaPara: marcarIndice, indexar, buildTree, counts, agendarSalvar + marcarSinc, pedirDesenho
+        _mapSave?.MarkSync();
+        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+        if (ReferenceEquals(World.Selected, house)) ShowHouse(house);
+        World.InvalidateVisual();
     }
 
     private Control Fab()
