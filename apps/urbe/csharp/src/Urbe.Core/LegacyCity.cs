@@ -1213,6 +1213,66 @@ public sealed partial class LegacyCity
         Reindex();
     }
 
+    /// <summary>operations.js removeFolder: the documents under the folder (path + '/'), in the store's order.</summary>
+    public static List<UrbeDocument> FolderDocuments(DocumentStore store, string folder)
+    {
+        ArgumentNullException.ThrowIfNull(store);
+        return store.List().Where(d => d.Path.StartsWith(folder + "/", StringComparison.Ordinal)).ToList();
+    }
+
+    /// <summary>descendentesRegiao (app.js ≈1854): the region's id and every sub-neighbourhood's, at any depth.</summary>
+    public HashSet<string> RegionDescendants(LegacyCityRegion r)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        var ids = new HashSet<string>(StringComparer.Ordinal) { r.Id };
+        for (bool changed = true; changed;)
+        {
+            changed = false;
+            foreach (var x in Regions)
+                if (x.ParentId is not null && ids.Contains(x.ParentId) && ids.Add(x.Id)) changed = true;
+        }
+        return ids;
+    }
+
+    /// <summary>
+    /// apagarRegiao(r, true) (app.js ≈1856), what 'explorer:folderRemoved' runs after a folder is deleted in Notas: the
+    /// note houses of the neighbourhood and its sub-neighbourhoods leave the city, every file building drops the files
+    /// whose folder is that one (or below) and leaves when none is left, the regions go, then marcarIndice + indexar.
+    /// Returns the folder paths (the region's and its descendants') that are no longer the city's, deepest first.
+    /// </summary>
+    public List<string> DeleteRegion(LegacyCityRegion r)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        var ids = RegionDescendants(r);
+        var paths = RegionPaths();
+        var basePath = paths.GetValueOrDefault(r.Id, r.Name);
+        bool Inside(string folder) => folder == basePath || folder.StartsWith(basePath + "/", StringComparison.Ordinal);
+        foreach (var b in Buildings.ToList())
+        {
+            if (b.IsNote)
+            {
+                if (b.RegionId is not null && ids.Contains(b.RegionId)) Buildings.Remove(b);
+                continue;
+            }
+            var keep = new JsonArray();
+            if ((b.Files is JsonArray ? b.Files : b.Anexos) is JsonArray files)
+                foreach (var a in files)
+                {
+                    string? folderPath = a is JsonObject o && o["folderPath"] is JsonValue fv && fv.TryGetValue<string>(out var fp) ? fp : null;
+                    string? relPath = a is JsonObject o2 && o2["relPath"] is JsonValue rv && rv.TryGetValue<string>(out var rp) ? rp : null;
+                    var folder = folderPath ?? (relPath is { } rel && rel.Contains('/') ? rel[..rel.LastIndexOf('/')] : "");
+                    if (!Inside(folder)) keep.Add(a?.DeepClone());
+                }
+            b.Files = keep;
+            b.Anexos = keep.DeepClone();
+            if (keep.Count == 0) Buildings.Remove(b);
+        }
+        var gone = Regions.Where(x => ids.Contains(x.Id)).Select(x => paths.GetValueOrDefault(x.Id, x.Name)).ToList();
+        Regions.RemoveAll(x => ids.Contains(x.Id));
+        Reindex();
+        return gone.OrderByDescending(p => p.Length).ThenBy(p => p, StringComparer.Ordinal).ToList();
+    }
+
     /// <summary>
     /// urbeCasaParaDocumento (app.js ≈3720) for a document that appears after the open (a note restored from the trash):
     /// the house of <see cref="AddDocument"/> tied to the document, with created/modified = the document's or nowDate()
