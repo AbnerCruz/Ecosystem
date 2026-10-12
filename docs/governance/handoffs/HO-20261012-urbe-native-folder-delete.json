@@ -10,11 +10,11 @@
   },
   "task_id": "UC-19",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "ccr-2e1b58fa-7mhpmx",
   "base_commit": "bfb233d9d7424cb1ff877a7a0c01b187ca841868",
-  "commit": null,
-  "pr": null,
+  "commit": "ad2f3d0f56c66967a864210f44e2414b586d6f85",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/534",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
     "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
@@ -78,8 +78,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "DEVICE: selecionar/excluir pasta em Android e Windows.",
-    "CI do PR e integração."
+    "DEVICE: selecionar/excluir pasta em Android e Windows."
   ],
   "decisions_required": [],
   "normative_sources": [

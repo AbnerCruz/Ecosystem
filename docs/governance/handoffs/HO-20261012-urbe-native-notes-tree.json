@@ -1,0 +1,109 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-notes-tree",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T15:44:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "ad2f3d0f56c66967a864210f44e2414b586d6f85",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ExplorerState.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Notes.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
+    "apps/urbe/csharp/tools/legacy-notes-screenshot.mjs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/NotesTreeUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-notes-tree.json",
+    "docs/governance/handoffs/HO-20261012-urbe-native-folder-delete.json"
+  ],
+  "work_completed": [
+    "Tela Notas nativa reescrita a partir de mobile-ui.js e das regras finais de theme.css (#urbeMobileExplorer, .ume-*): cabeçalho 'Notas' 24px com Nova (accent-soft), Mais opções e Fechar; campo 'Buscar notas' (12px acima, 44px); árvore expansível (model.tree: pastas primeiro e localeCompare, recuo 12+18·nível, ícone de pasta no accent, seta de 16px girada quando aberta, nome = título do documento); Busca por caminho ou título com a pasta sob o nome; Lixeira com cabeçalho/Esvaziar/Restaurar/✕; estados vazios ('Nenhuma nota ainda' com 'Criar primeira nota', 'Nada encontrado'); barra de seleção flutuante (38×44, ícones 20px, espaçador, desativados a 30 %).",
+    "Pastas abertas guardadas no aparelho (ExplorerState 'expanded', como localStorage urbe.explorer.v2); excluir pasta a esquece (forgetFolder).",
+    "Nova (newMenu 'Criar'): Nova nota na pasta selecionada ('Em “X”.' / 'Na raiz das notas.', 'Sem extensão, será salva como .md.', nome repetido recusado) → arquivo vazio gravado primeiro, documento explorer.create e casa por urbeCasaParaDocumento, editor aberto e Notas fechada; Nova pasta na pasta selecionada.",
+    "A partir de 900 px Notas é um painel de 360 px ao lado da cidade com Fechar; com Notas aberta a barra do topo e o + somem (v23Atualizar) e a barra inferior/trilho marca Notas como ativa; ícones Cidade/Notas/Assistente exatos de icons.js (22px, traço 1.8) e linha no topo da barra inferior.",
+    "Ferramenta tools/legacy-notes-screenshot.mjs: captura e mede a Notas da 1.8.4 real no mesmo vault para comparação."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Comparação por captura: legacy-notes-screenshot.mjs (1.8.4 real em Chromium) × snapshots nativos de Notes_IsTheExpandableTreeOfTheOriginal",
+      "result": "passed",
+      "evidence": "412×860: cabeçalho, busca (y 72), linhas de 48px, recuos, ícones, setas e barra de seleção coincidem; 1280×860: painel de 360px após o trilho, topo e + ocultos. Diferenças restantes: botão Compor (composições não portadas)."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (Notes_IsTheExpandableTreeOfTheOriginal e suíte completa)",
+      "result": "passed",
+      "evidence": "Client 96/96 localmente (inclui o teste novo e os de seleção, exclusão de pasta, lixeira e renomear)."
+    },
+    {
+      "kind": "human",
+      "check": "Tela Notas (árvore, Nova, busca, barra) em Android e Windows reais",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs"
+    }
+  ],
+  "known_issues": [
+    "Nova página, Páginas, Composições/Compor, Importar arquivos, Exportar tudo e 'Pasta do Urbe no dispositivo' do menu Notas ainda não portados (dependem de páginas/composições/importação).",
+    "Fonte: o nativo usa a fonte do sistema do aparelho (Roboto no Android, Segoe no Windows), como a --ui-font da 1.8.4 nesses sistemas; a captura de referência no Chromium Linux usa outra fonte de sistema."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "DEVICE: Notas em Android e Windows.",
+    "CI do PR e integração."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/explorer/mobile-ui.js",
+    "apps/urbe/src/explorer/model.js",
+    "apps/urbe/src/explorer/operations.js",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/styles/theme.css",
+    "apps/urbe/src/styles/explorer-mobile.css",
+    "apps/urbe/src/ui/icons.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Pastas abertas fora do vault, como na 1.8.4; regras de casa só no Urbe.Core (AddDocumentHouse)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-18/UC-19 seguem em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "notes-tree-ui",
+      "status": "product-specific",
+      "rationale": "Tela Notas do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Somente interface; a única escrita nova (Nova nota) usa CreateTextFileAsync já integrado; nenhum arquivo *Vault* alterado."
+  }
+}

@@ -131,7 +131,7 @@ public sealed partial class HeadlessUiTests : IDisposable
             Assert.True(view.Explorer.IsVisible);
             Assert.Contains("Tutorial", view.Explorer.VisibleFolderPaths);
             Assert.True(view.Explorer.TryEnterFolder("Tutorial"));
-            Assert.Equal("Tutorial", view.Explorer.CurrentFolder);
+            Assert.True(view.Explorer.IsExpanded("Tutorial"));
             Assert.Contains("Tutorial/Comece aqui.md", view.Explorer.VisibleNotePaths);
             view.Explorer.SearchText = "Comece";
             Assert.Contains("Tutorial/Comece aqui.md", view.Explorer.VisibleNotePaths);

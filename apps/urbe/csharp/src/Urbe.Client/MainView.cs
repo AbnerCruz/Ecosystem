@@ -59,11 +59,14 @@ public sealed partial class MainView : Grid
             _biome.Text = World.BiomeNameAtCentre();
             CityMap.IsVisible = false;
         };
-        Explorer = new NotesExplorer { IsVisible = false };
+        Explorer = new NotesExplorer { IsVisible = false, State = ExplorerState };
         Editor = new EditorOverlay { IsVisible = false, Dialogs = Dialogs, Notes = () => _contents.Select(n => new CityNote(n.Key, n.Value)) };
         Explorer.Closed += () => Explorer.IsVisible = false;
+        Explorer.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateNav(); };
         Explorer.SelectionAction += (action, paths) => _ = SelectionActionAsync(action, paths);
         Explorer.MoreRequested += () => _ = ShowNotesMenuAsync();
+        Explorer.NewRequested += () => _ = ShowNotesCreateMenuAsync();
+        Explorer.CreateFirstNoteRequested += () => _ = CreateNoteInNotesAsync();
         Explorer.RestoreRequested += id => _ = RestoreFromTrashAsync(id);
         Explorer.PurgeRequested += id => _ = PurgeFromTrashAsync(id);
         Explorer.EmptyTrashRequested += () => _ = EmptyTrashAsync();
@@ -89,8 +92,8 @@ public sealed partial class MainView : Grid
         Editor.MoreRequested += ShowEditorMenuAsync;
 
         _stage.Children.Add(World);
-        _stage.Children.Add(TopBar());
-        _stage.Children.Add(Fab());
+        _stage.Children.Add(_top = TopBar());
+        _stage.Children.Add(_fab = Fab());
         _stage.Children.Add(LifeNotice());
         _stage.Children.Add(ToolDock());
         _stage.Children.Add(HousePanel());
@@ -121,7 +124,8 @@ public sealed partial class MainView : Grid
         }
         Search = new SearchFeature(this, () => _contents.Select(n => new CityNote(n.Key, n.Value)).ToList());
 
-        World.CityVisible = () => !Editor.IsVisible && !Explorer.IsVisible;
+        // on a wide window Notas is a panel beside the city (theme.css @media (min-width:900px))
+        World.CityVisible = () => !Editor.IsVisible && (!Explorer.IsVisible || Explorer.Wide);
         World.Notice += (_, text) => ShowLifeNotice(text);
         World.CameraChanged += (_, _) => _biome.Text = World.BiomeNameAtCentre();
         World.SelectionChanged += (_, house) => ShowHouse(house);
@@ -401,6 +405,8 @@ public sealed partial class MainView : Grid
         bool wide = e.NewSize.Width >= WideBreakpoint;
         _rail.IsVisible = wide;
         _dock.IsVisible = !wide;
+        // theme.css @media (min-width:900px): Notas becomes a 360 px panel beside the city
+        Explorer.Wide = e.NewSize.Width >= 900;
         PlaceHousePanel(wide);
     }
 
@@ -726,7 +732,74 @@ public sealed partial class MainView : Grid
 
     /// <summary>Notas shows the notes and, like model.folders, every neighbourhood's folder even without notes.</summary>
     private void RefreshNotes() =>
-        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)), World.City?.RegionPaths().Values);
+        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value) { Title = _store?.Get(n.Key)?.Title }), World.City?.RegionPaths().Values);
+
+    /// <summary>mobile-ui.js newMenu: "Criar" with Nova nota (in the selected folder) and Nova pasta. Nova página joins
+    /// with the pages.</summary>
+    public Task ShowNotesCreateMenuAsync()
+    {
+        if (Dialogs.IsOpen) return Task.CompletedTask;
+        var folder = Explorer.CurrentFolder;
+        return Dialogs.MenuAsync("Criar",
+        [
+            new DialogItem("Nova nota", UrbeTheme.Icons.File, NotesWhere(folder), Run: () => CreateNoteInNotesAsync()),
+            new DialogItem("Nova pasta", UrbeTheme.Icons.Folder, "Vira uma região na cidade.",
+                Run: () => CreateFolderAsync(World.City?.RegionByPath(folder)?.Id))
+        ]);
+    }
+
+    /// <summary>mobile-ui.js where(folder).</summary>
+    private static string NotesWhere(string folder) => folder.Length > 0 ? "Em “" + folder + "”." : "Na raiz das notas.";
+
+    /// <summary>mobile-ui.js cleanName.</summary>
+    private static string CleanNoteName(string? s)
+    {
+        var t = System.Text.RegularExpressions.Regex.Replace((s ?? "").Trim(), "[\\\\/:*?\"<>|\u0000-\u001f]", "-");
+        t = System.Text.RegularExpressions.Regex.Replace(t, "^\\.+|\\.+$", "");
+        return t.Length > 90 ? t[..90] : t;
+    }
+
+    /// <summary>
+    /// mobile-ui.js createNote: "Nova nota" in the selected folder (or the root), "Ex.: Ideias", a name without an
+    /// extension becomes .md, a name already taken there is refused; the empty document is created (explorer.create),
+    /// gets its house like any new document (document:created → urbeCasaParaDocumento), opens, and Notas closes. The
+    /// empty file is written to the vault first.
+    /// </summary>
+    public async Task CreateNoteInNotesAsync(string? typedName = null)
+    {
+        if (World.City is not { } city || _store is null) return;
+        if (!VaultWritable)
+        {
+            await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (botão Cidades) para criar notas. O Tutorial desta prévia é só leitura.");
+            return;
+        }
+        var folder = Explorer.CurrentFolder;
+        string PathOf(string name)
+        {
+            if (!ArtifactModel.IsText(name)) name += ".md";
+            return (folder.Length > 0 ? folder + "/" : "") + name;
+        }
+        var raw = typedName ?? await Dialogs.PromptAsync(new PromptOptions("Nova nota", Label: "Nome", Placeholder: "Ex.: Ideias",
+            Hint: NotesWhere(folder) + " Sem extensão, será salva como .md.", Confirm: "Criar nota",
+            Validate: v => CleanNoteName(v) is not { Length: > 0 } n ? "Use um nome válido." : _store.Get(PathOf(n)) is not null ? "Já existe uma nota com esse nome aqui." : null));
+        var name = CleanNoteName(raw);
+        if (name.Length == 0) return;
+        var path = PathOf(name);
+        if (_store.Get(path) is not null || _contents.ContainsKey(path)) return;
+        try { await _vault!.CreateTextFileAsync(path, ""); }
+        catch (Exception ex) { await Dialogs.AlertAsync("Não foi possível criar a nota", ex.Message); return; }
+        var doc = _store.Upsert(new DocumentInput { Path = path, Content = "" }, "explorer.create");
+        city.AddDocumentHouse(doc, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        _contents[path] = "";
+        _mapSave?.Schedule();
+        _mapSave?.MarkSync();
+        RefreshNotes();
+        World.InvalidateVisual();
+        // document.open: touchRecent is not called by createNote; the editor opens and Notas closes
+        _editorOpenedFromNotes = false;
+        Explorer.IsVisible = false;
+        Editor.Open(new CityNote(path, ""));
+    }
 
     /// <summary>
     /// mobile-ui.js deleteSelected: folders inside another selected folder and notes inside a selected folder are
@@ -789,6 +862,7 @@ public sealed partial class MainView : Grid
         }
         if (city.RegionByPath(folder) is { } region)
             foreach (var p in city.DeleteRegion(region)) dirs.Add(p);
+        ExplorerState.Forget(folder); // explorer.forgetFolder
         _mapSave?.Schedule();
         _mapSave?.MarkSync();
         foreach (var dir in dirs.Where(d => d == folder || d.StartsWith(folder + "/", StringComparison.Ordinal))
@@ -1208,14 +1282,38 @@ public sealed partial class MainView : Grid
 
     private void BuildDock()
     {
-        _dock.Background = UrbeTheme.Brush(UrbeTheme.Bg);
+        // #v23Dock: rgba(bg, .94) with a 1px line on top
+        _dock.Background = UrbeTheme.Brush(UrbeTheme.Bg, .94);
         _dock.Height = 64;
+        var line = new Border { Height = 1, VerticalAlignment = VerticalAlignment.Top, Background = UrbeTheme.Brush(UrbeTheme.Line) };
+        SetColumnSpan(line, 3);
+        _dock.Children.Add(line);
         _dock.ColumnDefinitions = new ColumnDefinitions("*,*,*");
         for (int i = 0; i < Destinations.Length; i++)
         {
             var item = NavItem(Destinations[i].Icon, Destinations[i].Label, i == 0);
             SetColumn(item, i);
             _dock.Children.Add(item);
+        }
+    }
+
+    private readonly List<(string Label, string Icon, Border Ico, TextBlock Text)> _nav = [];
+    private Control? _top, _fab;
+
+    /// <summary>The destination shown as active (.ativo) in the rail and the dock: Notas while it is open, else Cidade.</summary>
+    public string ActiveDestination => Explorer.IsVisible ? "Notas" : "Cidade";
+
+    private void UpdateNav()
+    {
+        // v23Atualizar: with Notas open the top bar and the + are hidden (they show again beside a wide panel otherwise)
+        if (_top is not null) _top.IsVisible = !Explorer.IsVisible;
+        if (_fab is not null) _fab.IsVisible = !Explorer.IsVisible;
+        foreach (var (label, icon, ico, text) in _nav)
+        {
+            bool active = label == ActiveDestination;
+            ico.Background = active ? UrbeTheme.Brush(UrbeTheme.Accent, .14) : Brushes.Transparent;
+            ico.Child = UrbeTheme.Icon(icon, 22, active ? UrbeTheme.Accent : UrbeTheme.Text3, 1.8);
+            text.Foreground = UrbeTheme.Brush(active ? UrbeTheme.Text : UrbeTheme.Text3);
         }
     }
 
@@ -1227,7 +1325,7 @@ public sealed partial class MainView : Grid
             Height = 30,
             CornerRadius = new CornerRadius(15),
             Background = active ? UrbeTheme.Brush(UrbeTheme.Accent, .14) : Brushes.Transparent,
-            Child = UrbeTheme.Icon(icon, 18, active ? UrbeTheme.Accent : UrbeTheme.Text3),
+            Child = UrbeTheme.Icon(icon, 22, active ? UrbeTheme.Accent : UrbeTheme.Text3, 1.8), // #v23Dock .ui-icon: 22px, stroke 1.8
             HorizontalAlignment = HorizontalAlignment.Center
         };
         var text = new TextBlock
@@ -1239,6 +1337,7 @@ public sealed partial class MainView : Grid
             HorizontalAlignment = HorizontalAlignment.Center
         };
         var item = new StackPanel { Spacing = 4, VerticalAlignment = VerticalAlignment.Center, Children = { ico, text } };
+        _nav.Add((label, icon, ico, text));
         var button = new Button
         {
             Content = item,
@@ -1261,6 +1360,8 @@ public sealed partial class MainView : Grid
         {
             ToolTip.SetTip(button, "Assistente: em portabilidade");
             button.IsEnabled = false;
+            // the 1.8.4 draws it like the others; no grey box for the disabled state
+            button.Resources["ButtonBackgroundDisabled"] = Brushes.Transparent;
         }
         return button;
     }
