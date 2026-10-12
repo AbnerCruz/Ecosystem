@@ -248,6 +248,97 @@ public sealed partial class HeadlessUiTests
             return true;
         }, CancellationToken.None));
 
+    /// <summary>
+    /// Excluir from the house panel and "Mover para a lixeira" from the editor: the 1.8.4 confirmation, the file gone,
+    /// .urbe/trash.v2.json holding both notes, the houses gone from the city and the map; reopening keeps them deleted.
+    /// Cancelling the confirmation deletes nothing.
+    /// </summary>
+    [Fact]
+    public async Task Delete_MovesTheNoteToTheTrashFromThePanelAndTheEditor() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-trash-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(Path.Combine(vault, "Bairro"));
+            File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n\n[[Um]]\n");
+            File.WriteAllText(Path.Combine(vault, "Bairro", "Um.md"), "# Um\n");
+            File.WriteAllText(Path.Combine(vault, "Bairro", "Dois.md"), "# Dois\n");
+            var trashFile = Path.Combine(vault, ".urbe", "trash.v2.json");
+            MainView? view = null;
+            async Task Settled()
+            {
+                for (int i = 0; i < 40; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+            }
+            try
+            {
+                var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
+                view = new MainView(storage);
+                var window = new Window { Width = 1280, Height = 760, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                await UntilMapSaved(view);
+                var city = view.World.City!;
+
+                // the house panel: Excluir → "Mover para a lixeira?" → Cancelar keeps everything
+                var um = city.Buildings.Single(b => b.Path == "Bairro/Um.md");
+                view.World.Select(um);
+                Dispatcher.UIThread.RunJobs();
+                ClickButtonWithText(view, "Excluir");
+                await Settled();
+                Assert.Contains(view.Dialogs.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "“Um.md” poderá ser restaurada pela Lixeira, em Notas.");
+                Snapshot(window, "native-trash-confirm.png");
+                ClickButtonWithText(view.Dialogs, "Cancelar");
+                await Settled();
+                Assert.True(File.Exists(Path.Combine(vault, "Bairro", "Um.md")));
+                Assert.Contains(um, city.Buildings);
+
+                // again, confirmed
+                view.World.Select(um);
+                Dispatcher.UIThread.RunJobs();
+                ClickButtonWithText(view, "Excluir");
+                await Settled();
+                ClickButtonWithText(view.Dialogs, "Mover para a lixeira");
+                await Settled();
+                Assert.False(File.Exists(Path.Combine(vault, "Bairro", "Um.md")));
+                Assert.DoesNotContain(um, city.Buildings);
+                Assert.Null(view.Documents!.Get("Bairro/Um.md"));
+                Assert.Contains("\"originalPath\": \"Bairro/Um.md\"", File.ReadAllText(trashFile));
+
+                // the editor: Mais ações → Mover para a lixeira
+                view.OpenNoteByPath("Bairro/Dois.md");
+                Dispatcher.UIThread.RunJobs();
+                var more = view.Editor.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == "Mais ações");
+                more.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Dispatcher.UIThread.RunJobs();
+                ClickButtonWithText(view.Dialogs, "Mover para a lixeira");
+                await Settled();
+                ClickButtonWithText(view.Dialogs, "Mover para a lixeira");
+                await Settled();
+                Assert.False(view.Editor.IsVisible);
+                Assert.False(File.Exists(Path.Combine(vault, "Bairro", "Dois.md")));
+                var trash = File.ReadAllText(trashFile);
+                Assert.Contains("\"content\": \"# Um\\n\"", trash);
+                Assert.Contains("\"content\": \"# Dois\\n\"", trash);
+                await UntilMapSaved(view);
+                using (var m = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(vault, ".urbe", "mapa.json"))))
+                    Assert.Equal(["Comece.md"], m.RootElement.GetProperty("notas").EnumerateObject().Select(p => p.Name));
+                window.Close();
+
+                // a new app on the same folder: still deleted, the trash as it was
+                var reopened = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app2", "sel.json")));
+                var window2 = new Window { Width = 1280, Height = 760, Content = reopened };
+                window2.Show();
+                await reopened.OpenVaultAsync();
+                await Settle(window2, reopened);
+                Assert.Equal(["Comece.md"], reopened.World.City!.Buildings.Where(b => b.IsNote).Select(b => b.Path));
+                Assert.Equal(trash, File.ReadAllText(trashFile));
+                window2.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
     [Fact]
     public async Task Rename_WithoutAWritableVaultRenamesNothing() =>
         Assert.True(await Session.Dispatch<bool>(async () =>

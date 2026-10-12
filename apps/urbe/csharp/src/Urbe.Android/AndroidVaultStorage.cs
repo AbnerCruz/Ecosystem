@@ -247,6 +247,48 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    /// <summary>Moves ONE text file to the trash: .urbe/trash.v2.json written and verified first, then the file
+    /// deleted, then every file verified.</summary>
+    public async Task TrashTextFileAsync(string path, string trashJson, CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, files);
+            var (source, trashPath, trashBytes) = IUrbeVaultStorage.PlanTrash(files, path, trashJson);
+            var create = !baseline.ContainsKey(trashPath);
+
+            await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var sourceUri = FindDocument(tree, source)
+                    ?? throw new FileNotFoundException("O arquivo não existe na pasta.", source);
+                if (create && FindDocument(tree, trashPath) is not null)
+                    throw new IOException("A pasta foi modificada fora do Urbe: " + trashPath);
+                WriteVerified(tree, trashPath, trashBytes);
+                if (!DocumentsContract.DeleteDocument(Resolver, sourceUri))
+                    throw new IOException("O provedor não removeu o arquivo: " + source);
+                var observed = Snapshot(ReadFiles(tree, cancellationToken));
+                if (observed.Count != baseline.Count - 1 + (create ? 1 : 0) || observed.ContainsKey(source))
+                    throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
+                foreach (var pair in baseline)
+                {
+                    if (string.Equals(pair.Key, source, StringComparison.OrdinalIgnoreCase)) continue;
+                    var expected = string.Equals(pair.Key, trashPath, StringComparison.OrdinalIgnoreCase) ? trashBytes : pair.Value.Bytes.ToArray();
+                    if (!observed.TryGetValue(pair.Key, out var actual) || !actual.Bytes.Span.SequenceEqual(expected))
+                        throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
+                }
+                if (!observed.TryGetValue(trashPath, out var written) || !written.Bytes.Span.SequenceEqual(trashBytes))
+                    throw new IOException("A lixeira não passou na verificação: " + trashPath);
+                _baseline = observed;
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     /// <summary>Writes .urbe/mapa.json only; the same checks and verification as a note.</summary>
     public async Task SaveMapAsync(string json, CancellationToken cancellationToken = default)
     {

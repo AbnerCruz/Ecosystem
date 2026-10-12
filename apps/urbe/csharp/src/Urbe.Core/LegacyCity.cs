@@ -1116,6 +1116,14 @@ public sealed partial class LegacyCity
     /// <summary>Undo a house that could not be written to the vault.</summary>
     public void RemoveBuilding(LegacyCityBuilding b) => Buildings.Remove(b);
 
+    /// <summary>removerNota: the house leaves the city (world.buildings.filter), then marcarIndice + indexar.</summary>
+    public void DeleteNote(LegacyCityBuilding b)
+    {
+        ArgumentNullException.ThrowIfNull(b);
+        Buildings.Remove(b);
+        Reindex();
+    }
+
     /// <summary>urbeCasaParaDocumento: every document becomes a house in its folder's neighbourhood.</summary>
     public LegacyCityBuilding AddDocument(string path, string name)
     {

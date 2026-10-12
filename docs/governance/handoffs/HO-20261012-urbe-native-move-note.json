@@ -10,11 +10,11 @@
   },
   "task_id": "UC-19",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "ccr-2e1b58fa-7mhpmx",
   "base_commit": "d134525c5394fab0e5364e2fa6d2d25353495a34",
-  "commit": null,
-  "pr": null,
+  "commit": "f42a569a471f559fde213849a5ce41407360771d",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/530",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
     "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
@@ -53,8 +53,8 @@
     {
       "kind": "automated",
       "check": "Suítes completas Core/Client e consistency",
-      "result": "pending",
-      "evidence": "Core 545/545; Client 87/88 na primeira volta: o teste do toque curto media tempo de parede sob carga e foi tornado robusto (HoldDelay configurável); nova volta completa em execução ao registrar."
+      "result": "passed",
+      "evidence": "Core 545/545 e Client 88/88 no head do PR #530; CI do PR e estado combinado verdes; integrado na main."
     },
     {
       "kind": "human",
