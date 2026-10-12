@@ -45,6 +45,24 @@ public sealed partial class HeadlessUiTests
             // #propertiesBox only in Fonte
             Assert.DoesNotContain(Texts(), t => t.StartsWith("--- título:", StringComparison.Ordinal));
             Snapshot(window, "native-editor-preview.png");
+
+            // #mdToolbar in Visual too (v23): with no block being edited, Título 2 acts on the first block (the caret lands
+            // at the start of the text), turning the H1 into an H2; again, it goes back to a paragraph
+            var h2 = Tip("Título 2")!;
+            Assert.True(Shown(h2));
+            h2.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            editor.Surface.FinishEdit();
+            Assert.StartsWith("## Casa\n", editor.Editor.Text);
+            h2.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            editor.Surface.FinishEdit();
+            Assert.StartsWith("Casa\n", editor.Editor.Text);
+            editor.Editor.Text = "# Casa\n\nA casa e a CASA.\n\n[[Outra]]\n";
+            for (int i = 0; i < 200 && editor.HasChanges; i++) { await Task.Delay(20); Dispatcher.UIThread.RunJobs(); }
+            editor.Open(new CityNote("Casa.md", editor.Editor.Text));
+            Dispatcher.UIThread.RunJobs();
+
             editor.SetMode(EditorMode.Fonte);
             Dispatcher.UIThread.RunJobs();
             var props = Texts().Single(t => t.StartsWith("--- título:", StringComparison.Ordinal));

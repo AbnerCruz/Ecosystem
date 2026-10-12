@@ -46,9 +46,9 @@ public sealed class MarkdownReader
     {
         switch (n.Tag)
         {
-            case "h1": return Heading(n, 1.9, FontWeight.Bold, new Thickness(0, .2 * Size, 0, .5 * Size));
+            case "h1": return Heading(n, 1.9, (FontWeight)750, new Thickness(0, .2 * Size, 0, .5 * Size));
             case "h2": return Heading(n, 1.4, FontWeight.Bold, new Thickness(0, 1.4 * Size, 0, .4 * Size));
-            case "h3": return Heading(n, 1.15, FontWeight.SemiBold, new Thickness(0, 1.2 * Size, 0, .3 * Size));
+            case "h3": return Heading(n, 1.15, (FontWeight)650, new Thickness(0, 1.2 * Size, 0, .3 * Size));
             case "h4": case "h5": case "h6": return Heading(n, 1, FontWeight.Bold, new Thickness(0, 1.33 * Size, 0, 1.33 * Size));
             case "p": { var t = Text(n.Children, Size); t.Margin = new Thickness(0, .6 * Size); return t; }
             case "hr": return new Border { Height = 1, Background = UrbeTheme.Brush(UrbeTheme.Line2), Margin = new Thickness(0, 2 * Size) };
@@ -126,9 +126,10 @@ public sealed class MarkdownReader
                 var inner = n.Children.Select(Plain).Aggregate("", (a, b) => a + b);
                 var run = new Run(inner)
                 {
-                    Foreground = UrbeTheme.Brush(UrbeTheme.Accent), Background = UrbeTheme.Brush(UrbeTheme.Accent, .14),
-                    FontWeight = st.Bold ? FontWeight.Bold : FontWeight.Normal, FontStyle = st.Italic ? FontStyle.Italic : FontStyle.Normal
+                    Foreground = UrbeTheme.Brush(UrbeTheme.Accent), Background = UrbeTheme.Brush(UrbeTheme.Accent, .14)
                 };
+                if (st.Bold) run.FontWeight = FontWeight.Bold;
+                if (st.Italic) run.FontStyle = FontStyle.Italic;
                 into.Add(run); length += inner.Length;
                 host.Wiki.Add((start, inner.Length, n.Attr("data-note-name")));
                 return;
@@ -153,12 +154,10 @@ public sealed class MarkdownReader
     private static void AddRun(RichText host, InlineCollection into, string text, Style st, ref int length)
     {
         if (text.Length == 0) return;
-        var run = new Run(text)
-        {
-            FontWeight = st.Bold ? FontWeight.Bold : FontWeight.Normal,
-            FontStyle = st.Italic ? FontStyle.Italic : FontStyle.Normal,
-            Foreground = UrbeTheme.Brush(st.Code ? "#f0d9a8" : st.Color)
-        };
+        // only bold/italic marks set the run's weight and style: plain text keeps the block's (a heading is 750/700/650)
+        var run = new Run(text) { Foreground = UrbeTheme.Brush(st.Code ? "#f0d9a8" : st.Color) };
+        if (st.Bold) run.FontWeight = FontWeight.Bold;
+        if (st.Italic) run.FontStyle = FontStyle.Italic;
         if (st.Code) { run.FontFamily = UrbeTheme.MonoFont; run.FontSize = Size * .88; run.Background = UrbeTheme.Brush(UrbeTheme.Surface2); }
         var deco = new TextDecorationCollection();
         if (st.Strike) deco.Add(new TextDecoration { Location = TextDecorationLocation.Strikethrough });
