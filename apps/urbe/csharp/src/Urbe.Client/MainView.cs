@@ -60,6 +60,10 @@ public sealed partial class MainView : Grid
         Editor = new EditorOverlay { IsVisible = false, Dialogs = Dialogs, Notes = () => _contents.Select(n => new CityNote(n.Key, n.Value)) };
         Explorer.Closed += () => Explorer.IsVisible = false;
         Explorer.NoteHeld += note => _ = ShowMoveMenuAsync(note.Path);
+        Explorer.MoreRequested += () => _ = ShowNotesMenuAsync();
+        Explorer.RestoreRequested += id => _ = RestoreFromTrashAsync(id);
+        Explorer.PurgeRequested += id => _ = PurgeFromTrashAsync(id);
+        Explorer.EmptyTrashRequested += () => _ = EmptyTrashAsync();
         Explorer.NoteRequested += note =>
         {
             _editorOpenedFromNotes = true;
@@ -202,6 +206,7 @@ public sealed partial class MainView : Grid
     {
         if (Editor.IsVisible) return;
         CityMap.IsVisible = false;
+        Explorer.ShowTrash(null);
         Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
         _housePanel.IsVisible = false;
         Explorer.IsVisible = true;
@@ -788,6 +793,96 @@ public sealed partial class MainView : Grid
         _mapSave?.MarkSync();
         Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
         World.InvalidateVisual();
+    }
+
+    /// <summary>
+    /// mobile-ui.js moreMenu ("Notas") with the items the native app already has: Lixeira (n item(ns)). Recentes,
+    /// Favoritos, Páginas, Composições, Importar, Exportar and the device folder join as their screens are ported.
+    /// </summary>
+    public Task ShowNotesMenuAsync()
+    {
+        if (Dialogs.IsOpen) return Task.CompletedTask;
+        int n = _trash.Items.Count;
+        return Dialogs.MenuAsync("Notas",
+        [
+            new DialogItem("Lixeira", UrbeTheme.Icons.Trash, Detail: (n > 0 ? n.ToString(System.Globalization.CultureInfo.InvariantCulture) : "Nenhum") + " item(ns)",
+                Run: () => { ShowTrashView(); return Task.CompletedTask; })
+        ]);
+    }
+
+    /// <summary>show('trash'): the Lixeira in Notas.</summary>
+    public void ShowTrashView() => Explorer.ShowTrash(_trash.Items.Select(i =>
+        new NotesExplorer.TrashEntry((string?)i["document"]?["id"] ?? "", (string?)i["document"]?["title"] ?? "", (string?)i["originalPath"] ?? "")).ToList());
+
+    private bool TrashWritable(out string? problem)
+    {
+        problem = _vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly || _store is null
+            ? "Abra a pasta do seu vault (botão Cidades) para usar a lixeira."
+            : _trashReadOnly ? "A lixeira deste vault é de outra versão do Urbe e foi preservada." : null;
+        return problem is null;
+    }
+
+    /// <summary>
+    /// Restaurar (trash.restore): the note goes back to its path with a house (urbeCasaParaDocumento). The file is
+    /// created in the vault first, then the trash is rewritten without it; a document already at that path is refused.
+    /// </summary>
+    public async Task RestoreFromTrashAsync(string id)
+    {
+        if (!TrashWritable(out var problem)) { await Dialogs.AlertAsync("Lixeira", problem!); return; }
+        var item = _trash.Items.FirstOrDefault(i => (string?)i["document"]?["id"] == id);
+        if (item is null || World.City is not { } city) return;
+        var path = (string?)item["originalPath"] ?? (string?)item["document"]?["path"] ?? "";
+        var content = (string?)item["document"]?["content"] ?? "";
+        try
+        {
+            if (_store!.Get(path) is not null || _contents.ContainsKey(path)) throw new InvalidOperationException("Já existe um documento em " + path);
+            await _vault!.CreateTextFileAsync(path, content);
+            await _vault.SaveTrashAsync(_trash.ExportAfter(t => t.Purge(id)));
+        }
+        catch (Exception ex)
+        {
+            await Dialogs.AlertAsync("Não foi possível restaurar", ex.Message);
+            return;
+        }
+        var doc = _trash.Restore(_store!, id)!;
+        city.AddDocumentHouse(doc, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        _contents[doc.Path] = doc.Content;
+        // document:created → urbeCasaParaDocumento → marcarSinc; persistence schedule()
+        _mapSave?.Schedule();
+        _mapSave?.MarkSync();
+        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+        ShowTrashView();
+        World.InvalidateVisual();
+    }
+
+    /// <summary>✕ Excluir de vez (trash.purge) after "Excluir de vez?".</summary>
+    public async Task PurgeFromTrashAsync(string id, bool confirmed = false)
+    {
+        if (!TrashWritable(out var problem)) { await Dialogs.AlertAsync("Lixeira", problem!); return; }
+        var item = _trash.Items.FirstOrDefault(i => (string?)i["document"]?["id"] == id);
+        if (item is null) return;
+        if (!confirmed && !await Dialogs.ConfirmAsync("Excluir de vez?",
+                "“" + ((string?)item["document"]?["title"] ?? "") + "” será apagada para sempre. Não dá para desfazer.", "Excluir de vez", danger: true))
+            return;
+        try { await _vault!.SaveTrashAsync(_trash.ExportAfter(t => t.Purge(id))); }
+        catch (Exception ex) { await Dialogs.AlertAsync("Não foi possível excluir", ex.Message); return; }
+        _trash.Purge(id);
+        ShowTrashView();
+    }
+
+    /// <summary>Esvaziar (trash.clear) after "Esvaziar a lixeira?".</summary>
+    public async Task EmptyTrashAsync(bool confirmed = false)
+    {
+        if (!TrashWritable(out var problem)) { await Dialogs.AlertAsync("Lixeira", problem!); return; }
+        int n = _trash.Items.Count;
+        if (n == 0) return;
+        if (!confirmed && !await Dialogs.ConfirmAsync("Esvaziar a lixeira?",
+                "Todos os " + n.ToString(System.Globalization.CultureInfo.InvariantCulture) + " itens serão apagados para sempre. Não dá para desfazer.", "Esvaziar", danger: true))
+            return;
+        try { await _vault!.SaveTrashAsync(_trash.ExportAfter(t => t.Clear())); }
+        catch (Exception ex) { await Dialogs.AlertAsync("Não foi possível esvaziar", ex.Message); return; }
+        _trash.Clear();
+        ShowTrashView();
     }
 
     private Control Fab()

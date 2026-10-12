@@ -14,7 +14,7 @@
   "branch": "ccr-2e1b58fa-7mhpmx",
   "base_commit": "f42a569a471f559fde213849a5ce41407360771d",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/531",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/LegacyTrash.cs",
     "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
@@ -31,14 +31,17 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultStorageTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/RenameUiTests.cs",
     "apps/urbe/docs/csharp/ROADMAP.md",
-    "docs/governance/handoffs/HO-20261012-urbe-native-trash-note.json"
+    "docs/governance/handoffs/HO-20261012-urbe-native-trash-note.json",
+    "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs"
   ],
   "work_completed": [
     "Urbe.Core LegacyTrash porta TrashStore (src/core/trash.js) e o arquivo .urbe/trash.v2.json como workspace.js o grava (versão 2, itens por id, mais novos primeiro, JSON.stringify(…, null, 1)); itens lidos ficam como estavam; lixeira de outra versão é preservada e nunca escrita; v1 é lida quando não há v2. LegacyCity.DeleteNote porta a saída da casa (removerNota + indexar).",
     "Oráculo tools/legacy-trash-oracle.mjs: a 1.8.4 sem modificação em Chromium, Excluir pelo painel da casa e 'Mover para a lixeira' pelo menu do editor, com o UD.confirm do próprio app; todos os arquivos do vault, a lixeira e o mapa gravados após cada exclusão.",
     "IUrbeVaultStorage.TrashTextFileAsync + PlanTrash (desktop e Android SAF): a lixeira precisa conter o texto atual do arquivo, é gravada e verificada ANTES de o arquivo ser removido, e todos os arquivos do vault são verificados depois; lixeira de versão futura recusa a exclusão.",
     "Cliente nativo: UrbeDialogs.ConfirmAsync (UD.confirm, botão de perigo), Excluir do painel da casa ligado, 'Mover para a lixeira' no menu Mais ações do editor; MainView.DeleteNoteAsync grava a lixeira e remove o arquivo antes de mexer em casa, documento, editor e mapa.",
-    "Oráculo tools/legacy-copy-oracle.mjs (evidência): o Copiar do painel da 1.8.4 cria uma segunda casa no MESMO documento, não grava arquivo novo e o mapa passa a guardar a nota na posição da cópia; não portado."
+    "Oráculo tools/legacy-copy-oracle.mjs (evidência): o Copiar do painel da 1.8.4 cria uma segunda casa no MESMO documento, não grava arquivo novo e o mapa passa a guardar a nota na posição da cópia; não portado.",
+    "Lixeira em Notas: botão '⋯ Mais opções' no Explorer nativo (moreMenu, só com os itens já portados: Lixeira com 'n item(ns)'), tela renderTrash com Restaurar, ✕ Excluir de vez ('Excluir de vez?') e Esvaziar ('Esvaziar a lixeira?'). LegacyTrash.Restore/Purge/Clear/ExportAfter e LegacyCity.AddDocumentHouse (urbeCasaParaDocumento). IUrbeVaultStorage.SaveTrashAsync (desktop e Android) reescreve só a lixeira; restaurar cria o arquivo ANTES de tirar o item da lixeira.",
+    "Oráculo legacy-trash-oracle.mjs estendido: Notas → Mais opções → Lixeira → Restaurar e ✕ Excluir de vez na 1.8.4 real; lote da casa restaurada, lixeira, arquivos e mapa.json idênticos."
   ],
   "verification": [
     {
@@ -51,13 +54,19 @@
       "kind": "automated",
       "check": "dotnet test Urbe.Core.Tests (LegacyRenameOracleTests: lixeira)",
       "result": "passed",
-      "evidence": "trash.v2.json, conjunto de arquivos e mapa.json idênticos byte a byte aos da 1.8.4 nas 2 exclusões; releitura preserva os itens; versão desconhecida preservada; v1 lida."
+      "evidence": "trash.v2.json, conjunto de arquivos e mapa.json idênticos byte a byte aos da 1.8.4 nas 2 exclusões; releitura preserva os itens; versão desconhecida preservada; v1 lida. Restaurar (lote da casa, lixeira, arquivos e mapa) e Excluir de vez idênticos à 1.8.4."
     },
     {
       "kind": "automated",
       "check": "dotnet test Urbe.Client.Tests (TrashingANote…, ATrashWithoutTheCurrentText…, Delete_MovesTheNoteToTheTrashFromThePanelAndTheEditor)",
       "result": "passed",
       "evidence": "Lixeira antes do arquivo, sem cópias soltas; recusas sem tocar o vault; UI real com cancelar, confirmar, editor e reabertura."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (Trash_RestoresPurgesAndEmptiesFromNotes, RewritingTheTrashTouchesOnlyItAndRefusesAnotherVersion)",
+      "result": "passed",
+      "evidence": "UI real: menu Notas, Lixeira, Restaurar (arquivo e casa de volta), Excluir de vez e Esvaziar com confirmação, reabertura; reescrita da lixeira só toca ela e recusa outra versão."
     },
     {
       "kind": "automated",
@@ -74,14 +83,13 @@
     }
   ],
   "known_issues": [
-    "Restaurar/excluir permanentemente pela Lixeira (Notas) ainda não foi portado; as notas excluídas ficam em .urbe/trash.v2.json e a 1.8.4 as restaura.",
     "Copiar do painel da casa não portado: o da 1.8.4 não cria cópia e desloca a nota original na reabertura (oráculo legacy-copy-oracle.mjs). Fazer uma cópia de verdade muda o fluxo da 1.8.4 e depende do proprietário.",
-    "Excluir não refaz as ruas (scheduleRoadRebuild), como as demais edições do nativo."
+    "Excluir não refaz as ruas (scheduleRoadRebuild), como as demais edições do nativo.",
+    "O menu '⋯ Mais opções' de Notas lista só a Lixeira; Recentes, Favoritos, Páginas, Composições, Importar, Exportar e a pasta do dispositivo entram quando forem portados."
   ],
   "blockers": [],
   "next_actions": [
     "CI do PR e autorização do proprietário (zona user-data).",
-    "Portar a Lixeira em Notas (restaurar e excluir permanentemente).",
     "DEVICE: excluir nota no Android e no Windows; reabrir na 1.8.4."
   ],
   "decisions_required": [],

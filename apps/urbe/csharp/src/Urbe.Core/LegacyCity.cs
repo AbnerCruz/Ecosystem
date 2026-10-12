@@ -1124,6 +1124,24 @@ public sealed partial class LegacyCity
         Reindex();
     }
 
+    /// <summary>
+    /// urbeCasaParaDocumento (app.js ≈3720) for a document that appears after the open (a note restored from the trash):
+    /// the house of <see cref="AddDocument"/> tied to the document, with created/modified = the document's or nowDate()
+    /// and no attachments.
+    /// </summary>
+    public LegacyCityBuilding AddDocumentHouse(UrbeDocument d, long nowMs)
+    {
+        ArgumentNullException.ThrowIfNull(d);
+        var b = AddDocument(d.Path, NoteName(d.Title, d.Path));
+        var today = NowDate(nowMs);
+        b.DocumentId = d.Id;
+        b.Created = JsonValue.Create(string.IsNullOrEmpty(d.Created) ? today : d.Created);
+        b.Modified = JsonValue.Create(string.IsNullOrEmpty(d.Modified) ? today : d.Modified);
+        b.Anexos = new JsonArray();
+        Reindex();
+        return b;
+    }
+
     /// <summary>urbeCasaParaDocumento: every document becomes a house in its folder's neighbourhood.</summary>
     public LegacyCityBuilding AddDocument(string path, string name)
     {

@@ -63,14 +63,27 @@ public sealed class NotesExplorer : Grid
                 _location
             }
         };
-        var top = new StackPanel
+        var bar = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             VerticalAlignment = VerticalAlignment.Center,
             Spacing = 8,
-            Margin = new Thickness(10, 4),
             Children = { back, title }
         };
+        // mobile-ui.js header: [data-more] "Mais opções"
+        var more = new Button
+        {
+            Content = UrbeTheme.Icon(UrbeTheme.Icons.More, 21),
+            Width = 48,
+            Height = 48,
+            Padding = new Thickness(4),
+            Background = Brushes.Transparent,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        ToolTip.SetTip(more, "Mais opções");
+        more.Click += (_, _) => MoreRequested?.Invoke();
+        var top = new Grid { Margin = new Thickness(10, 4), Children = { bar, more } };
         SetRow(top, 0);
         Children.Add(top);
         SetRow(_search, 1);
@@ -89,6 +102,29 @@ public sealed class NotesExplorer : Grid
     }
 
     public event Action? Closed;
+    /// <summary>The header's "Mais opções" (moreMenu).</summary>
+    public event Action? MoreRequested;
+    /// <summary>Lixeira: Restaurar (the trashed document's id).</summary>
+    public event Action<string>? RestoreRequested;
+    /// <summary>Lixeira: ✕ Excluir de vez (the trashed document's id).</summary>
+    public event Action<string>? PurgeRequested;
+    /// <summary>Lixeira: Esvaziar.</summary>
+    public event Action? EmptyTrashRequested;
+
+    /// <summary>One item of the trash as the Lixeira lists it (renderTrash): the document's id and title, its path.</summary>
+    public sealed record TrashEntry(string Id, string Title, string OriginalPath);
+
+    private IReadOnlyList<TrashEntry>? _trash;
+
+    /// <summary>The Lixeira view (show('trash')): newest first; null leaves it.</summary>
+    public void ShowTrash(IReadOnlyList<TrashEntry>? items)
+    {
+        _trash = items;
+        Rebuild();
+    }
+
+    /// <summary>The Lixeira is shown.</summary>
+    public bool ShowingTrash => _trash is not null;
     public event Action<CityNote>? NoteRequested;
     /// <summary>A note row held (v21BindEntry: 520 ms without moving 9 px) → v21MoveEntry ("Mover para…").</summary>
     public event Action<CityNote>? NoteHeld;
@@ -148,6 +184,11 @@ public sealed class NotesExplorer : Grid
 
     private void GoBack()
     {
+        if (_trash is not null)
+        {
+            ShowTrash(null);
+            return;
+        }
         if (!string.IsNullOrEmpty(_search.Text))
         {
             _search.Text = string.Empty;
@@ -165,6 +206,11 @@ public sealed class NotesExplorer : Grid
 
     private void Rebuild()
     {
+        if (_trash is not null)
+        {
+            RenderTrash(_trash);
+            return;
+        }
         var search = _search.Text?.Trim() ?? string.Empty;
         if (search.Length > 0)
         {
@@ -220,6 +266,64 @@ public sealed class NotesExplorer : Grid
                 Margin = new Thickness(12, 24),
                 FontSize = 14
             });
+    }
+
+    /// <summary>renderTrash: "n item(ns) · restaure ou exclua de vez" with Esvaziar, then each item with Restaurar and ✕.</summary>
+    private void RenderTrash(IReadOnlyList<TrashEntry> items)
+    {
+        _location.Text = "Lixeira";
+        _summary.Text = items.Count > 0 ? items.Count + " item(ns) · restaure ou exclua de vez" : "";
+        _visibleFolders = [];
+        _visibleNotes = [];
+        _entries.Children.Clear();
+        if (items.Count == 0)
+        {
+            _entries.Children.Add(new StackPanel
+            {
+                Margin = new Thickness(12, 24),
+                Spacing = 6,
+                Children =
+                {
+                    new TextBlock { Text = "A lixeira está vazia", FontSize = 15, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text) },
+                    new TextBlock { Text = "Notas excluídas ficam aqui e podem ser restauradas.", FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap }
+                }
+            });
+            return;
+        }
+        var empty = new Button { Content = "Esvaziar", HorizontalAlignment = HorizontalAlignment.Right, Background = UrbeTheme.Brush(UrbeTheme.Surface3), Foreground = UrbeTheme.Brush(UrbeTheme.Text), CornerRadius = new CornerRadius(10) };
+        empty.Click += (_, _) => EmptyTrashRequested?.Invoke();
+        _entries.Children.Add(empty);
+        foreach (var item in items)
+        {
+            var entry = item;
+            var restore = new Button { Content = "Restaurar", Background = UrbeTheme.Brush(UrbeTheme.Surface3), Foreground = UrbeTheme.Brush(UrbeTheme.Text), CornerRadius = new CornerRadius(10), VerticalAlignment = VerticalAlignment.Center };
+            restore.Click += (_, _) => RestoreRequested?.Invoke(entry.Id);
+            var purge = new Button { Content = UrbeTheme.Icon(UrbeTheme.Icons.Close, 18, UrbeTheme.Text2), Background = Brushes.Transparent, Padding = new Thickness(8), VerticalAlignment = VerticalAlignment.Center };
+            ToolTip.SetTip(purge, "Excluir de vez");
+            purge.Click += (_, _) => PurgeRequested?.Invoke(entry.Id);
+            var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { restore, purge } };
+            DockPanel.SetDock(actions, Dock.Right);
+            var texts = new StackPanel
+            {
+                Spacing = 3,
+                VerticalAlignment = VerticalAlignment.Center,
+                Children =
+                {
+                    new TextBlock { Text = entry.Title, FontSize = 15, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextTrimming = TextTrimming.CharacterEllipsis },
+                    new TextBlock { Text = entry.OriginalPath, FontSize = 11, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis }
+                }
+            };
+            _entries.Children.Add(new Border
+            {
+                Background = UrbeTheme.Brush(UrbeTheme.Surface),
+                BorderBrush = UrbeTheme.Brush(UrbeTheme.Line),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(10),
+                Padding = new Thickness(16, 10),
+                MinHeight = 62,
+                Child = new DockPanel { Children = { actions, texts } }
+            });
+        }
     }
 
     private static Control Item(string name, string category, Action click, Action? hold = null, Func<TimeSpan>? holdDelay = null)

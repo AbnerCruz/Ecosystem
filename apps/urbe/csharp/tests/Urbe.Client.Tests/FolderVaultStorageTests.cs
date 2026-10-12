@@ -235,6 +235,26 @@ public sealed class FolderVaultStorageTests : IDisposable
         Assert.Equal("{\"version\":3,\"items\":[]}", File.ReadAllText(Path.Combine(Vault, ".urbe", "trash.v2.json")));
     }
 
+    [Fact]
+    public async Task RewritingTheTrashTouchesOnlyItAndRefusesAnotherVersion()
+    {
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        var before = Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).ToDictionary(f => f, File.ReadAllBytes);
+        var empty = "{\n \"version\": 2,\n \"items\": []\n}";
+        await storage.SaveTrashAsync(empty, Ct);
+        Assert.Equal(empty, File.ReadAllText(Path.Combine(Vault, ".urbe", "trash.v2.json")));
+        foreach (var (file, bytes) in before) Assert.Equal(bytes, File.ReadAllBytes(file));
+        await Assert.ThrowsAsync<InvalidDataException>(() => storage.SaveTrashAsync("{\"version\":3,\"items\":[]}", Ct));
+        Assert.Equal(empty, File.ReadAllText(Path.Combine(Vault, ".urbe", "trash.v2.json")));
+
+        File.WriteAllText(Path.Combine(Vault, ".urbe", "trash.v2.json"), "{\"version\":9}");
+        var reopened = Storage();
+        await reopened.PickAsync(Ct);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => reopened.SaveTrashAsync(empty, Ct));
+        Assert.Equal("{\"version\":9}", File.ReadAllText(Path.Combine(Vault, ".urbe", "trash.v2.json")));
+    }
+
     [Theory]
     [InlineData(".urbe/mapa.json")]
     [InlineData(".obsidian/app.json")]

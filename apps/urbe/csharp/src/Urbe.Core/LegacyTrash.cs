@@ -56,6 +56,59 @@ public sealed class LegacyTrash
         return item;
     }
 
+    /// <summary>
+    /// trash.restore(id): the document back in the store at its original path ({...item.document, id, path}); refused
+    /// when a document already has that path ("Já existe um documento em …"). Null when the trash has no such item.
+    /// </summary>
+    public UrbeDocument? Restore(DocumentStore store, string id)
+    {
+        ArgumentNullException.ThrowIfNull(store);
+        int i = _items.FindIndex(x => x.Id == id);
+        if (i < 0) return null;
+        var item = _items[i].Item;
+        var doc = item["document"] as JsonObject ?? new JsonObject();
+        var path = Str(item["originalPath"]) ?? Str(doc["path"]) ?? "";
+        if (store.Get(path) is not null) throw new InvalidOperationException("Já existe um documento em " + path);
+        var restored = store.Upsert(new DocumentInput
+        {
+            Id = Str(doc["id"]) ?? id,
+            Path = path,
+            Title = Str(doc["title"]),
+            Content = Str(doc["content"]) ?? "",
+            Properties = doc["properties"] is JsonObject props ? props.ToDictionary(p => p.Key, p => Str(p.Value) ?? "") : null,
+            Tags = doc["tags"] is JsonArray tags ? tags.Select(t => Str(t) ?? "").ToList() : null,
+            Links = doc["links"] is JsonArray links ? links.Select(t => Str(t) ?? "").ToList() : null,
+            Created = Str(doc["created"]),
+            Modified = Str(doc["modified"])
+        }, "trash.restore");
+        _items.RemoveAt(i);
+        return restored;
+    }
+
+    /// <summary>trash.purge(id): the item leaves the trash for good.</summary>
+    public bool Purge(string id)
+    {
+        int i = _items.FindIndex(x => x.Id == id);
+        if (i < 0) return false;
+        _items.RemoveAt(i);
+        return true;
+    }
+
+    /// <summary>trash.clear() (Esvaziar).</summary>
+    public void Clear() => _items.Clear();
+
+    /// <summary>The trash as it would be after <paramref name="change"/>, without changing this one.</summary>
+    public string ExportAfter(Action<LegacyTrash> change)
+    {
+        ArgumentNullException.ThrowIfNull(change);
+        var copy = new LegacyTrash();
+        copy._items.AddRange(_items.Select(x => (x.Id, (JsonObject)x.Item.DeepClone())));
+        change(copy);
+        return copy.Export();
+    }
+
+    private static string? Str(JsonNode? v) => v is JsonValue jv && jv.TryGetValue<string>(out var s) ? s : null;
+
     /// <summary>The text of .urbe/trash.v2.json once <paramref name="d"/> is trashed at <paramref name="nowMs"/>, without
     /// changing this trash (what must be on disk before the document's file is removed).</summary>
     public string ExportWith(UrbeDocument d, long nowMs)
