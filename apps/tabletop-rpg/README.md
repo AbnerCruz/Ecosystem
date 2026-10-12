@@ -20,6 +20,9 @@ Identidade estável: `tabletop-rpg`. O nome de exibição é provisório e pode 
 - `src/TabletopRpg.Core`: domínio e runtime headless, sem UI, rede ou SDK de provedor.
 - `src/TabletopRpg.Persistence`: codec versionado e store local com save atômico, backup e recuperação.
 - `src/TabletopRpg.ModelGateway`: contrato local de geração por turno e configurações não secretas de modelo/provedor, sem rede/SDK.
+- `src/TabletopRpg.PlayerAgent`: perfil de personagem e decisão por gatilho explícito, com JSON estrito convertido em intents autorizadas.
+- `src/TabletopRpg.GameMaster`: Mestre IA com visão privada, propostas tipadas e ferramentas autorizadas apenas após aprovação explícita.
+- `src/TabletopRpg.Director`: Director de tensão e fios narrativos com cues privadas, determinísticas e acionadas por eventos; sem mutação de campanha.
 - `tests/TabletopRpg.Core.Tests`: testes de domínio e persistência.
 - `SPEC.md`: requisitos do Product.
 - `ROADMAP.md`: fases e gates próprios.
@@ -27,6 +30,9 @@ Identidade estável: `tabletop-rpg`. O nome de exibição é provisório e pode 
 - `docs/persistence-v2.md`: schema atual (RPG-003), mundo/quests/inventário e migração v1 segura.
 - `docs/combat-r0.md`: runtime RPG-004, esquema neutro de regras, turnos, intents e limites de persistência.
 - `docs/model-gateway-r1.md`: contrato RPG-010, limites de contexto e credenciais fora da campanha.
+- `docs/player-agent-r1.md`: RPG-011, perspectiva restrita, parser, integrações e pendências.
+- `docs/game-master-r1.md`: RPG-012, visão privada do Mestre, rascunhos de narração/revelação e aprovação no host.
+- `docs/director-r1.md`: RPG-013, tensão, ameaças, pistas, promessas, consequências e limites.
 
 ## Teste
 
@@ -59,3 +65,15 @@ comercial. RPG-004 depende da integração prévia de RPG-003 (PR #310).
 ## Gateway de modelos (RPG-010)
 
 `IModelGateway` aceita somente mensagens projetadas pelo chamador e chamadas explícitas. Configuração é separada da campanha e o único vínculo com a credencial é o nome de uma variável de ambiente; segredos nunca entram no schema v2. Saídas de modelo são texto não confiável, sujeito a parsing de intent e autorização no `SessionEngine` em RPG-011. Ver `docs/model-gateway-r1.md`.
+
+## Player Agent (RPG-011)
+
+O novo `PlayerAgentDecisionSource` adapta o Gateway ao `AgentTurnRunner` existente. Usa apenas a perspectiva do personagem designado e decodifica JSON estrito (`speak`, `end_turn` ou `pass`), sem capacidade de escolher identidade, rolagem ou dificuldade. O motor continua sendo a única autoridade sobre ações e eventos. O perfil de persona/objetivos/relações ainda é transitório, sem novo formato de save; não existe provedor real nem sessão mobile com IA nesta fase.
+
+## Mestre IA (RPG-012)
+
+O `GameMasterAgent` consulta uma projeção canônica separada de `PlayerView`, podendo ver fatos secretos do mundo sem transmiti-los automaticamente aos jogadores. Suas respostas são somente propostas: texto narrativo ou revelação de um fato para uma personagem específica. A aplicação requer aprovação independente pelo host, papel de Mestre válido e revisão atual da campanha. O contrato ainda é headless, sem serviço de modelo real ou interface para aprovar propostas.
+
+## Director (RPG-013)
+
+O `DirectorRuntime` consome uma `GameMasterView` somente quando o host o aciona, produz sugestões privadas sobre tensão, ameaças, pistas e promessas, e nunca altera a campanha. Sem roteiro imposto, sem polling, sem chamadas reais a IA ou novo schema de save. Consulte `docs/director-r1.md`.

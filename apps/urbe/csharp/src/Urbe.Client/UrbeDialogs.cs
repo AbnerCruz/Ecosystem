@@ -224,7 +224,7 @@ public sealed class UrbeDialogs : Grid
             row.Children.Add(text);
             var b = new Button
             {
-                Content = row, MinHeight = 54, Padding = new Thickness(12, 8), CornerRadius = new CornerRadius(12), Background = Brushes.Transparent,
+                Content = row, MinHeight = UrbeAppearance.DialogOption.MinHeight, Padding = UrbeAppearance.DialogOption.Padding, CornerRadius = new CornerRadius(12), Background = Brushes.Transparent,
                 HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, VerticalContentAlignment = VerticalAlignment.Center
             };
             b.Click += (_, _) => finish(index);

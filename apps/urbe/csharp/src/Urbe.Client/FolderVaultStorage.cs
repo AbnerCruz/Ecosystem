@@ -87,6 +87,36 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
     public Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
         WriteTextFileAsync(path, content, create: false, cancellationToken);
 
+    public async Task CreateDirectoryAsync(string path, CancellationToken cancellationToken = default)
+    {
+        IUrbeVaultStorage.EnsureWritableFolderPath(path);
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            if (_baseline is null) throw new InvalidOperationException("Reabra a pasta do vault.");
+            await Task.Run(() =>
+            {
+                var rootFull = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar);
+                var full = Path.GetFullPath(Path.Combine([root, .. Segments(path)]));
+                if (!full.StartsWith(rootFull + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                    throw new InvalidDataException("Caminho fora do vault: " + path);
+                // every step must be a real folder: never a file, never a link out of the vault
+                var current = rootFull;
+                foreach (var segment in Segments(path))
+                {
+                    current = Path.Combine(current, segment);
+                    if (File.Exists(current)) throw new IOException("Já existe um arquivo com esse nome: " + path);
+                    if (Directory.Exists(current) && new DirectoryInfo(current).LinkTarget is not null)
+                        throw new IOException("A pasta é um atalho e não pode ser usada: " + path);
+                }
+                Directory.CreateDirectory(full);
+                if (!Directory.Exists(full)) throw new IOException("A pasta criada não passou na verificação: " + path);
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     /// <summary>Writes ONE user text file (a note, or a Personalização JSON): creates it when
     /// <paramref name="create"/> and it does not exist yet, else rewrites the existing one.</summary>
     private async Task WriteTextFileAsync(string path, string content, bool create, CancellationToken cancellationToken)
