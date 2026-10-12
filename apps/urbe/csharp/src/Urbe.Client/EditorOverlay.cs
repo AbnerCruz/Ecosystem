@@ -29,6 +29,12 @@ public sealed class EditorOverlay : Grid
     private readonly ScrollViewer _visualScroll;
     private readonly ScrollViewer _sourceScroll;
     private readonly StackPanel _sourceColumn;
+    private readonly Border _properties;
+    private readonly TextBlock _propertiesText = new();
+
+    /// <summary>propertiesFor(b) of the open note, as renderProps writes it ("---\ntítulo: …\n---"), or null when the
+    /// file has no house; the host supplies it.</summary>
+    public Func<string, string?>? PropertiesFor { get; set; }
     private readonly Border _toolbarHost = new();
     private readonly StackPanel _markdownTools = new() { Orientation = Orientation.Horizontal, Spacing = 2, Margin = new Thickness(10, 0) };
     private readonly StackPanel _codeTools = new() { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(10, 0) };
@@ -108,7 +114,24 @@ public sealed class EditorOverlay : Grid
         // find-ui.js: the bar is prepended to #editorMain, above #mdToolbar
         FindBar = new EditorFindBar(() => Editor, () => SetMode(EditorMode.Fonte));
         AddRow(new StackPanel { Children = { FindBar, Toolbars() } }, 1);
-        _sourceColumn = new StackPanel { Children = { Editor, _wiki }, HorizontalAlignment = HorizontalAlignment.Center };
+        // #propertiesBox (base.css + theme.css): above the text in Fonte only; max 720px, 12px below
+        _properties = new Border
+        {
+            BorderBrush = UrbeTheme.Brush("#9c7b45"),
+            BorderThickness = new Thickness(3, 0, 0, 0),
+            Background = UrbeTheme.Brush("#111b22"),
+            CornerRadius = new CornerRadius(5),
+            Padding = new Thickness(10, 9),
+            Margin = new Thickness(0, 0, 0, 12),
+            IsVisible = false,
+            Child = _propertiesText
+        };
+        _propertiesText.Foreground = UrbeTheme.Brush("#b8c6ce");
+        _propertiesText.FontSize = 11;
+        _propertiesText.LineHeight = 16.5;
+        _propertiesText.TextWrapping = TextWrapping.Wrap;
+        // the text column fills the width up to the column size (the textarea is width:100%)
+        _sourceColumn = new StackPanel { Children = { _properties, Editor, _wiki }, HorizontalAlignment = HorizontalAlignment.Stretch };
         _sourceScroll = Column(_sourceColumn);
         _visualScroll = Column(_visual);
         var body = new Grid { Children = { _sourceScroll, _visualScroll } };
@@ -130,6 +153,7 @@ public sealed class EditorOverlay : Grid
     public void Open(CityNote note)
     {
         _opening = true;
+        _edited = false;
         _autosave.Stop();
         _note = note;
         _savedContent = note.Content;
@@ -142,6 +166,11 @@ public sealed class EditorOverlay : Grid
         ShowMode(canVisual && StartInVisual ? EditorMode.Visual : EditorMode.Fonte);
         UpdateChrome();
         UpdateStatus(changed: false);
+        // renderProps(b) on loadFile; the box is a div, so its line breaks collapse into spaces
+        var props = PropertiesFor?.Invoke(note.Path);
+        _propertiesText.Text = props is null ? "" : System.Text.RegularExpressions.Regex.Replace(props, @"\s+", " ");
+        _hasProperties = props is not null;
+        UpdateProperties();
         IsVisible = true;
         // Focus after the overlay is laid out; on Android this brings up the soft keyboard (Fonte; Visual edits on tap).
         if (Mode == EditorMode.Fonte) Dispatcher.UIThread.Post(() => Editor.Focus(), DispatcherPriority.Loaded);
@@ -181,12 +210,18 @@ public sealed class EditorOverlay : Grid
     private static string Kind(string path) => System.IO.Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
     private bool IsMarkdown => _note is not null && CanVisual(_note.Path);
 
+    private bool _hasProperties;
+
+    /// <summary>#editorScroll.previewMode #propertiesBox{display:none}.</summary>
+    private void UpdateProperties() => _properties.IsVisible = _hasProperties && Mode == EditorMode.Fonte;
+
     public void SetMode(EditorMode mode) => ShowMode(mode == EditorMode.Visual && (_note is null || CanVisual(_note.Path)) ? EditorMode.Visual : EditorMode.Fonte);
 
     private void ShowMode(EditorMode mode)
     {
         if (Mode == EditorMode.Visual && mode != EditorMode.Visual) _visual.FinishEdit();   // serialise what was edited
         Mode = mode;
+        UpdateProperties();
         var visual = mode == EditorMode.Visual;
         _visualScroll.IsVisible = visual;
         _sourceScroll.IsVisible = !visual;
@@ -253,14 +288,6 @@ public sealed class EditorOverlay : Grid
         };
         var bar = new DockPanel { Margin = new Thickness(8, 0, 12, 0), LastChildFill = true };
         DockPanel.SetDock(back, Dock.Left);
-        var save = new Button
-        {
-            Content = "Salvar", MinWidth = 64, Height = 36, Margin = new Thickness(4, 0),
-            Foreground = UrbeTheme.Brush(UrbeTheme.AccentInk),
-            Background = UrbeTheme.Brush(UrbeTheme.Accent),
-            CornerRadius = new CornerRadius(9)
-        };
-        save.Click += async (_, _) => { _visual.FinishEdit(); await SaveAsync(); };
         // v23: the overflow "Mais ações" after Visual/Fonte (abrirMenuExplorer with the note's actions)
         var more = IconButton(UrbeTheme.Icons.More, "Mais ações");
         more.Click += async (_, _) =>
@@ -268,7 +295,8 @@ public sealed class EditorOverlay : Grid
             _visual.FinishEdit();
             if (MoreRequested is not null && _note is not null) await MoreRequested(this);
         };
-        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { save, _segment, more } };
+        // no Salvar: the 1.8.4 saves by itself (autosave below, Ctrl+S) and says so in the footer
+        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { _segment, more } };
         DockPanel.SetDock(right, Dock.Right);
         bar.Children.Add(back);
         bar.Children.Add(right);
@@ -363,9 +391,12 @@ public sealed class EditorOverlay : Grid
 
     // ------------------------------------------------------------------ text changes, status, autosave
 
+    private bool _edited;
+
     private void OnTextChanged()
     {
         if (_opening) return;
+        if (_note is not null && !string.Equals(Editor.Text, _note.Content, StringComparison.Ordinal)) _edited = true;
         UpdateStatus(changed: true);
         if (!_fromVisual && Mode == EditorMode.Fonte) UpdateWiki();
         ScheduleAutosave();
@@ -373,9 +404,12 @@ public sealed class EditorOverlay : Grid
 
     private void UpdateStatus(bool changed)
     {
-        _status.Text = LegacyEditorTools.Stats(Editor.Text ?? "", _note is null ? "md" : Kind(_note.Path));
-        _saveState.Text = _saving ? "Salvando…" :
-            SaveOnClose ? (HasChanges ? "Alterado · não salvo" : "Sem alterações") :
+        // v21RefreshEditorChrome shows "MD · n linhas" when a note opens; updateStats (on input) adds the words
+        var kind = _note is null ? "md" : Kind(_note.Path);
+        _status.Text = _edited ? LegacyEditorTools.Stats(Editor.Text ?? "", kind) : LegacyEditorTools.ChromeStats(Editor.Text ?? "", kind);
+        // workspace:dirty → 'Alterado', workspace:saving → 'Salvando...', workspace:saved → 'Salvo'
+        _saveState.Text = _saving ? "Salvando..." :
+            SaveOnClose ? (HasChanges ? "Alterado" : "Salvo") :
             (changed ? "Alterado (prévia: não grava no vault)" : "Prévia: não grava no vault");
     }
 
@@ -403,17 +437,20 @@ public sealed class EditorOverlay : Grid
             return false;
         }
         _saving = true;
-        _saveState.Text = "Salvando…";
+        _saveState.Text = "Salvando...";
         try
         {
             await SaveRequested(note);
             _savedContent = note.Content;
-            _saveState.Text = "Salvo e verificado no vault";
+            _saveState.Text = "Salvo";
+            ToolTip.SetTip(_saveState, "Salvo e verificado no vault");
             return true;
         }
         catch (Exception ex)
         {
-            _saveState.Text = "Falha ao salvar: " + ex.Message;
+            // workspace:saveError → 'Erro ao salvar'; the reason stays on the label
+            _saveState.Text = "Erro ao salvar";
+            ToolTip.SetTip(_saveState, ex.Message);
             return false;
         }
         finally { _saving = false; }

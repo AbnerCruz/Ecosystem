@@ -1,0 +1,110 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-editor-chrome",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T17:53:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "e055ff3d",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyEditorTools.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorChromeUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-editor-chrome.json",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "docs/governance/handoffs/HO-20261012-urbe-native-notes-tree.json",
+    "docs/governance/handoffs/HO-20261012-urbe-native-editor-find.json"
+  ],
+  "work_completed": [
+    "Cabeçalho do editor como #editorTop da 1.8.4: Voltar, nome, Visual/Fonte e Mais ações; saiu o botão Salvar, que a 1.8.4 não tem (ela salva sozinha; o nativo já salvava automaticamente em 400 ms e por Ctrl+S).",
+    "Rodapé #editorBottom: 'MD · n linhas' ao abrir (v21RefreshEditorChrome) e '· m palavras' depois da primeira edição (updateStats); estado 'Salvo' / 'Alterado' / 'Salvando...' / 'Erro ao salvar' (workspace:dirty/saving/saved/saveError). 'Salvo e verificado no vault' e o motivo de um erro ficam na dica do rótulo.",
+    "#propertiesBox no Fonte (renderProps/propertiesFor: título, categoria = caminho do bairro ou raiz, tags, criado, modificado), com as quebras recolhidas em espaços como no div original; some no Visual. Core: LegacyCity.PropertiesText.",
+    "Coluna do Fonte ocupa a largura (textarea width:100%, até a largura da coluna); antes encolhia ao conteúdo e ficava centralizada.",
+    "Com o editor aberto a barra inferior some no celular (v23Dock.hidden = editor); o trilho da tela larga continua.",
+    "Testes de interface mais rápidos para caber no limite de 20 min do CI: o Settle dos testes headless exigia 7 quadros da cidade inteira (cada um custa segundos sem GPU) mesmo com todos os pedaços do mapa prontos desde o primeiro; agora encerra no segundo quadro que encontra todos prontos e nenhum pendente (a mesma condição). Suíte local de 28,5 para 12,7 min, 98/98; nenhum teste removido ou enfraquecido. O PR #535 tinha sido cancelado por tempo no estado combinado e o aumento do limite no workflow não teria efeito (o integrador usa o workflow confiável da main).",
+    "Handoffs do PR #535 (Notas e Localizar) marcados como done."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (Editor_ChromeIsTheOriginals, EditorTests) e suítes completas",
+      "result": "passed",
+      "evidence": "Core 554/554; Client 98/98 em 12m44s (antes 28m35s) localmente."
+    },
+    {
+      "kind": "automated",
+      "check": "Comparação por captura com a 1.8.4 real em 412×860, Visual e Fonte",
+      "result": "passed",
+      "evidence": "Cabeçalho, quadro de propriedades, texto do Fonte a partir de x=20, rodapé 'MD · 6 linhas'/'Salvo' e ausência da barra inferior coincidem. Diferenças restantes: barra de formatação no Visual (próxima fatia) e pílula Assistente (vem com a IA, UC-21)."
+    },
+    {
+      "kind": "human",
+      "check": "Editor no Android e no Windows",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs"
+    }
+  ],
+  "known_issues": [
+    "A barra de formatação ainda some no Visual; na 1.8.4 ela aparece e age sobre o bloco do cursor (v23BlocoAtual) — próxima fatia.",
+    "Pílula 'Assistente' do rodapé ausente até a IA ser portada (UC-21)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Barra de formatação no Visual.",
+    "DEVICE: editor no Android e no Windows."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/explorer/mobile-ui.js",
+    "apps/urbe/src/explorer/model.js",
+    "apps/urbe/src/explorer/operations.js",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/styles/theme.css",
+    "apps/urbe/src/styles/explorer-mobile.css",
+    "apps/urbe/src/ui/icons.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Pastas abertas fora do vault, como na 1.8.4; regras de casa só no Urbe.Core (AddDocumentHouse)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-18/UC-19 seguem em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "editor-chrome",
+      "status": "product-specific",
+      "rationale": "Cabeçalho e rodapé do editor do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Só interface; a gravação continua pelo SaveAsync/autosave já integrados."
+  }
+}

@@ -61,6 +61,10 @@ public sealed partial class MainView : Grid
         };
         Explorer = new NotesExplorer { IsVisible = false, State = ExplorerState };
         Editor = new EditorOverlay { IsVisible = false, Dialogs = Dialogs, Notes = () => _contents.Select(n => new CityNote(n.Key, n.Value)) };
+        Editor.PropertiesFor = path => World.City?.Buildings.Find(b => b.IsNote && b.Path == path) is { } house
+            ? World.City.PropertiesText(house, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) : null;
+        // v23Atualizar: v23Dock.hidden = editor (the rail of a wide window stays)
+        Editor.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) _dock.IsVisible = !Editor.IsVisible && !(Bounds.Width >= WideBreakpoint); };
         Explorer.Closed += () => Explorer.IsVisible = false;
         Explorer.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateNav(); };
         Explorer.SelectionAction += (action, paths) => _ = SelectionActionAsync(action, paths);
@@ -404,7 +408,7 @@ public sealed partial class MainView : Grid
         base.OnSizeChanged(e);
         bool wide = e.NewSize.Width >= WideBreakpoint;
         _rail.IsVisible = wide;
-        _dock.IsVisible = !wide;
+        _dock.IsVisible = !wide && !Editor.IsVisible;
         // theme.css @media (min-width:900px): Notas becomes a 360 px panel beside the city
         Explorer.Wide = e.NewSize.Width >= 900;
         PlaceHousePanel(wide);
