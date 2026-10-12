@@ -309,6 +309,9 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
     public Task SaveTrashAsync(string trashJson, CancellationToken cancellationToken = default) =>
         SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanTrashWrite(files, trashJson), "A lixeira", cancellationToken);
 
+    public Task SaveHistoryAsync(string historyJson, CancellationToken cancellationToken = default) =>
+        SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanHistoryWrite(files, historyJson), "O histórico", cancellationToken);
+
     public Task SaveTutorialMarkAsync(string json, CancellationToken cancellationToken = default) =>
         SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanTutorialMarkWrite(files, json), "A marca do Tutorial", cancellationToken);
 

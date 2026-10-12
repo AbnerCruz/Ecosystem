@@ -508,7 +508,21 @@ public sealed class EditorOverlay : Grid
     /// <summary>Save only via the native vault adapter, never silently to an in-memory preview.</summary>
     public async Task<bool> SaveAsync()
     {
+        // a save already running (the autosave) is waited for, then what changed since is saved too
+        bool waited = false;
+        while (_saving && _saveRun is { } running) { await running; waited = true; }
         if (_saving || Current is not { } note) return false;
+        if (waited && !HasChanges) return true;
+        var done = new TaskCompletionSource();
+        _saveRun = done.Task;
+        try { return await SaveNowAsync(note); }
+        finally { done.SetResult(); }
+    }
+
+    private Task? _saveRun;
+
+    private async Task<bool> SaveNowAsync(CityNote note)
+    {
         if (SaveRequested is null)
         {
             _saveState.Text = "Sem armazenamento conectado";

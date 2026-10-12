@@ -61,6 +61,26 @@ public sealed class FolderVaultStorageTests : IDisposable
     }
 
     [Fact]
+    public async Task TheHistoryIsWrittenAloneAndAForeignOneIsKept()
+    {
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        var before = Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).ToDictionary(f => f, File.ReadAllBytes);
+        await Assert.ThrowsAsync<InvalidDataException>(() => storage.SaveHistoryAsync("{\"version\":1,\"documents\":{}}", Ct));
+        const string json = "{\"version\":2,\"documents\":{\"doc_a\":[{\"timestamp\":1,\"path\":\"Comece.md\",\"content\":\"x\"}]}}";
+        await storage.SaveHistoryAsync(json, Ct);
+        Assert.Equal(json, File.ReadAllText(Path.Combine(Vault, ".urbe", "history.v2.json")));
+        foreach (var (file, bytes) in before) Assert.Equal(bytes, File.ReadAllBytes(file));
+
+        // a history of a later version is the 1.8.4's to keep: never rewritten
+        File.WriteAllText(Path.Combine(Vault, ".urbe", "history.v2.json"), "{\"version\":3,\"documents\":{}}");
+        var other = Storage();
+        await other.RestoreAsync(Ct);
+        await Assert.ThrowsAnyAsync<InvalidOperationException>(() => other.SaveHistoryAsync(json, Ct));
+        Assert.Equal("{\"version\":3,\"documents\":{}}", File.ReadAllText(Path.Combine(Vault, ".urbe", "history.v2.json")));
+    }
+
+    [Fact]
     public async Task TheTutorialMarkIsWrittenAloneAndVerified()
     {
         var storage = Storage();
