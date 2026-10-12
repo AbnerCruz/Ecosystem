@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Headless;
+using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using Urbe.Client;
 
@@ -37,6 +38,31 @@ public sealed partial class HeadlessUiTests
             for (int i = 0; i < 40 && city.Links.Count < 2; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
             Assert.Equal(2, city.Links.Count);                         // a new street, from the text being typed
             Assert.True(city.Roads.Count > 0);
+
+            // Mais ações → Estrutura e backlinks: the outline of the text and the notes that link here; a backlink opens
+            view.OpenNoteByPath("A.md");
+            Dispatcher.UIThread.RunJobs();
+            view.Editor.Editor.Text = "# A\n\n## Parte\n\ntexto\n";
+            view.ShowEditorContext();
+            Dispatcher.UIThread.RunJobs();
+            var panel = view.Editor.Context;
+            Assert.True(panel.IsVisible);
+            Assert.Equal(new[] { "A", "Parte", "C" }, panel.Items.ToArray());
+            panel.GetLogicalDescendants().OfType<Button>().First(b => (b.Content as TextBlock)?.Text == "Parte")
+                .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Assert.False(panel.IsVisible);
+            Assert.Equal("# A\n\n".Length, view.Editor.Editor.CaretIndex);
+            view.ShowEditorContext();
+            panel.GetLogicalDescendants().OfType<Button>().First(b => (b.Content as TextBlock)?.Text == "C")
+                .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal("C.md", view.Editor.Current!.Path);
+            Assert.Equal(new[] { "C", "Sem backlinks." }.Take(1), panel.Items.Take(1));
+
+            // Mostrar nas notas: Notas over the open editor
+            view.ShowNotesOverEditor();
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(view.Explorer.IsVisible && view.Editor.IsVisible && view.Explorer.ZIndex > view.Editor.ZIndex);
             window.Close();
             return true;
         }

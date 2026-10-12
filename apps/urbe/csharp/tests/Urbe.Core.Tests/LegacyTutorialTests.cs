@@ -41,3 +41,16 @@ public sealed class LegacyTutorialTests
         return dir ?? throw new InvalidOperationException("apps/urbe not found");
     }
 }
+
+/// <summary>editor/context.js outline: the # headings with level, trimmed title, line and offset.</summary>
+public sealed class LegacyEditorContextTests
+{
+    [Fact]
+    public void TheOutlineIsContextJs()
+    {
+        var o = LegacyEditorContext.Outline("# Título ##\ntexto\n\n### Parte  \n#semtitulo\n####### sete\n## Fim");
+        Assert.Equal(new[] { (1, "Título", 1, 0), (3, "Parte", 4, 19), (2, "Fim", 7, 55) },
+            o.Select(h => (h.Level, h.Title, h.Line, h.Offset)).ToArray());
+        Assert.Empty(LegacyEditorContext.Outline(null));
+    }
+}

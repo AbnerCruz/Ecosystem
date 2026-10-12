@@ -144,8 +144,9 @@ public sealed class EditorOverlay : Grid
         _visualScroll = Column(_visual);
         // #mathDock: the formula bar of Fonte, over the bottom of the text
         MathBar = new MathDock(Editor, () => Mode == EditorMode.Fonte && IsVisible);
-        var body = new Grid { Children = { _sourceScroll, _visualScroll, MathBar } };
-        body.SizeChanged += (_, e) => MathBar.Place(e.NewSize.Width);
+        var body = new Grid { Children = { _sourceScroll, _visualScroll, MathBar, Context } };
+        body.SizeChanged += (_, e) => { MathBar.Place(e.NewSize.Width); Context.Place(e.NewSize.Width); };
+        Context.LineChosen += GoToLine;
         AddRow(body, 2);
         AddRow(Footer(), 3);
         _autosave.Tick += async (_, _) => await AutosaveTickAsync();
@@ -187,6 +188,25 @@ public sealed class EditorOverlay : Grid
 
     /// <summary>The formula bar of Fonte (math/editor.js #mathDock).</summary>
     public MathDock MathBar { get; }
+
+    /// <summary>"Estrutura e backlinks" (editor/chrome.js .uec-context).</summary>
+    public EditorContextPanel Context { get; } = new();
+
+    /// <summary>The outline's tap: the caret at the start of that line of the text, focused.</summary>
+    private void GoToLine(int line)
+    {
+        var text = Editor.Text ?? "";
+        int pos = 0;
+        for (int i = 1; i < line && pos <= text.Length; i++)
+        {
+            int nl = text.IndexOf('\n', pos);
+            if (nl < 0) { pos = text.Length; break; }
+            pos = nl + 1;
+        }
+        pos = Math.Min(pos, text.Length);
+        Editor.SelectionStart = Editor.SelectionEnd = Editor.CaretIndex = pos;
+        if (Mode == EditorMode.Fonte) Editor.Focus();
+    }
 
     /// <summary>"Localizar e substituir" (ui.find.open, Ctrl+F).</summary>
     public EditorFindBar FindBar { get; }
