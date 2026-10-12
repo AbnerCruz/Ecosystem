@@ -138,6 +138,11 @@ public static partial class LegacyEditorTools
         return kind.ToUpperInvariant() + " · " + lines + " linhas · " + words + " palavras";
     }
 
+    /// <summary>v21RefreshEditorChrome, when a note opens: "MD · {lines} linhas" (the words come with the first edit,
+    /// updateStats).</summary>
+    public static string ChromeStats(string text, string kind) =>
+        kind.ToUpperInvariant() + " · " + text.Split('\n').Length + " linhas";
+
     public static (int Lines, int Words) Count(string text)
     {
         var trimmed = LegacyCustomize.JsTrim(text);

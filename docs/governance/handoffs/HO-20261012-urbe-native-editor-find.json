@@ -10,11 +10,11 @@
   },
   "task_id": "UC-18",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "ccr-2e1b58fa-7mhpmx",
   "base_commit": "ad2f3d0f56c66967a864210f44e2414b586d6f85",
-  "commit": null,
-  "pr": null,
+  "commit": "e055ff3db447945dbdf8b7ac4693b1b71630893c",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/535",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/LegacyEditorFind.cs",
     "apps/urbe/csharp/src/Urbe.Client/EditorFindBar.cs",
@@ -65,8 +65,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "DEVICE: Localizar e substituir no Android e no Windows.",
-    "CI do PR e integração."
+    "DEVICE: Localizar e substituir no Android e no Windows."
   ],
   "decisions_required": [],
   "normative_sources": [

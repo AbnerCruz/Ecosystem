@@ -680,7 +680,9 @@ public sealed partial class HeadlessUiTests : IDisposable
             AvaloniaHeadlessPlatform.ForceRenderTimerTick();
             Dispatcher.UIThread.RunJobs();
             window.CaptureRenderedFrame();
-            if (view.World.ReadyChunks > 0 && view.World.PendingChunks == 0 && i > 5) break;
+            // settled once a frame drawn after the first one finds every visible chunk ready and none pending: a frame of
+            // the city costs seconds headless, so waiting for six of them (as before) made the suite outgrow its CI limit
+            if (view.World.ReadyChunks > 0 && view.World.PendingChunks == 0 && i > 0) break;
             await Task.Delay(20);
         }
         AvaloniaHeadlessPlatform.ForceRenderTimerTick();
