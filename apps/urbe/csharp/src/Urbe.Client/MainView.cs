@@ -98,7 +98,7 @@ public sealed partial class MainView : Grid
             }
         };
         if (_vault is not null) Editor.SaveRequested += SaveNoteAsync;
-        Editor.Editor.TextChanged += (_, _) => EditorLinksChanged();
+        Editor.Editor.TextChanged += (_, _) => { EditorLinksChanged(); CaptureEditorHistory(); };
         Editor.MoreRequested += ShowEditorMenuAsync;
 
         _stage.Children.Add(World);
@@ -303,6 +303,7 @@ public sealed partial class MainView : Grid
         string? Text(string path) => snapshot.Files.FirstOrDefault(f => string.Equals(f.Key, path, StringComparison.OrdinalIgnoreCase)).Value is { } file
             ? System.Text.Encoding.UTF8.GetString(file.Bytes.Span).TrimStart('\uFEFF') : null;
         _trash = LegacyTrash.Read(Text(LegacyTrash.Path), Text(LegacyTrash.PathV1), out _trashReadOnly);
+        LoadHistory(Text);
         Editor.SaveOnClose = !snapshot.IsReadOnly;
         var texts = snapshot.Documents.Where(d => d.Text is not null).ToArray();
         var notes = texts.Select(d => new CityNote(d.Path, d.Text!)).ToArray();
@@ -437,6 +438,7 @@ public sealed partial class MainView : Grid
             _mapSave?.Schedule();
             _mapSave?.MarkSync();
         }
+        await SaveHistoryAsync();
     }
 
     /// <summary>
@@ -749,8 +751,8 @@ public sealed partial class MainView : Grid
 
     /// <summary>
     /// The editor's "Mais ações" (v23 overflow → abrirMenuExplorer(nomeCompletoNota(currentFile), …)) with the
-    /// actions the native app already has, in the 1.8.4's order: Renomear, Mostrar nas notas, Estrutura e backlinks
-    /// and Mover para a lixeira. Assistente and Versões anteriores join as their screens are ported.
+    /// actions the native app already has, in the 1.8.4's order: Renomear, Mostrar nas notas, Versões anteriores,
+    /// Estrutura e backlinks and Mover para a lixeira. Assistente joins with the assistant.
     /// </summary>
     private Task ShowEditorMenuAsync(EditorOverlay editor)
     {
@@ -761,6 +763,7 @@ public sealed partial class MainView : Grid
         [
             new DialogItem("Renomear", UrbeTheme.Icons.Pencil, Run: () => RenameNoteAsync(note.Path)),
             new DialogItem("Mostrar nas notas", UrbeTheme.Icons.Notes, Run: () => { ShowNotesOverEditor(); return Task.CompletedTask; }),
+            new DialogItem("Versões anteriores", UrbeTheme.Icons.Restore, Run: ShowVersionsAsync),
             new DialogItem("Estrutura e backlinks", UrbeTheme.Icons.List, Run: () => { ShowEditorContext(); return Task.CompletedTask; }),
             new DialogItem("Mover para a lixeira", UrbeTheme.Icons.Trash, Danger: true, Run: () => DeleteNoteAsync(note.Path))
         ]);
@@ -868,6 +871,7 @@ public sealed partial class MainView : Grid
             Editor.IsVisible = false;
             _editorOpenedFromNotes = false;
         }
+        await CaptureRemovedAsync(doc);   // document:removed → history.captureRemoved
         // removerNota (house panel, editor): marcarIndice, indexar, scheduleRoadRebuild, counts, buildTree, agendarSalvar +
         // marcarSinc. From Notas it is explorer.delete → document:removed, which does not redraw the streets.
         if (!confirmed) ScheduleRoadRebuild();

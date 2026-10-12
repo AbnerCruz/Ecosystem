@@ -26,6 +26,7 @@ public sealed partial class HeadlessUiTests
 
     private static async Task RenameThroughTheEditorMenu(MainView view, string typed)
     {
+        var before = view.Editor.Current?.Path;
         var more = view.Editor.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == "Mais ações");
         more.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
@@ -36,6 +37,8 @@ public sealed partial class HeadlessUiTests
         input.Text = typed;
         ClickButtonWithText(view.Dialogs, "Renomear");
         for (int i = 0; i < 100 && view.Dialogs.IsOpen; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+        // the open note is saved first (with its previous versions), then the file moves
+        for (int i = 0; i < 300 && view.Editor.Current?.Path == before; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
         for (int i = 0; i < 20; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
     }
 
@@ -102,7 +105,8 @@ public sealed partial class HeadlessUiTests
                 await UntilMapSaved(view);
                 var files = Directory.GetFiles(vault, "*", SearchOption.AllDirectories)
                     .Select(f => Path.GetRelativePath(vault, f).Replace('\\', '/')).Order(StringComparer.Ordinal);
-                Assert.Equal([".urbe/mapa.json", "Bairro/Dois (2).md", "Bairro/Dois.md", "Comece.md", "foto.png"], files);
+                // the edit kept the previous text (Versões anteriores) next to the map
+                Assert.Equal([".urbe/history.v2.json", ".urbe/mapa.json", "Bairro/Dois (2).md", "Bairro/Dois.md", "Comece.md", "foto.png"], files);
                 Snapshot(window, "native-rename-editor.png");
                 window.Close();
 

@@ -148,6 +148,33 @@ public interface IUrbeVaultStorage
     Task SaveTutorialMarkAsync(string json, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException("Este armazenamento ainda não grava a marca do Tutorial.");
 
+    /// <summary>
+    /// Rewrites .urbe/history.v2.json (Versões anteriores, history.js) alone, with the trash's safeguards: a history
+    /// of another version, a protected vault or an interrupted operation is never written. Hosts must override it.
+    /// </summary>
+    Task SaveHistoryAsync(string historyJson, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não grava as versões anteriores.");
+
+    /// <summary>The checks of a history rewrite on these files: version 2 JSON, never over a file the 1.8.4 would keep.</summary>
+    static (string Path, byte[] Bytes) PlanHistoryWrite(IReadOnlyList<VaultFile> files, string historyJson)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(historyJson);
+        var snapshot = VaultReader.Read(files);
+        var path = files.FirstOrDefault(f => string.Equals(f.Path, LegacyHistory.Path, StringComparison.OrdinalIgnoreCase))?.Path ?? LegacyHistory.Path;
+        if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal ||
+            snapshot.FutureFiles.Any(f => string.Equals(f, path, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Formato futuro de vault, histórico protegido ou operação interrompida: escrita recusada.");
+        if (files.FirstOrDefault(f => string.Equals(f.Path, path, StringComparison.OrdinalIgnoreCase)) is { } current)
+        {
+            LegacyHistory.Read(System.Text.Encoding.UTF8.GetString(current.Bytes.Span).TrimStart('\uFEFF'), null, out var foreign);
+            if (foreign) throw new InvalidOperationException("O histórico do vault é de outra versão: escrita recusada.");
+        }
+        LegacyHistory.Read(historyJson, null, out var unreadable);
+        if (unreadable) throw new InvalidDataException("O histórico a gravar não é da versão 2.");
+        return (path, System.Text.Encoding.UTF8.GetBytes(historyJson));
+    }
+
     /// <summary>The checks of the Tutorial's mark on these files: a JSON object with "versao", never on a protected vault.</summary>
     static (string Path, byte[] Bytes) PlanTutorialMarkWrite(IReadOnlyList<VaultFile> files, string json)
     {

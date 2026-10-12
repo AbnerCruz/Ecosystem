@@ -1,0 +1,116 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-history",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T22:30:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "dc281222",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyHistory.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.History.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tools/legacy-history-oracle.mjs",
+    "apps/urbe/csharp/tests/fixtures/legacy-city/history-run-a.json",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyHistoryOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultStorageTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HistoryUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-history.json",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/RenameUiTests.cs",
+    "docs/governance/handoffs/HO-20261012-urbe-native-editor-context.json"
+  ],
+  "work_completed": [
+    "Versões anteriores como a 1.8.4 (history.js + urbeVersoes): cada mudança de uma nota no editor guarda o texto anterior, exceto mudanças a menos de 5 s da última (digitação), até 40 por nota; a nota mandada para a lixeira guarda o último texto marcado como removido.",
+    "O histórico é lido de .urbe/history.v2.json (ou history.json v1) e gravado depois de cada salvamento da nota, só esse arquivo, com as proteções da lixeira: um histórico de outra versão, vault protegido ou operação interrompida nunca é reescrito.",
+    "Editor → Mais ações → Versões anteriores: lista ('Hoje às 14:05' ou a data, e os primeiros 70 caracteres), 'Restaurar esta versão?' com até 600 caracteres e o texto volta ao editor ('Versão restaurada'), salvo como qualquer mudança.",
+    "Antes o nativo não guardava versões: o histórico da 1.8.4 ficava parado.",
+    "Salvar enquanto um salvamento automático está em andamento agora espera por ele em vez de falhar (renomear logo depois de digitar dizia 'A nota tem alterações que não foram salvas')."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Oráculo legacy-history-oracle.mjs (1.8.4 no Chromium) → LegacyHistoryOracleTests",
+      "result": "passed",
+      "evidence": ".urbe/history.v2.json idêntico byte a byte após cada passo (janela de 5 s, várias notas, aspas e barra, lixeira)."
+    },
+    {
+      "kind": "automated",
+      "check": "Urbe.Client.Tests TheHistoryIsWrittenAloneAndAForeignOneIsKept e Editor_PreviousVersionsAreKeptAndRestored",
+      "result": "passed",
+      "evidence": "Só o histórico é gravado; versão 3 preservada; edição guarda a versão anterior e restaurar devolve o texto ao arquivo."
+    },
+    {
+      "kind": "human",
+      "check": "Versões anteriores no Android e no Windows",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.History.cs"
+    }
+  ],
+  "known_issues": [
+    "Mais ações ainda sem Assistente; a 1.8.4 também cria um histórico vazio na primeira abertura, o nativo só cria o arquivo quando há versão a guardar."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Autorização do proprietário (zona user-data: *Vault*.cs).",
+    "DEVICE: versões anteriores."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/explorer/mobile-ui.js",
+    "apps/urbe/src/explorer/model.js",
+    "apps/urbe/src/explorer/operations.js",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/styles/theme.css",
+    "apps/urbe/src/styles/explorer-mobile.css",
+    "apps/urbe/src/ui/icons.js",
+    "apps/urbe/src/core/history.js",
+    "apps/urbe/src/persistence/workspace.js",
+    "apps/urbe/src/editor/session.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Regra e formato do histórico no Urbe.Core (LegacyHistory); o cliente só captura e grava."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-18/UC-19 seguem em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "history",
+      "status": "product-specific",
+      "rationale": "Histórico de versões do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Grava um arquivo novo do vault (.urbe/history.v2.json) pelo armazenamento (IUrbeVaultStorage, FolderVaultStorage, AndroidVaultStorage): zona user-data."
+  }
+}
