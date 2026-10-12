@@ -94,6 +94,12 @@ public sealed class LegacyCityOpenOracleTests
             Assert.Equal((e.GetProperty("x").GetInt32(), e.GetProperty("y").GetInt32(), e.GetProperty("w").GetInt32(), e.GetProperty("h").GetInt32()),
                 (b.X, b.Y, b.W, b.H));
             Assert.Equal(e.GetProperty("sprite").GetString(), b.Sprite);
+            // a file building shows nomeExibidoArquivo (its fileName) and keeps its class
+            if (!b.IsNote)
+            {
+                Assert.Equal("foto.png", b.FileDisplayName);
+                Assert.Equal("image", b.FileKind);
+            }
         }
 
         Assert.Equal(o.GetProperty("links").EnumerateArray().Select(l => l[0].GetString() + ">" + l[1].GetString()),

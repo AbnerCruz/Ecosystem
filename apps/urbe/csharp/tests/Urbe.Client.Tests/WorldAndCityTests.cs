@@ -13,6 +13,29 @@ public sealed class WorldAndCityTests(WorldFixture fixture) : IClassFixture<Worl
 {
     private readonly LegacyWorld _world = fixture.World;
 
+    /// <summary>
+    /// A file building of mapa.construcoes (an image the 1.8.4 indexed) is drawn as a "store" and named by its file
+    /// (nomeExibidoArquivo), as notes keep their trade and name.
+    /// </summary>
+    [Fact]
+    public void FileBuildingsAreNamedByTheirFile()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "csharp", "Urbe.Portable.slnx"))) dir = dir.Parent;
+        using var json = System.Text.Json.JsonDocument.Parse(File.ReadAllBytes(Path.Combine(dir!.FullName, "csharp", "tests", "fixtures", "legacy-city", "open-vault-run-a.json")));
+        var o = json.RootElement.GetProperty("mapa");
+        var files = o.GetProperty("files").EnumerateObject().Select(p => (p.Name, p.Value.GetString()!)).ToList();
+        int n = 0;
+        var city = new LegacyCity(new LegacyCityTerrain((x, y) => _world.At(x, y).Biome), p => p + (++n));
+        city.Open(files, o.GetProperty("mapaJson").GetString(),
+            o.GetProperty("documents").EnumerateArray().ToDictionary(d => d.GetProperty("path").GetString()!, d => d.GetProperty("id").GetString()!));
+        var file = city.Buildings.Single(b => !b.IsNote);
+        Assert.Equal("foto.png", WorldView.HouseLabel(file));
+        Assert.Equal("image", file.FileKind);
+        var note = city.Buildings.First(b => b.IsNote);
+        Assert.DoesNotContain(".md", WorldView.HouseLabel(note));
+    }
+
     [Fact]
     public void World_IsTheOriginalSeedAndSpawn()
     {

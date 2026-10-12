@@ -1,0 +1,98 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-file-buildings",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T23:50:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "c030ce57",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyCityOpenOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/WorldAndCityTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-file-buildings.json",
+    "docs/governance/handoffs/HO-20261012-urbe-native-history.json"
+  ],
+  "work_completed": [
+    "Construções de arquivo (imagens, PDFs e outros arquivos que a 1.8.4 guardou em mapa.construcoes) passam a ser desenhadas na cidade como na 1.8.4: urbeArteDaConstrucao com o ofício 'store', estilo do bioma, variante e flores pelo nome; antes só ocupavam espaço, invisíveis.",
+    "Rótulo de cada construção de arquivo por nomeExibidoArquivo (anexo: o nome; senão o fileName ou o nome), com o mesmo layout dos rótulos das casas (LegacyCityBuilding.FileDisplayName/FileKind no Core).",
+    "Handoff do PR #544 marcado done."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "LegacyCityOpenOracleTests (fixture open-vault-run-a: foto.png de mapa.construcoes) e WorldAndCityTests.FileBuildingsAreNamedByTheirFile",
+      "result": "passed",
+      "evidence": "Nome exibido 'foto.png', classe 'image'; notas mantêm o nome sem .md."
+    },
+    {
+      "kind": "human",
+      "check": "Construções de arquivo na cidade no Android e no Windows",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs"
+    }
+  ],
+  "known_issues": [
+    "Tocar numa construção de arquivo ainda não abre a prévia (openFilePreview): precisa ler o arquivo do vault (zona crítica), próximo PR.",
+    "Arquivos sem entrada em mapa.construcoes (v21IndexBinary) ainda não viram construção."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI e integração (rotina).",
+    "Prévia do arquivo (openFilePreview) com leitura do arquivo."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/explorer/mobile-ui.js",
+    "apps/urbe/src/explorer/model.js",
+    "apps/urbe/src/explorer/operations.js",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/styles/theme.css",
+    "apps/urbe/src/styles/explorer-mobile.css",
+    "apps/urbe/src/ui/icons.js",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Regra do nome exibido no Urbe.Core (LegacyCityBuilding.FileDisplayName)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-18/UC-19 seguem em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "file-buildings",
+      "status": "product-specific",
+      "rationale": "Cidade do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Só desenho e rótulo; não toca o armazenamento."
+  }
+}

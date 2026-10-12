@@ -142,6 +142,14 @@ public sealed class LegacyCityBuilding
     internal JsonNode? Tags, Anexos, Created, Modified, AiLocal;
     internal JsonNode? FileTipo, FileClass, FileName, FileDescription, Files;
 
+    /// <summary>nomeExibidoArquivo of a file building: an attachment ("anexo") shows its name, otherwise its fileName or name.</summary>
+    public string FileDisplayName =>
+        (FileTipo is JsonValue t && t.TryGetValue<string>(out var tipo) ? tipo : null) == "anexo" ? Name
+        : FileName is JsonValue f && f.TryGetValue<string>(out var file) && file.Length > 0 ? file : Name;
+
+    /// <summary>The file's class (image, audio, video, pdf, html, zip or other).</summary>
+    public string FileKind => FileClass is JsonValue c && c.TryGetValue<string>(out var k) && k.Length > 0 ? k : "other";
+
     /// <summary>b.parentNoteId of a file building: the id of the note house it belongs to.</summary>
     internal string? ParentNoteId;
 

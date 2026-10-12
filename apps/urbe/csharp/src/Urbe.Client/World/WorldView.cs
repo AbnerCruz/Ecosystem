@@ -562,12 +562,13 @@ public sealed class WorldView : Control
     /// <summary>The house art as drawn in the city (house panel preview).</summary>
     public Bitmap? ArtOf(LegacyCityBuilding b) => World is null ? null : Art(b);
 
-    /// <summary>urbeArteDaConstrucao: trade by extension, style by biome, variant and flowers by name.</summary>
+    /// <summary>urbeArteDaConstrucao: a note's trade by extension, a file building is a store; style by biome, variant and
+    /// flowers by name.</summary>
     private Bitmap Art(LegacyCityBuilding b)
     {
         var ext = b.Ext.TrimStart('.').ToLowerInvariant();
         if (!Noted.Contains(ext)) ext = "md";
-        var kind = Trade.GetValueOrDefault(ext, "house");
+        var kind = b.IsNote ? Trade.GetValueOrDefault(ext, "house") : "store";
         if (_ownArt.TryGetValue(kind, out var own)) return own;   // urbeSpritesProprios[kind]
         var biome = World!.At((int)Math.Floor(b.X + b.W / 2.0), (int)Math.Floor(b.Y + b.H / 2.0)).Biome;
         int variant = b.Sprite == "house2" ? 1 : b.Sprite == "house3" ? 2 : (int)(LegacyJsMath.Seed(b.Id.Length > 0 ? b.Id : b.Name) % 3);
@@ -575,9 +576,15 @@ public sealed class WorldView : Control
         return _sprites.Building(kind, LegacyWorldBuildings.StyleForBiome(LegacyBiomeRules.Id(biome)), variant, flowers);
     }
 
-    /// <summary>urbeNomeCasa: name with its extension, Markdown hidden, at most 30 characters.</summary>
+    /// <summary>urbeNomeCasa: name with its extension, Markdown hidden, at most 30 characters; a file building shows
+    /// nomeExibidoArquivo (an attachment its name, otherwise its fileName or name).</summary>
     public static string HouseLabel(LegacyCityBuilding b)
     {
+        if (!b.IsNote)
+        {
+            var file = b.FileDisplayName;
+            return file.Length > 30 ? file[..28] + "…" : file;
+        }
         var ext = b.Ext.ToLowerInvariant();
         if (!Noted.Contains(ext.TrimStart('.'))) ext = ".md";
         var raw = System.Text.RegularExpressions.Regex.Replace(b.Name + ext, @"\.(md|markdown)$", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
@@ -593,8 +600,6 @@ public sealed class WorldView : Control
         using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.None }))
             foreach (var b in city.Buildings)
             {
-                // file buildings (mapa.construcoes) take their room but their art is not ported yet
-                if (!b.IsNote) continue;
                 if (b.X > x1 || b.X + b.W < x0 || b.Y > y1 || b.Y + b.H < y0) continue;
                 if (b == Selected)
                 {
@@ -616,7 +621,7 @@ public sealed class WorldView : Control
         var city = City!;
         var (x0, y0, x1, y1) = Camera.VisibleTiles();
         double z = Camera.Zoom;
-        var labels = city.Buildings.Where(b => b.IsNote &&
+        var labels = city.Buildings.Where(b =>
             !(b.X > x1 || b.X + b.W < x0 || b.Y > y1 || b.Y + b.H < y0) &&
             ((z >= .42 && ShowHouseNames) || b == Selected)).ToList();
         var used = DistrictLabelLayout();
