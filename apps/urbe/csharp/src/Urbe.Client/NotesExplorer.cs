@@ -90,6 +90,10 @@ public sealed class NotesExplorer : Grid
 
     public event Action? Closed;
     public event Action<CityNote>? NoteRequested;
+    /// <summary>A note row held (v21BindEntry: 520 ms without moving 9 px) → v21MoveEntry ("Mover para…").</summary>
+    public event Action<CityNote>? NoteHeld;
+    /// <summary>How long a press must last to be a hold (v21BindEntry: 520 ms).</summary>
+    public TimeSpan HoldDelay { get; set; } = TimeSpan.FromMilliseconds(520);
     public string CurrentFolder => _folder;
     public string SearchText
     {
@@ -130,6 +134,15 @@ public sealed class NotesExplorer : Grid
             string.Equals(n.Path, path, StringComparison.OrdinalIgnoreCase));
         if (note is null) return false;
         NoteRequested?.Invoke(note);
+        return true;
+    }
+
+    /// <summary>The hold of a visible note row (what the gesture raises).</summary>
+    public bool HoldNote(string path)
+    {
+        var note = _visibleNotes.FirstOrDefault(n => string.Equals(n.Path, path, StringComparison.OrdinalIgnoreCase));
+        if (note is null) return false;
+        NoteHeld?.Invoke(note);
         return true;
     }
 
@@ -197,7 +210,7 @@ public sealed class NotesExplorer : Grid
             _entries.Children.Add(Item(
                 file.Name,
                 search.Length > 0 ? file.Path : "NOTA MARKDOWN",
-                () => TryOpenNote(file.Path)));
+                () => TryOpenNote(file.Path), () => HoldNote(file.Path), () => HoldDelay));
         }
         if (_visibleFolders.Length + _visibleNotes.Length == 0)
             _entries.Children.Add(new TextBlock
@@ -209,7 +222,7 @@ public sealed class NotesExplorer : Grid
             });
     }
 
-    private static Control Item(string name, string category, Action click)
+    private static Control Item(string name, string category, Action click, Action? hold = null, Func<TimeSpan>? holdDelay = null)
     {
         var texts = new StackPanel
         {
@@ -245,7 +258,35 @@ public sealed class NotesExplorer : Grid
             HorizontalAlignment = HorizontalAlignment.Stretch,
             MinHeight = 62
         };
-        button.Click += (_, _) => click();
+        // v21BindEntry: a press held 520 ms without moving more than 9 px is the hold; the release then opens nothing
+        bool held = false;
+        Avalonia.Threading.DispatcherTimer? timer = null;
+        Point start = default;
+        if (hold is not null)
+        {
+            button.AddHandler(PointerPressedEvent, (_, e) =>
+            {
+                if (e.GetCurrentPoint(button).Properties.IsRightButtonPressed) return;
+                held = false;
+                start = e.GetPosition(button);
+                timer?.Stop();
+                timer = new Avalonia.Threading.DispatcherTimer { Interval = holdDelay?.Invoke() ?? TimeSpan.FromMilliseconds(520) };
+                timer.Tick += (_, _) => { timer!.Stop(); timer = null; held = true; hold(); };
+                timer.Start();
+            }, Avalonia.Interactivity.RoutingStrategies.Tunnel | Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+            button.AddHandler(PointerMovedEvent, (_, e) =>
+            {
+                var p = e.GetPosition(button);
+                if (timer is not null && Math.Sqrt(Math.Pow(p.X - start.X, 2) + Math.Pow(p.Y - start.Y, 2)) > 9) { timer.Stop(); timer = null; }
+            }, Avalonia.Interactivity.RoutingStrategies.Tunnel | Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+            button.AddHandler(PointerReleasedEvent, (_, _) => { timer?.Stop(); timer = null; },
+                Avalonia.Interactivity.RoutingStrategies.Tunnel | Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+        }
+        button.Click += (_, _) =>
+        {
+            if (held) { held = false; return; }
+            click();
+        };
         return button;
     }
 }
