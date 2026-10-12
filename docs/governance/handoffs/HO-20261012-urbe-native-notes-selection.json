@@ -1,0 +1,122 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-notes-selection",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T12:00:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "ac3fd575703e52b330f5958e86d1d4cb7f4799b5",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ExplorerState.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
+    "apps/urbe/csharp/src/Urbe.Desktop/Program.cs",
+    "apps/urbe/csharp/src/Urbe.Android/MainActivity.cs",
+    "apps/urbe/csharp/tools/legacy-selection-oracle.mjs",
+    "apps/urbe/csharp/tests/fixtures/legacy-city/notes-selection-run-a.json",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyRenameOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/RenameUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-notes-selection.json"
+  ],
+  "work_completed": [
+    "Correção de fidelidade: na tela Notas o gesto de segurar agora SELECIONA (mobile-ui.js, 430 ms), como a 1.8.4; o PR #530 tinha portado o gesto da barra lateral v21 (segurar → 'Mover para…'). O Core de moverEntradaPara (PlanMove/ApplyMove + oráculo) continua para quando a barra lateral for portada; a interface antiga saiu.",
+    "Barra de seleção (.ume-actions): Limpar, contagem ('1 nota'/'n notas'), Abrir (touchRecent), Favoritar, Mover para pasta (D.choose 'Mover para': Raiz + pastas; explorer.move), Duplicar (explorer.duplicate) e Mover para a lixeira (uma confirmação para todas, mensagem da 1.8.4). Tocar com seleção alterna; sem seleção abre.",
+    "Core: LegacyCity.UniqueDocumentPath (unique de operations.js), FolderMovePath/ApplyFolderMove (casa troca de bairro e fica no lote), DuplicateDocument/DuplicateHouse ('X cópia.ext', casa a +4,+4).",
+    "Recentes e Favoritos (menu ⋯ de Notas, renderCollection) com ExplorerState: arquivo JSON nos dados do app (desktop: pasta de dados do Urbe; Android: arquivos privados), fora do vault, como o localStorage 'urbe.explorer.v2'.",
+    "Oráculo tools/legacy-selection-oracle.mjs: a 1.8.4 real em Chromium, linha segurada → Favoritar, Mover para pasta (2 notas), Duplicar, Mover para a lixeira (2 notas)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "node csharp/tools/legacy-selection-oracle.mjs (1.8.4-beta real em Chromium)",
+      "result": "passed",
+      "evidence": "Fixture notes-selection-run-a.json gravada."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (TheSelectionBarLeavesTheFilesTheMapAndTheTrashOfTheOriginal)",
+      "result": "passed",
+      "evidence": "Arquivos, mapa.json e lixeira idênticos byte a byte aos da 1.8.4 em mover para pasta, duplicar e exclusão múltipla; casas no mesmo lote/bairro."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (Notes_HoldingSelectsAndATapOpens, Notes_SelectionBarMovesDuplicatesAndFavorites)",
+      "result": "passed",
+      "evidence": "Gesto real de 430 ms seleciona; barra; mover com nome existente vira ' (2)' sem sobrescrever; duplicar; favoritos/recentes persistidos e relidos por um app novo."
+    },
+    {
+      "kind": "automated",
+      "check": "Suítes completas Core/Client e consistency",
+      "result": "passed",
+      "evidence": "Core 552/552 e Client 94/94 localmente; consistency 22/22."
+    },
+    {
+      "kind": "human",
+      "check": "Segurar/selecionar e usar a barra em Android e Windows reais",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs"
+    }
+  ],
+  "known_issues": [
+    "Desvio de segurança deliberado: mover para uma pasta que já tem um arquivo de mesmo nome dá 'X (2).md' (como a 1.8.4), mas a casa passa a se chamar 'X (2)'; na 1.8.4 ela mantém 'X' e o salvamento seguinte leva o documento para cima do outro arquivo (perda de dados).",
+    "Pastas não são selecionáveis ainda (a 1.8.4 seleciona pastas e exclui pasta inteira); Compor entra com as composições.",
+    "A tela Notas nativa navega por pastas (não é a árvore expansível da 1.8.4), herdado de sessões anteriores."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "PR depois da integração do #532.",
+    "DEVICE: segurar/selecionar e a barra em Android e Windows."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/explorer/mobile-ui.js",
+    "apps/urbe/src/explorer/model.js",
+    "apps/urbe/src/explorer/operations.js",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Regras de caminho/lote só em Urbe.Core; favoritos fora do vault, como na 1.8.4."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-19 segue em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "notes-selection",
+      "status": "product-specific",
+      "rationale": "Barra de seleção da tela Notas do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Usa as operações de vault já integradas (MoveTextFileAsync, CreateTextFileAsync, TrashTextFileAsync) sem mudar armazenamento; estado local do app fora do vault."
+  }
+}

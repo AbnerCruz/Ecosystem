@@ -1116,6 +1116,95 @@ public sealed partial class LegacyCity
     /// <summary>Undo a house that could not be written to the vault.</summary>
     public void RemoveBuilding(LegacyCityBuilding b) => Buildings.Remove(b);
 
+    /// <summary>
+    /// explorer.js unique(path, exceptId): the path itself when no other document has it, else "stem (2).ext",
+    /// "stem (3).ext"… (the stem and extension of the whole path).
+    /// </summary>
+    public static string UniqueDocumentPath(DocumentStore store, string path, string? exceptId = null)
+    {
+        ArgumentNullException.ThrowIfNull(store);
+        var basePath = DocumentModel.NormalizePath(path);
+        int slash = basePath.LastIndexOf('/'), dot = basePath.LastIndexOf('.');
+        string stem = dot > slash ? basePath[..dot] : basePath, ext = dot > slash ? basePath[dot..] : "";
+        var candidate = basePath;
+        for (int i = 2; store.Get(candidate) is { } other && other.Id != exceptId; i++)
+            candidate = stem + " (" + i.ToString(System.Globalization.CultureInfo.InvariantCulture) + ")" + ext;
+        return candidate;
+    }
+
+    /// <summary>explorer.move (Notas → Mover para pasta): the document's path in <paramref name="folder"/>, unique.</summary>
+    public static string FolderMovePath(DocumentStore store, UrbeDocument doc, string folder)
+    {
+        ArgumentNullException.ThrowIfNull(doc);
+        var f = DocumentModel.NormalizePath(folder);
+        return UniqueDocumentPath(store, (f.Length > 0 ? f + "/" : "") + doc.Path[(doc.Path.LastIndexOf('/') + 1)..], doc.Id);
+    }
+
+    /// <summary>
+    /// The house after explorer.move: the 'move' operation (name = urbeNomeDoc, modified = nowDate) and the
+    /// document:updated handler (the neighbourhood of the new folder when there is one, or none for the root). The
+    /// house does NOT move on the map: the 1.8.4 keeps its lot.
+    /// </summary>
+    public void ApplyFolderMove(LegacyCityBuilding b, UrbeDocument moved, long nowMs)
+    {
+        ArgumentNullException.ThrowIfNull(b);
+        ArgumentNullException.ThrowIfNull(moved);
+        int slash = moved.Path.LastIndexOf('/');
+        var file = moved.Path[(slash + 1)..];
+        var name = NoteName(moved.Title, moved.Path);
+        // When the folder already had that name (unique() gave "X (2).md"), the 1.8.4 keeps the old house name and its
+        // next save moves the document onto the other file (urbeReconcileWorld): the house takes the file's name instead.
+        if (!string.Equals(ArtifactModel.SafeName(name) + ExtNota(b), file, StringComparison.Ordinal))
+        {
+            var ext = System.Text.RegularExpressions.Regex.Match(file, @"\.[^.]+$");
+            name = ext.Success ? file[..^ext.Length] : file;
+        }
+        b.Name = name;
+        b.Path = moved.Path;
+        b.Modified = JsonValue.Create(NowDate(nowMs));
+        var folder = slash < 0 ? "" : moved.Path[..slash];
+        var region = folder.Length > 0 ? RegionByPath(folder) : null;
+        if (region is not null || folder.Length == 0) b.RegionId = region?.Id;
+    }
+
+    /// <summary>explorer.duplicate: the copy's document ({...doc, id:new, path:unique("stem cópia.ext"), title}).</summary>
+    public static UrbeDocument DuplicateDocument(DocumentStore store, UrbeDocument doc, string? newId = null)
+    {
+        ArgumentNullException.ThrowIfNull(store);
+        ArgumentNullException.ThrowIfNull(doc);
+        int dot = doc.Path.LastIndexOf('.');
+        string stem = dot >= 0 ? doc.Path[..dot] : doc.Path, ext = dot >= 0 ? doc.Path[dot..] : "";
+        var path = UniqueDocumentPath(store, stem + " cópia" + ext);
+        var file = path[(path.LastIndexOf('/') + 1)..];
+        var title = System.Text.RegularExpressions.Regex.Replace(file, @"\.(md|markdown)$", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        return store.Upsert(new DocumentInput
+        {
+            Id = newId, Path = path, Title = title, Content = doc.Content, Properties = doc.Properties, Tags = doc.Tags, Links = doc.Links,
+            Created = doc.Created, Modified = doc.Modified
+        }, "explorer.duplicate");
+    }
+
+    /// <summary>The house of a duplicate (explorer:operation 'duplicate'): {...source, new id, documentId, name, ext,
+    /// x+4, y+4, created/modified = nowDate()}; the 1.8.4 does not check that lot.</summary>
+    public LegacyCityBuilding DuplicateHouse(LegacyCityBuilding source, UrbeDocument copy, long nowMs)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(copy);
+        var b = new LegacyCityBuilding(_newId("b"), copy.Path, NoteName(copy.Title, copy.Path), source.RegionId, source.X + 4, source.Y + 4, source.Sprite)
+        {
+            DocumentId = copy.Id
+        };
+        var today = NowDate(nowMs);
+        b.Tags = source.Tags?.DeepClone();
+        b.Anexos = source.Anexos?.DeepClone();
+        b.AiLocal = source.AiLocal?.DeepClone();
+        b.Created = JsonValue.Create(today);
+        b.Modified = JsonValue.Create(today);
+        Buildings.Add(b);
+        Reindex();
+        return b;
+    }
+
     /// <summary>removerNota: the house leaves the city (world.buildings.filter), then marcarIndice + indexar.</summary>
     public void DeleteNote(LegacyCityBuilding b)
     {

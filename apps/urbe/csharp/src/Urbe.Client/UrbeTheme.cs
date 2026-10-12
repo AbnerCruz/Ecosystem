@@ -130,6 +130,11 @@ public static class UrbeTheme
         public const string Upload = "M12 15.5V4.5M7.5 9l4.5-4.5L16.5 9 M4.5 15v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3";
         public const string File = "M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z M14 3.5V8h4.5";
         public const string Pencil = "M4 20h4L19 9l-4-4L4 16z M14 6l4 4";
+        public const string Open = "M14 4.5h5.5V10 M19.5 4.5L11 13 M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4";
+        public const string Star = "M12 4l2.4 5 5.3.6-3.9 3.6 1.1 5.3L12 15.9l-4.9 2.6 1.1-5.3-3.9-3.6 5.3-.6z";
+        public const string Move = "M4.5 12h15M15 7.5l4.5 4.5-4.5 4.5";
+        public const string Copy = "M10.5 8.5h7a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2";
+        public const string Clock = "M12 4a8 8 0 1 0 0 16a8 8 0 1 0 0-16z M12 7.5V12l3 2";
         public const string Trash = "M4.5 7h15 M9.5 7V4.5h5V7 M6.5 7l.9 12.5h9.2L17.5 7 M10.2 11v5.5M13.8 11v5.5";
     }
 }

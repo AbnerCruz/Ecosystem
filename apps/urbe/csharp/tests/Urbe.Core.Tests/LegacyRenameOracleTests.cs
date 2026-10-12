@@ -188,6 +188,69 @@ public sealed class LegacyRenameOracleTests
         Assert.Equal("{\n \"version\": 2,\n \"items\": [\n  {\n   \"document\": {\n    \"id\": \"doc_a\",\n    \"path\": \"A.md\",\n    \"content\": \"x\"\n   },\n   \"deletedAt\": 5,\n   \"originalPath\": \"A.md\"\n  }\n ]\n}", trash.Export());
     }
 
+    /// <summary>
+    /// The selection bar of Notas (csharp/tools/legacy-selection-oracle.mjs): Mover para pasta (explorer.move: the file
+    /// moves, the house changes neighbourhood but keeps its lot), Duplicar ("Plano cópia.md", the house 4 tiles away)
+    /// and Mover para a lixeira with two notes. Files, map and trash are the original's after each step.
+    /// </summary>
+    [Fact]
+    public void TheSelectionBarLeavesTheFilesTheMapAndTheTrashOfTheOriginal()
+    {
+        using var json = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(Root().FullName, "csharp", "tests", "fixtures", "legacy-city", "notes-selection-run-a.json")));
+        var (city, store, writer, disk) = OpenFixture(json.RootElement, out var houseIds);
+        var trash = LegacyTrash.Read(null, null, out _);
+        var steps = json.RootElement.GetProperty("steps");
+        void Check(JsonElement step)
+        {
+            Assert.Equal(step.GetProperty("mapaWritten").GetString(), Produce(writer, city, store, step));
+            Assert.Equal(step.GetProperty("files").EnumerateObject().Select(p => (p.Name, p.Value.GetString())),
+                disk.OrderBy(p => p.Key, StringComparer.Ordinal).Select(p => (p.Key, (string?)p.Value)));
+        }
+
+        // Favoritar changes no file (the 1.8.4 keeps favourites in localStorage)
+        Check(steps.GetProperty("favorite"));
+
+        var move = steps.GetProperty("move");
+        foreach (var from in move.GetProperty("paths").EnumerateArray().Select(p => p.GetString()!))
+        {
+            var doc = store.Get(from)!;
+            var house = city.Buildings.Single(b => b.IsNote && b.DocumentId == doc.Id);
+            var path = LegacyCity.FolderMovePath(store, doc, move.GetProperty("to").GetString()!);
+            var moved = LegacyCity.MoveDocument(store, doc, path);
+            city.ApplyFolderMove(house, moved, move.GetProperty("now").GetInt64());
+            disk[path] = disk[from];
+            disk.Remove(from);
+            var expected = move.GetProperty("buildings").EnumerateArray().Single(b => b.GetProperty("id").GetString() == house.Id);
+            Assert.Equal((expected.GetProperty("x").GetInt32(), expected.GetProperty("y").GetInt32()), (house.X, house.Y));
+            Assert.Equal(expected.GetProperty("regionId").GetString(), house.RegionId);
+        }
+        Check(move);
+
+        var dup = steps.GetProperty("duplicate");
+        var plano = store.Get(dup.GetProperty("paths")[0].GetString()!)!;
+        var planoHouse = city.Buildings.Single(b => b.IsNote && b.DocumentId == plano.Id);
+        var madeHouse = dup.GetProperty("buildings").EnumerateArray().Last();
+        var copyId = dup.GetProperty("documents").EnumerateArray().Single(d => d.GetProperty("path").GetString() == madeHouse.GetProperty("path").GetString()).GetProperty("id").GetString();
+        var copy = LegacyCity.DuplicateDocument(store, plano, copyId);
+        houseIds.Enqueue(madeHouse.GetProperty("id").GetString()!);
+        var copyHouse = city.DuplicateHouse(planoHouse, copy, dup.GetProperty("now").GetInt64());
+        Assert.Equal((madeHouse.GetProperty("x").GetInt32(), madeHouse.GetProperty("y").GetInt32()), (copyHouse.X, copyHouse.Y));
+        disk[copy.Path] = copy.Content;
+        Check(dup);
+
+        var del = steps.GetProperty("delete");
+        foreach (var from in del.GetProperty("paths").EnumerateArray().Select(p => p.GetString()!))
+        {
+            var doc = store.Get(from)!;
+            var house = city.Buildings.Single(b => b.IsNote && b.DocumentId == doc.Id);
+            trash.Trash(store, doc.Id, del.GetProperty("now").GetInt64());
+            city.DeleteNote(house);
+            disk.Remove(from);
+        }
+        Assert.Equal(del.GetProperty("trashWritten").GetString(), trash.Export());
+        Check(del);
+    }
+
     /// <summary>The vault of a fixture opened like the original (ids fed back) and its first map checked.</summary>
     private static (LegacyCity City, DocumentStore Store, LegacyCityMap Writer, Dictionary<string, string> Disk) OpenFixture(JsonElement rootEl) => OpenFixture(rootEl, out _);
 

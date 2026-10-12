@@ -122,89 +122,11 @@ public sealed partial class HeadlessUiTests
         }, CancellationToken.None));
 
     /// <summary>
-    /// Explorer → hold a note → "Mover para…": into another neighbourhood the file moves and the map follows; to the
-    /// root the house moves and the file stays in its folder (as the 1.8.4); onto a name the destination already
-    /// has, nothing is overwritten and nothing moves.
+    /// Notas (mobile-ui.js): holding a note 430 ms selects it and shows the bar ("1 nota"), the release opens nothing, a tap
+    /// while selecting toggles, a tap without a selection opens the note; Limpar seleção ends it.
     /// </summary>
     [Fact]
-    public async Task Move_HoldInTheExplorerMovesTheHouseAndItsFile() =>
-        Assert.True(await Session.Dispatch<bool>(async () =>
-        {
-            var dir = Path.Combine(Path.GetTempPath(), "urbe-move-" + Guid.NewGuid().ToString("N"));
-            var vault = Path.Combine(dir, "vault");
-            Directory.CreateDirectory(Path.Combine(vault, "Bairro"));
-            Directory.CreateDirectory(Path.Combine(vault, "Outro"));
-            File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n\n[[Um]]\n");
-            File.WriteAllText(Path.Combine(vault, "Bairro", "Um.md"), "# Um\n");
-            File.WriteAllText(Path.Combine(vault, "Outro", "Comece.md"), "# Outro Comece\n");
-            var mapa = Path.Combine(vault, ".urbe", "mapa.json");
-            MainView? view = null;
-            async Task Pick(string item)
-            {
-                for (int i = 0; i < 50 && !view!.Dialogs.IsOpen; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
-                ClickButtonWithText(view!.Dialogs, item);
-                for (int i = 0; i < 40; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
-            }
-            try
-            {
-                var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
-                view = new MainView(storage);
-                var window = new Window { Width = 1280, Height = 760, Content = view };
-                window.Show();
-                await view.OpenVaultAsync();
-                await Settle(window, view);
-                await UntilMapSaved(view);
-                var city = view.World.City!;
-                var house = city.Buildings.Single(b => b.Path == "Bairro/Um.md");
-                var outro = city.Regions.Single(r => r.Name == "Outro");
-                var id = view.Documents!.Get("Bairro/Um.md")!.Id;
-
-                view.ShowNotes();
-                Assert.True(view.Explorer.TryEnterFolder("Bairro"));
-                Assert.True(view.Explorer.HoldNote("Bairro/Um.md"));
-                Dispatcher.UIThread.RunJobs();
-                Snapshot(window, "native-move-menu.png");
-                await Pick("Outro");
-                Assert.False(File.Exists(Path.Combine(vault, "Bairro", "Um.md")));
-                Assert.Equal("# Um\n", File.ReadAllText(Path.Combine(vault, "Outro", "Um.md")));
-                Assert.Equal(outro.Id, house.RegionId);
-                Assert.Equal("Outro/Um.md", house.Path);
-                Assert.True(outro.Has(house.X, house.Y));
-                Assert.Equal(id, view.Documents.Get("Outro/Um.md")!.Id);
-                await UntilMapSaved(view);
-                using (var m = System.Text.Json.JsonDocument.Parse(File.ReadAllText(mapa)))
-                {
-                    var p = m.RootElement.GetProperty("notas").GetProperty("Outro/Um.md");
-                    Assert.Equal((house.X, house.Y), (p.GetProperty("x").GetInt32(), p.GetProperty("y").GetInt32()));
-                }
-
-                // to the root: the house leaves the neighbourhood, the file stays in its folder
-                Assert.True(view.Explorer.TryEnterFolder("Outro"));
-                Assert.True(view.Explorer.HoldNote("Outro/Um.md"));
-                await Pick("vault");
-                Assert.Null(house.RegionId);
-                Assert.Equal("# Um\n", File.ReadAllText(Path.Combine(vault, "Outro", "Um.md")));
-                await UntilMapSaved(view);
-
-                // onto a name the destination has: refused, nothing overwritten or moved
-                var comece = city.Buildings.Single(b => b.Path == "Comece.md");
-                var before = (comece.X, comece.Y, comece.RegionId);
-                Assert.True(view.Explorer.HoldNote("Comece.md"));
-                await Pick("Outro");
-                Assert.Contains(view.Dialogs.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "Não foi possível mover");
-                ClickButtonWithText(view.Dialogs, "Ok");
-                Assert.Equal("# Outro Comece\n", File.ReadAllText(Path.Combine(vault, "Outro", "Comece.md")));
-                Assert.True(File.Exists(Path.Combine(vault, "Comece.md")));
-                Assert.Equal(before, (comece.X, comece.Y, comece.RegionId));
-                window.Close();
-                return true;
-            }
-            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
-        }, CancellationToken.None));
-
-    /// <summary>v21BindEntry: pressing a note row 520 ms opens "Mover para…" and the release opens nothing; a short tap opens the note.</summary>
-    [Fact]
-    public async Task Explorer_HoldingANoteRowAsksWhereToMoveItAndATapOpensIt() =>
+    public async Task Notes_HoldingSelectsAndATapOpens() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
         {
             var view = new MainView();
@@ -221,31 +143,150 @@ public sealed partial class HeadlessUiTests
                     .First(b => b.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == name));
                 return row.TranslatePoint(new Point(row.Bounds.Width / 2, row.Bounds.Height / 2), window)!.Value;
             }
-            var held = new List<string>();
-            view.Explorer.NoteHeld += n => held.Add(n.Path);
             var p = Centre("Um");
             window.MouseDown(p, MouseButton.Left);
             for (int i = 0; i < 70; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
             window.MouseUp(p, MouseButton.Left);
             Dispatcher.UIThread.RunJobs();
-            Assert.Equal(["Um.md"], held);
-            Assert.True(view.Dialogs.IsOpen);
+            Assert.Equal(["Um.md"], view.Explorer.SelectedPaths);
             Assert.False(view.Editor.IsVisible);
-            ClickButtonWithText(view.Dialogs, "Raiz");   // the Tutorial: the move asks for a vault and changes nothing
-            for (int i = 0; i < 20; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
-            ClickButtonWithText(view.Dialogs, "Ok");
+            Assert.Contains(view.Explorer.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "1 nota");
+            Snapshot(window, "native-notes-selection.png");
 
-            // a tap: wall time between press and release must not decide the test on a loaded machine
-            view.Explorer.HoldDelay = TimeSpan.FromSeconds(30);
+            // a tap while selecting toggles (2 notas), the bar's Limpar seleção ends it
+            view.Explorer.HoldDelay = TimeSpan.FromSeconds(30);   // taps: wall time must not decide on a loaded machine
             var q = Centre("Dois");
             window.MouseDown(q, MouseButton.Left);
             window.MouseUp(q, MouseButton.Left);
             Dispatcher.UIThread.RunJobs();
-            Assert.Equal(["Um.md"], held);
+            Assert.Equal(["Um.md", "Dois.md"], view.Explorer.SelectedPaths);
+            Assert.Contains(view.Explorer.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "2 notas");
+            view.Explorer.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == "Limpar seleção")
+                .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Assert.Empty(view.Explorer.SelectedPaths);
+
+            // without a selection a tap opens the note
+            q = Centre("Dois");
+            window.MouseDown(q, MouseButton.Left);
+            window.MouseUp(q, MouseButton.Left);
+            Dispatcher.UIThread.RunJobs();
             Assert.True(view.Editor.IsVisible);
             Assert.Equal("Dois.md", view.Editor.Current!.Path);
             window.Close();
             return true;
+        }, CancellationToken.None));
+
+    /// <summary>
+    /// The selection bar on a real vault: Mover para pasta (the file moves, the house joins the neighbourhood and keeps its
+    /// lot; a name the folder has is refused), Duplicar ("Um cópia.md", its house 4 tiles away), Favoritar and the
+    /// Favoritos and Recentes views, kept on the device.
+    /// </summary>
+    [Fact]
+    public async Task Notes_SelectionBarMovesDuplicatesAndFavorites() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-notesbar-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(Path.Combine(vault, "Bairro"));
+            Directory.CreateDirectory(Path.Combine(vault, "Outro"));
+            File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n\n[[Um]]\n");
+            File.WriteAllText(Path.Combine(vault, "Bairro", "Um.md"), "# Um\n");
+            File.WriteAllText(Path.Combine(vault, "Outro", "Comece.md"), "# Outro Comece\n");
+            var mapa = Path.Combine(vault, ".urbe", "mapa.json");
+            var previous = UrbeApp.LocalStatePath;
+            UrbeApp.LocalStatePath = Path.Combine(dir, "app", "notes-state.json");
+            async Task Settled() { for (int i = 0; i < 40; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); } }
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 1280, Height = 760, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                await UntilMapSaved(view);
+                var city = view.World.City!;
+                var house = city.Buildings.Single(b => b.Path == "Bairro/Um.md");
+                var outro = city.Regions.Single(r => r.Name == "Outro");
+                var lot = (house.X, house.Y);
+                var id = view.Documents!.Get("Bairro/Um.md")!.Id;
+                void Bar(string tip) => view.Explorer.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == tip)
+                    .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+
+                // Mover para pasta → Outro
+                view.ShowNotes();
+                Assert.True(view.Explorer.TryEnterFolder("Bairro"));
+                Assert.True(view.Explorer.HoldNote("Bairro/Um.md"));
+                Bar("Mover para pasta");
+                await Settled();
+                Assert.Contains(view.Dialogs.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "Fora de qualquer pasta");
+                ClickButtonWithText(view.Dialogs, "Outro");
+                await Settled();
+                Assert.False(File.Exists(Path.Combine(vault, "Bairro", "Um.md")));
+                Assert.Equal("# Um\n", File.ReadAllText(Path.Combine(vault, "Outro", "Um.md")));
+                Assert.Equal(outro.Id, house.RegionId);
+                Assert.Equal(lot, (house.X, house.Y));                       // the 1.8.4 keeps the lot
+                Assert.Equal(id, view.Documents.Get("Outro/Um.md")!.Id);
+                Assert.Empty(view.Explorer.SelectedPaths);
+
+                // Comece → Outro, where Comece.md exists: explorer.move takes "Comece (2).md", nothing is overwritten
+                Assert.True(view.Explorer.HoldNote("Comece.md"));
+                Bar("Mover para pasta");
+                await Settled();
+                ClickButtonWithText(view.Dialogs, "Outro");
+                await Settled();
+                Assert.Equal("# Outro Comece\n", File.ReadAllText(Path.Combine(vault, "Outro", "Comece.md")));
+                Assert.Equal("# Comece\n\n[[Um]]\n", File.ReadAllText(Path.Combine(vault, "Outro", "Comece (2).md")));
+
+                // Duplicar Um
+                Assert.True(view.Explorer.TryEnterFolder("Outro"));
+                Assert.True(view.Explorer.HoldNote("Outro/Um.md"));
+                Bar("Duplicar");
+                await Settled();
+                Assert.Equal("# Um\n", File.ReadAllText(Path.Combine(vault, "Outro", "Um cópia.md")));
+                var copy = city.Buildings.Single(b => b.Path == "Outro/Um cópia.md");
+                Assert.Equal((house.X + 4, house.Y + 4), (copy.X, copy.Y));
+
+                // Favoritar, then Notas → ⋯ → Favoritos; opening it puts it in Recentes
+                Assert.True(view.Explorer.TryEnterFolder("Outro"));
+                Assert.True(view.Explorer.HoldNote("Outro/Um cópia.md"));
+                Bar("Favoritar");
+                Dispatcher.UIThread.RunJobs();
+                view.ShowCollection("favorites");
+                Assert.Equal("Favoritos", view.Explorer.CollectionTitle);
+                Assert.Equal(["Outro/Um cópia.md"], view.Explorer.VisibleNotePaths);
+                Assert.True(view.Explorer.TryOpenNote("Outro/Um cópia.md"));
+                Assert.True(view.Editor.IsVisible);
+                view.Editor.IsVisible = false;
+                view.ShowCollection("recent");
+                Assert.Equal(["Outro/Um cópia.md"], view.Explorer.VisibleNotePaths);
+                Assert.True(File.Exists(UrbeApp.LocalStatePath));
+
+                await UntilMapSaved(view);
+                using (var m = System.Text.Json.JsonDocument.Parse(File.ReadAllText(mapa)))
+                {
+                    var notas = m.RootElement.GetProperty("notas");
+                    Assert.Equal(lot, (notas.GetProperty("Outro/Um.md").GetProperty("x").GetInt32(), notas.GetProperty("Outro/Um.md").GetProperty("y").GetInt32()));
+                    Assert.True(notas.TryGetProperty("Outro/Um cópia.md", out _));
+                }
+                window.Close();
+
+                // the favourites are on the device: a new app finds them
+                var again = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window2 = new Window { Width = 1280, Height = 760, Content = again };
+                window2.Show();
+                await again.OpenVaultAsync();
+                await Settle(window2, again);
+                again.ShowCollection("favorites");
+                Assert.Equal(["Outro/Um cópia.md"], again.Explorer.VisibleNotePaths);
+                window2.Close();
+                return true;
+            }
+            finally
+            {
+                UrbeApp.LocalStatePath = previous;
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
         }, CancellationToken.None));
 
     /// <summary>

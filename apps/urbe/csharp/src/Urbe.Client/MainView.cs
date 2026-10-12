@@ -35,6 +35,9 @@ public sealed partial class MainView : Grid
     private LegacyCityMap? _mapWriter;
     private MapSaveScheduler? _mapSave;
     private LegacyTrash _trash = new();
+
+    /// <summary>Favourites and recents of Notas, kept on the device (model.js localStorage).</summary>
+    public ExplorerState ExplorerState { get; } = new(UrbeApp.LocalStatePath);
     private bool _trashReadOnly;
 
     private string _today = DateTime.Now.ToString("yyyy-MM-dd");
@@ -59,13 +62,15 @@ public sealed partial class MainView : Grid
         Explorer = new NotesExplorer { IsVisible = false };
         Editor = new EditorOverlay { IsVisible = false, Dialogs = Dialogs, Notes = () => _contents.Select(n => new CityNote(n.Key, n.Value)) };
         Explorer.Closed += () => Explorer.IsVisible = false;
-        Explorer.NoteHeld += note => _ = ShowMoveMenuAsync(note.Path);
+        Explorer.SelectionAction += (action, paths) => _ = SelectionActionAsync(action, paths);
         Explorer.MoreRequested += () => _ = ShowNotesMenuAsync();
         Explorer.RestoreRequested += id => _ = RestoreFromTrashAsync(id);
         Explorer.PurgeRequested += id => _ = PurgeFromTrashAsync(id);
         Explorer.EmptyTrashRequested += () => _ = EmptyTrashAsync();
         Explorer.NoteRequested += note =>
         {
+            // openId: model.touchRecent(id)
+            if (_store?.Get(note.Path) is { } opened) ExplorerState.TouchRecent(opened.Id);
             _editorOpenedFromNotes = true;
             Explorer.IsVisible = false;
             Editor.Open(note);
@@ -665,83 +670,6 @@ public sealed partial class MainView : Grid
     }
 
     /// <summary>
-    /// v21MoveEntry → v21ChooseDestination: "Mover para…" with the root (named after the vault, Disco.cidade) and every
-    /// neighbourhood by its folder path, sorted (localeCompare).
-    /// </summary>
-    public Task ShowMoveMenuAsync(string path)
-    {
-        if (Dialogs.IsOpen || World.City is not { } city) return Task.CompletedTask;
-        var paths = city.RegionPaths();
-        var items = new List<DialogItem> { new(VaultName, UrbeTheme.Icons.House, Run: () => MoveNoteAsync(path, null)) };
-        foreach (var r in city.Regions.OrderBy(r => paths.GetValueOrDefault(r.Id, r.Name), StringComparer.CurrentCulture))
-        {
-            var region = r;
-            items.Add(new DialogItem(paths.GetValueOrDefault(r.Id, r.Name), UrbeTheme.Icons.Folder, Run: () => MoveNoteAsync(path, region.Id)));
-        }
-        return Dialogs.MenuAsync("Mover para…", items);
-    }
-
-    /// <summary>Disco.cidade: the name of the open vault folder ("Raiz" when the host does not tell it).</summary>
-    private string VaultName => _vault is FolderVaultStorage { Folder: { } folder } && Path.GetFileName(folder.TrimEnd('/', '\\')) is { Length: > 0 } name ? name : "Raiz";
-
-    /// <summary>
-    /// moverEntradaPara (app.js ≈2084) for a note: a free lot in the destination and the house's neighbourhood; the
-    /// 1.8.4 moves its file at the next save (urbeReconcileWorld), here the file is moved in the vault first,
-    /// verified, and only then the house, the document and the map follow. Moved to the root, the file stays in
-    /// its folder (urbeReconcileWorld keeps a root house's folder document). A file of the same name in the
-    /// destination is never overwritten: the move is refused.
-    /// </summary>
-    public async Task MoveNoteAsync(string path, string? regionId)
-    {
-        if (World.City is not { } city || city.Buildings.Find(b => b.IsNote && b.Path == path) is not { } house) return;
-        if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly)
-        {
-            await Dialogs.AlertAsync("Mover", "Abra a pasta do seu vault (botão Cidades) para mover notas. O Tutorial desta prévia é só leitura.");
-            return;
-        }
-        var destination = regionId is null ? null : city.Regions.Find(r => r.Id == regionId);
-        if (regionId is not null && destination is null) return;
-        if (Editor.IsVisible && Editor.Current?.Path == path && Editor.HasChanges && !await Editor.SaveAsync())
-        {
-            await Dialogs.AlertAsync("Não foi possível mover", "A nota tem alterações que não foram salvas no vault.");
-            return;
-        }
-        // app.js has one camera: a lot in the root is searched where the person is looking (centroBuscaRaiz)
-        city.CameraX = World.Camera.X;
-        city.CameraY = World.Camera.Y;
-        city.CameraZoom = World.Camera.Zoom;
-        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var doc = _store?.Get(path);
-        if (city.PlanMove(house, destination, now, doc?.Path ?? path) is not { } plan)
-        {
-            await Dialogs.AlertAsync("Mover", "Sem espaço construível no destino.");
-            return;
-        }
-        if (!string.Equals(plan.Path, path, StringComparison.Ordinal))
-        {
-            try
-            {
-                await _vault.MoveTextFileAsync(path, plan.Path);
-            }
-            catch (Exception ex)
-            {
-                await Dialogs.AlertAsync("Não foi possível mover", ex.Message);
-                return;
-            }
-            if (_contents.Remove(path, out var content)) _contents[plan.Path] = content;
-        }
-        city.ApplyMove(house, destination, plan, now);
-        if (doc is not null && !string.Equals(doc.Path, plan.Path, StringComparison.Ordinal))
-            LegacyCity.MoveDocument(_store!, doc, plan.Path);
-        if (Editor.IsVisible && Editor.Current?.Path == path) Editor.Renamed(plan.Path);
-        // moverEntradaPara: marcarIndice, indexar, buildTree, counts, agendarSalvar + marcarSinc, pedirDesenho
-        _mapSave?.MarkSync();
-        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
-        if (ReferenceEquals(World.Selected, house)) ShowHouse(house);
-        World.InvalidateVisual();
-    }
-
-    /// <summary>
     /// removerNota (app.js ≈1852): UD.confirm "Mover para a lixeira?", explorer.delete → trash.trash (the document kept
     /// in .urbe/trash.v2.json, removed from the store), the house leaves the city and the editor closes; the 1.8.4
     /// removes the file at its next save. Here the trash is written and verified first, then the file is removed,
@@ -805,9 +733,145 @@ public sealed partial class MainView : Grid
         int n = _trash.Items.Count;
         return Dialogs.MenuAsync("Notas",
         [
+            new DialogItem("Recentes", UrbeTheme.Icons.Clock, Run: () => { ShowCollection("recent"); return Task.CompletedTask; }),
+            new DialogItem("Favoritos", UrbeTheme.Icons.Star, Run: () => { ShowCollection("favorites"); return Task.CompletedTask; }),
             new DialogItem("Lixeira", UrbeTheme.Icons.Trash, Detail: (n > 0 ? n.ToString(System.Globalization.CultureInfo.InvariantCulture) : "Nenhum") + " item(ns)",
                 Run: () => { ShowTrashView(); return Task.CompletedTask; })
         ]);
+    }
+
+    /// <summary>show('recent') / show('favorites'): model.listRecent / listFavorites (notes that still exist).</summary>
+    public void ShowCollection(string view)
+    {
+        var ids = view == "recent" ? ExplorerState.Recent : ExplorerState.Favorites;
+        var notes = ids.Select(id => _store?.Get(id)).Where(d => d is not null && _contents.ContainsKey(d.Path))
+            .Select(d => new CityNote(d!.Path, _contents[d.Path])).ToList();
+        Explorer.ShowCollection(view == "recent"
+            ? new NotesExplorer.Collection("Recentes", notes, "Nada recente", "As notas que você abrir aparecem aqui.")
+            : new NotesExplorer.Collection("Favoritos", notes, "Nenhum favorito", "Selecione notas (toque e segure) e escolha Favoritar."));
+    }
+
+    /// <summary>
+    /// The selection bar of Notas (mobile-ui.js): Abrir (the first note, touchRecent), Favoritar, Mover para pasta
+    /// (explorer.move: the file moves, the house changes neighbourhood and keeps its lot), Duplicar (explorer.duplicate)
+    /// and Mover para a lixeira (explorer.delete, one confirmation for all). Files are written (and verified) before the
+    /// city, the documents and the map change; the selection is cleared after the action (model.clear()).
+    /// </summary>
+    public async Task SelectionActionAsync(string action, IReadOnlyList<string> paths)
+    {
+        if (paths.Count == 0) return;
+        switch (action)
+        {
+            case "open":
+                Explorer.ClearSelection();
+                if (_contents.TryGetValue(paths[0], out var text))
+                {
+                    if (_store?.Get(paths[0]) is { } d) ExplorerState.TouchRecent(d.Id);
+                    _editorOpenedFromNotes = true;
+                    Explorer.IsVisible = false;
+                    Editor.Open(new CityNote(paths[0], text));
+                }
+                return;
+            case "favorite":
+                foreach (var p in paths) if (_store?.Get(p) is { } d) ExplorerState.Favorite(d.Id);
+                Explorer.ClearSelection();
+                return;
+            case "move":
+                await MoveToFolderAsync(paths);
+                return;
+            case "duplicate":
+                await DuplicateNotesAsync(paths);
+                return;
+            case "delete":
+                var title = "Mover para a lixeira?";
+                var message = paths.Count == 1 ? "A nota poderá ser restaurada pela Lixeira." : paths.Count + " notas poderão ser restauradas pela Lixeira.";
+                if (!await Dialogs.ConfirmAsync(title, message, "Mover para a lixeira", danger: true)) return;
+                foreach (var p in paths) await DeleteNoteAsync(p, confirmed: true);
+                Explorer.ClearSelection();
+                return;
+        }
+    }
+
+    /// <summary>folders(): every folder of the Notas tree (neighbourhoods and the folders of documents), depth first,
+    /// each level sorted by name (localeCompare).</summary>
+    private List<string> NoteFolders()
+    {
+        var all = new HashSet<string>(StringComparer.Ordinal);
+        void Add(string folder) { for (var f = folder; f.Length > 0; f = f.Contains('/') ? f[..f.LastIndexOf('/')] : "") all.Add(f); }
+        if (World.City is { } city) foreach (var path in city.RegionPaths().Values) Add(path);
+        foreach (var path in _contents.Keys) if (path.Contains('/')) Add(path[..path.LastIndexOf('/')]);
+        var output = new List<string>();
+        void Walk(string parent)
+        {
+            var kids = all.Where(f => (f.Contains('/') ? f[..f.LastIndexOf('/')] : "") == parent)
+                .OrderBy(f => f[(f.LastIndexOf('/') + 1)..], StringComparer.CurrentCulture);
+            foreach (var k in kids) { output.Add(k); Walk(k); }
+        }
+        Walk("");
+        return output;
+    }
+
+    /// <summary>moveSelected: D.choose "Mover para" (Raiz + every folder), then explorer.move for each note.</summary>
+    private async Task MoveToFolderAsync(IReadOnlyList<string> paths)
+    {
+        if (World.City is not { } city || _store is null) return;
+        if (!VaultWritable)
+        {
+            await Dialogs.AlertAsync("Mover", NoVaultMessage);
+            return;
+        }
+        var folders = NoteFolders();
+        var options = new List<DialogItem> { new("Raiz", UrbeTheme.Icons.Notes, "Fora de qualquer pasta") };
+        options.AddRange(folders.Select(f => new DialogItem(f[(f.LastIndexOf('/') + 1)..], UrbeTheme.Icons.Folder, f)));
+        if (await Dialogs.ChooseAsync("Mover para", options) is not { } chosen) return;
+        var folder = chosen == 0 ? "" : folders[chosen - 1];
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        foreach (var from in paths)
+        {
+            if (_store.Get(from) is not { } doc || city.Buildings.Find(b => b.IsNote && b.Path == from) is not { } house) continue;
+            var to = LegacyCity.FolderMovePath(_store, doc, folder);
+            if (to == from) continue;
+            if (Editor.IsVisible && Editor.Current?.Path == from && Editor.HasChanges && !await Editor.SaveAsync()) continue;
+            try { await _vault!.MoveTextFileAsync(from, to); }
+            catch (Exception ex) { await Dialogs.AlertAsync("Não foi possível mover", ex.Message); break; }
+            if (_contents.Remove(from, out var content)) _contents[to] = content;
+            var moved = LegacyCity.MoveDocument(_store, doc, to);
+            city.ApplyFolderMove(house, moved, now);
+            if (Editor.IsVisible && Editor.Current?.Path == from) Editor.Renamed(to);
+        }
+        _mapSave?.Schedule();
+        _mapSave?.MarkSync();
+        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+        World.InvalidateVisual();
+    }
+
+    /// <summary>duplicateSelected: explorer.duplicate for each note — "X cópia.ext" in the same folder with the same
+    /// text, and its house 4 tiles away. The new file is written first.</summary>
+    private async Task DuplicateNotesAsync(IReadOnlyList<string> paths)
+    {
+        if (World.City is not { } city || _store is null) return;
+        if (!VaultWritable)
+        {
+            await Dialogs.AlertAsync("Duplicar", NoVaultMessage);
+            return;
+        }
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        foreach (var from in paths)
+        {
+            if (_store.Get(from) is not { } doc || city.Buildings.Find(b => b.IsNote && b.Path == from) is not { } house) continue;
+            int dot = doc.Path.LastIndexOf('.');
+            var target = LegacyCity.UniqueDocumentPath(_store, (dot >= 0 ? doc.Path[..dot] : doc.Path) + " cópia" + (dot >= 0 ? doc.Path[dot..] : ""));
+            var content = _contents.GetValueOrDefault(from, doc.Content);
+            try { await _vault!.CreateTextFileAsync(target, content); }
+            catch (Exception ex) { await Dialogs.AlertAsync("Não foi possível duplicar", ex.Message); break; }
+            var copy = LegacyCity.DuplicateDocument(_store, doc with { Content = content });
+            city.DuplicateHouse(house, copy, now);
+            _contents[copy.Path] = content;
+        }
+        _mapSave?.Schedule();
+        _mapSave?.MarkSync();
+        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+        World.InvalidateVisual();
     }
 
     /// <summary>show('trash'): the Lixeira in Notas.</summary>
