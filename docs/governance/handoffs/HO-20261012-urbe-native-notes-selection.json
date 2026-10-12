@@ -12,7 +12,7 @@
   "component": "urbe",
   "state": "review",
   "branch": "ccr-2e1b58fa-7mhpmx",
-  "base_commit": "ac3fd575703e52b330f5958e86d1d4cb7f4799b5",
+  "base_commit": "f0ddb3ca456ff7bf3e1336357343c5f867e7c224",
   "commit": null,
   "pr": null,
   "files_changed": [
@@ -78,8 +78,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "PR depois da integração do #532.",
-    "DEVICE: segurar/selecionar e a barra em Android e Windows."
+    "DEVICE: segurar/selecionar e a barra em Android e Windows.",
+    "CI do PR e integração."
   ],
   "decisions_required": [],
   "normative_sources": [
