@@ -184,6 +184,57 @@ public sealed class FolderVaultStorageTests : IDisposable
         Assert.False(File.Exists(Path.Combine(Vault, "Bairro", "Dois.md")));
     }
 
+    private static string TrashOf(string path, string content, string? earlier = null)
+    {
+        var store = new Urbe.Core.DocumentStore();
+        var doc = store.Upsert(new Urbe.Core.DocumentInput { Path = path, Content = content });
+        return Urbe.Core.LegacyTrash.Read(earlier, null, out _).ExportWith(doc, 1760000000000);
+    }
+
+    [Fact]
+    public async Task TrashingANoteWritesTheTrashFirstAndRemovesOnlyThatFile()
+    {
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        var before = Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).ToDictionary(f => f, File.ReadAllBytes);
+        var trash = TrashOf("Bairro/Um.md", "# Um\n");
+        await storage.TrashTextFileAsync("Bairro/Um.md", trash, Ct);
+        Assert.False(File.Exists(Path.Combine(Vault, "Bairro", "Um.md")));
+        Assert.Equal(trash, File.ReadAllText(Path.Combine(Vault, ".urbe", "trash.v2.json")));
+        foreach (var (file, bytes) in before)
+            if (!file.EndsWith("Um.md", StringComparison.Ordinal)) Assert.Equal(bytes, File.ReadAllBytes(file));
+        Assert.Equal(before.Count, Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).Length);   // -1 note +1 trash, no copies left
+
+        // a second note: the trash file is replaced (no recovery copy left) and keeps the first item
+        var second = TrashOf("Comece.md", "# Comece\n\n[[Bairro/Um]]\n", trash);
+        await storage.TrashTextFileAsync("Comece.md", second, Ct);
+        Assert.Equal(second, File.ReadAllText(Path.Combine(Vault, ".urbe", "trash.v2.json")));
+        Assert.Contains("Bairro/Um.md", second);
+        Assert.Equal(["foto.png", "trash.v2.json"], Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).Select(Path.GetFileName).Order().ToArray()!);
+    }
+
+    [Fact]
+    public async Task ATrashWithoutTheCurrentTextOrOfAnotherVersionRemovesNothing()
+    {
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        // the trash does not hold this text
+        await Assert.ThrowsAsync<InvalidDataException>(() => storage.TrashTextFileAsync("Bairro/Um.md", TrashOf("Bairro/Um.md", "outro texto"), Ct));
+        await Assert.ThrowsAsync<InvalidDataException>(() => storage.TrashTextFileAsync("Bairro/Um.md", TrashOf("Comece.md", "# Um\n"), Ct));
+        await Assert.ThrowsAsync<InvalidDataException>(() => storage.TrashTextFileAsync("Bairro/Um.md", "{}", Ct));
+        Assert.True(File.Exists(Path.Combine(Vault, "Bairro", "Um.md")));
+        Assert.False(File.Exists(Path.Combine(Vault, ".urbe", "trash.v2.json")));
+
+        // a trash file of a future version is preserved: nothing is deleted
+        Directory.CreateDirectory(Path.Combine(Vault, ".urbe"));
+        File.WriteAllText(Path.Combine(Vault, ".urbe", "trash.v2.json"), "{\"version\":3,\"items\":[]}");
+        var reopened = Storage();
+        await reopened.PickAsync(Ct);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => reopened.TrashTextFileAsync("Bairro/Um.md", TrashOf("Bairro/Um.md", "# Um\n"), Ct));
+        Assert.True(File.Exists(Path.Combine(Vault, "Bairro", "Um.md")));
+        Assert.Equal("{\"version\":3,\"items\":[]}", File.ReadAllText(Path.Combine(Vault, ".urbe", "trash.v2.json")));
+    }
+
     [Theory]
     [InlineData(".urbe/mapa.json")]
     [InlineData(".obsidian/app.json")]

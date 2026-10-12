@@ -109,6 +109,57 @@ public sealed class LegacyRenameOracleTests
         }
     }
 
+    /// <summary>
+    /// "Excluir" (house panel and the editor's "Mover para a lixeira"), recorded from the 1.8.4
+    /// (csharp/tools/legacy-trash-oracle.mjs): the file leaves the vault, .urbe/trash.v2.json keeps the document,
+    /// and the map loses the house. Trash, files and map are the original's bytes after each deletion.
+    /// </summary>
+    [Fact]
+    public void EveryDeletionLeavesTheTrashTheFilesAndTheMapOfTheOriginal()
+    {
+        using var json = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(Root().FullName, "csharp", "tests", "fixtures", "legacy-city", "trash-note-run-a.json")));
+        var (city, store, writer, disk) = OpenFixture(json.RootElement);
+        var trash = LegacyTrash.Read(null, null, out var readOnly);
+        Assert.False(readOnly);
+        foreach (var step in json.RootElement.GetProperty("steps").EnumerateObject().Select(p => p.Value))
+        {
+            var from = step.GetProperty("from").GetString()!;
+            var doc = store.Get(from)!;
+            var house = city.Buildings.Single(b => b.IsNote && b.DocumentId == doc.Id);
+            Assert.NotNull(trash.Trash(store, doc.Id, step.GetProperty("now").GetInt64()));
+            city.DeleteNote(house);
+            disk.Remove(from);
+            Assert.Null(store.Get(from));
+            Assert.Equal(step.GetProperty("trashWritten").GetString(), trash.Export());
+            Assert.Equal(step.GetProperty("mapaWritten").GetString(), Produce(writer, city, store, step));
+            Assert.Equal(step.GetProperty("files").EnumerateObject().Select(p => (p.Name, p.Value.GetString())),
+                disk.OrderBy(p => p.Key, StringComparer.Ordinal).Select(p => (p.Key, (string?)p.Value)));
+        }
+        // what is written is read back as it was: a later deletion keeps every earlier item
+        var last = json.RootElement.GetProperty("steps").GetProperty("editor").GetProperty("trashWritten").GetString()!;
+        Assert.Equal(last, LegacyTrash.Read(last, null, out _).Export());
+    }
+
+    [Theory]
+    [InlineData("""{"version":3,"items":[]}""")]
+    [InlineData("""{"items":[]}""")]
+    [InlineData("não é json")]
+    public void ATrashOfAnotherVersionIsPreservedAndNeverWritten(string v2)
+    {
+        var trash = LegacyTrash.Read(v2, null, out var readOnly);
+        Assert.True(readOnly);
+        Assert.Empty(trash.Items);
+    }
+
+    [Fact]
+    public void AVersion1TrashIsReadWhenThereIsNoVersion2()
+    {
+        var v1 = """{"items":[{"document":{"id":"doc_a","path":"A.md","content":"x"},"deletedAt":5,"originalPath":"A.md"},{"document":{"path":"sem id"}}]}""";
+        var trash = LegacyTrash.Read(null, v1, out var readOnly);
+        Assert.False(readOnly);
+        Assert.Equal("{\n \"version\": 2,\n \"items\": [\n  {\n   \"document\": {\n    \"id\": \"doc_a\",\n    \"path\": \"A.md\",\n    \"content\": \"x\"\n   },\n   \"deletedAt\": 5,\n   \"originalPath\": \"A.md\"\n  }\n ]\n}", trash.Export());
+    }
+
     /// <summary>The vault of a fixture opened like the original (ids fed back) and its first map checked.</summary>
     private static (LegacyCity City, DocumentStore Store, LegacyCityMap Writer, Dictionary<string, string> Disk) OpenFixture(JsonElement rootEl)
     {

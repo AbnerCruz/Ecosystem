@@ -1,0 +1,127 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261012-urbe-native-trash-note",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-12T10:22:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "f42a569a471f559fde213849a5ce41407360771d",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyTrash.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
+    "apps/urbe/csharp/tools/legacy-trash-oracle.mjs",
+    "apps/urbe/csharp/tools/legacy-copy-oracle.mjs",
+    "apps/urbe/csharp/tests/fixtures/legacy-city/trash-note-run-a.json",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyRenameOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultStorageTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/RenameUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261012-urbe-native-trash-note.json"
+  ],
+  "work_completed": [
+    "Urbe.Core LegacyTrash porta TrashStore (src/core/trash.js) e o arquivo .urbe/trash.v2.json como workspace.js o grava (versão 2, itens por id, mais novos primeiro, JSON.stringify(…, null, 1)); itens lidos ficam como estavam; lixeira de outra versão é preservada e nunca escrita; v1 é lida quando não há v2. LegacyCity.DeleteNote porta a saída da casa (removerNota + indexar).",
+    "Oráculo tools/legacy-trash-oracle.mjs: a 1.8.4 sem modificação em Chromium, Excluir pelo painel da casa e 'Mover para a lixeira' pelo menu do editor, com o UD.confirm do próprio app; todos os arquivos do vault, a lixeira e o mapa gravados após cada exclusão.",
+    "IUrbeVaultStorage.TrashTextFileAsync + PlanTrash (desktop e Android SAF): a lixeira precisa conter o texto atual do arquivo, é gravada e verificada ANTES de o arquivo ser removido, e todos os arquivos do vault são verificados depois; lixeira de versão futura recusa a exclusão.",
+    "Cliente nativo: UrbeDialogs.ConfirmAsync (UD.confirm, botão de perigo), Excluir do painel da casa ligado, 'Mover para a lixeira' no menu Mais ações do editor; MainView.DeleteNoteAsync grava a lixeira e remove o arquivo antes de mexer em casa, documento, editor e mapa.",
+    "Oráculo tools/legacy-copy-oracle.mjs (evidência): o Copiar do painel da 1.8.4 cria uma segunda casa no MESMO documento, não grava arquivo novo e o mapa passa a guardar a nota na posição da cópia; não portado."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "node csharp/tools/legacy-trash-oracle.mjs (1.8.4-beta real em Chromium)",
+      "result": "passed",
+      "evidence": "Fixture trash-note-run-a.json gravada."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (LegacyRenameOracleTests: lixeira)",
+      "result": "passed",
+      "evidence": "trash.v2.json, conjunto de arquivos e mapa.json idênticos byte a byte aos da 1.8.4 nas 2 exclusões; releitura preserva os itens; versão desconhecida preservada; v1 lida."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (TrashingANote…, ATrashWithoutTheCurrentText…, Delete_MovesTheNoteToTheTrashFromThePanelAndTheEditor)",
+      "result": "passed",
+      "evidence": "Lixeira antes do arquivo, sem cópias soltas; recusas sem tocar o vault; UI real com cancelar, confirmar, editor e reabertura."
+    },
+    {
+      "kind": "automated",
+      "check": "Suítes completas Core/Client e consistency",
+      "result": "passed",
+      "evidence": "Core 550/550 e Client 91/91 localmente; consistency 22/22."
+    },
+    {
+      "kind": "human",
+      "check": "Excluir nota em Android e Windows reais e reabrir na 1.8.4 (a nota aparece na Lixeira dela)",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs"
+    }
+  ],
+  "known_issues": [
+    "Restaurar/excluir permanentemente pela Lixeira (Notas) ainda não foi portado; as notas excluídas ficam em .urbe/trash.v2.json e a 1.8.4 as restaura.",
+    "Copiar do painel da casa não portado: o da 1.8.4 não cria cópia e desloca a nota original na reabertura (oráculo legacy-copy-oracle.mjs). Fazer uma cópia de verdade muda o fluxo da 1.8.4 e depende do proprietário.",
+    "Excluir não refaz as ruas (scheduleRoadRebuild), como as demais edições do nativo."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI do PR e autorização do proprietário (zona user-data).",
+    "Portar a Lixeira em Notas (restaurar e excluir permanentemente).",
+    "DEVICE: excluir nota no Android e no Windows; reabrir na 1.8.4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "docs/governance/integration-policy.json",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/core/trash.js",
+    "apps/urbe/src/persistence/workspace.js",
+    "apps/urbe/src/ui/dialogs.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Formato da lixeira só em Urbe.Core."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-19 segue em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "vault-trash",
+      "status": "product-specific",
+      "rationale": "Lixeira do vault do Urbe 1.8.4; nenhum outro Product a consome."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Zona user-data: remove arquivos do usuário do vault e grava .urbe/trash.v2.json."
+  }
+}

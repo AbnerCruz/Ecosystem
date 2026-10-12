@@ -34,6 +34,8 @@ public sealed partial class MainView : Grid
     private DocumentStore? _store;
     private LegacyCityMap? _mapWriter;
     private MapSaveScheduler? _mapSave;
+    private LegacyTrash _trash = new();
+    private bool _trashReadOnly;
 
     private string _today = DateTime.Now.ToString("yyyy-MM-dd");
 
@@ -245,6 +247,10 @@ public sealed partial class MainView : Grid
         }
         _snapshot = snapshot;
         _store = null;
+        // workspace.js readSide('trash'): the v2 file, else the v1 file; another version is kept and not written
+        string? Text(string path) => snapshot.Files.FirstOrDefault(f => string.Equals(f.Key, path, StringComparison.OrdinalIgnoreCase)).Value is { } file
+            ? System.Text.Encoding.UTF8.GetString(file.Bytes.Span).TrimStart('\uFEFF') : null;
+        _trash = LegacyTrash.Read(Text(LegacyTrash.Path), Text(LegacyTrash.PathV1), out _trashReadOnly);
         Editor.SaveOnClose = !snapshot.IsReadOnly;
         var texts = snapshot.Documents.Where(d => d.Text is not null).ToArray();
         var notes = texts.Select(d => new CityNote(d.Path, d.Text!)).ToArray();
@@ -595,7 +601,8 @@ public sealed partial class MainView : Grid
         var title = house is not null ? LegacyCity.FullNoteName(house) : System.IO.Path.GetFileName(note.Path);
         return Dialogs.MenuAsync(title,
         [
-            new DialogItem("Renomear", UrbeTheme.Icons.Pencil, Run: () => RenameNoteAsync(note.Path))
+            new DialogItem("Renomear", UrbeTheme.Icons.Pencil, Run: () => RenameNoteAsync(note.Path)),
+            new DialogItem("Mover para a lixeira", UrbeTheme.Icons.Trash, Danger: true, Run: () => DeleteNoteAsync(note.Path))
         ]);
     }
 
@@ -729,6 +736,60 @@ public sealed partial class MainView : Grid
         World.InvalidateVisual();
     }
 
+    /// <summary>
+    /// removerNota (app.js ≈1852): UD.confirm "Mover para a lixeira?", explorer.delete → trash.trash (the document kept
+    /// in .urbe/trash.v2.json, removed from the store), the house leaves the city and the editor closes; the 1.8.4
+    /// removes the file at its next save. Here the trash is written and verified first, then the file is removed,
+    /// and only then the city, the document and the map follow. Nothing is deleted in memory only.
+    /// </summary>
+    public async Task DeleteNoteAsync(string path, bool confirmed = false)
+    {
+        if (World.City is not { } city || city.Buildings.Find(b => b.IsNote && b.Path == path) is not { } house) return;
+        if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly || _store is null)
+        {
+            await Dialogs.AlertAsync("Excluir", "Abra a pasta do seu vault (botão Cidades) para excluir notas. O Tutorial desta prévia é só leitura.");
+            return;
+        }
+        if (_trashReadOnly)
+        {
+            await Dialogs.AlertAsync("Excluir", "A lixeira deste vault é de outra versão do Urbe e foi preservada; nada é excluído.");
+            return;
+        }
+        if (!confirmed && !await Dialogs.ConfirmAsync("Mover para a lixeira?",
+                "“" + LegacyCity.FullNoteName(house) + "” poderá ser restaurada pela Lixeira, em Notas.", "Mover para a lixeira", danger: true))
+            return;
+        var editing = Editor.IsVisible && Editor.Current?.Path == path;
+        if (editing && Editor.HasChanges && !await Editor.SaveAsync())
+        {
+            await Dialogs.AlertAsync("Não foi possível excluir", "A nota tem alterações que não foram salvas no vault.");
+            return;
+        }
+        if (_store.Get(path) is not { } doc) return;
+        // the trash as it will be: nothing changes in memory until the vault holds it
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        try
+        {
+            await _vault.TrashTextFileAsync(path, _trash.ExportWith(doc, now));
+        }
+        catch (Exception ex)
+        {
+            await Dialogs.AlertAsync("Não foi possível excluir", ex.Message);
+            return;
+        }
+        _trash.Trash(_store, doc.Id, now, "explorer.delete");
+        city.DeleteNote(house);
+        _contents.Remove(path);
+        if (editing)
+        {
+            Editor.IsVisible = false;
+            _editorOpenedFromNotes = false;
+        }
+        // removerNota: marcarIndice, indexar, scheduleRoadRebuild, counts, buildTree, agendarSalvar + marcarSinc
+        _mapSave?.MarkSync();
+        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+        World.InvalidateVisual();
+    }
+
     private Control Fab()
     {
         var b = new Button
@@ -827,6 +888,15 @@ public sealed partial class MainView : Grid
         var actions = new Grid { ColumnDefinitions = new ColumnDefinitions("*,8,*") };
         var copy = Secondary("Copiar", UrbeTheme.Text);
         var delete = Secondary("Excluir", UrbeTheme.Danger);
+        ToolTip.SetTip(delete, "Mover para a lixeira");
+        // deleteBtn: closeHouseSummary(); removerNota(b)
+        delete.Click += async (_, _) =>
+        {
+            if (World.Selected is not { IsNote: true } house) return;
+            World.Select(null);
+            await DeleteNoteAsync(house.Path);
+        };
+        ToolTip.SetTip(copy, "Em portabilidade: o Copiar da 1.8.4 não grava a cópia (ver handoff)");
         Grid.SetColumn(delete, 2);
         actions.Children.Add(copy);
         actions.Children.Add(delete);
