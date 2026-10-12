@@ -12,6 +12,9 @@ public sealed class UrbeApp : Application
     /// <summary>Injected by each native head; remains null for headless/desktop previews.</summary>
     public static Func<IUrbeVaultStorage>? VaultStorageFactory { get; set; }
 
+    /// <summary>A file in the app's own data for the Notas state kept on the device (favourites, recents); null keeps it for the session.</summary>
+    public static string? LocalStatePath { get; set; }
+
     public override void Initialize()
     {
         RequestedThemeVariant = ThemeVariant.Dark;

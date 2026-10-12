@@ -10,11 +10,11 @@
   },
   "task_id": "UC-19",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "ccr-2e1b58fa-7mhpmx",
   "base_commit": "ac3fd575703e52b330f5958e86d1d4cb7f4799b5",
-  "commit": null,
-  "pr": null,
+  "commit": "f0ddb3ca456ff7bf3e1336357343c5f867e7c224",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/532",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/LegacyTrash.cs",
     "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
@@ -89,7 +89,6 @@
   ],
   "blockers": [],
   "next_actions": [
-    "CI do PR e autorização do proprietário (zona user-data).",
     "DEVICE: excluir nota no Android e no Windows; reabrir na 1.8.4."
   ],
   "decisions_required": [],

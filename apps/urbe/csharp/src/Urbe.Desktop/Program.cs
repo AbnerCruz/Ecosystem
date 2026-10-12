@@ -14,6 +14,7 @@ public static class Program
         // remembered in the app data (never a hidden copy of the notes).
         var selection = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Urbe", "native-vault.json");
         UrbeApp.VaultStorageFactory = () => new FolderVaultStorage(PickFolderAsync, selection);
+        UrbeApp.LocalStatePath = Path.Combine(Path.GetDirectoryName(selection)!, "notes-state.json");
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 

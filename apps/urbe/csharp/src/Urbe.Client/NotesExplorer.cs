@@ -43,7 +43,7 @@ public sealed class NotesExplorer : Grid
     public NotesExplorer()
     {
         Background = UrbeTheme.Brush(UrbeTheme.Bg);
-        RowDefinitions = new RowDefinitions("62,58,*");
+        RowDefinitions = new RowDefinitions("62,58,*,Auto");
         var back = new Button
         {
             Content = UrbeTheme.Icon(UrbeTheme.Icons.Back, 21),
@@ -97,6 +97,8 @@ public sealed class NotesExplorer : Grid
         };
         SetRow(scroll, 2);
         Children.Add(scroll);
+        SetRow(_bar, 3);
+        Children.Add(SelectionBar());
         _search.TextChanged += (_, _) => Rebuild();
         Rebuild();
     }
@@ -120,16 +122,132 @@ public sealed class NotesExplorer : Grid
     public void ShowTrash(IReadOnlyList<TrashEntry>? items)
     {
         _trash = items;
+        if (items is not null) _collection = null;
         Rebuild();
+    }
+
+    /// <summary>A collection view (Recentes, Favoritos: renderCollection).</summary>
+    public sealed record Collection(string Title, IReadOnlyList<CityNote> Notes, string EmptyTitle, string EmptyText);
+
+    private Collection? _collection;
+
+    /// <summary>show('recent') / show('favorites'); null leaves it.</summary>
+    public void ShowCollection(Collection? collection)
+    {
+        _collection = collection;
+        _trash = null;
+        Rebuild();
+    }
+
+    /// <summary>The title of the collection shown, or null.</summary>
+    public string? CollectionTitle => _collection?.Title;
+
+    private void RenderCollection(Collection c)
+    {
+        _location.Text = c.Title;
+        _summary.Text = "";
+        _visibleFolders = [];
+        _visibleNotes = c.Notes.ToArray();
+        _entries.Children.Clear();
+        if (c.Notes.Count == 0)
+        {
+            _entries.Children.Add(new StackPanel
+            {
+                Margin = new Thickness(12, 24),
+                Spacing = 6,
+                Children =
+                {
+                    new TextBlock { Text = c.EmptyTitle, FontSize = 15, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text) },
+                    new TextBlock { Text = c.EmptyText, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap }
+                }
+            });
+            return;
+        }
+        foreach (var note in c.Notes)
+        {
+            var file = note;
+            int slash = file.Path.LastIndexOf('/');
+            _entries.Children.Add(Item(file.Name, slash < 0 ? "" : file.Path[..slash],
+                () => TryOpenNote(file.Path), () => HoldNote(file.Path), () => HoldDelay, _selected.Contains(file.Path)));
+        }
     }
 
     /// <summary>The Lixeira is shown.</summary>
     public bool ShowingTrash => _trash is not null;
     public event Action<CityNote>? NoteRequested;
-    /// <summary>A note row held (v21BindEntry: 520 ms without moving 9 px) → v21MoveEntry ("Mover para…").</summary>
-    public event Action<CityNote>? NoteHeld;
-    /// <summary>How long a press must last to be a hold (v21BindEntry: 520 ms).</summary>
-    public TimeSpan HoldDelay { get; set; } = TimeSpan.FromMilliseconds(520);
+    /// <summary>How long a press must last to be a hold (mobile-ui.js HOLD: 430 ms).</summary>
+    public TimeSpan HoldDelay { get; set; } = TimeSpan.FromMilliseconds(430);
+
+    /// <summary>An action of the selection bar (.ume-actions): "open", "favorite", "move", "duplicate" or "delete",
+    /// with the selected notes' paths.</summary>
+    public event Action<string, IReadOnlyList<string>>? SelectionAction;
+
+    private readonly List<string> _selected = [];
+    private readonly Border _bar = new();
+    private readonly TextBlock _count = new() { FontSize = 14, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center };
+
+    /// <summary>The selected notes (model.selection), in the order they were selected.</summary>
+    public IReadOnlyList<string> SelectedPaths => _selected.ToList();
+
+    /// <summary>model.clear().</summary>
+    public void ClearSelection()
+    {
+        _selected.Clear();
+        Rebuild();
+    }
+
+    /// <summary>model.select(id,'toggle').</summary>
+    private void Toggle(string path)
+    {
+        if (!_selected.Remove(path)) _selected.Add(path);
+        Rebuild();
+    }
+
+    /// <summary>The .ume-actions bar: Limpar, the count, Abrir, Favoritar, Mover para pasta, Duplicar, Mover para a lixeira
+    /// (Compor joins with the compositions).</summary>
+    private Control SelectionBar()
+    {
+        Button Act(string icon, string tip, string action, string? color = null)
+        {
+            var b = new Button { Content = UrbeTheme.Icon(icon, 20, color ?? UrbeTheme.Text), Width = 44, Height = 44, Background = Brushes.Transparent, Padding = new Thickness(0),
+                HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
+            ToolTip.SetTip(b, tip);
+            b.Click += (_, _) => { if (_selected.Count > 0) SelectionAction?.Invoke(action, _selected.ToList()); };
+            return b;
+        }
+        var clear = new Button { Content = UrbeTheme.Icon(UrbeTheme.Icons.Close, 20, UrbeTheme.Text2), Width = 44, Height = 44, Background = Brushes.Transparent, Padding = new Thickness(0),
+            HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
+        ToolTip.SetTip(clear, "Limpar seleção");
+        clear.Click += (_, _) => ClearSelection();
+        _count.Foreground = UrbeTheme.Brush(UrbeTheme.Text);
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, HorizontalAlignment = HorizontalAlignment.Right, Children =
+        {
+            Act(UrbeTheme.Icons.Open, "Abrir", "open"),
+            Act(UrbeTheme.Icons.Star, "Favoritar", "favorite"),
+            Act(UrbeTheme.Icons.Move, "Mover para pasta", "move"),
+            Act(UrbeTheme.Icons.Copy, "Duplicar", "duplicate"),
+            Act(UrbeTheme.Icons.Trash, "Mover para a lixeira", "delete", UrbeTheme.Danger)
+        } };
+        var row = new DockPanel { LastChildFill = true };
+        DockPanel.SetDock(clear, Dock.Left);
+        DockPanel.SetDock(actions, Dock.Right);
+        row.Children.Add(clear);
+        row.Children.Add(actions);
+        row.Children.Add(_count);
+        _bar.Child = row;
+        _bar.Background = UrbeTheme.Brush(UrbeTheme.Surface2);
+        _bar.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2);
+        _bar.BorderThickness = new Thickness(0, 1, 0, 0);
+        _bar.Padding = new Thickness(8, 6);
+        _bar.IsVisible = false;
+        return _bar;
+    }
+
+    private void UpdateBar()
+    {
+        _bar.IsVisible = _selected.Count > 0 && _trash is null;
+        _count.Text = _selected.Count == 1 ? "1 nota" : _selected.Count + " notas";
+    }
     public string CurrentFolder => _folder;
     public string SearchText
     {
@@ -150,6 +268,7 @@ public sealed class NotesExplorer : Grid
         _notes.AddRange(notes.Where(n => !string.IsNullOrWhiteSpace(n.Path))
             .OrderBy(n => n.Path, StringComparer.OrdinalIgnoreCase));
         _folder = string.Empty;
+        _selected.Clear();
         _search.Text = string.Empty;
         Rebuild();
     }
@@ -169,16 +288,18 @@ public sealed class NotesExplorer : Grid
         var note = _visibleNotes.FirstOrDefault(n =>
             string.Equals(n.Path, path, StringComparison.OrdinalIgnoreCase));
         if (note is null) return false;
+        // activate(): while a selection exists a tap toggles, otherwise it opens
+        if (_selected.Count > 0) { Toggle(note.Path); return true; }
         NoteRequested?.Invoke(note);
         return true;
     }
 
-    /// <summary>The hold of a visible note row (what the gesture raises).</summary>
+    /// <summary>The hold of a visible note row (what the gesture raises): model.select(id,'toggle').</summary>
     public bool HoldNote(string path)
     {
         var note = _visibleNotes.FirstOrDefault(n => string.Equals(n.Path, path, StringComparison.OrdinalIgnoreCase));
         if (note is null) return false;
-        NoteHeld?.Invoke(note);
+        Toggle(note.Path);
         return true;
     }
 
@@ -187,6 +308,11 @@ public sealed class NotesExplorer : Grid
         if (_trash is not null)
         {
             ShowTrash(null);
+            return;
+        }
+        if (_collection is not null)
+        {
+            ShowCollection(null);
             return;
         }
         if (!string.IsNullOrEmpty(_search.Text))
@@ -206,9 +332,15 @@ public sealed class NotesExplorer : Grid
 
     private void Rebuild()
     {
+        UpdateBar();
         if (_trash is not null)
         {
             RenderTrash(_trash);
+            return;
+        }
+        if (_collection is { } c)
+        {
+            RenderCollection(c);
             return;
         }
         var search = _search.Text?.Trim() ?? string.Empty;
@@ -256,7 +388,7 @@ public sealed class NotesExplorer : Grid
             _entries.Children.Add(Item(
                 file.Name,
                 search.Length > 0 ? file.Path : "NOTA MARKDOWN",
-                () => TryOpenNote(file.Path), () => HoldNote(file.Path), () => HoldDelay));
+                () => TryOpenNote(file.Path), () => HoldNote(file.Path), () => HoldDelay, _selected.Contains(file.Path)));
         }
         if (_visibleFolders.Length + _visibleNotes.Length == 0)
             _entries.Children.Add(new TextBlock
@@ -326,7 +458,7 @@ public sealed class NotesExplorer : Grid
         }
     }
 
-    private static Control Item(string name, string category, Action click, Action? hold = null, Func<TimeSpan>? holdDelay = null)
+    private static Control Item(string name, string category, Action click, Action? hold = null, Func<TimeSpan>? holdDelay = null, bool selected = false)
     {
         var texts = new StackPanel
         {
@@ -353,8 +485,8 @@ public sealed class NotesExplorer : Grid
         var button = new Button
         {
             Content = texts,
-            Background = UrbeTheme.Brush(UrbeTheme.Surface),
-            BorderBrush = UrbeTheme.Brush(UrbeTheme.Line),
+            Background = selected ? UrbeTheme.Brush(UrbeTheme.Accent, .14) : UrbeTheme.Brush(UrbeTheme.Surface),
+            BorderBrush = UrbeTheme.Brush(selected ? UrbeTheme.Accent : UrbeTheme.Line),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(10),
             Padding = new Thickness(16, 12),

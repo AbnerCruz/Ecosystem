@@ -15,6 +15,8 @@ public sealed class UrbeAndroidApplication : AvaloniaAndroidApplication<UrbeApp>
     public UrbeAndroidApplication(IntPtr javaReference, JniHandleOwnership transfer) : base(javaReference, transfer)
     {
         UrbeApp.VaultStorageFactory = () => new AndroidVaultStorage();
+        // the Notas state kept on the device (favourites, recents), in the app's private files
+        UrbeApp.LocalStatePath = System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? System.IO.Path.GetTempPath(), "notes-state.json");
     }
 }
 
