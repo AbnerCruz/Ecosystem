@@ -74,6 +74,8 @@ public sealed partial class MainView
         CityMap.IsVisible = false;
         World.Select(null);
         World.Tool = tool;
+        _copySource = null;
+        _toolOk.Content = "Construir";
         _toolText.Text = text;
         _toolOk.IsVisible = okVisible;
         _toolOk.IsEnabled = false;
@@ -86,6 +88,8 @@ public sealed partial class MainView
         World.Tool = null;
         _toolDock.IsVisible = false;
         _toolOk.IsVisible = false;
+        _toolOk.Content = "Construir";
+        _copySource = null;
     }
 
     // ------------------------------------------------------------------ Nova pasta
@@ -188,10 +192,93 @@ public sealed partial class MainView
         BeginTool(tool, "Posicione a construção · toque no mapa", okVisible: true);
     }
 
+    /// <summary>The house being copied while the placement tool is up (v21Placement = {kind:'copy', source}).</summary>
+    private LegacyCityBuilding? _copySource;
+
+    /// <summary>
+    /// The house panel's Copiar (v21BeginCopyPlacement): the panel closes and a tap on the map positions the copy, then
+    /// ✓ asks "Configurar cópia". Unlike the 1.8.4 (whose Copiar writes no copy), the copy is a real note: a new file
+    /// with the source's text (owner's decision, ROADMAP UC-19).
+    /// </summary>
+    public async Task BeginCopyAsync(LegacyCityBuilding source)
+    {
+        if (World.City is not { } city || !source.IsNote) return;
+        if (!VaultWritable)
+        {
+            await Dialogs.AlertAsync("Copiar", NoVaultMessage);
+            return;
+        }
+        var tool = new PlacementTool(city.CanHouse, c =>
+        {
+            _toolOk.IsEnabled = c is { } p && city.CanHouse(p.X, p.Y);
+            _toolText.Text = "Posicione a cópia" + (c is { } q ? $" · {q.X},{q.Y}" : " · toque no mapa");
+        });
+        BeginTool(tool, "Posicione a cópia · toque no mapa", okVisible: true);
+        _copySource = source;
+        _toolOk.Content = "Copiar";
+        ShowLifeNotice("Toque no mapa para posicionar a cópia.");
+    }
+
+    /// <summary>v21ConfirmPlacement (copy): "Configurar cópia", then the new file, its document and the house.</summary>
+    private async Task ConfirmCopyAsync(LegacyCityBuilding source, (int X, int Y) p)
+    {
+        if (World.City is not { } city) return;
+        var typed = await Dialogs.PromptAsync(new PromptOptions("Configurar cópia", Label: "Nome", Placeholder: "Ex.: Ideias",
+            Hint: "Sem extensão, vira .md. Também aceita .txt, .html, .css, .js, .json, .yaml e .csv.", Confirm: "Copiar"));
+        if (typed is null) return;
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        if (city.CopyNoteAt(source, p.X, p.Y, typed, now) is not { } copy)
+        {
+            ShowLifeNotice("Posição inválida.");
+            return;
+        }
+        var content = _contents.GetValueOrDefault(source.Path, "");
+        if (Editor.IsVisible && Editor.Current is { } open && open.Path == source.Path) content = open.Content;
+        try
+        {
+            await _vault!.CreateTextFileAsync(copy.Path, content);
+        }
+        catch (Exception ex)
+        {
+            city.RemoveBuilding(copy);
+            World.InvalidateVisual();
+            await Dialogs.AlertAsync("Não foi possível copiar", ex.Message);
+            return;
+        }
+        RegisterNewNote(copy, content, now);
+        EndTool();
+        World.Select(copy);
+        ShowLifeNotice("Cópia posicionada.");
+    }
+
+    /// <summary>
+    /// A note house whose file was just written gets its document, as urbeReconcileWorld does on the next save
+    /// ({path, content, created, modified} = the house's nowDate(), 'world.create'), and the map is saved with it
+    /// (agendarSalvar + marcarSinc). Without this the next map save would be refused (a house without document).
+    /// </summary>
+    private void RegisterNewNote(LegacyCityBuilding house, string content, long nowMs)
+    {
+        _contents[house.Path] = content;
+        if (_store is not null)
+        {
+            var today = LegacyCity.NowDate(nowMs);
+            _store.Upsert(new DocumentInput { Path = house.Path, Content = content, Created = today, Modified = today }, "world.create");
+            _mapSave?.Schedule();
+            _mapSave?.MarkSync();
+        }
+        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+    }
+
     /// <summary>v21ConfirmPlacement (new): "Configurar arquivo", the house at the tile, its file in the vault.</summary>
     public async Task ConfirmPlacementAsync()
     {
         if (World.City is not { } city || World.Tool is not PlacementTool { Candidate: { } p } || Dialogs.IsOpen) return;
+        if (_copySource is { } source)
+        {
+            if (!city.CanHouse(p.X, p.Y)) { ShowLifeNotice("Posição inválida."); return; }
+            await ConfirmCopyAsync(source, p);
+            return;
+        }
         if (!city.CanHouse(p.X, p.Y))
         {
             ShowLifeNotice("Posição inválida.");
@@ -200,7 +287,8 @@ public sealed partial class MainView
         var typed = await Dialogs.PromptAsync(new PromptOptions("Configurar arquivo", Label: "Nome", Placeholder: "Ex.: Ideias",
             Hint: "Sem extensão, vira .md. Também aceita .txt, .html, .css, .js, .json, .yaml e .csv.", Confirm: "Construir"));
         if (typed is null) return;
-        if (city.CreateNoteAt(p.X, p.Y, typed) is not { } made)
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        if (city.CreateNoteAt(p.X, p.Y, typed, now) is not { } made)
         {
             ShowLifeNotice("Posição inválida.");
             return;
@@ -216,8 +304,7 @@ public sealed partial class MainView
             await Dialogs.AlertAsync("Não foi possível criar a nota", ex.Message);
             return;
         }
-        _contents[made.House.Path] = made.Content;
-        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+        RegisterNewNote(made.House, made.Content, now);
         EndTool();
         World.Select(made.House);
         ShowLifeNotice("Arquivo construído.");

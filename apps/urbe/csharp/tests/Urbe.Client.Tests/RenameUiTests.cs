@@ -339,6 +339,93 @@ public sealed partial class HeadlessUiTests
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
 
+    /// <summary>
+    /// Notas → Mais opções → Lixeira: Restaurar brings the file and a house back, ✕ Excluir de vez and Esvaziar ask first
+    /// and only rewrite .urbe/trash.v2.json; a new app on the folder finds the restored note.
+    /// </summary>
+    [Fact]
+    public async Task Trash_RestoresPurgesAndEmptiesFromNotes() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-trashview-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(Path.Combine(vault, "Bairro"));
+            File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n");
+            File.WriteAllText(Path.Combine(vault, "Bairro", "Um.md"), "# Um\n\nTexto.\n");
+            File.WriteAllText(Path.Combine(vault, "Bairro", "Dois.md"), "# Dois\n");
+            File.WriteAllText(Path.Combine(vault, "Bairro", "Tres.md"), "# Tres\n");
+            var trashFile = Path.Combine(vault, ".urbe", "trash.v2.json");
+            MainView? view = null;
+            async Task Settled() { for (int i = 0; i < 40; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); } }
+            try
+            {
+                view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 1280, Height = 760, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                await UntilMapSaved(view);
+                foreach (var p in new[] { "Bairro/Um.md", "Bairro/Dois.md", "Bairro/Tres.md" }) await view.DeleteNoteAsync(p, confirmed: true);
+                Assert.False(File.Exists(Path.Combine(vault, "Bairro", "Um.md")));
+
+                // Notas → ⋯ → Lixeira
+                view.ShowNotes();
+                Dispatcher.UIThread.RunJobs();
+                var more = view.Explorer.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == "Mais opções");
+                more.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Dispatcher.UIThread.RunJobs();
+                Assert.Contains(view.Dialogs.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "3 item(ns)");
+                ClickButtonWithText(view.Dialogs, "Lixeira");
+                await Settled();
+                Assert.True(view.Explorer.ShowingTrash);
+                Assert.Contains(view.Explorer.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "3 item(ns) · restaure ou exclua de vez");
+                Snapshot(window, "native-trash-view.png");
+
+                // Restaurar "Um": the file with its text, a house in Bairro, one item less
+                var um = view.Explorer.GetLogicalDescendants().OfType<Border>()
+                    .First(b => b.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Bairro/Um.md"));
+                ClickButtonWithText(um, "Restaurar");
+                await Settled();
+                Assert.Equal("# Um\n\nTexto.\n", File.ReadAllText(Path.Combine(vault, "Bairro", "Um.md")));
+                Assert.Contains(view.World.City!.Buildings, b => b.Path == "Bairro/Um.md");
+                Assert.DoesNotContain("Bairro/Um.md", File.ReadAllText(trashFile));
+                Assert.Contains(view.Explorer.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "2 item(ns) · restaure ou exclua de vez");
+
+                // ✕ Excluir de vez "Dois": asks, then only the trash changes
+                var dois = view.Explorer.GetLogicalDescendants().OfType<Border>()
+                    .First(b => b.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Bairro/Dois.md"));
+                dois.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == "Excluir de vez")
+                    .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                await Settled();
+                Assert.Contains(view.Dialogs.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "“Dois” será apagada para sempre. Não dá para desfazer.");
+                ClickButtonWithText(view.Dialogs, "Excluir de vez");
+                await Settled();
+                Assert.DoesNotContain("Bairro/Dois.md", File.ReadAllText(trashFile));
+                Assert.Contains("Bairro/Tres.md", File.ReadAllText(trashFile));
+
+                // Esvaziar
+                ClickButtonWithText(view.Explorer, "Esvaziar");
+                await Settled();
+                Assert.Contains(view.Dialogs.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "Todos os 1 itens serão apagados para sempre. Não dá para desfazer.");
+                ClickButtonWithText(view.Dialogs, "Esvaziar");
+                await Settled();
+                Assert.Equal("{\n \"version\": 2,\n \"items\": []\n}", File.ReadAllText(trashFile));
+                Assert.Contains(view.Explorer.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "A lixeira está vazia");
+                await UntilMapSaved(view);
+                window.Close();
+
+                var reopened = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app2", "sel.json")));
+                var window2 = new Window { Width = 1280, Height = 760, Content = reopened };
+                window2.Show();
+                await reopened.OpenVaultAsync();
+                await Settle(window2, reopened);
+                Assert.Equal(["Bairro/Um.md", "Comece.md"], reopened.World.City!.Buildings.Where(b => b.IsNote).Select(b => b.Path).Order(StringComparer.Ordinal));
+                window2.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
     [Fact]
     public async Task Rename_WithoutAWritableVaultRenamesNothing() =>
         Assert.True(await Session.Dispatch<bool>(async () =>

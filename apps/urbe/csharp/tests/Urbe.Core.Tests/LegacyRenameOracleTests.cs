@@ -118,7 +118,7 @@ public sealed class LegacyRenameOracleTests
     public void EveryDeletionLeavesTheTrashTheFilesAndTheMapOfTheOriginal()
     {
         using var json = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(Root().FullName, "csharp", "tests", "fixtures", "legacy-city", "trash-note-run-a.json")));
-        var (city, store, writer, disk) = OpenFixture(json.RootElement);
+        var (city, store, writer, disk) = OpenFixture(json.RootElement, out var houseIds);
         var trash = LegacyTrash.Read(null, null, out var readOnly);
         Assert.False(readOnly);
         foreach (var step in json.RootElement.GetProperty("steps").EnumerateObject().Select(p => p.Value))
@@ -135,10 +135,38 @@ public sealed class LegacyRenameOracleTests
             Assert.Equal(step.GetProperty("files").EnumerateObject().Select(p => (p.Name, p.Value.GetString())),
                 disk.OrderBy(p => p.Key, StringComparer.Ordinal).Select(p => (p.Key, (string?)p.Value)));
         }
+        // Notas → Lixeira: Restaurar (the file and a house come back), then ✕ Excluir de vez
+        var after = json.RootElement.GetProperty("after");
+        var restore = after.GetProperty("restore");
+        var restorePath = restore.GetProperty("path").GetString()!;
+        var item = trash.Items.Single(i => i["originalPath"]!.GetValue<string>() == restorePath);
+        long restoreNow = restore.GetProperty("now").GetInt64();
+        var back = trash.Restore(store, item["document"]!["id"]!.GetValue<string>())!;
+        var expectedHouse = restore.GetProperty("buildings").EnumerateArray().Last();
+        houseIds.Enqueue(expectedHouse.GetProperty("id").GetString()!);
+        var made = city.AddDocumentHouse(back, restoreNow);
+        Assert.Equal(expectedHouse.GetProperty("path").GetString(), made.Path);
+        Assert.Equal((expectedHouse.GetProperty("x").GetInt32(), expectedHouse.GetProperty("y").GetInt32()), (made.X, made.Y));
+        disk[restorePath] = back.Content;
+        Assert.Equal(restore.GetProperty("trashWritten").GetString(), trash.Export());
+        Assert.Equal(restore.GetProperty("mapaWritten").GetString(), Produce(writer, city, store, restore));
+        Assert.Equal(restore.GetProperty("files").EnumerateObject().Select(p => (p.Name, p.Value.GetString())),
+            disk.OrderBy(p => p.Key, StringComparer.Ordinal).Select(p => (p.Key, (string?)p.Value)));
+        Assert.Throws<InvalidOperationException>(() => LegacyTrash.Read(LastTrash(json), null, out _).Restore(store, back.Id));
+
+        var purge = after.GetProperty("purge");
+        var purged = trash.Items.Single(i => i["originalPath"]!.GetValue<string>() == purge.GetProperty("path").GetString());
+        Assert.True(trash.Purge(purged["document"]!["id"]!.GetValue<string>()));
+        Assert.Equal(purge.GetProperty("trashWritten").GetString(), trash.Export());
+        Assert.Equal(purge.GetProperty("mapaWritten").GetString(), Produce(writer, city, store, purge));
+
         // what is written is read back as it was: a later deletion keeps every earlier item
         var last = json.RootElement.GetProperty("steps").GetProperty("editor").GetProperty("trashWritten").GetString()!;
         Assert.Equal(last, LegacyTrash.Read(last, null, out _).Export());
     }
+
+    private static string LastTrash(JsonDocument json) =>
+        json.RootElement.GetProperty("steps").GetProperty("editor").GetProperty("trashWritten").GetString()!;
 
     [Theory]
     [InlineData("""{"version":3,"items":[]}""")]
@@ -161,19 +189,45 @@ public sealed class LegacyRenameOracleTests
     }
 
     /// <summary>The vault of a fixture opened like the original (ids fed back) and its first map checked.</summary>
-    private static (LegacyCity City, DocumentStore Store, LegacyCityMap Writer, Dictionary<string, string> Disk) OpenFixture(JsonElement rootEl)
+    private static (LegacyCity City, DocumentStore Store, LegacyCityMap Writer, Dictionary<string, string> Disk) OpenFixture(JsonElement rootEl) => OpenFixture(rootEl, out _);
+
+    private static (LegacyCity City, DocumentStore Store, LegacyCityMap Writer, Dictionary<string, string> Disk) OpenFixture(JsonElement rootEl, out Queue<string> buildingIds)
     {
         var open = rootEl.GetProperty("open");
         var files = rootEl.GetProperty("files").EnumerateObject().Select(p => (p.Name, p.Value.GetString()!)).ToList();
         var regionIds = new Queue<string>(open.GetProperty("regions").EnumerateArray().Select(r => r.GetProperty("id").GetString()!));
         var noteIds = open.GetProperty("buildings").EnumerateArray().ToDictionary(b => b.GetProperty("path").GetString()!, b => b.GetProperty("id").GetString()!);
-        var buildingIds = new Queue<string>(files.Select(f => noteIds[f.Item1]));
+        var ids = buildingIds = new Queue<string>(files.Select(f => noteIds[f.Item1]));
         var documentIds = open.GetProperty("documents").EnumerateArray().ToDictionary(d => d.GetProperty("path").GetString()!, d => d.GetProperty("id").GetString()!);
-        var city = new LegacyCity(new LegacyCityTerrain((x, y) => World.Value.At(x, y).Biome), p => p == "r" ? regionIds.Dequeue() : buildingIds.Dequeue());
+        var city = new LegacyCity(new LegacyCityTerrain((x, y) => World.Value.At(x, y).Biome), p => p == "r" ? regionIds.Dequeue() : ids.Dequeue());
         var store = city.Open(files, null, documentIds, open.GetProperty("now").GetInt64());
         var writer = new LegacyCityMap(_ => throw new InvalidOperationException("every id comes from the open"));
         Assert.Equal(open.GetProperty("mapaWritten").GetString(), Produce(writer, city, store, open));
         return (city, store, writer, files.ToDictionary(f => f.Item1, f => f.Item2, StringComparer.Ordinal));
+    }
+
+    /// <summary>CopyNoteAt names the copy as the 1.8.4 names a placed clone (v21ConfirmPlacement 'copy').</summary>
+    [Fact]
+    public void ACopyIsNamedAsTheOriginalNamesItsCloneAndIsANewHouse()
+    {
+        var city = new LegacyCity(new LegacyCityTerrain((x, y) => World.Value.At(x, y).Biome), p => p + Guid.NewGuid().ToString("N")[..6]);
+        city.Open([("Nota.txt", "texto"), ("Nota cópia.txt", "outra")],
+            """{"v":4,"mundo":"placas-1","notas":{"Nota.txt":{"id":"doc_n","x":40,"y":30,"sprite":"house2","tags":["a"],"aiLocal":{"memory":"m"}},"Nota cópia.txt":{"id":"doc_c","x":46,"y":30}}}""",
+            new Dictionary<string, string> { ["Nota.txt"] = "doc_n", ["Nota cópia.txt"] = "doc_c" });
+        var source = city.Buildings.Single(b => b.Path == "Nota.txt");
+        (int X, int Y) lot = default;
+        for (int r = 4; r < 60 && lot == default; r++)
+        for (int dy = -r; dy <= r && lot == default; dy++)
+        for (int dx = -r; dx <= r && lot == default; dx++)
+            if (city.CanHouse(source.X + dx, source.Y + dy) && city.RegionAt(source.X + dx, source.Y + dy) is null) lot = (source.X + dx, source.Y + dy);
+        Assert.Null(city.CopyNoteAt(source, source.X, source.Y, "x", 0));            // not on a taken lot
+
+        var copy = city.CopyNoteAt(source, lot.X, lot.Y, "Nota cópia", 1760000000000)!;
+        Assert.Equal("Nota cópia (2).txt", copy.Path);                               // the source's extension, unique in the root
+        Assert.Equal("house2", copy.Sprite);
+        Assert.NotSame(source, copy);
+        Assert.Null(copy.DocumentId);                                                // its own document, given by the caller
+        Assert.Equal((lot.X, lot.Y), (copy.X, copy.Y));
     }
 
     [Fact]

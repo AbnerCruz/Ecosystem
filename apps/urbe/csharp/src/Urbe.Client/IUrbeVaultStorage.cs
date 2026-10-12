@@ -102,6 +102,29 @@ public interface IUrbeVaultStorage
         return (source.Path, trashPath, System.Text.Encoding.UTF8.GetBytes(trashJson));
     }
 
+    /// <summary>
+    /// Rewrites .urbe/trash.v2.json alone (a note restored, an item excluded for good, the trash emptied), with the same
+    /// safeguards as the map: nothing changed outside Urbe, a trash of another version or a vault that may not be
+    /// written is never rewritten, the bytes are verified and every file of the vault too. Hosts must override it.
+    /// </summary>
+    Task SaveTrashAsync(string trashJson, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não usa a lixeira.");
+
+    /// <summary>The checks of a trash rewrite on these files; returns the trash file's path (its case on disk) and bytes.</summary>
+    static (string TrashPath, byte[] TrashBytes) PlanTrashWrite(IReadOnlyList<VaultFile> files, string trashJson)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(trashJson);
+        var snapshot = VaultReader.Read(files);
+        var trashPath = files.FirstOrDefault(f => string.Equals(f.Path, LegacyTrash.Path, StringComparison.OrdinalIgnoreCase))?.Path ?? LegacyTrash.Path;
+        if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal ||
+            snapshot.FutureFiles.Any(f => string.Equals(f, trashPath, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Formato futuro de vault, lixeira protegida ou operação interrompida: escrita recusada.");
+        LegacyTrash.Read(trashJson, null, out var unreadable);
+        if (unreadable) throw new InvalidDataException("A lixeira a gravar não é da versão 2.");
+        return (trashPath, System.Text.Encoding.UTF8.GetBytes(trashJson));
+    }
+
     /// <summary>A folder path Urbe may create: vault-relative, no traversal, drive syntax, or hidden segment.</summary>
     static void EnsureWritableFolderPath(string path)
     {

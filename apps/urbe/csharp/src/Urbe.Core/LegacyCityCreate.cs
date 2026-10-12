@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System.Globalization;
 
 namespace Urbe.Core;
@@ -49,7 +50,12 @@ public sealed partial class LegacyCity
     /// v21ConfirmPlacement (new building): the note typed in "Configurar arquivo" built exactly
     /// at the chosen tile, in the neighbourhood under it. Null when the lot is not valid.
     /// </summary>
-    public (LegacyCityBuilding House, string Content)? CreateNoteAt(int x, int y, string typedName)
+    public (LegacyCityBuilding House, string Content)? CreateNoteAt(int x, int y, string typedName) =>
+        CreateNoteAt(x, y, typedName, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+
+    /// <summary>v21ConfirmPlacement (new building) at <paramref name="nowMs"/>: tags:[], created/modified = nowDate(),
+    /// aiLocal:{instructions:'',memory:'',artifacts:[]}, as the 1.8.4 builds it.</summary>
+    public (LegacyCityBuilding House, string Content)? CreateNoteAt(int x, int y, string typedName, long nowMs)
     {
         if (!CanHouse(x, y)) return null;
         var region = RegionAt(x, y);
@@ -58,8 +64,44 @@ public sealed partial class LegacyCity
         var folder = region is not null ? RegionPaths().GetValueOrDefault(region.Id, region.Name) : "";
         var path = (folder.Length > 0 ? folder + "/" : "") + name + ext;
         var b = new LegacyCityBuilding(_newId("b"), path, name, region?.Id, x, y, "house" + (Buildings.Count % 3 + 1));
+        var today = NowDate(nowMs);
+        b.Tags = new JsonArray();
+        b.Created = JsonValue.Create(today);
+        b.Modified = JsonValue.Create(today);
+        b.AiLocal = DefaultAiLocal();
         Buildings.Add(b);
+        Reindex();
         return (b, ext is ".md" or ".markdown" ? "# " : "");
+    }
+
+    /// <summary>
+    /// "Copiar" of a note house at a tile. The 1.8.4 (v21ConfirmPlacement 'copy') clones the house onto the SAME document
+    /// and writes no copy (csharp/tools/legacy-copy-oracle.mjs); by the owner's decision (ROADMAP UC-19, 12/10/2026)
+    /// the native copy is a real one: the clone's name follows the 1.8.4 (the name typed in "Configurar cópia", the
+    /// source's extension when it has none, v21UniqueName in the neighbourhood under the tile, separarNomeExtNota),
+    /// with the source's sprite, tags and aiLocal, created/modified = nowDate() and no attachments; the caller writes a
+    /// NEW file with the source's text and gives it its own document. Null when the lot is not valid.
+    /// </summary>
+    public LegacyCityBuilding? CopyNoteAt(LegacyCityBuilding source, int x, int y, string typedName, long nowMs)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        if (!source.IsNote || !CanHouse(x, y)) return null;
+        var region = RegionAt(x, y);
+        var requested = (typedName ?? "").Trim();
+        if (requested.Length > 0 && !TextRe.IsMatch(requested)) requested += ExtNota(source);
+        var unique = UniqueNoteName(requested.Length > 0 ? requested : FullNoteName(source), region?.Id);
+        var (name, ext) = SplitNoteName(unique, ExtNota(source));
+        var folder = region is not null ? RegionPaths().GetValueOrDefault(region.Id, region.Name) : "";
+        var b = new LegacyCityBuilding(_newId("b"), (folder.Length > 0 ? folder + "/" : "") + name + ext, name, region?.Id, x, y, source.Sprite);
+        var today = NowDate(nowMs);
+        b.Tags = source.Tags?.DeepClone() ?? new JsonArray();
+        b.Created = JsonValue.Create(today);
+        b.Modified = JsonValue.Create(today);
+        b.Anexos = new JsonArray();
+        b.AiLocal = source.AiLocal?.DeepClone();
+        Buildings.Add(b);
+        Reindex();
+        return b;
     }
 
     /// <summary>
