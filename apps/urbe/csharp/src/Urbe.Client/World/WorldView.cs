@@ -285,10 +285,10 @@ public sealed class WorldView : Control
         InvalidateVisual();
     }
 
-    /// <summary>rebuildRoadNetwork just ran: v25 drops the villagers and their routes (v25Rotas.clear(), v25Povo=[]).</summary>
+    /// <summary>rebuildRoadNetwork just ran: the cached routes go; villagers whose way still exists keep walking (DEC-0045).</summary>
     public void RoadsChanged()
     {
-        _villagers.Reset();
+        _villagers.RoadsChanged(_lifeHost);
         InvalidateVisual();
     }
 

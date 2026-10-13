@@ -23,6 +23,8 @@ O Urbe é o aplicativo publicado como **1.8.4-beta** (`apps/urbe/`, JavaScript):
 
 **Regra para o cliente C#:** cada uma dessas peças é reproduzida com a mesma aparência e o mesmo comportamento, comparada lado a lado com a 1.8.4. Uma tela que não existe na 1.8.4 (por exemplo, um painel de "estado da migração" ou abas Início/Explorer/Editor/Cidade/Mais) não faz parte do Urbe até ser aprovada como melhoria.
 
+**A 1.8.4 é referência de essência, não de defeitos** (DEC-0045, [ADD-0022](../../../../docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md)). O mundo, a arte, a sensação de aquário vivo e os dados em `.md` comuns são os da 1.8.4. O que o proprietário apontou como defeito ou aprovou como melhoria nas observações de uso (moradores que somem, eventos frequentes demais, arco-íris, Voltar que sempre vai à cidade, menu `+` duplicado, tutorial criado no mundo, aba de notas sem as funções de um explorador) é corrigido no porte, não reproduzido. Os itens estão no ROADMAP (UC-36 a UC-47).
+
 ## 2. Tecnologia
 
 C# nativo em **Android e Windows**, sem WebView, HTML ou CSS como interface (ADR-0032). Android vem primeiro. Não há versão Web/PWA do cliente C#.
@@ -39,3 +41,5 @@ Na prática, os artefatos são o que o `Urbe.Core` já sabe produzir a partir da
 2. Depois, a produção de artefatos como evolução, sobre o editor Visual e a cidade, cada melhoria como item próprio do roadmap.
 
 A direção nova não troca a experiência da cidade por uma interface de "workspace". Ela acrescenta capacidade de produção a ela.
+
+Decisões de 13/10/2026 (DEC-0045): recursos novos de escrita (comentários, tags estilizadas, blocos aninhados) se expressam como **sintaxe Markdown** no próprio arquivo; **composições passam a ser páginas**, sob o editor de páginas; modelos de nota e componentes reutilizáveis são **um conceito só**. A ideia de "Urbe como sistema operacional" (bairros como ambientes de trabalho) é **exploração**, a ser provada pelo uso, e não muda este princípio.

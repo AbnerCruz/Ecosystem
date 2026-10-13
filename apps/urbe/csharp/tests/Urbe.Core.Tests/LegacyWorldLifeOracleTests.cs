@@ -24,7 +24,7 @@ public sealed class LegacyWorldLifeOracleTests
         var host = new ScriptedHost(root);
         var random = LegacyJsMath.Rng(seed);
         var fauna = new LegacyFauna(random);
-        var life = new LegacyWorldLife(host, fauna, new LegacyLifeOptions { TimeMode = mode }, random,
+        var life = new LegacyWorldLife(host, fauna, LegacyLifeOptions.Legacy184(mode), random,
             () => DateTimeOffset.FromUnixTimeMilliseconds(1760000000000));
         var cam = root.GetProperty("camera");
         var f = root.GetProperty("view");

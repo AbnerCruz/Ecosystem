@@ -95,7 +95,7 @@ public sealed class LegacyWorldLife
         // module load order: vento, then the proximo* timers
         Breeze.A = Rnd(0, Math.PI * 2);
         Breeze.S = .7; Breeze.X = .5; Breeze.Y = .1;
-        _nextEvent = Rnd(14, 26);
+        _nextEvent = Rnd(Options.FirstEvent.Min, Options.FirstEvent.Max);
         _nextFish = Rnd(3, 7);
         _nextPigeons = Rnd(2, 5);
         _nextEmote = Rnd(4, 9);
@@ -372,12 +372,12 @@ public sealed class LegacyWorldLife
         Breeze.Y = Math.Sin(Breeze.A) * Breeze.S * .45;
 
         // events
-        if (T > _nextEvent) { _nextEvent = T + Rnd(40, 95); RollEvent(v); }
+        if (T > _nextEvent) { _nextEvent = T + Rnd(Options.EventGap.Min, Options.EventGap.Max); RollEvent(v); }
         L = CurrentLight;
         if (Rain.Target != 0 && T > Rain.End)
         {
             Rain.Target = 0;
-            if (!Rain.Snow && CurrentLight.Darkness < .3 && _r() < .6) Arc = new Rainbow(T + 6, T + 46, Rnd(.25, .75));
+            if (Options.Rainbow && !Rain.Snow && CurrentLight.Darkness < .3 && _r() < .6) Arc = new Rainbow(T + 6, T + 46, Rnd(.25, .75));
         }
         Rain.K += (Rain.Target - Rain.K) * Math.Min(1, dt * .35);
         if (Rain.K < .004 && Rain.Target == 0) Rain.K = 0;

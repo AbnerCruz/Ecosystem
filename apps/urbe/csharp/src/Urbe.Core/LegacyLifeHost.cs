@@ -73,4 +73,15 @@ public sealed class LegacyLifeOptions
     public bool Events { get; set; } = true;
     /// <summary>ambiente: real, ciclo, dia, entardecer or noite (app.js default 'ciclo').</summary>
     public string TimeMode { get; set; } = "ciclo";
+
+    /// <summary>Seconds before the first event (weather included). 1.8.4: 14–26 s.</summary>
+    public (double Min, double Max) FirstEvent { get; set; } = (60, 150);
+    /// <summary>Seconds between events. 1.8.4: 40–95 s, which the owner found too frequent (DEC-0045).</summary>
+    public (double Min, double Max) EventGap { get; set; } = (180, 420);
+    /// <summary>A rainbow after daytime rain (1.8.4: 60%). Off in the product by owner's order (DEC-0045).</summary>
+    public bool Rainbow { get; set; }
+
+    /// <summary>The exact pace of the 1.8.4-beta, for the oracle that replays the original life.js.</summary>
+    public static LegacyLifeOptions Legacy184(string timeMode = "ciclo") =>
+        new() { TimeMode = timeMode, FirstEvent = (14, 26), EventGap = (40, 95), Rainbow = true };
 }
