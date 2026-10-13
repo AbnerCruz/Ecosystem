@@ -41,6 +41,23 @@ public sealed class VisualSurface : StackPanel
     public bool IsEditing => _box is not null;
     public event Action<string>? TextEdited;
     public event Action<string>? WikiLinkTapped;
+
+    /// <summary>The bubble's "Fixar em painel": the selected text of the block (DEC-0045, UC-39).</summary>
+    public event Action<string>? PinRequested;
+
+    /// <summary>The text selected in the block being edited, or null.</summary>
+    public string? SelectedText
+    {
+        get
+        {
+            if (_box is null) return null;
+            var (text, a, b) = Selection();
+            return b > a ? text[a..b] : null;
+        }
+    }
+
+    /// <summary>The toolbar buttons that are on for the block being edited (empty when none is), read from its text (DEC-0045).</summary>
+    public event Action<IReadOnlySet<string>>? ActiveToolsChanged;
     /// <summary>The note names matching what follows "[[" (knowledge.search, current note excluded).</summary>
     public Func<string, IReadOnlyList<string>>? WikiCandidates { get; set; }
     /// <summary>The "Link externo" URL prompt (UD.prompt).</summary>
@@ -59,6 +76,7 @@ public sealed class VisualSurface : StackPanel
     {
         if (_box is null) return;
         _box = null;
+        ActiveToolsChanged?.Invoke(new HashSet<string>());
         _wiki.Hide();
         _slash.Hide();
         if (_editStart >= 0)
@@ -241,6 +259,7 @@ public sealed class VisualSurface : StackPanel
         var b = Math.Max(_box.SelectionStart, _box.SelectionEnd);
         var bubbleOn = b > a && text[a..b].Trim().Length > 0;
         _bubble.IsVisible = bubbleOn;
+        ActiveToolsChanged?.Invoke(LegacyEditorTools.ActiveTools(text, a, b));
 
         var slash = LegacyEditorTools.SlashQuery(text);
         if (slash is not null && _box.CaretIndex == text.Length) _slash.Show(slash); else _slash.Hide();
@@ -452,8 +471,10 @@ public sealed class VisualSurface : StackPanel
             case "quote": Apply(LegacyVisualEdit.ToggleBlock(text, _box.CaretIndex, "> ")); break;
             case "noteLink": Apply(LegacyEditorTools.InsertAtCursor(text, a, b, "[[")); break;
             case "rule": InsertRule(); break;
+            case "pin": if (b > a) PinRequested?.Invoke(text[a..b]); break;
+            case "codeblock": Apply(LegacyVisualEdit.CodeBlock(text, _box.CaretIndex)); break;
         }
-        if (act is "h2" or "quote" or "link" or "wiki") _bubble.IsVisible = false;
+        if (act is "h2" or "quote" or "link" or "wiki" or "pin") _bubble.IsVisible = false;
     }
 
     private async Task LinkAsync(string text, int a, int b)
@@ -525,6 +546,8 @@ public sealed class VisualSurface : StackPanel
         Sep();
         Add("h2", new TextBlock { Text = "H", FontWeight = FontWeight.Bold, FontSize = 15 }, "Título");
         Add("quote", Ic("quote"), "Citação");
+        Sep();
+        Add("pin", UrbeTheme.Icon(UrbeTheme.Icons.Pin, 18), "Fixar em painel");
         var card = EditorChrome.Card(row);
         card.IsVisible = true;
         card.Padding = new Thickness(4);

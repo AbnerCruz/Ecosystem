@@ -38,7 +38,7 @@ public sealed class LegacySlashAddonsTests
     public void TheFormulaItemsFollowTheMenuAndUseItsFilter()
     {
         var all = LegacyEditorTools.FilterSlashWithAddons("").Select(x => x.Act).ToList();
-        Assert.Equal(LegacyEditorTools.FilterSlash("").Select(x => x.Act).Concat(["formula", "formulaBlock"]), all);
+        Assert.Equal(LegacyEditorTools.FilterSlash("").Select(x => x.Act).Concat(["formula", "formulaBlock", "codeblock"]), all);
         Assert.Equal(["formula", "formulaBlock"], LegacyEditorTools.FilterSlashWithAddons("formula").Select(x => x.Act));
         Assert.Equal(["formulaBlock"], LegacyEditorTools.FilterSlashWithAddons("destaque").Select(x => x.Act));
         Assert.Equal(["formula", "formulaBlock"], LegacyEditorTools.FilterSlashWithAddons("EQUAÇÃO").Select(x => x.Act)); // fold()

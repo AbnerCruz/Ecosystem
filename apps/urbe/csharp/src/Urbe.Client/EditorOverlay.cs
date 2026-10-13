@@ -60,6 +60,26 @@ public sealed class EditorOverlay : Grid
     public UrbeDialogs? Dialogs { get; set; }
     public VisualSurface Surface => _visual;
 
+    /// <summary>"Fixar em painel" (DEC-0045, UC-39): the reference kept at the top of the editor, across notes.</summary>
+    public PinnedPanel Pinned { get; } = new();
+
+    /// <summary>Pins the selected text (of the block in Visual, of the text in Fonte), else the whole note.</summary>
+    public void PinSelectionOrNote()
+    {
+        if (_note is null) return;
+        string? text;
+        if (Mode == EditorMode.Visual) text = _visual.SelectedText;
+        else
+        {
+            var all = Editor.Text ?? "";
+            int a = Math.Clamp(Math.Min(Editor.SelectionStart, Editor.SelectionEnd), 0, all.Length);
+            int b = Math.Clamp(Math.Max(Editor.SelectionStart, Editor.SelectionEnd), 0, all.Length);
+            text = b > a ? all[a..b] : null;
+        }
+        if (string.IsNullOrWhiteSpace(text)) text = Editor.Text ?? "";
+        Pinned.Pin(text, _note.Path);
+    }
+
     /// <summary>Personalização → Editor and Texto: the text column width, the Fonte font size and the line height factor (--ui-editor-width, --ui-code-size, --ui-editor-line).</summary>
     public void ApplyAppearance(double columnWidth, double codeSize, double lineHeight)
     {
@@ -71,7 +91,8 @@ public sealed class EditorOverlay : Grid
     public EditorOverlay()
     {
         Background = UrbeTheme.Brush(UrbeTheme.Bg);
-        RowDefinitions = new RowDefinitions("56,Auto,*,48");
+        // top bar, find, toolbar (wide), text, footer, toolbar (narrow: on the last row, right above the soft keyboard)
+        RowDefinitions = new RowDefinitions("56,Auto,Auto,*,48,Auto");
         Editor = new TextBox
         {
             AcceptsReturn = true,
@@ -96,7 +117,12 @@ public sealed class EditorOverlay : Grid
         foreach (var key in new[] { "TextControlBorderBrush", "TextControlBorderBrushPointerOver", "TextControlBorderBrushFocused" })
             Editor.Resources[key] = Brushes.Transparent;
         Editor.TextChanged += (_, _) => OnTextChanged();
-        Editor.PropertyChanged += (_, e) => { if (e.Property == TextBox.CaretIndexProperty) UpdateWiki(); };
+        Editor.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == TextBox.CaretIndexProperty) UpdateWiki();
+            if (e.Property == TextBox.CaretIndexProperty || e.Property == TextBox.SelectionStartProperty || e.Property == TextBox.SelectionEndProperty)
+                UpdateActiveTools();
+        };
         Editor.AddHandler(KeyDownEvent, (object? _, KeyEventArgs e) => { if (_wiki.HandleKey(e.Key)) e.Handled = true; }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         // math/editor.js: Ctrl+M inserts a formula, Ctrl+Shift+M a display formula, with the focus in the text
         AddHandler(KeyDownEvent, (object? _, KeyEventArgs e) =>
@@ -114,14 +140,18 @@ public sealed class EditorOverlay : Grid
             if (!string.Equals(Editor.Text, md, StringComparison.Ordinal)) Editor.Text = md;
             _fromVisual = false;
         };
-        _visual.WikiLinkTapped += name => _ = OpenLinkedAsync(name);
+        _visual.WikiLinkTapped += name => _ = FollowLinkAsync(name);
+        _visual.PinRequested += text => { if (_note is not null) Pinned.Pin(text, _note.Path); };
+        _visual.ActiveToolsChanged += on => { if (Mode == EditorMode.Visual) ShowActiveTools(on); };
         _visual.WikiCandidates = Candidates;
         _visual.AskUrl = AskUrlAsync;
 
         AddRow(TopBar(), 0);
         // find-ui.js: the bar is prepended to #editorMain, above #mdToolbar
         FindBar = new EditorFindBar(() => Editor, () => SetMode(EditorMode.Fonte));
-        AddRow(new StackPanel { Children = { FindBar, Toolbars() } }, 1);
+        AddRow(FindBar, 1);
+        AddRow(Toolbars(), ToolbarRowTop);
+        SizeChanged += (_, e) => PlaceToolbar(e.NewSize.Width);
         // #propertiesBox (base.css + theme.css): above the text in Fonte only; max 720px, 12px below
         _properties = new Border
         {
@@ -147,8 +177,14 @@ public sealed class EditorOverlay : Grid
         var body = new Grid { Children = { _sourceScroll, _visualScroll, MathBar, Context } };
         body.SizeChanged += (_, e) => { MathBar.Place(e.NewSize.Width); Context.Place(e.NewSize.Width); };
         Context.LineChosen += GoToLine;
-        AddRow(body, 2);
-        AddRow(Footer(), 3);
+        // the pinned reference above the text, up to 40 % of the height, with its own scroll (DEC-0045, UC-39)
+        var bodyHost = new Grid { RowDefinitions = new RowDefinitions("Auto,*") };
+        bodyHost.Children.Add(Pinned);
+        SetRow(body, 1);
+        bodyHost.Children.Add(body);
+        bodyHost.SizeChanged += (_, e) => Pinned.MaxHeight = Math.Max(120, e.NewSize.Height * .4);
+        AddRow(bodyHost, 3);
+        AddRow(Footer(), 4);
         _autosave.Tick += async (_, _) => await AutosaveTickAsync();
         ApplyOptions(null, null);
         ShowMode(EditorMode.Visual);
@@ -213,7 +249,60 @@ public sealed class EditorOverlay : Grid
 
     // ------------------------------------------------------------------ open / close
 
+    /// <summary>Opens a note fresh (from the city, Notas, a search…): the trail of followed links starts over.</summary>
     public void Open(CityNote note)
+    {
+        _trail.Clear();
+        Show(note);
+    }
+
+    /// <summary>
+    /// Notes left by following a [[link]] or a backlink, most recent on top. The 1.8.4 always closed the editor on
+    /// Voltar; here Voltar walks this trail back first and only closes when it is empty (DEC-0045, UC-37).
+    /// </summary>
+    private readonly Stack<string> _trail = new();
+
+    /// <summary>How many notes Voltar goes back through before closing.</summary>
+    public int TrailDepth => _trail.Count;
+
+    /// <summary>Creates the note a [[link]] names when it does not exist yet (DEC-0045, UC-37): the host writes it to
+    /// the vault and returns it without opening it, or null when it could not.</summary>
+    public Func<string, Task<CityNote?>>? CreateLinked { get; set; }
+
+    /// <summary>Follows a link or a backlink to <paramref name="target"/>: saves the open note, remembers it and opens the target.</summary>
+    public async Task NavigateAsync(CityNote target)
+    {
+        if (!await LeaveCurrentAsync()) return;
+        Go(target);
+    }
+
+    private void Go(CityNote target)
+    {
+        if (_note is { } current && current.Path != target.Path) _trail.Push(current.Path);
+        Show(target.Path == _note?.Path ? Current! : target);
+    }
+
+    /// <summary>Voltar: the previous note of the trail, or closes back to where the editor was opened from.</summary>
+    public async Task BackAsync()
+    {
+        if (!await LeaveCurrentAsync()) return;
+        var notes = Notes?.Invoke().ToList() ?? [];
+        while (_trail.TryPop(out var path))
+        {
+            if (notes.FirstOrDefault(n => n.Path == path) is { } previous) { Show(previous); return; }
+        }
+        IsVisible = false;
+        Closed?.Invoke(this, EventArgs.Empty);
+    }
+
+    private async Task<bool> LeaveCurrentAsync()
+    {
+        _visual.FinishEdit();
+        _autosave.Stop();
+        return !(SaveOnClose && HasChanges && !await SaveAsync());
+    }
+
+    private void Show(CityNote note)
     {
         _opening = true;
         _edited = false;
@@ -284,6 +373,8 @@ public sealed class EditorOverlay : Grid
     {
         if (Mode == EditorMode.Visual && mode != EditorMode.Visual) _visual.FinishEdit();   // serialise what was edited
         Mode = mode;
+        ShowActiveTools(new HashSet<string>());
+        UpdateActiveTools();
         UpdateProperties();
         MathBar?.Update();
         var visual = mode == EditorMode.Visual;
@@ -301,6 +392,22 @@ public sealed class EditorOverlay : Grid
     }
 
     // ------------------------------------------------------------------ layout
+
+    private const int ToolbarRowTop = 2, ToolbarRowBottom = 5;
+
+    /// <summary>Below this width (a phone) the formatting bar sits at the bottom, next to the keyboard (DEC-0045, UC-37).</summary>
+    public const double ToolbarBottomBelow = 720;
+
+    /// <summary>Whether the formatting bar is on the bottom row, next to the soft keyboard.</summary>
+    public bool ToolbarAtBottom => GetRow(_toolbarHost) == ToolbarRowBottom;
+
+    // The 1.8.4 kept #mdToolbar at the top, far from the thumbs while typing on the phone (owner, DEC-0045).
+    private void PlaceToolbar(double width)
+    {
+        var bottom = width > 0 && width < ToolbarBottomBelow;
+        SetRow(_toolbarHost, bottom ? ToolbarRowBottom : ToolbarRowTop);
+        _toolbarHost.BorderThickness = bottom ? new Thickness(0, 1, 0, 0) : new Thickness(0, 0, 0, 1);
+    }
 
     private void AddRow(Control control, int row)
     {
@@ -324,15 +431,8 @@ public sealed class EditorOverlay : Grid
 
     private Control TopBar()
     {
-        var back = IconButton(UrbeTheme.Icons.Back, "Voltar para a cidade");
-        back.Click += async (_, _) =>
-        {
-            _visual.FinishEdit();
-            _autosave.Stop();
-            if (SaveOnClose && HasChanges && !await SaveAsync()) return;
-            IsVisible = false;
-            Closed?.Invoke(this, EventArgs.Empty);
-        };
+        var back = IconButton(UrbeTheme.Icons.Back, "Voltar");
+        back.Click += async (_, _) => await BackAsync();
         _title.FontFamily = UrbeTheme.UiFont;
         _title.FontWeight = FontWeight.SemiBold;
         _title.FontSize = 16;
@@ -443,8 +543,29 @@ public sealed class EditorOverlay : Grid
         };
         ToolTip.SetTip(b, tool.Title);
         b.Click += async (_, _) => await RunToolAsync(tool);
+        _toolButtons[tool.Id] = b;
         return b;
         static TextBlock Label(string t) => new() { Text = t, FontWeight = FontWeight.Bold, FontSize = 14 };
+    }
+
+    private readonly Dictionary<string, Button> _toolButtons = new(StringComparer.Ordinal);
+
+    /// <summary>The toolbar buttons that show as on now (tests and the host).</summary>
+    public IReadOnlySet<string> ActiveTools { get; private set; } = new HashSet<string>();
+
+    // Fonte: the state of the buttons is the Markdown under the caret (DEC-0045, UC-37)
+    private void UpdateActiveTools()
+    {
+        if (Mode != EditorMode.Fonte) return;
+        var text = Editor.Text ?? "";
+        ShowActiveTools(LegacyEditorTools.ActiveTools(text, Editor.SelectionStart, Editor.SelectionEnd));
+    }
+
+    private void ShowActiveTools(IReadOnlySet<string> on)
+    {
+        ActiveTools = on;
+        foreach (var (id, button) in _toolButtons)
+            button.Background = on.Contains(id) ? UrbeTheme.Brush(UrbeTheme.Accent, .22) : Brushes.Transparent;
     }
 
     private Control Footer()
@@ -478,7 +599,7 @@ public sealed class EditorOverlay : Grid
         if (_opening) return;
         if (_note is not null && !string.Equals(Editor.Text, _note.Content, StringComparison.Ordinal)) _edited = true;
         UpdateStatus(changed: true);
-        if (!_fromVisual && Mode == EditorMode.Fonte) UpdateWiki();
+        if (!_fromVisual && Mode == EditorMode.Fonte) { UpdateWiki(); UpdateActiveTools(); }
         ScheduleAutosave();
     }
 
@@ -639,17 +760,19 @@ public sealed class EditorOverlay : Grid
             Validate: v => LegacyVisualEdit.IsValidUrl(v) ? null : "Use um endereço começando com https://"));
 
     /// <summary>bindPreviewWikiLinks: open the note a wikilink names (exact path/title, else the single case-insensitive title match).</summary>
-    private async Task OpenLinkedAsync(string name)
+    public async Task FollowLinkAsync(string name)
     {
         var all = Notes?.Invoke().ToList() ?? [];
         var exact = all.FirstOrDefault(n => string.Equals(n.Path, name, StringComparison.Ordinal) || string.Equals(n.Path, name + ".md", StringComparison.Ordinal));
         var matches = all.Where(n => string.Equals(n.Name, name, StringComparison.OrdinalIgnoreCase)).ToList();
         var target = exact ?? (matches.Count == 1 ? matches[0] : null);
-        if (target is null) { Notify(matches.Count > 1 ? "Link ambíguo: use o caminho da nota." : "A nota vinculada não existe."); return; }
-        _visual.FinishEdit();
-        _autosave.Stop();
-        if (SaveOnClose && HasChanges && !await SaveAsync()) return;
-        Open(target.Path == _note?.Path ? Current! : target);
+        if (target is not null) { await NavigateAsync(target); return; }
+        if (matches.Count > 1) { Notify("Link ambíguo: use o caminho da nota."); return; }
+        // The 1.8.4 only said the note did not exist (owner, DEC-0045): offer to create it, next to this one.
+        if (CreateLinked is null || Dialogs is null || !LegacyEditorTools.IsCreatableLinkName(name)) { Notify("A nota vinculada não existe."); return; }
+        if (!await Dialogs.ConfirmAsync("Criar nota", $"A nota “{name}” ainda não existe. Criar agora?", "Criar nota")) return;
+        if (!await LeaveCurrentAsync()) return;
+        if (await CreateLinked(name) is { } made) Go(made);
     }
 
     // ------------------------------------------------------------------ small controls

@@ -60,12 +60,12 @@ public sealed partial class HeadlessUiTests
             // the open folders are on the device: a new view opens them again
             Assert.True(new ExplorerState(UrbeApp.LocalStatePath).IsExpanded("Bairro/Sub"));
 
-            // search: "Buscar notas" by path or title, with the folder under the name
+            // search: "Buscar arquivos" by path or title, with the folder under the name
             e.SearchText = "dois";
             Assert.Equal(new[] { "Bairro/Sub/Dois.md" }, e.VisibleNotePaths);
             Assert.Contains(e.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Bairro/Sub");
             e.SearchText = "nada disso";
-            Assert.Contains(e.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Nenhuma nota com “nada disso”.");
+            Assert.Contains(e.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Nenhum arquivo com “nada disso”.");
             e.SearchText = "";
 
             // the floating selection bar

@@ -1,0 +1,86 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "timestamp": "2026-10-13T13:23:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "3db1101a",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/548",
+  "blockers": [],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md"
+  ],
+  "message_id": "HO-20261013-urbe-uc39-fixar-em-painel",
+  "task_id": "UC-39",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/PinnedPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorNavigationUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261013-urbe-uc39-fixar-em-painel.json"
+  ],
+  "work_completed": [
+    "PinnedPanel: trecho renderizado no topo do editor, até 40 % da altura, rolagem própria, ✕ desafixa, persiste ao trocar de nota.",
+    "Fixar em painel no balão de seleção do Visual e em Mais ações (seleção ou nota inteira).",
+    "Issue #551 (state:verifying)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.Editor_BackWalksTheFollowedLinksAndAMissingLinkCreatesItsNote (trecho UC-39)",
+      "result": "passed",
+      "evidence": "Seleção fixada, continua visível em Outra.md; sem seleção fixa a nota inteira; captura native-editor-pinned.png."
+    },
+    {
+      "kind": "human",
+      "check": "Uso no aparelho Android (toque e layout)",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (NN-017, DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/PinnedPanel.cs"
+    }
+  ],
+  "known_issues": [],
+  "next_actions": [
+    "UC-40."
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "Divergências citam DEC-0045/ADD-0022."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Item fica [~] até validação no aparelho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Testes citados e Issue aberta em state:verifying."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "pinned-panel",
+      "status": "product-specific",
+      "rationale": "Interface do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Só interface; nada é gravado."
+  }
+}

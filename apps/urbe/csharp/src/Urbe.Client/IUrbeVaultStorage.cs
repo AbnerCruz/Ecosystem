@@ -37,6 +37,14 @@ public interface IUrbeVaultStorage
     Task<IReadOnlyList<VaultFile>> ReadAllFilesAsync(CancellationToken cancellationToken = default) =>
         throw new NotSupportedException("Este armazenamento ainda não exporta o vault.");
 
+    /// <summary>
+    /// The paths of every file of the vault, attachments included, without reading them (the Explorer lists every file
+    /// with its extension, DEC-0045, UC-38). Hidden entries (".urbe", ".git"…) and links out of the folder are left out.
+    /// Read only. A host that cannot list returns none.
+    /// </summary>
+    Task<IReadOnlyList<string>> ListFilePathsAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<string>>([]);
+
     /// <summary>Removes ONE user folder when it is empty (the 1.8.4 sync's FS.apagarPasta after a folder is deleted in
     /// Notas: removeEntry of a folder that still holds anything fails and is ignored). A folder holding any entry, a
     /// link, a file with that name or a missing folder is left as it is and false returned; nothing else is touched.</summary>

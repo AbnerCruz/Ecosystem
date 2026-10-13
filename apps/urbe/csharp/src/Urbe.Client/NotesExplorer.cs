@@ -20,12 +20,12 @@ public sealed class NotesExplorer : Border
 
     private static readonly StringComparer Locale = StringComparer.InvariantCulture; // localeCompare
 
-    private readonly TextBlock _title = new() { Text = "Notas", FontSize = 24, FontWeight = FontWeight.Bold, LetterSpacing = -0.48, VerticalAlignment = VerticalAlignment.Center };
+    private readonly TextBlock _title = new() { Text = "Explorer", FontSize = 24, FontWeight = FontWeight.Bold, LetterSpacing = -0.48, VerticalAlignment = VerticalAlignment.Center };
     private readonly Button _back, _new, _more, _close;
     private readonly Border _searchBox;
     private readonly TextBox _search = new()
     {
-        PlaceholderText = "Buscar notas",
+        PlaceholderText = "Buscar arquivos",
         FontSize = 16,
         FontWeight = FontWeight.Medium,
         Background = Brushes.Transparent,
@@ -40,6 +40,9 @@ public sealed class NotesExplorer : Border
     private readonly TextBlock _count = new() { FontSize = 14, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0) };
     private readonly List<Button> _noteActions = [];
     private readonly List<CityNote> _notes = [];
+    private readonly List<string> _files = [];
+    private readonly Dictionary<Control, string> _folderRows = [];
+    private Control? _dropTarget;
     private readonly HashSet<string> _extraFolders = new(StringComparer.Ordinal);
     private readonly List<string> _selected = [];
     private readonly HashSet<string> _localExpanded = new(StringComparer.Ordinal) { "" };
@@ -53,6 +56,8 @@ public sealed class NotesExplorer : Border
     public NotesExplorer()
     {
         Background = UrbeTheme.Brush(UrbeTheme.Bg);
+        AddHandler(PointerMovedEvent, OnDragMoved, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+        AddHandler(PointerReleasedEvent, OnDragReleased, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
         _title.Foreground = UrbeTheme.Brush(UrbeTheme.Text);
         _back = HeaderButton(UrbeTheme.Icons.Back, "Voltar para todas as notas");
         _back.Margin = new Thickness(-12, 0, 0, 0);
@@ -160,6 +165,15 @@ public sealed class NotesExplorer : Border
     /// <summary>Lixeira: Esvaziar.</summary>
     public event Action? EmptyTrashRequested;
     public event Action<CityNote>? NoteRequested;
+
+    /// <summary>A tap on a file that is not a note (an image, a PDF…): the host shows it (DEC-0045, UC-38).</summary>
+    public event Action<string>? FileRequested;
+
+    /// <summary>The "⋯" of a folder row: the host shows what can be done with that folder (DEC-0045, UC-38).</summary>
+    public event Action<string>? FolderMenuRequested;
+
+    /// <summary>Notes held and dragged onto a folder row: move them there (DEC-0045, UC-38).</summary>
+    public event Action<IReadOnlyList<string>, string>? MoveRequested;
     /// <summary>An action of the selection bar (.ume-actions): "open", "favorite", "move", "duplicate" or "delete",
     /// with the selection: notes by path, folders as "folder:" + their path (model.js folderId).</summary>
     public event Action<string, IReadOnlyList<string>>? SelectionAction;
@@ -254,6 +268,66 @@ public sealed class NotesExplorer : Border
         Render();
     }
 
+    /// <summary>
+    /// The files of the vault that are not notes (images, PDFs, other attachments). The 1.8.4 listed only the notes;
+    /// the owner asked for every file with its extension (DEC-0045, UC-38).
+    /// </summary>
+    public void SetFiles(IEnumerable<string> paths)
+    {
+        _files.Clear();
+        _files.AddRange(paths.Where(p => !string.IsNullOrWhiteSpace(p) && _notes.TrueForAll(n => n.Path != p)).Distinct(StringComparer.Ordinal));
+        Render();
+    }
+
+    /// <summary>The non-note file rows shown now.</summary>
+    public IReadOnlyList<string> VisibleFilePaths => _visibleFiles.ToArray();
+
+    private readonly List<string> _visibleFiles = [];
+
+    /// <summary>The icon of a file by its extension: notes and texts, pages, images, code and data, other files.</summary>
+    public static string IconFor(string path)
+    {
+        var p = path.ToLowerInvariant();
+        if (p.EndsWith(".page.json", StringComparison.Ordinal) || p.EndsWith(".template.json", StringComparison.Ordinal)) return UrbeTheme.Icons.Page;
+        var ext = System.IO.Path.GetExtension(p);
+        return ext switch
+        {
+            ".md" or ".markdown" or ".txt" => UrbeTheme.Icons.File,
+            ".png" or ".jpg" or ".jpeg" or ".gif" or ".webp" or ".svg" or ".bmp" or ".avif" => UrbeTheme.Icons.Image,
+            ".pdf" => UrbeTheme.Icons.Book,
+            ".json" or ".js" or ".css" or ".html" or ".htm" or ".yaml" or ".yml" or ".csv" or ".xml" or ".cs" or ".py" => UrbeTheme.Icons.FileCode,
+            _ => UrbeTheme.Icons.FileOther
+        };
+    }
+
+    /// <summary>A tap on a visible non-note file row.</summary>
+    public bool TryOpenFile(string path)
+    {
+        if (!_visibleFiles.Contains(path)) return false;
+        FileRequested?.Invoke(path);
+        return true;
+    }
+
+    /// <summary>The "⋯" of a visible folder row.</summary>
+    public bool OpenFolderMenu(string folder)
+    {
+        if (!_visibleFolders.Contains(folder)) return false;
+        FolderMenuRequested?.Invoke(folder);
+        return true;
+    }
+
+    /// <summary>
+    /// Drops the selected notes on <paramref name="folder"/> (what a drag onto a folder row does): only notes move,
+    /// and only those not already there. False when nothing would move.
+    /// </summary>
+    public bool DropSelectionOn(string folder)
+    {
+        var notes = _selected.Where(x => !x.StartsWith(FolderPrefix, StringComparison.Ordinal) && Dir(x) != folder).ToList();
+        if (notes.Count == 0) return false;
+        MoveRequested?.Invoke(notes, folder);
+        return true;
+    }
+
     /// <summary>model.clear().</summary>
     public void ClearSelection()
     {
@@ -337,12 +411,14 @@ public sealed class NotesExplorer : Border
     private void Render()
     {
         // setHeader: the title of the view; back outside tree/search; the search field only in tree/search
-        _title.Text = _view switch { "trash" => "Lixeira", "search" => "Busca", "collection" => _collection?.Title ?? "Notas", _ => "Notas" };
+        _title.Text = _view switch { "trash" => "Lixeira", "search" => "Busca", "collection" => _collection?.Title ?? "Explorer", _ => "Explorer" };
         _back.IsVisible = _view is "trash" or "collection";
         _searchBox.IsVisible = _view is "tree" or "search";
         _list.Children.Clear();
         _visibleNotes.Clear();
         _visibleFolders.Clear();
+        _visibleFiles.Clear();
+        _folderRows.Clear();
         switch (_view)
         {
             case "trash": RenderTrash(_trash ?? []); break;
@@ -361,23 +437,28 @@ public sealed class NotesExplorer : Border
         void Ensure(string path) { for (var f = path; f.Length > 0 && folders.Add(f); f = Dir(f)) { } }
         foreach (var f in _extraFolders) Ensure(f);
         foreach (var n in _notes) Ensure(Dir(n.Path));
+        foreach (var f in _files) Ensure(Dir(f));
         void Walk(string parent, int depth)
         {
-            var kids = folders.Where(f => Dir(f) == parent).Select(f => (Folder: true, Path: f, Name: Base(f)))
-                .Concat(_notes.Where(n => Dir(n.Path) == parent).Select(n => (Folder: false, n.Path, Name: NameOf(n))))
-                .OrderBy(k => k.Folder ? 0 : 1).ThenBy(k => k.Name, Locale).ToList();
+            // folders first, then every file by its name with the extension (notes and attachments together)
+            var kids = folders.Where(f => Dir(f) == parent).Select(f => (Kind: 0, Path: f, Name: Base(f)))
+                .Concat(_notes.Where(n => Dir(n.Path) == parent).Select(n => (Kind: 1, n.Path, Name: Base(n.Path))))
+                .Concat(_files.Where(f => Dir(f) == parent).Select(f => (Kind: 2, Path: f, Name: Base(f))))
+                .OrderBy(k => k.Kind == 0 ? 0 : 1).ThenBy(k => k.Name, Locale).ToList();
             foreach (var k in kids)
             {
-                if (k.Folder)
+                if (k.Kind == 0)
                 {
                     bool open = IsExpanded(k.Path);
                     _visibleFolders.Add(k.Path);
                     var folder = k.Path;
-                    _list.Children.Add(Row(UrbeTheme.Icons.Folder, k.Name, null, depth, true, open, _selected.Contains(FolderPrefix + folder),
-                        () => TapFolder(folder), () => HoldFolder(folder)));
+                    var row = FolderRow(folder, k.Name, depth, open);
+                    _folderRows[row] = folder;
+                    _list.Children.Add(row);
                     if (open) Walk(k.Path, depth + 1);
                 }
-                else AddNoteRow(_notes.First(n => n.Path == k.Path), depth, withPath: false);
+                else if (k.Kind == 1) AddNoteRow(_notes.First(n => n.Path == k.Path), depth, withPath: false);
+                else AddFileRow(k.Path, depth, withPath: false);
             }
         }
         Walk("", 0);
@@ -392,8 +473,10 @@ public sealed class NotesExplorer : Border
         var q = query.ToLowerInvariant();
         foreach (var n in _notes.Where(n => n.Path.ToLowerInvariant().Contains(q, StringComparison.Ordinal)
                      || (n.Title ?? "").ToLowerInvariant().Contains(q, StringComparison.Ordinal)).Take(200))
-            AddNoteRow(n, 0, withPath: true, name: string.IsNullOrEmpty(n.Title) ? n.Path : n.Title);
-        if (_list.Children.Count == 0) _list.Children.Add(Empty("Nada encontrado", "Nenhuma nota com “" + query + "”."));
+            AddNoteRow(n, 0, withPath: true);
+        foreach (var f in _files.Where(f => f.ToLowerInvariant().Contains(q, StringComparison.Ordinal)).Take(200))
+            AddFileRow(f, 0, withPath: true);
+        if (_list.Children.Count == 0) _list.Children.Add(Empty("Nada encontrado", "Nenhum arquivo com “" + query + "”."));
     }
 
     private void RenderCollection(Collection c)
@@ -406,11 +489,96 @@ public sealed class NotesExplorer : Border
     {
         _visibleNotes.Add(n.Path);
         var path = n.Path;
-        var icon = System.Text.RegularExpressions.Regex.IsMatch(path, @"\.(page|template)\.json$", System.Text.RegularExpressions.RegexOptions.IgnoreCase)
-            ? UrbeTheme.Icons.Page : UrbeTheme.Icons.File;
-        _list.Children.Add(Row(icon, name ?? NameOf(n), withPath && path.Contains('/') ? Dir(path) : null, depth, false, false, _selected.Contains(path),
-            () => TryOpenNote(path), () => HoldNote(path)));
+        // the file name with its extension, as an explorer shows it (the 1.8.4 showed the title)
+        _list.Children.Add(PressableRow(RowFrame(IconFor(path), name ?? Base(path), withPath && path.Contains('/') ? Dir(path) : null, false, false, null),
+            depth, _selected.Contains(path), () => TryOpenNote(path), () => { if (HoldNote(path)) ArmDrag(); }, () => HoldDelay));
     }
+
+    private void AddFileRow(string path, int depth, bool withPath)
+    {
+        _visibleFiles.Add(path);
+        _list.Children.Add(Row(IconFor(path), Base(path), withPath && path.Contains('/') ? Dir(path) : null, depth, false, false, false,
+            () => TryOpenFile(path), () => TryOpenFile(path)));
+    }
+
+    /// <summary>A folder row: the caret and a "⋯" with the folder's options (the 1.8.4 showed none, DEC-0045).</summary>
+    private Control FolderRow(string folder, string name, int depth, bool open)
+    {
+        var more = new Button
+        {
+            Content = UrbeTheme.Icon(UrbeTheme.Icons.MoreUi, 18, UrbeTheme.Text3, 1.8),
+            Width = 36, Height = 36, Padding = new Thickness(0), CornerRadius = new CornerRadius(8),
+            Background = Brushes.Transparent, BorderThickness = new Thickness(0),
+            HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
+        };
+        ToolTip.SetTip(more, "Opções da pasta");
+        more.Click += (_, e) => { e.Handled = true; OpenFolderMenu(folder); };
+        var caret = UrbeTheme.Icon(UrbeTheme.Icons.Chevron, 16, UrbeTheme.Text3, 1.8);
+        caret.VerticalAlignment = VerticalAlignment.Center;
+        caret.RenderTransform = open ? new RotateTransform(90) : null;
+        var trailing = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { more, caret } };
+        return PressableRow(RowFrame(UrbeTheme.Icons.Folder, name, null, true, open, trailing), depth, _selected.Contains(FolderPrefix + folder),
+            () => TapFolder(folder), () => HoldFolder(folder), () => HoldDelay);
+    }
+
+    // A held note can be dragged onto a folder row (the 1.8.4 did nothing, DEC-0045, UC-38). The hold re-renders the list,
+    // so the drag is followed here, on the whole explorer, not on the row that was pressed.
+    private bool _dragArmed, _dragging;
+    private Point? _dragFrom;
+
+    private void ArmDrag()
+    {
+        _dragArmed = true;
+        _dragging = false;
+        _dragFrom = null;
+    }
+
+    private void OnDragMoved(object? sender, Avalonia.Input.PointerEventArgs e)
+    {
+        if (!_dragArmed) return;
+        if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) { EndDrag(); return; }
+        var at = e.GetPosition(_list);
+        _dragFrom ??= at;
+        if (!_dragging && Math.Sqrt(Math.Pow(at.X - _dragFrom.Value.X, 2) + Math.Pow(at.Y - _dragFrom.Value.Y, 2)) <= 12) return;
+        _dragging = true;
+        Highlight(FolderRowAt(at));
+    }
+
+    private void OnDragReleased(object? sender, Avalonia.Input.PointerReleasedEventArgs e)
+    {
+        if (_dragging && FolderRowAt(e.GetPosition(_list)) is { } row && _folderRows.TryGetValue(row, out var folder))
+        {
+            EndDrag();
+            DropSelectionOn(folder);
+            return;
+        }
+        EndDrag();
+    }
+
+    private void EndDrag()
+    {
+        _dragArmed = _dragging = false;
+        _dragFrom = null;
+        Highlight(null);
+    }
+
+    private Control? FolderRowAt(Point at)
+    {
+        foreach (var (row, _) in _folderRows)
+            if (row.Bounds.Contains(at)) return row;
+        return null;
+    }
+
+    private void Highlight(Control? row)
+    {
+        if (_dropTarget is Button old && old != row)
+            old.BorderBrush = _folderRows.TryGetValue(old, out var f) && _selected.Contains(FolderPrefix + f) ? UrbeTheme.Brush(UrbeTheme.Accent, .35) : Brushes.Transparent;
+        _dropTarget = row;
+        if (row is Button target) target.BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent);
+    }
+
+    /// <summary>Whether a held note is being dragged now (tests).</summary>
+    public bool Dragging => _dragging;
 
     /// <summary>renderTrash: "n item(ns) · restaure ou exclua de vez" with Esvaziar, then each item with Restaurar and ✕.</summary>
     private void RenderTrash(IReadOnlyList<TrashEntry> items)
@@ -579,7 +747,7 @@ public sealed class NotesExplorer : Border
             Grid.SetRow(sub, 1);
             grid.Children.Add(sub);
         }
-        if (folder)
+        if (folder && trailing is null)
         {
             // .ume-caret: 16px chevron, text-3, turned 90° when the folder is open
             var caret = UrbeTheme.Icon(UrbeTheme.Icons.Chevron, 16, UrbeTheme.Text3, 1.8);
@@ -728,5 +896,4 @@ public sealed class NotesExplorer : Border
 
     private static string Dir(string path) => path.Contains('/') ? path[..path.LastIndexOf('/')] : "";
     private static string Base(string path) => path[(path.LastIndexOf('/') + 1)..];
-    private static string NameOf(CityNote n) => string.IsNullOrEmpty(n.Title) ? n.Name : n.Title;
 }

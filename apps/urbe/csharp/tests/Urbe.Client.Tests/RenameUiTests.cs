@@ -147,7 +147,7 @@ public sealed partial class HeadlessUiTests
                     .First(b => b.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == name));
                 return row.TranslatePoint(new Point(row.Bounds.Width / 2, row.Bounds.Height / 2), window)!.Value;
             }
-            var p = Centre("Um");
+            var p = Centre("Um.md");
             window.MouseDown(p, MouseButton.Left);
             for (int i = 0; i < 70; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
             window.MouseUp(p, MouseButton.Left);
@@ -159,7 +159,7 @@ public sealed partial class HeadlessUiTests
 
             // a tap while selecting toggles (2 notas), the bar's Limpar seleção ends it
             view.Explorer.HoldDelay = TimeSpan.FromSeconds(30);   // taps: wall time must not decide on a loaded machine
-            var q = Centre("Dois");
+            var q = Centre("Dois.md");
             window.MouseDown(q, MouseButton.Left);
             window.MouseUp(q, MouseButton.Left);
             Dispatcher.UIThread.RunJobs();
@@ -171,7 +171,7 @@ public sealed partial class HeadlessUiTests
             Assert.Empty(view.Explorer.SelectedPaths);
 
             // without a selection a tap opens the note
-            q = Centre("Dois");
+            q = Centre("Dois.md");
             window.MouseDown(q, MouseButton.Left);
             window.MouseUp(q, MouseButton.Left);
             Dispatcher.UIThread.RunJobs();

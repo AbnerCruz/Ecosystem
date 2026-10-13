@@ -133,6 +133,11 @@ public static class UrbeTheme
         public const string Download = "M12 4.5v11M7.5 11l4.5 4.5 4.5-4.5 M4.5 15v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3";
         public const string Upload = "M12 15.5V4.5M7.5 9l4.5-4.5L16.5 9 M4.5 15v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3";
         public const string File = "M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z M14 3.5V8h4.5";
+        // Explorer (DEC-0045, UC-38): a picture, a code/data file and any other file, in the same 1.8 stroke style
+        public const string Image = "M5.5 4.5h13a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1z M9 8a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3z M4.5 16l4.5-4.5 3.5 3.5 2.5-2.5 4.5 4.5";
+        public const string FileCode = "M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z M14 3.5V8h4.5 M10.5 11.5l-2 2.25 2 2.25 M13.5 11.5l2 2.25-2 2.25";
+        public const string Pin = "M9 4.5h6 M10 4.5v5.2L7 13h10l-3-3.3V4.5 M12 13v6.5";
+        public const string FileOther = "M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z M14 3.5V8h4.5 M9 13h6 M9 16.5h4";
         public const string Pencil = "M4 20h4L19 9l-4-4L4 16z M14 6l4 4";
         public const string Open = "M14 4.5h5.5V10 M19.5 4.5L11 13 M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4";
         public const string Star = "M12 4l2.4 5 5.3.6-3.9 3.6 1.1 5.3L12 15.9l-4.9 2.6 1.1-5.3-3.9-3.6 5.3-.6z";

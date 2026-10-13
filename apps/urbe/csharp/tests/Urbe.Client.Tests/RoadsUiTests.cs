@@ -55,7 +55,8 @@ public sealed partial class HeadlessUiTests
             view.ShowEditorContext();
             panel.GetLogicalDescendants().OfType<Button>().First(b => (b.Content as TextBlock)?.Text == "C")
                 .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
-            Dispatcher.UIThread.RunJobs();
+            // a followed backlink saves the open note first (DEC-0045, UC-37), then opens the other
+            for (int i = 0; i < 200 && view.Editor.Current?.Path != "C.md"; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
             Assert.Equal("C.md", view.Editor.Current!.Path);
             Assert.Equal(new[] { "C", "Sem backlinks." }.Take(1), panel.Items.Take(1));
 

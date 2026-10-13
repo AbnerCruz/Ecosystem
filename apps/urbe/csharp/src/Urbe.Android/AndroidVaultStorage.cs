@@ -136,6 +136,34 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public async Task<IReadOnlyList<string>> ListFilePathsAsync(CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            return await Task.Run(() =>
+            {
+                // names only, from the document provider: no attachment is opened or read
+                var paths = new List<string>();
+                void Walk(AndroidUri dir, string prefix, int depth)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (depth > 32 || paths.Count >= MaxEntries) return;
+                    foreach (var entry in Children(tree, dir))
+                    {
+                        if (entry.Name.StartsWith('.')) continue;
+                        if (entry.MimeType == DirectoryMime) Walk(DocumentUri(tree, entry.DocumentId), prefix + entry.Name + "/", depth + 1);
+                        else if (paths.Count < MaxEntries) paths.Add(prefix + entry.Name);
+                    }
+                }
+                Walk(Root(tree), string.Empty, 0);
+                return (IReadOnlyList<string>)paths;
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     public async Task<bool> RemoveEmptyDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureWritableFolderPath(path);
