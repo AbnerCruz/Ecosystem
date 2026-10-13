@@ -97,8 +97,11 @@ public sealed class EditorTests
         var holders = editor.Surface.Children.OfType<Border>().Where(b => b.MinHeight == 0).ToList();
         // tap the second rendered block ("primeiro")
         var target = holders[1];
-        target.RaiseEvent(new PointerPressedEventArgs(target, new Pointer(1, PointerType.Mouse, true), window, new Point(2, 2), 0,
-            new PointerPointProperties(RawInputModifiers.LeftMouseButton, PointerUpdateKind.LeftButtonPressed), KeyModifiers.None));
+        Dispatcher.UIThread.RunJobs();
+        // a finger's tap (down and up in place)
+        var at = target.TranslatePoint(new Point(10, target.Bounds.Height / 2), window)!.Value;
+        var finger = window.TouchBegin(at, RawInputModifiers.None);
+        window.TouchEnd(finger, at, RawInputModifiers.None);
         Dispatcher.UIThread.RunJobs();
         var box = All<TextBox>(editor.Surface).Single();
         Assert.Equal("primeiro", box.Text);
@@ -117,6 +120,66 @@ public sealed class EditorTests
         // back to Fonte shows the same text
         editor.SetMode(EditorMode.Fonte);
         Assert.Equal("# Título\n\n**primeiro** editado\n\nsegundo\n", editor.Editor.Text);
+        return true;
+    }, CancellationToken.None));
+
+    /// <summary>
+    /// A finger that lands on a block and drags scrolls the note (the 1.8.4's preview scrolls under the finger); only a
+    /// tap turns the block into its edit box. Before, the press alone opened the box under the finger and the scroll
+    /// stuck.
+    /// </summary>
+    [Fact]
+    public async Task Visual_DraggingAFingerOverTheBlocksScrollsAndDoesNotEdit() => Assert.True(await Session.Dispatch<bool>(() =>
+    {
+        var text = string.Join("\n\n", Enumerable.Range(1, 60).Select(i => "Parágrafo " + i + " com algum texto para ocupar a linha."));
+        var (editor, window) = Show(text: text);
+        Dispatcher.UIThread.RunJobs();
+        var scroll = editor.Surface.GetVisualAncestors().OfType<ScrollViewer>().First();
+        Assert.Equal(0, scroll.Offset.Y);
+        var block = editor.Surface.Children.OfType<Border>().Where(b => b.MinHeight == 0).ElementAt(3);
+        var start = block.TranslatePoint(new Point(40, block.Bounds.Height / 2), window)!.Value;
+        var finger = window.TouchBegin(start, RawInputModifiers.None);
+        for (int i = 1; i <= 12; i++)
+        {
+            window.TouchMove(finger, new Point(start.X, start.Y - i * 25), RawInputModifiers.None);
+            Dispatcher.UIThread.RunJobs();
+        }
+        window.TouchEnd(finger, new Point(start.X, start.Y - 300), RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Empty(All<TextBox>(editor.Surface));                 // no block went into editing
+        Assert.True(scroll.Offset.Y > 150, "rolou " + scroll.Offset.Y);
+        return true;
+    }, CancellationToken.None));
+
+    /// <summary>In Fonte the same: a finger dragged over the text scrolls it.</summary>
+    [Fact]
+    public async Task Source_DraggingAFingerScrolls() => Assert.True(await Session.Dispatch<bool>(() =>
+    {
+        var text = string.Join("\n\n", Enumerable.Range(1, 60).Select(i => "Parágrafo " + i + " com algum texto para ocupar a linha."));
+        var (editor, window) = Show(text: text);
+        editor.SetMode(EditorMode.Fonte);
+        Dispatcher.UIThread.RunJobs();
+        var scroll = editor.Editor.GetVisualAncestors().OfType<ScrollViewer>().First();
+        var start = editor.Editor.TranslatePoint(new Point(60, 300), window)!.Value;
+        var finger = window.TouchBegin(start, RawInputModifiers.None);
+        for (int i = 1; i <= 12; i++)
+        {
+            window.TouchMove(finger, new Point(start.X, start.Y - i * 25), RawInputModifiers.None);
+            Dispatcher.UIThread.RunJobs();
+        }
+        window.TouchEnd(finger, new Point(start.X, start.Y - 300), RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(scroll.Offset.Y > 150, "rolou " + scroll.Offset.Y + " seleção " + editor.Editor.SelectionStart + "-" + editor.Editor.SelectionEnd);
+        Assert.Equal(editor.Editor.SelectionStart, editor.Editor.SelectionEnd);   // the drag selected nothing
+
+        // a tap puts the caret under the finger
+        var tapAt = editor.Editor.TranslatePoint(new Point(30, scroll.Offset.Y + 100), window)!.Value;
+        var tap = window.TouchBegin(tapAt, RawInputModifiers.None);
+        window.TouchEnd(tap, tapAt, RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(editor.Editor.IsFocused);
+        Assert.Equal(TouchTextScroll.IndexAt(editor.Editor, new Point(30, scroll.Offset.Y + 100)), editor.Editor.CaretIndex);
+        Assert.True(editor.Editor.CaretIndex > 100, "cursor " + editor.Editor.CaretIndex);
         return true;
     }, CancellationToken.None));
 

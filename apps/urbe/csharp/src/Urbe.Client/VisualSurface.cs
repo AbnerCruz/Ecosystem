@@ -96,7 +96,7 @@ public sealed class VisualSurface : StackPanel
                 Background = Brushes.Transparent, MinHeight = 44,
                 Child = new TextBlock { Text = "Comece a escrever…", Foreground = UrbeTheme.Brush(UrbeTheme.Text3), FontSize = UrbeTheme.EditorSize }
             };
-            empty.PointerPressed += (_, e) => { e.Handled = true; AppendBlock(); };
+            empty.Tapped += (_, e) => { e.Handled = true; AppendBlock(); };
             Children.Add(empty);
         }
         var editorAdded = false;
@@ -112,7 +112,7 @@ public sealed class VisualSurface : StackPanel
         }
         if (_box is not null && !editorAdded) Children.Add(EditorFor());
         var tail = new Border { Background = Brushes.Transparent, MinHeight = 160 };
-        tail.PointerPressed += (_, e) => { e.Handled = true; AppendBlock(); };
+        tail.Tapped += (_, e) => { e.Handled = true; AppendBlock(); };
         Children.Add(tail);
     }
 
@@ -126,8 +126,10 @@ public sealed class VisualSurface : StackPanel
             MathTapped = index => _ = EditFormulaAsync(block.Start, index)
         };
         var holder = new Border { Background = Brushes.Transparent, Child = reader.Build(MarkdownTree.Parse(source)) };
+        // a tap (press and release without moving), never the press: a finger that starts a scroll on a block
+        // must scroll, not turn the block into an edit box under it (the 1.8.4's preview scrolls the same way)
         if (block.Kind != "frontmatter")
-            holder.PointerPressed += (_, e) =>
+            holder.Tapped += (_, e) =>
             {
                 if (e.Handled) return;
                 e.Handled = true;
