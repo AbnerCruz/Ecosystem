@@ -103,7 +103,7 @@ public sealed class MarkdownReader
         };
         var length = 0;
         foreach (var c in children) Inline(tb, c, tb.Inlines!, ref length, new Style { Color = color });
-        tb.PointerPressed += OnTextPressed;
+        tb.Tapped += OnTextTapped;
         return tb;
     }
 
@@ -173,7 +173,7 @@ public sealed class MarkdownReader
 
     private static string Plain(RichNode n) => n.Tag == RichNode.TextTag ? n.Text : string.Concat(n.Children.Select(Plain));
 
-    private void OnTextPressed(object? sender, PointerPressedEventArgs e)
+    private void OnTextTapped(object? sender, TappedEventArgs e)
     {
         if (sender is not RichText tb || (tb.Wiki.Count == 0 && tb.Links.Count == 0)) return;
         var hit = tb.TextLayout.HitTestPoint(e.GetPosition(tb));
@@ -235,7 +235,7 @@ public sealed class MarkdownReader
             VerticalAlignment = VerticalAlignment.Top, Cursor = new Cursor(StandardCursorType.Hand),
             Child = isChecked ? new Path { Data = Geometry.Parse("M3 9l3.5 3.5L14 5"), Stroke = UrbeTheme.Brush(UrbeTheme.AccentInk), StrokeThickness = 2, StrokeLineCap = PenLineCap.Round, StrokeJoin = PenLineJoin.Round, Width = 16, Height = 16 } : null
         };
-        box.PointerPressed += (_, e) => { e.Handled = true; TaskToggled?.Invoke(line, !isChecked); };
+        box.Tapped += (_, e) => { e.Handled = true; TaskToggled?.Invoke(line, !isChecked); };
         return box;
     }
 
@@ -358,7 +358,7 @@ public sealed class MarkdownReader
         int index = _math++;
         if (MathTapped is not { } tapped) return view;
         var holder = new Border { Background = Brushes.Transparent, Child = view, HorizontalAlignment = view.HorizontalAlignment, Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand) };
-        holder.PointerPressed += (_, e) => { e.Handled = true; tapped(index); };
+        holder.Tapped += (_, e) => { e.Handled = true; tapped(index); };
         return holder;
     }
 

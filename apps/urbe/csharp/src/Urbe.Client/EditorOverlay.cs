@@ -311,13 +311,15 @@ public sealed class EditorOverlay : Grid
     private ScrollViewer Column(Control content)
     {
         var host = new Border { Child = content, Padding = new Thickness(20, 28, 20, 48), HorizontalAlignment = HorizontalAlignment.Stretch };
-        return new ScrollViewer
+        var scroll = new ScrollViewer
         {
             Content = host,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalContentAlignment = HorizontalAlignment.Center
         };
+        TouchTextScroll.Attach(scroll);
+        return scroll;
     }
 
     private Control TopBar()

@@ -1,0 +1,97 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261013-urbe-native-editor-touch-scroll",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-13T00:30:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "2aac26a1",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/TouchTextScroll.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261013-urbe-native-editor-touch-scroll.json",
+    "docs/governance/handoffs/HO-20261012-urbe-native-file-buildings.json"
+  ],
+  "work_completed": [
+    "Relato do proprietário no aparelho: a rolagem do editor emperrava. Causa no Visual: cada bloco entrava em edição no PointerPressed (o dedo encostar), então começar a rolar sobre um bloco trocava o bloco por uma caixa de texto sob o dedo e o gesto travava. Agora blocos, links, tarefas e fórmulas reagem ao toque completo (Tapped), como a prévia da 1.8.4; arrastar só rola.",
+    "Causa no Fonte (e no bloco em edição do Visual): a caixa de texto do Avalonia tomava o toque para cursor e seleção (300 px de arrasto rolavam 28). TouchTextScroll: com o dedo, arrastar rola com inércia, tocar põe o cursor sob o dedo, segurar 500 ms seleciona a palavra; mouse e caneta continuam com a caixa de texto."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "EditorTests Visual_DraggingAFingerOverTheBlocksScrollsAndDoesNotEdit, Source_DraggingAFingerScrolls e Visual_TappingABlockEditsItsMarkdownAndWritesBackToTheNote com toque real (TouchBegin/Move/End)",
+      "result": "passed",
+      "evidence": "O teste do Visual falha com o código anterior (o bloco entrava em edição durante o arrasto); o do Fonte rolava 28 px de 300 antes."
+    },
+    {
+      "kind": "human",
+      "check": "Rolagem do editor no Android (Visual e Fonte), toque para editar e cursor",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (DEVICE): relato do proprietário a confirmar.",
+      "object": "apps/urbe/csharp/src/Urbe.Client/TouchTextScroll.cs"
+    }
+  ],
+  "known_issues": [
+    "Alças de seleção por toque não existem: segurar seleciona a palavra; ajustar a seleção ainda é por teclado/mouse."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI e integração (rotina).",
+    "DEVICE: o proprietário confirmar a rolagem no aparelho."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/explorer/mobile-ui.js",
+    "apps/urbe/src/explorer/model.js",
+    "apps/urbe/src/explorer/operations.js",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/styles/theme.css",
+    "apps/urbe/src/styles/explorer-mobile.css",
+    "apps/urbe/src/ui/icons.js",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Correção de toque provada em teste headless com toque real; a validação no aparelho continua pendente."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-18/UC-19 seguem em progresso."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "touch-text-scroll",
+      "status": "possible-candidate",
+      "rationale": "Rolagem por toque sobre caixas de texto pode servir a outro Product Avalonia; sem segundo consumidor, fica no Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Só entrada de toque do editor."
+  }
+}
