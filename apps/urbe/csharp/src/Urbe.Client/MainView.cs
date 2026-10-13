@@ -674,6 +674,7 @@ public sealed partial class MainView : Grid
         World.LightingMode = Customization.Ambient;
         UrbeAppearance.Apply(this);   // Personalização: tema, texto, forma, editor e chão
         if (Customization.Config["editor"] is System.Text.Json.Nodes.JsonObject ed) Editor.ApplyOptions((string?)ed["largura"], (string?)ed["modoInicial"]);
+        if (Editor.IsVisible) Editor.RefreshVisual();   // tag colours (DEC-0045, UC-43)
         World.InvalidateVisual();
     }
 

@@ -1,0 +1,70 @@
+using Urbe.Core;
+
+namespace Urbe.Core.Tests;
+
+/// <summary>DEC-0045 (UC-43): %%comments%% and #Tag: paragraphs, as plain Markdown marks over the 1.8.4 renderer.</summary>
+public sealed class NoteMarksTests
+{
+    private static IEnumerable<RichNode> All(IEnumerable<RichNode> nodes) => nodes.SelectMany(n => new[] { n }.Concat(All(n.Children)));
+
+    [Fact]
+    public void Comments_BecomeMarkedSpans()
+    {
+        var tree = NoteMarks.Parse("Traduzir %%rever esta frase%% depois.");
+        var comment = Assert.Single(All(tree), n => n.HasClass(NoteMarks.CommentClass));
+        Assert.Equal("rever esta frase", comment.Children.Single().Text);
+        var text = string.Concat(All(tree).Where(n => n.Tag == RichNode.TextTag).Select(n => n.Text));
+        Assert.Equal("Traduzir rever esta frase depois.", text);
+    }
+
+    [Fact]
+    public void TaggedParagraph_TakesTheTag()
+    {
+        var p = Assert.Single(NoteMarks.Parse("#Todo: comprar pão"));
+        Assert.True(p.HasClass(NoteMarks.TagClass));
+        Assert.Equal("Todo", p.Attr("data-tag"));
+        Assert.Equal("comprar pão", p.Children.Single().Text);
+        Assert.Equal("Dúvida", NoteMarks.TagOf("#Dúvida: x"));
+    }
+
+    [Theory]
+    [InlineData("#Todo sem dois-pontos")]
+    [InlineData("# Título")]
+    [InlineData("texto #Todo: no meio")]
+    [InlineData("#123: número")]
+    public void NotATag(string md) => Assert.DoesNotContain(All(NoteMarks.Parse(md)), n => n.HasClass(NoteMarks.TagClass));
+
+    [Fact]
+    public void Code_KeepsItsPercentSigns()
+    {
+        Assert.DoesNotContain(All(NoteMarks.Parse("`a %%b%% c`")), n => n.HasClass(NoteMarks.CommentClass));
+        Assert.DoesNotContain(All(NoteMarks.Parse("```\nx %%y%% z\n```")), n => n.HasClass(NoteMarks.CommentClass));
+    }
+
+    [Fact]
+    public void StripComments_LeavesThemOutOfPagesButNotOfCode()
+    {
+        Assert.Equal("a  b", NoteMarks.StripComments("a %%nota%% b"));
+        Assert.Equal("a\n\nb", NoteMarks.StripComments("a\n%%várias\nlinhas%%\nb").Replace("\n\n\n", "\n\n"));
+        Assert.Equal("`x %%y%%` z ", NoteMarks.StripComments("`x %%y%%` z %%w%%"));
+        Assert.Equal("sem nada", NoteMarks.StripComments("sem nada"));
+        Assert.DoesNotContain("segredo", MarkdownEngine.Render(NoteMarks.StripComments("texto %%segredo%%")));
+    }
+
+    [Fact]
+    public void WithoutMarks_TheTreeIsTheOriginal()
+    {
+        const string md = "# Título\n\nUm **texto** com [[link]] e `código`.\n\n- item\n";
+        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(MarkdownTree.Parse(md)), System.Text.Json.JsonSerializer.Serialize(NoteMarks.Parse(md)));
+    }
+
+    [Fact]
+    public void CommentTool_WrapsOrOpensAComment()
+    {
+        var empty = LegacyVisualEdit.Comment("a  b", 2, 2);
+        Assert.Equal("a %%  %% b", empty.Text);
+        Assert.Equal(5, empty.SelectionStart);
+        Assert.Equal("a %%x%% b", LegacyVisualEdit.Comment("a x b", 2, 3).Text);
+        Assert.Equal("a x b", LegacyVisualEdit.Comment("a %%x%% b", 4, 5).Text);
+    }
+}

@@ -125,6 +125,16 @@ public static partial class LegacyVisualEdit
         return ToggleWrap(text, a, b, "`");
     }
 
+    /// <summary>A %%comment%% (DEC-0045, UC-43): the selection becomes one (or stops being one); with none, the caret goes
+    /// between the marks to write it.</summary>
+    public static LegacyEditorTools.TextEdit Comment(string text, int selectionStart, int selectionEnd)
+    {
+        var a = Math.Clamp(Math.Min(selectionStart, selectionEnd), 0, text.Length);
+        var b = Math.Clamp(Math.Max(selectionStart, selectionEnd), 0, text.Length);
+        if (a == b) return new(text[..a] + "%%  %%" + text[a..], a + 3, a + 3);
+        return ToggleWrap(text, a, b, "%%");
+    }
+
     /// <summary>The "/" menu's Bloco de código (DEC-0045, UC-37): an empty fenced block with the caret inside it.</summary>
     public static LegacyEditorTools.TextEdit CodeBlock(string text, int caret)
     {

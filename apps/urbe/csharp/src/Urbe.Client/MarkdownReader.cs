@@ -54,6 +54,7 @@ public sealed class MarkdownReader
             case "h2": return Heading(n, 1.4, FontWeight.Bold, new Thickness(0, 1.4 * Size, 0, .4 * Size));
             case "h3": return Heading(n, 1.15, (FontWeight)650, new Thickness(0, 1.2 * Size, 0, .3 * Size));
             case "h4": case "h5": case "h6": return Heading(n, 1, FontWeight.Bold, new Thickness(0, 1.33 * Size, 0, 1.33 * Size));
+            case "p" when n.HasClass(NoteMarks.TagClass): return Tagged(n);
             case "p": { var t = Text(n.Children, Size); t.Margin = new Thickness(0, .6 * Size); return t; }
             case "hr": return new Border { Height = 1, Background = UrbeTheme.Brush(UrbeTheme.Line2), Margin = new Thickness(0, 2 * Size) };
             case "ul": case "ol": return List(n);
@@ -72,6 +73,27 @@ public sealed class MarkdownReader
             case "section" when n.Attrs.ContainsKey("data-frontmatter-card"): return Frontmatter(n);
             default: return Text(n.Children.Count == 0 ? [n] : n.Children, Size);
         }
+    }
+
+    /// <summary>A paragraph that starts with #Tag: (DEC-0045, UC-43): the tag's colour as a bar and a soft background, the
+    /// tag as a small label above the text.</summary>
+    private Control Tagged(RichNode n)
+    {
+        var tag = n.Attr("data-tag");
+        var color = UrbeTheme.TagColor(tag);
+        var label = new TextBlock
+        {
+            Text = "#" + tag, FontSize = Size * .72, FontWeight = FontWeight.Bold, LetterSpacing = .3,
+            Foreground = UrbeTheme.Brush(color), Margin = new Thickness(0, 0, 0, 2)
+        };
+        var body = Text(n.Children, Size);
+        return new Border
+        {
+            Margin = new Thickness(0, .5 * Size), Padding = new Thickness(.75 * Size, .45 * Size),
+            CornerRadius = new CornerRadius(8),
+            Background = UrbeTheme.Brush(color, .1), BorderBrush = UrbeTheme.Brush(color, .9), BorderThickness = new Thickness(3, 0, 0, 0),
+            Child = new StackPanel { Children = { label, body } }
+        };
     }
 
     private static Control Para(string text) => new TextBlock { Text = text, Margin = new Thickness(0, .6 * Size), TextWrapping = TextWrapping.Wrap };
@@ -136,6 +158,17 @@ public sealed class MarkdownReader
                 if (st.Italic) run.FontStyle = FontStyle.Italic;
                 into.Add(run); length += inner.Length;
                 host.Wiki.Add((start, inner.Length, n.Attr("data-note-name")));
+                return;
+            }
+            case "span" when n.HasClass(NoteMarks.CommentClass):
+            {
+                // %%comentário%% (DEC-0045, UC-43): the writer's note to self, set apart and never printed
+                var inner = n.Children.Select(Plain).Aggregate("", (a, b) => a + b);
+                into.Add(new Run(inner)
+                {
+                    Foreground = UrbeTheme.Brush(UrbeTheme.Comment), Background = UrbeTheme.Brush(UrbeTheme.Warn, .12), FontStyle = FontStyle.Italic
+                });
+                length += inner.Length;
                 return;
             }
             case "span" when n.HasClass("umath"):

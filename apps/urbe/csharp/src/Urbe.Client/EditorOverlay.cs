@@ -60,6 +60,13 @@ public sealed class EditorOverlay : Grid
     public UrbeDialogs? Dialogs { get; set; }
     public VisualSurface Surface => _visual;
 
+    /// <summary>Draws the note again in Visual (the colours of the tags changed in Personalização).</summary>
+    public void RefreshVisual()
+    {
+        if (_note is not null && Mode == EditorMode.Visual) _visual.SetText(Editor.Text ?? "");
+        if (Pinned.Text is { } pinned && Pinned.SourcePath is { } from) Pinned.Pin(pinned, from);
+    }
+
     /// <summary>"Fixar em painel" (DEC-0045, UC-39): the reference kept at the top of the editor, across notes.</summary>
     public PinnedPanel Pinned { get; } = new();
 

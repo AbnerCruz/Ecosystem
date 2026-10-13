@@ -254,6 +254,7 @@ public static partial class LegacyEditorTools
     public static IReadOnlyList<SlashItem> OwnSlashItems { get; } =
     [
         new("codeblock", "Bloco de código", "Código em várias linhas", "codigo code bloco programa", "code"),
+        new("comment", "Comentário", "Nota sua, fora das páginas", "comentario comment nota anotacao", "quote"),
     ];
 
     /// <summary>The menu the app shows: the visual-tools.js items, the math ones and the app's own, with the same filter.</summary>

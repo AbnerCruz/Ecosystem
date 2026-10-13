@@ -22,6 +22,46 @@ public static class UrbeTheme
     public const string Danger = "#ff7b86";
     public const string Warn = "#f1c46e";
     public const string Code = "#f0d9a8";
+    /// <summary>The text of a %%comment%% (DEC-0045, UC-43).</summary>
+    public const string Comment = "#d8c68f";
+
+    /// <summary>
+    /// The colour of a #Tag: paragraph (DEC-0045, UC-43): the default tags have their own, any other tag gets one of the
+    /// palette by its name, always the same for the same tag.
+    /// </summary>
+    public static string TagColor(string tag)
+    {
+        if (tag is not null && TagOverrides.TryGetValue(tag, out var chosen)) return chosen;
+        var key = Urbe.Core.LegacyEditorTools.Fold(tag ?? "");
+        return key switch
+        {
+            "todo" or "fazer" or "pendente" => Warn,
+            "ideia" or "idea" => Accent,
+            "feito" or "done" or "ok" => Ok,
+            "aviso" or "atencao" or "importante" or "urgente" => Danger,
+            "duvida" or "pergunta" or "question" => "#c79bff",
+            "nota" or "info" or "obs" => "#7fd0dc",
+            _ => TagPalette[(int)((uint)StableHash(key) % (uint)TagPalette.Length)]
+        };
+    }
+
+    /// <summary>The colours chosen in Personalização → Tags (Personalização/tags.json), by tag, ignoring case.</summary>
+    public static IReadOnlyDictionary<string, string> TagOverrides { get; set; } = new Dictionary<string, string>();
+
+    /// <summary>The colours offered for a tag.</summary>
+    public static IReadOnlyList<string> TagChoices => TagPalette;
+
+    private static readonly string[] TagPalette = ["#8fb3ff", "#7fdca6", "#f1c46e", "#ff7b86", "#c79bff", "#7fd0dc", "#f29e74", "#e59ad8"];
+
+    private static int StableHash(string s)
+    {
+        unchecked
+        {
+            int h = 17;
+            foreach (var c in s) h = h * 31 + c;
+            return h;
+        }
+    }
     public const double EditorSize = 17;
 
     private static readonly Dictionary<string, IBrush> Brushes = new(StringComparer.Ordinal);

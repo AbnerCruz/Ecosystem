@@ -143,7 +143,7 @@ public sealed class VisualSurface : StackPanel
             TaskToggled = (line, on) => ToggleTask(block, line, on),
             MathTapped = index => _ = EditFormulaAsync(block.Start, index)
         };
-        var holder = new Border { Background = Brushes.Transparent, Child = reader.Build(MarkdownTree.Parse(source)) };
+        var holder = new Border { Background = Brushes.Transparent, Child = reader.Build(NoteMarks.Parse(source)) };
         // a tap (press and release without moving), never the press: a finger that starts a scroll on a block
         // must scroll, not turn the block into an edit box under it (the 1.8.4's preview scrolls the same way)
         if (block.Kind != "frontmatter")
@@ -473,6 +473,11 @@ public sealed class VisualSurface : StackPanel
             case "rule": InsertRule(); break;
             case "pin": if (b > a) PinRequested?.Invoke(text[a..b]); break;
             case "codeblock": Apply(LegacyVisualEdit.CodeBlock(text, _box.CaretIndex)); break;
+            case "comment":
+                // from the "/" menu the typed "/query" goes first
+                if (LegacyEditorTools.SlashQuery(text) is not null) { text = ""; a = b = 0; }
+                Apply(LegacyVisualEdit.Comment(text, a, b));
+                break;
         }
         if (act is "h2" or "quote" or "link" or "wiki" or "pin") _bubble.IsVisible = false;
     }
@@ -547,6 +552,7 @@ public sealed class VisualSurface : StackPanel
         Add("h2", new TextBlock { Text = "H", FontWeight = FontWeight.Bold, FontSize = 15 }, "Título");
         Add("quote", Ic("quote"), "Citação");
         Sep();
+        Add("comment", new TextBlock { Text = "%%", FontWeight = FontWeight.Bold, FontSize = 13 }, "Comentário");
         Add("pin", UrbeTheme.Icon(UrbeTheme.Icons.Pin, 18), "Fixar em painel");
         var card = EditorChrome.Card(row);
         card.IsVisible = true;

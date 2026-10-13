@@ -1,0 +1,113 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261013-urbe-uc43-comentarios-tags",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-13T13:54:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-43",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "3031381b",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/548",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/NoteMarks.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageBookRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyVisualEdit.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyEditorTools.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PinnedPanel.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteMarksTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyEditorFindOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteMarksUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261013-urbe-uc43-comentarios-tags.json",
+    "apps/urbe/csharp/src/Urbe.Core/TagStyles.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Customization.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizePanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/TagStylesUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HistoryUiTests.cs"
+  ],
+  "work_completed": [
+    "NoteMarks: %%comentário%% e parágrafos #Tag: marcados sobre a árvore renderizada, sem tocar no renderizador da 1.8.4 (árvore idêntica quando não há marcas).",
+    "Visual e painel fixado desenham tags (barra, fundo, rótulo na cor da tag) e comentários (itálico destacado).",
+    "Páginas e livros removem comentários (StripComments), mantendo o código intacto.",
+    "Comentário no menu '/' e no balão de seleção do Visual.",
+    "Personalização → Tags: cor por tag (paleta), Adicionar tag e Padrão; grava Personalização/tags.json (TagStyles), fora de tema.json porque a 1.8.4 o reescreve só com as chaves conhecidas.",
+    "Clima na Personalização deixa de citar o arco-íris (removido no UC-36).",
+    "HistoryUiTests espera as duas gravações do autosave (nota e histórico), que sob carga chegam em qualquer ordem.",
+    "Issue #553 (state:verifying)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "NoteMarksTests, LegacyVisualEditTests, LegacyEditorFindOracleTests, HeadlessUiTests.NoteMarks_TagsAndCommentsAreDrawnApart",
+      "result": "passed",
+      "evidence": "Marcas corretas, código intocado, sem marcas a árvore é a original, comentários fora do HTML; captura native-note-marks.png."
+    },
+    {
+      "kind": "automated",
+      "check": "TagStyles_FileRoundTripsAndIgnoresWhatIsNotATagOrAColour, TagStyles_ChosenInPersonalizationAndWrittenToTheVault",
+      "result": "passed",
+      "evidence": "Cor escolhida grava tags.json e é usada na hora; Padrão volta à cor do app; tema.json intocado; captura native-customize-tags.png."
+    },
+    {
+      "kind": "human",
+      "check": "Leitura de tags e comentários no aparelho",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs"
+    }
+  ],
+  "known_issues": [
+    "Comentário que atravessa formatação (negrito, quebra de linha) não é reconhecido no Visual; nas páginas é removido."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "UC-41 (mundo): primeiro, provar se a 1.8.4 preserva campos novos em .urbe/mapa.json.",
+    "UC-44 (modelos e componentes)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "Sintaxe .md decidida pelo proprietário (DEC-0045)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Leitura no aparelho pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-43 fica [~] com Issue #553 até validação no aparelho."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "note-marks",
+      "status": "product-specific",
+      "rationale": "Sintaxe de notas do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Renderização; o arquivo .md não muda de formato além do que o usuário escreve."
+  }
+}

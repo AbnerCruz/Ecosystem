@@ -20,7 +20,7 @@ public sealed partial class CustomizePanel : Grid
     [
         ("aparencia", "Aparência", Icons.Palette), ("texto", "Texto", Icons.Type), ("editor", "Editor", Icons.Edit),
         ("cidade", "Cidade", Icons.City), ("texturas", "Texturas", Icons.Image), ("estilos", "Estilos CSS", Icons.Brush),
-        ("plugins", "Plugins", Icons.Puzzle), ("arquivo", "Arquivo", Icons.Code)
+        ("tags", "Tags", Icons.Palette), ("plugins", "Plugins", Icons.Puzzle), ("arquivo", "Arquivo", Icons.Code)
     ];
 
     private readonly Border _card = new();
@@ -185,6 +185,7 @@ public sealed partial class CustomizePanel : Grid
             case "cidade": CitySection(); break;
             case "texturas": TexturesSection(); break;
             case "estilos": StylesSection(); break;
+            case "tags": TagsSection(); break;
             case "plugins": PluginsSection(); break;
             case "arquivo": FileSection(); break;
         }
@@ -197,13 +198,80 @@ public sealed partial class CustomizePanel : Grid
         _body.Children.Add(Block("Vida na cidade",
             Toggle("cidade.moradores", B("moradores"), "Moradores", "Pessoas andando entre notas ligadas"),
             Toggle("cidade.fauna", B("fauna"), "Animais", "Rebanhos, cervos, patos, pássaros, peixes, borboletas, pombos e vaga-lumes"),
-            Toggle("cidade.clima", B("clima"), "Clima", "Nuvens, vento, folhas, chuva, neve, neblina e arco-íris"),
+            Toggle("cidade.clima", B("clima"), "Clima", "Nuvens, vento, folhas, chuva, neve e neblina"),
             Toggle("cidade.eventos", B("eventos"), "Eventos", "Balão, festa e fogos, barcos, raposa, revoadas e estrelas cadentes"),
             Toggle("cidade.nomes", B("nomes"), "Nomes das casas", "Letreiro com o nome da nota"),
             Toggle("cidade.bairros", B("bairros"), "Nomes dos bairros", "Letreiro com o nome da pasta")));
         _body.Children.Add(GroundColorsBlock());
         _body.Children.Add(Block("Luz", Row("Hora do dia", "Ciclo: um dia inteiro a cada 24 minutos. Auto segue o relógio do aparelho",
             Seg("cidade.ambiente", (string)c["ambiente"]!, [("ciclo", "Ciclo"), ("dia", "Dia"), ("entardecer", "Tarde"), ("noite", "Noite"), ("auto", "Auto")]))));
+    }
+
+    /// <summary>
+    /// Tags (DEC-0045, UC-43): the colour of each #Tag: paragraph. The default tags and those already chosen are listed,
+    /// each with the palette; "Padrão" goes back to the app's colour; "Adicionar tag" names another. Kept in
+    /// Personalização/tags.json, never in tema.json.
+    /// </summary>
+    private void TagsSection()
+    {
+        var tags = TagStyles.Defaults.Concat(Customization.TagColors.Keys)
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var add = new Button
+        {
+            Content = new TextBlock { Text = "Adicionar tag", FontSize = 13, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text) },
+            Padding = new Thickness(12, 6), CornerRadius = new CornerRadius(10), Background = UrbeTheme.Brush(UrbeTheme.Surface3)
+        };
+        add.Click += async (_, _) =>
+        {
+            var name = (await Dialogs.PromptAsync(new PromptOptions("Adicionar tag", Label: "Nome", Placeholder: "Ex.: Personagem",
+                Hint: "Escreva “#Nome: texto” no começo de um parágrafo para usar.", Confirm: "Adicionar",
+                Validate: v => TagStyles.IsTag((v ?? "").Trim().TrimStart('#').TrimEnd(':')) ? null : "Use letras, números, _ ou -, começando por letra.")))?.Trim().TrimStart('#').TrimEnd(':');
+            if (string.IsNullOrEmpty(name)) return;
+            await Customization.SetTagColorAsync(name, UrbeTheme.TagColor(name));
+            Render();
+        };
+        var rows = tags.Select(TagRow).ToArray();
+        _body.Children.Add(BlockWith("Tags", add, rows));
+        _body.Children.Add(new TextBlock
+        {
+            Text = "Um parágrafo que começa com “#Todo:” ganha o estilo da tag Todo. O arquivo fica em Personalização/tags.json.",
+            FontFamily = UrbeTheme.UiFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(4, 0)
+        });
+    }
+
+    private Border TagRow(string tag)
+    {
+        var current = UrbeTheme.TagColor(tag);
+        var swatches = new WrapPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        foreach (var color in UrbeTheme.TagChoices)
+        {
+            var c = color;
+            var chosen = string.Equals(c, current, StringComparison.OrdinalIgnoreCase);
+            var dot = new Button
+            {
+                Width = 26, Height = 26, Padding = new Thickness(0), Margin = new Thickness(3), CornerRadius = new CornerRadius(13),
+                Background = UrbeTheme.Brush(c), BorderBrush = UrbeTheme.Brush(chosen ? UrbeTheme.Text : UrbeTheme.Line2), BorderThickness = new Thickness(chosen ? 2 : 1)
+            };
+            ToolTip.SetTip(dot, c);
+            AutomationName(dot, "#" + tag + " " + c);
+            dot.Click += async (_, _) => { await Customization.SetTagColorAsync(tag, c); Render(); };
+            swatches.Children.Add(dot);
+        }
+        if (Customization.TagColors.ContainsKey(tag))
+        {
+            var reset = new Button { Content = "Padrão", FontSize = 12, Padding = new Thickness(8, 4), Margin = new Thickness(6, 3, 0, 3), CornerRadius = new CornerRadius(8), Background = Brushes.Transparent };
+            reset.Click += async (_, _) => { await Customization.SetTagColorAsync(tag, null); Render(); };
+            swatches.Children.Add(reset);
+        }
+        var chip = new Border
+        {
+            Background = UrbeTheme.Brush(current, .12), BorderBrush = UrbeTheme.Brush(current), BorderThickness = new Thickness(3, 0, 0, 0),
+            CornerRadius = new CornerRadius(6), Padding = new Thickness(8, 4), HorizontalAlignment = HorizontalAlignment.Left,
+            Child = new TextBlock { Text = "#" + tag, FontWeight = FontWeight.Bold, FontSize = 13, Foreground = UrbeTheme.Brush(current) }
+        };
+        var row = new StackPanel { Spacing = 6, Children = { chip, swatches } };
+        swatches.HorizontalAlignment = HorizontalAlignment.Left;
+        return new Border { Tag = "row", Child = row, Padding = new Thickness(0, 8), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line) };
     }
 
     private void FileSection()
