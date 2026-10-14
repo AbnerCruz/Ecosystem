@@ -21,6 +21,8 @@ public sealed class AiChatBlock
     public string? Partial { get; set; }
     public string? Status { get; set; }
     public int? Changes { get; set; }
+    /// <summary>A text the model reads but the chat does not show (the automatic context of the open note).</summary>
+    public bool Hidden { get; set; }
 
     public static AiChatBlock TextBlock(string text) => new() { Type = "text", Text = text };
 
@@ -36,7 +38,10 @@ public sealed class AiChatBlock
         var o = new JsonObject { ["type"] = Type };
         switch (Type)
         {
-            case "text": o["text"] = Text; break;
+            case "text":
+                o["text"] = Text;
+                if (Hidden) o["_hidden"] = true;
+                break;
             case "tool_use":
                 o["id"] = Id; o["name"] = Name; o["input"] = Input?.DeepClone();
                 if (Pending) o["_pending"] = true;
@@ -56,7 +61,7 @@ public sealed class AiChatBlock
         var type = (string?)n["type"] ?? "text";
         return type switch
         {
-            "text" => new() { Type = "text", Text = n["text"] is JsonValue t && t.TryGetValue<string>(out var s) ? s : null },
+            "text" => new() { Type = "text", Text = n["text"] is JsonValue t && t.TryGetValue<string>(out var s) ? s : null, Hidden = n["_hidden"] is JsonValue h && Urbe.Core.Pages.PageEngine.Truthy(h) },
             "tool_use" => new() { Type = "tool_use", Id = (string?)n["id"] ?? "", Name = (string?)n["name"] ?? "", Input = n["input"]?.DeepClone(), Pending = n["_pending"] is JsonValue p && Urbe.Core.Pages.PageEngine.Truthy(p), Partial = (string?)n["_partial"] },
             _ => new()
             {
@@ -77,6 +82,8 @@ public sealed class AiChatMeta
     public AiUsage? Usage { get; set; }
     public bool? ToolResults { get; set; }
     public bool? Draft { get; set; }
+    /// <summary>The note (and selection) the user's request was sent with, as the chat shows it.</summary>
+    public string? Context { get; set; }
 
     public JsonObject ToJson()
     {
@@ -88,6 +95,7 @@ public sealed class AiChatMeta
         if (Usage is not null) o["usage"] = AssistantAgent.UsageJson(Usage);
         if (ToolResults is not null) o["toolResults"] = ToolResults;
         if (Draft is not null) o["draft"] = Draft;
+        if (Context is not null) o["context"] = Context;
         return o;
     }
 
@@ -95,7 +103,7 @@ public sealed class AiChatMeta
     {
         Model = (string?)o["model"], Streaming = (bool?)o["streaming"], Agent = (string?)o["agent"], Reasoning = (string?)o["reasoning"],
         Usage = o["usage"] is JsonObject u ? new AiUsage((long)LegacyCustomize.JsToNumber(u["input"]), (long)LegacyCustomize.JsToNumber(u["output"]), u["cost"] is null ? null : LegacyCustomize.JsToNumber(u["cost"])) : null,
-        ToolResults = (bool?)o["toolResults"], Draft = (bool?)o["draft"]
+        ToolResults = (bool?)o["toolResults"], Draft = (bool?)o["draft"], Context = (string?)o["context"]
     };
 }
 

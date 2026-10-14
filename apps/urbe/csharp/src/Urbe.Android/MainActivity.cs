@@ -7,6 +7,9 @@ using Android.Views;
 using Avalonia.Android;
 using Urbe.Client;
 
+// the Assistente talks to the model provider the person connects (OpenRouter, Anthropic, OpenAI, Gemini, Ollama…)
+[assembly: UsesPermission(Android.Manifest.Permission.Internet)]
+
 namespace Urbe.AndroidHost;
 
 [Application(Label = "Urbe nativo (prévia)", Icon = "@drawable/icon")]
@@ -19,6 +22,8 @@ public sealed class UrbeAndroidApplication : AvaloniaAndroidApplication<UrbeApp>
         AndroidContentViewers.Register();
         // the Notas state kept on the device (favourites, recents), in the app's private files
         UrbeApp.LocalStatePath = System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? System.IO.Path.GetTempPath(), "notes-state.json");
+        // the Assistente's conversations, providers and keys: only in the app's private files, never in the vault
+        UrbeApp.AssistantFolder = System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? System.IO.Path.GetTempPath(), "assistant");
     }
 }
 

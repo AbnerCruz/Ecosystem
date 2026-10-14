@@ -76,19 +76,25 @@ public sealed class EditorOverlay : Grid
     /// <summary>"Fixar em painel" (DEC-0045, UC-39): the reference kept at the top of the editor, across notes.</summary>
     public PinnedPanel Pinned { get; } = new();
 
+    /// <summary>The selected text (of the block in Visual, of the text in Fonte), or null.</summary>
+    public string? SelectedText
+    {
+        get
+        {
+            if (_note is null) return null;
+            if (Mode == EditorMode.Visual) return _visual.SelectedText;
+            var all = Editor.Text ?? "";
+            int a = Math.Clamp(Math.Min(Editor.SelectionStart, Editor.SelectionEnd), 0, all.Length);
+            int b = Math.Clamp(Math.Max(Editor.SelectionStart, Editor.SelectionEnd), 0, all.Length);
+            return b > a ? all[a..b] : null;
+        }
+    }
+
     /// <summary>Pins the selected text (of the block in Visual, of the text in Fonte), else the whole note.</summary>
     public void PinSelectionOrNote()
     {
         if (_note is null) return;
-        string? text;
-        if (Mode == EditorMode.Visual) text = _visual.SelectedText;
-        else
-        {
-            var all = Editor.Text ?? "";
-            int a = Math.Clamp(Math.Min(Editor.SelectionStart, Editor.SelectionEnd), 0, all.Length);
-            int b = Math.Clamp(Math.Max(Editor.SelectionStart, Editor.SelectionEnd), 0, all.Length);
-            text = b > a ? all[a..b] : null;
-        }
+        var text = SelectedText;
         if (string.IsNullOrWhiteSpace(text)) text = Editor.Text ?? "";
         Pinned.Pin(text, _note.Path);
     }

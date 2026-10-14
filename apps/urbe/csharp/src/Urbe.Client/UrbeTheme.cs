@@ -191,6 +191,9 @@ public static class UrbeTheme
         public const string Page = "M6.5 3.5h11a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3h-11a3 3 0 0 1-3-3v-11a3 3 0 0 1 3-3z M3.5 9h17 M9 20.5V9";
         public const string Select = "M7 4h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3z M8.5 12l2.5 2.5 4.5-5";
         public const string Restore = "M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9 M4.5 4.5V9H9";
+        public const string Check = "M5 12.5l4.5 4.5L19 7.5";
+        public const string ArrowUp = "M12 19V5M5.5 11.5L12 5l6.5 6.5";
+        public const string Edit = "M4.5 19.5h4l10-10-4-4-10 10z M13 7l4 4";
         public const string Layers = "M12 3.5l8.5 4.5-8.5 4.5L3.5 8z M3.5 12.5l8.5 4.5 8.5-4.5";
         public const string MapUi = "M9 4.5L3.5 6.5v13l5.5-2 6 2 5.5-2v-13l-5.5 2z M9 4.5v13M15 6.5v13";
         public const string Settings = "M4 7h9M17 7h3M4 17h3M11 17h9 M15 5a2 2 0 1 0 0 4a2 2 0 1 0 0-4z M9 15a2 2 0 1 0 0 4a2 2 0 1 0 0-4z";

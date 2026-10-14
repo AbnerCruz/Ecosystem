@@ -15,6 +15,7 @@ public static class Program
         var selection = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Urbe", "native-vault.json");
         UrbeApp.VaultStorageFactory = () => new FolderVaultStorage(PickFolderAsync, selection);
         UrbeApp.LocalStatePath = Path.Combine(Path.GetDirectoryName(selection)!, "notes-state.json");
+        UrbeApp.AssistantFolder = Path.Combine(Path.GetDirectoryName(selection)!, "assistant");
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 

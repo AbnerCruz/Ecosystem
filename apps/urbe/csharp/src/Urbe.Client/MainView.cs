@@ -599,6 +599,7 @@ public sealed partial class MainView : Grid
         // theme.css @media (min-width:900px): Notas becomes a 360 px panel beside the city
         Explorer.Wide = e.NewSize.Width >= 900;
         PlaceHousePanel(wide);
+        PlaceAssistant(_assistant, e.NewSize.Width);
     }
 
     // ---------------- city chrome ----------------
@@ -1776,10 +1777,8 @@ public sealed partial class MainView : Grid
         }
         else
         {
-            ToolTip.SetTip(button, "Assistente: em portabilidade");
-            button.IsEnabled = false;
-            // the 1.8.4 draws it like the others; no grey box for the disabled state
-            button.Resources["ButtonBackgroundDisabled"] = Brushes.Transparent;
+            ToolTip.SetTip(button, "Assistente: agentes que pesquisam, escrevem e organizam o vault");
+            button.Click += (_, _) => ToggleAssistant();
         }
         return button;
     }
