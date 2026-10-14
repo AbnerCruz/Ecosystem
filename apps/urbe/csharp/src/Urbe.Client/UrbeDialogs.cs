@@ -248,6 +248,38 @@ public sealed class UrbeDialogs : Grid
         return (new StackPanel { Children = { Head(title, message, () => finish(null)), list } }, null, null, list.Children.Count > 0 ? list.Children[0] : null);
     });
 
+    /// <summary>A choice among pictures (the buildings' Visual, DEC-0045): a grid of pixel-art previews with their names;
+    /// the current one is outlined. The index chosen, or null.</summary>
+    public Task<int?> PickArtAsync(string title, IReadOnlyList<(string Label, IImage? Art)> options, int? current = null, string? message = null) => Open<int?>(finish =>
+    {
+        var grid = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(-4, 8, -4, 0), HorizontalAlignment = HorizontalAlignment.Center };
+        for (int i = 0; i < options.Count; i++)
+        {
+            var (label, art) = options[i];
+            int index = i;
+            var image = new Image { Source = art, Width = 60, Height = 70, Stretch = Stretch.Uniform };
+            RenderOptions.SetBitmapInterpolationMode(image, Avalonia.Media.Imaging.BitmapInterpolationMode.None);
+            var cell = new StackPanel { Spacing = 4, Children =
+            {
+                image,
+                new TextBlock { Text = label, FontFamily = UrbeTheme.UiFont, FontSize = 12, FontWeight = FontWeight.Medium, Foreground = UrbeTheme.Brush(UrbeTheme.Text2),
+                    HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap, MaxWidth = 84 }
+            } };
+            var b = new Button
+            {
+                Content = cell, Width = 92, Margin = new Thickness(4), Padding = new Thickness(4, 8), CornerRadius = new CornerRadius(12),
+                Background = UrbeTheme.Brush(index == current ? UrbeTheme.Surface3 : UrbeTheme.Bg),
+                BorderBrush = UrbeTheme.Brush(index == current ? UrbeTheme.Accent : UrbeTheme.Line2), BorderThickness = new Thickness(index == current ? 2 : 1),
+                HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Top
+            };
+            Avalonia.Automation.AutomationProperties.SetName(b, label);
+            b.Click += (_, _) => finish(index);
+            grid.Children.Add(b);
+        }
+        var scroll = new ScrollViewer { Content = grid, MaxHeight = 420, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
+        return (new StackPanel { Children = { Head(title, message, () => finish(null)), scroll } }, null, null, grid.Children.Count > 0 ? grid.Children[current ?? 0] : null);
+    });
+
     /// <summary>UrbeDialogs.menu: closes, then runs the chosen item.</summary>
     public async Task MenuAsync(string title, IReadOnlyList<DialogItem> items, string? message = null)
     {

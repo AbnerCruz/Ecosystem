@@ -43,6 +43,33 @@ public sealed partial class LegacyCity
         return CreateRegion(UniqueRegionName(name), 1, seed, parent?.Id, null);
     }
 
+    /// <summary>
+    /// validarPosicaoMovel(b, x, y): the lot under a carried building. Inside a neighbourhood (the one under the
+    /// lot's centre, regiaoDestinoLote) it must be a valid lot of it; outside, no tile may touch a neighbourhood. The
+    /// building itself is ignored. Returns the neighbourhood it would land in (null = the root).
+    /// </summary>
+    public (bool Ok, LegacyCityRegion? Region) ValidMove(LegacyCityBuilding b, int x, int y)
+    {
+        ArgumentNullException.ThrowIfNull(b);
+        var ignore = new HashSet<string>(StringComparer.Ordinal) { b.Id };
+        var r = RegionAt(x + b.W / 2, y + b.H / 2);
+        if (r is not null) return (LotIsValid(x, y, ignore, r), r);
+        for (int yy = y; yy < y + b.H; yy++)
+            for (int xx = x; xx < x + b.W; xx++)
+                if (RegionAt(xx, yy) is not null) return (false, null);
+        return (LotIsValid(x, y, ignore, null), null);
+    }
+
+    /// <summary>finalizarMovimentoMundo: the building at its new lot (b.x, b.y, modified = nowDate) and indexar.</summary>
+    public void MoveBuildingTo(LegacyCityBuilding b, int x, int y, long nowMs)
+    {
+        ArgumentNullException.ThrowIfNull(b);
+        b.X = x;
+        b.Y = y;
+        b.Modified = JsonValue.Create(NowDate(nowMs));
+        Reindex();
+    }
+
     /// <summary>canHouse: a 3×3 lot is valid at the tile, inside the innermost neighbourhood there.</summary>
     public bool CanHouse(int x, int y) => LotIsValid(x, y, null, RegionAt(x, y));
 

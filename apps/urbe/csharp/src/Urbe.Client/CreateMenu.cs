@@ -90,7 +90,11 @@ public sealed partial class MainView
         _toolOk.IsVisible = false;
         _toolOk.Content = "Construir";
         _copySource = null;
+        _placementExt = ".md";
     }
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"\.(md|markdown|txt|html|htm|js|mjs|css|json|yaml|yml|csv)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex TextExtension();
 
     // ------------------------------------------------------------------ Nova pasta
 
@@ -176,8 +180,36 @@ public sealed partial class MainView
 
     // ------------------------------------------------------------------ Adicionar construção
 
+    /// <summary>The types "+" → Construção offers (DEC-0045, UC-41: "as construções dependem da extensão", .md by default):
+    /// the text files the 1.8.4 builds, each with the trade it gets in the city.</summary>
+    public static IReadOnlyList<(string Ext, string Label)> BuildingTypes { get; } =
+    [
+        (".md", "Nota .md"), (".txt", "Texto .txt"), (".html", "Página .html"), (".js", "Script .js"),
+        (".css", "Estilo .css"), (".json", "Dados .json"), (".csv", "Tabela .csv")
+    ];
+
+    /// <summary>The extension of the building being placed (the type chosen in "+" → Construção).</summary>
+    private string _placementExt = ".md";
+
+    /// <summary>"+" → Construção: the type (its building shown; Nota .md first), then the placement.</summary>
+    public async Task BeginBuildingAsync()
+    {
+        if (World.City is null) return;
+        if (!VaultWritable)
+        {
+            await Dialogs.AlertAsync("Adicionar construção", NoVaultMessage);
+            return;
+        }
+        var options = BuildingTypes.Select(t => (t.Label, (Avalonia.Media.IImage?)World.KindArt(WorldView.TradeOf(t.Ext)))).ToList();
+        if (await Dialogs.PickArtAsync("Construção", options, 0, "O tipo do arquivo define a construção.") is not { } i) return;
+        await BeginPlacementAsync(BuildingTypes[i].Ext);
+    }
+
     /// <summary>v21BeginNewPlacement: tap the map to position the new building, then "Construir".</summary>
-    public async Task BeginPlacementAsync()
+    public async Task BeginPlacementAsync() => await BeginPlacementAsync(".md");
+
+    /// <summary>The placement of a new building whose file gets <paramref name="ext"/> when its name has no extension.</summary>
+    public async Task BeginPlacementAsync(string ext)
     {
         if (World.City is not { } city) return;
         if (!VaultWritable)
@@ -189,8 +221,9 @@ public sealed partial class MainView
         {
             _toolOk.IsEnabled = c is { } p && city.CanHouse(p.X, p.Y);
             _toolText.Text = "Posicione a construção" + (c is { } q ? $" · {q.X},{q.Y}" : " · toque no mapa");
-        });
+        }) { GhostKind = WorldView.TradeOf(ext) };
         BeginTool(tool, "Posicione a construção · toque no mapa", okVisible: true);
+        _placementExt = ext;
     }
 
     /// <summary>The house being copied while the placement tool is up (v21Placement = {kind:'copy', source}).</summary>
@@ -272,8 +305,75 @@ public sealed partial class MainView
     }
 
     /// <summary>v21ConfirmPlacement (new): "Configurar arquivo", the house at the tile, its file in the vault.</summary>
+    // ------------------------------------------------------------------ Decoração (DEC-0045, UC-41)
+
+    /// <summary>Whether a decoration of <paramref name="kind"/> fits with its corner at (x, y): land, no building, street or
+    /// other decoration under any of its tiles.</summary>
+    public bool CanDecorate(WorldDecorations.Kind kind, int x, int y) =>
+        World.City is { } city && WorldDecorations.Footprint(kind, x, y).All(t =>
+            !city.IsWater(t.X, t.Y) && city.BuildingAt(t.X, t.Y) is null && !city.HasRoad(t.X, t.Y) && World.Prefs.DecorationAt(t.X, t.Y) is null);
+
+    /// <summary>"+" → Decoração: which one, then a tap on the map places its ghost and ✓ puts it there (.urbe/mundo.json).</summary>
+    public async Task BeginDecorationAsync()
+    {
+        if (World.City is null) return;
+        if (!VaultWritable || Customization.WorldWriter is null)
+        {
+            await Dialogs.AlertAsync("Decoração", NoVaultMessage);
+            return;
+        }
+        var kinds = WorldDecorations.Kinds;
+        if (await Dialogs.ChooseAsync("Decoração", kinds.Select(k => new DialogItem(k.Label, UrbeTheme.Icons.Flower, k.Hint)).ToList()) is not { } i) return;
+        BeginDecoration(kinds[i]);
+    }
+
+    /// <summary>The placement of a decoration of <paramref name="kind"/> (tests and the menu).</summary>
+    public void BeginDecoration(WorldDecorations.Kind kind)
+    {
+        var tool = new DecorationTool(kind, (x, y) => CanDecorate(kind, x, y), c =>
+        {
+            _toolOk.IsEnabled = c is { } p && CanDecorate(kind, p.X, p.Y);
+            _toolText.Text = kind.Label + (c is { } q ? $" · {q.X},{q.Y}" : " · toque no mapa");
+        });
+        BeginTool(tool, kind.Label + " · toque no mapa", okVisible: true);
+        _toolOk.Content = "Colocar";
+    }
+
+    private async Task ConfirmDecorationAsync(DecorationTool tool)
+    {
+        if (tool.Candidate is not { } p || !CanDecorate(tool.Kind, p.X, p.Y)) { ShowLifeNotice("Posição inválida."); return; }
+        var prefs = Customization.World;
+        var placed = new WorldDecoration(prefs.NextDecorationId(), tool.Kind.Id, p.X, p.Y);
+        try { await Customization.SetWorldAsync(prefs with { Decorations = [.. prefs.Decorations, placed] }); }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or InvalidDataException)
+        {
+            await Dialogs.AlertAsync("Não foi possível colocar a decoração", ex.Message);
+            return;
+        }
+        EndTool();
+        World.InvalidateVisual();
+    }
+
+    /// <summary>A tap on a decoration: what it is, and Remover.</summary>
+    private Task ShowDecorationAsync(WorldDecoration decoration)
+    {
+        if (Dialogs.IsOpen || World.Tool is not null || WorldDecorations.Find(decoration.Kind) is not { } kind) return Task.CompletedTask;
+        var items = new List<DialogItem>();
+        if (VaultWritable && Customization.WorldWriter is not null)
+            items.Add(new("Remover decoração", UrbeTheme.Icons.Trash, Danger: true, Run: () => RemoveDecorationAsync(decoration)));
+        return Dialogs.MenuAsync(kind.Label, items, kind.Hint);
+    }
+
+    public async Task RemoveDecorationAsync(WorldDecoration decoration)
+    {
+        var prefs = Customization.World;
+        await Customization.SetWorldAsync(prefs with { Decorations = prefs.Decorations.Where(d => d.Id != decoration.Id).ToList() });
+        World.InvalidateVisual();
+    }
+
     public async Task ConfirmPlacementAsync()
     {
+        if (World.Tool is DecorationTool decorating) { await ConfirmDecorationAsync(decorating); return; }
         if (World.City is not { } city || World.Tool is not PlacementTool { Candidate: { } p } || Dialogs.IsOpen) return;
         if (_copySource is { } source)
         {
@@ -286,9 +386,11 @@ public sealed partial class MainView
             ShowLifeNotice("Posição inválida.");
             return;
         }
+        var ext = _placementExt;
         var typed = await Dialogs.PromptAsync(new PromptOptions("Configurar arquivo", Label: "Nome", Placeholder: "Ex.: Ideias",
-            Hint: "Sem extensão, vira .md. Também aceita .txt, .html, .css, .js, .json, .yaml e .csv.", Confirm: "Construir"));
+            Hint: $"Sem extensão, vira {ext}. Também aceita .md, .txt, .html, .css, .js, .json, .yaml e .csv.", Confirm: "Construir"));
         if (typed is null) return;
+        if (ext != ".md" && !TextExtension().IsMatch(typed.Trim())) typed = typed.Trim() + ext;
         long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         if (city.CreateNoteAt(p.X, p.Y, typed, now) is not { } made)
         {
@@ -487,4 +589,5 @@ public static class ImportDocuments
         }
         return new ImportDocumentsPlan(added, kept, skipped, unchanged);
     }
+
 }

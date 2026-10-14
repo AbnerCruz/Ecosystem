@@ -164,6 +164,67 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public async Task<VaultFileRead?> ReadFileAsync(string path, long maxBytes, CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            if (_tree is not { } tree) return null;
+            return await Task.Run(() =>
+            {
+                AndroidUri? uri;
+                try { uri = FindDocument(tree, path); }
+                catch (InvalidDataException) { return null; }
+                if (uri is null) return null;
+                long size = -1;
+                using (var cursor = Resolver.Query(uri, [DocumentsContract.Document.ColumnSize, DocumentsContract.Document.ColumnMimeType], null, null, null))
+                    if (cursor is not null && cursor.MoveToFirst())
+                    {
+                        if (cursor.GetString(1) == DirectoryMime) return null;
+                        if (!cursor.IsNull(0)) size = cursor.GetLong(0);
+                    }
+                if (size > maxBytes) return new VaultFileRead(size, null);
+                using var stream = Resolver.OpenInputStream(uri);
+                if (stream is null) return null;
+                using var buffer = new MemoryStream();
+                var chunk = new byte[64 * 1024];
+                int read;
+                while ((read = stream.Read(chunk, 0, chunk.Length)) > 0)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (buffer.Length + read > maxBytes) return new VaultFileRead(Math.Max(size, buffer.Length + read), null);
+                    buffer.Write(chunk, 0, read);
+                }
+                return new VaultFileRead(buffer.Length, buffer.ToArray());
+            }, cancellationToken);
+        }
+        catch (Exception ex) when (ex is IOException or Java.Lang.Exception) { return null; }
+        finally { _gate.Release(); }
+    }
+
+    public async Task<bool> OpenExternallyAsync(string path, CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            if (_tree is not { } tree) return false;
+            AndroidUri? uri;
+            try { uri = await Task.Run(() => FindDocument(tree, path), cancellationToken); }
+            catch (InvalidDataException) { return false; }
+            if (uri is null) return false;
+            // the app holding the vault grants the viewer read access to this one document only
+            var intent = new Intent(Intent.ActionView);
+            intent.SetDataAndType(uri, VaultFileKinds.Mime(path));
+            intent.AddFlags(ActivityFlags.GrantReadUriPermission | ActivityFlags.NewTask);
+            var chooser = Intent.CreateChooser(intent, "Abrir com")!;
+            chooser.AddFlags(ActivityFlags.NewTask);
+            Android.App.Application.Context.StartActivity(chooser);
+            return true;
+        }
+        catch (Exception ex) when (ex is ActivityNotFoundException or Java.Lang.Exception) { return false; }
+        finally { _gate.Release(); }
+    }
+
     public async Task<bool> RemoveEmptyDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureWritableFolderPath(path);

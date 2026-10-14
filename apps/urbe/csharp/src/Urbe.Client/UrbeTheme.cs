@@ -176,6 +176,7 @@ public static class UrbeTheme
         // Explorer (DEC-0045, UC-38): a picture, a code/data file and any other file, in the same 1.8 stroke style
         public const string Image = "M5.5 4.5h13a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1z M9 8a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3z M4.5 16l4.5-4.5 3.5 3.5 2.5-2.5 4.5 4.5";
         public const string FileCode = "M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z M14 3.5V8h4.5 M10.5 11.5l-2 2.25 2 2.25 M13.5 11.5l2 2.25-2 2.25";
+        public const string Flower = "M12 9.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5z M12 9.5V5.5 M12 14.5v6 M9.5 12H5.5 M14.5 12h4 M12 20.5c-2-1-4-1-5.5 0 M12 18c2-1.2 4-1 5.5 0";
         public const string Pin = "M9 4.5h6 M10 4.5v5.2L7 13h10l-3-3.3V4.5 M12 13v6.5";
         public const string FileOther = "M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z M14 3.5V8h4.5 M9 13h6 M9 16.5h4";
         public const string Pencil = "M4 20h4L19 9l-4-4L4 16z M14 6l4 4";

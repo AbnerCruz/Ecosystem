@@ -63,12 +63,14 @@ public sealed partial class HeadlessUiTests
             Assert.DoesNotContain(e.VisibleFilePaths, p => p.StartsWith(".urbe", StringComparison.Ordinal));
             Snapshot(window, "native-explorer.png");
 
-            // a file that is not a note says what it is, instead of opening nothing
+            // a file that is not a note opens its preview (openFilePreview): a PDF offers Abrir in another app
             Assert.True(e.TryOpenFile("livro.pdf"));
-            Dispatcher.UIThread.RunJobs();
-            Assert.True(view.Dialogs.IsOpen);
-            Assert.Contains(view.Dialogs.GetVisualDescendants().OfType<TextBlock>(), t => (t.Text ?? "").StartsWith("Arquivo PDF na raiz.", StringComparison.Ordinal));
-            ClickButtonWithText(view.Dialogs, "Ok");
+            for (int i = 0; i < 40 && view.FilePreview.Current != "livro.pdf"; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+            await Settled();
+            Assert.True(view.FilePreview.IsVisible);
+            Assert.Equal("livro.pdf", view.FilePreview.Current);
+            Assert.Contains(view.FilePreview.GetLogicalDescendants().OfType<TextBlock>(), t => (t.Text ?? "").StartsWith("PDF · 4 B · livro.pdf", StringComparison.Ordinal));
+            view.FilePreview.Close();
             await Settled();
 
             // the "⋯" of a folder: its options, and Nova nota aqui creates the note in it

@@ -1,0 +1,87 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-urbe-uc42-oficios",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T12:20:39Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-42",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "d30db228",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/560",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/TownTrades.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/CityLifeHost.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/LifeRenderer.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/TownTradesTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/TradesUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261014-urbe-uc42-oficios.json"
+  ],
+  "work_completed": [
+    "TownTrades: para cada poço, roça ou lenha à vista, um morador da casa mais próxima (até 16 lotes) vai por terra até a decoração, trabalha, volta e descansa em casa.",
+    "Caminho por BFS em terra, contornando casas e água; trabalhador some quando a decoração sai da vista ou a vida é desligada.",
+    "Sprite de morador da 1.8.4 com a ferramenta do ofício; efeito de trabalho (gotas, torrões, lascas); entra na lista de pessoas do céu (guarda-chuva, lanterna).",
+    "v25Povo da 1.8.4 intocado: oráculo de LegacyVillagers continua verde."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "TownTradesTests e HeadlessUiTests.Trades_ANeighbourFetchesWaterAtTheWell",
+      "result": "passed",
+      "evidence": "Fases casa→ida→trabalho→volta→casa, nunca dentro de casa nem na água, ponto de trabalho ao lado do poço, ninguém sem casa próxima, fora da vista ou com vida desligada; banco não é ofício; captura native-trade-well.png."
+    },
+    {
+      "kind": "human",
+      "check": "Moradores trabalhando nas decorações no aparelho",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho e do gosto do proprietário (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Core/TownTrades.cs"
+    }
+  ],
+  "known_issues": [
+    "Build Android local indisponível sem workload; o CI valida."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validação humana do UC-42 (Issue #562).",
+    "UC-44: Modelos/Componentes."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "UC-42 fica [~] com Issue #562 em state:verifying até a validação humana."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Sem [x] antes da validação."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "town-trades",
+      "status": "product-specific",
+      "rationale": "Vida da cidade do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Só simulação e desenho; não grava nada no vault."
+  }
+}

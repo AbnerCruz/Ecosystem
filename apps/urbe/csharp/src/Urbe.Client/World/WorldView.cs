@@ -38,12 +38,61 @@ public sealed class WorldView : Control
     private readonly Dictionary<string, RegionShape> _shapes = new(StringComparer.Ordinal);
     private readonly Dictionary<string, FormattedText> _texts = new(StringComparer.Ordinal);
     private Point? _pressAt;
+
+    /// <summary>v21MoveHold: holding a building 430 ms picks it up (gesture.mode = 'moveBuilding').</summary>
+    public const int MoveHoldMs = 430;
+    private readonly DispatcherTimer _moveHold = new() { Interval = TimeSpan.FromMilliseconds(MoveHoldMs) };
+    private LegacyCityBuilding? _pressBuilding;
+    private (int X, int Y) _moveOffset;
+
+    /// <summary>The building being carried by the finger, or null.</summary>
+    public LegacyCityBuilding? Moving { get; private set; }
+
+    /// <summary>Where the carried building would land (gesture.dragPos).</summary>
+    public (int X, int Y) MovePos { get; private set; }
+
+    /// <summary>validarPosicaoMovel for the drawing of the carried building (green or red frame).</summary>
+    public Func<LegacyCityBuilding, int, int, bool>? MoveValid { get; set; }
+
+    /// <summary>The carried building was let go at a new lot (finalizarMovimentoMundo).</summary>
+    public event Action<LegacyCityBuilding, int, int>? BuildingMoveRequested;
+
+    /// <summary>The hold that picks a building up (v21MoveHold), from tile (tx, ty) on it.</summary>
+    public void PickUp(LegacyCityBuilding b, int tx, int ty)
+    {
+        Moving = b;
+        _moveOffset = (tx - b.X, ty - b.Y);
+        MovePos = (b.X, b.Y);
+        InvalidateVisual();
+    }
+
+    /// <summary>The carried building follows the finger to tile (tx, ty).</summary>
+    public void Carry(int tx, int ty)
+    {
+        if (Moving is null) return;
+        MovePos = (tx - _moveOffset.X, ty - _moveOffset.Y);
+        InvalidateVisual();
+    }
+
+    /// <summary>Lets the carried building go: a new lot asks to move it there.</summary>
+    public void Drop()
+    {
+        if (Moving is not { } b) return;
+        Moving = null;
+        var (x, y) = MovePos;
+        InvalidateVisual();
+        // let go where it was: the hold was only a long tap, which selects it
+        if (x == b.X && y == b.Y) { Select(b); return; }
+        Select(null);
+        BuildingMoveRequested?.Invoke(b, x, y);
+    }
     private bool _dragged;
     private double _pinchDistance;
     private int _worldGeneration;
     private readonly LegacyFauna _fauna = new();
     private readonly LegacyWorldLife _life;
     private readonly LegacyVillagers _villagers = new();
+    private readonly TownTrades _trades = new();
     // app.js v25Ciclo every V25_FPS (33 ms)
     private readonly DispatcherTimer _villagerTimer = new() { Interval = TimeSpan.FromMilliseconds(LegacyVillagers.FrameMs) };
     private readonly LifeRenderer _lifeArt = new();
@@ -69,6 +118,15 @@ public sealed class WorldView : Control
         _lifeTimer.Tick += (_, _) => LifeTick();
         _faunaTimer.Tick += (_, _) => FaunaTick();
         _villagerTimer.Tick += (_, _) => VillagerTick();
+        _moveHold.Tick += (_, _) =>
+        {
+            _moveHold.Stop();
+            if (_pointers.Count == 1 && !_dragged && Tool is null && _pressBuilding is { } b && _pressAt is { } at)
+            {
+                var (tx, ty) = Camera.TileAt(at);
+                PickUp(b, tx, ty);
+            }
+        };
         RefreshLighting();
     }
 
@@ -109,6 +167,9 @@ public sealed class WorldView : Control
     public LegacyFauna Fauna => _fauna;
     /// <summary>v25Povo: who walks between linked notes and who idles at the door.</summary>
     public LegacyVillagers Villagers => _villagers;
+
+    /// <summary>The residents with trades at the well, the field and the woodpile (DEC-0045, UC-42).</summary>
+    public TownTrades Trades => _trades;
     /// <summary>The discreet event notice of life.js avisar() ("🌧 Chuva passageira", …).</summary>
     public event EventHandler<string>? Notice;
     /// <summary>v25MapaVisivel(): false while the editor, explorer or a menu covers the city.</summary>
@@ -158,11 +219,14 @@ public sealed class WorldView : Control
     public void VillagerTick()
     {
         if (World is null || City is null || Bounds.Width <= 0) return;
-        if (!CityVisible()) { _villagers.People.Clear(); _villagerLast = 0; return; }
+        if (!CityVisible()) { _villagers.People.Clear(); _trades.Reset(); _villagerLast = 0; return; }
         double now = _clock.Elapsed.TotalMilliseconds;
-        _villagerMs += _villagerLast == 0 ? 0 : now - _villagerLast;
+        double dt = _villagerLast == 0 ? 0 : now - _villagerLast;
+        _villagerMs += dt;
         _villagerLast = now;
-        if (_villagers.Tick(_villagerMs, LifeView(), _life.Options.People, _life.Hurry, _lifeHost)) InvalidateVisual();
+        var view = LifeView();
+        bool moved = _villagers.Tick(_villagerMs, view, _life.Options.People, _life.Hurry, _lifeHost);
+        if (_trades.Tick(Math.Min(.1, dt / 1000), view, _life.Options.People, _life.Hurry, Prefs.Decorations, _lifeHost) || moved) InvalidateVisual();
     }
 
     /// <summary>Runs the life and the fauna for <paramref name="seconds"/> of simulated time
@@ -176,6 +240,7 @@ public sealed class WorldView : Control
             _life.Tick(.033, v);
             _villagerMs += 33;
             _villagers.Tick(_villagerMs, v, _life.Options.People, _life.Hurry, _lifeHost);
+            _trades.Tick(.033, v, _life.Options.People, _life.Hurry, Prefs.Decorations, _lifeHost);
             while (nextFauna <= t)
             {
                 nextFauna += .04;
@@ -239,12 +304,17 @@ public sealed class WorldView : Control
     }
 
     /// <summary>The house art of the placement ghost (v21 overlay: A.house1 at the candidate tile).</summary>
-    public Bitmap? GhostArt(int x, int y)
+    public Bitmap? GhostArt(int x, int y, string kind = "house")
     {
         if (World is null) return null;
+        if (_ownArt.TryGetValue(kind, out var own)) return own;
         var biome = World.At(x + 1, y + 1).Biome;
-        return _sprites.Building("house", LegacyWorldBuildings.StyleForBiome(LegacyBiomeRules.Id(biome)), 0, false);
+        return _sprites.Building(kind, LegacyWorldBuildings.StyleForBiome(LegacyBiomeRules.Id(biome)), 0, false);
     }
+
+    /// <summary>A trade's art in the temperate style (the type picker of "+" → Construção).</summary>
+    public Bitmap KindArt(string kind) =>
+        _ownArt.TryGetValue(kind, out var own) ? own : _sprites.Building(kind, "temperate", 0, false);
 
     private LegacyGroundStyle? _ground;
     /// <summary>The ground set by Personalização; null is the original art.</summary>
@@ -282,6 +352,7 @@ public sealed class WorldView : Control
         _shapes.Clear();
         _fauna.Animals.Clear();
         _villagers.Reset();
+        _trades.Reset();
         InvalidateVisual();
     }
 
@@ -360,11 +431,14 @@ public sealed class WorldView : Control
             missing = DrawGround(context);
         DrawRegions(context);
         DrawRoads(context);
+        using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.None }))
+            DrawDecorations(context);
         var life = LifeView();
         _lifeArt.Ground(context, _life, life);
         using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.None }))
             DrawTrees(context);
-        _lifeArt.Villagers(context, _villagers.People, life, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        _lifeArt.Villagers(context, _trades.People.Count == 0 ? _villagers.People : [.. _villagers.People, .. _trades.People], life, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        _lifeArt.TradeWork(context, _trades, life);
         _lifeArt.Fauna(context, _fauna, life);
         DrawBuildings(context);
         // app.js urbeAntesDosRotulos: céu, multiply light, lit windows, brilho, then the names
@@ -501,6 +575,42 @@ public sealed class WorldView : Control
         context.DrawGeometry(null, new Pen(WallTop, .12, new DashStyle([7, 7], 0), PenLineCap.Flat, PenLineJoin.Miter), g);
     }
 
+    // ---------------- decorations (DEC-0045, UC-41): from .urbe/mundo.json, pixel art at 12 cells per tile
+
+    private readonly Dictionary<string, Avalonia.Media.Imaging.Bitmap> _decorArt = new(StringComparer.Ordinal);
+
+    /// <summary>The image of a decoration kind (cached per view: bitmaps belong to the view's thread).</summary>
+    public Avalonia.Media.Imaging.Bitmap? DecorationArt(string kind)
+    {
+        if (_decorArt.TryGetValue(kind, out var art)) return art;
+        if (WorldDecorations.Find(kind) is not { } k) return null;
+        var (px, w, h) = LegacyLifeSprites.Render(k.Sprite, 0, false);
+        return _decorArt[kind] = Pixels.ToBitmap(px, w, h);
+    }
+
+    /// <summary>The screen rectangle of a decoration of <paramref name="kind"/> with its corner at tile (x, y).</summary>
+    public Rect DecorationRect(WorldDecorations.Kind kind, int x, int y)
+    {
+        var p = Camera.WorldToScreen(x * T, y * T);
+        double size = T * Camera.Zoom;
+        return new Rect(Math.Round(p.X), Math.Round(p.Y), Math.Ceiling(kind.W * size), Math.Ceiling(kind.H * size));
+    }
+
+    private void DrawDecorations(DrawingContext context)
+    {
+        if (Prefs.Decorations.Count == 0) return;
+        var (x0, y0, x1, y1) = Camera.VisibleTiles();
+        foreach (var d in Prefs.Decorations.OrderBy(d => d.Y))
+        {
+            if (WorldDecorations.Find(d.Kind) is not { } k || d.X > x1 || d.X + k.W < x0 || d.Y > y1 || d.Y + k.H < y0) continue;
+            if (DecorationArt(d.Kind) is not { } art) continue;
+            context.DrawImage(art, new Rect(0, 0, art.Size.Width, art.Size.Height), DecorationRect(k, d.X, d.Y));
+        }
+    }
+
+    /// <summary>A tap on a decoration (DEC-0045, UC-41): the host offers what can be done with it.</summary>
+    public event Action<WorldDecoration>? DecorationTapped;
+
     /// <summary>The root neighbourhood shown at the top from this zoom on (DEC-0045, UC-41).</summary>
     public const double RootNameZoom = 1.6;
 
@@ -625,19 +735,41 @@ public sealed class WorldView : Control
     }
 
     /// <summary>The house art as drawn in the city (house panel preview).</summary>
-    public Bitmap? ArtOf(LegacyCityBuilding b) => World is null ? null : Art(b);
+    public Bitmap? ArtOf(LegacyCityBuilding b) => World is null ? null : Art(b, LookOf(b));
+
+    /// <summary>The house art with another look (the Visual picker's previews).</summary>
+    public Bitmap? ArtOf(LegacyCityBuilding b, BuildingLook look) => World is null ? null : Art(b, look);
+
+    /// <summary>The look chosen for this building in .urbe/mundo.json (DEC-0045, UC-41), or the automatic one.</summary>
+    public BuildingLook LookOf(LegacyCityBuilding b) => Prefs.Looks.GetValueOrDefault(b.Path) ?? new BuildingLook();
+
+    /// <summary>The trade the 1.8.4 gives this building: a note's by its extension, a file building is a store.</summary>
+    public static string AutomaticKind(LegacyCityBuilding b) => b.IsNote ? TradeOf(b.Ext) : "store";
+
+    /// <summary>The trade of a note with this extension (urbeArteDaConstrucao: .html a hall, .js a workshop…).</summary>
+    public static string TradeOf(string ext)
+    {
+        ext = ext.TrimStart('.').ToLowerInvariant();
+        if (!Noted.Contains(ext)) ext = "md";
+        return Trade.GetValueOrDefault(ext, "house");
+    }
+
+    /// <summary>The variant the 1.8.4 gives this building (its sprite, or its id).</summary>
+    public static int AutomaticVariant(LegacyCityBuilding b) =>
+        b.Sprite == "house2" ? 1 : b.Sprite == "house3" ? 2 : (int)(LegacyJsMath.Seed(b.Id.Length > 0 ? b.Id : b.Name) % 3);
+
+    /// <summary>Whether the 1.8.4 puts flowers by this building (by its name).</summary>
+    public static bool AutomaticFlowers(LegacyCityBuilding b) => LegacyJsMath.Seed(b.Name) % 3 == 0;
 
     /// <summary>urbeArteDaConstrucao: a note's trade by extension, a file building is a store; style by biome, variant and
-    /// flowers by name.</summary>
-    private Bitmap Art(LegacyCityBuilding b)
+    /// flowers by name; what the person chose in Visual (.urbe/mundo.json) instead, when there is a choice.</summary>
+    private Bitmap Art(LegacyCityBuilding b, BuildingLook look)
     {
-        var ext = b.Ext.TrimStart('.').ToLowerInvariant();
-        if (!Noted.Contains(ext)) ext = "md";
-        var kind = b.IsNote ? Trade.GetValueOrDefault(ext, "house") : "store";
+        var kind = look.Kind ?? AutomaticKind(b);
         if (_ownArt.TryGetValue(kind, out var own)) return own;   // urbeSpritesProprios[kind]
         var biome = World!.At((int)Math.Floor(b.X + b.W / 2.0), (int)Math.Floor(b.Y + b.H / 2.0)).Biome;
-        int variant = b.Sprite == "house2" ? 1 : b.Sprite == "house3" ? 2 : (int)(LegacyJsMath.Seed(b.Id.Length > 0 ? b.Id : b.Name) % 3);
-        bool flowers = LegacyJsMath.Seed(b.Name) % 3 == 0;
+        int variant = look.Variant ?? AutomaticVariant(b);
+        bool flowers = look.Flowers ?? AutomaticFlowers(b);
         return _sprites.Building(kind, LegacyWorldBuildings.StyleForBiome(LegacyBiomeRules.Id(biome)), variant, flowers);
     }
 
@@ -673,11 +805,27 @@ public sealed class WorldView : Control
                     double rr = Math.Min(10 * z, Math.Min(halo.Height / 2, halo.Width / 2));
                     context.DrawRectangle(new SolidColorBrush(Color.FromArgb(41, 143, 179, 255)), new Pen(UrbeTheme.Brush("#8fb3ff"), 2), halo, rr, rr);
                 }
+                if (b == Moving) continue;
                 var p = Camera.WorldToScreen(b.X * T, b.Y * T);
                 double w = 48 * s * (b.W / 3.0), h = 56 * s * (b.H / 3.0);
-                context.DrawImage(Art(b), new Rect(0, 0, LegacyWorldBuildings.Width, LegacyWorldBuildings.Height),
+                context.DrawImage(Art(b, LookOf(b)), new Rect(0, 0, LegacyWorldBuildings.Width, LegacyWorldBuildings.Height),
                     new Rect(Math.Round(p.X), Math.Round(p.Y + b.H * T * z - h), Math.Ceiling(w), Math.Ceiling(h)));
             }
+        if (Moving is { } carried)
+        {
+            // the carried building (moveBuilding): its old lot faint, the new one framed green where it fits, red where not
+            var (mx, my) = MovePos;
+            bool ok = MoveValid?.Invoke(carried, mx, my) ?? true;
+            var old = Camera.WorldToScreen(carried.X * T, carried.Y * T);
+            context.DrawRectangle(null, new Pen(UrbeTheme.Brush("#ffffff", .35), 1, new DashStyle([4, 4], 0)), new Rect(old.X, old.Y, carried.W * T * z, carried.H * T * z));
+            var p = Camera.WorldToScreen(mx * T, my * T);
+            double w = 48 * s * (carried.W / 3.0), h = 56 * s * (carried.H / 3.0);
+            using (context.PushOpacity(.8))
+            using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.None }))
+                context.DrawImage(Art(carried, LookOf(carried)), new Rect(0, 0, LegacyWorldBuildings.Width, LegacyWorldBuildings.Height),
+                    new Rect(Math.Round(p.X), Math.Round(p.Y + carried.H * T * z - h), Math.Ceiling(w), Math.Ceiling(h)));
+            context.DrawRectangle(null, new Pen(UrbeTheme.Brush(ok ? "#7ef29a" : "#ef766f"), 3), new Rect(p.X, p.Y, carried.W * T * z, carried.H * T * z));
+        }
     }
 
     /// <summary>Names are intentionally AFTER lighting, identical to app.js 'urbeAntesDosRotulos'.</summary>
@@ -867,8 +1015,16 @@ public sealed class WorldView : Control
             tool.Down(tx, ty);
             InvalidateVisual();
         }
-        else if (_pointers.Count == 1) { _pressAt = p; _dragged = false; }
-        else { _pressAt = null; _pinchDistance = PinchDistance(); if (_toolGesture) { _toolGesture = false; Tool?.Cancel(); } }
+        else if (_pointers.Count == 1)
+        {
+            _pressAt = p;
+            _dragged = false;
+            var (tx, ty) = Camera.TileAt(p);
+            _pressBuilding = City?.BuildingAt(tx, ty);
+            _moveHold.Stop();
+            if (_pressBuilding is not null && MoveValid is not null) _moveHold.Start();
+        }
+        else { _moveHold.Stop(); if (Moving is not null) { Moving = null; } _pressAt = null; _pinchDistance = PinchDistance(); if (_toolGesture) { _toolGesture = false; Tool?.Cancel(); } }
         e.Handled = true;
     }
 
@@ -889,9 +1045,14 @@ public sealed class WorldView : Control
             var (tx, ty) = Camera.TileAt(p);
             active.Move(tx, ty);
         }
+        else if (Moving is not null)
+        {
+            var (tx, ty) = Camera.TileAt(p);
+            Carry(tx, ty);
+        }
         else
         {
-            if (_pressAt is { } start && Distance(start, p) > TapSlop) _dragged = true;
+            if (_pressAt is { } start && Distance(start, p) > TapSlop) { _dragged = true; _moveHold.Stop(); }
             if (_dragged) Camera.Pan(p - last);
         }
         InvalidateVisual();
@@ -903,6 +1064,13 @@ public sealed class WorldView : Control
         base.OnPointerReleased(e);
         _pointers.Remove(e.Pointer);
         e.Pointer.Capture(null);
+        _moveHold.Stop();
+        if (Moving is not null && _pointers.Count == 0)
+        {
+            Drop();
+            _pressAt = null;
+            return;
+        }
         if (_toolGesture && _pointers.Count == 0)
         {
             _toolGesture = false;
@@ -913,7 +1081,8 @@ public sealed class WorldView : Control
         else if (_pointers.Count == 0 && _pressAt is { } start && !_dragged && City is not null)
         {
             var (tx, ty) = Camera.TileAt(start);
-            Select(City.BuildingAt(tx, ty) is { IsNote: true } house ? house : null);
+            if (City.BuildingAt(tx, ty) is null && Prefs.DecorationAt(tx, ty) is { } decoration) { Select(null); DecorationTapped?.Invoke(decoration); }
+            else Select(City.BuildingAt(tx, ty));   // a note opens its summary, a file building its preview
         }
         if (_pointers.Count < 2) _pinchDistance = 0;
         if (_pointers.Count == 0) _pressAt = null;
@@ -922,7 +1091,10 @@ public sealed class WorldView : Control
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
     {
         base.OnPointerCaptureLost(e);
-        _pointers.Remove(e.Pointer);
+        // lost without a release (another control took the pointer): whatever was carried goes back
+        if (!_pointers.Remove(e.Pointer)) return;
+        _moveHold.Stop();
+        if (_pointers.Count == 0 && Moving is not null) { Moving = null; InvalidateVisual(); }
     }
 
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
