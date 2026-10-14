@@ -360,6 +360,8 @@ public sealed class WorldView : Control
             missing = DrawGround(context);
         DrawRegions(context);
         DrawRoads(context);
+        using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.None }))
+            DrawDecorations(context);
         var life = LifeView();
         _lifeArt.Ground(context, _life, life);
         using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.None }))
@@ -500,6 +502,42 @@ public sealed class WorldView : Control
         context.DrawGeometry(null, new Pen(WallMerlon, w * .7, new DashStyle([1.2, 1.2], 0), PenLineCap.Flat, PenLineJoin.Miter), g);
         context.DrawGeometry(null, new Pen(WallTop, .12, new DashStyle([7, 7], 0), PenLineCap.Flat, PenLineJoin.Miter), g);
     }
+
+    // ---------------- decorations (DEC-0045, UC-41): from .urbe/mundo.json, pixel art at 12 cells per tile
+
+    private readonly Dictionary<string, Avalonia.Media.Imaging.Bitmap> _decorArt = new(StringComparer.Ordinal);
+
+    /// <summary>The image of a decoration kind (cached per view: bitmaps belong to the view's thread).</summary>
+    public Avalonia.Media.Imaging.Bitmap? DecorationArt(string kind)
+    {
+        if (_decorArt.TryGetValue(kind, out var art)) return art;
+        if (WorldDecorations.Find(kind) is not { } k) return null;
+        var (px, w, h) = LegacyLifeSprites.Render(k.Sprite, 0, false);
+        return _decorArt[kind] = Pixels.ToBitmap(px, w, h);
+    }
+
+    /// <summary>The screen rectangle of a decoration of <paramref name="kind"/> with its corner at tile (x, y).</summary>
+    public Rect DecorationRect(WorldDecorations.Kind kind, int x, int y)
+    {
+        var p = Camera.WorldToScreen(x * T, y * T);
+        double size = T * Camera.Zoom;
+        return new Rect(Math.Round(p.X), Math.Round(p.Y), Math.Ceiling(kind.W * size), Math.Ceiling(kind.H * size));
+    }
+
+    private void DrawDecorations(DrawingContext context)
+    {
+        if (Prefs.Decorations.Count == 0) return;
+        var (x0, y0, x1, y1) = Camera.VisibleTiles();
+        foreach (var d in Prefs.Decorations.OrderBy(d => d.Y))
+        {
+            if (WorldDecorations.Find(d.Kind) is not { } k || d.X > x1 || d.X + k.W < x0 || d.Y > y1 || d.Y + k.H < y0) continue;
+            if (DecorationArt(d.Kind) is not { } art) continue;
+            context.DrawImage(art, new Rect(0, 0, art.Size.Width, art.Size.Height), DecorationRect(k, d.X, d.Y));
+        }
+    }
+
+    /// <summary>A tap on a decoration (DEC-0045, UC-41): the host offers what can be done with it.</summary>
+    public event Action<WorldDecoration>? DecorationTapped;
 
     /// <summary>The root neighbourhood shown at the top from this zoom on (DEC-0045, UC-41).</summary>
     public const double RootNameZoom = 1.6;
@@ -913,7 +951,8 @@ public sealed class WorldView : Control
         else if (_pointers.Count == 0 && _pressAt is { } start && !_dragged && City is not null)
         {
             var (tx, ty) = Camera.TileAt(start);
-            Select(City.BuildingAt(tx, ty) is { IsNote: true } house ? house : null);
+            if (City.BuildingAt(tx, ty) is null && Prefs.DecorationAt(tx, ty) is { } decoration) { Select(null); DecorationTapped?.Invoke(decoration); }
+            else Select(City.BuildingAt(tx, ty) is { IsNote: true } house ? house : null);
         }
         if (_pointers.Count < 2) _pinchDistance = 0;
         if (_pointers.Count == 0) _pressAt = null;

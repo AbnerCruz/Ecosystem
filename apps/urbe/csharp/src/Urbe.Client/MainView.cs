@@ -157,6 +157,7 @@ public sealed partial class MainView : Grid
         World.Notice += (_, text) => ShowLifeNotice(text);
         World.CameraChanged += (_, _) => _biome.Text = World.BiomeNameAtCentre();
         World.SelectionChanged += (_, house) => ShowHouse(house);
+        World.DecorationTapped += decoration => _ = ShowDecorationAsync(decoration);
     }
 
     public WorldView World { get; }
@@ -717,11 +718,12 @@ public sealed partial class MainView : Grid
         if (Dialogs.IsOpen) return Task.CompletedTask;
         return Dialogs.MenuAsync("Criar",
         [
-            new DialogItem("Nova nota", UrbeTheme.Icons.Plus, Run: () => CreateNoteAsync(null)),
-            new DialogItem("Nova pasta", UrbeTheme.Icons.Folder, Run: () => CreateFolderAsync()),
-            new DialogItem("Desenhar pasta no mapa", UrbeTheme.Icons.Region, Run: BeginDrawRegionAsync),
-            new DialogItem("Adicionar construção", UrbeTheme.Icons.House, Run: BeginPlacementAsync),
-            new DialogItem("Importar", UrbeTheme.Icons.Upload, Run: () => ImportAsync())
+            // DEC-0045 (UC-41): the 1.8.4 had two items for each thing (Nova nota / Adicionar construção, Nova pasta /
+            // Desenhar pasta); the city builds, draws, decorates and imports. Nova nota and Nova pasta stay in the Explorer.
+            new DialogItem("Construção", UrbeTheme.Icons.House, "Uma nota onde você tocar no mapa", Run: BeginPlacementAsync),
+            new DialogItem("Região", UrbeTheme.Icons.Region, "Uma pasta desenhada no mapa", Run: BeginDrawRegionAsync),
+            new DialogItem("Decoração", UrbeTheme.Icons.Flower, "Poço, roça, lenha, banco, fonte, canteiro", Run: BeginDecorationAsync),
+            new DialogItem("Importar", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync())
         ]);
     }
 

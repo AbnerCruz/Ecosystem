@@ -35,3 +35,39 @@ public sealed class WorldPrefsTests
         Assert.True(newer);
     }
 }
+
+public sealed class WorldDecorationsTests
+{
+    [Fact]
+    public void EverySpriteFillsWholeTiles()
+    {
+        foreach (var k in WorldDecorations.Kinds)
+            foreach (var frame in k.Sprite.Frames)
+            {
+                Assert.Equal(k.H * WorldDecorations.CellsPerTile, frame.Length);
+                Assert.All(frame, row => Assert.Equal(k.W * WorldDecorations.CellsPerTile, row.Length));
+                Assert.All(frame.SelectMany(r => r).Where(c => c != '.'), c => Assert.True(k.Sprite.Palette.ContainsKey(c), k.Id + ": " + c));
+            }
+    }
+
+    [Fact]
+    public void DecorationsRoundTripAndAreFoundByAnyOfTheirTiles()
+    {
+        var p = WorldPrefs.Default with { Decorations = [new("d1", "poco", 4, 7), new("d2", "roca", 10, 2)] };
+        Assert.Contains("\"decoracoes\"", p.Text());
+        var back = WorldPrefs.Parse(p.Text(), out _);
+        Assert.Equal(p, back);
+        Assert.Equal("d2", back.DecorationAt(11, 2)!.Id);   // the field is two tiles wide
+        Assert.Null(back.DecorationAt(12, 2));
+        Assert.Equal("d3", back.NextDecorationId());
+        Assert.NotEqual(p, WorldPrefs.Default);
+    }
+
+    [Fact]
+    public void UnknownKindsAndRepeatedIdsAreLeftOut()
+    {
+        var p = WorldPrefs.Parse("{\"versao\":1,\"decoracoes\":[{\"id\":\"a\",\"tipo\":\"disco-voador\",\"x\":1,\"y\":1},{\"id\":\"b\",\"tipo\":\"banco\",\"x\":2,\"y\":2},{\"id\":\"b\",\"tipo\":\"poco\",\"x\":3,\"y\":3}]}", out _);
+        var only = Assert.Single(p.Decorations);
+        Assert.Equal(new WorldDecoration("b", "banco", 2, 2), only);
+    }
+}

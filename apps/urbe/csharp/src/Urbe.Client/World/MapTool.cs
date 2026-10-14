@@ -75,3 +75,29 @@ public sealed class PlacementTool(Func<int, int, bool> valid, Action<(int X, int
         context.DrawRectangle(null, new Pen(UrbeTheme.Brush(ok ? "#7ef29a" : "#ef766f"), 3), new Rect(p.X, p.Y, 3 * size, 3 * size));
     }
 }
+
+/// <summary>
+/// Placing a decoration (DEC-0045, UC-41): its sprite follows the finger, half transparent, framed in green where it fits
+/// and in red where it does not (water, a building, a street or another decoration).
+/// </summary>
+public sealed class DecorationTool(WorldDecorations.Kind kind, Func<int, int, bool> valid, Action<(int X, int Y)?> changed) : MapTool
+{
+    public WorldDecorations.Kind Kind { get; } = kind;
+    public (int X, int Y)? Candidate { get; private set; }
+
+    private void Set(int tx, int ty) { Candidate = (tx, ty); changed(Candidate); }
+    public override void Down(int tx, int ty) => Set(tx, ty);
+    public override void Move(int tx, int ty) => Set(tx, ty);
+    public override void Up(int tx, int ty) => Set(tx, ty);
+
+    public override void Render(DrawingContext context, WorldView view)
+    {
+        if (Candidate is not { } c) return;
+        var rect = view.DecorationRect(Kind, c.X, c.Y);
+        if (view.DecorationArt(Kind.Id) is { } art)
+            using (context.PushOpacity(.7))
+            using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = Avalonia.Media.Imaging.BitmapInterpolationMode.None }))
+                context.DrawImage(art, new Rect(0, 0, art.Size.Width, art.Size.Height), rect);
+        context.DrawRectangle(null, new Pen(UrbeTheme.Brush(valid(c.X, c.Y) ? "#7ef29a" : "#ef766f"), 3), rect);
+    }
+}
