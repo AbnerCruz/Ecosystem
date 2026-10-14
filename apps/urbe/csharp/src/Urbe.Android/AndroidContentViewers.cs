@@ -1,0 +1,176 @@
+using Android.Content;
+using Android.Graphics;
+using Android.Graphics.Pdf;
+using Android.OS;
+using Android.Views;
+using Android.Webkit;
+using Android.Widget;
+using Avalonia.Android;
+using Avalonia.Controls;
+using Avalonia.Platform;
+using Urbe.Client;
+using Urbe.Core;
+using AndroidUri = Android.Net.Uri;
+using AView = Android.Views.View;
+
+namespace Urbe.AndroidHost;
+
+/// <summary>
+/// The content viewers of the Android head (owner, ADD-0023/DEC-0046): what the Urbe shows inside its own panels.
+/// HTML in the system's WebView, isolated (no file or content access, no bridge to the app, no leaving the page);
+/// audio and video in the system's player straight from the vault; PDF pages drawn by the system's PdfRenderer
+/// (<see cref="AndroidPdfDocument"/>, shown by <see cref="PdfPagesView"/>). The app's interface stays native
+/// (ADR-0032): these are content inside a native panel.
+/// </summary>
+internal static class AndroidContentViewers
+{
+    public static void Register()
+    {
+        ContentViewers.Factory = CreateAsync;
+        ContentViewers.PdfReader = OpenPdfAsync;
+    }
+
+    private static async Task<Control?> CreateAsync(ContentRequest request, CancellationToken cancellationToken)
+    {
+        switch (request.Kind)
+        {
+            case VaultFileKinds.Html when request.Bytes is { } bytes && FilePreviewPanel.Text(bytes) is { } html:
+                return new AndroidViewHost(context => Page(context, html), view => (view as WebView)?.Destroy());
+            case VaultFileKinds.Audio or VaultFileKinds.Video when request.Storage is AndroidVaultStorage vault
+                                                                 && await vault.DocumentOfAsync(request.Path, cancellationToken) is { } uri:
+                return new AndroidViewHost(context => Player(context, uri), view => (view.FindViewWithTag("player") as VideoView)?.StopPlayback());
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>A page of HTML from the vault: JavaScript on (the HTML products need it), nothing else reachable.</summary>
+    private static AView Page(Context context, string html)
+    {
+        var web = new WebView(context);
+        web.SetBackgroundColor(Color.White);
+        var settings = web.Settings;
+        settings.JavaScriptEnabled = true;
+        settings.DomStorageEnabled = true;
+        settings.AllowFileAccess = false;
+        settings.AllowContentAccess = false;
+        settings.SetSupportZoom(true);
+        settings.BuiltInZoomControls = true;
+        settings.DisplayZoomControls = false;
+        web.SetWebViewClient(new StayOnPage());
+        web.LoadDataWithBaseURL(null, html, "text/html", "utf-8", null);
+        return web;
+    }
+
+    /// <summary>A link or form of the page does not take the panel away from the file.</summary>
+    private sealed class StayOnPage : WebViewClient
+    {
+        public override bool ShouldOverrideUrlLoading(WebView? view, IWebResourceRequest? request) => true;
+    }
+
+    /// <summary>Audio or video of the vault in the system's player, with its controls.</summary>
+    private static AView Player(Context context, AndroidUri uri)
+    {
+        var frame = new FrameLayout(context);
+        frame.SetBackgroundColor(Color.Black);
+        var video = new VideoView(context) { Tag = "player" };
+        frame.AddView(video, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent, GravityFlags.Center));
+        var controls = new MediaController(context);
+        controls.SetAnchorView(frame);
+        video.SetMediaController(controls);
+        video.Prepared += (_, _) => controls.Show(0);
+        video.SetVideoURI(uri);
+        return frame;
+    }
+
+    private static async Task<IPdfDocument?> OpenPdfAsync(ContentRequest request, CancellationToken cancellationToken)
+    {
+        if (request.Storage is not AndroidVaultStorage vault) return null;
+        ParcelFileDescriptor? fd = null;
+        try
+        {
+            if (await vault.DocumentOfAsync(request.Path, cancellationToken) is { } uri)
+                fd = Android.App.Application.Context.ContentResolver?.OpenFileDescriptor(uri, "r");
+        }
+        catch (Java.Lang.Exception) { fd = null; }
+        // a provider whose files cannot be seeked: the bytes already read, from the app's own cache
+        if (fd is null && request.Bytes is { } bytes)
+        {
+            var cache = System.IO.Path.Combine(Android.App.Application.Context.CacheDir?.AbsolutePath ?? System.IO.Path.GetTempPath(), "preview.pdf");
+            await File.WriteAllBytesAsync(cache, bytes, cancellationToken);
+            fd = ParcelFileDescriptor.Open(new Java.IO.File(cache), ParcelFileMode.ReadOnly);
+        }
+        if (fd is null) return null;
+        try { return new AndroidPdfDocument(fd); }
+        catch (Java.Lang.Exception) { fd.Close(); return null; }
+    }
+}
+
+/// <summary>A PDF read by Android's PdfRenderer; one page is open at a time, as the renderer requires.</summary>
+internal sealed class AndroidPdfDocument : IPdfDocument
+{
+    private readonly ParcelFileDescriptor _fd;
+    private readonly PdfRenderer _renderer;
+    private readonly Avalonia.Size[] _sizes;
+
+    public AndroidPdfDocument(ParcelFileDescriptor fd)
+    {
+        _fd = fd;
+        _renderer = new PdfRenderer(fd);
+        _sizes = new Avalonia.Size[_renderer.PageCount];
+        for (int i = 0; i < _sizes.Length; i++)
+        {
+            using var page = _renderer.OpenPage(i);
+            _sizes[i] = new Avalonia.Size(page.Width, page.Height);
+            page.Close();
+        }
+    }
+
+    public int PageCount => _sizes.Length;
+
+    public Avalonia.Size PageSize(int index) => _sizes[index];
+
+    public (byte[] Rgba, int Width, int Height) Render(int index, int width)
+    {
+        var size = _sizes[index];
+        int height = Math.Max(1, (int)Math.Round(width * size.Height / Math.Max(1, size.Width)));
+        using var page = _renderer.OpenPage(index);
+        using var bitmap = Bitmap.CreateBitmap(width, height, Bitmap.Config.Argb8888!)!;
+        bitmap.EraseColor(Color.White.ToArgb());
+        page.Render(bitmap, null, null, PdfRenderMode.ForDisplay);
+        page.Close();
+        // ARGB_8888 is RGBA in memory; on white the alpha is full, so premultiplied and straight are the same
+        var buffer = Java.Nio.ByteBuffer.Allocate(width * height * 4);
+        bitmap.CopyPixelsToBuffer(buffer);
+        buffer.Rewind();
+        var rgba = new byte[width * height * 4];
+        buffer.Get(rgba);
+        return (rgba, width, height);
+    }
+
+    public void Dispose()
+    {
+        _renderer.Close();
+        _fd.Close();
+    }
+}
+
+/// <summary>An Android view inside an Avalonia panel (NativeControlHost), released when the panel lets it go.</summary>
+internal sealed class AndroidViewHost(Func<Context, AView> make, Action<AView>? release = null) : NativeControlHost
+{
+    private AView? _view;
+
+    protected override IPlatformHandle CreateNativeControlCore(IPlatformHandle parent)
+    {
+        var context = (Context?)MainActivity.Current ?? Android.App.Application.Context;
+        _view = make(context);
+        return new AndroidViewControlHandle(_view);
+    }
+
+    protected override void DestroyNativeControlCore(IPlatformHandle control)
+    {
+        if (_view is { } view) release?.Invoke(view);
+        _view = null;
+        base.DestroyNativeControlCore(control);
+    }
+}

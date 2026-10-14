@@ -13,9 +13,9 @@ namespace Urbe.Client;
 /// <summary>
 /// app.js openFilePreview / renderFilePreview natively: the file of a file building (or of the Explorer) with its
 /// title, "Imagem · 120 KB · pasta/arquivo.png", a chooser when the building holds several files, and the body by
-/// kind. Images are drawn here; text, code and HTML show their source (the native app has no browser, ADR-0032);
-/// a .zip lists its entries; PDF, audio and video — which the 1.8.4 showed in the WebView — open in another app of
-/// the device ("Abrir"). Read only: nothing is written to the vault.
+/// kind, always inside the Urbe (owner, ADD-0023): images drawn here, HTML as a page (or its source), PDF pages, audio
+/// and video in the platform's content viewers (<see cref="ContentViewers"/>); text and code as text; a .zip lists
+/// its entries. "Abrir" in another app stays as an extra. Read only: nothing is written to the vault.
 /// </summary>
 public sealed class FilePreviewPanel : Grid
 {
@@ -31,6 +31,8 @@ public sealed class FilePreviewPanel : Grid
     private readonly ContentControl _body = new() { Margin = new Thickness(0, 14, 0, 0) };
     private readonly Button _open = Action("Abrir", primary: true);
     private readonly Button _show = Action("Mostrar na cidade", primary: false);
+    private readonly StackPanel _htmlMode = new() { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(0, 10, 0, 0), IsVisible = false };
+    private bool _htmlSource;
     private IReadOnlyList<(string Name, string? Path)> _files = [];
     private int _version;
     private bool _choosing;
@@ -70,7 +72,14 @@ public sealed class FilePreviewPanel : Grid
         actions.Children.Add(_show);
         actions.Children.Add(_open);
         var layout = new DockPanel();
-        var top = new StackPanel { Children = { head, _meta, _choose } };
+        // htmlRenderBtn / htmlSourceBtn: the page or its source
+        foreach (var (label, source) in new[] { ("Página", false), ("Fonte", true) })
+        {
+            var b = Chip(label);
+            b.Click += (_, _) => { if (_htmlSource == source) return; _htmlSource = source; _ = ShowAsync(Index); };
+            _htmlMode.Children.Add(b);
+        }
+        var top = new StackPanel { Children = { head, _meta, _choose, _htmlMode } };
         DockPanel.SetDock(top, Dock.Top);
         DockPanel.SetDock(actions, Dock.Bottom);
         layout.Children.Add(top);
@@ -100,7 +109,7 @@ public sealed class FilePreviewPanel : Grid
 
     public LegacyCityBuilding? Building { get; private set; }
 
-    /// <summary>What the body shows now: "image", "text", "zip" or "none" (tests).</summary>
+    /// <summary>What the body shows now: "image", "text", "zip", "viewer" (a content viewer) or "none" (tests).</summary>
     public string Shown { get; private set; } = "none";
 
     /// <summary>The text of the body when it is text or a listing (tests).</summary>
@@ -117,6 +126,7 @@ public sealed class FilePreviewPanel : Grid
     {
         _files = files;
         Building = building;
+        _htmlSource = false;
         _show.IsVisible = building is not null;
         _choosing = true;
         _choose.ItemsSource = files.Select(f => f.Name).ToList();
@@ -159,10 +169,15 @@ public sealed class FilePreviewPanel : Grid
         _title.Text = name;
         _meta.Text = VaultFileKinds.Label(kind) + (path is not null ? " · " + path : "");
         _open.IsVisible = false;
+        _htmlMode.IsVisible = kind == VaultFileKinds.Html;
+        for (int i = 0; i < _htmlMode.Children.Count; i++)
+            if (_htmlMode.Children[i] is Button chip) Mark(chip, (i == 1) == _htmlSource);
         Shown = "none";
         ShownText = null;
         _body.Content = Empty("Carregando do dispositivo…");
-        var read = path is not null && Storage is { } s ? await s.ReadFileAsync(path, MaxBytes) : null;
+        // audio and video are played from the vault by the platform: only their size is read here
+        bool media = kind is VaultFileKinds.Audio or VaultFileKinds.Video;
+        var read = path is not null && Storage is { } s ? await s.ReadFileAsync(path, media ? 0 : MaxBytes) : null;
         if (version != _version) return;
         if (read is null)
         {
@@ -190,6 +205,21 @@ public sealed class FilePreviewPanel : Grid
             catch (InvalidDataException) { _body.Content = Empty("Arquivo compactado", name); }
             return;
         }
+        // HTML as a page, PDF, audio and video: the content viewer of the platform, inside the panel (ADD-0023)
+        if (kind is VaultFileKinds.Pdf or VaultFileKinds.Audio or VaultFileKinds.Video || (kind == VaultFileKinds.Html && !_htmlSource))
+        {
+            Control? viewer = null;
+            try { viewer = await ContentViewers.CreateAsync(new ContentRequest(Storage, path!, name, kind, bytes)); }
+            catch (Exception ex) when (ex is IOException or InvalidOperationException or NotSupportedException or UnauthorizedAccessException) { viewer = null; }
+            if (version != _version) { (viewer as IDisposable)?.Dispose(); return; }
+            if (viewer is not null)
+            {
+                viewer.Height = ViewerHeight();
+                _body.Content = viewer;
+                Shown = "viewer";
+                return;
+            }
+        }
         bool textual = kind is VaultFileKinds.Html or VaultFileKinds.Other || name.EndsWith(".svg", StringComparison.OrdinalIgnoreCase);
         if (textual && bytes is not null && read.Size < MaxTextBytes && Text(bytes) is { } source)
         {
@@ -197,8 +227,24 @@ public sealed class FilePreviewPanel : Grid
             return;
         }
         _body.Content = Empty(name, kind is VaultFileKinds.Pdf or VaultFileKinds.Audio or VaultFileKinds.Video
-            ? "Sem visualização no app para este formato. Toque em Abrir para ver em outro app do aparelho."
+            ? "Este aparelho ainda não tem o visualizador deste formato dentro do Urbe."
             : "Sem visualização nativa para este formato.");
+    }
+
+    /// <summary>The height of a content viewer: a native view needs one, and it fills what the card leaves.</summary>
+    private double ViewerHeight() => Bounds.Width >= 720 ? Math.Max(260, Bounds.Height - 280) : Math.Max(260, Bounds.Height * .9 - 250);
+
+    private static Button Chip(string text) => new()
+    {
+        Content = text, Height = 34, Padding = new Thickness(14, 0), CornerRadius = new CornerRadius(17), FontSize = 13, FontWeight = FontWeight.SemiBold,
+        VerticalContentAlignment = VerticalAlignment.Center, BorderThickness = new Thickness(1)
+    };
+
+    private static void Mark(Button chip, bool on)
+    {
+        chip.Background = UrbeTheme.Brush(on ? UrbeTheme.Accent : UrbeTheme.Surface2);
+        chip.Foreground = UrbeTheme.Brush(on ? UrbeTheme.AccentInk : UrbeTheme.Text2);
+        chip.BorderBrush = UrbeTheme.Brush(on ? UrbeTheme.Accent : UrbeTheme.Line2);
     }
 
     private void ShowText(string text, string shown)

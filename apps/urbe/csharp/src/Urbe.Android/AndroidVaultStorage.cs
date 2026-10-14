@@ -202,6 +202,23 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    /// <summary>
+    /// The document of one file of the vault, for the content viewers inside the Urbe (ADD-0023): the player and the
+    /// PDF reader open it directly, read only, through the permission the vault already has. Null when not there.
+    /// </summary>
+    internal async Task<AndroidUri?> DocumentOfAsync(string path, CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            if (_tree is not { } tree) return null;
+            try { return await Task.Run(() => FindDocument(tree, path), cancellationToken); }
+            catch (InvalidDataException) { return null; }
+        }
+        catch (Exception ex) when (ex is IOException or Java.Lang.Exception) { return null; }
+        finally { _gate.Release(); }
+    }
+
     public async Task<bool> OpenExternallyAsync(string path, CancellationToken cancellationToken = default)
     {
         await _gate.WaitAsync(cancellationToken);
