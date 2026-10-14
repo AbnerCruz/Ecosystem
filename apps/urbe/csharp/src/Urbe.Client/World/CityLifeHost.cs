@@ -50,7 +50,9 @@ internal sealed class CityLifeHost(WorldView view) : ILegacyLifeHost, ILegacyTow
     }
 
     /// <summary>v25Povo.</summary>
-    public IReadOnlyList<ILegacyLifePerson> People => view.Villagers.People;
+    public IReadOnlyList<ILegacyLifePerson> People => view.Trades.People.Count == 0
+        ? view.Villagers.People
+        : [.. view.Villagers.People, .. view.Trades.People];   // the trades' workers get umbrellas and lanterns too (UC-42)
 
     public IReadOnlyList<(string From, string To)> Links => City?.Links ?? (IReadOnlyList<(string, string)>)[];
 

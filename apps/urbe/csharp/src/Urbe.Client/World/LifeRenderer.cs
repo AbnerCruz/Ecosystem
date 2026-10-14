@@ -268,6 +268,50 @@ public sealed class LifeRenderer
         return b;
     }
 
+    /// <summary>
+    /// The trades at work (DEC-0045, UC-42), in the 1.8.4's pixel scale: water drops over the well's bucket, clods of
+    /// earth at the field, chips flying at the woodpile; the rhythm comes from the worker's step.
+    /// </summary>
+    public void TradeWork(DrawingContext c, TownTrades trades, LegacyLifeView v)
+    {
+        double z = v.Zoom;
+        if (z < .55) return;
+        double sp = TILE * z / 20;
+        foreach (var w in trades.Workers)
+        {
+            if (w.Phase != TownTrades.Phase.Working) continue;
+            var a = w.Person;
+            var q = v.P(a.PosX, a.PosY);
+            double t = a.Step, beat = t % 1;
+            double top = q.Y - LegacyVillagerSprite.Height * sp + sp * 2;
+            switch (w.Work)
+            {
+                case "agua":
+                    for (int i = 0; i < 3; i++)
+                    {
+                        double k = (beat + i / 3.0) % 1;
+                        c.FillRectangle(Rgba(120, 190, 240, 1 - k), new Rect(Math.Round(q.X - sp * 3 + i * sp * 3), Math.Round(top - sp * 2 + k * sp * 8), Math.Ceiling(sp), Math.Ceiling(sp * 2)));
+                    }
+                    break;
+                case "roca":
+                    for (int i = 0; i < 2; i++)
+                    {
+                        double k = (beat + i * .5) % 1, arc = Math.Sin(k * Math.PI);
+                        c.FillRectangle(Rgba(107, 74, 46, 1), new Rect(Math.Round(q.X + (i == 0 ? -1 : 1) * sp * (2 + k * 4)), Math.Round(q.Y - sp * (1 + arc * 5)), Math.Ceiling(sp * 1.5), Math.Ceiling(sp * 1.5)));
+                    }
+                    break;
+                case "lenha":
+                    if (beat < .6)
+                        for (int i = 0; i < 3; i++)
+                        {
+                            double k = beat / .6, dx = (i - 1) * sp * 4 * k, dy = -Math.Sin(k * Math.PI) * sp * (4 + i * 2);
+                            c.FillRectangle(Rgba(216, 176, 122, 1 - k * .7), new Rect(Math.Round(q.X + dx), Math.Round(top + sp * 6 + dy), Math.Ceiling(sp * 1.2), Math.Ceiling(sp)));
+                        }
+                    break;
+            }
+        }
+    }
+
     public void Villagers(DrawingContext c, IReadOnlyList<LegacyVillager> people, LegacyLifeView v, double nowMs)
     {
         double z = v.Zoom;
