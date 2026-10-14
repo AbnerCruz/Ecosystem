@@ -157,6 +157,54 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public async Task<VaultFileRead?> ReadFileAsync(string path, long maxBytes, CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            if (_root is not { } root || ExistingFile(root, path) is not { } full) return null;
+            return await Task.Run(() =>
+            {
+                var info = new FileInfo(full);
+                return new VaultFileRead(info.Length, info.Length <= maxBytes ? File.ReadAllBytes(full) : null);
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
+    public async Task<bool> OpenExternallyAsync(string path, CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            if (_root is not { } root || ExistingFile(root, path) is not { } full) return false;
+            try
+            {
+                using var _ = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(full) { UseShellExecute = true });
+                return true;
+            }
+            catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or PlatformNotSupportedException) { return false; }
+        }
+        finally { _gate.Release(); }
+    }
+
+    /// <summary>The full path of an existing file of the vault, reached through real folders only (no link on any step).</summary>
+    private static string? ExistingFile(string root, string path)
+    {
+        string[] segments;
+        try { segments = Segments(path).ToArray(); }
+        catch (InvalidDataException) { return null; }
+        var rootFull = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar);
+        var current = rootFull;
+        for (int i = 0; i < segments.Length; i++)
+        {
+            current = Path.Combine(current, segments[i]);
+            FileSystemInfo entry = i < segments.Length - 1 ? new DirectoryInfo(current) : new FileInfo(current);
+            if (!entry.Exists || entry.LinkTarget is not null) return null;
+        }
+        return current.StartsWith(rootFull + Path.DirectorySeparatorChar, StringComparison.Ordinal) ? current : null;
+    }
+
     public async Task<bool> RemoveEmptyDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureWritableFolderPath(path);

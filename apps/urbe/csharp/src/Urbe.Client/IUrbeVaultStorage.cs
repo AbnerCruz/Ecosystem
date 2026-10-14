@@ -45,6 +45,20 @@ public interface IUrbeVaultStorage
     Task<IReadOnlyList<string>> ListFilePathsAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<string>>([]);
 
+    /// <summary>
+    /// One file of the vault for its preview (openFilePreview → blobDoArquivo): its size and, when it is at most
+    /// <paramref name="maxBytes"/>, its bytes. Null when the file is not there (the 1.8.4's "Arquivo não encontrado").
+    /// Read only; never follows a link out of the folder. A host that cannot read files returns null.
+    /// </summary>
+    Task<VaultFileRead?> ReadFileAsync(string path, long maxBytes, CancellationToken cancellationToken = default) =>
+        Task.FromResult<VaultFileRead?>(null);
+
+    /// <summary>
+    /// Opens one file of the vault in another app of the device (the 1.8.4's "Abrir" of a PDF; audio and video too,
+    /// which the native app does not play). Nothing is written. False when the host cannot or the file is not there.
+    /// </summary>
+    Task<bool> OpenExternallyAsync(string path, CancellationToken cancellationToken = default) => Task.FromResult(false);
+
     /// <summary>Removes ONE user folder when it is empty (the 1.8.4 sync's FS.apagarPasta after a folder is deleted in
     /// Notas: removeEntry of a folder that still holds anything fails and is ignored). A folder holding any entry, a
     /// link, a file with that name or a missing folder is left as it is and false returned; nothing else is touched.</summary>
@@ -312,3 +326,6 @@ public interface IUrbeVaultStorage
         ".md", ".markdown", ".txt", ".html", ".htm", ".js", ".mjs", ".css", ".json", ".yaml", ".yml", ".csv"
     };
 }
+
+/// <summary>A file read for its preview: its size, and its bytes when they were within the limit asked.</summary>
+public sealed record VaultFileRead(long Size, byte[]? Bytes);

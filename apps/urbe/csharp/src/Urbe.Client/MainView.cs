@@ -127,6 +127,13 @@ public sealed partial class MainView : Grid
         _stage.Children.Add(CityMap);
         _stage.Children.Add(Explorer);
         _stage.Children.Add(Editor);
+        FilePreview.Storage = _vault;
+        FilePreview.ShowInCity += building =>
+        {
+            if (!Explorer.Wide) Explorer.IsVisible = false;
+            World.CenterOn(building);
+        };
+        _stage.Children.Add(FilePreview);
         Customize = new CustomizePanel(Customization, Dialogs);
         Customize.OpenFileRequested += path => Editor.Open(new CityNote(path, _contents.GetValueOrDefault(path, "")));
         Customization.Applied += ApplyCustomization;
@@ -156,7 +163,17 @@ public sealed partial class MainView : Grid
         World.CityVisible = () => !Editor.IsVisible && (!Explorer.IsVisible || Explorer.Wide);
         World.Notice += (_, text) => ShowLifeNotice(text);
         World.CameraChanged += (_, _) => _biome.Text = World.BiomeNameAtCentre();
-        World.SelectionChanged += (_, house) => ShowHouse(house);
+        // app.js v21CanvasUp: a note opens its summary, a file building its preview (openFilePreview)
+        World.SelectionChanged += (_, house) =>
+        {
+            if (house is { IsNote: false } file)
+            {
+                ShowHouse(null);
+                _ = FilePreview.OpenAsync(file);
+                return;
+            }
+            ShowHouse(house);
+        };
         World.DecorationTapped += decoration => _ = ShowDecorationAsync(decoration);
     }
 
@@ -238,6 +255,9 @@ public sealed partial class MainView : Grid
 
     public NotesExplorer Explorer { get; }
     public EditorOverlay Editor { get; }
+
+    /// <summary>The preview of a file that is not a note (openFilePreview).</summary>
+    public FilePreviewPanel FilePreview { get; } = new();
 
     /// <summary>Open the native hierarchical vault Explorer (1.8.4 Notas), not a web panel.</summary>
     public void ShowNotes()
@@ -932,29 +952,14 @@ public sealed partial class MainView : Grid
     }
 
     /// <summary>
-    /// A file of the Explorer that is not a note (DEC-0045, UC-38): when it has a building in the city, "Mostrar na
-    /// cidade" takes the camera there; the preview of images and PDFs is not in the native app yet, and it says so.
+    /// A file of the Explorer that is not a note (DEC-0045, UC-38): its preview (abrirEntradaTree → openFilePreview),
+    /// with "Mostrar na cidade" when the city has its building.
     /// </summary>
-    private async Task ShowFileAsync(string path)
+    private Task ShowFileAsync(string path)
     {
-        if (Dialogs.IsOpen) return;
-        var name = path[(path.LastIndexOf('/') + 1)..];
-        var folder = path.Contains('/') ? path[..path.LastIndexOf('/')] : "";
-        var ext = System.IO.Path.GetExtension(name).TrimStart('.').ToUpperInvariant();
-        var building = World.City?.Buildings.Find(b => !b.IsNote && b.Path == path);
-        var about = (ext.Length > 0 ? "Arquivo " + ext : "Arquivo") + (folder.Length > 0 ? " em “" + folder + "”." : " na raiz.")
-            + " A prévia deste tipo de arquivo ainda não está no app.";
-        if (building is null) { await Dialogs.AlertAsync(name, about); return; }
-        await Dialogs.MenuAsync(name,
-        [
-            new DialogItem("Mostrar na cidade", UrbeTheme.Icons.City, "A construção deste arquivo.", Run: () =>
-            {
-                if (!Explorer.Wide) Explorer.IsVisible = false;
-                World.CenterOn(building);
-                World.Select(building);
-                return Task.CompletedTask;
-            })
-        ], about);
+        if (Dialogs.IsOpen) return Task.CompletedTask;
+        var building = World.City?.Buildings.Find(b => !b.IsNote && (b.Path == path || b.PreviewFiles.Any(f => f.Path == path)));
+        return FilePreview.OpenAsync(path, building);
     }
 
     /// <summary>
