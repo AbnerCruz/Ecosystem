@@ -285,10 +285,10 @@ public sealed class WorldView : Control
         InvalidateVisual();
     }
 
-    /// <summary>rebuildRoadNetwork just ran: v25 drops the villagers and their routes (v25Rotas.clear(), v25Povo=[]).</summary>
+    /// <summary>rebuildRoadNetwork just ran: the cached routes go; villagers whose way still exists keep walking (DEC-0045).</summary>
     public void RoadsChanged()
     {
-        _villagers.Reset();
+        _villagers.RoadsChanged(_lifeHost);
         InvalidateVisual();
     }
 
@@ -335,6 +335,15 @@ public sealed class WorldView : Control
     {
         Camera.X = (house.X + house.W / 2.0) * T;
         Camera.Y = (house.Y + house.H / 2.0) * T;
+        InvalidateVisual();
+        CameraChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>The camera on the middle of a neighbourhood (the Explorer's "Mostrar na cidade" of a folder, DEC-0045).</summary>
+    public void CenterOnRegion(LegacyCityRegion region)
+    {
+        Camera.X = (region.X + region.W / 2.0) * T;
+        Camera.Y = (region.Y + region.H / 2.0) * T;
         InvalidateVisual();
         CameraChanged?.Invoke(this, EventArgs.Empty);
     }

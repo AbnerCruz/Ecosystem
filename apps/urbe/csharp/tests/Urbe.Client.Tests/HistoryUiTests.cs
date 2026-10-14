@@ -43,7 +43,9 @@ public sealed partial class HeadlessUiTests
             view.Editor.Editor.Text = "# Casa\n\nSegundo texto.\n";
             Dispatcher.UIThread.RunJobs();
             var history = Path.Combine(vault, ".urbe", "history.v2.json");
-            for (int i = 0; i < 300 && !File.Exists(history); i++) { await Task.Delay(20); Dispatcher.UIThread.RunJobs(); }
+            // the history and the note are two writes of the autosave; under load either may land first, so wait for both
+            var note = Path.Combine(vault, "Casa.md");
+            for (int i = 0; i < 300 && !(File.Exists(history) && File.ReadAllText(note) == "# Casa\n\nSegundo texto.\n"); i++) { await Task.Delay(20); Dispatcher.UIThread.RunJobs(); }
             Assert.Equal("# Casa\n\nSegundo texto.\n", File.ReadAllText(Path.Combine(vault, "Casa.md")));
             var saved = File.ReadAllText(history);
             Assert.StartsWith("{\"version\":2,\"documents\":{\"", saved);

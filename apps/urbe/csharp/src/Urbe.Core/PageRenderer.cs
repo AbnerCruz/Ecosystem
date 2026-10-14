@@ -10,6 +10,9 @@ namespace Urbe.Core;
 /// </summary>
 public static class PageRenderer
 {
+    // %%comments%% are the writer's, never part of a page or a book (DEC-0045, UC-43)
+    private static string RenderNote(string? markdown) => MarkdownEngine.Render(NoteMarks.StripComments(markdown));
+
     private const string ExportRuntime = """
 (function(){var d=document,r=d.documentElement;try{var s=localStorage.getItem("urbe-page-theme");if(s)r.dataset.theme=s}catch(e){}var t=d.querySelector(".fab-theme");if(t)t.onclick=function(){var dark=r.dataset.theme?r.dataset.theme==="dark":r.classList.contains("dark-default")?true:r.classList.contains("light-default")?false:matchMedia("(prefers-color-scheme: dark)").matches;r.dataset.theme=dark?"light":"dark";try{localStorage.setItem("urbe-page-theme",r.dataset.theme)}catch(e){}};var top=d.querySelector(".fab-top"),bar=d.querySelector(".progress");function sc(){var y=scrollY,h=r.scrollHeight-innerHeight;if(top)top.classList.toggle("on",y>600);if(bar)bar.style.width=(h>0?y/h*100:0)+"%"}addEventListener("scroll",sc,{passive:true});sc();if(top)top.onclick=function(){scrollTo({top:0,behavior:"smooth"})};d.querySelectorAll("pre.code .copy").forEach(function(b){b.onclick=function(){var c=b.parentNode.querySelector("code").textContent;(navigator.clipboard?navigator.clipboard.writeText(c):Promise.reject()).then(function(){b.textContent="Copiado!";setTimeout(function(){b.textContent="Copiar"},1400)},function(){})}});d.querySelectorAll(".countdown").forEach(function(el){var until=new Date(el.dataset.until).getTime(),cells=el.querySelectorAll(".cd strong");function tick(){var s=Math.max(0,Math.floor((until-Date.now())/1000));if(isNaN(until))return;if(!s){var box=el.querySelector(".cd");if(box)box.textContent=el.dataset.done;return}[Math.floor(s/86400),Math.floor(s/3600)%24,Math.floor(s/60)%60,s%60].forEach(function(v,i){if(cells[i])cells[i].textContent=String(v).padStart(2,"0")});setTimeout(tick,1000)}tick()})})();
 """;
@@ -79,7 +82,7 @@ public static class PageRenderer
             : PageDocument.StringValue(layout["footer"]) ?? string.Empty;
         var footer = footerMarkdown.Length > 0
             ? "<footer class='foot'><div class='wrap'>" +
-              MarkdownEngine.Render(footerMarkdown) + "</div></footer>"
+              RenderNote(footerMarkdown) + "</div></footer>"
             : string.Empty;
         var progress = !plan.BookFormat &&
                        PageDocument.BoolValue(layout["progress"])
@@ -290,7 +293,7 @@ public static class PageRenderer
                    : string.Empty) +
                "<h1>" + MarkdownEngine.InlineMarkdown(title) + "</h1>" +
                (subtitle.Length > 0
-                   ? "<div class='lead'>" + MarkdownEngine.Render(subtitle) + "</div>"
+                   ? "<div class='lead'>" + RenderNote(subtitle) + "</div>"
                    : string.Empty) +
                "</section>";
     }
@@ -304,7 +307,7 @@ public static class PageRenderer
                (title.Length > 0
                    ? "<h2>" + MarkdownEngine.InlineMarkdown(title) + "</h2>"
                    : string.Empty) +
-               "<div class='prose'>" + MarkdownEngine.Render(markdown) + "</div>" +
+               "<div class='prose'>" + RenderNote(markdown) + "</div>" +
                "</section>";
     }
 
@@ -339,7 +342,7 @@ public static class PageRenderer
                    ? "<h1 class='note-title'>" + MarkdownEngine.EscapeHtml(document.Title) + "</h1>"
                    : string.Empty) +
                meta +
-               MarkdownEngine.Render(StripLeadingTitle(document.Content, document.Title, showTitle)) +
+               RenderNote(StripLeadingTitle(document.Content, document.Title, showTitle)) +
                "</article>";
     }
 
@@ -376,7 +379,7 @@ public static class PageRenderer
                 output.Append("<article class='prose note-article'><h2 class='note-title'>")
                     .Append(MarkdownEngine.EscapeHtml(document.Title))
                     .Append("</h2>")
-                    .Append(MarkdownEngine.Render(
+                    .Append(RenderNote(
                         StripLeadingTitle(document.Content, document.Title, true)))
                     .Append("</article>");
             }
@@ -450,7 +453,7 @@ public static class PageRenderer
                (title.Length > 0
                    ? "<h1>" + MarkdownEngine.InlineMarkdown(title) + "</h1>"
                    : string.Empty) +
-               MarkdownEngine.Render(markdown) +
+               RenderNote(markdown) +
                "</section>";
     }
 
@@ -478,7 +481,7 @@ public static class PageRenderer
                 "<section class='chapter'><h1>" +
                 MarkdownEngine.EscapeHtml(document.Title) +
                 "</h1>" +
-                MarkdownEngine.Render(
+                RenderNote(
                     StripLeadingTitle(document.Content, document.Title, true)) +
                 "</section>"));
     }

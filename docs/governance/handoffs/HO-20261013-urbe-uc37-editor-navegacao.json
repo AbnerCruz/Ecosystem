@@ -1,0 +1,104 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261013-urbe-uc37-editor-navegacao",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-13T12:50:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-37",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "3db1101a",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/548",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyEditorTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyVisualEdit.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/EditorActiveToolsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyVisualEditTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyEditorFindOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorNavigationUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261013-urbe-uc37-editor-navegacao.json"
+  ],
+  "work_completed": [
+    "Voltar refaz o caminho dos links e backlinks seguidos (pilha em EditorOverlay; abrir de fora recomeça o caminho) e só fecha para a origem quando o caminho acaba.",
+    "Tocar num [[link]] sem nota oferece criá-la no bairro da nota aberta: MainView.CreateNoteAsync(open: false) grava no vault, cria a casa e salva o mapa; o editor empilha a nota anterior.",
+    "Código em linha sem a palavra 'código' (cursor entre crases; seleção já em código volta a texto) e 'Bloco de código' vazio no menu '/', como item próprio fora da lista do oráculo da 1.8.4.",
+    "LegacyEditorTools.ActiveTools lê do Markdown sob o cursor quais botões estão ligados; Visual e Fonte acendem a barra por ela.",
+    "Abaixo de 720 px a barra de formatação vai para a última linha do editor, junto ao teclado (Android AdjustResize); no computador continua no topo.",
+    "Issue #549 (state:verifying) acompanha o UC-37 [~]."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "EditorActiveToolsTests, LegacyVisualEditTests, LegacyEditorFindOracleTests, LegacyEditorToolsOracleTests",
+      "result": "passed",
+      "evidence": "47/47; oráculos do editor da 1.8.4 inalterados."
+    },
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.Editor_BackWalksTheFollowedLinksAndAMissingLinkCreatesItsNote",
+      "result": "passed",
+      "evidence": "Caminho Casa→Outra→Voltar→Casa→Voltar fecha; 'Nova ideia.md' criada em Bairro/ no disco e na cidade; botões bold/h1 acendem e apagam; barra embaixo em 412 px e no topo em 1280 px (captura native-editor-toolbar-bottom.png)."
+    },
+    {
+      "kind": "human",
+      "check": "Toque, teclado virtual e barra junto ao teclado no Android",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (NN-017, DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs"
+    }
+  ],
+  "known_issues": [
+    "A barra no rodapé depende do AdjustResize do Android para ficar acima do teclado; confirmar no aparelho."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "UC-38: Explorer (nome, todos os arquivos com extensão e ícone, opções de pasta, arrastar).",
+    "UC-39: Fixar em painel.",
+    "UC-40: tutorial em painel."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md",
+    "apps/urbe/src/editor/workspace.js",
+    "apps/urbe/src/editor/visual-tools.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "Cada divergência cita DEC-0045/ADD-0022."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "UC-37 fica [~]; validação no aparelho pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Testes citados; Issue #549."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "editor-active-tools",
+      "status": "product-specific",
+      "rationale": "Barra do editor do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "UI do editor; a criação de nota reaproveita o caminho existente de gravação no vault, sem formato novo."
+  }
+}

@@ -69,13 +69,29 @@ public sealed partial class MainView : Grid
         Explorer.Closed += () => Explorer.IsVisible = false;
         Explorer.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty && !Explorer.IsVisible) Explorer.ZIndex = 0; };
         // a backlink opens its note; the panel then shows that note's context (document:updated → renderContext)
-        Editor.Context.BacklinkChosen += path => { OpenNoteByPath(path); ShowEditorContext(); };
+        Editor.Context.BacklinkChosen += async path =>
+        {
+            // a followed backlink joins the editor's trail, so Voltar comes back here (DEC-0045, UC-37)
+            await Editor.NavigateAsync(new CityNote(path, _contents.GetValueOrDefault(path, "")));
+            ShowEditorContext();
+        };
+        // [[link]] to a note that does not exist yet: created next to the open note, in its neighbourhood (DEC-0045, UC-37)
+        Editor.CreateLinked = name =>
+        {
+            var city = World.City;
+            var house = Editor.Current is { } open ? city?.Buildings.Find(b => b.IsNote && b.Path == open.Path) : null;
+            var region = house?.RegionId is { } id ? city?.Regions.Find(r => r.Id == id) : null;
+            return CreateNoteAsync(region, name, open: false);
+        };
         Explorer.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateNav(); };
         Explorer.SelectionAction += (action, paths) => _ = SelectionActionAsync(action, paths);
         Explorer.MoreRequested += () => _ = ShowNotesMenuAsync();
         Explorer.NewRequested += () => _ = ShowNotesCreateMenuAsync();
         Explorer.CreateFirstNoteRequested += () => _ = CreateNoteInNotesAsync();
         Explorer.RestoreRequested += id => _ = RestoreFromTrashAsync(id);
+        Explorer.FileRequested += path => _ = ShowFileAsync(path);
+        Explorer.FolderMenuRequested += folder => _ = ShowFolderMenuAsync(folder);
+        Explorer.MoveRequested += async (paths, folder) => { await MoveNotesToAsync(paths, folder); Explorer.ClearSelection(); };
         Explorer.PurgeRequested += id => _ = PurgeFromTrashAsync(id);
         Explorer.EmptyTrashRequested += () => _ = EmptyTrashAsync();
         Explorer.NoteRequested += note =>
@@ -306,6 +322,13 @@ public sealed partial class MainView : Grid
         LoadHistory(Text);
         Editor.SaveOnClose = !snapshot.IsReadOnly;
         var texts = snapshot.Documents.Where(d => d.Text is not null).ToArray();
+        // every other file of the vault, by name only, for the Explorer (DEC-0045, UC-38); hidden folders (.urbe) stay out
+        _attachments.Clear();
+        if (_vault is not null)
+        {
+            try { foreach (var path in await _vault.ListFilePathsAsync()) _attachments.Add(path); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { /* the Explorer shows the notes */ }
+        }
         var notes = texts.Select(d => new CityNote(d.Path, d.Text!)).ToArray();
         var ids = texts.ToDictionary(d => d.Path, d => d.Id, StringComparer.Ordinal);
         // 1.8.4 abrirCidade: the saved map (.urbe/mapa.json) is respected.
@@ -327,7 +350,6 @@ public sealed partial class MainView : Grid
         _store = store;
         StartMapSaves(snapshot, opened);
         // tutorial.js: workspace:loaded → setTimeout(semear, 300)
-        if (SeedsTutorial) _ = SeedTutorialLaterAsync(snapshot);
     }
 
     /// <summary>
@@ -652,6 +674,7 @@ public sealed partial class MainView : Grid
         World.LightingMode = Customization.Ambient;
         UrbeAppearance.Apply(this);   // Personalização: tema, texto, forma, editor e chão
         if (Customization.Config["editor"] is System.Text.Json.Nodes.JsonObject ed) Editor.ApplyOptions((string?)ed["largura"], (string?)ed["modoInicial"]);
+        if (Editor.IsVisible) Editor.RefreshVisual();   // tag colours (DEC-0045, UC-43)
         World.InvalidateVisual();
     }
 
@@ -701,17 +724,17 @@ public sealed partial class MainView : Grid
     /// written to the vault, the camera on the house and the editor open. Nothing is created in
     /// memory only: without a writable vault folder the note is not created.
     /// </summary>
-    public async Task CreateNoteAsync(LegacyCityRegion? region, string? typedName = null)
+    public async Task<CityNote?> CreateNoteAsync(LegacyCityRegion? region, string? typedName = null, bool open = true)
     {
-        if (World.City is not { } city) return;
+        if (World.City is not { } city) return null;
         if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly)
         {
             await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar notas. O Tutorial desta prévia é só leitura.");
-            return;
+            return null;
         }
         var typed = typedName ?? await Dialogs.PromptAsync(new PromptOptions("Nova nota", Label: "Nome", Placeholder: "Ex.: Ideias",
             Hint: "Sem extensão, vira .md. Também aceita .txt, .html, .css, .js, .json, .yaml e .csv.", Confirm: "Criar nota"));
-        if (typed is null) return;
+        if (typed is null) return null;
         // app.js has one camera: the loose lot is searched where the person is looking (centroBuscaRaiz)
         city.CameraX = World.Camera.X;
         city.CameraY = World.Camera.Y;
@@ -720,7 +743,7 @@ public sealed partial class MainView : Grid
         if (city.CreateNote(region, typed, now) is not { } made)
         {
             await Dialogs.AlertAsync("Nova nota", "Não encontrei lote livre.");
-            return;
+            return null;
         }
         try
         {
@@ -731,7 +754,7 @@ public sealed partial class MainView : Grid
             city.RemoveBuilding(made.House);
             World.InvalidateVisual();
             await Dialogs.AlertAsync("Não foi possível criar a nota", ex.Message);
-            return;
+            return null;
         }
         _contents[made.House.Path] = made.Content;
         // urbeReconcileWorld: the new house gets its document ({path, content, created, modified} =
@@ -746,7 +769,9 @@ public sealed partial class MainView : Grid
         RefreshNotes();
         World.CenterOn(made.House);
         World.Select(made.House);
-        Editor.Open(new CityNote(made.House.Path, made.Content));
+        var note = new CityNote(made.House.Path, made.Content);
+        if (open) Editor.Open(note);
+        return note;
     }
 
     /// <summary>
@@ -765,6 +790,9 @@ public sealed partial class MainView : Grid
             new DialogItem("Mostrar nas notas", UrbeTheme.Icons.Notes, Run: () => { ShowNotesOverEditor(); return Task.CompletedTask; }),
             new DialogItem("Versões anteriores", UrbeTheme.Icons.Restore, Run: ShowVersionsAsync),
             new DialogItem("Estrutura e backlinks", UrbeTheme.Icons.List, Run: () => { ShowEditorContext(); return Task.CompletedTask; }),
+            // DEC-0045, UC-39: the selection (or the whole note) stays at the top while writing
+            new DialogItem("Fixar em painel", UrbeTheme.Icons.Pin, "A seleção, ou a nota inteira, fica no topo enquanto você escreve.",
+                Run: () => { editor.PinSelectionOrNote(); return Task.CompletedTask; }),
             new DialogItem("Mover para a lixeira", UrbeTheme.Icons.Trash, Danger: true, Run: () => DeleteNoteAsync(note.Path))
         ]);
     }
@@ -882,8 +910,66 @@ public sealed partial class MainView : Grid
     }
 
     /// <summary>Notas shows the notes and, like model.folders, every neighbourhood's folder even without notes.</summary>
-    private void RefreshNotes() =>
+    private readonly HashSet<string> _attachments = new(StringComparer.Ordinal);
+
+    private void RefreshNotes()
+    {
         Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value) { Title = _store?.Get(n.Key)?.Title }), World.City?.RegionPaths().Values);
+        var files = new HashSet<string>(_attachments, StringComparer.Ordinal);
+        if (World.City is { } city) foreach (var b in city.Buildings) if (!b.IsNote && !string.IsNullOrEmpty(b.Path)) files.Add(b.Path);
+        files.ExceptWith(_contents.Keys);
+        Explorer.SetFiles(files);
+    }
+
+    /// <summary>
+    /// A file of the Explorer that is not a note (DEC-0045, UC-38): when it has a building in the city, "Mostrar na
+    /// cidade" takes the camera there; the preview of images and PDFs is not in the native app yet, and it says so.
+    /// </summary>
+    private async Task ShowFileAsync(string path)
+    {
+        if (Dialogs.IsOpen) return;
+        var name = path[(path.LastIndexOf('/') + 1)..];
+        var folder = path.Contains('/') ? path[..path.LastIndexOf('/')] : "";
+        var ext = System.IO.Path.GetExtension(name).TrimStart('.').ToUpperInvariant();
+        var building = World.City?.Buildings.Find(b => !b.IsNote && b.Path == path);
+        var about = (ext.Length > 0 ? "Arquivo " + ext : "Arquivo") + (folder.Length > 0 ? " em “" + folder + "”." : " na raiz.")
+            + " A prévia deste tipo de arquivo ainda não está no app.";
+        if (building is null) { await Dialogs.AlertAsync(name, about); return; }
+        await Dialogs.MenuAsync(name,
+        [
+            new DialogItem("Mostrar na cidade", UrbeTheme.Icons.City, "A construção deste arquivo.", Run: () =>
+            {
+                if (!Explorer.Wide) Explorer.IsVisible = false;
+                World.CenterOn(building);
+                World.Select(building);
+                return Task.CompletedTask;
+            })
+        ], about);
+    }
+
+    /// <summary>
+    /// The "⋯" of a folder in the Explorer (the 1.8.4 showed no options when a folder was selected, DEC-0045, UC-38):
+    /// Nova nota aqui, Nova subpasta, Mostrar na cidade and Mover para a lixeira, each the existing operation.
+    /// </summary>
+    private Task ShowFolderMenuAsync(string folder)
+    {
+        if (Dialogs.IsOpen) return Task.CompletedTask;
+        var region = World.City?.RegionByPath(folder);
+        var items = new List<DialogItem>
+        {
+            new("Nova nota aqui", UrbeTheme.Icons.File, NotesWhere(folder), Run: () => CreateNoteInNotesAsync(folder: folder)),
+            new("Nova subpasta", UrbeTheme.Icons.Folder, "Vira uma região dentro desta.", Run: () => CreateFolderAsync(region?.Id))
+        };
+        if (region is not null)
+            items.Add(new("Mostrar na cidade", UrbeTheme.Icons.City, "O bairro desta pasta.", Run: () =>
+            {
+                if (!Explorer.Wide) Explorer.IsVisible = false;
+                World.CenterOnRegion(region);
+                return Task.CompletedTask;
+            }));
+        items.Add(new("Mover para a lixeira", UrbeTheme.Icons.Trash, "A pasta e as notas dela.", Run: () => SelectionActionAsync("delete", [NotesExplorer.FolderPrefix + folder])));
+        return Dialogs.MenuAsync(folder[(folder.LastIndexOf('/') + 1)..], items);
+    }
 
     /// <summary>mobile-ui.js newMenu: "Criar" with Nova nota (in the selected folder) and Nova pasta. Nova página joins
     /// with the pages.</summary>
@@ -916,7 +1002,7 @@ public sealed partial class MainView : Grid
     /// gets its house like any new document (document:created → urbeCasaParaDocumento), opens, and Notas closes. The
     /// empty file is written to the vault first.
     /// </summary>
-    public async Task CreateNoteInNotesAsync(string? typedName = null)
+    public async Task CreateNoteInNotesAsync(string? typedName = null, string? folder = null)
     {
         if (World.City is not { } city || _store is null) return;
         if (!VaultWritable)
@@ -924,7 +1010,7 @@ public sealed partial class MainView : Grid
             await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar notas. O Tutorial desta prévia é só leitura.");
             return;
         }
-        var folder = Explorer.CurrentFolder;
+        folder ??= Explorer.CurrentFolder;
         string PathOf(string name)
         {
             if (!ArtifactModel.IsText(name)) name += ".md";
@@ -1037,7 +1123,7 @@ public sealed partial class MainView : Grid
     {
         if (Dialogs.IsOpen) return Task.CompletedTask;
         int n = _trash.Items.Count;
-        return Dialogs.MenuAsync("Notas",
+        return Dialogs.MenuAsync("Explorer",
         [
             new DialogItem("Recentes", UrbeTheme.Icons.Clock, Run: () => { ShowCollection("recent"); return Task.CompletedTask; }),
             new DialogItem("Favoritos", UrbeTheme.Icons.Star, Run: () => { ShowCollection("favorites"); return Task.CompletedTask; }),
@@ -1188,7 +1274,19 @@ public sealed partial class MainView : Grid
         var options = new List<DialogItem> { new("Raiz", UrbeTheme.Icons.Notes, "Fora de qualquer pasta") };
         options.AddRange(folders.Select(f => new DialogItem(f[(f.LastIndexOf('/') + 1)..], UrbeTheme.Icons.Folder, f)));
         if (await Dialogs.ChooseAsync("Mover para", options) is not { } chosen) return;
-        var folder = chosen == 0 ? "" : folders[chosen - 1];
+        await MoveNotesToAsync(paths, chosen == 0 ? "" : folders[chosen - 1]);
+    }
+
+    /// <summary>explorer.move of each note into <paramref name="folder"/> ("" = the root): the file first, then the house
+    /// changes neighbourhood. Also what dragging notes onto a folder in the Explorer does (DEC-0045, UC-38).</summary>
+    public async Task MoveNotesToAsync(IReadOnlyList<string> paths, string folder)
+    {
+        if (World.City is not { } city || _store is null) return;
+        if (!VaultWritable)
+        {
+            await Dialogs.AlertAsync("Mover", NoVaultMessage);
+            return;
+        }
         long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         foreach (var from in paths)
         {
@@ -1480,7 +1578,7 @@ public sealed partial class MainView : Grid
     // ---------------- navigation (1.8.4 rail / dock) ----------------
 
     private static readonly (string Icon, string Label)[] Destinations =
-        [(UrbeTheme.Icons.City, "Cidade"), (UrbeTheme.Icons.Notes, "Notas"), (UrbeTheme.Icons.Assistant, "Assistente")];
+        [(UrbeTheme.Icons.City, "Cidade"), (UrbeTheme.Icons.Notes, "Explorer"), (UrbeTheme.Icons.Assistant, "Assistente")];
 
     private void BuildRail()
     {
@@ -1513,7 +1611,7 @@ public sealed partial class MainView : Grid
     private Control? _top, _fab;
 
     /// <summary>The destination shown as active (.ativo) in the rail and the dock: Notas while it is open, else Cidade.</summary>
-    public string ActiveDestination => Explorer.IsVisible ? "Notas" : "Cidade";
+    public string ActiveDestination => Explorer.IsVisible ? "Explorer" : "Cidade";
 
     private void UpdateNav()
     {
@@ -1559,7 +1657,7 @@ public sealed partial class MainView : Grid
             VerticalContentAlignment = VerticalAlignment.Center,
             Padding = new Thickness(0)
         };
-        if (label == "Notas")
+        if (label == "Explorer")
         {
             ToolTip.SetTip(button, "Explorador de notas e pastas");
             button.Click += (_, _) => ShowNotes();

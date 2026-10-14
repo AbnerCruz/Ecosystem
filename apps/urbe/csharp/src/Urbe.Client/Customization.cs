@@ -31,10 +31,35 @@ public sealed partial class Customization
         _documents = documents;
         _savedTheme = path => documents.TryGetValue(path, out var t) && IsObject(t);
         FileContent = documents.TryGetValue(LegacyCustomize.FilePath, out var text) ? text : null;
+        _tagsText = documents.TryGetValue(TagStyles.FilePath, out var tags) ? tags : null;
+        TagColors = TagStyles.Parse(_tagsText);
+        UrbeTheme.TagOverrides = TagColors;
         var n = LegacyCustomize.Normalize(FileContent);
         Errors = n.Errors;
         Warnings = n.Warnings;
         Apply(n.Config);
+    }
+
+    private string? _tagsText;
+
+    /// <summary>The colours chosen for the tags (Personalização/tags.json, DEC-0045, UC-43).</summary>
+    public IReadOnlyDictionary<string, string> TagColors { get; private set; } = new Dictionary<string, string>();
+
+    /// <summary>Chooses the colour of a tag, or (null) goes back to the app's own; writes tags.json and applies it.</summary>
+    public async Task SetTagColorAsync(string tag, string? color)
+    {
+        if (!TagStyles.IsTag(tag) || (color is not null && !TagStyles.IsColor(color))) return;
+        var next = new Dictionary<string, string>(TagColors, StringComparer.OrdinalIgnoreCase);
+        if (color is null) next.Remove(tag); else next[tag] = color.ToLowerInvariant();
+        var text = TagStyles.Text(next);
+        if (Writer is { } write && text != _tagsText)
+        {
+            await write(TagStyles.FilePath, text, _tagsText is not null);
+            _tagsText = text;
+        }
+        TagColors = next;
+        UrbeTheme.TagOverrides = next;
+        Applied?.Invoke();
     }
 
     public LegacyCustomize.Result Normalize(string text) => LegacyCustomize.Normalize(text, _savedTheme);

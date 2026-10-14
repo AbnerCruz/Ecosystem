@@ -112,14 +112,43 @@ public static partial class LegacyVisualEdit
     private static bool IsDouble(string text, int open, int close) =>
         (open > 0 && text[open - 1] == text[open]) || (close + 1 < text.Length && text[close + 1] == text[close]);
 
-    /// <summary>insertHTML &lt;code&gt;selection or "código"&lt;/code&gt;.</summary>
+    /// <summary>
+    /// Inline code in the running text. The 1.8.4 inserted &lt;code&gt;selection or "código"&lt;/code&gt;; the owner did not want
+    /// the placeholder word (DEC-0045, UC-37): with no selection the caret goes between two backticks to type the code,
+    /// a selection becomes code, and a selection that already is code goes back to plain text.
+    /// </summary>
     public static LegacyEditorTools.TextEdit InlineCode(string text, int selectionStart, int selectionEnd)
     {
         var a = Math.Clamp(Math.Min(selectionStart, selectionEnd), 0, text.Length);
         var b = Math.Clamp(Math.Max(selectionStart, selectionEnd), 0, text.Length);
-        var inner = a == b ? "código" : text[a..b];
-        var code = "`" + inner + "`";
-        return new(text[..a] + code + text[b..], a + code.Length, a + code.Length);
+        if (a == b) return new(text[..a] + "``" + text[a..], a + 1, a + 1);
+        return ToggleWrap(text, a, b, "`");
+    }
+
+    /// <summary>A %%comment%% (DEC-0045, UC-43): the selection becomes one (or stops being one); with none, the caret goes
+    /// between the marks to write it.</summary>
+    public static LegacyEditorTools.TextEdit Comment(string text, int selectionStart, int selectionEnd)
+    {
+        var a = Math.Clamp(Math.Min(selectionStart, selectionEnd), 0, text.Length);
+        var b = Math.Clamp(Math.Max(selectionStart, selectionEnd), 0, text.Length);
+        if (a == b) return new(text[..a] + "%%  %%" + text[a..], a + 3, a + 3);
+        return ToggleWrap(text, a, b, "%%");
+    }
+
+    /// <summary>The "/" menu's Bloco de código (DEC-0045, UC-37): an empty fenced block with the caret inside it.</summary>
+    public static LegacyEditorTools.TextEdit CodeBlock(string text, int caret)
+    {
+        var at = Math.Clamp(caret, 0, text.Length);
+        int lineStart = text.LastIndexOf('\n', Math.Max(0, at - 1)) + 1;
+        if (at == 0) lineStart = 0;
+        int lineEnd = text.IndexOf('\n', at);
+        if (lineEnd < 0) lineEnd = text.Length;
+        var line = text[lineStart..lineEnd];
+        // "/" at the start of an empty block: the typed "/query" goes, the block becomes the fence
+        var keep = line.TrimStart().StartsWith('/') ? "" : line;
+        var fence = (keep.Length > 0 ? keep + "\n" : "") + "```\n\n```";
+        var caretAt = lineStart + fence.Length - 4;
+        return new(text[..lineStart] + fence + text[lineEnd..], caretAt, caretAt);
     }
 
     /// <summary>The bubble's wikilink button: the trimmed selection becomes [[selection]]; null when empty.</summary>

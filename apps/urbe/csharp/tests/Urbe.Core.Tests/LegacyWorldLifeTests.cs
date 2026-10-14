@@ -44,6 +44,30 @@ public sealed class LegacyWorldLifeTests
     }
 
     [Fact]
+    public void Rain_EndsWithoutARainbowAndEventsAreRarerThanIn184()
+    {
+        // DEC-0045: the owner found the 1.8.4 events too frequent and did not want the rainbow.
+        var defaults = new LegacyLifeOptions();
+        var legacy = LegacyLifeOptions.Legacy184();
+        Assert.False(defaults.Rainbow);
+        Assert.True(legacy.Rainbow);
+        Assert.True(defaults.FirstEvent.Min > legacy.FirstEvent.Max);
+        Assert.True(defaults.EventGap.Min > legacy.EventGap.Max);
+
+        for (int seed = 1; seed <= 12; seed++)
+        {
+            var life = new LegacyWorldLife(new EmptyHost(), options: new LegacyLifeOptions { TimeMode = "dia" }, random: LegacyJsMath.Rng(seed));
+            var view = new LegacyLifeView(0, 0, 1, 800, 600, -14, -11, 14, 11);
+            life.Start("chuva", view);
+            for (int i = 0; i < 900; i++)
+            {
+                life.Tick(.1, view);
+                Assert.Null(life.Arc);
+            }
+        }
+    }
+
+    [Fact]
     public void Rain_DarkensAndCoolsTheLight()
     {
         var host = new EmptyHost();

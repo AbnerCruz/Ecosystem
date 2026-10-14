@@ -1635,6 +1635,39 @@
       "decidedAt": "2026-10-11",
       "record": "docs/governance/addenda/ADD-0021-urbe-plugins-api-nativa.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0045",
+      "status": "decided",
+      "component": "urbe",
+      "blocking": false,
+      "title": "A 1.8.4 como referência de essência, não de defeitos; observações de uso do proprietário viram o rumo do Urbe",
+      "context": "FATO OBSERVADO: o proprietário entregou 19 observações de uso da 1.8.4-beta (defeitos, ajustes e ideias). FATO: a regra vigente (DEC-0043/ADD-0020) manda portar a 1.8.4 com paridade exata, e o cliente C# vinha reproduzindo também o que ele criticou (eventos a cada 40–95 s, arco-íris, moradores que somem ao editar um link, Voltar que vai sempre à cidade, menu + duplicado, tutorial criado no mundo). INFERÊNCIA: sem uma decisão explícita, todo agente continuaria portando os defeitos.",
+      "question": "A 1.8.4 continua sendo especificação exata, inclusive dos defeitos? Recursos novos ficam no .md ou em .urbe/? Composições continuam? 'Urbe como sistema operacional' é direção?",
+      "alternatives": [
+        {
+          "option": "1 — Paridade exata (estado anterior)",
+          "consequences": "Defeitos apontados pelo proprietário são portados e corrigidos depois, com retrabalho."
+        },
+        {
+          "option": "2 — 1.8.4 como referência de essência; defeitos e melhorias aprovadas divergem, com sintaxe .md para recursos novos, composições dentro de páginas e o 'Urbe como SO' só como exploração",
+          "consequences": "O porte corrige ao portar; cada divergência cita DEC-0045 e, onde há oráculo, ele continua provando o porte fiel com os valores originais."
+        }
+      ],
+      "consequences": "DECISÃO DO PROPRIETÁRIO: 2 — 'Aceito', 'Sintaxe .md', composições 'Sim'; sobre o SO, 'talvez eu nem venha gostar', e delegou as demais escolhas ('Vou deixar você tomar as decisões'). Itens UC-36 a UC-47 no ROADMAP C#; UC-36 a UC-40 antes do beta Android; 'bairro como ambiente' (UC-47) é exploração reversível, por último.",
+      "manifestCompatibility": "Não muda boundaries, dependências nem a pilha (ADR-0032). Divergências de produto ficam registradas aqui (NN-009, NN-011); validação de sensação continua humana no aparelho (NN-017).",
+      "recommendation": "2 — recomendada pelo agente e aceita pelo proprietário.",
+      "related": [
+        "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md",
+        "apps/urbe/docs/csharp/ROADMAP.md",
+        "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md"
+      ],
+      "raisedBy": "Claude Code — análise das observações de uso da 1.8.4-beta",
+      "raisedAt": "2026-10-13",
+      "decision": "2 — A 1.8.4 é referência de essência, não de defeitos; recursos novos como sintaxe .md; composições viram páginas; 'Urbe como SO' é exploração; demais escolhas delegadas ao agente e registradas em ADD-0022.",
+      "decidedAt": "2026-10-13",
+      "record": "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md",
+      "consequencesApplied": true
     }
   ]
 }

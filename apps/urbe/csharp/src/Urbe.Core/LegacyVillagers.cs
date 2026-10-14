@@ -74,11 +74,35 @@ public sealed class LegacyVillagers
 
     public List<LegacyVillager> People { get; private set; } = [];
 
-    /// <summary>Mudou a geografia ou os links: rotas guardadas não valem mais (rebuildRoadNetwork).</summary>
+    /// <summary>Another city or world: nobody from the old one stays.</summary>
     public void Reset()
     {
         _routes.Clear();
         People = [];
+    }
+
+    /// <summary>
+    /// The roads were rebuilt (rebuildRoadNetwork). The 1.8.4 dropped everyone here (v25Povo=[]), so editing one
+    /// link made the whole town vanish at once (owner, DEC-0045). Only the cached routes are dropped now; whoever
+    /// still has a house, the same doors and a street under every step keeps walking.
+    /// </summary>
+    public void RoadsChanged(ILegacyTownMap map)
+    {
+        _routes.Clear();
+        var byId = new Dictionary<string, LegacyCityBuilding>(StringComparer.Ordinal);
+        foreach (var b in map.Buildings) byId.TryAdd(b.Id, b);
+        People = People.Where(a => StillHere(a, byId, map)).ToList();
+    }
+
+    private static bool StillHere(LegacyVillager a, Dictionary<string, LegacyCityBuilding> byId, ILegacyTownMap map)
+    {
+        if (!byId.TryGetValue(a.From.Id, out var from)) return false;
+        if (a.Kind == "ocioso") return Door(from) == Door(a.From);
+        if (a.To is null || a.Route is not { Count: > 2 } r || !byId.TryGetValue(a.To.Id, out var to)) return false;
+        if (Door(from) != r[0] || Door(to) != r[^1]) return false;
+        for (int i = 1; i < r.Count - 1; i++)
+            if (!map.Road(r[i].X, r[i].Y)) return false;
+        return true;
     }
 
     /// <summary>v25Ciclo(): <paramref name="nowMs"/> is Date.now(); hurry is urbeVelPovo.</summary>
@@ -118,6 +142,9 @@ public sealed class LegacyVillagers
         }
         return cand.OrderByDescending(c => c.Weight).Take(Max).Select(c => (c.B, c.Viz)).ToList();
     }
+
+    private static bool Seen(LegacyVillager a, LegacyLifeView f) =>
+        !a.Indoors && a.PosX >= f.X0 - 2 && a.PosX <= f.X1 + 2 && a.PosY >= f.Y0 - 2 && a.PosY <= f.Y1 + 3;
 
     private static (int X, int Y) Door(LegacyCityBuilding b) => ((int)LegacyJsMath.Round(b.X + (b.W - 1) / 2.0), b.Y + b.H);
 
@@ -247,8 +274,10 @@ public sealed class LegacyVillagers
         var alive = new List<LegacyVillager>();
         var used = new HashSet<string>(StringComparer.Ordinal);
         int newRoutes = 0;
+        // 1.8.4 kept a walker only while its house was in the cast, so one who was still on screen vanished as soon
+        // as the house left the view. Whoever is in sight now stays until they walk out of it (DEC-0045).
         foreach (var a in People)
-            if (a.Kind != "ocioso" && cast.Any(c => c.B == a.From)) { alive.Add(a); used.Add(a.From.Id); }
+            if (a.Kind != "ocioso" && (cast.Any(c => c.B == a.From) || Seen(a, f))) { alive.Add(a); used.Add(a.From.Id); }
         for (int j = 0; j < cast.Count && alive.Count < cast.Count; j++)
         {
             var c = cast[j];

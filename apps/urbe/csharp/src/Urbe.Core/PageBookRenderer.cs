@@ -6,6 +6,9 @@ namespace Urbe.Core;
 
 internal static class PageBookRenderer
 {
+    // %%comments%% are the writer's, never part of a page or a book (DEC-0045, UC-43)
+    private static string RenderNote(string? markdown) => MarkdownEngine.Render(NoteMarks.StripComments(markdown));
+
     private static readonly string[] NumberWords =
     [
         "zero", "um", "dois", "três", "quatro", "cinco", "seis", "sete",
@@ -242,7 +245,7 @@ internal static class PageBookRenderer
         if (markdown.Length > 0)
         {
             output.Append("<div class='prose'>")
-                .Append(MarkdownEngine.Render(markdown))
+                .Append(RenderNote(markdown))
                 .Append("</div>");
         }
 
@@ -293,7 +296,7 @@ internal static class PageBookRenderer
             Text(props["epigraph"]) ?? string.Empty,
             Text(props["epigraphAuthor"]) ?? string.Empty,
             Bool(props["dropCap"], true),
-            MarkdownEngine.Render(ShiftHeadings(markdown, 2)));
+            RenderNote(ShiftHeadings(markdown, 2)));
     }
 
     private static string RenderChapters(
@@ -322,7 +325,7 @@ internal static class PageBookRenderer
                     string.Empty,
                     string.Empty,
                     dropCap,
-                    MarkdownEngine.Render(
+                    RenderNote(
                         ShiftHeadings(
                             StripLeadingTitle(
                                 chapter.Document.Content,
@@ -368,7 +371,7 @@ internal static class PageBookRenderer
         if (epigraph.Length > 0)
         {
             output.Append("<blockquote class='bk-epi'>")
-                .Append(MarkdownEngine.Render(epigraph));
+                .Append(RenderNote(epigraph));
             if (epigraphAuthor.Length > 0)
             {
                 output.Append("<cite>— ")

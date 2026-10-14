@@ -46,11 +46,28 @@ public sealed class LegacyVisualEditTests
         Assert.Equal("_x_", LegacyVisualEdit.ToggleWrap("x", 0, 1, "_").Text);
     }
 
+    [Theory]
+    [InlineData("/", 1, "```\n\n```", 4)]
+    [InlineData("/cod", 4, "```\n\n```", 4)]
+    [InlineData("texto", 5, "texto\n```\n\n```", 10)]
+    [InlineData("a\n/\nb", 3, "a\n```\n\n```\nb", 6)]
+    public void CodeBlock_StartsEmptyWithTheCaretInside(string text, int caret, string expected, int at)
+    {
+        var edit = LegacyVisualEdit.CodeBlock(text, caret);
+        Assert.Equal(expected, edit.Text);
+        Assert.Equal(at, edit.SelectionStart);
+        Assert.Equal('\n', edit.Text[at - 1]);
+    }
+
     [Fact]
     public void CodeWikiAndLinkTools()
     {
-        Assert.Equal("a `código` b", LegacyVisualEdit.InlineCode("a  b", 2, 2).Text);
+        // DEC-0045: no "código" placeholder; the caret goes between the backticks
+        var empty = LegacyVisualEdit.InlineCode("a  b", 2, 2);
+        Assert.Equal("a `` b", empty.Text);
+        Assert.Equal(3, empty.SelectionStart);
         Assert.Equal("a `x` b", LegacyVisualEdit.InlineCode("a x b", 2, 3).Text);
+        Assert.Equal("a x b", LegacyVisualEdit.InlineCode("a `x` b", 3, 4).Text);   // code goes back to text
         Assert.Equal("a [[Nota]] b", LegacyVisualEdit.WikiOfSelection("a  Nota  b", 2, 8)!.Text);
         Assert.Null(LegacyVisualEdit.WikiOfSelection("a  b", 2, 3));
         Assert.Equal("[texto](https://x.org)", LegacyVisualEdit.Link("texto", 0, 5, " https://x.org ")!.Text);

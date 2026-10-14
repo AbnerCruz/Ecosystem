@@ -4,16 +4,13 @@ using Urbe.Core;
 namespace Urbe.Client;
 
 /// <summary>
-/// tutorial.js (1.8.4): the "Tutorial" folder is created by itself the first time a city (a real folder) opens, and
-/// only once — the mark is .urbe/tutorial.json inside the city, so a person who deletes it does not get it back.
-/// Configurações → Tutorial opens it ("Comece aqui") or restores it: what is missing is created again and the notes
-/// that differ from the originals are replaced only after asking.
+/// The Tutorial. The 1.8.4 (tutorial.js) created a "Tutorial" folder in the city the first time it opened; the owner did
+/// not want it in the world (DEC-0045, UC-40), so it is read in its own panel (<see cref="TutorialPanel"/>). Copying it
+/// into the city as notes is still there, as the panel's own choice: what is missing is created, the notes that differ
+/// from the originals are replaced only after asking, and the mark .urbe/tutorial.json is written.
 /// </summary>
 public sealed partial class MainView
 {
-    /// <summary>Whether opening a city creates its Tutorial (tutorial.js semear); tests that do not look at it turn it off.</summary>
-    public static bool SeedsTutorial { get; set; } = true;
-
     private static IReadOnlyList<CityNote>? _tutorialFiles;
     private static string? _tutorialVersion;
 
@@ -22,27 +19,30 @@ public sealed partial class MainView
     /// <summary>C.version (build-tutorial.mjs).</summary>
     public static string TutorialVersion => _tutorialVersion ??= LegacyTutorial.Version(TutorialFiles.Select(f => (f.Path, f.Content)));
 
-    /// <summary>tutorial.js menu: "Tutorial" with Abrir o Tutorial and Restaurar o Tutorial.</summary>
-    public Task ShowTutorialMenuAsync()
+    /// <summary>The Tutorial panel (DEC-0045, UC-40), made the first time it opens.</summary>
+    public TutorialPanel Tutorial => _tutorialPanel ??= MakeTutorialPanel();
+
+    private TutorialPanel? _tutorialPanel;
+
+    private TutorialPanel MakeTutorialPanel()
     {
-        if (Dialogs.IsOpen) return Task.CompletedTask;
-        return Dialogs.MenuAsync("Tutorial",
-        [
-            new DialogItem("Abrir o Tutorial", UrbeTheme.Icons.Book, "Começa pela nota “Comece aqui”", Run: OpenTutorialAsync),
-            new DialogItem("Restaurar o Tutorial", UrbeTheme.Icons.Restore, "Recria as notas que faltam ou foram mudadas", Run: () => RestoreTutorialAsync(true))
-        ]);
+        var panel = new TutorialPanel(TutorialFiles);
+        panel.CopyRequested += () => _ = RestoreTutorialAsync(false);
+        SetRowSpan(panel, 2);
+        SetColumnSpan(panel, 2);
+        // under the dialogs, over everything else
+        Children.Insert(Math.Max(0, Children.IndexOf(Customize)), panel);
+        return panel;
     }
 
-    /// <summary>abrir: "Comece aqui" in the editor, or the offer to create the folder again when it is gone.</summary>
-    public async Task OpenTutorialAsync()
+    /// <summary>
+    /// Configurações → Tutorial. The 1.8.4 created a Tutorial neighbourhood in the city the first time it opened and opened
+    /// "Comece aqui" in the editor; the owner preferred a panel of its own, with navigation and search (DEC-0045, UC-40).
+    /// </summary>
+    public Task ShowTutorialMenuAsync()
     {
-        if (_contents.ContainsKey(LegacyTutorial.Start))
-        {
-            OpenNoteByPath(LegacyTutorial.Start);
-            return;
-        }
-        if (await Dialogs.ConfirmAsync("Tutorial", "A pasta Tutorial não está nesta cidade. Quer criá-la de novo?", "Criar Tutorial"))
-            await RestoreTutorialAsync(true);
+        Tutorial.Open();
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -74,37 +74,7 @@ public sealed partial class MainView
         }
         await MarkTutorialAsync();
         ShowLifeNotice(created > 0 || replace ? "Tutorial restaurado" : "O Tutorial já está completo");
-        if (openAfter) await OpenTutorialAsync();
-    }
-
-    /// <summary>
-    /// semear (workspace:loaded): the first time this city opens — no Tutorial/ note, no mark in .urbe — the whole
-    /// folder is created; on an empty city the camera frames the houses and "Comece aqui" opens, otherwise a notice.
-    /// Never on a read-only vault (REQ-035).
-    /// </summary>
-    private async Task SeedTutorialAsync(VaultSnapshot snapshot)
-    {
-        if (!VaultWritable || World.City is null || _store is null) return;
-        if (_store.List().Any(d => d.Path.StartsWith(LegacyTutorial.Folder, StringComparison.Ordinal))) return;
-        if (snapshot.Files.Keys.Any(k => string.Equals(k, LegacyTutorial.MarkPath, StringComparison.OrdinalIgnoreCase))) return;
-        bool empty = !_store.List().Any(d => !d.Path.StartsWith("Personalização/", StringComparison.Ordinal));
-        if (await CreateTutorialFilesAsync(TutorialFiles.Select(f => f.Path).ToList()) == 0) return;
-        await MarkTutorialAsync();
-        if (empty)
-        {
-            await Task.Delay(900);
-            World.FitNotes();
-            await OpenTutorialAsync();
-        }
-        else ShowLifeNotice("Nova pasta Tutorial: tudo o que o Urbe faz, explicado passo a passo.");
-    }
-
-    private async Task SeedTutorialLaterAsync(VaultSnapshot snapshot)
-    {
-        await Task.Delay(300);
-        if (!ReferenceEquals(_snapshot, snapshot)) return;
-        try { await SeedTutorialAsync(snapshot); }
-        catch (Exception ex) { ShowLifeNotice("Tutorial: " + ex.Message); }   // semear().catch(console.warn)
+        if (openAfter) Tutorial.Open();
     }
 
     /// <summary>prepararBairros + criar: neighbourhoods of the right size, then one file and one house per note.</summary>

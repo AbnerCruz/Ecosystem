@@ -36,6 +36,66 @@ public static partial class LegacyEditorTools
     /// <summary>Separators of the toolbar fall after these button ids.</summary>
     public static readonly string[] SeparatorAfter = ["h3", "code", "quote"];
 
+    /// <summary>
+    /// Which toolbar buttons are on for the selection [<paramref name="selectionStart"/>, <paramref name="selectionEnd"/>]
+    /// of <paramref name="text"/>: read from the Markdown itself, the only source of that state. In the 1.8.4 the buttons
+    /// kept a state of their own that drifted from the text (owner, DEC-0045, UC-37). Ids are those of
+    /// <see cref="Toolbar"/>: h1, h2, h3, list, task, quote (the line of the selection start) and bold, italic, code
+    /// (a pair of marks on that line that encloses the whole selection).
+    /// </summary>
+    public static IReadOnlySet<string> ActiveTools(string text, int selectionStart, int selectionEnd)
+    {
+        var on = new HashSet<string>(StringComparer.Ordinal);
+        var a = Math.Clamp(Math.Min(selectionStart, selectionEnd), 0, text.Length);
+        var b = Math.Clamp(Math.Max(selectionStart, selectionEnd), 0, text.Length);
+        int lineStart = a == 0 ? 0 : text.LastIndexOf('\n', a - 1) + 1;
+        int lineEnd = text.IndexOf('\n', a);
+        if (lineEnd < 0) lineEnd = text.Length;
+        if (b > lineEnd) return on;   // inline marks never span lines; a multi-line selection has no single block either
+        var line = text[lineStart..lineEnd];
+        var block = Regex.Match(line, @"^\s{0,3}(#{1,3})\s|^\s*[-*+]\s+\[[ xX]\]\s|^\s*[-*+]\s|^\s*>");
+        if (block.Success)
+        {
+            if (block.Groups[1].Success) on.Add("h" + block.Groups[1].Length);
+            else if (block.Value.Contains('[')) on.Add("task");
+            else if (block.Value.TrimEnd().EndsWith('>')) on.Add("quote");
+            else on.Add("list");
+        }
+        int la = a - lineStart, lb = b - lineStart;
+        var code = new List<(int S, int E)>();
+        foreach (Match m in Regex.Matches(line, @"`[^`\n]*`"))
+        {
+            code.Add((m.Index, m.Index + m.Length));
+            if (la >= m.Index + 1 && lb <= m.Index + m.Length - 1) on.Add("code");
+        }
+        bool InCode(int i) => code.Exists(c => i >= c.S && i < c.E);
+        void Pair(string id, string pattern, int mark)
+        {
+            foreach (Match m in Regex.Matches(line, pattern))
+            {
+                if (InCode(m.Index)) continue;
+                int innerStart = m.Index + mark, innerEnd = m.Index + m.Length - mark;
+                if (la >= innerStart && lb <= innerEnd) { on.Add(id); return; }
+            }
+        }
+        Pair("bold", @"\*\*(?=\S)(.+?)(?<=\S)\*\*", 2);
+        Pair("italic", @"(?<![_\w])_(?=[^\s_])(.+?)(?<=[^\s_])_(?![_\w])", 1);
+        return on;
+    }
+
+    /// <summary>
+    /// Whether a tapped [[link]] that names no note can become a new note next to the open one (DEC-0045, UC-37):
+    /// a plain name, without folders, a heading/alias part or characters a file name cannot carry.
+    /// </summary>
+    public static bool IsCreatableLinkName(string? name)
+    {
+        var n = name?.Trim() ?? "";
+        if (n.Length == 0 || n.Length > 120 || n.StartsWith('.') || n.EndsWith('.')) return false;
+        foreach (var c in n)
+            if (char.IsControl(c) || "/\\:*?\"<>|#^[]".Contains(c)) return false;
+        return true;
+    }
+
     /// <summary>insertAtCursor(prefix, suffix): setRangeText(prefix + selection + suffix, start, end, "end").</summary>
     public static TextEdit InsertAtCursor(string text, int selectionStart, int selectionEnd, string prefix, string suffix = "")
     {
@@ -190,11 +250,18 @@ public static partial class LegacyEditorTools
         new("formulaBlock", "Fórmula em destaque", "Equação centralizada", "formula destaque bloco equacao latex math display", Text: "∫"),
     ];
 
-    /// <summary>The menu the app shows: the visual-tools.js items and then the added ones, with the same filter.</summary>
+    /// <summary>Items the 1.8.4 did not have, approved by the owner (DEC-0045): Bloco de código, which starts empty (UC-37).</summary>
+    public static IReadOnlyList<SlashItem> OwnSlashItems { get; } =
+    [
+        new("codeblock", "Bloco de código", "Código em várias linhas", "codigo code bloco programa", "code"),
+        new("comment", "Comentário", "Nota sua, fora das páginas", "comentario comment nota anotacao", "quote"),
+    ];
+
+    /// <summary>The menu the app shows: the visual-tools.js items, the math ones and the app's own, with the same filter.</summary>
     public static IReadOnlyList<SlashItem> FilterSlashWithAddons(string query)
     {
         var q = Fold(query);
-        return SlashItems.Concat(MathSlashItems).Where(x => q.Length == 0 || Fold(x.Label + " " + x.Keys).Contains(q, StringComparison.Ordinal)).ToArray();
+        return SlashItems.Concat(MathSlashItems).Concat(OwnSlashItems).Where(x => q.Length == 0 || Fold(x.Label + " " + x.Keys).Contains(q, StringComparison.Ordinal)).ToArray();
     }
 
     /// <summary>slashQuery(): the block text (U+200B removed) must be "/" + up to 24 characters without space or "/".</summary>

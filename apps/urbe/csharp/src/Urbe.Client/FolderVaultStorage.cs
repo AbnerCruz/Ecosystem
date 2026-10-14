@@ -130,6 +130,33 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public async Task<IReadOnlyList<string>> ListFilePathsAsync(CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            return await Task.Run(() =>
+            {
+                var paths = new List<string>();
+                void Walk(string dir, string prefix, int depth)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (depth > 32 || paths.Count >= MaxEntries) return;
+                    foreach (var entry in new DirectoryInfo(dir).EnumerateFileSystemInfos().OrderBy(e => e.Name, StringComparer.Ordinal))
+                    {
+                        if (entry.LinkTarget is not null || entry.Name.StartsWith('.')) continue;
+                        if (entry is DirectoryInfo sub) Walk(sub.FullName, prefix + entry.Name + "/", depth + 1);
+                        else if (paths.Count < MaxEntries) paths.Add(prefix + entry.Name);
+                    }
+                }
+                Walk(root, string.Empty, 0);
+                return (IReadOnlyList<string>)paths;
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     public async Task<bool> RemoveEmptyDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureWritableFolderPath(path);

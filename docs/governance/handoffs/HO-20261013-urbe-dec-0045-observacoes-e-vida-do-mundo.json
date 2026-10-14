@@ -1,0 +1,114 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261013-urbe-dec-0045-observacoes-e-vida-do-mundo",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-13T11:45:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-36",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "cb53b4e7",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md",
+    "docs/governance/decisions.json",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyLifeHost.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyWorldLife.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyVillagers.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyVillagersTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldLifeTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldLifeOracleTests.cs",
+    "docs/governance/handoffs/HO-20261013-urbe-dec-0045-observacoes-e-vida-do-mundo.json"
+  ],
+  "work_completed": [
+    "Análise das 19 observações de uso da 1.8.4-beta contra o código da 1.8.4 e do cliente C#; respostas do proprietário (paridade de essência, sintaxe .md, composições viram páginas, 'Urbe como SO' incerto) e delegação das demais escolhas registradas em ADD-0022 e DEC-0045 (decided).",
+    "ROADMAP C#: itens UC-36 a UC-47 com ordem (UC-36 a UC-40 antes do beta Android; UC-41 a UC-43 depois; UC-44 a UC-47 na fase do UC-35). PRODUCT-DIRECTION e AGENTS (raiz §1.2 e Urbe §10) apontam a regra 'essência, não defeitos'.",
+    "UC-36: ritmo dos eventos e arco-íris viram LegacyLifeOptions (produto: primeiro evento 60–150 s, depois 180–420 s, sem arco-íris; LegacyLifeOptions.Legacy184() mantém 14–26 s, 40–95 s e arco-íris para o oráculo).",
+    "UC-36: LegacyVillagers.RoadsChanged revalida em vez de zerar a população (sai só quem perdeu casa, porta ou rua); Repopulate mantém o andarilho que ainda está à vista mesmo que a casa saia da tela. WorldView.RoadsChanged usa a revalidação.",
+    "Issue https://github.com/AbnerCruz/Ecosystem/issues/547 (state:verifying) acompanha o UC-36 [~] no ROADMAP."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests: LegacyVillagersTests, LegacyWorldLifeTests, LegacyVillagersOracleTests, LegacyWorldLifeOracleTests (16 testes)",
+      "result": "passed",
+      "evidence": "Oráculos da 1.8.4 verdes com Legacy184(); novos testes provam: sem arco-íris em 12 sementes, moradores mantidos ao refazer ruas intactas, retirados quando a rua some, mantidos à vista com a casa fora da tela."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet run tests/consistency/Check.cs",
+      "result": "passed",
+      "evidence": "Todos os checks passam; a única falha local (CHK-SINGLE-AUTHORITY) vem de .claude/worktrees excluídas pelo .git/info/exclude, inexistentes no CI."
+    },
+    {
+      "kind": "human",
+      "check": "Ritmo dos eventos e moradores que não somem, no aparelho Android",
+      "result": "not-applicable",
+      "evidence": "Sensação depende de uso real (NN-017, DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Core/LegacyVillagers.cs"
+    }
+  ],
+  "known_issues": [
+    "O intervalo dos eventos (3–7 min) é escolha delegada ao agente; o proprietário pode ajustá-lo pelo uso."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI e integração (rotina).",
+    "UC-37: Voltar à origem, código em linha, criar nota por [[link]] inexistente, estado das ferramentas, barra junto ao teclado.",
+    "UC-40: tutorial em painel antes do beta (o tutorial no mundo criaria a pasta Tutorial/ no vault novo do beta)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "docs/governance/addenda/ADD-0021-urbe-plugins-api-nativa.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/governance/decisions.json",
+    "apps/urbe/src/world/life.js",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "Respostas do proprietário persistidas em ADD-0022/DEC-0045 antes de sustentar a implementação."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Mudança de direção de produto (paridade de essência) registrada como decisão do proprietário; escolhas delegadas marcadas como do agente e revisáveis."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "UC-36 fica [~]; validação humana no aparelho pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Testes e oráculos citados; Issue #547 em state:verifying."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "world-life-pace",
+      "status": "product-specific",
+      "rationale": "Simulação da cidade do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Simulação visual e documentação de direção já decidida pelo proprietário; não toca armazenamento nem distribuição."
+  }
+}

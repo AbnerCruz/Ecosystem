@@ -1,0 +1,89 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "timestamp": "2026-10-13T13:23:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "3db1101a",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/548",
+  "blockers": [],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md"
+  ],
+  "message_id": "HO-20261013-urbe-uc40-tutorial-painel",
+  "task_id": "UC-40",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/TutorialPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Tutorial.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/TutorialUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/TestSetup.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261013-urbe-uc40-tutorial-painel.json"
+  ],
+  "work_completed": [
+    "A primeira abertura não cria mais Tutorial/ nem .urbe/tutorial.json (removidos SeedsTutorial e a semeadura).",
+    "TutorialPanel: índice por seção, busca, artigo renderizado, Anterior/Próximo, [[links]] internos.",
+    "Copiar o tutorial para a cidade continua, só quando pedido (RestoreTutorialAsync).",
+    "Issue #552 (state:verifying)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.Tutorial_IsAPanelAndTheCityIsLeftAlone",
+      "result": "passed",
+      "evidence": "Cidade vazia continua vazia; painel lista os 47 artigos .md; busca, Próximo e links; cópia sob pedido cria notas e marca; capturas native-tutorial-index.png e native-tutorial-article.png."
+    },
+    {
+      "kind": "human",
+      "check": "Uso no aparelho Android (toque e layout)",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho (NN-017, DEVICE).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/TutorialPanel.cs"
+    }
+  ],
+  "known_issues": [
+    "O texto dos artigos é o da 1.8.4 e ainda fala da aba Notas e da instalação web; revisão de conteúdo é item à parte."
+  ],
+  "next_actions": [
+    "Revisar o texto do tutorial para o app nativo.",
+    "UC-41 depois do beta."
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "Divergências citam DEC-0045/ADD-0022."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Item fica [~] até validação no aparelho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Testes citados e Issue aberta em state:verifying."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "tutorial-panel",
+      "status": "product-specific",
+      "rationale": "Interface do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Interface; a gravação só ocorre no 'Copiar' pedido, pelo caminho já existente."
+  }
+}

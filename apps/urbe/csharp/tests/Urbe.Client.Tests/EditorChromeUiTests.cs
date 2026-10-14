@@ -57,7 +57,7 @@ public sealed partial class HeadlessUiTests
             Assert.True(Texts().Contains("MD · 6 linhas"), string.Join(" / ", Texts()));
             Assert.Contains("Salvo", Texts());
             // the dock is hidden under the editor on a phone (v23Dock.hidden = editor)
-            Assert.DoesNotContain(view.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Notas" && Shown(t));
+            Assert.DoesNotContain(view.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Explorer" && Shown(t));
             // #propertiesBox only in Fonte
             Assert.DoesNotContain(Texts(), t => t.StartsWith("--- título:", StringComparison.Ordinal));
             Snapshot(window, "native-editor-preview.png");
@@ -97,7 +97,7 @@ public sealed partial class HeadlessUiTests
             Assert.EndsWith("mais\n", File.ReadAllText(Path.Combine(vault, "Casa.md")));
             editor.IsVisible = false;
             Dispatcher.UIThread.RunJobs();
-            Assert.Contains(view.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Notas" && Shown(t));
+            Assert.Contains(view.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Explorer" && Shown(t));
             window.Close();
             return true;
         }

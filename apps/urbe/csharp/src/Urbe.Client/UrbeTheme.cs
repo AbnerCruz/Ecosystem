@@ -22,6 +22,46 @@ public static class UrbeTheme
     public const string Danger = "#ff7b86";
     public const string Warn = "#f1c46e";
     public const string Code = "#f0d9a8";
+    /// <summary>The text of a %%comment%% (DEC-0045, UC-43).</summary>
+    public const string Comment = "#d8c68f";
+
+    /// <summary>
+    /// The colour of a #Tag: paragraph (DEC-0045, UC-43): the default tags have their own, any other tag gets one of the
+    /// palette by its name, always the same for the same tag.
+    /// </summary>
+    public static string TagColor(string tag)
+    {
+        if (tag is not null && TagOverrides.TryGetValue(tag, out var chosen)) return chosen;
+        var key = Urbe.Core.LegacyEditorTools.Fold(tag ?? "");
+        return key switch
+        {
+            "todo" or "fazer" or "pendente" => Warn,
+            "ideia" or "idea" => Accent,
+            "feito" or "done" or "ok" => Ok,
+            "aviso" or "atencao" or "importante" or "urgente" => Danger,
+            "duvida" or "pergunta" or "question" => "#c79bff",
+            "nota" or "info" or "obs" => "#7fd0dc",
+            _ => TagPalette[(int)((uint)StableHash(key) % (uint)TagPalette.Length)]
+        };
+    }
+
+    /// <summary>The colours chosen in Personalização → Tags (Personalização/tags.json), by tag, ignoring case.</summary>
+    public static IReadOnlyDictionary<string, string> TagOverrides { get; set; } = new Dictionary<string, string>();
+
+    /// <summary>The colours offered for a tag.</summary>
+    public static IReadOnlyList<string> TagChoices => TagPalette;
+
+    private static readonly string[] TagPalette = ["#8fb3ff", "#7fdca6", "#f1c46e", "#ff7b86", "#c79bff", "#7fd0dc", "#f29e74", "#e59ad8"];
+
+    private static int StableHash(string s)
+    {
+        unchecked
+        {
+            int h = 17;
+            foreach (var c in s) h = h * 31 + c;
+            return h;
+        }
+    }
     public const double EditorSize = 17;
 
     private static readonly Dictionary<string, IBrush> Brushes = new(StringComparer.Ordinal);
@@ -133,6 +173,11 @@ public static class UrbeTheme
         public const string Download = "M12 4.5v11M7.5 11l4.5 4.5 4.5-4.5 M4.5 15v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3";
         public const string Upload = "M12 15.5V4.5M7.5 9l4.5-4.5L16.5 9 M4.5 15v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3";
         public const string File = "M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z M14 3.5V8h4.5";
+        // Explorer (DEC-0045, UC-38): a picture, a code/data file and any other file, in the same 1.8 stroke style
+        public const string Image = "M5.5 4.5h13a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1z M9 8a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3z M4.5 16l4.5-4.5 3.5 3.5 2.5-2.5 4.5 4.5";
+        public const string FileCode = "M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z M14 3.5V8h4.5 M10.5 11.5l-2 2.25 2 2.25 M13.5 11.5l2 2.25-2 2.25";
+        public const string Pin = "M9 4.5h6 M10 4.5v5.2L7 13h10l-3-3.3V4.5 M12 13v6.5";
+        public const string FileOther = "M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z M14 3.5V8h4.5 M9 13h6 M9 16.5h4";
         public const string Pencil = "M4 20h4L19 9l-4-4L4 16z M14 6l4 4";
         public const string Open = "M14 4.5h5.5V10 M19.5 4.5L11 13 M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4";
         public const string Star = "M12 4l2.4 5 5.3.6-3.9 3.6 1.1 5.3L12 15.9l-4.9 2.6 1.1-5.3-3.9-3.6 5.3-.6z";
