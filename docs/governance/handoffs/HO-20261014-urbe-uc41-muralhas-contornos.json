@@ -12,7 +12,7 @@
   "component": "urbe",
   "state": "review",
   "branch": "ccr-2e1b58fa-7mhpmx",
-  "base_commit": "535cfbdc",
+  "base_commit": "bc186fc2",
   "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/548",
   "files_changed": [
