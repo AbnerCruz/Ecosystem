@@ -71,6 +71,13 @@ entre os dois workflows; a versão pública deriva de VERSION e do run de CI.
 
 ## Verificação e gate
 
+O build no GitHub também executa `tools/smoke-android-preview.sh`: compila o mesmo app Release para x86_64 e o instala
+num emulador Android 13 Google APIs x86_64, abre a Activity pelo
+launcher e exige processo vivo e tela inicial de projetos. Falha de boot, instalação,
+crash ou tela de diagnóstico reprova o teste; logcat acompanha a evidência. O ensaio
+exige KVM no runner e usa apenas um emulador novo, sem dados nem provider real.
+O APK distribuído continua arm64; esse ensaio não substitui o teste no moto g32.
+
 Falhas de inicialização da Activity são capturadas numa tela local segura; o código de diagnóstico é derivado do tipo/stack sem exibir mensagem, caminho, conversa ou token. O app não tenta reparar nem apagar o catálogo automaticamente.
 
 `R4NativeProductTests` prova composição real com HTTP mockado, leitura de

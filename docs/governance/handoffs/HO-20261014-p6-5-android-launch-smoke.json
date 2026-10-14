@@ -1,0 +1,95 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-p6-5-android-launch-smoke",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T23:44:09Z",
+  "agent": {
+    "id": "codex-android-launch",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "verifying",
+  "branch": "fix/p6-5-android-launch-smoke-20261014",
+  "base_commit": "d3c2f6316529feafe68e74fcc797894a1227712d",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/tools/build-android-preview.sh",
+    "apps/ecosystem-ai/tools/smoke-android-preview.sh",
+    "apps/ecosystem-ai/docs-r4-android-native.md",
+    "docs/governance/handoffs/HO-20261014-p6-5-android-launch-smoke.json"
+  ],
+  "work_completed": [
+    "O proprietário confirmou que o APK fecha imediatamente ao tocar no ícone; a tela de diagnóstico do PR #567 não confirmou nem corrigiu a causa.",
+    "Adicionado ensaio executável do mesmo app Release compilado para x86_64 num emulador Android 13: instalação, launcher, processo vivo e tela de projetos.",
+    "O build glue existente chama o teste no GitHub antes do upload de artefatos; falha de abertura reprova o build e imprime o crash buffer. Sem alterar workflows ou política."
+  ],
+  "verification": [
+    {
+      "check": "bash -n e git diff --check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Sintaxe dos scripts e whitespace validados localmente."
+    },
+    {
+      "check": "APK real no emulador Android 13",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando boot/teste com logcat e execução do CI; ainda não há causa confirmada."
+    },
+    {
+      "check": "Abertura no moto g32 após correção",
+      "kind": "human",
+      "result": "pending",
+      "evidence": "Sintoma atual: fecha imediatamente. Revalidar apenas depois de corrigir e produzir novo APK.",
+      "object": "apps/ecosystem-ai/docs-r4-android-native.md",
+      "critical": true
+    }
+  ],
+  "known_issues": [
+    "Crash de abertura ainda sob investigação; nenhum APK é anunciado corrigido só por compilar.",
+    "A compilação x86_64 do emulador não valida a arquitetura arm64 nem toda a combinação de hardware/runtime do moto g32."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Reproduzir o crash e obter a exceção pelo logcat.",
+    "Corrigir a causa no mesmo PR, repetir ensaio, integrar e entregar APK com nome novo."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md",
+    "apps/ecosystem-ai/docs-r4-android-native.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Sintoma, scripts, resultado e próximas ações registrados neste handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Ensaio automatizado de abertura é distinto de DEVICE no moto g32."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P6-5 permanece aberta e crash não é declarado corrigido antes de prova."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "ecosystem-ai-packaged-apk-launch-test",
+      "status": "product-specific",
+      "rationale": "Ensaio do cliente, package ID e tela deste Product; sem abstração compartilhada."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Fortalece a verificação funcional do Product dentro do build glue já autorizado; não muda workflow, autoridade, assinatura, identidade ou permissões do aplicativo."
+  }
+}

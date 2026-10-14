@@ -37,3 +37,6 @@ cp "$apk" android-preview/Ecosystem-AI-Android-Preview.apk
 cp docs-r4-android-native.md android-preview/README.md
 (cd android-preview && sha256sum Ecosystem-AI-Android-Preview.apk > SHA256SUMS.txt)
 "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose android-preview/Ecosystem-AI-Android-Preview.apk
+if [[ "${GITHUB_ACTIONS:-false}" == true ]]; then
+  bash tools/smoke-android-preview.sh "$SDKMANAGER"
+fi
