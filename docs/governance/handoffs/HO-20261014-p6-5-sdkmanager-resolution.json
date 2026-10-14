@@ -1,0 +1,95 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-p6-5-sdkmanager-resolution",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T21:15:12Z",
+  "agent": {
+    "id": "codex-p6-5-android-build-fix",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "verifying",
+  "branch": "fix/p6-5-sdkmanager-resolution-20261014",
+  "base_commit": "593fcfc88dbbece30b123bd925fcac5f7cafc2c2",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/tools/build-android-preview.sh",
+    "docs/governance/handoffs/HO-20261014-p6-5-sdkmanager-resolution.json"
+  ],
+  "work_completed": [
+    "Verificado o estado integrado da P6-5: os testes .NET do cliente Android passam, mas os jobs ecosystem-ai-ci/android e ecosystem-ai-android-preview falhavam antes do build porque sdkmanager não era encontrado no PATH.",
+    "O script agora procura sdkmanager no PATH e nos diretórios do Android SDK, passa explicitamente ANDROID_HOME como sdk_root e falha com diagnóstico objetivo se os command-line tools estiverem ausentes.",
+    "Sem mudanças em assinatura, identidade, versão, workflow, credenciais, permissões ou comportamento do produto."
+  ],
+  "verification": [
+    {
+      "check": "bash -n apps/ecosystem-ai/tools/build-android-preview.sh",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Sintaxe bash validada."
+    },
+    {
+      "check": "Build script with isolated SDK manager fixture",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Fixture sem sdkmanager no PATH encontrou cmdline-tools/latest/bin/sdkmanager, passou --sdk_root e os pacotes Android 36, concluiu coleta/checksum de APK simulado. Isso verifica resolução/empacotamento do script; não é compilação real do APK."
+    },
+    {
+      "check": "ecosystem-ai-ci and ecosystem-ai-android-preview on the actual GitHub runner",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Runs 38491408050 e 38491408319 confirmam que os testes .NET passaram e o build Android falhou com `sdkmanager: command not found`; executar novamente após publicar este commit.",
+      "object": "https://github.com/AbnerCruz/Ecosystem/actions"
+    }
+  ],
+  "known_issues": [
+    "O SDK Android real não está instalado nesta sessão; o novo APK ainda precisa ser produzido e verificado pelo CI."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Publicar a branch e conferir os jobs ecosystem-ai-ci/android e ecosystem-ai-android-preview no novo estado combinado.",
+    "Depois do APK real verde, disponibilizá-lo para o roteiro DEVICE A-F já aprovado na Issue #559; manter P6-5 aberta até as evidências restantes."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    ".github/workflows/ecosystem-ai-ci.yml",
+    ".github/workflows/ecosystem-ai-android-preview.yml",
+    "apps/ecosystem-ai/docs-r4-android-native.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-014",
+      "evidence": "A correção reaproveita os workflows do Product e não altera lifecycle, versão ou release de outros componentes."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "O teste simulado não é apresentado como build real, validação de APK ou teste em aparelho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P6-5 não é declarada concluída; CI real, APK e evidências humanas ainda estão pendentes."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "ecosystem-ai-android-sdkmanager-resolution",
+      "status": "product-specific",
+      "rationale": "Apenas corrige a localização do SDK manager no script de build existente deste Product; não cria uma API ou abstração compartilhada."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Correção local e compatível do build já autorizado na P6-5; preserva workflow, assinatura de desenvolvimento, identidade e canal, sem reduzir checks ou alterar autoridade."
+  }
+}
