@@ -13,8 +13,8 @@
   "state": "review",
   "branch": "ccr-2e1b58fa-7mhpmx",
   "base_commit": "d30db228",
-  "commit": null,
-  "pr": null,
+  "commit": "f969492f",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/560",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/WorldDecorations.cs",
     "apps/urbe/csharp/src/Urbe.Core/WorldPrefs.cs",
