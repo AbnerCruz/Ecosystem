@@ -46,6 +46,39 @@ public interface IUrbeVaultStorage
         Task.FromResult<IReadOnlyList<string>>([]);
 
     /// <summary>
+    /// Renames ONE folder of the vault (a neighbourhood renamed: openRegionEditDialog → confirmRegion), keeping it in
+    /// the same parent: <paramref name="from"/> and <paramref name="to"/> differ only in the last name. With the same
+    /// safeguards as moving a note: nothing changed outside the Urbe since the open, nothing with the new name already
+    /// there, and afterwards every file read back identical under the new path. A host that cannot rename throws.
+    /// </summary>
+    Task RenameFolderAsync(string from, string to, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não renomeia pastas.");
+
+    /// <summary>The parent of both paths must be the same, and both must be safe folder paths.</summary>
+    static void EnsureFolderRename(string from, string to)
+    {
+        EnsureWritableFolderPath(from);
+        EnsureWritableFolderPath(to);
+        static string Parent(string p) => p.Contains('/') ? p[..p.LastIndexOf('/')] : "";
+        if (!string.Equals(Parent(from), Parent(to), StringComparison.Ordinal))
+            throw new InvalidOperationException("Renomear pasta não muda a pasta de lugar: " + from + " → " + to);
+        if (string.Equals(from, to, StringComparison.Ordinal)) throw new InvalidOperationException("O nome é o mesmo: " + from);
+    }
+
+    /// <summary>The baseline after a folder rename: every file under <paramref name="from"/> must now be under
+    /// <paramref name="to"/> with the same bytes, and nothing else may have changed.</summary>
+    static void EnsureRenamed(IReadOnlyDictionary<string, VaultFile> baseline, IReadOnlyDictionary<string, VaultFile> observed, string from, string to)
+    {
+        if (observed.Count != baseline.Count) throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
+        foreach (var pair in baseline)
+        {
+            var key = pair.Key.StartsWith(from + "/", StringComparison.OrdinalIgnoreCase) ? to + pair.Key[from.Length..] : pair.Key;
+            if (!observed.TryGetValue(key, out var actual) || !actual.Bytes.Span.SequenceEqual(pair.Value.Bytes.Span))
+                throw new IOException("Verificação pós-gravação detectou divergência em: " + key);
+        }
+    }
+
+    /// <summary>
     /// One file of the vault for its preview (openFilePreview → blobDoArquivo): its size and, when it is at most
     /// <paramref name="maxBytes"/>, its bytes. Null when the file is not there (the 1.8.4's "Arquivo não encontrado").
     /// Read only; never follows a link out of the folder. A host that cannot read files returns null.

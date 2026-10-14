@@ -374,6 +374,7 @@ public sealed partial class MainView
     public async Task ConfirmPlacementAsync()
     {
         if (World.Tool is DecorationTool decorating) { await ConfirmDecorationAsync(decorating); return; }
+        if (World.Tool is RegionShapeTool shaping) { await ApplyRegionShapeAsync(shaping); return; }
         if (World.City is not { } city || World.Tool is not PlacementTool { Candidate: { } p } || Dialogs.IsOpen) return;
         if (_copySource is { } source)
         {

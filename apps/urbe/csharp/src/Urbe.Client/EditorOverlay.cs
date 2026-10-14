@@ -185,9 +185,11 @@ public sealed class EditorOverlay : Grid
         body.SizeChanged += (_, e) => { MathBar.Place(e.NewSize.Width); Context.Place(e.NewSize.Width); };
         Context.LineChosen += GoToLine;
         // the pinned reference above the text, up to 40 % of the height, with its own scroll (DEC-0045, UC-39)
-        var bodyHost = new Grid { RowDefinitions = new RowDefinitions("Auto,*") };
+        var bodyHost = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*") };
+        bodyHost.Children.Add(_tabBar);
+        SetRow(Pinned, 1);
         bodyHost.Children.Add(Pinned);
-        SetRow(body, 1);
+        SetRow(body, 2);
         bodyHost.Children.Add(body);
         bodyHost.SizeChanged += (_, e) => Pinned.MaxHeight = Math.Max(120, e.NewSize.Height * .4);
         AddRow(bodyHost, 3);
@@ -317,6 +319,7 @@ public sealed class EditorOverlay : Grid
         _note = note;
         _savedContent = note.Content;
         _title.Text = System.IO.Path.GetFileName(note.Path);
+        TouchTab(note.Path);
         Editor.Text = note.Content;
         _opening = false;
         RebuildIndex();
@@ -343,6 +346,8 @@ public sealed class EditorOverlay : Grid
     public void Renamed(string path)
     {
         if (_note is null) return;
+        var index = _tabs.IndexOf(_note.Path);
+        if (index >= 0) _tabs[index] = path;
         _note = _note with { Path = path };
         _title.Text = System.IO.Path.GetFileName(path);
         RebuildIndex();
@@ -351,6 +356,102 @@ public sealed class EditorOverlay : Grid
         if (!canVisual && Mode == EditorMode.Visual) ShowMode(EditorMode.Fonte);
         UpdateChrome();
         UpdateStatus(changed: HasChanges);
+        RenderTabs();
+    }
+
+    // ------------------------------------------------------------------ tabs (v21OpenTabs)
+
+    /// <summary>The notes opened, in the order they were first opened (v21OpenTabs).</summary>
+    private readonly List<string> _tabs = [];
+    private readonly StackPanel _tabRow = new() { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(12, 6) };
+    private readonly ScrollViewer _tabBar = new()
+    {
+        IsVisible = false,
+        HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+        VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
+    };
+
+    /// <summary>The open tabs (tests and the host).</summary>
+    public IReadOnlyList<string> Tabs => _tabs;
+
+    /// <summary>v21TouchTab: tabs of notes that no longer exist go; the note opened joins at the end.</summary>
+    private void TouchTab(string path)
+    {
+        if (Notes?.Invoke().Select(n => n.Path).ToHashSet(StringComparer.Ordinal) is { } existing)
+            _tabs.RemoveAll(t => t != path && !existing.Contains(t));
+        if (!_tabs.Contains(path)) _tabs.Add(path);
+        RenderTabs();
+    }
+
+    /// <summary>v21RenderTabs: a tab per note, the open one marked, each with ×; the bar shows from two tabs on (v22Single).</summary>
+    private void RenderTabs()
+    {
+        _tabBar.Content ??= _tabRow;
+        _tabRow.Children.Clear();
+        foreach (var path in _tabs)
+        {
+            bool active = path == _note?.Path;
+            var close = new Button
+            {
+                Content = UrbeTheme.Icon(UrbeTheme.Icons.CloseUi, 12, active ? UrbeTheme.Text : UrbeTheme.Text3, 2),
+                Width = 22, Height = 22, Padding = new Thickness(0), CornerRadius = new CornerRadius(11), Background = Brushes.Transparent,
+                HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
+            };
+            ToolTip.SetTip(close, "Fechar aba");
+            var tab = path;
+            close.Click += async (_, e) => { e.Handled = true; await CloseTabAsync(tab); };
+            var label = new TextBlock
+            {
+                Text = System.IO.Path.GetFileName(path), FontFamily = UrbeTheme.UiFont, FontSize = 13, MaxWidth = 180,
+                FontWeight = active ? FontWeight.SemiBold : FontWeight.Normal, TextTrimming = TextTrimming.CharacterEllipsis,
+                Foreground = UrbeTheme.Brush(active ? UrbeTheme.Text : UrbeTheme.Text2), VerticalAlignment = VerticalAlignment.Center
+            };
+            var button = new Button
+            {
+                Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { label, close } },
+                Height = 32, Padding = new Thickness(12, 0, 6, 0), CornerRadius = new CornerRadius(16),
+                Background = UrbeTheme.Brush(active ? UrbeTheme.Surface3 : UrbeTheme.Surface2),
+                BorderBrush = UrbeTheme.Brush(active ? UrbeTheme.Accent : UrbeTheme.Line2), BorderThickness = new Thickness(1),
+                VerticalContentAlignment = VerticalAlignment.Center
+            };
+            Avalonia.Automation.AutomationProperties.SetName(button, "Aba " + System.IO.Path.GetFileName(path));
+            button.Click += async (_, _) => await SwitchTabAsync(tab);
+            _tabRow.Children.Add(button);
+        }
+        _tabBar.IsVisible = _tabs.Count >= 2;
+    }
+
+    /// <summary>A tab tapped: the open note is saved, then the tab's note opens.</summary>
+    public async Task SwitchTabAsync(string path)
+    {
+        if (path == _note?.Path) return;
+        if (Notes?.Invoke().FirstOrDefault(n => n.Path == path) is not { } note) { _tabs.Remove(path); RenderTabs(); return; }
+        if (!await LeaveCurrentAsync()) return;
+        _trail.Clear();
+        Show(note);
+    }
+
+    /// <summary>× of a tab: it closes; if it was the open note, the last tab opens, or the editor closes when none is left.</summary>
+    public async Task CloseTabAsync(string path)
+    {
+        if (path != _note?.Path)
+        {
+            _tabs.Remove(path);
+            RenderTabs();
+            return;
+        }
+        if (!await LeaveCurrentAsync()) return;
+        _tabs.Remove(path);
+        var notes = Notes?.Invoke().ToList() ?? [];
+        while (_tabs.Count > 0)
+        {
+            var next = _tabs[^1];
+            if (notes.FirstOrDefault(n => n.Path == next) is { } note) { _trail.Clear(); Show(note); return; }
+            _tabs.RemoveAt(_tabs.Count - 1);
+        }
+        RenderTabs();
+        IsVisible = false;
+        Closed?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Text currently in the editor, as a note.</summary>

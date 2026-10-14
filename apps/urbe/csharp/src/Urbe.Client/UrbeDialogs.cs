@@ -248,6 +248,63 @@ public sealed class UrbeDialogs : Grid
         return (new StackPanel { Children = { Head(title, message, () => finish(null)), list } }, null, null, list.Children.Count > 0 ? list.Children[0] : null);
     });
 
+    /// <summary>
+    /// The region dialog of the 1.8.4 (#regionDialog: Nome, Descrição, Cor, "Salvar alterações"): the three values,
+    /// or null when cancelled. The colour is one of <paramref name="colors"/> (the current one marked).
+    /// </summary>
+    public Task<(string Name, string Description, string Color)?> RegionAsync(string title, string name, string description, string color,
+        IReadOnlyList<string> colors, string confirm) => Open<(string, string, string)?>(finish =>
+    {
+        TextBox Field(string value, bool multi)
+        {
+            var box = NewField(value, multi);
+            box.Resources["TextControlBackgroundFocused"] = UrbeTheme.Brush(UrbeTheme.Bg);
+            box.Resources["TextControlBackgroundPointerOver"] = UrbeTheme.Brush(UrbeTheme.Bg);
+            box.Resources["TextControlBorderBrushFocused"] = UrbeTheme.Brush(UrbeTheme.Accent);
+            return box;
+        }
+        TextBox NewField(string value, bool multi) => new()
+        {
+            Text = value, MinHeight = multi ? 76 : 50, AcceptsReturn = multi, TextWrapping = multi ? TextWrapping.Wrap : TextWrapping.NoWrap,
+            Padding = new Thickness(14, 12), CornerRadius = new CornerRadius(12), FontFamily = UrbeTheme.UiFont, FontSize = 16,
+            Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text),
+            BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), CaretBrush = UrbeTheme.Brush(UrbeTheme.Accent)
+        };
+        TextBlock Label(string text) => new() { Text = text, FontFamily = UrbeTheme.UiFont, FontSize = 13, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), Margin = new Thickness(0, 12, 0, 8) };
+        var nameBox = Field(name, false);
+        var descBox = Field(description, true);
+        var chosen = colors.Contains(color, StringComparer.OrdinalIgnoreCase) ? color : colors.Count > 0 ? colors[0] : color;
+        var swatches = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+        void Paint()
+        {
+            foreach (var b in swatches.Children.OfType<Button>())
+            {
+                bool on = string.Equals((string)b.Tag!, chosen, StringComparison.OrdinalIgnoreCase);
+                b.BorderBrush = UrbeTheme.Brush(on ? UrbeTheme.Text : UrbeTheme.Line2);
+                b.BorderThickness = new Thickness(on ? 3 : 1);
+            }
+        }
+        foreach (var c in colors)
+        {
+            var swatch = new Button { Tag = c, Width = 38, Height = 38, CornerRadius = new CornerRadius(19), Background = UrbeTheme.Brush(c) };
+            Avalonia.Automation.AutomationProperties.SetName(swatch, "Cor " + c);
+            swatch.Click += (_, _) => { chosen = c; Paint(); };
+            swatches.Children.Add(swatch);
+        }
+        Paint();
+        void Submit() => finish(((nameBox.Text ?? "").Trim(), descBox.Text ?? "", chosen));
+        var cancel = Action("Cancelar", false);
+        cancel.Click += (_, _) => finish(null);
+        var ok = Action(confirm, true);
+        ok.Click += (_, _) => Submit();
+        var actions = new Grid { ColumnDefinitions = new ColumnDefinitions("*,10,*"), Margin = new Thickness(0, 20, 0, 0) };
+        Grid.SetColumn(ok, 2);
+        actions.Children.Add(cancel);
+        actions.Children.Add(ok);
+        var body = new StackPanel { Children = { Head(title, null, () => finish(null)), Label("Nome"), nameBox, Label("Descrição"), descBox, Label("Cor"), swatches, actions } };
+        return (body, null, Submit, nameBox);
+    });
+
     /// <summary>A choice among pictures (the buildings' Visual, DEC-0045): a grid of pixel-art previews with their names;
     /// the current one is outlined. The index chosen, or null.</summary>
     public Task<int?> PickArtAsync(string title, IReadOnlyList<(string Label, IImage? Art)> options, int? current = null, string? message = null) => Open<int?>(finish =>

@@ -1,0 +1,103 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-urbe-region-edit",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T17:37:04Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "83d86e80",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/563",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCityCreate.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/RegionEdits.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/RegionEditUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261014-urbe-region-edit.json",
+    "apps/urbe/csharp/src/Urbe.Client/RegionShapes.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/MapTool.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/RegionShapeUiTests.cs"
+  ],
+  "work_completed": [
+    "Editar região como na 1.8.4 (openRegionEditDialog/confirmRegion): Nome, Descrição e Cor da paleta.",
+    "Entradas: ⋯ da pasta no Explorer e segurar o bairro 520 ms na cidade (v20CanvasHold).",
+    "Nome novo renomeia a pasta real (RenameFolderAsync, desktop e Android, mesmo pai, verificação arquivo a arquivo); depois documentos, casas, anexos (folderPath/relPath), visuais e mapa.",
+    "Nome de pasta já existente é recusado sem mexer em nada.",
+    "Forma do bairro: tocar entra no modo com 8 alças (v20EntrarShape/v20ResizeDraft); Aplicar usa a máscara prioritária do dono (ResizeRegionMask) e cede território (ApplyRegionMask).",
+    "As casas da raiz cobertas pela forma nova entram na pasta com o arquivo movido no vault (absorverConstrucoesDaRaiz via MoveNotesToAsync)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.RegionEdit_RenamesTheFolderInTheVaultAndKeepsEverythingInside e Explorer_*",
+      "result": "passed",
+      "evidence": "Bairro → Centro: pasta renomeada, Centro/Um.md com o mesmo texto, casa e mapa.json com Centro/Um.md; só a cor não mexe no disco; nome repetido recusado; captura native-region-edit.png."
+    },
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.RegionShape_GrowsOverARootHouseAndAdoptsItsFile",
+      "result": "passed",
+      "evidence": "Bairro cresce pela alça noroeste até cobrir Comece; Comece.md vai para Bairro/Comece.md e o mapa.json grava o caminho novo."
+    },
+    {
+      "kind": "human",
+      "check": "Segurar bairro e renomear pasta no Android",
+      "result": "not-applicable",
+      "evidence": "DocumentsContract.RenameDocument depende do provedor do aparelho (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs"
+    }
+  ],
+  "known_issues": [
+    "Desenhar região nova ainda não adota as casas da raiz (só a forma do bairro adota); unificar numa próxima fatia."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Renomear, mover e excluir anexos (renomearAsset/moverAsset/removerAsset).",
+    "Abas do editor (v21OpenTabs)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Renomear pasta no Android pendente de aparelho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-19 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "region-edit",
+      "status": "product-specific",
+      "rationale": "Cidade do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Renomeia pastas do vault (dados do usuário) pela camada de armazenamento."
+  }
+}

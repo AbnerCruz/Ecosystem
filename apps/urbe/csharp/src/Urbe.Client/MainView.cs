@@ -178,6 +178,9 @@ public sealed partial class MainView : Grid
         // v21MoveHold: holding a house carries it (only with a vault that can be written)
         World.MoveValid = (b, x, y) => World.City?.ValidMove(b, x, y).Ok ?? false;
         World.BuildingMoveRequested += (b, x, y) => _ = MoveHouseAsync(b, x, y);
+        // v20CanvasHold: holding a neighbourhood (not a house) opens its edit dialog
+        World.RegionHeld += region => { if (!Dialogs.IsOpen) _ = EditRegionAsync(region); };
+        World.RegionTapped += region => { if (!Dialogs.IsOpen && World.Tool is null) BeginRegionShape(region); };
     }
 
     public WorldView World { get; }
@@ -978,6 +981,8 @@ public sealed partial class MainView : Grid
             new("Nova nota aqui", UrbeTheme.Icons.File, NotesWhere(folder), Run: () => CreateNoteInNotesAsync(folder: folder)),
             new("Nova subpasta", UrbeTheme.Icons.Folder, "Vira uma região dentro desta.", Run: () => CreateFolderAsync(region?.Id))
         };
+        if (region is not null)
+            items.Add(new("Editar nome, cor e descrição", UrbeTheme.Icons.Pencil, "Renomear a pasta muda o nome dela no vault.", Run: () => EditRegionAsync(region)));
         if (region is not null)
             items.Add(new("Mostrar na cidade", UrbeTheme.Icons.City, "O bairro desta pasta.", Run: () =>
             {

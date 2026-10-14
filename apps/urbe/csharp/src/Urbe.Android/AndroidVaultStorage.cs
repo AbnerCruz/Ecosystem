@@ -164,6 +164,39 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public async Task RenameFolderAsync(string from, string to, CancellationToken cancellationToken = default)
+    {
+        IUrbeVaultStorage.EnsureFolderRename(from, to);
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, files);
+            await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var folder = FindDocument(tree, from) ?? throw new DirectoryNotFoundException("A pasta não existe no vault: " + from);
+                bool caseOnly = string.Equals(from, to, StringComparison.OrdinalIgnoreCase);
+                if (!caseOnly && FindDocument(tree, to) is not null) throw new IOException("Já existe uma pasta ou arquivo com esse nome: " + to);
+                var name = to[(to.LastIndexOf('/') + 1)..];
+                if (caseOnly)
+                {
+                    // the providers ignore case: through a temporary name the vault does not list
+                    folder = DocumentsContract.RenameDocument(Resolver, folder, name + ".urbe-rename-" + Guid.NewGuid().ToString("N"))
+                        ?? throw new IOException("O provedor não renomeou a pasta: " + from);
+                }
+                _ = DocumentsContract.RenameDocument(Resolver, folder, name)
+                    ?? throw new IOException("O provedor não renomeou a pasta: " + from);
+                var observed = Snapshot(ReadFiles(tree, cancellationToken));
+                IUrbeVaultStorage.EnsureRenamed(baseline, observed, from, to);
+                _baseline = observed;
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     public async Task<VaultFileRead?> ReadFileAsync(string path, long maxBytes, CancellationToken cancellationToken = default)
     {
         await _gate.WaitAsync(cancellationToken);

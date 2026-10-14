@@ -104,3 +104,74 @@ public sealed class DecorationTool(WorldDecorations.Kind kind, Func<int, int, bo
         context.DrawRectangle(null, new Pen(UrbeTheme.Brush(valid(c.X, c.Y) ? "#7ef29a" : "#ef766f"), 3), rect);
     }
 }
+
+/// <summary>
+/// v20RegionShape: a neighbourhood being reshaped. Its rectangle is drawn dashed with eight handles
+/// (v20HandlePoints); dragging a handle moves that side or corner (v20ResizeDraft, at least 3×3). The new shape is
+/// applied by the dock's Aplicar (v20SairShape(true)), with the owner's priority mask.
+/// </summary>
+public sealed class RegionShapeTool(LegacyCityRegion region, (int X, int Y, int W, int H) start, Func<double> tilePixels, Action changed) : MapTool
+{
+    public static readonly string[] Handles = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
+
+    public LegacyCityRegion Region { get; } = region;
+    public (int X, int Y, int W, int H) Start { get; } = start;
+    public (int X, int Y, int W, int H) Draft { get; private set; } = start;
+    public bool Changed => Draft != Start;
+
+    private string? _handle;
+    private (int X, int Y, int W, int H) _base;
+
+    /// <summary>A handle's place in tiles (corners on the rectangle's edges, sides in their middle).</summary>
+    public static (double X, double Y) HandleAt((int X, int Y, int W, int H) b, string k) => k switch
+    {
+        "nw" => (b.X, b.Y), "n" => (b.X + b.W / 2.0, b.Y), "ne" => (b.X + b.W, b.Y), "e" => (b.X + b.W, b.Y + b.H / 2.0),
+        "se" => (b.X + b.W, b.Y + b.H), "s" => (b.X + b.W / 2.0, b.Y + b.H), "sw" => (b.X, b.Y + b.H), _ => (b.X, b.Y + b.H / 2.0)
+    };
+
+    public override void Down(int tx, int ty)
+    {
+        // v20HandleAt: within 18 px of a handle (at least the tile itself)
+        double reach = Math.Max(1, 18 / Math.Max(1e-6, tilePixels()));
+        _handle = null;
+        double best = double.MaxValue;
+        foreach (var k in Handles)
+        {
+            var (hx, hy) = HandleAt(Draft, k);
+            double d = Math.Max(Math.Abs(tx + .5 - hx), Math.Abs(ty + .5 - hy));
+            if (d <= reach + .5 && d < best) { best = d; _handle = k; }
+        }
+        _base = Draft;
+    }
+
+    public override void Move(int tx, int ty)
+    {
+        if (_handle is null) return;
+        Draft = LegacyCity.ResizeDraft(_base, _handle, tx, ty);
+        changed();
+    }
+
+    public override void Up(int tx, int ty)
+    {
+        Move(tx, ty);
+        _handle = null;
+    }
+
+    public override void Cancel() => _handle = null;
+
+    public override void Render(DrawingContext context, WorldView view)
+    {
+        var b = Draft;
+        var p = view.Camera.WorldToScreen(b.X * LegacyWorld.Tile, b.Y * LegacyWorld.Tile);
+        double size = LegacyWorld.Tile * view.Camera.Zoom;
+        var line = UrbeTheme.Brush("#b9ecff");
+        context.DrawRectangle(null, new Pen(line, 2, new DashStyle([7, 4], 0)), new Rect(p.X, p.Y, b.W * size, b.H * size));
+        double radius = Math.Max(6, 7 * view.Camera.Zoom);
+        foreach (var k in Handles)
+        {
+            var (hx, hy) = HandleAt(b, k);
+            var q = view.Camera.WorldToScreen(hx * LegacyWorld.Tile, hy * LegacyWorld.Tile);
+            context.DrawEllipse(UrbeTheme.Brush("#0d1b24"), new Pen(line, 2), q, radius, radius);
+        }
+    }
+}

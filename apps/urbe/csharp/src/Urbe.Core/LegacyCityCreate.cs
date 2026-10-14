@@ -43,6 +43,53 @@ public sealed partial class LegacyCity
         return CreateRegion(UniqueRegionName(name), 1, seed, parent?.Id, null);
     }
 
+    /// <summary>The neighbourhood colours the 1.8.4 offers (app.js colors).</summary>
+    public static IReadOnlyList<string> RegionColors { get; } = ["#5bc2ff", "#e38eff", "#7ee3a0", "#ffd567", "#ff9a88"];
+
+    /// <summary>
+    /// openRegionEditDialog → confirmRegion (edit): the folder path of <paramref name="r"/> now and with the name typed
+    /// (trimmed; empty is "Região", as the 1.8.4 does). Equal when the name keeps the path. Null when another folder
+    /// already has that path: on a real disk two folders cannot share a name.
+    /// </summary>
+    public (string Name, string Before, string After)? PlanRegionEdit(LegacyCityRegion r, string? typedName)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        var name = (typedName ?? "").Trim();
+        if (name.Length == 0) name = "Região";
+        var paths = RegionPaths();
+        var before = paths[r.Id];
+        var parent = r.ParentId is { } pid && paths.TryGetValue(pid, out var pp) ? pp + "/" : "";
+        var after = parent + ArtifactModel.SafeName(name);
+        if (string.Equals(after, before, StringComparison.Ordinal)) return (name, before, before);
+        if (Regions.Any(x => x != r && string.Equals(paths[x.Id], after, StringComparison.OrdinalIgnoreCase))) return null;
+        return (name, before, after);
+    }
+
+    /// <summary>
+    /// The edit applied (confirmRegion): name, description and colour (#rrggbb, otherwise the old one), and — when the
+    /// folder was renamed on disk — every house and attachment under the old path now under the new one
+    /// (atualizarFolderPathAoRenomear, here for the files' real paths too). The documents are moved by the caller.
+    /// </summary>
+    public void ApplyRegionEdit(LegacyCityRegion r, (string Name, string Before, string After) plan, string? description, string? color)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        r.Name = plan.Name;
+        r.Description = description ?? "";
+        if (color is not null && System.Text.RegularExpressions.Regex.IsMatch(color, "^#[0-9a-fA-F]{6}$")) r.Color = color.ToLowerInvariant();
+        if (string.Equals(plan.Before, plan.After, StringComparison.Ordinal)) return;
+        string Moved(string path) => path == plan.Before ? plan.After
+            : path.StartsWith(plan.Before + "/", StringComparison.Ordinal) ? plan.After + path[plan.Before.Length..] : path;
+        foreach (var b in Buildings)
+        {
+            if (b.IsNote) { b.Path = Moved(b.Path); continue; }
+            if (b.Files is not JsonArray files) continue;
+            foreach (var f in files)
+                if (f is JsonObject o)
+                    foreach (var key in new[] { "folderPath", "relPath" })
+                        if (o[key] is JsonValue v && v.TryGetValue<string>(out var value)) o[key] = Moved(value);
+        }
+    }
+
     /// <summary>
     /// validarPosicaoMovel(b, x, y): the lot under a carried building. Inside a neighbourhood (the one under the
     /// lot's centre, regiaoDestinoLote) it must be a valid lot of it; outside, no tile may touch a neighbourhood. The
@@ -239,4 +286,136 @@ public sealed partial class LegacyCity
 
     /// <summary>The default colour of the "Nova região" dialog: colors[regions.length % 5].</summary>
     public string NextRegionColor() => BaseColors[Regions.Count % BaseColors.Length];
+}
+
+public sealed partial class LegacyCity
+{
+    /// <summary>urbeDentroDe(rid, anc): the neighbourhood is <paramref name="anc"/> or lies inside it.</summary>
+    private bool Within(string? regionId, LegacyCityRegion? anc)
+    {
+        if (anc is null) return false;
+        var r = Regions.Find(o => o.Id == regionId);
+        for (int g = 0; r is not null && g < 24; g++)
+        {
+            if (r.Id == anc.Id) return true;
+            var p = r.ParentId;
+            r = p is not null ? Regions.Find(o => o.Id == p) : null;
+        }
+        return false;
+    }
+
+    /// <summary>v20ResizeDraft(base, handle, t): the rectangle with the dragged side(s) at the tile, at least 3×3.</summary>
+    public static (int X, int Y, int W, int H) ResizeDraft((int X, int Y, int W, int H) b, string handle, int tx, int ty)
+    {
+        int x0 = b.X, y0 = b.Y, x1 = b.X + b.W - 1, y1 = b.Y + b.H - 1;
+        if (handle.Contains('w')) x0 = Math.Min(tx, x1 - 2);
+        if (handle.Contains('e')) x1 = Math.Max(tx, x0 + 2);
+        if (handle.Contains('n')) y0 = Math.Min(ty, y1 - 2);
+        if (handle.Contains('s')) y1 = Math.Max(ty, y0 + 2);
+        return (x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+    }
+
+    /// <summary>
+    /// v20MascaraPrioritaria(bounds, owner): the new shape of <paramref name="owner"/> inside the rectangle — never
+    /// smaller than its own houses with their gap (v20LimitarBoundsAConstrucoes), inside its parent, without water,
+    /// other neighbourhoods' protected lots (v20TileProtegidoPorConstrucaoAlheia) or other sub-neighbourhoods
+    /// (v20TileEmSubregiaoAlheia); the biggest connected piece plus every piece holding one of its houses.
+    /// </summary>
+    public LegacyRegionMask ResizeRegionMask(LegacyCityRegion owner, int bx, int by, int bw, int bh)
+    {
+        ArgumentNullException.ThrowIfNull(owner);
+        int x0 = bx, y0 = by, x1 = bx + bw - 1, y1 = by + bh - 1;
+        foreach (var c in Buildings)
+            if (c.RegionId == owner.Id)
+            {
+                x0 = Math.Min(x0, c.X - LotGap); y0 = Math.Min(y0, c.Y - LotGap);
+                x1 = Math.Max(x1, c.X + c.W - 1 + LotGap); y1 = Math.Max(y1, c.Y + c.H - 1 + LotGap);
+            }
+        var bounds = (x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+        var parent = owner.ParentId is { } pid ? Regions.Find(r => r.Id == pid) : null;
+        bool Allowed(int x, int y)
+        {
+            if (x < x0 || y < y0 || x > x1 || y > y1 || IsWater(x, y)) return false;
+            if (parent is not null && !RegionHasTile(parent, x, y)) return false;
+            foreach (var b in Buildings)
+            {
+                if (b.RegionId is null || b.RegionId == owner.Id || Within(b.RegionId, owner)) continue;
+                if (x >= b.X - LotGap && x < b.X + b.W + LotGap && y >= b.Y - LotGap && y < b.Y + b.H + LotGap) return false;
+            }
+            foreach (var r in Regions)
+            {
+                if (r.Id == owner.Id || r.ParentId is null || Within(r.Id, owner) || Within(owner.Id, r)) continue;
+                if (RegionHasTile(r, x, y)) return false;
+            }
+            return true;
+        }
+        var cand = new List<(int X, int Y)>();
+        int dry = 0, total = 0;
+        for (int y = y0; y <= y1; y++)
+        for (int x = x0; x <= x1; x++)
+        {
+            total++;
+            if (Allowed(x, y)) { dry++; cand.Add((x, y)); }
+        }
+        if (cand.Count == 0) return new LegacyRegionMask([], dry, total, bounds);
+        var seen = new HashSet<(int, int)>();
+        var comps = new List<List<(int X, int Y)>>();
+        foreach (var seed in cand)
+        {
+            if (seen.Contains(seed)) continue;
+            var queue = new Queue<(int X, int Y)>();
+            queue.Enqueue(seed);
+            var cells = new List<(int X, int Y)>();
+            while (queue.Count > 0)
+            {
+                var c = queue.Dequeue();
+                if (!seen.Add(c)) continue;
+                if (!Allowed(c.X, c.Y)) continue;
+                cells.Add(c);
+                queue.Enqueue((c.X + 1, c.Y)); queue.Enqueue((c.X - 1, c.Y)); queue.Enqueue((c.X, c.Y + 1)); queue.Enqueue((c.X, c.Y - 1));
+            }
+            if (cells.Count > 0) comps.Add(cells);
+        }
+        // comps.sort((a,b)=>b.length-a.length): a stable sort, the first biggest wins
+        var ordered = comps.Select((c, i) => (c, i)).OrderByDescending(p => p.c.Count).ThenBy(p => p.i).Select(p => p.c).ToList();
+        var keep = new List<(int X, int Y)>(ordered[0]);
+        var required = new HashSet<(int, int)>();
+        foreach (var b in Buildings)
+            if (b.RegionId == owner.Id)
+                for (int y = b.Y; y < b.Y + b.H; y++)
+                for (int x = b.X; x < b.X + b.W; x++) required.Add((x, y));
+        foreach (var comp in ordered.Skip(1))
+            if (comp.Any(required.Contains)) keep.AddRange(comp);
+        return new LegacyRegionMask(keep.Distinct().ToList(), dry, total, bounds);
+    }
+
+    /// <summary>
+    /// v20AplicarMascaraRegiao(r, m): the neighbourhood's cells are the mask, its bounds recalculated, the other
+    /// neighbourhoods of the same parent cede those tiles (v20CederTerritorio), holes closed (urbeTaparTodos) and the
+    /// index rebuilt. The root houses it now covers are returned for the caller to adopt (absorverConstrucoesDaRaiz),
+    /// which moves their files.
+    /// </summary>
+    public IReadOnlyList<LegacyCityBuilding> ApplyRegionMask(LegacyCityRegion r, LegacyRegionMask m)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        ArgumentNullException.ThrowIfNull(m);
+        r.CellList.Clear();
+        r.CellSet.Clear();
+        r.CellsNull = false;
+        foreach (var c in m.Cells) r.Add(c);
+        Bounds(r);
+        foreach (var old in Regions)
+        {
+            if (ReferenceEquals(old, r) || old.ParentId != r.ParentId || old.CellsNull || old.CellList.Count == 0) continue;
+            int before = old.CellList.Count;
+            old.CellList.RemoveAll(c => r.CellSet.Contains(c));
+            if (old.CellList.Count == before) continue;
+            old.CellSet.Clear();
+            foreach (var c in old.CellList) old.CellSet.Add(c);
+            Bounds(old);
+        }
+        TaparTodos();
+        Reindex();
+        return RootBuildingsUnder(r);
+    }
 }

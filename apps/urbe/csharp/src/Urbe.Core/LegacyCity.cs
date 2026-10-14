@@ -34,7 +34,7 @@ public sealed class LegacyCityRegion
     }
 
     public string Id { get; }
-    public string Name { get; }
+    public string Name { get; internal set; }
     public string? ParentId { get; }
     public string Color { get; internal set; }
     public int X { get; internal set; }

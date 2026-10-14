@@ -54,8 +54,32 @@ public sealed class WorldView : Control
     /// <summary>validarPosicaoMovel for the drawing of the carried building (green or red frame).</summary>
     public Func<LegacyCityBuilding, int, int, bool>? MoveValid { get; set; }
 
+    /// <summary>A tap on a neighbourhood, outside its houses (v20EntrarShape).</summary>
+    public event Action<LegacyCityRegion>? RegionTapped;
+
+    /// <summary>v20CanvasHold: a neighbourhood held 520 ms (outside its houses) asks for its edit dialog.</summary>
+    public event Action<LegacyCityRegion>? RegionHeld;
+    public const int RegionHoldMs = 520;
+    private LegacyCityRegion? _pressRegion;
+
     /// <summary>The carried building was let go at a new lot (finalizarMovimentoMundo).</summary>
     public event Action<LegacyCityBuilding, int, int>? BuildingMoveRequested;
+
+    /// <summary>
+    /// v21CanvasUp 'selectCandidate': a tap on tile (tx, ty). A decoration shows its menu, a house is selected (a note
+    /// opens its summary, a file building its preview), a neighbourhood enters its shape (v20EntrarShape).
+    /// </summary>
+    public void Tap(int tx, int ty)
+    {
+        if (City is null) return;
+        if (City.BuildingAt(tx, ty) is null && Prefs.DecorationAt(tx, ty) is { } decoration) { Select(null); DecorationTapped?.Invoke(decoration); }
+        else if (City.BuildingAt(tx, ty) is { } tapped) Select(tapped);
+        else
+        {
+            Select(null);
+            if (City.RegionAt(tx, ty) is { } region) RegionTapped?.Invoke(region);
+        }
+    }
 
     /// <summary>The hold that picks a building up (v21MoveHold), from tile (tx, ty) on it.</summary>
     public void PickUp(LegacyCityBuilding b, int tx, int ty)
@@ -125,6 +149,12 @@ public sealed class WorldView : Control
             {
                 var (tx, ty) = Camera.TileAt(at);
                 PickUp(b, tx, ty);
+            }
+            else if (_pointers.Count == 1 && !_dragged && Tool is null && _pressRegion is { } r)
+            {
+                // the hold is the gesture: the release that follows is not a tap
+                _pressAt = null;
+                RegionHeld?.Invoke(r);
             }
         };
         RefreshLighting();
@@ -1021,8 +1051,10 @@ public sealed class WorldView : Control
             _dragged = false;
             var (tx, ty) = Camera.TileAt(p);
             _pressBuilding = City?.BuildingAt(tx, ty);
+            _pressRegion = _pressBuilding is null && Prefs.DecorationAt(tx, ty) is null ? City?.RegionAt(tx, ty) : null;
             _moveHold.Stop();
-            if (_pressBuilding is not null && MoveValid is not null) _moveHold.Start();
+            _moveHold.Interval = TimeSpan.FromMilliseconds(_pressBuilding is not null ? MoveHoldMs : RegionHoldMs);
+            if ((_pressBuilding is not null && MoveValid is not null) || (_pressRegion is not null && RegionHeld is not null)) _moveHold.Start();
         }
         else { _moveHold.Stop(); if (Moving is not null) { Moving = null; } _pressAt = null; _pinchDistance = PinchDistance(); if (_toolGesture) { _toolGesture = false; Tool?.Cancel(); } }
         e.Handled = true;
@@ -1081,8 +1113,7 @@ public sealed class WorldView : Control
         else if (_pointers.Count == 0 && _pressAt is { } start && !_dragged && City is not null)
         {
             var (tx, ty) = Camera.TileAt(start);
-            if (City.BuildingAt(tx, ty) is null && Prefs.DecorationAt(tx, ty) is { } decoration) { Select(null); DecorationTapped?.Invoke(decoration); }
-            else Select(City.BuildingAt(tx, ty));   // a note opens its summary, a file building its preview
+            Tap(tx, ty);
         }
         if (_pointers.Count < 2) _pinchDistance = 0;
         if (_pointers.Count == 0) _pressAt = null;

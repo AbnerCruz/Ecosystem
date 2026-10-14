@@ -157,6 +157,51 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public async Task RenameFolderAsync(string from, string to, CancellationToken cancellationToken = default)
+    {
+        IUrbeVaultStorage.EnsureFolderRename(from, to);
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, files);
+            await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var rootFull = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar);
+                var source = Path.GetFullPath(Path.Combine([root, .. Segments(from)]));
+                var target = Path.GetFullPath(Path.Combine([root, .. Segments(to)]));
+                if (!source.StartsWith(rootFull + Path.DirectorySeparatorChar, StringComparison.Ordinal) ||
+                    !target.StartsWith(rootFull + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                    throw new InvalidDataException("Caminho fora do vault: " + to);
+                // every step a real folder, never a link out of the vault
+                var current = rootFull;
+                foreach (var segment in Segments(from))
+                {
+                    current = Path.Combine(current, segment);
+                    var info = new DirectoryInfo(current);
+                    if (!info.Exists || info.LinkTarget is not null) throw new DirectoryNotFoundException("A pasta não existe no vault: " + from);
+                }
+                bool caseOnly = string.Equals(from, to, StringComparison.OrdinalIgnoreCase);
+                if (!caseOnly && (Directory.Exists(target) || File.Exists(target))) throw new IOException("Já existe uma pasta ou arquivo com esse nome: " + to);
+                if (caseOnly)
+                {
+                    // a case-insensitive disk: through a temporary name the vault does not list
+                    var temp = source + ".urbe-rename-" + Guid.NewGuid().ToString("N");
+                    Directory.Move(source, temp);
+                    Directory.Move(temp, target);
+                }
+                else Directory.Move(source, target);
+                var observed = Snapshot(ReadFiles(root, cancellationToken));
+                IUrbeVaultStorage.EnsureRenamed(baseline, observed, from, to);
+                _baseline = observed;
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     public async Task<VaultFileRead?> ReadFileAsync(string path, long maxBytes, CancellationToken cancellationToken = default)
     {
         await _gate.WaitAsync(cancellationToken);

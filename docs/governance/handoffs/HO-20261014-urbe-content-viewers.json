@@ -13,8 +13,8 @@
   "state": "review",
   "branch": "ccr-2e1b58fa-7mhpmx",
   "base_commit": "83d86e80",
-  "commit": null,
-  "pr": null,
+  "commit": "db123436",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/563",
   "files_changed": [
     "AGENTS.md",
     "apps/urbe/AGENTS.md",
