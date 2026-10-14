@@ -220,7 +220,12 @@ public sealed partial class HeadlessUiTests
                 Dispatcher.UIThread.RunJobs();
                 int houses = city.Buildings.Count;
 
-                await PickFromCreateMenu(view, "Construção", () => Task.CompletedTask);
+                await PickFromCreateMenu(view, "Construção", () =>
+                {
+                    Snapshot(window, "native-building-type.png");
+                    ClickButtonWithText(view.Dialogs, "Nota .md");
+                    return Task.CompletedTask;
+                });
                 Assert.True(view.ToolActive);
                 Assert.StartsWith("Posicione a construção", view.ToolDockText);
                 var spot = ScreenOf(window, view, lx + .5, ly + .5);

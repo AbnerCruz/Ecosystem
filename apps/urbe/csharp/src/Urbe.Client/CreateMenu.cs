@@ -90,7 +90,11 @@ public sealed partial class MainView
         _toolOk.IsVisible = false;
         _toolOk.Content = "Construir";
         _copySource = null;
+        _placementExt = ".md";
     }
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"\.(md|markdown|txt|html|htm|js|mjs|css|json|yaml|yml|csv)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex TextExtension();
 
     // ------------------------------------------------------------------ Nova pasta
 
@@ -176,8 +180,36 @@ public sealed partial class MainView
 
     // ------------------------------------------------------------------ Adicionar construção
 
+    /// <summary>The types "+" → Construção offers (DEC-0045, UC-41: "as construções dependem da extensão", .md by default):
+    /// the text files the 1.8.4 builds, each with the trade it gets in the city.</summary>
+    public static IReadOnlyList<(string Ext, string Label)> BuildingTypes { get; } =
+    [
+        (".md", "Nota .md"), (".txt", "Texto .txt"), (".html", "Página .html"), (".js", "Script .js"),
+        (".css", "Estilo .css"), (".json", "Dados .json"), (".csv", "Tabela .csv")
+    ];
+
+    /// <summary>The extension of the building being placed (the type chosen in "+" → Construção).</summary>
+    private string _placementExt = ".md";
+
+    /// <summary>"+" → Construção: the type (its building shown; Nota .md first), then the placement.</summary>
+    public async Task BeginBuildingAsync()
+    {
+        if (World.City is null) return;
+        if (!VaultWritable)
+        {
+            await Dialogs.AlertAsync("Adicionar construção", NoVaultMessage);
+            return;
+        }
+        var options = BuildingTypes.Select(t => (t.Label, (Avalonia.Media.IImage?)World.KindArt(WorldView.TradeOf(t.Ext)))).ToList();
+        if (await Dialogs.PickArtAsync("Construção", options, 0, "O tipo do arquivo define a construção.") is not { } i) return;
+        await BeginPlacementAsync(BuildingTypes[i].Ext);
+    }
+
     /// <summary>v21BeginNewPlacement: tap the map to position the new building, then "Construir".</summary>
-    public async Task BeginPlacementAsync()
+    public async Task BeginPlacementAsync() => await BeginPlacementAsync(".md");
+
+    /// <summary>The placement of a new building whose file gets <paramref name="ext"/> when its name has no extension.</summary>
+    public async Task BeginPlacementAsync(string ext)
     {
         if (World.City is not { } city) return;
         if (!VaultWritable)
@@ -189,8 +221,9 @@ public sealed partial class MainView
         {
             _toolOk.IsEnabled = c is { } p && city.CanHouse(p.X, p.Y);
             _toolText.Text = "Posicione a construção" + (c is { } q ? $" · {q.X},{q.Y}" : " · toque no mapa");
-        });
+        }) { GhostKind = WorldView.TradeOf(ext) };
         BeginTool(tool, "Posicione a construção · toque no mapa", okVisible: true);
+        _placementExt = ext;
     }
 
     /// <summary>The house being copied while the placement tool is up (v21Placement = {kind:'copy', source}).</summary>
@@ -353,9 +386,11 @@ public sealed partial class MainView
             ShowLifeNotice("Posição inválida.");
             return;
         }
+        var ext = _placementExt;
         var typed = await Dialogs.PromptAsync(new PromptOptions("Configurar arquivo", Label: "Nome", Placeholder: "Ex.: Ideias",
-            Hint: "Sem extensão, vira .md. Também aceita .txt, .html, .css, .js, .json, .yaml e .csv.", Confirm: "Construir"));
+            Hint: $"Sem extensão, vira {ext}. Também aceita .md, .txt, .html, .css, .js, .json, .yaml e .csv.", Confirm: "Construir"));
         if (typed is null) return;
+        if (ext != ".md" && !TextExtension().IsMatch(typed.Trim())) typed = typed.Trim() + ext;
         long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         if (city.CreateNoteAt(p.X, p.Y, typed, now) is not { } made)
         {
@@ -554,4 +589,5 @@ public static class ImportDocuments
         }
         return new ImportDocumentsPlan(added, kept, skipped, unchanged);
     }
+
 }

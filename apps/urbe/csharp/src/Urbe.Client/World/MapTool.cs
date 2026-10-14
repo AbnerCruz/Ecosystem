@@ -53,6 +53,9 @@ public sealed class PlacementTool(Func<int, int, bool> valid, Action<(int X, int
 {
     public (int X, int Y)? Candidate { get; private set; }
 
+    /// <summary>The trade of the ghost (the type chosen in "+" → Construção; the 1.8.4 always shows the house).</summary>
+    public string GhostKind { get; init; } = "house";
+
     private void Set(int tx, int ty) { Candidate = (tx, ty); changed(Candidate); }
     public override void Down(int tx, int ty) => Set(tx, ty);
     public override void Move(int tx, int ty) => Set(tx, ty);
@@ -64,7 +67,7 @@ public sealed class PlacementTool(Func<int, int, bool> valid, Action<(int X, int
         var p = view.Camera.WorldToScreen(c.X * LegacyWorld.Tile, c.Y * LegacyWorld.Tile);
         double z = view.Camera.Zoom, size = LegacyWorld.Tile * z;
         bool ok = valid(c.X, c.Y);
-        if (view.GhostArt(c.X, c.Y) is { } art)
+        if (view.GhostArt(c.X, c.Y, GhostKind) is { } art)
         {
             double s = LegacyWorld.Tile * z / LegacyWorld.TilePixels, w = 48 * s, h = 56 * s;
             using (context.PushOpacity(.62))

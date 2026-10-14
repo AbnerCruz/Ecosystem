@@ -1,0 +1,96 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-urbe-uc41-visual-construcoes",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T12:11:42Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-41",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "d30db228",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/560",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/WorldPrefs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/BuildingLooks.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/MapTool.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/WorldPrefsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/BuildingLookUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CreateMenuUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261014-urbe-uc41-visual-construcoes.json"
+  ],
+  "work_completed": [
+    "Construção do menu + pergunta o tipo numa grade com a construção de cada um (Nota .md primeiro); nome sem extensão recebe a do tipo; a prévia no mapa mostra o ofício.",
+    "Visual no painel da construção: ofício (Automático ou um dos sete da 1.8.4), depois variação e flores, com prévias da própria construção.",
+    "Visual guardado em .urbe/mundo.json (construcoes, pelo caminho do arquivo, pois os ids da 1.8.4 são refeitos a cada abertura); acompanha renomear e mover; Automático remove a entrada.",
+    "Painel 'Tipo: Nota Markdown' mantido como na 1.8.4 (app.js:547)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "BuildingLookTests e HeadlessUiTests.Building_TypeChosenOnCreationAndLookChangedByVisual, AddBuilding, CreateMenu_*, Rename*",
+      "result": "passed",
+      "evidence": "Arquivo .html criado pelo tipo, ofício salão; Torre + Variação 2 com flores gravados em mundo.json e mapa.json sem campo novo; visual acompanha a renomeação; Automático limpa; capturas native-building-type.png, native-building-visual.png e native-building-tower.png."
+    },
+    {
+      "kind": "human",
+      "check": "Grades de tipo e Visual e aparência das construções no aparelho",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho e do gosto do proprietário (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/BuildingLooks.cs"
+    }
+  ],
+  "known_issues": [
+    "Quando o app ganhar renomear pasta, ele deve chamar CarryLooksAsync como renomear e mover arquivo já fazem.",
+    "Build Android local indisponível sem workload; o CI valida."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validação humana do UC-41 (Issue #561).",
+    "UC-42: moradores com ofícios nas decorações."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "mapa.json continua a autoridade da 1.8.4; visual só em mundo.json."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "UC-41 fica [~] com Issue #561 em state:verifying até a validação humana."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Sem [x] antes da validação."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "building-looks",
+      "status": "product-specific",
+      "rationale": "Cidade do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Acrescenta dados a .urbe/mundo.json gravado pela camada de armazenamento do vault (zona user-data); não altera mapa.json nem notas."
+  }
+}

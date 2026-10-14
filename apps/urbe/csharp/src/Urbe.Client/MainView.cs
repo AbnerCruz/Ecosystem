@@ -720,7 +720,7 @@ public sealed partial class MainView : Grid
         [
             // DEC-0045 (UC-41): the 1.8.4 had two items for each thing (Nova nota / Adicionar construção, Nova pasta /
             // Desenhar pasta); the city builds, draws, decorates and imports. Nova nota and Nova pasta stay in the Explorer.
-            new DialogItem("Construção", UrbeTheme.Icons.House, "Uma nota onde você tocar no mapa", Run: BeginPlacementAsync),
+            new DialogItem("Construção", UrbeTheme.Icons.House, "Um arquivo onde você tocar no mapa (.md, .html, .js…)", Run: BeginBuildingAsync),
             new DialogItem("Região", UrbeTheme.Icons.Region, "Uma pasta desenhada no mapa", Run: BeginDrawRegionAsync),
             new DialogItem("Decoração", UrbeTheme.Icons.Flower, "Poço, roça, lenha, banco, fonte, canteiro", Run: BeginDecorationAsync),
             new DialogItem("Importar", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync())
@@ -844,6 +844,8 @@ public sealed partial class MainView : Grid
             if (_contents.Remove(path, out var content)) _contents[plan.Path] = content;
         }
         city.ApplyRename(house, plan, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        if (!string.Equals(plan.Path, path, StringComparison.Ordinal))
+            await CarryLooksAsync(new Dictionary<string, string>(StringComparer.Ordinal) { [path] = plan.Path });
         if (_store?.Get(path) is { } doc && !string.Equals(doc.Path, plan.Path, StringComparison.Ordinal))
             LegacyCity.MoveDocument(_store, doc, plan.Path);
         // aplicarNomeCompletoNota: buildTree, scheduleRoadRebuild, agendarSalvar + marcarSinc, pedirDesenho; v21RefreshEditorChrome
@@ -1296,6 +1298,7 @@ public sealed partial class MainView : Grid
             return;
         }
         long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var moves = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var from in paths)
         {
             if (_store.Get(from) is not { } doc || city.Buildings.Find(b => b.IsNote && b.Path == from) is not { } house) continue;
@@ -1307,8 +1310,10 @@ public sealed partial class MainView : Grid
             if (_contents.Remove(from, out var content)) _contents[to] = content;
             var moved = LegacyCity.MoveDocument(_store, doc, to);
             city.ApplyFolderMove(house, moved, now);
+            moves[from] = house.Path;
             if (Editor.IsVisible && Editor.Current?.Path == from) Editor.Renamed(to);
         }
+        await CarryLooksAsync(moves);
         _mapSave?.Schedule();
         _mapSave?.MarkSync();
         RefreshNotes();
@@ -1534,7 +1539,18 @@ public sealed partial class MainView : Grid
             if (World.Selected is not { IsNote: true } house) return;
             await BeginCopyAsync(house);
         };
-        Grid.SetColumn(delete, 2);
+        // Visual (DEC-0045, UC-41): the building's look, chosen from pictures
+        var look = Secondary("Visual", UrbeTheme.Text);
+        ToolTip.SetTip(look, "Mudar o visual da construção");
+        look.Click += async (_, _) =>
+        {
+            if (World.Selected is not { IsNote: true } house) return;
+            await EditLookAsync(house);
+        };
+        actions.ColumnDefinitions = new ColumnDefinitions("*,8,*,8,*");
+        Grid.SetColumn(copy, 2);
+        Grid.SetColumn(delete, 4);
+        actions.Children.Add(look);
         actions.Children.Add(copy);
         actions.Children.Add(delete);
 

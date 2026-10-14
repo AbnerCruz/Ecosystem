@@ -239,12 +239,17 @@ public sealed class WorldView : Control
     }
 
     /// <summary>The house art of the placement ghost (v21 overlay: A.house1 at the candidate tile).</summary>
-    public Bitmap? GhostArt(int x, int y)
+    public Bitmap? GhostArt(int x, int y, string kind = "house")
     {
         if (World is null) return null;
+        if (_ownArt.TryGetValue(kind, out var own)) return own;
         var biome = World.At(x + 1, y + 1).Biome;
-        return _sprites.Building("house", LegacyWorldBuildings.StyleForBiome(LegacyBiomeRules.Id(biome)), 0, false);
+        return _sprites.Building(kind, LegacyWorldBuildings.StyleForBiome(LegacyBiomeRules.Id(biome)), 0, false);
     }
+
+    /// <summary>A trade's art in the temperate style (the type picker of "+" → Construção).</summary>
+    public Bitmap KindArt(string kind) =>
+        _ownArt.TryGetValue(kind, out var own) ? own : _sprites.Building(kind, "temperate", 0, false);
 
     private LegacyGroundStyle? _ground;
     /// <summary>The ground set by Personalização; null is the original art.</summary>
@@ -663,19 +668,41 @@ public sealed class WorldView : Control
     }
 
     /// <summary>The house art as drawn in the city (house panel preview).</summary>
-    public Bitmap? ArtOf(LegacyCityBuilding b) => World is null ? null : Art(b);
+    public Bitmap? ArtOf(LegacyCityBuilding b) => World is null ? null : Art(b, LookOf(b));
+
+    /// <summary>The house art with another look (the Visual picker's previews).</summary>
+    public Bitmap? ArtOf(LegacyCityBuilding b, BuildingLook look) => World is null ? null : Art(b, look);
+
+    /// <summary>The look chosen for this building in .urbe/mundo.json (DEC-0045, UC-41), or the automatic one.</summary>
+    public BuildingLook LookOf(LegacyCityBuilding b) => Prefs.Looks.GetValueOrDefault(b.Path) ?? new BuildingLook();
+
+    /// <summary>The trade the 1.8.4 gives this building: a note's by its extension, a file building is a store.</summary>
+    public static string AutomaticKind(LegacyCityBuilding b) => b.IsNote ? TradeOf(b.Ext) : "store";
+
+    /// <summary>The trade of a note with this extension (urbeArteDaConstrucao: .html a hall, .js a workshop…).</summary>
+    public static string TradeOf(string ext)
+    {
+        ext = ext.TrimStart('.').ToLowerInvariant();
+        if (!Noted.Contains(ext)) ext = "md";
+        return Trade.GetValueOrDefault(ext, "house");
+    }
+
+    /// <summary>The variant the 1.8.4 gives this building (its sprite, or its id).</summary>
+    public static int AutomaticVariant(LegacyCityBuilding b) =>
+        b.Sprite == "house2" ? 1 : b.Sprite == "house3" ? 2 : (int)(LegacyJsMath.Seed(b.Id.Length > 0 ? b.Id : b.Name) % 3);
+
+    /// <summary>Whether the 1.8.4 puts flowers by this building (by its name).</summary>
+    public static bool AutomaticFlowers(LegacyCityBuilding b) => LegacyJsMath.Seed(b.Name) % 3 == 0;
 
     /// <summary>urbeArteDaConstrucao: a note's trade by extension, a file building is a store; style by biome, variant and
-    /// flowers by name.</summary>
-    private Bitmap Art(LegacyCityBuilding b)
+    /// flowers by name; what the person chose in Visual (.urbe/mundo.json) instead, when there is a choice.</summary>
+    private Bitmap Art(LegacyCityBuilding b, BuildingLook look)
     {
-        var ext = b.Ext.TrimStart('.').ToLowerInvariant();
-        if (!Noted.Contains(ext)) ext = "md";
-        var kind = b.IsNote ? Trade.GetValueOrDefault(ext, "house") : "store";
+        var kind = look.Kind ?? AutomaticKind(b);
         if (_ownArt.TryGetValue(kind, out var own)) return own;   // urbeSpritesProprios[kind]
         var biome = World!.At((int)Math.Floor(b.X + b.W / 2.0), (int)Math.Floor(b.Y + b.H / 2.0)).Biome;
-        int variant = b.Sprite == "house2" ? 1 : b.Sprite == "house3" ? 2 : (int)(LegacyJsMath.Seed(b.Id.Length > 0 ? b.Id : b.Name) % 3);
-        bool flowers = LegacyJsMath.Seed(b.Name) % 3 == 0;
+        int variant = look.Variant ?? AutomaticVariant(b);
+        bool flowers = look.Flowers ?? AutomaticFlowers(b);
         return _sprites.Building(kind, LegacyWorldBuildings.StyleForBiome(LegacyBiomeRules.Id(biome)), variant, flowers);
     }
 
@@ -713,7 +740,7 @@ public sealed class WorldView : Control
                 }
                 var p = Camera.WorldToScreen(b.X * T, b.Y * T);
                 double w = 48 * s * (b.W / 3.0), h = 56 * s * (b.H / 3.0);
-                context.DrawImage(Art(b), new Rect(0, 0, LegacyWorldBuildings.Width, LegacyWorldBuildings.Height),
+                context.DrawImage(Art(b, LookOf(b)), new Rect(0, 0, LegacyWorldBuildings.Width, LegacyWorldBuildings.Height),
                     new Rect(Math.Round(p.X), Math.Round(p.Y + b.H * T * z - h), Math.Ceiling(w), Math.Ceiling(h)));
             }
     }

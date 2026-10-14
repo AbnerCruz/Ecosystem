@@ -71,3 +71,38 @@ public sealed class WorldDecorationsTests
         Assert.Equal(new WorldDecoration("b", "banco", 2, 2), only);
     }
 }
+
+public sealed class BuildingLookTests
+{
+    [Fact]
+    public void LooksRoundTripByPathAndAutomaticOnesAreNotKept()
+    {
+        var p = WorldPrefs.Default
+            .WithLook("Projetos/Ideias.md", new BuildingLook("tower", 2, true))
+            .WithLook("Casa.md", new BuildingLook(Flowers: false))
+            .WithLook("Nada.md", new BuildingLook());
+        Assert.Equal(2, p.Looks.Count);
+        var text = p.Text();
+        Assert.Contains("\"Projetos/Ideias.md\"", text);
+        Assert.Contains("\"tipo\": \"tower\"", text);
+        Assert.DoesNotContain("\"variante\": null", text);
+        var back = WorldPrefs.Parse(text, out _);
+        Assert.Equal(p, back);
+        Assert.Equal(new BuildingLook("tower", 2, true), back.Looks["Projetos/Ideias.md"]);
+        Assert.Equal(new BuildingLook(null, null, false), back.Looks["Casa.md"]);
+        Assert.Empty(back.WithLook("Casa.md", new BuildingLook()).WithLook("Projetos/Ideias.md", new BuildingLook()).Looks);
+    }
+
+    [Fact]
+    public void LooksFollowMovedFilesAndBadEntriesAreLeftOut()
+    {
+        var p = WorldPrefs.Default.WithLook("A.md", new BuildingLook("hall"));
+        Assert.Null(p.WithMoved(new Dictionary<string, string> { ["B.md"] = "C.md" }));
+        var moved = p.WithMoved(new Dictionary<string, string> { ["A.md"] = "Pasta/A.md" })!;
+        Assert.Equal(["Pasta/A.md"], moved.Looks.Keys);
+
+        var bad = WorldPrefs.Parse("{\"versao\":1,\"construcoes\":{\"X.md\":{\"tipo\":\"castelo\",\"variante\":9},\"Y.md\":{\"tipo\":\"store\",\"variante\":-1,\"flores\":\"sim\"}}}", out _);
+        Assert.Equal(["Y.md"], bad.Looks.Keys);
+        Assert.Equal(new BuildingLook("store"), bad.Looks["Y.md"]);
+    }
+}
