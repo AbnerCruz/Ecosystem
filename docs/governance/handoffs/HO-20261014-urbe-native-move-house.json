@@ -1,0 +1,94 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-urbe-native-move-house",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T14:04:33Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "d30db228",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/560",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCityCreate.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/HouseMoves.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HouseMoveUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261014-urbe-native-move-house.json"
+  ],
+  "work_completed": [
+    "Segurar uma casa 430 ms a pega e arrastar a leva a outro lote (v21MoveHold, moveBuilding, finalizarMovimentoMundo), com moldura verde/vermelha por validarPosicaoMovel (LegacyCity.ValidMove).",
+    "Ao mudar de bairro, o arquivo da nota muda de pasta no vault primeiro; depois casa, documento, visual escolhido e mapa.",
+    "Painel da casa: Mover (escolherDestinoEMover → PlanMove/ApplyMove).",
+    "Tocar numa construção de arquivo a seleciona e abre a prévia (antes só notas eram selecionadas).",
+    "Segurar e soltar no mesmo lugar conta como toque e seleciona a casa; a casa só sai do lugar quando é arrastada."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.HouseMove_DraggedToTheRootMovesItsFileAndInsideKeepsIt",
+      "result": "passed",
+      "evidence": "Lote inválido recusado sem mexer no arquivo; dentro do bairro só muda o lote; para a raiz o arquivo vai de Bairro/Um.md a Um.md com o mesmo texto e o mapa.json grava x/y novos; Mover devolve a Bairro num lote livre; captura native-house-carried.png."
+    },
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests 624/624 e Urbe.Client.Tests 129/129",
+      "result": "passed",
+      "evidence": "City_RendersFullScreenWithHousesAndOpensTheEditorFromAHouse expôs que o temporizador de 430 ms podia disparar num toque lento; soltar sem mover agora seleciona."
+    },
+    {
+      "kind": "human",
+      "check": "Segurar e arrastar casas no aparelho",
+      "result": "not-applicable",
+      "evidence": "Toque e tempo de segurar dependem do aparelho (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs"
+    }
+  ],
+  "known_issues": [
+    "Construções de arquivo (anexos) só se movem dentro do mesmo bairro; entre pastas o app avisa que ainda não está no nativo.",
+    "Build Android local indisponível sem workload; o CI valida."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Editar nome, cor e descrição do bairro (openRegionEditDialog) e renomear pasta.",
+    "Redimensionar bairro no mapa (v20EntrarShape)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Gesto de segurar/arrastar pendente de validação no aparelho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-19 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "house-move",
+      "status": "product-specific",
+      "rationale": "Cidade do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Move arquivos de nota entre pastas do vault ao arrastar a casa para outro bairro (dados do usuário)."
+  }
+}

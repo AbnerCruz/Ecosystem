@@ -41,6 +41,16 @@ public sealed partial class HeadlessUiTests
         await menu;
     }
 
+    /// <summary>A flow started directly (what the Explorer's Nova pasta does), with <paramref name="next"/> answering its dialog.</summary>
+    private static async Task RunWithDialog(Task flow, Func<Task> next)
+    {
+        Dispatcher.UIThread.RunJobs();
+        await Task.Delay(30);
+        Dispatcher.UIThread.RunJobs();
+        await next();
+        await flow;
+    }
+
     private static Point ScreenOf(Window window, MainView view, double tileX, double tileY) =>
         view.World.TranslatePoint(view.World.Camera.WorldToScreen(tileX * 32, tileY * 32), window)!.Value;
 
@@ -54,7 +64,7 @@ public sealed partial class HeadlessUiTests
                 var city = view.World.City!;
                 int regions = city.Regions.Count;
                 var before = Directory.GetFiles(vault, "*", SearchOption.AllDirectories).Order().ToArray();
-                await PickFromCreateMenu(view, "Nova pasta", () =>
+                await RunWithDialog(view.CreateFolderAsync(), () =>
                 {
                     Snapshot(window, "native-new-folder-dialog.png");
                     var input = view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single();
@@ -68,7 +78,7 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal(before, Directory.GetFiles(vault, "*", SearchOption.AllDirectories).Order().ToArray());   // no file touched or added
 
                 // the same name again: "Projetos (2)" (v21UniqueRegionName), never the same folder
-                await PickFromCreateMenu(view, "Nova pasta", () =>
+                await RunWithDialog(view.CreateFolderAsync(), () =>
                 {
                     view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single().Text = "projetos";
                     ClickButtonWithText(view.Dialogs, "Criar pasta");
@@ -96,7 +106,7 @@ public sealed partial class HeadlessUiTests
             await view.LoadAsync(TutorialNotes.Load());
             await Settle(window, view);
             int regions = view.World.City!.Regions.Count, houses = view.World.City.Buildings.Count;
-            foreach (var item in new[] { "Nova pasta", "Desenhar pasta no mapa", "Adicionar construção", "Importar" })
+            foreach (var item in new[] { "Construção", "Região", "Decoração", "Importar" })
                 await PickFromCreateMenu(view, item, () =>
                 {
                     Assert.Empty(view.Dialogs.GetVisualDescendants().OfType<TextBox>());
@@ -127,7 +137,7 @@ public sealed partial class HeadlessUiTests
                 Dispatcher.UIThread.RunJobs();
                 int regions = city.Regions.Count;
 
-                await PickFromCreateMenu(view, "Desenhar pasta no mapa", () => Task.CompletedTask);
+                await PickFromCreateMenu(view, "Região", () => Task.CompletedTask);
                 Assert.True(view.ToolActive);
                 Assert.Equal("Arraste no mapa para delimitar a nova pasta.", view.ToolDockText);
 
@@ -210,7 +220,12 @@ public sealed partial class HeadlessUiTests
                 Dispatcher.UIThread.RunJobs();
                 int houses = city.Buildings.Count;
 
-                await PickFromCreateMenu(view, "Adicionar construção", () => Task.CompletedTask);
+                await PickFromCreateMenu(view, "Construção", () =>
+                {
+                    Snapshot(window, "native-building-type.png");
+                    ClickButtonWithText(view.Dialogs, "Nota .md");
+                    return Task.CompletedTask;
+                });
                 Assert.True(view.ToolActive);
                 Assert.StartsWith("Posicione a construção", view.ToolDockText);
                 var spot = ScreenOf(window, view, lx + .5, ly + .5);

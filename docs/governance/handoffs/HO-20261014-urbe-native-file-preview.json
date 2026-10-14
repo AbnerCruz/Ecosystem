@@ -1,0 +1,98 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-urbe-native-file-preview",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T12:47:13Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "d30db228",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/560",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/VaultFileKinds.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultFileKindsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FilePreviewUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ExplorerUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261014-urbe-native-file-preview.json"
+  ],
+  "work_completed": [
+    "Porta openFilePreview/renderFilePreview: tocar numa construção de arquivo ou num anexo do Explorer abre a prévia com título, linha tipo · tamanho · caminho e escolha entre os arquivos do prédio.",
+    "Imagem desenhada no app; texto/código/HTML mostram a fonte (sem WebView, ADR-0032); .zip lista entradas; PDF/áudio/vídeo abrem em outro app (Abrir); ausente mostra 'Arquivo não encontrado'.",
+    "IUrbeVaultStorage.ReadFileAsync e OpenExternallyAsync (desktop e Android), só leitura, sem seguir atalhos; no Android a permissão de leitura vai só para o documento aberto.",
+    "VaultFileKinds porta classificarArquivo, rotuloClasse e formatBytes."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "VaultFileKindsTests e HeadlessUiTests.FilePreview_ShowsImagesTextAndZipAndNothingIsWritten",
+      "result": "passed",
+      "evidence": "Classes e tamanhos iguais à 1.8.4; PNG desenhado, .log como texto, .zip listado, PDF com Abrir, ausente sem Abrir; nenhum arquivo do vault muda (mesmos arquivos e datas); captura native-file-preview-image.png."
+    },
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests 624/624 e Urbe.Client.Tests 128/128",
+      "result": "passed",
+      "evidence": "Explorer_ShowsEveryFileHasFolderOptionsAndMovesByDragging atualizado: tocar no PDF abre a prévia (antes, um aviso de que a prévia não existia)."
+    },
+    {
+      "kind": "human",
+      "check": "Prévia de arquivos e Abrir em outro app no Android",
+      "result": "not-applicable",
+      "evidence": "OpenExternallyAsync do Android (Intent ACTION_VIEW com permissão de leitura) só pode ser provado no aparelho (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs"
+    }
+  ],
+  "known_issues": [
+    "SVG aparece como fonte (o app nativo não desenha SVG); áudio e vídeo não tocam dentro do app.",
+    "Build Android local indisponível sem workload; o CI valida."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "DEVICE: prévia e Abrir no Android.",
+    "Próxima lacuna de paridade do UC-18/UC-19 antes do UC-25."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Abrir em outro app depende do aparelho; pendente de validação humana."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Só leitura; no Android a concessão é apenas de leitura e apenas do documento aberto."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "file-preview",
+      "status": "product-specific",
+      "rationale": "Painel do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Acrescenta leitura de arquivos e abertura externa à camada de armazenamento do vault (zona user-data: *Vault*.cs); nada é gravado."
+  }
+}

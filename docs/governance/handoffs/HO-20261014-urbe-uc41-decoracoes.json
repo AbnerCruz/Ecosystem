@@ -1,0 +1,97 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-urbe-uc41-decoracoes",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T12:00:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-41",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "d30db228",
+  "commit": "f969492f",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/560",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/WorldDecorations.cs",
+    "apps/urbe/csharp/src/Urbe.Core/WorldPrefs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/MapTool.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/WorldPrefsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/DecorationsUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CreateMenuUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261014-urbe-uc41-decoracoes.json"
+  ],
+  "work_completed": [
+    "Menu + com Construção, Região, Decoração e Importar (DEC-0045, observação do proprietário).",
+    "Decorações em pixel-art no método de grade e paleta da 1.8.4: poço, roça (2×1), lenha, banco, fonte e canteiro.",
+    "Colocação com prévia verde/vermelha; recusada em água, construção, rua ou outra decoração; tocar numa decoração permite removê-la.",
+    "Decorações guardadas em .urbe/mundo.json (campo decoracoes), nunca em mapa.json; tipos desconhecidos e ids repetidos ignorados na leitura."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "WorldDecorationsTests, WorldPrefsTests, HeadlessUiTests.Decoration_IsPlacedOnTheMapKeptInMundoJsonAndRemoved e testes do menu +",
+      "result": "passed",
+      "evidence": "Sprites com dimensões corretas, ida e volta do arquivo, decoração colocada, gravada, mapa.json intocado e remoção; capturas native-create-menu.png e native-decoration-poco.png."
+    },
+    {
+      "kind": "human",
+      "check": "Aparência das decorações e fluxo do menu + no aparelho",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho e do gosto do proprietário (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Core/WorldDecorations.cs"
+    }
+  ],
+  "known_issues": [
+    "Decorações ainda não têm uso pelos moradores (UC-42).",
+    "Build Android local indisponível sem workload; o CI valida."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Construção conforme a extensão e visual editável de cada construção (resto do UC-41).",
+    "UC-42: moradores com ofícios nas decorações."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "mapa.json continua a autoridade da 1.8.4; decorações só em mundo.json."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Aparência pendente de validação humana."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-41 continua [ ] (fatia 2 de várias)."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "world-decorations",
+      "status": "product-specific",
+      "rationale": "Cidade do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Acrescenta dados a .urbe/mundo.json gravado pela camada de armazenamento do vault (zona user-data); não altera mapa.json nem notas."
+  }
+}

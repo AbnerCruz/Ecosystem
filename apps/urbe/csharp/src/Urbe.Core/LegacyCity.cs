@@ -147,6 +147,29 @@ public sealed class LegacyCityBuilding
         (FileTipo is JsonValue t && t.TryGetValue<string>(out var tipo) ? tipo : null) == "anexo" ? Name
         : FileName is JsonValue f && f.TryGetValue<string>(out var file) && file.Length > 0 ? file : Name;
 
+    /// <summary>
+    /// arquivosDoPredio(b): the files of a file building (b.files || b.anexos), each with its name (nome) and vault path
+    /// (relPath, null when the 1.8.4 kept it only in its offline cache); none listed gives one with fileName or name.
+    /// </summary>
+    public IReadOnlyList<(string Name, string? Path)> PreviewFiles
+    {
+        get
+        {
+            var list = new List<(string, string?)>();
+            if (Files is JsonArray files)
+                foreach (var f in files)
+                    if (f is JsonObject o)
+                    {
+                        var rel = o["relPath"] is JsonValue r && r.TryGetValue<string>(out var rp) && rp.Length > 0 ? rp : null;
+                        var nome = o["nome"] is JsonValue n && n.TryGetValue<string>(out var nm) && nm.Length > 0 ? nm
+                            : rel is not null ? rel[(rel.LastIndexOf('/') + 1)..] : "Arquivo " + (list.Count + 1);
+                        list.Add((nome, rel));
+                    }
+            if (list.Count == 0) list.Add((FileName is JsonValue fn && fn.TryGetValue<string>(out var f1) && f1.Length > 0 ? f1 : Name.Length > 0 ? Name : "arquivo", null));
+            return list;
+        }
+    }
+
     /// <summary>The file's class (image, audio, video, pdf, html, zip or other).</summary>
     public string FileKind => FileClass is JsonValue c && c.TryGetValue<string>(out var k) && k.Length > 0 ? k : "other";
 

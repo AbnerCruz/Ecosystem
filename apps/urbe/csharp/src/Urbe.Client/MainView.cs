@@ -127,6 +127,13 @@ public sealed partial class MainView : Grid
         _stage.Children.Add(CityMap);
         _stage.Children.Add(Explorer);
         _stage.Children.Add(Editor);
+        FilePreview.Storage = _vault;
+        FilePreview.ShowInCity += building =>
+        {
+            if (!Explorer.Wide) Explorer.IsVisible = false;
+            World.CenterOn(building);
+        };
+        _stage.Children.Add(FilePreview);
         Customize = new CustomizePanel(Customization, Dialogs);
         Customize.OpenFileRequested += path => Editor.Open(new CityNote(path, _contents.GetValueOrDefault(path, "")));
         Customization.Applied += ApplyCustomization;
@@ -156,7 +163,21 @@ public sealed partial class MainView : Grid
         World.CityVisible = () => !Editor.IsVisible && (!Explorer.IsVisible || Explorer.Wide);
         World.Notice += (_, text) => ShowLifeNotice(text);
         World.CameraChanged += (_, _) => _biome.Text = World.BiomeNameAtCentre();
-        World.SelectionChanged += (_, house) => ShowHouse(house);
+        // app.js v21CanvasUp: a note opens its summary, a file building its preview (openFilePreview)
+        World.SelectionChanged += (_, house) =>
+        {
+            if (house is { IsNote: false } file)
+            {
+                ShowHouse(null);
+                _ = FilePreview.OpenAsync(file);
+                return;
+            }
+            ShowHouse(house);
+        };
+        World.DecorationTapped += decoration => _ = ShowDecorationAsync(decoration);
+        // v21MoveHold: holding a house carries it (only with a vault that can be written)
+        World.MoveValid = (b, x, y) => World.City?.ValidMove(b, x, y).Ok ?? false;
+        World.BuildingMoveRequested += (b, x, y) => _ = MoveHouseAsync(b, x, y);
     }
 
     public WorldView World { get; }
@@ -237,6 +258,9 @@ public sealed partial class MainView : Grid
 
     public NotesExplorer Explorer { get; }
     public EditorOverlay Editor { get; }
+
+    /// <summary>The preview of a file that is not a note (openFilePreview).</summary>
+    public FilePreviewPanel FilePreview { get; } = new();
 
     /// <summary>Open the native hierarchical vault Explorer (1.8.4 Notas), not a web panel.</summary>
     public void ShowNotes()
@@ -717,11 +741,12 @@ public sealed partial class MainView : Grid
         if (Dialogs.IsOpen) return Task.CompletedTask;
         return Dialogs.MenuAsync("Criar",
         [
-            new DialogItem("Nova nota", UrbeTheme.Icons.Plus, Run: () => CreateNoteAsync(null)),
-            new DialogItem("Nova pasta", UrbeTheme.Icons.Folder, Run: () => CreateFolderAsync()),
-            new DialogItem("Desenhar pasta no mapa", UrbeTheme.Icons.Region, Run: BeginDrawRegionAsync),
-            new DialogItem("Adicionar construção", UrbeTheme.Icons.House, Run: BeginPlacementAsync),
-            new DialogItem("Importar", UrbeTheme.Icons.Upload, Run: () => ImportAsync())
+            // DEC-0045 (UC-41): the 1.8.4 had two items for each thing (Nova nota / Adicionar construção, Nova pasta /
+            // Desenhar pasta); the city builds, draws, decorates and imports. Nova nota and Nova pasta stay in the Explorer.
+            new DialogItem("Construção", UrbeTheme.Icons.House, "Um arquivo onde você tocar no mapa (.md, .html, .js…)", Run: BeginBuildingAsync),
+            new DialogItem("Região", UrbeTheme.Icons.Region, "Uma pasta desenhada no mapa", Run: BeginDrawRegionAsync),
+            new DialogItem("Decoração", UrbeTheme.Icons.Flower, "Poço, roça, lenha, banco, fonte, canteiro", Run: BeginDecorationAsync),
+            new DialogItem("Importar", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync())
         ]);
     }
 
@@ -842,6 +867,8 @@ public sealed partial class MainView : Grid
             if (_contents.Remove(path, out var content)) _contents[plan.Path] = content;
         }
         city.ApplyRename(house, plan, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        if (!string.Equals(plan.Path, path, StringComparison.Ordinal))
+            await CarryLooksAsync(new Dictionary<string, string>(StringComparer.Ordinal) { [path] = plan.Path });
         if (_store?.Get(path) is { } doc && !string.Equals(doc.Path, plan.Path, StringComparison.Ordinal))
             LegacyCity.MoveDocument(_store, doc, plan.Path);
         // aplicarNomeCompletoNota: buildTree, scheduleRoadRebuild, agendarSalvar + marcarSinc, pedirDesenho; v21RefreshEditorChrome
@@ -928,29 +955,14 @@ public sealed partial class MainView : Grid
     }
 
     /// <summary>
-    /// A file of the Explorer that is not a note (DEC-0045, UC-38): when it has a building in the city, "Mostrar na
-    /// cidade" takes the camera there; the preview of images and PDFs is not in the native app yet, and it says so.
+    /// A file of the Explorer that is not a note (DEC-0045, UC-38): its preview (abrirEntradaTree → openFilePreview),
+    /// with "Mostrar na cidade" when the city has its building.
     /// </summary>
-    private async Task ShowFileAsync(string path)
+    private Task ShowFileAsync(string path)
     {
-        if (Dialogs.IsOpen) return;
-        var name = path[(path.LastIndexOf('/') + 1)..];
-        var folder = path.Contains('/') ? path[..path.LastIndexOf('/')] : "";
-        var ext = System.IO.Path.GetExtension(name).TrimStart('.').ToUpperInvariant();
-        var building = World.City?.Buildings.Find(b => !b.IsNote && b.Path == path);
-        var about = (ext.Length > 0 ? "Arquivo " + ext : "Arquivo") + (folder.Length > 0 ? " em “" + folder + "”." : " na raiz.")
-            + " A prévia deste tipo de arquivo ainda não está no app.";
-        if (building is null) { await Dialogs.AlertAsync(name, about); return; }
-        await Dialogs.MenuAsync(name,
-        [
-            new DialogItem("Mostrar na cidade", UrbeTheme.Icons.City, "A construção deste arquivo.", Run: () =>
-            {
-                if (!Explorer.Wide) Explorer.IsVisible = false;
-                World.CenterOn(building);
-                World.Select(building);
-                return Task.CompletedTask;
-            })
-        ], about);
+        if (Dialogs.IsOpen) return Task.CompletedTask;
+        var building = World.City?.Buildings.Find(b => !b.IsNote && (b.Path == path || b.PreviewFiles.Any(f => f.Path == path)));
+        return FilePreview.OpenAsync(path, building);
     }
 
     /// <summary>
@@ -1276,11 +1288,18 @@ public sealed partial class MainView : Grid
             await Dialogs.AlertAsync("Mover", NoVaultMessage);
             return;
         }
+        if (await ChooseFolderAsync() is not { } folder) return;
+        await MoveNotesToAsync(paths, folder);
+    }
+
+    /// <summary>uiDestinoRegiao("Mover para"): Raiz or one of the folders; "" is the root, null when cancelled.</summary>
+    private async Task<string?> ChooseFolderAsync()
+    {
         var folders = NoteFolders();
         var options = new List<DialogItem> { new("Raiz", UrbeTheme.Icons.Notes, "Fora de qualquer pasta") };
         options.AddRange(folders.Select(f => new DialogItem(f[(f.LastIndexOf('/') + 1)..], UrbeTheme.Icons.Folder, f)));
-        if (await Dialogs.ChooseAsync("Mover para", options) is not { } chosen) return;
-        await MoveNotesToAsync(paths, chosen == 0 ? "" : folders[chosen - 1]);
+        if (await Dialogs.ChooseAsync("Mover para", options) is not { } chosen) return null;
+        return chosen == 0 ? "" : folders[chosen - 1];
     }
 
     /// <summary>explorer.move of each note into <paramref name="folder"/> ("" = the root): the file first, then the house
@@ -1294,6 +1313,7 @@ public sealed partial class MainView : Grid
             return;
         }
         long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var moves = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var from in paths)
         {
             if (_store.Get(from) is not { } doc || city.Buildings.Find(b => b.IsNote && b.Path == from) is not { } house) continue;
@@ -1305,8 +1325,10 @@ public sealed partial class MainView : Grid
             if (_contents.Remove(from, out var content)) _contents[to] = content;
             var moved = LegacyCity.MoveDocument(_store, doc, to);
             city.ApplyFolderMove(house, moved, now);
+            moves[from] = house.Path;
             if (Editor.IsVisible && Editor.Current?.Path == from) Editor.Renamed(to);
         }
+        await CarryLooksAsync(moves);
         _mapSave?.Schedule();
         _mapSave?.MarkSync();
         RefreshNotes();
@@ -1532,7 +1554,30 @@ public sealed partial class MainView : Grid
             if (World.Selected is not { IsNote: true } house) return;
             await BeginCopyAsync(house);
         };
+        // Visual (DEC-0045, UC-41): the building's look, chosen from pictures
+        var look = Secondary("Visual", UrbeTheme.Text);
+        ToolTip.SetTip(look, "Mudar o visual da construção");
+        look.Click += async (_, _) =>
+        {
+            if (World.Selected is not { IsNote: true } house) return;
+            await EditLookAsync(house);
+        };
+        // moveBtn → escolherDestinoEMover
+        var move = Secondary("Mover", UrbeTheme.Text);
+        ToolTip.SetTip(move, "Mover para outra pasta");
+        move.Click += async (_, _) =>
+        {
+            if (World.Selected is not { IsNote: true } house) return;
+            await MoveHouseToFolderAsync(house);
+        };
+        actions.ColumnDefinitions = new ColumnDefinitions("*,8,*");
+        actions.RowDefinitions = new RowDefinitions("Auto,8,Auto");
+        Grid.SetColumn(move, 2);
+        Grid.SetRow(copy, 2);
+        Grid.SetRow(delete, 2);
         Grid.SetColumn(delete, 2);
+        actions.Children.Add(look);
+        actions.Children.Add(move);
         actions.Children.Add(copy);
         actions.Children.Add(delete);
 

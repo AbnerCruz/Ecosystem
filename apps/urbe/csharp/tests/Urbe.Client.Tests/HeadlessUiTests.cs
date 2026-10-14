@@ -362,12 +362,19 @@ public sealed partial class HeadlessUiTests : IDisposable
                 await Settle(window, view);
                 int houses = view.World.City!.Buildings.Count;
 
-                // + → Criar → Nova nota
-                var menu = view.ShowCreateMenuAsync();
+                // the "+" (DEC-0045): Construção, Região, Decoração, Importar; a new note by name is the Explorer's Nova nota,
+                // the same CreateNoteAsync
+                var plus = view.ShowCreateMenuAsync();
                 Dispatcher.UIThread.RunJobs();
                 Assert.True(view.Dialogs.IsOpen);
+                var labels = view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
+                foreach (var item in new[] { "Construção", "Região", "Decoração", "Importar" }) Assert.Contains(item, labels);
+                Assert.DoesNotContain("Nova nota", labels);
                 Snapshot(window, "native-create-menu.png");
-                ClickButtonWithText(view.Dialogs, "Nova nota");
+                window.KeyPress(Avalonia.Input.Key.Escape, Avalonia.Input.RawInputModifiers.None, Avalonia.Input.PhysicalKey.Escape, null);
+                for (int i = 0; i < 20 && view.Dialogs.IsOpen; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                await plus;
+                var menu = view.CreateNoteAsync(null);
                 Dispatcher.UIThread.RunJobs();
                 await Task.Delay(50);
                 Dispatcher.UIThread.RunJobs();
