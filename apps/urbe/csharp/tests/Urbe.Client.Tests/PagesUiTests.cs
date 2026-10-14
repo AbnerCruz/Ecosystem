@@ -59,6 +59,20 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal(html, view.FilePreview.ShownText);
                 view.FilePreview.Close();
 
+                // the exports: Baixar HTML (a file where the person chooses), Salvar HTML no vault (next to the page), Copiar HTML
+                (string Name, byte[] Bytes)? downloaded = null;
+                view.SavePageFile = (n, b) => { downloaded = (n, b); return Task.FromResult<bool?>(true); };
+                await view.DownloadPageHtmlAsync("Páginas/Meu site.page.json");
+                Assert.Equal("Meu site.html", downloaded!.Value.Name);
+                Assert.Equal(html, System.Text.Encoding.UTF8.GetString(downloaded.Value.Bytes));
+                await view.SavePageHtmlInVaultAsync("Páginas/Meu site.page.json");
+                Assert.Equal(html, File.ReadAllText(Path.Combine(vault, "Páginas", "Meu site.html")));
+                Assert.Contains(view.World.City!.Buildings, b => b.Path == "Páginas/Meu site.html");
+                await view.SavePageHtmlInVaultAsync("Páginas/Meu site.page.json");   // again: replaced, not duplicated
+                Assert.Single(view.World.City!.Buildings, b => b.Path == "Páginas/Meu site.html");
+                await view.CopyPageHtmlAsync("Páginas/Meu site.page.json");
+                if (TopLevel.GetTopLevel(view)?.Clipboard is not null) Assert.Equal(html, view.CopiedText);
+
                 // the palette has it too
                 view.Pages.Close();
                 Assert.True(view.Search.Execute("pages.home"));

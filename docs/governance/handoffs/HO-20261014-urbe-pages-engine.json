@@ -37,7 +37,8 @@
   "work_completed": [
     "Motor de páginas da 1.8.4 (engine.js + free.js) portado para Urbe.Core/Pages: normalize, compact e render com os 34 blocos, temas, livro e layout livre; literais de CSS/JS e dados do motor gerados do próprio original.",
     "Configurações → Páginas e pages.home na paleta: lista os .page.json do vault e mostra cada página dentro do Urbe no visualizador HTML (Página/Fonte), sem sair do app (ADD-0023).",
-    "Ações da página: Ver página, Abrir como texto (JSON) e Mover para a lixeira (pela lixeira de notas, gravada antes)."
+    "Ações da página: Ver página, Abrir como texto (JSON) e Mover para a lixeira (pela lixeira de notas, gravada antes).",
+    "Exportações da página (studio.js exportMenu): Baixar HTML, Salvar HTML no vault (x.page.json → x.html, criado ou substituído, casa na cidade) e Copiar HTML."
   ],
   "verification": [
     {
@@ -50,7 +51,7 @@
       "kind": "automated",
       "check": "HeadlessUiTests.Pages_AreListedAndShownInsideTheUrbeAsTheEngineRendersThem",
       "result": "passed",
-      "evidence": "Vault real: Configurações → Páginas lista a página com título, ícone e seções; tocar mostra o HTML do motor com o texto da nota pelo visualizador; Fonte mostra o HTML; pages.home na paleta; Mover para a lixeira tira o arquivo do vault e da lista. Também passaram ContentViewer, FilePreview, Attachments, Export, Tutorial, EditorChrome e Reorganize."
+      "evidence": "Vault real: Configurações → Páginas lista a página com título, ícone e seções; tocar mostra o HTML do motor com o texto da nota pelo visualizador; Fonte mostra o HTML; pages.home na paleta; Mover para a lixeira tira o arquivo do vault e da lista. Também passaram ContentViewer, FilePreview, Attachments, Export, Tutorial, EditorChrome e Reorganize. Baixar HTML entrega 'Meu site.html' com o HTML do motor; Salvar HTML no vault grava Páginas/Meu site.html e a casa (sem duplicar ao repetir); Copiar HTML."
     },
     {
       "kind": "human",
@@ -63,7 +64,7 @@
   "known_issues": [
     "O estúdio (criar e editar páginas, modelos, Nova página) não foi portado; as páginas são vistas e podem ser editadas como JSON.",
     "Fórmulas $…$ nas páginas ficam como texto: a 1.8.4 só as renderiza com KaTeX quando o módulo de matemática está carregado.",
-    "Exportar o HTML da página ainda não existe no app nativo."
+    "Imprimir/salvar PDF da página ainda não existe no app nativo."
   ],
   "blockers": [],
   "next_actions": [
