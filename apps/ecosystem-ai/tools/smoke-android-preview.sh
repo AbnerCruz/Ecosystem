@@ -14,6 +14,11 @@ dotnet publish src/EcosystemAi.Android/EcosystemAi.Android.csproj -c Release \
   -p:JavaSdkDirectory="$JAVA_HOME" -o "$scratch/apk"
 apk="$(find "$scratch/apk" -name '*-Signed.apk' -print -quit)"
 test -n "$apk" && test -s "$apk"
+badging="$("$ANDROID_HOME/build-tools/36.0.0/aapt2" dump badging "$apk")"
+printf '%s\n' "$badging"
+package="$(sed -n "s/^package: name='\([^']*\)'.*/\1/p" <<< "$badging")"
+activity="$(sed -n "s/^launchable-activity: name='\([^']*\)'.*/\1/p" <<< "$badging")"
+[[ "$package" == io.ecosystem.ai.preview && -n "$activity" ]]
 export ANDROID_AVD_HOME="$scratch/avds"
 mkdir -p "$ANDROID_AVD_HOME"
 printf 'no\n' | "$(dirname "$sdkmanager")/avdmanager" create avd --force \
@@ -26,7 +31,10 @@ cleanup() {
   if [[ "$passed" != true ]]; then
     echo 'Android launch test failed. Crash buffer:' >&2
     "$adb" -s "$serial" logcat -b crash -d >&2 || true
-    tail -80 android-preview/android-launch-logcat.txt >&2 || true
+    grep -E 'AndroidRuntime|FATAL|mono|monodroid|Ecosystem|ecosystem.ai|SIGABRT' \
+      android-preview/android-launch-logcat.txt | tail -150 >&2 || true
+    if [[ -f android-preview/android-launch-ui.xml ]]; then cat android-preview/android-launch-ui.xml >&2; fi
+    "$adb" -s "$serial" shell dumpsys package io.ecosystem.ai.preview >&2 || true
     tail -30 "$scratch/emulator.log" >&2 || true
   fi
   "$adb" -s "$serial" emu kill >/dev/null 2>&1 || true
@@ -47,7 +55,8 @@ done
 "$adb" -s "$serial" logcat -c
 "$adb" -s "$serial" shell input keyevent 82
 "$adb" -s "$serial" shell am start -W -a android.intent.action.MAIN \
-  -c android.intent.category.LAUNCHER -p io.ecosystem.ai.preview
+  -c android.intent.category.LAUNCHER -n "$package/$activity" | tee "$scratch/launch.txt"
+grep -q 'Status: ok' "$scratch/launch.txt"
 sleep 12
 test -n "$("$adb" -s "$serial" shell pidof io.ecosystem.ai.preview)"
 timeout 30 "$adb" -s "$serial" shell uiautomator dump /data/local/tmp/ecoai-launch.xml
