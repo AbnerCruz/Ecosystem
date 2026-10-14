@@ -117,6 +117,7 @@ public sealed partial class MainView : Grid
         if (_vault is not null) Editor.SaveRequested += SaveNoteAsync;
         Editor.Editor.TextChanged += (_, _) => { EditorLinksChanged(); CaptureEditorHistory(); };
         Editor.MoreRequested += ShowEditorMenuAsync;
+        Editor.Shown += path => NoteOpened?.Invoke(path);   // plugins: "nota:aberta"
 
         _stage.Children.Add(World);
         _stage.Children.Add(_top = TopBar());
@@ -136,9 +137,13 @@ public sealed partial class MainView : Grid
             World.CenterOn(building);
         };
         _stage.Children.Add(FilePreview);
+        _stage.Children.Add(_pluginPanels);   // the plugins' panels, over the city and the editor (ADD-0021)
         Customize = new CustomizePanel(Customization, Dialogs);
         Customize.OpenFileRequested += path => Editor.Open(new CityNote(path, _contents.GetValueOrDefault(path, "")));
+        Customize.NativePlugins = NativePlugins;
+        Customize.SetNativePlugin = SetNativePlugin;
         Customization.Applied += ApplyCustomization;
+        Customization.Applied += SyncPlugins;   // the safe mode turns every plugin off
         SetColumn(_stage, 1);
         Children.Add(_stage);
 
@@ -490,6 +495,7 @@ public sealed partial class MainView : Grid
             _mapSave?.MarkSync();
         }
         await SaveHistoryAsync();
+        NoteSaved?.Invoke(note.Path);   // plugins: "nota:salva"
     }
 
     /// <summary>
@@ -608,6 +614,7 @@ public sealed partial class MainView : Grid
             HorizontalAlignment = HorizontalAlignment.Right,
             Children = { SearchButton(), MapButton(), SettingsButton() }
         };
+        _topButtons = buttons;   // the plugins' buttons go before Configurações
         var bar = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"), Margin = new Thickness(12, 10, 12, 0), VerticalAlignment = VerticalAlignment.Top };
         SetColumn(buttons, 2);
         bar.Children.Add(pill);

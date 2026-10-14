@@ -58,6 +58,12 @@ public sealed partial class CustomizePanel : Grid
     /// <summary>abrirNota(p): the panel asks the app to open a vault file.</summary>
     public event Action<string>? OpenFileRequested;
 
+    /// <summary>The native plugins with whether each is on (the host fills it; ADD-0021).</summary>
+    public Func<IReadOnlyList<(PluginManifest Manifest, bool On)>>? NativePlugins { get; set; }
+
+    /// <summary>Turns a native plugin on or off.</summary>
+    public Action<string, bool>? SetNativePlugin { get; set; }
+
     /// <summary>abrir(qual).</summary>
     public void Open(string? section = null)
     {

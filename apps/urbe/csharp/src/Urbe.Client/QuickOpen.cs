@@ -366,6 +366,14 @@ public sealed class SearchFeature
     public QuickOpenPanel QuickOpen { get; }
     public CommandPalettePanel Palette { get; }
 
+    /// <summary>core.commands.register(id, …) for a plugin (category "Plugin · name"); returns what removes it.</summary>
+    public Action AddCommand(string id, string title, string category, Action run)
+    {
+        var command = new NativeCommand(new LegacyCommand(id, title, category, null), run);
+        _commands.Add(command);
+        return () => _commands.Remove(command);
+    }
+
     /// <summary>core.commands.has(id).</summary>
     public bool Has(string id) => _commands.Any(c => c.Info.Id == id);
 

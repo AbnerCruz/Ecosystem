@@ -202,6 +202,9 @@ public sealed class EditorOverlay : Grid
     public TextBox Editor { get; }
     public event EventHandler? Closed;
 
+    /// <summary>A note was opened in the editor (by any way: city, Notas, a link, a tab).</summary>
+    public event Action<string>? Shown;
+
     /// <summary>The formula pane (math/editor.js openPane) the host shows: the LaTeX, whether it is a display formula and
     /// whether an existing one is edited in, the answer out.</summary>
     public Func<string, bool, bool, Task<FormulaPane.Result?>>? AskFormula
@@ -320,6 +323,7 @@ public sealed class EditorOverlay : Grid
         _savedContent = note.Content;
         _title.Text = System.IO.Path.GetFileName(note.Path);
         TouchTab(note.Path);
+        Shown?.Invoke(note.Path);
         Editor.Text = note.Content;
         _opening = false;
         RebuildIndex();
