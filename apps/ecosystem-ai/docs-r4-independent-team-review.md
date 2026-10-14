@@ -38,10 +38,13 @@ que executa .NET. Tokens e endpoint não vão ao formulário.
    carregada do perfil. O retorno 0 do CLI, sozinho, **não basta**:
    exigir exatamente um novo `RunReceipt` succeeded/verified e resposta
    `assistant` no catálogo canônico.
-4. Construir a tarefa do revisor com solicitação original e trecho limitado
-   da resposta **já redigida e persistida** do produtor. Ela é tratada
-   como dado não confiável, não como instrução. Encaminhar esse trecho
-   ao mesmo provider é uma consequência explícita de habilitar a flag.
+4. Construir a tarefa do revisor com solicitação original **completa**, incluindo
+   o critério de aceite nas tarefas planejadas, e resposta **completa, já
+   redigida e persistida** do produtor. Ela é tratada como dado não confiável,
+   não como instrução. Encaminhar o resultado ao mesmo provider é uma
+   consequência explícita de habilitar a flag. Se tudo não couber no limite
+   existente, registrar revisão incompleta sem chamar o revisor; o recibo
+   e a resposta do produtor continuam disponíveis.
 5. Executar **revisor diferente do produtor**, com seu próprio perfil,
    runId, receipt, orçamento e resposta. Validar também esse segundo
    recibo e a resposta. A tela do catálogo mostra os dois runs e parecer.
@@ -62,8 +65,11 @@ automáticos, execução em background nem escrita no workspace.
   Não há devolução de reservas; modelo e preço são definidos pelo Host.
 - O orçamento é local à instância; **não** é teto distribuído entre
   processos nem estimativa infalível da fatura do provider.
-- A passagem de trecho do resultado do produtor ao revisor é limitada a
-  7.000 caracteres; a tarefa original, a 3.500 caracteres.
+- A solicitação de revisão completa, com instruções, objetivo e resposta,
+  fica limitada a 16.384 caracteres. Não corta critérios ou resposta.
+  Objetivo que não deixa espaço para a revisão é recusado **antes** de
+  executar o produtor; resultado excessivo interrompe antes do revisor.
+  O custo do produtor já executado permanece contabilizado.
 - O verificator de presença de resposta do Runtime **não prova a
   qualidade** nem que o parecer seja correto. Auditoria estrutural e
   aceite técnico integral permanecem exigências diferentes.

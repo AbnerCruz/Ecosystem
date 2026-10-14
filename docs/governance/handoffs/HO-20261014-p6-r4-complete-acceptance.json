@@ -1,0 +1,119 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-p6-r4-complete-acceptance",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T00:03:57.483229Z",
+  "agent": {
+    "id": "codex-p6-r4-closeout",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "fix/p6-5-complete-acceptance-20261014",
+  "commit": null,
+  "pr": null,
+  "base_commit": "cb53b4e794e0ddf53bb0d02d38c374cc84794cd5",
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliPlannedTaskRequest.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUi.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebTaskRunner.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4CompleteAcceptanceTests.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4PlannedTaskBoardTests.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4IndependentTeamReviewTests.cs",
+    "apps/ecosystem-ai/docs-r4-planned-task-board.md",
+    "apps/ecosystem-ai/docs-r4-independent-team-review.md",
+    "docs/governance/handoffs/HO-20261014-p6-r4-complete-acceptance.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: /task-run enviava Goal sem Acceptance; revisão cortava a solicitação original em 3500 caracteres e a resposta em 7000 sem declarar a omissão.",
+    "Objetivo e critério são enviados integralmente ao mesmo Workspace/Runner. Solicitação de revisão preserva objetivo, critério e resposta completos, com quebras de linha reais.",
+    "Composição acima de 16384 caracteres é recusada sem truncamento: objetivo excessivo antes da reserva; resposta excessiva após produtor, sem executar/gastar com revisor ou fabricar parecer.",
+    "Regressões HTTP, preservação de critérios após 5000 caracteres e interrupção por resposta longa; schemas, grants, ledger e distribuição intactos."
+  ],
+  "verification": [
+    {
+      "check": "Build EcosystemAI.slnx .NET 10",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Build local com -m:1, 0 warnings e 0 errors."
+    },
+    {
+      "check": "AgentRuntime.Tests e EcosystemAi.ProjectStore.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "221/221 e 11/11 testes locais, sem erros, falhas ou skips. Provedor fake; não é teste comercial."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks locais passaram. Clone inicialmente raso: histórico e snapshot Issues ainda não verificados, explicitados pelo checker; CI combinado fará checks com histórico completo."
+    }
+  ],
+  "known_issues": [
+    "P6-5 permanece aberta: aceite material/integração de ChangeSets, experiência Android e ensaio com provider real não são entregues por este fix.",
+    "Fase 7 precisa de auditoria e Extraction Review; text.inspect experimental não encerra o gate de Tool real automaticamente.",
+    "O excesso de resposta interrompe a revisão após o produtor: sua execução já teve custo, conservado no recibo; não há retry nem ampliação de limite."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar a correção pelo integrador governado após CI combinado verde.",
+    "Fechar as lacunas restantes de P6-5 com evidência, sem reaproveitar validação de builds diferentes.",
+    "Auditar candidato de Fase 7 com dois consumidores reais antes de extração."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/platform-execution.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-planned-task-board.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O catálogo e os recibos permanecem fontes de verdade; o quadro é projeção efêmera."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Mudança restrita a apps/ecosystem-ai; sem referência direta a Lunet ou Urbe."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #497, branch, testes, PR e handoff auditáveis."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes pendentes explicitamente; nenhum gate DEVICE reivindicado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Trabalho em review, sem afirmar sucesso antes dos checks e integração."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Sem novo runtime, ledger ou provedor; validação é projeção de receipts existentes."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "ecosystem-ai-complete-task-request",
+      "status": "product-specific",
+      "rationale": "Composição de entradas da UI local; sem segundo runtime, contrato ou extração transversal."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Bug de encaminhamento de requisitos e revisão no mesmo fluxo autorizado. Sem alterar schema, dados existentes, grants, limite, provider, release ou boundaries."
+  },
+  "cost": null
+}
