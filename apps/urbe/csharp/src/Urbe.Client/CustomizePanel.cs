@@ -202,6 +202,12 @@ public sealed partial class CustomizePanel : Grid
             Toggle("cidade.eventos", B("eventos"), "Eventos", "Balão, festa e fogos, barcos, raposa, revoadas e estrelas cadentes"),
             Toggle("cidade.nomes", B("nomes"), "Nomes das casas", "Letreiro com o nome da nota"),
             Toggle("cidade.bairros", B("bairros"), "Nomes dos bairros", "Letreiro com o nome da pasta")));
+        // Muralha e contornos (DEC-0045, UC-41): kept in .urbe/mundo.json, never in tema.json
+        var world = Customization.World;
+        _body.Children.Add(Block("Bairros",
+            Toggle(world.Walls, "Muralha", "O bairro principal de cada pasta da raiz cercado por uma muralha de pedra",
+                v => Customization.SetWorldAsync(Customization.World with { Walls = v })),
+            Row("Contornos", "Dos bairros dentro de outros", OutlineSeg(world.Outlines))));
         _body.Children.Add(GroundColorsBlock());
         _body.Children.Add(Block("Luz", Row("Hora do dia", "Ciclo: um dia inteiro a cada 24 minutos. Auto segue o relógio do aparelho",
             Seg("cidade.ambiente", (string)c["ambiente"]!, [("ciclo", "Ciclo"), ("dia", "Dia"), ("entardecer", "Tarde"), ("noite", "Noite"), ("auto", "Auto")]))));
@@ -461,6 +467,30 @@ public sealed partial class CustomizePanel : Grid
         return new Border
         {
             Tag = "seg", Child = _narrow ? grid : stack, Padding = new Thickness(3), CornerRadius = new CornerRadius(11), Background = UrbeTheme.Brush(UrbeTheme.Bg),
+            BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), VerticalAlignment = VerticalAlignment.Center
+        };
+    }
+
+    private Border OutlineSeg(string value)
+    {
+        var stack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
+        foreach (var (v, label) in new[] { (WorldPrefs.Soft, "Suaves"), (WorldPrefs.Strong, "Fortes"), (WorldPrefs.Hidden, "Ocultos") })
+        {
+            bool on = v == value;
+            var b = new Button
+            {
+                Content = label, MinHeight = 34, Padding = new Thickness(12, 0), CornerRadius = new CornerRadius(7), FontFamily = UrbeTheme.UiFont, FontSize = 13,
+                FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(on ? UrbeTheme.Text : UrbeTheme.Text2),
+                Background = on ? UrbeTheme.Brush(UrbeTheme.Surface3) : Brushes.Transparent, VerticalContentAlignment = VerticalAlignment.Center
+            };
+            AutomationName(b, "Contornos " + label);
+            var choice = v;
+            b.Click += async (_, _) => { await Customization.SetWorldAsync(Customization.World with { Outlines = choice }); Render(); };
+            stack.Children.Add(b);
+        }
+        return new Border
+        {
+            Child = stack, Padding = new Thickness(3), CornerRadius = new CornerRadius(11), Background = UrbeTheme.Brush(UrbeTheme.Bg),
             BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), VerticalAlignment = VerticalAlignment.Center
         };
     }

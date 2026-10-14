@@ -375,6 +375,7 @@ public sealed class WorldView : Control
             _lifeArt.Windows(context, City.Buildings, life, Math.Min(1, (light.Darkness - .25) / .6), _clock.Elapsed.TotalMilliseconds);
         _lifeArt.Glow(context, _life, _lifeHost.People, life);
         DrawWorldLabels(context);
+        DrawRootDistrictName(context);
         RequestChunks(missing);
         Tool?.Render(context, this);
     }
@@ -443,7 +444,14 @@ public sealed class WorldView : Control
         return City!.Regions.Where(r => r.W > 0 && r.X < x1 + margin && r.X + r.W > x0 - margin && r.Y < y1 + margin && r.Y + r.H > y0 - margin).ToList();
     }
 
-    /// <summary>app.js urbeDesenharBairros: fill per level, then outlines (halo on root, dashed from level 2).</summary>
+    /// <summary>Muralha, contornos (DEC-0045, UC-41): from .urbe/mundo.json; the defaults when there is none.</summary>
+    public WorldPrefs Prefs { get; set; } = WorldPrefs.Default;
+
+    /// <summary>
+    /// app.js urbeDesenharBairros: fill per level, then outlines (halo on root, dashed from level 2). With DEC-0045 (the
+    /// owner found the outlines too strong and asked for walls): a root neighbourhood can be walled in stone, and the
+    /// sub-neighbourhoods drawn faint ("suave") or not at all ("oculto"); "forte" is the 1.8.4's drawing.
+    /// </summary>
     private void DrawRegions(DrawingContext context)
     {
         var vis = VisibleRegions(1);
@@ -453,21 +461,69 @@ public sealed class WorldView : Control
         var ordered = vis.Select(r => (r, n: Level(r))).OrderBy(p => p.n).ToList();
         using (context.PushTransform(Matrix.CreateScale(s, s) * Matrix.CreateTranslation(o.X, o.Y)))
         {
+            bool strong = Prefs.Outlines == WorldPrefs.Strong, hidden = Prefs.Outlines == WorldPrefs.Hidden;
             foreach (var (r, n) in ordered)
-                context.DrawGeometry(UrbeTheme.Brush(r.Color, n != 0 ? .10 : .13), null, Shape(r).Geometry);
+                context.DrawGeometry(UrbeTheme.Brush(r.Color, n != 0 ? (strong ? .10 : .05) : (strong ? .13 : .08)), null, Shape(r).Geometry);
             foreach (var (r, n) in ordered)
             {
                 double w = n == 0 ? 3 : n == 1 ? 2 : 1.5;
                 var g = Shape(r).Geometry;
+                if (n == 0 && Prefs.Walls) { DrawWall(context, g); continue; }
+                if (n != 0 && hidden) continue;
+                double alpha = strong ? (n != 0 ? .85 : .95) : (n != 0 ? .35 : .6);
                 if (n == 0)
                     context.DrawGeometry(null, new Pen(new SolidColorBrush(Color.FromArgb(140, 8, 10, 14)), (w + 2.5) / s,
                         lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round), g);
                 // JS dash [5/px, 4/px] in tile units = 5 and 4 screen px; Avalonia dashes are in pen widths.
                 var dash = n >= 2 ? new DashStyle([5 / w, 4 / w], 0) : null;
-                context.DrawGeometry(null, new Pen(UrbeTheme.Brush(r.Color, n != 0 ? .85 : .95), w / s, dash,
+                context.DrawGeometry(null, new Pen(UrbeTheme.Brush(r.Color, alpha), w / s, dash,
                     PenLineCap.Round, PenLineJoin.Round), g);
             }
         }
+    }
+
+    // A stone wall along the outline, in tile units so it scales with the city: a shadow, the stone body, the merlons
+    // (dashes one wall-width long) and a light top — the stones and greys of the 1.8.4 buildings.
+    private static readonly IBrush WallShadow = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.FromArgb(120, 8, 10, 14));
+    private static readonly IBrush WallStone = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.Parse("#7d776b"));
+    private static readonly IBrush WallJoint = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.Parse("#4e4a43"));
+    private static readonly IBrush WallMerlon = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.Parse("#b8b09e"));
+    private static readonly IBrush WallTop = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.Parse("#e0d8c4"));
+
+    private static void DrawWall(DrawingContext context, Geometry g)
+    {
+        const double w = .62;
+        context.DrawGeometry(null, new Pen(WallShadow, w + .4, lineCap: PenLineCap.Square, lineJoin: PenLineJoin.Miter), g);
+        context.DrawGeometry(null, new Pen(WallJoint, w + .12, lineCap: PenLineCap.Square, lineJoin: PenLineJoin.Miter), g);
+        context.DrawGeometry(null, new Pen(WallStone, w, lineCap: PenLineCap.Square, lineJoin: PenLineJoin.Miter), g);
+        // merlons: blocks one wall-width long with a gap of the same, lighter, and a bright top on each
+        context.DrawGeometry(null, new Pen(WallMerlon, w * .7, new DashStyle([1.2, 1.2], 0), PenLineCap.Flat, PenLineJoin.Miter), g);
+        context.DrawGeometry(null, new Pen(WallTop, .12, new DashStyle([7, 7], 0), PenLineCap.Flat, PenLineJoin.Miter), g);
+    }
+
+    /// <summary>The root neighbourhood shown at the top from this zoom on (DEC-0045, UC-41).</summary>
+    public const double RootNameZoom = 1.6;
+
+    /// <summary>The root neighbourhood whose name is shown at the top now, or null.</summary>
+    public string? RootDistrictShown { get; private set; }
+
+    // Close up, the city around is out of sight: the name of the folder at the root of where the camera is helps to know
+    // where one is (owner, DEC-0045). A pill at the top centre, under the top bar.
+    private void DrawRootDistrictName(DrawingContext context)
+    {
+        RootDistrictShown = null;
+        if (Camera.Zoom < RootNameZoom || City is not { } city) return;
+        int cx = (int)Math.Floor(Camera.X / T), cy = (int)Math.Floor(Camera.Y / T);
+        var r = city.RegionAt(cx, cy);
+        for (int guard = 0; r?.ParentId is { } parent && guard < 64; guard++) r = city.Regions.Find(x => x.Id == parent) ?? r;
+        if (r is null) return;
+        RootDistrictShown = r.Name;
+        var text = Text(r.Name, 14, FontWeight.Bold, UrbeTheme.Brush(UrbeTheme.Text));
+        double padX = 14, h = 30, dot = 8, wide = text.Width + padX * 2 + dot + 8;
+        var box = new Rect(Bounds.Width / 2 - wide / 2, 72, wide, h);
+        context.DrawRectangle(UrbeTheme.Brush(UrbeTheme.Surface, .9), new Pen(UrbeTheme.Brush(r.Color, .8), 1), box, h / 2, h / 2);
+        context.DrawEllipse(UrbeTheme.Brush(r.Color), null, new Point(box.X + padX + dot / 2, box.Y + h / 2), dot / 2, dot / 2);
+        context.DrawText(text, new Point(box.X + padX + dot + 8, box.Y + (h - text.Height) / 2));
     }
 
     /// <summary>app.js drawRoads (two passes with neighbour links, pebbles at z ≥ .7) and bridges over water.</summary>

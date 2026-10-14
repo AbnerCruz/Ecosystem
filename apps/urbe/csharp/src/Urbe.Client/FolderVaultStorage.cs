@@ -342,6 +342,9 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
     public Task SaveTutorialMarkAsync(string json, CancellationToken cancellationToken = default) =>
         SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanTutorialMarkWrite(files, json), "A marca do Tutorial", cancellationToken);
 
+    public Task SaveWorldAsync(string json, CancellationToken cancellationToken = default) =>
+        SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanWorldWrite(files, json), "O mundo", cancellationToken);
+
     /// <summary>One internal file of .urbe/ (the trash, the Tutorial's mark), planned on the files as they are now,
     /// written with verification of it and of every other file.</summary>
     private async Task SaveUrbeFileAsync(Func<IReadOnlyList<VaultFile>, (string, byte[])> plan, string what, CancellationToken cancellationToken)
