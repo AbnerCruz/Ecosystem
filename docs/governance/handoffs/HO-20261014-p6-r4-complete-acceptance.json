@@ -13,7 +13,7 @@
   "state": "review",
   "branch": "fix/p6-5-complete-acceptance-20261014",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/555",
   "base_commit": "cb53b4e794e0ddf53bb0d02d38c374cc84794cd5",
   "files_changed": [
     "apps/ecosystem-ai/src/EcosystemAi.Cli/CliPlannedTaskRequest.cs",
@@ -49,7 +49,7 @@
       "check": "Consistency",
       "kind": "automated",
       "result": "passed",
-      "evidence": "22/22 checks locais passaram. Clone inicialmente raso: histórico e snapshot Issues ainda não verificados, explicitados pelo checker; CI combinado fará checks com histórico completo."
+      "evidence": "22/22 checks locais passaram após fetch de histórico completo. Snapshot vivo de Issues ainda não verificado localmente; CI combinado permanece obrigatório."
     }
   ],
   "known_issues": [
