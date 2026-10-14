@@ -204,6 +204,40 @@ public interface IUrbeVaultStorage
         return (path, System.Text.Encoding.UTF8.GetBytes(json));
     }
 
+    /// <summary>
+    /// Rewrites .urbe/mundo.json (what the native app adds to the city, DEC-0045, UC-41) alone, with the trash's
+    /// safeguards. A file of a newer version is never written over. Hosts must override it.
+    /// </summary>
+    Task SaveWorldAsync(string json, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não grava o mundo.");
+
+    /// <summary>The checks of a mundo.json rewrite: a JSON object with "versao" this app knows, never over a newer file.</summary>
+    static (string Path, byte[] Bytes) PlanWorldWrite(IReadOnlyList<VaultFile> files, string json)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(json);
+        var snapshot = VaultReader.Read(files);
+        var existing = files.FirstOrDefault(f => string.Equals(f.Path, WorldPrefs.FilePath, StringComparison.OrdinalIgnoreCase));
+        var path = existing?.Path ?? WorldPrefs.FilePath;
+        if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal)
+            throw new InvalidOperationException("Vault protegido ou operação interrompida: escrita recusada.");
+        if (existing is not null)
+        {
+            WorldPrefs.Parse(System.Text.Encoding.UTF8.GetString(existing.Bytes.Span), out var newer);
+            if (newer) throw new InvalidOperationException("O mundo desta cidade é de uma versão mais nova do Urbe: escrita recusada.");
+        }
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind != System.Text.Json.JsonValueKind.Object ||
+                !doc.RootElement.TryGetProperty("versao", out var v) || v.GetInt32() != WorldPrefs.Version)
+                throw new InvalidDataException("mundo.json inválido.");
+        }
+        catch (Exception ex) when (ex is System.Text.Json.JsonException or FormatException or InvalidOperationException)
+        { throw new InvalidDataException("mundo.json inválido."); }
+        return (path, System.Text.Encoding.UTF8.GetBytes(json));
+    }
+
     /// <summary>A folder path Urbe may create: vault-relative, no traversal, drive syntax, or hidden segment.</summary>
     static void EnsureWritableFolderPath(string path)
     {

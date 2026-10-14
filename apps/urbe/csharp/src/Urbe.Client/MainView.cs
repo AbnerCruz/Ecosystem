@@ -504,6 +504,11 @@ public sealed partial class MainView : Grid
             // workspace:loaded → customize recarregar(); it writes only with a writable vault folder
             Customization.Writer = _vault is { IsConnected: true } && _snapshot is { IsReadOnly: false } ? WriteVaultFileAsync : null;
             Customization.Load(_contents);
+            // .urbe/mundo.json (DEC-0045, UC-41): muralha e contornos; written only with a writable vault
+            Customization.WorldWriter = Customization.Writer is null || _vault is null ? null : json => _vault.SaveWorldAsync(json);
+            Customization.LoadWorld(_snapshot?.Files.FirstOrDefault(f => string.Equals(f.Key, WorldPrefs.FilePath, StringComparison.OrdinalIgnoreCase)).Value is { } mundo
+                ? System.Text.Encoding.UTF8.GetString(mundo.Bytes.Span) : null);
+            World.Prefs = Customization.World;
             _biome.Text = World.BiomeNameAtCentre();
             _loading.IsVisible = false;
         }
@@ -672,6 +677,7 @@ public sealed partial class MainView : Grid
         World.ShowHouseNames = Customization.City("nomes");
         World.ShowDistrictNames = Customization.City("bairros");
         World.LightingMode = Customization.Ambient;
+        World.Prefs = Customization.World;
         UrbeAppearance.Apply(this);   // Personalização: tema, texto, forma, editor e chão
         if (Customization.Config["editor"] is System.Text.Json.Nodes.JsonObject ed) Editor.ApplyOptions((string?)ed["largura"], (string?)ed["modoInicial"]);
         if (Editor.IsVisible) Editor.RefreshVisual();   // tag colours (DEC-0045, UC-43)

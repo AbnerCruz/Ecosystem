@@ -1,0 +1,103 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-urbe-uc41-muralhas-contornos",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T10:30:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-41",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "535cfbdc",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/548",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/WorldPrefs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Customization.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizePanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/WorldPrefsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/WorldWallsUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261014-urbe-uc41-muralhas-contornos.json"
+  ],
+  "work_completed": [
+    "Fato verificado: a 1.8.4 reconstrói .urbe/mapa.json só com os campos que conhece (app.js estadoDesejado); o que o app nativo acrescenta ao mundo vai em .urbe/mundo.json.",
+    "WorldPrefs (Core) e SaveWorldAsync (desktop e Android) com as salvaguardas da lixeira e recusa de gravar sobre arquivo de versão mais nova.",
+    "Muralha de pedra no bairro raiz (sombra, juntas, merlões e topo claro) e contornos suaves/fortes/ocultos dos sub-bairros.",
+    "Personalização → Cidade → Bairros: Muralha e Contornos.",
+    "Nome do bairro raiz no topo a partir do zoom 1,6."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "WorldPrefsTests, HeadlessUiTests.WorldFile_IsNeverWrittenOverANewerOne, HeadlessUiTests.World_WallsOutlinesAndTheRootNameCloseUp",
+      "result": "passed",
+      "evidence": "Arquivo lido/gravado, versão mais nova preservada, preferências aplicadas e gravadas em .urbe/mundo.json, mapa.json sem campos novos, nome 'Bairro' em zoom 2,4 e ausente em 1; capturas native-world-walls.png e native-world-root-name.png."
+    },
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests 605/605 e Urbe.Client.Tests 124/124",
+      "result": "passed",
+      "evidence": "Pincéis da muralha imutáveis: um SolidColorBrush estático, criado na thread de um teste, quebrava o renderizador dos testes seguintes (thread de outro Dispatcher)."
+    },
+    {
+      "kind": "human",
+      "check": "Aparência da muralha e dos contornos no aparelho (dia e noite)",
+      "result": "not-applicable",
+      "evidence": "Depende de aparelho e do gosto do proprietário (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs"
+    }
+  ],
+  "known_issues": [
+    "A muralha segue o contorno orgânico do bairro da 1.8.4 (ondulado), sem torres nos cantos.",
+    "Build Android local indisponível sem workload; o CI valida."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Menu + (Construção, Região, Decoração, Importar) e decorações em .urbe/mundo.json.",
+    "Construção por extensão e visual editável."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "mapa.json continua a autoridade da 1.8.4; mundo.json só guarda o que é do app nativo."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Aparência pendente de validação humana."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-41 continua [ ] (fatia 1 de várias)."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "world-prefs",
+      "status": "product-specific",
+      "rationale": "Cidade do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Grava um arquivo novo em .urbe/ pela camada de armazenamento do vault (zona user-data); não altera mapa.json nem notas."
+  }
+}
