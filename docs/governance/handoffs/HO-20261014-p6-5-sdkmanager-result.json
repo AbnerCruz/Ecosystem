@@ -1,0 +1,108 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-p6-5-sdkmanager-result",
+  "category": "RESULT",
+  "timestamp": "2026-10-14T21:24:35Z",
+  "agent": {
+    "id": "codex-p6-5-android-build-fix",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "docs/p6-5-sdkmanager-result-20261014",
+  "base_commit": "f61b1ba569fc21c264d1b84f0d46e72ac3874458",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/governance/handoffs/HO-20261014-p6-5-sdkmanager-result.json"
+  ],
+  "work_completed": [
+    "A PR #565 corrigiu a resolução do sdkmanager no build Android e foi integrado automaticamente à main no commit f61b1ba569fc21c264d1b84f0d46e72ac3874458.",
+    "Os testes .NET, o build e a assinatura do APK Android passaram no CI normal e no estado combinado do integrador; a prévia também anexou um APK verificável.",
+    "O APK foi baixado, extraído e conferido com o SHA-256 do artefato CI: 4239874477c087165c12a7777e17d185fdeaa1692139cecad6c8677c9dd57fc0.",
+    "Este resultado resolve o bloqueio de empacotamento, não declara P6-5 concluída; a experiência ainda não executa e integra ChangeSets pelo fluxo supervisionado do Runtime."
+  ],
+  "verification": [
+    {
+      "check": "ecosystem-ai-ci (Product tests and Android APK)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Workflow run 38638982311: testes do AgentRuntime e ProjectStore e build/assinatura/verificação/upload do APK passaram.",
+      "tested_commit": "d9c1080df2207536d99e8eddf0adadf5769225b8"
+    },
+    {
+      "check": "ecosystem-ai-android-preview",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Workflow run 38638982273 produziu artifact 11929468079; APK extraído tem 25484455 bytes e SHA-256 4239874477c087165c12a7777e17d185fdeaa1692139cecad6c8677c9dd57fc0.",
+      "tested_commit": "d9c1080df2207536d99e8eddf0adadf5769225b8"
+    },
+    {
+      "check": "Integrator combined state and consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Run 38638981040 concluiu sucesso com CI do Ecosystem AI e consistency no estado combinado; a integração do PR #565 foi automática.",
+      "tested_commit": "d9c1080df2207536d99e8eddf0adadf5769225b8"
+    },
+    {
+      "check": "Install and validate this exact APK on Android (A-F)",
+      "kind": "human",
+      "result": "pending",
+      "evidence": "A aprovação P6-5 anterior está registrada na Issue #559; este artefato foi gerado depois e não se afirma que tenha sido instalado no aparelho.",
+      "object": "https://github.com/AbnerCruz/Ecosystem/actions/runs/38638982273",
+      "critical": true,
+      "tested_commit": "d9c1080df2207536d99e8eddf0adadf5769225b8"
+    }
+  ],
+  "known_issues": [
+    "A P6-5 continua aberta até que a execução supervisionada de ChangeSets pelo ChangeIntegrator esteja demonstrada no Product e as evidências de aceite correspondentes estejam completas.",
+    "A validação humana aprovada na Issue #559 refere-se à validação P6-5 anterior; este artefato exato ainda não foi instalado/testado."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Instalar o APK exato e concluir o roteiro A-F no Android; registrar o resultado na validação P6-5.",
+    "Continuar o slice de P6-5 para ChangeSets supervisionados, preservando o mesmo Runtime/Workspace e sem conceder escrita irrestrita ao agente."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/adr/0020-r2-workspace-changes-e-integracao-local.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "apps/ecosystem-ai/docs-r4-android-native.md",
+    "apps/ecosystem-ai/docs-r4-planned-task-board.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "PR, merge, workflow runs, artifact, checksum e próximo passo estão registrados neste handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e checksum não são apresentados como validação deste APK em aparelho; o roteiro exato permanece pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P6-5 não está marcada como concluída; ChangeSets e validação deste artefato continuam explicitamente abertos."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "ecosystem-ai-android-sdkmanager-resolution",
+      "status": "product-specific",
+      "rationale": "A correção permanece no build glue do Ecosystem AI e não introduz ferramenta ou abstração compartilhada."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Registro do resultado integrado de uma correção local aprovada no escopo da P6-5; não altera política, assinatura, identidade do app, permissão ou canal de distribuição."
+  }
+}
