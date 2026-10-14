@@ -48,16 +48,23 @@ public sealed class MainActivity : Activity
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
-        // Impede captura do campo de token e histórico pelo snapshot do SO.
-        Window?.SetFlags(WindowManagerFlags.Secure, WindowManagerFlags.Secure);
-        var root = FilesDir!.AbsolutePath;
-        _catalog = System.IO.Path.Combine(root, "catalog");
-        _journal = System.IO.Path.Combine(root, "runs");
-        _projectRoot = System.IO.Path.Combine(root, "projects");
-        _store = new LocalProjectStore(_catalog);
-        _projectId = savedInstanceState?.GetString("projectId");
-        _sessionId = savedInstanceState?.GetString("sessionId");
-        Guard(Render);
+        try
+        {
+            // Impede captura do campo de token e histórico pelo snapshot do SO.
+            Window?.SetFlags(WindowManagerFlags.Secure, WindowManagerFlags.Secure);
+            var root = FilesDir!.AbsolutePath;
+            _catalog = System.IO.Path.Combine(root, "catalog");
+            _journal = System.IO.Path.Combine(root, "runs");
+            _projectRoot = System.IO.Path.Combine(root, "projects");
+            _store = new LocalProjectStore(_catalog);
+            _projectId = savedInstanceState?.GetString("projectId");
+            _sessionId = savedInstanceState?.GetString("sessionId");
+            Render();
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            ShowStartupFailure(error);
+        }
     }
 
     protected override void OnSaveInstanceState(Bundle outState)
@@ -79,6 +86,31 @@ public sealed class MainActivity : Activity
         _active?.Cancel();
         _settings = null;
         base.OnDestroy();
+    }
+
+    private void ShowStartupFailure(Exception error)
+    {
+        var cause = error;
+        while (cause.InnerException is not null) cause = cause.InnerException;
+        var fingerprintInput = $"{cause.GetType().FullName}|{cause.HResult}|{cause.StackTrace}";
+        var diagnosticId = Convert.ToHexString(
+            System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(fingerprintInput)))[..12];
+        var explanation = cause switch
+        {
+            InvalidDataException => "Os dados locais parecem inválidos ou inconsistentes.",
+            System.Text.Json.JsonException => "O catálogo local não pôde ser interpretado.",
+            UnauthorizedAccessException => "O Android bloqueou o acesso aos dados locais.",
+            _ => "Ocorreu uma falha inesperada durante a inicialização."
+        };
+
+        var screen = Column();
+        screen.SetBackgroundColor(_background);
+        screen.SetPadding(Dp(24), Dp(48), Dp(24), Dp(24));
+        screen.AddView(Text("Ecosystem AI não iniciou", 24, true));
+        screen.AddView(Text(explanation, 17));
+        screen.AddView(Text($"Diagnóstico: {cause.GetType().Name} • {diagnosticId}", 14));
+        screen.AddView(Text("Se enviar esse código, consigo localizar a falha sem expor conversa, token ou caminhos do aparelho.", 14));
+        SetContentView(screen);
     }
 
     private int Dp(int n) => (int)(n * Resources!.DisplayMetrics!.Density);
