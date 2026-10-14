@@ -62,6 +62,31 @@ public sealed partial class Customization
         Applied?.Invoke();
     }
 
+    /// <summary>How the neighbourhoods are drawn (.urbe/mundo.json, DEC-0045, UC-41).</summary>
+    public WorldPrefs World { get; private set; } = WorldPrefs.Default;
+
+    /// <summary>Writes .urbe/mundo.json; null without a writable vault (or when the file is of a newer version).</summary>
+    public Func<string, Task>? WorldWriter { get; set; }
+
+    /// <summary>The world preferences read with the vault; a newer file is used as the defaults and never written over.</summary>
+    public void LoadWorld(string? text)
+    {
+        World = WorldPrefs.Parse(text, out var newer);
+        WorldNewer = newer;
+    }
+
+    /// <summary>True when .urbe/mundo.json is of a newer version of the app: it is left as it is.</summary>
+    public bool WorldNewer { get; private set; }
+
+    /// <summary>Changes the world preferences: written to .urbe/mundo.json (when it can be) and applied.</summary>
+    public async Task SetWorldAsync(WorldPrefs prefs)
+    {
+        if (prefs == World) return;
+        if (WorldWriter is { } write && !WorldNewer) await write(prefs.Text());
+        World = prefs;
+        Applied?.Invoke();
+    }
+
     public LegacyCustomize.Result Normalize(string text) => LegacyCustomize.Normalize(text, _savedTheme);
 
     /// <summary>set(patch) = gravar(merge(atual, patch)).</summary>
