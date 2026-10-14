@@ -175,6 +175,9 @@ public sealed partial class MainView : Grid
             ShowHouse(house);
         };
         World.DecorationTapped += decoration => _ = ShowDecorationAsync(decoration);
+        // v21MoveHold: holding a house carries it (only with a vault that can be written)
+        World.MoveValid = (b, x, y) => World.City?.ValidMove(b, x, y).Ok ?? false;
+        World.BuildingMoveRequested += (b, x, y) => _ = MoveHouseAsync(b, x, y);
     }
 
     public WorldView World { get; }
@@ -1285,11 +1288,18 @@ public sealed partial class MainView : Grid
             await Dialogs.AlertAsync("Mover", NoVaultMessage);
             return;
         }
+        if (await ChooseFolderAsync() is not { } folder) return;
+        await MoveNotesToAsync(paths, folder);
+    }
+
+    /// <summary>uiDestinoRegiao("Mover para"): Raiz or one of the folders; "" is the root, null when cancelled.</summary>
+    private async Task<string?> ChooseFolderAsync()
+    {
         var folders = NoteFolders();
         var options = new List<DialogItem> { new("Raiz", UrbeTheme.Icons.Notes, "Fora de qualquer pasta") };
         options.AddRange(folders.Select(f => new DialogItem(f[(f.LastIndexOf('/') + 1)..], UrbeTheme.Icons.Folder, f)));
-        if (await Dialogs.ChooseAsync("Mover para", options) is not { } chosen) return;
-        await MoveNotesToAsync(paths, chosen == 0 ? "" : folders[chosen - 1]);
+        if (await Dialogs.ChooseAsync("Mover para", options) is not { } chosen) return null;
+        return chosen == 0 ? "" : folders[chosen - 1];
     }
 
     /// <summary>explorer.move of each note into <paramref name="folder"/> ("" = the root): the file first, then the house
@@ -1552,10 +1562,22 @@ public sealed partial class MainView : Grid
             if (World.Selected is not { IsNote: true } house) return;
             await EditLookAsync(house);
         };
-        actions.ColumnDefinitions = new ColumnDefinitions("*,8,*,8,*");
-        Grid.SetColumn(copy, 2);
-        Grid.SetColumn(delete, 4);
+        // moveBtn → escolherDestinoEMover
+        var move = Secondary("Mover", UrbeTheme.Text);
+        ToolTip.SetTip(move, "Mover para outra pasta");
+        move.Click += async (_, _) =>
+        {
+            if (World.Selected is not { IsNote: true } house) return;
+            await MoveHouseToFolderAsync(house);
+        };
+        actions.ColumnDefinitions = new ColumnDefinitions("*,8,*");
+        actions.RowDefinitions = new RowDefinitions("Auto,8,Auto");
+        Grid.SetColumn(move, 2);
+        Grid.SetRow(copy, 2);
+        Grid.SetRow(delete, 2);
+        Grid.SetColumn(delete, 2);
         actions.Children.Add(look);
+        actions.Children.Add(move);
         actions.Children.Add(copy);
         actions.Children.Add(delete);
 

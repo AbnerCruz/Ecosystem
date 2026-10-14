@@ -38,6 +38,54 @@ public sealed class WorldView : Control
     private readonly Dictionary<string, RegionShape> _shapes = new(StringComparer.Ordinal);
     private readonly Dictionary<string, FormattedText> _texts = new(StringComparer.Ordinal);
     private Point? _pressAt;
+
+    /// <summary>v21MoveHold: holding a building 430 ms picks it up (gesture.mode = 'moveBuilding').</summary>
+    public const int MoveHoldMs = 430;
+    private readonly DispatcherTimer _moveHold = new() { Interval = TimeSpan.FromMilliseconds(MoveHoldMs) };
+    private LegacyCityBuilding? _pressBuilding;
+    private (int X, int Y) _moveOffset;
+
+    /// <summary>The building being carried by the finger, or null.</summary>
+    public LegacyCityBuilding? Moving { get; private set; }
+
+    /// <summary>Where the carried building would land (gesture.dragPos).</summary>
+    public (int X, int Y) MovePos { get; private set; }
+
+    /// <summary>validarPosicaoMovel for the drawing of the carried building (green or red frame).</summary>
+    public Func<LegacyCityBuilding, int, int, bool>? MoveValid { get; set; }
+
+    /// <summary>The carried building was let go at a new lot (finalizarMovimentoMundo).</summary>
+    public event Action<LegacyCityBuilding, int, int>? BuildingMoveRequested;
+
+    /// <summary>The hold that picks a building up (v21MoveHold), from tile (tx, ty) on it.</summary>
+    public void PickUp(LegacyCityBuilding b, int tx, int ty)
+    {
+        Moving = b;
+        _moveOffset = (tx - b.X, ty - b.Y);
+        MovePos = (b.X, b.Y);
+        InvalidateVisual();
+    }
+
+    /// <summary>The carried building follows the finger to tile (tx, ty).</summary>
+    public void Carry(int tx, int ty)
+    {
+        if (Moving is null) return;
+        MovePos = (tx - _moveOffset.X, ty - _moveOffset.Y);
+        InvalidateVisual();
+    }
+
+    /// <summary>Lets the carried building go: a new lot asks to move it there.</summary>
+    public void Drop()
+    {
+        if (Moving is not { } b) return;
+        Moving = null;
+        var (x, y) = MovePos;
+        InvalidateVisual();
+        // let go where it was: the hold was only a long tap, which selects it
+        if (x == b.X && y == b.Y) { Select(b); return; }
+        Select(null);
+        BuildingMoveRequested?.Invoke(b, x, y);
+    }
     private bool _dragged;
     private double _pinchDistance;
     private int _worldGeneration;
@@ -70,6 +118,15 @@ public sealed class WorldView : Control
         _lifeTimer.Tick += (_, _) => LifeTick();
         _faunaTimer.Tick += (_, _) => FaunaTick();
         _villagerTimer.Tick += (_, _) => VillagerTick();
+        _moveHold.Tick += (_, _) =>
+        {
+            _moveHold.Stop();
+            if (_pointers.Count == 1 && !_dragged && Tool is null && _pressBuilding is { } b && _pressAt is { } at)
+            {
+                var (tx, ty) = Camera.TileAt(at);
+                PickUp(b, tx, ty);
+            }
+        };
         RefreshLighting();
     }
 
@@ -748,11 +805,27 @@ public sealed class WorldView : Control
                     double rr = Math.Min(10 * z, Math.Min(halo.Height / 2, halo.Width / 2));
                     context.DrawRectangle(new SolidColorBrush(Color.FromArgb(41, 143, 179, 255)), new Pen(UrbeTheme.Brush("#8fb3ff"), 2), halo, rr, rr);
                 }
+                if (b == Moving) continue;
                 var p = Camera.WorldToScreen(b.X * T, b.Y * T);
                 double w = 48 * s * (b.W / 3.0), h = 56 * s * (b.H / 3.0);
                 context.DrawImage(Art(b, LookOf(b)), new Rect(0, 0, LegacyWorldBuildings.Width, LegacyWorldBuildings.Height),
                     new Rect(Math.Round(p.X), Math.Round(p.Y + b.H * T * z - h), Math.Ceiling(w), Math.Ceiling(h)));
             }
+        if (Moving is { } carried)
+        {
+            // the carried building (moveBuilding): its old lot faint, the new one framed green where it fits, red where not
+            var (mx, my) = MovePos;
+            bool ok = MoveValid?.Invoke(carried, mx, my) ?? true;
+            var old = Camera.WorldToScreen(carried.X * T, carried.Y * T);
+            context.DrawRectangle(null, new Pen(UrbeTheme.Brush("#ffffff", .35), 1, new DashStyle([4, 4], 0)), new Rect(old.X, old.Y, carried.W * T * z, carried.H * T * z));
+            var p = Camera.WorldToScreen(mx * T, my * T);
+            double w = 48 * s * (carried.W / 3.0), h = 56 * s * (carried.H / 3.0);
+            using (context.PushOpacity(.8))
+            using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.None }))
+                context.DrawImage(Art(carried, LookOf(carried)), new Rect(0, 0, LegacyWorldBuildings.Width, LegacyWorldBuildings.Height),
+                    new Rect(Math.Round(p.X), Math.Round(p.Y + carried.H * T * z - h), Math.Ceiling(w), Math.Ceiling(h)));
+            context.DrawRectangle(null, new Pen(UrbeTheme.Brush(ok ? "#7ef29a" : "#ef766f"), 3), new Rect(p.X, p.Y, carried.W * T * z, carried.H * T * z));
+        }
     }
 
     /// <summary>Names are intentionally AFTER lighting, identical to app.js 'urbeAntesDosRotulos'.</summary>
@@ -942,8 +1015,16 @@ public sealed class WorldView : Control
             tool.Down(tx, ty);
             InvalidateVisual();
         }
-        else if (_pointers.Count == 1) { _pressAt = p; _dragged = false; }
-        else { _pressAt = null; _pinchDistance = PinchDistance(); if (_toolGesture) { _toolGesture = false; Tool?.Cancel(); } }
+        else if (_pointers.Count == 1)
+        {
+            _pressAt = p;
+            _dragged = false;
+            var (tx, ty) = Camera.TileAt(p);
+            _pressBuilding = City?.BuildingAt(tx, ty);
+            _moveHold.Stop();
+            if (_pressBuilding is not null && MoveValid is not null) _moveHold.Start();
+        }
+        else { _moveHold.Stop(); if (Moving is not null) { Moving = null; } _pressAt = null; _pinchDistance = PinchDistance(); if (_toolGesture) { _toolGesture = false; Tool?.Cancel(); } }
         e.Handled = true;
     }
 
@@ -964,9 +1045,14 @@ public sealed class WorldView : Control
             var (tx, ty) = Camera.TileAt(p);
             active.Move(tx, ty);
         }
+        else if (Moving is not null)
+        {
+            var (tx, ty) = Camera.TileAt(p);
+            Carry(tx, ty);
+        }
         else
         {
-            if (_pressAt is { } start && Distance(start, p) > TapSlop) _dragged = true;
+            if (_pressAt is { } start && Distance(start, p) > TapSlop) { _dragged = true; _moveHold.Stop(); }
             if (_dragged) Camera.Pan(p - last);
         }
         InvalidateVisual();
@@ -978,6 +1064,13 @@ public sealed class WorldView : Control
         base.OnPointerReleased(e);
         _pointers.Remove(e.Pointer);
         e.Pointer.Capture(null);
+        _moveHold.Stop();
+        if (Moving is not null && _pointers.Count == 0)
+        {
+            Drop();
+            _pressAt = null;
+            return;
+        }
         if (_toolGesture && _pointers.Count == 0)
         {
             _toolGesture = false;
@@ -989,7 +1082,7 @@ public sealed class WorldView : Control
         {
             var (tx, ty) = Camera.TileAt(start);
             if (City.BuildingAt(tx, ty) is null && Prefs.DecorationAt(tx, ty) is { } decoration) { Select(null); DecorationTapped?.Invoke(decoration); }
-            else Select(City.BuildingAt(tx, ty) is { IsNote: true } house ? house : null);
+            else Select(City.BuildingAt(tx, ty));   // a note opens its summary, a file building its preview
         }
         if (_pointers.Count < 2) _pinchDistance = 0;
         if (_pointers.Count == 0) _pressAt = null;
@@ -998,7 +1091,10 @@ public sealed class WorldView : Control
     protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
     {
         base.OnPointerCaptureLost(e);
-        _pointers.Remove(e.Pointer);
+        // lost without a release (another control took the pointer): whatever was carried goes back
+        if (!_pointers.Remove(e.Pointer)) return;
+        _moveHold.Stop();
+        if (_pointers.Count == 0 && Moving is not null) { Moving = null; InvalidateVisual(); }
     }
 
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
