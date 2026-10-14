@@ -1,0 +1,43 @@
+name: ecosystem-ai-android-preview
+
+on:
+  pull_request:
+    paths: ['apps/ecosystem-ai/**', '.github/workflows/ecosystem-ai-android-preview.yml']
+  push:
+    branches: [main]
+    paths: ['apps/ecosystem-ai/**', '.github/workflows/ecosystem-ai-android-preview.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ecosystem-ai-android-${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/ecosystem-ai
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Runtime and Product tests
+        run: |
+          dotnet test --project tests/AgentRuntime.Tests
+          dotnet test --project tests/EcosystemAi.ProjectStore.Tests
+      - name: Build and verify native Android APK
+        run: bash tools/build-android-preview.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ecosystem-ai-android-preview-${{ github.run_id }}
+          path: apps/ecosystem-ai/android-preview/
+          retention-days: 30
