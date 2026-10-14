@@ -174,7 +174,7 @@ public sealed class NotesExplorer : Border
 
     /// <summary>Notes held and dragged onto a folder row: move them there (DEC-0045, UC-38).</summary>
     public event Action<IReadOnlyList<string>, string>? MoveRequested;
-    /// <summary>An action of the selection bar (.ume-actions): "open", "favorite", "move", "duplicate" or "delete",
+    /// <summary>An action of the selection bar (.ume-actions): "open", "favorite", "move", "duplicate", "group" or "delete",
     /// with the selection: notes by path, folders as "folder:" + their path (model.js folderId).</summary>
     public event Action<string, IReadOnlyList<string>>? SelectionAction;
 
@@ -305,6 +305,17 @@ public sealed class NotesExplorer : Border
     {
         if (!_visibleFiles.Contains(path)) return false;
         FileRequested?.Invoke(path);
+        return true;
+    }
+
+    /// <summary>Holding a non-note file (menuEntradaExplorer: Visualizar, Renomear, Mover, Excluir).</summary>
+    public event Action<string>? FileMenuRequested;
+
+    /// <summary>A hold on a visible non-note file row.</summary>
+    public bool HoldFile(string path)
+    {
+        if (!_visibleFiles.Contains(path)) return false;
+        FileMenuRequested?.Invoke(path);
         return true;
     }
 
@@ -498,7 +509,7 @@ public sealed class NotesExplorer : Border
     {
         _visibleFiles.Add(path);
         _list.Children.Add(Row(IconFor(path), Base(path), withPath && path.Contains('/') ? Dir(path) : null, depth, false, false, false,
-            () => TryOpenFile(path), () => TryOpenFile(path)));
+            () => TryOpenFile(path), () => HoldFile(path)));
     }
 
     /// <summary>A folder row: the caret and a "⋯" with the folder's options (the 1.8.4 showed none, DEC-0045).</summary>
@@ -859,6 +870,7 @@ public sealed class NotesExplorer : Border
                 Act(UrbeTheme.Icons.Star, "Favoritar", "favorite", UrbeTheme.Text2),
                 Act(UrbeTheme.Icons.Move, "Mover para pasta", "move", UrbeTheme.Text2),
                 Act(UrbeTheme.Icons.Copy, "Duplicar", "duplicate", UrbeTheme.Text2),
+                Act(UrbeTheme.Icons.Folder, "Agrupar em nova pasta", "group", UrbeTheme.Text2),
                 Act(UrbeTheme.Icons.Trash, "Mover para a lixeira", "delete", UrbeTheme.Danger)
             }
         };

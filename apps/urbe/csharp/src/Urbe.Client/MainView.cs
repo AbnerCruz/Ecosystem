@@ -90,6 +90,7 @@ public sealed partial class MainView : Grid
         Explorer.CreateFirstNoteRequested += () => _ = CreateNoteInNotesAsync();
         Explorer.RestoreRequested += id => _ = RestoreFromTrashAsync(id);
         Explorer.FileRequested += path => _ = ShowFileAsync(path);
+        Explorer.FileMenuRequested += path => _ = ShowAttachmentActionsAsync(path, withView: true);
         Explorer.FolderMenuRequested += folder => _ = ShowFolderMenuAsync(folder);
         Explorer.MoveRequested += async (paths, folder) => { await MoveNotesToAsync(paths, folder); Explorer.ClearSelection(); };
         Explorer.PurgeRequested += id => _ = PurgeFromTrashAsync(id);
@@ -128,6 +129,7 @@ public sealed partial class MainView : Grid
         _stage.Children.Add(Explorer);
         _stage.Children.Add(Editor);
         FilePreview.Storage = _vault;
+        FilePreview.ActionsRequested += path => _ = ShowAttachmentActionsAsync(path);
         FilePreview.ShowInCity += building =>
         {
             if (!Explorer.Wide) Explorer.IsVisible = false;
@@ -1261,6 +1263,9 @@ public sealed partial class MainView : Grid
                 return;
             case "duplicate":
                 await DuplicateNotesAsync(paths);
+                return;
+            case "group":
+                await GroupIntoFolderAsync(paths);
                 return;
         }
     }

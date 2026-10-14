@@ -46,6 +46,39 @@ public interface IUrbeVaultStorage
         Task.FromResult<IReadOnlyList<string>>([]);
 
     /// <summary>
+    /// Renames or moves ONE attachment of the vault (renomearAsset / moverAsset): a file that is not a note or text
+    /// document the Urbe reads (those move with <see cref="MoveTextFileAsync"/>), never inside <c>.urbe</c>. Nothing with
+    /// the new name may exist; the folder of <paramref name="to"/> must exist; afterwards the file is there with the same
+    /// size and gone from where it was, and the notes are untouched. A host that cannot move files throws.
+    /// </summary>
+    Task MoveFileAsync(string from, string to, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não move anexos.");
+
+    /// <summary>
+    /// Deletes ONE attachment of the vault (removerAsset: "O arquivo será apagado do vault", after the person confirms).
+    /// Only a file that is not a note or text document the Urbe reads, never inside <c>.urbe</c>; the notes are
+    /// untouched. A host that cannot delete files throws.
+    /// </summary>
+    Task DeleteFileAsync(string path, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não exclui anexos.");
+
+    /// <summary>An attachment path the Urbe may move or delete: safe, outside .urbe, and not a text document it reads.</summary>
+    static void EnsureAttachmentPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || path.StartsWith('/') || path.Contains('\\') || path.Contains(':'))
+            throw new InvalidDataException("Caminho inválido no vault: " + path);
+        var parts = path.Split('/');
+        if (parts.Any(s => s.Length == 0 || s is "." or ".." || s.StartsWith('.') || s.EndsWith(' ')))
+            throw new InvalidOperationException("Caminho interno ou inseguro no vault: " + path);
+        if (TextDocument(path)) throw new InvalidOperationException("Notas e documentos de texto não são anexos: " + path);
+    }
+
+    /// <summary>The documents the Urbe reads as text (they belong to the vault's baseline, not to the attachments).</summary>
+    static bool TextDocument(string path) =>
+        new[] { ".md", ".markdown", ".txt", ".json", ".yaml", ".yml", ".html", ".htm", ".css", ".js", ".mjs", ".csv" }
+            .Contains(System.IO.Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Renames ONE folder of the vault (a neighbourhood renamed: openRegionEditDialog → confirmRegion), keeping it in
     /// the same parent: <paramref name="from"/> and <paramref name="to"/> differ only in the last name. With the same
     /// safeguards as moving a note: nothing changed outside the Urbe since the open, nothing with the new name already

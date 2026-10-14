@@ -51,9 +51,20 @@ public sealed class FilePreviewPanel : Grid
         };
         ToolTip.SetTip(close, "Fechar");
         close.Click += (_, _) => Close();
+        // menuEntradaExplorer for an attachment: Renomear, Mover, Excluir
+        var more = new Button
+        {
+            Content = UrbeTheme.Icon(UrbeTheme.Icons.More, 20, UrbeTheme.Text2), Width = 40, Height = 40, CornerRadius = new CornerRadius(20),
+            Background = Brushes.Transparent, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
+        };
+        ToolTip.SetTip(more, "Mais ações");
+        more.Click += (_, _) => { if (Current is { } path) ActionsRequested?.Invoke(path); };
+        _more = more;
         var head = new DockPanel();
         DockPanel.SetDock(close, Dock.Right);
+        DockPanel.SetDock(more, Dock.Right);
         head.Children.Add(close);
+        head.Children.Add(more);
         head.Children.Add(_title);
         _choose.SelectionChanged += (_, _) => { if (!_choosing && _choose.SelectedIndex >= 0 && IsVisible) _ = ShowAsync(_choose.SelectedIndex); };
         _open.Click += async (_, _) =>
@@ -95,6 +106,11 @@ public sealed class FilePreviewPanel : Grid
         KeyDown += (_, e) => { if (e.Key == Key.Escape) { Close(); e.Handled = true; } };
         SizeChanged += (_, _) => Place();
     }
+
+    private readonly Button _more;
+
+    /// <summary>"⋯": the host shows the attachment's actions (Renomear, Mover, Excluir).</summary>
+    public event Action<string>? ActionsRequested;
 
     /// <summary>The vault the files are read from.</summary>
     public IUrbeVaultStorage? Storage { get; set; }
@@ -169,6 +185,7 @@ public sealed class FilePreviewPanel : Grid
         _title.Text = name;
         _meta.Text = VaultFileKinds.Label(kind) + (path is not null ? " · " + path : "");
         _open.IsVisible = false;
+        _more.IsVisible = path is not null;
         _htmlMode.IsVisible = kind == VaultFileKinds.Html;
         for (int i = 0; i < _htmlMode.Children.Count; i++)
             if (_htmlMode.Children[i] is Button chip) Mark(chip, (i == 1) == _htmlSource);

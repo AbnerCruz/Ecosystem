@@ -157,6 +157,79 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public async Task MoveFileAsync(string from, string to, CancellationToken cancellationToken = default)
+    {
+        IUrbeVaultStorage.EnsureAttachmentPath(from);
+        IUrbeVaultStorage.EnsureAttachmentPath(to);
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, files);
+            await Task.Run(() =>
+            {
+                var source = ExistingFile(root, from) ?? throw new FileNotFoundException("O arquivo não existe na pasta.", from);
+                var targetDir = to.Contains('/') ? ExistingDirectory(root, to[..to.LastIndexOf('/')]) : Path.GetFullPath(root);
+                if (targetDir is null) throw new DirectoryNotFoundException("A pasta de destino não existe no vault: " + to);
+                var target = Path.Combine(targetDir, to[(to.LastIndexOf('/') + 1)..]);
+                bool caseOnly = string.Equals(from, to, StringComparison.OrdinalIgnoreCase);
+                if (!caseOnly && (File.Exists(target) || Directory.Exists(target))) throw new IOException("Já existe um arquivo com esse nome: " + to);
+                long size = new FileInfo(source).Length;
+                if (caseOnly)
+                {
+                    var temp = source + ".urbe-move-" + Guid.NewGuid().ToString("N");
+                    File.Move(source, temp);
+                    File.Move(temp, target);
+                }
+                else File.Move(source, target);
+                if (!File.Exists(target) || new FileInfo(target).Length != size || (!caseOnly && File.Exists(source)))
+                    throw new IOException("O arquivo movido não passou na verificação: " + to);
+                EnsureUnchanged(baseline, ReadFiles(root, cancellationToken));
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
+    public async Task DeleteFileAsync(string path, CancellationToken cancellationToken = default)
+    {
+        IUrbeVaultStorage.EnsureAttachmentPath(path);
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, files);
+            await Task.Run(() =>
+            {
+                var full = ExistingFile(root, path) ?? throw new FileNotFoundException("O arquivo não existe na pasta.", path);
+                File.Delete(full);
+                if (File.Exists(full)) throw new IOException("O arquivo não foi excluído: " + path);
+                EnsureUnchanged(baseline, ReadFiles(root, cancellationToken));
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
+    /// <summary>The full path of an existing folder of the vault ("" is the root), through real folders only.</summary>
+    private static string? ExistingDirectory(string root, string path)
+    {
+        var current = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar);
+        if (path.Length == 0) return current;
+        string[] segments;
+        try { segments = Segments(path); }
+        catch (InvalidDataException) { return null; }
+        foreach (var segment in segments)
+        {
+            current = Path.Combine(current, segment);
+            var info = new DirectoryInfo(current);
+            if (!info.Exists || info.LinkTarget is not null) return null;
+        }
+        return current;
+    }
+
     public async Task RenameFolderAsync(string from, string to, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureFolderRename(from, to);

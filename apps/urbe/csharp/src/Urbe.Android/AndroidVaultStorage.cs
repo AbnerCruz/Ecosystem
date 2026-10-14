@@ -164,6 +164,66 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public async Task MoveFileAsync(string from, string to, CancellationToken cancellationToken = default)
+    {
+        IUrbeVaultStorage.EnsureAttachmentPath(from);
+        IUrbeVaultStorage.EnsureAttachmentPath(to);
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, files);
+            await Task.Run(() =>
+            {
+                static string Parent(string p) => p.Contains('/') ? p[..p.LastIndexOf('/')] : "";
+                AndroidUri FolderOf(AndroidUri t, string p) => p.Length == 0 ? Root(t)
+                    : FindDocument(t, p) ?? throw new DirectoryNotFoundException("A pasta de destino não existe no vault: " + p);
+                var source = FindDocument(tree, from) ?? throw new FileNotFoundException("O arquivo não existe na pasta.", from);
+                bool caseOnly = string.Equals(from, to, StringComparison.OrdinalIgnoreCase);
+                if (!caseOnly && FindDocument(tree, to) is not null) throw new IOException("Já existe um arquivo com esse nome: " + to);
+                var name = to[(to.LastIndexOf('/') + 1)..];
+                var moved = source;
+                if (!string.Equals(Parent(from), Parent(to), StringComparison.Ordinal))
+                    moved = DocumentsContract.MoveDocument(Resolver, source, FolderOf(tree, Parent(from)), FolderOf(tree, Parent(to)))
+                        ?? throw new IOException("O provedor não moveu o arquivo: " + from);
+                if (!string.Equals(from[(from.LastIndexOf('/') + 1)..], name, StringComparison.Ordinal))
+                {
+                    if (caseOnly)
+                        moved = DocumentsContract.RenameDocument(Resolver, moved, name + ".urbe-move-" + Guid.NewGuid().ToString("N"))
+                            ?? throw new IOException("O provedor não renomeou o arquivo: " + from);
+                    _ = DocumentsContract.RenameDocument(Resolver, moved, name) ?? throw new IOException("O provedor não renomeou o arquivo: " + from);
+                }
+                if (FindDocument(tree, to) is null || (!caseOnly && FindDocument(tree, from) is not null))
+                    throw new IOException("O arquivo movido não passou na verificação: " + to);
+                EnsureUnchanged(baseline, ReadFiles(tree, cancellationToken));
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
+    public async Task DeleteFileAsync(string path, CancellationToken cancellationToken = default)
+    {
+        IUrbeVaultStorage.EnsureAttachmentPath(path);
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, files);
+            await Task.Run(() =>
+            {
+                var uri = FindDocument(tree, path) ?? throw new FileNotFoundException("O arquivo não existe na pasta.", path);
+                if (!DocumentsContract.DeleteDocument(Resolver, uri) || FindDocument(tree, path) is not null)
+                    throw new IOException("O provedor não excluiu o arquivo: " + path);
+                EnsureUnchanged(baseline, ReadFiles(tree, cancellationToken));
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     public async Task RenameFolderAsync(string from, string to, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureFolderRename(from, to);

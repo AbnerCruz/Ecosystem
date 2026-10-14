@@ -419,3 +419,50 @@ public sealed partial class LegacyCity
         return RootBuildingsUnder(r);
     }
 }
+
+public sealed partial class LegacyCity
+{
+    private static string? RelOf(JsonObject o) => o["relPath"] is JsonValue v && v.TryGetValue<string>(out var s) && s.Length > 0 ? s : null;
+
+    /// <summary>The file building holding the attachment at <paramref name="path"/> (by its relPath), or null.</summary>
+    public LegacyCityBuilding? AttachmentBuilding(string path) =>
+        Buildings.Find(b => !b.IsNote && b.Files is JsonArray files && files.OfType<JsonObject>().Any(o => RelOf(o) == path));
+
+    /// <summary>
+    /// renomearAsset / moverAsset after the file moved in the vault: its entry takes the new path (relPath,
+    /// folderPath, nome); a building with only that file takes its name and class (b.fileName, limparNome, fileClass)
+    /// and, moved to another folder, the neighbourhood and a free lot there (vagaNaRegiao / vagaAleatoria).
+    /// </summary>
+    public void ApplyAttachmentMove(string from, string to, long nowMs)
+    {
+        if (AttachmentBuilding(from) is not { Files: JsonArray files } b) return;
+        static string Dir(string p) => p.Contains('/') ? p[..p.LastIndexOf('/')] : "";
+        var name = to[(to.LastIndexOf('/') + 1)..];
+        foreach (var o in files.OfType<JsonObject>().Where(o => RelOf(o) == from))
+        {
+            o["relPath"] = to;
+            o["folderPath"] = Dir(to);
+            o["nome"] = name;
+        }
+        b.Modified = JsonValue.Create(NowDate(nowMs));
+        if (files.Count != 1) return;
+        b.FileName = JsonValue.Create(name);
+        b.Name = System.Text.RegularExpressions.Regex.Replace(name, @"\.[^.]+$", " ").Trim();
+        b.FileClass = JsonValue.Create(VaultFileKinds.Classify(name));
+        if (Dir(from) == Dir(to)) return;
+        var region = Dir(to).Length > 0 ? RegionByPath(Dir(to)) : null;
+        double seed = LegacyJsMath.Seed(name + nowMs.ToString(CultureInfo.InvariantCulture));
+        var pos = region is not null ? PlaceInRegion(region, seed, new HashSet<string>(StringComparer.Ordinal) { b.Id }) : PlaceLoose(seed, 3, 3);
+        if (pos is { } p) { b.X = p.X; b.Y = p.Y; b.RegionId = region?.Id; }
+        Reindex();
+    }
+
+    /// <summary>removerAsset after the file left the vault: its entry goes, and a building left without files goes too.</summary>
+    public void RemoveAttachment(string path)
+    {
+        if (AttachmentBuilding(path) is not { Files: JsonArray files } b) return;
+        foreach (var o in files.OfType<JsonObject>().Where(o => RelOf(o) == path).ToList()) files.Remove(o);
+        if (files.Count == 0) Buildings.Remove(b);
+        Reindex();
+    }
+}
