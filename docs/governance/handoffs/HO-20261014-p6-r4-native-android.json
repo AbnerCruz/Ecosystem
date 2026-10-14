@@ -83,10 +83,10 @@
     {
       "check": "DEVICE A-F Android e provider real",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "apps/ecosystem-ai/docs-r4-android-native.md",
-      "evidence": "Roteiro A-F documentado para o APK exato: instalação, persistência/reabertura, provider real, custos, critérios/equipe, lifecycle, exportação e atualização; ainda não executado."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-14 (Issue https://github.com/AbnerCruz/Ecosystem/issues/559); registro em docs/governance/responses/VAL-HO-20261014-p6-r4-native-android-e3f43b8a1bed.md."
     }
   ],
   "known_issues": [
