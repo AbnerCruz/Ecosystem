@@ -382,21 +382,55 @@ public sealed partial class MainView : Grid
         if (_brandPill is not null) ToolTip.SetTip(_brandPill, "Salvo na pasta escolhida no dispositivo");
         if (store is null || opened is null || !ReferenceEquals(World.City, opened)) return;
         _store = store;
-        StartMapSaves(snapshot, opened);
+        if (opened.MigratedFromWorld is { } from) await AdaptedToNewWorldAsync(snapshot, opened, from);
+        else StartMapSaves(snapshot, opened);
         // tutorial.js: workspace:loaded → setTimeout(semear, 300)
+    }
+
+    /// <summary>
+    /// abrirCidade after "Adaptando a cidade ao mundo novo" (urbeCidadeMigrada): the map as it was on disk is copied to
+    /// .urbe/backup first (layout-guard.js, reason 'mundo'); only then the reorganized city is saved. The houses are
+    /// framed and, 700 ms later, "Cidade reorganizada" offers to go back to the previous arrangement.
+    /// </summary>
+    private async Task AdaptedToNewWorldAsync(VaultSnapshot snapshot, LegacyCity city, string from)
+    {
+        bool saves = _vault is not null && !snapshot.IsReadOnly && !snapshot.IsMapReadOnly && !snapshot.RecoveredFromJournal && snapshot.MapJson is not null;
+        if (saves)
+        {
+            try { await _vault!.SaveLayoutBackupAsync(snapshot.MapJson!, DateTimeOffset.UtcNow, "mundo"); }
+            catch (Exception ex)
+            {
+                saves = false;   // the old map stays as it is on disk
+                ShowLifeNotice("O mapa anterior não pôde ser copiado (" + ex.Message + "); a cidade nova não será salva por cima dele.");
+            }
+        }
+        if (!ReferenceEquals(World.City, city)) return;
+        if (saves) StartMapSaves(snapshot, city);
+        _lastLayout = city.LayoutBeforeMigration;
+        World.FitNotes();   // urbeEnquadrarNotas(true)
+        _ = OfferUndoMigrationAsync(city, from);
+    }
+
+    /// <summary>setTimeout(…, 700): "Cidade reorganizada" — Desfazer goes back to the arrangement the map had.</summary>
+    private async Task OfferUndoMigrationAsync(LegacyCity city, string from)
+    {
+        await Task.Delay(700);
+        if (!ReferenceEquals(World.City, city) || Dialogs.IsOpen) return;
+        if (await Dialogs.ConfirmAsync("Cidade reorganizada",
+                "O mundo do Urbe mudou: esta cidade foi salva com outra versão (" + from + ") e foi reorganizada no terreno novo. Notas, pastas e ligações continuam iguais, e uma cópia do mapa anterior foi guardada. Quer voltar ao arranjo anterior?",
+                "Desfazer", cancel: "Manter a nova") && ReferenceEquals(World.City, city))
+            UndoReorganize();
     }
 
     /// <summary>
     /// From now on the city's changes are written to .urbe/mapa.json like the 1.8.4 (workspace.js is
     /// the single writer): only for a real, writable vault whose map the 1.8.4 would rewrite. Not for a
-    /// read-only vault or a map of a future/unknown format (REQ-035/REQ-040), and not while the map
-    /// belongs to another world: the 1.8.4 first reorganizes such a city (urbeReorganizarCidade, not
-    /// ported), so saving the old geometry as this world's would lose that reorganization.
+    /// read-only vault or a map of a future/unknown format (REQ-035/REQ-040). A map of another world is
+    /// saved only after its backup (<see cref="AdaptedToNewWorldAsync"/>).
     /// </summary>
     private void StartMapSaves(VaultSnapshot snapshot, LegacyCity city)
     {
-        if (_vault is null || snapshot.IsReadOnly || snapshot.IsMapReadOnly || snapshot.RecoveredFromJournal ||
-            city.WorldReorganizationPending) return;
+        if (_vault is null || snapshot.IsReadOnly || snapshot.IsMapReadOnly || snapshot.RecoveredFromJournal) return;
         var writer = new LegacyCityMap();
         MapSaveScheduler? scheduler = null;
         scheduler = new MapSaveScheduler(() =>

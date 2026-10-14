@@ -17,13 +17,29 @@ public sealed class LegacyReorganizeOracleTests
         return new LegacyTileChunks(new LegacyTileSampler(hydrology, LegacyWorldSpawn.Choose(hydrology)));
     });
 
-    private static (LegacyCity City, DocumentStore Store, JsonDocument Json) Open()
+    private static (LegacyCity City, DocumentStore Store, JsonDocument Json) Open(string step = "open")
     {
         var json = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(Root().FullName, "csharp", "tests", "fixtures", "legacy-city", "reorganize-run-a.json")));
-        var open = json.RootElement.GetProperty("open");
+        var open = json.RootElement.GetProperty(step);
         var files = json.RootElement.GetProperty("files").EnumerateObject().Select(p => (p.Name, p.Value.GetString()!)).ToList();
-        var regionIds = new Queue<string>(open.GetProperty("regions").EnumerateArray().Select(r => r.GetProperty("id").GetString()!));
-        var buildingIds = new Queue<string>(open.GetProperty("buildings").EnumerateArray().Select(b => b.GetProperty("id").GetString()!));
+        var documentIds = open.GetProperty("documents").EnumerateArray().ToDictionary(d => d.GetProperty("path").GetString()!, d => d.GetProperty("id").GetString()!);
+        // the 1.8.4's runtime ids (Math.random) in the order this open creates them: a first pass learns which
+        // neighbourhood and house each new id goes to, then each gets the id the 1.8.4 gave it
+        int n = 0;
+        var probe = new LegacyCity(new LegacyCityTerrain((x, y) => World.Value.At(x, y).Biome), p => p + "#" + n++);
+        probe.Open(files, open.GetProperty("mapa").GetString(), documentIds, open.GetProperty("now").GetInt64());
+        var regionPaths = probe.RegionPaths();
+        var jsRegionPath = new Dictionary<string, string>(StringComparer.Ordinal);
+        {
+            var byId = open.GetProperty("regions").EnumerateArray().ToDictionary(r => r.GetProperty("id").GetString()!, r => r);
+            string PathOf(JsonElement r) => (r.GetProperty("parentId").GetString() is { } pid ? PathOf(byId[pid]) + "/" : "") + r.GetProperty("name").GetString();
+            foreach (var r in byId.Values) jsRegionPath[PathOf(r)] = r.GetProperty("id").GetString()!;
+        }
+        var jsBuilding = open.GetProperty("buildings").EnumerateArray().ToDictionary(b => b.GetProperty("path").GetString()!, b => b.GetProperty("id").GetString()!);
+        var order = probe.Regions.Select(r => (r.Id, jsRegionPath[regionPaths[r.Id]]))
+            .Concat(probe.Buildings.Select(b => (b.Id, jsBuilding[b.Path]))).ToDictionary(p => p.Item1, p => p.Item2);
+        var regionIds = new Queue<string>(Enumerable.Range(0, n).Select(i => "r#" + i).Where(order.ContainsKey).Select(k => order[k]));
+        var buildingIds = new Queue<string>(Enumerable.Range(0, n).Select(i => "b#" + i).Where(order.ContainsKey).Select(k => order[k]));
         var city = new LegacyCity(new LegacyCityTerrain((x, y) => World.Value.At(x, y).Biome), p => p == "r" ? regionIds.Dequeue() : buildingIds.Dequeue());
         var store = city.Open(files, open.GetProperty("mapa").GetString(),
             open.GetProperty("documents").EnumerateArray().ToDictionary(d => d.GetProperty("path").GetString()!, d => d.GetProperty("id").GetString()!),
@@ -75,6 +91,20 @@ public sealed class LegacyReorganizeOracleTests
 
         city.RestoreLayout(before);
         SameLayout(root.GetProperty("restored"), city, "restored");
+    }
+
+    /// <summary>abrirCidade with a map saved for another world: "Adaptando a cidade ao mundo novo" reorganizes it from the
+    /// world's start before the houses are fitted into their neighbourhoods; the layout is the original's.</summary>
+    [Fact]
+    public void AMapOfAnotherWorldIsReorganizedOnOpenAsTheOriginal()
+    {
+        var (city, _, json) = Open("migrated");
+        using var _ = json;
+        var migrated = json.RootElement.GetProperty("migrated");
+        Assert.Equal("antigo", city.MigratedFromWorld);
+        SameLayout(migrated, city, "migrated");
+        Assert.Equal(migrated.GetProperty("errors").EnumerateArray().Select(e => e.GetString()!).ToList(), city.ValidateDistricts());
+        Assert.Contains("Cidade reorganizada", migrated.GetProperty("dialog").GetString());
     }
 
     private static DirectoryInfo Root()

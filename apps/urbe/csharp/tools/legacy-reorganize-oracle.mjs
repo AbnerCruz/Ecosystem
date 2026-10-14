@@ -2,7 +2,8 @@
 // "Desfazer reorganização" (city.undoReorganize → world/layout-guard.js undo) in the UNMODIFIED Urbe 1.8.4-beta
 // (apps/urbe) in Chromium. The city is opened twice: the first open writes .urbe/mapa.json; the second opens that
 // map (as the native app does), and its runtime ids, the layout, the reorganized layout, its streets and the
-// undone layout are recorded. Test-only tool: never part of the native app.
+// undone layout are recorded. A third open reads that map marked as saved for another world (mundo 'antigo'):
+// abrirCidade reorganizes it on the new terrain (urbeReorganizarCidade {motivo:'mundo'}) and asks to keep it. Test-only tool: never part of the native app.
 //
 //   PLAYWRIGHT_MODULE=/opt/node22/lib/node_modules/playwright/index.mjs CHROMIUM_PATH=/opt/pw-browsers/chromium/chrome-linux/chrome \
 //   node csharp/tools/legacy-reorganize-oracle.mjs > csharp/tests/fixtures/legacy-city/reorganize-run-a.json
@@ -160,8 +161,20 @@ try {
   const restored = await layout(s.page);
   restored.undone = undone;
   await s.context.close();
+  // the same vault with a map saved for another world: the open reorganizes it (motivo 'mundo')
+  const old = JSON.stringify({ ...JSON.parse(mapa), mundo: 'antigo' }, null, 1);
+  const m = await boot({ ...notes, '.urbe/tutorial.json': tutorialMarker, '.urbe/mapa.json': old }, Object.keys(notes).length);
+  await m.page.waitForTimeout(1200);
+  const migrated = await layout(m.page);
+  migrated.mapa = old;
+  migrated.documents = await m.page.evaluate(() => UrbeCore.service('documents').list().map(d => ({ path: d.path, id: d.id })));
+  migrated.now = await m.page.evaluate(() => Date.now());
+  migrated.dialog = await m.page.evaluate(() => { const d = document.querySelector('.udlg.open'); return d ? d.innerText : null; });
+  migrated.errors = await m.page.evaluate(() => UrbeCore.service('city.layout').validate().erros);
+  migrated.mapaWritten = (await readVault(m.page))['.urbe/mapa.json'];
+  await m.context.close();
   process.stdout.write(JSON.stringify({ source: 'apps/urbe 1.8.4-beta, vault "Urbe" in IndexedDB, Math.random LCG(0x12345678)',
-    files: Object.fromEntries(Object.keys(notes).sort((x, y) => (x < y ? -1 : x > y ? 1 : 0)).map(p => [p, notes[p]])), open, reorganized, restored }) + '\n');
+    files: Object.fromEntries(Object.keys(notes).sort((x, y) => (x < y ? -1 : x > y ? 1 : 0)).map(p => [p, notes[p]])), open, reorganized, restored, migrated }) + '\n');
 } finally {
   await browser.close();
   server.close();

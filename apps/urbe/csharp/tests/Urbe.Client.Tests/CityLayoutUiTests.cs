@@ -87,4 +87,57 @@ public sealed partial class HeadlessUiTests
             }
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
+
+    [Fact]
+    public async Task MapOfAnotherWorld_IsBackedUpReorganizedSavedAndCanBeUndone() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-mundo-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(Path.Combine(vault, "Bairro"));
+            Directory.CreateDirectory(Path.Combine(vault, ".urbe"));
+            File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n\n[[Um]]\n");
+            File.WriteAllText(Path.Combine(vault, "Bairro", "Um.md"), "# Um\n");
+            const string old = """{"v":4,"mundo":"antigo","notas":{"Comece.md":{"x":40,"y":30},"Bairro/Um.md":{"x":60,"y":44}}}""";
+            File.WriteAllText(Path.Combine(vault, ".urbe", "mapa.json"), old);
+            var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
+            var view = new MainView(storage);
+            var window = new Avalonia.Controls.Window { Width = 1280, Height = 760, Content = view };
+            window.Show();
+            try
+            {
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                var city = view.World.City!;
+                Assert.Equal("antigo", city.MigratedFromWorld);
+                var comece = city.Buildings.Single(b => b.Path == "Comece.md");
+                Assert.NotEqual((40, 30), (comece.X, comece.Y));
+                Assert.True(view.CanUndoReorganize);
+
+                // the old map first went to .urbe/backup, byte for byte, with reason 'mundo'
+                var backup = Assert.Single(Directory.GetDirectories(Path.Combine(vault, ".urbe", "backup")));
+                Assert.Equal(old, File.ReadAllText(Path.Combine(backup, "files", "urbe", "mapa.json")));
+                using (var manifest = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(backup, "manifest.json"))))
+                    Assert.Equal("mundo", manifest.RootElement.GetProperty("reason").GetString());
+
+                // then the reorganized city is saved as this world's
+                await view.FlushMapAsync();
+                using (var mapa = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(vault, ".urbe", "mapa.json"))))
+                    Assert.Equal(Urbe.Core.LegacyCity.WorldVersion, mapa.RootElement.GetProperty("mundo").GetString());
+
+                // "Cidade reorganizada": Desfazer goes back to the arrangement the map had
+                for (int i = 0; i < 200 && !view.Dialogs.IsOpen; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                var texts = view.Dialogs.GetLogicalDescendants().OfType<Avalonia.Controls.TextBlock>().Select(t => t.Text).ToList();
+                Assert.Contains("Cidade reorganizada", texts);
+                Assert.Contains("Manter a nova", texts);
+                ClickButtonWithText(view.Dialogs, "Desfazer");
+                for (int i = 0; i < 40 && view.CanUndoReorganize; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.Equal((40, 30), (comece.X, comece.Y));
+                Assert.Equal("# Comece\n\n[[Um]]\n", File.ReadAllText(Path.Combine(vault, "Comece.md")));
+                await view.FlushMapAsync();
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
 }

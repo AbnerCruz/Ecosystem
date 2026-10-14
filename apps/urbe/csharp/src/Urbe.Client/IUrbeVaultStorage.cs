@@ -297,7 +297,7 @@ public interface IUrbeVaultStorage
     /// create, the format workspace.restoreBackup reads). Only new files; nothing existing is touched. Hosts must
     /// override it.
     /// </summary>
-    Task<string> SaveLayoutBackupAsync(string mapJson, DateTimeOffset now, CancellationToken cancellationToken = default) =>
+    Task<string> SaveLayoutBackupAsync(string mapJson, DateTimeOffset now, string reason = "reorganizar", CancellationToken cancellationToken = default) =>
         throw new NotSupportedException("Este armazenamento ainda não grava cópias de segurança do mapa.");
 
     /// <summary>backup.js create(adapter, vault, ['.urbe/mapa.json'], {from:'layout', to:'layout', reason, contents}):

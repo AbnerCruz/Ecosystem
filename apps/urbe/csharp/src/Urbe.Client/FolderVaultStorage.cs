@@ -513,14 +513,14 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
 
     /// <summary>layout-guard.js writeBackup: the copy of the map, then its manifest, each a new file written and verified
     /// with every other file of the vault unchanged. Returns the backup's folder.</summary>
-    public async Task<string> SaveLayoutBackupAsync(string mapJson, DateTimeOffset now, CancellationToken cancellationToken = default)
+    public async Task<string> SaveLayoutBackupAsync(string mapJson, DateTimeOffset now, string reason = "reorganizar", CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(mapJson);
         string? dir = null;
         (string Path, byte[] Bytes) manifest = default;
         await SaveUrbeFileAsync(files =>
         {
-            var plan = IUrbeVaultStorage.PlanLayoutBackup(files, mapJson, now);
+            var plan = IUrbeVaultStorage.PlanLayoutBackup(files, mapJson, now, reason);
             dir = plan.Directory;
             manifest = plan.Manifest;
             return plan.Copy;
