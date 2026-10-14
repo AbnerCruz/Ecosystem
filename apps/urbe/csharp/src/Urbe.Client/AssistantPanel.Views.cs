@@ -1,0 +1,758 @@
+using System.Globalization;
+using System.Text.Json.Nodes;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.Threading;
+using Urbe.Core;
+using Urbe.Core.Assistant;
+
+namespace Urbe.Client;
+
+/// <summary>The Assistente's messages, tool cards, approval with diff, run footer, empty states and overlaid views (ui.js).</summary>
+public sealed partial class AssistantPanel
+{
+    // ---------------------------------------------------------------- messages
+
+    private Control MessageView(AiChatMessage m)
+    {
+        if (m.Role == "user")
+        {
+            if (m.Meta?.ToolResults == true) return new Panel { IsVisible = false };
+            var text = string.Join("\n\n", m.Content.Where(b => b.Type == "text" && !b.Hidden).Select(b => b.Text));
+            var stack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Right, MaxWidth = 520, Spacing = 4 };
+            if (m.Meta?.Context is { Length: > 0 } ctx)
+                stack.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, HorizontalAlignment = HorizontalAlignment.Right, Children = { UrbeTheme.Icon(UrbeTheme.Icons.File, 12, UrbeTheme.Text3), Label(ctx, 11, UrbeTheme.Text3) } });
+            var bubble = new SelectableTextBlock { Text = text, FontSize = 15, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text) };
+            stack.Children.Add(new Border { Child = bubble, Padding = new Thickness(12, 9), CornerRadius = new CornerRadius(16, 16, 4, 16), Background = UrbeTheme.Brush(UrbeTheme.Accent, .16) });
+            return stack;
+        }
+        var view = new StackPanel { Spacing = 8 };
+        var meta = m.Meta;
+        if (meta?.Reasoning is { Length: > 0 } reasoning)
+            view.Children.Add(new Expander
+            {
+                Header = Label(meta.Streaming == true && m.Content.Count == 0 ? "Pensando…" : "Raciocínio", 12, UrbeTheme.Text3), HorizontalAlignment = HorizontalAlignment.Stretch,
+                Content = Wrap(reasoning, 12, UrbeTheme.Text3)
+            });
+        foreach (var b in m.Content)
+        {
+            if (b.Type == "text")
+            {
+                var md = Markdown(b.Text ?? "");
+                // an answer given before finishing the reading: folded, the revised one comes next
+                view.Children.Add(meta?.Draft == true
+                    ? new Expander { Header = Label("Resposta preliminar (substituída pela revisada abaixo)", 12, UrbeTheme.Text3), Content = md, HorizontalAlignment = HorizontalAlignment.Stretch }
+                    : md);
+            }
+            else if (b.Type == "tool_use") view.Children.Add(ToolCard(b, m));
+        }
+        if (meta?.Streaming == true && m.Content.Count == 0 && string.IsNullOrEmpty(meta.Reasoning))
+            view.Children.Add(Label("•••", 18, UrbeTheme.Text3));
+        return view;
+    }
+
+    private static readonly Dictionary<string, string> AccessIcon = new()
+    {
+        ["read"] = UrbeTheme.Icons.Search, ["write"] = UrbeTheme.Icons.Edit, ["destructive"] = UrbeTheme.Icons.Trash, ["ui"] = UrbeTheme.Icons.Open,
+        ["memory"] = UrbeTheme.Icons.Star, ["plan"] = UrbeTheme.Icons.Check
+    };
+
+    private AiChatBlock? ResultFor(string id)
+    {
+        for (int i = _conv.Messages.Count - 1; i >= 0; i--)
+        {
+            var m = _conv.Messages[i];
+            if (m.Role != "user") continue;
+            foreach (var b in m.Content) if (b.Type == "tool_result" && b.ToolUseId == id) return b;
+        }
+        return null;
+    }
+
+    private string? LatestPlanId()
+    {
+        for (int i = _conv.Messages.Count - 1; i >= 0; i--)
+            for (int j = _conv.Messages[i].Content.Count - 1; j >= 0; j--)
+                if (_conv.Messages[i].Content[j] is { Type: "tool_use", Name: "update_plan", Pending: false } b) return b.Id;
+        return null;
+    }
+
+    private Control ToolCard(AiChatBlock b, AiChatMessage m)
+    {
+        var tool = AssistantTools.Get(b.Name) ?? (b.Name == "delegate_research" ? AssistantAgent.Delegate : null);
+        string label = tool is not null && !b.Pending ? SafeLabel(tool, b.Input) : b.Pending ? "Preparando " + b.Name + "…" : b.Name;
+        var r = ResultFor(b.Id);
+        bool pend = _pending is { } p && ReferenceEquals(p.Request.Call, b) || _pending is { } q && q.Request.Call.Id == b.Id && b.Id.Length > 0;
+        var status = r is not null ? r.Status ?? (r.IsError ? "error" : "done") : pend ? "waiting" : m.Meta?.Streaming == true ? "pending" : _running is not null ? "running" : "aborted";
+        var stTxt = status switch { "error" => "falhou", "rejected" => "recusado", "aborted" => "interrompido", "waiting" => "aguardando você", _ => "" };
+        var head = new DockPanel();
+        Control mark = status is "running" or "pending" ? Label("…", 15, UrbeTheme.Accent, FontWeight.Bold)
+            : status == "done" ? UrbeTheme.Icon(UrbeTheme.Icons.Check, 16, UrbeTheme.Accent, 2.2)
+            : Label(stTxt, 12, status == "error" ? "#c0504d" : UrbeTheme.Text3);
+        DockPanel.SetDock(mark, Dock.Right);
+        head.Children.Add(mark);
+        var ic = UrbeTheme.Icon(AccessIcon.GetValueOrDefault(tool?.Access ?? "", UrbeTheme.Icons.Layers), 16, UrbeTheme.Text2, 1.8);
+        DockPanel.SetDock(ic, Dock.Left);
+        head.Children.Add(ic);
+        var lbl = Label(label, 13, UrbeTheme.Text, FontWeight.SemiBold);
+        lbl.Margin = new Thickness(8, 0);
+        head.Children.Add(lbl);
+        var card = new StackPanel { Spacing = 6, Children = { head } };
+        if (_progress.TryGetValue(b.Id, out var prog) && r is null) card.Children.Add(Label(prog, 12, UrbeTheme.Text3));
+        // only the latest plan shows open, as a checklist
+        if (b.Name == "update_plan" && !b.Pending && b.Id == LatestPlanId() && b.Input?["steps"] is JsonArray steps) card.Children.Add(Plan(steps));
+        if (pend && _pending is { } pending) card.Children.Add(Approval(pending.Request));
+        else if (r is not null || !b.Pending)
+        {
+            var more = new StackPanel { Spacing = 6 };
+            if (!b.Pending) more.Children.Add(Pre(ClipText(LegacyCustomize.Stringify(b.Input ?? new JsonObject(), 2), 3000), false));
+            if (r is not null) more.Children.Add(Pre(ClipText(r.Content, 20000) + (r.Content.Length > 20000 ? "\n…" : ""), r.IsError));
+            card.Children.Add(new Expander { Header = Label("Detalhes", 12, UrbeTheme.Text3), Content = more, HorizontalAlignment = HorizontalAlignment.Stretch });
+        }
+        var border = Card(card, status == "waiting" ? UrbeTheme.Accent : null);
+        border.Padding = new Thickness(10, 8);
+        return border;
+    }
+
+    private static string ClipText(string s, int n) => s.Length > n ? s[..n] : s;
+
+    private static string SafeLabel(AiTool t, JsonNode? input)
+    {
+        try { return t.Label(input as JsonObject ?? new JsonObject()); }
+        catch (Exception) { return t.Name; }
+    }
+
+    private static Control Pre(string text, bool error) => new Border
+    {
+        Padding = new Thickness(8, 6), CornerRadius = new CornerRadius(8), Background = UrbeTheme.Brush(error ? "#c0504d" : UrbeTheme.Bg, error ? .12 : 1),
+        Child = new SelectableTextBlock { Text = text, FontFamily = UrbeTheme.MonoFont, FontSize = 11.5, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) }
+    };
+
+    private static Control Plan(JsonArray steps)
+    {
+        var list = new StackPanel { Spacing = 3, Margin = new Thickness(2, 2, 0, 2) };
+        foreach (var x in steps)
+        {
+            var s = (string?)x?["status"] ?? "pending";
+            var mark = s switch { "done" => "✓", "in_progress" => "◐", _ => "○" };
+            list.Children.Add(Row(Label(mark, 13, s == "done" ? UrbeTheme.Accent : UrbeTheme.Text3), Wrap((string?)x?["step"] ?? "", 13, s == "done" ? UrbeTheme.Text3 : UrbeTheme.Text)));
+        }
+        return list;
+    }
+
+    // ---------------------------------------------------------------- approval with a preview
+
+    private Control Approval(AiApprovalRequest p)
+    {
+        var pv = p.Preview;
+        bool danger = p.Access == "destructive";
+        var box = new StackPanel { Spacing = 8 };
+        box.Children.Add(Wrap((danger ? "Confirmar exclusão" : "Aprovar alteração") + (pv is { Path.Length: > 0 } ? " · " + pv.Path : ""), 13, UrbeTheme.Text, FontWeight.Bold));
+        if (pv?.Note is { Length: > 0 } note) box.Children.Add(Wrap(note, 13, UrbeTheme.Text2));
+        if (pv is not null && (pv.Before is not null || pv.After is not null)) box.Children.Add(Diff(pv.Before, pv.After));
+        var actions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right };
+        var reject = TextButton("Recusar", () => Answer(AiApproval.Reject()));
+        reject.Margin = new Thickness(0, 0, 8, 0);
+        actions.Children.Add(reject);
+        if (!danger)
+        {
+            var all = TextButton("Aprovar todas", () => Answer(AiApproval.ApproveAll));
+            ToolTip.SetTip(all, "Aprovar esta e as próximas alterações desta resposta");
+            all.Margin = new Thickness(0, 0, 8, 0);
+            actions.Children.Add(all);
+        }
+        actions.Children.Add(TextButton(danger ? "Excluir" : "Aprovar", () => Answer(AiApproval.Approve), primary: !danger, danger: danger));
+        box.Children.Add(actions);
+        return new Border { Child = box, Padding = new Thickness(10), CornerRadius = new CornerRadius(12), Background = UrbeTheme.Brush(UrbeTheme.Accent, .07) };
+    }
+
+    /// <summary>diffLines(): an LCS line diff (huge files fall back to everything removed then added).</summary>
+    public static List<(char Op, string Line)> DiffLines(IReadOnlyList<string> a, IReadOnlyList<string> b)
+    {
+        var output = new List<(char, string)>();
+        if ((long)a.Count * b.Count > 4_000_000)
+        {
+            output.AddRange(a.Select(l => ('-', l)));
+            output.AddRange(b.Select(l => ('+', l)));
+            return output;
+        }
+        int n = a.Count, m = b.Count;
+        var dp = new int[n + 1, m + 1];
+        for (int i = n - 1; i >= 0; i--)
+            for (int j = m - 1; j >= 0; j--)
+                dp[i, j] = a[i] == b[j] ? dp[i + 1, j + 1] + 1 : Math.Max(dp[i + 1, j], dp[i, j + 1]);
+        int x = 0, y = 0;
+        while (x < n && y < m)
+        {
+            if (a[x] == b[y]) { output.Add((' ', a[x])); x++; y++; }
+            else if (dp[x + 1, y] >= dp[x, y + 1]) output.Add(('-', a[x++]));
+            else output.Add(('+', b[y++]));
+        }
+        while (x < n) output.Add(('-', a[x++]));
+        while (y < m) output.Add(('+', b[y++]));
+        return output;
+    }
+
+    private static Control Diff(string? before, string? after)
+    {
+        var x = before is null ? [] : before.Split('\n');
+        var y = after is null ? [] : after.Split('\n');
+        var ops = DiffLines(x, y);
+        var keep = new bool[ops.Count];
+        for (int i = 0; i < ops.Count; i++)
+            if (ops[i].Op != ' ')
+                for (int k = Math.Max(0, i - 2); k <= Math.Min(ops.Count - 1, i + 2); k++) keep[k] = true;
+        var lines = new StackPanel();
+        bool gap = false;
+        int shown = 0;
+        const int Max = 160;
+        for (int i = 0; i < ops.Count && shown < Max; i++)
+        {
+            if (!keep[i])
+            {
+                if (!gap) lines.Children.Add(Label("⋯", 12, UrbeTheme.Text3));
+                gap = true;
+                continue;
+            }
+            gap = false;
+            shown++;
+            var (op, line) = ops[i];
+            lines.Children.Add(new Border
+            {
+                Background = op == '+' ? UrbeTheme.Brush("#3a9a5b", .16) : op == '-' ? UrbeTheme.Brush("#c0504d", .16) : Brushes.Transparent,
+                Padding = new Thickness(4, 1),
+                Child = new TextBlock { Text = op + " " + (line.Length > 0 ? line : " "), FontFamily = UrbeTheme.MonoFont, FontSize = 12, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text) }
+            });
+        }
+        if (shown >= Max) lines.Children.Add(Label("… mais linhas", 12, UrbeTheme.Text3));
+        int add = ops.Count(o => o.Op == '+'), del = ops.Count(o => o.Op == '-');
+        return new StackPanel
+        {
+            Spacing = 4,
+            Children =
+            {
+                Row(Label("+" + add, 12, "#3a9a5b", FontWeight.Bold), Label("−" + del, 12, "#c0504d", FontWeight.Bold)),
+                new Border { Child = new ScrollViewer { Content = lines, MaxHeight = 320, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled }, CornerRadius = new CornerRadius(8), BorderThickness = new Thickness(1), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), Padding = new Thickness(4) }
+            }
+        };
+    }
+
+    // ---------------------------------------------------------------- footer of the last run: undo, errors, continue
+
+    private Control? Tail()
+    {
+        var r = _conv.Runs.LastOrDefault();
+        if (r is null || _running is not null) return null;
+        var tail = new StackPanel { Spacing = 8 };
+        Control Note(string text, string action, Action act, bool error = false)
+        {
+            var row = new WrapPanel { Children = { Wrap(text, 13, error ? "#c0504d" : UrbeTheme.Text2), LinkButton(action, act) } };
+            return Card(row, error ? "#c0504d" : null);
+        }
+        if (r.Error is { Length: > 0 }) tail.Children.Add(Note(r.Error, "Tentar de novo", () => CurrentRun = StartAsync(), error: true));
+        else if (r.Stopped == "aborted") tail.Children.Add(Note("Interrompido.", "Continuar", () => Send("Continue de onde parou.")));
+        else if (r.Stopped == "max_steps") tail.Children.Add(Note("Parei no limite de " + _cfg.MaxSteps + " passos.", "Continuar", () => Send("Continue de onde parou.")));
+        else if (r.Stopped == "loop") tail.Children.Add(Note("Parei: o agente repetia uma ação que falhava.", "Continuar", () => Send("Continue de onde parou.")));
+        else if (r.Stopped == "max_tokens") tail.Children.Add(Note("A resposta foi cortada pelo limite do modelo.", "Continuar", () => Send("Continue de onde parou.")));
+        if (r.Changes.Count > 0)
+        {
+            var files = new List<string>();
+            foreach (var c in r.Changes)
+                if ((c.After ?? c.Before)?.Path is { } path && !files.Contains(path)) files.Add(path);
+            var head = new WrapPanel
+            {
+                Children =
+                {
+                    Row(UrbeTheme.Icon(UrbeTheme.Icons.Edit, 15, UrbeTheme.Text2), Label(r.Reverted ? "Alterações desfeitas" : files.Count + " nota" + (files.Count > 1 ? "s" : "") + " alterada" + (files.Count > 1 ? "s" : ""), 13, UrbeTheme.Text, FontWeight.SemiBold))
+                }
+            };
+            if (!r.Reverted) head.Children.Add(LinkButton("Desfazer", () => _ = UndoLastAsync()));
+            var list = new WrapPanel();
+            foreach (var f in files.Take(8)) list.Children.Add(LinkButton(f, () => OpenRef(f)));
+            tail.Children.Add(Card(new StackPanel { Spacing = 4, Children = { head, list } }));
+        }
+        return tail.Children.Count > 0 ? tail : null;
+    }
+
+    // ---------------------------------------------------------------- empty states
+
+    private static readonly string[] PresetOrder = ["openrouter", "anthropic", "openai", "gemini", "ollama", "custom"];
+
+    private static readonly Dictionary<string, string> PresetDetail = new()
+    {
+        ["openrouter"] = "Recomendado · Claude, GPT, Gemini, Llama e outros com uma chave", ["anthropic"] = "Claude direto da Anthropic", ["openai"] = "GPT direto da OpenAI",
+        ["gemini"] = "Gemini do Google", ["ollama"] = "Modelos no seu computador, sem internet", ["custom"] = "LM Studio, vLLM, Groq… (API compatível)"
+    };
+
+    private Control Onboarding()
+    {
+        var box = new StackPanel { Spacing = 10, Margin = new Thickness(4, 24, 4, 0) };
+        box.Children.Add(Wrap("Conecte um modelo", 20, UrbeTheme.Text, FontWeight.Bold));
+        box.Children.Add(Wrap("O Assistente funciona com qualquer modelo: escolha um provedor e cole sua chave. Ela fica salva só neste aparelho.", 14, UrbeTheme.Text2));
+        foreach (var k in PresetOrder)
+        {
+            var pre = AssistantProviders.Presets[k];
+            var b = new Button
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, Padding = new Thickness(14, 10), CornerRadius = new CornerRadius(14),
+                Background = UrbeTheme.Brush(UrbeTheme.Surface), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1),
+                Content = new StackPanel { Spacing = 2, Children = { Label(pre.Name, 15, UrbeTheme.Text, FontWeight.SemiBold), Wrap(PresetDetail[k], 12, UrbeTheme.Text3) } }
+            };
+            Avalonia.Automation.AutomationProperties.SetName(b, pre.Name);
+            b.Click += (_, _) => ShowSettings(k);
+            box.Children.Add(b);
+        }
+        return box;
+    }
+
+    private Control Empty()
+    {
+        var e = EditorInfo();
+        var a = AssistantAgent.AgentById(_conv.AgentId, _cfg.CustomAgents);
+        var sug = new List<string>();
+        if (e.Path is { Length: > 0 }) sug.AddRange(["Resuma esta nota em tópicos", "Revise o texto desta nota: clareza e erros", "Encontre notas relacionadas e sugira [[links]] para esta"]);
+        sug.AddRange(["O que tem no meu vault? Dê uma visão geral", "Encontre notas sem nenhuma ligação e sugira conexões", "Crie uma nota-índice que ligue as notas por tema"]);
+        var box = new StackPanel { Spacing = 10, Margin = new Thickness(4, 32, 4, 0), HorizontalAlignment = HorizontalAlignment.Center, MaxWidth = 460 };
+        box.Children.Add(new Border { Width = 56, Height = 56, CornerRadius = new CornerRadius(18), Background = UrbeTheme.Brush(UrbeTheme.Accent, .14), HorizontalAlignment = HorizontalAlignment.Center, Child = UrbeTheme.Icon(UrbeTheme.Icons.Assistant, 28, UrbeTheme.Accent, 1.8) });
+        var title = Wrap(a.Name, 20, UrbeTheme.Text, FontWeight.Bold);
+        title.TextAlignment = TextAlignment.Center;
+        box.Children.Add(title);
+        var desc = Wrap(a.Description, 14, UrbeTheme.Text2);
+        desc.TextAlignment = TextAlignment.Center;
+        box.Children.Add(desc);
+        foreach (var s in sug.Take(5))
+        {
+            var b = new Button
+            {
+                Content = Wrap(s, 13, UrbeTheme.Text), HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, Padding = new Thickness(12, 9),
+                CornerRadius = new CornerRadius(12), Background = UrbeTheme.Brush(UrbeTheme.Surface), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1)
+            };
+            b.Click += (_, _) => { _input.Text = s; Submit(); };
+            box.Children.Add(b);
+        }
+        return box;
+    }
+
+    // ---------------------------------------------------------------- pickers
+
+    private async Task PickAgentAsync()
+    {
+        if (_running is not null) return;
+        var list = AssistantAgent.Agents.Concat(_cfg.CustomAgents).ToList();
+        var i = await _app.Dialogs.ChooseAsync("Agente", list.Select(a => new DialogItem(a.Name + (a.Id == _conv.AgentId ? "  ✓" : ""), UrbeTheme.Icons.Assistant,
+            a.Description.Length > 0 ? a.Description : a.Tools == "read" ? "Só leitura" : "Personalizado")).ToList());
+        if (i is not { } k) return;
+        _conv.AgentId = list[k].Id;
+        _cfg.AgentId = list[k].Id;
+        SaveConfig();
+        RenderAll();
+    }
+
+    private async Task PickPolicyAsync()
+    {
+        if (_running is not null) return;
+        string[] values = ["ask", "auto", "readonly"];
+        var i = await _app.Dialogs.ChooseAsync("Permissões nesta conversa",
+        [
+            new DialogItem("Pede aprovação" + (_conv.Policy == "ask" ? "  ✓" : ""), UrbeTheme.Icons.Check, "Lê à vontade; mostra cada alteração antes de aplicar"),
+            new DialogItem("Edita sozinho" + (_conv.Policy == "auto" ? "  ✓" : ""), UrbeTheme.Icons.Edit, "Aplica alterações direto (dá para desfazer). Exclusões ainda pedem aprovação"),
+            new DialogItem("Só leitura" + (_conv.Policy == "readonly" ? "  ✓" : ""), UrbeTheme.Icons.Search, "Nunca altera notas")
+        ]);
+        if (i is not { } k) return;
+        _conv.Policy = values[k];
+        _cfg.Policy = values[k];
+        SaveConfig();
+        RenderChrome();
+    }
+
+    // ---------------------------------------------------------------- overlaid views
+
+    private StackPanel OpenView(string title, Action? back = null)
+    {
+        var body = new StackPanel { Spacing = 12, Margin = new Thickness(14, 4, 14, 24) };
+        var backButton = IconButton(UrbeTheme.Icons.Back, "Voltar");
+        backButton.Click += (_, _) => (back ?? CloseView)();
+        var head = new DockPanel { Margin = new Thickness(6, 6, 6, 4), Height = 52 };
+        DockPanel.SetDock(backButton, Dock.Left);
+        head.Children.Add(backButton);
+        var t = Label(title, 18, UrbeTheme.Text, FontWeight.Bold);
+        t.Margin = new Thickness(6, 0);
+        head.Children.Add(t);
+        var layout = new DockPanel();
+        DockPanel.SetDock(head, Dock.Top);
+        layout.Children.Add(head);
+        layout.Children.Add(new ScrollViewer { Content = body, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
+        _view.Child = layout;
+        _view.IsVisible = true;
+        return body;
+    }
+
+    private void CloseView() { _view.IsVisible = false; _view.Child = null; }
+
+    /// <summary>The view open over the chat (tests): its title, or null.</summary>
+    public string? ViewTitle => _view.IsVisible && _view.Child is DockPanel { Children: [DockPanel head, ..] } && head.Children.OfType<TextBlock>().FirstOrDefault() is { } t ? t.Text : null;
+
+    private void ShowHistory()
+    {
+        var list = _store.ListConversations();
+        var body = OpenView("Conversas");
+        if (list.Count == 0) { body.Children.Add(Wrap("Nenhuma conversa ainda.", 14, UrbeTheme.Text3)); return; }
+        foreach (var c in list)
+        {
+            int n = c.Messages.Count(m => m.Role == "user" && m.Meta?.ToolResults != true);
+            var a = AssistantAgent.AgentById(c.AgentId, _cfg.CustomAgents);
+            var when = DateTimeOffset.FromUnixTimeMilliseconds(c.Updated).LocalDateTime.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture);
+            var open = new Button
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, Padding = new Thickness(12, 8), CornerRadius = new CornerRadius(12),
+                Background = UrbeTheme.Brush(c.Id == _conv.Id ? UrbeTheme.Accent : UrbeTheme.Surface, c.Id == _conv.Id ? .12 : 1), BorderThickness = new Thickness(0),
+                Content = new StackPanel
+                {
+                    Spacing = 2,
+                    Children = { Label(c.Title.Length > 0 ? c.Title : "Conversa", 14, UrbeTheme.Text, FontWeight.SemiBold),
+                        Label(a.Name + " · " + n + " pedido" + (n == 1 ? "" : "s") + " · " + when + (c.Vault.Length > 0 && c.Vault != _app.VaultName ? " · " + c.Vault : ""), 12, UrbeTheme.Text3) }
+                }
+            };
+            open.Click += (_, _) =>
+            {
+                if (_running is not null) return;
+                _conv = _store.GetConversation(c.Id) ?? c;
+                CloseView();
+                RenderAll();
+            };
+            var del = IconButton(UrbeTheme.Icons.Trash, "Excluir conversa");
+            del.Click += async (_, _) =>
+            {
+                if (!await _app.Dialogs.ConfirmAsync("Excluir esta conversa?", null, "Excluir", danger: true)) return;
+                _store.DeleteConversation(c.Id);
+                if (_conv.Id == c.Id) _conv = NewConversation();
+                ShowHistory();
+                RenderAll();
+            };
+            var row = new DockPanel();
+            DockPanel.SetDock(del, Dock.Right);
+            row.Children.Add(del);
+            row.Children.Add(open);
+            body.Children.Add(row);
+        }
+    }
+
+    private static Control Section(string title, params Control[] items)
+    {
+        var s = new StackPanel { Spacing = 8, Children = { Label(title, 15, UrbeTheme.Text, FontWeight.Bold) } };
+        foreach (var i in items) s.Children.Add(i);
+        return s;
+    }
+
+    private static TextBlock Hint(string text) => Wrap(text, 12, UrbeTheme.Text3);
+
+    /// <summary>showSettings(): providers (test, edit, remove, add), instructions, memory, own agents and the step limit.</summary>
+    public void ShowSettings(string? addPreset = null)
+    {
+        var c = _cfg;
+        var v = VaultKey;
+        var body = OpenView("Configurações do Assistente");
+        var provs = new StackPanel { Spacing = 8 };
+        if (c.Providers.Count == 0) provs.Children.Add(Hint("Nenhum provedor ainda."));
+        foreach (var p in c.Providers)
+        {
+            var pre = AssistantProviders.Presets.GetValueOrDefault(p.Preset) ?? AssistantProviders.Presets["custom"];
+            var test = Hint("");
+            var info = new StackPanel
+            {
+                Spacing = 2,
+                Children = { Label(p.Name ?? p.Id, 14, UrbeTheme.Text, FontWeight.SemiBold),
+                    Label((p.BaseUrl is { Length: > 0 } ? p.BaseUrl : pre.BaseUrl) + (p.ApiKey is { Length: > 0 } key ? " · chave •••" + key[^Math.Min(4, key.Length)..] : ""), 12, UrbeTheme.Text3), test }
+            };
+            var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+            actions.Children.Add(TextButton("Testar", () => _ = TestProviderAsync(p, test)));
+            actions.Children.Add(TextButton("Editar", () => EditProvider(p, p.Preset)));
+            var rm = IconButton(UrbeTheme.Icons.Trash, "Remover");
+            rm.Click += async (_, _) =>
+            {
+                if (!await _app.Dialogs.ConfirmAsync("Remover este provedor?", "A chave salva será apagada deste aparelho.", "Remover", danger: true)) return;
+                c.Providers.RemoveAll(x => x.Id == p.Id);
+                c.ModelCache.Remove(p.Id);
+                if (c.ProviderId == p.Id) { c.ProviderId = c.Providers.FirstOrDefault()?.Id; c.Model = ""; }
+                SaveConfig();
+                ShowSettings();
+                RenderChrome();
+            };
+            actions.Children.Add(rm);
+            provs.Children.Add(Card(new StackPanel { Spacing = 8, Children = { info, actions } }));
+        }
+        var add = TextButton("+ Adicionar provedor", () => _ = AddProviderAsync());
+        body.Children.Add(Section("Provedores de modelo", Hint("As chaves ficam salvas só neste aparelho e vão direto para o provedor."), provs, add));
+
+        var instr = new TextBox { Text = c.Instructions, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 90, PlaceholderText = "Ex.: escreva em português do Brasil, frases curtas; use a pasta Diário para registros do dia." };
+        instr.LostFocus += (_, _) => { c.Instructions = instr.Text ?? ""; SaveConfig(); };
+        instr.TextChanged += (_, _) => c.Instructions = instr.Text ?? "";
+        body.Children.Add(Section("Instruções para todos os agentes", instr));
+
+        var mem = new StackPanel { Spacing = 6 };
+        var facts = (c.Memory.GetValueOrDefault(v) ?? []).Select((f, i) => (f, k: v, i)).Concat((c.Memory.GetValueOrDefault("*") ?? []).Select((f, i) => (f, k: "*", i))).ToList();
+        if (facts.Count == 0) mem.Children.Add(Hint("Vazia. Diga “lembre que…” numa conversa."));
+        foreach (var (f, k, i) in facts)
+        {
+            var forget = IconButton(UrbeTheme.Icons.Close, "Esquecer");
+            forget.Click += (_, _) => { if (c.Memory.TryGetValue(k, out var l) && i < l.Count) l.RemoveAt(i); SaveConfig(); ShowSettings(); };
+            var row = new DockPanel();
+            DockPanel.SetDock(forget, Dock.Right);
+            row.Children.Add(forget);
+            row.Children.Add(Wrap(f + (k == "*" ? "  (geral)" : ""), 13, UrbeTheme.Text));
+            mem.Children.Add(row);
+        }
+        body.Children.Add(Section("Memória", Hint("Fatos que você pediu para o Assistente lembrar. Valem para este vault (" + v + ") e, os marcados como gerais, para todos."), mem));
+
+        var custom = new StackPanel { Spacing = 8 };
+        if (c.CustomAgents.Count == 0) custom.Children.Add(Hint("Crie agentes com instruções próprias, ex.: “Revisor acadêmico”."));
+        foreach (var a in c.CustomAgents)
+        {
+            var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+            actions.Children.Add(TextButton("Editar", () => EditAgent(a)));
+            var rm = IconButton(UrbeTheme.Icons.Trash, "Remover");
+            rm.Click += (_, _) => { c.CustomAgents.RemoveAll(x => x.Id == a.Id); SaveConfig(); ShowSettings(); };
+            actions.Children.Add(rm);
+            custom.Children.Add(Card(new StackPanel
+            {
+                Spacing = 6,
+                Children = { Label(a.Name, 14, UrbeTheme.Text, FontWeight.SemiBold), Hint(a.Tools switch { "all" => "Tudo", "write" => "Lê e escreve (sem excluir)", _ => "Só leitura" }), actions }
+            }));
+        }
+        body.Children.Add(Section("Agentes personalizados", custom, TextButton("+ Novo agente", () => EditAgent(null))));
+
+        var steps = new TextBox { Text = c.MaxSteps.ToString(CultureInfo.InvariantCulture), Width = 100, HorizontalAlignment = HorizontalAlignment.Left };
+        steps.LostFocus += (_, _) =>
+        {
+            c.MaxSteps = int.TryParse(steps.Text, out var n) && n > 0 ? Math.Clamp(n, 3, 100) : 30;
+            steps.Text = c.MaxSteps.ToString(CultureInfo.InvariantCulture);
+            SaveConfig();
+        };
+        body.Children.Add(Section("Limite de passos por resposta", steps, Hint("Cada leitura, busca ou edição é um passo.")));
+        if (addPreset is not null) EditProvider(null, addPreset);
+    }
+
+    private async Task AddProviderAsync()
+    {
+        var i = await _app.Dialogs.ChooseAsync("Qual provedor?", PresetOrder.Select(k => new DialogItem(AssistantProviders.Presets[k].Name, UrbeTheme.Icons.Storage)).ToList());
+        if (i is { } k) EditProvider(null, PresetOrder[k]);
+    }
+
+    private async Task TestProviderAsync(AiProviderConfig p, TextBlock output)
+    {
+        var pre = AssistantProviders.Presets.GetValueOrDefault(p.Preset);
+        var m = p.Id == Provider()?.Id && ModelId().Length > 0 ? ModelId() : pre?.Models?.FirstOrDefault();
+        output.Text = "Testando…";
+        output.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
+        try
+        {
+            if (m is null)
+            {
+                var ms = await Providers.ListModelsAsync(p);
+                output.Text = "Conectado · " + ms.Count + " modelos disponíveis";
+            }
+            else
+            {
+                var r = await Providers.TestAsync(p, m);
+                output.Text = "Funcionando · " + r.Model;
+            }
+            output.Foreground = UrbeTheme.Brush("#3a9a5b");
+        }
+        catch (Exception e)
+        {
+            output.Text = e.Message;
+            output.Foreground = UrbeTheme.Brush("#c0504d");
+        }
+    }
+
+    /// <summary>editProvider(): name, API address and key; saved after the models list answers (a 401/403 stops it), then the model picker.</summary>
+    private void EditProvider(AiProviderConfig? p, string preset)
+    {
+        var pre = AssistantProviders.Presets.GetValueOrDefault(preset) ?? AssistantProviders.Presets["custom"];
+        bool isNew = p is null;
+        p ??= new AiProviderConfig(AssistantAgent.NewId("p"), preset, pre.Name, "", "");
+        var body = OpenView(isNew ? "Conectar " + pre.Name : p.Name ?? pre.Name, () => ShowSettings());
+        var name = new TextBox { Text = p.Name ?? pre.Name };
+        var url = new TextBox { Text = p.BaseUrl is { Length: > 0 } ? p.BaseUrl : pre.BaseUrl, PlaceholderText = "https://…/v1" };
+        var key = new TextBox { Text = p.ApiKey ?? "", PasswordChar = '•', PlaceholderText = pre.KeyHint };
+        Avalonia.Automation.AutomationProperties.SetName(key, "Chave da API");
+        var output = Hint("");
+        body.Children.Add(Section("Nome", name));
+        body.Children.Add(Section("Endereço da API", url));
+        body.Children.Add(Section("Chave da API" + (pre.NeedsKey ? "" : " (opcional)"), key));
+        if (pre.Site is { } site) body.Children.Add(Hint("Crie uma chave em " + site.Replace("https://", "") + "."));
+        if (preset == "ollama") body.Children.Add(Hint("Use um modelo com suporte a ferramentas (ex.: qwen2.5, llama3.1). No aparelho, o endereço precisa ser o do computador na rede, não localhost."));
+        body.Children.Add(output);
+        var save = TextButton("Salvar e escolher modelo", () => { }, primary: true);
+        var orig = p;
+        save.Click += async (_, _) =>
+        {
+            var typedUrl = (url.Text ?? "").Trim();
+            var cfg = orig with
+            {
+                Name = (name.Text ?? "").Trim() is { Length: > 0 } n ? n : pre.Name,
+                BaseUrl = typedUrl == pre.BaseUrl ? "" : typedUrl,
+                ApiKey = (key.Text ?? "").Trim()
+            };
+            if (pre.NeedsKey && cfg.ApiKey!.Length == 0) { Fail("Cole a chave da API."); return; }
+            if (AssistantProviders.Resolve(cfg).BaseUrl.Length == 0) { Fail("Informe o endereço da API."); return; }
+            output.Text = "Conectando…";
+            output.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
+            try { _cfg.ModelCache[cfg.Id] = new AiModelCache(Now(), await Providers.ListModelsAsync(cfg)); }
+            catch (AiProviderException e) when (e.Status is 401 or 403) { Fail(e.Message); return; }
+            catch (Exception) { }
+            int at = _cfg.Providers.FindIndex(x => x.Id == cfg.Id);
+            if (at >= 0) _cfg.Providers[at] = cfg; else _cfg.Providers.Add(cfg);
+            if (_cfg.ProviderId is null || isNew)
+            {
+                _cfg.ProviderId = cfg.Id;
+                _cfg.Model = "";
+                _conv.ProviderId = cfg.Id;
+                _conv.Model = "";
+            }
+            SaveConfig();
+            CloseView();
+            RenderAll();
+            await PickModelAsync();
+        };
+        void Fail(string text) { output.Text = text; output.Foreground = UrbeTheme.Brush("#c0504d"); }
+        var cancel = TextButton("Cancelar", () => ShowSettings());
+        cancel.Margin = new Thickness(0, 0, 8, 0);
+        body.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { cancel, save } });
+    }
+
+    private void EditAgent(AiAgentDef? a)
+    {
+        bool isNew = a is null;
+        var body = OpenView(isNew ? "Novo agente" : a!.Name, () => ShowSettings());
+        var name = new TextBox { Text = a?.Name ?? "", PlaceholderText = "Ex.: Revisor acadêmico" };
+        var prompt = new TextBox { Text = a?.Prompt ?? "", AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 140, PlaceholderText = "Como este agente deve pensar e trabalhar." };
+        string[] values = ["all", "write", "read"];
+        var tools = new ComboBox { ItemsSource = new[] { "Tudo (inclusive excluir, com aprovação)", "Ler e escrever, sem excluir", "Só ler" }, SelectedIndex = Math.Max(0, Array.IndexOf(values, a?.Tools ?? "all")) };
+        body.Children.Add(Section("Nome", name));
+        body.Children.Add(Section("Instruções", prompt));
+        body.Children.Add(Section("O que pode fazer", tools));
+        var save = TextButton("Salvar", () =>
+        {
+            var n = (name.Text ?? "").Trim();
+            if (n.Length == 0) return;
+            var p = (prompt.Text ?? "").Trim();
+            var t = values[Math.Max(0, tools.SelectedIndex)];
+            var made = new AiAgentDef(a?.Id ?? AssistantAgent.NewId("a"), n, t == "read" ? "search" : "sparkle", p.Length > 80 ? p[..80] : p, t, t == "all", p);
+            int at = _cfg.CustomAgents.FindIndex(x => x.Id == made.Id);
+            if (at >= 0) _cfg.CustomAgents[at] = made; else _cfg.CustomAgents.Add(made);
+            SaveConfig();
+            ShowSettings();
+        }, primary: true);
+        var cancel = TextButton("Cancelar", () => ShowSettings());
+        cancel.Margin = new Thickness(0, 0, 8, 0);
+        body.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { cancel, save } });
+    }
+
+    /// <summary>pickModel(): the provider's models (cached 6 h), search, price, the "sem ferramentas" warning, and a typed id.</summary>
+    public async Task PickModelAsync()
+    {
+        if (_cfg.Providers.Count == 0) { ShowSettings("openrouter"); return; }
+        var prov = Provider()!;
+        var body = OpenView("Modelo");
+        var tabs = new WrapPanel();
+        var search = new TextBox { PlaceholderText = "Buscar modelo (ex.: claude, gpt, gemini)" };
+        var list = new StackPanel { Spacing = 6 };
+        var manual = new TextBox { PlaceholderText = "Ou digite o ID do modelo" };
+        var use = TextButton("Usar", () => { var id = (manual.Text ?? "").Trim(); if (id.Length > 0) Choose(id); });
+        var manualRow = new DockPanel();
+        DockPanel.SetDock(use, Dock.Right);
+        use.Margin = new Thickness(8, 0, 0, 0);
+        manualRow.Children.Add(use);
+        manualRow.Children.Add(manual);
+        body.Children.Add(tabs);
+        body.Children.Add(search);
+        body.Children.Add(manualRow);
+        body.Children.Add(list);
+        IReadOnlyList<AiModelInfo> models = [];
+
+        void Tabs()
+        {
+            tabs.Children.Clear();
+            foreach (var p in _cfg.Providers)
+            {
+                var b = TextButton(p.Name ?? p.Id, () => { prov = p; Tabs(); _ = Load(); }, primary: p.Id == prov.Id);
+                b.Margin = new Thickness(0, 0, 6, 6);
+                tabs.Children.Add(b);
+            }
+        }
+
+        static int Rank(string id)
+        {
+            string[] s = ["claude", "gpt-5", "gpt-4", "gemini", "qwen", "llama", "mistral", "deepseek"];
+            for (int i = 0; i < s.Length; i++) if (id.Contains(s[i], StringComparison.OrdinalIgnoreCase)) return i;
+            return 99;
+        }
+
+        void Paint()
+        {
+            list.Children.Clear();
+            var q = (search.Text ?? "").Trim().ToLowerInvariant();
+            var hits = models.Where(m => q.Length == 0 || (m.Id + " " + m.Name).Contains(q, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(m => m.Tools == true ? 0 : 1).ThenBy(m => Rank(m.Id)).ThenBy(m => m.Name, StringComparer.CurrentCulture).Take(200).ToList();
+            if (hits.Count == 0) { list.Children.Add(Hint("Nenhum modelo.")); return; }
+            foreach (var m in hits)
+            {
+                var detail = m.Id + (m.Context is { } c ? " · " + Math.Round(c / 1000.0) + "k contexto" : "") +
+                             (m.Price is { } pr ? " · US$ " + pr.Input.ToString("0.00", CultureInfo.InvariantCulture) + "/" + pr.Output.ToString("0.00", CultureInfo.InvariantCulture) + " por 1M" : "") +
+                             (m.Tools == false ? " · sem ferramentas" : "");
+                bool on = m.Id == ModelId() && prov.Id == Provider()?.Id;
+                var b = new Button
+                {
+                    HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, Padding = new Thickness(12, 8), CornerRadius = new CornerRadius(12),
+                    Background = UrbeTheme.Brush(on ? UrbeTheme.Accent : UrbeTheme.Surface, on ? .14 : 1), BorderThickness = new Thickness(0),
+                    Content = new StackPanel { Spacing = 2, Children = { Label(m.Name, 14, UrbeTheme.Text, FontWeight.SemiBold), Wrap(detail, 12, m.Tools == false ? "#c0504d" : UrbeTheme.Text3) } }
+                };
+                var id = m.Id;
+                b.Click += (_, _) => Choose(id);
+                list.Children.Add(b);
+            }
+        }
+
+        async Task Load()
+        {
+            list.Children.Clear();
+            list.Children.Add(Hint("Carregando modelos…"));
+            if (_cfg.ModelCache.TryGetValue(prov.Id, out var cache) && Now() - cache.At < 6 * 3600_000) models = cache.List;
+            else
+            {
+                try
+                {
+                    models = await Providers.ListModelsAsync(prov);
+                    _cfg.ModelCache[prov.Id] = new AiModelCache(Now(), models);
+                    SaveConfig();
+                }
+                catch (Exception e)
+                {
+                    list.Children.Clear();
+                    list.Children.Add(Wrap(e.Message, 13, "#c0504d"));
+                    models = [];
+                    return;
+                }
+            }
+            Paint();
+        }
+
+        void Choose(string id)
+        {
+            _cfg.ProviderId = prov.Id;
+            _cfg.Model = id;
+            _conv.ProviderId = prov.Id;
+            _conv.Model = id;
+            SaveConfig();
+            CloseView();
+            RenderAll();
+        }
+
+        search.TextChanged += (_, _) => Paint();
+        Tabs();
+        await Load();
+    }
+}

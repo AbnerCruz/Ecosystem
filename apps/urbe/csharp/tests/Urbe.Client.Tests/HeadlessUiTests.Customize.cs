@@ -127,7 +127,8 @@ public sealed partial class HeadlessUiTests
             Snapshot(window, "native-customize-styles-phone.png");
             Assert.Contains(Texts(view.Customize), t => t.Contains("não tem CSS"));
             view.Customize.Open("plugins");
-            Assert.Contains(Texts(view.Customize), t => t.Contains("não executa plugins"));
+            Assert.Contains(Texts(view.Customize), t => t.Contains("não rodam no app nativo"));
+            Assert.Contains(Texts(view.Customize), t => t == "PLUGINS NATIVOS");
             return true;
         }
         finally { ResetTheme(view); window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }

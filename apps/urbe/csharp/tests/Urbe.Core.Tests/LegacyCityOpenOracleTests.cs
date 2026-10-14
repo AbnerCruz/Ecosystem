@@ -56,7 +56,7 @@ public sealed class LegacyCityOpenOracleTests
 
         Assert.Empty(regionIds);
         Assert.Empty(buildingIds);
-        Assert.False(city.WorldReorganizationPending);
+        Assert.Null(city.MigratedFromWorld);
         Assert.Equal(documentIds.Keys.Order(StringComparer.Ordinal), store.List().Select(d => d.Path).Order(StringComparer.Ordinal));
 
         var expectedRegions = o.GetProperty("regions").EnumerateArray().ToList();
@@ -115,12 +115,18 @@ public sealed class LegacyCityOpenOracleTests
     }
 
     [Fact]
-    public void AMapaFromAnotherWorldIsFlaggedNotSilentlyReorganized()
+    public void AMapaFromAnotherWorldIsReorganizedOnThisTerrainAndCanBeUndone()
     {
         var city = new LegacyCity(new LegacyCityTerrain((x, y) => World.Value.At(x, y).Biome), p => p + Guid.NewGuid().ToString("N")[..6]);
         city.Open([("Solta.md", "# Solta\n")], """{"v":4,"mundo":"antigo","notas":{"Solta.md":{"x":40,"y":30}}}""");
-        Assert.True(city.WorldReorganizationPending);
+        Assert.Equal("antigo", city.MigratedFromWorld);
+        Assert.NotNull(city.LayoutBeforeMigration);
+        city.RestoreLayout(city.LayoutBeforeMigration!);
         Assert.Equal((40, 30), (city.Buildings[0].X, city.Buildings[0].Y));
+
+        var none = new LegacyCity(new LegacyCityTerrain((x, y) => World.Value.At(x, y).Biome), p => p + Guid.NewGuid().ToString("N")[..6]);
+        none.Open([("Solta.md", "# Solta\n")], """{"v":4,"notas":{"Solta.md":{"x":40,"y":30}}}""");
+        Assert.Equal("sem versão", none.MigratedFromWorld);
     }
 
     private static DirectoryInfo Root()

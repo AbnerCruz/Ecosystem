@@ -1,0 +1,2292 @@
+{
+ "source": "apps/urbe 1.8.4-beta src/ai/providers.js in node:vm with a scripted fetch",
+ "presets": {
+  "openrouter": {
+   "kind": "openai",
+   "name": "OpenRouter",
+   "baseUrl": "https://openrouter.ai/api/v1",
+   "needsKey": true,
+   "streamUsage": true,
+   "extra": {
+    "usage": {
+     "include": true
+    }
+   },
+   "keyHint": "sk-or-…",
+   "site": "https://openrouter.ai/keys"
+  },
+  "anthropic": {
+   "kind": "anthropic",
+   "name": "Anthropic",
+   "baseUrl": "https://api.anthropic.com/v1",
+   "needsKey": true,
+   "keyHint": "sk-ant-…",
+   "site": "https://console.anthropic.com/settings/keys",
+   "models": [
+    "claude-opus-5-5",
+    "claude-sonnet-5",
+    "claude-haiku-4-5-20251001"
+   ]
+  },
+  "openai": {
+   "kind": "openai",
+   "name": "OpenAI",
+   "baseUrl": "https://api.openai.com/v1",
+   "needsKey": true,
+   "streamUsage": true,
+   "keyHint": "sk-…",
+   "site": "https://platform.openai.com/api-keys"
+  },
+  "gemini": {
+   "kind": "openai",
+   "name": "Google Gemini",
+   "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
+   "needsKey": true,
+   "keyHint": "AIza…",
+   "site": "https://aistudio.google.com/apikey"
+  },
+  "ollama": {
+   "kind": "openai",
+   "name": "Ollama (local)",
+   "baseUrl": "http://localhost:11434/v1",
+   "needsKey": false,
+   "keyHint": "não precisa"
+  },
+  "custom": {
+   "kind": "openai",
+   "name": "Compatível com OpenAI",
+   "baseUrl": "",
+   "needsKey": false,
+   "streamUsage": false,
+   "keyHint": "se o servidor exigir"
+  }
+ },
+ "scenarios": [
+  {
+   "name": "openai-text-and-tools",
+   "cfg": {
+    "id": "or",
+    "preset": "openrouter",
+    "name": "",
+    "apiKey": " sk-or-1 ",
+    "baseUrl": ""
+   },
+   "req": {
+    "model": "m-1",
+    "system": "Sistema",
+    "messages": [
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": "Resuma [[Plano]]"
+       }
+      ]
+     },
+     {
+      "role": "assistant",
+      "content": [
+       {
+        "type": "text",
+        "text": "Vou ler."
+       },
+       {
+        "type": "tool_use",
+        "id": "c1",
+        "name": "read_note",
+        "input": {
+         "path": "Plano.md"
+        }
+       }
+      ]
+     },
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "tool_result",
+        "tool_use_id": "c1",
+        "content": "# Plano\nPassos",
+        "is_error": false
+       }
+      ]
+     },
+     {
+      "role": "assistant",
+      "content": [
+       {
+        "type": "tool_use",
+        "id": "c2",
+        "name": "read_note",
+        "input": {}
+       }
+      ]
+     },
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "tool_result",
+        "tool_use_id": "c2",
+        "content": "falhou",
+        "is_error": true
+       },
+       {
+        "type": "text",
+        "text": "e agora?"
+       }
+      ]
+     },
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": ""
+       },
+       {
+        "type": "text",
+        "text": "mais"
+       }
+      ]
+     }
+    ],
+    "tools": [
+     {
+      "name": "read_note",
+      "description": "Lê uma nota",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "path": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "path"
+       ]
+      }
+     }
+    ],
+    "maxTokens": 512,
+    "temperature": 0.2
+   },
+   "responses": [
+    {
+     "status": 200,
+     "headers": {
+      "content-type": "text/event-stream"
+     },
+     "chunk": 5,
+     "body": "data: {\"model\":\"org/m-1\",\"choices\":[{\"delta\":{\"reasoning\":\"pensa\"}}]}\n\ndata: {\"choices\":[{\"delta\":{\"content\":\"Olá, \"}}]}\n\ndata: {\"choices\":[{\"delta\":{\"content\":\"ação ✓\"}}]}\n\ndata: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"call_a\",\"function\":{\"name\":\"read_\",\"arguments\":\"\"}}]}}]}\n\ndata: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"function\":{\"name\":\"note\",\"arguments\":\"{\\\"pa\"}}]}}]}\n\ndata: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"function\":{\"arguments\":\"th\\\":\\\"A.md\\\"}\"}},{\"index\":2,\"id\":\"call_c\",\"function\":{\"name\":\"list_notes\",\"arguments\":{\"folder\":\"X\"}}}]}}]}\n\ndata: {\"choices\":[{\"delta\":{},\"finish_reason\":\"tool_calls\"}],\"usage\":{\"prompt_tokens\":120,\"completion_tokens\":30,\"cost\":\"0.0012\"}}\n\ndata: [DONE]\n\n"
+    }
+   ],
+   "requests": [
+    {
+     "url": "https://openrouter.ai/api/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-or-1",
+      "X-Title": "Urbe"
+     },
+     "body": {
+      "model": "m-1",
+      "messages": [
+       {
+        "role": "system",
+        "content": "Sistema"
+       },
+       {
+        "role": "user",
+        "content": "Resuma [[Plano]]"
+       },
+       {
+        "role": "assistant",
+        "content": "Vou ler.",
+        "tool_calls": [
+         {
+          "id": "c1",
+          "type": "function",
+          "function": {
+           "name": "read_note",
+           "arguments": "{\"path\":\"Plano.md\"}"
+          }
+         }
+        ]
+       },
+       {
+        "role": "tool",
+        "tool_call_id": "c1",
+        "content": "# Plano\nPassos"
+       },
+       {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+         {
+          "id": "c2",
+          "type": "function",
+          "function": {
+           "name": "read_note",
+           "arguments": "{}"
+          }
+         }
+        ]
+       },
+       {
+        "role": "tool",
+        "tool_call_id": "c2",
+        "content": "ERRO: falhou"
+       },
+       {
+        "role": "user",
+        "content": "e agora?"
+       },
+       {
+        "role": "user",
+        "content": "\n\nmais"
+       }
+      ],
+      "stream": true,
+      "tools": [
+       {
+        "type": "function",
+        "function": {
+         "name": "read_note",
+         "description": "Lê uma nota",
+         "parameters": {
+          "type": "object",
+          "properties": {
+           "path": {
+            "type": "string"
+           }
+          },
+          "required": [
+           "path"
+          ]
+         }
+        }
+       }
+      ],
+      "tool_choice": "auto",
+      "max_tokens": 512,
+      "temperature": 0.2,
+      "stream_options": {
+       "include_usage": true
+      },
+      "usage": {
+       "include": true
+      }
+     }
+    }
+   ],
+   "events": [
+    {
+     "type": "reasoning",
+     "delta": "pensa"
+    },
+    {
+     "type": "text",
+     "delta": "Olá, "
+    },
+    {
+     "type": "text",
+     "delta": "ação ✓"
+    },
+    {
+     "type": "tool_start",
+     "index": 0,
+     "name": "read_"
+    },
+    {
+     "type": "tool_start",
+     "index": 0,
+     "name": "read_note"
+    },
+    {
+     "type": "tool_delta",
+     "index": 0,
+     "partial": "{\"pa"
+    },
+    {
+     "type": "tool_delta",
+     "index": 0,
+     "partial": "{\"path\":\"A.md\"}"
+    },
+    {
+     "type": "tool_start",
+     "index": 2,
+     "name": "list_notes"
+    },
+    {
+     "type": "tool_delta",
+     "index": 2,
+     "partial": "{\"folder\":\"X\"}"
+    }
+   ],
+   "result": {
+    "content": [
+     {
+      "type": "text",
+      "text": "Olá, ação ✓"
+     },
+     {
+      "type": "tool_use",
+      "id": "call_a",
+      "name": "read_note",
+      "input": {
+       "path": "A.md"
+      }
+     },
+     {
+      "type": "tool_use",
+      "id": "call_c",
+      "name": "list_notes",
+      "input": {
+       "folder": "X"
+      }
+     }
+    ],
+    "reasoning": "pensa",
+    "stopReason": "tool_use",
+    "usage": {
+     "input": 120,
+     "output": 30,
+     "cost": 0.0012
+    },
+    "model": "org/m-1"
+   },
+   "error": null
+  },
+  {
+   "name": "openai-length-and-loose-args",
+   "cfg": {
+    "id": "c",
+    "preset": "custom",
+    "baseUrl": "http://srv:8080/v1/"
+   },
+   "req": {
+    "model": "x",
+    "messages": [
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": "oi"
+       }
+      ]
+     }
+    ]
+   },
+   "responses": [
+    {
+     "status": 200,
+     "headers": {
+      "content-type": "text/event-stream"
+     },
+     "body": ": comentário\r\ndata: {\"choices\":[{\"delta\":{\"content\":\"parcial\"},\"finish_reason\":\"length\"}]}\r\n\r\n"
+    }
+   ],
+   "requests": [
+    {
+     "url": "http://srv:8080/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json"
+     },
+     "body": {
+      "model": "x",
+      "messages": [
+       {
+        "role": "user",
+        "content": "oi"
+       }
+      ],
+      "stream": true
+     }
+    }
+   ],
+   "events": [
+    {
+     "type": "text",
+     "delta": "parcial"
+    }
+   ],
+   "result": {
+    "content": [
+     {
+      "type": "text",
+      "text": "parcial"
+     }
+    ],
+    "reasoning": "",
+    "stopReason": "max_tokens",
+    "usage": {
+     "input": 0,
+     "output": 0,
+     "cost": null
+    },
+    "model": "x"
+   },
+   "error": null
+  },
+  {
+   "name": "openai-truncated-tool-json",
+   "cfg": {
+    "id": "lo",
+    "preset": "ollama"
+   },
+   "req": {
+    "model": "llama",
+    "messages": [
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": "x"
+       }
+      ]
+     }
+    ],
+    "tools": [
+     {
+      "name": "read_note",
+      "description": "Lê uma nota",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "path": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "path"
+       ]
+      }
+     }
+    ]
+   },
+   "responses": [
+    {
+     "status": 200,
+     "headers": {
+      "content-type": "text/event-stream"
+     },
+     "body": "data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"t1\",\"function\":{\"name\":\"read_note\",\"arguments\":\"{\\\"path\\\":\\\"A\"}}]}}]}\n\ndata: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":1,\"id\":\"t2\",\"function\":{\"name\":\"read_note\",\"arguments\":\"{\\\"path\\\":\\\"B\\\"\"}}]}}]}\n\ndata: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":2,\"id\":\"t3\",\"function\":{\"name\":\"read_note\",\"arguments\":\"nada\"}}]}}]}\n\n"
+    }
+   ],
+   "requests": [
+    {
+     "url": "http://localhost:11434/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json"
+     },
+     "body": {
+      "model": "llama",
+      "messages": [
+       {
+        "role": "user",
+        "content": "x"
+       }
+      ],
+      "stream": true,
+      "tools": [
+       {
+        "type": "function",
+        "function": {
+         "name": "read_note",
+         "description": "Lê uma nota",
+         "parameters": {
+          "type": "object",
+          "properties": {
+           "path": {
+            "type": "string"
+           }
+          },
+          "required": [
+           "path"
+          ]
+         }
+        }
+       }
+      ],
+      "tool_choice": "auto"
+     }
+    }
+   ],
+   "events": [
+    {
+     "type": "tool_start",
+     "index": 0,
+     "name": "read_note"
+    },
+    {
+     "type": "tool_delta",
+     "index": 0,
+     "partial": "{\"path\":\"A"
+    },
+    {
+     "type": "tool_start",
+     "index": 1,
+     "name": "read_note"
+    },
+    {
+     "type": "tool_delta",
+     "index": 1,
+     "partial": "{\"path\":\"B\""
+    },
+    {
+     "type": "tool_start",
+     "index": 2,
+     "name": "read_note"
+    },
+    {
+     "type": "tool_delta",
+     "index": 2,
+     "partial": "nada"
+    }
+   ],
+   "result": {
+    "content": [
+     {
+      "type": "tool_use",
+      "id": "t1",
+      "name": "read_note",
+      "input": {
+       "path": "A"
+      }
+     },
+     {
+      "type": "tool_use",
+      "id": "t2",
+      "name": "read_note",
+      "input": {
+       "path": "B"
+      }
+     },
+     {
+      "type": "tool_use",
+      "id": "t3",
+      "name": "read_note",
+      "input": {
+       "__invalid": "nada"
+      }
+     }
+    ],
+    "reasoning": "",
+    "stopReason": "tool_use",
+    "usage": {
+     "input": 0,
+     "output": 0,
+     "cost": null
+    },
+    "model": "llama"
+   },
+   "error": null
+  },
+  {
+   "name": "openai-json-not-stream",
+   "cfg": {
+    "id": "or",
+    "preset": "openrouter",
+    "name": "",
+    "apiKey": " sk-or-1 ",
+    "baseUrl": ""
+   },
+   "req": {
+    "model": "m",
+    "messages": [
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": "x"
+       }
+      ]
+     }
+    ]
+   },
+   "responses": [
+    {
+     "status": 200,
+     "headers": {
+      "content-type": "application/json"
+     },
+     "body": {
+      "model": "m-b",
+      "choices": [
+       {
+        "message": {
+         "content": "inteiro"
+        },
+        "finish_reason": "stop"
+       }
+      ],
+      "usage": {
+       "prompt_tokens": 3,
+       "completion_tokens": 1
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "url": "https://openrouter.ai/api/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-or-1",
+      "X-Title": "Urbe"
+     },
+     "body": {
+      "model": "m",
+      "messages": [
+       {
+        "role": "user",
+        "content": "x"
+       }
+      ],
+      "stream": true,
+      "stream_options": {
+       "include_usage": true
+      },
+      "usage": {
+       "include": true
+      }
+     }
+    }
+   ],
+   "events": [
+    {
+     "type": "text",
+     "delta": "inteiro"
+    }
+   ],
+   "result": {
+    "content": [
+     {
+      "type": "text",
+      "text": "inteiro"
+     }
+    ],
+    "reasoning": "",
+    "stopReason": "end",
+    "usage": {
+     "input": 3,
+     "output": 1,
+     "cost": null
+    },
+    "model": "m-b"
+   },
+   "error": null
+  },
+  {
+   "name": "openai-error-in-stream",
+   "cfg": {
+    "id": "or",
+    "preset": "openrouter",
+    "name": "",
+    "apiKey": " sk-or-1 ",
+    "baseUrl": ""
+   },
+   "req": {
+    "model": "m",
+    "messages": [
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": "x"
+       }
+      ]
+     }
+    ]
+   },
+   "responses": [
+    {
+     "status": 200,
+     "headers": {
+      "content-type": "text/event-stream"
+     },
+     "body": "data: {\"error\":{\"code\":402,\"message\":\"no credits\"}}\n\n"
+    }
+   ],
+   "requests": [
+    {
+     "url": "https://openrouter.ai/api/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-or-1",
+      "X-Title": "Urbe"
+     },
+     "body": {
+      "model": "m",
+      "messages": [
+       {
+        "role": "user",
+        "content": "x"
+       }
+      ],
+      "stream": true,
+      "stream_options": {
+       "include_usage": true
+      },
+      "usage": {
+       "include": true
+      }
+     }
+    }
+   ],
+   "events": [],
+   "result": null,
+   "error": {
+    "message": "Sem créditos em OpenRouter. Adicione créditos ou troque de provedor.",
+    "status": 402,
+    "network": false
+   }
+  },
+  {
+   "name": "anthropic-text-thinking-tools",
+   "cfg": {
+    "id": "an",
+    "preset": "anthropic",
+    "apiKey": "sk-ant-1"
+   },
+   "req": {
+    "model": "m-1",
+    "system": "Sistema",
+    "messages": [
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": "Resuma [[Plano]]"
+       }
+      ]
+     },
+     {
+      "role": "assistant",
+      "content": [
+       {
+        "type": "text",
+        "text": "Vou ler."
+       },
+       {
+        "type": "tool_use",
+        "id": "c1",
+        "name": "read_note",
+        "input": {
+         "path": "Plano.md"
+        }
+       }
+      ]
+     },
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "tool_result",
+        "tool_use_id": "c1",
+        "content": "# Plano\nPassos",
+        "is_error": false
+       }
+      ]
+     },
+     {
+      "role": "assistant",
+      "content": [
+       {
+        "type": "tool_use",
+        "id": "c2",
+        "name": "read_note",
+        "input": {}
+       }
+      ]
+     },
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "tool_result",
+        "tool_use_id": "c2",
+        "content": "falhou",
+        "is_error": true
+       },
+       {
+        "type": "text",
+        "text": "e agora?"
+       }
+      ]
+     },
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": ""
+       },
+       {
+        "type": "text",
+        "text": "mais"
+       }
+      ]
+     }
+    ],
+    "tools": [
+     {
+      "name": "read_note",
+      "description": "Lê uma nota",
+      "parameters": {
+       "type": "object",
+       "properties": {
+        "path": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "path"
+       ]
+      }
+     }
+    ],
+    "maxTokens": 512,
+    "temperature": 0.2
+   },
+   "responses": [
+    {
+     "status": 200,
+     "headers": {
+      "content-type": "text/event-stream"
+     },
+     "chunk": 11,
+     "body": "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"model\":\"claude-x\",\"usage\":{\"input_tokens\":10,\"cache_read_input_tokens\":5,\"output_tokens\":1}}}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"thinking\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"hmm\"}}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":1,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"Lendo \"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"já.\"}}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":2,\"content_block\":{\"type\":\"tool_use\",\"id\":\"tu_1\",\"name\":\"read_note\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"{\\\"path\\\":\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"\\\"B.md\\\"}\"}}\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"tool_use\"},\"usage\":{\"output_tokens\":42}}\n\nevent: ping\ndata: {\"type\":\"ping\"}\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"}\n\n"
+    }
+   ],
+   "requests": [
+    {
+     "url": "https://api.anthropic.com/v1/messages",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "x-api-key": "sk-ant-1",
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+     },
+     "body": {
+      "model": "m-1",
+      "max_tokens": 512,
+      "messages": [
+       {
+        "role": "user",
+        "content": [
+         {
+          "type": "text",
+          "text": "Resuma [[Plano]]"
+         }
+        ]
+       },
+       {
+        "role": "assistant",
+        "content": [
+         {
+          "type": "text",
+          "text": "Vou ler."
+         },
+         {
+          "type": "tool_use",
+          "id": "c1",
+          "name": "read_note",
+          "input": {
+           "path": "Plano.md"
+          }
+         }
+        ]
+       },
+       {
+        "role": "user",
+        "content": [
+         {
+          "type": "tool_result",
+          "tool_use_id": "c1",
+          "content": "# Plano\nPassos",
+          "is_error": false
+         }
+        ]
+       },
+       {
+        "role": "assistant",
+        "content": [
+         {
+          "type": "tool_use",
+          "id": "c2",
+          "name": "read_note",
+          "input": {}
+         }
+        ]
+       },
+       {
+        "role": "user",
+        "content": [
+         {
+          "type": "tool_result",
+          "tool_use_id": "c2",
+          "content": "falhou",
+          "is_error": true
+         },
+         {
+          "type": "text",
+          "text": "e agora?"
+         },
+         {
+          "type": "text",
+          "text": "mais"
+         }
+        ]
+       }
+      ],
+      "stream": true,
+      "system": "Sistema",
+      "tools": [
+       {
+        "name": "read_note",
+        "description": "Lê uma nota",
+        "input_schema": {
+         "type": "object",
+         "properties": {
+          "path": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "path"
+         ]
+        }
+       }
+      ],
+      "temperature": 0.2
+     }
+    }
+   ],
+   "events": [
+    {
+     "type": "reasoning",
+     "delta": "hmm"
+    },
+    {
+     "type": "text",
+     "delta": "Lendo "
+    },
+    {
+     "type": "text",
+     "delta": "já."
+    },
+    {
+     "type": "tool_start",
+     "index": 2,
+     "name": "read_note"
+    },
+    {
+     "type": "tool_delta",
+     "index": 2,
+     "partial": "{\"path\":"
+    },
+    {
+     "type": "tool_delta",
+     "index": 2,
+     "partial": "{\"path\":\"B.md\"}"
+    }
+   ],
+   "result": {
+    "content": [
+     {
+      "type": "text",
+      "text": "Lendo já."
+     },
+     {
+      "type": "tool_use",
+      "id": "tu_1",
+      "name": "read_note",
+      "input": {
+       "path": "B.md"
+      }
+     }
+    ],
+    "reasoning": "hmm",
+    "stopReason": "tool_use",
+    "usage": {
+     "input": 15,
+     "output": 42,
+     "cost": null
+    },
+    "model": "claude-x"
+   },
+   "error": null
+  },
+  {
+   "name": "anthropic-overloaded",
+   "cfg": {
+    "id": "an",
+    "preset": "anthropic",
+    "apiKey": "sk-ant-1"
+   },
+   "req": {
+    "model": "c",
+    "messages": [
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": "x"
+       }
+      ]
+     }
+    ]
+   },
+   "responses": [
+    {
+     "status": 200,
+     "headers": {
+      "content-type": "text/event-stream"
+     },
+     "body": "event: error\ndata: {\"type\":\"error\",\"error\":{\"type\":\"overloaded_error\",\"message\":\"Overloaded\"}}\n\n"
+    }
+   ],
+   "requests": [
+    {
+     "url": "https://api.anthropic.com/v1/messages",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "x-api-key": "sk-ant-1",
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+     },
+     "body": {
+      "model": "c",
+      "max_tokens": 8192,
+      "messages": [
+       {
+        "role": "user",
+        "content": [
+         {
+          "type": "text",
+          "text": "x"
+         }
+        ]
+       }
+      ],
+      "stream": true
+     }
+    }
+   ],
+   "events": [],
+   "result": null,
+   "error": {
+    "message": "Anthropic está instável (529). Overloaded",
+    "status": null,
+    "network": false
+   }
+  },
+  {
+   "name": "http-401",
+   "cfg": {
+    "id": "or",
+    "preset": "openrouter",
+    "name": "",
+    "apiKey": " sk-or-1 ",
+    "baseUrl": ""
+   },
+   "req": {
+    "model": "m",
+    "messages": [
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": "x"
+       }
+      ]
+     }
+    ]
+   },
+   "responses": [
+    {
+     "status": 401,
+     "body": {
+      "error": {
+       "message": "bad key"
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "url": "https://openrouter.ai/api/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-or-1",
+      "X-Title": "Urbe"
+     },
+     "body": {
+      "model": "m",
+      "messages": [
+       {
+        "role": "user",
+        "content": "x"
+       }
+      ],
+      "stream": true,
+      "stream_options": {
+       "include_usage": true
+      },
+      "usage": {
+       "include": true
+      }
+     }
+    }
+   ],
+   "events": [],
+   "result": null,
+   "error": {
+    "message": "A chave de OpenRouter foi recusada. Confira a chave nas configurações.",
+    "status": 401,
+    "network": false
+   }
+  },
+  {
+   "name": "http-402",
+   "cfg": {
+    "id": "an",
+    "preset": "anthropic",
+    "apiKey": "sk-ant-1"
+   },
+   "req": {
+    "model": "m",
+    "messages": [
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": "x"
+       }
+      ]
+     }
+    ]
+   },
+   "responses": [
+    {
+     "status": 402,
+     "body": {
+      "error": {
+       "message": "pay"
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "url": "https://api.anthropic.com/v1/messages",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "x-api-key": "sk-ant-1",
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+     },
+     "body": {
+      "model": "m",
+      "max_tokens": 8192,
+      "messages": [
+       {
+        "role": "user",
+        "content": [
+         {
+          "type": "text",
+          "text": "x"
+         }
+        ]
+       }
+      ],
+      "stream": true
+     }
+    }
+   ],
+   "events": [],
+   "result": null,
+   "error": {
+    "message": "Sem créditos em Anthropic. Adicione créditos ou troque de provedor.",
+    "status": 402,
+    "network": false
+   }
+  },
+  {
+   "name": "http-404-model",
+   "cfg": {
+    "id": "or",
+    "preset": "openrouter",
+    "name": "",
+    "apiKey": " sk-or-1 ",
+    "baseUrl": ""
+   },
+   "req": {
+    "model": "m",
+    "messages": [
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": "x"
+       }
+      ]
+     }
+    ]
+   },
+   "responses": [
+    {
+     "status": 404,
+     "body": {
+      "error": {
+       "message": "No such model: m"
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "url": "https://openrouter.ai/api/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-or-1",
+      "X-Title": "Urbe"
+     },
+     "body": {
+      "model": "m",
+      "messages": [
+       {
+        "role": "user",
+        "content": "x"
+       }
+      ],
+      "stream": true,
+      "stream_options": {
+       "include_usage": true
+      },
+      "usage": {
+       "include": true
+      }
+     }
+    }
+   ],
+   "events": [],
+   "result": null,
+   "error": {
+    "message": "Modelo não encontrado em OpenRouter: No such model: m",
+    "status": 404,
+    "network": false
+   }
+  },
+  {
+   "name": "http-400-tools",
+   "cfg": {
+    "id": "or",
+    "preset": "openrouter",
+    "name": "",
+    "apiKey": " sk-or-1 ",
+    "baseUrl": ""
+   },
+   "req": {
+    "model": "m",
+    "messages": [
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": "x"
+       }
+      ]
+     }
+    ]
+   },
+   "responses": [
+    {
+     "status": 400,
+     "body": {
+      "error": {
+       "message": "No endpoints found that support tool use"
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "url": "https://openrouter.ai/api/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-or-1",
+      "X-Title": "Urbe"
+     },
+     "body": {
+      "model": "m",
+      "messages": [
+       {
+        "role": "user",
+        "content": "x"
+       }
+      ],
+      "stream": true,
+      "stream_options": {
+       "include_usage": true
+      },
+      "usage": {
+       "include": true
+      }
+     }
+    }
+   ],
+   "events": [],
+   "result": null,
+   "error": {
+    "message": "Este modelo não aceita ferramentas. Escolha outro modelo (ex.: Claude, GPT, Gemini, Qwen).",
+    "status": 400,
+    "network": false
+   }
+  },
+  {
+   "name": "http-413",
+   "cfg": {
+    "id": "or",
+    "preset": "openrouter",
+    "name": "",
+    "apiKey": " sk-or-1 ",
+    "baseUrl": ""
+   },
+   "req": {
+    "model": "m",
+    "messages": [
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": "x"
+       }
+      ]
+     }
+    ]
+   },
+   "responses": [
+    {
+     "status": 413,
+     "body": "payload too large <html>"
+    }
+   ],
+   "requests": [
+    {
+     "url": "https://openrouter.ai/api/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-or-1",
+      "X-Title": "Urbe"
+     },
+     "body": {
+      "model": "m",
+      "messages": [
+       {
+        "role": "user",
+        "content": "x"
+       }
+      ],
+      "stream": true,
+      "stream_options": {
+       "include_usage": true
+      },
+      "usage": {
+       "include": true
+      }
+     }
+    }
+   ],
+   "events": [],
+   "result": null,
+   "error": {
+    "message": "A conversa ficou grande demais para este modelo. Comece uma nova conversa ou use um modelo com mais contexto.",
+    "status": 413,
+    "network": false
+   }
+  },
+  {
+   "name": "http-400-object-error",
+   "cfg": {
+    "id": "or",
+    "preset": "openrouter",
+    "name": "",
+    "apiKey": " sk-or-1 ",
+    "baseUrl": ""
+   },
+   "req": {
+    "model": "m",
+    "messages": [
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": "x"
+       }
+      ]
+     }
+    ]
+   },
+   "responses": [
+    {
+     "status": 400,
+     "body": {
+      "error": {
+       "code": "x",
+       "detail": {
+        "a": 1
+       }
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "url": "https://openrouter.ai/api/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-or-1",
+      "X-Title": "Urbe"
+     },
+     "body": {
+      "model": "m",
+      "messages": [
+       {
+        "role": "user",
+        "content": "x"
+       }
+      ],
+      "stream": true,
+      "stream_options": {
+       "include_usage": true
+      },
+      "usage": {
+       "include": true
+      }
+     }
+    }
+   ],
+   "events": [],
+   "result": null,
+   "error": {
+    "message": "{\"code\":\"x\",\"detail\":{\"a\":1}}",
+    "status": 400,
+    "network": false
+   }
+  },
+  {
+   "name": "http-429-then-ok",
+   "cfg": {
+    "id": "or",
+    "preset": "openrouter",
+    "name": "",
+    "apiKey": " sk-or-1 ",
+    "baseUrl": ""
+   },
+   "req": {
+    "model": "m",
+    "messages": [
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": "x"
+       }
+      ]
+     }
+    ]
+   },
+   "responses": [
+    {
+     "status": 429,
+     "headers": {
+      "retry-after": "2"
+     },
+     "body": {
+      "error": {
+       "message": "slow down"
+      }
+     }
+    },
+    {
+     "status": 503,
+     "body": "down"
+    },
+    {
+     "status": 200,
+     "headers": {
+      "content-type": "text/event-stream"
+     },
+     "body": "data: {\"choices\":[{\"delta\":{\"content\":\"ok\"},\"finish_reason\":\"stop\"}]}\n\n"
+    }
+   ],
+   "requests": [
+    {
+     "url": "https://openrouter.ai/api/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-or-1",
+      "X-Title": "Urbe"
+     },
+     "body": {
+      "model": "m",
+      "messages": [
+       {
+        "role": "user",
+        "content": "x"
+       }
+      ],
+      "stream": true,
+      "stream_options": {
+       "include_usage": true
+      },
+      "usage": {
+       "include": true
+      }
+     }
+    },
+    {
+     "url": "https://openrouter.ai/api/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-or-1",
+      "X-Title": "Urbe"
+     },
+     "body": {
+      "model": "m",
+      "messages": [
+       {
+        "role": "user",
+        "content": "x"
+       }
+      ],
+      "stream": true,
+      "stream_options": {
+       "include_usage": true
+      },
+      "usage": {
+       "include": true
+      }
+     }
+    },
+    {
+     "url": "https://openrouter.ai/api/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-or-1",
+      "X-Title": "Urbe"
+     },
+     "body": {
+      "model": "m",
+      "messages": [
+       {
+        "role": "user",
+        "content": "x"
+       }
+      ],
+      "stream": true,
+      "stream_options": {
+       "include_usage": true
+      },
+      "usage": {
+       "include": true
+      }
+     }
+    }
+   ],
+   "events": [
+    {
+     "type": "text",
+     "delta": "ok"
+    }
+   ],
+   "result": {
+    "content": [
+     {
+      "type": "text",
+      "text": "ok"
+     }
+    ],
+    "reasoning": "",
+    "stopReason": "end",
+    "usage": {
+     "input": 0,
+     "output": 0,
+     "cost": null
+    },
+    "model": "m"
+   },
+   "error": null
+  },
+  {
+   "name": "http-500-four-times",
+   "cfg": {
+    "id": "or",
+    "preset": "openrouter",
+    "name": "",
+    "apiKey": " sk-or-1 ",
+    "baseUrl": ""
+   },
+   "req": {
+    "model": "m",
+    "messages": [
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": "x"
+       }
+      ]
+     }
+    ]
+   },
+   "responses": [
+    {
+     "status": 500,
+     "body": {
+      "message": "boom"
+     }
+    },
+    {
+     "status": 500,
+     "body": {
+      "message": "boom"
+     }
+    },
+    {
+     "status": 500,
+     "body": {
+      "message": "boom"
+     }
+    },
+    {
+     "status": 500,
+     "body": {
+      "message": "boom"
+     }
+    }
+   ],
+   "requests": [
+    {
+     "url": "https://openrouter.ai/api/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-or-1",
+      "X-Title": "Urbe"
+     },
+     "body": {
+      "model": "m",
+      "messages": [
+       {
+        "role": "user",
+        "content": "x"
+       }
+      ],
+      "stream": true,
+      "stream_options": {
+       "include_usage": true
+      },
+      "usage": {
+       "include": true
+      }
+     }
+    },
+    {
+     "url": "https://openrouter.ai/api/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-or-1",
+      "X-Title": "Urbe"
+     },
+     "body": {
+      "model": "m",
+      "messages": [
+       {
+        "role": "user",
+        "content": "x"
+       }
+      ],
+      "stream": true,
+      "stream_options": {
+       "include_usage": true
+      },
+      "usage": {
+       "include": true
+      }
+     }
+    },
+    {
+     "url": "https://openrouter.ai/api/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-or-1",
+      "X-Title": "Urbe"
+     },
+     "body": {
+      "model": "m",
+      "messages": [
+       {
+        "role": "user",
+        "content": "x"
+       }
+      ],
+      "stream": true,
+      "stream_options": {
+       "include_usage": true
+      },
+      "usage": {
+       "include": true
+      }
+     }
+    },
+    {
+     "url": "https://openrouter.ai/api/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-or-1",
+      "X-Title": "Urbe"
+     },
+     "body": {
+      "model": "m",
+      "messages": [
+       {
+        "role": "user",
+        "content": "x"
+       }
+      ],
+      "stream": true,
+      "stream_options": {
+       "include_usage": true
+      },
+      "usage": {
+       "include": true
+      }
+     }
+    }
+   ],
+   "events": [],
+   "result": null,
+   "error": {
+    "message": "OpenRouter está instável (500). boom",
+    "status": 500,
+    "network": false
+   }
+  },
+  {
+   "name": "network-local",
+   "cfg": {
+    "id": "lo",
+    "preset": "ollama"
+   },
+   "req": {
+    "model": "llama",
+    "messages": [
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": "x"
+       }
+      ]
+     }
+    ]
+   },
+   "responses": [
+    {
+     "network": true
+    },
+    {
+     "network": true
+    },
+    {
+     "network": true
+    }
+   ],
+   "requests": [
+    {
+     "url": "http://localhost:11434/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json"
+     },
+     "body": {
+      "model": "llama",
+      "messages": [
+       {
+        "role": "user",
+        "content": "x"
+       }
+      ],
+      "stream": true
+     }
+    },
+    {
+     "url": "http://localhost:11434/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json"
+     },
+     "body": {
+      "model": "llama",
+      "messages": [
+       {
+        "role": "user",
+        "content": "x"
+       }
+      ],
+      "stream": true
+     }
+    },
+    {
+     "url": "http://localhost:11434/v1/chat/completions",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json"
+     },
+     "body": {
+      "model": "llama",
+      "messages": [
+       {
+        "role": "user",
+        "content": "x"
+       }
+      ],
+      "stream": true
+     }
+    }
+   ],
+   "events": [],
+   "result": null,
+   "error": {
+    "message": "Não foi possível conectar a Ollama (local). Verifique a internet e se o servidor local está aberto (e aceita CORS).",
+    "status": null,
+    "network": true
+   }
+  },
+  {
+   "name": "network-then-ok",
+   "cfg": {
+    "id": "an",
+    "preset": "anthropic",
+    "apiKey": "sk-ant-1"
+   },
+   "req": {
+    "model": "c",
+    "messages": [
+     {
+      "role": "user",
+      "content": [
+       {
+        "type": "text",
+        "text": "x"
+       }
+      ]
+     }
+    ]
+   },
+   "responses": [
+    {
+     "network": true
+    },
+    {
+     "status": 200,
+     "headers": {
+      "content-type": "text/event-stream"
+     },
+     "body": "event: message_stop\ndata: {\"type\":\"message_stop\"}\n\n"
+    }
+   ],
+   "requests": [
+    {
+     "url": "https://api.anthropic.com/v1/messages",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "x-api-key": "sk-ant-1",
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+     },
+     "body": {
+      "model": "c",
+      "max_tokens": 8192,
+      "messages": [
+       {
+        "role": "user",
+        "content": [
+         {
+          "type": "text",
+          "text": "x"
+         }
+        ]
+       }
+      ],
+      "stream": true
+     }
+    },
+    {
+     "url": "https://api.anthropic.com/v1/messages",
+     "method": "POST",
+     "headers": {
+      "Content-Type": "application/json",
+      "x-api-key": "sk-ant-1",
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+     },
+     "body": {
+      "model": "c",
+      "max_tokens": 8192,
+      "messages": [
+       {
+        "role": "user",
+        "content": [
+         {
+          "type": "text",
+          "text": "x"
+         }
+        ]
+       }
+      ],
+      "stream": true
+     }
+    }
+   ],
+   "events": [],
+   "result": {
+    "content": [],
+    "reasoning": "",
+    "stopReason": "end",
+    "usage": {
+     "input": 0,
+     "output": 0,
+     "cost": null
+    },
+    "model": "c"
+   },
+   "error": null
+  },
+  {
+   "name": "missing-key",
+   "cfg": {
+    "id": "o",
+    "preset": "openai"
+   },
+   "req": {
+    "model": "m",
+    "messages": []
+   },
+   "responses": [],
+   "requests": [],
+   "events": [],
+   "result": null,
+   "error": {
+    "message": "Configure a chave de OpenAI nas configurações do Assistente.",
+    "status": null,
+    "network": false
+   }
+  },
+  {
+   "name": "missing-url",
+   "cfg": {
+    "id": "c",
+    "preset": "custom"
+   },
+   "req": {
+    "model": "m",
+    "messages": []
+   },
+   "responses": [],
+   "requests": [],
+   "events": [],
+   "result": null,
+   "error": {
+    "message": "Informe o endereço (URL base) do provedor Compatível com OpenAI.",
+    "status": null,
+    "network": false
+   }
+  },
+  {
+   "name": "missing-model",
+   "cfg": {
+    "id": "or",
+    "preset": "openrouter",
+    "name": "",
+    "apiKey": " sk-or-1 ",
+    "baseUrl": ""
+   },
+   "req": {
+    "model": "",
+    "messages": []
+   },
+   "responses": [],
+   "requests": [],
+   "events": [],
+   "result": null,
+   "error": {
+    "message": "Escolha um modelo.",
+    "status": null,
+    "network": false
+   }
+  }
+ ],
+ "models": [
+  {
+   "name": "openrouter-models",
+   "cfg": {
+    "id": "or",
+    "preset": "openrouter",
+    "name": "",
+    "apiKey": " sk-or-1 ",
+    "baseUrl": ""
+   },
+   "responses": [
+    {
+     "status": 200,
+     "body": {
+      "data": [
+       {
+        "id": "a/b",
+        "name": "B",
+        "context_length": 8000,
+        "pricing": {
+         "prompt": "0.000001",
+         "completion": "0.000002"
+        },
+        "supported_parameters": [
+         "tools",
+         "temperature"
+        ]
+       },
+       {
+        "id": "c",
+        "supported_parameters": [
+         "x"
+        ]
+       },
+       {
+        "name": "só nome"
+       }
+      ]
+     }
+    }
+   ],
+   "requests": [
+    {
+     "url": "https://openrouter.ai/api/v1/models",
+     "method": "GET",
+     "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-or-1",
+      "X-Title": "Urbe"
+     },
+     "body": null
+    }
+   ],
+   "list": [
+    {
+     "id": "a/b",
+     "name": "B",
+     "context": 8000,
+     "price": {
+      "input": 1,
+      "output": 2
+     },
+     "tools": true
+    },
+    {
+     "id": "c",
+     "name": "c",
+     "context": null,
+     "price": null,
+     "tools": false
+    },
+    {
+     "id": "só nome",
+     "name": "só nome",
+     "context": null,
+     "price": null,
+     "tools": null
+    }
+   ],
+   "error": null
+  },
+  {
+   "name": "anthropic-models",
+   "cfg": {
+    "id": "an",
+    "preset": "anthropic",
+    "apiKey": "sk-ant-1"
+   },
+   "responses": [
+    {
+     "status": 200,
+     "body": {
+      "data": [
+       {
+        "id": "claude-1",
+        "display_name": "Claude 1"
+       },
+       {
+        "id": "claude-2"
+       }
+      ]
+     }
+    }
+   ],
+   "requests": [
+    {
+     "url": "https://api.anthropic.com/v1/models?limit=100",
+     "method": "GET",
+     "headers": {
+      "Content-Type": "application/json",
+      "x-api-key": "sk-ant-1",
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+     },
+     "body": null
+    }
+   ],
+   "list": [
+    {
+     "id": "claude-1",
+     "name": "Claude 1",
+     "context": 200000,
+     "tools": true
+    },
+    {
+     "id": "claude-2",
+     "name": "claude-2",
+     "context": 200000,
+     "tools": true
+    }
+   ],
+   "error": null
+  },
+  {
+   "name": "anthropic-models-fallback",
+   "cfg": {
+    "id": "an",
+    "preset": "anthropic",
+    "apiKey": "sk-ant-1"
+   },
+   "responses": [
+    {
+     "status": 404,
+     "body": {
+      "error": {
+       "message": "nope"
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "url": "https://api.anthropic.com/v1/models?limit=100",
+     "method": "GET",
+     "headers": {
+      "Content-Type": "application/json",
+      "x-api-key": "sk-ant-1",
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+     },
+     "body": null
+    }
+   ],
+   "list": [
+    {
+     "id": "claude-opus-5-5",
+     "name": "claude-opus-5-5",
+     "context": 200000,
+     "tools": true
+    },
+    {
+     "id": "claude-sonnet-5",
+     "name": "claude-sonnet-5",
+     "context": 200000,
+     "tools": true
+    },
+    {
+     "id": "claude-haiku-4-5-20251001",
+     "name": "claude-haiku-4-5-20251001",
+     "context": 200000,
+     "tools": true
+    }
+   ],
+   "error": null
+  },
+  {
+   "name": "anthropic-models-401",
+   "cfg": {
+    "id": "an",
+    "preset": "anthropic",
+    "apiKey": "sk-ant-1"
+   },
+   "responses": [
+    {
+     "status": 401,
+     "body": {
+      "error": {
+       "message": "bad"
+      }
+     }
+    }
+   ],
+   "requests": [
+    {
+     "url": "https://api.anthropic.com/v1/models?limit=100",
+     "method": "GET",
+     "headers": {
+      "Content-Type": "application/json",
+      "x-api-key": "sk-ant-1",
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+     },
+     "body": null
+    }
+   ],
+   "list": null,
+   "error": {
+    "message": "A chave de Anthropic foi recusada. Confira a chave nas configurações.",
+    "status": 401
+   }
+  }
+ ]
+}

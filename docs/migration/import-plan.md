@@ -136,6 +136,8 @@ Feito por mim com as credenciais de sessão já anexadas, ou pelo próprio `sync
 
 ### 7.6.2 Disparo da sincronização (DEC-0017-A)
 
+> **Substituído por [ADD-0023](../governance/addenda/ADD-0023-tudo-no-ecosystem-e-conteudo-dentro-do-urbe.md) / DEC-0046 (2026-10-14):** tudo é no Ecosystem; agentes não disparam nem exigem a sincronização com os espelhos. O texto abaixo é histórico.
+
 O agendamento não rodou nas primeiras horas. Decisão do proprietário: **manter o agendamento como reforço e adotar o disparo explícito** — o agente dispara `sync-from-ecosystem.yml` na origem após cada mudança em `apps/<id>` na `main` (regra em `AGENTS.md` §3), e o proprietário pode dispará-lo pelo botão *Run workflow*. O portal confere **ao vivo** se cada espelho está em dia (último `Ecosystem-Tree` da origem × árvore de `apps/<id>` no commit publicado) e, se não estiver, mostra o link para rodar a sincronização.
 
 ### 7.7 O que só a primeira execução real confirma

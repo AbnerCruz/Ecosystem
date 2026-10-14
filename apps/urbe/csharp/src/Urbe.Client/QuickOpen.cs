@@ -346,9 +346,15 @@ public sealed class SearchFeature
         Register("workspace.navigate.world", "Abrir cidade", "Navegação", () => { if (!view.Editor.IsVisible) view.Explorer.IsVisible = false; });
         Register("document.create", "Nova nota", "Documento", () => _ = view.CreateNoteAsync(null));
         Register("city.fit", "Enquadrar todas as notas", "Cidade", view.World.FitNotes);
+        Register("city.reorganize", "Organizar os bairros", "Cidade", () => _ = view.ReorganizeAsync());
+        Register("city.undoReorganize", "Desfazer reorganização", "Cidade", view.UndoReorganize, () => view.CanUndoReorganize);
         Register("ui.customize", "Personalização", "Aplicativo", () => view.Customize.Open());
+        Register("pages.home", "Páginas", "Páginas", view.ShowPages);
         Register("workspace.save", "Salvar workspace", "Workspace", () => _ = view.Editor.SaveAsync(), () => view.Editor.IsVisible);
         Register("ui.find.open", "Localizar e substituir", "Editor", view.Editor.FindBar.Open, () => view.Editor.IsVisible);
+        Register("editor.split.open", "Abrir em painel dividido", "Editor", () => _ = view.ChooseSplitAsync());
+        Register("editor.split.close", "Fechar painel dividido", "Editor", view.CloseSplit, () => view.SplitState.Enabled);
+        Register("editor.split.swap", "Trocar painéis", "Editor", view.SwapSplit, () => view.SplitState.Enabled);
 
         // document.addEventListener('keydown'): on the top level, so it works with nothing focused too
         void Hook()
@@ -365,6 +371,14 @@ public sealed class SearchFeature
 
     public QuickOpenPanel QuickOpen { get; }
     public CommandPalettePanel Palette { get; }
+
+    /// <summary>core.commands.register(id, …) for a plugin (category "Plugin · name"); returns what removes it.</summary>
+    public Action AddCommand(string id, string title, string category, Action run)
+    {
+        var command = new NativeCommand(new LegacyCommand(id, title, category, null), run);
+        _commands.Add(command);
+        return () => _commands.Remove(command);
+    }
 
     /// <summary>core.commands.has(id).</summary>
     public bool Has(string id) => _commands.Any(c => c.Info.Id == id);

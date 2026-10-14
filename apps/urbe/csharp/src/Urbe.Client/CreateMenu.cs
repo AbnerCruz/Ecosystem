@@ -170,12 +170,12 @@ public sealed partial class MainView
             return;
         }
         if (!await WriteFolderAsync(city, drawn.Region, drawn.Undo)) return;
-        var stay = city.RootBuildingsUnder(drawn.Region).Count;
         EndTool();
+        // absorverConstrucoesDaRaiz: the root notes under the new region join its folder, their files moved
+        var adopted = city.RootBuildingsUnder(drawn.Region).Where(b => b.IsNote).Select(b => b.Path).ToList();
+        if (adopted.Count > 0) await MoveNotesToAsync(adopted, city.RegionPaths()[drawn.Region.Id]);
         World.InvalidateVisual();
-        ShowLifeNotice("Região criada com prioridade territorial" + (stay > 0
-            ? $" · {stay} item(ns) da raiz continuam na raiz até o app nativo mover arquivos."
-            : "."));
+        ShowLifeNotice("Região criada com prioridade territorial" + (adopted.Count > 0 ? $" · {adopted.Count} item(ns) da raiz entraram nela." : "."));
     }
 
     // ------------------------------------------------------------------ Adicionar construção
@@ -374,6 +374,7 @@ public sealed partial class MainView
     public async Task ConfirmPlacementAsync()
     {
         if (World.Tool is DecorationTool decorating) { await ConfirmDecorationAsync(decorating); return; }
+        if (World.Tool is RegionShapeTool shaping) { await ApplyRegionShapeAsync(shaping); return; }
         if (World.City is not { } city || World.Tool is not PlacementTool { Candidate: { } p } || Dialogs.IsOpen) return;
         if (_copySource is { } source)
         {

@@ -1668,6 +1668,39 @@
       "decidedAt": "2026-10-13",
       "record": "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0046",
+      "status": "decided",
+      "component": "ecosystem",
+      "blocking": false,
+      "title": "Tudo acontece no Ecosystem (agentes não sincronizam espelhos) e o conteúdo HTML/PDF/mídia abre dentro do Urbe",
+      "context": "FATO OBSERVADO: AGENTS.md (DEC-0017-A) mandava disparar sync-from-ecosystem.yml nos espelhos após mudar apps/<id>; ao fim do PR #560 o agente apontou esse passo como pendente. FATO: a prévia de arquivo do Urbe nativo mandava PDF, áudio e vídeo para outro app do aparelho.",
+      "question": "Agentes continuam sincronizando os espelhos? A prévia de conteúdo pode abrir fora do Urbe?",
+      "alternatives": [
+        {
+          "option": "1 — Manter a sincronização e abrir conteúdo em outro app",
+          "consequences": "Passo extra a cada integração; o usuário sai do Urbe para ver seus arquivos."
+        },
+        {
+          "option": "2 — Tudo no Ecosystem; conteúdo dentro do Urbe num painel reutilizável",
+          "consequences": "Agentes não sincronizam espelhos; o cliente C# ganha um visualizador de conteúdo embutido (não é camada de UI; ADR-0032 emendado)."
+        }
+      ],
+      "consequences": "DECISÃO DO PROPRIETÁRIO: 2 — 'Remove essa especificação de sincronização com o espelho, já falei várias vezes que é tudo no ecosystem agora' e 'dá um jeito da visualização aparecer no próprio Urbe, muitos painéis assim serão necessários'. AGENTS.md sem a instrução de sincronização; visualizador embutido na prévia de arquivo do Urbe.",
+      "manifestCompatibility": "Não muda boundaries entre Products. A UI do Urbe continua nativa (ADD-0020); o visualizador mostra conteúdo do usuário isolado (NN-016).",
+      "recommendation": "2 — ordem do proprietário.",
+      "related": [
+        "docs/governance/addenda/ADD-0023-tudo-no-ecosystem-e-conteudo-dentro-do-urbe.md",
+        "AGENTS.md",
+        "docs/adr/0032-urbe-ui-nativa-sem-webview.md"
+      ],
+      "raisedBy": "Proprietário",
+      "raisedAt": "2026-10-14",
+      "decision": "2 — Tudo no Ecosystem, sem sincronização de espelho pelos agentes; conteúdo HTML/PDF/áudio/vídeo visto dentro do Urbe.",
+      "decidedAt": "2026-10-14",
+      "record": "docs/governance/addenda/ADD-0023-tudo-no-ecosystem-e-conteudo-dentro-do-urbe.md",
+      "consequencesApplied": true
     }
   ]
 }

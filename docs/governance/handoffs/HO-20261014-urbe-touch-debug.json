@@ -1,0 +1,82 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-urbe-touch-debug",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T20:13:36Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "83d86e80",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/563",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/TouchDebug.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.TouchDebug.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/TouchDebugUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261014-urbe-touch-debug.json"
+  ],
+  "work_completed": [
+    "Configurações → Diagnóstico de toques portado de touch-debug.js: linha por toque (controle, duração, deslize, cancelamento, destino do clique), ponto verde/vermelho, quadro no topo com Copiar relatório, minimizar e desligar; estado guardado no aparelho."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.TouchDebug_RegistersEachTouchAndReportsIt",
+      "result": "passed",
+      "evidence": "Ligado por Configurações com o aviso da 1.8.4; um toque no botão Criar registra '✓ Button “Criar”'; o relatório começa por 'Relatório de toques — Urbe nativo' e traz a linha; o × desliga e apaga a marca do aparelho. Captura native-touch-debug.png. Também passaram Export, Tutorial, EditorChrome, Pages e Reorganize."
+    },
+    {
+      "kind": "human",
+      "check": "Diagnóstico de toques no Android",
+      "result": "not-applicable",
+      "evidence": "É a ferramenta para validar toques no aparelho (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/TouchDebug.cs"
+    }
+  ],
+  "known_issues": [
+    "O 'bloqueado em pointerdown/touchstart' da 1.8.4 (defaultPrevented do navegador) não tem equivalente no Avalonia e não aparece no relatório."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Usar o diagnóstico na validação do APK (Issues #561, #562, #564)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/src/ui/touch-debug.js",
+    "apps/urbe/src/ui/settings.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-013",
+      "evidence": "Porte do comportamento da 1.8.4."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Ferramenta para a validação humana no aparelho."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "touch-debug",
+      "status": "product-specific",
+      "rationale": "Ferramenta de diagnóstico do cliente do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Diagnóstico local; não toca dados do vault."
+  }
+}

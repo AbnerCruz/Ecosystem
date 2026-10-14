@@ -23,11 +23,14 @@ public sealed partial class LegacyCity
     public double CameraZoom { get; set; } = 1.15;
 
     /// <summary>
-    /// True when the vault's mapa.json was saved for another world (mapa.mundo ≠ URBE_MUNDO) and
-    /// there are buildings: the 1.8.4 then reorganizes the whole city (urbeReorganizarCidade),
-    /// which is NOT ported yet. The geometry here is the saved one, as read.
+    /// urbeCidadeMigrada: the vault's mapa.json was saved for another world (mapa.mundo ≠ URBE_MUNDO, here its
+    /// mundo or "sem versão") and the open reorganized the city on this terrain (urbeReorganizarCidade
+    /// {carregando, centro: urbeInicioDoMundo(), motivo: 'mundo'}). Null when the map is of this world.
     /// </summary>
-    public bool WorldReorganizationPending { get; private set; }
+    public string? MigratedFromWorld { get; private set; }
+
+    /// <summary>The layout as the map had it, before that reorganization (layout-guard.js before), for the undo.</summary>
+    public LegacyCityLayoutSnapshot? LayoutBeforeMigration { get; private set; }
 
     /// <summary>
     /// abrirCidade for a real vault. <paramref name="files"/> are the vault's files in the order the
@@ -204,7 +207,8 @@ public sealed partial class LegacyCity
         _roadOrder.Clear();
         _componentId = null;
         Links.Clear();
-        WorldReorganizationPending = false;
+        MigratedFromWorld = null;
+        LayoutBeforeMigration = null;
 
         var geoReg = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
         var caminhos = new List<string>();
@@ -362,8 +366,15 @@ public sealed partial class LegacyCity
         }
         CameraZoom = Math.Clamp(CameraZoom, .22, 2.8);
 
-        // mapa.mundo !== URBE_MUNDO: urbeReorganizarCidade (not ported; flagged)
-        if (mapa is { } mw && Str(mw, "mundo") != WorldVersion && Buildings.Count > 0) WorldReorganizationPending = true;
+        // mapa.mundo !== URBE_MUNDO: "Adaptando a cidade ao mundo novo" — urbeReorganizarCidade from the world's start
+        if (mapa is { } mw && Str(mw, "mundo") != WorldVersion && Buildings.Count > 0)
+        {
+            var from = Str(mw, "mundo");
+            Reindex();
+            LayoutBeforeMigration = SnapshotLayout();
+            Reorganize(WorldStart());
+            MigratedFromWorld = string.IsNullOrEmpty(from) ? "sem versão" : from;
+        }
 
         // marcarIndice(); indexar(); urbeCasasNosBairros()+urbeTaparTodos() with no streets yet.
         // (The rebuildRoadNetwork that follows here is fully replaced by the one in abrirCidade ≈3740:
