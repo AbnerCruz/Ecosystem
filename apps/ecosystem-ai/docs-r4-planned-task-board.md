@@ -15,6 +15,13 @@ não recebe grant, custo, modelo nem texto alterado no envio. Usa
 `WorkspaceSession → AgentRunner/Ledger` existente, inclusive revisão de
 equipe com `--web-review-teams` quando autorizada.
 
+A execução encaminha **objetivo e critério de aceite completos** ao agente,
+na mesma solicitação. O critério também chega integralmente ao revisor.
+O limite total continua em 16.384 caracteres; se a composição exceder esse
+limite, o envio é recusado antes de reservar orçamento. Nada é truncado
+para fazer uma tarefa caber. Essa inclusão orienta a produção, mas não
+transforma o verificador de presença de resposta em prova de aceite material.
+
 ## Persistência e evidências
 
 - O auxiliar `planned-tasks.json` está ao lado de `catalog.json`,

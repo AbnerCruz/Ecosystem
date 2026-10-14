@@ -344,8 +344,9 @@ public static class CliWebUi
                         ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
                         return;
                     }
+                    var executionGoal = CliPlannedTaskRequest.Compose(item);
                     var outcome = await taskRunner.SubmitAsync(
-                        item.ProjectId, item.SessionId, item.Goal, item.Assignee);
+                        item.ProjectId, item.SessionId, executionGoal, item.Assignee);
                     if (outcome.State is WebTaskState.Busy or WebTaskState.QuotaExceeded
                         or WebTaskState.Invalid)
                     {
@@ -363,7 +364,7 @@ public static class CliWebUi
                         && after.Runs.Take(before.Runs.Count)
                             .Select(r => r.RunId).SequenceEqual(before.Runs.Select(r => r.RunId))
                         && after.Turns.Skip(before.Turns.Count).Any(t =>
-                            t.Role == "user" && t.Text == item.Goal);
+                            t.Role == "user" && t.Text == executionGoal);
                     var added = compatible ? after.Runs.Skip(before.Runs.Count)
                         .Select(r => r.RunId).Take(3).ToArray() : [];
                     var verified = added.Length > 0 && added.All(id =>

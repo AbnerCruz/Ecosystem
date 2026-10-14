@@ -99,6 +99,9 @@ public sealed class R4PlannedTaskBoardTests
                     { ["csrf"] = csrf, ["taskId"] = planned.Id })))
                     Assert.Equal(HttpStatusCode.SeeOther, run.StatusCode);
                 Assert.Single(calls);
+                var submittedGoal = calls[0][Array.IndexOf(calls[0], "--goal") + 1];
+                Assert.Contains(planned.Goal, submittedGoal);
+                Assert.EndsWith("CRITÉRIO DE ACEITE:\n" + planned.Acceptance, submittedGoal);
                 Assert.Contains("--agent-profile-id", calls[0]);
                 Assert.DoesNotContain("--allow-create", calls[0]);
                 var updated = Assert.Single(new LocalPlannedTaskStore(cat).Read().Tasks);

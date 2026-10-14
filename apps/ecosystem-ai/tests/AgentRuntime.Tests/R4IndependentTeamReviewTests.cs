@@ -67,8 +67,10 @@ public sealed class R4IndependentTeamReviewTests
                 return Task.FromResult(0);
             });
 
+            var fullGoal = "Inspecione o código C#\n" + new string('a', 5000)
+                + "\nCRITÉRIO DE ACEITE:\nCite a evidência final, sem omitir esta condição.";
             var result = await runner.SubmitAsync(project.Id, session.Id,
-                "Inspecione o código C#", "team:" + team.Id);
+                fullGoal, "team:" + team.Id);
             Assert.Equal(WebTaskState.Reviewed, result.State);
             Assert.Equal(2, calls.Count);
             Assert.Equal(producer.Id,
@@ -79,6 +81,7 @@ public sealed class R4IndependentTeamReviewTests
                 calls[1][Array.IndexOf(calls[1], "--goal") + 1]);
             Assert.Contains("Inspecione o código C#",
                 calls[1][Array.IndexOf(calls[1], "--goal") + 1]);
+            Assert.Contains(fullGoal, calls[1][Array.IndexOf(calls[1], "--goal") + 1]);
             Assert.DoesNotContain("--allow-create", calls[0]);
             Assert.DoesNotContain("--allow-create", calls[1]);
             Assert.DoesNotContain("--use-history", calls[1]);
