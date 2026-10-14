@@ -190,6 +190,7 @@ public sealed partial class MainView : Grid
         World.RegionHeld += region => { if (!Dialogs.IsOpen) _ = EditRegionAsync(region); };
         World.RegionTapped += region => { if (!Dialogs.IsOpen && World.Tool is null) BeginRegionShape(region); };
         RestoreTouchDebug();
+        WireSplit();
     }
 
     public WorldView World { get; }

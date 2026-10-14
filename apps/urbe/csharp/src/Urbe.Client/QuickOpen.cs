@@ -352,6 +352,9 @@ public sealed class SearchFeature
         Register("pages.home", "Páginas", "Páginas", view.ShowPages);
         Register("workspace.save", "Salvar workspace", "Workspace", () => _ = view.Editor.SaveAsync(), () => view.Editor.IsVisible);
         Register("ui.find.open", "Localizar e substituir", "Editor", view.Editor.FindBar.Open, () => view.Editor.IsVisible);
+        Register("editor.split.open", "Abrir em painel dividido", "Editor", () => _ = view.ChooseSplitAsync());
+        Register("editor.split.close", "Fechar painel dividido", "Editor", view.CloseSplit, () => view.SplitState.Enabled);
+        Register("editor.split.swap", "Trocar painéis", "Editor", view.SwapSplit, () => view.SplitState.Enabled);
 
         // document.addEventListener('keydown'): on the top level, so it works with nothing focused too
         void Hook()

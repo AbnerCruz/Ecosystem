@@ -51,6 +51,12 @@ public sealed class EditorOverlay : Grid
     public bool SaveOnClose { get; set; }
     public bool HasChanges => _note is not null && !string.Equals(Editor.Text, _savedContent, StringComparison.Ordinal);
     public event Func<CityNote, Task>? SaveRequested;
+
+    /// <summary>The split pane (editor.split): another note, read only, beside this one.</summary>
+    public SplitPane Split { get; } = new();
+
+    /// <summary>state.ratio: the editor's share of the width (.25–.75; the pane gets the rest).</summary>
+    public double SplitRatio { get; set; } = .5;
     public EditorMode Mode { get; private set; } = EditorMode.Visual;
     /// <summary>"Abrir notas no modo" (Personalização → editor.modoInicial): Visual unless "texto".</summary>
     public bool StartInVisual { get; set; } = true;
@@ -181,8 +187,14 @@ public sealed class EditorOverlay : Grid
         _visualScroll = Column(_visual);
         // #mathDock: the formula bar of Fonte, over the bottom of the text
         MathBar = new MathDock(Editor, () => Mode == EditorMode.Fonte && IsVisible);
-        var body = new Grid { Children = { _sourceScroll, _visualScroll, MathBar, Context } };
-        body.SizeChanged += (_, e) => { MathBar.Place(e.NewSize.Width); Context.Place(e.NewSize.Width); };
+        var text = new Grid { Children = { _sourceScroll, _visualScroll, MathBar, Context } };
+        text.SizeChanged += (_, e) => { MathBar.Place(e.NewSize.Width); Context.Place(e.NewSize.Width); };
+        // #urbeSplitPane: another note beside this one, (1 - ratio) of the width (editor/split-ui.js)
+        var body = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+        body.Children.Add(text);
+        SetColumn(Split, 1);
+        body.Children.Add(Split);
+        body.SizeChanged += (_, e) => Split.Width = Math.Round(e.NewSize.Width * (1 - SplitRatio));
         Context.LineChosen += GoToLine;
         // the pinned reference above the text, up to 40 % of the height, with its own scroll (DEC-0045, UC-39)
         var bodyHost = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*") };

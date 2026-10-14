@@ -1,0 +1,81 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-urbe-editor-split",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T20:19:16Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "83d86e80",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/563",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/SplitPane.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Split.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/QuickOpen.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/SplitUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261014-urbe-editor-split.json"
+  ],
+  "work_completed": [
+    "Painel dividido do editor (editor/split.js + split-ui.js): Abrir em painel dividido (escolha da nota ao lado), Fechar painel dividido e Trocar painéis; a nota secundária aparece só leitura ao lado do editor e acompanha seus salvamentos."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.Split_ShowsAnotherNoteBesideTheEditor",
+      "result": "passed",
+      "evidence": "Abrir ao lado lista as outras notas (não a aberta); a escolhida aparece no painel com metade da largura; ⇄ troca primária e secundária; × fecha. Captura native-editor-split.png. Os 24 testes do editor (abas, localizar, fórmula, fixados, marcas) continuam passando."
+    },
+    {
+      "kind": "human",
+      "check": "Painel dividido no Android e no Windows",
+      "result": "not-applicable",
+      "evidence": "Largura e leitura em telas reais (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/SplitPane.cs"
+    }
+  ],
+  "known_issues": [
+    "Como na 1.8.4, Trocar painéis só troca o estado (o editor continua na mesma nota) e não há arrasto para mudar a proporção."
+  ],
+  "blockers": [],
+  "next_actions": [],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/src/editor/split.js",
+    "apps/urbe/src/editor/split-ui.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-013",
+      "evidence": "Porte do comportamento da 1.8.4, sem regra nova."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação no aparelho pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "editor-split",
+      "status": "product-specific",
+      "rationale": "Editor do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Interface do editor; só leitura."
+  }
+}
