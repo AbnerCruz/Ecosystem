@@ -1,0 +1,91 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-p6-5-android-launch-diagnostic",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T23:09:16Z",
+  "agent": {
+    "id": "codex-p6-5-android-launch-diagnostic",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "fix/ecosystem-ai-android-startup-diagnostic-20261014",
+  "base_commit": "a8c8e652f1329555d15df941931753142f1ab27e",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Android/MainActivity.cs",
+    "apps/ecosystem-ai/docs-r4-android-native.md",
+    "docs/governance/handoffs/HO-20261014-p6-5-android-launch-diagnostic.json"
+  ],
+  "work_completed": [
+    "A Activity agora protege toda a inicialização com captura de exceção; o comportamento normal permanece inalterado.",
+    "Falha ao abrir o catálogo ou preparar a tela mostra um diagnóstico local com tipo da exceção e fingerprint curto derivado de tipo/HResult/stack.",
+    "O diagnóstico não exibe mensagem, caminho de arquivo, conversa, token ou dados do provider; não tenta reparar, migrar ou apagar dados."
+  ],
+  "verification": [
+    {
+      "check": "Build Android e testes do Product via CI",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando workflows do PR; o host local desta sessão não tem .NET SDK, Android SDK, adb ou dispositivo.",
+      "tested_commit": "445093de38671658bd9d4b83dae641360c4f9b20"
+    },
+    {
+      "check": "Abrir o APK diagnóstico no moto g32 Android 13",
+      "kind": "human",
+      "result": "pending",
+      "evidence": "O proprietário informou que o APK anterior instala, mas a Activity fecha imediatamente. Este incremento busca exibir um código de diagnóstico; requer novo APK integrado para confirmar.",
+      "object": "https://github.com/AbnerCruz/Ecosystem/actions",
+      "critical": true,
+      "tested_commit": "445093de38671658bd9d4b83dae641360c4f9b20"
+    }
+  ],
+  "known_issues": [
+    "A causa exata do fechamento não foi confirmada sem stack trace do aparelho. Esta alteração evita a saída silenciosa somente quando a falha ocorre durante OnCreate; uma falha nativa anterior à Activity ainda requer logcat."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar CI e integração, baixar o APK deste incremento e testar a abertura no moto g32.",
+    "Se o diagnóstico aparecer, registrar apenas o tipo e código; então corrigir a causa específica e reconstruir."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/architecture/agent-runtime.md",
+    "apps/ecosystem-ai/docs-r4-android-native.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Handoff registra o sintoma observado, o escopo, os checks pendentes e os próximos passos rastreáveis."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação de aparelho é inferida de build/assinatura no CI; o teste deste APK permanece pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Não declara P6-5 concluída nem afirma que a causa do crash foi resolvida."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "ecosystem-ai-android-startup-diagnostics",
+      "status": "product-specific",
+      "rationale": "Diagnóstico de ciclo de vida vinculado à Activity do cliente Android; não cria contrato ou infraestrutura compartilhada."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Falhas ocorridas durante a inicialização passam a ser exibidas numa tela local sem alterar permissões, dados, configuração de gasto, identidade ou publicação do app."
+  }
+}
