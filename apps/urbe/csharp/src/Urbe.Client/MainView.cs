@@ -634,8 +634,8 @@ public sealed partial class MainView : Grid
     public string SaveDotState => _saveState;
 
     /// <summary>
-    /// settings.js: "Configurações" with what the native app has — Personalização, Tutorial, Exportar tudo (.zip),
-    /// Importar arquivos and Pasta no dispositivo (the vault folder). Organizar os bairros, Assistente, Páginas,
+    /// settings.js: "Configurações" with what the native app has — Personalização, Tutorial, Organizar os bairros,
+    /// Exportar tudo (.zip), Importar arquivos and Pasta no dispositivo (the vault folder). Assistente, Páginas,
     /// Diagnóstico de toques and Procurar atualização join as they are ported.
     /// </summary>
     public Task ShowSettingsAsync()
@@ -644,7 +644,8 @@ public sealed partial class MainView : Grid
         var items = new List<DialogItem>
         {
             new("Personalização", UrbeTheme.Icons.Brush, "Tema, cores, fontes, cidade, texturas, estilos e plugins", Run: () => { Customize.Open(); return Task.CompletedTask; }),
-            new("Tutorial", UrbeTheme.Icons.Book, "Guia completo de tudo o que o Urbe faz", Run: ShowTutorialMenuAsync)
+            new("Tutorial", UrbeTheme.Icons.Book, "Guia completo de tudo o que o Urbe faz", Run: ShowTutorialMenuAsync),
+            new("Organizar os bairros", UrbeTheme.Icons.Region, "Redesenha pastas e subpastas e reagrupa as casas", Run: () => ReorganizeAsync())
         };
         if (_vault is not null)
             items.Add(new("Exportar tudo (.zip)", UrbeTheme.Icons.Download, "Cópia de segurança de todas as notas", Run: () => ExportAsync()));

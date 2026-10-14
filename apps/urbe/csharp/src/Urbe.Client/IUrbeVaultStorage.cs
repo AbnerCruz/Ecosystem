@@ -291,6 +291,55 @@ public interface IUrbeVaultStorage
     Task SaveWorldAsync(string json, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException("Este armazenamento ainda não grava o mundo.");
 
+    /// <summary>
+    /// layout-guard.js writeBackup (REQ-043): before the city is reorganized, a copy of the map as it is now goes to
+    /// .urbe/backup/&lt;AAAAMMDD-HHMMSS&gt;-layout-layout/files/urbe/mapa.json, then its manifest.json (backup.js
+    /// create, the format workspace.restoreBackup reads). Only new files; nothing existing is touched. Hosts must
+    /// override it.
+    /// </summary>
+    Task<string> SaveLayoutBackupAsync(string mapJson, DateTimeOffset now, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não grava cópias de segurança do mapa.");
+
+    /// <summary>backup.js create(adapter, vault, ['.urbe/mapa.json'], {from:'layout', to:'layout', reason, contents}):
+    /// the folder (a "-2", "-3"… when one of that second exists), the copy and the manifest.</summary>
+    static (string Directory, (string Path, byte[] Bytes) Copy, (string Path, byte[] Bytes) Manifest) PlanLayoutBackup(
+        IReadOnlyList<VaultFile> files, string mapJson, DateTimeOffset now, string reason = "reorganizar")
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(mapJson);
+        var snapshot = VaultReader.Read(files);
+        if (snapshot.IsReadOnly || snapshot.IsMapReadOnly || snapshot.RecoveredFromJournal)
+            throw new InvalidOperationException("Vault protegido ou operação interrompida: escrita recusada.");
+        var paths = new HashSet<string>(files.Select(f => f.Path), StringComparer.OrdinalIgnoreCase);
+        var baseDir = ".urbe/backup/" + now.UtcDateTime.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture) + "-layout-layout";
+        var dir = baseDir;
+        for (int n = 2; paths.Contains(dir + "/manifest.json"); n++) dir = baseDir + "-" + n;
+        var copyPath = dir + "/files/urbe/mapa.json";
+        if (paths.Contains(copyPath)) throw new IOException("A cópia de segurança já existe: " + copyPath);
+        var bytes = System.Text.Encoding.UTF8.GetBytes(mapJson);
+        var manifest = new System.Text.Json.Nodes.JsonObject
+        {
+            ["version"] = 1,
+            ["from"] = "layout",
+            ["to"] = "layout",
+            ["reason"] = reason,
+            ["at"] = now.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", System.Globalization.CultureInfo.InvariantCulture),
+            ["files"] = new System.Text.Json.Nodes.JsonArray(new System.Text.Json.Nodes.JsonObject
+            {
+                ["path"] = ".urbe/mapa.json",
+                ["size"] = mapJson.Length,   // JS text.length
+                ["sha256"] = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes))
+            }),
+            ["absent"] = new System.Text.Json.Nodes.JsonArray()
+        };
+        // JSON.stringify(manifest, null, 1)
+        var text = manifest.ToJsonString(new System.Text.Json.JsonSerializerOptions
+        {
+            WriteIndented = true, IndentSize = 1, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        });
+        return (dir, (copyPath, bytes), (dir + "/manifest.json", System.Text.Encoding.UTF8.GetBytes(text)));
+    }
+
     /// <summary>The checks of a mundo.json rewrite: a JSON object with "versao" this app knows, never over a newer file.</summary>
     static (string Path, byte[] Bytes) PlanWorldWrite(IReadOnlyList<VaultFile> files, string json)
     {

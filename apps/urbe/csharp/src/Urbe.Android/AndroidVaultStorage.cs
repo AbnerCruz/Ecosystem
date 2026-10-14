@@ -552,9 +552,27 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     public Task SaveWorldAsync(string json, CancellationToken cancellationToken = default) =>
         SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanWorldWrite(files, json), "O mundo", cancellationToken);
 
+    /// <summary>layout-guard.js writeBackup: the copy of the map, then its manifest, each a new file written and verified
+    /// with every other file of the vault unchanged. Returns the backup's folder.</summary>
+    public async Task<string> SaveLayoutBackupAsync(string mapJson, DateTimeOffset now, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(mapJson);
+        string? dir = null;
+        (string Path, byte[] Bytes) manifest = default;
+        await SaveUrbeFileAsync(files =>
+        {
+            var plan = IUrbeVaultStorage.PlanLayoutBackup(files, mapJson, now);
+            dir = plan.Directory;
+            manifest = plan.Manifest;
+            return plan.Copy;
+        }, "A cópia de segurança do mapa", cancellationToken, createOnly: true);
+        await SaveUrbeFileAsync(_ => manifest, "O manifesto da cópia de segurança", cancellationToken, createOnly: true);
+        return dir!;
+    }
+
     /// <summary>One internal file of .urbe/ (the trash, the Tutorial's mark), planned on the files as they are now,
     /// written with verification of it and of every other file.</summary>
-    private async Task SaveUrbeFileAsync(Func<IReadOnlyList<VaultFile>, (string, byte[])> plan, string what, CancellationToken cancellationToken)
+    private async Task SaveUrbeFileAsync(Func<IReadOnlyList<VaultFile>, (string, byte[])> plan, string what, CancellationToken cancellationToken, bool createOnly = false)
     {
         await _gate.WaitAsync(cancellationToken);
         try
@@ -565,6 +583,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
             EnsureUnchanged(baseline, files);
             var (target, plannedBytes) = plan(files);
             var create = !baseline.ContainsKey(target);
+            if (createOnly && !create) throw new IOException(what + " já existe: " + target);
             await Task.Run(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();

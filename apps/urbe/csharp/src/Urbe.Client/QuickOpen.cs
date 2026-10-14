@@ -346,6 +346,8 @@ public sealed class SearchFeature
         Register("workspace.navigate.world", "Abrir cidade", "Navegação", () => { if (!view.Editor.IsVisible) view.Explorer.IsVisible = false; });
         Register("document.create", "Nova nota", "Documento", () => _ = view.CreateNoteAsync(null));
         Register("city.fit", "Enquadrar todas as notas", "Cidade", view.World.FitNotes);
+        Register("city.reorganize", "Organizar os bairros", "Cidade", () => _ = view.ReorganizeAsync());
+        Register("city.undoReorganize", "Desfazer reorganização", "Cidade", view.UndoReorganize, () => view.CanUndoReorganize);
         Register("ui.customize", "Personalização", "Aplicativo", () => view.Customize.Open());
         Register("workspace.save", "Salvar workspace", "Workspace", () => _ = view.Editor.SaveAsync(), () => view.Editor.IsVisible);
         Register("ui.find.open", "Localizar e substituir", "Editor", view.Editor.FindBar.Open, () => view.Editor.IsVisible);
