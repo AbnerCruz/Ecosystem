@@ -27,7 +27,8 @@ planejamento, pareceres e `LocalRunEventLog`. Não é outro Runtime.
 
 Somente **Enviar/Executar agora** chama modelos. Nenhuma execução em GET,
 idle, abertura do app ou criação de projeto. Ao sair da Activity, a execução
-ativa recebe cancelamento; não há serviço/background nesta prévia.
+ativa recebe cancelamento; não há serviço/background nesta prévia. Se a inicialização falhar,
+o app exibe um diagnóstico curto (tipo de erro e código), sem mostrar dados privados.
 
 ## Dados, custos e segredos
 
@@ -69,6 +70,8 @@ O versionCode de teste deriva do minuto UTC da build, permitindo atualizações
 entre os dois workflows; a versão pública deriva de VERSION e do run de CI.
 
 ## Verificação e gate
+
+Falhas de inicialização da Activity são capturadas numa tela local segura; o código de diagnóstico é derivado do tipo/stack sem exibir mensagem, caminho, conversa ou token. O app não tenta reparar nem apagar o catálogo automaticamente.
 
 `R4NativeProductTests` prova composição real com HTTP mockado, leitura de
 arquivo, journal/reabertura de catálogo, critério material de texto, recusa
