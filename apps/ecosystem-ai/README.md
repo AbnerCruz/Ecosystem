@@ -35,7 +35,7 @@ O Core não referencia pacote nem outro projeto, e os testes de arquitetura (T-1
 dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests
 ```
 
-Requer .NET SDK 10+. Não há provedor de modelo real, rede nem segredo: o R1 prova o runtime com provedores determinísticos.
+Requer .NET SDK 10+. A suíte usa provedores determinísticos/HTTP mockado, sem rede comercial ou segredo. As interfaces de execução configuram explicitamente o adapter de modelo existente.
 
 ## Coordenação local candidata
 
@@ -52,7 +52,7 @@ O Workspace consome o Core. A prova técnica P6-4 foi concluída com o **Host re
 O Product já pode gerar uma visualização HTML **estática, mobile-first e somente leitura**
 a partir do catálogo local, sem servidor nem modelo. Os projetos, sessões,
 mensagens e recibos são lidos do `EcosystemAi.ProjectStore`, não do Runtime.
-Essa projeção não encerra P6-5 nem substitui a futura UI interativa.
+Essa projeção é alternativa offline ao painel interativo; não encerra P6-5.
 
 Uso, segurança e limitações: [docs-r4-visual-snapshot.md](docs-r4-visual-snapshot.md).
 
@@ -90,8 +90,8 @@ dotnet run --project src/EcosystemAi.Cli -- --web-ui --catalog /dados/privados/c
 No mesmo dispositivo, abra `http://127.0.0.1:8765/` no navegador. A tela
 permite vincular pastas preexistentes como projetos, criar sessões, ler
 conversas, execuções e custos; grava diretamente no `LocalProjectStore` atual.
-Isso **não é APK nem acesso remoto** e ainda não habilita execução de agentes
-no navegador. Documentação e riscos: [docs-r4-local-web-ui.md](docs-r4-local-web-ui.md).
+Esse modo básico é somente gestão local. Para executar agentes no painel,
+use `--web-tasks` com configuração e orçamento explícitos; não é acesso remoto. Documentação e riscos: [docs-r4-local-web-ui.md](docs-r4-local-web-ui.md).
 
 ## Quadro de atividade real de agentes e tarefas (R4)
 
@@ -99,7 +99,7 @@ Com `--web-ui --catalog /dados/privados/catalogo --journal /dados/privados/runs`
 o painel local exibe agentes, tarefas, verificações, ferramentas e artefatos
 **de execuções reais**, reconstruídos diretamente do `RunState.Replay`.
 Não lê prompts/payloads nem cria motor, ledger ou armazenamento paralelo;
-ainda não permite disparar agentes pelo navegador. Ausências ou divergências de
+o modo de auditoria sozinho não dispara agentes. Ausências ou divergências de
 journal são sinalizadas, e a UI padrão sem `--journal` não é alterada.
 
 Uso, limites e testes: [docs-r4-live-task-board.md](docs-r4-live-task-board.md).
@@ -141,7 +141,7 @@ para integrar**. [Uso, segurança e limitações](docs-r4-web-task-execution.md)
 O painel local agora cadastra **agentes e equipes por projeto**, com produtor e
 revisor distintos. A execução supervisionada permite escolher um agente ou o
 produtor da equipe, usando o **mesmo Runner, modelo, orçamento e grants read-only**.
-A revisão de equipe não é automática nesta etapa. Os perfis são gravados em
+A revisão de equipe requer o opt-in `--web-review-teams`, descrito abaixo. Os perfis são gravados em
 `roster.json` ao lado do catálogo, sem alterar o schema de `catalog.json` v1.
 [Limites e testes](docs-r4-project-agents-teams.md).
 
@@ -192,6 +192,19 @@ Após autorização crítica da distribuição e CI verde, as releases de
 x64 e macOS Apple Silicon sem instalar o SDK .NET. Em PR são disponibilizados
 apenas artefatos de build; releases são criadas na `main` quando o workflow
 for integrado. O Runtime e o catálogo não mudam; a chave de API é configurada
-somente pelo operador. **Ainda não há APK Android** ou executáveis assinados.
+somente pelo operador. Os executáveis desktop não são assinados. O head Android e o canal de artefatos
+de teste estão descritos abaixo; nenhuma validação DEVICE é inferida do build.
 
 [Instruções de uso e limites](docs-r4-desktop-distribution.md).
+
+## Cliente Android nativo
+
+`src/EcosystemAi.Android` fornece projetos/conversas persistentes, agentes,
+equipes, planejamento, execução explícita com o mesmo Runtime, recibos e
+exportação `.md`, sem WebView/JavaScript. `EcosystemAi.Product` compõe o Host
+portátil sem ASP.NET; o Core continua sem Product, UI ou SDK de provedor.
+A chave é transitória e o agente só recebe leitura dos arquivos do projeto.
+
+[Uso, assinatura pública de teste, limites e roteiro DEVICE](docs-r4-android-native.md).
+O CI produz artefatos APK; disponibilidade de build é evidência do workflow,
+não prova de instalação, provider real ou encerramento da P6-5.

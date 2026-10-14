@@ -5,6 +5,7 @@
     <RootNamespace>EcosystemAi.Cli</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../EcosystemAi.Product/EcosystemAi.Product.csproj" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup>

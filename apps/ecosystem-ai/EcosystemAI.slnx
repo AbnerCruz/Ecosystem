@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/EcosystemAi.Product/EcosystemAi.Product.csproj" />
     <Project Path="src/AgentRuntime.Core/AgentRuntime.Core.csproj" />
     <Project Path="src/AgentWorkspace/AgentWorkspace.csproj" />
     <Project Path="src/AgentRuntime.Providers.ChatCompletions/AgentRuntime.Providers.ChatCompletions.csproj" />

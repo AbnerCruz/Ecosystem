@@ -1,0 +1,171 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-p6-r4-native-android",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T00:35:58.788775Z",
+  "agent": {
+    "id": "codex-p6-native-android",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-android-native-20261014",
+  "commit": null,
+  "pr": null,
+  "base_commit": "74d9f09519619adbe86cbd18a0c54a1b6d984439",
+  "files_changed": [
+    ".github/workflows/ecosystem-ai-android-preview.yml",
+    "apps/ecosystem-ai/docs-r4-android-native.md",
+    "apps/ecosystem-ai/src/EcosystemAi.Android/EcosystemAi.Android.csproj",
+    "apps/ecosystem-ai/src/EcosystemAi.Android/MainActivity.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Android/Properties/AndroidManifest.xml",
+    "apps/ecosystem-ai/src/EcosystemAi.Android/Resources/drawable/app_icon.xml",
+    "apps/ecosystem-ai/src/EcosystemAi.Android/Resources/values/styles.xml",
+    "apps/ecosystem-ai/src/EcosystemAi.Product/EcosystemAi.Product.csproj",
+    "apps/ecosystem-ai/src/EcosystemAi.Product/ProductConversationContext.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Product/ProductExecutionHost.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Product/ProductReviewRequest.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Product/ProductTaskRequest.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4NativeProductTests.cs",
+    "apps/ecosystem-ai/tools/build-android-preview.sh",
+    "apps/ecosystem-ai/tools/ecosystem-ai-preview.keystore",
+    "apps/ecosystem-ai/tools/ecosystem-ai-preview.keystore.sha256",
+    "docs/governance/handoffs/HO-20261014-p6-r4-native-android.json",
+    ".github/workflows/ecosystem-ai-ci.yml",
+    "apps/ecosystem-ai/EcosystemAI.slnx",
+    "apps/ecosystem-ai/README.md",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliPlannedTaskRequest.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliSessionContext.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebTaskRunner.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/EcosystemAi.Cli.csproj",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/AgentRuntime.Tests.csproj"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: PR #555 integrado na main 74d9f095; Ecosystem AI tinha somente CLI/painel localhost e não tinha head Android.",
+    "Cliente Android C# nativo com projetos/conversas no catálogo v1 existente, importação textual via SAF com limites e sem overwrite, agentes/equipes, tarefas planejadas, resposta/pareceres/recibos e exportação .md.",
+    "EcosystemAi.Product compõe o mesmo AgentRunner/Workspace/ledger/provider/store/journal, sem ASP.NET no Android; funções de contexto, solicitação e revisão usadas pela CLI continuam com uma autoridade local ao Product.",
+    "Verificação independente de trecho de resposta, recusa de critérios desconhecidos, quotas conservadoras, cancelamento ao sair da Activity, chave transitória redigida e fora de persistência.",
+    "Workflow de artefatos APK arm64 e assinatura de desenvolvimento pública estável; não publica release nem alega teste físico."
+  ],
+  "verification": [
+    {
+      "check": "Build portable Product + CLI .NET 10",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Build EcosystemAI.slnx local: 0 warnings e 0 errors."
+    },
+    {
+      "check": "Runtime/Product/ProjectStore regression tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "227/227 AgentRuntime.Tests e 11/11 ProjectStore; inclui 6 novos testes com HTTP mockado e ferramentas/journal reais."
+    },
+    {
+      "check": "Native C# Android bindings compile",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Compilação da MainActivity contra Mono.Android/Java.Interop API36 no projeto temporário net10.0: 0 warnings/errors; não substitui APK/device."
+    },
+    {
+      "check": "Native Android APK build/signature",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "O SDK Android/JDK completo não está disponível localmente; compilação C# contra bindings verificada separadamente. O workflow ecosystem-ai-android-preview produzirá/verificará o APK no PR."
+    },
+    {
+      "check": "Consistency e estado combinado",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks locais com histórico completo, bash -n do script e sintaxe YAML passaram. CI combinado ainda obrigatório; snapshot de Issues é do CI."
+    },
+    {
+      "check": "DEVICE A-F Android e provider real",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/ecosystem-ai/docs-r4-android-native.md",
+      "evidence": "Roteiro A-F documentado para o APK exato: instalação, persistência/reabertura, provider real, custos, critérios/equipe, lifecycle, exportação e atualização; ainda não executado."
+    }
+  ],
+  "known_issues": [
+    "A prévia não integra ChangeSets; presença/trecho exato não provam verdade, qualidade ou cumprimento de critérios arbitrários.",
+    "Não há retomada automática após processo morto nem provider configurado pelo agente; token e autorização são transitórios.",
+    "Importação é uma cópia textual de até 64 KiB no projeto privado, não adapter de pasta externa inteiro.",
+    "A chave de assinatura é pública e exclusiva de desenvolvimento; não constitui canal de produção/IPC confiável.",
+    "P6-5 permanece aberta até critérios e evidências completos; a Fase7 é auditada separadamente."
+  ],
+  "blockers": [
+    "Integração crítica: novo head Android, INTERNET, assinatura pública de prévia e workflow; política exige autorização proprietária, sem simular label/evento do usuário."
+  ],
+  "next_actions": [
+    "Executar/verificar APK no CI; corrigir qualquer erro antes de pedir autorização crítica.",
+    "Disponibilizar APK exato para DEVICE A-F, sem inferir aprovação pelo build.",
+    "Integrar pelo integrador governado com autorização do proprietário; reconciliar fase somente com evidência."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/architecture/platform-execution.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-android-native.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Mesmos formatos Store/journal/ledger do Core; contexto/revisão/solicitação com autoridade única no Product."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nenhuma referência a outro Product ou Hub; novo head pertence ao Ecosystem AI."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #556, branch, CI e handoff auditáveis; sem execução invisível."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Acesso de agente read-only; token transitório; gasto/quotas explícitos, sem operação ociosa ou externa automática."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE/provider real pendentes explícitos; APK não é prova de validação física."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review, sem encerrar P6-5 antes das evidências/integração."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem promoção transversal: biblioteca Product local consumida pelas interfaces do próprio Product."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "ecosystem-ai-product-execution-host",
+      "status": "product-specific",
+      "rationale": "Composição das interfaces CLI/Android do mesmo Product; não promove Agent Runtime nem referencia outro Product."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "security",
+      "distribution",
+      "control-plane"
+    ],
+    "reason": "Novo head/apk Android com INTERNET e assinatura pública estável, arquivos de identidade e workflow de build. Nenhuma chave privada de produção ou nova autoridade de Runtime."
+  },
+  "cost": null
+}
