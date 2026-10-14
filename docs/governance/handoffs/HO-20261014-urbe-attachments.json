@@ -27,14 +27,17 @@
     "apps/urbe/docs/csharp/ROADMAP.md",
     "docs/governance/handoffs/HO-20261014-urbe-attachments.json",
     "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
-    "apps/urbe/csharp/src/Urbe.Client/HouseMoves.cs"
+    "apps/urbe/csharp/src/Urbe.Client/HouseMoves.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/RegionShapeUiTests.cs"
   ],
   "work_completed": [
     "Anexos como na 1.8.4 (menuEntradaExplorer): Renomear (renomearAsset, extensão mantida), Mover (moverAsset; prédio de um arquivo vai junto) e Excluir (removerAsset, com confirmação), pelo ⋯ da prévia.",
     "IUrbeVaultStorage.MoveFileAsync e DeleteFileAsync (desktop e Android): só anexos, nunca nota/documento de texto nem .urbe; verificação do arquivo e de que as notas não mudaram.",
     "Core: AttachmentBuilding, ApplyAttachmentMove e RemoveAttachment atualizam o prédio e o mapa.",
     "Segurar anexo no Explorer abre o menu (Visualizar, Renomear, Mover, Excluir); divergência registrada: a 1.8.4 final só selecionava (DEC-0045, opções faltando).",
-    "Agrupar em nova pasta (v20AgruparSelecao) na barra de seleção: bairro novo dimensionado para os itens, pasta criada e notas movidas com casa e arquivo."
+    "Agrupar em nova pasta (v20AgruparSelecao) na barra de seleção: bairro novo dimensionado para os itens, pasta criada e notas movidas com casa e arquivo.",
+    "Desenhar região nova adota as notas da raiz sob ela, movendo os arquivos (absorverConstrucoesDaRaiz)."
   ],
   "verification": [
     {
@@ -54,7 +57,6 @@
   "known_issues": [],
   "blockers": [],
   "next_actions": [
-    "Desenhar região nova adotar as casas da raiz (como a forma do bairro).",
     "Excluir seleção com anexos (v20ExcluirContexto)."
   ],
   "decisions_required": [],

@@ -1,4 +1,5 @@
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Urbe.Client;
 using Urbe.Client.World;
 using Urbe.Core;
@@ -58,6 +59,40 @@ public sealed partial class HeadlessUiTests
                 Assert.False(File.Exists(Path.Combine(vault, "Comece.md")));
                 await UntilMapSaved(view);
                 Assert.Contains("\"Bairro/Comece.md\"", File.ReadAllText(Path.Combine(vault, ".urbe", "mapa.json")));
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+}
+
+/// <summary>absorverConstrucoesDaRaiz on a drawn region: the root note under it joins the new folder.</summary>
+public sealed partial class HeadlessUiTests
+{
+    [Fact]
+    public async Task DrawnRegion_AdoptsTheRootNoteUnderIt() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var (view, window, vault, dir) = await OpenCreateVault();
+            try
+            {
+                var city = view.World.City!;
+                var comece = city.Buildings.Single(b => b.Path == "Comece.md");
+                await view.BeginDrawRegionAsync();
+                var tool = Assert.IsType<RegionDrawTool>(view.World.Tool);
+                tool.Down(comece.X - 3, comece.Y - 3);
+                tool.Move(comece.X + comece.W + 2, comece.Y + comece.H + 2);
+                tool.Up(comece.X + comece.W + 2, comece.Y + comece.H + 2);
+                for (int i = 0; i < 40 && !view.Dialogs.IsOpen; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.True(view.Dialogs.IsOpen, view.LifeNoticeText);
+                window.UpdateLayout();
+                view.Dialogs.GetVisualDescendants().OfType<Avalonia.Controls.TextBox>().Single().Text = "Praça";
+                ClickButtonWithText(view.Dialogs, "Criar");
+                for (int i = 0; i < 200 && comece.Path != "Praça/Comece.md"; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.Equal("Praça/Comece.md", comece.Path);
+                Assert.True(File.Exists(Path.Combine(vault, "Praça", "Comece.md")));
+                Assert.False(File.Exists(Path.Combine(vault, "Comece.md")));
+                Assert.Contains("entraram nela", view.LifeNoticeText);
                 window.Close();
                 return true;
             }
