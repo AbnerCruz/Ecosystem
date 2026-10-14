@@ -1,0 +1,73 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-urbe-editor-tabs",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T17:54:45Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "83d86e80",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/563",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTabsUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261014-urbe-editor-tabs.json"
+  ],
+  "work_completed": [
+    "Abas do editor como na 1.8.4 (v21OpenTabs, v21TouchTab, v21RenderTabs, v22Single): cada nota aberta vira aba; barra a partir de duas; tocar troca salvando a nota aberta; × fecha (a última restante abre; sem abas, fecha o editor); renomear leva a aba."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.EditorTabs_OpenSwitchAndCloseLikeThe184",
+      "result": "passed",
+      "evidence": "Duas abas; trocar grava Bairro/Um.md editado; fechar a aberta abre a restante; fechar a última fecha o editor; captura native-editor-tabs.png."
+    },
+    {
+      "kind": "human",
+      "check": "Abas no editor do Android",
+      "result": "not-applicable",
+      "evidence": "Toque e largura do telefone (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Renomear, mover e excluir anexos (renomearAsset/moverAsset/removerAsset)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Abas pendentes de aparelho."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "editor-tabs",
+      "status": "product-specific",
+      "rationale": "Editor do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Só interface do editor; grava pela mesma rotina de salvar nota."
+  }
+}

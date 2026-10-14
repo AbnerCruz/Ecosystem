@@ -768,7 +768,23 @@ public sealed partial class CustomizePanel
             ["aprovado"] = ("Aprovado · não executa no nativo", "warn"), ["desligado"] = ("Desligado", ""), ["mudou"] = ("Código mudou", "warn"), ["seguro"] = ("Modo seguro", "warn")
         };
         _body.Children.Add(Banner("warn", "Plugins são programas: podem ler e mudar suas notas. Só ligue código que você entende ou que veio de alguém de confiança. Se o arquivo mudar, o Urbe desliga o plugin até você revisar."));
-        _body.Children.Add(Banner("warn", "O app nativo não executa plugins (são JavaScript com acesso total). Aqui você vê, aprova e cria os arquivos; a execução continua na versão web (1.8.4)."));
+        // the native plugins (ADD-0021): each declares what it may do, and nothing else is allowed
+        if (NativePlugins?.Invoke() is { Count: > 0 } natives)
+        {
+            var rows = new List<Control>();
+            foreach (var (m, on) in natives)
+            {
+                var perms = string.Join(" · ", m.Permissions.Select(x => PluginPermissions.Labels.GetValueOrDefault(x, x)));
+                rows.Add(Toggle(on && !Customization.SafeMode, m.Name + " v" + m.Version, m.Description + " Pode: " + perms + ".", v =>
+                {
+                    SetNativePlugin?.Invoke(m.Id, v);
+                    Render();
+                    return Task.CompletedTask;
+                }));
+            }
+            _body.Children.Add(Block("Plugins nativos", [.. rows]));
+        }
+        _body.Children.Add(Banner("warn", "Os plugins .js da 1.8.4 não rodam no app nativo (DEC-0044): aqui você vê, aprova e cria os arquivos. Os plugins nativos acima rodam no app."));
         var items = new List<Control>();
         var list = Customization.Plugins();
         if (list.Count == 0) items.Add(Help("Nenhum plugin nesta cidade. Crie um a partir de um modelo e veja o código funcionando."));

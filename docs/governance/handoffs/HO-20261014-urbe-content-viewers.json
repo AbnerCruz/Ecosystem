@@ -1,0 +1,100 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-urbe-content-viewers",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T17:02:06Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "83d86e80",
+  "commit": "db123436",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/563",
+  "files_changed": [
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/addenda/ADD-0023-tudo-no-ecosystem-e-conteudo-dentro-do-urbe.md",
+    "docs/governance/decisions.json",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/migration/import-plan.md",
+    "apps/urbe/csharp/src/Urbe.Client/ContentViewers.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidContentViewers.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/MainActivity.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ContentViewerUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261014-urbe-content-viewers.json"
+  ],
+  "work_completed": [
+    "ADD-0023/DEC-0046 registrado com as palavras do proprietário: tudo no Ecosystem (AGENTS.md sem a instrução de sincronizar espelhos) e conteúdo HTML/PDF/mídia dentro do Urbe; ADR-0032 emendado.",
+    "ContentViewers (Client): contrato reutilizável de visualizador de conteúdo por plataforma; PdfPagesView desenha só as páginas próximas da tela e fecha o documento com o painel.",
+    "Android: WebView do sistema isolada para HTML (sem arquivo/conteúdo, sem ponte, sem navegar), PdfRenderer para PDF e VideoView com controles para áudio e vídeo direto do vault (AndroidVaultStorage.DocumentOfAsync, só leitura).",
+    "Prévia de arquivo: HTML como Página ou Fonte; PDF, áudio e vídeo dentro do painel; Abrir em outro app só como extra."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.ContentViewer_HtmlAsAPageOrItsSourceAndPdfPagesInsideThePanel e FilePreview_*",
+      "result": "passed",
+      "evidence": "Visualizador pedido com caminho, tipo e bytes; Fonte sem novo pedido; áudio sem bytes; PDF de 30 páginas desenha 0 e 1, ao rolar desenha 29 e libera 0; documento fechado ao fechar; captura native-content-pdf.png. Achado: subclasse de ScrollViewer sem StyleKeyOverride não rolava."
+    },
+    {
+      "kind": "human",
+      "check": "HTML, PDF, áudio e vídeo dentro do Urbe no Android",
+      "result": "not-applicable",
+      "evidence": "WebView, PdfRenderer e player só se provam no aparelho (NN-017); a compilação Android é provada pelo CI.",
+      "object": "apps/urbe/csharp/src/Urbe.Android/AndroidContentViewers.cs",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Desktop: HTML mostra a fonte e PDF/áudio/vídeo ainda pedem Abrir até o visualizador do Windows (UC-24).",
+    "Build Android local indisponível (workload e nuget.org bloqueados pelo proxy); o CI valida."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "DEVICE: abrir HTML, PDF, áudio e vídeo pela cidade e pelo Explorer no Android.",
+    "Reusar ContentViewers nas páginas e composições (UC-35/UC-45).",
+    "Editar nome, cor e descrição do bairro (openRegionEditDialog)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "Ordem do proprietário persistida em ADD-0023/DEC-0046 antes da implementação."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "WebView sem acesso a arquivos/conteúdo nem ponte; leitura do vault só do documento aberto."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Visualizadores Android pendentes de aparelho."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "content-viewers",
+      "status": "product-specific",
+      "rationale": "Painéis de conteúdo do Urbe; outros painéis HTML do Urbe vão reutilizar."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Muda AGENTS.md (constituição dos agentes) e acrescenta leitura de documentos do vault (AndroidVaultStorage)."
+  }
+}

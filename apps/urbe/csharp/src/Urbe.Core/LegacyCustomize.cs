@@ -375,6 +375,7 @@ public static class LegacyCustomize
             case JsonValue jv when jv.TryGetValue<string>(out var s): return StringToNumber(s);
             case JsonValue jv when jv.TryGetValue<double>(out var d): return d;
             case JsonValue jv when jv.TryGetValue<int>(out var i): return i;
+            case JsonValue jv when jv.TryGetValue<long>(out var l): return l;
             default: return double.NaN;
         }
     }

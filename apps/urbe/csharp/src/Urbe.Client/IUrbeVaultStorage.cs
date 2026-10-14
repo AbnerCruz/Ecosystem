@@ -46,6 +46,72 @@ public interface IUrbeVaultStorage
         Task.FromResult<IReadOnlyList<string>>([]);
 
     /// <summary>
+    /// Renames or moves ONE attachment of the vault (renomearAsset / moverAsset): a file that is not a note or text
+    /// document the Urbe reads (those move with <see cref="MoveTextFileAsync"/>), never inside <c>.urbe</c>. Nothing with
+    /// the new name may exist; the folder of <paramref name="to"/> must exist; afterwards the file is there with the same
+    /// size and gone from where it was, and the notes are untouched. A host that cannot move files throws.
+    /// </summary>
+    Task MoveFileAsync(string from, string to, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não move anexos.");
+
+    /// <summary>
+    /// Deletes ONE attachment of the vault (removerAsset: "O arquivo será apagado do vault", after the person confirms).
+    /// Only a file that is not a note or text document the Urbe reads, never inside <c>.urbe</c>; the notes are
+    /// untouched. A host that cannot delete files throws.
+    /// </summary>
+    Task DeleteFileAsync(string path, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não exclui anexos.");
+
+    /// <summary>An attachment path the Urbe may move or delete: safe, outside .urbe, and not a text document it reads.</summary>
+    static void EnsureAttachmentPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || path.StartsWith('/') || path.Contains('\\') || path.Contains(':'))
+            throw new InvalidDataException("Caminho inválido no vault: " + path);
+        var parts = path.Split('/');
+        if (parts.Any(s => s.Length == 0 || s is "." or ".." || s.StartsWith('.') || s.EndsWith(' ')))
+            throw new InvalidOperationException("Caminho interno ou inseguro no vault: " + path);
+        if (TextDocument(path)) throw new InvalidOperationException("Notas e documentos de texto não são anexos: " + path);
+    }
+
+    /// <summary>The documents the Urbe reads as text (they belong to the vault's baseline, not to the attachments).</summary>
+    static bool TextDocument(string path) =>
+        new[] { ".md", ".markdown", ".txt", ".json", ".yaml", ".yml", ".html", ".htm", ".css", ".js", ".mjs", ".csv" }
+            .Contains(System.IO.Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Renames ONE folder of the vault (a neighbourhood renamed: openRegionEditDialog → confirmRegion), keeping it in
+    /// the same parent: <paramref name="from"/> and <paramref name="to"/> differ only in the last name. With the same
+    /// safeguards as moving a note: nothing changed outside the Urbe since the open, nothing with the new name already
+    /// there, and afterwards every file read back identical under the new path. A host that cannot rename throws.
+    /// </summary>
+    Task RenameFolderAsync(string from, string to, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não renomeia pastas.");
+
+    /// <summary>The parent of both paths must be the same, and both must be safe folder paths.</summary>
+    static void EnsureFolderRename(string from, string to)
+    {
+        EnsureWritableFolderPath(from);
+        EnsureWritableFolderPath(to);
+        static string Parent(string p) => p.Contains('/') ? p[..p.LastIndexOf('/')] : "";
+        if (!string.Equals(Parent(from), Parent(to), StringComparison.Ordinal))
+            throw new InvalidOperationException("Renomear pasta não muda a pasta de lugar: " + from + " → " + to);
+        if (string.Equals(from, to, StringComparison.Ordinal)) throw new InvalidOperationException("O nome é o mesmo: " + from);
+    }
+
+    /// <summary>The baseline after a folder rename: every file under <paramref name="from"/> must now be under
+    /// <paramref name="to"/> with the same bytes, and nothing else may have changed.</summary>
+    static void EnsureRenamed(IReadOnlyDictionary<string, VaultFile> baseline, IReadOnlyDictionary<string, VaultFile> observed, string from, string to)
+    {
+        if (observed.Count != baseline.Count) throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
+        foreach (var pair in baseline)
+        {
+            var key = pair.Key.StartsWith(from + "/", StringComparison.OrdinalIgnoreCase) ? to + pair.Key[from.Length..] : pair.Key;
+            if (!observed.TryGetValue(key, out var actual) || !actual.Bytes.Span.SequenceEqual(pair.Value.Bytes.Span))
+                throw new IOException("Verificação pós-gravação detectou divergência em: " + key);
+        }
+    }
+
+    /// <summary>
     /// One file of the vault for its preview (openFilePreview → blobDoArquivo): its size and, when it is at most
     /// <paramref name="maxBytes"/>, its bytes. Null when the file is not there (the 1.8.4's "Arquivo não encontrado").
     /// Read only; never follows a link out of the folder. A host that cannot read files returns null.
@@ -224,6 +290,55 @@ public interface IUrbeVaultStorage
     /// </summary>
     Task SaveWorldAsync(string json, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException("Este armazenamento ainda não grava o mundo.");
+
+    /// <summary>
+    /// layout-guard.js writeBackup (REQ-043): before the city is reorganized, a copy of the map as it is now goes to
+    /// .urbe/backup/&lt;AAAAMMDD-HHMMSS&gt;-layout-layout/files/urbe/mapa.json, then its manifest.json (backup.js
+    /// create, the format workspace.restoreBackup reads). Only new files; nothing existing is touched. Hosts must
+    /// override it.
+    /// </summary>
+    Task<string> SaveLayoutBackupAsync(string mapJson, DateTimeOffset now, string reason = "reorganizar", CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não grava cópias de segurança do mapa.");
+
+    /// <summary>backup.js create(adapter, vault, ['.urbe/mapa.json'], {from:'layout', to:'layout', reason, contents}):
+    /// the folder (a "-2", "-3"… when one of that second exists), the copy and the manifest.</summary>
+    static (string Directory, (string Path, byte[] Bytes) Copy, (string Path, byte[] Bytes) Manifest) PlanLayoutBackup(
+        IReadOnlyList<VaultFile> files, string mapJson, DateTimeOffset now, string reason = "reorganizar")
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(mapJson);
+        var snapshot = VaultReader.Read(files);
+        if (snapshot.IsReadOnly || snapshot.IsMapReadOnly || snapshot.RecoveredFromJournal)
+            throw new InvalidOperationException("Vault protegido ou operação interrompida: escrita recusada.");
+        var paths = new HashSet<string>(files.Select(f => f.Path), StringComparer.OrdinalIgnoreCase);
+        var baseDir = ".urbe/backup/" + now.UtcDateTime.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture) + "-layout-layout";
+        var dir = baseDir;
+        for (int n = 2; paths.Contains(dir + "/manifest.json"); n++) dir = baseDir + "-" + n;
+        var copyPath = dir + "/files/urbe/mapa.json";
+        if (paths.Contains(copyPath)) throw new IOException("A cópia de segurança já existe: " + copyPath);
+        var bytes = System.Text.Encoding.UTF8.GetBytes(mapJson);
+        var manifest = new System.Text.Json.Nodes.JsonObject
+        {
+            ["version"] = 1,
+            ["from"] = "layout",
+            ["to"] = "layout",
+            ["reason"] = reason,
+            ["at"] = now.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", System.Globalization.CultureInfo.InvariantCulture),
+            ["files"] = new System.Text.Json.Nodes.JsonArray(new System.Text.Json.Nodes.JsonObject
+            {
+                ["path"] = ".urbe/mapa.json",
+                ["size"] = mapJson.Length,   // JS text.length
+                ["sha256"] = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes))
+            }),
+            ["absent"] = new System.Text.Json.Nodes.JsonArray()
+        };
+        // JSON.stringify(manifest, null, 1)
+        var text = manifest.ToJsonString(new System.Text.Json.JsonSerializerOptions
+        {
+            WriteIndented = true, IndentSize = 1, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        });
+        return (dir, (copyPath, bytes), (dir + "/manifest.json", System.Text.Encoding.UTF8.GetBytes(text)));
+    }
 
     /// <summary>The checks of a mundo.json rewrite: a JSON object with "versao" this app knows, never over a newer file.</summary>
     static (string Path, byte[] Bytes) PlanWorldWrite(IReadOnlyList<VaultFile> files, string json)

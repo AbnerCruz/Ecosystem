@@ -1,0 +1,92 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-urbe-attachments",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T17:58:58Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "83d86e80",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/563",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCityCreate.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AttachmentActionsUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261014-urbe-attachments.json",
+    "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/HouseMoves.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/RegionShapeUiTests.cs"
+  ],
+  "work_completed": [
+    "Anexos como na 1.8.4 (menuEntradaExplorer): Renomear (renomearAsset, extensão mantida), Mover (moverAsset; prédio de um arquivo vai junto) e Excluir (removerAsset, com confirmação), pelo ⋯ da prévia.",
+    "IUrbeVaultStorage.MoveFileAsync e DeleteFileAsync (desktop e Android): só anexos, nunca nota/documento de texto nem .urbe; verificação do arquivo e de que as notas não mudaram.",
+    "Core: AttachmentBuilding, ApplyAttachmentMove e RemoveAttachment atualizam o prédio e o mapa.",
+    "Segurar anexo no Explorer abre o menu (Visualizar, Renomear, Mover, Excluir); divergência registrada: a 1.8.4 final só selecionava (DEC-0045, opções faltando).",
+    "Agrupar em nova pasta (v20AgruparSelecao) na barra de seleção: bairro novo dimensionado para os itens, pasta criada e notas movidas com casa e arquivo.",
+    "Desenhar região nova adota as notas da raiz sob ela, movendo os arquivos (absorverConstrucoesDaRaiz)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.Attachments_RenameMoveAndDeleteInTheVault, FilePreview_*, ContentViewer_*, GroupIntoFolder_MovesTheNotesIntoANewNeighbourhood; suíte completa 624/624 e 134/134",
+      "result": "passed",
+      "evidence": "foto.png → capa.jpg recusado; → capa.png com os mesmos bytes; → Bairro/capa.png; excluído; notas intactas; o armazenamento recusa mover/excluir Comece.md."
+    },
+    {
+      "kind": "human",
+      "check": "Renomear, mover e excluir anexos no Android",
+      "result": "not-applicable",
+      "evidence": "DocumentsContract.RenameDocument/MoveDocument/DeleteDocument dependem do provedor do aparelho (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Excluir seleção com anexos (v20ExcluirContexto)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-016",
+      "evidence": "Operações restritas a anexos; notas e .urbe recusados pelo armazenamento."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Provedores do Android pendentes de aparelho."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "attachment-actions",
+      "status": "product-specific",
+      "rationale": "Explorer do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Move e exclui arquivos do vault (dados do usuário) pela camada de armazenamento."
+  }
+}

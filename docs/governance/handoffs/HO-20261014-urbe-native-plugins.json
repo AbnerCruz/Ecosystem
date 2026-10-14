@@ -1,0 +1,96 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-urbe-native-plugins",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T18:44:06Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-20",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "83d86e80",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/563",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/NativePlugins.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PluginHost.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Plugins/ClockPlugin.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizePanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizePanel.Sections.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/NativePluginsUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261014-urbe-native-plugins.json",
+    "apps/urbe/csharp/src/Urbe.Client/QuickOpen.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.Customize.cs"
+  ],
+  "work_completed": [
+    "API nativa de plugins (ADD-0021): IUrbePlugin, PluginManifest com permissões, IPluginApi (avisos, botões, comandos, notas ler/escrever, eventos nota:aberta/nota:salva, painéis, dados no aparelho), deny-by-default e limpeza total ao desligar.",
+    "Host: ligar/desligar por aparelho, modo seguro desliga todos, falha ao ligar não deixa sobras.",
+    "Personalização → Plugins nativos com o que cada plugin pode fazer; aviso dos .js atualizado (não rodam no nativo, DEC-0044).",
+    "Relógio (UC-46) como primeiro plugin: hora, cronômetro e temporizador num painel sobre a cidade e o editor.",
+    "Comandos dos plugins entram na paleta (Abrir comandos) como plugin.<id>.<slug> em \"Plugin · nome\"; o Relógio registra \"Abrir relógio\"."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.NativePlugins_ClockRunsWithItsPermissionsAndOthersAreRefused",
+      "result": "passed",
+      "evidence": "Botão aparece ao ligar e some ao desligar e no modo seguro; temporizador de 5 min mostra 03:00 após 2 min e avisa ao terminar; minutos guardados no aparelho; plugin que lê notas sem permissão recebe UnauthorizedAccessException; captura native-plugin-clock.png. Suíte completa: Core 624/624, Client 136/137 antes de atualizar o texto esperado em Customize_AllSectionsRenderTheirControls (agora verde)."
+    },
+    {
+      "kind": "human",
+      "check": "Relógio e Plugins nativos no Android",
+      "result": "not-applicable",
+      "evidence": "Toque e tempo real no aparelho (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/Plugins/ClockPlugin.cs"
+    }
+  ],
+  "known_issues": [
+    "Plugins de terceiros (código fora do app) ainda não carregam; só os que vêm com o Urbe.",
+    "UC-46 adiantado em relação à fase do UC-35 por ser o consumidor real da API (NN-022)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validação do Relógio no aparelho (Issue #564)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-016",
+      "evidence": "Cada chamada da API exige a permissão do manifesto; deny-by-default."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "A API tem consumidor real (Relógio) e teste de consumidor."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Pendente de aparelho."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "native-plugin-api",
+      "status": "product-specific",
+      "rationale": "API de plugins do Urbe; extração só com segundo consumidor real (NN-022)."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Introduz modelo de execução de plugins (permissões, superfície de confiança) decidido em ADD-0021."
+  }
+}

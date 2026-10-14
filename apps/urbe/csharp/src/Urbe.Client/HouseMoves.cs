@@ -102,4 +102,39 @@ public sealed partial class MainView
         if (ReferenceEquals(World.Selected, house)) ShowHouse(house);
         ShowLifeNotice(region is not null ? "Movido para " + region.Name + "." : "Movido para a raiz.");
     }
+
+    /// <summary>
+    /// v20AgruparSelecao: at least two notes; the folder's name; a new neighbourhood sized for them inside the folder
+    /// shown in Notas (criarRegiaoOrganica), its folder created in the vault; then each note moves into it, house and
+    /// file (moverEntradaPara).
+    /// </summary>
+    public async Task GroupIntoFolderAsync(IReadOnlyList<string> paths, string? typedName = null)
+    {
+        if (World.City is not { } city || _store is null) return;
+        if (paths.Count < 2) { ShowLifeNotice("Selecione pelo menos dois arquivos."); return; }
+        if (!VaultWritable)
+        {
+            await Dialogs.AlertAsync("Agrupar em nova pasta", NoVaultMessage);
+            return;
+        }
+        var name = (typedName ?? await Dialogs.PromptAsync(new PromptOptions("Agrupar em nova pasta", Label: "Nome da pasta", Value: "Nova pasta", Confirm: "Criar pasta")) ?? "").Trim();
+        if (name.Length == 0) return;
+        var parent = city.RegionByPath(Explorer.CurrentFolder ?? "");
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var region = city.CreateRegion(city.UniqueRegionName(name), paths.Count, LegacyJsMath.Seed(name + now.ToString(System.Globalization.CultureInfo.InvariantCulture)), parent?.Id, null);
+        if (region is null) { ShowLifeNotice("Não foi possível criar a pasta."); return; }
+        if (!await WriteFolderAsync(city, region, undo: () => city.Regions.Remove(region))) return;
+        var folder = city.RegionPaths()[region.Id];
+        int moved = 0;
+        foreach (var path in paths)
+            if (city.Buildings.Find(b => b.IsNote && b.Path == path) is { } house)
+            {
+                await MoveHouseToFolderAsync(house, folder);
+                if (house.RegionId == region.Id) moved++;
+            }
+        Explorer.ClearSelection();
+        RefreshNotes();
+        World.InvalidateVisual();
+        ShowLifeNotice("Pasta criada com " + moved + " itens.");
+    }
 }

@@ -1,0 +1,113 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-urbe-reorganize",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T19:38:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "83d86e80",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/563",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCityLayout.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CityLayout.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/QuickOpen.cs",
+    "apps/urbe/csharp/tools/legacy-reorganize-oracle.mjs",
+    "apps/urbe/csharp/tests/fixtures/legacy-city/reorganize-run-a.json",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyReorganizeOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CityLayoutUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261014-urbe-reorganize.json",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCityOpen.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyCityOpenOracleTests.cs"
+  ],
+  "work_completed": [
+    "Organizar os bairros (city.reorganize) portado de urbeReorganizarCidade: bairros redesenhados do mais pesado ao mais leve, subpastas dentro da sua, cores automáticas refeitas, notas recolocadas por nome e arquivos ao lado da nota.",
+    "Desfazer reorganização (city.undoReorganize) portado de world/layout-guard.js: foto do layout antes e restauração.",
+    "Antes de reorganizar, cópia do mapa em .urbe/backup/<data>-layout-layout/ no formato do backup.js (cópia + manifest com sha256), gravada e verificada nos dois armazenamentos (desktop e Android), só arquivos novos; se falhar, nada muda (REQ-043).",
+    "Entrada em Configurações e comandos na paleta, com os textos da 1.8.4; urbeValidarBairros portado como ValidateDistricts.",
+    "Mapa de outro mundo na abertura (urbeCidadeMigrada): a cidade é reorganizada a partir do início do mundo como no abrirCidade; o mapa do disco vai para .urbe/backup (motivo 'mundo') antes de a cidade nova ser salva; \"Cidade reorganizada\" oferece Desfazer/Manter a nova. Remove o bloqueio WorldReorganizationPending."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "LegacyReorganizeOracleTests.OrganizingTheDistrictsDrawsThemAndPlacesTheHousesAsTheOriginal",
+      "result": "passed",
+      "evidence": "Oráculo gravado da 1.8.4 sem modificação (csharp/tools/legacy-reorganize-oracle.mjs → reorganize-run-a.json): bairros (x, y, w, h, células, cor, pai), casas, resultado {bairros, casas, falhas}, validação, ruas e o layout desfeito idênticos. Core 625/625."
+    },
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.Reorganize_BacksUpTheMapReorganizesAndUndoes",
+      "result": "passed",
+      "evidence": "Vault real em pasta: Configurações lista o item; o backup tem cópia e manifest com sha256 certo; mapa reorganizado salvo; notas com o mesmo texto; Desfazer pela paleta volta ao layout anterior. Também passaram os testes que abrem Configurações (Export, Tutorial, EditorChrome, City_RendersFullScreen)."
+    },
+    {
+      "kind": "automated",
+      "check": "LegacyReorganizeOracleTests.AMapOfAnotherWorldIsReorganizedOnOpenAsTheOriginal + HeadlessUiTests.MapOfAnotherWorld_IsBackedUpReorganizedSavedAndCanBeUndone",
+      "result": "passed",
+      "evidence": "Abertura da 1.8.4 com mundo 'antigo' gravada pelo oráculo: bairros, células, cores e casas idênticos; no app, backup byte a byte do mapa antigo com motivo 'mundo', mapa salvo como placas-1, diálogo com Desfazer que volta ao arranjo anterior."
+    },
+    {
+      "kind": "human",
+      "check": "Organizar os bairros num vault real no Android",
+      "result": "not-applicable",
+      "evidence": "Gravação do backup pelo SAF e aparência da cidade reorganizada no aparelho (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/CityLayout.cs"
+    }
+  ],
+  "known_issues": [
+    "O registro {kind:'layout'} em vault.json.maintenance da 1.8.4 ainda não é escrito; o backup em .urbe/backup é."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validação no aparelho (Organizar os bairros e abertura de um vault da 1.8.4 de outro mundo)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/world/layout-guard.js",
+    "apps/urbe/src/persistence/backup.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-013",
+      "evidence": "Porte do comportamento da 1.8.4 provado por oráculo; nenhuma regra nova."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação no aparelho pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Oráculo e teste de UI com vault real."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "city-reorganize",
+      "status": "product-specific",
+      "rationale": "Layout da cidade do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Grava novos arquivos no vault (backup do mapa) pela camada de armazenamento e reescreve o mapa da cidade."
+  }
+}

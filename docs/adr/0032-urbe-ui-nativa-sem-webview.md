@@ -65,3 +65,8 @@ Urbe.Android     head Avalonia Android
 - `apps/urbe/docs/csharp/ROADMAP.md`, `apps/urbe/docs/csharp/PRODUCT-DIRECTION.md`.
 - MANIFEST NN-002, NN-003, NN-005, NN-011, NN-017, NN-020, NN-022, NN-023.
 - Avalonia: https://docs.avaloniaui.net/
+
+## Emenda — visualizador de conteúdo (ADD-0023 / DEC-0046, 2026-10-14)
+
+Ordem do proprietário: HTML, PDF, áudio e vídeo do vault (e os produtos HTML do projeto) são vistos **dentro do Urbe**, num painel sobre a cidade, não em outro aplicativo. A interface continua nativa (Avalonia, esta decisão); o que entra é um **visualizador de conteúdo** dentro de um painel nativo — WebView do sistema para HTML e mídia, renderizador de PDF do sistema —, que mostra arquivos do usuário isolados (sem pontes com o app nem acesso ao vault além do arquivo aberto). Não é camada de UI e não reabre o caminho Blazor/Hybrid.
+

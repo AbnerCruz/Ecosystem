@@ -15,6 +15,9 @@ public sealed class UrbeApp : Application
     /// <summary>A file in the app's own data for the Notas state kept on the device (favourites, recents); null keeps it for the session.</summary>
     public static string? LocalStatePath { get; set; }
 
+    /// <summary>A folder of the app's own data for the Assistente (conversations, providers and keys, memory); null keeps them for the session. Never the vault.</summary>
+    public static string? AssistantFolder { get; set; }
+
     public override void Initialize()
     {
         RequestedThemeVariant = ThemeVariant.Dark;

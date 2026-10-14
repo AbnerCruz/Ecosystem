@@ -81,4 +81,6 @@ A regra de dados do §3 continua protegendo `.md`, gravações e metadados **atu
 
 **Essência, não defeitos (DEC-0045, 13/10/2026):** a 1.8.4 é referência de essência; os defeitos e melhorias listados em `docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md` (UC-36 a UC-47 do ROADMAP C#) são corrigidos no porte, não reproduzidos. Onde há oráculo da 1.8.4, ele continua com os valores originais pedidos explicitamente.
 
+**Conteúdo dentro do Urbe (ADD-0023/DEC-0046, 14/10/2026):** HTML, PDF, áudio e vídeo do vault e os produtos HTML do projeto são vistos **num painel do próprio Urbe** (`ContentViewers`), nunca mandados a outro app como forma de ver. O visualizador (WebView do sistema isolada, PdfRenderer, player) é conteúdo dentro de painel nativo, não camada de interface.
+
 **Proibições:** nova versão Web, WebView na interface, refazer arte, screenshots exportados como motor de jogo, tela inicial de migração, grade estática de notas, duplicar storage/dominio, publicar prévia que não salva dados como beta utilizável, apagar estado do usuário e marcar gate humano aprovado por teste headless. Usar um único Core canônico, preservar a 1.8.4-beta instalada e obedecer às regras de merge/gates do Ecosystem.

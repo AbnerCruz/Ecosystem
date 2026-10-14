@@ -90,6 +90,7 @@ public sealed partial class MainView : Grid
         Explorer.CreateFirstNoteRequested += () => _ = CreateNoteInNotesAsync();
         Explorer.RestoreRequested += id => _ = RestoreFromTrashAsync(id);
         Explorer.FileRequested += path => _ = ShowFileAsync(path);
+        Explorer.FileMenuRequested += path => _ = ShowAttachmentActionsAsync(path, withView: true);
         Explorer.FolderMenuRequested += folder => _ = ShowFolderMenuAsync(folder);
         Explorer.MoveRequested += async (paths, folder) => { await MoveNotesToAsync(paths, folder); Explorer.ClearSelection(); };
         Explorer.PurgeRequested += id => _ = PurgeFromTrashAsync(id);
@@ -116,6 +117,7 @@ public sealed partial class MainView : Grid
         if (_vault is not null) Editor.SaveRequested += SaveNoteAsync;
         Editor.Editor.TextChanged += (_, _) => { EditorLinksChanged(); CaptureEditorHistory(); };
         Editor.MoreRequested += ShowEditorMenuAsync;
+        Editor.Shown += path => NoteOpened?.Invoke(path);   // plugins: "nota:aberta"
 
         _stage.Children.Add(World);
         _stage.Children.Add(_top = TopBar());
@@ -128,15 +130,21 @@ public sealed partial class MainView : Grid
         _stage.Children.Add(Explorer);
         _stage.Children.Add(Editor);
         FilePreview.Storage = _vault;
+        FilePreview.ActionsRequested += path => _ = ShowAttachmentActionsAsync(path);
+        FilePreview.PageActionsRequested += path => _ = ShowPageMenuAsync(path);
         FilePreview.ShowInCity += building =>
         {
             if (!Explorer.Wide) Explorer.IsVisible = false;
             World.CenterOn(building);
         };
         _stage.Children.Add(FilePreview);
+        _stage.Children.Add(_pluginPanels);   // the plugins' panels, over the city and the editor (ADD-0021)
         Customize = new CustomizePanel(Customization, Dialogs);
         Customize.OpenFileRequested += path => Editor.Open(new CityNote(path, _contents.GetValueOrDefault(path, "")));
+        Customize.NativePlugins = NativePlugins;
+        Customize.SetNativePlugin = SetNativePlugin;
         Customization.Applied += ApplyCustomization;
+        Customization.Applied += SyncPlugins;   // the safe mode turns every plugin off
         SetColumn(_stage, 1);
         Children.Add(_stage);
 
@@ -178,6 +186,11 @@ public sealed partial class MainView : Grid
         // v21MoveHold: holding a house carries it (only with a vault that can be written)
         World.MoveValid = (b, x, y) => World.City?.ValidMove(b, x, y).Ok ?? false;
         World.BuildingMoveRequested += (b, x, y) => _ = MoveHouseAsync(b, x, y);
+        // v20CanvasHold: holding a neighbourhood (not a house) opens its edit dialog
+        World.RegionHeld += region => { if (!Dialogs.IsOpen) _ = EditRegionAsync(region); };
+        World.RegionTapped += region => { if (!Dialogs.IsOpen && World.Tool is null) BeginRegionShape(region); };
+        RestoreTouchDebug();
+        WireSplit();
     }
 
     public WorldView World { get; }
@@ -372,21 +385,55 @@ public sealed partial class MainView : Grid
         if (_brandPill is not null) ToolTip.SetTip(_brandPill, "Salvo na pasta escolhida no dispositivo");
         if (store is null || opened is null || !ReferenceEquals(World.City, opened)) return;
         _store = store;
-        StartMapSaves(snapshot, opened);
+        if (opened.MigratedFromWorld is { } from) await AdaptedToNewWorldAsync(snapshot, opened, from);
+        else StartMapSaves(snapshot, opened);
         // tutorial.js: workspace:loaded → setTimeout(semear, 300)
+    }
+
+    /// <summary>
+    /// abrirCidade after "Adaptando a cidade ao mundo novo" (urbeCidadeMigrada): the map as it was on disk is copied to
+    /// .urbe/backup first (layout-guard.js, reason 'mundo'); only then the reorganized city is saved. The houses are
+    /// framed and, 700 ms later, "Cidade reorganizada" offers to go back to the previous arrangement.
+    /// </summary>
+    private async Task AdaptedToNewWorldAsync(VaultSnapshot snapshot, LegacyCity city, string from)
+    {
+        bool saves = _vault is not null && !snapshot.IsReadOnly && !snapshot.IsMapReadOnly && !snapshot.RecoveredFromJournal && snapshot.MapJson is not null;
+        if (saves)
+        {
+            try { await _vault!.SaveLayoutBackupAsync(snapshot.MapJson!, DateTimeOffset.UtcNow, "mundo"); }
+            catch (Exception ex)
+            {
+                saves = false;   // the old map stays as it is on disk
+                ShowLifeNotice("O mapa anterior não pôde ser copiado (" + ex.Message + "); a cidade nova não será salva por cima dele.");
+            }
+        }
+        if (!ReferenceEquals(World.City, city)) return;
+        if (saves) StartMapSaves(snapshot, city);
+        _lastLayout = city.LayoutBeforeMigration;
+        World.FitNotes();   // urbeEnquadrarNotas(true)
+        _ = OfferUndoMigrationAsync(city, from);
+    }
+
+    /// <summary>setTimeout(…, 700): "Cidade reorganizada" — Desfazer goes back to the arrangement the map had.</summary>
+    private async Task OfferUndoMigrationAsync(LegacyCity city, string from)
+    {
+        await Task.Delay(700);
+        if (!ReferenceEquals(World.City, city) || Dialogs.IsOpen) return;
+        if (await Dialogs.ConfirmAsync("Cidade reorganizada",
+                "O mundo do Urbe mudou: esta cidade foi salva com outra versão (" + from + ") e foi reorganizada no terreno novo. Notas, pastas e ligações continuam iguais, e uma cópia do mapa anterior foi guardada. Quer voltar ao arranjo anterior?",
+                "Desfazer", cancel: "Manter a nova") && ReferenceEquals(World.City, city))
+            UndoReorganize();
     }
 
     /// <summary>
     /// From now on the city's changes are written to .urbe/mapa.json like the 1.8.4 (workspace.js is
     /// the single writer): only for a real, writable vault whose map the 1.8.4 would rewrite. Not for a
-    /// read-only vault or a map of a future/unknown format (REQ-035/REQ-040), and not while the map
-    /// belongs to another world: the 1.8.4 first reorganizes such a city (urbeReorganizarCidade, not
-    /// ported), so saving the old geometry as this world's would lose that reorganization.
+    /// read-only vault or a map of a future/unknown format (REQ-035/REQ-040). A map of another world is
+    /// saved only after its backup (<see cref="AdaptedToNewWorldAsync"/>).
     /// </summary>
     private void StartMapSaves(VaultSnapshot snapshot, LegacyCity city)
     {
-        if (_vault is null || snapshot.IsReadOnly || snapshot.IsMapReadOnly || snapshot.RecoveredFromJournal ||
-            city.WorldReorganizationPending) return;
+        if (_vault is null || snapshot.IsReadOnly || snapshot.IsMapReadOnly || snapshot.RecoveredFromJournal) return;
         var writer = new LegacyCityMap();
         MapSaveScheduler? scheduler = null;
         scheduler = new MapSaveScheduler(() =>
@@ -485,6 +532,7 @@ public sealed partial class MainView : Grid
             _mapSave?.MarkSync();
         }
         await SaveHistoryAsync();
+        NoteSaved?.Invoke(note.Path);   // plugins: "nota:salva"
     }
 
     /// <summary>
@@ -551,6 +599,7 @@ public sealed partial class MainView : Grid
         // theme.css @media (min-width:900px): Notas becomes a 360 px panel beside the city
         Explorer.Wide = e.NewSize.Width >= 900;
         PlaceHousePanel(wide);
+        PlaceAssistant(_assistant, e.NewSize.Width);
     }
 
     // ---------------- city chrome ----------------
@@ -603,6 +652,7 @@ public sealed partial class MainView : Grid
             HorizontalAlignment = HorizontalAlignment.Right,
             Children = { SearchButton(), MapButton(), SettingsButton() }
         };
+        _topButtons = buttons;   // the plugins' buttons go before Configurações
         var bar = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"), Margin = new Thickness(12, 10, 12, 0), VerticalAlignment = VerticalAlignment.Top };
         SetColumn(buttons, 2);
         bar.Children.Add(pill);
@@ -622,9 +672,9 @@ public sealed partial class MainView : Grid
     public string SaveDotState => _saveState;
 
     /// <summary>
-    /// settings.js: "Configurações" with what the native app has — Personalização, Tutorial, Exportar tudo (.zip),
-    /// Importar arquivos and Pasta no dispositivo (the vault folder). Organizar os bairros, Assistente, Páginas,
-    /// Diagnóstico de toques and Procurar atualização join as they are ported.
+    /// settings.js: "Configurações" with what the native app has — Personalização, Tutorial, Organizar os bairros,
+    /// Exportar tudo (.zip), Importar arquivos, Pasta no dispositivo (the vault folder), Páginas and Diagnóstico de toques. Assistente and
+    /// Procurar atualização join as they are ported.
     /// </summary>
     public Task ShowSettingsAsync()
     {
@@ -632,13 +682,16 @@ public sealed partial class MainView : Grid
         var items = new List<DialogItem>
         {
             new("Personalização", UrbeTheme.Icons.Brush, "Tema, cores, fontes, cidade, texturas, estilos e plugins", Run: () => { Customize.Open(); return Task.CompletedTask; }),
-            new("Tutorial", UrbeTheme.Icons.Book, "Guia completo de tudo o que o Urbe faz", Run: ShowTutorialMenuAsync)
+            new("Tutorial", UrbeTheme.Icons.Book, "Guia completo de tudo o que o Urbe faz", Run: ShowTutorialMenuAsync),
+            new("Organizar os bairros", UrbeTheme.Icons.Region, "Redesenha pastas e subpastas e reagrupa as casas", Run: () => ReorganizeAsync())
         };
         if (_vault is not null)
             items.Add(new("Exportar tudo (.zip)", UrbeTheme.Icons.Download, "Cópia de segurança de todas as notas", Run: () => ExportAsync()));
         items.Add(new("Importar arquivos", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync()));
         if (_vault is not null)
             items.Add(new("Pasta no dispositivo", UrbeTheme.Icons.Storage, "Onde os arquivos ficam salvos", Run: () => OpenVaultAsync()));
+        items.Add(new("Páginas", UrbeTheme.Icons.Page, "Sites e páginas HTML do vault", Run: () => { ShowPages(); return Task.CompletedTask; }));
+        items.Add(new("Diagnóstico de toques", UrbeTheme.Icons.Select, TouchDebugOn ? "Ligado — toque para desligar" : "Para descobrir botões que não respondem", Run: ToggleTouchDebugAsync));
         return Dialogs.MenuAsync("Configurações", items);
     }
 
@@ -979,6 +1032,8 @@ public sealed partial class MainView : Grid
             new("Nova subpasta", UrbeTheme.Icons.Folder, "Vira uma região dentro desta.", Run: () => CreateFolderAsync(region?.Id))
         };
         if (region is not null)
+            items.Add(new("Editar nome, cor e descrição", UrbeTheme.Icons.Pencil, "Renomear a pasta muda o nome dela no vault.", Run: () => EditRegionAsync(region)));
+        if (region is not null)
             items.Add(new("Mostrar na cidade", UrbeTheme.Icons.City, "O bairro desta pasta.", Run: () =>
             {
                 if (!Explorer.Wide) Explorer.IsVisible = false;
@@ -1256,6 +1311,9 @@ public sealed partial class MainView : Grid
                 return;
             case "duplicate":
                 await DuplicateNotesAsync(paths);
+                return;
+            case "group":
+                await GroupIntoFolderAsync(paths);
                 return;
         }
     }
@@ -1719,10 +1777,8 @@ public sealed partial class MainView : Grid
         }
         else
         {
-            ToolTip.SetTip(button, "Assistente: em portabilidade");
-            button.IsEnabled = false;
-            // the 1.8.4 draws it like the others; no grey box for the disabled state
-            button.Resources["ButtonBackgroundDisabled"] = Brushes.Transparent;
+            ToolTip.SetTip(button, "Assistente: agentes que pesquisam, escrevem e organizam o vault");
+            button.Click += (_, _) => ToggleAssistant();
         }
         return button;
     }

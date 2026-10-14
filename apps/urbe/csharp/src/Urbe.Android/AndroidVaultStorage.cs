@@ -164,6 +164,99 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public async Task MoveFileAsync(string from, string to, CancellationToken cancellationToken = default)
+    {
+        IUrbeVaultStorage.EnsureAttachmentPath(from);
+        IUrbeVaultStorage.EnsureAttachmentPath(to);
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, files);
+            await Task.Run(() =>
+            {
+                static string Parent(string p) => p.Contains('/') ? p[..p.LastIndexOf('/')] : "";
+                AndroidUri FolderOf(AndroidUri t, string p) => p.Length == 0 ? Root(t)
+                    : FindDocument(t, p) ?? throw new DirectoryNotFoundException("A pasta de destino não existe no vault: " + p);
+                var source = FindDocument(tree, from) ?? throw new FileNotFoundException("O arquivo não existe na pasta.", from);
+                bool caseOnly = string.Equals(from, to, StringComparison.OrdinalIgnoreCase);
+                if (!caseOnly && FindDocument(tree, to) is not null) throw new IOException("Já existe um arquivo com esse nome: " + to);
+                var name = to[(to.LastIndexOf('/') + 1)..];
+                var moved = source;
+                if (!string.Equals(Parent(from), Parent(to), StringComparison.Ordinal))
+                    moved = DocumentsContract.MoveDocument(Resolver, source, FolderOf(tree, Parent(from)), FolderOf(tree, Parent(to)))
+                        ?? throw new IOException("O provedor não moveu o arquivo: " + from);
+                if (!string.Equals(from[(from.LastIndexOf('/') + 1)..], name, StringComparison.Ordinal))
+                {
+                    if (caseOnly)
+                        moved = DocumentsContract.RenameDocument(Resolver, moved, name + ".urbe-move-" + Guid.NewGuid().ToString("N"))
+                            ?? throw new IOException("O provedor não renomeou o arquivo: " + from);
+                    _ = DocumentsContract.RenameDocument(Resolver, moved, name) ?? throw new IOException("O provedor não renomeou o arquivo: " + from);
+                }
+                if (FindDocument(tree, to) is null || (!caseOnly && FindDocument(tree, from) is not null))
+                    throw new IOException("O arquivo movido não passou na verificação: " + to);
+                EnsureUnchanged(baseline, ReadFiles(tree, cancellationToken));
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
+    public async Task DeleteFileAsync(string path, CancellationToken cancellationToken = default)
+    {
+        IUrbeVaultStorage.EnsureAttachmentPath(path);
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, files);
+            await Task.Run(() =>
+            {
+                var uri = FindDocument(tree, path) ?? throw new FileNotFoundException("O arquivo não existe na pasta.", path);
+                if (!DocumentsContract.DeleteDocument(Resolver, uri) || FindDocument(tree, path) is not null)
+                    throw new IOException("O provedor não excluiu o arquivo: " + path);
+                EnsureUnchanged(baseline, ReadFiles(tree, cancellationToken));
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
+    public async Task RenameFolderAsync(string from, string to, CancellationToken cancellationToken = default)
+    {
+        IUrbeVaultStorage.EnsureFolderRename(from, to);
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, files);
+            await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var folder = FindDocument(tree, from) ?? throw new DirectoryNotFoundException("A pasta não existe no vault: " + from);
+                bool caseOnly = string.Equals(from, to, StringComparison.OrdinalIgnoreCase);
+                if (!caseOnly && FindDocument(tree, to) is not null) throw new IOException("Já existe uma pasta ou arquivo com esse nome: " + to);
+                var name = to[(to.LastIndexOf('/') + 1)..];
+                if (caseOnly)
+                {
+                    // the providers ignore case: through a temporary name the vault does not list
+                    folder = DocumentsContract.RenameDocument(Resolver, folder, name + ".urbe-rename-" + Guid.NewGuid().ToString("N"))
+                        ?? throw new IOException("O provedor não renomeou a pasta: " + from);
+                }
+                _ = DocumentsContract.RenameDocument(Resolver, folder, name)
+                    ?? throw new IOException("O provedor não renomeou a pasta: " + from);
+                var observed = Snapshot(ReadFiles(tree, cancellationToken));
+                IUrbeVaultStorage.EnsureRenamed(baseline, observed, from, to);
+                _baseline = observed;
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     public async Task<VaultFileRead?> ReadFileAsync(string path, long maxBytes, CancellationToken cancellationToken = default)
     {
         await _gate.WaitAsync(cancellationToken);
@@ -197,6 +290,23 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 }
                 return new VaultFileRead(buffer.Length, buffer.ToArray());
             }, cancellationToken);
+        }
+        catch (Exception ex) when (ex is IOException or Java.Lang.Exception) { return null; }
+        finally { _gate.Release(); }
+    }
+
+    /// <summary>
+    /// The document of one file of the vault, for the content viewers inside the Urbe (ADD-0023): the player and the
+    /// PDF reader open it directly, read only, through the permission the vault already has. Null when not there.
+    /// </summary>
+    internal async Task<AndroidUri?> DocumentOfAsync(string path, CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            if (_tree is not { } tree) return null;
+            try { return await Task.Run(() => FindDocument(tree, path), cancellationToken); }
+            catch (InvalidDataException) { return null; }
         }
         catch (Exception ex) when (ex is IOException or Java.Lang.Exception) { return null; }
         finally { _gate.Release(); }
@@ -442,9 +552,27 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     public Task SaveWorldAsync(string json, CancellationToken cancellationToken = default) =>
         SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanWorldWrite(files, json), "O mundo", cancellationToken);
 
+    /// <summary>layout-guard.js writeBackup: the copy of the map, then its manifest, each a new file written and verified
+    /// with every other file of the vault unchanged. Returns the backup's folder.</summary>
+    public async Task<string> SaveLayoutBackupAsync(string mapJson, DateTimeOffset now, string reason = "reorganizar", CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(mapJson);
+        string? dir = null;
+        (string Path, byte[] Bytes) manifest = default;
+        await SaveUrbeFileAsync(files =>
+        {
+            var plan = IUrbeVaultStorage.PlanLayoutBackup(files, mapJson, now, reason);
+            dir = plan.Directory;
+            manifest = plan.Manifest;
+            return plan.Copy;
+        }, "A cópia de segurança do mapa", cancellationToken, createOnly: true);
+        await SaveUrbeFileAsync(_ => manifest, "O manifesto da cópia de segurança", cancellationToken, createOnly: true);
+        return dir!;
+    }
+
     /// <summary>One internal file of .urbe/ (the trash, the Tutorial's mark), planned on the files as they are now,
     /// written with verification of it and of every other file.</summary>
-    private async Task SaveUrbeFileAsync(Func<IReadOnlyList<VaultFile>, (string, byte[])> plan, string what, CancellationToken cancellationToken)
+    private async Task SaveUrbeFileAsync(Func<IReadOnlyList<VaultFile>, (string, byte[])> plan, string what, CancellationToken cancellationToken, bool createOnly = false)
     {
         await _gate.WaitAsync(cancellationToken);
         try
@@ -455,6 +583,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
             EnsureUnchanged(baseline, files);
             var (target, plannedBytes) = plan(files);
             var create = !baseline.ContainsKey(target);
+            if (createOnly && !create) throw new IOException(what + " já existe: " + target);
             await Task.Run(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
