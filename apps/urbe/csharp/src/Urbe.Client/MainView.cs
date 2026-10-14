@@ -189,6 +189,7 @@ public sealed partial class MainView : Grid
         // v20CanvasHold: holding a neighbourhood (not a house) opens its edit dialog
         World.RegionHeld += region => { if (!Dialogs.IsOpen) _ = EditRegionAsync(region); };
         World.RegionTapped += region => { if (!Dialogs.IsOpen && World.Tool is null) BeginRegionShape(region); };
+        RestoreTouchDebug();
     }
 
     public WorldView World { get; }
@@ -670,8 +671,8 @@ public sealed partial class MainView : Grid
 
     /// <summary>
     /// settings.js: "Configurações" with what the native app has — Personalização, Tutorial, Organizar os bairros,
-    /// Exportar tudo (.zip), Importar arquivos, Pasta no dispositivo (the vault folder) and Páginas. Assistente,
-    /// Diagnóstico de toques and Procurar atualização join as they are ported.
+    /// Exportar tudo (.zip), Importar arquivos, Pasta no dispositivo (the vault folder), Páginas and Diagnóstico de toques. Assistente and
+    /// Procurar atualização join as they are ported.
     /// </summary>
     public Task ShowSettingsAsync()
     {
@@ -688,6 +689,7 @@ public sealed partial class MainView : Grid
         if (_vault is not null)
             items.Add(new("Pasta no dispositivo", UrbeTheme.Icons.Storage, "Onde os arquivos ficam salvos", Run: () => OpenVaultAsync()));
         items.Add(new("Páginas", UrbeTheme.Icons.Page, "Sites e páginas HTML do vault", Run: () => { ShowPages(); return Task.CompletedTask; }));
+        items.Add(new("Diagnóstico de toques", UrbeTheme.Icons.Select, TouchDebugOn ? "Ligado — toque para desligar" : "Para descobrir botões que não respondem", Run: ToggleTouchDebugAsync));
         return Dialogs.MenuAsync("Configurações", items);
     }
 

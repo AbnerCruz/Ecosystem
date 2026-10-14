@@ -189,6 +189,7 @@ public static class UrbeTheme
         // ui/icons.js (1.8.4), exactly, for Notas (mobile-ui.js): chevron, page, restore, layers, search, close, more
         public const string Chevron = "M9.5 6l6 6-6 6";
         public const string Page = "M6.5 3.5h11a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3h-11a3 3 0 0 1-3-3v-11a3 3 0 0 1 3-3z M3.5 9h17 M9 20.5V9";
+        public const string Select = "M7 4h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3z M8.5 12l2.5 2.5 4.5-5";
         public const string Restore = "M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9 M4.5 4.5V9H9";
         public const string Layers = "M12 3.5l8.5 4.5-8.5 4.5L3.5 8z M3.5 12.5l8.5 4.5 8.5-4.5";
         public const string MapUi = "M9 4.5L3.5 6.5v13l5.5-2 6 2 5.5-2v-13l-5.5 2z M9 4.5v13M15 6.5v13";
