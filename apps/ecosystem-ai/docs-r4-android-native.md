@@ -54,6 +54,16 @@ o app exibe um diagnóstico curto (tipo de erro e código), sem mostrar dados pr
 - Não há restauração automática de um run após processo morto. O journal
   preserva a execução incompleta para auditoria; não reenviar sem conferir.
 
+## Compatibilidade de inicialização
+
+A prévia usa Mono JIT, com `PublishTrimmed=false`, `RunAOTCompilation=false` e
+`AndroidEnableProfiledAot=false`. O build anterior com AOT abortava antes de
+`OnCreate`, com SIGABRT e a assertion `klass->instance_size == instance_size`
+(reproduzido no emulador Android 13, CI run 38656644999). Um catch C# na Activity
+não intercepta esse abort nativo. Os catálogos continuam usando reflexão e os
+mesmos formatos; ativar AOT novamente exige repetir o teste de abertura e DEVICE.
+A escolha pode afetar o desempenho de inicialização; não houve benchmark no moto g32.
+
 ## Identidade e assinatura da prévia
 
 Package de teste separado `io.ecosystem.ai.preview`; versão deriva de `VERSION`

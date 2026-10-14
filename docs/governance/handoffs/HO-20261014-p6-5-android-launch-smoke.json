@@ -14,8 +14,9 @@
   "branch": "fix/p6-5-android-launch-smoke-20261014",
   "base_commit": "d3c2f6316529feafe68e74fcc797894a1227712d",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/568",
   "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Android/EcosystemAi.Android.csproj",
     "apps/ecosystem-ai/tools/build-android-preview.sh",
     "apps/ecosystem-ai/tools/smoke-android-preview.sh",
     "apps/ecosystem-ai/docs-r4-android-native.md",
@@ -24,7 +25,8 @@
   "work_completed": [
     "O proprietário confirmou que o APK fecha imediatamente ao tocar no ícone; a tela de diagnóstico do PR #567 não confirmou nem corrigiu a causa.",
     "Adicionado ensaio executável do mesmo app Release compilado para x86_64 num emulador Android 13: instalação, launcher, processo vivo e tela de projetos.",
-    "O build glue existente chama o teste no GitHub antes do upload de artefatos; falha de abertura reprova o build e imprime o crash buffer. Sem alterar workflows ou política."
+    "O build glue existente chama o teste no GitHub antes do upload de artefatos; falha de abertura reprova o build e imprime o crash buffer. Sem alterar workflows ou política.",
+    "Crash reproduzido no Android 13 x86_64: o Mono aborta antes da UI com SIGABRT, assertion klass->instance_size == instance_size. A prévia passa a JIT com AOT/profiled AOT desabilitados e trimming explicitamente desabilitado, preservando reflexão dos stores."
   ],
   "verification": [
     {
@@ -32,6 +34,13 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "Sintaxe dos scripts e whitespace validados localmente."
+    },
+    {
+      "check": "Reprodução negativa antes da correção",
+      "kind": "automated",
+      "result": "failed",
+      "evidence": "Workflow ecosystem-ai-ci 38656644999, job 116167875809: instalação e am start Status ok; processo aborta em 1 segundo. Logcat monodroid: class-init.c:2474 klass->instance_size == instance_size, SIGABRT. O teste de abertura reprova de verdade.",
+      "tested_commit": "4073c93f48a0a3cad04ff93426339a8c43c10fde"
     },
     {
       "check": "APK real no emulador Android 13",
@@ -49,13 +58,13 @@
     }
   ],
   "known_issues": [
-    "Crash de abertura ainda sob investigação; nenhum APK é anunciado corrigido só por compilar.",
+    "A correção candidata remove o caminho AOT que abortou; o novo teste Android ainda precisa passar.",
     "A compilação x86_64 do emulador não valida a arquitetura arm64 nem toda a combinação de hardware/runtime do moto g32."
   ],
   "blockers": [],
   "next_actions": [
-    "Reproduzir o crash e obter a exceção pelo logcat.",
-    "Corrigir a causa no mesmo PR, repetir ensaio, integrar e entregar APK com nome novo."
+    "Verificar abertura e tela inicial no CI após a configuração JIT.",
+    "Integrar pelo integrador e entregar APK arm64 identificado; repetir abertura no moto g32."
   ],
   "decisions_required": [],
   "normative_sources": [
