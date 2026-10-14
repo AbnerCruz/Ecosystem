@@ -58,7 +58,11 @@ public sealed class FilePreviewPanel : Grid
             Background = Brushes.Transparent, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
         };
         ToolTip.SetTip(more, "Mais ações");
-        more.Click += (_, _) => { if (Current is { } path) ActionsRequested?.Invoke(path); };
+        more.Click += (_, _) =>
+        {
+            if (_generated is { } g) PageActionsRequested?.Invoke(g.Source);
+            else if (Current is { } path) ActionsRequested?.Invoke(path);
+        };
         _more = more;
         var head = new DockPanel();
         DockPanel.SetDock(close, Dock.Right);
@@ -138,8 +142,35 @@ public sealed class FilePreviewPanel : Grid
     public Task OpenAsync(string path, LegacyCityBuilding? building = null) =>
         OpenAsync([(path[(path.LastIndexOf('/') + 1)..], path)], 0, building);
 
+    /// <summary>
+    /// A page of the vault (Páginas): the HTML the page engine wrote for <paramref name="source"/> (a .page.json), shown
+    /// as a page or as its source like any HTML file; "⋯" offers the page's actions. Nothing is written to the vault.
+    /// </summary>
+    public async Task OpenGeneratedAsync(string title, string source, byte[] html)
+    {
+        _generated = (source, html);
+        _files = [(title, null)];
+        Building = null;
+        _htmlSource = false;
+        _show.IsVisible = false;
+        _choose.IsVisible = false;
+        IsVisible = true;
+        Place();
+        await ShowAsync(0);
+        Focus();
+    }
+
+    private (string Source, byte[] Html)? _generated;
+
+    /// <summary>The .page.json whose HTML is shown, or null (tests).</summary>
+    public string? GeneratedFrom => _generated?.Source;
+
+    /// <summary>"⋯" on a generated page: the host shows the page's actions.</summary>
+    public event Action<string>? PageActionsRequested;
+
     private async Task OpenAsync(IReadOnlyList<(string Name, string? Path)> files, int index, LegacyCityBuilding? building)
     {
+        _generated = null;
         _files = files;
         Building = building;
         _htmlSource = false;
@@ -181,11 +212,11 @@ public sealed class FilePreviewPanel : Grid
         _choose.SelectedIndex = index;
         _choosing = false;
         var (name, path) = _files[index];
-        var kind = VaultFileKinds.Classify(name);
+        var kind = _generated is not null ? VaultFileKinds.Html : VaultFileKinds.Classify(name);
         _title.Text = name;
         _meta.Text = VaultFileKinds.Label(kind) + (path is not null ? " · " + path : "");
         _open.IsVisible = false;
-        _more.IsVisible = path is not null;
+        _more.IsVisible = path is not null || _generated is not null;
         _htmlMode.IsVisible = kind == VaultFileKinds.Html;
         for (int i = 0; i < _htmlMode.Children.Count; i++)
             if (_htmlMode.Children[i] is Button chip) Mark(chip, (i == 1) == _htmlSource);
@@ -194,15 +225,17 @@ public sealed class FilePreviewPanel : Grid
         _body.Content = Empty("Carregando do dispositivo…");
         // audio and video are played from the vault by the platform: only their size is read here
         bool media = kind is VaultFileKinds.Audio or VaultFileKinds.Video;
-        var read = path is not null && Storage is { } s ? await s.ReadFileAsync(path, media ? 0 : MaxBytes) : null;
+        var read = _generated is { } g ? new VaultFileRead(g.Html.Length, g.Html)
+            : path is not null && Storage is { } s ? await s.ReadFileAsync(path, media ? 0 : MaxBytes) : null;
         if (version != _version) return;
         if (read is null)
         {
             _body.Content = Empty("Arquivo não encontrado", "O item existe no índice da cidade, mas não foi encontrado na pasta do vault.");
             return;
         }
-        _meta.Text = VaultFileKinds.Label(kind) + " · " + VaultFileKinds.FormatBytes(read.Size) + (path is not null ? " · " + path : "");
-        _open.IsVisible = true;
+        _meta.Text = (_generated is { } gen ? "Página · " + VaultFileKinds.FormatBytes(read.Size) + " · " + gen.Source
+            : VaultFileKinds.Label(kind) + " · " + VaultFileKinds.FormatBytes(read.Size) + (path is not null ? " · " + path : ""));
+        _open.IsVisible = _generated is null;
         var bytes = read.Bytes;
         if (kind == VaultFileKinds.Image && bytes is not null && Image(bytes) is { } image)
         {
@@ -226,7 +259,7 @@ public sealed class FilePreviewPanel : Grid
         if (kind is VaultFileKinds.Pdf or VaultFileKinds.Audio or VaultFileKinds.Video || (kind == VaultFileKinds.Html && !_htmlSource))
         {
             Control? viewer = null;
-            try { viewer = await ContentViewers.CreateAsync(new ContentRequest(Storage, path!, name, kind, bytes)); }
+            try { viewer = await ContentViewers.CreateAsync(new ContentRequest(Storage, path ?? _generated?.Source ?? name, name, kind, bytes)); }
             catch (Exception ex) when (ex is IOException or InvalidOperationException or NotSupportedException or UnauthorizedAccessException) { viewer = null; }
             if (version != _version) { (viewer as IDisposable)?.Dispose(); return; }
             if (viewer is not null)

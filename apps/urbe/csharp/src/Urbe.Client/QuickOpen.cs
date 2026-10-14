@@ -349,6 +349,7 @@ public sealed class SearchFeature
         Register("city.reorganize", "Organizar os bairros", "Cidade", () => _ = view.ReorganizeAsync());
         Register("city.undoReorganize", "Desfazer reorganização", "Cidade", view.UndoReorganize, () => view.CanUndoReorganize);
         Register("ui.customize", "Personalização", "Aplicativo", () => view.Customize.Open());
+        Register("pages.home", "Páginas", "Páginas", view.ShowPages);
         Register("workspace.save", "Salvar workspace", "Workspace", () => _ = view.Editor.SaveAsync(), () => view.Editor.IsVisible);
         Register("ui.find.open", "Localizar e substituir", "Editor", view.Editor.FindBar.Open, () => view.Editor.IsVisible);
 

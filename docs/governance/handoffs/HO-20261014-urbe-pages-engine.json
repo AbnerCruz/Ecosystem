@@ -1,0 +1,109 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261014-urbe-pages-engine",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-14T20:04:02Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-35",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "83d86e80",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/563",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Render.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Free.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageMarkdown.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngineText.g.cs",
+    "apps/urbe/csharp/tools/pages-engine-constants.mjs",
+    "apps/urbe/csharp/tools/pages-engine-oracle.mjs",
+    "apps/urbe/csharp/tests/fixtures/pages/engine-run-a.json",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageEngineOracleTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PagesPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Pages.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/QuickOpen.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PagesUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261014-urbe-pages-engine.json"
+  ],
+  "work_completed": [
+    "Motor de páginas da 1.8.4 (engine.js + free.js) portado para Urbe.Core/Pages: normalize, compact e render com os 34 blocos, temas, livro e layout livre; literais de CSS/JS e dados do motor gerados do próprio original.",
+    "Configurações → Páginas e pages.home na paleta: lista os .page.json do vault e mostra cada página dentro do Urbe no visualizador HTML (Página/Fonte), sem sair do app (ADD-0023).",
+    "Ações da página: Ver página, Abrir como texto (JSON) e Mover para a lixeira (pela lixeira de notas, gravada antes)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "PageEngineOracleTests.ThePageIsTheOriginals (26 casos)",
+      "result": "passed",
+      "evidence": "Oráculo do engine.js/free.js/templates.js originais em node:vm (csharp/tools/pages-engine-oracle.mjs): todos os modelos (e variações de três), todos os blocos, livro, página inválida e JSON em texto — HTML byte a byte, página normalizada, erros, avisos e forma compacta idênticos. Core 652/652."
+    },
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.Pages_AreListedAndShownInsideTheUrbeAsTheEngineRendersThem",
+      "result": "passed",
+      "evidence": "Vault real: Configurações → Páginas lista a página com título, ícone e seções; tocar mostra o HTML do motor com o texto da nota pelo visualizador; Fonte mostra o HTML; pages.home na paleta; Mover para a lixeira tira o arquivo do vault e da lista. Também passaram ContentViewer, FilePreview, Attachments, Export, Tutorial, EditorChrome e Reorganize."
+    },
+    {
+      "kind": "human",
+      "check": "Páginas no Android",
+      "result": "not-applicable",
+      "evidence": "A página renderizada no WebView isolado do aparelho e a navegação na lista (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.Pages.cs"
+    }
+  ],
+  "known_issues": [
+    "O estúdio (criar e editar páginas, modelos, Nova página) não foi portado; as páginas são vistas e podem ser editadas como JSON.",
+    "Fórmulas $…$ nas páginas ficam como texto: a 1.8.4 só as renderiza com KaTeX quando o módulo de matemática está carregado.",
+    "Exportar o HTML da página ainda não existe no app nativo."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Estúdio de páginas (UC-35) e exportação do HTML."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0023-tudo-no-ecosystem-e-conteudo-dentro-do-urbe.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/pages/engine.js",
+    "apps/urbe/src/pages/free.js",
+    "apps/urbe/src/pages/studio.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-013",
+      "evidence": "Porte provado byte a byte por oráculo; nenhuma regra nova no motor."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação no aparelho pendente."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "O motor fica no Urbe (Urbe.Core/Pages); nenhuma extração."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "page-engine",
+      "status": "possible-candidate",
+      "rationale": "Gera HTML de páginas a partir de JSON; outros produtos HTML do Ecosystem poderiam usar, mas não há segundo consumidor real (NN-022): continua no Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Leitura e exibição de páginas; a única escrita é a lixeira de notas já existente."
+  }
+}

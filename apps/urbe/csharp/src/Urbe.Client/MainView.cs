@@ -131,6 +131,7 @@ public sealed partial class MainView : Grid
         _stage.Children.Add(Editor);
         FilePreview.Storage = _vault;
         FilePreview.ActionsRequested += path => _ = ShowAttachmentActionsAsync(path);
+        FilePreview.PageActionsRequested += path => _ = ShowPageMenuAsync(path);
         FilePreview.ShowInCity += building =>
         {
             if (!Explorer.Wide) Explorer.IsVisible = false;
@@ -669,7 +670,7 @@ public sealed partial class MainView : Grid
 
     /// <summary>
     /// settings.js: "Configurações" with what the native app has — Personalização, Tutorial, Organizar os bairros,
-    /// Exportar tudo (.zip), Importar arquivos and Pasta no dispositivo (the vault folder). Assistente, Páginas,
+    /// Exportar tudo (.zip), Importar arquivos, Pasta no dispositivo (the vault folder) and Páginas. Assistente,
     /// Diagnóstico de toques and Procurar atualização join as they are ported.
     /// </summary>
     public Task ShowSettingsAsync()
@@ -686,6 +687,7 @@ public sealed partial class MainView : Grid
         items.Add(new("Importar arquivos", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync()));
         if (_vault is not null)
             items.Add(new("Pasta no dispositivo", UrbeTheme.Icons.Storage, "Onde os arquivos ficam salvos", Run: () => OpenVaultAsync()));
+        items.Add(new("Páginas", UrbeTheme.Icons.Page, "Sites e páginas HTML do vault", Run: () => { ShowPages(); return Task.CompletedTask; }));
         return Dialogs.MenuAsync("Configurações", items);
     }
 
