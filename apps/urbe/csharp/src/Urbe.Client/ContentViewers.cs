@@ -54,6 +54,8 @@ public static class ContentViewers
 public interface IHtmlReloadable
 {
     void Reload(string html);
+    /// <summary>A message posted to the page (window.postMessage), as the 1.8.4 posted to the preview's iframe.</summary>
+    void Post(string json);
 }
 
 /// <summary>A PDF opened by the platform: its pages, their size, and each page drawn as RGBA at a given width.</summary>

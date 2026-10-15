@@ -39,6 +39,8 @@ public interface IPageStudioHost
     /// <summary>An image chosen on the device, as a data: URL reduced to 1600 px (null when cancelled).</summary>
     Task<string?> PickImageAsync();
     void Closed();
+    /// <summary>Something of the app is over the studio (the Assistente, a plugin panel, a file preview): a native preview would hide it.</summary>
+    bool PreviewCovered => false;
 }
 
 /// <summary>
@@ -74,6 +76,10 @@ public sealed partial class PageStudioView : Border
     private readonly DispatcherTimer _previewTimer = new() { Interval = TimeSpan.FromMilliseconds(350) };
     private bool _wideLast;
     private string? _previewPath;
+    // the phone's preview is a platform view drawn over everything of the app: while something is shown over it
+    // (the block library, JSON, a menu, the Assistente) it is hidden, else those cannot be seen nor touched (UC-48)
+    private readonly DispatcherTimer _coverTimer = new() { Interval = TimeSpan.FromMilliseconds(200) };
+    private string? _postedSelection;
 
     public PageStudioView(IPageStudioHost host)
     {
@@ -82,6 +88,7 @@ public sealed partial class PageStudioView : Border
         Background = UrbeTheme.Brush(UrbeTheme.Bg);
         _saveTimer.Tick += async (_, _) => { _saveTimer.Stop(); await SaveAsync(); };
         _previewTimer.Tick += async (_, _) => { _previewTimer.Stop(); await RenderPreviewAsync(); };
+        _coverTimer.Tick += (_, _) => UpdateCover();
 
         var back = IconButton(UrbeTheme.Icons.Back, "Voltar");
         back.Click += async (_, _) => await CloseAsync();
@@ -172,7 +179,7 @@ public sealed partial class PageStudioView : Border
         _sheetBox.CornerRadius = new CornerRadius(18, 18, 0, 0);
         _sheetBox.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2);
         _sheetBox.BorderThickness = new Thickness(0, 1, 0, 0);
-        _sheetBox.VerticalAlignment = VerticalAlignment.Bottom;
+        _sheetBox.VerticalAlignment = VerticalAlignment.Stretch;
         _sheetBox.IsVisible = false;
         _tabbar.ColumnDefinitions = new ColumnDefinitions("*,*,*,*,*");
         _tabbar.Height = 62;
@@ -208,11 +215,12 @@ public sealed partial class PageStudioView : Border
             _tabbar.Children.Add(b);
         }
 
-        var main = new Grid { RowDefinitions = new RowDefinitions("Auto,*,Auto") };
+        // the phone's sheet sits under the preview (not over it: the preview is a platform view that covers the app)
+        var main = new Grid { RowDefinitions = new RowDefinitions("Auto,*,Auto,Auto") };
         Grid.SetRow(top, 0);
         Grid.SetRow(_body, 1);
-        Grid.SetRow(_sheetBox, 1);
-        Grid.SetRow(_tabbar, 2);
+        Grid.SetRow(_sheetBox, 2);
+        Grid.SetRow(_tabbar, 3);
         main.Children.Add(top);
         main.Children.Add(_body);
         main.Children.Add(_sheetBox);
@@ -251,6 +259,7 @@ public sealed partial class PageStudioView : Border
         _st.Changed += (_, _) => { };
         _sheet = null;
         IsVisible = true;
+        _coverTimer.Start();
         _wideLast = Wide;
         Layout();
         RenderAll();
@@ -280,6 +289,7 @@ public sealed partial class PageStudioView : Border
         IsVisible = false;
         _overlay.IsVisible = false;
         _overlay.Children.Clear();
+        ReleasePreview();
         _st = null;
         _host.Closed();
     }
@@ -289,7 +299,42 @@ public sealed partial class PageStudioView : Border
     {
         _saveTimer.Stop();
         IsVisible = false;
+        ReleasePreview();
         _st = null;
+    }
+
+    /// <summary>The preview's browser let go when the studio closes: it never stays over the other screens.</summary>
+    private void ReleasePreview()
+    {
+        _coverTimer.Stop();
+        _preview.Content = null;
+        _previewPath = null;
+        _postedSelection = null;
+    }
+
+    private void UpdateCover()
+    {
+        if (_preview.Content is not NativeControlHost native) return;
+        bool covered = !IsEffectivelyVisible || _overlay.IsVisible || _host.Dialogs.IsOpen || _host.PreviewCovered;
+        if (native.IsVisible == !covered) return;
+        native.IsVisible = !covered;
+        if (!covered) _postedSelection = null;
+    }
+
+    /// <summary>The selected part marked in the preview (the 1.8.4 posts it to the iframe): a second tap on it writes in place.</summary>
+    private void PostSelection()
+    {
+        if (_st is null || _preview.Content is not IHtmlReloadable live) return;
+        var key = _st.Selected + "|" + _st.NodeSelected;
+        if (key == _postedSelection) return;
+        _postedSelection = key;
+        live.Post(SelectionMessage(scroll: true));
+    }
+
+    private string SelectionMessage(bool scroll)
+    {
+        var m = new JsonObject { ["urbePage"] = "select", ["host"] = true, ["id"] = _st?.Selected, ["nid"] = _st?.NodeSelected, ["scroll"] = scroll, ["instant"] = true };
+        return m.ToJsonString();
     }
 
     private void Layout()
@@ -325,6 +370,7 @@ public sealed partial class PageStudioView : Border
         RenderChrome();
         Layout();
         foreach (var t in _leftTabs.Children.OfType<Button>()) MarkChip(t, (string?)t.Tag == _leftTab);
+        PostSelection();
         if (Wide)
         {
             _left.Child = Panel(_leftTab);
@@ -343,7 +389,7 @@ public sealed partial class PageStudioView : Border
                     "sections" => "Seções", "theme" => "Tema", "page" => "Página",
                     _ => _st.SelectedSection is { } s ? _st.Label(s).Label : "Editar"
                 };
-                _sheetBox.Height = Math.Max(260, Bounds.Height * .58);
+                _sheetBox.Height = Math.Max(240, Bounds.Height * .5);
                 _sheetBody.Content = Panel(_sheet);
             }
         }
@@ -414,9 +460,12 @@ public sealed partial class PageStudioView : Border
         if (html == LastHtml && _preview.Content is not null) return;
         LastHtml = html;
         // the same browser shows the new page (creating one per change made the phone slow)
-        if (_preview.Content is IHtmlReloadable live && _previewPath == _path) { live.Reload(html); return; }
+        // the selected part stays marked in the new page
+        var shown = html + "<script>addEventListener('load',function(){postMessage(" + SelectionMessage(scroll: false) + ",'*')})</script>";
+        _postedSelection = _st.Selected + "|" + _st.NodeSelected;
+        if (_preview.Content is IHtmlReloadable live && _previewPath == _path) { live.Reload(shown); return; }
         _previewPath = _path;
-        var viewer = await _host.PreviewAsync(_path, System.Text.Encoding.UTF8.GetBytes(html), PreviewMessage);
+        var viewer = await _host.PreviewAsync(_path, System.Text.Encoding.UTF8.GetBytes(shown), PreviewMessage);
         _preview.Content = viewer ?? Outline();
     }
 
@@ -552,7 +601,7 @@ public sealed partial class PageStudioView : Border
         line.Children.Add(new TextBlock { Text = text, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextWrapping = TextWrapping.Wrap, MaxWidth = 460, VerticalAlignment = VerticalAlignment.Center });
         var t = new Border
         {
-            Background = UrbeTheme.Brush(UrbeTheme.Surface3), CornerRadius = new CornerRadius(12), Padding = new Thickness(14, 10), Margin = new Thickness(16, 0, 16, 76),
+            Background = UrbeTheme.Brush(UrbeTheme.Surface3), CornerRadius = new CornerRadius(12), Padding = new Thickness(14, 10), Margin = new Thickness(16, 0, 16, Wide ? 76 : 6),   // phone: over the tab bar, not over the preview
             HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom, BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1),
             Child = line
         };

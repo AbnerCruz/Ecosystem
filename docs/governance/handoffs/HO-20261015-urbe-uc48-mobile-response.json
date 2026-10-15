@@ -30,6 +30,8 @@
     "docs/governance/addenda/ADD-0024-urbe-nativo-desempenho-primeiro-e-release.md",
     "docs/governance/decisions.json",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/DockLayoutUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Studio.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/StudioPhoneUiTests.cs",
     "docs/governance/handoffs/HO-20261015-urbe-uc48-mobile-response.json"
   ],
   "work_completed": [
@@ -38,7 +40,8 @@
     "Editor: um toque num parágrafo põe o cursor onde o dedo tocou (antes ia para o fim e exigia segundo toque); o teclado do Android é pedido explicitamente ao abrir a caixa de edição; toque duplo seleciona a palavra.",
     "Editor: botão do Assistente na barra superior; o plugin Relógio também põe seu botão no editor.",
     "DEC-0047/ADD-0024 registram a prioridade do proprietário (desempenho, resposta, acessibilidade, depois beta) e as observações novas viraram UC-48..UC-55 no ROADMAP C#.",
-    "Barra inferior no celular (print do proprietário): Cidade, Explorer e Assistente ficavam à esquerda de cada terço; agora cada botão ocupa o terço inteiro, centralizado, com área de toque maior. Widget de notas rápidas por voz registrado como UC-56."
+    "Barra inferior no celular (print do proprietário): Cidade, Explorer e Assistente ficavam à esquerda de cada terço; agora cada botão ocupa o terço inteiro, centralizado, com área de toque maior. Widget de notas rápidas por voz registrado como UC-56.",
+    "Estúdio de páginas no celular (relato do proprietário: nada funcionava, a prévia cobria as outras abas): a prévia é uma view nativa desenhada por cima do app; agora a gaveta de opções fica abaixo dela (não por cima), a prévia some enquanto a biblioteca de blocos, o JSON, um menu, o Assistente, um painel de plugin ou outro arquivo estão abertos, e é liberada ao sair do estúdio. A parte tocada fica marcada na prévia (a seleção é enviada à página como a 1.8.4 enviava ao iframe), então o segundo toque escreve no lugar; o WebView pede o foco/teclado ao ser tocado."
   ],
   "verification": [
     {
@@ -52,6 +55,12 @@
       "check": "HeadlessUiTests.Dock_EachDestinationIsCentredInItsThirdOnAPhone",
       "result": "passed",
       "evidence": "Em 400 px de largura cada botão tem um terço da barra e o rótulo fica no centro do terço."
+    },
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.Studio_OnAPhoneTheSheetIsUnderThePreviewAndThePreviewHidesUnderMenus",
+      "result": "passed",
+      "evidence": "Com uma prévia nativa simulada em 400 px: tocar seleciona e abre Editar abaixo da prévia, a seleção é enviada à página, a biblioteca esconde a prévia e ela volta depois; ao sair a prévia é liberada."
     },
     {
       "kind": "human",

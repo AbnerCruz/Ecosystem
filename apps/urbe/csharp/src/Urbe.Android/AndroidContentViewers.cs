@@ -124,8 +124,19 @@ internal static class AndroidContentViewers
         {
             // the studio's preview: what the page posts to its parent (here, itself) goes out by the console, nothing else
             web.SetWebChromeClient(new PreviewMessages(messages));
-            const string relay = "<script>addEventListener('message',function(e){try{var m=e.data;if(m&&(m.urbePage==='select'||m.urbePage==='text'))console.log('urbe-msg:'+JSON.stringify(m))}catch(_){}})</script>";
+            const string relay = "<script>addEventListener('message',function(e){try{var m=e.data;if(m&&!m.host&&(m.urbePage==='select'||m.urbePage==='text'))console.log('urbe-msg:'+JSON.stringify(m))}catch(_){}})</script>";
             html = html.Contains("</body>", StringComparison.Ordinal) ? html.Replace("</body>", relay + "</body>", StringComparison.Ordinal) : html + relay;
+        }
+        if (messages is not null)
+        {
+            // writing in the preview: the page's text takes the keyboard (the app's own view holds it otherwise)
+            web.Focusable = true;
+            web.FocusableInTouchMode = true;
+            web.Touch += (_, e) =>
+            {
+                if (e.Event?.Action == MotionEventActions.Down && !web.HasFocus) web.RequestFocus();
+                e.Handled = false;
+            };
         }
         web.LoadDataWithBaseURL(null, html, "text/html", "utf-8", null);
         return web;
@@ -248,13 +259,20 @@ internal sealed class AndroidHtmlHost(Func<Context, AView> make, Action<AView>? 
         if (View is not WebView web || web.Handle == IntPtr.Zero) return;
         if (relay)
         {
-            const string script = "<script>addEventListener('message',function(e){try{var m=e.data;if(m&&(m.urbePage==='select'||m.urbePage==='text'))console.log('urbe-msg:'+JSON.stringify(m))}catch(_){}})</script>";
+            const string script = "<script>addEventListener('message',function(e){try{var m=e.data;if(m&&!m.host&&(m.urbePage==='select'||m.urbePage==='text'))console.log('urbe-msg:'+JSON.stringify(m))}catch(_){}})</script>";
             html = html.Contains("</body>", StringComparison.Ordinal) ? html.Replace("</body>", script + "</body>", StringComparison.Ordinal) : html + script;
         }
         // keep where the person was reading
         int y = web.ScrollY;
         web.LoadDataWithBaseURL(null, html, "text/html", "utf-8", null);
         web.PostDelayed(() => { try { if (web.Handle != IntPtr.Zero) web.ScrollTo(0, y); } catch (ObjectDisposedException) { } }, 150);
+    }
+
+    public void Post(string json)
+    {
+        if (View is not WebView web || web.Handle == IntPtr.Zero) return;
+        try { web.EvaluateJavascript("postMessage(" + json + ",'*')", null); }
+        catch (ObjectDisposedException) { }
     }
 }
 
