@@ -911,6 +911,14 @@ public sealed class EditorOverlay : Grid
             ApplyEdit(LegacyEditorTools.NoteLink(Editor.Text ?? text, a, b, names[i]));
             return;
         }
+        // UC-55: a lit button turns its state off (the 1.8.4's insertAtCursor, ApplySource, only added marks: a lit B added
+        // another pair), and Código puts the caret between the backticks; off buttons otherwise insert as the 1.8.4 did.
+        var (s, e) = VisualSurface.Range(Editor);
+        if (tool.Id is "bold" or "italic" or "code" && LegacyEditorTools.EnclosingMark(text, s, e, tool.Id) is not null)
+        { ApplyEdit(LegacyVisualEdit.ToggleMark(text, s, e, tool.Id)); return; }
+        if (tool.Id == "code") { ApplyEdit(LegacyVisualEdit.InlineCode(text, s, e)); return; }
+        if (tool.Id is "h1" or "h2" or "h3" or "list" or "task" or "quote" && LegacyEditorTools.ActiveTools(text, s, e).Contains(tool.Id))
+        { ApplyEdit(LegacyVisualEdit.ToggleBlock(text, s, tool.Md!)); return; }
         if (LegacyEditorTools.ApplySource(tool, text, a, b) is { } edit) ApplyEdit(edit);
     }
 
