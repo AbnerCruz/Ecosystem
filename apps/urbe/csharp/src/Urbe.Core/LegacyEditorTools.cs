@@ -61,26 +61,46 @@ public static partial class LegacyEditorTools
             else if (block.Value.TrimEnd().EndsWith('>')) on.Add("quote");
             else on.Add("list");
         }
+        foreach (var id in InlineMarks)
+            if (EnclosingMark(text, a, b, id) is not null) on.Add(id);
+        return on;
+    }
+
+    private static readonly string[] InlineMarks = ["bold", "italic", "code"];
+
+    /// <summary>
+    /// The pair of <paramref name="id"/> marks (bold, italic, code) on the line of the selection whose content encloses the
+    /// whole selection, the same test <see cref="ActiveTools"/> lights the button by: Open and Close are the indexes of the
+    /// opening and closing marks in <paramref name="text"/>, Mark their length. Null when the button is off.
+    /// </summary>
+    public static (int Open, int Close, int Mark)? EnclosingMark(string text, int selectionStart, int selectionEnd, string id)
+    {
+        var a = Math.Clamp(Math.Min(selectionStart, selectionEnd), 0, text.Length);
+        var b = Math.Clamp(Math.Max(selectionStart, selectionEnd), 0, text.Length);
+        int lineStart = a == 0 ? 0 : text.LastIndexOf('\n', a - 1) + 1;
+        int lineEnd = text.IndexOf('\n', a);
+        if (lineEnd < 0) lineEnd = text.Length;
+        if (b > lineEnd) return null;
+        var line = text[lineStart..lineEnd];
         int la = a - lineStart, lb = b - lineStart;
-        var code = new List<(int S, int E)>();
-        foreach (Match m in Regex.Matches(line, @"`[^`\n]*`"))
-        {
-            code.Add((m.Index, m.Index + m.Length));
-            if (la >= m.Index + 1 && lb <= m.Index + m.Length - 1) on.Add("code");
-        }
-        bool InCode(int i) => code.Exists(c => i >= c.S && i < c.E);
-        void Pair(string id, string pattern, int mark)
+        var code = Regex.Matches(line, @"`[^`\n]*`").Select(m => (S: m.Index, E: m.Index + m.Length)).ToList();
+        (int, int, int)? Pair(string pattern, int mark, bool skipCode)
         {
             foreach (Match m in Regex.Matches(line, pattern))
             {
-                if (InCode(m.Index)) continue;
+                if (skipCode && code.Exists(c => m.Index >= c.S && m.Index < c.E)) continue;
                 int innerStart = m.Index + mark, innerEnd = m.Index + m.Length - mark;
-                if (la >= innerStart && lb <= innerEnd) { on.Add(id); return; }
+                if (la >= innerStart && lb <= innerEnd) return (lineStart + m.Index, lineStart + innerEnd, mark);
             }
+            return null;
         }
-        Pair("bold", @"\*\*(?=\S)(.+?)(?<=\S)\*\*", 2);
-        Pair("italic", @"(?<![_\w])_(?=[^\s_])(.+?)(?<=[^\s_])_(?![_\w])", 1);
-        return on;
+        return id switch
+        {
+            "code" => Pair(@"`[^`\n]*`", 1, false),
+            "bold" => Pair(@"\*\*(?=\S)(.+?)(?<=\S)\*\*", 2, true),
+            "italic" => Pair(@"(?<![_\w])_(?=[^\s_])(.+?)(?<=[^\s_])_(?![_\w])", 1, true),
+            _ => null,
+        };
     }
 
     /// <summary>
