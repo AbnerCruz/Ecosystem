@@ -347,6 +347,15 @@ public sealed partial class MainView : Grid
 
     private async Task ShowVaultAsync(VaultSnapshot snapshot)
     {
+        // an import interrupted (app closed, error) left its journal: the vault is put back as it was first
+        if (snapshot.Files.ContainsKey(ImportTransaction.JournalPath) && _vault?.ImportStorage is { } importer)
+        {
+            try
+            {
+                if (await new ImportTransaction(importer).RecoverAsync() && await _vault.ReloadAsync() is { } recovered) snapshot = recovered;
+            }
+            catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException or InvalidOperationException) { /* the vault stays protected (Plan refuses) */ }
+        }
         // the previous vault's pending map is written first (abrirCidade: rodarSinc(true) + flush)
         if (_mapSave is { } previous)
         {

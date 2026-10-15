@@ -38,6 +38,15 @@ public sealed partial class HeadlessUiTests
         await Task.Delay(30);
         Dispatcher.UIThread.RunJobs();
         await next();
+        // a restore reopens the city, whose loading draws frames: they are ticked until the flow ends
+        for (int i = 0; i < 600 && !menu.IsCompleted; i++)
+        {
+            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+            Dispatcher.UIThread.RunJobs();
+            await Task.Delay(20);
+        }
+        if (!menu.IsCompleted)
+            throw new TimeoutException("A ação não terminou. Na tela: " + string.Join(" | ", view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text)));
         await menu;
     }
 
@@ -48,6 +57,12 @@ public sealed partial class HeadlessUiTests
         await Task.Delay(30);
         Dispatcher.UIThread.RunJobs();
         await next();
+        for (int i = 0; i < 1500 && !flow.IsCompleted; i++)
+        {
+            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+            Dispatcher.UIThread.RunJobs();
+            await Task.Delay(20);
+        }
         await flow;
     }
 
@@ -373,7 +388,7 @@ public sealed partial class HeadlessUiTests
             try
             {
                 var before = Directory.GetFiles(vault, "*", SearchOption.AllDirectories).Order().ToArray();
-                foreach (var selection in new[] { Files(false, ("../fora.md", "x")), Files(true, (".urbe/vault.json", "{\"formatVersion\":2}"), ("n.md", "x")) })
+                foreach (var selection in new[] { Files(false, ("../fora.md", "x")), Files(true, (".urbe/vault.json", "{\"formatVersion\":99}"), ("n.md", "x")) })
                 {
                     view.ImportPicker = _ => Task.FromResult<ImportSelection?>(selection);
                     await PickFromCreateMenu(view, "Importar", async () =>
@@ -386,6 +401,74 @@ public sealed partial class HeadlessUiTests
                     });
                 }
                 Assert.Equal(before, Directory.GetFiles(vault, "*", SearchOption.AllDirectories).Order().ToArray());
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task Import_RestoresAVaultFolderWithABackupOfWhatItReplaces() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var (view, window, vault, dir) = await OpenCreateVault();
+            try
+            {
+                await view.FlushMapAsync();
+                // the copy of the vault as it is now (what "Exportar"/a copied folder gives)
+                var copy = Directory.GetFiles(vault, "*", SearchOption.AllDirectories)
+                    .Select(f => (Path: Path.GetRelativePath(vault, f).Replace('\\', '/'), Bytes: File.ReadAllBytes(f))).ToList();
+                Assert.Contains(copy, f => f.Path == ".urbe/mapa.json");
+                // the vault changes afterwards
+                File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Mudou\n");
+                File.WriteAllText(Path.Combine(vault, "Extra.md"), "# Extra\n");
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                view.ImportPicker = _ => Task.FromResult<ImportSelection?>(new ImportSelection(
+                    copy.Select(f => new ImportSource(f.Path, _ => ValueTask.FromResult<Stream>(new MemoryStream(f.Bytes)))).ToList(), true));
+                await PickFromCreateMenu(view, "Importar", async () =>
+                {
+                    ClickButtonWithText(view.Dialogs, "Pasta inteira");
+                    await Task.Delay(80);
+                    Dispatcher.UIThread.RunJobs();
+                    Assert.Contains("Vault para restauração", view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text));
+                    ClickButtonWithText(view.Dialogs, "Continuar");
+                    await Task.Delay(150);
+                    Dispatcher.UIThread.RunJobs();
+                    Assert.Contains("Restaurar este vault?", view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text));
+                    Snapshot(window, "native-import-restore.png");
+                    ClickButtonWithText(view.Dialogs, "Restaurar com backup");
+                    await Task.Delay(400);
+                    Dispatcher.UIThread.RunJobs();
+                });
+                Assert.Equal("# Comece\n\n[[Um]]\n", File.ReadAllText(Path.Combine(vault, "Comece.md")));
+                Assert.False(File.Exists(Path.Combine(vault, "Extra.md")));
+                Assert.False(File.Exists(Path.Combine(vault, ".urbe", "import.v1.json")));
+                var backup = Directory.GetDirectories(Path.Combine(vault, ".urbe", "backup"), "import-*").Single();
+                Assert.Equal("# Mudou\n", File.ReadAllText(Path.Combine(backup, "files", "Comece.md")));
+                Assert.Equal("# Extra\n", File.ReadAllText(Path.Combine(backup, "files", "Extra.md")));
+                Assert.StartsWith("Vault restaurado. ", view.LifeNoticeText);
+                Assert.Null(view.World.City!.Buildings.FirstOrDefault(b => b.Path == "Extra.md"));
+
+                // Backups do vault: the import's own backup brings the replaced vault back (and is itself backed up first)
+                await RunWithDialog(view.ShowBackupsAsync(), async () =>
+                {
+                    Assert.Contains("Antes de importar · 3 arquivo(s)", view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text));
+                    Snapshot(window, "native-backups-list.png");
+                    ClickButtonWithText(view.Dialogs, "Antes de importar · 3 arquivo(s)");
+                    await Task.Delay(120);
+                    Dispatcher.UIThread.RunJobs();
+                    ClickButtonWithText(view.Dialogs, "Continuar");
+                    await Task.Delay(150);
+                    Dispatcher.UIThread.RunJobs();
+                    ClickButtonWithText(view.Dialogs, "Restaurar com backup");
+                    await Task.Delay(400);
+                    Dispatcher.UIThread.RunJobs();
+                });
+                Assert.Equal("# Mudou\n", File.ReadAllText(Path.Combine(vault, "Comece.md")));
+                Assert.Equal("# Extra\n", File.ReadAllText(Path.Combine(vault, "Extra.md")));
+                Assert.Equal(2, Directory.GetDirectories(Path.Combine(vault, ".urbe", "backup"), "import-*").Length);
+                Assert.StartsWith("Vault restaurado. ", view.LifeNoticeText);
                 window.Close();
                 return true;
             }

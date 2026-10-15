@@ -494,8 +494,7 @@ public sealed partial class MainView
         }
         if (inspection.Kind != ImportKind.Documents)
         {
-            await Dialogs.AlertAsync("Não foi possível importar",
-                "Restaurar um vault ou backup ainda não está disponível no app nativo. Nenhum dado foi alterado. Selecione apenas documentos ou uma pasta de documentos.");
+            await RestoreSelectionAsync(inspection);
             return;
         }
 
@@ -525,6 +524,156 @@ public sealed partial class MainView
         }
         World.InvalidateVisual();
         ShowLifeNotice($"Importação concluída. {written} arquivo(s) gravado(s); {plan.Unchanged} preservado(s), sem nova gravação.");
+    }
+
+    /// <summary>
+    /// app.js importarEntradasDestino for a vault, an export or a backup: confirm, write the pending note, map and
+    /// history, stop the map saves, plan against the vault as it is on disk, confirm the replacements ("Restaurar com
+    /// backup"), run the ImportTransaction (every replaced or removed file is copied to .urbe/backup/import-… first, with
+    /// the recovery journal) and reopen the city. On a failure the journal is recovered and the city reopened.
+    /// </summary>
+    private async Task RestoreSelectionAsync(ImportInspection inspection)
+    {
+        if (_vault?.ImportStorage is not { } storage || _snapshot is null)
+        {
+            await Dialogs.AlertAsync("Não foi possível importar", NoVaultMessage);
+            return;
+        }
+        if (_snapshot.IsReadOnly || _snapshot.IsMapReadOnly || _snapshot.FutureFiles.Count > 0)
+        {
+            await Dialogs.AlertAsync("Não foi possível importar", "O vault atual está protegido. Nenhum dado será alterado.");
+            return;
+        }
+        if (!await Dialogs.ConfirmAsync("Vault para restauração", $"{inspection.DocumentCount} documento(s) e {inspection.AssetCount} arquivo(s). O vault de origem será restaurado com suas notas e metadados. Um backup do vault atual será preservado.", "Continuar"))
+        {
+            ShowLifeNotice("Importação cancelada.");
+            return;
+        }
+        bool suspended = false;
+        try
+        {
+            // rodarSinc(true) + persistence.flush + suspend: what is pending goes to the vault, then nothing else writes
+            if (Editor.HasChanges && !await Editor.SaveAsync()) throw new IOException("A nota aberta não pôde ser salva. Nenhum dado foi alterado.");
+            await SaveHistoryAsync();
+            if (_mapSave is { } saves)
+            {
+                await saves.FlushAsync();
+                saves.Stop();
+                _mapSave = null;
+            }
+            suspended = true;
+            foreach (var tab in Editor.Tabs.ToList()) await Editor.CloseTabAsync(tab);
+            var files = new List<VaultFile>();
+            foreach (var path in await storage.ListAsync(CancellationToken.None))
+                if (await storage.ReadAsync(path, CancellationToken.None) is { } bytes) files.Add(new VaultFile(path, bytes.ToArray()));
+            var current = VaultReader.Read(files);
+            var revision = ImportTransaction.Revision(files);
+            var plan = ImportPipeline.Plan(inspection, current, revision);
+            if (plan.Conflicts.Count > 0)
+            {
+                if (!await Dialogs.ConfirmAsync("Restaurar este vault?", $"A restauração substituirá {plan.Conflicts.Count} arquivo(s) do vault atual. Eles serão guardados em backup antes de qualquer alteração.", "Restaurar com backup"))
+                {
+                    ShowLifeNotice("Importação cancelada.");
+                    return;
+                }
+                plan = ImportPipeline.Plan(inspection, current, revision, plan.Conflicts.ToDictionary(c => c.Path, _ => ImportConflictChoice.Replace, StringComparer.OrdinalIgnoreCase));
+            }
+            ShowLifeNotice("Importando…");
+            var result = await ImportPipeline.ExecuteAsync(plan, new ImportTransaction(storage));
+            suspended = false;
+            await ReopenVaultAsync();
+            ShowLifeNotice($"Vault restaurado. {result.Written} arquivo(s) gravado(s); {result.Unchanged} preservado(s), sem nova gravação.");
+        }
+        catch (Exception ex)
+        {
+            await Dialogs.AlertAsync("Não foi possível importar", ex.Message.Length > 0 ? ex.Message : "A seleção não pôde ser lida. O vault atual foi preservado.");
+        }
+        finally
+        {
+            if (suspended)
+            {
+                try
+                {
+                    await new ImportTransaction(storage).RecoverAsync();
+                    await ReopenVaultAsync();
+                }
+                catch (Exception ex) when (ex is InvalidDataException or InvalidOperationException or IOException or UnauthorizedAccessException)
+                {
+                    ShowLifeNotice("O vault aguarda recuperação. Preserve o backup e reabra o aplicativo.");
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// workspace.backups + workspace.restoreBackup (backup.js list/restore): the backups kept in .urbe/backup (before a
+    /// migration, a reorganization or an import), newest first; the one chosen is restored through the same import
+    /// transaction, so what it replaces is itself kept in a new backup first.
+    /// </summary>
+    public async Task ShowBackupsAsync()
+    {
+        if (_vault?.ImportStorage is not { } storage || !VaultWritable)
+        {
+            await Dialogs.AlertAsync("Backups do vault", NoVaultMessage);
+            return;
+        }
+        var token = CancellationToken.None;
+        var paths = await storage.ListAsync(token);
+        var backups = new List<(string Dir, string At, string Detail)>();
+        foreach (var path in paths)
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(path, @"^\.urbe/backup/([^/]+)/manifest\.json$");
+            if (!match.Success || await storage.ReadAsync(path, token) is not { } bytes) continue;
+            try
+            {
+                using var json = System.Text.Json.JsonDocument.Parse(bytes);
+                var root = json.RootElement;
+                string at = root.TryGetProperty("at", out var a) && a.ValueKind == System.Text.Json.JsonValueKind.String ? a.GetString()! : "";
+                string from = root.TryGetProperty("from", out var fr) ? fr.ToString() : "";
+                int count = root.TryGetProperty("files", out var f) && f.ValueKind == System.Text.Json.JsonValueKind.Array ? f.GetArrayLength()
+                    : root.TryGetProperty("journal", out var j) && j.TryGetProperty("entries", out var e) && e.ValueKind == System.Text.Json.JsonValueKind.Array ? e.GetArrayLength() : 0;
+                var dir = ".urbe/backup/" + match.Groups[1].Value;
+                if (at.Length == 0) at = match.Groups[1].Value;
+                var label = root.TryGetProperty("kind", out _) ? "Antes de importar" : from == "layout" ? "Antes de reorganizar a cidade" : from.Length > 0 ? "Antes de migrar o formato" : "Backup";
+                backups.Add((dir, at, label + " · " + count + " arquivo(s)"));
+            }
+            catch (System.Text.Json.JsonException) { /* an unreadable manifest is not offered */ }
+        }
+        if (backups.Count == 0)
+        {
+            await Dialogs.AlertAsync("Backups do vault", "Nenhum backup neste vault. O Urbe guarda um backup em .urbe/backup antes de migrar, reorganizar ou importar.");
+            return;
+        }
+        backups.Sort((x, y) => string.CompareOrdinal(y.At, x.At));
+        static string When(string at) => DateTimeOffset.TryParse(at, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out var t)
+            ? t.ToLocalTime().ToString("dd/MM/yyyy HH:mm", System.Globalization.CultureInfo.InvariantCulture) : at;
+        var pick = await Dialogs.ChooseAsync("Backups do vault", backups.Select(b => new DialogItem(When(b.At).Length > 0 ? When(b.At) : b.Dir, Detail: b.Detail)).ToList(),
+            "Escolha um backup para restaurar. O que ele substituir será guardado antes em outro backup.");
+        if (pick is null) return;
+        var chosen = backups[pick.Value].Dir + "/";
+        var sources = new List<ImportSource>();
+        foreach (var path in paths.Where(p => p.StartsWith(chosen, StringComparison.Ordinal)))
+        {
+            var bytes = await storage.ReadAsync(path, token);
+            if (bytes is null) continue;
+            var copy = bytes.Value.ToArray();
+            sources.Add(new ImportSource(path[chosen.Length..], _ => ValueTask.FromResult<Stream>(new MemoryStream(copy, writable: false))));
+        }
+        ImportInspection inspection;
+        try { inspection = await ImportPipeline.InspectAsync(new ImportSelection(sources, IsDirectory: true)); }
+        catch (InvalidDataException ex)
+        {
+            await Dialogs.AlertAsync("Não foi possível restaurar", ex.Message);
+            return;
+        }
+        await RestoreSelectionAsync(inspection);
+    }
+
+    /// <summary>abrirCidade(Disco.cidade): the same folder read again from disk.</summary>
+    private async Task ReopenVaultAsync()
+    {
+        if (await _vault!.ReloadAsync() is { } snapshot) await ShowVaultAsync(snapshot);
+        World.InvalidateVisual();
     }
 
     private async Task<ImportSelection?> PickImportAsync(bool folder)

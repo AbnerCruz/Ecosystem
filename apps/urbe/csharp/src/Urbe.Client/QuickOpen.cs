@@ -370,6 +370,7 @@ public sealed class SearchFeature
         Register("customize.edit-file", "Abrir tema.json", "Personalização", () => _ = view.EditThemeFileAsync());
         Register("ui.plugins", "Plugins", "Personalização", () => view.Customize.Open("plugins"));
         Register("plugins.reload", "Recarregar plugins", "Personalização", view.SyncPlugins);
+        Register("workspace.backups", "Backups do vault", "Workspace", () => _ = view.ShowBackupsAsync());
         Register("tutorial.menu", "Tutorial: abrir ou restaurar", "Ajuda", () => _ = view.ShowTutorialMenuAsync());
         Register("ui.settings", "Configurações", "Aplicativo", () => _ = view.ShowSettingsAsync());
         Register("ui.assistant", "Assistente", "Aplicativo", view.ToggleAssistant);

@@ -25,6 +25,49 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     private IReadOnlyDictionary<string, VaultFile>? _baseline;
     public bool IsConnected => _tree is not null && _baseline is not null;
 
+    public IImportStorage? ImportStorage => _tree is null ? null : new Importer(this);
+
+    /// <summary>The folder for ImportTransaction: every file (attachments and .urbe too), under the host's lock.</summary>
+    private sealed class Importer(AndroidVaultStorage host) : IImportStorage
+    {
+        private AndroidUri Tree => host._tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+
+        public async ValueTask<IAsyncDisposable> AcquireExclusiveAsync(CancellationToken cancellationToken)
+        {
+            await host._gate.WaitAsync(cancellationToken);
+            return new Release(host);
+        }
+
+        private sealed class Release(AndroidVaultStorage host) : IAsyncDisposable
+        {
+            public ValueTask DisposeAsync()
+            {
+                try { if (host._tree is { } tree) host._baseline = Snapshot(ReadFiles(tree, CancellationToken.None)); }
+                finally { host._gate.Release(); }
+                return ValueTask.CompletedTask;
+            }
+        }
+
+        public ValueTask<IReadOnlyList<string>> ListAsync(CancellationToken cancellationToken) =>
+            ValueTask.FromResult<IReadOnlyList<string>>(ReadFiles(Tree, cancellationToken, includeAll: true).Select(f => f.Path).ToList());
+
+        public ValueTask<ReadOnlyMemory<byte>?> ReadAsync(string path, CancellationToken cancellationToken) =>
+            ValueTask.FromResult<ReadOnlyMemory<byte>?>(FindDocument(Tree, path) is { } uri ? new ReadOnlyMemory<byte>(ReadBytes(uri)) : (ReadOnlyMemory<byte>?)null);
+
+        public ValueTask WriteAsync(string path, ReadOnlyMemory<byte> bytes, CancellationToken cancellationToken)
+        {
+            WriteVerified(Tree, path, bytes.ToArray());
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask RemoveAsync(string path, CancellationToken cancellationToken)
+        {
+            if (FindDocument(Tree, path) is { } uri && !DocumentsContract.DeleteDocument(Resolver, uri))
+                throw new IOException("O provedor recusou excluir " + path);
+            return ValueTask.CompletedTask;
+        }
+    }
+
     private static Android.Content.ISharedPreferences Preferences =>
         Android.App.Application.Context.GetSharedPreferences("urbe-native-vault", FileCreationMode.Private)
         ?? throw new IOException("Preferências do Android indisponíveis.");
@@ -69,6 +112,19 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
             _tree = selected;
             _baseline = Snapshot(files);
             return snapshot;
+        }
+        finally { _gate.Release(); }
+    }
+
+    public async Task<VaultSnapshot?> ReloadAsync(CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            if (_tree is not { } tree) return null;
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            _baseline = Snapshot(files);
+            return VaultReader.Read(files);
         }
         finally { _gate.Release(); }
     }

@@ -61,6 +61,9 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         return await OpenAsync(stored.Folder, cancellationToken);
     }
 
+    public async Task<VaultSnapshot?> ReloadAsync(CancellationToken cancellationToken = default) =>
+        _root is { } root ? await OpenAsync(root, cancellationToken) : null;
+
     private async Task<VaultSnapshot> OpenAsync(string root, CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken);
@@ -115,6 +118,53 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
             }, cancellationToken);
         }
         finally { _gate.Release(); }
+    }
+
+    public IImportStorage? ImportStorage => _root is null ? null : new Importer(this);
+
+    /// <summary>The folder for ImportTransaction: every file (attachments and .urbe too), under the host's lock.</summary>
+    private sealed class Importer(FolderVaultStorage host) : IImportStorage
+    {
+        private string Root => host._root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+
+        public async ValueTask<IAsyncDisposable> AcquireExclusiveAsync(CancellationToken cancellationToken)
+        {
+            await host._gate.WaitAsync(cancellationToken);
+            return new Release(host);
+        }
+
+        private sealed class Release(FolderVaultStorage host) : IAsyncDisposable
+        {
+            public ValueTask DisposeAsync()
+            {
+                try { if (host._root is { } root) host._baseline = Snapshot(ReadFiles(root, CancellationToken.None)); }
+                finally { host._gate.Release(); }
+                return ValueTask.CompletedTask;
+            }
+        }
+
+        public ValueTask<IReadOnlyList<string>> ListAsync(CancellationToken cancellationToken) =>
+            ValueTask.FromResult<IReadOnlyList<string>>(ReadFiles(Root, cancellationToken, includeAll: true).Select(f => f.Path).ToList());
+
+        public ValueTask<ReadOnlyMemory<byte>?> ReadAsync(string path, CancellationToken cancellationToken)
+        {
+            var full = Inside(Root, path);
+            return ValueTask.FromResult<ReadOnlyMemory<byte>?>(File.Exists(full) ? new ReadOnlyMemory<byte>(File.ReadAllBytes(full)) : (ReadOnlyMemory<byte>?)null);
+        }
+
+        public ValueTask WriteAsync(string path, ReadOnlyMemory<byte> bytes, CancellationToken cancellationToken)
+        {
+            var full = Inside(Root, path);
+            WriteVerified(Root, path, bytes.ToArray(), create: !File.Exists(full));
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask RemoveAsync(string path, CancellationToken cancellationToken)
+        {
+            var full = Inside(Root, path);
+            if (File.Exists(full)) File.Delete(full);
+            return ValueTask.CompletedTask;
+        }
     }
 
     public string? VaultName => _root is null ? null : Path.GetFileName(Path.GetFullPath(_root).TrimEnd(Path.DirectorySeparatorChar));

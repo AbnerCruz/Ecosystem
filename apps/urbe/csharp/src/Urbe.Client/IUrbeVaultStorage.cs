@@ -30,6 +30,16 @@ public interface IUrbeVaultStorage
     string? VaultName => null;
 
     /// <summary>
+    /// The vault as the import/restore transaction sees it (ImportTransaction: exclusive writer, every file listed,
+    /// read and written byte for byte, removed); null when the host cannot restore. While the transaction holds it no
+    /// other write runs, and afterwards the host's view of the folder is refreshed.
+    /// </summary>
+    IImportStorage? ImportStorage => null;
+
+    /// <summary>abrirCidade(Disco.cidade): the folder already open read again from disk (after a restore); null when none is open.</summary>
+    Task<VaultSnapshot?> ReloadAsync(CancellationToken cancellationToken = default) => Task.FromResult<VaultSnapshot?>(null);
+
+    /// <summary>
     /// Every file of the vault as it is on disk now, notes and attachments alike (exportarVault reads them all for the
     /// .zip), without following links out of the folder and within the same limits as the open. Read only: nothing is
     /// written. Hosts must override it.
