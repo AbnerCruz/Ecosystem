@@ -24,6 +24,8 @@ def shell(*args):
 
 
 assert shell('getprop', 'ro.kernel.qemu') == '1'
+for setting in ('window_animation_scale', 'transition_animation_scale', 'animator_duration_scale'):
+    shell('settings', 'put', 'global', setting, '0')
 
 
 def ui():
@@ -51,17 +53,24 @@ def tap(text=None, resource=None):
     x1, y1, x2, y2 = map(int, re.findall(r'\d+', target.get('bounds')))
     assert x2 > x1 and y2 > y1
     shell('input', 'tap', str((x1+x2)//2), str((y1+y2)//2))
-    time.sleep(.4)
+    time.sleep(1)
 
 
 def enter(hint, text):
     tap(hint)
     shell('input', 'text', text)
     shell('input', 'keyevent', '4')  # hide keyboard, keep dialog
+    time.sleep(1)  # IME resizing must settle before obtaining tap coordinates
 
 
 def save():
-    tap(resource='android:id/button1')
+    # A missed coordinate tap must not masquerade as a failed Product operation.
+    # ui() fails immediately on the Product's error dialog; never dismiss it here.
+    for _ in range(3):
+        tap(resource='android:id/button1')
+        if not any(n.get('resource-id') == 'android:id/button1' for n in ui().iter('node')):
+            return
+    raise AssertionError('The submit dialog did not close after three taps')
 
 
 def open_project():

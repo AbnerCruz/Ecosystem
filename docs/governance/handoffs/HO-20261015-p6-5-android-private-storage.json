@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261015-p6-5-android-private-storage",
   "category": "HANDOFF",
-  "timestamp": "2026-10-15T04:15:05.193863Z",
+  "timestamp": "2026-10-15T04:41:09.971987Z",
   "agent": {
     "id": "codex-android-storage",
     "kind": "ai-agent"
@@ -14,7 +14,7 @@
   "branch": "fix/android-private-storage-20261015",
   "base_commit": "f379a37b291283744e216e183c086bc0613d95ba",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/570",
   "files_changed": [
     "apps/ecosystem-ai/docs-r4-android-native.md",
     "apps/ecosystem-ai/src/EcosystemAi.Android/MainActivity.cs",
@@ -28,7 +28,10 @@
     "Print do proprietário após PR568 mostra Operação não concluída: Roster não aceita diretórios simbólicos. Não é evidência de uso completo do app.",
     "Host Android usa FilesDir.CanonicalPath antes de abrir stores; proteção contra symlinks dos stores intacta.",
     "Workspaces GUID privados registrados sob alias anterior são rebindados somente após validação do destino canônico exato, sem mover dados nem mudar schema, IDs ou histórico; caminho divergente falha fechado.",
-    "Teste automatizado amplia home-only para criar projeto/agente/conversa, matar processo e reabrir por raiz privada simbolizada no emulador descartável. Adicionado teste de persistência/rebind e recusa de links reais pelo roster."
+    "Teste automatizado amplia home-only para criar projeto/agente/conversa, matar processo e reabrir por raiz privada simbolizada no emulador descartável. Adicionado teste de persistência/rebind e recusa de links reais pelo roster.",
+    "Rebind compara o destino canônico exato da pasta GUID privada para aceitar grafias equivalentes de alias sem adotar outro destino.",
+    "Smoke preserva UID/contexto SELinux do app no alias sintético, rola até conversa em tela pequena e confirma fechamento do diálogo antes de avançar.",
+    "APK arm64 entregue: SHA256 16a3fd70f4e42c3c90bcc41d026e4d087ea5f523e47385dc579dfaae14649d71, versionCode 29867315 e certificado SHA256 bc5402adb12de1613402e6364ee8faa3cb4124cafd0dcda2e05c5e36a6569dfa, mesma assinatura do APK anterior."
   ],
   "verification": [
     {
@@ -38,10 +41,18 @@
       "evidence": "python -m py_compile, bash -n e git diff --check locais."
     },
     {
-      "check": "Testes Product e abertura Android13 com alias privado",
+      "check": "Product tests e Android13: projeto/agente/conversa/reabertura por alias",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Será executado pelo CI do Product e pelo integrador no estado combinado."
+      "result": "passed",
+      "evidence": "ecosystem-ai-ci run 38682168113: test e android verdes. Job Android 116248910925 registra project passed e launch passed às 04:39:36Z. Reabriu processo por symlink privado, conferiu conversa, roster e identidade do diretório; dados preservados e sem provider. Artifact 11948159166.",
+      "tested_commit": "da1fec59b8715e2fc2a801569352c88cc217da2d"
+    },
+    {
+      "check": "Assinatura, identidade, versionCode e digest do APK entregue",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "ZIP SHA256 b4e68067d3a85fb72e0c854e09a0483bbfa1ac4a452d8927c7db4905bbb90527 e SHA256SUMS conferidos; APK certificado igual ao anterior, package io.ecosystem.ai.preview, versionCode 29867315 > 29867039. CI apksigner verifica scheme v3; inspeção local do certificado e manifesto confirma a atualização.",
+      "tested_commit": "da1fec59b8715e2fc2a801569352c88cc217da2d"
     },
     {
       "check": "Criar e reabrir projeto/conversa no moto g32",
@@ -57,8 +68,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Conferir testes e integração automática; entregar novo APK arm64 com mesma assinatura.",
-    "Revalidar criação/reabertura de projeto no moto g32."
+    "Conferir a revisão final do teste e integração automática. O código do APK entregue corresponde a da1fec59; ajustes seguintes são somente automação/handoff.",
+    "Revalidar criação/reabertura de projeto no moto g32 com o APK SHA256 16a3fd70f4e42c3c90bcc41d026e4d087ea5f523e47385dc579dfaae14649d71."
   ],
   "decisions_required": [],
   "normative_sources": [
