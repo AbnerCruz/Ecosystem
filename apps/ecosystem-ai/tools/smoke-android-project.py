@@ -64,6 +64,14 @@ def tap(text=None, resource=None):
     time.sleep(1)
 
 
+def tap_dialog_action(label, resource='android:id/button1'):
+    # Native AlertDialog buttons apply AllCaps; IDs stay stable across themes.
+    target = node(resource=resource)
+    assert target.get('text', '').casefold() == label.casefold(), ET.tostring(target, encoding='unicode')
+    assert target.get('enabled') == 'true'
+    tap(resource=resource)
+
+
 def enter(hint, text):
     tap(hint)
     shell('input', 'text', text)
@@ -204,20 +212,21 @@ open_project()
 tap('Abrir conversa')
 tap('Salvar no projeto')
 # Name defaults to resposta.md; preparing and cancelling review must not write it.
-tap('Revisar conteúdo')
+tap_dialog_action('Revisar conteúdo')
 node('Novo arquivo: resposta.md')
 node('CI_reviewed_response')
 target_file = fixture_project['workspaceDirectory'] + '/resposta.md'
 assert shell('find', fixture_project['workspaceDirectory'], '-name', 'resposta.md') == ''
-tap('Cancelar')
+tap_dialog_action('Cancelar', resource='android:id/button2')
 tap('Salvar no projeto')
-tap('Revisar conteúdo')
-tap('Confirmar e salvar')
+tap_dialog_action('Revisar conteúdo')
+node('Revisar arquivo', resource='android:id/alertTitle')
+tap_dialog_action('Confirmar e salvar')
 node('Arquivo salvo no projeto')
 assert shell('cat', target_file) == 'CI_reviewed_response'
 saved_catalog = shell('cat', files + '/catalog/catalog.json')
 assert json.loads(saved_catalog)['body']['projects'][0]['sessions'][0]['runs'] == []
-tap('Fechar')
+tap_dialog_action('Fechar')
 shell('am', 'force-stop', package)
 shell('am', 'start', '-W', '-a', 'android.intent.action.MAIN',
       '-c', 'android.intent.category.LAUNCHER', '-n', package + '/' + activity)

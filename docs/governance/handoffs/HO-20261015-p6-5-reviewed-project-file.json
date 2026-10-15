@@ -32,7 +32,8 @@
     "Composição local usa IsolatedWorkspace/ChangeSet/ChangeIntegrator existentes com operador revisor distinto do produtor Host, verificador exato e autorização vinculados ao objeto. Sem aprovação automática de parecer ou tarefa.",
     "Publicação de arquivo novo por temporário + flush + rename sem overwrite; recusa conflito/case collision, traversal, nomes reservados, symlinks e rebind; origem relida, propostas vinculadas ao Host e repetição recusada.",
     "Testes portáteis usam filesystem real e smoke Android ampliado com resposta fictícia offline, cancelamento da revisão, confirmação, arquivo e restart. Nenhum recibo de inferência fictício, chamada de modelo ou gasto.",
-    "Revisão final: lock privado no catálogo serializa publicações entre Hosts/processos cooperantes; evita corrida de nomes que diferem só na capitalização. Caminhos privados normalizados na construção."
+    "Revisão final: lock privado no catálogo serializa publicações entre Hosts/processos cooperantes; evita corrida de nomes que diferem só na capitalização. Caminhos privados normalizados na construção.",
+    "CI compilou/abriu APK, validou projeto/roster/conversa/cofre e parou no smoke novo por AllCaps do AlertDialog. Seletores agora usam resource-id estável e conferem label case-insensitive; verificação de texto/conteúdo permanece estrita. Repetir o smoke integral antes de disponibilizar APK."
   ],
   "verification": [
     {
