@@ -151,7 +151,7 @@ jobs:
 
       - name: Preserve verified Android beta APK as workflow artifact
         if: steps.version.outputs.skip != 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: urbe-csharp-v${{ steps.version.outputs.version }}-android
           path: |
