@@ -96,14 +96,15 @@ public sealed partial class HeadlessUiTests
                 var texts = panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
                 Assert.Contains("Aprovar alteração · Comece.md", texts);
                 Assert.Contains("- - uma", texts);
-                Assert.Contains("+ - primeira", texts);
+                // UC-51: the text the Assistente writes carries its mark, {ia:"modelo"}
+                Assert.Contains("+ - primeira {ia:\"modelo-b\"}", texts);
                 Assert.Equal(original, File.ReadAllText(Path.Combine(vault, "Comece.md")));   // nothing written before the approval
                 Snapshot(window, "native-assistant-approval.png");
 
                 ClickButtonWithText(panel, "Aprovar");
                 await panel.CurrentRun!;
                 for (int i = 0; i < 20; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
-                var edited = original.Replace("- uma", "- primeira");
+                var edited = original.Replace("- uma", "- primeira {ia:\"modelo-b\"}");
                 Assert.Equal(edited, File.ReadAllText(Path.Combine(vault, "Comece.md")));
                 Assert.Equal(edited, view.Documents!.Get("Comece.md")!.Content);
                 var run = panel.Conversation.Runs.Last();

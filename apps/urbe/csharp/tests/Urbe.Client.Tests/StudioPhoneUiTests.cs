@@ -74,3 +74,32 @@ public sealed partial class HeadlessUiTests
             }
         }, CancellationToken.None));
 }
+
+/// <summary>UC-48 ("tudo com delay"): the world does not run behind an opaque screen that covers it all.</summary>
+public sealed partial class HeadlessUiTests
+{
+    [Fact]
+    public async Task World_PausesBehindTheStudioAndPagesAndRunsAgainAfter() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var (view, window, vault, dir) = await OpenCreateVault();
+            try
+            {
+                Assert.True(view.World.CityVisible());
+                view.ShowPages();
+                await Pump(100);
+                Assert.False(view.World.CityVisible());
+                await view.NewPageAsync();
+                for (int i = 0; i < 100 && view.Studio.Path is null; i++) await Pump(20);
+                await Pump(100);
+                Assert.False(view.World.CityVisible());
+                await view.Studio.CloseAsync();
+                view.Pages.IsVisible = false;
+                await Pump(100);
+                Assert.True(view.World.CityVisible());
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+}

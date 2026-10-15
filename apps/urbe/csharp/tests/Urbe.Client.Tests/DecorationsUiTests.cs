@@ -40,6 +40,9 @@ public sealed partial class HeadlessUiTests
                 window.MouseUp(at, MouseButton.Left);
                 Dispatcher.UIThread.RunJobs();
                 await view.ConfirmPlacementAsync();
+                // UC-53: the tool stays to place more of the same; ✕ finishes
+                Assert.True(view.ToolActive);
+                view.EndTool();
                 Assert.False(view.ToolActive);
                 var placed = Assert.Single(view.World.Prefs.Decorations);
                 Assert.Equal(("poco", spot.X, spot.Y), (placed.Kind, placed.X, placed.Y));

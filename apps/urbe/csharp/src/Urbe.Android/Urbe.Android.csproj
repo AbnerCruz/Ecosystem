@@ -21,6 +21,16 @@
     <UrbeBetaVersion>2.0.0-beta.10</UrbeBetaVersion>
     <UrbeBetaVersionCode>2000010</UrbeBetaVersionCode>
   </PropertyGroup>
+  <!--
+    UC-48 (desempenho no celular, "tá muito lagado"): o Release é todo compilado antes (AOT), não só a partida —
+    o JIT compilando a cidade, o editor e os painéis durante o uso dava travadas; e o coletor de lixo concorrente
+    pausa menos o app. O APK fica maior.
+  -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <RunAOTCompilation>true</RunAOTCompilation>
+    <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+    <AndroidEnableSGenConcurrent>true</AndroidEnableSGenConcurrent>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(UrbeChannel)' == 'beta'">
     <ApplicationTitle>Urbe</ApplicationTitle>
     <ApplicationId>app.urbe.csharp</ApplicationId>

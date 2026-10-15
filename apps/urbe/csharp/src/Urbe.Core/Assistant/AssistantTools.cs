@@ -24,6 +24,33 @@ public sealed record AiToolOutput(string Content, IReadOnlyList<AiChange>? Chang
 /// <summary>What the approval shows: the note and its text before and after (or a note of what happens).</summary>
 public sealed record AiPreview(string Path, string? Before, string? After, string? Note = null);
 
+public static partial class AssistantTools
+{
+    /// <summary>
+    /// UC-51: every text the Assistente writes into a note ends with its mark, <c>{ia:"modelo"}</c> (NoteMarks.AiMark), so
+    /// it can always be told apart; the person sees it in the preview and can edit it before approving.
+    /// </summary>
+    public static void Watermark(AiTool tool, JsonObject input, string? model)
+    {
+        var field = tool.Name switch { "create_note" or "write_note" or "append_to_note" => "content", "edit_note" => "new_text", _ => null };
+        if (field is null || input[field] is not JsonValue v || !v.TryGetValue<string>(out var text) || text.Trim().Length == 0) return;
+        input[field] = NoteMarks.WithAiMark(text, model ?? "IA");
+    }
+
+    /// <summary>Tools whose preview's "after" is the note's whole new text, so the person can edit it before approving.</summary>
+    public static bool CanEdit(AiTool tool, AiPreview? preview) =>
+        preview?.After is not null && tool.Name is "create_note" or "write_note" or "edit_note" or "append_to_note";
+
+    /// <summary>The call that writes <paramref name="edited"/> instead of what the model proposed: create_note keeps
+    /// creating; the others become write_note of the same note with the person's text.</summary>
+    public static (AiTool Tool, JsonObject Input)? EditedRun(AiTool tool, JsonObject input, AiPreview? preview, string edited)
+    {
+        if (!CanEdit(tool, preview)) return null;
+        if (tool.Name == "create_note") return (tool, new JsonObject { ["path"] = input["path"]?.DeepClone(), ["content"] = edited });
+        return (Get("write_note")!, new JsonObject { ["path"] = input["path"]?.DeepClone(), ["content"] = edited });
+    }
+}
+
 /// <summary>A tool's failure the model can act on (ToolError: the message goes as is).</summary>
 public sealed class AiToolException(string message) : Exception(message);
 
@@ -73,7 +100,7 @@ public sealed class AiTool
 /// tags, editor), writing (create, edit, rewrite, append, rename with links, trash, folder) and interface/memory
 /// (open, plan, remember), with the original's descriptions, schemas, labels and messages, and validate().
 /// </summary>
-public static class AssistantTools
+public static partial class AssistantTools
 {
     private const int Limit = 24000;
     private static readonly Regex NoteRe = new(@"\.(md|markdown)$", RegexOptions.IgnoreCase);

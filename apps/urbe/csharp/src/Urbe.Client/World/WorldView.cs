@@ -36,7 +36,10 @@ public sealed class WorldView : Control
     private readonly SpriteCache _sprites = new();
     private readonly Dictionary<IPointer, Point> _pointers = [];
     private readonly Dictionary<string, RegionShape> _shapes = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, FormattedText> _texts = new(StringComparer.Ordinal);
+    private readonly Dictionary<(string Text, double Size, FontWeight Weight, IBrush Brush), FormattedText> _texts = [];
+    // the dark pill behind house names (one brush, not one per label per frame)
+    private static readonly IBrush LabelBackground = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.FromArgb(209, 14, 15, 17));
+    private readonly List<LegacyCityBuilding> _labelHouses = [];
     private Point? _pressAt;
 
     /// <summary>v21MoveHold: holding a building 430 ms picks it up (gesture.mode = 'moveBuilding').</summary>
@@ -117,6 +120,8 @@ public sealed class WorldView : Control
     private readonly LegacyWorldLife _life;
     private readonly LegacyVillagers _villagers = new();
     private readonly TownTrades _trades = new();
+    // children playing by their doors (UC-52)
+    private readonly TownKids _kids = new();
     // app.js v25Ciclo every V25_FPS (33 ms)
     private readonly DispatcherTimer _villagerTimer = new() { Interval = TimeSpan.FromMilliseconds(LegacyVillagers.FrameMs) };
     private readonly LifeRenderer _lifeArt = new();
@@ -200,6 +205,8 @@ public sealed class WorldView : Control
 
     /// <summary>The residents with trades at the well, the field and the woodpile (DEC-0045, UC-42).</summary>
     public TownTrades Trades => _trades;
+    /// <summary>The children playing by their doors (UC-52).</summary>
+    public TownKids Kids => _kids;
     /// <summary>The discreet event notice of life.js avisar() ("🌧 Chuva passageira", …).</summary>
     public event EventHandler<string>? Notice;
     /// <summary>v25MapaVisivel(): false while the editor, explorer or a menu covers the city.</summary>
@@ -249,14 +256,15 @@ public sealed class WorldView : Control
     public void VillagerTick()
     {
         if (World is null || City is null || Bounds.Width <= 0) return;
-        if (!CityVisible()) { _villagers.People.Clear(); _trades.Reset(); _villagerLast = 0; return; }
+        if (!CityVisible()) { _villagers.People.Clear(); _trades.Reset(); _kids.Reset(); _villagerLast = 0; return; }
         double now = _clock.Elapsed.TotalMilliseconds;
         double dt = _villagerLast == 0 ? 0 : now - _villagerLast;
         _villagerMs += dt;
         _villagerLast = now;
         var view = LifeView();
         bool moved = _villagers.Tick(_villagerMs, view, _life.Options.People, _life.Hurry, _lifeHost);
-        if (_trades.Tick(Math.Min(.1, dt / 1000), view, _life.Options.People, _life.Hurry, Prefs.Decorations, _lifeHost) || moved) InvalidateVisual();
+        bool kids = _kids.Tick(Math.Min(.1, dt / 1000), view, _life.Options.People && _life.Hurry <= 1, _lifeHost);
+        if (_trades.Tick(Math.Min(.1, dt / 1000), view, _life.Options.People, _life.Hurry, Prefs.Decorations, _lifeHost) || moved || kids) InvalidateVisual();
     }
 
     /// <summary>Runs the life and the fauna for <paramref name="seconds"/> of simulated time
@@ -271,6 +279,7 @@ public sealed class WorldView : Control
             _villagerMs += 33;
             _villagers.Tick(_villagerMs, v, _life.Options.People, _life.Hurry, _lifeHost);
             _trades.Tick(.033, v, _life.Options.People, _life.Hurry, Prefs.Decorations, _lifeHost);
+            _kids.Tick(.033, v, _life.Options.People && _life.Hurry <= 1, _lifeHost);
             while (nextFauna <= t)
             {
                 nextFauna += .04;
@@ -467,7 +476,7 @@ public sealed class WorldView : Control
         _lifeArt.Ground(context, _life, life);
         using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.None }))
             DrawTrees(context);
-        _lifeArt.Villagers(context, _trades.People.Count == 0 ? _villagers.People : [.. _villagers.People, .. _trades.People], life, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        _lifeArt.Villagers(context, _trades.People.Count == 0 && _kids.People.Count == 0 ? _villagers.People : [.. _villagers.People, .. _trades.People, .. _kids.People], life, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         _lifeArt.TradeWork(context, _trades, life);
         _lifeArt.Fauna(context, _fauna, life);
         DrawBuildings(context);
@@ -576,12 +585,9 @@ public sealed class WorldView : Control
                 if (n != 0 && hidden) continue;
                 double alpha = strong ? (n != 0 ? .85 : .95) : (n != 0 ? .35 : .6);
                 if (n == 0)
-                    context.DrawGeometry(null, new Pen(new SolidColorBrush(Color.FromArgb(140, 8, 10, 14)), (w + 2.5) / s,
-                        lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round), g);
+                    context.DrawGeometry(null, OutlinePen(RegionShadow, (w + 2.5) / s, false), g);
                 // JS dash [5/px, 4/px] in tile units = 5 and 4 screen px; Avalonia dashes are in pen widths.
-                var dash = n >= 2 ? new DashStyle([5 / w, 4 / w], 0) : null;
-                context.DrawGeometry(null, new Pen(UrbeTheme.Brush(r.Color, alpha), w / s, dash,
-                    PenLineCap.Round, PenLineJoin.Round), g);
+                context.DrawGeometry(null, OutlinePen(UrbeTheme.Brush(r.Color, alpha), w / s, n >= 2), g);
             }
         }
     }
@@ -594,15 +600,21 @@ public sealed class WorldView : Control
     private static readonly IBrush WallMerlon = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.Parse("#b8b09e"));
     private static readonly IBrush WallTop = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.Parse("#e0d8c4"));
 
+    private const double WallWidth = .62;
+    // made once (they were made for every wall, every frame — UC-48)
+    private static readonly IPen[] WallPens =
+    [
+        new Avalonia.Media.Immutable.ImmutablePen((Avalonia.Media.Immutable.ImmutableSolidColorBrush)WallShadow, WallWidth + .4, null, PenLineCap.Square, PenLineJoin.Miter),
+        new Avalonia.Media.Immutable.ImmutablePen((Avalonia.Media.Immutable.ImmutableSolidColorBrush)WallJoint, WallWidth + .12, null, PenLineCap.Square, PenLineJoin.Miter),
+        new Avalonia.Media.Immutable.ImmutablePen((Avalonia.Media.Immutable.ImmutableSolidColorBrush)WallStone, WallWidth, null, PenLineCap.Square, PenLineJoin.Miter),
+        // merlons: blocks one wall-width long with a gap of the same, lighter, and a bright top on each
+        new Avalonia.Media.Immutable.ImmutablePen((Avalonia.Media.Immutable.ImmutableSolidColorBrush)WallMerlon, WallWidth * .7, new Avalonia.Media.Immutable.ImmutableDashStyle([1.2, 1.2], 0), PenLineCap.Flat, PenLineJoin.Miter),
+        new Avalonia.Media.Immutable.ImmutablePen((Avalonia.Media.Immutable.ImmutableSolidColorBrush)WallTop, .12, new Avalonia.Media.Immutable.ImmutableDashStyle([7, 7], 0), PenLineCap.Flat, PenLineJoin.Miter),
+    ];
+
     private static void DrawWall(DrawingContext context, Geometry g)
     {
-        const double w = .62;
-        context.DrawGeometry(null, new Pen(WallShadow, w + .4, lineCap: PenLineCap.Square, lineJoin: PenLineJoin.Miter), g);
-        context.DrawGeometry(null, new Pen(WallJoint, w + .12, lineCap: PenLineCap.Square, lineJoin: PenLineJoin.Miter), g);
-        context.DrawGeometry(null, new Pen(WallStone, w, lineCap: PenLineCap.Square, lineJoin: PenLineJoin.Miter), g);
-        // merlons: blocks one wall-width long with a gap of the same, lighter, and a bright top on each
-        context.DrawGeometry(null, new Pen(WallMerlon, w * .7, new DashStyle([1.2, 1.2], 0), PenLineCap.Flat, PenLineJoin.Miter), g);
-        context.DrawGeometry(null, new Pen(WallTop, .12, new DashStyle([7, 7], 0), PenLineCap.Flat, PenLineJoin.Miter), g);
+        foreach (var pen in WallPens) context.DrawGeometry(null, pen, g);
     }
 
     // ---------------- decorations (DEC-0045, UC-41): from .urbe/mundo.json, pixel art at 12 cells per tile
@@ -805,7 +817,18 @@ public sealed class WorldView : Control
 
     /// <summary>urbeNomeCasa: name with its extension, Markdown hidden, at most 30 characters; a file building shows
     /// nomeExibidoArquivo (an attachment its name, otherwise its fileName or name).</summary>
+    // the name on a house is worked out once per (name, extension, file): the labels are drawn every frame (UC-48)
+    private static readonly Dictionary<(string, string, string, bool), string> HouseLabels = [];
+
     public static string HouseLabel(LegacyCityBuilding b)
+    {
+        var key = (b.Name, b.Ext, b.FileDisplayName, b.IsNote);
+        if (HouseLabels.TryGetValue(key, out var known)) return known;
+        if (HouseLabels.Count > 20000) HouseLabels.Clear();
+        return HouseLabels[key] = MakeHouseLabel(b);
+    }
+
+    private static string MakeHouseLabel(LegacyCityBuilding b)
     {
         if (!b.IsNote)
         {
@@ -864,29 +887,39 @@ public sealed class WorldView : Control
         var city = City!;
         var (x0, y0, x1, y1) = Camera.VisibleTiles();
         double z = Camera.Zoom;
-        var labels = city.Buildings.Where(b =>
-            !(b.X > x1 || b.X + b.W < x0 || b.Y > y1 || b.Y + b.H < y0) &&
-            ((z >= .42 && ShowHouseNames) || b == Selected)).ToList();
+        // the selected house first, then the others in their order (no LINQ: this runs every frame)
+        var labels = _labelHouses;
+        labels.Clear();
+        if (Selected is { } sel && city.Buildings.Contains(sel) && !(sel.X > x1 || sel.X + sel.W < x0 || sel.Y > y1 || sel.Y + sel.H < y0)) labels.Add(sel);
+        if (z >= .42 && ShowHouseNames)
+            foreach (var b in city.Buildings)
+                if (b != Selected && !(b.X > x1 || b.X + b.W < x0 || b.Y > y1 || b.Y + b.H < y0)) labels.Add(b);
         var used = DistrictLabelLayout();
-        var districts = used.ToList();
-        labels = labels.Select((b, i) => (b, i)).OrderBy(p => p.b == Selected ? 0 : 1).ThenBy(p => p.i).Select(p => p.b).ToList();
+        int districtCount = used.Count;
         foreach (var r in labels)
         {
             var q = Camera.WorldToScreen((r.X + r.W / 2.0) * T, (r.Y + r.H) * T);
             var name = HouseLabel(r);
             var box = HouseLabelBox(name, q.X, q.Y + 4 * z);
-            if (r != Selected && used.Any(u => box.X < u.Box.X + u.Box.Width + 3 && box.X + box.Width + 3 > u.Box.X && box.Y < u.Box.Y + u.Box.Height + 2 && box.Y + box.Height + 2 > u.Box.Y)) continue;
+            if (r != Selected && Overlaps(used, box)) continue;
             used.Add((box, null, 0, ""));
             DrawHouseLabel(context, name, q.X, q.Y + 4 * z, r == Selected);
         }
-        foreach (var d in districts) DrawDistrictPill(context, d);
+        for (int i = 0; i < districtCount; i++) DrawDistrictPill(context, used[i]);
+    }
+
+    private static bool Overlaps(List<(Rect Box, LegacyCityRegion? Region, int Level, string Name)> used, Rect box)
+    {
+        foreach (var u in used)
+            if (box.X < u.Box.X + u.Box.Width + 3 && box.X + box.Width + 3 > u.Box.X && box.Y < u.Box.Y + u.Box.Height + 2 && box.Y + box.Height + 2 > u.Box.Y) return true;
+        return false;
     }
 
     // ---------------- labels (urbeRotulo, urbeCaixaBairro, urbePilulaBairro, urbeLayoutNomes)
 
     private FormattedText Text(string text, double size, FontWeight weight, IBrush brush)
     {
-        var key = text + "|" + size + "|" + (int)weight + "|" + brush.GetHashCode();
+        var key = (text, size, weight, brush);
         if (!_texts.TryGetValue(key, out var ft))
         {
             if (_texts.Count > 4000) _texts.Clear();
@@ -909,7 +942,7 @@ public sealed class WorldView : Control
     {
         var box = HouseLabelBox(text, cx, top);
         var ft = Text(text, LabelSize, FontWeight.SemiBold, UrbeTheme.Brush(selected ? "#0b1325" : "#ececf0"));
-        context.DrawRectangle(selected ? UrbeTheme.Brush("#8fb3ff") : new SolidColorBrush(Color.FromArgb(209, 14, 15, 17)), null, box, box.Height / 2, box.Height / 2);
+        context.DrawRectangle(selected ? UrbeTheme.Brush("#8fb3ff") : LabelBackground, null, box, box.Height / 2, box.Height / 2);
         context.DrawText(ft, new Point(cx - ft.Width / 2, top + box.Height / 2 + .5 - ft.Height / 2));
     }
 
@@ -959,6 +992,37 @@ public sealed class WorldView : Control
         return used;
     }
 
+    private static readonly IBrush RegionShadow = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.FromArgb(140, 8, 10, 14));
+    private readonly Dictionary<(IBrush, double, bool), IPen> _outlinePens = [];
+
+    /// <summary>A neighbourhood outline pen (round caps; dashed [5, 4] px for sub-folders), kept per brush and width.</summary>
+    private IPen OutlinePen(IBrush brush, double width, bool dashed)
+    {
+        if (!_outlinePens.TryGetValue((brush, width, dashed), out var pen))
+        {
+            if (_outlinePens.Count > 4096) _outlinePens.Clear();
+            // the dash is in pen widths: 5 and 4 screen px at the pen's screen width of 1.5
+            var dash = dashed ? new Avalonia.Media.Immutable.ImmutableDashStyle([5 / 1.5, 4 / 1.5], 0) : null;
+            _outlinePens[(brush, width, dashed)] = pen = new Avalonia.Media.Immutable.ImmutablePen(brush.ToImmutable(), width, dash, PenLineCap.Round, PenLineJoin.Round);
+        }
+        return pen;
+    }
+
+    private static readonly IBrush PillSub = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.FromArgb(219, 20, 22, 27));
+    private static readonly IBrush PillRoot = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.FromArgb(235, 12, 13, 16));
+    private readonly Dictionary<(IBrush, double), IPen> _pens = [];
+
+    /// <summary>One pen per brush and width, kept (pens were made anew for every outline, every frame — UC-48).</summary>
+    private IPen PenOf(IBrush brush, double width)
+    {
+        if (!_pens.TryGetValue((brush, width), out var pen))
+        {
+            if (_pens.Count > 4096) _pens.Clear();
+            _pens[(brush, width)] = pen = new Avalonia.Media.Immutable.ImmutablePen(brush.ToImmutable(), width);
+        }
+        return pen;
+    }
+
     private void DrawDistrictPill(DrawingContext context, (Rect Box, LegacyCityRegion? Region, int Level, string Name) d)
     {
         if (d.Region is null) return;
@@ -966,8 +1030,7 @@ public sealed class WorldView : Control
         int n = d.Level;
         var box = d.Box;
         double y = box.Y + box.Height / 2;
-        context.DrawRectangle(new SolidColorBrush(n != 0 ? Color.FromArgb(219, 20, 22, 27) : Color.FromArgb(235, 12, 13, 16)),
-            new Pen(UrbeTheme.Brush(r.Color, n != 0 ? .7 : .95), n != 0 ? 1.5 : 2), box, box.Height / 2, box.Height / 2);
+        context.DrawRectangle(n != 0 ? PillSub : PillRoot, PenOf(UrbeTheme.Brush(r.Color, n != 0 ? .7 : .95), n != 0 ? 1.5 : 2), box, box.Height / 2, box.Height / 2);
         if (n != 0) context.DrawEllipse(UrbeTheme.Brush(r.Color), null, new Point(box.X + 12, y), 3.5, 3.5);
         else context.FillRectangle(UrbeTheme.Brush(r.Color), new Rect(box.X + 10, y - 4.5, 9, 9));
         var ft = Text(d.Name, n != 0 ? 11 : 13, n != 0 ? FontWeight.SemiBold : FontWeight.Bold, UrbeTheme.Brush(n != 0 ? "#dfe3ea" : "#ffffff"));

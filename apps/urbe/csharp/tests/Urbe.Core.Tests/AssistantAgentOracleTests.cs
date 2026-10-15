@@ -239,4 +239,36 @@ public sealed class AssistantAgentOracleTests
         while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "csharp", "Urbe.Portable.slnx"))) dir = dir.Parent;
         return dir ?? throw new InvalidOperationException("apps/urbe not found");
     }
+
+    [Fact]
+    public async Task AnEditedApprovalWritesThePersonsText()
+    {
+        // UC-51: the model proposes an edit; the person changes the proposed text before approving
+        var host = new Host(new JsonArray(new JsonObject { ["path"] = "Comece.md", ["content"] = "# Comece\n\nTexto antigo.\n" }));
+        var replies = new Queue<AiResult>(
+        [
+            new AiResult([AiBlock.ToolUse("t1", "edit_note", new JsonObject { ["path"] = "Comece.md", ["old_text"] = "Texto antigo.", ["new_text"] = "Texto da IA." })], "", "tool_use", new AiUsage(1, 1, null), "m-1"),
+            new AiResult([AiBlock.TextBlock("Pronto.")], "", "end", new AiUsage(1, 1, null), "m-1")
+        ]);
+        AiApprovalRequest? asked = null;
+        var messages = new List<AiChatMessage> { new() { Id = "u1", Role = "user", Content = [AiChatBlock.TextBlock("Melhore")] } };
+        var result = await AssistantAgent.RunAsync(new AiAgentRun
+        {
+            Agent = AssistantAgent.AgentById("geral"), Policy = "ask", Messages = messages, Host = host, Cancel = CancellationToken.None,
+            Provider = new AiProviderConfig("p1", ""), Model = "m-1", VaultName = "Cofre", Now = new DateTime(2025, 10, 9, 15, 0, 0),
+            Stream = (cfg, req, onEvent, cancel) => Task.FromResult(replies.Dequeue()),
+            Approve = (req, _) =>
+            {
+                asked = req;
+                Assert.True(AssistantTools.CanEdit(req.Tool, req.Preview));
+                Assert.Equal("# Comece\n\nTexto da IA.\n", req.Preview!.After);
+                return Task.FromResult(AiApproval.ApproveEdited("# Comece\n\nTexto meu, revisado.\n"));
+            }
+        });
+        Assert.NotNull(asked);
+        Assert.Equal("# Comece\n\nTexto meu, revisado.\n", host.Documents.Get("Comece.md")!.Content);
+        Assert.Single(result.Changes);
+        var toolResult = messages.SelectMany(m => m.Content).First(b => b.Type == "tool_result");
+        Assert.Contains("editou o texto antes de aprovar", toolResult.Content);
+    }
 }

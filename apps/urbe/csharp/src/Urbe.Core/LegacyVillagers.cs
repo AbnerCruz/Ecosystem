@@ -38,6 +38,8 @@ public sealed class LegacyVillager : ILegacyLifePerson
     public int DirX { get; set; }
     public int DirY { get; set; } = 1;
     public double Conversation { get; set; }            // conversa
+    /// <summary>The size drawn (1 = an adult; children are smaller, UC-52).</summary>
+    public double Scale { get; init; } = 1;
 
     bool ILegacyLifePerson.Placed => PosX != 0;
     double ILegacyLifePerson.X => PosX;
