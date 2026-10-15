@@ -370,6 +370,11 @@ public sealed class SearchFeature
         Register("customize.edit-file", "Abrir tema.json", "Personalização", () => _ = view.EditThemeFileAsync());
         Register("ui.plugins", "Plugins", "Personalização", () => view.Customize.Open("plugins"));
         Register("plugins.reload", "Recarregar plugins", "Personalização", view.SyncPlugins);
+        Register("pages.open", "Abrir página no estúdio", "Páginas", () => _ = view.ChoosePageForStudioAsync());
+        Register("tutorial.open", "Tutorial", "Ajuda", () => _ = view.ShowTutorialMenuAsync());
+        Register("tutorial.restore", "Restaurar o Tutorial", "Ajuda", () => _ = view.RestoreTutorialAsync(true));
+        Register("editor.find", "Localizar no documento", "Editor", view.Editor.FindBar.Open, () => view.Editor.IsVisible);
+        Register("editor.replace", "Substituir no documento", "Editor", view.Editor.FindBar.Open, () => view.Editor.IsVisible);
         Register("pages.new", "Nova página", "Páginas", () => _ = view.NewPageAsync());
         Register("workspace.backups", "Backups do vault", "Workspace", () => _ = view.ShowBackupsAsync());
         Register("workspace.cleanOrphans", "Limpar referências órfãs", "Workspace", () => _ = view.CleanOrphansAsync());
