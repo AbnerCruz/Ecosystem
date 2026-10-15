@@ -13,9 +13,16 @@ planejamento, pareceres e `LocalRunEventLog`. Não é outro Runtime.
    São cópias no projeto privado; nome já existente é recusado, não sobrescrito.
 3. Crie uma conversa. Agentes e equipes podem ser cadastrados no projeto,
    sem modelo nem gasto. Planejar/cancelar tarefas também funciona offline.
-4. Em **Configurar IA e orçamento**, informe endpoint HTTPS completo de
-   Chat Completions compatível, modelo, chave e os preços do provedor.
-   Informe limites por execução/chamada e autorize o teto desta instância.
+4. Abra **Configurações de IA** (disponível também na home), toque em
+   **+ Novo provedor** e salve nome, URL base HTTPS e chave. Nesta versão,
+   use API compatível com Chat Completions (ex.: OpenRouter/OpenAI).
+   Em **Modelos de …**, cadastre o ID ou toque em **Buscar modelos do provedor**
+   para consultar `/models`. Configure uma vez nome, preços e limites por
+   modelo. **Usar …** seleciona o modelo e volta à conversa. Provedores,
+   modelos e seleção permanecem após fechar o app. Na conversa, o botão do
+   modelo abre um seletor rápido de provedor/modelo, sem preencher credenciais. Você pode editar/remover.
+   Na conversa, **Autorizar gasto** libera somente o teto desta instância;
+   trocar de modelo não recria o Host nem devolve reservas já consumidas.
 5. Envie uma tarefa. Opcionalmente declare um trecho exato obrigatório:
    o verificador confere o texto devolvido, não a declaração do modelo.
 6. Selecione uma equipe para executar produtor e revisor diferentes, com
@@ -35,11 +42,23 @@ o app exibe um diagnóstico curto (tipo de erro e código), sem mostrar dados pr
 - Catálogo v1, roster, planejamento, pareceres e journal usam os formatos
   atuais do Product, sob armazenamento privado do aplicativo. Os workspaces
   ficam separados dos registros, sem acesso do agente a catálogo ou journal.
-- O token vive somente em memória. Não vai a SharedPreferences, Bundle,
-  catálogo, journal ou prompts. O redactor do Runtime continua ativo.
-  Capturas/snapshot do SO são desabilitados na Activity. Endpoint/modelo
-  podem ser lembrados; chave e autorização financeira precisam ser dadas
-  novamente após a morte do processo. Backup automático Android está desabilitado.
+- A configuração de provedores, modelos, seleção e chaves fica no cofre local
+  do Host Android: AES-GCM autenticado, IV aleatório e chave não exportável
+  gerada no AndroidKeyStore. Preferences privadas contêm somente ciphertext.
+  A chave de API é recuperada somente para o adapter; nunca vai a catálogo,
+  workspace, journal, Bundle, exports, prompt ou log. O runtime não ganha
+  persistência nem novo acesso a segredo. Backup automático continua desabilitado.
+- Ao reabrir, o modelo escolhido e a chave são restaurados, mas **nenhum gasto
+  é autorizado automaticamente**. Só é preciso autorizar o teto, sem preencher
+  provedor, chave ou modelo novamente. Edição/seleção não chama inferência;
+  **Buscar modelos** realiza somente GET explícito, com limite de resposta,
+  timeout e redirects desativados. Falha permite informar o ID manualmente.
+- Remover provedor apaga sua chave e modelos do snapshot; remover o selecionado
+  limpa a seleção. Falha ao decifrar preserva o arquivo e permite redefinir
+  somente a configuração de IA por confirmação explícita; projetos ficam intactos.
+  Desinstalar/limpar os dados apaga o cofre; não há sincronização de credenciais.
+- Capturas/snapshot do SO continuam desabilitados. Campo de chave existente
+  fica vazio ao editar: vazio conserva o segredo, valor novo o substitui.
 - O orçamento da instância reserva o teto inteiro de cada run. Não devolve
   reservas nem é teto distribuído entre processos. A autorização nova no
   diálogo é explícita; não existe renovação automática.
@@ -133,3 +152,18 @@ Roteiro em aparelho para o APK exato:
 
 P6-5 só pode fechar com os requisitos completos e a evidência apropriada.
 Este APK não prova integração real de ChangeSets nem conclui a Fase 7.
+
+## Diretriz de configuração persistente (15/10/2026)
+
+Pedido explícito do proprietário: área dedicada de configuração,
+com **Novo provedor**, cadastro salvo e modelos selecionáveis a partir do
+provedor já configurado. Esta diretriz substitui a limitação transitória de
+chave somente em memória do head Android anterior. Implementação local ao
+Product/Host, sem dependência em outro Product, novo contrato compartilhado ou provedor
+no Core. Guardar configuração não renova autorização financeira.
+
+`SavedModelConfigurationTests` cobre provedores independentes, round-trip,
+seleção, remoção, validação e discovery mockado sem vazar payload de erro.
+O smoke Android cria um provedor com chave fictícia e modelo offline, mata o
+processo e verifica modelo selecionado, ausência de autorização financeira e
+ciphertext sem chave/URL em claro nas preferences. O teste não usa chave real.

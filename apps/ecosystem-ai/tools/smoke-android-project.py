@@ -40,12 +40,19 @@ def ui():
 
 
 def node(text=None, resource=None):
-    root = ui()
-    matches = [n for n in root.iter('node') if
-               (text is None or n.get('text') == text) and
-               (resource is None or n.get('resource-id') == resource)]
-    assert len(matches) == 1, (text, resource, ET.tostring(root, encoding='unicode'))
-    return matches[0]
+    for _ in range(6):
+        root = ui()
+        matches = [n for n in root.iter('node') if
+                   (text is None or n.get('text') == text) and
+                   (resource is None or n.get('resource-id') == resource)]
+        if len(matches) == 1:
+            return matches[0]
+        scrolls = [n for n in root.iter('node') if n.get('class') == 'android.widget.ScrollView' and n.get('scrollable') == 'true']
+        if not scrolls:
+            break
+        x1, y1, x2, y2 = map(int, re.findall(r'\d+', scrolls[0].get('bounds')))
+        shell('input', 'swipe', str((x1+x2)//2), str(y1+(y2-y1)*3//4), str((x1+x2)//2), str(y1+(y2-y1)//4), '300')
+    raise AssertionError((text, resource, ET.tostring(root, encoding='unicode')))
 
 
 def tap(text=None, resource=None):
@@ -89,6 +96,8 @@ enter('Nome', 'CI_agent')
 enter('Papel e instruções', 'Offline_reviewer')
 save()
 node('1 agentes • 0 equipes')
+# Return to the top after asserting the roster near the bottom.
+shell('input', 'swipe', '160', '220', '160', '570', '300')
 tap('+ Nova conversa')
 enter('Título', 'CI_conversation')
 save()
@@ -135,3 +144,41 @@ new_project['workspaceDirectory'] = old_project['workspaceDirectory']
 assert new_project == old_project, 'Project identity, sessions and history must survive alias rebinding'
 assert shell('pidof', package)
 print('Android 13 project passed: project, agent, conversation and process restart through symlinked private root; data preserved; no provider call.')
+
+# Provider settings are saved by an explicit gesture; the canary is a fake test key.
+tap('Configurações de IA')
+tap('+ Novo provedor')
+enter('Nome do provedor', 'CI_provider')
+enter('URL base da API (https://…/v1)', 'https://provider.example.test/v1')
+enter('Chave de API', 'sentinel-saved-provider-key')
+tap('Salvar provedor')
+tap('+ Adicionar modelo por ID')
+enter('ID do modelo', 'ci/model')
+enter('Nome do modelo', 'CI_model')
+tap('Salvar modelo')
+tap('Usar CI_model')
+node('Modelo: ci/model')
+node('Autorizar gasto')  # Persisting credentials never grants a spending budget.
+shell('am', 'force-stop', package)
+shell('am', 'start', '-W', '-a', 'android.intent.action.MAIN',
+      '-c', 'android.intent.category.LAUNCHER', '-n', package + '/' + activity)
+time.sleep(3)
+open_project()
+tap('Abrir conversa')
+node('Modelo: ci/model')
+node('Autorizar gasto')
+tap('Modelo: ci/model')
+node('Selecionar modelo')
+save()
+node('Modelo: ci/model')
+tap('Configurações de IA')
+node('CI_provider')
+tap('Modelos de CI_provider')
+node('CI_model • selecionado')
+# Inspect only this disposable app sandbox. No real provider/secret is involved.
+preferences = shell('cat', data + '/shared_prefs/ai-providers-v1.xml')
+assert 'vault' in preferences and 'sentinel-saved-provider-key' not in preferences
+assert 'provider.example.test' not in preferences
+assert 'sentinel-saved-provider-key' not in shell('cat', files + '/catalog/catalog.json')
+assert 'sentinel-saved-provider-key' not in ET.tostring(ui(), encoding='unicode')
+print('Android 13 settings passed: encrypted provider credential, saved model and selection survive process death; no provider call, no automatic spending authorization.')

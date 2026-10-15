@@ -7,7 +7,7 @@ using EcosystemAi.RunJournal;
 
 namespace EcosystemAi.Product;
 
-/// <summary>Configuração explícita do operador. Token transitório, nunca serializado.</summary>
+/// <summary>Configuração explícita do operador. Token de execução nunca serializado; persistência pertence ao cofre do Host.</summary>
 public sealed class ProductModelSettings
 {
     public required string Endpoint { get; init; }
@@ -30,7 +30,7 @@ public sealed class ProductModelSettings
             throw new ArgumentException("Informe o identificador do modelo.");
         if ((!uri.IsLoopback || !string.IsNullOrWhiteSpace(ApiKey))
             && (ApiKey is null || ApiKey.Length < SecretRedactor.MinimumLength))
-            throw new ArgumentException("A chave precisa ter ao menos 8 caracteres e será mantida apenas em memória.");
+            throw new ArgumentException("A chave precisa ter ao menos 8 caracteres.");
         if (RunBudgetCents < 1 || MaxCallCents < 1 || MaxCallCents > RunBudgetCents
             || InputUsdPerMillion < 0 || OutputUsdPerMillion < 0)
             throw new ArgumentException("Configure orçamento positivo e preços não negativos.");

@@ -18,7 +18,7 @@ namespace EcosystemAi.Android;
     ConfigurationChanges = global::Android.Content.PM.ConfigChanges.Orientation |
         global::Android.Content.PM.ConfigChanges.ScreenSize | global::Android.Content.PM.ConfigChanges.KeyboardHidden,
     WindowSoftInputMode = SoftInput.AdjustResize)]
-public sealed class MainActivity : Activity
+public sealed partial class MainActivity : Activity
 {
     private const int ImportCode = 501;
     private const int ExportCode = 502;
@@ -61,6 +61,7 @@ public sealed class MainActivity : Activity
             _projectRoot = System.IO.Path.Combine(root, "projects");
             _store = new LocalProjectStore(_catalog);
             RebindPrivateWorkspaces(originalRoot);
+            LoadModelPreferences();
             _projectId = savedInstanceState?.GetString("projectId");
             _sessionId = savedInstanceState?.GetString("sessionId");
             Render();
@@ -222,6 +223,7 @@ public sealed class MainActivity : Activity
         scroll.AddView(_content); SetContentView(scroll);
         _content.AddView(Text("Ecosystem AI", 28, true));
         _content.AddView(Text("Seus projetos. Seus agentes. Seu controle.", 14));
+        _content.AddView(Button("Configurações de IA", ShowAiSettings));
         var snapshot = _store.Read();
         var project = snapshot.Projects.SingleOrDefault(p => p.Id == _projectId);
         if (project is null) { _projectId = null; _sessionId = null; ShowProjects(snapshot); return; }
@@ -285,7 +287,8 @@ public sealed class MainActivity : Activity
     private void ShowSession(ProjectEntry project, SessionEntry session)
     {
         _content.AddView(Text(session.Title, 21, true));
-        _content.AddView(Button(_settings is null ? "Configurar IA e orçamento" : "IA: " + _settings.Model, Configure));
+        _content.AddView(Button(_settings is null ? "Selecionar modelo" : "Modelo: " + _settings.Model, ChooseSavedModel));
+        _content.AddView(Button(_execution is null ? "Autorizar gasto" : "Orçamento da instância", AuthorizeBudget));
         var remaining = _execution is null ? "Sem autorização de gasto configurada"
             : $"Autorização restante: {_execution.RemainingCents} centavos USD • {_execution.RemainingRuns} execuções";
         _content.AddView(Text(remaining, 13));
@@ -335,47 +338,11 @@ public sealed class MainActivity : Activity
         ShowReviews(project.Id, session.Id);
     }
 
-    private void Configure()
-    {
-        var prefs = GetSharedPreferences("model-ui", FileCreationMode.Private)!;
-        var body = Column(); body.AddView(Text("O token fica somente em memória. A configuração autoriza os limites abaixo para esta instância.", 14));
-        var endpoint = Input("Endpoint HTTPS completo", _settings?.Endpoint ?? prefs.GetString("endpoint", "") ?? "");
-        var model = Input("ID do modelo", _settings?.Model ?? prefs.GetString("model", "") ?? "");
-        var key = Input("Chave de API", _settings?.ApiKey ?? "", secret: true);
-        var run = Input("Centavos USD por execução", (_settings?.RunBudgetCents ?? 20).ToString(CultureInfo.InvariantCulture));
-        var call = Input("Centavos USD por chamada", (_settings?.MaxCallCents ?? 5).ToString(CultureInfo.InvariantCulture));
-        var total = Input("Autorizar até quantos centavos USD nesta instância?", "100");
-        var inputPrice = Input("Preço de entrada USD / milhão de tokens", _settings?.InputUsdPerMillion.ToString(CultureInfo.InvariantCulture) ?? "");
-        var outputPrice = Input("Preço de saída USD / milhão de tokens", _settings?.OutputUsdPerMillion.ToString(CultureInfo.InvariantCulture) ?? "");
-        var history = new CheckBox(this) { Text = "Reenviar histórico da conversa ao provedor", Checked = _settings?.UseHistory ?? false };
-        history.SetTextColor(_ink);
-        foreach (var view in new View[] { endpoint, model, key, run, call, total, inputPrice, outputPrice, history }) body.AddView(view);
-        Dialog("IA e autorização de gasto", body, "Autorizar", () =>
-        {
-            decimal Price(EditText e) => decimal.Parse((e.Text ?? "").Replace(',', '.'), CultureInfo.InvariantCulture);
-            var settings = new ProductModelSettings
-            {
-                Endpoint = (endpoint.Text ?? "").Trim(), Model = (model.Text ?? "").Trim(), ApiKey = key.Text,
-                RunBudgetCents = long.Parse(run.Text ?? "", CultureInfo.InvariantCulture),
-                MaxCallCents = long.Parse(call.Text ?? "", CultureInfo.InvariantCulture),
-                InputUsdPerMillion = Price(inputPrice), OutputUsdPerMillion = Price(outputPrice), UseHistory = history.Checked
-            };
-            settings.Validate();
-            if (new Uri(settings.Endpoint).Scheme != "https") throw new ArgumentException("A prévia Android aceita endpoint HTTPS.");
-            var limit = long.Parse(total.Text ?? "", CultureInfo.InvariantCulture);
-            if (limit < settings.RunBudgetCents) throw new ArgumentException("Teto da instância menor que o orçamento de uma execução.");
-            _execution = new ProductExecutionHost(_catalog, _journal, limit);
-            _settings = settings;
-            // Apenas endpoint/modelo, nunca chave nem nova autorização automática após restart.
-            prefs.Edit()!.PutString("endpoint", settings.Endpoint)!.PutString("model", settings.Model)!.Apply();
-            key.Text = ""; Render();
-        });
-    }
-
     private void StartRun(string goal, string? required, PlannedTaskEntry? planned)
     {
         if (_active is not null) throw new InvalidOperationException("Uma execução já está ativa.");
-        if (_settings is null || _execution is null) { Configure(); return; }
+        if (_settings is null) { ChooseSavedModel(); return; }
+        if (_execution is null) { AuthorizeBudget(); return; }
         if (string.IsNullOrWhiteSpace(goal)) throw new ArgumentException("Escreva uma solicitação.");
         var projectId = _projectId!; var sessionId = _sessionId!;
         var settings = _settings; var execution = _execution;
