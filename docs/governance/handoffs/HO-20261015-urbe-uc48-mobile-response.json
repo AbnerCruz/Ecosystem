@@ -29,6 +29,7 @@
     "apps/urbe/docs/csharp/ROADMAP.md",
     "docs/governance/addenda/ADD-0024-urbe-nativo-desempenho-primeiro-e-release.md",
     "docs/governance/decisions.json",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/DockLayoutUiTests.cs",
     "docs/governance/handoffs/HO-20261015-urbe-uc48-mobile-response.json"
   ],
   "work_completed": [
@@ -36,7 +37,8 @@
     "Salvar e sair mais rápido no Android: o armazenamento SAF guarda o conteúdo de cada arquivo de até 512 KB enquanto o provedor informar o mesmo tamanho e a mesma data de modificação; a verificação antes e depois de gravar não abre mais todos os arquivos do vault. Arquivo alterado há menos de 3 s é sempre lido de novo; a gravação continua verificada.",
     "Editor: um toque num parágrafo põe o cursor onde o dedo tocou (antes ia para o fim e exigia segundo toque); o teclado do Android é pedido explicitamente ao abrir a caixa de edição; toque duplo seleciona a palavra.",
     "Editor: botão do Assistente na barra superior; o plugin Relógio também põe seu botão no editor.",
-    "DEC-0047/ADD-0024 registram a prioridade do proprietário (desempenho, resposta, acessibilidade, depois beta) e as observações novas viraram UC-48..UC-55 no ROADMAP C#."
+    "DEC-0047/ADD-0024 registram a prioridade do proprietário (desempenho, resposta, acessibilidade, depois beta) e as observações novas viraram UC-48..UC-55 no ROADMAP C#.",
+    "Barra inferior no celular (print do proprietário): Cidade, Explorer e Assistente ficavam à esquerda de cada terço; agora cada botão ocupa o terço inteiro, centralizado, com área de toque maior. Widget de notas rápidas por voz registrado como UC-56."
   ],
   "verification": [
     {
@@ -44,6 +46,12 @@
       "check": "HeadlessUiTests.VisualEdit_TheCaretGoesWhereTheParagraphWasTappedAndADoubleTapWordIsFound",
       "result": "passed",
       "evidence": "Toque no meio do parágrafo põe o cursor no meio; palavra do toque duplo encontrada; texto preservado ao sair da edição."
+    },
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.Dock_EachDestinationIsCentredInItsThirdOnAPhone",
+      "result": "passed",
+      "evidence": "Em 400 px de largura cada botão tem um terço da barra e o rótulo fica no centro do terço."
     },
     {
       "kind": "human",
