@@ -32,6 +32,8 @@ contrato público, extração ou dependência em outro Product.
   arquivos ocultos, caminhos absolutos ou travessia.
 - Arquivo, diretório ou link existente com nome equivalente, inclusive em
   outra capitalização, é conflito. Nunca substituir/excluir o destino.
+  Um lock privado no catálogo serializa publicações de Hosts cooperantes,
+  inclusive entre processos; não fica acessível ao agente no workspace.
 - Workspace existente sem links simbólicos nos ancestrais, separado em ambas
   as direções do catálogo e journal. O uso previsto é o armazenamento privado
   Android; isto não é sandbox contra um processo hostil com o mesmo UID/root

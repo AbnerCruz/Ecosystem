@@ -42,6 +42,8 @@ public sealed class ReviewedProjectFileHost(string catalogDirectory, string jour
     private readonly object _identity = new();
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly HashSet<string> _published = new(StringComparer.Ordinal);
+    private readonly string _catalogPath = Path.GetFullPath(catalogDirectory);
+    private readonly string _journalPath = Path.GetFullPath(journalDirectory);
     private readonly LocalProjectStore _store = new(catalogDirectory);
 
     public ReviewedProjectFile Prepare(string projectId, string sessionId, int turnIndex, string fileName)
@@ -76,6 +78,13 @@ public sealed class ReviewedProjectFileHost(string catalogDirectory, string jour
             cancellationToken.ThrowIfCancellationRequested();
             if (_published.Contains(proposal.Change.Id)) throw new InvalidOperationException("Proposta já publicada.");
             ValidateSource(proposal);
+            // Serializa Hosts cooperantes, inclusive entre processos, antes da checagem
+            // case-insensitive. O lock é privado e nunca aparece no workspace do agente.
+            var lockPath = Path.Combine(_catalogPath, ".reviewed-file.lock");
+            var lockInfo = new FileInfo(lockPath);
+            if (lockInfo.LinkTarget is not null || (lockInfo.Exists && lockInfo.Attributes.HasFlag(FileAttributes.ReparsePoint)))
+                throw new IOException("Lock de publicação inválido.");
+            using var publicationLock = new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
             RequireAbsent(proposal.Workspace, proposal.FileName);
             var integrator = new ChangeIntegrator(new WorkspaceSnapshot(0, []),
                 new OperatorReview(proposal.Change), new ExactTextVerifier(proposal), new SavePolicy(),
@@ -136,10 +145,10 @@ public sealed class ReviewedProjectFileHost(string catalogDirectory, string jour
     private void ValidateRoot(string root)
     {
         if (!Directory.Exists(root)) throw new DirectoryNotFoundException("Workspace inexistente.");
-        ProductExecutionHost.RequireOutside(catalogDirectory, root);
-        ProductExecutionHost.RequireOutside(journalDirectory, root);
-        ProductExecutionHost.RequireOutside(root, catalogDirectory);
-        ProductExecutionHost.RequireOutside(root, journalDirectory);
+        ProductExecutionHost.RequireOutside(_catalogPath, root);
+        ProductExecutionHost.RequireOutside(_journalPath, root);
+        ProductExecutionHost.RequireOutside(root, _catalogPath);
+        ProductExecutionHost.RequireOutside(root, _journalPath);
     }
 
     private static void RequireAbsent(string root, string name)

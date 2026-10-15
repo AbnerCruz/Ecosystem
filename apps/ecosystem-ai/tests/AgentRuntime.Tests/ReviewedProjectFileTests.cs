@@ -115,6 +115,36 @@ public sealed class ReviewedProjectFileTests
     }
 
     [Fact]
+    public async Task Hosts_distintos_nao_publicam_nomes_que_so_diferem_em_capitalizacao()
+    {
+        using var f = new Fixture();
+        var other = new ReviewedProjectFileHost(f.Catalog, f.Journal);
+        var first = f.Prepare("RESULTADO.md");
+        var second = other.Prepare(f.Project.Id, f.Session.Id, 1, "resultado.md");
+        async Task<bool> Publish(ReviewedProjectFileHost host, ReviewedProjectFile proposal)
+        {
+            try { await host.PublishAsync(proposal, true); return true; }
+            catch (IOException) { return false; }
+        }
+        var attempts = await Task.WhenAll(Task.Run(() => Publish(f.Host, first)), Task.Run(() => Publish(other, second)));
+        Assert.Single(attempts, success => success);
+        Assert.Single(Directory.GetFileSystemEntries(f.Workspace));
+    }
+
+    [Fact]
+    public async Task Lock_privado_substituido_por_link_nao_e_aberto()
+    {
+        if (OperatingSystem.IsWindows()) return;
+        using var f = new Fixture();
+        var proposal = f.Prepare();
+        var outside = Path.Combine(f.Root, "outside.txt"); File.WriteAllText(outside, "intacto");
+        File.CreateSymbolicLink(Path.Combine(f.Catalog, ".reviewed-file.lock"), outside);
+        await Assert.ThrowsAsync<IOException>(() => f.Host.PublishAsync(proposal, true));
+        Assert.Equal("intacto", File.ReadAllText(outside));
+        Assert.Empty(Directory.GetFileSystemEntries(f.Workspace));
+    }
+
+    [Fact]
     public async Task Proposta_de_outro_host_e_troca_do_workspace_sao_recusadas()
     {
         using var f = new Fixture();

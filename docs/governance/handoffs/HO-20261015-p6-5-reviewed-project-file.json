@@ -14,7 +14,7 @@
   "branch": "codex/p6-5-reviewed-project-file",
   "base_commit": "419b1b0a9fac1a63c8faa20bd9f59615d180f21a",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/580",
   "files_changed": [
     "apps/ecosystem-ai/README.md",
     "apps/ecosystem-ai/docs-r4-android-native.md",
@@ -31,20 +31,27 @@
     "Novo fluxo Android Salvar no projeto: nome simples .md/.txt, revisão integral, confirmação explícita e arquivo real disponível para leitura/reabertura.",
     "Composição local usa IsolatedWorkspace/ChangeSet/ChangeIntegrator existentes com operador revisor distinto do produtor Host, verificador exato e autorização vinculados ao objeto. Sem aprovação automática de parecer ou tarefa.",
     "Publicação de arquivo novo por temporário + flush + rename sem overwrite; recusa conflito/case collision, traversal, nomes reservados, symlinks e rebind; origem relida, propostas vinculadas ao Host e repetição recusada.",
-    "Testes portáteis usam filesystem real e smoke Android ampliado com resposta fictícia offline, cancelamento da revisão, confirmação, arquivo e restart. Nenhum recibo de inferência fictício, chamada de modelo ou gasto."
+    "Testes portáteis usam filesystem real e smoke Android ampliado com resposta fictícia offline, cancelamento da revisão, confirmação, arquivo e restart. Nenhum recibo de inferência fictício, chamada de modelo ou gasto.",
+    "Revisão final: lock privado no catálogo serializa publicações entre Hosts/processos cooperantes; evita corrida de nomes que diferem só na capitalização. Caminhos privados normalizados na construção."
   ],
   "verification": [
     {
       "check": "Build e suíte AgentRuntime/Product",
       "kind": "automated",
       "result": "passed",
-      "evidence": "SDK10.0.402: build zero warnings/errors; execução AgentRuntime.Tests.dll: 250/250 testes, zero falhas/skip. Inclui 18 novos casos de publicação."
+      "evidence": "SDK10.0.402: build zero warnings/errors; execução AgentRuntime.Tests.dll: 252/252 testes, zero falhas/skip. Inclui 20 novos casos de publicação, com Hosts concorrentes e lock privado protegido contra symlink."
     },
     {
       "check": "Consistency local",
       "kind": "automated",
       "result": "passed",
       "evidence": "dotnet run tests/consistency/Check.cs: 22/22 checks; sem snapshot de Issues. Reexecutar após handoff e no CI combinado."
+    },
+    {
+      "check": "Compilação dos fontes Android contra bindings",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os arquivos C# do head Android compilados contra Mono.Android/Java.Interop: zero warnings/errors; não é build do APK nem DEVICE."
     },
     {
       "check": "APK e smoke Android13",
