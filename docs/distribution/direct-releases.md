@@ -65,6 +65,10 @@ Depois da primeira release direta, validar em DEVICE:
 - Web/PWA abre na URL do Ecosystem.
 
 
+## Urbe C# no Android: Urbe Beta 2.0 nativa (DEC-0048 / ADD-0025)
+
+A partir de `2.0.0-beta.10`, `urbe-csharp-mobile-release.yml` publica o **cliente nativo** (`apps/urbe/csharp/src/Urbe.Android`, compilado com `-p:UrbeChannel=beta`). O canal é o mesmo das betas 2.0 anteriores: identidade `app.urbe.csharp`, tags `urbe-csharp-v*` e o mesmo certificado beta público. A interface Blazor congelada (`Urbe.App`) deixa de ser publicada. A versão do canal tem uma só fonte, `UrbeBetaVersion`/`UrbeBetaVersionCode` em `Urbe.Android.csproj`: mudá-la e integrar na `main` publica a release. O APK de prévia dos PRs mantém a identidade de prévia. A validação no aparelho continua pendente (NN-017).
+
 ## Novo Product
 
 Declare identidade e versão no manifest, comando de teste, workflow de build
