@@ -50,6 +50,15 @@ public sealed class MainActivity : AvaloniaMainActivity
     {
         Current = this;
         base.OnCreate(savedInstanceState);
+        // the editor asks for the keyboard when a block becomes an edit box: Android does not always open it by itself (UC-48)
+        PlatformInput.ShowKeyboard = () => Window?.DecorView is { } root && GetSystemService(InputMethodService) is Android.Views.InputMethods.InputMethodManager ime
+            ? ShowKeyboard(root, ime) : false;
+    }
+
+    private static bool ShowKeyboard(View root, Android.Views.InputMethods.InputMethodManager ime)
+    {
+        var target = root.FindFocus() ?? root;
+        return ime.ShowSoftInput(target, Android.Views.InputMethods.ShowFlags.Implicit);
     }
 
     /// <summary>workspace.js flushPending on visibilitychange hidden: write a pending map now.</summary>

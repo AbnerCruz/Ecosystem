@@ -169,3 +169,10 @@ public sealed class PdfPagesView : ScrollViewer
         _doc.Dispose();
     }
 }
+
+/// <summary>What the platform does for text input that Avalonia does not (the Android head sets it).</summary>
+public static class PlatformInput
+{
+    /// <summary>Brings up the on-screen keyboard for the focused text box (null on a computer).</summary>
+    public static Func<bool>? ShowKeyboard { get; set; }
+}

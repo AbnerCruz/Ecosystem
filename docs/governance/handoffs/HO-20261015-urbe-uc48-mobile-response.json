@@ -1,0 +1,92 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261015-urbe-uc48-mobile-response",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-15T12:44:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-48",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "94732ff2",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/AndroidContentViewers.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/MainActivity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ContentViewers.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PageStudioView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Plugins/ClockPlugin.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/VisualEditCrashUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0024-urbe-nativo-desempenho-primeiro-e-release.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261015-urbe-uc48-mobile-response.json"
+  ],
+  "work_completed": [
+    "Erro relatado pelo proprietário (ObjectDisposedException em WebView.Destroy ao fechar página HTML/prévia): a liberação do WebView no Android é protegida e a prévia do estúdio de páginas reaproveita o mesmo WebView (recarrega o HTML e mantém a rolagem) em vez de criar e destruir um a cada mudança.",
+    "Salvar e sair mais rápido no Android: o armazenamento SAF guarda o conteúdo de cada arquivo de até 512 KB enquanto o provedor informar o mesmo tamanho e a mesma data de modificação; a verificação antes e depois de gravar não abre mais todos os arquivos do vault. Arquivo alterado há menos de 3 s é sempre lido de novo; a gravação continua verificada.",
+    "Editor: um toque num parágrafo põe o cursor onde o dedo tocou (antes ia para o fim e exigia segundo toque); o teclado do Android é pedido explicitamente ao abrir a caixa de edição; toque duplo seleciona a palavra.",
+    "Editor: botão do Assistente na barra superior; o plugin Relógio também põe seu botão no editor.",
+    "DEC-0047/ADD-0024 registram a prioridade do proprietário (desempenho, resposta, acessibilidade, depois beta) e as observações novas viraram UC-48..UC-55 no ROADMAP C#."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.VisualEdit_TheCaretGoesWhereTheParagraphWasTappedAndADoubleTapWordIsFound",
+      "result": "passed",
+      "evidence": "Toque no meio do parágrafo põe o cursor no meio; palavra do toque duplo encontrada; texto preservado ao sair da edição."
+    },
+    {
+      "kind": "human",
+      "check": "No Android: tocar num parágrafo abre o teclado com o cursor no ponto tocado; toque duplo seleciona a palavra; salvar e voltar ficam rápidos; fechar página HTML não derruba o app",
+      "result": "not-applicable",
+      "evidence": "Toque, teclado (IME) e tempo de resposta só se provam no aparelho (NN-017); o build Android sai do CI.",
+      "object": "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs"
+    }
+  ],
+  "known_issues": [
+    "Texto com aparência de negrito no Android ainda não reproduzido fora do aparelho: hipótese é a fonte do sistema (Roboto variável) escolhida pela lista de fontes; precisa de captura no aparelho antes de trocar a fonte (paridade visual).",
+    "Desalinhamentos no celular dependem de capturas do aparelho para serem localizados."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar no aparelho; seguir UC-48 (atrasos gerais, alinhamento) e depois a beta nativa (UC-25/27)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Comportamento de toque provado por teste headless; validação no aparelho pendente."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "O botão do Relógio no editor usa a permissão 'botoes' já declarada no manifesto do plugin."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "android-saf-file-cache",
+      "status": "product-specific",
+      "rationale": "Cache de leitura do armazenamento SAF do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Desempenho e correções de toque do cliente; gravação continua verificada e nenhum formato de dados muda."
+  }
+}

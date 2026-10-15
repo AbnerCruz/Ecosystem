@@ -41,6 +41,8 @@ public sealed class ClockPlugin : IUrbePlugin
         var panel = api.Panel("Relógio", Content());
         Panel = panel;
         api.Button("Relógio", UrbeTheme.Icons.Clock, () => { panel.Toggle(); Update(); return Task.CompletedTask; });
+        // also in the editor's top bar: the owner looked for it there (UC-46/UC-48: "o plugin do relógio não apareceu no editor")
+        api.EditorButton("Relógio", UrbeTheme.Icons.Clock, () => { panel.Toggle(); Update(); return Task.CompletedTask; });
         api.Command("Abrir relógio", () => { panel.Show(); Update(); return Task.CompletedTask; });
         _tick.Tick += (_, _) => Update();
         _tick.Start();

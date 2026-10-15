@@ -43,3 +43,36 @@ public sealed partial class HeadlessUiTests
             finally { window.Close(); }
         }, CancellationToken.None));
 }
+
+/// <summary>Owner's report (UC-48): a tap on a paragraph needed a second tap to put the caret where the finger was.</summary>
+public sealed partial class HeadlessUiTests
+{
+    [Fact]
+    public async Task VisualEdit_TheCaretGoesWhereTheParagraphWasTappedAndADoubleTapWordIsFound() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var surface = new VisualSurface();
+            var window = new Window { Width = 600, Height = 500, Content = surface };
+            window.Show();
+            try
+            {
+                const string text = "Um parágrafo com bastante texto para tocar no meio dele.";
+                surface.SetText(text + "\n");
+                Dispatcher.UIThread.RunJobs();
+                var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+                typeof(VisualSurface).GetField("_tapAt", flags)!.SetValue(surface, (Avalonia.Point?)new Avalonia.Point(160, 14));
+                typeof(VisualSurface).GetMethod("Edit", flags)!.Invoke(surface, [0]);
+                await Pump(200);
+                var box = surface.GetLogicalDescendants().OfType<TextBox>().Single();
+                Assert.InRange(box.CaretIndex, 5, text.Length - 5);
+
+                var wordAt = typeof(VisualSurface).GetMethod("WordAt", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!;
+                Assert.Equal((3, 12), ((int, int))wordAt.Invoke(null, [text, 6])!);
+                Assert.Equal((3, 12), ((int, int))wordAt.Invoke(null, [text, 12])!);
+                surface.FinishEdit();
+                Assert.Equal(text + "\n", surface.Text);
+                return true;
+            }
+            finally { window.Close(); }
+        }, CancellationToken.None));
+}

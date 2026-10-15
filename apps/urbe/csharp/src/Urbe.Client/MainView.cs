@@ -117,6 +117,7 @@ public sealed partial class MainView : Grid
         if (_vault is not null) Editor.SaveRequested += SaveNoteAsync;
         Editor.Editor.TextChanged += (_, _) => { EditorLinksChanged(); CaptureEditorHistory(); };
         Editor.MoreRequested += ShowEditorMenuAsync;
+        Editor.AssistantRequested += ToggleAssistant;
         Editor.Shown += path => NoteOpened?.Invoke(path);   // plugins: "nota:aberta"
 
         _stage.Children.Add(World);
