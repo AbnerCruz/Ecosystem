@@ -174,6 +174,7 @@ public sealed partial class MainView
         [
             new DialogItem("Abrir no estúdio", UrbeTheme.Icons.Edit, "Editar seções, tema e página", Run: () => OpenStudioAsync(path)),
             new DialogItem("Ver página", UrbeTheme.Icons.Page, "A página dentro do Urbe.", Run: () => ShowPageAsync(path)),
+            new DialogItem("Imprimir ou salvar PDF", UrbeTheme.Icons.Page, "Pela impressão do sistema", Run: () => PrintPageAsync(path)),
             new DialogItem("Baixar HTML", UrbeTheme.Icons.Download, "Arquivo único, funciona em qualquer hospedagem", Run: () => DownloadPageHtmlAsync(path)),
             new DialogItem("Salvar HTML no vault", UrbeTheme.Icons.Storage, "Ao lado desta página", Run: () => SavePageHtmlInVaultAsync(path)),
             new DialogItem("Copiar HTML", UrbeTheme.Icons.Copy, Run: () => CopyPageHtmlAsync(path)),

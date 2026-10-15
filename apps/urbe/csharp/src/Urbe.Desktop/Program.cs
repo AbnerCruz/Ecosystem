@@ -16,6 +16,17 @@ public static class Program
         UrbeApp.VaultStorageFactory = () => new FolderVaultStorage(PickFolderAsync, selection);
         UrbeApp.LocalStatePath = Path.Combine(Path.GetDirectoryName(selection)!, "notes-state.json");
         UrbeApp.AssistantFolder = Path.Combine(Path.GetDirectoryName(selection)!, "assistant");
+        // Imprimir ou salvar PDF: the page in the browser, which opens its print dialog (the 1.8.4's print frame)
+        ContentViewers.Printer = (title, html) =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-print");
+            Directory.CreateDirectory(dir);
+            var name = string.Concat((string.IsNullOrWhiteSpace(title) ? "pagina" : title).Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '-' : c));
+            var file = Path.Combine(dir, name + ".html");
+            File.WriteAllText(file, html.Replace("</body>", "<script>addEventListener(\"load\",function(){(document.fonts&&document.fonts.ready||Promise.resolve()).then(function(){setTimeout(function(){print()},250)})})</script></body>"));
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(file) { UseShellExecute = true });
+            return Task.CompletedTask;
+        };
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 

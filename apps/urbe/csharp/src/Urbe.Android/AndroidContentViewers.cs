@@ -1,3 +1,4 @@
+using Android.App;
 using Android.Content;
 using Android.Graphics;
 using Android.Graphics.Pdf;
@@ -28,6 +29,62 @@ internal static class AndroidContentViewers
     {
         ContentViewers.Factory = CreateAsync;
         ContentViewers.PdfReader = OpenPdfAsync;
+        ContentViewers.Printer = PrintAsync;
+    }
+
+    /// <summary>
+    /// printPdf (UrbeNative.printHtml in the 1.8.4 APK): the page in an off-screen WebView, then the system's print
+    /// dialog for it — "Salvar como PDF" saves the file where the person chooses; a book keeps its page size and margins.
+    /// </summary>
+    private static Task PrintAsync(string title, string html)
+    {
+        var activity = MainActivity.Current ?? throw new InvalidOperationException("O aplicativo não está aberto.");
+        var done = new TaskCompletionSource();
+        activity.RunOnUiThread(() =>
+        {
+            try
+            {
+                var web = new WebView(activity);
+                web.Settings.JavaScriptEnabled = true;
+                web.Settings.AllowFileAccess = false;
+                web.Settings.AllowContentAccess = false;
+                web.SetWebViewClient(new PrintWhenLoaded(activity, title, done));
+                web.LoadDataWithBaseURL(null, html, "text/html", "utf-8", null);
+                Kept.Add(web);
+            }
+            catch (Exception ex) { done.TrySetException(ex); }
+        });
+        return done.Task;
+    }
+
+    // the off-screen WebView must live until the print job has read the page
+    private static readonly List<WebView> Kept = [];
+
+    private sealed class PrintWhenLoaded(Activity activity, string title, TaskCompletionSource done) : WebViewClient
+    {
+        private bool _printed;
+
+        public override bool ShouldOverrideUrlLoading(WebView? view, IWebResourceRequest? request) => true;
+
+        public override void OnPageFinished(WebView? view, string? url)
+        {
+            if (_printed || view is null) return;
+            _printed = true;
+            try
+            {
+                if (activity.GetSystemService(Context.PrintService) is not Android.Print.PrintManager printer)
+                    throw new InvalidOperationException("Este aparelho não tem impressão.");
+                var job = string.IsNullOrWhiteSpace(title) ? "Página" : title;
+                printer.Print(job, view.CreatePrintDocumentAdapter(job), new Android.Print.PrintAttributes.Builder().Build());
+                done.TrySetResult();
+            }
+            catch (Exception ex) { done.TrySetException(ex); }
+            finally
+            {
+                // released a while later: the system has copied the document by then
+                view.PostDelayed(() => { Kept.Remove(view); view.Destroy(); }, 120_000);
+            }
+        }
     }
 
     private static async Task<Control?> CreateAsync(ContentRequest request, CancellationToken cancellationToken)

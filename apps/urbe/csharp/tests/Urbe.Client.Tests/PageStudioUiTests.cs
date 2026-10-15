@@ -86,6 +86,15 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains("Uma frase", File.ReadAllText(file));
                 Assert.Equal("Salvo", view.Studio.Status);
 
+                // Exportar → Imprimir ou salvar PDF: the export HTML goes to the system's print
+                (string Title, string Html)? printed = null;
+                var before = ContentViewers.Printer;
+                ContentViewers.Printer = (t, h) => { printed = (t, h); return Task.CompletedTask; };
+                try { await view.PrintPageAsync("Páginas/Nova página.page.json"); }
+                finally { ContentViewers.Printer = before; }
+                Assert.Equal("Nova página", printed!.Value.Title);
+                Assert.Contains("Uma frase", printed.Value.Html);
+
                 // Voltar: the page is listed with its new title
                 await view.Studio.CloseAsync();
                 Assert.Null(view.Studio.Path);

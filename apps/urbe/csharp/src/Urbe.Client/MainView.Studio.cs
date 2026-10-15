@@ -148,11 +148,27 @@ public sealed partial class MainView : IPageStudioHost
     /// <summary>exportMenu: Baixar HTML, Salvar HTML no vault, Copiar HTML (Imprimir ou salvar PDF: by the HTML opened in the browser).</summary>
     Task IPageStudioHost.ExportMenuAsync(string path) => Dialogs.MenuAsync("Exportar",
     [
+        new DialogItem("Imprimir ou salvar PDF", UrbeTheme.Icons.Page,
+            Studio.Model?.IsBook == true ? "Com o tamanho de página e as margens do livro" : "Pela impressão do sistema", Run: () => PrintPageAsync(path)),
         new DialogItem("Baixar HTML", UrbeTheme.Icons.Download, "Arquivo único, funciona em qualquer hospedagem", Run: () => DownloadPageHtmlAsync(path)),
         new DialogItem("Ver página", UrbeTheme.Icons.Page, "A página dentro do Urbe, como ela será publicada", Run: async () => { await ShowPageAsync(path); }),
         new DialogItem("Salvar HTML no vault", UrbeTheme.Icons.Storage, "Ao lado desta página", Run: () => SavePageHtmlInVaultAsync(path)),
         new DialogItem("Copiar HTML", UrbeTheme.Icons.Copy, Run: () => CopyPageHtmlAsync(path))
     ]);
+
+    /// <summary>printPdf(): the page's export HTML to the system's print ("Salvar como PDF" saves the file).</summary>
+    public async Task PrintPageAsync(string path)
+    {
+        if (PageHtml(path) is not { } html) return;
+        if (ContentViewers.Printer is not { } print) { await Dialogs.AlertAsync("Imprimir ou salvar PDF", "Este aparelho não oferece impressão. Use Baixar HTML e imprima pelo navegador."); return; }
+        try
+        {
+            ShowLifeNotice("Preparando o PDF…");
+            await print(PageFileBase(path), html);
+            ShowLifeNotice("Escolha “Salvar como PDF” para gerar o arquivo.");
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException) { ShowLifeNotice("Não consegui gerar o PDF: " + ex.Message); }
+    }
 
     /// <summary>moreMenu: Salvar como modelo, Duplicar página, Editar JSON, Todas as páginas, Mover página para a lixeira.</summary>
     Task IPageStudioHost.MoreMenuAsync(string path) => Dialogs.MenuAsync("Página",
