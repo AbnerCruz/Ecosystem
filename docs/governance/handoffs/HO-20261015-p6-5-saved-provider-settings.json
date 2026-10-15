@@ -62,8 +62,8 @@
     {
       "check": "Configurar provedores, selecionar modelo e reabrir no moto g32",
       "kind": "human",
-      "result": "pending",
-      "evidence": "Validar o APK novo exato, cadastro/edição/remoção, chave salva após restart e uso de provider real com autorização de gasto explícita.",
+      "result": "passed",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-15 (Issue https://github.com/AbnerCruz/Ecosystem/issues/576); registro em docs/governance/responses/VAL-HO-20261015-p6-5-saved-provider-settings-d9e31a731c89.md.",
       "object": "apps/ecosystem-ai/docs-r4-android-native.md",
       "critical": true
     }
