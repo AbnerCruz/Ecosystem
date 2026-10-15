@@ -474,4 +474,28 @@ public sealed partial class HeadlessUiTests
             }
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
+
+    [Fact]
+    public async Task Identity_ANoteRenamedOutsideTheAppKeepsItsHouse() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var (view, window, vault, dir) = await OpenCreateVault();
+            try
+            {
+                await view.FlushMapAsync();
+                // the map save also writes the identity sidecar (identity.js), so a later open can recognize renames
+                Assert.True(File.Exists(Path.Combine(vault, ".urbe", "identity.json")));
+                var before = view.World.City!.Buildings.Single(b => b.Path == "Bairro/Um.md");
+                File.Move(Path.Combine(vault, "Bairro", "Um.md"), Path.Combine(vault, "Bairro", "Um renomeado.md"));
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                var after = view.World.City!.Buildings.Single(b => b.Path == "Bairro/Um renomeado.md");
+                Assert.Equal(before.DocumentId, after.DocumentId);
+                Assert.Equal((before.X, before.Y), (after.X, after.Y));
+                Assert.Equal("Uma nota renomeada fora do app foi reconhecida: Bairro/Um renomeado.md.", view.LifeNoticeText);
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
 }

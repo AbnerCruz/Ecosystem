@@ -381,13 +381,14 @@ public sealed partial class MainView : Grid
         }
         var notes = texts.Select(d => new CityNote(d.Path, d.Text!)).ToArray();
         var ids = texts.ToDictionary(d => d.Path, d => d.Id, StringComparer.Ordinal);
+        var mapJson = ReconcileIdentity(snapshot, notes, ids);
         // 1.8.4 abrirCidade: the saved map (.urbe/mapa.json) is respected.
         // The terrain is always UrbeTerrain.createWorld('urbe'); mapa.mundo only names its version.
         DocumentStore? store = null;
         LegacyCity? opened = null;
         await LoadAsync(notes, city =>
         {
-            store = city.Open(notes.Select(n => (n.Path, n.Content)).ToList(), snapshot.MapJson, ids,
+            store = city.Open(notes.Select(n => (n.Path, n.Content)).ToList(), mapJson, ids,
                 DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
             opened = city;
             return true;
@@ -458,7 +459,11 @@ public sealed partial class MainView : Grid
                 DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), LegacyCityMap.ReferenceVersion, out var refusal);
             if (text is null) scheduler!.Refused(refusal ?? "");
             return text;
-        }, json => _vault.SaveMapAsync(json), snapshot.MapJson);
+        }, async json =>
+        {
+            await _vault.SaveMapAsync(json);
+            await SaveIdentityAsync();
+        }, snapshot.MapJson);
         scheduler.StateChanged += (_, _) =>
         {
             _vaultName.Text = scheduler.State switch { "error" => "Erro ao salvar o mapa", "refused" => "Mapa não salvo", _ => "" };

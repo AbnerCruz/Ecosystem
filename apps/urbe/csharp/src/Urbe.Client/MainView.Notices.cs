@@ -17,6 +17,7 @@ public sealed partial class MainView
     private void VaultNotices(VaultSnapshot snapshot)
     {
         if (_vault is null) return;
+        if (_identityNotice is { } recognized) ShowLifeNotice(recognized);
         if (snapshot.IsReadOnly && snapshot.FormatState == VaultFormatState.Future)
         {
             var msg = "Este vault foi criado por uma versão mais nova do Urbe (formato " + snapshot.VaultFormatVersion + "). Para não corromper nada, ele está aberto somente para leitura. Atualize o Urbe para editar.";
@@ -26,6 +27,72 @@ public sealed partial class MainView
         var foreign = snapshot.FutureFiles.Where(p => p != ".urbe/vault.json").ToList();
         if (foreign.Count > 0)
             ShowLifeNotice("Arquivos de uma versão mais nova do Urbe foram preservados sem alteração: " + string.Join(", ", foreign.Select(p => p.StartsWith(".urbe/", StringComparison.Ordinal) ? p[6..] : p)) + ".");
+    }
+
+    // ---------------------------------------------------------------- identity.js (REQ-042)
+
+    private VaultIdentityState? _identity;
+    private bool _identityReadOnly;
+    private byte[]? _identityOnDisk;
+    private string? _identityNotice;
+
+    /// <summary>
+    /// workspace.js load: the sidecar .urbe/identity.json is read (a newer version is preserved and never written) and
+    /// the notes renamed or moved outside the app while it was closed keep id, house, region and assets
+    /// (LegacyIdentity.Reconcile adjusts the map before the city opens); vault-notices.js tells what was recognized.
+    /// Returns the map the city opens with.
+    /// </summary>
+    private string? ReconcileIdentity(VaultSnapshot snapshot, IReadOnlyList<CityNote> notes, Dictionary<string, string> ids)
+    {
+        _identity = null;
+        _identityOnDisk = null;
+        _identityReadOnly = false;
+        _identityNotice = null;
+        var file = snapshot.Files.FirstOrDefault(f => string.Equals(f.Key, VaultIdentity.Path, StringComparison.OrdinalIgnoreCase)).Value;
+        if (file is not null)
+        {
+            _identityOnDisk = file.Bytes.ToArray();
+            _identity = VaultIdentity.Parse(file.Bytes, out var future);
+            _identityReadOnly = future;
+        }
+        if (_identity is null || snapshot.RecoveredFromJournal || snapshot.IsMapReadOnly) return snapshot.MapJson;
+        System.Text.Json.Nodes.JsonObject? meta = null;
+        try { meta = snapshot.MapJson is { } json ? System.Text.Json.Nodes.JsonNode.Parse(json) as System.Text.Json.Nodes.JsonObject : null; }
+        catch (System.Text.Json.JsonException) { return snapshot.MapJson; }
+        var notas = meta?["notas"] as System.Text.Json.Nodes.JsonObject;
+        var items = notes.Select(n => new LegacyIdentity.Item(n.Path, n.Content,
+            notas?[n.Path] is System.Text.Json.Nodes.JsonObject o && o["id"] is System.Text.Json.Nodes.JsonValue v && v.TryGetValue<string>(out var id) && id.Length > 0 ? id : null)).ToList();
+        var result = LegacyIdentity.Reconcile(items, meta, _identity, snapshot.Files.Keys.ToList());
+        foreach (var r in result.Renames) ids[r.To] = r.Id;
+        if (result.Ambiguous.Count > 0)
+            _identityNotice = "Notas idênticas apareceram fora do app (" + string.Join("; ", result.Ambiguous.Select(a => string.Join(", ", a.To))) + "): entraram como notas novas.";
+        else if (result.Renames.Count == 1)
+            _identityNotice = "Uma nota renomeada fora do app foi reconhecida: " + result.Renames[0].To + ".";
+        else if (result.Renames.Count > 1)
+            _identityNotice = result.Renames.Count + " notas renomeadas ou movidas fora do app foram reconhecidas.";
+        return result.Renames.Count > 0 && meta is not null ? meta.ToJsonString() : snapshot.MapJson;
+    }
+
+    /// <summary>workspace.js flush: the sidecar rebuilt from the notes (seen kept for who did not change), written only when it differs.</summary>
+    private async Task SaveIdentityAsync()
+    {
+        if (_vault is null || _identityReadOnly || _store is null || !VaultWritable) return;
+        var built = VaultIdentity.Build(_store.List().Select(d => new VaultWriteDocument(d.Id, d.Path, d.Content)), _identity, DateTimeOffset.UtcNow);
+        var bytes = VaultIdentity.Serialize(built);
+        if (_identityOnDisk is { } current && current.AsSpan().SequenceEqual(bytes)) return;
+        // the same documents with the same seen: nothing to write (the file is not rewritten for nothing)
+        if (_identity is { } previous && previous.Documents.Count == built.Documents.Count &&
+            built.Documents.All(p => previous.Documents.TryGetValue(p.Key, out var o) && o == p.Value)) return;
+        try
+        {
+            await _vault.SaveIdentityAsync(bytes);
+            _identity = built;
+            _identityOnDisk = bytes;
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or InvalidDataException or NotSupportedException or UnauthorizedAccessException)
+        {
+            // derived record: the notes and the map are already saved; the next save tries again
+        }
     }
 
     // ---------------------------------------------------------------- tips.js

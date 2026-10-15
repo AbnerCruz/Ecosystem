@@ -253,6 +253,27 @@ public interface IUrbeVaultStorage
     Task SaveHistoryAsync(string historyJson, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException("Este armazenamento ainda não grava as versões anteriores.");
 
+    /// <summary>
+    /// Rewrites .urbe/identity.json (identity.js: {version:1, docs:{id:{path, fingerprint, seen}}}), the derived record
+    /// that lets a note renamed outside the app keep its house, with the trash's safeguards. Hosts must override it.
+    /// </summary>
+    Task SaveIdentityAsync(byte[] identityJson, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não grava a identidade das notas.");
+
+    /// <summary>The checks of an identity rewrite: never over a sidecar of a newer version, a protected vault or an interrupted operation.</summary>
+    static (string Path, byte[] Bytes) PlanIdentityWrite(IReadOnlyList<VaultFile> files, byte[] identityJson)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(identityJson);
+        var snapshot = VaultReader.Read(files);
+        var path = files.FirstOrDefault(f => string.Equals(f.Path, VaultIdentity.Path, StringComparison.OrdinalIgnoreCase))?.Path ?? VaultIdentity.Path;
+        if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal ||
+            snapshot.FutureFiles.Any(f => string.Equals(f, path, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Formato futuro de vault, identidade protegida ou operação interrompida: escrita recusada.");
+        if (VaultIdentity.Parse(identityJson, out _) is null) throw new InvalidDataException("Identidade das notas inválida.");
+        return (path, identityJson);
+    }
+
     /// <summary>The checks of a history rewrite on these files: version 2 JSON, never over a file the 1.8.4 would keep.</summary>
     static (string Path, byte[] Bytes) PlanHistoryWrite(IReadOnlyList<VaultFile> files, string historyJson)
     {
