@@ -20549,5 +20549,4985 @@
     ]
    }
   }
+ ],
+ "variants": [
+  {
+   "id": "empty",
+   "mode": "simple",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "✦",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "grafite",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "none",
+     "animations": false,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": false,
+     "brand": "",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "",
+     "themeToggle": false,
+     "backToTop": false,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": []
+   }
+  },
+  {
+   "id": "empty",
+   "mode": "skeleton",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "✦",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "grafite",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "none",
+     "animations": false,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": false,
+     "brand": "",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "",
+     "themeToggle": false,
+     "backToTop": false,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": []
+   }
+  },
+  {
+   "id": "canvas",
+   "mode": "simple",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "⊞",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "aurora",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": false,
+     "brand": "",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "",
+     "themeToggle": false,
+     "backToTop": true,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "free",
+      "props": {
+       "root": {
+        "type": "box",
+        "content": {
+         "tag": "div"
+        },
+        "style": {
+         "gap": "64px",
+         "padding": "0 0 48px"
+        },
+        "children": [
+         {
+          "type": "box",
+          "content": {
+           "tag": "header"
+          },
+          "style": {
+           "minHeight": "60vh",
+           "justify": "center",
+           "align": "center",
+           "textAlign": "center",
+           "gap": "18px",
+           "padding": "48px 20px"
+          },
+          "children": [
+           {
+            "type": "heading",
+            "content": {
+             "text": "Página",
+             "level": 1
+            }
+           },
+           {
+            "type": "text",
+            "content": {
+             "text": "Uma frase que convida a continuar."
+            }
+           },
+           {
+            "type": "button",
+            "content": {
+             "label": "Começar",
+             "url": "#",
+             "variant": "primary"
+            }
+           }
+          ]
+         },
+         {
+          "type": "box",
+          "content": {
+           "tag": "div"
+          },
+          "style": {
+           "display": "row",
+           "gap": "28px",
+           "align": "center",
+           "minCol": "260px"
+          },
+          "children": [
+           {
+            "type": "image",
+            "style": {
+             "radius": "16px",
+             "aspect": "4/3"
+            }
+           },
+           {
+            "type": "box",
+            "content": {
+             "tag": "div"
+            },
+            "style": {
+             "gap": "12px"
+            },
+            "children": [
+             {
+              "type": "heading",
+              "content": {
+               "text": "Um título forte",
+               "level": 2
+              }
+             },
+             {
+              "type": "text",
+              "content": {
+               "text": "Uma explicação curta ao lado da imagem."
+              }
+             },
+             {
+              "type": "button",
+              "content": {
+               "label": "Saiba mais",
+               "url": "#",
+               "variant": "primary"
+              }
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "type": "box",
+          "content": {
+           "tag": "div"
+          },
+          "style": {
+           "gap": "18px"
+          },
+          "children": [
+           {
+            "type": "heading",
+            "content": {
+             "text": "Destaques",
+             "level": 2
+            },
+            "style": {
+             "textAlign": "center"
+            }
+           },
+           {
+            "type": "box",
+            "content": {
+             "tag": "div"
+            },
+            "style": {
+             "display": "grid",
+             "gap": "18px",
+             "minCol": "220px"
+            },
+            "children": [
+             {
+              "type": "box",
+              "content": {
+               "tag": "div"
+              },
+              "style": {
+               "padding": "22px",
+               "radius": "16px",
+               "border": "1px",
+               "shadow": "soft",
+               "gap": "8px",
+               "css": "background:var(--surface)"
+              },
+              "children": [
+               {
+                "type": "icon",
+                "content": {
+                 "emoji": "✨"
+                }
+               },
+               {
+                "type": "heading",
+                "content": {
+                 "text": "Primeiro",
+                 "level": 3
+                }
+               },
+               {
+                "type": "text",
+                "content": {
+                 "text": "Uma frase sobre isto."
+                }
+               }
+              ]
+             },
+             {
+              "type": "box",
+              "content": {
+               "tag": "div"
+              },
+              "style": {
+               "padding": "22px",
+               "radius": "16px",
+               "border": "1px",
+               "shadow": "soft",
+               "gap": "8px",
+               "css": "background:var(--surface)"
+              },
+              "children": [
+               {
+                "type": "icon",
+                "content": {
+                 "emoji": "✨"
+                }
+               },
+               {
+                "type": "heading",
+                "content": {
+                 "text": "Segundo",
+                 "level": 3
+                }
+               },
+               {
+                "type": "text",
+                "content": {
+                 "text": "Uma frase sobre isto."
+                }
+               }
+              ]
+             },
+             {
+              "type": "box",
+              "content": {
+               "tag": "div"
+              },
+              "style": {
+               "padding": "22px",
+               "radius": "16px",
+               "border": "1px",
+               "shadow": "soft",
+               "gap": "8px",
+               "css": "background:var(--surface)"
+              },
+              "children": [
+               {
+                "type": "icon",
+                "content": {
+                 "emoji": "✨"
+                }
+               },
+               {
+                "type": "heading",
+                "content": {
+                 "text": "Terceiro",
+                 "level": 3
+                }
+               },
+               {
+                "type": "text",
+                "content": {
+                 "text": "Uma frase sobre isto."
+                }
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "sheet": "page"
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "s",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "canvas",
+   "mode": "skeleton",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "⊞",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "aurora",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": false,
+     "brand": "",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "",
+     "themeToggle": false,
+     "backToTop": true,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "free",
+      "props": {
+       "root": {
+        "type": "box",
+        "content": {
+         "tag": "div"
+        },
+        "style": {
+         "gap": "64px",
+         "padding": "0 0 48px"
+        },
+        "children": [
+         {
+          "type": "box",
+          "content": {
+           "tag": "header"
+          },
+          "style": {
+           "minHeight": "60vh",
+           "justify": "center",
+           "align": "center",
+           "textAlign": "center",
+           "gap": "18px",
+           "padding": "48px 20px"
+          },
+          "children": [
+           {
+            "type": "heading",
+            "content": {
+             "text": "Página",
+             "level": 1
+            }
+           },
+           {
+            "type": "text",
+            "content": {
+             "text": "Uma frase que convida a continuar."
+            }
+           },
+           {
+            "type": "button",
+            "content": {
+             "label": "Começar",
+             "url": "#",
+             "variant": "primary"
+            }
+           }
+          ]
+         },
+         {
+          "type": "box",
+          "content": {
+           "tag": "div"
+          },
+          "style": {
+           "display": "row",
+           "gap": "28px",
+           "align": "center",
+           "minCol": "260px"
+          },
+          "children": [
+           {
+            "type": "image",
+            "style": {
+             "radius": "16px",
+             "aspect": "4/3"
+            }
+           },
+           {
+            "type": "box",
+            "content": {
+             "tag": "div"
+            },
+            "style": {
+             "gap": "12px"
+            },
+            "children": [
+             {
+              "type": "heading",
+              "content": {
+               "text": "Um título forte",
+               "level": 2
+              }
+             },
+             {
+              "type": "text",
+              "content": {
+               "text": "Uma explicação curta ao lado da imagem."
+              }
+             },
+             {
+              "type": "button",
+              "content": {
+               "label": "Saiba mais",
+               "url": "#",
+               "variant": "primary"
+              }
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "type": "box",
+          "content": {
+           "tag": "div"
+          },
+          "style": {
+           "gap": "18px"
+          },
+          "children": [
+           {
+            "type": "heading",
+            "content": {
+             "text": "Destaques",
+             "level": 2
+            },
+            "style": {
+             "textAlign": "center"
+            }
+           },
+           {
+            "type": "box",
+            "content": {
+             "tag": "div"
+            },
+            "style": {
+             "display": "grid",
+             "gap": "18px",
+             "minCol": "220px"
+            },
+            "children": [
+             {
+              "type": "box",
+              "content": {
+               "tag": "div"
+              },
+              "style": {
+               "padding": "22px",
+               "radius": "16px",
+               "border": "1px",
+               "shadow": "soft",
+               "gap": "8px",
+               "css": "background:var(--surface)"
+              },
+              "children": [
+               {
+                "type": "icon",
+                "content": {
+                 "emoji": "✨"
+                }
+               },
+               {
+                "type": "heading",
+                "content": {
+                 "text": "Primeiro",
+                 "level": 3
+                }
+               },
+               {
+                "type": "text",
+                "content": {
+                 "text": "Uma frase sobre isto."
+                }
+               }
+              ]
+             },
+             {
+              "type": "box",
+              "content": {
+               "tag": "div"
+              },
+              "style": {
+               "padding": "22px",
+               "radius": "16px",
+               "border": "1px",
+               "shadow": "soft",
+               "gap": "8px",
+               "css": "background:var(--surface)"
+              },
+              "children": [
+               {
+                "type": "icon",
+                "content": {
+                 "emoji": "✨"
+                }
+               },
+               {
+                "type": "heading",
+                "content": {
+                 "text": "Segundo",
+                 "level": 3
+                }
+               },
+               {
+                "type": "text",
+                "content": {
+                 "text": "Uma frase sobre isto."
+                }
+               }
+              ]
+             },
+             {
+              "type": "box",
+              "content": {
+               "tag": "div"
+              },
+              "style": {
+               "padding": "22px",
+               "radius": "16px",
+               "border": "1px",
+               "shadow": "soft",
+               "gap": "8px",
+               "css": "background:var(--surface)"
+              },
+              "children": [
+               {
+                "type": "icon",
+                "content": {
+                 "emoji": "✨"
+                }
+               },
+               {
+                "type": "heading",
+                "content": {
+                 "text": "Terceiro",
+                 "level": 3
+                }
+               },
+               {
+                "type": "text",
+                "content": {
+                 "text": "Uma frase sobre isto."
+                }
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "sheet": "page"
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "s",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "blank",
+   "mode": "simple",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "✦",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "papel",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "soft",
+     "animations": false,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": false,
+     "brand": "",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "© 2025 Página",
+     "themeToggle": false,
+     "backToTop": true,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "hero",
+      "props": {
+       "eyebrow": "",
+       "title": "Página",
+       "subtitle": "Uma frase curta sobre o que é esta página.",
+       "buttons": [],
+       "image": "",
+       "layout": "left",
+       "height": "auto",
+       "stack": false
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "l",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "text",
+      "props": {
+       "title": "",
+       "markdown": "Escreva aqui. Toque em qualquer parte para editar e use **+** para adicionar blocos.",
+       "columns": 1
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "blank",
+   "mode": "skeleton",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "✦",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "papel",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "soft",
+     "animations": false,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": false,
+     "brand": "",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "© 2025 Página",
+     "themeToggle": false,
+     "backToTop": true,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "hero",
+      "props": {
+       "eyebrow": "",
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "buttons": [],
+       "image": "",
+       "layout": "left",
+       "height": "auto",
+       "stack": false
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "l",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "text",
+      "props": {
+       "title": "Título",
+       "markdown": "Escreva aqui.",
+       "columns": 1
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "landing",
+   "mode": "simple",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "Uma frase que vende o produto.",
+     "lang": "pt-BR",
+     "icon": "🚀",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "aurora",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "mesh",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": true,
+     "brand": "Página",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "© 2025 Página · Feito com Urbe",
+     "themeToggle": true,
+     "backToTop": true,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "hero",
+      "props": {
+       "eyebrow": "Novo · versão 1.0",
+       "title": "O jeito mais simples de fazer **o que importa**",
+       "subtitle": "Explique em uma frase o que o produto resolve e para quem ele é.",
+       "buttons": [
+        {
+         "label": "Começar grátis",
+         "url": "#planos",
+         "variant": "primary"
+        }
+       ],
+       "image": "",
+       "layout": "center",
+       "height": "tall",
+       "stack": false
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "l",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "stats",
+      "props": {
+       "title": "",
+       "items": [
+        {
+         "value": "10k+",
+         "label": "pessoas usando"
+        },
+        {
+         "value": "4,9★",
+         "label": "avaliação média"
+        }
+       ]
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "s",
+       "width": "normal",
+       "align": "center",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "features",
+      "props": {
+       "title": "Tudo o que você precisa",
+       "subtitle": "Recursos pensados para o dia a dia.",
+       "columns": 3,
+       "items": [
+        {
+         "icon": "⚡",
+         "title": "Rápido",
+         "text": "Resposta instantânea em qualquer tela."
+        },
+        {
+         "icon": "🔒",
+         "title": "Privado",
+         "text": "Seus dados ficam com você."
+        }
+       ]
+      },
+      "style": {
+       "anchor": "Recursos",
+       "menu": true,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "testimonials",
+      "props": {
+       "title": "Quem usa, recomenda",
+       "columns": 3,
+       "items": [
+        {
+         "text": "Economizei horas toda semana.",
+         "author": "Marina Alves",
+         "role": "Designer",
+         "image": ""
+        },
+        {
+         "text": "Finalmente algo simples que funciona.",
+         "author": "João Pedro",
+         "role": "Desenvolvedor",
+         "image": ""
+        }
+       ]
+      },
+      "style": {
+       "anchor": "Depoimentos",
+       "menu": true,
+       "background": "surface",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "landing",
+   "mode": "skeleton",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "Uma frase que vende o produto.",
+     "lang": "pt-BR",
+     "icon": "🚀",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "aurora",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "mesh",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": true,
+     "brand": "Página",
+     "sticky": true,
+     "navCta": "Começar",
+     "navCtaUrl": "#planos",
+     "footer": "© 2025 Página · Feito com Urbe",
+     "themeToggle": true,
+     "backToTop": true,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "hero",
+      "props": {
+       "eyebrow": "",
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "buttons": [
+        {
+         "label": "Começar grátis",
+         "url": "#",
+         "variant": "primary"
+        }
+       ],
+       "image": "",
+       "layout": "center",
+       "height": "tall",
+       "stack": false
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "l",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "stats",
+      "props": {
+       "title": "Título",
+       "items": [
+        {
+         "value": "10k+",
+         "label": "pessoas usando"
+        }
+       ]
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "s",
+       "width": "normal",
+       "align": "center",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "features",
+      "props": {
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "columns": 3,
+       "items": [
+        {
+         "icon": "⚡",
+         "title": "Título",
+         "text": "Escreva aqui."
+        }
+       ]
+      },
+      "style": {
+       "anchor": "Recursos",
+       "menu": true,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "testimonials",
+      "props": {
+       "title": "Título",
+       "columns": 3,
+       "items": [
+        {
+         "text": "Escreva aqui.",
+         "author": "Ana",
+         "role": "",
+         "image": ""
+        }
+       ]
+      },
+      "style": {
+       "anchor": "Depoimentos",
+       "menu": true,
+       "background": "surface",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "pricing",
+      "props": {
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "items": [
+        {
+         "name": "Plano",
+         "price": "R$ 0",
+         "period": "/mês",
+         "description": "",
+         "features": "Item um\nItem dois",
+         "buttonLabel": "Escolher",
+         "url": "#",
+         "highlight": false
+        }
+       ]
+      },
+      "style": {
+       "anchor": "Planos",
+       "menu": true,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "center",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "faq",
+      "props": {
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "items": [
+        {
+         "q": "Como funciona?",
+         "a": "Explique aqui."
+        }
+       ],
+       "openFirst": true
+      },
+      "style": {
+       "anchor": "Dúvidas",
+       "menu": true,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "cta",
+      "props": {
+       "title": "Título",
+       "text": "Escreva aqui.",
+       "buttons": [
+        {
+         "label": "Criar conta grátis",
+         "url": "#",
+         "variant": "primary"
+        }
+       ]
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "portfolio",
+   "mode": "simple",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página — Portfólio",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "◆",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "grafite",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "grid",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": true,
+     "brand": "Página",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "© 2025 Página",
+     "themeToggle": true,
+     "backToTop": true,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "hero",
+      "props": {
+       "eyebrow": "Disponível para projetos",
+       "title": "Olá, eu sou Página. Crio experiências **simples e bonitas**.",
+       "subtitle": "Designer e desenvolvedor. Transformo ideias em produtos que as pessoas gostam de usar.",
+       "buttons": [
+        {
+         "label": "Ver projetos",
+         "url": "#projetos",
+         "variant": "primary"
+        }
+       ],
+       "image": "",
+       "layout": "left",
+       "height": "tall",
+       "stack": false
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "l",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "cards",
+      "props": {
+       "title": "Projetos selecionados",
+       "subtitle": "",
+       "columns": 3,
+       "items": [
+        {
+         "image": "",
+         "tag": "Produto",
+         "title": "Aplicativo de finanças",
+         "text": "Redesenho completo com foco em clareza.",
+         "url": ""
+        },
+        {
+         "image": "",
+         "tag": "Marca",
+         "title": "Identidade visual",
+         "text": "Marca, tipografia e sistema de cores.",
+         "url": ""
+        }
+       ]
+      },
+      "style": {
+       "anchor": "Projetos",
+       "menu": true,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "timeline",
+      "props": {
+       "title": "Trajetória",
+       "subtitle": "",
+       "items": [
+        {
+         "date": "2025",
+         "title": "Estúdio próprio",
+         "text": "Projetos para empresas e pessoas."
+        },
+        {
+         "date": "2022",
+         "title": "Designer sênior",
+         "text": "Liderança de design em produto digital."
+        }
+       ]
+      },
+      "style": {
+       "anchor": "Trajetória",
+       "menu": true,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "contact",
+      "props": {
+       "title": "Vamos criar algo juntos?",
+       "text": "Conte sua ideia; respondo em até um dia.",
+       "email": "voce@exemplo.com",
+       "phone": "",
+       "links": [
+        {
+         "label": "GitHub",
+         "url": "https://github.com"
+        },
+        {
+         "label": "LinkedIn",
+         "url": "https://linkedin.com"
+        }
+       ]
+      },
+      "style": {
+       "anchor": "Contato",
+       "menu": true,
+       "background": "surface",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "portfolio",
+   "mode": "skeleton",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página — Portfólio",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "◆",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "grafite",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "grid",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": true,
+     "brand": "Página",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "© 2025 Página",
+     "themeToggle": true,
+     "backToTop": true,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "hero",
+      "props": {
+       "eyebrow": "",
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "buttons": [
+        {
+         "label": "Ver projetos",
+         "url": "#",
+         "variant": "primary"
+        }
+       ],
+       "image": "",
+       "layout": "left",
+       "height": "tall",
+       "stack": false
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "l",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "cards",
+      "props": {
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "columns": 3,
+       "items": [
+        {
+         "image": "",
+         "tag": "",
+         "title": "Título",
+         "text": "Escreva aqui.",
+         "url": ""
+        }
+       ]
+      },
+      "style": {
+       "anchor": "Projetos",
+       "menu": true,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "timeline",
+      "props": {
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "items": [
+        {
+         "date": "2025",
+         "title": "Título",
+         "text": "Escreva aqui."
+        }
+       ]
+      },
+      "style": {
+       "anchor": "Trajetória",
+       "menu": true,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "contact",
+      "props": {
+       "title": "Título",
+       "text": "Escreva aqui.",
+       "email": "",
+       "phone": "",
+       "links": [
+        {
+         "label": "GitHub",
+         "url": ""
+        }
+       ]
+      },
+      "style": {
+       "anchor": "Contato",
+       "menu": true,
+       "background": "surface",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "article",
+   "mode": "simple",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Plano",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "✎",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "papel",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1000,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": true,
+     "brand": "Plano",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "Publicado com Urbe · 09/10/2025",
+     "themeToggle": true,
+     "backToTop": true,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "note",
+      "props": {
+       "path": "Plano.md",
+       "showTitle": true,
+       "showMeta": true
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "l",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "article",
+   "mode": "skeleton",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Plano",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "✎",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "papel",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1000,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": true,
+     "brand": "Plano",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "Publicado com Urbe · 09/10/2025",
+     "themeToggle": true,
+     "backToTop": true,
+     "progress": true,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "note",
+      "props": {
+       "path": "Plano.md",
+       "showTitle": true,
+       "showMeta": true
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "l",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "vault-site",
+   "mode": "simple",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "🗂️",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "lavanda",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": true,
+     "brand": "Página",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "Gerado a partir de “vault” com Urbe",
+     "themeToggle": true,
+     "backToTop": true,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "hero",
+      "props": {
+       "eyebrow": "Coleção",
+       "title": "Página",
+       "subtitle": "Todas as notas de **o vault** reunidas num só lugar.",
+       "buttons": [
+        {
+         "label": "Começar a ler",
+         "url": "#indice",
+         "variant": "primary"
+        }
+       ],
+       "image": "",
+       "layout": "center",
+       "height": "auto",
+       "stack": false
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "l",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "notes",
+      "props": {
+       "title": "Índice",
+       "subtitle": "",
+       "source": "folder",
+       "folder": "",
+       "tag": "",
+       "paths": "",
+       "layout": "cards",
+       "columns": 3,
+       "limit": 60,
+       "sort": "title",
+       "excerpt": true,
+       "expand": true
+      },
+      "style": {
+       "anchor": "Índice",
+       "menu": true,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "vault-site",
+   "mode": "skeleton",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "🗂️",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "lavanda",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": true,
+     "brand": "Página",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "Gerado a partir de “vault” com Urbe",
+     "themeToggle": true,
+     "backToTop": true,
+     "progress": true,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "hero",
+      "props": {
+       "eyebrow": "",
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "buttons": [
+        {
+         "label": "Começar a ler",
+         "url": "#",
+         "variant": "primary"
+        }
+       ],
+       "image": "",
+       "layout": "center",
+       "height": "auto",
+       "stack": false
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "l",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "notes",
+      "props": {
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "source": "folder",
+       "folder": "",
+       "tag": "",
+       "paths": "",
+       "layout": "cards",
+       "columns": 3,
+       "limit": 60,
+       "sort": "title",
+       "excerpt": true,
+       "expand": true
+      },
+      "style": {
+       "anchor": "Índice",
+       "menu": true,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "resume",
+   "mode": "simple",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página — Currículo",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "💼",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "papel",
+     "mode": "light",
+     "headingFont": "fraunces",
+     "bodyFont": "dmsans",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": false,
+     "brand": "",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "",
+     "themeToggle": false,
+     "backToTop": true,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "hero",
+      "props": {
+       "eyebrow": "Profissão · Cidade",
+       "title": "Página",
+       "subtitle": "Duas ou três frases sobre quem você é, o que faz de melhor e o que procura.",
+       "buttons": [
+        {
+         "label": "E-mail",
+         "url": "mailto:voce@exemplo.com",
+         "variant": "primary"
+        }
+       ],
+       "image": "",
+       "layout": "left",
+       "height": "auto",
+       "stack": false
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "l",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "timeline",
+      "props": {
+       "title": "Experiência",
+       "subtitle": "",
+       "items": [
+        {
+         "date": "2023 – hoje",
+         "title": "Cargo · Empresa",
+         "text": "- Resultado mensurável\n- Outro resultado"
+        },
+        {
+         "date": "2020 – 2023",
+         "title": "Cargo · Empresa",
+         "text": "- O que você conquistou"
+        }
+       ]
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "features",
+      "props": {
+       "title": "Habilidades",
+       "subtitle": "",
+       "columns": 3,
+       "items": [
+        {
+         "icon": "🧭",
+         "title": "Liderança",
+         "text": "Times pequenos e autônomos."
+        },
+        {
+         "icon": "🛠️",
+         "title": "Técnica",
+         "text": "Ferramentas que domina."
+        }
+       ]
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "timeline",
+      "props": {
+       "title": "Formação",
+       "subtitle": "",
+       "items": [
+        {
+         "date": "2017",
+         "title": "Curso · Instituição",
+         "text": ""
+        }
+       ]
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "resume",
+   "mode": "skeleton",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página — Currículo",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "💼",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "papel",
+     "mode": "light",
+     "headingFont": "fraunces",
+     "bodyFont": "dmsans",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": false,
+     "brand": "",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "",
+     "themeToggle": false,
+     "backToTop": true,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "hero",
+      "props": {
+       "eyebrow": "",
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "buttons": [
+        {
+         "label": "E-mail",
+         "url": "#",
+         "variant": "primary"
+        }
+       ],
+       "image": "",
+       "layout": "left",
+       "height": "auto",
+       "stack": false
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "l",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "timeline",
+      "props": {
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "items": [
+        {
+         "date": "2025",
+         "title": "Título",
+         "text": "Escreva aqui."
+        }
+       ]
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "features",
+      "props": {
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "columns": 3,
+       "items": [
+        {
+         "icon": "🧭",
+         "title": "Título",
+         "text": "Escreva aqui."
+        }
+       ]
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "timeline",
+      "props": {
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "items": [
+        {
+         "date": "2025",
+         "title": "Título",
+         "text": "Escreva aqui."
+        }
+       ]
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "contact",
+      "props": {
+       "title": "Título",
+       "text": "Escreva aqui.",
+       "email": "",
+       "phone": "",
+       "links": [
+        {
+         "label": "LinkedIn",
+         "url": ""
+        }
+       ]
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "s",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "event",
+   "mode": "simple",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "🎟️",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "entardecer",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": true,
+     "brand": "Página",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "Página · 2025-11-08",
+     "themeToggle": true,
+     "backToTop": true,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "hero",
+      "props": {
+       "eyebrow": "08/11/2025 · Local do evento",
+       "title": "Página",
+       "subtitle": "Um dia inteiro de ideias, conversas e gente boa.",
+       "buttons": [
+        {
+         "label": "Garantir minha vaga",
+         "url": "#inscricao",
+         "variant": "primary"
+        }
+       ],
+       "image": "",
+       "layout": "center",
+       "height": "screen",
+       "stack": false
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "gradient",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "countdown",
+      "props": {
+       "title": "Faltam",
+       "date": "2025-11-08 09:00",
+       "done": "O evento começou!"
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "s",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "timeline",
+      "props": {
+       "title": "Programação",
+       "subtitle": "",
+       "items": [
+        {
+         "date": "09:00",
+         "title": "Abertura",
+         "text": "Boas-vindas e café."
+        },
+        {
+         "date": "10:00",
+         "title": "Palestra principal",
+         "text": "Tema do evento."
+        }
+       ]
+      },
+      "style": {
+       "anchor": "Programação",
+       "menu": true,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "testimonials",
+      "props": {
+       "title": "Palestrantes",
+       "columns": 3,
+       "items": [
+        {
+         "text": "Tema da fala.",
+         "author": "Pessoa Um",
+         "role": "Empresa",
+         "image": ""
+        },
+        {
+         "text": "Tema da fala.",
+         "author": "Pessoa Dois",
+         "role": "Empresa",
+         "image": ""
+        }
+       ]
+      },
+      "style": {
+       "anchor": "Palestrantes",
+       "menu": true,
+       "background": "surface",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "event",
+   "mode": "skeleton",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "🎟️",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "entardecer",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": true,
+     "brand": "Página",
+     "sticky": true,
+     "navCta": "Inscrever-se",
+     "navCtaUrl": "#inscricao",
+     "footer": "Página · 2025-11-08",
+     "themeToggle": true,
+     "backToTop": true,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "hero",
+      "props": {
+       "eyebrow": "",
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "buttons": [
+        {
+         "label": "Garantir minha vaga",
+         "url": "#",
+         "variant": "primary"
+        }
+       ],
+       "image": "",
+       "layout": "center",
+       "height": "screen",
+       "stack": false
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "gradient",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "countdown",
+      "props": {
+       "title": "Título",
+       "date": "2030-01-01 09:00",
+       "done": "Começou!"
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "s",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "timeline",
+      "props": {
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "items": [
+        {
+         "date": "2025",
+         "title": "Título",
+         "text": "Escreva aqui."
+        }
+       ]
+      },
+      "style": {
+       "anchor": "Programação",
+       "menu": true,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "testimonials",
+      "props": {
+       "title": "Título",
+       "columns": 3,
+       "items": [
+        {
+         "text": "Escreva aqui.",
+         "author": "Ana",
+         "role": "",
+         "image": ""
+        }
+       ]
+      },
+      "style": {
+       "anchor": "Palestrantes",
+       "menu": true,
+       "background": "surface",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "faq",
+      "props": {
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "items": [
+        {
+         "q": "Como funciona?",
+         "a": "Explique aqui."
+        }
+       ],
+       "openFirst": true
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "cta",
+      "props": {
+       "title": "Título",
+       "text": "Escreva aqui.",
+       "buttons": [
+        {
+         "label": "Inscrever-se",
+         "url": "#",
+         "variant": "primary"
+        }
+       ]
+      },
+      "style": {
+       "anchor": "Inscrição",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "docs",
+   "mode": "simple",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "📚",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "oceano",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1040,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": true,
+     "brand": "Página",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "Documentação gerada com Urbe",
+     "themeToggle": true,
+     "backToTop": true,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "hero",
+      "props": {
+       "eyebrow": "",
+       "title": "Página",
+       "subtitle": "Guia completo, organizado a partir das notas.",
+       "buttons": [
+        {
+         "label": "Começar",
+         "url": "#conteudo",
+         "variant": "primary"
+        }
+       ],
+       "image": "",
+       "layout": "left",
+       "height": "auto",
+       "stack": false
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "notes",
+      "props": {
+       "title": "Conteúdo",
+       "subtitle": "",
+       "source": "folder",
+       "folder": "",
+       "tag": "",
+       "paths": "",
+       "layout": "list",
+       "columns": 3,
+       "limit": 100,
+       "sort": "path",
+       "excerpt": true,
+       "expand": true
+      },
+      "style": {
+       "anchor": "Conteúdo",
+       "menu": true,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "docs",
+   "mode": "skeleton",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "📚",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "oceano",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1040,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": true,
+     "brand": "Página",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "Documentação gerada com Urbe",
+     "themeToggle": true,
+     "backToTop": true,
+     "progress": true,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "hero",
+      "props": {
+       "eyebrow": "",
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "buttons": [
+        {
+         "label": "Começar",
+         "url": "#",
+         "variant": "primary"
+        }
+       ],
+       "image": "",
+       "layout": "left",
+       "height": "auto",
+       "stack": false
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "notes",
+      "props": {
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "source": "folder",
+       "folder": "",
+       "tag": "",
+       "paths": "",
+       "layout": "list",
+       "columns": 3,
+       "limit": 100,
+       "sort": "path",
+       "excerpt": true,
+       "expand": true
+      },
+      "style": {
+       "anchor": "Conteúdo",
+       "menu": true,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "narrow",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "book",
+   "mode": "simple",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "Um livro feito com o Urbe.",
+     "lang": "pt-BR",
+     "icon": "📖",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "livro",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": false,
+     "brand": "",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "",
+     "themeToggle": true,
+     "backToTop": true,
+     "progress": false,
+     "format": "book",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "Página",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "bookcover",
+      "props": {
+       "title": "Página",
+       "subtitle": "Um subtítulo que convida à leitura",
+       "author": "Nome do autor",
+       "publisher": "Editora",
+       "image": "",
+       "style": "classic"
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "titlepage",
+      "props": {
+       "title": "Página",
+       "subtitle": "Um subtítulo que convida à leitura",
+       "author": "Nome do autor",
+       "publisher": "Editora",
+       "place": "Cidade",
+       "year": "2025"
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "booktoc",
+      "props": {
+       "title": "Sumário"
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "chapter",
+      "props": {
+       "title": "A cidade de papel",
+       "source": "text",
+       "markdown": "Escreva aqui o primeiro capítulo. O primeiro parágrafo ganha uma **letra capitular** e a primeira linha em versalete.\n\nOs parágrafos seguintes têm recuo na primeira linha, texto justificado e hifenização, como num livro impresso.\n\n***\n\nTrês asteriscos sozinhos numa linha viram um ornamento de troca de cena.",
+       "path": "",
+       "epigraph": "Toda cidade é um livro que se lê andando.",
+       "epigraphAuthor": "Anônimo",
+       "numbered": true,
+       "dropCap": true
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "chapter",
+      "props": {
+       "title": "Ruas e pontes",
+       "source": "text",
+       "markdown": "Cada capítulo começa numa página nova. Para puxar o texto de uma nota, troque **Texto de onde** para **De uma nota**.",
+       "path": "",
+       "epigraph": "",
+       "epigraphAuthor": "",
+       "numbered": true,
+       "dropCap": true
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "free",
+      "props": {
+       "root": {
+        "type": "box",
+        "content": {
+         "tag": "div"
+        },
+        "style": {
+         "gap": "14px"
+        },
+        "children": [
+         {
+          "type": "heading",
+          "content": {
+           "text": "Uma página montada peça por peça",
+           "level": 2
+          },
+          "style": {
+           "textAlign": "center"
+          }
+         },
+         {
+          "type": "text",
+          "content": {
+           "text": "Esta página é um **layout livre**: cada título, parágrafo, imagem ou caixa é uma peça que você move, aninha e estiliza."
+          }
+         },
+         {
+          "type": "box",
+          "content": {
+           "tag": "div"
+          },
+          "style": {
+           "padding": "18px 22px",
+           "radius": "12px",
+           "gap": "6px",
+           "css": "border-left:4px solid var(--primary);background:color-mix(in srgb,var(--primary) 12%,transparent)"
+          },
+          "children": [
+           {
+            "type": "heading",
+            "content": {
+             "text": "Importante",
+             "level": 4
+            }
+           },
+           {
+            "type": "text",
+            "content": {
+             "text": "Um aviso ou uma ideia que merece destaque."
+            }
+           }
+          ]
+         },
+         {
+          "type": "text",
+          "content": {
+           "text": "Qualquer bloco do livro também pode virar layout livre: menu ⋯ da seção → **Converter em layout livre**."
+          }
+         }
+        ]
+       },
+       "sheet": "page"
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "book",
+   "mode": "skeleton",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "Um livro feito com o Urbe.",
+     "lang": "pt-BR",
+     "icon": "📖",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "livro",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": false,
+     "brand": "",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "",
+     "themeToggle": true,
+     "backToTop": true,
+     "progress": false,
+     "format": "book",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "Página",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "bookcover",
+      "props": {
+       "title": "Título",
+       "subtitle": "",
+       "author": "Nome do autor",
+       "publisher": "",
+       "image": "",
+       "style": "classic"
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "titlepage",
+      "props": {
+       "title": "Título",
+       "subtitle": "",
+       "author": "Nome do autor",
+       "publisher": "",
+       "place": "",
+       "year": "2025"
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "copyright",
+      "props": {
+       "markdown": "Escreva aqui."
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "dedication",
+      "props": {
+       "kind": "dedication",
+       "markdown": "Escreva aqui.",
+       "author": ""
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "booktoc",
+      "props": {
+       "title": "Título"
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "part",
+      "props": {
+       "title": "Título",
+       "markdown": "Escreva aqui."
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "chapter",
+      "props": {
+       "title": "Título",
+       "source": "text",
+       "markdown": "Escreva aqui.",
+       "path": "",
+       "epigraph": "",
+       "epigraphAuthor": "",
+       "numbered": true,
+       "dropCap": true
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "chapter",
+      "props": {
+       "title": "Título",
+       "source": "text",
+       "markdown": "Escreva aqui.",
+       "path": "",
+       "epigraph": "",
+       "epigraphAuthor": "",
+       "numbered": true,
+       "dropCap": true
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "free",
+      "props": {
+       "root": {
+        "type": "box",
+        "content": {
+         "tag": "div"
+        },
+        "style": {
+         "gap": "14px"
+        },
+        "children": [
+         {
+          "type": "heading",
+          "content": {
+           "text": "Uma página montada peça por peça",
+           "level": 2
+          },
+          "style": {
+           "textAlign": "center"
+          }
+         },
+         {
+          "type": "text",
+          "content": {
+           "text": "Esta página é um **layout livre**: cada título, parágrafo, imagem ou caixa é uma peça que você move, aninha e estiliza."
+          }
+         },
+         {
+          "type": "box",
+          "content": {
+           "tag": "div"
+          },
+          "style": {
+           "padding": "18px 22px",
+           "radius": "12px",
+           "gap": "6px",
+           "css": "border-left:4px solid var(--primary);background:color-mix(in srgb,var(--primary) 12%,transparent)"
+          },
+          "children": [
+           {
+            "type": "heading",
+            "content": {
+             "text": "Importante",
+             "level": 4
+            }
+           },
+           {
+            "type": "text",
+            "content": {
+             "text": "Um aviso ou uma ideia que merece destaque."
+            }
+           }
+          ]
+         },
+         {
+          "type": "text",
+          "content": {
+           "text": "Qualquer bloco do livro também pode virar layout livre: menu ⋯ da seção → **Converter em layout livre**."
+          }
+         }
+        ]
+       },
+       "sheet": "page"
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "part",
+      "props": {
+       "title": "Título",
+       "markdown": "Escreva aqui."
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "chapter",
+      "props": {
+       "title": "Título",
+       "source": "text",
+       "markdown": "Escreva aqui.",
+       "path": "",
+       "epigraph": "",
+       "epigraphAuthor": "",
+       "numbered": true,
+       "dropCap": true
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "about",
+      "props": {
+       "title": "Título",
+       "image": "",
+       "markdown": "Escreva aqui."
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "colophon",
+      "props": {
+       "markdown": "Escreva aqui."
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "book-folder",
+   "mode": "simple",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "📖",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "livro",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": false,
+     "brand": "",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "",
+     "themeToggle": true,
+     "backToTop": true,
+     "progress": false,
+     "format": "book",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "Página",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "bookcover",
+      "props": {
+       "title": "Página",
+       "subtitle": "Um subtítulo que convida à leitura",
+       "author": "Nome do autor",
+       "publisher": "Editora",
+       "image": "",
+       "style": "classic"
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "titlepage",
+      "props": {
+       "title": "Página",
+       "subtitle": "Um subtítulo que convida à leitura",
+       "author": "Nome do autor",
+       "publisher": "Editora",
+       "place": "Cidade",
+       "year": "2025"
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "booktoc",
+      "props": {
+       "title": "Sumário"
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "chapters",
+      "props": {
+       "folder": "",
+       "sort": "path",
+       "dropCap": true
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "book-folder",
+   "mode": "skeleton",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "📖",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "livro",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 1120,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": false,
+     "brand": "",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "",
+     "themeToggle": true,
+     "backToTop": true,
+     "progress": false,
+     "format": "book",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "Página",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "bookcover",
+      "props": {
+       "title": "Título",
+       "subtitle": "",
+       "author": "Nome do autor",
+       "publisher": "",
+       "image": "",
+       "style": "classic"
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "titlepage",
+      "props": {
+       "title": "Título",
+       "subtitle": "",
+       "author": "Nome do autor",
+       "publisher": "",
+       "place": "",
+       "year": "2025"
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "copyright",
+      "props": {
+       "markdown": "Escreva aqui."
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "dedication",
+      "props": {
+       "kind": "dedication",
+       "markdown": "Escreva aqui.",
+       "author": ""
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "booktoc",
+      "props": {
+       "title": "Título"
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "chapters",
+      "props": {
+       "folder": "",
+       "sort": "path",
+       "dropCap": true
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "about",
+      "props": {
+       "title": "Título",
+       "image": "",
+       "markdown": "Escreva aqui."
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     },
+     {
+      "type": "colophon",
+      "props": {
+       "markdown": "Escreva aqui."
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "links",
+   "mode": "simple",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "🔗",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "neon",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 640,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": false,
+     "brand": "",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "",
+     "themeToggle": true,
+     "backToTop": false,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "hero",
+      "props": {
+       "eyebrow": "",
+       "title": "Página",
+       "subtitle": "Criador de conteúdo · links abaixo 👇",
+       "buttons": [
+        {
+         "label": "Meu site",
+         "url": "https://exemplo.com",
+         "variant": "primary"
+        }
+       ],
+       "image": "",
+       "layout": "center",
+       "height": "screen",
+       "stack": true
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  },
+  {
+   "id": "links",
+   "mode": "skeleton",
+   "spec": {
+    "version": 1,
+    "kind": "urbe-page",
+    "meta": {
+     "title": "Página",
+     "description": "",
+     "lang": "pt-BR",
+     "icon": "🔗",
+     "image": "",
+     "head": ""
+    },
+    "theme": {
+     "preset": "neon",
+     "mode": "",
+     "headingFont": "",
+     "bodyFont": "",
+     "primary": "",
+     "accent": "",
+     "bg": "",
+     "surface": "",
+     "text": "",
+     "muted": "",
+     "background": "",
+     "radius": null,
+     "scale": 1,
+     "spacing": "comfortable",
+     "width": 640,
+     "shadow": "soft",
+     "animations": true,
+     "headingWeight": "",
+     "headingCase": "",
+     "headingSpacing": null,
+     "headingScale": 1,
+     "lineHeight": null,
+     "buttonStyle": "solid",
+     "cardStyle": "elevated",
+     "linkStyle": "underline",
+     "border": "",
+     "css": ""
+    },
+    "layout": {
+     "nav": false,
+     "brand": "",
+     "sticky": true,
+     "navCta": "",
+     "navCtaUrl": "",
+     "footer": "",
+     "themeToggle": true,
+     "backToTop": false,
+     "progress": false,
+     "format": "web",
+     "pageSize": "a5",
+     "margins": "normal",
+     "pageNumbers": true,
+     "runningHead": "",
+     "chapterStyle": "word",
+     "recto": false,
+     "justify": true,
+     "indent": true
+    },
+    "sections": [
+     {
+      "type": "hero",
+      "props": {
+       "eyebrow": "",
+       "title": "Título",
+       "subtitle": "Escreva aqui.",
+       "buttons": [
+        {
+         "label": "Meu site",
+         "url": "#",
+         "variant": "primary"
+        }
+       ],
+       "image": "",
+       "layout": "center",
+       "height": "screen",
+       "stack": true
+      },
+      "style": {
+       "anchor": "",
+       "menu": false,
+       "background": "none",
+       "image": "",
+       "padding": "m",
+       "width": "normal",
+       "align": "left",
+       "bgColor": "",
+       "textColor": "",
+       "boxed": false,
+       "minHeight": "none",
+       "animation": "",
+       "className": "",
+       "css": "",
+       "hidden": false
+      }
+     }
+    ]
+   }
+  }
  ]
 }

@@ -40,6 +40,21 @@ public sealed class PageTemplatesOracleTests
         }
     }
 
+    [Fact]
+    public void EachVariantIsTheOriginals()
+    {
+        var engine = new PageEngine(2025);
+        foreach (var r in Fixture()["variants"]!.AsArray())
+        {
+            var id = (string)r!["id"]!;
+            (string, string)? note = PageTemplates.Get(id)!.Needs == "note" ? ("Plano", "Plano.md") : null;
+            var built = PageTemplates.Build(engine, id, "Página", "", note, new DateTime(2025, 10, 9, 12, 0, 0))!;
+            var spec = PageTemplates.Variant(engine, built, (string)r["mode"]!);
+            Assert.True(LegacyCustomize.Stringify(r["spec"]) == LegacyCustomize.Stringify(Strip(spec)),
+                id + " " + (string)r["mode"]! + "\nexpected: " + LegacyCustomize.Stringify(r["spec"])[..600] + "\nactual:   " + LegacyCustomize.Stringify(Strip(spec))[..600]);
+        }
+    }
+
     private static DirectoryInfo Root()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

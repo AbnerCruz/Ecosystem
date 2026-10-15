@@ -27,4 +27,10 @@ for (const t of TPL.list()) for (const c0 of CTX) {
   if (c0.note) { c.note = c0.note; c.title = c.title || c0.note.title; }
   runs.push({ id: t.id, input: c0, spec: strip(JSON.parse(JSON.stringify(TPL.build(t.id, c)))) });
 }
-process.stdout.write(JSON.stringify({ source: 'apps/urbe 1.8.4-beta src/pages/templates.js in node:vm, 2025-10-09', list: TPL.list().map(t => ({ id: t.id, name: t.name, icon: t.icon, description: t.description, needs: t.needs || null })), runs }, null, 1) + '\n');
+// variant(spec, mode) as "Como começar?" uses it: Simplificado and Só a estrutura of each template built with a title
+const variants = [];
+for (const t of TPL.list()) for (const mode of ['simple', 'skeleton']) {
+  const spec = TPL.build(t.id, { title: 'Página', folder: '', note: t.needs === 'note' ? { title: 'Plano', path: 'Plano.md' } : undefined });
+  variants.push({ id: t.id, mode, spec: strip(JSON.parse(JSON.stringify(TPL.variant(spec, mode)))) });
+}
+process.stdout.write(JSON.stringify({ source: 'apps/urbe 1.8.4-beta src/pages/templates.js in node:vm, 2025-10-09', list: TPL.list().map(t => ({ id: t.id, name: t.name, icon: t.icon, description: t.description, needs: t.needs || null })), runs, variants }, null, 1) + '\n');
