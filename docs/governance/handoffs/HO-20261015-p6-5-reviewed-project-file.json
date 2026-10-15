@@ -63,10 +63,10 @@
     {
       "check": "Salvar resposta revisada no moto g32",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "apps/ecosystem-ai/docs-r4-reviewed-project-file.md",
-      "evidence": "No APK exato: escolher resposta, revisar/cancelar sem gravar, confirmar, abrir Arquivos, reabrir app e conferir conteúdo; colisão mantém arquivo anterior. CI não substitui DEVICE."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-15 (Issue https://github.com/AbnerCruz/Ecosystem/issues/593); registro em docs/governance/responses/VAL-HO-20261015-p6-5-reviewed-project-file-f361d9e07c73.md."
     }
   ],
   "known_issues": [
