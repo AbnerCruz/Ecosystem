@@ -293,6 +293,6 @@ public sealed partial class MainView : IPageStudioHost
 
     void IPageStudioHost.Closed()
     {
-        if (Pages.IsVisible) Pages.Show(PageCards());
+        if (Pages.IsVisible) Pages.Show(PageCards(), CompositionPlan()?.Creates.Count ?? 0);
     }
 }

@@ -71,10 +71,40 @@ public sealed class PagesPanel : Border
     /// <summary>The pages listed now (tests).</summary>
     public IReadOnlyList<PageCard> Listed { get; private set; } = [];
 
-    public void Show(IReadOnlyList<PageCard> pages)
+    /// <summary>"Converter em páginas": the host turns the vault's old compositions into pages (UC-45).</summary>
+    public event Action? ConvertCompositionsRequested;
+
+    /// <summary>Compositions of the 1.8.4 not yet turned into pages (the banner's count; tests).</summary>
+    public int PendingCompositions { get; private set; }
+
+    public void Show(IReadOnlyList<PageCard> pages, int pendingCompositions = 0)
     {
         Listed = pages;
+        PendingCompositions = pendingCompositions;
         _list.Children.Clear();
+        if (pendingCompositions > 0)
+        {
+            var convert = new Button
+            {
+                Content = new TextBlock { Text = "Converter em páginas", FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.AccentInk) },
+                Padding = new Thickness(14, 8), CornerRadius = new CornerRadius(10), Background = UrbeTheme.Brush(UrbeTheme.Accent), Margin = new Thickness(0, 8, 0, 0)
+            };
+            Avalonia.Automation.AutomationProperties.SetName(convert, "Converter em páginas");
+            convert.Click += (_, _) => ConvertCompositionsRequested?.Invoke();
+            _list.Children.Add(new Border
+            {
+                Padding = new Thickness(14), CornerRadius = new CornerRadius(14), Background = UrbeTheme.Brush(UrbeTheme.Accent, .12), BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent, .5), BorderThickness = new Thickness(1),
+                Child = new StackPanel
+                {
+                    Children =
+                    {
+                        new TextBlock { Text = pendingCompositions == 1 ? "1 composição da versão anterior" : pendingCompositions + " composições da versão anterior", FontWeight = FontWeight.Bold, Foreground = UrbeTheme.Brush(UrbeTheme.Text) },
+                        new TextBlock { Text = "As composições agora são páginas: cada uma vira uma página com as mesmas notas, em Páginas/Composições. O arquivo antigo fica no vault, sem mudança.", TextWrapping = TextWrapping.Wrap, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) },
+                        convert
+                    }
+                }
+            });
+        }
         if (pages.Count == 0)
         {
             _list.Children.Add(new StackPanel

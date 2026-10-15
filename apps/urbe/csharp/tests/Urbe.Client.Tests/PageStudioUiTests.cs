@@ -115,3 +115,50 @@ public sealed partial class HeadlessUiTests
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
 }
+
+public sealed partial class HeadlessUiTests
+{
+    [Fact]
+    public async Task Compositions_BecomePagesWithTheSameNotesAndTheFileIsKept() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-cmp-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(Path.Combine(vault, ".urbe"));
+            File.WriteAllText(Path.Combine(vault, "Capítulo.md"), "# Capítulo\n\nTexto do capítulo.\n");
+            File.WriteAllText(Path.Combine(vault, ".urbe", "mapa.json"), "{\"v\":4,\"mundo\":\"placas-1\",\"notas\":{\"Capítulo.md\":{\"id\":\"doc_cap\"}}}");
+            var compositions = "{\"version\":2,\"items\":[{\"id\":\"cmp_livro\",\"name\":\"Meu livro\",\"sources\":[\"doc_cap\"],\"theme\":\"clean\",\"customCSS\":\"h1{color:red}\"}]}";
+            File.WriteAllText(Path.Combine(vault, ".urbe", "compositions.v2.json"), compositions);
+            var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
+            var view = new MainView(storage);
+            var window = new Window { Width = 1280, Height = 760, Content = view };
+            window.Show();
+            try
+            {
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                view.ShowPages();
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal(1, view.Pages.PendingCompositions);
+                var convert = view.Pages.GetLogicalDescendants().OfType<Button>().First(b => AutomationProperties.GetName(b) == "Converter em páginas");
+                var flow = view.ConvertCompositionsAsync();
+                await RunWithDialog(flow, async () =>
+                {
+                    ClickButtonWithText(view.Dialogs, "Converter");
+                    await Pump(200);
+                });
+                var page = Path.Combine(vault, "Páginas", "Composições", "Meu livro.page.json");
+                Assert.True(File.Exists(page));
+                var text = File.ReadAllText(page);
+                var json = System.Text.Json.Nodes.JsonNode.Parse(text)!;
+                Assert.Equal("Capítulo.md", (string?)json["sections"]![0]!["props"]!["path"]);
+                Assert.Contains("cmp_livro", text);
+                Assert.Equal(compositions, File.ReadAllText(Path.Combine(vault, ".urbe", "compositions.v2.json")));
+                Assert.Equal(0, view.Pages.PendingCompositions);
+                Assert.Contains(view.Pages.Listed, p => p.Title == "Meu livro");
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+}

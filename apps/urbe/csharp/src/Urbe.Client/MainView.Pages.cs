@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Avalonia.Input.Platform;
 using Urbe.Core;
 using Urbe.Core.Pages;
+using Urbe.Core.Assistant;
 
 namespace Urbe.Client;
 
@@ -35,6 +36,7 @@ public sealed partial class MainView
         var panel = new PagesPanel();
         panel.PageRequested += path => _ = OpenStudioAsync(path);
         panel.NewRequested += () => _ = NewPageAsync();
+        panel.ConvertCompositionsRequested += () => _ = ConvertCompositionsAsync();
         panel.MenuRequested += path => _ = ShowPageMenuAsync(path);
         _stage.Children.Insert(Math.Max(0, _stage.Children.IndexOf(FilePreview)), panel);
         return panel;
@@ -68,7 +70,69 @@ public sealed partial class MainView
     public void ShowPages()
     {
         if (Dialogs.IsOpen) return;
-        Pages.Show(PageCards());
+        Pages.Show(PageCards(), CompositionPlan()?.Creates.Count ?? 0);
+    }
+
+    /// <summary>The vault's compositions of the 1.8.4 (.urbe/compositions.v2.json or .json), as the converter reads them; null without any.</summary>
+    private CompositionFile? Compositions()
+    {
+        if (_snapshot is null) return null;
+        VaultFile? Find(string p) => _snapshot.Files.FirstOrDefault(f => string.Equals(f.Key, p, StringComparison.OrdinalIgnoreCase)).Value;
+        if (Find(".urbe/compositions.v2.json") is { } v2)
+        {
+            try
+            {
+                // readSide: version 2 is the same content as version 1
+                if (JsonNode.Parse(v2.Bytes.Span) is JsonObject root && root["version"] is JsonValue v && v.TryGetValue<int>(out var n) && n == 2)
+                {
+                    root["version"] = 1;
+                    return CompositionFile.Parse(root);
+                }
+            }
+            catch (System.Text.Json.JsonException) { }
+            return CompositionFile.Parse(v2.Bytes);
+        }
+        return Find(".urbe/compositions.json") is { } v1 ? CompositionFile.Parse(v1.Bytes) : null;
+    }
+
+    /// <summary>UC-45 (ADR-0009): which compositions still become pages (an already converted one is recognised by its id).</summary>
+    private CompositionMigrationPlan? CompositionPlan()
+    {
+        if (_store is null || Compositions() is not { } file || file.Items.Count == 0) return null;
+        var existing = _store.List().Where(d => d.Path.EndsWith(".page.json", StringComparison.OrdinalIgnoreCase))
+            .Select(d => new PersistedPage(d.Path, PageDocument.Parse(d.Content))).ToList();
+        return CompositionMigrationPlanner.Plan(file, _store, existing);
+    }
+
+    /// <summary>"Converter em páginas": each composition written as a page (only new files; the compositions file is kept).</summary>
+    public async Task ConvertCompositionsAsync()
+    {
+        if (!VaultWritable) { await Dialogs.AlertAsync("Converter composições", NoVaultMessage); return; }
+        var plan = CompositionPlan();
+        if (plan is null || plan.Blocked) { await Dialogs.AlertAsync("Converter composições", plan?.BlockReason ?? "Não há composições para converter."); return; }
+        if (plan.Creates.Count == 0) { ShowLifeNotice("As composições já viraram páginas."); return; }
+        var missing = plan.Creates.Sum(c => c.MissingDocumentIds.Count);
+        if (!await Dialogs.ConfirmAsync("Converter " + plan.Creates.Count + " composição(ões) em páginas?",
+                "Cada composição vira uma página em Páginas/Composições, com as mesmas notas na mesma ordem. O arquivo das composições fica no vault, sem mudança." +
+                (missing > 0 ? " " + missing + " nota(s) que não existem mais ficam como seções vazias." : "") +
+                (plan.Conflicts.Count > 0 ? " " + plan.Conflicts.Count + " composição(ões) não serão convertidas: já existe uma página diferente com o mesmo nome." : ""), "Converter"))
+            return;
+        int written = 0;
+        foreach (var c in plan.Creates)
+        {
+            try
+            {
+                await ((IAssistantApp)this).CreateNoteAsync(c.PagePath, c.Page.SerializeForWrite() + "\n");
+                written++;
+            }
+            catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or InvalidDataException or NotSupportedException)
+            {
+                await Dialogs.AlertAsync("Não foi possível converter " + c.PagePath, ex.Message);
+                break;
+            }
+        }
+        ShowPages();
+        ShowLifeNotice(written + " página(s) criada(s) a partir das composições.");
     }
 
     /// <summary>The page as the 1.8.4 renders it, inside the Urbe (the HTML viewer of the platform, or its source).</summary>
@@ -190,7 +254,7 @@ public sealed partial class MainView
                 if (!await Dialogs.ConfirmAsync("Mover para a lixeira?", path, "Mover", danger: true)) return;
                 if (!await DeleteNoteAsync(path, confirmed: true)) return;
                 if (FilePreview.GeneratedFrom == path) FilePreview.Close();
-                if (Pages.IsVisible) Pages.Show(PageCards());
+                if (Pages.IsVisible) Pages.Show(PageCards(), CompositionPlan()?.Creates.Count ?? 0);
             })
         ]);
     }
