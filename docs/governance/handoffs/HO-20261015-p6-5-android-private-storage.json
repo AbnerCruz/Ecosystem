@@ -57,8 +57,8 @@
     {
       "check": "Criar e reabrir projeto/conversa no moto g32",
       "kind": "human",
-      "result": "pending",
-      "evidence": "Print atual reproduz recusa de diretório simbólico. Revalidar o novo APK depois do ensaio automatizado.",
+      "result": "passed",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-15 (Issue https://github.com/AbnerCruz/Ecosystem/issues/572); registro em docs/governance/responses/VAL-HO-20261015-p6-5-android-private-storage-e6478fae7f1f.md.",
       "object": "apps/ecosystem-ai/docs-r4-android-native.md",
       "critical": true
     }
