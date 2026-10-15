@@ -32,7 +32,8 @@ public sealed partial class MainView
             try
             {
                 if (text is null) throw new InvalidOperationException(refusal ?? "O mapa não pôde ser lido.");
-                await _vault.SaveLayoutBackupAsync(text, DateTimeOffset.UtcNow);
+                var backup = await _vault.SaveLayoutBackupAsync(text, DateTimeOffset.UtcNow);
+                await RecordLayoutAsync("reorganizar", null, null, backup);
             }
             catch (Exception ex)
             {

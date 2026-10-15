@@ -60,6 +60,20 @@ public sealed partial class MainView
         ShowLifeNotice("Limpeza feita e registrada no vault.");
     }
 
+    /// <summary>layout-guard.js writeBackup: P.recordMaintenance({kind:'layout', reason, from, to, backup}); the backup is what matters, so a failure here is not one.</summary>
+    private async Task RecordLayoutAsync(string reason, string? from, string? to, string backup)
+    {
+        if (_vault is null) return;
+        try
+        {
+            await _vault.SaveMaintenanceAsync(new JsonObject
+            {
+                ["kind"] = "layout", ["reason"] = reason, ["from"] = from, ["to"] = to, ["backup"] = backup
+            });
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or InvalidDataException or NotSupportedException or UnauthorizedAccessException) { }
+    }
+
     /// <summary>The version of this app, for the diagnosis.</summary>
     private static string AppVersion =>
         typeof(MainView).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0]

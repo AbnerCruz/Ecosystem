@@ -1,0 +1,124 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261015-urbe-migration-gaps",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-15T05:26:32Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "c8ecf175",
+  "commit": null,
+  "pr": "#571",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CityLayout.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Commands.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Errors.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Notices.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Workspace.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/QuickOpen.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantPageTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ImportTransaction.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyHistory.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyIdentity.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageTemplates.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageTemplatesText.g.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VaultWriter.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CityLayoutUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CreateMenuUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ImportStorageTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ParityGapsUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantPagesOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyIdentityOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageTemplatesOracleTests.cs",
+    "apps/urbe/csharp/tests/fixtures/assistant/pages-run-a.json",
+    "apps/urbe/csharp/tests/fixtures/identity/reconcile-run-a.json",
+    "apps/urbe/csharp/tests/fixtures/pages/templates-run-a.json",
+    "apps/urbe/csharp/tools/assistant-pages-oracle.mjs",
+    "apps/urbe/csharp/tools/legacy-identity-oracle.mjs",
+    "apps/urbe/csharp/tools/pages-templates-constants.mjs",
+    "apps/urbe/csharp/tools/pages-templates-oracle.mjs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261015-urbe-migration-gaps.json"
+  ],
+  "work_completed": [
+    "Pedido do proprietário (15/10/2026): 'Termine a migração'. Lacunas da 1.8.4 levantadas e portadas em fatias com teste.",
+    "Comandos e atalhos restantes (Avançar, Desfazer/Refazer, Fechar aba, Restaurar sessão do editor, Inserir fórmula, Restaurar da lixeira/aparência, Recarregar plugins…), Baixar arquivo, dicas de primeiro uso (tips.js) e avisos do vault (vault-notices.js).",
+    "Assistente: page_schema e write_page (pages/ai-tools.js) com os modelos de página da 1.8.4 gerados do original e provados por oráculo.",
+    "Importar: pasta de vault, exportação ou backup agora restaura pela ImportTransaction (backup de tudo que substitui ou remove, diário de recuperação, recuperação ao abrir); Backups do vault lista e restaura os backups de .urbe/backup.",
+    "Notas renomeadas ou movidas fora do app mantêm casa, bairro e anexos: .urbe/identity.json gravado com o mapa e reconciliado na abertura (identity.js, oráculo de 8 casos).",
+    "Limpar referências órfãs e Diagnóstico do workspace; reorganização e adaptação registradas em vault.json.maintenance."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests (792) e HeadlessUiTests de importação/restauração, identidade, manutenção, reorganização e lacunas",
+      "result": "passed",
+      "evidence": "Import_RestoresAVaultFolderWithABackupOfWhatItReplaces (restaura, guarda o substituído em .urbe/backup/import-*, Backups do vault traz de volta), ImportStorageTests, Identity_ANoteRenamedOutsideTheAppKeepsItsHouse, Workspace_CleanOrphansForgetsOldHistoriesAndRecordsItAndDiagnosticsReports, Reorganize_BacksUpTheMapReorganizesAndUndoes (registro layout), LegacyIdentityOracleTests, PageTemplatesOracleTests, AssistantPagesOracleTests, ParityGapsUiTests."
+    },
+    {
+      "kind": "human",
+      "check": "Restaurar um backup e renomear uma nota pelo gerenciador de arquivos no Android",
+      "result": "not-applicable",
+      "evidence": "O provedor de documentos do Android (SAF) só se prova no aparelho (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs"
+    }
+  ],
+  "known_issues": [
+    "As preferências guardadas num backup exportado ('Preferências do backup') ainda não são aplicadas na restauração.",
+    "Composições não existem no cliente nativo; a limpeza de órfãos cobre os históricos (a lixeira não expira, como na 1.8.4).",
+    "Ainda faltam: estúdio de páginas (UC-35/UC-44), tema de plugin, Procurar atualização (depende de UC-24/25)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Estúdio de páginas (Nova página por modelo, editar seções e blocos, tema, layout livre, capítulos, duplicar, imprimir/PDF)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-005",
+      "evidence": "Porte do comportamento da 1.8.4 (import.js, backup.js, identity.js, gc.js, diagnostics.js) com oráculos e testes; formato dos arquivos preservado (o manifesto de backup só ganha o campo 'at', ignorado pela 1.8.4)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação no aparelho pendente para o Android."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Cada fatia tem teste automatizado listado em verification."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "vault-restore-identity",
+      "status": "product-specific",
+      "rationale": "Formato de vault do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Funcionalidades autorizadas do porte (ADR-0032), sem mudança de direção; as gravações seguem as salvaguardas existentes (backup antes, verificação depois)."
+  }
+}

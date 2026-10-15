@@ -416,7 +416,7 @@ public sealed partial class MainView : Grid
         bool saves = _vault is not null && !snapshot.IsReadOnly && !snapshot.IsMapReadOnly && !snapshot.RecoveredFromJournal && snapshot.MapJson is not null;
         if (saves)
         {
-            try { await _vault!.SaveLayoutBackupAsync(snapshot.MapJson!, DateTimeOffset.UtcNow, "mundo"); }
+            try { await RecordLayoutAsync("mundo", from, LegacyCity.WorldVersion, await _vault!.SaveLayoutBackupAsync(snapshot.MapJson!, DateTimeOffset.UtcNow, "mundo")); }
             catch (Exception ex)
             {
                 saves = false;   // the old map stays as it is on disk
