@@ -16,7 +16,9 @@ public sealed partial class MainView
         var name = path[(path.LastIndexOf('/') + 1)..];
         var items = new List<DialogItem>();
         if (withView) items.Add(new DialogItem("Visualizar", UrbeTheme.Icons.Image, "A prévia dentro do Urbe.", Run: () => ShowFileAsync(path)));
-        if (!VaultWritable) return withView ? Dialogs.MenuAsync(name, items) : Dialogs.AlertAsync(name, NoVaultMessage);
+        // #downloadPreviewBtn: a copy where the person chooses (only reads the vault)
+        if (_vault is not null) items.Add(new DialogItem("Baixar arquivo", UrbeTheme.Icons.Download, "Uma cópia onde você escolher.", Run: () => DownloadFileAsync(path)));
+        if (!VaultWritable) return items.Count > 0 ? Dialogs.MenuAsync(name, items) : Dialogs.AlertAsync(name, NoVaultMessage);
         items.AddRange(
         [
             new DialogItem("Renomear", UrbeTheme.Icons.Pencil, "Mantenha a extensão para preservar o tipo.", Run: () => RenameAttachmentAsync(path)),
@@ -24,6 +26,40 @@ public sealed partial class MainView
             new DialogItem("Excluir", UrbeTheme.Icons.Trash, "O arquivo será apagado do vault.", Danger: true, Run: () => DeleteAttachmentAsync(path))
         ]);
         return Dialogs.MenuAsync(name, items);
+    }
+
+    /// <summary>The bytes of a downloaded file and where they went (tests replace the picker).</summary>
+    public Func<string, byte[], Task<bool?>>? SaveFileCopy { get; set; }
+
+    /// <summary>Baixar arquivo (#downloadPreviewBtn): the file's bytes saved where the person chooses; the vault is only read.</summary>
+    public async Task DownloadFileAsync(string path)
+    {
+        if (_vault is null) return;
+        var name = path[(path.LastIndexOf('/') + 1)..];
+        try
+        {
+            var read = await _vault.ReadFileAsync(path, 512L * 1024 * 1024);
+            if (read is null) { await Dialogs.AlertAsync("Baixar arquivo", "Arquivo não encontrado."); return; }
+            if (read.Bytes is null) { await Dialogs.AlertAsync("Baixar arquivo", "O arquivo é grande demais para copiar por aqui."); return; }
+            var saved = await (SaveFileCopy ?? SaveAnyFileAsync)(name, read.Bytes);
+            if (saved == true) ShowLifeNotice("Arquivo baixado.");
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException) { ShowLifeNotice("Não consegui salvar: " + ex.Message); }
+    }
+
+    private async Task<bool?> SaveAnyFileAsync(string name, byte[] bytes)
+    {
+        if (Avalonia.Controls.TopLevel.GetTopLevel(this)?.StorageProvider is not { CanSave: true } storage)
+            throw new NotSupportedException("este aparelho não permite salvar arquivos");
+        var ext = System.IO.Path.GetExtension(name).TrimStart('.');
+        var file = await storage.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions
+        {
+            Title = "Baixar arquivo", SuggestedFileName = name, DefaultExtension = ext.Length > 0 ? ext : null
+        });
+        if (file is null) return null;
+        await using var stream = await file.OpenWriteAsync();
+        await stream.WriteAsync(bytes);
+        return true;
     }
 
     /// <summary>renomearAsset: the new name in the same folder; a different extension is refused.</summary>

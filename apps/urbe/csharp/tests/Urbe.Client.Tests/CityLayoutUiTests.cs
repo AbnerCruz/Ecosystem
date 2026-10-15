@@ -58,6 +58,14 @@ public sealed partial class HeadlessUiTests
                 var backups = Directory.GetDirectories(Path.Combine(vault, ".urbe", "backup"));
                 var backup = Assert.Single(backups);
                 Assert.EndsWith("-layout-layout", backup);
+                // layout-guard.js: the reorganization is recorded in vault.json (maintenance), pointing at the backup
+                using (var meta = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(vault, ".urbe", "vault.json"))))
+                {
+                    var record = meta.RootElement.GetProperty("maintenance").EnumerateArray().Last();
+                    Assert.Equal("layout", record.GetProperty("kind").GetString());
+                    Assert.Equal("reorganizar", record.GetProperty("reason").GetString());
+                    Assert.Equal(".urbe/backup/" + Path.GetFileName(backup), record.GetProperty("backup").GetString());
+                }
                 var copy = File.ReadAllBytes(Path.Combine(backup, "files", "urbe", "mapa.json"));
                 using (var manifest = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(backup, "manifest.json"))))
                 {

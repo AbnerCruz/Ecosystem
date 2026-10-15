@@ -67,7 +67,13 @@ consts.MetaFieldsJson = JSON.stringify(fieldsOf(P.META_FIELDS));
 consts.SectionFieldsJson = JSON.stringify(fieldsOf(P.SECTION_FIELDS));
 consts.GeneratedYear = String(new Date().getFullYear());
 // free.js: its element types (content fields) and styles, and its literal stylesheet and shadows
-consts.FreeTypesJson = JSON.stringify(Object.keys(P.free.TYPES).map(k => { const t = P.free.TYPES[k]; return { type: k, label: t.label, box: !!t.box, content: fieldsOf(t.content) }; }));
+consts.FreeTypesJson = JSON.stringify(Object.keys(P.free.TYPES).map(k => { const t = P.free.TYPES[k]; return { type: k, label: t.label, icon: t.icon, box: !!t.box, text: !!t.text, content: fieldsOf(t.content) }; }));
+// the studio's free-layout tools (studio.js): the style groups, the ready compositions (built once, ids renumbered so the
+// file is the same on every run; the native side gives each insertion new ids) and the blocks that convert to free
+consts.FreeGroupsJson = JSON.stringify(P.free.GROUPS);
+const renumber = (n, seq) => { n.id = 'p' + (++seq.i); (n.children || []).forEach(c => renumber(c, seq)); return n; };
+consts.FreePresetsJson = JSON.stringify(Object.keys(P.free.PRESETS).map(k => ({ key: k, label: P.free.PRESETS[k].label, icon: P.free.PRESETS[k].icon, node: renumber(P.free.PRESETS[k].build(), { i: 0 }) })));
+consts.FreeConvertibleJson = JSON.stringify(P.free.CONVERTIBLE);
 consts.FreeStyleJson = JSON.stringify(P.free.STYLE);
 consts.FreeCss = evaluate(free.slice(free.indexOf('var FREE_CSS=') + 'var FREE_CSS='.length, free.indexOf(';\n', free.indexOf('var FREE_CSS='))));
 const shadow = evaluate(free.slice(free.indexOf('var SHADOW=') + 'var SHADOW='.length, free.indexOf(';', free.indexOf('var SHADOW='))));

@@ -1,0 +1,998 @@
+{
+ "source": "apps/urbe 1.8.4-beta src/pages/ai-tools.js in node:vm, 2025-10-09",
+ "notes": [
+  {
+   "path": "Projetos/Plano.md",
+   "content": "# Plano\n\nPassos.\n"
+  },
+  {
+   "path": "Páginas/Existente.page.json",
+   "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Velha\"},\"sections\":[]}\n"
+  }
+ ],
+ "calls": [
+  {
+   "name": "page_schema",
+   "input": {},
+   "label": "Lendo o formato de páginas",
+   "access": "read",
+   "description": "Formato completo das páginas HTML do Urbe (.page.json): meta, tema, layout, estilos de seção, todos os blocos e modelos prontos. Chame antes de criar ou editar uma página.",
+   "parameters": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+   },
+   "preview": null,
+   "content": "FORMATO DE PÁGINA DO URBE (arquivo .page.json)\n{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{...},\"theme\":{...},\"layout\":{...},\"sections\":[{\"type\":\"<bloco>\",\"props\":{...},\"style\":{...}}]}\n\nmeta:\n  - title (text, padrão \"Página sem título\"): Título da página\n  - description (textarea): Descrição (buscadores e compartilhamento)\n  - lang (text, padrão \"pt-BR\"): Idioma\n  - icon (text, padrão \"✦\"): Ícone (emoji)\n  - image (URL de imagem): Imagem de compartilhamento\n  - head (code): Código no <head> (estatísticas, fontes, meta tags)\n\ntheme (tudo opcional; comece pelo preset):\n  - preset (\"aurora\"|\"papel\"|\"grafite\"|\"oceano\"|\"floresta\"|\"entardecer\"|\"neon\"|\"livro\"|\"moderno\"|\"lavanda\", padrão \"aurora\"): Tema\n  - mode (\"dark\"|\"light\"|\"auto\"): Modo\n  - headingFont (\"inter\"|\"manrope\"|\"grotesk\"|\"dmsans\"|\"outfit\"|\"playfair\"|\"fraunces\"|\"lora\"|\"merriweather\"|\"garamond\"|\"cormorant\"|\"crimson\"|\"baskerville\"|\"mono\"|\"system\"|\"serif\"): Fonte dos títulos\n  - bodyFont (\"inter\"|\"manrope\"|\"grotesk\"|\"dmsans\"|\"outfit\"|\"playfair\"|\"fraunces\"|\"lora\"|\"merriweather\"|\"garamond\"|\"cormorant\"|\"crimson\"|\"baskerville\"|\"mono\"|\"system\"|\"serif\"): Fonte do texto\n  - primary (color): Cor principal\n  - accent (color): Cor de destaque\n  - bg (color): Fundo\n  - surface (color): Superfícies\n  - text (color): Texto\n  - muted (color): Texto secundário\n  - background (\"plain\"|\"gradient\"|\"mesh\"|\"dots\"|\"grid\"): Fundo da página\n  - radius (number): Arredondamento\n  - scale (number, padrão 1): Tamanho do texto\n  - spacing (\"compact\"|\"comfortable\"|\"airy\", padrão \"comfortable\"): Espaçamento\n  - width (number, padrão 1120): Largura máxima (px)\n  - shadow (\"none\"|\"soft\"|\"strong\", padrão \"soft\"): Sombras\n  - animations (boolean, padrão true): Animações ao rolar\n  - headingWeight (\"400\"|\"500\"|\"600\"|\"700\"|\"800\"|\"900\"): Peso dos títulos\n  - headingCase (\"upper\"|\"small\"): Títulos em\n  - headingSpacing (number): Espaço entre letras dos títulos\n  - headingScale (number, padrão 1): Tamanho dos títulos\n  - lineHeight (number): Altura da linha do texto\n  - buttonStyle (\"solid\"|\"pill\"|\"square\"|\"outline\"|\"soft\", padrão \"solid\"): Estilo dos botões\n  - cardStyle (\"elevated\"|\"outlined\"|\"flat\"|\"glass\", padrão \"elevated\"): Estilo dos cartões\n  - linkStyle (\"underline\"|\"plain\"|\"highlight\", padrão \"underline\"): Links no texto\n  - border (color): Cor das bordas\n  - css (code): CSS próprio da página\n\nlayout:\n  - nav (boolean, padrão true): Barra de navegação\n  - brand (text): Nome na barra\n  - sticky (boolean, padrão true): Barra fixa no topo\n  - navCta (text): Botão da barra\n  - navCtaUrl (url): Link do botão da barra\n  - footer (texto Markdown): Rodapé (Markdown)\n  - themeToggle (boolean, padrão true): Botão claro/escuro\n  - backToTop (boolean, padrão true): Botão voltar ao topo\n  - progress (boolean, padrão false): Barra de progresso de leitura\n  - format (\"web\"|\"book\", padrão \"web\"): Formato\n  - pageSize (\"a5\"|\"6x9\"|\"pocket\"|\"a4\"|\"letter\", padrão \"a5\"): Tamanho da página (livro)\n  - margins (\"narrow\"|\"normal\"|\"wide\", padrão \"normal\"): Margens (livro)\n  - pageNumbers (boolean, padrão true): Números de página (livro)\n  - runningHead (text): Cabeçalho das páginas (livro)\n  - chapterStyle (\"word\"|\"words\"|\"number\"|\"roman\"|\"none\", padrão \"word\"): Número dos capítulos (livro)\n  - recto (boolean, padrão false): Capítulos começam na página da direita (livro)\n  - justify (boolean, padrão true): Texto justificado com hifenização (livro)\n  - indent (boolean, padrão true): Recuo na primeira linha dos parágrafos (livro)\n\nstyle de cada seção (opcional):\n  - anchor (text): Âncora (#link) e item do menu\n  - menu (boolean, padrão false): Mostrar no menu\n  - background (\"none\"|\"surface\"|\"primary\"|\"gradient\"|\"image\"|\"inverse\", padrão \"none\"): Fundo\n  - image (URL de imagem): Imagem de fundo\n  - padding (\"none\"|\"s\"|\"m\"|\"l\"|\"xl\", padrão \"m\"): Espaço vertical\n  - width (\"narrow\"|\"normal\"|\"wide\"|\"full\", padrão \"normal\"): Largura do conteúdo\n  - align (\"left\"|\"center\", padrão \"left\"): Alinhamento\n  - bgColor (color): Cor de fundo própria\n  - textColor (color): Cor do texto própria\n  - boxed (boolean, padrão false): Seção em caixa (cartão)\n  - minHeight (\"none\"|\"half\"|\"screen\", padrão \"none\"): Altura mínima\n  - animation (\"none\"|\"fade\"|\"up\"|\"zoom\"|\"left\"|\"right\"): Animação\n  - className (text): Classe CSS\n  - css (code): CSS desta seção (use & para a seção)\n  - hidden (boolean, padrão false): Ocultar seção\n\nBLOCOS (type → props):\n\nhero — Capa: Abertura com título grande, texto, botões e imagem opcional.\n  - eyebrow (text): Chamada acima do título\n  - title (text, padrão \"Um título que diz tudo\"): Título\n  - subtitle (texto Markdown, padrão \"Uma frase curta que explica o que é, para quem é e por que importa.\"): Texto\n  - buttons (lista de objetos): Botões\n      - label (text, padrão \"Saiba mais\"): Texto\n      - url (url, padrão \"#\"): Link\n      - variant (\"primary\"|\"secondary\"|\"ghost\", padrão \"primary\"): Estilo\n  - image (URL de imagem): Imagem\n  - layout (\"center\"|\"left\"|\"split\", padrão \"center\"): Disposição\n  - height (\"auto\"|\"tall\"|\"screen\", padrão \"tall\"): Altura\n  - stack (boolean, padrão false): Botões empilhados (estilo lista de links)\n\ntext — Texto: Texto livre em Markdown (títulos, listas, tabelas, citações, código, [[links]]).\n  - title (text): Título\n  - markdown (texto Markdown, padrão \"Escreva aqui em **Markdown**.\"): Conteúdo\n  - columns (1|2, padrão 1): Colunas de texto\n\nnote — Nota: Mostra o conteúdo de uma nota do vault; atualiza sozinho quando a nota muda.\n  - path (caminho de nota, obrigatório): Nota\n  - showTitle (boolean, padrão true): Mostrar título\n  - showMeta (boolean, padrão false): Mostrar data e tags\n\nnotes — Coleção de notas: Cartões ou lista de várias notas (de uma pasta, uma tag ou escolhidas), com resumo; pode incluir o texto completo de cada uma logo abaixo.\n  - title (text): Título\n  - subtitle (textarea): Subtítulo\n  - source (\"folder\"|\"tag\"|\"list\"|\"recent\", padrão \"folder\"): Origem\n  - folder (folder): Pasta\n  - tag (tag): Tag\n  - paths (textarea): Notas (uma por linha)\n  - layout (\"cards\"|\"list\"|\"grid\", padrão \"cards\"): Aparência\n  - columns (1|2|3|4, padrão 3): Colunas\n  - limit (number, padrão 24): Máximo\n  - sort (\"title\"|\"modified\"|\"path\", padrão \"title\"): Ordem\n  - excerpt (boolean, padrão true): Mostrar resumo\n  - expand (boolean, padrão false): Incluir o texto completo abaixo\n\nfeatures — Destaques: Grade de benefícios/recursos com ícone (emoji), título e texto.\n  - title (text): Título\n  - subtitle (textarea): Subtítulo\n  - columns (1|2|3|4, padrão 3): Colunas\n  - items (lista de objetos): Itens\n      - icon (text, padrão \"✨\"): Ícone (emoji)\n      - title (text, padrão \"Recurso\"): Título\n      - text (textarea, padrão \"Uma frase sobre este recurso.\"): Texto\n\ncards — Cartões: Cartões com imagem, título, texto, etiqueta e link (projetos, posts, produtos).\n  - title (text): Título\n  - subtitle (textarea): Subtítulo\n  - columns (1|2|3|4, padrão 3): Colunas\n  - items (lista de objetos): Cartões\n      - image (URL de imagem): Imagem\n      - tag (text): Etiqueta\n      - title (text, padrão \"Título do cartão\"): Título\n      - text (textarea): Texto\n      - url (url): Link\n\ngallery — Galeria: Grade de imagens com legenda; toque abre a imagem ampliada.\n  - title (text): Título\n  - columns (1|2|3|4, padrão 3): Colunas\n  - items (lista de objetos): Imagens\n      - image (URL de imagem): Imagem\n      - caption (text): Legenda\n\nimage — Imagem: Uma imagem com legenda.\n  - src (URL de imagem, obrigatório): Imagem\n  - alt (text): Descrição (acessibilidade)\n  - caption (text): Legenda\n  - size (\"normal\"|\"wide\"|\"full\", padrão \"wide\"): Tamanho\n  - rounded (boolean, padrão true): Cantos arredondados\n\nvideo — Vídeo: Vídeo do YouTube, Vimeo ou arquivo .mp4/.webm.\n  - url (url, obrigatório): Link do vídeo\n  - caption (text): Legenda\n\nquote — Citação: Citação em destaque com autor.\n  - text (textarea, padrão \"Simplicidade é o último grau de sofisticação.\"): Citação\n  - author (text, padrão \"Leonardo da Vinci\"): Autor\n  - role (text): Cargo / origem\n  - image (URL de imagem): Foto\n\ntestimonials — Depoimentos: Vários depoimentos em cartões.\n  - title (text): Título\n  - columns (1|2|3|4, padrão 3): Colunas\n  - items (lista de objetos): Depoimentos\n      - text (textarea, padrão \"Mudou meu jeito de trabalhar.\"): Texto\n      - author (text, padrão \"Ana\"): Nome\n      - role (text): Cargo\n      - image (URL de imagem): Foto\n\nstats — Números: Números grandes com rótulo (métricas, conquistas).\n  - title (text): Título\n  - items (lista de objetos): Números\n      - value (text, padrão \"100+\"): Valor\n      - label (text, padrão \"clientes\"): Rótulo\n\ntimeline — Linha do tempo: Eventos em ordem, com data, título e texto (história, roteiro, carreira).\n  - title (text): Título\n  - subtitle (textarea): Subtítulo\n  - items (lista de objetos): Eventos\n      - date (text, padrão \"2025\"): Data\n      - title (text, padrão \"Marco\"): Título\n      - text (texto Markdown): Texto\n\nfaq — Perguntas: Perguntas frequentes que abrem e fecham.\n  - title (text): Título\n  - subtitle (textarea): Subtítulo\n  - items (lista de objetos): Perguntas\n      - q (text, padrão \"Como funciona?\"): Pergunta\n      - a (texto Markdown, padrão \"Explique aqui.\"): Resposta\n  - openFirst (boolean, padrão true): Primeira aberta\n\ncta — Chamada: Faixa de chamada para ação com botões.\n  - title (text, padrão \"Pronto para começar?\"): Título\n  - text (textarea, padrão \"Leva menos de um minuto.\"): Texto\n  - buttons (lista de objetos): Botões\n      - label (text, padrão \"Saiba mais\"): Texto\n      - url (url, padrão \"#\"): Link\n      - variant (\"primary\"|\"secondary\"|\"ghost\", padrão \"primary\"): Estilo\n\ncolumns — Colunas: Duas a quatro colunas de texto em Markdown.\n  - title (text): Título\n  - columns (1|2|3|4, padrão 2): Colunas\n  - items (lista de objetos): Colunas\n      - title (text): Título\n      - markdown (texto Markdown, padrão \"Texto da coluna.\"): Texto\n\npricing — Planos: Tabela de planos/preços com lista de itens e botão.\n  - title (text): Título\n  - subtitle (textarea): Subtítulo\n  - items (lista de objetos): Planos\n      - name (text, padrão \"Plano\"): Nome\n      - price (text, padrão \"R$ 0\"): Preço\n      - period (text, padrão \"/mês\"): Período\n      - description (text): Descrição\n      - features (textarea, padrão \"Item um\\nItem dois\"): Itens (um por linha)\n      - buttonLabel (text, padrão \"Escolher\"): Botão\n      - url (url, padrão \"#\"): Link\n      - highlight (boolean, padrão false): Destacar\n\ncontact — Contato: Contato com e-mail, telefone e links (redes, portfólio).\n  - title (text, padrão \"Vamos conversar\"): Título\n  - text (textarea, padrão \"Respondo em até um dia.\"): Texto\n  - email (text): E-mail\n  - phone (text): Telefone\n  - links (lista de objetos): Links\n      - label (text, padrão \"GitHub\"): Nome\n      - url (url): Link\n\ncountdown — Contagem regressiva: Contagem até uma data (eventos, lançamentos).\n  - title (text, padrão \"Falta pouco\"): Título\n  - date (text, padrão \"2030-01-01 09:00\"): Data e hora (AAAA-MM-DD HH:MM)\n  - done (text, padrão \"Começou!\"): Texto quando chegar\n\ncode — Código: Bloco de código com botão de copiar.\n  - title (text): Título\n  - language (text, padrão \"js\"): Linguagem\n  - code (code, padrão \"console.log(\\\"olá\\\")\"): Código\n\ntoc — Sumário: Lista automática das seções com título desta página.\n  - title (text, padrão \"Nesta página\"): Título\n\ndivider — Divisor: Separador visual ou espaço.\n  - style (\"line\"|\"dots\"|\"wave\"|\"space\", padrão \"line\"): Estilo\n\nhtml — HTML livre: HTML/CSS/JS próprio, inserido como está (use com cuidado).\n  - code (code, padrão \"<div style=\\\"text-align:center\\\">Olá!</div>\"): HTML\n\nbookcover — Capa do livro: Capa com título, subtítulo, autor e editora (clássica, moderna ou com imagem).\n  - title (text, padrão \"O título do livro\"): Título\n  - subtitle (text): Subtítulo\n  - author (text, padrão \"Nome do autor\"): Autor\n  - publisher (text): Editora ou selo\n  - image (URL de imagem): Imagem\n  - style (\"classic\"|\"modern\"|\"image\", padrão \"classic\"): Estilo\n\ntitlepage — Folha de rosto: Página com título, subtítulo, autor e editora, cidade e ano.\n  - title (text, padrão \"O título do livro\"): Título\n  - subtitle (text): Subtítulo\n  - author (text, padrão \"Nome do autor\"): Autor\n  - publisher (text): Editora ou selo\n  - place (text): Cidade\n  - year (text, padrão \"2025\"): Ano\n\ncopyright — Créditos e direitos: Página de créditos: direitos autorais, edição, ISBN, ficha catalográfica e equipe.\n  - markdown (texto Markdown, padrão \"Copyright © 2025 Nome do autor\\n\\nTodos os direitos reservados. Nenhuma parte desta obra pode ser reproduzida sem autorização por escrito do autor.\\n\\n1ª edição\\n\\n**Revisão:** Nome  \\n**Capa:** Nome  \\n**Diagramação:** Urbe\\n\\nISBN 000-00-00000-00-0\"): Texto\n\ndedication — Dedicatória ou epígrafe: Página curta e centralizada: dedicatória, agradecimento breve ou epígrafe com autor.\n  - kind (\"dedication\"|\"epigraph\", padrão \"dedication\"): Tipo\n  - markdown (texto Markdown, padrão \"Para quem sempre acreditou.\"): Texto\n  - author (text): Autor da epígrafe\n\nbooktoc — Sumário do livro: Sumário automático com as partes e os capítulos do livro, com links.\n  - title (text, padrão \"Sumário\"): Título\n\npart — Parte: Página de abertura de uma parte do livro (Parte I, Parte II…), com texto opcional.\n  - title (text, padrão \"Título da parte\"): Título\n  - markdown (texto Markdown): Texto de abertura\n\nchapter — Capítulo: Capítulo numerado, começando em página nova: título, epígrafe e texto escrito aqui ou puxado de uma nota.\n  - title (text, padrão \"Título do capítulo\"): Título\n  - source (\"text\"|\"note\", padrão \"text\"): Texto de onde\n  - markdown (texto Markdown, padrão \"Era uma vez uma cidade feita de notas.\\n\\nCada parágrafo ganha recuo na primeira linha, como num livro impresso.\\n\\n***\\n\\nUma linha com três asteriscos vira um ornamento de troca de cena.\"): Texto\n  - path (caminho de nota): Nota\n  - epigraph (textarea): Epígrafe\n  - epigraphAuthor (text): Autor da epígrafe\n  - numbered (boolean, padrão true): Numerar o capítulo\n  - dropCap (boolean, padrão true): Letra capitular\n\nchapters — Capítulos de uma pasta: Cada nota de uma pasta vira um capítulo, na ordem escolhida (por nome, caminho ou data).\n  - folder (folder): Pasta\n  - sort (\"path\"|\"title\"|\"modified\", padrão \"path\"): Ordem\n  - dropCap (boolean, padrão true): Letra capitular\n\nabout — Sobre o autor: Página com foto e uma breve biografia do autor.\n  - title (text, padrão \"Sobre o autor\"): Título\n  - image (URL de imagem): Foto\n  - markdown (texto Markdown, padrão \"Nome do autor nasceu em … e escreve sobre …\"): Texto\n\ncolophon — Colofão: Nota final de produção: fontes, papel, gráfica e data de impressão.\n  - markdown (texto Markdown, padrão \"Este livro foi composto em EB Garamond e Cormorant Garamond e produzido com o Urbe.\"): Texto\n\nfree — Layout livre: Monte peça por peça: containers (empilhados, lado a lado ou em grade) com títulos, parágrafos, imagens, botões e mais. Cada peça tem o próprio estilo, com valores diferentes para computador, tablet e celular.\n  - root (tree): Elementos\n  - sheet (\"flow\"|\"page\"|\"full\", padrão \"page\"): No livro\n\nLAYOUT LIVRE (bloco \"free\"): props.root é uma árvore. Cada peça: {\"type\":\"<tipo>\",\"content\":{...},\"style\":{...},\"tablet\":{...},\"mobile\":{...},\"children\":[...]} (só \"box\" tem children). tablet vale até 900px e mobile até 600px; o que não mudar herda de style.\nTipos e content: box(tag,link); heading(text,level); text(text); image(src,alt,caption,link); button(label,url,variant); list(items,ordered); quote(text,author); icon(emoji); divider(); spacer(); video(url); note(path,showTitle); html(code); table(md); code(code,lang); formula(tex); badge(text); embed(url,title); pagebreak().\nEstilos: display=stack|row|grid|none; gap=medida css; columns=número; minCol=medida css; justify=start|center|end|between|around|evenly; align=stretch|start|center|end|baseline; self=auto|start|center|end|stretch; order=número; width=medida css; maxWidth=medida css; minHeight=medida css; height=medida css; aspect=1/1|4/3|3/2|16/9|21/9|3/4|2/3|9/16; fit=cover|contain; padding=medida css; margin=medida css; bg=cor; bg2=cor; angle=número; bgImage; color=cor; border=medida css; borderStyle=solid|dashed|dotted|double; borderColor=cor; radius=medida css; shadow=none|soft|strong|glow; opacity=número; font=heading|body|inter|manrope|grotesk|dmsans|outfit|playfair|fraunces|lora|merriweather|garamond|cormorant|crimson|baskerville|mono|system|serif; size=medida css; weight=300|400|500|600|700|800|900; lineHeight=número; spacing=medida css; textAlign=left|center|right|justify; transform=none|uppercase|lowercase|capitalize; italic=yes|no; className; css.\nExemplo: {\"type\":\"box\",\"style\":{\"display\":\"row\",\"gap\":\"24px\",\"minCol\":\"260px\"},\"mobile\":{\"display\":\"stack\"},\"children\":[{\"type\":\"heading\",\"content\":{\"text\":\"Oi\",\"level\":2}},{\"type\":\"text\",\"content\":{\"text\":\"Parágrafo **em Markdown**.\"}}]}\nDicas: textos longos em Markdown aceitam [[links]] para notas. Blocos \"note\" e \"notes\" puxam o conteúdo real das notas e se atualizam sozinhos. Para aparecer no menu da barra, dê \"anchor\" e \"menu\":true no style da seção.\n\nMODELOS PRONTOS (write_page com template):\n- empty: O mínimo do mínimo: nenhuma seção, sem barra, sem rodapé, sem animações. Você monta tudo.\n- canvas: Tudo em layout livre: capa, colunas e cartões montados peça por peça, cada um com estilo próprio para computador, tablet e celular.\n- blank: O básico, genérico e resumido: um título, um texto e um rodapé.\n- landing: Capa, números, recursos, depoimentos, planos, perguntas e chamada final.\n- portfolio: Apresentação pessoal, projetos em cartões, trajetória e contato.\n- article (precisa de note): Publica uma nota como artigo elegante, com barra de progresso de leitura.\n- vault-site (precisa de folder): Transforma uma pasta em site: capa, índice em cartões e o texto de cada nota.\n- resume: Resumo, experiência em linha do tempo, habilidades e contato.\n- event: Capa com data, contagem regressiva, programação, palestrantes e inscrição.\n- docs (precisa de folder): Sumário e as notas de uma pasta em sequência, com código e busca pelo menu.\n- book: Livro pronto para imprimir ou gerar PDF: capa, folha de rosto, créditos, dedicatória, sumário, partes e capítulos.\n- book-folder (precisa de folder): Cada nota da pasta vira um capítulo do livro, com capa, folha de rosto, sumário e créditos.\n- links: Página única e vertical com seus links principais — ótima para celular.\n\nTemas: aurora (Aurora, dark), papel (Papel, light), grafite (Grafite, dark), oceano (Oceano, light), floresta (Floresta, dark), entardecer (Entardecer, light), neon (Neon, dark), livro (Livro clássico, light), moderno (Livro moderno, light), lavanda (Lavanda, light).\nPara editar uma página existente: read_note no .page.json, altere o JSON e envie tudo com write_page.",
+   "error": null,
+   "changes": null,
+   "files": [
+    {
+     "path": "Projetos/Plano.md",
+     "content": "# Plano\n\nPassos.\n"
+    },
+    {
+     "path": "Páginas/Existente.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Velha\"},\"sections\":[]}"
+    }
+   ]
+  },
+  {
+   "name": "write_page",
+   "input": {
+    "path": "Meu site",
+    "template": "landing",
+    "title": "Café"
+   },
+   "label": "Página Meu site",
+   "access": "write",
+   "description": "Cria ou substitui uma página HTML do vault (arquivo .page.json) a partir do JSON completo (spec) ou de um modelo (template). Valida antes de gravar e devolve os erros se houver. Depois, abra com open_note para o usuário ver no estúdio.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "Ex.: \"Páginas/Meu site.page.json\" (a extensão é adicionada se faltar)"
+     },
+     "spec": {
+      "type": "object",
+      "description": "JSON completo da página no formato de page_schema",
+      "additionalProperties": true
+     },
+     "template": {
+      "type": "string",
+      "description": "Alternativa a spec: id de um modelo (empty, canvas, blank, landing, portfolio, article, vault-site, resume, event, docs, book, book-folder, links)"
+     },
+     "title": {
+      "type": "string",
+      "description": "Título ao usar template"
+     },
+     "folder": {
+      "type": "string",
+      "description": "Pasta de notas para os modelos vault-site/docs"
+     },
+     "note": {
+      "type": "string",
+      "description": "Caminho da nota para o modelo article"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "path": "Páginas/Meu site.page.json",
+    "before": null,
+    "after": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Café\",\"description\":\"Uma frase que vende o produto.\",\"lang\":\"pt-BR\",\"icon\":\"🚀\",\"image\":\"\",\"head\":\"\"},\"theme\":{\"preset\":\"aurora\",\"mode\":\"\",\"headingFont\":\"\",\"bodyFont\":\"\",\"primary\":\"\",\"accent\":\"\",\"bg\":\"\",\"surface\":\"\",\"text\":\"\",\"muted\":\"\",\"background\":\"mesh\",\"radius\":null,\"scale\":1,\"spacing\":\"comfortable\",\"width\":1120,\"shadow\":\"soft\",\"animations\":true,\"headingWeight\":\"\",\"headingCase\":\"\",\"headingSpacing\":null,\"headingScale\":1,\"lineHeight\":null,\"buttonStyle\":\"solid\",\"cardStyle\":\"elevated\",\"linkStyle\":\"underline\",\"border\":\"\",\"css\":\"\"},\"layout\":{\"nav\":true,\"brand\":\"Café\",\"sticky\":true,\"navCta\":\"Começar\",\"navCtaUrl\":\"#planos\",\"footer\":\"© 2025 Café · Feito com Urbe\",\"themeToggle\":true,\"backToTop\":true,\"progress\":false,\"format\":\"web\",\"pageSize\":\"a5\",\"margins\":\"normal\",\"pageNumbers\":true,\"runningHead\":\"\",\"chapterStyle\":\"word\",\"recto\":false,\"justify\":true,\"indent\":true},\"sections\":[{\"type\":\"hero\",\"props\":{\"eyebrow\":\"Novo · versão 1.0\",\"title\":\"O jeito mais simples de fazer **o que importa**\",\"subtitle\":\"Explique em uma frase o que o produto resolve e para quem ele é.\",\"buttons\":[{\"label\":\"Começar grátis\",\"url\":\"#planos\",\"variant\":\"primary\"},{\"label\":\"Ver como funciona\",\"url\":\"#recursos\",\"variant\":\"secondary\"}],\"image\":\"\",\"layout\":\"center\",\"height\":\"tall\",\"stack\":false},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"l\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"stats\",\"props\":{\"title\":\"\",\"items\":[{\"value\":\"10k+\",\"label\":\"pessoas usando\"},{\"value\":\"4,9★\",\"label\":\"avaliação média\"},{\"value\":\"2 min\",\"label\":\"para começar\"},{\"value\":\"24/7\",\"label\":\"suporte\"}]},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"s\",\"width\":\"normal\",\"align\":\"center\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"features\",\"props\":{\"title\":\"Tudo o que você precisa\",\"subtitle\":\"Recursos pensados para o dia a dia.\",\"columns\":3,\"items\":[{\"icon\":\"⚡\",\"title\":\"Rápido\",\"text\":\"Resposta instantânea em qualquer tela.\"},{\"icon\":\"🔒\",\"title\":\"Privado\",\"text\":\"Seus dados ficam com você.\"},{\"icon\":\"🧠\",\"title\":\"Inteligente\",\"text\":\"Automatiza o repetitivo.\"},{\"icon\":\"📱\",\"title\":\"Em todo lugar\",\"text\":\"Celular, tablet e computador.\"},{\"icon\":\"🎨\",\"title\":\"Bonito\",\"text\":\"Visual moderno e personalizável.\"},{\"icon\":\"🤝\",\"title\":\"Colaborativo\",\"text\":\"Compartilhe com quem quiser.\"}]},\"style\":{\"anchor\":\"Recursos\",\"menu\":true,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"testimonials\",\"props\":{\"title\":\"Quem usa, recomenda\",\"columns\":3,\"items\":[{\"text\":\"Economizei horas toda semana.\",\"author\":\"Marina Alves\",\"role\":\"Designer\",\"image\":\"\"},{\"text\":\"Finalmente algo simples que funciona.\",\"author\":\"João Pedro\",\"role\":\"Desenvolvedor\",\"image\":\"\"},{\"text\":\"Minha equipe adotou em um dia.\",\"author\":\"Carla Dias\",\"role\":\"Gerente de produto\",\"image\":\"\"}]},\"style\":{\"anchor\":\"Depoimentos\",\"menu\":true,\"background\":\"surface\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"pricing\",\"props\":{\"title\":\"Planos simples\",\"subtitle\":\"Comece grátis e mude quando quiser.\",\"items\":[{\"name\":\"Grátis\",\"price\":\"R$ 0\",\"period\":\"/mês\",\"description\":\"Para experimentar.\",\"features\":\"Recursos essenciais\\n1 projeto\\nSuporte da comunidade\",\"buttonLabel\":\"Começar\",\"url\":\"#\",\"highlight\":false},{\"name\":\"Pro\",\"price\":\"R$ 29\",\"period\":\"/mês\",\"description\":\"Para quem leva a sério.\",\"features\":\"Tudo do Grátis\\nProjetos ilimitados\\nSuporte prioritário\",\"buttonLabel\":\"Assinar Pro\",\"url\":\"#\",\"highlight\":true},{\"name\":\"Equipe\",\"price\":\"R$ 79\",\"period\":\"/mês\",\"description\":\"Para times.\",\"features\":\"Tudo do Pro\\nAté 10 pessoas\\nAdministração\",\"buttonLabel\":\"Falar com vendas\",\"url\":\"#\",\"highlight\":false}]},\"style\":{\"anchor\":\"Planos\",\"menu\":true,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"center\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"faq\",\"props\":{\"title\":\"Perguntas frequentes\",\"subtitle\":\"\",\"items\":[{\"q\":\"Preciso de cartão para começar?\",\"a\":\"Não. O plano grátis não pede cartão.\"},{\"q\":\"Posso cancelar quando quiser?\",\"a\":\"Sim, em um clique, sem multa.\"},{\"q\":\"Meus dados ficam seguros?\",\"a\":\"Sim. Tudo é criptografado e você pode exportar a qualquer momento.\"}],\"openFirst\":true},\"style\":{\"anchor\":\"Dúvidas\",\"menu\":true,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"narrow\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"cta\",\"props\":{\"title\":\"Pronto para começar?\",\"text\":\"Leva menos de um minuto.\",\"buttons\":[{\"label\":\"Criar conta grátis\",\"url\":\"#\",\"variant\":\"primary\"},{\"label\":\"Falar com a gente\",\"url\":\"#\",\"variant\":\"secondary\"}]},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}}]}",
+    "note": "Nova página · 7 seções · tema aurora"
+   },
+   "content": "Página criada: Páginas/Meu site.page.json (7 seções: hero, stats, features, testimonials, pricing, faq, cta).\nO usuário pode abrir no estúdio (open_note) e exportar como HTML.",
+   "error": null,
+   "changes": [
+    {
+     "id": "doc_100",
+     "before": null,
+     "after": {
+      "path": "Páginas/Meu site.page.json",
+      "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Café\",\"description\":\"Uma frase que vende o produto.\",\"lang\":\"pt-BR\",\"icon\":\"🚀\",\"image\":\"\",\"head\":\"\"},\"theme\":{\"preset\":\"aurora\",\"mode\":\"\",\"headingFont\":\"\",\"bodyFont\":\"\",\"primary\":\"\",\"accent\":\"\",\"bg\":\"\",\"surface\":\"\",\"text\":\"\",\"muted\":\"\",\"background\":\"mesh\",\"radius\":null,\"scale\":1,\"spacing\":\"comfortable\",\"width\":1120,\"shadow\":\"soft\",\"animations\":true,\"headingWeight\":\"\",\"headingCase\":\"\",\"headingSpacing\":null,\"headingScale\":1,\"lineHeight\":null,\"buttonStyle\":\"solid\",\"cardStyle\":\"elevated\",\"linkStyle\":\"underline\",\"border\":\"\",\"css\":\"\"},\"layout\":{\"nav\":true,\"brand\":\"Café\",\"sticky\":true,\"navCta\":\"Começar\",\"navCtaUrl\":\"#planos\",\"footer\":\"© 2025 Café · Feito com Urbe\",\"themeToggle\":true,\"backToTop\":true,\"progress\":false,\"format\":\"web\",\"pageSize\":\"a5\",\"margins\":\"normal\",\"pageNumbers\":true,\"runningHead\":\"\",\"chapterStyle\":\"word\",\"recto\":false,\"justify\":true,\"indent\":true},\"sections\":[{\"type\":\"hero\",\"props\":{\"eyebrow\":\"Novo · versão 1.0\",\"title\":\"O jeito mais simples de fazer **o que importa**\",\"subtitle\":\"Explique em uma frase o que o produto resolve e para quem ele é.\",\"buttons\":[{\"label\":\"Começar grátis\",\"url\":\"#planos\",\"variant\":\"primary\"},{\"label\":\"Ver como funciona\",\"url\":\"#recursos\",\"variant\":\"secondary\"}],\"image\":\"\",\"layout\":\"center\",\"height\":\"tall\",\"stack\":false},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"l\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"stats\",\"props\":{\"title\":\"\",\"items\":[{\"value\":\"10k+\",\"label\":\"pessoas usando\"},{\"value\":\"4,9★\",\"label\":\"avaliação média\"},{\"value\":\"2 min\",\"label\":\"para começar\"},{\"value\":\"24/7\",\"label\":\"suporte\"}]},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"s\",\"width\":\"normal\",\"align\":\"center\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"features\",\"props\":{\"title\":\"Tudo o que você precisa\",\"subtitle\":\"Recursos pensados para o dia a dia.\",\"columns\":3,\"items\":[{\"icon\":\"⚡\",\"title\":\"Rápido\",\"text\":\"Resposta instantânea em qualquer tela.\"},{\"icon\":\"🔒\",\"title\":\"Privado\",\"text\":\"Seus dados ficam com você.\"},{\"icon\":\"🧠\",\"title\":\"Inteligente\",\"text\":\"Automatiza o repetitivo.\"},{\"icon\":\"📱\",\"title\":\"Em todo lugar\",\"text\":\"Celular, tablet e computador.\"},{\"icon\":\"🎨\",\"title\":\"Bonito\",\"text\":\"Visual moderno e personalizável.\"},{\"icon\":\"🤝\",\"title\":\"Colaborativo\",\"text\":\"Compartilhe com quem quiser.\"}]},\"style\":{\"anchor\":\"Recursos\",\"menu\":true,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"testimonials\",\"props\":{\"title\":\"Quem usa, recomenda\",\"columns\":3,\"items\":[{\"text\":\"Economizei horas toda semana.\",\"author\":\"Marina Alves\",\"role\":\"Designer\",\"image\":\"\"},{\"text\":\"Finalmente algo simples que funciona.\",\"author\":\"João Pedro\",\"role\":\"Desenvolvedor\",\"image\":\"\"},{\"text\":\"Minha equipe adotou em um dia.\",\"author\":\"Carla Dias\",\"role\":\"Gerente de produto\",\"image\":\"\"}]},\"style\":{\"anchor\":\"Depoimentos\",\"menu\":true,\"background\":\"surface\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"pricing\",\"props\":{\"title\":\"Planos simples\",\"subtitle\":\"Comece grátis e mude quando quiser.\",\"items\":[{\"name\":\"Grátis\",\"price\":\"R$ 0\",\"period\":\"/mês\",\"description\":\"Para experimentar.\",\"features\":\"Recursos essenciais\\n1 projeto\\nSuporte da comunidade\",\"buttonLabel\":\"Começar\",\"url\":\"#\",\"highlight\":false},{\"name\":\"Pro\",\"price\":\"R$ 29\",\"period\":\"/mês\",\"description\":\"Para quem leva a sério.\",\"features\":\"Tudo do Grátis\\nProjetos ilimitados\\nSuporte prioritário\",\"buttonLabel\":\"Assinar Pro\",\"url\":\"#\",\"highlight\":true},{\"name\":\"Equipe\",\"price\":\"R$ 79\",\"period\":\"/mês\",\"description\":\"Para times.\",\"features\":\"Tudo do Pro\\nAté 10 pessoas\\nAdministração\",\"buttonLabel\":\"Falar com vendas\",\"url\":\"#\",\"highlight\":false}]},\"style\":{\"anchor\":\"Planos\",\"menu\":true,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"center\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"faq\",\"props\":{\"title\":\"Perguntas frequentes\",\"subtitle\":\"\",\"items\":[{\"q\":\"Preciso de cartão para começar?\",\"a\":\"Não. O plano grátis não pede cartão.\"},{\"q\":\"Posso cancelar quando quiser?\",\"a\":\"Sim, em um clique, sem multa.\"},{\"q\":\"Meus dados ficam seguros?\",\"a\":\"Sim. Tudo é criptografado e você pode exportar a qualquer momento.\"}],\"openFirst\":true},\"style\":{\"anchor\":\"Dúvidas\",\"menu\":true,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"narrow\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"cta\",\"props\":{\"title\":\"Pronto para começar?\",\"text\":\"Leva menos de um minuto.\",\"buttons\":[{\"label\":\"Criar conta grátis\",\"url\":\"#\",\"variant\":\"primary\"},{\"label\":\"Falar com a gente\",\"url\":\"#\",\"variant\":\"secondary\"}]},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}}]}"
+     }
+    }
+   ],
+   "files": [
+    {
+     "path": "Projetos/Plano.md",
+     "content": "# Plano\n\nPassos.\n"
+    },
+    {
+     "path": "Páginas/Existente.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Velha\"},\"sections\":[]}"
+    },
+    {
+     "path": "Páginas/Meu site.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Café\",\"description\":\"Uma frase que vende o produto.\",\"lang\":\"pt-BR\",\"icon\":\"🚀\",\"image\":\"\",\"head\":\"\"},\"theme\":{\"preset\":\"aurora\",\"mode\":\"\",\"headingFont\":\"\",\"bodyFont\":\"\",\"primary\":\"\",\"accent\":\"\",\"bg\":\"\",\"surface\":\"\",\"text\":\"\",\"muted\":\"\",\"background\":\"mesh\",\"radius\":null,\"scale\":1,\"spacing\":\"comfortable\",\"width\":1120,\"shadow\":\"soft\",\"animations\":true,\"headingWeight\":\"\",\"headingCase\":\"\",\"headingSpacing\":null,\"headingScale\":1,\"lineHeight\":null,\"buttonStyle\":\"solid\",\"cardStyle\":\"elevated\",\"linkStyle\":\"underline\",\"border\":\"\",\"css\":\"\"},\"layout\":{\"nav\":true,\"brand\":\"Café\",\"sticky\":true,\"navCta\":\"Começar\",\"navCtaUrl\":\"#planos\",\"footer\":\"© 2025 Café · Feito com Urbe\",\"themeToggle\":true,\"backToTop\":true,\"progress\":false,\"format\":\"web\",\"pageSize\":\"a5\",\"margins\":\"normal\",\"pageNumbers\":true,\"runningHead\":\"\",\"chapterStyle\":\"word\",\"recto\":false,\"justify\":true,\"indent\":true},\"sections\":[{\"type\":\"hero\",\"props\":{\"eyebrow\":\"Novo · versão 1.0\",\"title\":\"O jeito mais simples de fazer **o que importa**\",\"subtitle\":\"Explique em uma frase o que o produto resolve e para quem ele é.\",\"buttons\":[{\"label\":\"Começar grátis\",\"url\":\"#planos\",\"variant\":\"primary\"},{\"label\":\"Ver como funciona\",\"url\":\"#recursos\",\"variant\":\"secondary\"}],\"image\":\"\",\"layout\":\"center\",\"height\":\"tall\",\"stack\":false},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"l\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"stats\",\"props\":{\"title\":\"\",\"items\":[{\"value\":\"10k+\",\"label\":\"pessoas usando\"},{\"value\":\"4,9★\",\"label\":\"avaliação média\"},{\"value\":\"2 min\",\"label\":\"para começar\"},{\"value\":\"24/7\",\"label\":\"suporte\"}]},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"s\",\"width\":\"normal\",\"align\":\"center\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"features\",\"props\":{\"title\":\"Tudo o que você precisa\",\"subtitle\":\"Recursos pensados para o dia a dia.\",\"columns\":3,\"items\":[{\"icon\":\"⚡\",\"title\":\"Rápido\",\"text\":\"Resposta instantânea em qualquer tela.\"},{\"icon\":\"🔒\",\"title\":\"Privado\",\"text\":\"Seus dados ficam com você.\"},{\"icon\":\"🧠\",\"title\":\"Inteligente\",\"text\":\"Automatiza o repetitivo.\"},{\"icon\":\"📱\",\"title\":\"Em todo lugar\",\"text\":\"Celular, tablet e computador.\"},{\"icon\":\"🎨\",\"title\":\"Bonito\",\"text\":\"Visual moderno e personalizável.\"},{\"icon\":\"🤝\",\"title\":\"Colaborativo\",\"text\":\"Compartilhe com quem quiser.\"}]},\"style\":{\"anchor\":\"Recursos\",\"menu\":true,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"testimonials\",\"props\":{\"title\":\"Quem usa, recomenda\",\"columns\":3,\"items\":[{\"text\":\"Economizei horas toda semana.\",\"author\":\"Marina Alves\",\"role\":\"Designer\",\"image\":\"\"},{\"text\":\"Finalmente algo simples que funciona.\",\"author\":\"João Pedro\",\"role\":\"Desenvolvedor\",\"image\":\"\"},{\"text\":\"Minha equipe adotou em um dia.\",\"author\":\"Carla Dias\",\"role\":\"Gerente de produto\",\"image\":\"\"}]},\"style\":{\"anchor\":\"Depoimentos\",\"menu\":true,\"background\":\"surface\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"pricing\",\"props\":{\"title\":\"Planos simples\",\"subtitle\":\"Comece grátis e mude quando quiser.\",\"items\":[{\"name\":\"Grátis\",\"price\":\"R$ 0\",\"period\":\"/mês\",\"description\":\"Para experimentar.\",\"features\":\"Recursos essenciais\\n1 projeto\\nSuporte da comunidade\",\"buttonLabel\":\"Começar\",\"url\":\"#\",\"highlight\":false},{\"name\":\"Pro\",\"price\":\"R$ 29\",\"period\":\"/mês\",\"description\":\"Para quem leva a sério.\",\"features\":\"Tudo do Grátis\\nProjetos ilimitados\\nSuporte prioritário\",\"buttonLabel\":\"Assinar Pro\",\"url\":\"#\",\"highlight\":true},{\"name\":\"Equipe\",\"price\":\"R$ 79\",\"period\":\"/mês\",\"description\":\"Para times.\",\"features\":\"Tudo do Pro\\nAté 10 pessoas\\nAdministração\",\"buttonLabel\":\"Falar com vendas\",\"url\":\"#\",\"highlight\":false}]},\"style\":{\"anchor\":\"Planos\",\"menu\":true,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"center\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"faq\",\"props\":{\"title\":\"Perguntas frequentes\",\"subtitle\":\"\",\"items\":[{\"q\":\"Preciso de cartão para começar?\",\"a\":\"Não. O plano grátis não pede cartão.\"},{\"q\":\"Posso cancelar quando quiser?\",\"a\":\"Sim, em um clique, sem multa.\"},{\"q\":\"Meus dados ficam seguros?\",\"a\":\"Sim. Tudo é criptografado e você pode exportar a qualquer momento.\"}],\"openFirst\":true},\"style\":{\"anchor\":\"Dúvidas\",\"menu\":true,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"narrow\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"cta\",\"props\":{\"title\":\"Pronto para começar?\",\"text\":\"Leva menos de um minuto.\",\"buttons\":[{\"label\":\"Criar conta grátis\",\"url\":\"#\",\"variant\":\"primary\"},{\"label\":\"Falar com a gente\",\"url\":\"#\",\"variant\":\"secondary\"}]},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}}]}"
+    }
+   ]
+  },
+  {
+   "name": "write_page",
+   "input": {
+    "path": "Sites/Portfólio.html",
+    "template": "portfolio"
+   },
+   "label": "Página Portfólio.html",
+   "access": "write",
+   "description": "Cria ou substitui uma página HTML do vault (arquivo .page.json) a partir do JSON completo (spec) ou de um modelo (template). Valida antes de gravar e devolve os erros se houver. Depois, abra com open_note para o usuário ver no estúdio.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "Ex.: \"Páginas/Meu site.page.json\" (a extensão é adicionada se faltar)"
+     },
+     "spec": {
+      "type": "object",
+      "description": "JSON completo da página no formato de page_schema",
+      "additionalProperties": true
+     },
+     "template": {
+      "type": "string",
+      "description": "Alternativa a spec: id de um modelo (empty, canvas, blank, landing, portfolio, article, vault-site, resume, event, docs, book, book-folder, links)"
+     },
+     "title": {
+      "type": "string",
+      "description": "Título ao usar template"
+     },
+     "folder": {
+      "type": "string",
+      "description": "Pasta de notas para os modelos vault-site/docs"
+     },
+     "note": {
+      "type": "string",
+      "description": "Caminho da nota para o modelo article"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "path": "Sites/Portfólio.page.json",
+    "before": null,
+    "after": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Seu Nome — Portfólio\",\"description\":\"\",\"lang\":\"pt-BR\",\"icon\":\"◆\",\"image\":\"\",\"head\":\"\"},\"theme\":{\"preset\":\"grafite\",\"mode\":\"\",\"headingFont\":\"\",\"bodyFont\":\"\",\"primary\":\"\",\"accent\":\"\",\"bg\":\"\",\"surface\":\"\",\"text\":\"\",\"muted\":\"\",\"background\":\"grid\",\"radius\":null,\"scale\":1,\"spacing\":\"comfortable\",\"width\":1120,\"shadow\":\"soft\",\"animations\":true,\"headingWeight\":\"\",\"headingCase\":\"\",\"headingSpacing\":null,\"headingScale\":1,\"lineHeight\":null,\"buttonStyle\":\"solid\",\"cardStyle\":\"elevated\",\"linkStyle\":\"underline\",\"border\":\"\",\"css\":\"\"},\"layout\":{\"nav\":true,\"brand\":\"Seu Nome\",\"sticky\":true,\"navCta\":\"\",\"navCtaUrl\":\"\",\"footer\":\"© 2025 Seu Nome\",\"themeToggle\":true,\"backToTop\":true,\"progress\":false,\"format\":\"web\",\"pageSize\":\"a5\",\"margins\":\"normal\",\"pageNumbers\":true,\"runningHead\":\"\",\"chapterStyle\":\"word\",\"recto\":false,\"justify\":true,\"indent\":true},\"sections\":[{\"type\":\"hero\",\"props\":{\"eyebrow\":\"Disponível para projetos\",\"title\":\"Olá, eu sou Seu Nome. Crio experiências **simples e bonitas**.\",\"subtitle\":\"Designer e desenvolvedor. Transformo ideias em produtos que as pessoas gostam de usar.\",\"buttons\":[{\"label\":\"Ver projetos\",\"url\":\"#projetos\",\"variant\":\"primary\"},{\"label\":\"Contato\",\"url\":\"#contato\",\"variant\":\"secondary\"}],\"image\":\"\",\"layout\":\"left\",\"height\":\"tall\",\"stack\":false},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"l\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"cards\",\"props\":{\"title\":\"Projetos selecionados\",\"subtitle\":\"\",\"columns\":3,\"items\":[{\"image\":\"\",\"tag\":\"Produto\",\"title\":\"Aplicativo de finanças\",\"text\":\"Redesenho completo com foco em clareza.\",\"url\":\"\"},{\"image\":\"\",\"tag\":\"Marca\",\"title\":\"Identidade visual\",\"text\":\"Marca, tipografia e sistema de cores.\",\"url\":\"\"},{\"image\":\"\",\"tag\":\"Web\",\"title\":\"Site institucional\",\"text\":\"Rápido, acessível e fácil de editar.\",\"url\":\"\"}]},\"style\":{\"anchor\":\"Projetos\",\"menu\":true,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"timeline\",\"props\":{\"title\":\"Trajetória\",\"subtitle\":\"\",\"items\":[{\"date\":\"2025\",\"title\":\"Estúdio próprio\",\"text\":\"Projetos para empresas e pessoas.\"},{\"date\":\"2022\",\"title\":\"Designer sênior\",\"text\":\"Liderança de design em produto digital.\"},{\"date\":\"2019\",\"title\":\"Começo\",\"text\":\"Primeiros projetos como freelancer.\"}]},\"style\":{\"anchor\":\"Trajetória\",\"menu\":true,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"narrow\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"contact\",\"props\":{\"title\":\"Vamos criar algo juntos?\",\"text\":\"Conte sua ideia; respondo em até um dia.\",\"email\":\"voce@exemplo.com\",\"phone\":\"\",\"links\":[{\"label\":\"GitHub\",\"url\":\"https://github.com\"},{\"label\":\"LinkedIn\",\"url\":\"https://linkedin.com\"}]},\"style\":{\"anchor\":\"Contato\",\"menu\":true,\"background\":\"surface\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}}]}",
+    "note": "Nova página · 4 seções · tema grafite"
+   },
+   "content": "Página criada: Sites/Portfólio.page.json (4 seções: hero, cards, timeline, contact).\nO usuário pode abrir no estúdio (open_note) e exportar como HTML.",
+   "error": null,
+   "changes": [
+    {
+     "id": "doc_100",
+     "before": null,
+     "after": {
+      "path": "Sites/Portfólio.page.json",
+      "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Seu Nome — Portfólio\",\"description\":\"\",\"lang\":\"pt-BR\",\"icon\":\"◆\",\"image\":\"\",\"head\":\"\"},\"theme\":{\"preset\":\"grafite\",\"mode\":\"\",\"headingFont\":\"\",\"bodyFont\":\"\",\"primary\":\"\",\"accent\":\"\",\"bg\":\"\",\"surface\":\"\",\"text\":\"\",\"muted\":\"\",\"background\":\"grid\",\"radius\":null,\"scale\":1,\"spacing\":\"comfortable\",\"width\":1120,\"shadow\":\"soft\",\"animations\":true,\"headingWeight\":\"\",\"headingCase\":\"\",\"headingSpacing\":null,\"headingScale\":1,\"lineHeight\":null,\"buttonStyle\":\"solid\",\"cardStyle\":\"elevated\",\"linkStyle\":\"underline\",\"border\":\"\",\"css\":\"\"},\"layout\":{\"nav\":true,\"brand\":\"Seu Nome\",\"sticky\":true,\"navCta\":\"\",\"navCtaUrl\":\"\",\"footer\":\"© 2025 Seu Nome\",\"themeToggle\":true,\"backToTop\":true,\"progress\":false,\"format\":\"web\",\"pageSize\":\"a5\",\"margins\":\"normal\",\"pageNumbers\":true,\"runningHead\":\"\",\"chapterStyle\":\"word\",\"recto\":false,\"justify\":true,\"indent\":true},\"sections\":[{\"type\":\"hero\",\"props\":{\"eyebrow\":\"Disponível para projetos\",\"title\":\"Olá, eu sou Seu Nome. Crio experiências **simples e bonitas**.\",\"subtitle\":\"Designer e desenvolvedor. Transformo ideias em produtos que as pessoas gostam de usar.\",\"buttons\":[{\"label\":\"Ver projetos\",\"url\":\"#projetos\",\"variant\":\"primary\"},{\"label\":\"Contato\",\"url\":\"#contato\",\"variant\":\"secondary\"}],\"image\":\"\",\"layout\":\"left\",\"height\":\"tall\",\"stack\":false},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"l\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"cards\",\"props\":{\"title\":\"Projetos selecionados\",\"subtitle\":\"\",\"columns\":3,\"items\":[{\"image\":\"\",\"tag\":\"Produto\",\"title\":\"Aplicativo de finanças\",\"text\":\"Redesenho completo com foco em clareza.\",\"url\":\"\"},{\"image\":\"\",\"tag\":\"Marca\",\"title\":\"Identidade visual\",\"text\":\"Marca, tipografia e sistema de cores.\",\"url\":\"\"},{\"image\":\"\",\"tag\":\"Web\",\"title\":\"Site institucional\",\"text\":\"Rápido, acessível e fácil de editar.\",\"url\":\"\"}]},\"style\":{\"anchor\":\"Projetos\",\"menu\":true,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"timeline\",\"props\":{\"title\":\"Trajetória\",\"subtitle\":\"\",\"items\":[{\"date\":\"2025\",\"title\":\"Estúdio próprio\",\"text\":\"Projetos para empresas e pessoas.\"},{\"date\":\"2022\",\"title\":\"Designer sênior\",\"text\":\"Liderança de design em produto digital.\"},{\"date\":\"2019\",\"title\":\"Começo\",\"text\":\"Primeiros projetos como freelancer.\"}]},\"style\":{\"anchor\":\"Trajetória\",\"menu\":true,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"narrow\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"contact\",\"props\":{\"title\":\"Vamos criar algo juntos?\",\"text\":\"Conte sua ideia; respondo em até um dia.\",\"email\":\"voce@exemplo.com\",\"phone\":\"\",\"links\":[{\"label\":\"GitHub\",\"url\":\"https://github.com\"},{\"label\":\"LinkedIn\",\"url\":\"https://linkedin.com\"}]},\"style\":{\"anchor\":\"Contato\",\"menu\":true,\"background\":\"surface\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}}]}"
+     }
+    }
+   ],
+   "files": [
+    {
+     "path": "Projetos/Plano.md",
+     "content": "# Plano\n\nPassos.\n"
+    },
+    {
+     "path": "Páginas/Existente.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Velha\"},\"sections\":[]}"
+    },
+    {
+     "path": "Sites/Portfólio.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Seu Nome — Portfólio\",\"description\":\"\",\"lang\":\"pt-BR\",\"icon\":\"◆\",\"image\":\"\",\"head\":\"\"},\"theme\":{\"preset\":\"grafite\",\"mode\":\"\",\"headingFont\":\"\",\"bodyFont\":\"\",\"primary\":\"\",\"accent\":\"\",\"bg\":\"\",\"surface\":\"\",\"text\":\"\",\"muted\":\"\",\"background\":\"grid\",\"radius\":null,\"scale\":1,\"spacing\":\"comfortable\",\"width\":1120,\"shadow\":\"soft\",\"animations\":true,\"headingWeight\":\"\",\"headingCase\":\"\",\"headingSpacing\":null,\"headingScale\":1,\"lineHeight\":null,\"buttonStyle\":\"solid\",\"cardStyle\":\"elevated\",\"linkStyle\":\"underline\",\"border\":\"\",\"css\":\"\"},\"layout\":{\"nav\":true,\"brand\":\"Seu Nome\",\"sticky\":true,\"navCta\":\"\",\"navCtaUrl\":\"\",\"footer\":\"© 2025 Seu Nome\",\"themeToggle\":true,\"backToTop\":true,\"progress\":false,\"format\":\"web\",\"pageSize\":\"a5\",\"margins\":\"normal\",\"pageNumbers\":true,\"runningHead\":\"\",\"chapterStyle\":\"word\",\"recto\":false,\"justify\":true,\"indent\":true},\"sections\":[{\"type\":\"hero\",\"props\":{\"eyebrow\":\"Disponível para projetos\",\"title\":\"Olá, eu sou Seu Nome. Crio experiências **simples e bonitas**.\",\"subtitle\":\"Designer e desenvolvedor. Transformo ideias em produtos que as pessoas gostam de usar.\",\"buttons\":[{\"label\":\"Ver projetos\",\"url\":\"#projetos\",\"variant\":\"primary\"},{\"label\":\"Contato\",\"url\":\"#contato\",\"variant\":\"secondary\"}],\"image\":\"\",\"layout\":\"left\",\"height\":\"tall\",\"stack\":false},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"l\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"cards\",\"props\":{\"title\":\"Projetos selecionados\",\"subtitle\":\"\",\"columns\":3,\"items\":[{\"image\":\"\",\"tag\":\"Produto\",\"title\":\"Aplicativo de finanças\",\"text\":\"Redesenho completo com foco em clareza.\",\"url\":\"\"},{\"image\":\"\",\"tag\":\"Marca\",\"title\":\"Identidade visual\",\"text\":\"Marca, tipografia e sistema de cores.\",\"url\":\"\"},{\"image\":\"\",\"tag\":\"Web\",\"title\":\"Site institucional\",\"text\":\"Rápido, acessível e fácil de editar.\",\"url\":\"\"}]},\"style\":{\"anchor\":\"Projetos\",\"menu\":true,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"timeline\",\"props\":{\"title\":\"Trajetória\",\"subtitle\":\"\",\"items\":[{\"date\":\"2025\",\"title\":\"Estúdio próprio\",\"text\":\"Projetos para empresas e pessoas.\"},{\"date\":\"2022\",\"title\":\"Designer sênior\",\"text\":\"Liderança de design em produto digital.\"},{\"date\":\"2019\",\"title\":\"Começo\",\"text\":\"Primeiros projetos como freelancer.\"}]},\"style\":{\"anchor\":\"Trajetória\",\"menu\":true,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"narrow\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"contact\",\"props\":{\"title\":\"Vamos criar algo juntos?\",\"text\":\"Conte sua ideia; respondo em até um dia.\",\"email\":\"voce@exemplo.com\",\"phone\":\"\",\"links\":[{\"label\":\"GitHub\",\"url\":\"https://github.com\"},{\"label\":\"LinkedIn\",\"url\":\"https://linkedin.com\"}]},\"style\":{\"anchor\":\"Contato\",\"menu\":true,\"background\":\"surface\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}}]}"
+    }
+   ]
+  },
+  {
+   "name": "write_page",
+   "input": {
+    "path": "Artigo",
+    "template": "article",
+    "note": "Projetos/Plano"
+   },
+   "label": "Página Artigo",
+   "access": "write",
+   "description": "Cria ou substitui uma página HTML do vault (arquivo .page.json) a partir do JSON completo (spec) ou de um modelo (template). Valida antes de gravar e devolve os erros se houver. Depois, abra com open_note para o usuário ver no estúdio.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "Ex.: \"Páginas/Meu site.page.json\" (a extensão é adicionada se faltar)"
+     },
+     "spec": {
+      "type": "object",
+      "description": "JSON completo da página no formato de page_schema",
+      "additionalProperties": true
+     },
+     "template": {
+      "type": "string",
+      "description": "Alternativa a spec: id de um modelo (empty, canvas, blank, landing, portfolio, article, vault-site, resume, event, docs, book, book-folder, links)"
+     },
+     "title": {
+      "type": "string",
+      "description": "Título ao usar template"
+     },
+     "folder": {
+      "type": "string",
+      "description": "Pasta de notas para os modelos vault-site/docs"
+     },
+     "note": {
+      "type": "string",
+      "description": "Caminho da nota para o modelo article"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "path": "Páginas/Artigo.page.json",
+    "before": null,
+    "after": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Plano\",\"description\":\"\",\"lang\":\"pt-BR\",\"icon\":\"✎\",\"image\":\"\",\"head\":\"\"},\"theme\":{\"preset\":\"papel\",\"mode\":\"\",\"headingFont\":\"\",\"bodyFont\":\"\",\"primary\":\"\",\"accent\":\"\",\"bg\":\"\",\"surface\":\"\",\"text\":\"\",\"muted\":\"\",\"background\":\"\",\"radius\":null,\"scale\":1,\"spacing\":\"comfortable\",\"width\":1000,\"shadow\":\"soft\",\"animations\":true,\"headingWeight\":\"\",\"headingCase\":\"\",\"headingSpacing\":null,\"headingScale\":1,\"lineHeight\":null,\"buttonStyle\":\"solid\",\"cardStyle\":\"elevated\",\"linkStyle\":\"underline\",\"border\":\"\",\"css\":\"\"},\"layout\":{\"nav\":true,\"brand\":\"Plano\",\"sticky\":true,\"navCta\":\"\",\"navCtaUrl\":\"\",\"footer\":\"Publicado com Urbe · 09/10/2025\",\"themeToggle\":true,\"backToTop\":true,\"progress\":true,\"format\":\"web\",\"pageSize\":\"a5\",\"margins\":\"normal\",\"pageNumbers\":true,\"runningHead\":\"\",\"chapterStyle\":\"word\",\"recto\":false,\"justify\":true,\"indent\":true},\"sections\":[{\"type\":\"note\",\"props\":{\"path\":\"Projetos/Plano.md\",\"showTitle\":true,\"showMeta\":true},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"l\",\"width\":\"narrow\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}}]}",
+    "note": "Nova página · 1 seções · tema papel"
+   },
+   "content": "Página criada: Páginas/Artigo.page.json (1 seções: note).\nO usuário pode abrir no estúdio (open_note) e exportar como HTML.",
+   "error": null,
+   "changes": [
+    {
+     "id": "doc_100",
+     "before": null,
+     "after": {
+      "path": "Páginas/Artigo.page.json",
+      "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Plano\",\"description\":\"\",\"lang\":\"pt-BR\",\"icon\":\"✎\",\"image\":\"\",\"head\":\"\"},\"theme\":{\"preset\":\"papel\",\"mode\":\"\",\"headingFont\":\"\",\"bodyFont\":\"\",\"primary\":\"\",\"accent\":\"\",\"bg\":\"\",\"surface\":\"\",\"text\":\"\",\"muted\":\"\",\"background\":\"\",\"radius\":null,\"scale\":1,\"spacing\":\"comfortable\",\"width\":1000,\"shadow\":\"soft\",\"animations\":true,\"headingWeight\":\"\",\"headingCase\":\"\",\"headingSpacing\":null,\"headingScale\":1,\"lineHeight\":null,\"buttonStyle\":\"solid\",\"cardStyle\":\"elevated\",\"linkStyle\":\"underline\",\"border\":\"\",\"css\":\"\"},\"layout\":{\"nav\":true,\"brand\":\"Plano\",\"sticky\":true,\"navCta\":\"\",\"navCtaUrl\":\"\",\"footer\":\"Publicado com Urbe · 09/10/2025\",\"themeToggle\":true,\"backToTop\":true,\"progress\":true,\"format\":\"web\",\"pageSize\":\"a5\",\"margins\":\"normal\",\"pageNumbers\":true,\"runningHead\":\"\",\"chapterStyle\":\"word\",\"recto\":false,\"justify\":true,\"indent\":true},\"sections\":[{\"type\":\"note\",\"props\":{\"path\":\"Projetos/Plano.md\",\"showTitle\":true,\"showMeta\":true},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"l\",\"width\":\"narrow\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}}]}"
+     }
+    }
+   ],
+   "files": [
+    {
+     "path": "Projetos/Plano.md",
+     "content": "# Plano\n\nPassos.\n"
+    },
+    {
+     "path": "Páginas/Existente.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Velha\"},\"sections\":[]}"
+    },
+    {
+     "path": "Páginas/Artigo.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Plano\",\"description\":\"\",\"lang\":\"pt-BR\",\"icon\":\"✎\",\"image\":\"\",\"head\":\"\"},\"theme\":{\"preset\":\"papel\",\"mode\":\"\",\"headingFont\":\"\",\"bodyFont\":\"\",\"primary\":\"\",\"accent\":\"\",\"bg\":\"\",\"surface\":\"\",\"text\":\"\",\"muted\":\"\",\"background\":\"\",\"radius\":null,\"scale\":1,\"spacing\":\"comfortable\",\"width\":1000,\"shadow\":\"soft\",\"animations\":true,\"headingWeight\":\"\",\"headingCase\":\"\",\"headingSpacing\":null,\"headingScale\":1,\"lineHeight\":null,\"buttonStyle\":\"solid\",\"cardStyle\":\"elevated\",\"linkStyle\":\"underline\",\"border\":\"\",\"css\":\"\"},\"layout\":{\"nav\":true,\"brand\":\"Plano\",\"sticky\":true,\"navCta\":\"\",\"navCtaUrl\":\"\",\"footer\":\"Publicado com Urbe · 09/10/2025\",\"themeToggle\":true,\"backToTop\":true,\"progress\":true,\"format\":\"web\",\"pageSize\":\"a5\",\"margins\":\"normal\",\"pageNumbers\":true,\"runningHead\":\"\",\"chapterStyle\":\"word\",\"recto\":false,\"justify\":true,\"indent\":true},\"sections\":[{\"type\":\"note\",\"props\":{\"path\":\"Projetos/Plano.md\",\"showTitle\":true,\"showMeta\":true},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"l\",\"width\":\"narrow\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}}]}"
+    }
+   ]
+  },
+  {
+   "name": "write_page",
+   "input": {
+    "path": "Artigo",
+    "template": "article",
+    "note": "Nada"
+   },
+   "label": "Página Artigo",
+   "access": "write",
+   "description": "Cria ou substitui uma página HTML do vault (arquivo .page.json) a partir do JSON completo (spec) ou de um modelo (template). Valida antes de gravar e devolve os erros se houver. Depois, abra com open_note para o usuário ver no estúdio.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "Ex.: \"Páginas/Meu site.page.json\" (a extensão é adicionada se faltar)"
+     },
+     "spec": {
+      "type": "object",
+      "description": "JSON completo da página no formato de page_schema",
+      "additionalProperties": true
+     },
+     "template": {
+      "type": "string",
+      "description": "Alternativa a spec: id de um modelo (empty, canvas, blank, landing, portfolio, article, vault-site, resume, event, docs, book, book-folder, links)"
+     },
+     "title": {
+      "type": "string",
+      "description": "Título ao usar template"
+     },
+     "folder": {
+      "type": "string",
+      "description": "Pasta de notas para os modelos vault-site/docs"
+     },
+     "note": {
+      "type": "string",
+      "description": "Caminho da nota para o modelo article"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "error": "Nota não encontrada: Nada"
+   },
+   "content": null,
+   "error": "Nota não encontrada: Nada",
+   "changes": null,
+   "files": [
+    {
+     "path": "Projetos/Plano.md",
+     "content": "# Plano\n\nPassos.\n"
+    },
+    {
+     "path": "Páginas/Existente.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Velha\"},\"sections\":[]}"
+    }
+   ]
+  },
+  {
+   "name": "write_page",
+   "input": {
+    "path": "Coleção",
+    "template": "vault-site",
+    "folder": "Projetos"
+   },
+   "label": "Página Coleção",
+   "access": "write",
+   "description": "Cria ou substitui uma página HTML do vault (arquivo .page.json) a partir do JSON completo (spec) ou de um modelo (template). Valida antes de gravar e devolve os erros se houver. Depois, abra com open_note para o usuário ver no estúdio.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "Ex.: \"Páginas/Meu site.page.json\" (a extensão é adicionada se faltar)"
+     },
+     "spec": {
+      "type": "object",
+      "description": "JSON completo da página no formato de page_schema",
+      "additionalProperties": true
+     },
+     "template": {
+      "type": "string",
+      "description": "Alternativa a spec: id de um modelo (empty, canvas, blank, landing, portfolio, article, vault-site, resume, event, docs, book, book-folder, links)"
+     },
+     "title": {
+      "type": "string",
+      "description": "Título ao usar template"
+     },
+     "folder": {
+      "type": "string",
+      "description": "Pasta de notas para os modelos vault-site/docs"
+     },
+     "note": {
+      "type": "string",
+      "description": "Caminho da nota para o modelo article"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "path": "Páginas/Coleção.page.json",
+    "before": null,
+    "after": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Projetos\",\"description\":\"\",\"lang\":\"pt-BR\",\"icon\":\"🗂️\",\"image\":\"\",\"head\":\"\"},\"theme\":{\"preset\":\"lavanda\",\"mode\":\"\",\"headingFont\":\"\",\"bodyFont\":\"\",\"primary\":\"\",\"accent\":\"\",\"bg\":\"\",\"surface\":\"\",\"text\":\"\",\"muted\":\"\",\"background\":\"\",\"radius\":null,\"scale\":1,\"spacing\":\"comfortable\",\"width\":1120,\"shadow\":\"soft\",\"animations\":true,\"headingWeight\":\"\",\"headingCase\":\"\",\"headingSpacing\":null,\"headingScale\":1,\"lineHeight\":null,\"buttonStyle\":\"solid\",\"cardStyle\":\"elevated\",\"linkStyle\":\"underline\",\"border\":\"\",\"css\":\"\"},\"layout\":{\"nav\":true,\"brand\":\"Projetos\",\"sticky\":true,\"navCta\":\"\",\"navCtaUrl\":\"\",\"footer\":\"Gerado a partir de “Projetos” com Urbe\",\"themeToggle\":true,\"backToTop\":true,\"progress\":true,\"format\":\"web\",\"pageSize\":\"a5\",\"margins\":\"normal\",\"pageNumbers\":true,\"runningHead\":\"\",\"chapterStyle\":\"word\",\"recto\":false,\"justify\":true,\"indent\":true},\"sections\":[{\"type\":\"hero\",\"props\":{\"eyebrow\":\"Coleção\",\"title\":\"Projetos\",\"subtitle\":\"Todas as notas de **Projetos** reunidas num só lugar.\",\"buttons\":[{\"label\":\"Começar a ler\",\"url\":\"#indice\",\"variant\":\"primary\"}],\"image\":\"\",\"layout\":\"center\",\"height\":\"auto\",\"stack\":false},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"l\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"notes\",\"props\":{\"title\":\"Índice\",\"subtitle\":\"\",\"source\":\"folder\",\"folder\":\"Projetos\",\"tag\":\"\",\"paths\":\"\",\"layout\":\"cards\",\"columns\":3,\"limit\":60,\"sort\":\"title\",\"excerpt\":true,\"expand\":true},\"style\":{\"anchor\":\"Índice\",\"menu\":true,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}}]}",
+    "note": "Nova página · 2 seções · tema lavanda"
+   },
+   "content": "Página criada: Páginas/Coleção.page.json (2 seções: hero, notes).\nO usuário pode abrir no estúdio (open_note) e exportar como HTML.",
+   "error": null,
+   "changes": [
+    {
+     "id": "doc_100",
+     "before": null,
+     "after": {
+      "path": "Páginas/Coleção.page.json",
+      "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Projetos\",\"description\":\"\",\"lang\":\"pt-BR\",\"icon\":\"🗂️\",\"image\":\"\",\"head\":\"\"},\"theme\":{\"preset\":\"lavanda\",\"mode\":\"\",\"headingFont\":\"\",\"bodyFont\":\"\",\"primary\":\"\",\"accent\":\"\",\"bg\":\"\",\"surface\":\"\",\"text\":\"\",\"muted\":\"\",\"background\":\"\",\"radius\":null,\"scale\":1,\"spacing\":\"comfortable\",\"width\":1120,\"shadow\":\"soft\",\"animations\":true,\"headingWeight\":\"\",\"headingCase\":\"\",\"headingSpacing\":null,\"headingScale\":1,\"lineHeight\":null,\"buttonStyle\":\"solid\",\"cardStyle\":\"elevated\",\"linkStyle\":\"underline\",\"border\":\"\",\"css\":\"\"},\"layout\":{\"nav\":true,\"brand\":\"Projetos\",\"sticky\":true,\"navCta\":\"\",\"navCtaUrl\":\"\",\"footer\":\"Gerado a partir de “Projetos” com Urbe\",\"themeToggle\":true,\"backToTop\":true,\"progress\":true,\"format\":\"web\",\"pageSize\":\"a5\",\"margins\":\"normal\",\"pageNumbers\":true,\"runningHead\":\"\",\"chapterStyle\":\"word\",\"recto\":false,\"justify\":true,\"indent\":true},\"sections\":[{\"type\":\"hero\",\"props\":{\"eyebrow\":\"Coleção\",\"title\":\"Projetos\",\"subtitle\":\"Todas as notas de **Projetos** reunidas num só lugar.\",\"buttons\":[{\"label\":\"Começar a ler\",\"url\":\"#indice\",\"variant\":\"primary\"}],\"image\":\"\",\"layout\":\"center\",\"height\":\"auto\",\"stack\":false},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"l\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"notes\",\"props\":{\"title\":\"Índice\",\"subtitle\":\"\",\"source\":\"folder\",\"folder\":\"Projetos\",\"tag\":\"\",\"paths\":\"\",\"layout\":\"cards\",\"columns\":3,\"limit\":60,\"sort\":\"title\",\"excerpt\":true,\"expand\":true},\"style\":{\"anchor\":\"Índice\",\"menu\":true,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}}]}"
+     }
+    }
+   ],
+   "files": [
+    {
+     "path": "Projetos/Plano.md",
+     "content": "# Plano\n\nPassos.\n"
+    },
+    {
+     "path": "Páginas/Existente.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Velha\"},\"sections\":[]}"
+    },
+    {
+     "path": "Páginas/Coleção.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Projetos\",\"description\":\"\",\"lang\":\"pt-BR\",\"icon\":\"🗂️\",\"image\":\"\",\"head\":\"\"},\"theme\":{\"preset\":\"lavanda\",\"mode\":\"\",\"headingFont\":\"\",\"bodyFont\":\"\",\"primary\":\"\",\"accent\":\"\",\"bg\":\"\",\"surface\":\"\",\"text\":\"\",\"muted\":\"\",\"background\":\"\",\"radius\":null,\"scale\":1,\"spacing\":\"comfortable\",\"width\":1120,\"shadow\":\"soft\",\"animations\":true,\"headingWeight\":\"\",\"headingCase\":\"\",\"headingSpacing\":null,\"headingScale\":1,\"lineHeight\":null,\"buttonStyle\":\"solid\",\"cardStyle\":\"elevated\",\"linkStyle\":\"underline\",\"border\":\"\",\"css\":\"\"},\"layout\":{\"nav\":true,\"brand\":\"Projetos\",\"sticky\":true,\"navCta\":\"\",\"navCtaUrl\":\"\",\"footer\":\"Gerado a partir de “Projetos” com Urbe\",\"themeToggle\":true,\"backToTop\":true,\"progress\":true,\"format\":\"web\",\"pageSize\":\"a5\",\"margins\":\"normal\",\"pageNumbers\":true,\"runningHead\":\"\",\"chapterStyle\":\"word\",\"recto\":false,\"justify\":true,\"indent\":true},\"sections\":[{\"type\":\"hero\",\"props\":{\"eyebrow\":\"Coleção\",\"title\":\"Projetos\",\"subtitle\":\"Todas as notas de **Projetos** reunidas num só lugar.\",\"buttons\":[{\"label\":\"Começar a ler\",\"url\":\"#indice\",\"variant\":\"primary\"}],\"image\":\"\",\"layout\":\"center\",\"height\":\"auto\",\"stack\":false},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"l\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"notes\",\"props\":{\"title\":\"Índice\",\"subtitle\":\"\",\"source\":\"folder\",\"folder\":\"Projetos\",\"tag\":\"\",\"paths\":\"\",\"layout\":\"cards\",\"columns\":3,\"limit\":60,\"sort\":\"title\",\"excerpt\":true,\"expand\":true},\"style\":{\"anchor\":\"Índice\",\"menu\":true,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}}]}"
+    }
+   ]
+  },
+  {
+   "name": "write_page",
+   "input": {
+    "path": "X",
+    "template": "nenhum"
+   },
+   "label": "Página X",
+   "access": "write",
+   "description": "Cria ou substitui uma página HTML do vault (arquivo .page.json) a partir do JSON completo (spec) ou de um modelo (template). Valida antes de gravar e devolve os erros se houver. Depois, abra com open_note para o usuário ver no estúdio.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "Ex.: \"Páginas/Meu site.page.json\" (a extensão é adicionada se faltar)"
+     },
+     "spec": {
+      "type": "object",
+      "description": "JSON completo da página no formato de page_schema",
+      "additionalProperties": true
+     },
+     "template": {
+      "type": "string",
+      "description": "Alternativa a spec: id de um modelo (empty, canvas, blank, landing, portfolio, article, vault-site, resume, event, docs, book, book-folder, links)"
+     },
+     "title": {
+      "type": "string",
+      "description": "Título ao usar template"
+     },
+     "folder": {
+      "type": "string",
+      "description": "Pasta de notas para os modelos vault-site/docs"
+     },
+     "note": {
+      "type": "string",
+      "description": "Caminho da nota para o modelo article"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "error": "Modelo \"nenhum\" não existe. Modelos: empty, canvas, blank, landing, portfolio, article, vault-site, resume, event, docs, book, book-folder, links"
+   },
+   "content": null,
+   "error": "Modelo \"nenhum\" não existe. Modelos: empty, canvas, blank, landing, portfolio, article, vault-site, resume, event, docs, book, book-folder, links",
+   "changes": null,
+   "files": [
+    {
+     "path": "Projetos/Plano.md",
+     "content": "# Plano\n\nPassos.\n"
+    },
+    {
+     "path": "Páginas/Existente.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Velha\"},\"sections\":[]}"
+    }
+   ]
+  },
+  {
+   "name": "write_page",
+   "input": {
+    "path": "Existente",
+    "spec": {
+     "meta": {
+      "title": "Nova"
+     },
+     "sections": [
+      {
+       "type": "hero",
+       "props": {
+        "title": "Oi"
+       }
+      },
+      {
+       "type": "text",
+       "props": {
+        "markdown": "Olá"
+       }
+      }
+     ]
+    }
+   },
+   "label": "Página Existente",
+   "access": "write",
+   "description": "Cria ou substitui uma página HTML do vault (arquivo .page.json) a partir do JSON completo (spec) ou de um modelo (template). Valida antes de gravar e devolve os erros se houver. Depois, abra com open_note para o usuário ver no estúdio.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "Ex.: \"Páginas/Meu site.page.json\" (a extensão é adicionada se faltar)"
+     },
+     "spec": {
+      "type": "object",
+      "description": "JSON completo da página no formato de page_schema",
+      "additionalProperties": true
+     },
+     "template": {
+      "type": "string",
+      "description": "Alternativa a spec: id de um modelo (empty, canvas, blank, landing, portfolio, article, vault-site, resume, event, docs, book, book-folder, links)"
+     },
+     "title": {
+      "type": "string",
+      "description": "Título ao usar template"
+     },
+     "folder": {
+      "type": "string",
+      "description": "Pasta de notas para os modelos vault-site/docs"
+     },
+     "note": {
+      "type": "string",
+      "description": "Caminho da nota para o modelo article"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "path": "Páginas/Existente.page.json",
+    "before": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Velha\"},\"sections\":[]}\n",
+    "after": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Nova\",\"description\":\"\",\"lang\":\"pt-BR\",\"icon\":\"✦\",\"image\":\"\",\"head\":\"\"},\"theme\":{\"preset\":\"aurora\",\"mode\":\"\",\"headingFont\":\"\",\"bodyFont\":\"\",\"primary\":\"\",\"accent\":\"\",\"bg\":\"\",\"surface\":\"\",\"text\":\"\",\"muted\":\"\",\"background\":\"\",\"radius\":null,\"scale\":1,\"spacing\":\"comfortable\",\"width\":1120,\"shadow\":\"soft\",\"animations\":true,\"headingWeight\":\"\",\"headingCase\":\"\",\"headingSpacing\":null,\"headingScale\":1,\"lineHeight\":null,\"buttonStyle\":\"solid\",\"cardStyle\":\"elevated\",\"linkStyle\":\"underline\",\"border\":\"\",\"css\":\"\"},\"layout\":{\"nav\":true,\"brand\":\"\",\"sticky\":true,\"navCta\":\"\",\"navCtaUrl\":\"\",\"footer\":\"\",\"themeToggle\":true,\"backToTop\":true,\"progress\":false,\"format\":\"web\",\"pageSize\":\"a5\",\"margins\":\"normal\",\"pageNumbers\":true,\"runningHead\":\"\",\"chapterStyle\":\"word\",\"recto\":false,\"justify\":true,\"indent\":true},\"sections\":[{\"type\":\"hero\",\"props\":{\"eyebrow\":\"\",\"title\":\"Oi\",\"subtitle\":\"Uma frase curta que explica o que é, para quem é e por que importa.\",\"buttons\":[],\"image\":\"\",\"layout\":\"center\",\"height\":\"tall\",\"stack\":false},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"text\",\"props\":{\"title\":\"\",\"markdown\":\"Olá\",\"columns\":1},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}}]}",
+    "note": "Substitui a página existente · 2 seções · tema aurora"
+   },
+   "content": "Página atualizada: Páginas/Existente.page.json (2 seções: hero, text).\nO usuário pode abrir no estúdio (open_note) e exportar como HTML.",
+   "error": null,
+   "changes": [
+    {
+     "id": "doc_1",
+     "before": {
+      "path": "Páginas/Existente.page.json",
+      "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Velha\"},\"sections\":[]}\n"
+     },
+     "after": {
+      "path": "Páginas/Existente.page.json",
+      "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Nova\",\"description\":\"\",\"lang\":\"pt-BR\",\"icon\":\"✦\",\"image\":\"\",\"head\":\"\"},\"theme\":{\"preset\":\"aurora\",\"mode\":\"\",\"headingFont\":\"\",\"bodyFont\":\"\",\"primary\":\"\",\"accent\":\"\",\"bg\":\"\",\"surface\":\"\",\"text\":\"\",\"muted\":\"\",\"background\":\"\",\"radius\":null,\"scale\":1,\"spacing\":\"comfortable\",\"width\":1120,\"shadow\":\"soft\",\"animations\":true,\"headingWeight\":\"\",\"headingCase\":\"\",\"headingSpacing\":null,\"headingScale\":1,\"lineHeight\":null,\"buttonStyle\":\"solid\",\"cardStyle\":\"elevated\",\"linkStyle\":\"underline\",\"border\":\"\",\"css\":\"\"},\"layout\":{\"nav\":true,\"brand\":\"\",\"sticky\":true,\"navCta\":\"\",\"navCtaUrl\":\"\",\"footer\":\"\",\"themeToggle\":true,\"backToTop\":true,\"progress\":false,\"format\":\"web\",\"pageSize\":\"a5\",\"margins\":\"normal\",\"pageNumbers\":true,\"runningHead\":\"\",\"chapterStyle\":\"word\",\"recto\":false,\"justify\":true,\"indent\":true},\"sections\":[{\"type\":\"hero\",\"props\":{\"eyebrow\":\"\",\"title\":\"Oi\",\"subtitle\":\"Uma frase curta que explica o que é, para quem é e por que importa.\",\"buttons\":[],\"image\":\"\",\"layout\":\"center\",\"height\":\"tall\",\"stack\":false},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"text\",\"props\":{\"title\":\"\",\"markdown\":\"Olá\",\"columns\":1},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}}]}"
+     }
+    }
+   ],
+   "files": [
+    {
+     "path": "Projetos/Plano.md",
+     "content": "# Plano\n\nPassos.\n"
+    },
+    {
+     "path": "Páginas/Existente.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Nova\",\"description\":\"\",\"lang\":\"pt-BR\",\"icon\":\"✦\",\"image\":\"\",\"head\":\"\"},\"theme\":{\"preset\":\"aurora\",\"mode\":\"\",\"headingFont\":\"\",\"bodyFont\":\"\",\"primary\":\"\",\"accent\":\"\",\"bg\":\"\",\"surface\":\"\",\"text\":\"\",\"muted\":\"\",\"background\":\"\",\"radius\":null,\"scale\":1,\"spacing\":\"comfortable\",\"width\":1120,\"shadow\":\"soft\",\"animations\":true,\"headingWeight\":\"\",\"headingCase\":\"\",\"headingSpacing\":null,\"headingScale\":1,\"lineHeight\":null,\"buttonStyle\":\"solid\",\"cardStyle\":\"elevated\",\"linkStyle\":\"underline\",\"border\":\"\",\"css\":\"\"},\"layout\":{\"nav\":true,\"brand\":\"\",\"sticky\":true,\"navCta\":\"\",\"navCtaUrl\":\"\",\"footer\":\"\",\"themeToggle\":true,\"backToTop\":true,\"progress\":false,\"format\":\"web\",\"pageSize\":\"a5\",\"margins\":\"normal\",\"pageNumbers\":true,\"runningHead\":\"\",\"chapterStyle\":\"word\",\"recto\":false,\"justify\":true,\"indent\":true},\"sections\":[{\"type\":\"hero\",\"props\":{\"eyebrow\":\"\",\"title\":\"Oi\",\"subtitle\":\"Uma frase curta que explica o que é, para quem é e por que importa.\",\"buttons\":[],\"image\":\"\",\"layout\":\"center\",\"height\":\"tall\",\"stack\":false},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}},{\"type\":\"text\",\"props\":{\"title\":\"\",\"markdown\":\"Olá\",\"columns\":1},\"style\":{\"anchor\":\"\",\"menu\":false,\"background\":\"none\",\"image\":\"\",\"padding\":\"m\",\"width\":\"normal\",\"align\":\"left\",\"bgColor\":\"\",\"textColor\":\"\",\"boxed\":false,\"minHeight\":\"none\",\"animation\":\"\",\"className\":\"\",\"css\":\"\",\"hidden\":false}}]}"
+    }
+   ]
+  },
+  {
+   "name": "write_page",
+   "input": {
+    "path": "Ruim",
+    "spec": "{\"sections\":[{\"type\":\"naoexiste\"}]}"
+   },
+   "label": "Página Ruim",
+   "access": "write",
+   "description": "Cria ou substitui uma página HTML do vault (arquivo .page.json) a partir do JSON completo (spec) ou de um modelo (template). Valida antes de gravar e devolve os erros se houver. Depois, abra com open_note para o usuário ver no estúdio.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "Ex.: \"Páginas/Meu site.page.json\" (a extensão é adicionada se faltar)"
+     },
+     "spec": {
+      "type": "object",
+      "description": "JSON completo da página no formato de page_schema",
+      "additionalProperties": true
+     },
+     "template": {
+      "type": "string",
+      "description": "Alternativa a spec: id de um modelo (empty, canvas, blank, landing, portfolio, article, vault-site, resume, event, docs, book, book-folder, links)"
+     },
+     "title": {
+      "type": "string",
+      "description": "Título ao usar template"
+     },
+     "folder": {
+      "type": "string",
+      "description": "Pasta de notas para os modelos vault-site/docs"
+     },
+     "note": {
+      "type": "string",
+      "description": "Caminho da nota para o modelo article"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "error": "A página tem 1 erro(s); corrija e envie de novo:\n- sections[0].type: tipo \"naoexiste\" não existe. Tipos: hero, text, note, notes, features, cards, gallery, image, video, quote, testimonials, stats, timeline, faq, cta, columns, pricing, contact, countdown, code, toc, divider, html, bookcover, titlepage, copyright, dedication, booktoc, part, chapter, chapters, about, colophon, free.\n(Chame page_schema para ver o formato.)"
+   },
+   "content": null,
+   "error": "A página tem 1 erro(s); corrija e envie de novo:\n- sections[0].type: tipo \"naoexiste\" não existe. Tipos: hero, text, note, notes, features, cards, gallery, image, video, quote, testimonials, stats, timeline, faq, cta, columns, pricing, contact, countdown, code, toc, divider, html, bookcover, titlepage, copyright, dedication, booktoc, part, chapter, chapters, about, colophon, free.\n(Chame page_schema para ver o formato.)",
+   "changes": null,
+   "files": [
+    {
+     "path": "Projetos/Plano.md",
+     "content": "# Plano\n\nPassos.\n"
+    },
+    {
+     "path": "Páginas/Existente.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Velha\"},\"sections\":[]}"
+    }
+   ]
+  },
+  {
+   "name": "write_page",
+   "input": {
+    "path": "Ruim",
+    "spec": "{nao json"
+   },
+   "label": "Página Ruim",
+   "access": "write",
+   "description": "Cria ou substitui uma página HTML do vault (arquivo .page.json) a partir do JSON completo (spec) ou de um modelo (template). Valida antes de gravar e devolve os erros se houver. Depois, abra com open_note para o usuário ver no estúdio.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "Ex.: \"Páginas/Meu site.page.json\" (a extensão é adicionada se faltar)"
+     },
+     "spec": {
+      "type": "object",
+      "description": "JSON completo da página no formato de page_schema",
+      "additionalProperties": true
+     },
+     "template": {
+      "type": "string",
+      "description": "Alternativa a spec: id de um modelo (empty, canvas, blank, landing, portfolio, article, vault-site, resume, event, docs, book, book-folder, links)"
+     },
+     "title": {
+      "type": "string",
+      "description": "Título ao usar template"
+     },
+     "folder": {
+      "type": "string",
+      "description": "Pasta de notas para os modelos vault-site/docs"
+     },
+     "note": {
+      "type": "string",
+      "description": "Caminho da nota para o modelo article"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "error": "spec não é JSON válido: Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+   },
+   "content": null,
+   "error": "spec não é JSON válido: Expected property name or '}' in JSON at position 1 (line 1 column 2)",
+   "changes": null,
+   "files": [
+    {
+     "path": "Projetos/Plano.md",
+     "content": "# Plano\n\nPassos.\n"
+    },
+    {
+     "path": "Páginas/Existente.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Velha\"},\"sections\":[]}"
+    }
+   ]
+  },
+  {
+   "name": "write_page",
+   "input": {
+    "path": "Vazio"
+   },
+   "label": "Página Vazio",
+   "access": "write",
+   "description": "Cria ou substitui uma página HTML do vault (arquivo .page.json) a partir do JSON completo (spec) ou de um modelo (template). Valida antes de gravar e devolve os erros se houver. Depois, abra com open_note para o usuário ver no estúdio.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "Ex.: \"Páginas/Meu site.page.json\" (a extensão é adicionada se faltar)"
+     },
+     "spec": {
+      "type": "object",
+      "description": "JSON completo da página no formato de page_schema",
+      "additionalProperties": true
+     },
+     "template": {
+      "type": "string",
+      "description": "Alternativa a spec: id de um modelo (empty, canvas, blank, landing, portfolio, article, vault-site, resume, event, docs, book, book-folder, links)"
+     },
+     "title": {
+      "type": "string",
+      "description": "Título ao usar template"
+     },
+     "folder": {
+      "type": "string",
+      "description": "Pasta de notas para os modelos vault-site/docs"
+     },
+     "note": {
+      "type": "string",
+      "description": "Caminho da nota para o modelo article"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "error": "Envie spec (o JSON completo da página) ou template."
+   },
+   "content": null,
+   "error": "Envie spec (o JSON completo da página) ou template.",
+   "changes": null,
+   "files": [
+    {
+     "path": "Projetos/Plano.md",
+     "content": "# Plano\n\nPassos.\n"
+    },
+    {
+     "path": "Páginas/Existente.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Velha\"},\"sections\":[]}"
+    }
+   ]
+  },
+  {
+   "name": "write_page",
+   "input": {
+    "path": "",
+    "template": "blank"
+   },
+   "label": "Página ",
+   "access": "write",
+   "description": "Cria ou substitui uma página HTML do vault (arquivo .page.json) a partir do JSON completo (spec) ou de um modelo (template). Valida antes de gravar e devolve os erros se houver. Depois, abra com open_note para o usuário ver no estúdio.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "Ex.: \"Páginas/Meu site.page.json\" (a extensão é adicionada se faltar)"
+     },
+     "spec": {
+      "type": "object",
+      "description": "JSON completo da página no formato de page_schema",
+      "additionalProperties": true
+     },
+     "template": {
+      "type": "string",
+      "description": "Alternativa a spec: id de um modelo (empty, canvas, blank, landing, portfolio, article, vault-site, resume, event, docs, book, book-folder, links)"
+     },
+     "title": {
+      "type": "string",
+      "description": "Título ao usar template"
+     },
+     "folder": {
+      "type": "string",
+      "description": "Pasta de notas para os modelos vault-site/docs"
+     },
+     "note": {
+      "type": "string",
+      "description": "Caminho da nota para o modelo article"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "error": "Informe path (ex.: \"Páginas/Portfólio.page.json\")."
+   },
+   "content": null,
+   "error": "Informe path (ex.: \"Páginas/Portfólio.page.json\").",
+   "changes": null,
+   "files": [
+    {
+     "path": "Projetos/Plano.md",
+     "content": "# Plano\n\nPassos.\n"
+    },
+    {
+     "path": "Páginas/Existente.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Velha\"},\"sections\":[]}"
+    }
+   ]
+  },
+  {
+   "name": "write_page",
+   "input": {
+    "path": "../fora",
+    "template": "blank"
+   },
+   "label": "Página fora",
+   "access": "write",
+   "description": "Cria ou substitui uma página HTML do vault (arquivo .page.json) a partir do JSON completo (spec) ou de um modelo (template). Valida antes de gravar e devolve os erros se houver. Depois, abra com open_note para o usuário ver no estúdio.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "Ex.: \"Páginas/Meu site.page.json\" (a extensão é adicionada se faltar)"
+     },
+     "spec": {
+      "type": "object",
+      "description": "JSON completo da página no formato de page_schema",
+      "additionalProperties": true
+     },
+     "template": {
+      "type": "string",
+      "description": "Alternativa a spec: id de um modelo (empty, canvas, blank, landing, portfolio, article, vault-site, resume, event, docs, book, book-folder, links)"
+     },
+     "title": {
+      "type": "string",
+      "description": "Título ao usar template"
+     },
+     "folder": {
+      "type": "string",
+      "description": "Pasta de notas para os modelos vault-site/docs"
+     },
+     "note": {
+      "type": "string",
+      "description": "Caminho da nota para o modelo article"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "error": "Caminho inválido: ../fora.page.json"
+   },
+   "content": null,
+   "error": "Caminho inválido: ../fora.page.json",
+   "changes": null,
+   "files": [
+    {
+     "path": "Projetos/Plano.md",
+     "content": "# Plano\n\nPassos.\n"
+    },
+    {
+     "path": "Páginas/Existente.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Velha\"},\"sections\":[]}"
+    }
+   ]
+  },
+  {
+   "name": "write_page",
+   "input": {
+    "path": "A/B:c",
+    "template": "blank"
+   },
+   "label": "Página B:c",
+   "access": "write",
+   "description": "Cria ou substitui uma página HTML do vault (arquivo .page.json) a partir do JSON completo (spec) ou de um modelo (template). Valida antes de gravar e devolve os erros se houver. Depois, abra com open_note para o usuário ver no estúdio.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "Ex.: \"Páginas/Meu site.page.json\" (a extensão é adicionada se faltar)"
+     },
+     "spec": {
+      "type": "object",
+      "description": "JSON completo da página no formato de page_schema",
+      "additionalProperties": true
+     },
+     "template": {
+      "type": "string",
+      "description": "Alternativa a spec: id de um modelo (empty, canvas, blank, landing, portfolio, article, vault-site, resume, event, docs, book, book-folder, links)"
+     },
+     "title": {
+      "type": "string",
+      "description": "Título ao usar template"
+     },
+     "folder": {
+      "type": "string",
+      "description": "Pasta de notas para os modelos vault-site/docs"
+     },
+     "note": {
+      "type": "string",
+      "description": "Caminho da nota para o modelo article"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "error": "Caminho inválido: A/B:c.page.json"
+   },
+   "content": null,
+   "error": "Caminho inválido: A/B:c.page.json",
+   "changes": null,
+   "files": [
+    {
+     "path": "Projetos/Plano.md",
+     "content": "# Plano\n\nPassos.\n"
+    },
+    {
+     "path": "Páginas/Existente.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Velha\"},\"sections\":[]}"
+    }
+   ]
+  },
+  {
+   "name": "write_page",
+   "input": {
+    "path": "modelo.template.json",
+    "template": "empty",
+    "title": "M"
+   },
+   "label": "Página modelo.template.json",
+   "access": "write",
+   "description": "Cria ou substitui uma página HTML do vault (arquivo .page.json) a partir do JSON completo (spec) ou de um modelo (template). Valida antes de gravar e devolve os erros se houver. Depois, abra com open_note para o usuário ver no estúdio.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "Ex.: \"Páginas/Meu site.page.json\" (a extensão é adicionada se faltar)"
+     },
+     "spec": {
+      "type": "object",
+      "description": "JSON completo da página no formato de page_schema",
+      "additionalProperties": true
+     },
+     "template": {
+      "type": "string",
+      "description": "Alternativa a spec: id de um modelo (empty, canvas, blank, landing, portfolio, article, vault-site, resume, event, docs, book, book-folder, links)"
+     },
+     "title": {
+      "type": "string",
+      "description": "Título ao usar template"
+     },
+     "folder": {
+      "type": "string",
+      "description": "Pasta de notas para os modelos vault-site/docs"
+     },
+     "note": {
+      "type": "string",
+      "description": "Caminho da nota para o modelo article"
+     }
+    },
+    "required": [
+     "path"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "path": "Páginas/modelo.template.json",
+    "before": null,
+    "after": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"M\",\"description\":\"\",\"lang\":\"pt-BR\",\"icon\":\"✦\",\"image\":\"\",\"head\":\"\"},\"theme\":{\"preset\":\"grafite\",\"mode\":\"\",\"headingFont\":\"\",\"bodyFont\":\"\",\"primary\":\"\",\"accent\":\"\",\"bg\":\"\",\"surface\":\"\",\"text\":\"\",\"muted\":\"\",\"background\":\"\",\"radius\":null,\"scale\":1,\"spacing\":\"comfortable\",\"width\":1120,\"shadow\":\"none\",\"animations\":false,\"headingWeight\":\"\",\"headingCase\":\"\",\"headingSpacing\":null,\"headingScale\":1,\"lineHeight\":null,\"buttonStyle\":\"solid\",\"cardStyle\":\"elevated\",\"linkStyle\":\"underline\",\"border\":\"\",\"css\":\"\"},\"layout\":{\"nav\":false,\"brand\":\"\",\"sticky\":true,\"navCta\":\"\",\"navCtaUrl\":\"\",\"footer\":\"\",\"themeToggle\":false,\"backToTop\":false,\"progress\":false,\"format\":\"web\",\"pageSize\":\"a5\",\"margins\":\"normal\",\"pageNumbers\":true,\"runningHead\":\"\",\"chapterStyle\":\"word\",\"recto\":false,\"justify\":true,\"indent\":true},\"sections\":[]}",
+    "note": "Nova página · 0 seções · tema grafite"
+   },
+   "content": "Página criada: Páginas/modelo.template.json (0 seções: ).\nO usuário pode abrir no estúdio (open_note) e exportar como HTML.",
+   "error": null,
+   "changes": [
+    {
+     "id": "doc_100",
+     "before": null,
+     "after": {
+      "path": "Páginas/modelo.template.json",
+      "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"M\",\"description\":\"\",\"lang\":\"pt-BR\",\"icon\":\"✦\",\"image\":\"\",\"head\":\"\"},\"theme\":{\"preset\":\"grafite\",\"mode\":\"\",\"headingFont\":\"\",\"bodyFont\":\"\",\"primary\":\"\",\"accent\":\"\",\"bg\":\"\",\"surface\":\"\",\"text\":\"\",\"muted\":\"\",\"background\":\"\",\"radius\":null,\"scale\":1,\"spacing\":\"comfortable\",\"width\":1120,\"shadow\":\"none\",\"animations\":false,\"headingWeight\":\"\",\"headingCase\":\"\",\"headingSpacing\":null,\"headingScale\":1,\"lineHeight\":null,\"buttonStyle\":\"solid\",\"cardStyle\":\"elevated\",\"linkStyle\":\"underline\",\"border\":\"\",\"css\":\"\"},\"layout\":{\"nav\":false,\"brand\":\"\",\"sticky\":true,\"navCta\":\"\",\"navCtaUrl\":\"\",\"footer\":\"\",\"themeToggle\":false,\"backToTop\":false,\"progress\":false,\"format\":\"web\",\"pageSize\":\"a5\",\"margins\":\"normal\",\"pageNumbers\":true,\"runningHead\":\"\",\"chapterStyle\":\"word\",\"recto\":false,\"justify\":true,\"indent\":true},\"sections\":[]}"
+     }
+    }
+   ],
+   "files": [
+    {
+     "path": "Projetos/Plano.md",
+     "content": "# Plano\n\nPassos.\n"
+    },
+    {
+     "path": "Páginas/Existente.page.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"Velha\"},\"sections\":[]}"
+    },
+    {
+     "path": "Páginas/modelo.template.json",
+     "content": "{\"version\":1,\"kind\":\"urbe-page\",\"meta\":{\"title\":\"M\",\"description\":\"\",\"lang\":\"pt-BR\",\"icon\":\"✦\",\"image\":\"\",\"head\":\"\"},\"theme\":{\"preset\":\"grafite\",\"mode\":\"\",\"headingFont\":\"\",\"bodyFont\":\"\",\"primary\":\"\",\"accent\":\"\",\"bg\":\"\",\"surface\":\"\",\"text\":\"\",\"muted\":\"\",\"background\":\"\",\"radius\":null,\"scale\":1,\"spacing\":\"comfortable\",\"width\":1120,\"shadow\":\"none\",\"animations\":false,\"headingWeight\":\"\",\"headingCase\":\"\",\"headingSpacing\":null,\"headingScale\":1,\"lineHeight\":null,\"buttonStyle\":\"solid\",\"cardStyle\":\"elevated\",\"linkStyle\":\"underline\",\"border\":\"\",\"css\":\"\"},\"layout\":{\"nav\":false,\"brand\":\"\",\"sticky\":true,\"navCta\":\"\",\"navCtaUrl\":\"\",\"footer\":\"\",\"themeToggle\":false,\"backToTop\":false,\"progress\":false,\"format\":\"web\",\"pageSize\":\"a5\",\"margins\":\"normal\",\"pageNumbers\":true,\"runningHead\":\"\",\"chapterStyle\":\"word\",\"recto\":false,\"justify\":true,\"indent\":true},\"sections\":[]}"
+    }
+   ]
+  }
+ ]
+}

@@ -145,6 +145,7 @@ public sealed partial class MainView : Grid
         Customize.SetNativePlugin = SetNativePlugin;
         Customization.Applied += ApplyCustomization;
         Customization.Applied += SyncPlugins;   // the safe mode turns every plugin off
+        Customization.PluginsChanged += SyncPlugins;
         SetColumn(_stage, 1);
         Children.Add(_stage);
 
@@ -191,6 +192,8 @@ public sealed partial class MainView : Grid
         World.RegionTapped += region => { if (!Dialogs.IsOpen && World.Tool is null) BeginRegionShape(region); };
         RestoreTouchDebug();
         WatchErrors();
+        WatchSession();
+        WatchTips();
         WireSplit();
     }
 
@@ -241,8 +244,15 @@ public sealed partial class MainView : Grid
         return _notice;
     }
 
+    private readonly List<string> _notices = [];
+
+    /// <summary>The notices shown lately (the last 20, oldest first): each notice is shown 4.5 s (tests).</summary>
+    public IReadOnlyList<string> Notices => _notices;
+
     private void ShowLifeNotice(string text)
     {
+        _notices.Add(text);
+        if (_notices.Count > 20) _notices.RemoveAt(0);
         _noticeText.Text = text;
         _notice.MaxWidth = Math.Max(120, Bounds.Width * .8);
         _notice.Opacity = 1;
@@ -344,6 +354,15 @@ public sealed partial class MainView : Grid
 
     private async Task ShowVaultAsync(VaultSnapshot snapshot)
     {
+        // an import interrupted (app closed, error) left its journal: the vault is put back as it was first
+        if (snapshot.Files.ContainsKey(ImportTransaction.JournalPath) && _vault?.ImportStorage is { } importer)
+        {
+            try
+            {
+                if (await new ImportTransaction(importer).RecoverAsync() && await _vault.ReloadAsync() is { } recovered) snapshot = recovered;
+            }
+            catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException or InvalidOperationException) { /* the vault stays protected (Plan refuses) */ }
+        }
         // the previous vault's pending map is written first (abrirCidade: rodarSinc(true) + flush)
         if (_mapSave is { } previous)
         {
@@ -369,13 +388,14 @@ public sealed partial class MainView : Grid
         }
         var notes = texts.Select(d => new CityNote(d.Path, d.Text!)).ToArray();
         var ids = texts.ToDictionary(d => d.Path, d => d.Id, StringComparer.Ordinal);
+        var mapJson = ReconcileIdentity(snapshot, notes, ids);
         // 1.8.4 abrirCidade: the saved map (.urbe/mapa.json) is respected.
         // The terrain is always UrbeTerrain.createWorld('urbe'); mapa.mundo only names its version.
         DocumentStore? store = null;
         LegacyCity? opened = null;
         await LoadAsync(notes, city =>
         {
-            store = city.Open(notes.Select(n => (n.Path, n.Content)).ToList(), snapshot.MapJson, ids,
+            store = city.Open(notes.Select(n => (n.Path, n.Content)).ToList(), mapJson, ids,
                 DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
             opened = city;
             return true;
@@ -386,6 +406,8 @@ public sealed partial class MainView : Grid
         if (_brandPill is not null) ToolTip.SetTip(_brandPill, "Salvo na pasta escolhida no dispositivo");
         if (store is null || opened is null || !ReferenceEquals(World.City, opened)) return;
         _store = store;
+        VaultNotices(snapshot);
+        TipsLoaded();
         if (opened.MigratedFromWorld is { } from) await AdaptedToNewWorldAsync(snapshot, opened, from);
         else StartMapSaves(snapshot, opened);
         // tutorial.js: workspace:loaded → setTimeout(semear, 300)
@@ -401,7 +423,7 @@ public sealed partial class MainView : Grid
         bool saves = _vault is not null && !snapshot.IsReadOnly && !snapshot.IsMapReadOnly && !snapshot.RecoveredFromJournal && snapshot.MapJson is not null;
         if (saves)
         {
-            try { await _vault!.SaveLayoutBackupAsync(snapshot.MapJson!, DateTimeOffset.UtcNow, "mundo"); }
+            try { await RecordLayoutAsync("mundo", from, LegacyCity.WorldVersion, await _vault!.SaveLayoutBackupAsync(snapshot.MapJson!, DateTimeOffset.UtcNow, "mundo")); }
             catch (Exception ex)
             {
                 saves = false;   // the old map stays as it is on disk
@@ -444,12 +466,17 @@ public sealed partial class MainView : Grid
                 DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), LegacyCityMap.ReferenceVersion, out var refusal);
             if (text is null) scheduler!.Refused(refusal ?? "");
             return text;
-        }, json => _vault.SaveMapAsync(json), snapshot.MapJson);
+        }, async json =>
+        {
+            await _vault.SaveMapAsync(json);
+            await SaveIdentityAsync();
+        }, snapshot.MapJson);
         scheduler.StateChanged += (_, _) =>
         {
             _vaultName.Text = scheduler.State switch { "error" => "Erro ao salvar o mapa", "refused" => "Mapa não salvo", _ => "" };
             // statusSinc: 'gravando' while writing, 'erro' on a failure, else ok
             _saveState = scheduler.State switch { "saving" => "gravando", "error" => "erro", _ => "ok" };
+            if (scheduler.State == "saved") _lastSavedAt = DateTimeOffset.UtcNow;
             PaintDot();
         };
         _mapWriter = writer;
@@ -691,6 +718,7 @@ public sealed partial class MainView : Grid
         items.Add(new("Importar arquivos", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync()));
         if (_vault is not null)
             items.Add(new("Pasta no dispositivo", UrbeTheme.Icons.Storage, "Onde os arquivos ficam salvos", Run: () => OpenVaultAsync()));
+        items.Add(new("Assistente", UrbeTheme.Icons.Assistant, "Agentes que pesquisam, escrevem e organizam o vault", Run: () => { ToggleAssistant(); return Task.CompletedTask; }));
         items.Add(new("Páginas", UrbeTheme.Icons.Page, "Sites e páginas HTML do vault", Run: () => { ShowPages(); return Task.CompletedTask; }));
         items.Add(new("Diagnóstico de toques", UrbeTheme.Icons.Select, TouchDebugOn ? "Ligado — toque para desligar" : "Para descobrir botões que não respondem", Run: ToggleTouchDebugAsync));
         if (CrashLog.Read().Length > 0)
@@ -1244,7 +1272,9 @@ public sealed partial class MainView : Grid
             {
                 AppVersion = "urbe-native-preview",
                 VaultName = vault.VaultName,
-                VaultFormatVersion = _snapshot.VaultFormatVersion
+                VaultFormatVersion = _snapshot.VaultFormatVersion,
+                // collectState: this device's preferences that travel with the export (tips, editor session, plugin approvals; never AI keys)
+                State = VaultExportStatePolicy.Collect(Customization.Device.All(), "Urbe")
             });
             var saved = await (SaveExport ?? SaveZipAsync)(zip.Bytes.ToArray());
             if (saved == true) ShowLifeNotice("Vault completo exportado.");

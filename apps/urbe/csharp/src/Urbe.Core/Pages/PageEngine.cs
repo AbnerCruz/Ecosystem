@@ -46,6 +46,8 @@ public sealed partial class PageEngine
         public required string Label { get; init; }
         public required string Group { get; init; }
         public required JsonArray Fields { get; init; }
+        public string Icon { get; init; } = "";
+        public string Description { get; init; } = "";
         public Func<JsonObject, RenderContext, JsonObject, string> Render { get; set; } = (_, _, _) => "";
     }
 
@@ -66,7 +68,8 @@ public sealed partial class PageEngine
         foreach (var b in JsonNode.Parse(blocks)!.AsArray().OfType<JsonObject>())
         {
             var type = (string)b["type"]!;
-            _blocks[type] = new Block { Type = type, Label = (string)b["label"]!, Group = (string)b["group"]!, Fields = b["fields"]!.AsArray() };
+            _blocks[type] = new Block { Type = type, Label = (string)b["label"]!, Group = (string)b["group"]!, Fields = b["fields"]!.AsArray(),
+                Icon = (string?)b["icon"] ?? "", Description = (string?)b["description"] ?? "" };
         }
         _themeFields = JsonNode.Parse(PageEngineText.ThemeFieldsJson)!.AsArray();
         _layoutFields = JsonNode.Parse(PageEngineText.LayoutFieldsJson)!.AsArray();
@@ -83,7 +86,7 @@ public sealed partial class PageEngine
 
     // ---------------------------------------------------------------- JS values
 
-    internal static bool Truthy(JsonNode? n) => n switch
+    public static bool Truthy(JsonNode? n) => n switch
     {
         null => false,
         JsonValue v when v.TryGetValue<bool>(out var b) => b,

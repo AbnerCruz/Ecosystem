@@ -765,7 +765,8 @@ public sealed partial class CustomizePanel
     {
         var states = new Dictionary<string, (string Label, string Kind)>
         {
-            ["aprovado"] = ("Aprovado · não executa no nativo", "warn"), ["desligado"] = ("Desligado", ""), ["mudou"] = ("Código mudou", "warn"), ["seguro"] = ("Modo seguro", "warn")
+            ["aprovado"] = ("Aprovado · não executa no nativo", "warn"), ["desligado"] = ("Desligado", ""), ["mudou"] = ("Código mudou", "warn"), ["seguro"] = ("Modo seguro", "warn"),
+            ["invalido"] = ("Com erros", "err")
         };
         _body.Children.Add(Banner("warn", "Plugins são programas: podem ler e mudar suas notas. Só ligue código que você entende ou que veio de alguém de confiança. Se o arquivo mudar, o Urbe desliga o plugin até você revisar."));
         // the native plugins (ADD-0021): each declares what it may do, and nothing else is allowed
@@ -784,13 +785,14 @@ public sealed partial class CustomizePanel
             }
             _body.Children.Add(Block("Plugins nativos", [.. rows]));
         }
-        _body.Children.Add(Banner("warn", "Os plugins .js da 1.8.4 não rodam no app nativo (DEC-0044): aqui você vê, aprova e cria os arquivos. Os plugins nativos acima rodam no app."));
+        _body.Children.Add(Banner("warn", "Plugins .plugin.json (os que você ou o Assistente criam) rodam no app depois de ligados, e só fazem o que declaram. Os .js da 1.8.4 não rodam no app nativo (DEC-0044): aqui você só os vê e aprova."));
         var items = new List<Control>();
         var list = Customization.Plugins();
         if (list.Count == 0) items.Add(Help("Nenhum plugin nesta cidade. Crie um a partir de um modelo e veja o código funcionando."));
         foreach (var p in list)
         {
-            var (label, kind) = states.GetValueOrDefault(p.Status, ("Desligado", ""));
+            var native = Urbe.Core.Plugins.VaultPluginSpec.IsPluginPath(p.Path);
+            var (label, kind) = native && p.Status == "aprovado" ? ("Ligado", "ok") : states.GetValueOrDefault(p.Status, ("Desligado", ""));
             var name = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
             name.Children.Add(Label(p.Name, 14.5, FontWeight.SemiBold));
             if (p.Version.Length > 0) name.Children.Add(new TextBlock { Text = "v" + p.Version, FontFamily = UrbeTheme.MonoFont, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center });
@@ -806,7 +808,7 @@ public sealed partial class CustomizePanel
             Button Pb(string t, bool primary, Func<Task> run) { var b = SmallButton(t, primary); b.Margin = new Thickness(8, 0, 0, 0); b.MinHeight = 40; b.Click += async (_, _) => await run(); return b; }
             if (p.Status == "mudou") { act.Children.Add(Pb("Revisei, ligar", true, () => ApprovePluginAsync(p.Path))); act.Children.Add(Pb("Desligar", false, () => { Customization.DisablePlugin(p.Path); Render(); return Task.CompletedTask; })); }
             else if (p.Status is "aprovado" or "seguro") act.Children.Add(Pb("Desligar", false, () => { Customization.DisablePlugin(p.Path); Render(); return Task.CompletedTask; }));
-            else act.Children.Add(Pb("Ligar", true, () => ApprovePluginAsync(p.Path)));
+            else if (p.Status != "invalido") act.Children.Add(Pb("Ligar", true, () => ApprovePluginAsync(p.Path)));
             var stack = new StackPanel { Children = { head } };
             if (p.Error is not null) stack.Children.Add(Banner("err", p.Error));
             stack.Children.Add(act);
@@ -819,6 +821,19 @@ public sealed partial class CustomizePanel
 
     private async Task ApprovePluginAsync(string path)
     {
+        if (Urbe.Core.Plugins.VaultPluginSpec.IsPluginPath(path))
+        {
+            var spec = Customization.Documents.TryGetValue(path, out var text) ? Urbe.Core.Plugins.VaultPluginSpec.Parse(path, text).Spec : null;
+            if (spec is null) return;
+            var perms = spec.Declared.Count == 0 ? "nada além de mostrar o próprio painel" : string.Join(", ", spec.Declared.Select(x => PluginPermissions.Labels.GetValueOrDefault(x, x).ToLowerInvariant()));
+            var go = await Dialogs.ChooseAsync("Ligar " + spec.Name + "?", [new DialogItem("Ligar"), new DialogItem("Cancelar")],
+                "Este plugin pode: " + perms + ". Ele roda neste aparelho enquanto o arquivo não mudar; se mudar, desliga até você ligar de novo.");
+            if (go != 0) return;
+            Customization.EnablePlugin(path);
+            Render();
+            Toast("Plugin ligado: " + spec.Name);
+            return;
+        }
         var ok = await Dialogs.ChooseAsync("Ligar plugin?", [new DialogItem("Ligar"), new DialogItem("Cancelar")],
             "Registrar a aprovação de " + path.Split('/').Last() + " neste aparelho? O código é de confiança só enquanto não mudar. O app nativo não executa plugins; a aprovação vale quando a cidade for aberta na versão web.");
         if (ok != 0) return;
@@ -829,9 +844,25 @@ public sealed partial class CustomizePanel
 
     private async Task NewPluginAsync()
     {
-        var m = await Dialogs.ChooseAsync("Novo plugin", LegacyPlugins.Templates.Select(t => new DialogItem(t.Name, Icons.Puzzle, t.Description)).ToList(),
-            "Escolha um modelo para começar. O código fica em Personalização/plugins e você pode editar à vontade.");
-        if (m is not { } i) return;
+        var m = await Dialogs.ChooseAsync("Novo plugin",
+            [new DialogItem("Plugin nativo (cronômetro)", Icons.Puzzle, "Roda no app: um painel com cronômetro e voltas. Edite o .plugin.json ou peça ao Assistente outro plugin."),
+             .. LegacyPlugins.Templates.Select(t => new DialogItem(t.Name + " (.js da 1.8.4)", Icons.Puzzle, t.Description))],
+            "Escolha um modelo para começar. O arquivo fica em Personalização/plugins e você pode editar à vontade.");
+        if (m is not { } choice) return;
+        if (choice == 0)
+        {
+            var nativeName = await Dialogs.PromptAsync(new PromptOptions("Nome do plugin", Value: "Cronômetro", Confirm: "Criar"));
+            if (string.IsNullOrWhiteSpace(nativeName)) return;
+            try
+            {
+                var path = await Customization.CreateVaultPluginAsync(nativeName);
+                Toast("Plugin criado: " + path.Split('/').Last() + " (desligado)");
+                Render();
+            }
+            catch (InvalidOperationException e) { await Dialogs.AlertAsync("Plugins", e.Message); }
+            return;
+        }
+        var i = choice - 1;
         var tpl = LegacyPlugins.Templates[i];
         var name = await Dialogs.PromptAsync(new PromptOptions("Nome do plugin", Value: tpl.Name, Confirm: "Criar"));
         if (string.IsNullOrWhiteSpace(name)) return;

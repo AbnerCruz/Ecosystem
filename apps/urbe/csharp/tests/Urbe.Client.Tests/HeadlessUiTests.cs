@@ -478,7 +478,8 @@ public sealed partial class HeadlessUiTests : IDisposable
                 var camera = (view.World.Camera.X, view.World.Camera.Y, view.World.Camera.Zoom);
                 var files = Directory.GetFiles(vault, "*", SearchOption.AllDirectories)
                     .Select(f => Path.GetRelativePath(vault, f).Replace('\\', '/')).Order(StringComparer.Ordinal);
-                Assert.Equal([".urbe/mapa.json", "Bairro/Um.md", "Comece.md", "Ideias.md", "foto.png"], files);
+                // .urbe/identity.json follows the map save (identity.js); it is the derived record, written just after
+                Assert.Equal([".urbe/mapa.json", "Bairro/Um.md", "Comece.md", "Ideias.md", "foto.png"], files.Where(f => f != ".urbe/identity.json"));
                 Assert.Equal([1, 2, 3], File.ReadAllBytes(Path.Combine(vault, "foto.png")));
                 window.Close();
 

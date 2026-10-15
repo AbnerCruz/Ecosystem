@@ -61,7 +61,7 @@ public sealed class ImportTransaction(IImportStorage storage) : IImportTransacti
         }
         var journal = new RecoveryJournal { Version = 1, Root = root, Entries = entries };
         var journalBytes = JsonSerializer.SerializeToUtf8Bytes(journal, JsonOptions);
-        var backup = JsonSerializer.SerializeToUtf8Bytes(new { version = 2, kind = "urbe-import-backup", journal }, JsonOptions);
+        var backup = JsonSerializer.SerializeToUtf8Bytes(new { version = 2, kind = "urbe-import-backup", at = DateTimeOffset.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", System.Globalization.CultureInfo.InvariantCulture), journal }, JsonOptions);
         await storage.WriteAsync(root + "/manifest.json", backup, cancellationToken);
         await storage.WriteAsync(JournalPath, journalBytes, cancellationToken);
         await VerifyAsync(JournalPath, journalBytes, cancellationToken);

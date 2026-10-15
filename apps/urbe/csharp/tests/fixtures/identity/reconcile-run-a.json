@@ -1,0 +1,660 @@
+{
+ "source": "apps/urbe/src/persistence/identity.js (1.8.4-beta)",
+ "cases": [
+  {
+   "name": "simple-rename",
+   "items": [
+    [
+     "Bairro/Novo nome.md",
+     "# Texto\n\nconteúdo"
+    ],
+    [
+     "Outra.md",
+     "# Outra"
+    ]
+   ],
+   "metaBefore": {
+    "v": 4,
+    "notas": {
+     "Bairro/Velho.md": {
+      "id": "n1",
+      "x": 10,
+      "y": 12,
+      "criado": 1
+     },
+     "Outra.md": {
+      "id": "n2",
+      "x": 3,
+      "y": 4
+     }
+    },
+    "regioes": [
+     {
+      "id": "reg_a",
+      "caminho": "Bairro",
+      "nome": "Bairro",
+      "x": 0,
+      "y": 0,
+      "w": 20,
+      "h": 20
+     }
+    ]
+   },
+   "identity": {
+    "version": 1,
+    "docs": {
+     "n1": {
+      "path": "Bairro/Velho.md",
+      "fingerprint": "19d29a00c4cdce91:h",
+      "seen": "2026-01-01T00:00:00.000Z"
+     },
+     "n2": {
+      "path": "Outra.md",
+      "fingerprint": "9fe8255b28317901:7",
+      "seen": "2026-01-01T00:00:00.000Z"
+     }
+    }
+   },
+   "onDisk": null,
+   "ids": [
+    "n1",
+    "n2"
+   ],
+   "renames": [
+    {
+     "id": "n1",
+     "from": "Bairro/Velho.md",
+     "to": "Bairro/Novo nome.md"
+    }
+   ],
+   "ambiguous": [],
+   "metaAfter": {
+    "v": 4,
+    "notas": {
+     "Outra.md": {
+      "id": "n2",
+      "x": 3,
+      "y": 4
+     },
+     "Bairro/Novo nome.md": {
+      "id": "n1",
+      "x": 10,
+      "y": 12,
+      "criado": 1
+     }
+    },
+    "regioes": [
+     {
+      "id": "reg_a",
+      "caminho": "Bairro",
+      "nome": "Bairro",
+      "x": 0,
+      "y": 0,
+      "w": 20,
+      "h": 20
+     }
+    ]
+   },
+   "fingerprints": [
+    "19d29a00c4cdce91:h",
+    "9fe8255b28317901:7"
+   ]
+  },
+  {
+   "name": "moved-to-another-folder",
+   "items": [
+    [
+     "B/Nota.md",
+     "mesmo texto"
+    ],
+    [
+     "A/Fica.md",
+     "x"
+    ]
+   ],
+   "metaBefore": {
+    "notas": {
+     "A/Nota.md": {
+      "id": "n1",
+      "x": 5,
+      "y": 6,
+      "tags": [
+       "t"
+      ]
+     },
+     "A/Fica.md": {
+      "id": "n3",
+      "x": 1,
+      "y": 1
+     }
+    },
+    "regioes": [
+     {
+      "id": "reg_a",
+      "caminho": "A",
+      "nome": "A"
+     },
+     {
+      "id": "reg_b",
+      "caminho": "B",
+      "nome": "B"
+     }
+    ]
+   },
+   "identity": {
+    "version": 1,
+    "docs": {
+     "n1": {
+      "path": "A/Nota.md",
+      "fingerprint": "54f08acc3e806e9a:b",
+      "seen": "2026-01-01T00:00:00.000Z"
+     },
+     "n3": {
+      "path": "A/Fica.md",
+      "fingerprint": "fd0c5087996ddaf8:1",
+      "seen": "2026-01-01T00:00:00.000Z"
+     }
+    }
+   },
+   "onDisk": null,
+   "ids": [
+    "n1",
+    "n3"
+   ],
+   "renames": [
+    {
+     "id": "n1",
+     "from": "A/Nota.md",
+     "to": "B/Nota.md"
+    }
+   ],
+   "ambiguous": [],
+   "metaAfter": {
+    "notas": {
+     "A/Fica.md": {
+      "id": "n3",
+      "x": 1,
+      "y": 1
+     },
+     "B/Nota.md": {
+      "id": "n1",
+      "tags": [
+       "t"
+      ]
+     }
+    },
+    "regioes": [
+     {
+      "id": "reg_a",
+      "caminho": "A",
+      "nome": "A"
+     },
+     {
+      "id": "reg_b",
+      "caminho": "B",
+      "nome": "B"
+     }
+    ]
+   },
+   "fingerprints": [
+    "54f08acc3e806e9a:b",
+    "fd0c5087996ddaf8:1"
+   ]
+  },
+  {
+   "name": "folder-renamed",
+   "items": [
+    [
+     "Novo/Sub/Um.md",
+     "um"
+    ],
+    [
+     "Novo/Dois.md",
+     "dois"
+    ]
+   ],
+   "metaBefore": {
+    "notas": {
+     "Velho/Sub/Um.md": {
+      "id": "n1",
+      "x": 7,
+      "y": 8,
+      "anexos": [
+       {
+        "relPath": "Velho/Sub/img.png",
+        "folderPath": "Velho/Sub"
+       }
+      ]
+     },
+     "Velho/Dois.md": {
+      "id": "n2",
+      "x": 9,
+      "y": 9
+     }
+    },
+    "regioes": [
+     {
+      "id": "reg_v",
+      "caminho": "Velho",
+      "nome": "Velho",
+      "x": 1,
+      "y": 1,
+      "w": 30,
+      "h": 30
+     },
+     {
+      "id": "reg_s",
+      "caminho": "Velho/Sub",
+      "nome": "Sub"
+     }
+    ],
+    "construcoes": [
+     {
+      "id": "c1",
+      "caminho": "Velho/Sub",
+      "files": [
+       {
+        "relPath": "Velho/Sub/a.pdf",
+        "folderPath": "Velho/Sub"
+       }
+      ]
+     }
+    ]
+   },
+   "identity": {
+    "version": 1,
+    "docs": {
+     "n1": {
+      "path": "Velho/Sub/Um.md",
+      "fingerprint": "604338c71fe86183:2",
+      "seen": "2026-01-01T00:00:00.000Z"
+     },
+     "n2": {
+      "path": "Velho/Dois.md",
+      "fingerprint": "28fa3f5cf4b72751:4",
+      "seen": "2026-01-01T00:00:00.000Z"
+     }
+    }
+   },
+   "onDisk": [
+    "Novo/Sub/Um.md",
+    "Novo/Dois.md",
+    "Novo/Sub/img.png",
+    "Novo/Sub/a.pdf",
+    ".urbe/mapa.json"
+   ],
+   "ids": [
+    "n1",
+    "n2"
+   ],
+   "renames": [
+    {
+     "id": "n1",
+     "from": "Velho/Sub/Um.md",
+     "to": "Novo/Sub/Um.md"
+    },
+    {
+     "id": "n2",
+     "from": "Velho/Dois.md",
+     "to": "Novo/Dois.md"
+    }
+   ],
+   "ambiguous": [],
+   "metaAfter": {
+    "notas": {
+     "Novo/Sub/Um.md": {
+      "id": "n1",
+      "x": 7,
+      "y": 8,
+      "anexos": [
+       {
+        "relPath": "Novo/Sub/img.png",
+        "folderPath": "Novo/Sub"
+       }
+      ]
+     },
+     "Novo/Dois.md": {
+      "id": "n2",
+      "x": 9,
+      "y": 9
+     }
+    },
+    "regioes": [
+     {
+      "id": "reg_v",
+      "caminho": "Novo",
+      "nome": "Novo",
+      "x": 1,
+      "y": 1,
+      "w": 30,
+      "h": 30
+     },
+     {
+      "id": "reg_s",
+      "caminho": "Novo/Sub",
+      "nome": "Sub"
+     }
+    ],
+    "construcoes": [
+     {
+      "id": "c1",
+      "caminho": "Novo/Sub",
+      "files": [
+       {
+        "relPath": "Novo/Sub/a.pdf",
+        "folderPath": "Novo/Sub"
+       }
+      ]
+     }
+    ]
+   },
+   "fingerprints": [
+    "604338c71fe86183:2",
+    "28fa3f5cf4b72751:4"
+   ]
+  },
+  {
+   "name": "ambiguous-copies",
+   "items": [
+    [
+     "X/Copia 1.md",
+     "igual"
+    ],
+    [
+     "X/Copia 2.md",
+     "igual"
+    ],
+    [
+     "Vazia nova.md",
+     ""
+    ]
+   ],
+   "metaBefore": {
+    "notas": {
+     "Original.md": {
+      "id": "n1",
+      "x": 1,
+      "y": 2
+     },
+     "Vazia.md": {
+      "id": "n9",
+      "x": 0,
+      "y": 0
+     }
+    }
+   },
+   "identity": {
+    "version": 1,
+    "docs": {
+     "n1": {
+      "path": "Original.md",
+      "fingerprint": "35c285e9fdef79fe:5",
+      "seen": "2026-01-01T00:00:00.000Z"
+     },
+     "n9": {
+      "path": "Vazia.md",
+      "fingerprint": "",
+      "seen": "2026-01-01T00:00:00.000Z"
+     }
+    }
+   },
+   "onDisk": null,
+   "ids": [
+    null,
+    null,
+    null
+   ],
+   "renames": [],
+   "ambiguous": [
+    {
+     "fingerprint": "35c285e9fdef79fe:5",
+     "from": [
+      "Original.md"
+     ],
+     "to": [
+      "X/Copia 1.md",
+      "X/Copia 2.md"
+     ]
+    }
+   ],
+   "metaAfter": {
+    "notas": {
+     "Original.md": {
+      "id": "n1",
+      "x": 1,
+      "y": 2
+     },
+     "Vazia.md": {
+      "id": "n9",
+      "x": 0,
+      "y": 0
+     }
+    }
+   },
+   "fingerprints": [
+    "35c285e9fdef79fe:5",
+    "35c285e9fdef79fe:5",
+    ""
+   ]
+  },
+  {
+   "name": "id-from-sidecar-same-path",
+   "items": [
+    [
+     "Sem mapa.md",
+     "a"
+    ],
+    [
+     "Outra.md",
+     "b"
+    ]
+   ],
+   "metaBefore": null,
+   "identity": {
+    "version": 1,
+    "docs": {
+     "s1": {
+      "path": "Sem mapa.md",
+      "fingerprint": "e40c292ca26de923:1",
+      "seen": "2026-01-01T00:00:00.000Z"
+     },
+     "s2": {
+      "path": "Outra.md",
+      "fingerprint": "a7b0389d5ad59639:3",
+      "seen": "2026-01-01T00:00:00.000Z"
+     }
+    }
+   },
+   "onDisk": null,
+   "ids": [
+    "s1",
+    "s2"
+   ],
+   "renames": [],
+   "ambiguous": [],
+   "metaAfter": null,
+   "fingerprints": [
+    "e40c292ca26de923:1",
+    "e70c2de5a36deab6:1"
+   ]
+  },
+  {
+   "name": "target-already-in-map",
+   "items": [
+    [
+     "Novo.md",
+     "texto"
+    ]
+   ],
+   "metaBefore": {
+    "notas": {
+     "Velho.md": {
+      "id": "n1",
+      "x": 1,
+      "y": 1
+     },
+     "Novo.md": {
+      "x": 2,
+      "y": 2
+     }
+    }
+   },
+   "identity": {
+    "version": 1,
+    "docs": {
+     "n1": {
+      "path": "Velho.md",
+      "fingerprint": "428d4983d744c856:5",
+      "seen": "2026-01-01T00:00:00.000Z"
+     }
+    }
+   },
+   "onDisk": null,
+   "ids": [
+    "n1"
+   ],
+   "renames": [
+    {
+     "id": "n1",
+     "from": "Velho.md",
+     "to": "Novo.md"
+    }
+   ],
+   "ambiguous": [],
+   "metaAfter": {
+    "notas": {
+     "Velho.md": {
+      "id": "n1",
+      "x": 1,
+      "y": 1
+     },
+     "Novo.md": {
+      "x": 2,
+      "y": 2
+     }
+    }
+   },
+   "fingerprints": [
+    "428d4983d744c856:5"
+   ]
+  },
+  {
+   "name": "old-folder-still-exists",
+   "items": [
+    [
+     "Novo/Um.md",
+     "um"
+    ],
+    [
+     "Velho/Outro.md",
+     "outro"
+    ]
+   ],
+   "metaBefore": {
+    "notas": {
+     "Velho/Um.md": {
+      "id": "n1",
+      "x": 4,
+      "y": 4
+     },
+     "Velho/Outro.md": {
+      "id": "n2",
+      "x": 5,
+      "y": 5
+     }
+    },
+    "regioes": [
+     {
+      "id": "reg_v",
+      "caminho": "Velho",
+      "nome": "Velho"
+     }
+    ]
+   },
+   "identity": {
+    "version": 1,
+    "docs": {
+     "n1": {
+      "path": "Velho/Um.md",
+      "fingerprint": "604338c71fe86183:2",
+      "seen": "2026-01-01T00:00:00.000Z"
+     },
+     "n2": {
+      "path": "Velho/Outro.md",
+      "fingerprint": "a6eb79a8fd808629:5",
+      "seen": "2026-01-01T00:00:00.000Z"
+     }
+    }
+   },
+   "onDisk": null,
+   "ids": [
+    "n1",
+    "n2"
+   ],
+   "renames": [
+    {
+     "id": "n1",
+     "from": "Velho/Um.md",
+     "to": "Novo/Um.md"
+    }
+   ],
+   "ambiguous": [],
+   "metaAfter": {
+    "notas": {
+     "Velho/Outro.md": {
+      "id": "n2",
+      "x": 5,
+      "y": 5
+     },
+     "Novo/Um.md": {
+      "id": "n1"
+     }
+    },
+    "regioes": [
+     {
+      "id": "reg_v",
+      "caminho": "Velho",
+      "nome": "Velho"
+     }
+    ]
+   },
+   "fingerprints": [
+    "604338c71fe86183:2",
+    "a6eb79a8fd808629:5"
+   ]
+  },
+  {
+   "name": "no-identity",
+   "items": [
+    [
+     "A.md",
+     "a"
+    ]
+   ],
+   "metaBefore": {
+    "notas": {
+     "B.md": {
+      "id": "n1"
+     }
+    }
+   },
+   "identity": null,
+   "onDisk": null,
+   "ids": [
+    null
+   ],
+   "renames": [],
+   "ambiguous": [],
+   "metaAfter": {
+    "notas": {
+     "B.md": {
+      "id": "n1"
+     }
+    }
+   },
+   "fingerprints": [
+    "e40c292ca26de923:1"
+   ]
+  }
+ ]
+}

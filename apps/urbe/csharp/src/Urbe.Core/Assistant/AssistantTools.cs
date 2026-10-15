@@ -50,6 +50,8 @@ public interface IAssistantHost
     void SetPlan(IReadOnlyList<AiPlanStep> steps);
     /// <summary>The Personalização the appearance tools change, when the app has one.</summary>
     IAssistantAppearance? Appearance => null;
+    /// <summary>The city's plugins the plugin tools create and turn on, when the app has them.</summary>
+    IAssistantPlugins? Plugins => null;
 }
 
 /// <summary>A tool the agents use (tools.js def): name, description, JSON Schema, access, label, preview and run.</summary>

@@ -306,8 +306,33 @@ public sealed class EditorOverlay : Grid
         Go(target);
     }
 
+    /// <summary>Notes Voltar went back from, for Avançar (editor.forward); following a new link clears it.</summary>
+    private readonly Stack<string> _forward = new();
+
+    /// <summary>Avançar is possible.</summary>
+    public bool CanForward => _forward.Count > 0;
+
+    /// <summary>editor.forward: the note Voltar left, if it still exists.</summary>
+    public async Task ForwardAsync()
+    {
+        if (!await LeaveCurrentAsync()) return;
+        var notes = Notes?.Invoke().ToList() ?? [];
+        while (_forward.TryPop(out var path))
+        {
+            if (notes.FirstOrDefault(n => n.Path == path) is not { } next) continue;
+            if (_note is { } current) _trail.Push(current.Path);
+            Show(next);
+            return;
+        }
+    }
+
+    /// <summary>editor.undo / editor.redo: of the text being edited (Fonte, or the block in Visual).</summary>
+    public void Undo() { if (Mode == EditorMode.Fonte) Editor.Undo(); else _visual.Undo(); }
+    public void Redo() { if (Mode == EditorMode.Fonte) Editor.Redo(); else _visual.Redo(); }
+
     private void Go(CityNote target)
     {
+        _forward.Clear();
         if (_note is { } current && current.Path != target.Path) _trail.Push(current.Path);
         Show(target.Path == _note?.Path ? Current! : target);
     }
@@ -319,7 +344,12 @@ public sealed class EditorOverlay : Grid
         var notes = Notes?.Invoke().ToList() ?? [];
         while (_trail.TryPop(out var path))
         {
-            if (notes.FirstOrDefault(n => n.Path == path) is { } previous) { Show(previous); return; }
+            if (notes.FirstOrDefault(n => n.Path == path) is { } previous)
+            {
+                if (_note is { } current) _forward.Push(current.Path);
+                Show(previous);
+                return;
+            }
         }
         IsVisible = false;
         Closed?.Invoke(this, EventArgs.Empty);
@@ -395,6 +425,17 @@ public sealed class EditorOverlay : Grid
 
     /// <summary>The open tabs (tests and the host).</summary>
     public IReadOnlyList<string> Tabs => _tabs;
+
+    /// <summary>editor.session.restore: the tabs of a session (the existing notes), the active one shown.</summary>
+    public void RestoreSession(IReadOnlyList<string> tabs, string? active)
+    {
+        var notes = Notes?.Invoke().ToList() ?? [];
+        foreach (var t in tabs) if (notes.Any(n => n.Path == t) && !_tabs.Contains(t)) _tabs.Add(t);
+        var show = notes.FirstOrDefault(n => n.Path == active) ?? notes.FirstOrDefault(n => n.Path == _tabs.LastOrDefault());
+        if (show is null) { RenderTabs(); return; }
+        IsVisible = true;
+        Show(show);
+    }
 
     /// <summary>v21TouchTab: tabs of notes that no longer exist go; the note opened joins at the end.</summary>
     private void TouchTab(string path)
@@ -592,7 +633,7 @@ public sealed class EditorOverlay : Grid
             if (MoreRequested is not null && _note is not null) await MoreRequested(this);
         };
         // no Salvar: the 1.8.4 saves by itself (autosave below, Ctrl+S) and says so in the footer
-        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { _segment, more } };
+        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { PluginButtons, _segment, more } };
         DockPanel.SetDock(right, Dock.Right);
         bar.Children.Add(back);
         bar.Children.Add(right);
@@ -811,6 +852,25 @@ public sealed class EditorOverlay : Grid
     }
 
     // ------------------------------------------------------------------ Fonte tools (app.js .mdBtn handlers)
+
+    /// <summary>The plugins' buttons in the editor's top bar (native plugin API, "onde": "editor").</summary>
+    public StackPanel PluginButtons { get; } = new() { Orientation = Orientation.Horizontal, Spacing = 2 };
+
+    /// <summary>A plugin's text at the caret (Fonte) or at the end of the note (Visual); the note saves by itself.</summary>
+    public void InsertText(string insert)
+    {
+        if (_note is null || insert.Length == 0) return;
+        _visual.FinishEdit();
+        var text = Editor.Text ?? "";
+        var (a, b) = VisualSurface.Range(Editor);
+        if (Mode == EditorMode.Visual)
+        {
+            a = b = text.Length;
+            if (text.Length > 0 && !text.EndsWith('\n')) insert = "\n" + insert;
+        }
+        ApplyEdit(new LegacyEditorTools.TextEdit(text[..a] + insert + text[b..], a + insert.Length, a + insert.Length));
+        if (Mode == EditorMode.Visual) _visual.SetText(Editor.Text ?? "");
+    }
 
     private void ApplyEdit(LegacyEditorTools.TextEdit edit)
     {

@@ -12,7 +12,7 @@ public sealed record PageCard(string Path, string Title, string Icon, int Sectio
 /// <summary>
 /// Páginas (studio.js home, "Sites e páginas HTML feitos a partir do vault"): every .page.json of the vault, the most
 /// recently changed first, each a card with its icon, title, "path · n seções" and "⋯". Tapping a card shows the page
-/// inside the Urbe (ADD-0023). The studio that creates and edits pages is UC-35.
+/// in the studio; "Nova página" creates one there.
 /// </summary>
 public sealed class PagesPanel : Border
 {
@@ -38,9 +38,18 @@ public sealed class PagesPanel : Border
                 new TextBlock { Text = "Sites e páginas HTML feitos a partir do vault", FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis }
             }
         };
-        var head = new DockPanel { Margin = new Thickness(8, 6, 8, 8), Height = 60 };
+        var create = new Button
+        {
+            Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { UrbeTheme.Icon(UrbeTheme.Icons.Plus, 16, UrbeTheme.AccentInk, 2.2), new TextBlock { Text = "Nova página", FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.AccentInk), VerticalAlignment = VerticalAlignment.Center } } },
+            Height = 40, Padding = new Thickness(14, 0), CornerRadius = new CornerRadius(12), Background = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center
+        };
+        Avalonia.Automation.AutomationProperties.SetName(create, "Nova página");
+        create.Click += (_, _) => NewRequested?.Invoke();
+        var head = new DockPanel { Margin = new Thickness(8, 6, 12, 8), Height = 60 };
         DockPanel.SetDock(close, Dock.Left);
+        DockPanel.SetDock(create, Dock.Right);
         head.Children.Add(close);
+        head.Children.Add(create);
         head.Children.Add(titles);
         var scroll = new ScrollViewer { HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = _list };
         var layout = new DockPanel();
@@ -53,16 +62,49 @@ public sealed class PagesPanel : Border
     /// <summary>A card was tapped: the host shows the page.</summary>
     public event Action<string>? PageRequested;
 
+    /// <summary>"Nova página": the host creates a page and opens it in the studio.</summary>
+    public event Action? NewRequested;
+
     /// <summary>"⋯" of a card: the host shows the page's actions.</summary>
     public event Action<string>? MenuRequested;
 
     /// <summary>The pages listed now (tests).</summary>
     public IReadOnlyList<PageCard> Listed { get; private set; } = [];
 
-    public void Show(IReadOnlyList<PageCard> pages)
+    /// <summary>"Converter em páginas": the host turns the vault's old compositions into pages (UC-45).</summary>
+    public event Action? ConvertCompositionsRequested;
+
+    /// <summary>Compositions of the 1.8.4 not yet turned into pages (the banner's count; tests).</summary>
+    public int PendingCompositions { get; private set; }
+
+    public void Show(IReadOnlyList<PageCard> pages, int pendingCompositions = 0)
     {
         Listed = pages;
+        PendingCompositions = pendingCompositions;
         _list.Children.Clear();
+        if (pendingCompositions > 0)
+        {
+            var convert = new Button
+            {
+                Content = new TextBlock { Text = "Converter em páginas", FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.AccentInk) },
+                Padding = new Thickness(14, 8), CornerRadius = new CornerRadius(10), Background = UrbeTheme.Brush(UrbeTheme.Accent), Margin = new Thickness(0, 8, 0, 0)
+            };
+            Avalonia.Automation.AutomationProperties.SetName(convert, "Converter em páginas");
+            convert.Click += (_, _) => ConvertCompositionsRequested?.Invoke();
+            _list.Children.Add(new Border
+            {
+                Padding = new Thickness(14), CornerRadius = new CornerRadius(14), Background = UrbeTheme.Brush(UrbeTheme.Accent, .12), BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent, .5), BorderThickness = new Thickness(1),
+                Child = new StackPanel
+                {
+                    Children =
+                    {
+                        new TextBlock { Text = pendingCompositions == 1 ? "1 composição da versão anterior" : pendingCompositions + " composições da versão anterior", FontWeight = FontWeight.Bold, Foreground = UrbeTheme.Brush(UrbeTheme.Text) },
+                        new TextBlock { Text = "As composições agora são páginas: cada uma vira uma página com as mesmas notas, em Páginas/Composições. O arquivo antigo fica no vault, sem mudança.", TextWrapping = TextWrapping.Wrap, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) },
+                        convert
+                    }
+                }
+            });
+        }
         if (pages.Count == 0)
         {
             _list.Children.Add(new StackPanel
@@ -71,10 +113,10 @@ public sealed class PagesPanel : Border
                 Children =
                 {
                     new TextBlock { Text = "✦", FontSize = 44, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UrbeTheme.Brush(UrbeTheme.Accent) },
-                    new TextBlock { Text = "Nenhuma página ainda", FontSize = 18, FontWeight = FontWeight.Bold, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UrbeTheme.Brush(UrbeTheme.Text) },
+                    new TextBlock { Text = "Crie sua primeira página", FontSize = 18, FontWeight = FontWeight.Bold, HorizontalAlignment = HorizontalAlignment.Center, Foreground = UrbeTheme.Brush(UrbeTheme.Text) },
                     new TextBlock
                     {
-                        Text = "Sites, portfólios, currículos, livros… As páginas (.page.json) do vault aparecem aqui e abrem dentro do Urbe.",
+                        Text = "Sites, portfólios, currículos, livros… A página abre direto no editor: escreva à vontade ou carregue um modelo lá dentro, em ＋ → Modelos.",
                         TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, MaxWidth = 420, Foreground = UrbeTheme.Brush(UrbeTheme.Text3)
                     }
                 }

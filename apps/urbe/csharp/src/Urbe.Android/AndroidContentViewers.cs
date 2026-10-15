@@ -1,3 +1,4 @@
+using Android.App;
 using Android.Content;
 using Android.Graphics;
 using Android.Graphics.Pdf;
@@ -28,6 +29,62 @@ internal static class AndroidContentViewers
     {
         ContentViewers.Factory = CreateAsync;
         ContentViewers.PdfReader = OpenPdfAsync;
+        ContentViewers.Printer = PrintAsync;
+    }
+
+    /// <summary>
+    /// printPdf (UrbeNative.printHtml in the 1.8.4 APK): the page in an off-screen WebView, then the system's print
+    /// dialog for it — "Salvar como PDF" saves the file where the person chooses; a book keeps its page size and margins.
+    /// </summary>
+    private static Task PrintAsync(string title, string html)
+    {
+        var activity = MainActivity.Current ?? throw new InvalidOperationException("O aplicativo não está aberto.");
+        var done = new TaskCompletionSource();
+        activity.RunOnUiThread(() =>
+        {
+            try
+            {
+                var web = new WebView(activity);
+                web.Settings.JavaScriptEnabled = true;
+                web.Settings.AllowFileAccess = false;
+                web.Settings.AllowContentAccess = false;
+                web.SetWebViewClient(new PrintWhenLoaded(activity, title, done));
+                web.LoadDataWithBaseURL(null, html, "text/html", "utf-8", null);
+                Kept.Add(web);
+            }
+            catch (Exception ex) { done.TrySetException(ex); }
+        });
+        return done.Task;
+    }
+
+    // the off-screen WebView must live until the print job has read the page
+    private static readonly List<WebView> Kept = [];
+
+    private sealed class PrintWhenLoaded(Activity activity, string title, TaskCompletionSource done) : WebViewClient
+    {
+        private bool _printed;
+
+        public override bool ShouldOverrideUrlLoading(WebView? view, IWebResourceRequest? request) => true;
+
+        public override void OnPageFinished(WebView? view, string? url)
+        {
+            if (_printed || view is null) return;
+            _printed = true;
+            try
+            {
+                if (activity.GetSystemService(Context.PrintService) is not Android.Print.PrintManager printer)
+                    throw new InvalidOperationException("Este aparelho não tem impressão.");
+                var job = string.IsNullOrWhiteSpace(title) ? "Página" : title;
+                printer.Print(job, view.CreatePrintDocumentAdapter(job), new Android.Print.PrintAttributes.Builder().Build());
+                done.TrySetResult();
+            }
+            catch (Exception ex) { done.TrySetException(ex); }
+            finally
+            {
+                // released a while later: the system has copied the document by then
+                view.PostDelayed(() => { Kept.Remove(view); view.Destroy(); }, 120_000);
+            }
+        }
     }
 
     private static async Task<Control?> CreateAsync(ContentRequest request, CancellationToken cancellationToken)
@@ -35,7 +92,7 @@ internal static class AndroidContentViewers
         switch (request.Kind)
         {
             case VaultFileKinds.Html when request.Bytes is { } bytes && FilePreviewPanel.Text(bytes) is { } html:
-                return new AndroidViewHost(context => Page(context, html), view => (view as WebView)?.Destroy());
+                return new AndroidViewHost(context => Page(context, html, request.Messages), view => (view as WebView)?.Destroy());
             case VaultFileKinds.Audio or VaultFileKinds.Video when request.Storage is AndroidVaultStorage vault
                                                                  && await vault.DocumentOfAsync(request.Path, cancellationToken) is { } uri:
                 return new AndroidViewHost(context => Player(context, uri), view => (view.FindViewWithTag("player") as VideoView)?.StopPlayback());
@@ -45,7 +102,7 @@ internal static class AndroidContentViewers
     }
 
     /// <summary>A page of HTML from the vault: JavaScript on (the HTML products need it), nothing else reachable.</summary>
-    private static AView Page(Context context, string html)
+    private static AView Page(Context context, string html, Action<string>? messages = null)
     {
         var web = new WebView(context);
         web.SetBackgroundColor(Color.White);
@@ -58,8 +115,30 @@ internal static class AndroidContentViewers
         settings.BuiltInZoomControls = true;
         settings.DisplayZoomControls = false;
         web.SetWebViewClient(new StayOnPage());
+        if (messages is not null)
+        {
+            // the studio's preview: what the page posts to its parent (here, itself) goes out by the console, nothing else
+            web.SetWebChromeClient(new PreviewMessages(messages));
+            const string relay = "<script>addEventListener('message',function(e){try{var m=e.data;if(m&&(m.urbePage==='select'||m.urbePage==='text'))console.log('urbe-msg:'+JSON.stringify(m))}catch(_){}})</script>";
+            html = html.Contains("</body>", StringComparison.Ordinal) ? html.Replace("</body>", relay + "</body>", StringComparison.Ordinal) : html + relay;
+        }
         web.LoadDataWithBaseURL(null, html, "text/html", "utf-8", null);
         return web;
+    }
+
+    private sealed class PreviewMessages(Action<string> messages) : WebChromeClient
+    {
+        public override bool OnConsoleMessage(ConsoleMessage? consoleMessage)
+        {
+            var text = consoleMessage?.Message();
+            if (text is not null && text.StartsWith("urbe-msg:", StringComparison.Ordinal))
+            {
+                var json = text["urbe-msg:".Length..];
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => messages(json));
+                return true;
+            }
+            return base.OnConsoleMessage(consoleMessage);
+        }
     }
 
     /// <summary>A link or form of the page does not take the panel away from the file.</summary>

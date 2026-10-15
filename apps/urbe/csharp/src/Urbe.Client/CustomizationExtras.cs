@@ -11,6 +11,8 @@ public interface IDeviceStore
 {
     string? Get(string key);
     void Set(string key, string? value);
+    /// <summary>Every key and value (collectState of the export).</summary>
+    IReadOnlyDictionary<string, string> All() => new Dictionary<string, string>();
 }
 
 public sealed class MemoryDeviceStore : IDeviceStore
@@ -18,6 +20,7 @@ public sealed class MemoryDeviceStore : IDeviceStore
     private readonly Dictionary<string, string> _values = [];
     public string? Get(string key) => _values.GetValueOrDefault(key);
     public void Set(string key, string? value) { if (value is null) _values.Remove(key); else _values[key] = value; }
+    public IReadOnlyDictionary<string, string> All() => new Dictionary<string, string>(_values);
 }
 
 /// <summary>A small JSON file in the app's local data folder; a failure to read or write only costs persistence.</summary>
@@ -35,6 +38,8 @@ public sealed class FileDeviceStore(string? path = null) : IDeviceStore
     }
 
     public string? Get(string key) => Values().GetValueOrDefault(key);
+
+    public IReadOnlyDictionary<string, string> All() => new Dictionary<string, string>(Values());
 
     public void Set(string key, string? value)
     {
@@ -197,12 +202,22 @@ public sealed partial class Customization
     public IReadOnlyList<PluginEntry> Plugins()
     {
         var approvals = Approvals();
-        return _documents.Where(d => d.Key.StartsWith(LegacyPlugins.Folder, StringComparison.Ordinal) && d.Key.EndsWith(".js", StringComparison.OrdinalIgnoreCase))
+        return _documents.Where(d => d.Key.StartsWith(LegacyPlugins.Folder, StringComparison.Ordinal)
+                && (d.Key.EndsWith(".js", StringComparison.OrdinalIgnoreCase) || Urbe.Core.Plugins.VaultPluginSpec.IsPluginPath(d.Key)))
             .OrderBy(d => d.Key, StringComparer.InvariantCulture)
             .Select(d =>
             {
-                var info = LegacyPlugins.Read(d.Key, d.Key.Split('/').Last(), d.Value);
                 string status = "desligado"; string? error = null;
+                LegacyPlugins.Info info;
+                if (Urbe.Core.Plugins.VaultPluginSpec.IsPluginPath(d.Key))
+                {
+                    // a plugin of the native API: checked before it can be turned on
+                    var (spec, errors) = Urbe.Core.Plugins.VaultPluginSpec.Parse(d.Key, d.Value);
+                    info = new LegacyPlugins.Info(d.Key, spec?.Name ?? d.Key.Split('/').Last(), spec?.Version ?? "", spec?.Description ?? "", d.Value.Length);
+                    if (spec is null)
+                        return new PluginEntry(d.Key, info.Name, "", "", "invalido", "O plugin tem erros e não pode ser ligado:\n" + string.Join("\n", errors.Take(6)) + (errors.Count > 6 ? "\n…" : ""));
+                }
+                else info = LegacyPlugins.Read(d.Key, d.Key.Split('/').Last(), d.Value);
                 if (approvals[ApprovalKey(d.Key)] is JsonObject ap)
                 {
                     if ((string?)ap["hash"] != LegacyPlugins.Fingerprint(d.Value)) { status = "mudou"; error = "O código mudou desde que você ligou este plugin. Revise e ligue de novo."; }
@@ -219,6 +234,7 @@ public sealed partial class Customization
         var approvals = Approvals();
         approvals[ApprovalKey(path)] = new JsonObject { ["hash"] = LegacyPlugins.Fingerprint(text), ["em"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() };
         Device.Set(PluginKey, approvals.ToJsonString());
+        PluginsChanged?.Invoke();
     }
 
     public void DisablePlugin(string path)
@@ -226,6 +242,38 @@ public sealed partial class Customization
         var approvals = Approvals();
         approvals.Remove(ApprovalKey(path));
         Device.Set(PluginKey, approvals.ToJsonString());
+        PluginsChanged?.Invoke();
+    }
+
+    /// <summary>A plugin was turned on or off here (the host starts or stops it).</summary>
+    public event Action? PluginsChanged;
+
+    /// <summary>The vault plugins (.plugin.json) approved on this device for exactly their current text, valid, outside the safe mode.</summary>
+    public IReadOnlyList<(string Path, Urbe.Core.Plugins.VaultPluginSpec Spec, string Hash)> ApprovedVaultPlugins()
+    {
+        if (SafeMode) return [];
+        var approvals = Approvals();
+        var list = new List<(string, Urbe.Core.Plugins.VaultPluginSpec, string)>();
+        foreach (var (path, text) in _documents.Where(d => Urbe.Core.Plugins.VaultPluginSpec.IsPluginPath(d.Key)).OrderBy(d => d.Key, StringComparer.InvariantCulture))
+        {
+            var hash = LegacyPlugins.Fingerprint(text);
+            if (approvals[ApprovalKey(path)] is not JsonObject ap || (string?)ap["hash"] != hash) continue;
+            if (Urbe.Core.Plugins.VaultPluginSpec.Parse(path, text).Spec is { } spec) list.Add((path, spec, hash));
+        }
+        return list;
+    }
+
+    /// <summary>A native plugin (.plugin.json) from the guide's example, with the given name (disabled).</summary>
+    public async Task<string> CreateVaultPluginAsync(string name)
+    {
+        name = name.Trim();
+        var safe = System.Text.RegularExpressions.Regex.Replace(name, @"[\\/:*?""<>|]", "-");
+        var path = LegacyPlugins.Folder + safe + Urbe.Core.Plugins.VaultPluginSpec.Extension;
+        for (int n = 2; _documents.ContainsKey(path); n++) path = LegacyPlugins.Folder + safe + " " + n + Urbe.Core.Plugins.VaultPluginSpec.Extension;
+        var o = (JsonObject)JsonNode.Parse(Urbe.Core.Plugins.VaultPluginSpec.ExampleTimer)!;
+        o["nome"] = name;
+        await UpsertAsync(path, o.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) + "\n");
+        return path;
     }
 
     /// <summary>novo(nome, modelo): writes a plugin from a template (disabled) and returns its path.</summary>

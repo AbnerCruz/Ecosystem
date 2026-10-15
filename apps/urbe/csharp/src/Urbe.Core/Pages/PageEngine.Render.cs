@@ -560,7 +560,7 @@ public sealed partial class PageEngine
                 ? "<a class=\"wikilink\" href=\"#" + Esc(a) + "\">" + Esc(!string.IsNullOrEmpty(label) ? label : target) + "</a>"
                 : "<span class=\"wikilink\">" + Esc(!string.IsNullOrEmpty(label) ? label : target.Split('/')[^1]) + "</span>";
         }
-        var md = new PageMarkdownOptions(Wikilink);
+        var md = new PageMarkdownOptions(Wikilink) { Math = MathHtml };
         var toc = new List<(string Id, string Anchor, string Title, bool Menu)>();
         foreach (var sec in sections)
         {
@@ -615,7 +615,7 @@ public sealed partial class PageEngine
         var secCss = new List<string>();
         var c = new RenderContext
         {
-            Md = md, Note = NoteOf, Notes = NotesFor, NoteAnchor = NoteAnchor, MdNote = (d, shift) => new PageMarkdownOptions(Wikilink, shift, NoteAnchor(d) + "-"),
+            Md = md, Note = NoteOf, Notes = NotesFor, NoteAnchor = NoteAnchor, MdNote = (d, shift) => new PageMarkdownOptions(Wikilink, shift, NoteAnchor(d) + "-") { Math = MathHtml },
             Toc = toc, BookEntries = entries, BookStyle = S(L, "chapterStyle"), Preview = preview, Css = secCss, BookFormat = book
         };
         var bodyParts = new List<string>();

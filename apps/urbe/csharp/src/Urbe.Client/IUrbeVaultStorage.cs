@@ -30,6 +30,16 @@ public interface IUrbeVaultStorage
     string? VaultName => null;
 
     /// <summary>
+    /// The vault as the import/restore transaction sees it (ImportTransaction: exclusive writer, every file listed,
+    /// read and written byte for byte, removed); null when the host cannot restore. While the transaction holds it no
+    /// other write runs, and afterwards the host's view of the folder is refreshed.
+    /// </summary>
+    IImportStorage? ImportStorage => null;
+
+    /// <summary>abrirCidade(Disco.cidade): the folder already open read again from disk (after a restore); null when none is open.</summary>
+    Task<VaultSnapshot?> ReloadAsync(CancellationToken cancellationToken = default) => Task.FromResult<VaultSnapshot?>(null);
+
+    /// <summary>
     /// Every file of the vault as it is on disk now, notes and attachments alike (exportarVault reads them all for the
     /// .zip), without following links out of the folder and within the same limits as the open. Read only: nothing is
     /// written. Hosts must override it.
@@ -242,6 +252,47 @@ public interface IUrbeVaultStorage
     /// </summary>
     Task SaveHistoryAsync(string historyJson, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException("Este armazenamento ainda não grava as versões anteriores.");
+
+    /// <summary>
+    /// Rewrites .urbe/identity.json (identity.js: {version:1, docs:{id:{path, fingerprint, seen}}}), the derived record
+    /// that lets a note renamed outside the app keep its house, with the trash's safeguards. Hosts must override it.
+    /// </summary>
+    Task SaveIdentityAsync(byte[] identityJson, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não grava a identidade das notas.");
+
+    /// <summary>
+    /// Appends a maintenance record to .urbe/vault.json (P.recordMaintenance: {kind, at, …}, the last 20 kept), with the
+    /// trash's safeguards: a vault.json of a newer format, a protected vault or an interrupted operation is never written.
+    /// </summary>
+    Task SaveMaintenanceAsync(System.Text.Json.Nodes.JsonObject maintenance, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não registra manutenções.");
+
+    static (string Path, byte[] Bytes) PlanMaintenanceWrite(IReadOnlyList<VaultFile> files, System.Text.Json.Nodes.JsonObject maintenance)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(maintenance);
+        const string meta = ".urbe/vault.json";
+        var snapshot = VaultReader.Read(files);
+        var current = files.FirstOrDefault(f => string.Equals(f.Path, meta, StringComparison.OrdinalIgnoreCase));
+        if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal || snapshot.FormatState is VaultFormatState.Future or VaultFormatState.Corrupt ||
+            snapshot.FutureFiles.Any(f => string.Equals(f, meta, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Formato futuro de vault ou operação interrompida: escrita recusada.");
+        return (current?.Path ?? meta, VaultWriter.SetVaultMaintenance(current?.Bytes, "urbe-native-preview", DateTimeOffset.UtcNow, (System.Text.Json.Nodes.JsonObject)maintenance.DeepClone()));
+    }
+
+    /// <summary>The checks of an identity rewrite: never over a sidecar of a newer version, a protected vault or an interrupted operation.</summary>
+    static (string Path, byte[] Bytes) PlanIdentityWrite(IReadOnlyList<VaultFile> files, byte[] identityJson)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(identityJson);
+        var snapshot = VaultReader.Read(files);
+        var path = files.FirstOrDefault(f => string.Equals(f.Path, VaultIdentity.Path, StringComparison.OrdinalIgnoreCase))?.Path ?? VaultIdentity.Path;
+        if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal ||
+            snapshot.FutureFiles.Any(f => string.Equals(f, path, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Formato futuro de vault, identidade protegida ou operação interrompida: escrita recusada.");
+        if (VaultIdentity.Parse(identityJson, out _) is null) throw new InvalidDataException("Identidade das notas inválida.");
+        return (path, identityJson);
+    }
 
     /// <summary>The checks of a history rewrite on these files: version 2 JSON, never over a file the 1.8.4 would keep.</summary>
     static (string Path, byte[] Bytes) PlanHistoryWrite(IReadOnlyList<VaultFile> files, string historyJson)

@@ -11,7 +11,14 @@ namespace Urbe.Client;
 /// (<see cref="Core.VaultFileKinds"/>), with its bytes when they were read, and the vault it comes from so a platform
 /// can reach the file itself (a large video is played from the vault, not loaded into memory).
 /// </summary>
-public sealed record ContentRequest(IUrbeVaultStorage? Storage, string Path, string Name, string Kind, byte[]? Bytes);
+public sealed record ContentRequest(IUrbeVaultStorage? Storage, string Path, string Name, string Kind, byte[]? Bytes)
+{
+    /// <summary>
+    /// The studio's preview: the page's messages ({urbePage:"select"|"text",…} as JSON, what the 1.8.4 preview posts to its
+    /// parent) are handed here, on the UI thread; null for every other viewer (isolated, no way back to the app).
+    /// </summary>
+    public Action<string>? Messages { get; init; }
+}
 
 /// <summary>
 /// The content viewers inside the Urbe (owner, ADD-0023: "dá um jeito da visualização aparecer no próprio Urbe,
@@ -27,6 +34,12 @@ public static class ContentViewers
 
     /// <summary>The platform's PDF document reader (the pages are drawn by <see cref="PdfPagesView"/>), or null.</summary>
     public static Func<ContentRequest, CancellationToken, Task<IPdfDocument?>>? PdfReader { get; set; }
+
+    /// <summary>
+    /// printPdf(): the platform prints this HTML (the system's print dialog, where "Salvar como PDF" is one of the
+    /// printers), named after the page; null when the platform cannot print.
+    /// </summary>
+    public static Func<string, string, Task>? Printer { get; set; }
 
     /// <summary>A viewer for <paramref name="request"/>: a PDF by the platform's reader, anything else by its factory.</summary>
     public static async Task<Control?> CreateAsync(ContentRequest request, CancellationToken cancellationToken = default)

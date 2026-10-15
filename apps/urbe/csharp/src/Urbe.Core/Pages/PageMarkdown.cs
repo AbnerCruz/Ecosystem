@@ -5,7 +5,11 @@ using System.Text.RegularExpressions;
 namespace Urbe.Core.Pages;
 
 /// <summary>The Markdown options of src/pages/engine.js (o.wikilink, o.shift, o.idPrefix).</summary>
-public sealed record PageMarkdownOptions(Func<string, string?, string>? Wikilink = null, int Shift = 0, string IdPrefix = "");
+public sealed record PageMarkdownOptions(Func<string, string?, string>? Wikilink = null, int Shift = 0, string IdPrefix = "")
+{
+    /// <summary>UrbeMath when the app has it (markdown(): formulas drawn, the rest as Markdown); null = text as written.</summary>
+    public Func<string, bool, string>? Math { get; init; }
+}
 
 /// <summary>
 /// The Markdown of the 1.8.4's pages (engine.js inline/markdownRaw/list/plain/excerpt/slug/stripTitle): GFM essentials,
@@ -123,8 +127,44 @@ public static class PageMarkdown
     private static readonly Regex ListItem = new(@"^\s*([-*+]|[0-9]+[.)])\s+");
     private static readonly Regex Continuation = new(@"^\s{2,}\S");
 
-    /// <summary>markdown(src, o) — markdownRaw: front matter skipped, blocks in the 1.8.4's order.</summary>
+    private const char OpenI = '\uE000', CloseI = '\uE001', OpenB = '\uE002', CloseB = '\uE003';
+
+    /// <summary>
+    /// markdown(src, o) of engine.js: with UrbeMath, the formulas are swapped for markers that survive the Markdown, then
+    /// restored drawn (math/core.js extract/restore: a block formula alone in a paragraph is a block); else markdownRaw.
+    /// </summary>
     public static string Markdown(string? src, PageMarkdownOptions? o = null)
+    {
+        if (o?.Math is not { } math) return MarkdownRaw(src, o);
+        var s = src ?? "";
+        var items = MathEditing.Scan(s);
+        if (items.Count == 0) return MarkdownRaw(src, o);
+        var text = new System.Text.StringBuilder();
+        int last = 0;
+        for (int k = 0; k < items.Count; k++)
+        {
+            var it = items[k];
+            text.Append(s, last, it.Start - last).Append(it.Block ? OpenB : OpenI).Append(k.ToString(CultureInfo.InvariantCulture)).Append(it.Block ? CloseB : CloseI);
+            last = it.End;
+        }
+        text.Append(s, last, s.Length - last);
+        var html = MarkdownRaw(text.ToString(), o with { Math = null });
+        string Atom(int k, bool block)
+        {
+            if (k < 0 || k >= items.Count) return "";
+            var it = items[k];
+            var attrs = " data-tex=\"" + Esc(it.Tex) + "\" data-open=\"" + Esc(it.Open) + "\" data-close=\"" + Esc(it.Close) + "\"";
+            return block ? "<div class=\"umath umath-block\"" + attrs + ">" + math(it.Tex, true) + "</div>"
+                : "<span class=\"umath" + (it.Display ? " umath-display" : "") + "\"" + attrs + ">" + math(it.Tex, it.Display) + "</span>";
+        }
+        int N(Match m) => int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
+        html = Regex.Replace(html, "<p>\\s*" + OpenB + "(\\d+)" + CloseB + "\\s*</p>", m => Atom(N(m), true));
+        html = Regex.Replace(html, OpenB + "(\\d+)" + CloseB, m => Atom(N(m), false));
+        return Regex.Replace(html, OpenI + "(\\d+)" + CloseI, m => Atom(N(m), false));
+    }
+
+    /// <summary>markdownRaw(src, o): front matter skipped, blocks in the 1.8.4's order.</summary>
+    public static string MarkdownRaw(string? src, PageMarkdownOptions? o = null)
     {
         o ??= new PageMarkdownOptions();
         var lines = (src ?? "").Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');

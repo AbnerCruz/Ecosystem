@@ -79,6 +79,18 @@ public interface IPluginApi
 
     /// <summary><see cref="PluginPermissions.Data"/>: keeps (or with null, removes) the plugin's own value on this device.</summary>
     void SetData(string key, string? value);
+
+    /// <summary><see cref="PluginPermissions.Buttons"/>: a button in the editor's top bar.</summary>
+    void EditorButton(string title, string icon, Func<Task> run);
+
+    /// <summary><see cref="PluginPermissions.WriteNotes"/>: text at the caret of the note open in the editor.</summary>
+    void InsertText(string text);
+
+    /// <summary><see cref="PluginPermissions.ReadNotes"/>: opens a note in the editor.</summary>
+    void OpenNote(string path);
+
+    /// <summary>The note open in the editor, or null.</summary>
+    string? OpenNotePath { get; }
 }
 
 /// <summary>A plugin's floating panel.</summary>

@@ -355,6 +355,33 @@ public sealed class SearchFeature
         Register("editor.split.open", "Abrir em painel dividido", "Editor", () => _ = view.ChooseSplitAsync());
         Register("editor.split.close", "Fechar painel dividido", "Editor", view.CloseSplit, () => view.SplitState.Enabled);
         Register("editor.split.swap", "Trocar painéis", "Editor", view.SwapSplit, () => view.SplitState.Enabled);
+        // the rest of the 1.8.4's commands (and so their shortcuts: Mod+W, Alt+←/→)
+        Register("editor.back", "Voltar", "Navegação", () => _ = view.Editor.BackAsync(), () => view.Editor.IsVisible);
+        Register("editor.forward", "Avançar", "Navegação", () => _ = view.Editor.ForwardAsync(), () => view.Editor.IsVisible && view.Editor.CanForward);
+        Register("editor.closeTab", "Fechar aba", "Editor", () => { if (view.Editor.Current is { } n) _ = view.Editor.CloseTabAsync(n.Path); }, () => view.Editor.IsVisible);
+        Register("editor.undo", "Desfazer", "Editor", view.Editor.Undo, () => view.Editor.IsVisible);
+        Register("editor.redo", "Refazer", "Editor", view.Editor.Redo, () => view.Editor.IsVisible);
+        Register("editor.contextPanel", "Outline e backlinks", "Editor", view.ShowEditorContext, () => view.Editor.IsVisible);
+        Register("editor.session.restore", "Restaurar sessão", "Editor", () => { if (!view.RestoreSession()) view.Notify("Nenhuma sessão para restaurar."); });
+        Register("history.restore", "Restaurar versão", "Editor", () => _ = view.ShowVersionsAsync(), () => view.Editor.IsVisible);
+        Register("math.insert", "Inserir fórmula", "Editor", () => _ = view.Editor.StartFormulaAsync(false), () => view.Editor.IsVisible);
+        Register("trash.restore", "Restaurar da lixeira", "Notas", () => { view.ShowNotes(); view.ShowTrashView(); });
+        Register("customize.reset", "Restaurar aparência padrão", "Personalização", () => _ = view.Customization.ResetAsync());
+        Register("customize.edit-file", "Abrir tema.json", "Personalização", () => _ = view.EditThemeFileAsync());
+        Register("ui.plugins", "Plugins", "Personalização", () => view.Customize.Open("plugins"));
+        Register("plugins.reload", "Recarregar plugins", "Personalização", view.SyncPlugins);
+        Register("pages.open", "Abrir página no estúdio", "Páginas", () => _ = view.ChoosePageForStudioAsync());
+        Register("tutorial.open", "Tutorial", "Ajuda", () => _ = view.ShowTutorialMenuAsync());
+        Register("tutorial.restore", "Restaurar o Tutorial", "Ajuda", () => _ = view.RestoreTutorialAsync(true));
+        Register("editor.find", "Localizar no documento", "Editor", view.Editor.FindBar.Open, () => view.Editor.IsVisible);
+        Register("editor.replace", "Substituir no documento", "Editor", view.Editor.FindBar.Open, () => view.Editor.IsVisible);
+        Register("pages.new", "Nova página", "Páginas", () => _ = view.NewPageAsync());
+        Register("workspace.backups", "Backups do vault", "Workspace", () => _ = view.ShowBackupsAsync());
+        Register("workspace.cleanOrphans", "Limpar referências órfãs", "Workspace", () => _ = view.CleanOrphansAsync());
+        Register("workspace.diagnostics", "Diagnóstico do workspace", "Workspace", () => _ = view.ShowDiagnosticsAsync());
+        Register("tutorial.menu", "Tutorial: abrir ou restaurar", "Ajuda", () => _ = view.ShowTutorialMenuAsync());
+        Register("ui.settings", "Configurações", "Aplicativo", () => _ = view.ShowSettingsAsync());
+        Register("ui.assistant", "Assistente", "Aplicativo", view.ToggleAssistant);
 
         // document.addEventListener('keydown'): on the top level, so it works with nothing focused too
         void Hook()

@@ -1,0 +1,1820 @@
+{
+ "source": "apps/urbe 1.8.4-beta src/pages/free.js in node:vm",
+ "notes": {
+  "Diário/Hoje.md": {
+   "title": "Hoje",
+   "path": "Diário/Hoje.md",
+   "content": "# Hoje\n\nPrimeiro parágrafo.\n\n## Seção\n\n> uma citação\n\n---\n\n![foto](img/a.png)\n\nFim."
+  }
+ },
+ "paragraphs": [
+  {
+   "type": "text",
+   "content": {
+    "text": "Um parágrafo com **negrito**."
+   }
+  },
+  {
+   "type": "heading",
+   "content": {
+    "text": "Título interno",
+    "level": 4
+   }
+  },
+  {
+   "type": "quote",
+   "content": {
+    "text": "citação\nsegunda linha"
+   }
+  },
+  {
+   "type": "text",
+   "content": {
+    "text": "> [!nota] callout fica texto"
+   }
+  },
+  {
+   "type": "divider"
+  },
+  {
+   "type": "image",
+   "content": {
+    "src": "https://x.y/z.png",
+    "alt": "alt"
+   }
+  },
+  {
+   "type": "text",
+   "content": {
+    "text": "Último."
+   }
+  }
+ ],
+ "md": "Um parágrafo com **negrito**.\n\n### Título interno\n\n> citação\n> segunda linha\n\n> [!nota] callout fica texto\n\n***\n\n![alt](https://x.y/z.png)\n\nÚltimo.",
+ "runs": [
+  {
+   "type": "text",
+   "props": null,
+   "section": {
+    "type": "text",
+    "props": {
+     "title": "",
+     "markdown": "Escreva aqui em **Markdown**.",
+     "columns": 1
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "div"
+    },
+    "style": {
+     "gap": "14px"
+    },
+    "children": [
+     {
+      "type": "text",
+      "content": {
+       "text": "Escreva aqui em **Markdown**."
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "text",
+   "props": {
+    "title": "Sobre",
+    "markdown": "Um parágrafo com **negrito**.\n\n### Título interno\n\n> citação\n> segunda linha\n\n> [!nota] callout fica texto\n\n***\n\n![alt](https://x.y/z.png)\n\nÚltimo."
+   },
+   "section": {
+    "type": "text",
+    "props": {
+     "title": "Sobre",
+     "markdown": "Um parágrafo com **negrito**.\n\n### Título interno\n\n> citação\n> segunda linha\n\n> [!nota] callout fica texto\n\n***\n\n![alt](https://x.y/z.png)\n\nÚltimo.",
+     "columns": 1
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "div"
+    },
+    "style": {
+     "gap": "14px"
+    },
+    "children": [
+     {
+      "type": "heading",
+      "content": {
+       "text": "Sobre",
+       "level": 2
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Um parágrafo com **negrito**."
+      }
+     },
+     {
+      "type": "heading",
+      "content": {
+       "text": "Título interno",
+       "level": 4
+      }
+     },
+     {
+      "type": "quote",
+      "content": {
+       "text": "citação\nsegunda linha"
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "> [!nota] callout fica texto"
+      }
+     },
+     {
+      "type": "divider"
+     },
+     {
+      "type": "image",
+      "content": {
+       "src": "https://x.y/z.png",
+       "alt": "alt"
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Último."
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "hero",
+   "props": null,
+   "section": {
+    "type": "hero",
+    "props": {
+     "eyebrow": "",
+     "title": "Um título que diz tudo",
+     "subtitle": "Uma frase curta que explica o que é, para quem é e por que importa.",
+     "buttons": [],
+     "image": "",
+     "layout": "center",
+     "height": "tall",
+     "stack": false
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "l",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "header"
+    },
+    "style": {
+     "gap": "18px",
+     "align": "center",
+     "textAlign": "center",
+     "minHeight": "70vh",
+     "justify": "center"
+    },
+    "children": [
+     {
+      "type": "heading",
+      "content": {
+       "text": "Um título que diz tudo",
+       "level": 1
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Uma frase curta que explica o que é, para quem é e por que importa."
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "hero",
+   "props": {
+    "eyebrow": "Novidade",
+    "title": "Grande título",
+    "subtitle": "Linha um.\n\nLinha dois.",
+    "image": "https://x.y/h.png",
+    "layout": "center",
+    "height": "screen",
+    "buttons": [
+     {
+      "label": "Ir",
+      "url": "#a",
+      "variant": "primary"
+     },
+     {
+      "label": "",
+      "url": "#b"
+     }
+    ]
+   },
+   "section": {
+    "type": "hero",
+    "props": {
+     "eyebrow": "Novidade",
+     "title": "Grande título",
+     "subtitle": "Linha um.\n\nLinha dois.",
+     "buttons": [
+      {
+       "label": "Ir",
+       "url": "#a",
+       "variant": "primary"
+      },
+      {
+       "label": "Saiba mais",
+       "url": "#b",
+       "variant": "primary"
+      }
+     ],
+     "image": "https://x.y/h.png",
+     "layout": "center",
+     "height": "screen",
+     "stack": false
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "l",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "header"
+    },
+    "style": {
+     "gap": "18px",
+     "align": "center",
+     "textAlign": "center",
+     "minHeight": "100vh",
+     "justify": "center"
+    },
+    "children": [
+     {
+      "type": "text",
+      "content": {
+       "text": "Novidade"
+      },
+      "style": {
+       "transform": "uppercase",
+       "spacing": ".12em",
+       "size": ".85rem",
+       "weight": "700"
+      }
+     },
+     {
+      "type": "heading",
+      "content": {
+       "text": "Grande título",
+       "level": 1
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Linha um."
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Linha dois."
+      }
+     },
+     {
+      "type": "image",
+      "content": {
+       "src": "https://x.y/h.png",
+       "alt": "Grande título"
+      },
+      "style": {
+       "radius": "16px"
+      }
+     },
+     {
+      "type": "box",
+      "content": {
+       "tag": "div"
+      },
+      "style": {
+       "display": "row",
+       "gap": "12px",
+       "minCol": "160px"
+      },
+      "children": [
+       {
+        "type": "button",
+        "content": {
+         "label": "Ir",
+         "url": "#a",
+         "variant": "primary"
+        }
+       },
+       {
+        "type": "button",
+        "content": {
+         "label": "Saiba mais",
+         "url": "#b",
+         "variant": "primary"
+        }
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "type": "quote",
+   "props": null,
+   "section": {
+    "type": "quote",
+    "props": {
+     "text": "Simplicidade é o último grau de sofisticação.",
+     "author": "Leonardo da Vinci",
+     "role": "",
+     "image": ""
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "div"
+    },
+    "style": {},
+    "children": [
+     {
+      "type": "quote",
+      "content": {
+       "text": "Simplicidade é o último grau de sofisticação.",
+       "author": "Leonardo da Vinci"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "quote",
+   "props": {
+    "text": "Frase",
+    "author": "Ana",
+    "role": "Autora"
+   },
+   "section": {
+    "type": "quote",
+    "props": {
+     "text": "Frase",
+     "author": "Ana",
+     "role": "Autora",
+     "image": ""
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "div"
+    },
+    "style": {},
+    "children": [
+     {
+      "type": "quote",
+      "content": {
+       "text": "Frase",
+       "author": "Ana, Autora"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "image",
+   "props": null,
+   "section": {
+    "type": "image",
+    "props": {
+     "src": "",
+     "alt": "",
+     "caption": "",
+     "size": "wide",
+     "rounded": true
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "div"
+    },
+    "style": {},
+    "children": [
+     {
+      "type": "image"
+     }
+    ]
+   }
+  },
+  {
+   "type": "image",
+   "props": {
+    "src": "https://x.y/i.png",
+    "alt": "",
+    "caption": "Legenda"
+   },
+   "section": {
+    "type": "image",
+    "props": {
+     "src": "https://x.y/i.png",
+     "alt": "",
+     "caption": "Legenda",
+     "size": "wide",
+     "rounded": true
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "div"
+    },
+    "style": {},
+    "children": [
+     {
+      "type": "image",
+      "content": {
+       "src": "https://x.y/i.png",
+       "alt": "Legenda",
+       "caption": "Legenda"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "bookcover",
+   "props": null,
+   "section": {
+    "type": "bookcover",
+    "props": {
+     "title": "O título do livro",
+     "subtitle": "",
+     "author": "Nome do autor",
+     "publisher": "",
+     "image": "",
+     "style": "classic"
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "header"
+    },
+    "style": {
+     "minHeight": "100%",
+     "padding": "12% 10%",
+     "gap": "14px",
+     "textAlign": "center",
+     "align": "center",
+     "bg": "#7a2e1f",
+     "color": "#f6efe2"
+    },
+    "children": [
+     {
+      "type": "heading",
+      "content": {
+       "text": "O título do livro",
+       "level": 1
+      },
+      "style": {
+       "size": "2.6em"
+      }
+     },
+     {
+      "type": "spacer",
+      "style": {
+       "css": "flex:1"
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Nome do autor"
+      },
+      "style": {
+       "transform": "uppercase",
+       "spacing": ".18em"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "bookcover",
+   "props": {
+    "title": "Livro",
+    "subtitle": "Sub",
+    "author": "Autor",
+    "publisher": "Editora"
+   },
+   "section": {
+    "type": "bookcover",
+    "props": {
+     "title": "Livro",
+     "subtitle": "Sub",
+     "author": "Autor",
+     "publisher": "Editora",
+     "image": "",
+     "style": "classic"
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "header"
+    },
+    "style": {
+     "minHeight": "100%",
+     "padding": "12% 10%",
+     "gap": "14px",
+     "textAlign": "center",
+     "align": "center",
+     "bg": "#7a2e1f",
+     "color": "#f6efe2"
+    },
+    "children": [
+     {
+      "type": "heading",
+      "content": {
+       "text": "Livro",
+       "level": 1
+      },
+      "style": {
+       "size": "2.6em"
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "*Sub*"
+      }
+     },
+     {
+      "type": "spacer",
+      "style": {
+       "css": "flex:1"
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Autor"
+      },
+      "style": {
+       "transform": "uppercase",
+       "spacing": ".18em"
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Editora"
+      },
+      "style": {
+       "size": ".78em",
+       "transform": "uppercase",
+       "spacing": ".14em",
+       "opacity": 0.75
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "titlepage",
+   "props": null,
+   "section": {
+    "type": "titlepage",
+    "props": {
+     "title": "O título do livro",
+     "subtitle": "",
+     "author": "Nome do autor",
+     "publisher": "",
+     "place": "",
+     "year": "2025"
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "div"
+    },
+    "style": {
+     "minHeight": "100%",
+     "gap": "14px",
+     "textAlign": "center",
+     "align": "center",
+     "justify": "between"
+    },
+    "children": [
+     {
+      "type": "text",
+      "content": {
+       "text": "Nome do autor"
+      },
+      "style": {
+       "transform": "uppercase",
+       "spacing": ".18em"
+      }
+     },
+     {
+      "type": "box",
+      "content": {
+       "tag": "div"
+      },
+      "style": {
+       "gap": "8px",
+       "align": "center"
+      },
+      "children": [
+       {
+        "type": "heading",
+        "content": {
+         "text": "O título do livro",
+         "level": 1
+        }
+       }
+      ]
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "2025"
+      },
+      "style": {
+       "size": ".85em"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "titlepage",
+   "props": {
+    "title": "Livro",
+    "subtitle": "",
+    "author": "Autor",
+    "publisher": "Ed",
+    "place": "Rio",
+    "year": "2025"
+   },
+   "section": {
+    "type": "titlepage",
+    "props": {
+     "title": "Livro",
+     "subtitle": "",
+     "author": "Autor",
+     "publisher": "Ed",
+     "place": "Rio",
+     "year": "2025"
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "div"
+    },
+    "style": {
+     "minHeight": "100%",
+     "gap": "14px",
+     "textAlign": "center",
+     "align": "center",
+     "justify": "between"
+    },
+    "children": [
+     {
+      "type": "text",
+      "content": {
+       "text": "Autor"
+      },
+      "style": {
+       "transform": "uppercase",
+       "spacing": ".18em"
+      }
+     },
+     {
+      "type": "box",
+      "content": {
+       "tag": "div"
+      },
+      "style": {
+       "gap": "8px",
+       "align": "center"
+      },
+      "children": [
+       {
+        "type": "heading",
+        "content": {
+         "text": "Livro",
+         "level": 1
+        }
+       }
+      ]
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Ed\n\nRio · 2025"
+      },
+      "style": {
+       "size": ".85em"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "dedication",
+   "props": null,
+   "section": {
+    "type": "dedication",
+    "props": {
+     "kind": "dedication",
+     "markdown": "Para quem sempre acreditou.",
+     "author": ""
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "div"
+    },
+    "style": {
+     "gap": "12px",
+     "justify": "center",
+     "minHeight": "100%",
+     "textAlign": "center"
+    },
+    "children": [
+     {
+      "type": "text",
+      "content": {
+       "text": "Para quem sempre acreditou."
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "dedication",
+   "props": {
+    "markdown": "Para você."
+   },
+   "section": {
+    "type": "dedication",
+    "props": {
+     "kind": "dedication",
+     "markdown": "Para você.",
+     "author": ""
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "div"
+    },
+    "style": {
+     "gap": "12px",
+     "justify": "center",
+     "minHeight": "100%",
+     "textAlign": "center"
+    },
+    "children": [
+     {
+      "type": "text",
+      "content": {
+       "text": "Para você."
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "copyright",
+   "props": null,
+   "section": {
+    "type": "copyright",
+    "props": {
+     "markdown": "Copyright © 2025 Nome do autor\n\nTodos os direitos reservados. Nenhuma parte desta obra pode ser reproduzida sem autorização por escrito do autor.\n\n1ª edição\n\n**Revisão:** Nome  \n**Capa:** Nome  \n**Diagramação:** Urbe\n\nISBN 000-00-00000-00-0"
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "div"
+    },
+    "style": {
+     "gap": "12px",
+     "justify": "end",
+     "minHeight": "100%"
+    },
+    "children": [
+     {
+      "type": "text",
+      "content": {
+       "text": "Copyright © 2025 Nome do autor"
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Todos os direitos reservados. Nenhuma parte desta obra pode ser reproduzida sem autorização por escrito do autor."
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "1ª edição"
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "**Revisão:** Nome  \n**Capa:** Nome  \n**Diagramação:** Urbe"
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "ISBN 000-00-00000-00-0"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "copyright",
+   "props": {
+    "markdown": "Copyright."
+   },
+   "section": {
+    "type": "copyright",
+    "props": {
+     "markdown": "Copyright."
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "div"
+    },
+    "style": {
+     "gap": "12px",
+     "justify": "end",
+     "minHeight": "100%"
+    },
+    "children": [
+     {
+      "type": "text",
+      "content": {
+       "text": "Copyright."
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "colophon",
+   "props": null,
+   "section": {
+    "type": "colophon",
+    "props": {
+     "markdown": "Este livro foi composto em EB Garamond e Cormorant Garamond e produzido com o Urbe."
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "div"
+    },
+    "style": {
+     "gap": "12px",
+     "justify": "end",
+     "minHeight": "100%",
+     "textAlign": "center"
+    },
+    "children": [
+     {
+      "type": "text",
+      "content": {
+       "text": "Este livro foi composto em EB Garamond e Cormorant Garamond e produzido com o Urbe."
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "colophon",
+   "props": {
+    "title": "Colofão",
+    "markdown": "Feito."
+   },
+   "section": {
+    "type": "colophon",
+    "props": {
+     "markdown": "Feito."
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "div"
+    },
+    "style": {
+     "gap": "12px",
+     "justify": "end",
+     "minHeight": "100%",
+     "textAlign": "center"
+    },
+    "children": [
+     {
+      "type": "text",
+      "content": {
+       "text": "Feito."
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "about",
+   "props": null,
+   "section": {
+    "type": "about",
+    "props": {
+     "title": "Sobre o autor",
+     "image": "",
+     "markdown": "Nome do autor nasceu em … e escreve sobre …"
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "div"
+    },
+    "style": {
+     "gap": "12px",
+     "justify": "center",
+     "minHeight": "100%"
+    },
+    "children": [
+     {
+      "type": "heading",
+      "content": {
+       "text": "Sobre o autor",
+       "level": 2
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Nome do autor nasceu em … e escreve sobre …"
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "about",
+   "props": {
+    "title": "Sobre o autor",
+    "markdown": "Um parágrafo com **negrito**.\n\n### Título interno\n\n> citação\n> segunda linha\n\n> [!nota] callout fica texto\n\n***\n\n![alt](https://x.y/z.png)\n\nÚltimo.",
+    "author": "Fulano"
+   },
+   "section": {
+    "type": "about",
+    "props": {
+     "title": "Sobre o autor",
+     "image": "",
+     "markdown": "Um parágrafo com **negrito**.\n\n### Título interno\n\n> citação\n> segunda linha\n\n> [!nota] callout fica texto\n\n***\n\n![alt](https://x.y/z.png)\n\nÚltimo."
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "div"
+    },
+    "style": {
+     "gap": "12px",
+     "justify": "center",
+     "minHeight": "100%"
+    },
+    "children": [
+     {
+      "type": "heading",
+      "content": {
+       "text": "Sobre o autor",
+       "level": 2
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Um parágrafo com **negrito**."
+      }
+     },
+     {
+      "type": "heading",
+      "content": {
+       "text": "Título interno",
+       "level": 4
+      }
+     },
+     {
+      "type": "quote",
+      "content": {
+       "text": "citação\nsegunda linha"
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "> [!nota] callout fica texto"
+      }
+     },
+     {
+      "type": "divider"
+     },
+     {
+      "type": "image",
+      "content": {
+       "src": "https://x.y/z.png",
+       "alt": "alt"
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Último."
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "part",
+   "props": null,
+   "section": {
+    "type": "part",
+    "props": {
+     "title": "Título da parte",
+     "markdown": ""
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "div"
+    },
+    "style": {
+     "gap": "12px",
+     "justify": "center",
+     "minHeight": "100%",
+     "textAlign": "center"
+    },
+    "children": [
+     {
+      "type": "heading",
+      "content": {
+       "text": "Parte  · Título da parte",
+       "level": 2
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "part",
+   "props": {
+    "title": "Início",
+    "markdown": "Abertura."
+   },
+   "section": {
+    "type": "part",
+    "props": {
+     "title": "Início",
+     "markdown": "Abertura."
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "div"
+    },
+    "style": {
+     "gap": "12px",
+     "justify": "center",
+     "minHeight": "100%",
+     "textAlign": "center"
+    },
+    "children": [
+     {
+      "type": "heading",
+      "content": {
+       "text": "Parte  · Início",
+       "level": 2
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Abertura."
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "chapter",
+   "props": null,
+   "section": {
+    "type": "chapter",
+    "props": {
+     "title": "Título do capítulo",
+     "source": "text",
+     "markdown": "Era uma vez uma cidade feita de notas.\n\nCada parágrafo ganha recuo na primeira linha, como num livro impresso.\n\n***\n\nUma linha com três asteriscos vira um ornamento de troca de cena.",
+     "path": "",
+     "epigraph": "",
+     "epigraphAuthor": "",
+     "numbered": true,
+     "dropCap": true
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "article"
+    },
+    "style": {
+     "gap": "14px"
+    },
+    "children": [
+     {
+      "type": "heading",
+      "content": {
+       "text": "Título do capítulo",
+       "level": 2
+      },
+      "style": {
+       "textAlign": "center",
+       "margin": "8% 0 6%"
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Era uma vez uma cidade feita de notas."
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Cada parágrafo ganha recuo na primeira linha, como num livro impresso."
+      }
+     },
+     {
+      "type": "divider"
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Uma linha com três asteriscos vira um ornamento de troca de cena."
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "chapter",
+   "props": {
+    "title": "",
+    "source": "note",
+    "path": "Diário/Hoje.md",
+    "epigraph": "Epígrafe",
+    "epigraphAuthor": "X"
+   },
+   "section": {
+    "type": "chapter",
+    "props": {
+     "title": "Título do capítulo",
+     "source": "note",
+     "markdown": "Era uma vez uma cidade feita de notas.\n\nCada parágrafo ganha recuo na primeira linha, como num livro impresso.\n\n***\n\nUma linha com três asteriscos vira um ornamento de troca de cena.",
+     "path": "Diário/Hoje.md",
+     "epigraph": "Epígrafe",
+     "epigraphAuthor": "X",
+     "numbered": true,
+     "dropCap": true
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "article"
+    },
+    "style": {
+     "gap": "14px"
+    },
+    "children": [
+     {
+      "type": "heading",
+      "content": {
+       "text": "Título do capítulo",
+       "level": 2
+      },
+      "style": {
+       "textAlign": "center",
+       "margin": "8% 0 6%"
+      }
+     },
+     {
+      "type": "quote",
+      "content": {
+       "text": "Epígrafe",
+       "author": "X"
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Primeiro parágrafo."
+      }
+     },
+     {
+      "type": "heading",
+      "content": {
+       "text": "Seção",
+       "level": 3
+      }
+     },
+     {
+      "type": "quote",
+      "content": {
+       "text": "uma citação"
+      }
+     },
+     {
+      "type": "divider"
+     },
+     {
+      "type": "image",
+      "content": {
+       "src": "img/a.png",
+       "alt": "foto"
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Fim."
+      }
+     }
+    ]
+   }
+  },
+  {
+   "type": "note",
+   "props": null,
+   "section": {
+    "type": "note",
+    "props": {
+     "path": "",
+     "showTitle": true,
+     "showMeta": false
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "article"
+    },
+    "style": {
+     "gap": "14px"
+    },
+    "children": []
+   }
+  },
+  {
+   "type": "note",
+   "props": {
+    "path": "Diário/Hoje.md",
+    "showTitle": true
+   },
+   "section": {
+    "type": "note",
+    "props": {
+     "path": "Diário/Hoje.md",
+     "showTitle": true,
+     "showMeta": false
+    },
+    "style": {
+     "anchor": "",
+     "menu": false,
+     "background": "none",
+     "image": "",
+     "padding": "m",
+     "width": "normal",
+     "align": "left",
+     "bgColor": "",
+     "textColor": "",
+     "boxed": false,
+     "minHeight": "none",
+     "animation": "",
+     "className": "",
+     "css": "",
+     "hidden": false
+    }
+   },
+   "free": {
+    "type": "box",
+    "content": {
+     "tag": "article"
+    },
+    "style": {
+     "gap": "14px"
+    },
+    "children": [
+     {
+      "type": "heading",
+      "content": {
+       "text": "Hoje",
+       "level": 1
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Primeiro parágrafo."
+      }
+     },
+     {
+      "type": "heading",
+      "content": {
+       "text": "Seção",
+       "level": 3
+      }
+     },
+     {
+      "type": "quote",
+      "content": {
+       "text": "uma citação"
+      }
+     },
+     {
+      "type": "divider"
+     },
+     {
+      "type": "image",
+      "content": {
+       "src": "img/a.png",
+       "alt": "foto"
+      }
+     },
+     {
+      "type": "text",
+      "content": {
+       "text": "Fim."
+      }
+     }
+    ]
+   }
+  }
+ ]
+}
