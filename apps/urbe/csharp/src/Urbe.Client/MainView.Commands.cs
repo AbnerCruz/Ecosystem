@@ -1,0 +1,63 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Urbe.Core;
+
+namespace Urbe.Client;
+
+/// <summary>
+/// The rest of the 1.8.4's commands (core.commands): the editor's session (editor.session.restore, kept on this device
+/// as editor/workspace.js kept it in localStorage), Abrir tema.json (customize.edit-file) and the helpers the palette
+/// and the keyboard shortcuts call.
+/// </summary>
+public sealed partial class MainView
+{
+    private const string SessionKey = "urbe.editor.workspace.v1";
+
+    private void WatchSession()
+    {
+        Editor.Shown += _ => SaveSession();
+        Editor.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) SaveSession(); };
+    }
+
+    /// <summary>persist(): the open tabs and the active note, on this device.</summary>
+    private void SaveSession()
+    {
+        if (_vault is null || Editor.Tabs.Count == 0) return;
+        var o = new JsonObject
+        {
+            ["tabs"] = new JsonArray(Editor.Tabs.Select(t => (JsonNode)JsonValue.Create(t)).ToArray()),
+            ["activeId"] = Editor.IsVisible ? Editor.Current?.Path : null,
+            ["vault"] = _vault.VaultName
+        };
+        Customization.Device.Set(SessionKey, o.ToJsonString());
+    }
+
+    /// <summary>editor.session.restore: reopens the tabs of the last session of this vault.</summary>
+    public bool RestoreSession()
+    {
+        try
+        {
+            if (Customization.Device.Get(SessionKey) is not { } text || JsonNode.Parse(text) is not JsonObject o) return false;
+            if ((string?)o["vault"] != _vault?.VaultName) return false;
+            var tabs = (o["tabs"] as JsonArray ?? []).Select(x => (string?)x).OfType<string>().Where(_contents.ContainsKey).ToList();
+            if (tabs.Count == 0) return false;
+            CityMap.IsVisible = false;
+            Explorer.IsVisible = false;
+            Editor.RestoreSession(tabs, (string?)o["activeId"]);
+            return true;
+        }
+        catch (JsonException) { return false; }
+    }
+
+    /// <summary>customize.edit-file: Personalização/tema.json in the editor (written first when the vault has none).</summary>
+    public async Task EditThemeFileAsync()
+    {
+        if (!_contents.ContainsKey(LegacyCustomize.FilePath))
+        {
+            if (!VaultWritable) { await Dialogs.AlertAsync("Abrir tema.json", NoVaultMessage); return; }
+            await Customization.SaveAsync(Customization.Config);
+            if (!_contents.ContainsKey(LegacyCustomize.FilePath)) await WriteVaultFileAsync(LegacyCustomize.FilePath, "{\n  \"$schema\": \"urbe-tema-1\"\n}\n", exists: false);
+        }
+        OpenNoteByPath(LegacyCustomize.FilePath);
+    }
+}

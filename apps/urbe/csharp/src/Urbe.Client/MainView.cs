@@ -192,6 +192,8 @@ public sealed partial class MainView : Grid
         World.RegionTapped += region => { if (!Dialogs.IsOpen && World.Tool is null) BeginRegionShape(region); };
         RestoreTouchDebug();
         WatchErrors();
+        WatchSession();
+        WatchTips();
         WireSplit();
     }
 
@@ -387,6 +389,8 @@ public sealed partial class MainView : Grid
         if (_brandPill is not null) ToolTip.SetTip(_brandPill, "Salvo na pasta escolhida no dispositivo");
         if (store is null || opened is null || !ReferenceEquals(World.City, opened)) return;
         _store = store;
+        VaultNotices(snapshot);
+        TipsLoaded();
         if (opened.MigratedFromWorld is { } from) await AdaptedToNewWorldAsync(snapshot, opened, from);
         else StartMapSaves(snapshot, opened);
         // tutorial.js: workspace:loaded → setTimeout(semear, 300)
@@ -692,6 +696,7 @@ public sealed partial class MainView : Grid
         items.Add(new("Importar arquivos", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync()));
         if (_vault is not null)
             items.Add(new("Pasta no dispositivo", UrbeTheme.Icons.Storage, "Onde os arquivos ficam salvos", Run: () => OpenVaultAsync()));
+        items.Add(new("Assistente", UrbeTheme.Icons.Assistant, "Agentes que pesquisam, escrevem e organizam o vault", Run: () => { ToggleAssistant(); return Task.CompletedTask; }));
         items.Add(new("Páginas", UrbeTheme.Icons.Page, "Sites e páginas HTML do vault", Run: () => { ShowPages(); return Task.CompletedTask; }));
         items.Add(new("Diagnóstico de toques", UrbeTheme.Icons.Select, TouchDebugOn ? "Ligado — toque para desligar" : "Para descobrir botões que não respondem", Run: ToggleTouchDebugAsync));
         if (CrashLog.Read().Length > 0)

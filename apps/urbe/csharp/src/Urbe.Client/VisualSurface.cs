@@ -72,6 +72,9 @@ public sealed class VisualSurface : StackPanel
     }
 
     /// <summary>Leaves the block being edited (its text is already in <see cref="Text"/>) and draws it again.</summary>
+    public void Undo() => _box?.Undo();
+    public void Redo() => _box?.Redo();
+
     public void FinishEdit()
     {
         if (_box is null) return;
