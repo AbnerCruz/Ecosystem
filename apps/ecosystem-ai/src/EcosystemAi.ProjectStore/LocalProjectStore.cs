@@ -97,6 +97,23 @@ public sealed class LocalProjectStore
         });
     }
 
+    /// <summary>Rebind an existing workspace path after the Host resolves its private OS alias.
+    /// Does not move files, change identity/history, or authorize agent access.</summary>
+    public void RebindWorkspace(string projectId, string expectedDirectory, string directory)
+    {
+        CheckId(projectId);
+        var expected = Path.GetFullPath(expectedDirectory);
+        var resolved = Path.GetFullPath(directory);
+        if (!Directory.Exists(resolved)) throw new DirectoryNotFoundException("Workspace inexistente.");
+        Change(state =>
+        {
+            var project = FindProject(state, projectId);
+            if (project.WorkspaceDirectory != expected)
+                throw new InvalidOperationException("O caminho do workspace mudou; releia o catálogo.");
+            return (ReplaceProject(state, project with { WorkspaceDirectory = resolved }), true);
+        });
+    }
+
     public void AppendTurn(string projectId, string sessionId, string role, string text)
     {
         CheckId(projectId); CheckId(sessionId);

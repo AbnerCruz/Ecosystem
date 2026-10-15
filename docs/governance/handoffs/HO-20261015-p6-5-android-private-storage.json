@@ -1,0 +1,109 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261015-p6-5-android-private-storage",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-15T04:41:09.971987Z",
+  "agent": {
+    "id": "codex-android-storage",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "fix/android-private-storage-20261015",
+  "base_commit": "f379a37b291283744e216e183c086bc0613d95ba",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/570",
+  "files_changed": [
+    "apps/ecosystem-ai/docs-r4-android-native.md",
+    "apps/ecosystem-ai/src/EcosystemAi.Android/MainActivity.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.ProjectStore/LocalProjectStore.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4WebAgentTeamsTests.cs",
+    "apps/ecosystem-ai/tools/smoke-android-preview.sh",
+    "apps/ecosystem-ai/tools/smoke-android-project.py",
+    "docs/governance/handoffs/HO-20261015-p6-5-android-private-storage.json"
+  ],
+  "work_completed": [
+    "Print do proprietário após PR568 mostra Operação não concluída: Roster não aceita diretórios simbólicos. Não é evidência de uso completo do app.",
+    "Host Android usa FilesDir.CanonicalPath antes de abrir stores; proteção contra symlinks dos stores intacta.",
+    "Workspaces GUID privados registrados sob alias anterior são rebindados somente após validação do destino canônico exato, sem mover dados nem mudar schema, IDs ou histórico; caminho divergente falha fechado.",
+    "Teste automatizado amplia home-only para criar projeto/agente/conversa, matar processo e reabrir por raiz privada simbolizada no emulador descartável. Adicionado teste de persistência/rebind e recusa de links reais pelo roster.",
+    "Rebind compara o destino canônico exato da pasta GUID privada para aceitar grafias equivalentes de alias sem adotar outro destino.",
+    "Smoke preserva UID/contexto SELinux do app no alias sintético, rola até conversa em tela pequena e confirma fechamento do diálogo antes de avançar.",
+    "APK arm64 entregue: SHA256 16a3fd70f4e42c3c90bcc41d026e4d087ea5f523e47385dc579dfaae14649d71, versionCode 29867315 e certificado SHA256 bc5402adb12de1613402e6364ee8faa3cb4124cafd0dcda2e05c5e36a6569dfa, mesma assinatura do APK anterior."
+  ],
+  "verification": [
+    {
+      "check": "Sintaxe Python/shell e whitespace",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "python -m py_compile, bash -n e git diff --check locais."
+    },
+    {
+      "check": "Product tests e Android13: projeto/agente/conversa/reabertura por alias",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "ecosystem-ai-ci run 38682168113: test e android verdes. Job Android 116248910925 registra project passed e launch passed às 04:39:36Z. Reabriu processo por symlink privado, conferiu conversa, roster e identidade do diretório; dados preservados e sem provider. Artifact 11948159166.",
+      "tested_commit": "da1fec59b8715e2fc2a801569352c88cc217da2d"
+    },
+    {
+      "check": "Assinatura, identidade, versionCode e digest do APK entregue",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "ZIP SHA256 b4e68067d3a85fb72e0c854e09a0483bbfa1ac4a452d8927c7db4905bbb90527 e SHA256SUMS conferidos; APK certificado igual ao anterior, package io.ecosystem.ai.preview, versionCode 29867315 > 29867039. CI apksigner verifica scheme v3; inspeção local do certificado e manifesto confirma a atualização.",
+      "tested_commit": "da1fec59b8715e2fc2a801569352c88cc217da2d"
+    },
+    {
+      "check": "Criar e reabrir projeto/conversa no moto g32",
+      "kind": "human",
+      "result": "pending",
+      "evidence": "Print atual reproduz recusa de diretório simbólico. Revalidar o novo APK depois do ensaio automatizado.",
+      "object": "apps/ecosystem-ai/docs-r4-android-native.md",
+      "critical": true
+    }
+  ],
+  "known_issues": [
+    "Emulador x86_64 não valida hardware arm64. DEVICE no moto g32 e demais critérios P6-5 permanecem pendentes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Conferir a revisão final do teste e integração automática. O código do APK entregue corresponde a da1fec59; ajustes seguintes são somente automação/handoff.",
+    "Revalidar criação/reabertura de projeto no moto g32 com o APK SHA256 16a3fd70f4e42c3c90bcc41d026e4d087ea5f523e47385dc579dfaae14649d71."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md",
+    "apps/ecosystem-ai/docs-r4-android-native.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Sintoma, scripts, resultado e próximas ações registrados neste handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Ensaio automatizado de abertura é distinto de DEVICE no moto g32."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P6-5 permanece aberta e crash não é declarado corrigido antes de prova."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "android-private-root-alias",
+      "status": "product-specific",
+      "rationale": "Normalização no Host Android e rebind local do catálogo; não cria abstração compartilhada."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Correção de caminho privado fornecido pelo Android e preservação dos projetos da prévia; não altera permissões, segurança dos stores, schema, assinatura, workflows ou política."
+  }
+}

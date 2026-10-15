@@ -64,6 +64,21 @@ não intercepta esse abort nativo. Os catálogos continuam usando reflexão e os
 mesmos formatos; ativar AOT novamente exige repetir o teste de abertura e DEVICE.
 A escolha pode afetar o desempenho de inicialização; não houve benchmark no moto g32.
 
+### Diretório privado Android
+
+O Host resolve `FilesDir.CanonicalPath` antes de construir catálogo, journal e
+workspaces. O Android pode expor o mesmo diretório por um alias em `/data/data`
+ou `/data/user/0`; passar o caminho absoluto sem resolver esse alias fazia o
+roster recusar a tela do projeto com “Roster não aceita diretórios simbólicos”.
+A proteção dos stores permanece: links em catálogo, roster, locks e workspaces
+não são liberados. Não há exceção global para symlinks.
+
+Para projetos criados pela prévia anterior, o Host atualiza somente o caminho
+do seu próprio workspace GUID sob o alias privado, após conferir o destino
+canônico exato. IDs, sessões, mensagens e arquivos permanecem; nenhum arquivo
+é movido e o schema v1 não muda. Caminhos que não resolvem exatamente à pasta GUID privada não são reescritos. A troca
+usa lock/revisão/checksum do catálogo e recusa caminho alterado por concorrência.
+
 ## Identidade e assinatura da prévia
 
 Package de teste separado `io.ecosystem.ai.preview`; versão deriva de `VERSION`
@@ -86,6 +101,11 @@ num emulador Android 13 Google APIs x86_64, abre a Activity pelo
 launcher e exige processo vivo e tela inicial de projetos. Falha de boot, instalação,
 crash ou tela de diagnóstico reprova o teste; logcat acompanha a evidência. O ensaio
 exige KVM no runner e usa apenas um emulador novo, sem dados nem provider real.
+O ensaio também cria projeto, agente e conversa offline e mata/reabre o processo.
+Num emulador descartável com adb root, transforma o diretório privado em link
+para o mesmo conteúdo, confirmando abertura do projeto, rebind do caminho e
+preservação de IDs/histórico/roster. Essa montagem existe somente no teste;
+o APK não altera os aliases do sistema nem recebe root.
 O APK distribuído continua arm64; esse ensaio não substitui o teste no moto g32.
 
 Falhas de inicialização da Activity são capturadas numa tela local segura; o código de diagnóstico é derivado do tipo/stack sem exibir mensagem, caminho, conversa ou token. O app não tenta reparar nem apagar o catálogo automaticamente.
