@@ -10,6 +10,8 @@ namespace Urbe.Core;
 /// <item><c>#Tag: texto</c> at the start of a paragraph — the paragraph takes the style of that tag (#Todo, #Ideia…).</item>
 /// <item><c>palavra{"comentário"}{"outro"}</c> — comments on a word (UC-49): a 💬 over the word opens them; left out of
 /// pages and exported HTML like <c>%%…%%</c>.</item>
+/// <item><c>{ia:"modelo"}</c> — the mark the Assistente leaves after the text it wrote (UC-51): shown as a tiny green
+/// "modelo" in the editor.</item>
 /// </list>
 /// Applied over the rendered tree (<see cref="MarkdownTree"/>), never inside the 1.8.4 renderer, whose output stays as the
 /// goldens prove.
@@ -19,6 +21,23 @@ public static partial class NoteMarks
     public const string CommentClass = "urbe-comment";
     public const string TagClass = "urbe-tag";
     public const string NotesClass = "urbe-notes";
+    public const string AiClass = "urbe-ai";
+
+    /// <summary>The mark after text written by the Assistente: <c>{ia:"modelo"}</c>, the model's short name.</summary>
+    public static string AiMark(string model)
+    {
+        var name = model.Split('/').Last().Replace("\"", "").Replace("\n", " ").Trim();
+        if (name.Length > 60) name = name[..60];
+        return "{ia:\"" + (name.Length > 0 ? name : "IA") + "\"}";
+    }
+
+    /// <summary>The text with the Assistente's mark at its end (once: an existing mark there is kept).</summary>
+    public static string WithAiMark(string text, string model)
+    {
+        var trimmed = text.TrimEnd();
+        if (AiMarkRegex().Match(trimmed) is { Success: true } m && m.Index + m.Length == trimmed.Length) return text;
+        return trimmed + " " + AiMark(model) + text[trimmed.Length..];
+    }
 
     /// <summary>A run of word comments in the source: where it is and the comments in it, in order.</summary>
     public sealed record CommentGroup(int Start, int Length, IReadOnlyList<string> Comments);
@@ -64,14 +83,15 @@ public static partial class NoteMarks
     public static string StripComments(string? markdown)
     {
         var text = markdown ?? "";
-        if (!text.Contains("%%", StringComparison.Ordinal) && !text.Contains("{\"", StringComparison.Ordinal)) return text;
+        if (!text.Contains("%%", StringComparison.Ordinal) && !text.Contains("{\"", StringComparison.Ordinal) && !text.Contains("{ia:", StringComparison.Ordinal)) return text;
         // fenced code and inline code stay untouched; everything else loses %%…%%
         var parts = CodeRegex().Split(text);
         var codes = CodeRegex().Matches(text);
         var sb = new System.Text.StringBuilder(text.Length);
         for (int i = 0; i < parts.Length; i++)
         {
-            sb.Append(NotesRegex().Replace(CommentRegex().Replace(parts[i], ""), ""));
+            // the Assistente's mark stays visible in pages, as plain text (UC-51: AI text is always marked)
+            sb.Append(AiMarkRegex().Replace(NotesRegex().Replace(CommentRegex().Replace(parts[i], ""), ""), m => "· IA: " + m.Groups[1].Value));
             if (i < codes.Count) sb.Append(codes[i].Value);
         }
         return sb.ToString();
@@ -108,7 +128,14 @@ public static partial class NoteMarks
             foreach (Match m in MarksRegex().Matches(c.Text))
             {
                 if (m.Index > at) output.Add(c with { Text = c.Text[at..m.Index] });
-                if (m.Value.StartsWith("%%", StringComparison.Ordinal))
+                if (m.Value.StartsWith("{ia:", StringComparison.Ordinal))
+                {
+                    output.Add(new RichNode("span", new Dictionary<string, string>
+                    {
+                        ["class"] = AiClass, ["data-model"] = AiMarkRegex().Match(m.Value).Groups[1].Value
+                    }, "", []));
+                }
+                else if (m.Value.StartsWith("%%", StringComparison.Ordinal))
                 {
                     var inner = m.Groups[1].Value.Trim();
                     output.Add(new RichNode("span", new Dictionary<string, string> { ["class"] = CommentClass },
@@ -145,7 +172,10 @@ public static partial class NoteMarks
     [GeneratedRegex(@"\{""((?:[^""\\\n]|\\.)*)""\}")]
     private static partial Regex NoteRegex();
 
-    [GeneratedRegex(@"%%(.+?)%%|(?:\{""(?:[^""\\\n]|\\.)*""\})+", RegexOptions.Singleline)]
+    [GeneratedRegex(@"\{ia:""([^""\n]{1,80})""\}")]
+    private static partial Regex AiMarkRegex();
+
+    [GeneratedRegex(@"%%(.+?)%%|(?:\{""(?:[^""\\\n]|\\.)*""\})+|\{ia:""[^""\n]{1,80}""\}", RegexOptions.Singleline)]
     private static partial Regex MarksRegex();
 
     [GeneratedRegex(@"```[\s\S]*?(?:```|$)|`[^`\n]*`")]

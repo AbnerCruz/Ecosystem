@@ -92,4 +92,15 @@ public sealed class NoteMarksTests
         // pages and exported HTML: no comments, code untouched
         Assert.Equal("Uma palavra no texto. `codigo{\"não\"}` fim\n", NoteMarks.StripComments(md));
     }
+
+    [Fact]
+    public void AiMark_IsAddedOnceAndRenderedAsAModelMark()
+    {
+        Assert.Equal("Texto. {ia:\"claude-x\"}\n", NoteMarks.WithAiMark("Texto.\n", "anthropic/claude-x"));
+        Assert.Equal("Texto. {ia:\"claude-x\"}\n", NoteMarks.WithAiMark("Texto. {ia:\"claude-x\"}\n", "anthropic/claude-x"));
+        var span = All(NoteMarks.Parse("Texto. {ia:\"claude-x\"}\n")).Single(n => n.HasClass(NoteMarks.AiClass));
+        Assert.Equal("claude-x", span.Attr("data-model"));
+        Assert.Equal("Texto. · IA: claude-x\n", NoteMarks.StripComments("Texto. {ia:\"claude-x\"}\n"));
+        Assert.DoesNotContain(All(NoteMarks.Parse("Texto. {ia:\"claude-x\"}\n")), n => n.Tag == RichNode.TextTag && n.Text.Contains("{ia:"));
+    }
 }

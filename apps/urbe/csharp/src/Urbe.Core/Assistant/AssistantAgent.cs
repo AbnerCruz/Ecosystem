@@ -140,8 +140,10 @@ public sealed record AiAgentDef(string Id, string Name, string Icon, string Desc
 public sealed record AiApprovalRequest(AiChatBlock Call, AiTool Tool, string Label, AiPreview? Preview, string Access);
 
 /// <summary>The user's answer: approve, approve all for this run, or reject (with a reason).</summary>
-public sealed record AiApproval(string Kind, string? Reason = null)
+public sealed record AiApproval(string Kind, string? Reason = null, string? EditedText = null)
 {
+    /// <summary>Approved with the person's own version of the note's new text (UC-51: edit the proposal before approving).</summary>
+    public static AiApproval ApproveEdited(string text) => new("approve", EditedText: text);
     public static readonly AiApproval Approve = new("approve");
     public static readonly AiApproval ApproveAll = new("approve_all");
     public static AiApproval Reject(string? reason = null) => new("reject", reason);
@@ -174,6 +176,8 @@ public sealed class AiAgentRun
     public required string Model { get; init; }
     public required Func<AiProviderConfig, AiRequest, Action<AiStreamEvent>, CancellationToken, Task<AiResult>> Stream { get; init; }
     public Func<AiApprovalRequest, CancellationToken, Task<AiApproval>>? Approve { get; init; }
+    /// <summary>UC-51: text written into notes ends with <c>{ia:"modelo"}</c> (the app turns it on; the 1.8.4 oracles run without it).</summary>
+    public bool MarkAiText { get; init; }
     public Action<AiAgentEvent>? OnUpdate { get; init; }
     public CancellationToken Cancel { get; init; }
     public IReadOnlyList<AiTool>? Tools { get; init; }
@@ -614,6 +618,7 @@ public static class AssistantAgent
             var input = (JsonObject)call.Input!;
             emit(new AiAgentEvent("tool_status", Call: call, Status: "running"));
             if (tool == Delegate) return await DelegateAsync(call, input);
+            if (o.MarkAiText) AssistantTools.Watermark(tool, input, o.Model);
             AiPreview? preview = null;
             if (tool.Preview is not null)
             {
@@ -632,6 +637,17 @@ public static class AssistantAgent
                     return new Out("O usuário recusou esta ação." + why + " Não tente de novo da mesma forma; ajuste o plano ou pergunte.", true, "rejected");
                 }
                 emit(new AiAgentEvent("tool_status", Call: call, Status: "running"));
+                // the person changed the proposed text before approving: that text is what is written (UC-51)
+                if (ans.EditedText is { } edited && AssistantTools.EditedRun(tool, input, preview, edited) is { } own)
+                {
+                    try
+                    {
+                        var r0 = await own.Tool.Run(own.Input, host);
+                        return new Out(r0.Content + " O usuário editou o texto antes de aprovar; o que foi gravado é a versão dele.", Changes: r0.Changes, Reads: r0.Reads);
+                    }
+                    catch (AiToolException e) { return new Out(e.Message, true); }
+                    catch (Exception e) { return new Out("Falha na ferramenta: " + e.Message, true); }
+                }
             }
             try
             {

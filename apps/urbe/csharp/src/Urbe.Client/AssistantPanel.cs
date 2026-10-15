@@ -296,7 +296,7 @@ public sealed partial class AssistantPanel : Border
             var r = await AssistantAgent.RunAsync(new AiAgentRun
             {
                 Host = new Host(this, documents, knowledge), Provider = p, Model = ModelId(), Messages = conv.Messages,
-                Agent = AssistantAgent.AgentById(conv.AgentId, _cfg.CustomAgents), Policy = conv.Policy, Cancel = cts.Token,
+                Agent = AssistantAgent.AgentById(conv.AgentId, _cfg.CustomAgents), Policy = conv.Policy, Cancel = cts.Token, MarkAiText = true,
                 MaxSteps = _cfg.MaxSteps, ContextTokens = meta?.Context ?? 128000, Instructions = _cfg.Instructions, Memory = MemoryList(), VaultName = _app.VaultName,
                 Stream = Providers.StreamAsync, Approve = ApproveAsync, OnUpdate = OnUpdate, Tools = Tools
             });

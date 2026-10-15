@@ -193,6 +193,14 @@ public sealed class MarkdownReader
                 length += 1;
                 return;
             }
+            case "span" when n.HasClass(NoteMarks.AiClass):
+            {
+                // {ia:"modelo"} (UC-51): text written by the Assistente — a tiny green "modelo" after it
+                var model = n.Attr("data-model");
+                into.Add(new Run(" " + model) { FontSize = Size * .55, Foreground = UrbeTheme.Brush("#3fb86b"), BaselineAlignment = BaselineAlignment.Superscript });
+                length += model.Length + 1;
+                return;
+            }
             case "span" when n.HasClass("umath"):
                 into.Add(new InlineUIContainer(MathNode(n, Size + 2, n.HasClass("umath-display")))); length += 1; return;
             case "img":
