@@ -498,4 +498,56 @@ public sealed partial class HeadlessUiTests
             }
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
+
+    [Fact]
+    public async Task Workspace_CleanOrphansForgetsOldHistoriesAndRecordsItAndDiagnosticsReports() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-gc-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(Path.Combine(vault, ".urbe"));
+            File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n");
+            long old = DateTimeOffset.UtcNow.AddDays(-45).ToUnixTimeMilliseconds(), recent = DateTimeOffset.UtcNow.AddDays(-2).ToUnixTimeMilliseconds();
+            File.WriteAllText(Path.Combine(vault, ".urbe", "history.v2.json"),
+                "{\"version\":2,\"documents\":{\"doc_velho\":[{\"timestamp\":" + old + ",\"path\":\"Sumiu.md\",\"content\":\"x\"}]," +
+                "\"doc_recente\":[{\"timestamp\":" + recent + ",\"path\":\"Outra.md\",\"content\":\"y\"}]}}");
+            var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
+            var view = new MainView(storage);
+            var window = new Window { Width = 1280, Height = 760, Content = view };
+            window.Show();
+            try
+            {
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                await RunWithDialog(view.CleanOrphansAsync(), async () =>
+                {
+                    var texts = view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
+                    Assert.Contains("Limpar referências órfãs?", texts);
+                    Assert.Contains(texts, t => t?.StartsWith("Encontrei 1 histórico de uma nota que não existe mais há mais de 30 dias.", StringComparison.Ordinal) == true);
+                    ClickButtonWithText(view.Dialogs, "Limpar");
+                    await Task.Delay(200);
+                    Dispatcher.UIThread.RunJobs();
+                });
+                var history = File.ReadAllText(Path.Combine(vault, ".urbe", "history.v2.json"));
+                Assert.DoesNotContain("doc_velho", history);
+                Assert.Contains("doc_recente", history);
+                var meta = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(vault, ".urbe", "vault.json")))!;
+                var record = meta["maintenance"]!.AsArray()[^1]!;
+                Assert.Equal("gc", (string)record["kind"]!);
+                Assert.Equal(1, (int)record["removed"]!["history"]!);
+                Assert.Equal("Limpeza feita e registrada no vault.", view.LifeNoticeText);
+                await RunWithDialog(view.ShowDiagnosticsAsync(), async () =>
+                {
+                    var texts = view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
+                    Assert.Contains("Tudo certo", texts);
+                    Assert.Contains(texts, t => t?.Contains("Notas e arquivos: 1", StringComparison.Ordinal) == true && t.Contains("Construções na cidade:", StringComparison.Ordinal));
+                    Snapshot(window, "native-workspace-diagnostics.png");
+                    ClickButtonWithText(view.Dialogs, "Ok");
+                    await Task.CompletedTask;
+                });
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
 }

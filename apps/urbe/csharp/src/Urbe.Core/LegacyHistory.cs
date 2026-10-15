@@ -79,6 +79,26 @@ public sealed class LegacyHistory
             Str(r["path"]) ?? "", Str(r["content"]) ?? "", r["removed"] is JsonValue v && v.TryGetValue<bool>(out var b) && b)).ToList();
     }
 
+    /// <summary>
+    /// gc.js plan (history part): the histories of documents that are neither alive nor in the trash and did not change
+    /// for <paramref name="orphanDays"/> days (the last revision's timestamp; none counts as 0).
+    /// </summary>
+    public IReadOnlyList<(string Id, int Revisions, long? Last)> Orphans(Func<string, bool> known, long nowMs, int orphanDays = 30)
+    {
+        ArgumentNullException.ThrowIfNull(known);
+        var result = new List<(string, int, long?)>();
+        foreach (var (id, revisions) in _byDoc)
+        {
+            if (known(id)) continue;
+            long last = revisions.Select(r => Timestamp(r["timestamp"])).DefaultIfEmpty(0).Max();
+            if (nowMs - last >= orphanDays * 86_400_000L) result.Add((id, revisions.Count, last == 0 ? null : last));
+        }
+        return result;
+    }
+
+    /// <summary>history.forget(id): the versions kept for a document are dropped.</summary>
+    public bool Forget(string id) => _byDoc.RemoveAll(x => x.Id == id) > 0;
+
     /// <summary>The text of .urbe/history.v2.json.</summary>
     public string Export()
     {

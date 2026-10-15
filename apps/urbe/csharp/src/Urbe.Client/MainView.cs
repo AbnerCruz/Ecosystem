@@ -469,6 +469,7 @@ public sealed partial class MainView : Grid
             _vaultName.Text = scheduler.State switch { "error" => "Erro ao salvar o mapa", "refused" => "Mapa não salvo", _ => "" };
             // statusSinc: 'gravando' while writing, 'erro' on a failure, else ok
             _saveState = scheduler.State switch { "saving" => "gravando", "error" => "erro", _ => "ok" };
+            if (scheduler.State == "saved") _lastSavedAt = DateTimeOffset.UtcNow;
             PaintDot();
         };
         _mapWriter = writer;

@@ -389,7 +389,8 @@ public static class VaultWriter
         return result;
     }
 
-    internal static byte[] SetVaultMaintenance(
+    /// <summary>.urbe/vault.json with <paramref name="maintenance"/> appended to its log (the last 20 kept; P.recordMaintenance).</summary>
+    public static byte[] SetVaultMaintenance(
         ReadOnlyMemory<byte>? current,
         string appVersion,
         DateTimeOffset now,

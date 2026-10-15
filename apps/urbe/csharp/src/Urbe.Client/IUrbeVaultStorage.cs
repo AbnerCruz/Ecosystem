@@ -260,6 +260,26 @@ public interface IUrbeVaultStorage
     Task SaveIdentityAsync(byte[] identityJson, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException("Este armazenamento ainda não grava a identidade das notas.");
 
+    /// <summary>
+    /// Appends a maintenance record to .urbe/vault.json (P.recordMaintenance: {kind, at, …}, the last 20 kept), with the
+    /// trash's safeguards: a vault.json of a newer format, a protected vault or an interrupted operation is never written.
+    /// </summary>
+    Task SaveMaintenanceAsync(System.Text.Json.Nodes.JsonObject maintenance, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não registra manutenções.");
+
+    static (string Path, byte[] Bytes) PlanMaintenanceWrite(IReadOnlyList<VaultFile> files, System.Text.Json.Nodes.JsonObject maintenance)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(maintenance);
+        const string meta = ".urbe/vault.json";
+        var snapshot = VaultReader.Read(files);
+        var current = files.FirstOrDefault(f => string.Equals(f.Path, meta, StringComparison.OrdinalIgnoreCase));
+        if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal || snapshot.FormatState is VaultFormatState.Future or VaultFormatState.Corrupt ||
+            snapshot.FutureFiles.Any(f => string.Equals(f, meta, StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Formato futuro de vault ou operação interrompida: escrita recusada.");
+        return (current?.Path ?? meta, VaultWriter.SetVaultMaintenance(current?.Bytes, "urbe-native-preview", DateTimeOffset.UtcNow, (System.Text.Json.Nodes.JsonObject)maintenance.DeepClone()));
+    }
+
     /// <summary>The checks of an identity rewrite: never over a sidecar of a newer version, a protected vault or an interrupted operation.</summary>
     static (string Path, byte[] Bytes) PlanIdentityWrite(IReadOnlyList<VaultFile> files, byte[] identityJson)
     {

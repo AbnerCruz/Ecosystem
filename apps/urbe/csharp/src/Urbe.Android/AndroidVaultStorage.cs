@@ -599,6 +599,9 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     public Task SaveTrashAsync(string trashJson, CancellationToken cancellationToken = default) =>
         SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanTrashWrite(files, trashJson), "A lixeira", cancellationToken);
 
+    public Task SaveMaintenanceAsync(System.Text.Json.Nodes.JsonObject maintenance, CancellationToken cancellationToken = default) =>
+        SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanMaintenanceWrite(files, maintenance), "O registro de manutenção", cancellationToken);
+
     public Task SaveIdentityAsync(byte[] identityJson, CancellationToken cancellationToken = default) =>
         SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanIdentityWrite(files, identityJson), "A identidade das notas", cancellationToken);
 
