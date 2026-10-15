@@ -1765,7 +1765,7 @@
       "decision": "2 — Publicar agora o cliente nativo como Urbe Beta 2.0 (pré-release) e continuar o desenvolvimento.",
       "decidedAt": "2026-10-15",
       "record": "docs/governance/addenda/ADD-0025-urbe-beta-2-0-nativa.md",
-      "consequencesApplied": false
+      "consequencesApplied": true
     }
   ]
 }

@@ -1,0 +1,63 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261015-urbe-beta-2-0-release",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-15T14:51:46Z",
+  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "task_id": "UC-27",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "137da292",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/workflows/urbe-csharp-mobile-release.yml",
+    "docs/distribution/direct-releases.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261015-urbe-beta-2-0-release.json"
+  ],
+  "work_completed": [
+    "Ordem do proprietário (DEC-0048/ADD-0025, confirmada nesta conversa: 'Confirmo, pode fazer'): o pipeline urbe-csharp-mobile-release passa a publicar o cliente nativo (Urbe.Android com UrbeChannel=beta) como Urbe Beta 2.0 (2.0.0-beta.10, app.urbe.csharp, mesmo certificado beta público), no lugar da UI Blazor congelada. A versão vem só de Urbe.Android.csproj. O APK é verificado antes de publicar: assinatura do canal, presença do Skia do cliente nativo, identidade, versão e nome 'Urbe'."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "YAML do workflow válido; consistency check local",
+      "result": "passed",
+      "evidence": "O workflow só roda na main; o build do Urbe.Android com a mesma assinatura já roda no CI de cada PR (prévia)."
+    },
+    {
+      "kind": "human",
+      "check": "Instalar a Urbe Beta 2.0 publicada no Android, atualizando a beta anterior; abrir o vault e editar",
+      "result": "not-applicable",
+      "evidence": "Instalação e atualização reais só se provam no aparelho (NN-017).",
+      "object": ".github/workflows/urbe-csharp-mobile-release.yml"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Após a integração, conferir o run de urbe-csharp-mobile-release e a release urbe-csharp-v2.0.0-beta.10; mandar o link ao proprietário."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/distribution/direct-releases.md",
+    "docs/governance/addenda/ADD-0025-urbe-beta-2-0-nativa.md",
+    "docs/governance/addenda/ADD-0015-releases-diretas-no-ecosystem.md"
+  ],
+  "invariants": [
+    { "id": "NN-001", "evidence": "Um só canal Android do Urbe C# e uma só fonte da versão (Urbe.Android.csproj)." },
+    { "id": "NN-017", "evidence": "Pré-release; validação no aparelho registrada como pendente." },
+    { "id": "NN-023", "evidence": "A release não depende do Hub." }
+  ],
+  "reuse_assessment": [
+    { "subject": "urbe-native-release", "status": "product-specific", "rationale": "Pipeline de release do Urbe." }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Muda o que o canal de distribuição do Urbe C# publica (DEC-0048); precisa da autorização do proprietário no PR."
+  }
+}
