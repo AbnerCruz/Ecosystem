@@ -89,6 +89,8 @@ public sealed class DecorationTool(WorldDecorations.Kind kind, Func<int, int, bo
     public (int X, int Y)? Candidate { get; private set; }
 
     private void Set(int tx, int ty) { Candidate = (tx, ty); changed(Candidate); }
+    /// <summary>No ghost until the next tap (after one was placed).</summary>
+    public void Clear() => Candidate = null;
     public override void Down(int tx, int ty) => Set(tx, ty);
     public override void Move(int tx, int ty) => Set(tx, ty);
     public override void Up(int tx, int ty) => Set(tx, ty);

@@ -85,6 +85,7 @@ public sealed partial class MainView
     /// <summary>setTool('select'): the normal city again.</summary>
     public void EndTool()
     {
+        _movingDecoration = null;
         World.Tool = null;
         _toolDock.IsVisible = false;
         _toolOk.IsVisible = false;
@@ -311,7 +312,11 @@ public sealed partial class MainView
     /// other decoration under any of its tiles.</summary>
     public bool CanDecorate(WorldDecorations.Kind kind, int x, int y) =>
         World.City is { } city && WorldDecorations.Footprint(kind, x, y).All(t =>
-            !city.IsWater(t.X, t.Y) && city.BuildingAt(t.X, t.Y) is null && !city.HasRoad(t.X, t.Y) && World.Prefs.DecorationAt(t.X, t.Y) is null);
+            !city.IsWater(t.X, t.Y) && city.BuildingAt(t.X, t.Y) is null && !city.HasRoad(t.X, t.Y) &&
+            (World.Prefs.DecorationAt(t.X, t.Y) is not { } there || there.Id == _movingDecoration?.Id));
+
+    /// <summary>The decoration being moved (its own tiles do not block its new place), or null when placing new ones.</summary>
+    private WorldDecoration? _movingDecoration;
 
     /// <summary>"+" → Decoração: which one, then a tap on the map places its ghost and ✓ puts it there (.urbe/mundo.json).</summary>
     public async Task BeginDecorationAsync()
@@ -336,22 +341,28 @@ public sealed partial class MainView
             _toolText.Text = kind.Label + (c is { } q ? $" · {q.X},{q.Y}" : " · toque no mapa");
         });
         BeginTool(tool, kind.Label + " · toque no mapa", okVisible: true);
-        _toolOk.Content = "Colocar";
+        _toolOk.Content = _movingDecoration is null ? "Colocar" : "Mover";
     }
 
     private async Task ConfirmDecorationAsync(DecorationTool tool)
     {
         if (tool.Candidate is not { } p || !CanDecorate(tool.Kind, p.X, p.Y)) { ShowLifeNotice("Posição inválida."); return; }
         var prefs = Customization.World;
-        var placed = new WorldDecoration(prefs.NextDecorationId(), tool.Kind.Id, p.X, p.Y);
-        try { await Customization.SetWorldAsync(prefs with { Decorations = [.. prefs.Decorations, placed] }); }
+        var moving = _movingDecoration;
+        var placed = moving is null ? new WorldDecoration(prefs.NextDecorationId(), tool.Kind.Id, p.X, p.Y) : moving with { X = p.X, Y = p.Y };
+        var list = moving is null ? [.. prefs.Decorations, placed] : prefs.Decorations.Select(d => d.Id == moving.Id ? placed : d).ToList();
+        try { await Customization.SetWorldAsync(prefs with { Decorations = list }); }
         catch (Exception ex) when (ex is IOException or InvalidOperationException or InvalidDataException)
         {
             await Dialogs.AlertAsync("Não foi possível colocar a decoração", ex.Message);
             return;
         }
-        EndTool();
         World.InvalidateVisual();
+        if (moving is not null) { _movingDecoration = null; EndTool(); return; }
+        // UC-53: the tool stays, to place more of the same kind with one tap each; ✕ finishes
+        tool.Clear();
+        _toolOk.IsEnabled = false;
+        _toolText.Text = tool.Kind.Label + " colocado · toque para outro";
     }
 
     /// <summary>A tap on a decoration: what it is, and Remover.</summary>
@@ -360,7 +371,21 @@ public sealed partial class MainView
         if (Dialogs.IsOpen || World.Tool is not null || WorldDecorations.Find(decoration.Kind) is not { } kind) return Task.CompletedTask;
         var items = new List<DialogItem>();
         if (VaultWritable && Customization.WorldWriter is not null)
+        {
+            items.Add(new("Mover", UrbeTheme.Icons.Move, "Toque no novo lugar e confirme.", Run: () =>
+            {
+                _movingDecoration = decoration;
+                BeginDecoration(kind);
+                return Task.CompletedTask;
+            }));
+            items.Add(new("Colocar mais desta", UrbeTheme.Icons.Plus, "A mesma decoração, um toque para cada.", Run: () =>
+            {
+                _movingDecoration = null;
+                BeginDecoration(kind);
+                return Task.CompletedTask;
+            }));
             items.Add(new("Remover decoração", UrbeTheme.Icons.Trash, Danger: true, Run: () => RemoveDecorationAsync(decoration)));
+        }
         return Dialogs.MenuAsync(kind.Label, items, kind.Hint);
     }
 
