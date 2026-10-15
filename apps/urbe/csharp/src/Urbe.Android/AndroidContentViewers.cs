@@ -82,7 +82,12 @@ internal static class AndroidContentViewers
             finally
             {
                 // released a while later: the system has copied the document by then
-                view.PostDelayed(() => { Kept.Remove(view); view.Destroy(); }, 120_000);
+                view.PostDelayed(() =>
+                {
+                    Kept.Remove(view);
+                    try { if (view.Handle != IntPtr.Zero) view.Destroy(); }
+                    catch (ObjectDisposedException) { }
+                }, 120_000);
             }
         }
     }
@@ -92,7 +97,7 @@ internal static class AndroidContentViewers
         switch (request.Kind)
         {
             case VaultFileKinds.Html when request.Bytes is { } bytes && FilePreviewPanel.Text(bytes) is { } html:
-                return new AndroidViewHost(context => Page(context, html, request.Messages), view => (view as WebView)?.Destroy());
+                return new AndroidHtmlHost(context => Page(context, html, request.Messages), view => (view as WebView)?.Destroy(), request.Messages is not null);
             case VaultFileKinds.Audio or VaultFileKinds.Video when request.Storage is AndroidVaultStorage vault
                                                                  && await vault.DocumentOfAsync(request.Path, cancellationToken) is { } uri:
                 return new AndroidViewHost(context => Player(context, uri), view => (view.FindViewWithTag("player") as VideoView)?.StopPlayback());
@@ -235,9 +240,29 @@ internal sealed class AndroidPdfDocument : IPdfDocument
 }
 
 /// <summary>An Android view inside an Avalonia panel (NativeControlHost), released when the panel lets it go.</summary>
-internal sealed class AndroidViewHost(Func<Context, AView> make, Action<AView>? release = null) : NativeControlHost
+/// <summary>An HTML page whose WebView loads new HTML in place (the studio's preview).</summary>
+internal sealed class AndroidHtmlHost(Func<Context, AView> make, Action<AView>? release, bool relay) : AndroidViewHost(make, release), IHtmlReloadable
+{
+    public void Reload(string html)
+    {
+        if (View is not WebView web || web.Handle == IntPtr.Zero) return;
+        if (relay)
+        {
+            const string script = "<script>addEventListener('message',function(e){try{var m=e.data;if(m&&(m.urbePage==='select'||m.urbePage==='text'))console.log('urbe-msg:'+JSON.stringify(m))}catch(_){}})</script>";
+            html = html.Contains("</body>", StringComparison.Ordinal) ? html.Replace("</body>", script + "</body>", StringComparison.Ordinal) : html + script;
+        }
+        // keep where the person was reading
+        int y = web.ScrollY;
+        web.LoadDataWithBaseURL(null, html, "text/html", "utf-8", null);
+        web.PostDelayed(() => { try { if (web.Handle != IntPtr.Zero) web.ScrollTo(0, y); } catch (ObjectDisposedException) { } }, 150);
+    }
+}
+
+internal class AndroidViewHost(Func<Context, AView> make, Action<AView>? release = null) : NativeControlHost
 {
     private AView? _view;
+
+    protected AView? View => _view;
 
     protected override IPlatformHandle CreateNativeControlCore(IPlatformHandle parent)
     {
@@ -248,8 +273,15 @@ internal sealed class AndroidViewHost(Func<Context, AView> make, Action<AView>? 
 
     protected override void DestroyNativeControlCore(IPlatformHandle control)
     {
-        if (_view is { } view) release?.Invoke(view);
+        // the view can already be gone on the Java side (the control was moved or the page closed twice): releasing a
+        // disposed peer threw ObjectDisposedException and brought the app down (relatório de erros, 15/10/2026)
+        if (_view is { } view && view.Handle != IntPtr.Zero)
+        {
+            try { release?.Invoke(view); }
+            catch (ObjectDisposedException) { }
+        }
         _view = null;
-        base.DestroyNativeControlCore(control);
+        try { base.DestroyNativeControlCore(control); }
+        catch (ObjectDisposedException) { }
     }
 }

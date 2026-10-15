@@ -1701,6 +1701,38 @@
       "decidedAt": "2026-10-14",
       "record": "docs/governance/addenda/ADD-0023-tudo-no-ecosystem-e-conteudo-dentro-do-urbe.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0047",
+      "status": "decided",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Urbe nativo: desempenho, resposta e acessibilidade no celular antes de tudo; release beta logo depois",
+      "context": "FATO OBSERVADO: nas observações da prévia nativa o proprietário relatou atraso geral, toques imprecisos, teclado que não abre, salvamento lento e um travamento ao fechar página HTML.",
+      "question": "Qual a prioridade do cliente nativo e quando sai a release?",
+      "alternatives": [
+        {
+          "option": "1 — Seguir portando recursos e lançar depois",
+          "consequences": "O app continua lento no celular."
+        },
+        {
+          "option": "2 — Desempenho, resposta e acessibilidade primeiro; release logo depois",
+          "consequences": "UC-48 antes de recursos novos; release beta do cliente nativo depois de validado no aparelho."
+        }
+      ],
+      "consequences": "DECISÃO DO PROPRIETÁRIO: 2 — 'Já quero release assim que melhorar a acessibilidade, performance, tempo de resposta etc... Essa é a prioridade. De resto, vai anotando e a gente vai desenvolvendo.' ROADMAP C# com UC-48 e as observações em UC-49 a UC-55.",
+      "manifestCompatibility": "Não muda boundaries nem formato de dados. Release continua pelo pipeline direto (ADD-0015) e pelos gates de validação humana (NN-017).",
+      "recommendation": "2 — ordem do proprietário.",
+      "related": [
+        "docs/governance/addenda/ADD-0024-urbe-nativo-desempenho-primeiro-e-release.md",
+        "apps/urbe/docs/csharp/ROADMAP.md"
+      ],
+      "raisedBy": "Proprietário",
+      "raisedAt": "2026-10-15",
+      "decision": "2 — Desempenho, tempo de resposta e acessibilidade no celular primeiro; release beta do cliente nativo assim que isso estiver feito e validado no aparelho.",
+      "decidedAt": "2026-10-15",
+      "record": "docs/governance/addenda/ADD-0024-urbe-nativo-desempenho-primeiro-e-release.md",
+      "consequencesApplied": true
     }
   ]
 }

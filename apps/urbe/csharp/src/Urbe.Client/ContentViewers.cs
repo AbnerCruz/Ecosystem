@@ -50,6 +50,12 @@ public static class ContentViewers
     }
 }
 
+/// <summary>An HTML viewer that can show new HTML in place (the studio's preview: no new browser for every change).</summary>
+public interface IHtmlReloadable
+{
+    void Reload(string html);
+}
+
 /// <summary>A PDF opened by the platform: its pages, their size, and each page drawn as RGBA at a given width.</summary>
 public interface IPdfDocument : IDisposable
 {

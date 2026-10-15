@@ -73,6 +73,7 @@ public sealed partial class PageStudioView : Border
     private readonly DispatcherTimer _saveTimer = new() { Interval = TimeSpan.FromMilliseconds(600) };
     private readonly DispatcherTimer _previewTimer = new() { Interval = TimeSpan.FromMilliseconds(350) };
     private bool _wideLast;
+    private string? _previewPath;
 
     public PageStudioView(IPageStudioHost host)
     {
@@ -412,6 +413,9 @@ public sealed partial class PageStudioView : Border
         var html = _host.Render(_st.Spec, preview: true);
         if (html == LastHtml && _preview.Content is not null) return;
         LastHtml = html;
+        // the same browser shows the new page (creating one per change made the phone slow)
+        if (_preview.Content is IHtmlReloadable live && _previewPath == _path) { live.Reload(html); return; }
+        _previewPath = _path;
         var viewer = await _host.PreviewAsync(_path, System.Text.Encoding.UTF8.GetBytes(html), PreviewMessage);
         _preview.Content = viewer ?? Outline();
     }
