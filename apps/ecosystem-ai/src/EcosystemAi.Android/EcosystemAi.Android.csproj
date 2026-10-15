@@ -12,7 +12,13 @@
     <AndroidPackageFormat>apk</AndroidPackageFormat>
     <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
     <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+    <!-- Catalog serialization uses reflection. Mono AOT with the untrimmed
+         build aborts before OnCreate (class-init.c: instance_size assertion).
+         Keep this preview on Mono JIT; validate AOT separately before enabling. -->
+    <PublishTrimmed>false</PublishTrimmed>
     <AndroidLinkMode>None</AndroidLinkMode>
+    <RunAOTCompilation>false</RunAOTCompilation>
+    <AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <AndroidKeyStore>true</AndroidKeyStore>
     <AndroidSigningKeyStore>$(MSBuildThisFileDirectory)../../tools/ecosystem-ai-preview.keystore</AndroidSigningKeyStore>

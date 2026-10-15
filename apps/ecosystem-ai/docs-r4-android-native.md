@@ -54,6 +54,16 @@ o app exibe um diagnóstico curto (tipo de erro e código), sem mostrar dados pr
 - Não há restauração automática de um run após processo morto. O journal
   preserva a execução incompleta para auditoria; não reenviar sem conferir.
 
+## Compatibilidade de inicialização
+
+A prévia usa Mono JIT, com `PublishTrimmed=false`, `RunAOTCompilation=false` e
+`AndroidEnableProfiledAot=false`. O build anterior com AOT abortava antes de
+`OnCreate`, com SIGABRT e a assertion `klass->instance_size == instance_size`
+(reproduzido no emulador Android 13, CI run 38656644999). Um catch C# na Activity
+não intercepta esse abort nativo. Os catálogos continuam usando reflexão e os
+mesmos formatos; ativar AOT novamente exige repetir o teste de abertura e DEVICE.
+A escolha pode afetar o desempenho de inicialização; não houve benchmark no moto g32.
+
 ## Identidade e assinatura da prévia
 
 Package de teste separado `io.ecosystem.ai.preview`; versão deriva de `VERSION`
@@ -70,6 +80,13 @@ O versionCode de teste deriva do minuto UTC da build, permitindo atualizações
 entre os dois workflows; a versão pública deriva de VERSION e do run de CI.
 
 ## Verificação e gate
+
+O build no GitHub também executa `tools/smoke-android-preview.sh`: compila o mesmo app Release para x86_64 e o instala
+num emulador Android 13 Google APIs x86_64, abre a Activity pelo
+launcher e exige processo vivo e tela inicial de projetos. Falha de boot, instalação,
+crash ou tela de diagnóstico reprova o teste; logcat acompanha a evidência. O ensaio
+exige KVM no runner e usa apenas um emulador novo, sem dados nem provider real.
+O APK distribuído continua arm64; esse ensaio não substitui o teste no moto g32.
 
 Falhas de inicialização da Activity são capturadas numa tela local segura; o código de diagnóstico é derivado do tipo/stack sem exibir mensagem, caminho, conversa ou token. O app não tenta reparar nem apagar o catálogo automaticamente.
 
