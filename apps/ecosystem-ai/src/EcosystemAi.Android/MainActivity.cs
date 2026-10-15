@@ -52,11 +52,15 @@ public sealed class MainActivity : Activity
         {
             // Impede captura do campo de token e histórico pelo snapshot do SO.
             Window?.SetFlags(WindowManagerFlags.Secure, WindowManagerFlags.Secure);
-            var root = FilesDir!.AbsolutePath;
+            // Android can expose FilesDir through /data/data or /data/user/0 aliases.
+            // Resolve only the OS-owned private root; stores still reject links below it.
+            var originalRoot = FilesDir!.AbsolutePath;
+            var root = FilesDir.CanonicalPath;
             _catalog = System.IO.Path.Combine(root, "catalog");
             _journal = System.IO.Path.Combine(root, "runs");
             _projectRoot = System.IO.Path.Combine(root, "projects");
             _store = new LocalProjectStore(_catalog);
+            RebindPrivateWorkspaces(originalRoot);
             _projectId = savedInstanceState?.GetString("projectId");
             _sessionId = savedInstanceState?.GetString("sessionId");
             Render();
@@ -64,6 +68,25 @@ public sealed class MainActivity : Activity
         catch (Exception error) when (error is not OutOfMemoryException)
         {
             ShowStartupFailure(error);
+        }
+    }
+
+    private void RebindPrivateWorkspaces(string originalRoot)
+    {
+        var originalProjects = System.IO.Path.Combine(originalRoot, "projects");
+        if (originalProjects == _projectRoot) return;
+        foreach (var project in _store.Read().Projects)
+        {
+            // Earlier APKs persisted the OS alias. Only rebind our own GUID directory,
+            // never a user-selected external path or a link inside the private workspace.
+            var name = System.IO.Path.GetFileName(project.WorkspaceDirectory);
+            if (!Guid.TryParseExact(name, "N", out _)
+                || project.WorkspaceDirectory != System.IO.Path.Combine(originalProjects, name)) continue;
+            var expected = System.IO.Path.Combine(_projectRoot, name);
+            using var directory = new Java.IO.File(project.WorkspaceDirectory);
+            if (directory.CanonicalPath != expected)
+                throw new IOException("O workspace privado não corresponde ao diretório esperado.");
+            _store.RebindWorkspace(project.Id, project.WorkspaceDirectory, expected);
         }
     }
 

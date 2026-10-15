@@ -22,6 +22,50 @@ public sealed class R4WebAgentTeamsTests
         1m, 3m, 100, 5);
 
     [Fact]
+    public void Canonical_host_root_preserves_history_and_roster_still_rejects_links()
+    {
+        if (OperatingSystem.IsWindows()) return; // Linux CI provides real symlinks.
+        var root = Root();
+        Directory.CreateDirectory(root);
+        var canonical = Path.Combine(root, "private-real");
+        var alias = Path.Combine(root, "private-alias");
+        Directory.CreateDirectory(Path.Combine(canonical, "projects", "workspace"));
+        Directory.CreateSymbolicLink(alias, canonical);
+        try
+        {
+            var oldWorkspace = Path.Combine(alias, "projects", "workspace");
+            var realWorkspace = Path.Combine(canonical, "projects", "workspace");
+            var store = new LocalProjectStore(Path.Combine(canonical, "catalog"));
+            var project = store.CreateProject("Existing project", oldWorkspace);
+            var session = store.CreateSession(project.Id, "Existing conversation");
+            store.AppendTurn(project.Id, session.Id, "user", "Keep this history");
+            var roster = new LocalAgentRosterStore(Path.Combine(canonical, "catalog"));
+            var agent = roster.CreateAgent(project.Id, "Reviewer", "Review offline");
+            var rosterBytes = File.ReadAllBytes(Path.Combine(canonical, "catalog", "roster.json"));
+            Assert.Throws<IOException>(() => new LocalAgentRosterStore(Path.Combine(alias, "catalog")));
+            store.RebindWorkspace(project.Id, oldWorkspace, realWorkspace);
+            var reopened = Assert.Single(new LocalProjectStore(Path.Combine(canonical, "catalog")).Read().Projects);
+            Assert.Equal(project.Id, reopened.Id);
+            Assert.Equal(realWorkspace, reopened.WorkspaceDirectory);
+            Assert.Equal("Keep this history", Assert.Single(Assert.Single(reopened.Sessions).Turns).Text);
+            Assert.Equal(agent, Assert.Single(roster.Read().Agents));
+            Assert.Equal(rosterBytes, File.ReadAllBytes(Path.Combine(canonical, "catalog", "roster.json")));
+            Assert.Throws<InvalidOperationException>(() => store.RebindWorkspace(project.Id, oldWorkspace, realWorkspace));
+            var before = File.ReadAllBytes(Path.Combine(canonical, "catalog", "catalog.json"));
+            Assert.Throws<DirectoryNotFoundException>(() => store.RebindWorkspace(project.Id, realWorkspace, Path.Combine(root, "missing")));
+            Assert.Equal(before, File.ReadAllBytes(Path.Combine(canonical, "catalog", "catalog.json")));
+            // Normalizing the Host root must not disable anti-link checks in the store.
+            var rosterFile = Path.Combine(canonical, "catalog", "roster.json");
+            var outside = Path.Combine(root, "outside.json");
+            File.Move(rosterFile, outside);
+            File.CreateSymbolicLink(rosterFile, outside);
+            Assert.Throws<IOException>(() => roster.Read());
+            Assert.Equal(rosterBytes, File.ReadAllBytes(outside));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
     public void Roster_persiste_sem_alterar_catalogo_v1_e_rejeita_equipes_cruzadas()
     {
         var root = Root();

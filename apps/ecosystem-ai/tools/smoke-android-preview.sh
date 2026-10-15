@@ -62,5 +62,6 @@ test -n "$("$adb" -s "$serial" shell pidof io.ecosystem.ai.preview)"
 timeout 30 "$adb" -s "$serial" shell uiautomator dump /data/local/tmp/ecoai-launch.xml
 "$adb" -s "$serial" pull /data/local/tmp/ecoai-launch.xml android-preview/android-launch-ui.xml
 grep -q 'Comece com um projeto' android-preview/android-launch-ui.xml
+python3 tools/smoke-android-project.py "$adb" "$serial" "$package" "$activity"
 passed=true
 echo 'Android 13 launch passed: Release x86_64 app stayed alive and rendered the project home screen; arm64 DEVICE validation remains separate.'

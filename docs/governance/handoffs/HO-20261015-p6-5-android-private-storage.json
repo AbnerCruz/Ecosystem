@@ -1,0 +1,98 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261015-p6-5-android-private-storage",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-15T04:15:05.193863Z",
+  "agent": {
+    "id": "codex-android-storage",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "fix/android-private-storage-20261015",
+  "base_commit": "f379a37b291283744e216e183c086bc0613d95ba",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/docs-r4-android-native.md",
+    "apps/ecosystem-ai/src/EcosystemAi.Android/MainActivity.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.ProjectStore/LocalProjectStore.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4WebAgentTeamsTests.cs",
+    "apps/ecosystem-ai/tools/smoke-android-preview.sh",
+    "apps/ecosystem-ai/tools/smoke-android-project.py",
+    "docs/governance/handoffs/HO-20261015-p6-5-android-private-storage.json"
+  ],
+  "work_completed": [
+    "Print do proprietário após PR568 mostra Operação não concluída: Roster não aceita diretórios simbólicos. Não é evidência de uso completo do app.",
+    "Host Android usa FilesDir.CanonicalPath antes de abrir stores; proteção contra symlinks dos stores intacta.",
+    "Workspaces GUID privados registrados sob alias anterior são rebindados somente após validação do destino canônico exato, sem mover dados nem mudar schema, IDs ou histórico; caminho divergente falha fechado.",
+    "Teste automatizado amplia home-only para criar projeto/agente/conversa, matar processo e reabrir por raiz privada simbolizada no emulador descartável. Adicionado teste de persistência/rebind e recusa de links reais pelo roster."
+  ],
+  "verification": [
+    {
+      "check": "Sintaxe Python/shell e whitespace",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "python -m py_compile, bash -n e git diff --check locais."
+    },
+    {
+      "check": "Testes Product e abertura Android13 com alias privado",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Será executado pelo CI do Product e pelo integrador no estado combinado."
+    },
+    {
+      "check": "Criar e reabrir projeto/conversa no moto g32",
+      "kind": "human",
+      "result": "pending",
+      "evidence": "Print atual reproduz recusa de diretório simbólico. Revalidar o novo APK depois do ensaio automatizado.",
+      "object": "apps/ecosystem-ai/docs-r4-android-native.md",
+      "critical": true
+    }
+  ],
+  "known_issues": [
+    "Emulador x86_64 não valida hardware arm64. DEVICE no moto g32 e demais critérios P6-5 permanecem pendentes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Conferir testes e integração automática; entregar novo APK arm64 com mesma assinatura.",
+    "Revalidar criação/reabertura de projeto no moto g32."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md",
+    "apps/ecosystem-ai/docs-r4-android-native.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Sintoma, scripts, resultado e próximas ações registrados neste handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Ensaio automatizado de abertura é distinto de DEVICE no moto g32."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P6-5 permanece aberta e crash não é declarado corrigido antes de prova."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "android-private-root-alias",
+      "status": "product-specific",
+      "rationale": "Normalização no Host Android e rebind local do catálogo; não cria abstração compartilhada."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Correção de caminho privado fornecido pelo Android e preservação dos projetos da prévia; não altera permissões, segurança dos stores, schema, assinatura, workflows ou política."
+  }
+}
