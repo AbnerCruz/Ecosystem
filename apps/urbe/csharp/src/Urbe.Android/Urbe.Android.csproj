@@ -18,8 +18,8 @@
       DEC-0048 / ADD-0025 — canal beta do Urbe C# no Android ("Urbe Beta 2.0"): única fonte da versão publicada.
       urbe-csharp-mobile-release.yml compila com -p:UrbeChannel=beta; sem isso o APK é a prévia acima.
     -->
-    <UrbeBetaVersion>2.0.0-beta.10</UrbeBetaVersion>
-    <UrbeBetaVersionCode>2000010</UrbeBetaVersionCode>
+    <UrbeBetaVersion>2.0.0-beta.11</UrbeBetaVersion>
+    <UrbeBetaVersionCode>2000011</UrbeBetaVersionCode>
   </PropertyGroup>
   <!--
     UC-48 (desempenho no celular, "tá muito lagado"): o Release é todo compilado antes (AOT), não só a partida —
