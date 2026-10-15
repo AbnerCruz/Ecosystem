@@ -1,0 +1,95 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261015-urbe-editor-autosave-pause",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-15T23:29:45Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-48",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "5b7c93d3",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/592",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTests.cs",
+    "docs/governance/handoffs/HO-20261015-urbe-editor-autosave-pause.json",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Comments.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Render.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Pages.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderMoves.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCityCreate.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyEditorTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyVisualEdit.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "work_completed": [
+    "UC-48 (resposta ao digitar): o salvamento automático do editor esperava 400 ms a partir da primeira tecla e, digitando sem parar, gravava a nota a cada 400 ms — no Android cada gravação lista, planeja e verifica o vault. Agora espera uma pausa de 900 ms na digitação, sem segurar uma edição por mais de 3 s.",
+    "Ao sair para segundo plano (OnPause) o editor grava a edição pendente antes do mapa, para a pausa não custar as últimas palavras. A gravação continua verificada como antes.",
+    "UC-49: comentários {\"…\"} com 💬 na prévia do estúdio de páginas; exportação sem comentários (antes saíam crus).",
+    "UC-54: mover pastas inteiras (subárvore e bairro) e arrastar arquivos que não são notas, pela gravação verificada existente.",
+    "UC-55: código curto entre crases, botões acesos desligam a marca e não ficam presos, testes de [[nota nova]] e dos botões Assistente/Relógio."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Core completo e testes do cliente das áreas tocadas (editor, Explorer, anexos, estúdio, pastas)",
+      "result": "passed",
+      "evidence": "821/821 Core; 23/23 dos filtros do cliente no estado combinado; bateria completa no CI do PR."
+    },
+    {
+      "kind": "human",
+      "check": "Digitação no editor sem travadas no aparelho",
+      "result": "not-applicable",
+      "evidence": "Fluidez percebida só se prova no aparelho (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs"
+    },
+    {
+      "kind": "human",
+      "check": "Arrastar pasta e arquivo no Explorer e o 💬 na prévia de páginas no celular",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/FolderMoves.cs"
+    }
+  ],
+  "known_issues": [
+    "Cada gravação no Android ainda relê a árvore do vault para verificar; reduzir isso toca o adaptador de vault (zona crítica) e fica para fatia própria."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Seguir UC-48: medir o custo por tecla no modo Visual (reconstrução do texto completo e estatísticas)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0024-urbe-nativo-desempenho-primeiro-e-release.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-018",
+      "evidence": "Teste automatizado da junção de gravações e da gravação imediata ao sair."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "editor-autosave",
+      "status": "product-specific",
+      "rationale": "Editor do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Detalhe de implementação do editor; a gravação verificada não muda."
+  }
+}

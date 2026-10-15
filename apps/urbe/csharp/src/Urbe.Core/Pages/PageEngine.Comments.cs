@@ -1,0 +1,178 @@
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+
+namespace Urbe.Core.Pages;
+
+/// <summary>
+/// The Urbe's own .md marks in pages (DEC-0045, UC-43/49/51), kept out of the 1.8.4 engine: the page's texts and notes
+/// are rewritten before <see cref="PageEngine.Render(JsonNode?, IPageNotes?, bool)"/> and its HTML finished after.
+/// Exported HTML leaves comments out (<see cref="NoteMarks.StripComments"/>); the studio preview shows each
+/// <c>palavra{"…"}</c> as a 💬 after the word that opens its comments.
+/// </summary>
+internal sealed class PageCommentMarks(bool show)
+{
+    // a comment run becomes Open + one char of its index: survives Markdown, escaping and slugs, and is cut out whole
+    private const char Open = '';
+    private const char First = '', Last = '';
+    // raw text: fields that are code (blocks, CSS, the <head>) are never touched
+    private static readonly HashSet<string> RawKeys = new(StringComparer.Ordinal) { "code", "css", "head" };
+
+    private readonly List<IReadOnlyList<string>> _groups = [];
+
+    public string Text(string? markdown)
+    {
+        var text = markdown ?? "";
+        if (show)
+        {
+            var groups = NoteMarks.CommentGroups(text);
+            for (int i = groups.Count - 1; i >= 0; i--)
+            {
+                var g = groups[i];
+                string token = "";
+                if (First + _groups.Count <= Last)
+                {
+                    token = Open.ToString() + (char)(First + _groups.Count);
+                    _groups.Add(g.Comments);
+                }
+                text = text[..g.Start] + token + text[(g.Start + g.Length)..];
+            }
+        }
+        return NoteMarks.StripComments(text);
+    }
+
+    /// <summary>A copy of the page with every text field rewritten.</summary>
+    public JsonNode? Page(JsonNode? input) => Map(input?.DeepClone(), null);
+
+    private JsonNode? Map(JsonNode? node, string? key)
+    {
+        switch (node)
+        {
+            case JsonObject o:
+                foreach (var name in o.Select(p => p.Key).ToList())
+                    if (Map(o[name], name) is var m && !ReferenceEquals(m, o[name])) o[name] = m;
+                return o;
+            case JsonArray a:
+                for (int i = 0; i < a.Count; i++)
+                    if (Map(a[i], key) is var m && !ReferenceEquals(m, a[i])) a[i] = m;
+                return a;
+            case JsonValue v when v.GetValueKind() == JsonValueKind.String && (key is null || !RawKeys.Contains(key)):
+                var s = (string)v!;
+                var t = Text(s);
+                return t == s ? v : JsonValue.Create(t);
+            default:
+                return node;
+        }
+    }
+
+    public IPageNotes? Notes(IPageNotes? notes) => notes is null ? null : new Rewritten(notes, this);
+
+    private sealed class Rewritten(IPageNotes inner, PageCommentMarks marks) : IPageNotes
+    {
+        private readonly Dictionary<string, PageNote?> _byPath = new(StringComparer.Ordinal);
+        private IReadOnlyList<PageNote>? _all;
+
+        private PageNote Of(PageNote n)
+        {
+            if (_byPath.TryGetValue(n.Path, out var done) && done is not null) return done;
+            var r = n with { Content = marks.Text(n.Content) };
+            _byPath[n.Path] = r;
+            return r;
+        }
+
+        public PageNote? Get(string path) => inner.Get(path) is { } n ? Of(n) : null;
+        public IReadOnlyList<PageNote> List() => _all ??= inner.List().Select(Of).ToList();
+    }
+
+    /// <summary>The rendered page with each comment run as its 💬 (text) or gone (inside tags, the title, scripts and styles).</summary>
+    public string Finish(string html)
+    {
+        if (html.IndexOf(Open) < 0) return html;
+        var sb = new StringBuilder(html.Length + 256);
+        bool inTag = false;
+        string? raw = null; // the raw-text element we are inside (title, script, style, textarea)
+        int used = 0;
+        for (int i = 0; i < html.Length; i++)
+        {
+            var c = html[i];
+            if (c == Open)
+            {
+                // a run cut in half (an excerpt) leaves only Open: it never reaches the page either
+                int index = i + 1 < html.Length && html[i + 1] is >= First and <= Last ? html[i + 1] - First : -1;
+                if (index >= 0) i++;
+                if (!inTag && raw is null && index >= 0 && index < _groups.Count) { sb.Append(Marker(_groups[index])); used++; }
+                continue;
+            }
+            sb.Append(c);
+            if (raw is not null)
+            {
+                if (c == '<' && string.Compare(html, i, "</" + raw, 0, raw.Length + 2, StringComparison.OrdinalIgnoreCase) == 0) { raw = null; inTag = true; }
+            }
+            else if (inTag) { if (c == '>') inTag = false; }
+            else if (c == '<')
+            {
+                inTag = true;
+                if (RawElement(html, i) is { } name && html.IndexOf('>', i) is var end and > 0)
+                {
+                    sb.Append(html, i + 1, end - i);
+                    i = end;
+                    inTag = false;
+                    raw = name;
+                }
+            }
+        }
+        var output = sb.ToString();
+        if (used == 0) return output;
+        var at = output.LastIndexOf("</body>", StringComparison.Ordinal);
+        var extra = "<style>" + Css + "</style><script>" + Script + "</script>\n";
+        return at < 0 ? output + extra : output.Insert(at, extra);
+    }
+
+    private static string? RawElement(string html, int at)
+    {
+        foreach (var name in (string[])["title", "script", "style", "textarea"])
+            if (string.Compare(html, at + 1, name, 0, name.Length, StringComparison.OrdinalIgnoreCase) == 0 &&
+                at + 1 + name.Length < html.Length && html[at + 1 + name.Length] is '>' or ' ' or '\t' or '\n' or '/')
+                return name;
+        return null;
+    }
+
+    /// <summary>The 💬 after the word: the count when more than one, the comments in its title and data-comments.</summary>
+    public static string Marker(IReadOnlyList<string> comments)
+    {
+        var json = JsonSerializer.Serialize(comments);
+        var source = string.Concat(comments.Select(NoteMarks.Quote));
+        return "<sup class=\"urbe-cm\" role=\"button\" tabindex=\"0\" title=\"" + PageMarkdown.Esc(string.Join("\n", comments)) +
+               "\" data-comments=\"" + PageMarkdown.Esc(json) + "\" data-src=\"" + PageMarkdown.Esc(source) + "\">💬" +
+               (comments.Count > 1 ? comments.Count.ToString(System.Globalization.CultureInfo.InvariantCulture) : "") + "</sup>";
+    }
+
+    private const string Css = ".urbe-cm{cursor:pointer;font-size:.62em;line-height:0;margin-left:.08em;vertical-align:super;font-weight:600;color:var(--accent,#c58a2b);user-select:none;-webkit-user-select:none}" +
+        ".urbe-cm-pop{position:absolute;z-index:2147483000;max-width:min(320px,calc(100vw - 24px));max-height:240px;overflow:auto;padding:10px 12px;border-radius:10px;" +
+        "background:var(--surface,#fff);color:var(--text,#1d1d1f);border:1px solid color-mix(in srgb,currentColor 18%,transparent);box-shadow:0 8px 28px rgba(0,0,0,.25);font:14px/1.45 system-ui,sans-serif;text-align:left}" +
+        ".urbe-cm-pop b{display:block;font-size:12px;opacity:.7;margin-bottom:6px}.urbe-cm-pop p{margin:0 0 6px;white-space:pre-wrap;overflow-wrap:anywhere}.urbe-cm-pop p:last-child{margin:0}";
+
+    // tapping a 💬 opens its comments (window capture runs before the studio's selection script); while a text is being
+    // written in place its 💬 goes back to {"…"}, so the comments are kept in what the studio receives
+    private const string Script = "(function(){var d=document,pop=null;function close(){if(pop){pop.remove();pop=null}}" +
+        "function open(m){close();var list=[];try{list=JSON.parse(m.dataset.comments||'[]')}catch(e){}pop=d.createElement('div');pop.className='urbe-cm-pop';pop.setAttribute('role','dialog');" +
+        "var h=d.createElement('b');h.textContent=list.length>1?list.length+' comentários':'Comentário';pop.appendChild(h);list.forEach(function(t){var p=d.createElement('p');p.textContent=t;pop.appendChild(p)});" +
+        "d.body.appendChild(pop);var r=m.getBoundingClientRect(),w=pop.offsetWidth,x=Math.max(12,Math.min(r.left+scrollX-w/2,scrollX+innerWidth-w-12));pop.style.left=x+'px';pop.style.top=(r.bottom+scrollY+6)+'px';pop._for=m}" +
+        "addEventListener('click',function(e){var m=e.target.closest&&e.target.closest('.urbe-cm');if(m&&!m.closest('[contenteditable=true]')){e.preventDefault();e.stopPropagation();if(pop&&pop._for===m)close();else open(m);return}" +
+        "if(pop){if(!(e.target.closest&&e.target.closest('.urbe-cm-pop'))){close();e.preventDefault()}e.stopPropagation()}},true);" +
+        "addEventListener('keydown',function(e){var m=e.target.closest&&e.target.closest('.urbe-cm');if(m&&(e.key==='Enter'||e.key===' ')){e.preventDefault();open(m)}if(e.key==='Escape')close()},true);" +
+        "addEventListener('scroll',function(){if(pop&&pop._for&&!pop._for.isConnected)close()},{passive:true});" +
+        "function raw(n){n.querySelectorAll('.urbe-cm').forEach(function(m){m.replaceWith(d.createTextNode(m.dataset.src||''))})}" +
+        "addEventListener('focusin',function(e){var n=e.target;if(n&&n.isContentEditable){close();raw(n)}},true);" +
+        "addEventListener('focusout',function(e){var n=e.target;if(n&&n.isContentEditable)raw(n)},true)})();";
+}
+
+public sealed partial class PageEngine
+{
+    /// <summary>
+    /// The Urbe's own marks of the notes (DEC-0045): on, <c>%%…%%</c> and <c>{"…"}</c> comments are left out of the
+    /// page and <c>{ia:"modelo"}</c> shows as "· IA: modelo"; in the studio preview (<c>preview</c>) each word comment
+    /// shows as a 💬 that opens it (UC-49). Off (the default, and the oracles) renders the texts as the 1.8.4 does.
+    /// </summary>
+    public bool UrbeMarks { get; set; }
+}

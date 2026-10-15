@@ -172,8 +172,12 @@ public sealed class NotesExplorer : Border
     /// <summary>The "⋯" of a folder row: the host shows what can be done with that folder (DEC-0045, UC-38).</summary>
     public event Action<string>? FolderMenuRequested;
 
-    /// <summary>Notes held and dragged onto a folder row: move them there (DEC-0045, UC-38).</summary>
+    /// <summary>Notes and folders held and dragged onto a folder row: move them there (DEC-0045, UC-38, UC-54); notes by
+    /// path, folders as "folder:" + their path.</summary>
     public event Action<IReadOnlyList<string>, string>? MoveRequested;
+
+    /// <summary>A file that is not a note, held and dragged onto a folder row: move it there (UC-54).</summary>
+    public event Action<string, string>? FileMoveRequested;
     /// <summary>An action of the selection bar (.ume-actions): "open", "favorite", "move", "duplicate", "group" or "delete",
     /// with the selection: notes by path, folders as "folder:" + their path (model.js folderId).</summary>
     public event Action<string, IReadOnlyList<string>>? SelectionAction;
@@ -331,14 +335,28 @@ public sealed class NotesExplorer : Border
     }
 
     /// <summary>
-    /// Drops the selected notes on <paramref name="folder"/> (what a drag onto a folder row does): only notes move,
-    /// and only those not already there. False when nothing would move.
+    /// Drops the selection on <paramref name="folder"/> (what a drag onto a folder row does): the notes not already
+    /// there and the folders that can go there (not the folder itself, one above it or one already in it), each folder
+    /// with what is inside it. False when nothing would move.
     /// </summary>
     public bool DropSelectionOn(string folder)
     {
-        var notes = _selected.Where(x => !x.StartsWith(FolderPrefix, StringComparison.Ordinal) && Dir(x) != folder).ToList();
-        if (notes.Count == 0) return false;
-        MoveRequested?.Invoke(notes, folder);
+        var folders = _selected.Where(x => x.StartsWith(FolderPrefix, StringComparison.Ordinal)).Select(x => x[FolderPrefix.Length..])
+            .Where(f => f.Length > 0 && f != folder && !folder.StartsWith(f + "/", StringComparison.Ordinal) && Dir(f) != folder).ToList();
+        folders = folders.Where(f => !folders.Any(g => f.StartsWith(g + "/", StringComparison.Ordinal))).ToList();
+        var notes = _selected.Where(x => !x.StartsWith(FolderPrefix, StringComparison.Ordinal) && Dir(x) != folder
+            && !folders.Any(f => x.StartsWith(f + "/", StringComparison.Ordinal))).ToList();
+        if (notes.Count == 0 && folders.Count == 0) return false;
+        MoveRequested?.Invoke([.. folders.Select(f => FolderPrefix + f), .. notes], folder);
+        return true;
+    }
+
+    /// <summary>Drops a visible file that is not a note on <paramref name="folder"/>. False when it is already there.</summary>
+    public bool DropFileOn(string path, string folder)
+    {
+        Fresh();
+        if (!_visibleFiles.Contains(path) || Dir(path) == folder) return false;
+        FileMoveRequested?.Invoke(path, folder);
         return true;
     }
 
@@ -543,7 +561,7 @@ public sealed class NotesExplorer : Border
     {
         _visibleFiles.Add(path);
         _list.Children.Add(Row(IconFor(path), Base(path), withPath && path.Contains('/') ? Dir(path) : null, depth, false, false, false,
-            () => TryOpenFile(path), () => HoldFile(path)));
+            () => TryOpenFile(path), () => ArmDrag(path)));
     }
 
     /// <summary>A folder row: the caret and a "⋯" with the folder's options (the 1.8.4 showed none, DEC-0045).</summary>
@@ -563,16 +581,19 @@ public sealed class NotesExplorer : Border
         caret.RenderTransform = open ? new RotateTransform(90) : null;
         var trailing = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { more, caret } };
         return PressableRow(RowFrame(UrbeTheme.Icons.Folder, name, null, true, open, trailing), depth, _selected.Contains(FolderPrefix + folder),
-            () => TapFolder(folder), () => HoldFolder(folder), () => HoldDelay);
+            () => TapFolder(folder), () => { if (HoldFolder(folder)) ArmDrag(); }, () => HoldDelay);
     }
 
-    // A held note can be dragged onto a folder row (the 1.8.4 did nothing, DEC-0045, UC-38). The hold re-renders the list,
-    // so the drag is followed here, on the whole explorer, not on the row that was pressed.
+    // A held note or folder can be dragged onto a folder row (the 1.8.4 did nothing, DEC-0045, UC-38, UC-54). The hold
+    // re-renders the list, so the drag is followed here, on the whole explorer, not on the row that was pressed. A held
+    // file that is not a note drags alone; let go without dragging, it shows its options (menuEntradaExplorer).
     private bool _dragArmed, _dragging;
     private Point? _dragFrom;
+    private string? _dragFile;
 
-    private void ArmDrag()
+    private void ArmDrag(string? file = null)
     {
+        _dragFile = file;
         _dragArmed = true;
         _dragging = false;
         _dragFrom = null;
@@ -591,19 +612,24 @@ public sealed class NotesExplorer : Border
 
     private void OnDragReleased(object? sender, Avalonia.Input.PointerReleasedEventArgs e)
     {
+        var file = _dragFile;
         if (_dragging && FolderRowAt(e.GetPosition(_list)) is { } row && _folderRows.TryGetValue(row, out var folder))
         {
             EndDrag();
-            DropSelectionOn(folder);
+            if (file is not null) DropFileOn(file, folder);
+            else DropSelectionOn(folder);
             return;
         }
+        bool dragged = _dragging;
         EndDrag();
+        if (file is not null && !dragged) HoldFile(file);
     }
 
     private void EndDrag()
     {
         _dragArmed = _dragging = false;
         _dragFrom = null;
+        _dragFile = null;
         Highlight(null);
     }
 
@@ -622,7 +648,7 @@ public sealed class NotesExplorer : Border
         if (row is Button target) target.BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent);
     }
 
-    /// <summary>Whether a held note is being dragged now (tests).</summary>
+    /// <summary>Whether a held note, folder or file is being dragged now (tests).</summary>
     public bool Dragging => _dragging;
 
     /// <summary>renderTrash: "n item(ns) · restaure ou exclua de vez" with Esvaziar, then each item with Restaurar and ✕.</summary>

@@ -125,6 +125,25 @@ public static partial class LegacyVisualEdit
         return ToggleWrap(text, a, b, "`");
     }
 
+    /// <summary>
+    /// The bold, italic and code buttons (UC-55): a button that shows as on (<see cref="LegacyEditorTools.EnclosingMark"/>)
+    /// takes its marks off, even with only the caret inside them; otherwise the marks go in (<see cref="ToggleWrap"/>,
+    /// <see cref="InlineCode"/>). The tap always does what the lit button says.
+    /// </summary>
+    public static LegacyEditorTools.TextEdit ToggleMark(string text, int selectionStart, int selectionEnd, string id)
+    {
+        var a = Math.Clamp(Math.Min(selectionStart, selectionEnd), 0, text.Length);
+        var b = Math.Clamp(Math.Max(selectionStart, selectionEnd), 0, text.Length);
+        if (LegacyEditorTools.EnclosingMark(text, a, b, id) is var (open, close, m))
+            return new(text[..open] + text[(open + m)..close] + text[(close + m)..], a - m, b - m);
+        return id switch
+        {
+            "code" => InlineCode(text, a, b),
+            "italic" => ToggleWrap(text, a, b, "_"),
+            _ => ToggleWrap(text, a, b, "**"),
+        };
+    }
+
     /// <summary>A %%comment%% (DEC-0045, UC-43): the selection becomes one (or stops being one); with none, the caret goes
     /// between the marks to write it.</summary>
     public static LegacyEditorTools.TextEdit Comment(string text, int selectionStart, int selectionEnd)

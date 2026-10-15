@@ -67,6 +67,8 @@ public sealed class VisualSurface : StackPanel
     public void SetText(string markdown)
     {
         _text = markdown.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+        // the block being edited goes: its buttons must not stay lit (UC-55)
+        if (_box is not null) ActiveToolsChanged?.Invoke(new HashSet<string>());
         _box = null;
         _editStart = _editEnd = -1;
         Rebuild();
@@ -543,9 +545,8 @@ public sealed class VisualSurface : StackPanel
         var (text, a, b) = Selection();
         switch (act)
         {
-            case "bold": Apply(LegacyVisualEdit.ToggleWrap(text, a, b, "**")); break;
-            case "italic": Apply(LegacyVisualEdit.ToggleWrap(text, a, b, "_")); break;
-            case "code": Apply(LegacyVisualEdit.InlineCode(text, a, b)); break;
+            // a lit button takes its marks off, even with only the caret inside them (UC-55)
+            case "bold" or "italic" or "code": Apply(LegacyVisualEdit.ToggleMark(text, a, b, act)); break;
             case "wiki": Apply(LegacyVisualEdit.WikiOfSelection(text, a, b)); break;
             case "link": _ = LinkAsync(text, a, b); break;
             case "h1": Apply(LegacyVisualEdit.ToggleBlock(text, _box.CaretIndex, "# ")); break;

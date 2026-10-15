@@ -1,0 +1,32 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261015-urbe-beta-11-validacao",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-15T23:38:00Z",
+  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "task_id": "UC-33",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "5b7c93d3",
+  "commit": null,
+  "pr": null,
+  "files_changed": ["docs/governance/handoffs/HO-20261015-urbe-beta-11-validacao.json"],
+  "work_completed": [
+    "Registra no portal as validações no aparelho da Urbe Beta 2.0 (2.0.0-beta.11), que os handoffs anteriores deixaram como não aplicáveis e por isso não apareciam para o proprietário."
+  ],
+  "verification": [
+    { "kind": "human", "check": "Android físico: instalar/atualizar a beta.11 por cima da anterior, abrir a cidade em tela cheia, tocar, navegar e usar sem travar (gate G-N0, UC-33/UC-48)", "result": "pending", "critical": true, "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.11" },
+    { "kind": "human", "check": "Android físico: abrir um vault real, editar uma nota, fechar e reabrir o app, e a edição continuar lá (UC-19/UC-25)", "result": "pending", "critical": true, "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.11" },
+    { "kind": "human", "check": "Windows: extrair o zip da beta.11, abrir o Urbe.exe, abrir o vault, editar e reabrir (UC-24)", "result": "pending", "critical": true, "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.11" }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": ["Quando o proprietário aprovar no portal, marcar os itens correspondentes do ROADMAP C# conforme a aprovação."],
+  "decisions_required": [],
+  "normative_sources": ["AGENTS.md", "docs/governance/communication.md", "apps/urbe/docs/csharp/ROADMAP.md"],
+  "invariants": [ { "id": "NN-017", "evidence": "Validação no aparelho registrada como humana e pendente, separada da automática." } ],
+  "reuse_assessment": [ { "subject": "urbe-beta-validation", "status": "product-specific", "rationale": "Validação do Urbe." } ],
+  "criticality": { "declared": "routine", "reason": "Só registra validações pendentes." }
+}

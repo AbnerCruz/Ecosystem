@@ -43,7 +43,12 @@ public sealed class EditorOverlay : Grid
     private CityNote? _note;
     private string _savedContent = string.Empty;
     private bool _saving, _fromVisual, _opening;
-    private readonly DispatcherTimer _autosave = new() { Interval = TimeSpan.FromMilliseconds(400) };
+    // UC-48: the autosave waits for a pause in typing (each save lists, plans and verifies the vault on
+    // Android), but never holds an edit longer than AutosaveMaxWait while typing goes on.
+    private readonly DispatcherTimer _autosave = new() { Interval = AutosavePause };
+    internal static readonly TimeSpan AutosavePause = TimeSpan.FromMilliseconds(900);
+    internal static readonly TimeSpan AutosaveMaxWait = TimeSpan.FromSeconds(3);
+    private DateTime _pendingSince;
     private KnowledgeIndex? _index;
     private DocumentStore? _store;
     private string? _currentId;
@@ -799,7 +804,18 @@ public sealed class EditorOverlay : Grid
     private void ScheduleAutosave()
     {
         if (!SaveOnClose || SaveRequested is null || _note is null || !HasChanges) return;
-        if (!_autosave.IsEnabled) _autosave.Start();
+        var now = DateTime.UtcNow;
+        if (!_autosave.IsEnabled) { _pendingSince = now; _autosave.Start(); return; }
+        // still typing: push the save to the next pause, unless the edit has waited long enough
+        if (now - _pendingSince < AutosaveMaxWait) { _autosave.Stop(); _autosave.Start(); }
+    }
+
+    /// <summary>Writes a pending edit now (the app is leaving the foreground): the pause of the autosave
+    /// must not cost the last words.</summary>
+    public async Task FlushAsync()
+    {
+        if (!_autosave.IsEnabled) return;
+        await AutosaveTickAsync();
     }
 
     private async Task AutosaveTickAsync()
@@ -911,6 +927,14 @@ public sealed class EditorOverlay : Grid
             ApplyEdit(LegacyEditorTools.NoteLink(Editor.Text ?? text, a, b, names[i]));
             return;
         }
+        // UC-55: a lit button turns its state off (the 1.8.4's insertAtCursor, ApplySource, only added marks: a lit B added
+        // another pair), and Código puts the caret between the backticks; off buttons otherwise insert as the 1.8.4 did.
+        var (s, e) = VisualSurface.Range(Editor);
+        if (tool.Id is "bold" or "italic" or "code" && LegacyEditorTools.EnclosingMark(text, s, e, tool.Id) is not null)
+        { ApplyEdit(LegacyVisualEdit.ToggleMark(text, s, e, tool.Id)); return; }
+        if (tool.Id == "code") { ApplyEdit(LegacyVisualEdit.InlineCode(text, s, e)); return; }
+        if (tool.Id is "h1" or "h2" or "h3" or "list" or "task" or "quote" && LegacyEditorTools.ActiveTools(text, s, e).Contains(tool.Id))
+        { ApplyEdit(LegacyVisualEdit.ToggleBlock(text, s, tool.Md!)); return; }
         if (LegacyEditorTools.ApplySource(tool, text, a, b) is { } edit) ApplyEdit(edit);
     }
 

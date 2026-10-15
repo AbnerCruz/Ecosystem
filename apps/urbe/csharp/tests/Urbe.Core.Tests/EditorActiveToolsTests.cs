@@ -50,4 +50,24 @@ public sealed class EditorActiveToolsTests
         Assert.Equal("a x b", off.Text);
         Assert.DoesNotContain("bold", LegacyEditorTools.ActiveTools(off.Text, off.SelectionStart, off.SelectionEnd));
     }
+
+    [Theory]
+    // UC-55: a lit button takes its marks off, even with only the caret inside them
+    [InlineData("a **forte** b", 6, 6, "bold", "a forte b", 4)]
+    [InlineData("a _leve_ b", 4, 4, "italic", "a leve b", 3)]
+    [InlineData("a `x = 1` b", 5, 5, "code", "a x = 1 b", 4)]
+    [InlineData("a **forte** b", 4, 9, "bold", "a forte b", 2)]
+    // off: the marks go in; inline code never takes the whole line nor a placeholder word
+    [InlineData("a x b", 2, 3, "code", "a `x` b", 3)]
+    [InlineData("a  b", 2, 2, "code", "a `` b", 3)]
+    [InlineData("a x b", 2, 3, "bold", "a **x** b", 4)]
+    [InlineData("a x b", 2, 3, "italic", "a _x_ b", 3)]
+    public void ALitButtonTurnsOffAndAnOffOneTurnsOn(string text, int a, int b, string id, string expected, int caret)
+    {
+        var edit = LegacyVisualEdit.ToggleMark(text, a, b, id);
+        Assert.Equal(expected, edit.Text);
+        Assert.Equal(caret, edit.SelectionStart);
+        // the state the button shows flips with every tap
+        Assert.NotEqual(LegacyEditorTools.ActiveTools(text, a, b).Contains(id), LegacyEditorTools.ActiveTools(edit.Text, edit.SelectionStart, edit.SelectionEnd).Contains(id));
+    }
 }
