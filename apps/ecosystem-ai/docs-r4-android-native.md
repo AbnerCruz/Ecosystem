@@ -31,6 +31,11 @@ planejamento, pareceres e `LocalRunEventLog`. Não é outro Runtime.
 7. Leia os recibos e salve respostas em `.md` pelo seletor de destino Android.
    Pareceres podem ser aceitos/rejeitados com justificativa; isso não integra
    arquivos nem significa aceite técnico do projeto inteiro.
+8. Para tornar uma resposta um arquivo do próprio projeto, toque em **Salvar
+   no projeto**, escolha o nome `.md`/`.txt`, revise o texto completo e confirme.
+   Nome existente é recusado. Cancelar a revisão não grava nem chama IA.
+   O arquivo fica disponível para leitura nas próximas tarefas e em **Arquivos**.
+   Detalhes e limites: [salvamento revisado](docs-r4-reviewed-project-file.md).
 
 Somente **Enviar/Executar agora** chama modelos. Nenhuma execução em GET,
 idle, abertura do app ou criação de projeto. Ao sair da Activity, a execução
@@ -151,7 +156,9 @@ Roteiro em aparelho para o APK exato:
   conforto no moto g32 Android 13.
 
 P6-5 só pode fechar com os requisitos completos e a evidência apropriada.
-Este APK não prova integração real de ChangeSets nem conclui a Fase 7.
+Salvar uma resposta agora percorre o ChangeIntegrator e publica um único
+arquivo novo no projeto após revisão do operador. Não prova integração de
+mudanças arbitrárias/multiarquivo nem conclui P6-5 ou a Fase 7.
 
 ## Diretriz de configuração persistente (15/10/2026)
 

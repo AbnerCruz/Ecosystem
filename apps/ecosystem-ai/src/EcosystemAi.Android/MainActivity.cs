@@ -302,7 +302,11 @@ public sealed partial class MainActivity : Activity
             box.AddView(Text(turn.Role == "user" ? "VOCÊ" : "AGENTE", 12, true));
             var text = Text(turn.Text, 16); text.SetTextColor(_ink); text.SetTextIsSelectable(true); box.AddView(text);
             if (turn.Role == "assistant")
+            {
+                var turnIndex = index;
                 box.AddView(Button("Salvar resposta .md", () => Export(turn.Text)));
+                box.AddView(Button("Salvar no projeto", () => ReviewProjectFile(project.Id, session.Id, turnIndex)));
+            }
             Panel(box);
         }
         _message = Input("O que você quer produzir ou investigar?", _draftGoal, multi: true);

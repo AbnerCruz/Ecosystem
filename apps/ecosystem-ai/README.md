@@ -42,6 +42,11 @@ Requer .NET SDK 10+. A suíte usa provedores determinísticos/HTTP mockado, sem 
 A prova de equipes, isolamento e integração está descrita em [docs-r2.md](docs-r2.md).
 Autoridade do escopo: P6-3 no ROADMAP; contrato candidato: ADR-0020.
 
+No Android, **Salvar no projeto** permite revisar uma resposta inteira e
+publicá-la como novo arquivo `.md`/`.txt` pelo integrador existente, sem
+sobrescrita ou permissão de escrita ao agente. Escopo e evidências em
+[salvamento revisado](docs-r4-reviewed-project-file.md).
+
 ## Sessão do Agent Workspace
 
 A prova local de hospedagem em dois contextos está em [docs-r3.md](docs-r3.md).

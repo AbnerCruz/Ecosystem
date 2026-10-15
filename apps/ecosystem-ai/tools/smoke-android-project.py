@@ -3,6 +3,7 @@
 Runs only on the disposable emulator selected by smoke-android-preview.sh.
 No provider, credentials, or third-party Python packages.
 """
+import hashlib
 import json
 import re
 import subprocess
@@ -61,6 +62,14 @@ def tap(text=None, resource=None):
     assert x2 > x1 and y2 > y1
     shell('input', 'tap', str((x1+x2)//2), str((y1+y2)//2))
     time.sleep(1)
+
+
+def tap_dialog_action(label, resource='android:id/button1'):
+    # Native AlertDialog buttons apply AllCaps; IDs stay stable across themes.
+    target = node(resource=resource)
+    assert target.get('text', '').casefold() == label.casefold(), ET.tostring(target, encoding='unicode')
+    assert target.get('enabled') == 'true'
+    tap(resource=resource)
 
 
 def enter(hint, text):
@@ -182,3 +191,48 @@ assert 'provider.example.test' not in preferences
 assert 'sentinel-saved-provider-key' not in shell('cat', files + '/catalog/catalog.json')
 assert 'sentinel-saved-provider-key' not in ET.tostring(ui(), encoding='unicode')
 print('Android 13 settings passed: encrypted provider credential, saved model and selection survive process death; no provider call, no automatic spending authorization.')
+
+# Offline response fixture only in the disposable emulator. No inference receipt is fabricated.
+shell('am', 'force-stop', package)
+fixture = json.loads(shell('cat', files + '/catalog/catalog.json'))
+fixture_project = fixture['body']['projects'][0]
+fixture_session = fixture_project['sessions'][0]
+fixture_session['turns'].append({'role': 'assistant', 'text': 'CI_reviewed_response',
+                                 'at': fixture_session['createdAt']})
+fixture['body']['revision'] += 1
+fixture['sha256'] = hashlib.sha256(json.dumps(fixture['body'], separators=(',', ':')).encode()).hexdigest()
+fixture_path = Path('android-preview/reviewed-response-fixture.json')
+fixture_path.write_text(json.dumps(fixture, separators=(',', ':')))
+call('push', str(fixture_path), '/data/local/tmp/reviewed-response-fixture.json')
+shell('cp', '/data/local/tmp/reviewed-response-fixture.json', files + '/catalog/catalog.json')
+shell('am', 'start', '-W', '-a', 'android.intent.action.MAIN',
+      '-c', 'android.intent.category.LAUNCHER', '-n', package + '/' + activity)
+time.sleep(3)
+open_project()
+tap('Abrir conversa')
+tap('Salvar no projeto')
+# Name defaults to resposta.md; preparing and cancelling review must not write it.
+tap_dialog_action('Revisar conteúdo')
+node('Novo arquivo: resposta.md')
+node('CI_reviewed_response')
+target_file = fixture_project['workspaceDirectory'] + '/resposta.md'
+assert shell('find', fixture_project['workspaceDirectory'], '-name', 'resposta.md') == ''
+tap_dialog_action('Cancelar', resource='android:id/button2')
+tap('Salvar no projeto')
+tap_dialog_action('Revisar conteúdo')
+node('Revisar arquivo', resource='android:id/alertTitle')
+tap_dialog_action('Confirmar e salvar')
+node('Arquivo salvo no projeto')
+assert shell('cat', target_file) == 'CI_reviewed_response'
+saved_catalog = shell('cat', files + '/catalog/catalog.json')
+assert json.loads(saved_catalog)['body']['projects'][0]['sessions'][0]['runs'] == []
+tap_dialog_action('Fechar')
+shell('am', 'force-stop', package)
+shell('am', 'start', '-W', '-a', 'android.intent.action.MAIN',
+      '-c', 'android.intent.category.LAUNCHER', '-n', package + '/' + activity)
+time.sleep(3)
+open_project()
+node('resposta.md')
+assert shell('cat', target_file) == 'CI_reviewed_response'
+assert shell('cat', files + '/catalog/catalog.json') == saved_catalog
+print('Android 13 reviewed file passed: full review, cancel without write, explicit confirmation, real file and process restart; no provider call or fabricated run.')
