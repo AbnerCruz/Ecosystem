@@ -297,7 +297,7 @@ public sealed partial class AssistantPanel : Border
             {
                 Host = new Host(this, documents, knowledge), Provider = p, Model = ModelId(), Messages = conv.Messages,
                 Agent = AssistantAgent.AgentById(conv.AgentId, _cfg.CustomAgents), Policy = conv.Policy, Cancel = cts.Token, MarkAiText = true,
-                MaxSteps = _cfg.MaxSteps, ContextTokens = meta?.Context ?? 128000, Instructions = _cfg.Instructions, Memory = MemoryList(), VaultName = _app.VaultName,
+                MaxSteps = _cfg.MaxSteps, ContextTokens = meta?.Context ?? 128000, Instructions = WithUserAgents(_cfg.Instructions, documents), Memory = MemoryList(), VaultName = _app.VaultName,
                 Stream = Providers.StreamAsync, Approve = ApproveAsync, OnUpdate = OnUpdate, Tools = Tools
             });
             run.Changes = r.Changes;
@@ -515,6 +515,16 @@ public sealed partial class AssistantPanel : Border
         ToolTip.SetTip(b, tip);
         Avalonia.Automation.AutomationProperties.SetName(b, tip);
         return b;
+    }
+
+    /// <summary>UC-50: the person's Personalização/AGENTS.md (the general part and the part for this model) after the
+    /// Assistente's own instructions, read again at every conversation.</summary>
+    private string? WithUserAgents(string? instructions, DocumentStore documents)
+    {
+        var own = UserAgentsFile.For(documents.Get(UserAgentsFile.Path)?.Content, ModelId());
+        if (own.Length == 0) return instructions;
+        var block = "Instruções do usuário (" + UserAgentsFile.Path + "):\n" + own;
+        return string.IsNullOrWhiteSpace(instructions) ? block : instructions + "\n\n" + block;
     }
 
     private static Button TextButton(string text, Action click, bool primary = false, bool danger = false)

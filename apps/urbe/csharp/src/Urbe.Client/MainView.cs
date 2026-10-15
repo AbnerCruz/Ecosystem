@@ -912,6 +912,11 @@ public sealed partial class MainView : Grid
         return Dialogs.MenuAsync(title,
         [
             new DialogItem("Renomear", UrbeTheme.Icons.Pencil, Run: () => RenameNoteAsync(note.Path)),
+            new DialogItem("Mover para outra pasta", UrbeTheme.Icons.Folder, "A casa muda de bairro na cidade.", Run: async () =>
+            {
+                // UC-54: move from inside the editor (the note stays open at its new path)
+                if (await ChooseFolderAsync() is { } folder) await MoveNotesToAsync([note.Path], folder);
+            }),
             new DialogItem("Mostrar nas notas", UrbeTheme.Icons.Notes, Run: () => { ShowNotesOverEditor(); return Task.CompletedTask; }),
             new DialogItem("Versões anteriores", UrbeTheme.Icons.Restore, Run: ShowVersionsAsync),
             new DialogItem("Estrutura e backlinks", UrbeTheme.Icons.List, Run: () => { ShowEditorContext(); return Task.CompletedTask; }),

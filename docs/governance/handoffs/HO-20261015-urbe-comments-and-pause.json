@@ -31,13 +31,19 @@
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantAgentOracleTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ChooseSearchUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/UserAgentsFile.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/UserAgentsFileTests.cs",
     "docs/governance/handoffs/HO-20261015-urbe-comments-and-pause.json"
   ],
   "work_completed": [
     "UC-48: a cidade deixa de simular e desenhar ~30 vezes por segundo atrás de uma tela opaca que a cobre inteira (estúdio de páginas, Páginas, tutorial, Personalização, Assistente no celular).",
     "UC-48/UC-55: quando o Android não redimensiona a janela para o teclado, o app termina onde o teclado começa (InputPane), e a barra do editor e o texto ficam acima das teclas.",
     "UC-49 (editor): palavra{\"comentário\"} mostra um 💬 sobre a palavra; tocar lista os comentários e acrescenta outro no próprio .md; páginas e HTML exportado deixam os comentários de fora.",
-    "UC-51: 'Editar' no cartão de aprovação do Assistente; aprovar grava a versão editada pela pessoa (create_note mantém a criação; as demais viram write_note da mesma nota) e o modelo é avisado. Marca d'água: texto escrito pelo Assistente termina com {ia:\"modelo\"} (opção MarkAiText ligada no app; os oráculos da 1.8.4 rodam sem ela), mostrado como 'modelo' minúsculo verde no editor e '· IA: modelo' nas páginas."
+    "UC-51: 'Editar' no cartão de aprovação do Assistente; aprovar grava a versão editada pela pessoa (create_note mantém a criação; as demais viram write_note da mesma nota) e o modelo é avisado. Marca d'água: texto escrito pelo Assistente termina com {ia:\"modelo\"} (opção MarkAiText ligada no app; os oráculos da 1.8.4 rodam sem ela), mostrado como 'modelo' minúsculo verde no editor e '· IA: modelo' nas páginas.",
+    "UC-54: escolhas longas (como 'Mover para') ganham busca sem acentos e rolagem, Enter escolhe a primeira mostrada; 'Mover para outra pasta' no menu do editor (a nota segue aberta no novo caminho).",
+    "UC-50: o Assistente lê Personalização/AGENTS.md a cada conversa — a parte Geral e a do modelo em uso (Nome: {…} ou ## Nome) — depois das instruções dele."
   ],
   "verification": [
     {
@@ -57,6 +63,18 @@
       "check": "AssistantAgentOracleTests.AnEditedApprovalWritesThePersonsText; NoteMarksTests.AiMark_IsAddedOnceAndRenderedAsAModelMark",
       "result": "passed",
       "evidence": "Core: 807 testes passando, oráculos do agente inalterados."
+    },
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.Choose_ALongListHasASearchThatFiltersWithoutAccentsAndEnterTakesTheFirst",
+      "result": "passed",
+      "evidence": "'acao' acha 'Ações'; Enter escolhe a primeira visível."
+    },
+    {
+      "kind": "automated",
+      "check": "UserAgentsFileTests",
+      "result": "passed",
+      "evidence": "Seções nas duas formas, chaves aninhadas, Geral + seção do modelo."
     },
     {
       "kind": "automated",

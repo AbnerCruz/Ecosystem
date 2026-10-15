@@ -281,10 +281,42 @@ public sealed class UrbeDialogs : Grid
                 HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, VerticalContentAlignment = VerticalAlignment.Center
             };
             b.Click += (_, _) => finish(index);
+            b.Tag = Fold(x.Label + " " + x.Detail);
             list.Children.Add(b);
         }
-        return (new StackPanel { Children = { Head(title, message, () => finish(null)), list } }, null, null, list.Children.Count > 0 ? list.Children[0] : null);
+        // a long list (the folders of "Mover para") gets a search box and scrolls (UC-54)
+        if (options.Count <= SearchFrom)
+            return (new StackPanel { Children = { Head(title, message, () => finish(null)), list } }, null, null, list.Children.Count > 0 ? list.Children[0] : null);
+        var search = new TextBox
+        {
+            PlaceholderText = "Buscar", MinHeight = 44, Padding = new Thickness(12, 10), CornerRadius = new CornerRadius(12), Margin = new Thickness(0, 12, 0, 0),
+            FontFamily = UrbeTheme.UiFont, FontSize = 15, Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text),
+            BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), CaretBrush = UrbeTheme.Brush(UrbeTheme.Accent)
+        };
+        Avalonia.Automation.AutomationProperties.SetName(search, "Buscar");
+        search.TextChanged += (_, _) =>
+        {
+            var q = Fold(search.Text ?? "");
+            foreach (var c in list.Children) c.IsVisible = q.Length == 0 || ((string?)c.Tag ?? "").Contains(q, StringComparison.Ordinal);
+        };
+        // Enter takes the first one still shown
+        void First() { if (list.Children.FirstOrDefault(c => c.IsVisible) is Button f) f.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent)); }
+        var scroll = new ScrollViewer { Content = list, MaxHeight = 420, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
+        return (new StackPanel { Children = { Head(title, message, () => finish(null)), search, scroll } }, null, First, search);
     });
+
+    /// <summary>From this many options a choice list has a search box.</summary>
+    public const int SearchFrom = 7;
+
+    /// <summary>Lower case without accents, for searching ("Ação" finds "acao").</summary>
+    private static string Fold(string text)
+    {
+        var d = text.Normalize(System.Text.NormalizationForm.FormD);
+        var sb = new System.Text.StringBuilder(d.Length);
+        foreach (var ch in d)
+            if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(ch) != System.Globalization.UnicodeCategory.NonSpacingMark) sb.Append(char.ToLowerInvariant(ch));
+        return sb.ToString();
+    }
 
     /// <summary>
     /// The region dialog of the 1.8.4 (#regionDialog: Nome, Descrição, Cor, "Salvar alterações"): the three values,
