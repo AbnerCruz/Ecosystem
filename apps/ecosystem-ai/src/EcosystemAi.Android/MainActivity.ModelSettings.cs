@@ -1,5 +1,6 @@
 using Android.Content;
 using Android.Widget;
+using Android.Text;
 using EcosystemAi.Product;
 using System.Globalization;
 
@@ -129,7 +130,10 @@ public sealed partial class MainActivity
         var url = Input("URL base da API (https://…/v1)", provider?.BaseUrl ?? "");
         var key = Input(provider is null ? "Chave de API" : "Nova chave (vazio mantém a salva)", secret: true);
         _content.AddView(Text("API compatível com Chat Completions. Exemplos: https://openrouter.ai/api/v1 ou https://api.openai.com/v1", 14));
-        _content.AddView(name); _content.AddView(url); _content.AddView(key);
+        url.InputType = InputTypes.ClassText | InputTypes.TextVariationUri;
+        _content.AddView(Text("Nome do provedor:", 14)); _content.AddView(name);
+        _content.AddView(Text("URL base da API:", 14)); _content.AddView(url);
+        _content.AddView(Text("Chave de API:", 14)); _content.AddView(key);
         _content.AddView(Button("Salvar provedor", () =>
         {
             var baseUrl = SavedModelConfiguration.BaseUri((url.Text ?? "").Trim()).AbsoluteUri.TrimEnd('/');
@@ -190,7 +194,16 @@ public sealed partial class MainActivity
         var run = Input("Centavos USD por execução", (model?.RunBudgetCents ?? 20).ToString(CultureInfo.InvariantCulture));
         var call = Input("Centavos USD por chamada", (model?.MaxCallCents ?? 5).ToString(CultureInfo.InvariantCulture));
         var history = new CheckBox(this) { Text = "Reenviar histórico da conversa", Checked = model?.UseHistory ?? false }; history.SetTextColor(_ink);
-        foreach (var view in new global::Android.Views.View[] { id, name, input, output, run, call, history }) _content.AddView(view);
+        id.InputType = InputTypes.ClassText | InputTypes.TextFlagNoSuggestions;
+        input.InputType = output.InputType = InputTypes.ClassNumber | InputTypes.NumberFlagDecimal;
+        run.InputType = call.InputType = InputTypes.ClassNumber;
+        foreach (var (label, view) in new (string, global::Android.Views.View)[]
+        {
+            ("ID do modelo:", id), ("Nome do modelo:", name),
+            ("Entrada USD por milhão de tokens:", input), ("Saída USD por milhão de tokens:", output),
+            ("Centavos USD por execução:", run), ("Centavos USD por chamada:", call)
+        }) { _content.AddView(Text(label, 14)); _content.AddView(view); }
+        _content.AddView(history);
         _content.AddView(Text("Confira os preços do modelo. Zero só deve ser usado quando a tarifa informada for zero.", 13));
         _content.AddView(Button("Salvar modelo", () =>
         {
