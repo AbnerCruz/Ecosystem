@@ -117,6 +117,8 @@ public sealed class WorldView : Control
     private readonly LegacyWorldLife _life;
     private readonly LegacyVillagers _villagers = new();
     private readonly TownTrades _trades = new();
+    // children playing by their doors (UC-52)
+    private readonly TownKids _kids = new();
     // app.js v25Ciclo every V25_FPS (33 ms)
     private readonly DispatcherTimer _villagerTimer = new() { Interval = TimeSpan.FromMilliseconds(LegacyVillagers.FrameMs) };
     private readonly LifeRenderer _lifeArt = new();
@@ -200,6 +202,8 @@ public sealed class WorldView : Control
 
     /// <summary>The residents with trades at the well, the field and the woodpile (DEC-0045, UC-42).</summary>
     public TownTrades Trades => _trades;
+    /// <summary>The children playing by their doors (UC-52).</summary>
+    public TownKids Kids => _kids;
     /// <summary>The discreet event notice of life.js avisar() ("🌧 Chuva passageira", …).</summary>
     public event EventHandler<string>? Notice;
     /// <summary>v25MapaVisivel(): false while the editor, explorer or a menu covers the city.</summary>
@@ -249,14 +253,15 @@ public sealed class WorldView : Control
     public void VillagerTick()
     {
         if (World is null || City is null || Bounds.Width <= 0) return;
-        if (!CityVisible()) { _villagers.People.Clear(); _trades.Reset(); _villagerLast = 0; return; }
+        if (!CityVisible()) { _villagers.People.Clear(); _trades.Reset(); _kids.Reset(); _villagerLast = 0; return; }
         double now = _clock.Elapsed.TotalMilliseconds;
         double dt = _villagerLast == 0 ? 0 : now - _villagerLast;
         _villagerMs += dt;
         _villagerLast = now;
         var view = LifeView();
         bool moved = _villagers.Tick(_villagerMs, view, _life.Options.People, _life.Hurry, _lifeHost);
-        if (_trades.Tick(Math.Min(.1, dt / 1000), view, _life.Options.People, _life.Hurry, Prefs.Decorations, _lifeHost) || moved) InvalidateVisual();
+        bool kids = _kids.Tick(Math.Min(.1, dt / 1000), view, _life.Options.People && _life.Hurry <= 1, _lifeHost);
+        if (_trades.Tick(Math.Min(.1, dt / 1000), view, _life.Options.People, _life.Hurry, Prefs.Decorations, _lifeHost) || moved || kids) InvalidateVisual();
     }
 
     /// <summary>Runs the life and the fauna for <paramref name="seconds"/> of simulated time
@@ -271,6 +276,7 @@ public sealed class WorldView : Control
             _villagerMs += 33;
             _villagers.Tick(_villagerMs, v, _life.Options.People, _life.Hurry, _lifeHost);
             _trades.Tick(.033, v, _life.Options.People, _life.Hurry, Prefs.Decorations, _lifeHost);
+            _kids.Tick(.033, v, _life.Options.People && _life.Hurry <= 1, _lifeHost);
             while (nextFauna <= t)
             {
                 nextFauna += .04;
@@ -467,7 +473,7 @@ public sealed class WorldView : Control
         _lifeArt.Ground(context, _life, life);
         using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.None }))
             DrawTrees(context);
-        _lifeArt.Villagers(context, _trades.People.Count == 0 ? _villagers.People : [.. _villagers.People, .. _trades.People], life, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+        _lifeArt.Villagers(context, _trades.People.Count == 0 && _kids.People.Count == 0 ? _villagers.People : [.. _villagers.People, .. _trades.People, .. _kids.People], life, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         _lifeArt.TradeWork(context, _trades, life);
         _lifeArt.Fauna(context, _fauna, life);
         DrawBuildings(context);

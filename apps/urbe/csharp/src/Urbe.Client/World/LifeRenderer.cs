@@ -328,7 +328,7 @@ public sealed class LifeRenderer
             string dir = a.DirX != 0 ? "side" : a.DirY < 0 ? "up" : "down";
             var im = Villager(a.Look, dir, fr, dir == "side" && a.DirX < 0);
             var q = v.P(a.PosX, a.PosY);
-            double w = LegacyVillagerSprite.Width * sp, h = LegacyVillagerSprite.Height * sp, bob = !still && (fr & 1) != 0 ? sp : 0;
+            double w = LegacyVillagerSprite.Width * sp * a.Scale, h = LegacyVillagerSprite.Height * sp * a.Scale, bob = !still && (fr & 1) != 0 ? sp * a.Scale : 0;
             c.DrawEllipse(Rgba(0, 0, 0, .22), null, Pt(q), w * .34, sp * 1.6);
             Img(c, im, Math.Round(q.X - w / 2), Math.Round(q.Y - h + sp * 1.2 - bob), Math.Ceiling(w), Math.Ceiling(h));
             if (a.Conversation > 0 && z >= .55)
