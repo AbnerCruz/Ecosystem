@@ -74,18 +74,21 @@ public sealed class MainActivity : Activity
     private void RebindPrivateWorkspaces(string originalRoot)
     {
         var originalProjects = System.IO.Path.Combine(originalRoot, "projects");
-        if (originalProjects == _projectRoot) return;
         foreach (var project in _store.Read().Projects)
         {
-            // Earlier APKs persisted the OS alias. Only rebind our own GUID directory,
-            // never a user-selected external path or a link inside the private workspace.
+            // Earlier APKs persisted different OS aliases. Rebind only when the
+            // resolved target is exactly our private GUID directory, never outside it.
             var name = System.IO.Path.GetFileName(project.WorkspaceDirectory);
-            if (!Guid.TryParseExact(name, "N", out _)
-                || project.WorkspaceDirectory != System.IO.Path.Combine(originalProjects, name)) continue;
+            if (!Guid.TryParseExact(name, "N", out _)) continue;
             var expected = System.IO.Path.Combine(_projectRoot, name);
+            if (project.WorkspaceDirectory == expected) continue;
             using var directory = new Java.IO.File(project.WorkspaceDirectory);
             if (directory.CanonicalPath != expected)
-                throw new IOException("O workspace privado não corresponde ao diretório esperado.");
+            {
+                if (project.WorkspaceDirectory == System.IO.Path.Combine(originalProjects, name))
+                    throw new IOException("O workspace privado não corresponde ao diretório esperado.");
+                continue; // An unrelated external workspace is never rebound.
+            }
             _store.RebindWorkspace(project.Id, project.WorkspaceDirectory, expected);
         }
     }

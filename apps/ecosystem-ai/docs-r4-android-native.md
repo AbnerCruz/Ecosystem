@@ -76,7 +76,7 @@ não são liberados. Não há exceção global para symlinks.
 Para projetos criados pela prévia anterior, o Host atualiza somente o caminho
 do seu próprio workspace GUID sob o alias privado, após conferir o destino
 canônico exato. IDs, sessões, mensagens e arquivos permanecem; nenhum arquivo
-é movido e o schema v1 não muda. Caminhos externos não são reescritos. A troca
+é movido e o schema v1 não muda. Caminhos que não resolvem exatamente à pasta GUID privada não são reescritos. A troca
 usa lock/revisão/checksum do catálogo e recusa caminho alterado por concorrência.
 
 ## Identidade e assinatura da prévia

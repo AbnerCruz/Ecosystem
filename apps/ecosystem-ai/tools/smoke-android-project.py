@@ -120,7 +120,8 @@ updated = json.loads(shell('cat', files + '/catalog/catalog.json'))
 # Only the host-owned workspace path and enclosing revision/checksum may change.
 old_project = before['body']['projects'][0]
 new_project = updated['body']['projects'][0]
-assert new_project['workspaceDirectory'] == old_project['workspaceDirectory'].replace('/files/projects/', '/files-canonical/projects/', 1)
+assert '/files-canonical/projects/' in new_project['workspaceDirectory'], (old_project, new_project)
+shell('test', new_project['workspaceDirectory'], '-ef', old_project['workspaceDirectory'])
 new_project['workspaceDirectory'] = old_project['workspaceDirectory']
 assert new_project == old_project, 'Project identity, sessions and history must survive alias rebinding'
 assert shell('pidof', package)
