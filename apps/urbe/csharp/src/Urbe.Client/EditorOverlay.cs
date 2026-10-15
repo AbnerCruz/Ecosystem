@@ -164,6 +164,7 @@ public sealed class EditorOverlay : Grid
         _visual.ActiveToolsChanged += on => { if (Mode == EditorMode.Visual) ShowActiveTools(on); };
         _visual.WikiCandidates = Candidates;
         _visual.AskUrl = AskUrlAsync;
+        _visual.AskComment = comments => Dialogs?.CommentsAsync("Comentários", comments) ?? Task.FromResult<string?>(null);
 
         AddRow(TopBar(), 0);
         // find-ui.js: the bar is prepended to #editorMain, above #mdToolbar

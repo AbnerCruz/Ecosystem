@@ -1,0 +1,50 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261015-urbe-comments-and-pause",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-15T15:05:59Z",
+  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "task_id": "UC-48",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "419b1b0a",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/NoteMarks.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteMarksTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/VisualEditCrashUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/StudioPhoneUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261015-urbe-comments-and-pause.json"
+  ],
+  "work_completed": [
+    "UC-48: a cidade deixa de simular e desenhar ~30 vezes por segundo atrás de uma tela opaca que a cobre inteira (estúdio de páginas, Páginas, tutorial, Personalização, Assistente no celular).",
+    "UC-48/UC-55: quando o Android não redimensiona a janela para o teclado, o app termina onde o teclado começa (InputPane), e a barra do editor e o texto ficam acima das teclas.",
+    "UC-49 (editor): palavra{\"comentário\"} mostra um 💬 sobre a palavra; tocar lista os comentários e acrescenta outro no próprio .md; páginas e HTML exportado deixam os comentários de fora."
+  ],
+  "verification": [
+    { "kind": "automated", "check": "NoteMarksTests.WordComments_AreFoundReadAddedAndLeftOutOfPages", "result": "passed", "evidence": "Grupos, escape de aspas, inclusão e remoção nas páginas; código intocado." },
+    { "kind": "automated", "check": "HeadlessUiTests.VisualEdit_WordCommentsShowAMarkThatListsAndAddsComments", "result": "passed", "evidence": "O 💬 aparece, lista o comentário, acrescenta outro e o bloco continua renderizado." },
+    { "kind": "automated", "check": "HeadlessUiTests.World_PausesBehindTheStudioAndPagesAndRunsAgainAfter", "result": "passed", "evidence": "CityVisible falso atrás de Páginas e do estúdio; verdadeiro ao fechar." },
+    { "kind": "human", "check": "No Android: comentários 💬, teclado sem cobrir a barra do editor, fluidez com páginas abertas", "result": "not-applicable", "evidence": "Toque, teclado e desempenho percebido só se provam no aparelho (NN-017).", "object": "apps/urbe/csharp/src/Urbe.Client/MainView.cs" }
+  ],
+  "known_issues": ["UC-49: comentários ainda não aparecem adaptados dentro das páginas HTML (o editor de páginas os omite)."],
+  "blockers": [],
+  "next_actions": ["Seguir UC-48 (texto com aparência de negrito precisa de teste no aparelho) e UC-49 nas páginas."],
+  "decisions_required": [],
+  "normative_sources": ["AGENTS.md", "apps/urbe/AGENTS.md", "apps/urbe/docs/csharp/ROADMAP.md", "docs/governance/addenda/ADD-0024-urbe-nativo-desempenho-primeiro-e-release.md"],
+  "invariants": [
+    { "id": "NN-017", "evidence": "Provado por testes headless; validação no aparelho pendente." },
+    { "id": "NN-001", "evidence": "Os comentários vivem só no .md (sintaxe), sem arquivo paralelo." }
+  ],
+  "reuse_assessment": [ { "subject": "word-comments", "status": "product-specific", "rationale": "Sintaxe de notas do Urbe." } ],
+  "criticality": { "declared": "routine", "reason": "Desempenho e recurso do editor; nenhum formato de dados, canal ou permissão muda." }
+}

@@ -170,7 +170,9 @@ public sealed partial class MainView : Grid
         Search = new SearchFeature(this, () => _contents.Select(n => new CityNote(n.Key, n.Value)).ToList());
 
         // on a wide window Notas is a panel beside the city (theme.css @media (min-width:900px))
-        World.CityVisible = () => !Editor.IsVisible && (!Explorer.IsVisible || Explorer.Wide);
+        // nor while an opaque screen covers it all (the page studio, Páginas, the tutorial, Personalização, the Assistente
+        // on a phone…): the world stops simulating and drawing 30 times a second behind it (UC-48: "tudo com delay")
+        World.CityVisible = () => !Editor.IsVisible && (!Explorer.IsVisible || Explorer.Wide) && !CityCovered();
         World.Notice += (_, text) => ShowLifeNotice(text);
         World.CameraChanged += (_, _) => _biome.Text = World.BiomeNameAtCentre();
         // app.js v21CanvasUp: a note opens its summary, a file building its preview (openFilePreview)
@@ -1723,6 +1725,48 @@ public sealed partial class MainView : Grid
     private void SaveEditorToMemory()
     {
         if (Editor.Current is { } edited) _contents[edited.Path] = edited.Content;
+    }
+
+    private Avalonia.Controls.Platform.IInputPane? _inputPane;
+
+    protected override void OnAttachedToVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        // the phone's keyboard: when the window is not resized for it, the app ends where the keyboard starts, so the
+        // editor's formatting bar (bottom row on a phone) and the text being typed stay above the keys (UC-48/UC-55)
+        _inputPane = TopLevel.GetTopLevel(this)?.InputPane;
+        if (_inputPane is not null) _inputPane.StateChanged += OnInputPane;
+    }
+
+    protected override void OnDetachedFromVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
+    {
+        if (_inputPane is not null) _inputPane.StateChanged -= OnInputPane;
+        _inputPane = null;
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void OnInputPane(object? sender, Avalonia.Controls.Platform.InputPaneStateEventArgs e)
+    {
+        double covered = 0;
+        if (e.NewState == Avalonia.Controls.Platform.InputPaneState.Open && TopLevel.GetTopLevel(this) is { } top &&
+            this.TranslatePoint(new Point(0, Bounds.Height), top) is { } bottom)
+            covered = Math.Max(0, bottom.Y + Margin.Bottom - e.EndRect.Top);
+        Margin = new Thickness(0, 0, 0, covered);
+    }
+
+    /// <summary>Something opaque over the whole city (the world need not run behind it).</summary>
+    private bool CityCovered()
+    {
+        var area = World.Bounds;
+        if (area.Width <= 0) return false;
+        foreach (var c in _stage.Children)
+        {
+            if (ReferenceEquals(c, World) || !c.IsVisible || c.Opacity < 1) continue;
+            if (c.Bounds.Width < area.Width - 1 || c.Bounds.Height < area.Height - 1) continue;
+            var background = c switch { Panel p => p.Background, Border b => b.Background, Avalonia.Controls.Primitives.TemplatedControl t => t.Background, _ => null };
+            if (background is ISolidColorBrush { Color.A: 255, Opacity: >= 1 }) return true;
+        }
+        return false;
     }
 
     // ---------------- navigation (1.8.4 rail / dock) ----------------

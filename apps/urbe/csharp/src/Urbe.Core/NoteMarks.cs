@@ -8,6 +8,8 @@ namespace Urbe.Core;
 /// <list type="bullet">
 /// <item><c>%%comentário%%</c> — a comment: shown, set apart, in the editor; left out of pages and exported HTML.</item>
 /// <item><c>#Tag: texto</c> at the start of a paragraph — the paragraph takes the style of that tag (#Todo, #Ideia…).</item>
+/// <item><c>palavra{"comentário"}{"outro"}</c> — comments on a word (UC-49): a 💬 over the word opens them; left out of
+/// pages and exported HTML like <c>%%…%%</c>.</item>
 /// </list>
 /// Applied over the rendered tree (<see cref="MarkdownTree"/>), never inside the 1.8.4 renderer, whose output stays as the
 /// goldens prove.
@@ -16,6 +18,35 @@ public static partial class NoteMarks
 {
     public const string CommentClass = "urbe-comment";
     public const string TagClass = "urbe-tag";
+    public const string NotesClass = "urbe-notes";
+
+    /// <summary>A run of word comments in the source: where it is and the comments in it, in order.</summary>
+    public sealed record CommentGroup(int Start, int Length, IReadOnlyList<string> Comments);
+
+    /// <summary>The <c>{"…"}</c> comment runs of a text, outside code, in order.</summary>
+    public static IReadOnlyList<CommentGroup> CommentGroups(string? markdown)
+    {
+        var text = markdown ?? "";
+        var result = new List<CommentGroup>();
+        if (!text.Contains("{\"", StringComparison.Ordinal)) return result;
+        var code = CodeRegex().Matches(text).Select(m => (m.Index, End: m.Index + m.Length)).ToList();
+        foreach (Match m in NotesRegex().Matches(text))
+            if (!code.Any(c => m.Index >= c.Index && m.Index < c.End))
+                result.Add(new CommentGroup(m.Index, m.Length, Comments(m.Value)));
+        return result;
+    }
+
+    /// <summary>The comments of one run (<c>{"a"}{"b \"c\""}</c> → a, b "c").</summary>
+    public static IReadOnlyList<string> Comments(string group) =>
+        NoteRegex().Matches(group).Select(m => Regex.Replace(m.Groups[1].Value, @"\\(.)", "$1")).ToArray();
+
+    /// <summary>The text with <paramref name="comment"/> added at the end of the comment run at <paramref name="group"/>.</summary>
+    public static string AddComment(string text, CommentGroup group, string comment) =>
+        text.Insert(group.Start + group.Length, Quote(comment));
+
+    /// <summary>One comment as written in the note: <c>{"…"}</c>, with quotes and backslashes escaped.</summary>
+    public static string Quote(string comment) =>
+        "{\"" + comment.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", "").Replace('\n', ' ').Trim() + "\"}";
 
     /// <summary>The rendered tree of a note with its comments and tagged paragraphs marked.</summary>
     public static IReadOnlyList<RichNode> Parse(string? markdown) => Apply(MarkdownTree.Parse(markdown));
@@ -33,14 +64,14 @@ public static partial class NoteMarks
     public static string StripComments(string? markdown)
     {
         var text = markdown ?? "";
-        if (!text.Contains("%%", StringComparison.Ordinal)) return text;
+        if (!text.Contains("%%", StringComparison.Ordinal) && !text.Contains("{\"", StringComparison.Ordinal)) return text;
         // fenced code and inline code stay untouched; everything else loses %%…%%
         var parts = CodeRegex().Split(text);
         var codes = CodeRegex().Matches(text);
         var sb = new System.Text.StringBuilder(text.Length);
         for (int i = 0; i < parts.Length; i++)
         {
-            sb.Append(CommentRegex().Replace(parts[i], ""));
+            sb.Append(NotesRegex().Replace(CommentRegex().Replace(parts[i], ""), ""));
             if (i < codes.Count) sb.Append(codes[i].Value);
         }
         return sb.ToString();
@@ -74,12 +105,24 @@ public static partial class NoteMarks
             if (c.Tag == "code" || c.Tag == "pre") { output.Add(c); continue; }
             if (c.Tag != RichNode.TextTag) { output.Add(Block(c)); continue; }
             int at = 0;
-            foreach (Match m in CommentRegex().Matches(c.Text))
+            foreach (Match m in MarksRegex().Matches(c.Text))
             {
                 if (m.Index > at) output.Add(c with { Text = c.Text[at..m.Index] });
-                var inner = m.Groups[1].Value.Trim();
-                output.Add(new RichNode("span", new Dictionary<string, string> { ["class"] = CommentClass },
-                    "", [new RichNode(RichNode.TextTag, new Dictionary<string, string>(), inner, [])]));
+                if (m.Value.StartsWith("%%", StringComparison.Ordinal))
+                {
+                    var inner = m.Groups[1].Value.Trim();
+                    output.Add(new RichNode("span", new Dictionary<string, string> { ["class"] = CommentClass },
+                        "", [new RichNode(RichNode.TextTag, new Dictionary<string, string>(), inner, [])]));
+                }
+                else
+                {
+                    var notes = Comments(m.Value);
+                    output.Add(new RichNode("span", new Dictionary<string, string>
+                    {
+                        ["class"] = NotesClass,
+                        ["data-comments"] = System.Text.Json.JsonSerializer.Serialize(notes)
+                    }, "", []));
+                }
                 at = m.Index + m.Length;
             }
             if (at == 0) output.Add(c);
@@ -94,6 +137,16 @@ public static partial class NoteMarks
 
     [GeneratedRegex(@"%%(.+?)%%", RegexOptions.Singleline)]
     private static partial Regex CommentRegex();
+
+    // {"comentário"} runs: one or more quoted comments in braces, \" and \\ escaped inside
+    [GeneratedRegex(@"(?:\{""(?:[^""\\\n]|\\.)*""\})+")]
+    private static partial Regex NotesRegex();
+
+    [GeneratedRegex(@"\{""((?:[^""\\\n]|\\.)*)""\}")]
+    private static partial Regex NoteRegex();
+
+    [GeneratedRegex(@"%%(.+?)%%|(?:\{""(?:[^""\\\n]|\\.)*""\})+", RegexOptions.Singleline)]
+    private static partial Regex MarksRegex();
 
     [GeneratedRegex(@"```[\s\S]*?(?:```|$)|`[^`\n]*`")]
     private static partial Regex CodeRegex();

@@ -145,7 +145,8 @@ public sealed class VisualSurface : StackPanel
         {
             WikiLinkTapped = name => WikiLinkTapped?.Invoke(name),
             TaskToggled = (line, on) => ToggleTask(block, line, on),
-            MathTapped = index => _ = EditFormulaAsync(block.Start, index)
+            MathTapped = index => _ = EditFormulaAsync(block.Start, index),
+            CommentsTapped = index => _ = CommentsAsync(block.Start, index)
         };
         var holder = new Border { Background = Brushes.Transparent, Child = reader.Build(NoteMarks.Parse(source)) };
         // a tap (press and release without moving), never the press: a finger that starts a scroll on a block
@@ -431,6 +432,33 @@ public sealed class VisualSurface : StackPanel
     /// $tex$, or takes an inline one out of its paragraph and puts $$ … $$ after it; Remover (or an emptied formula) takes it
     /// out (removeAtom: a display formula leaves its block empty, which then goes).
     /// </summary>
+    /// <summary>The comments on a word (UC-49): shown, and the one written added at the end of the run, in the .md.</summary>
+    public Func<IReadOnlyList<string>, Task<string?>>? AskComment { get; set; }
+
+    private async Task CommentsAsync(int blockStart, int index)
+    {
+        if (AskComment is not { } ask) return;
+        var before = _text.Length;
+        var editingStart = _editStart;
+        FinishEdit();
+        var shift = _text.Length - before;
+        var start = blockStart > editingStart && editingStart >= 0 ? blockStart + shift : blockStart;
+        var block = _blocks.FirstOrDefault(b => b.Start == start);
+        if (block is null) return;
+        var groups = NoteMarks.CommentGroups(_text[block.Start..block.End]);
+        if (index < 0 || index >= groups.Count) return;
+        string? added;
+        _prompting = true;
+        try { added = await ask(groups[index].Comments); }
+        finally { _prompting = false; }
+        if (string.IsNullOrWhiteSpace(added)) return;
+        var g = groups[index];
+        var source = NoteMarks.AddComment(_text[block.Start..block.End], g, added);
+        _text = _text[..block.Start] + source + _text[block.End..];
+        Rebuild();
+        TextEdited?.Invoke(_text);
+    }
+
     private async Task EditFormulaAsync(int blockStart, int index)
     {
         if (AskFormula is not { } ask) return;

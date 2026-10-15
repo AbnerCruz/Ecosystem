@@ -76,3 +76,33 @@ public sealed partial class HeadlessUiTests
             finally { window.Close(); }
         }, CancellationToken.None));
 }
+
+/// <summary>Owner (UC-49): palavra{"comentário"} shows a 💬 over the word; a tap shows the comments and adds one.</summary>
+public sealed partial class HeadlessUiTests
+{
+    [Fact]
+    public async Task VisualEdit_WordCommentsShowAMarkThatListsAndAddsComments() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var surface = new VisualSurface();
+            var window = new Window { Width = 600, Height = 500, Content = surface };
+            window.Show();
+            try
+            {
+                surface.SetText("Uma palavra{\"primeiro\"} aqui.\n");
+                IReadOnlyList<string>? shown = null;
+                surface.AskComment = list => { shown = list; return Task.FromResult<string?>("segundo \"x\""); };
+                await Pump(60);
+                var mark = surface.GetLogicalDescendants().OfType<Button>().Single(b => Avalonia.Automation.AutomationProperties.GetName(b) == "1 comentário");
+                Assert.Contains(surface.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "💬");
+                mark.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                await Pump(60);
+                Assert.Equal(["primeiro"], shown);
+                Assert.Equal("Uma palavra{\"primeiro\"}{\"segundo \\\"x\\\"\"} aqui.\n", surface.Text);
+                Assert.Empty(surface.GetLogicalDescendants().OfType<TextBox>());   // the block stays rendered
+                Assert.Contains(surface.GetLogicalDescendants().OfType<Button>(), b => Avalonia.Automation.AutomationProperties.GetName(b) == "2 comentários");
+                return true;
+            }
+            finally { window.Close(); }
+        }, CancellationToken.None));
+}

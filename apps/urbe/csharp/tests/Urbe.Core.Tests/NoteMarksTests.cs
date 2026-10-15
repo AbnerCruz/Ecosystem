@@ -67,4 +67,29 @@ public sealed class NoteMarksTests
         Assert.Equal("a %%x%% b", LegacyVisualEdit.Comment("a x b", 2, 3).Text);
         Assert.Equal("a x b", LegacyVisualEdit.Comment("a %%x%% b", 4, 5).Text);
     }
+
+    [Fact]
+    public void WordComments_AreFoundReadAddedAndLeftOutOfPages()
+    {
+        const string md = "Uma palavra{\"primeiro\"}{\"diz \\\"oi\\\"\"} no texto. `codigo{\"não\"}` fim{\"só\"}\n";
+        var groups = NoteMarks.CommentGroups(md);
+        Assert.Equal(2, groups.Count);
+        Assert.Equal(["primeiro", "diz \"oi\""], groups[0].Comments);
+        Assert.Equal(["só"], groups[1].Comments);
+        Assert.Equal("palavra", md[(groups[0].Start - 7)..groups[0].Start]);
+
+        // a new one goes at the end of the run, quoted
+        var added = NoteMarks.AddComment(md, groups[1], "novo \"x\"");
+        Assert.Contains("fim{\"só\"}{\"novo \\\"x\\\"\"}", added);
+        Assert.Equal(["só", "novo \"x\""], NoteMarks.CommentGroups(added)[1].Comments);
+
+        // rendered: the run becomes one marked span after the word, with its comments
+        var spans = All(NoteMarks.Parse(md)).Where(n => n.HasClass(NoteMarks.NotesClass)).ToList();
+        Assert.Equal(2, spans.Count);
+        Assert.Contains("primeiro", spans[0].Attr("data-comments"));
+        Assert.DoesNotContain(All(NoteMarks.Parse(md)), n => n.Tag == RichNode.TextTag && n.Text.Contains("{\"primeiro"));
+
+        // pages and exported HTML: no comments, code untouched
+        Assert.Equal("Uma palavra no texto. `codigo{\"não\"}` fim\n", NoteMarks.StripComments(md));
+    }
 }
