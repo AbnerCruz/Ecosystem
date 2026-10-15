@@ -52,6 +52,38 @@ public sealed partial class MainActivity
         if (_settingsBack is not null) { Guard(_settingsBack); return; }
         base.OnBackPressed();
     }
+    private void ChooseSavedModel()
+    {
+        var providers = _modelConfiguration.Providers.Where(p => p.Models.Count > 0).ToArray();
+        if (providers.Length == 0 || _modelPreferencesError is not null) { ShowAiSettings(); return; }
+        var body = Column();
+        body.AddView(Text("Provedor", 16, true));
+        var provider = Select(providers.Select(p => p.Name).ToArray());
+        var index = Array.FindIndex(providers, p => p.Id == _modelConfiguration.ProviderId);
+        provider.SetSelection(Math.Max(0, index));
+        body.AddView(provider);
+        body.AddView(Text("Modelo", 16, true));
+        var models = Select(Array.Empty<string>()); body.AddView(models);
+        void Populate(int position)
+        {
+            var current = providers[position];
+            models.Adapter = new ArrayAdapter<string>(this,
+                global::Android.Resource.Layout.SimpleSpinnerDropDownItem,
+                current.Models.Select(m => m.Name + " • " + m.Id).ToArray());
+            var selected = current.Id == _modelConfiguration.ProviderId
+                ? current.Models.ToList().FindIndex(m => m.Id == _modelConfiguration.ModelId) : 0;
+            models.SetSelection(Math.Max(0, selected));
+        }
+        Populate(Math.Max(0, index));
+        provider.ItemSelected += (_, args) => Populate(args.Position);
+        Dialog("Selecionar modelo", body, "Usar modelo", () =>
+        {
+            var selected = providers[provider.SelectedItemPosition];
+            SaveModels(_modelConfiguration with { ProviderId = selected.Id, ModelId = selected.Models[models.SelectedItemPosition].Id });
+            BackToConversation();
+        });
+    }
+
     private void ShowAiSettings()
     {
         SettingsScreen("Configurações de IA", BackToConversation);

@@ -287,7 +287,7 @@ public sealed partial class MainActivity : Activity
     private void ShowSession(ProjectEntry project, SessionEntry session)
     {
         _content.AddView(Text(session.Title, 21, true));
-        _content.AddView(Button(_settings is null ? "Selecionar modelo" : "Modelo: " + _settings.Model, ShowAiSettings));
+        _content.AddView(Button(_settings is null ? "Selecionar modelo" : "Modelo: " + _settings.Model, ChooseSavedModel));
         _content.AddView(Button(_execution is null ? "Autorizar gasto" : "Orçamento da instância", AuthorizeBudget));
         var remaining = _execution is null ? "Sem autorização de gasto configurada"
             : $"Autorização restante: {_execution.RemainingCents} centavos USD • {_execution.RemainingRuns} execuções";
@@ -341,7 +341,7 @@ public sealed partial class MainActivity : Activity
     private void StartRun(string goal, string? required, PlannedTaskEntry? planned)
     {
         if (_active is not null) throw new InvalidOperationException("Uma execução já está ativa.");
-        if (_settings is null) { ShowAiSettings(); return; }
+        if (_settings is null) { ChooseSavedModel(); return; }
         if (_execution is null) { AuthorizeBudget(); return; }
         if (string.IsNullOrWhiteSpace(goal)) throw new ArgumentException("Escreva uma solicitação.");
         var projectId = _projectId!; var sessionId = _sessionId!;

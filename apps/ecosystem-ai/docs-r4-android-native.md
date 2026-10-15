@@ -19,7 +19,8 @@ planejamento, pareceres e `LocalRunEventLog`. Não é outro Runtime.
    Em **Modelos de …**, cadastre o ID ou toque em **Buscar modelos do provedor**
    para consultar `/models`. Configure uma vez nome, preços e limites por
    modelo. **Usar …** seleciona o modelo e volta à conversa. Provedores,
-   modelos e seleção permanecem após fechar o app. Você pode editar/remover.
+   modelos e seleção permanecem após fechar o app. Na conversa, o botão do
+   modelo abre um seletor rápido de provedor/modelo, sem preencher credenciais. Você pode editar/remover.
    Na conversa, **Autorizar gasto** libera somente o teto desta instância;
    trocar de modelo não recria o Host nem devolve reservas já consumidas.
 5. Envie uma tarefa. Opcionalmente declare um trecho exato obrigatório:
