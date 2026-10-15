@@ -1,0 +1,76 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261015-urbe-editor-crash",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-15T03:18:20Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "c99a7d99",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CrashLog.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Errors.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs",
+    "apps/urbe/csharp/src/Urbe.Android/MainActivity.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/VisualEditCrashUiTests.cs",
+    "docs/governance/handoffs/HO-20261015-urbe-editor-crash.json"
+  ],
+  "work_completed": [
+    "Crash do editor ao escrever/apagar (relato do proprietário, 15/10/2026): no modo Visual, o bloco em edição encolhia (Backspace sobre seleção, teclado do Android trocando a palavra composta) enquanto a seleção ainda apontava além do fim, e as ferramentas sob o cursor liam fora do texto (ArgumentOutOfRangeException). A seleção agora é sempre limitada ao texto (VisualSurface.Range), também na fórmula do Fonte e no trecho em edição; a numeração de lista usa número sem limite.",
+    "Rede de segurança: erros não tratados são gravados num arquivo do app (nunca no vault) e os da interface não fecham mais o Urbe; um aviso aparece uma vez e Configurações → Relatório de erros mostra, copia e apaga o relatório. No Android também os erros que atravessam a camada Java."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.VisualEdit_ShorteningTheTextWithASelectionDoesNotCrash",
+      "result": "passed",
+      "evidence": "Com o código anterior o teste falha com ArgumentOutOfRangeException (reprodução do crash); com a correção passa. Testes do editor, fórmulas e Assistente: 25 passando; Core: 769."
+    },
+    {
+      "kind": "human",
+      "check": "Escrever e apagar no editor Visual e Fonte no Android",
+      "result": "not-applicable",
+      "evidence": "Teclado real (IME) e seleção por toque só se provam no aparelho (NN-017); se ainda houver erro, o Relatório de erros traz a pilha.",
+      "object": "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Pedir ao proprietário o Relatório de erros se algum fechamento continuar acontecendo."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Correção provada por teste; validação no aparelho pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "crash-log",
+      "status": "product-specific",
+      "rationale": "Registro de erros do cliente do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Correção de bug do editor e registro local de erros; nenhum dado do vault é alterado."
+  }
+}

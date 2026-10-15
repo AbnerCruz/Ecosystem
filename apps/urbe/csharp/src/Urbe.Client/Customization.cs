@@ -89,6 +89,9 @@ public sealed partial class Customization
 
     public LegacyCustomize.Result Normalize(string text) => LegacyCustomize.Normalize(text, _savedTheme);
 
+    /// <summary>normalize(config) of an object (the Assistente's set_appearance).</summary>
+    public LegacyCustomize.Result Normalize(JsonNode config) => LegacyCustomize.Normalize(config, _savedTheme);
+
     /// <summary>set(patch) = gravar(merge(atual, patch)).</summary>
     public Task<LegacyCustomize.Result> SetAsync(JsonObject patch) => SaveAsync(LegacyCustomize.Merge(Config, patch));
 

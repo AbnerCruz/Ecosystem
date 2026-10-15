@@ -1,0 +1,486 @@
+{
+ "source": "apps/urbe 1.8.4-beta src/customize/ai-tools.js + customize.js in node:vm",
+ "files": {
+  "Personalização/tema.json": "{\n  \"tema\": \"floresta\",\n  \"texto\": { \"tamanho\": 16 }\n}\n",
+  "Personalização/temas/Minha.json": "{ \"nome\": \"Minha\", \"claro\": false, \"base\": \"escuro\", \"cores\": { \"destaque\": \"#ff8800\" } }",
+  "Personalização/texturas/Pacote.json": "{ \"nome\": \"Pacote\" }"
+ },
+ "calls": [
+  {
+   "name": "appearance_schema",
+   "input": {},
+   "label": "Lendo o formato da personalização",
+   "access": "read",
+   "description": "Formato completo da personalização do Urbe: tema.json (tema, cores, fontes, forma, editor, cidade, texturas, estilos), temas salvos e pacotes de texturas. Mostra também a configuração atual. Chame antes de mudar a aparência.",
+   "parameters": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+   },
+   "preview": null,
+   "content": "ARQUIVO: Personalização/tema.json (JSON). Só escreva o que quiser mudar; o resto usa o padrão. Salvar o arquivo aplica na hora.\n{\n  \"tema\": \"escuro\" | \"meia-noite\" | \"floresta\" | \"oceano\" | \"vinho\" | \"claro\" | \"sepia\" | \"alto-contraste\" | \"Personalização/temas/<nome>.json\",\n  \"cores\": { \"fundo\": \"#rrggbb\", \"superficie\": \"#rrggbb\", \"superficie2\": \"#rrggbb\", \"superficie3\": \"#rrggbb\", \"linha\": \"#rrggbb\", \"linha2\": \"#rrggbb\", \"texto\": \"#rrggbb\", \"texto2\": \"#rrggbb\", \"texto3\": \"#rrggbb\", \"destaque\": \"#rrggbb\", \"perigo\": \"#rrggbb\", \"sucesso\": \"#rrggbb\", \"aviso\": \"#rrggbb\", \"codigo\": \"#rrggbb\" },   // sobrepõem as do tema; trocar \"fundo\" decide se é claro ou escuro\n  \"texto\": { \"fonte\": \"sistema\" | \"arredondada\" | \"humanista\" | \"serifada\" | \"leitura\" | \"mono\" | \"manuscrita\" | \"nome de fonte\", \"fonteEditor\": (igual), \"tamanho\": 12-22, \"tamanhoEditor\": 13-28, \"alturaLinha\": 1.2-2.2 },\n  \"forma\": { \"cantos\": \"retos\" | \"suaves\" | \"redondos\", \"densidade\": \"compacta\" | \"normal\" | \"confortavel\", \"vidro\": true|false },\n  \"animacoes\": \"sistema\" | \"ligadas\" | \"reduzidas\",\n  \"editor\": { \"largura\": \"estreita\" | \"media\" | \"larga\" | \"total\", \"modoInicial\": \"visual\" | \"texto\", \"ortografia\": true|false },\n  \"cidade\": { \"moradores\": bool, \"fauna\": bool, \"clima\": bool, \"eventos\": bool, \"nomes\": bool, \"bairros\": bool, \"ambiente\": \"dia\" | \"entardecer\" | \"noite\" | \"auto\" | \"ciclo\",\n              \"texturas\": \"Personalização/texturas/<pacote>.json\" | \"\", \"paleta\": { \"<bioma>\": [\"#base\", \"#sombra\", \"#luz\", \"#detalhe\"] } },\n  \"estilos\": { \"Personalização/estilos/<arquivo>.css\": true|false },\n  \"css\": \"regras CSS extras aplicadas por último\"\n}\nBiomas: grama, campo, prado, floresta, mata, mata-fechada, pantano, pântano, taiga, tundra, neve, colinas, montanha, pico, deserto, savana, estepe, praia, mar, profundo, oceano, rio, lago, agua (rio+lago+mar).\n\nTEMA SALVO (Personalização/temas/<nome>.json): { \"nome\": \"...\", \"claro\": bool, \"base\": \"<tema pronto>\", \"cores\": { ...mesmas chaves de \"cores\"... } }\n\nPACOTE DE TEXTURAS (Personalização/texturas/<nome>.json):\n{ \"nome\": \"...\",\n  \"paleta\": { \"<bioma>\": [\"#base\", ...] },\n  \"chao\": { \"<bioma>\": { \"cores\": { \"a\": \"#rrggbb\", \"b\": \"#rrggbb\" }, \"pixels\": [\"16 letras\", ... 16 linhas] }  |  { \"imagem\": \"data:image/png;base64,...\" }  |  [até 4 variações] },\n  \"construcoes\": { \"casa\" | \"salao\" | \"oficina\" | \"tinturaria\" | \"torre\" | \"mercado\" | \"armazem\": { \"imagem\": \"data:...\" } | { \"cores\": {...}, \"pixels\": [...] } } }\nPixels: cada letra é uma cor de \"cores\"; \".\" usa a cor base do bioma. Grades de até 64×64 são reduzidas para 16×16 no chão.\nConstruções: desenho de 48×56 (3×3,5 tiles) fica igual às originais; outros tamanhos são esticados.\n\nESTILOS: arquivos .css em Personalização/estilos/. Variáveis úteis: --ui-bg, --ui-surface, --ui-surface-2, --ui-surface-3, --ui-line, --ui-line-2, --ui-text, --ui-text-2, --ui-text-3, --ui-accent, --ui-danger, --ui-ok, --ui-warn, --ui-code, --ui-font, --ui-editor-font, --ui-editor-size, --ui-r-m.\nPLUGINS: arquivos .js em Personalização/plugins/ — veja plugin_guide.\n\nTEMAS PRONTOS: escuro (Escuro, escuro), meia-noite (Meia-noite, escuro), floresta (Floresta, escuro), oceano (Oceano, escuro), vinho (Vinho, escuro), claro (Claro, claro), sepia (Sépia, claro), alto-contraste (Alto contraste, escuro)\nFONTES: sistema, arredondada, humanista, serifada, leitura, mono, manuscrita\nTEMAS SALVOS: Personalização/temas/Minha.json\nPACOTES DE TEXTURAS: Personalização/texturas/Pacote.json\n\nCONFIGURAÇÃO ATUAL:\n{\n  \"versao\": 1,\n  \"tema\": \"floresta\",\n  \"cores\": {},\n  \"texto\": {\n    \"fonte\": \"sistema\",\n    \"fonteEditor\": \"sistema\",\n    \"tamanho\": 16,\n    \"tamanhoEditor\": 17,\n    \"alturaLinha\": 1.7\n  },\n  \"forma\": {\n    \"cantos\": \"suaves\",\n    \"densidade\": \"normal\",\n    \"vidro\": true\n  },\n  \"animacoes\": \"sistema\",\n  \"editor\": {\n    \"largura\": \"media\",\n    \"modoInicial\": \"visual\",\n    \"ortografia\": true\n  },\n  \"cidade\": {\n    \"moradores\": true,\n    \"fauna\": true,\n    \"clima\": true,\n    \"eventos\": true,\n    \"nomes\": true,\n    \"bairros\": true,\n    \"ambiente\": \"ciclo\",\n    \"texturas\": \"\",\n    \"paleta\": {}\n  },\n  \"estilos\": {},\n  \"css\": \"\"\n}",
+   "error": null,
+   "changes": null,
+   "file": "{\n  \"tema\": \"floresta\",\n  \"texto\": { \"tamanho\": 16 }\n}\n"
+  },
+  {
+   "name": "set_appearance",
+   "input": {
+    "config": {
+     "tema": "sepia",
+     "texto": {
+      "fonte": "serifada"
+     }
+    }
+   },
+   "label": "Mudando a aparência",
+   "access": "write",
+   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "config": {
+      "type": "object",
+      "description": "Partes do tema.json no formato de appearance_schema",
+      "additionalProperties": true
+     },
+     "replace": {
+      "type": "boolean",
+      "description": "true = substitui a configuração inteira"
+     }
+    },
+    "required": [
+     "config"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "path": "Personalização/tema.json",
+    "before": "{\n  \"tema\": \"floresta\",\n  \"texto\": { \"tamanho\": 16 }\n}\n",
+    "after": "{\n  \"versao\": 1,\n  \"tema\": \"sepia\",\n  \"cores\": {},\n  \"texto\": {\n    \"fonte\": \"serifada\",\n    \"fonteEditor\": \"sistema\",\n    \"tamanho\": 16,\n    \"tamanhoEditor\": 17,\n    \"alturaLinha\": 1.7\n  },\n  \"forma\": {\n    \"cantos\": \"suaves\",\n    \"densidade\": \"normal\",\n    \"vidro\": true\n  },\n  \"animacoes\": \"sistema\",\n  \"editor\": {\n    \"largura\": \"media\",\n    \"modoInicial\": \"visual\",\n    \"ortografia\": true\n  },\n  \"cidade\": {\n    \"moradores\": true,\n    \"fauna\": true,\n    \"clima\": true,\n    \"eventos\": true,\n    \"nomes\": true,\n    \"bairros\": true,\n    \"ambiente\": \"ciclo\",\n    \"texturas\": \"\",\n    \"paleta\": {}\n  },\n  \"estilos\": {},\n  \"css\": \"\"\n}\n",
+    "note": "Aparência · tema sepia"
+   },
+   "content": "Aparência aplicada (tema sepia).",
+   "error": null,
+   "changes": [
+    {
+     "id": "doc_0",
+     "before": {
+      "path": "Personalização/tema.json",
+      "content": "{\n  \"tema\": \"floresta\",\n  \"texto\": { \"tamanho\": 16 }\n}\n"
+     },
+     "after": {
+      "path": "Personalização/tema.json",
+      "content": "{\n  \"$schema\": \"urbe-tema-1\",\n  \"versao\": 1,\n  \"tema\": \"sepia\",\n  \"texto\": {\n    \"fonte\": \"serifada\",\n    \"tamanho\": 16\n  }\n}\n"
+     }
+    }
+   ],
+   "file": "{\n  \"$schema\": \"urbe-tema-1\",\n  \"versao\": 1,\n  \"tema\": \"sepia\",\n  \"texto\": {\n    \"fonte\": \"serifada\",\n    \"tamanho\": 16\n  }\n}\n"
+  },
+  {
+   "name": "set_appearance",
+   "input": {
+    "config": {
+     "cores": {
+      "destaque": "#123456"
+     }
+    }
+   },
+   "label": "Mudando a aparência",
+   "access": "write",
+   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "config": {
+      "type": "object",
+      "description": "Partes do tema.json no formato de appearance_schema",
+      "additionalProperties": true
+     },
+     "replace": {
+      "type": "boolean",
+      "description": "true = substitui a configuração inteira"
+     }
+    },
+    "required": [
+     "config"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "path": "Personalização/tema.json",
+    "before": "{\n  \"tema\": \"floresta\",\n  \"texto\": { \"tamanho\": 16 }\n}\n",
+    "after": "{\n  \"versao\": 1,\n  \"tema\": \"floresta\",\n  \"cores\": {\n    \"destaque\": \"#123456\"\n  },\n  \"texto\": {\n    \"fonte\": \"sistema\",\n    \"fonteEditor\": \"sistema\",\n    \"tamanho\": 16,\n    \"tamanhoEditor\": 17,\n    \"alturaLinha\": 1.7\n  },\n  \"forma\": {\n    \"cantos\": \"suaves\",\n    \"densidade\": \"normal\",\n    \"vidro\": true\n  },\n  \"animacoes\": \"sistema\",\n  \"editor\": {\n    \"largura\": \"media\",\n    \"modoInicial\": \"visual\",\n    \"ortografia\": true\n  },\n  \"cidade\": {\n    \"moradores\": true,\n    \"fauna\": true,\n    \"clima\": true,\n    \"eventos\": true,\n    \"nomes\": true,\n    \"bairros\": true,\n    \"ambiente\": \"ciclo\",\n    \"texturas\": \"\",\n    \"paleta\": {}\n  },\n  \"estilos\": {},\n  \"css\": \"\"\n}\n",
+    "note": "Aparência · tema floresta"
+   },
+   "content": "Aparência aplicada (tema floresta).",
+   "error": null,
+   "changes": [
+    {
+     "id": "doc_0",
+     "before": {
+      "path": "Personalização/tema.json",
+      "content": "{\n  \"tema\": \"floresta\",\n  \"texto\": { \"tamanho\": 16 }\n}\n"
+     },
+     "after": {
+      "path": "Personalização/tema.json",
+      "content": "{\n  \"$schema\": \"urbe-tema-1\",\n  \"versao\": 1,\n  \"tema\": \"floresta\",\n  \"cores\": {\n    \"destaque\": \"#123456\"\n  },\n  \"texto\": {\n    \"tamanho\": 16\n  }\n}\n"
+     }
+    }
+   ],
+   "file": "{\n  \"$schema\": \"urbe-tema-1\",\n  \"versao\": 1,\n  \"tema\": \"floresta\",\n  \"cores\": {\n    \"destaque\": \"#123456\"\n  },\n  \"texto\": {\n    \"tamanho\": 16\n  }\n}\n"
+  },
+  {
+   "name": "set_appearance",
+   "input": {
+    "config": {
+     "tema": "claro"
+    },
+    "replace": true
+   },
+   "label": "Mudando a aparência",
+   "access": "write",
+   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "config": {
+      "type": "object",
+      "description": "Partes do tema.json no formato de appearance_schema",
+      "additionalProperties": true
+     },
+     "replace": {
+      "type": "boolean",
+      "description": "true = substitui a configuração inteira"
+     }
+    },
+    "required": [
+     "config"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "path": "Personalização/tema.json",
+    "before": "{\n  \"tema\": \"floresta\",\n  \"texto\": { \"tamanho\": 16 }\n}\n",
+    "after": "{\n  \"versao\": 1,\n  \"tema\": \"claro\",\n  \"cores\": {},\n  \"texto\": {\n    \"fonte\": \"sistema\",\n    \"fonteEditor\": \"sistema\",\n    \"tamanho\": 15,\n    \"tamanhoEditor\": 17,\n    \"alturaLinha\": 1.7\n  },\n  \"forma\": {\n    \"cantos\": \"suaves\",\n    \"densidade\": \"normal\",\n    \"vidro\": true\n  },\n  \"animacoes\": \"sistema\",\n  \"editor\": {\n    \"largura\": \"media\",\n    \"modoInicial\": \"visual\",\n    \"ortografia\": true\n  },\n  \"cidade\": {\n    \"moradores\": true,\n    \"fauna\": true,\n    \"clima\": true,\n    \"eventos\": true,\n    \"nomes\": true,\n    \"bairros\": true,\n    \"ambiente\": \"ciclo\",\n    \"texturas\": \"\",\n    \"paleta\": {}\n  },\n  \"estilos\": {},\n  \"css\": \"\"\n}\n",
+    "note": "Aparência · tema claro"
+   },
+   "content": "Aparência aplicada (tema claro).",
+   "error": null,
+   "changes": [
+    {
+     "id": "doc_0",
+     "before": {
+      "path": "Personalização/tema.json",
+      "content": "{\n  \"tema\": \"floresta\",\n  \"texto\": { \"tamanho\": 16 }\n}\n"
+     },
+     "after": {
+      "path": "Personalização/tema.json",
+      "content": "{\n  \"$schema\": \"urbe-tema-1\",\n  \"versao\": 1,\n  \"tema\": \"claro\"\n}\n"
+     }
+    }
+   ],
+   "file": "{\n  \"$schema\": \"urbe-tema-1\",\n  \"versao\": 1,\n  \"tema\": \"claro\"\n}\n"
+  },
+  {
+   "name": "set_appearance",
+   "input": {
+    "config": "{\"cidade\":{\"fauna\":false,\"ambiente\":\"noite\"}}"
+   },
+   "label": "Mudando a aparência",
+   "access": "write",
+   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "config": {
+      "type": "object",
+      "description": "Partes do tema.json no formato de appearance_schema",
+      "additionalProperties": true
+     },
+     "replace": {
+      "type": "boolean",
+      "description": "true = substitui a configuração inteira"
+     }
+    },
+    "required": [
+     "config"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "path": "Personalização/tema.json",
+    "before": "{\n  \"tema\": \"floresta\",\n  \"texto\": { \"tamanho\": 16 }\n}\n",
+    "after": "{\n  \"versao\": 1,\n  \"tema\": \"floresta\",\n  \"cores\": {},\n  \"texto\": {\n    \"fonte\": \"sistema\",\n    \"fonteEditor\": \"sistema\",\n    \"tamanho\": 16,\n    \"tamanhoEditor\": 17,\n    \"alturaLinha\": 1.7\n  },\n  \"forma\": {\n    \"cantos\": \"suaves\",\n    \"densidade\": \"normal\",\n    \"vidro\": true\n  },\n  \"animacoes\": \"sistema\",\n  \"editor\": {\n    \"largura\": \"media\",\n    \"modoInicial\": \"visual\",\n    \"ortografia\": true\n  },\n  \"cidade\": {\n    \"moradores\": true,\n    \"fauna\": false,\n    \"clima\": true,\n    \"eventos\": true,\n    \"nomes\": true,\n    \"bairros\": true,\n    \"ambiente\": \"noite\",\n    \"texturas\": \"\",\n    \"paleta\": {}\n  },\n  \"estilos\": {},\n  \"css\": \"\"\n}\n",
+    "note": "Aparência · tema floresta"
+   },
+   "content": "Aparência aplicada (tema floresta).",
+   "error": null,
+   "changes": [
+    {
+     "id": "doc_0",
+     "before": {
+      "path": "Personalização/tema.json",
+      "content": "{\n  \"tema\": \"floresta\",\n  \"texto\": { \"tamanho\": 16 }\n}\n"
+     },
+     "after": {
+      "path": "Personalização/tema.json",
+      "content": "{\n  \"$schema\": \"urbe-tema-1\",\n  \"versao\": 1,\n  \"tema\": \"floresta\",\n  \"texto\": {\n    \"tamanho\": 16\n  },\n  \"cidade\": {\n    \"fauna\": false,\n    \"ambiente\": \"noite\"\n  }\n}\n"
+     }
+    }
+   ],
+   "file": "{\n  \"$schema\": \"urbe-tema-1\",\n  \"versao\": 1,\n  \"tema\": \"floresta\",\n  \"texto\": {\n    \"tamanho\": 16\n  },\n  \"cidade\": {\n    \"fauna\": false,\n    \"ambiente\": \"noite\"\n  }\n}\n"
+  },
+  {
+   "name": "set_appearance",
+   "input": {
+    "config": "{ruim"
+   },
+   "label": "Mudando a aparência",
+   "access": "write",
+   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "config": {
+      "type": "object",
+      "description": "Partes do tema.json no formato de appearance_schema",
+      "additionalProperties": true
+     },
+     "replace": {
+      "type": "boolean",
+      "description": "true = substitui a configuração inteira"
+     }
+    },
+    "required": [
+     "config"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "error": "config não é JSON válido: Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+   },
+   "content": null,
+   "error": "config não é JSON válido: Expected property name or '}' in JSON at position 1 (line 1 column 2)",
+   "changes": null,
+   "file": "{\n  \"tema\": \"floresta\",\n  \"texto\": { \"tamanho\": 16 }\n}\n"
+  },
+  {
+   "name": "set_appearance",
+   "input": {
+    "config": 5
+   },
+   "label": "Mudando a aparência",
+   "access": "write",
+   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "config": {
+      "type": "object",
+      "description": "Partes do tema.json no formato de appearance_schema",
+      "additionalProperties": true
+     },
+     "replace": {
+      "type": "boolean",
+      "description": "true = substitui a configuração inteira"
+     }
+    },
+    "required": [
+     "config"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "error": "Envie config: objeto com as partes do tema.json a mudar."
+   },
+   "content": null,
+   "error": "Envie config: objeto com as partes do tema.json a mudar.",
+   "changes": null,
+   "file": "{\n  \"tema\": \"floresta\",\n  \"texto\": { \"tamanho\": 16 }\n}\n"
+  },
+  {
+   "name": "set_appearance",
+   "input": {
+    "config": {
+     "tema": "Personalização/temas/Minha.json"
+    }
+   },
+   "label": "Mudando a aparência",
+   "access": "write",
+   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "config": {
+      "type": "object",
+      "description": "Partes do tema.json no formato de appearance_schema",
+      "additionalProperties": true
+     },
+     "replace": {
+      "type": "boolean",
+      "description": "true = substitui a configuração inteira"
+     }
+    },
+    "required": [
+     "config"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "path": "Personalização/tema.json",
+    "before": "{\n  \"tema\": \"floresta\",\n  \"texto\": { \"tamanho\": 16 }\n}\n",
+    "after": "{\n  \"versao\": 1,\n  \"tema\": \"Personalização/temas/Minha.json\",\n  \"cores\": {},\n  \"texto\": {\n    \"fonte\": \"sistema\",\n    \"fonteEditor\": \"sistema\",\n    \"tamanho\": 16,\n    \"tamanhoEditor\": 17,\n    \"alturaLinha\": 1.7\n  },\n  \"forma\": {\n    \"cantos\": \"suaves\",\n    \"densidade\": \"normal\",\n    \"vidro\": true\n  },\n  \"animacoes\": \"sistema\",\n  \"editor\": {\n    \"largura\": \"media\",\n    \"modoInicial\": \"visual\",\n    \"ortografia\": true\n  },\n  \"cidade\": {\n    \"moradores\": true,\n    \"fauna\": true,\n    \"clima\": true,\n    \"eventos\": true,\n    \"nomes\": true,\n    \"bairros\": true,\n    \"ambiente\": \"ciclo\",\n    \"texturas\": \"\",\n    \"paleta\": {}\n  },\n  \"estilos\": {},\n  \"css\": \"\"\n}\n",
+    "note": "Aparência · tema Personalização/temas/Minha.json"
+   },
+   "content": "Aparência aplicada (tema Personalização/temas/Minha.json).",
+   "error": null,
+   "changes": [
+    {
+     "id": "doc_0",
+     "before": {
+      "path": "Personalização/tema.json",
+      "content": "{\n  \"tema\": \"floresta\",\n  \"texto\": { \"tamanho\": 16 }\n}\n"
+     },
+     "after": {
+      "path": "Personalização/tema.json",
+      "content": "{\n  \"$schema\": \"urbe-tema-1\",\n  \"versao\": 1,\n  \"tema\": \"Personalização/temas/Minha.json\",\n  \"texto\": {\n    \"tamanho\": 16\n  }\n}\n"
+     }
+    }
+   ],
+   "file": "{\n  \"$schema\": \"urbe-tema-1\",\n  \"versao\": 1,\n  \"tema\": \"Personalização/temas/Minha.json\",\n  \"texto\": {\n    \"tamanho\": 16\n  }\n}\n"
+  },
+  {
+   "name": "set_appearance",
+   "input": {
+    "config": {
+     "tema": "inexistente",
+     "texto": {
+      "tamanho": 99
+     }
+    }
+   },
+   "label": "Mudando a aparência",
+   "access": "write",
+   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "config": {
+      "type": "object",
+      "description": "Partes do tema.json no formato de appearance_schema",
+      "additionalProperties": true
+     },
+     "replace": {
+      "type": "boolean",
+      "description": "true = substitui a configuração inteira"
+     }
+    },
+    "required": [
+     "config"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "error": "O tema tem 1 erro(s); corrija e envie de novo:\n- texto.tamanho: número entre 12 e 22\n(Chame appearance_schema para ver o formato.)"
+   },
+   "content": null,
+   "error": "O tema tem 1 erro(s); corrija e envie de novo:\n- texto.tamanho: número entre 12 e 22\n(Chame appearance_schema para ver o formato.)",
+   "changes": null,
+   "file": "{\n  \"tema\": \"floresta\",\n  \"texto\": { \"tamanho\": 16 }\n}\n"
+  },
+  {
+   "name": "set_appearance",
+   "input": {
+    "config": {
+     "texto": "grande",
+     "forma": {
+      "cantos": "quadrados"
+     }
+    }
+   },
+   "label": "Mudando a aparência",
+   "access": "write",
+   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "config": {
+      "type": "object",
+      "description": "Partes do tema.json no formato de appearance_schema",
+      "additionalProperties": true
+     },
+     "replace": {
+      "type": "boolean",
+      "description": "true = substitui a configuração inteira"
+     }
+    },
+    "required": [
+     "config"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "error": "O tema tem 2 erro(s); corrija e envie de novo:\n- texto: deve ser um objeto\n- forma.cantos: use um de: retos, suaves, redondos\n(Chame appearance_schema para ver o formato.)"
+   },
+   "content": null,
+   "error": "O tema tem 2 erro(s); corrija e envie de novo:\n- texto: deve ser um objeto\n- forma.cantos: use um de: retos, suaves, redondos\n(Chame appearance_schema para ver o formato.)",
+   "changes": null,
+   "file": "{\n  \"tema\": \"floresta\",\n  \"texto\": { \"tamanho\": 16 }\n}\n"
+  },
+  {
+   "name": "set_appearance",
+   "input": {
+    "config": {
+     "tema": "floresta",
+     "texto": {
+      "tamanho": 16
+     }
+    }
+   },
+   "label": "Mudando a aparência",
+   "access": "write",
+   "description": "Muda a aparência do Urbe gravando o tema.json (validado). Envie só o que muda em config, ex.: {\"tema\":\"sepia\",\"texto\":{\"fonte\":\"serifada\"}}. Use replace=true para substituir tudo em vez de mesclar. Aplica na hora; o usuário pode desfazer.",
+   "parameters": {
+    "type": "object",
+    "properties": {
+     "config": {
+      "type": "object",
+      "description": "Partes do tema.json no formato de appearance_schema",
+      "additionalProperties": true
+     },
+     "replace": {
+      "type": "boolean",
+      "description": "true = substitui a configuração inteira"
+     }
+    },
+    "required": [
+     "config"
+    ],
+    "additionalProperties": false
+   },
+   "preview": {
+    "path": "Personalização/tema.json",
+    "before": "{\n  \"tema\": \"floresta\",\n  \"texto\": { \"tamanho\": 16 }\n}\n",
+    "after": "{\n  \"versao\": 1,\n  \"tema\": \"floresta\",\n  \"cores\": {},\n  \"texto\": {\n    \"fonte\": \"sistema\",\n    \"fonteEditor\": \"sistema\",\n    \"tamanho\": 16,\n    \"tamanhoEditor\": 17,\n    \"alturaLinha\": 1.7\n  },\n  \"forma\": {\n    \"cantos\": \"suaves\",\n    \"densidade\": \"normal\",\n    \"vidro\": true\n  },\n  \"animacoes\": \"sistema\",\n  \"editor\": {\n    \"largura\": \"media\",\n    \"modoInicial\": \"visual\",\n    \"ortografia\": true\n  },\n  \"cidade\": {\n    \"moradores\": true,\n    \"fauna\": true,\n    \"clima\": true,\n    \"eventos\": true,\n    \"nomes\": true,\n    \"bairros\": true,\n    \"ambiente\": \"ciclo\",\n    \"texturas\": \"\",\n    \"paleta\": {}\n  },\n  \"estilos\": {},\n  \"css\": \"\"\n}\n",
+    "note": "Aparência · tema floresta"
+   },
+   "content": "Aparência aplicada (tema floresta).",
+   "error": null,
+   "changes": [
+    {
+     "id": "doc_0",
+     "before": {
+      "path": "Personalização/tema.json",
+      "content": "{\n  \"tema\": \"floresta\",\n  \"texto\": { \"tamanho\": 16 }\n}\n"
+     },
+     "after": {
+      "path": "Personalização/tema.json",
+      "content": "{\n  \"$schema\": \"urbe-tema-1\",\n  \"versao\": 1,\n  \"tema\": \"floresta\",\n  \"texto\": {\n    \"tamanho\": 16\n  }\n}\n"
+     }
+    }
+   ],
+   "file": "{\n  \"$schema\": \"urbe-tema-1\",\n  \"versao\": 1,\n  \"tema\": \"floresta\",\n  \"texto\": {\n    \"tamanho\": 16\n  }\n}\n"
+  }
+ ]
+}

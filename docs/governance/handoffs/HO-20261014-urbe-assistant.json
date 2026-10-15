@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261014-urbe-assistant",
   "category": "HANDOFF",
-  "timestamp": "2026-10-14T20:54:45Z",
+  "timestamp": "2026-10-14T21:00:08Z",
   "agent": {
     "id": "claude-code-urbe-native-port",
     "kind": "ai-agent"
@@ -41,26 +41,32 @@
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantAgentOracleTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantStoreTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantCustomizeTools.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Customization.cs",
+    "apps/urbe/csharp/tools/assistant-customize-oracle.mjs",
+    "apps/urbe/csharp/tests/fixtures/assistant/customize-run-a.json",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantCustomizeOracleTests.cs",
     "apps/urbe/docs/csharp/ROADMAP.md",
     "docs/governance/handoffs/HO-20261014-urbe-assistant.json"
   ],
   "work_completed": [
     "Assistente da 1.8.4 portado para o cliente nativo: provedores, as 19 ferramentas, o loop do agente (com subagente, aprovação, leitura parcial e limites), armazenamento só no aparelho, Desfazer e a tela completa no destino Assistente da barra.",
     "As ferramentas gravam pelo mesmo caminho da pessoa: arquivo no vault primeiro, depois documento, cidade e mapa; nada muda só em memória.",
-    "Android declara a permissão de internet para falar com o provedor que a pessoa conectar."
+    "Android declara a permissão de internet para falar com o provedor que a pessoa conectar.",
+    "Ferramentas de aparência do Assistente (appearance_schema, set_appearance) portadas de customize/ai-tools.js: o tema.json muda com aprovação, é aplicado na hora e o Desfazer o devolve; o documento do tema acompanha o arquivo no store, como o docs.upsert original."
   ],
   "verification": [
     {
       "kind": "automated",
-      "check": "AssistantProvidersOracleTests, AssistantToolsOracleTests, AssistantAgentOracleTests (oráculos com o JS original da 1.8.4)",
+      "check": "AssistantProvidersOracleTests, AssistantToolsOracleTests, AssistantAgentOracleTests (oráculos com o JS original da 1.8.4), AssistantCustomizeOracleTests",
       "result": "passed",
-      "evidence": "21 cenários de provedor, 55 chamadas de ferramenta mais validações, e 25 execuções do agente com modelo roteirizado iguais à 1.8.4 (requisições, eventos, conversa, alterações e motivo de parada). Suíte do Core: 758 testes passando."
+      "evidence": "21 cenários de provedor, 55 chamadas de ferramenta mais validações, e 25 execuções do agente e 11 chamadas das ferramentas de aparência com modelo roteirizado iguais à 1.8.4 (requisições, eventos, conversa, alterações e motivo de parada). Suíte do Core: 758 testes passando."
     },
     {
       "kind": "automated",
       "check": "HeadlessUiTests.Assistant_EditsTheVaultWithApprovalAndUndoes",
       "result": "passed",
-      "evidence": "Conectar OpenRouter com chave, escolher o modelo da lista, pedido que edita Comece.md: a aprovação mostra o diff e nada é gravado antes; Aprovar grava o arquivo no vault; rodapé '1 nota alterada'; Desfazer devolve o arquivo; conversa e chave ficam na pasta do app, nunca no vault. Capturas native-assistant-approval.png e native-assistant-done.png."
+      "evidence": "Conectar OpenRouter com chave, escolher o modelo da lista, pedido que edita Comece.md: a aprovação mostra o diff e nada é gravado antes; Aprovar grava o arquivo no vault; rodapé '1 nota alterada'; Desfazer devolve o arquivo; conversa e chave ficam na pasta do app, nunca no vault. Capturas native-assistant-approval.png e native-assistant-done.png. Segundo pedido: set_appearance grava Personalização/tema.json só depois da aprovação, a Personalização passa a sépia e o Desfazer o tira (não existia) e volta ao tema anterior."
     },
     {
       "kind": "human",
@@ -73,7 +79,8 @@
   "known_issues": [
     "As ferramentas de páginas (page_schema, write_page) chegam com o estúdio de páginas (UC-35).",
     "O Markdown do chat usa o leitor de notas do app; fórmulas LaTeX no chat ainda não são desenhadas.",
-    "Configurações de agentes personalizados não têm ícone próprio além do da 1.8.4 (sparkle/search)."
+    "Configurações de agentes personalizados não têm ícone próprio além do da 1.8.4 (sparkle/search).",
+    "plugin_guide não é portado: o app nativo não executa plugins JavaScript (ADD-0021)."
   ],
   "blockers": [],
   "next_actions": [

@@ -245,7 +245,7 @@ public sealed class EditorOverlay : Grid
             return;
         }
         var text = Editor.Text ?? "";
-        int a = Math.Min(Editor.SelectionStart, Editor.SelectionEnd), b = Math.Max(Editor.SelectionStart, Editor.SelectionEnd);
+        var (a, b) = VisualSurface.Range(Editor);
         var txt = text[a..b];
         var pre = block && a > 0 && text[a - 1] != '\n' ? "\n" : "";
         var sn = MathEditing.Snippet(block ? pre + "$$\n" + (txt.Length > 0 ? txt : "●") + "\n$$\n" : "$" + (txt.Length > 0 ? txt : "●") + "$");

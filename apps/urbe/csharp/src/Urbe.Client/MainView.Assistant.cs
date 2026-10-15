@@ -55,6 +55,22 @@ public sealed partial class MainView : IAssistantApp
 
     UrbeDialogs IAssistantApp.Dialogs => Dialogs;
 
+    IAssistantAppearance? IAssistantApp.Appearance => new AppearanceAdapter(Customization);
+
+    /// <summary>customize api for the appearance tools: get, normalize, replace (gravar: the vault file first), themes and packs.</summary>
+    private sealed class AppearanceAdapter(Customization c) : IAssistantAppearance
+    {
+        public System.Text.Json.Nodes.JsonObject Current => (System.Text.Json.Nodes.JsonObject)c.Config.DeepClone();
+        public LegacyCustomize.Result Normalize(System.Text.Json.Nodes.JsonNode config) => c.Normalize(config);
+        public async Task ReplaceAsync(System.Text.Json.Nodes.JsonObject config)
+        {
+            var n = await c.SaveAsync(config);
+            if (n.Errors.Count > 0) throw new InvalidOperationException(n.Errors[0].Path + ": " + n.Errors[0].Message);
+        }
+        public IReadOnlyList<string> SavedThemes => c.Themes().Select(t => t.Id).ToList();
+        public IReadOnlyList<string> Packs => c.Packs().Select(p => p.Path).ToList();
+    }
+
     void IAssistantApp.Notify(string text) => ShowLifeNotice(text);
 
     bool IAssistantApp.OpenReference(string reference)
@@ -95,8 +111,10 @@ public sealed partial class MainView : IAssistantApp
 
     private static string FolderOf(string path) => path.LastIndexOf('/') is var i and >= 0 ? path[..i] : "";
 
-    private void AfterAssistantWrite()
+    private void AfterAssistantWrite(string path)
     {
+        // a file of Personalização changed (tema.json, temas, texturas, tags): recarregar(), as customize.js does on document:updated
+        if (path.StartsWith(LegacyCustomize.Folder + "/", StringComparison.Ordinal)) Customization.Load(_contents);
         ScheduleRoadRebuild();
         _mapSave?.Schedule();
         _mapSave?.MarkSync();
@@ -115,7 +133,7 @@ public sealed partial class MainView : IAssistantApp
         var doc = _store.Upsert(new DocumentInput { Path = path, Content = content, Created = today, Modified = today }, "ai.agent");
         World.City!.AddDocumentHouse(doc, now);
         _contents[path] = content;
-        AfterAssistantWrite();
+        AfterAssistantWrite(path);
         return doc;
     }
 
@@ -126,7 +144,7 @@ public sealed partial class MainView : IAssistantApp
         if (editing && Editor.HasChanges) throw new InvalidOperationException("A nota " + doc.Path + " está aberta no editor com alterações não salvas. Salve ou descarte antes.");
         await SaveNoteAsync(new CityNote(doc.Path, content));
         if (editing) Editor.Open(new CityNote(doc.Path, content));
-        AfterAssistantWrite();
+        AfterAssistantWrite(doc.Path);
         return _store!.Get(doc.Id) ?? doc;
     }
 
@@ -145,7 +163,7 @@ public sealed partial class MainView : IAssistantApp
         city.ApplyFolderMove(house, moved, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         await CarryLooksAsync(new Dictionary<string, string>(StringComparer.Ordinal) { [from] = newPath });
         if (editing) Editor.Renamed(newPath);
-        AfterAssistantWrite();
+        AfterAssistantWrite(newPath);
         return _store.Get(moved.Id) ?? moved;
     }
 
@@ -153,6 +171,7 @@ public sealed partial class MainView : IAssistantApp
     {
         RequireWritable();
         if (!await DeleteNoteAsync(doc.Path, confirmed: true)) throw new InvalidOperationException("Não foi possível mover " + doc.Path + " para a lixeira.");
+        if (doc.Path.StartsWith(LegacyCustomize.Folder + "/", StringComparison.Ordinal)) Customization.Load(_contents);
         ScheduleRoadRebuild();
     }
 
@@ -167,7 +186,9 @@ public sealed partial class MainView : IAssistantApp
     async Task<bool> IAssistantApp.RestoreTrashedAsync(string id)
     {
         await RestoreFromTrashAsync(id);
-        return _store?.Get(id) is not null;
+        if (_store?.Get(id) is not { } back) return false;
+        if (back.Path.StartsWith(LegacyCustomize.Folder + "/", StringComparison.Ordinal)) Customization.Load(_contents);
+        return true;
     }
 
     async Task IAssistantApp.WriteBackAsync(UrbeDocument current, string path, string content)

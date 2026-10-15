@@ -48,6 +48,8 @@ public interface IAssistantHost
     void OpenNote(string path);
     void Remember(string fact);
     void SetPlan(IReadOnlyList<AiPlanStep> steps);
+    /// <summary>The Personalização the appearance tools change, when the app has one.</summary>
+    IAssistantAppearance? Appearance => null;
 }
 
 /// <summary>A tool the agents use (tools.js def): name, description, JSON Schema, access, label, preview and run.</summary>

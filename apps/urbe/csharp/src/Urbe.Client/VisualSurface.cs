@@ -245,6 +245,8 @@ public sealed class VisualSurface : StackPanel
     {
         if (_box is null) return;
         var block = _box.Text ?? "";
+        _editStart = Math.Clamp(_editStart, 0, _text.Length);
+        _editEnd = Math.Clamp(_editEnd, _editStart, _text.Length);
         _text = _text[.._editStart] + block + _text[_editEnd..];
         _editEnd = _editStart + block.Length;
         TextEdited?.Invoke(_text);
@@ -255,8 +257,8 @@ public sealed class VisualSurface : StackPanel
     {
         if (_box is null) return;
         var text = _box.Text ?? "";
-        var a = Math.Min(_box.SelectionStart, _box.SelectionEnd);
-        var b = Math.Max(_box.SelectionStart, _box.SelectionEnd);
+        // while a key or the keyboard (IME) changes the text, the selection can still point past its end
+        var (a, b) = Range(_box);
         var bubbleOn = b > a && text[a..b].Trim().Length > 0;
         _bubble.IsVisible = bubbleOn;
         ActiveToolsChanged?.Invoke(LegacyEditorTools.ActiveTools(text, a, b));
@@ -290,7 +292,7 @@ public sealed class VisualSurface : StackPanel
         var m = System.Text.RegularExpressions.Regex.Match(line, @"^([ \t]*)(?:(\d+)([.)])|([-*+])|(>))\s?(\[[ xX]\]\s)?(.*)$");
         if (!m.Success || caret != e) return false;
         string marker;
-        if (m.Groups[2].Success) marker = m.Groups[1].Value + (int.Parse(m.Groups[2].Value) + 1) + m.Groups[3].Value + " ";
+        if (m.Groups[2].Success) marker = m.Groups[1].Value + (System.Numerics.BigInteger.Parse(m.Groups[2].Value) + 1) + m.Groups[3].Value + " ";
         else if (m.Groups[4].Success) marker = m.Groups[1].Value + m.Groups[4].Value + " " + (m.Groups[6].Success ? "[ ] " : "");
         else marker = "> ";
         if (m.Groups[7].Value.Length == 0)
@@ -303,6 +305,14 @@ public sealed class VisualSurface : StackPanel
         box.Text = text[..e] + "\n" + marker + text[e..];
         box.CaretIndex = e + 1 + marker.Length;
         return true;
+    }
+
+    /// <summary>The box's selection as an ordered range inside its text.</summary>
+    internal static (int A, int B) Range(TextBox box)
+    {
+        var n = (box.Text ?? "").Length;
+        int a = Math.Clamp(Math.Min(box.SelectionStart, box.SelectionEnd), 0, n), b = Math.Clamp(Math.Max(box.SelectionStart, box.SelectionEnd), 0, n);
+        return (a, b);
     }
 
     private void Apply(LegacyEditorTools.TextEdit? edit)
@@ -318,7 +328,8 @@ public sealed class VisualSurface : StackPanel
     private (string Text, int A, int B) Selection()
     {
         var text = _box?.Text ?? "";
-        return (text, Math.Min(_box?.SelectionStart ?? 0, _box?.SelectionEnd ?? 0), Math.Max(_box?.SelectionStart ?? 0, _box?.SelectionEnd ?? 0));
+        var (a, b) = _box is null ? (0, 0) : Range(_box);
+        return (text, a, b);
     }
 
     private void CommitWiki(string name)
