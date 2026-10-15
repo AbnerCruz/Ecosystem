@@ -16,10 +16,12 @@
   "commit": null,
   "pr": "#571",
   "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/AndroidContentViewers.cs",
     "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
     "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
     "apps/urbe/csharp/src/Urbe.Client/CityLayout.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ContentViewers.cs",
     "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs",
     "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
     "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
@@ -41,13 +43,17 @@
     "apps/urbe/csharp/src/Urbe.Core/ImportTransaction.cs",
     "apps/urbe/csharp/src/Urbe.Core/LegacyHistory.cs",
     "apps/urbe/csharp/src/Urbe.Core/LegacyIdentity.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Convert.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Render.cs",
     "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Studio.cs",
     "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.cs",
     "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngineText.g.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageMarkdown.cs",
     "apps/urbe/csharp/src/Urbe.Core/Pages/PageStudio.cs",
     "apps/urbe/csharp/src/Urbe.Core/Pages/PageTemplates.cs",
     "apps/urbe/csharp/src/Urbe.Core/Pages/PageTemplatesText.g.cs",
     "apps/urbe/csharp/src/Urbe.Core/VaultWriter.cs",
+    "apps/urbe/csharp/src/Urbe.Desktop/Program.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/CityLayoutUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/CreateMenuUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
@@ -58,13 +64,16 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/RenameUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantPagesOracleTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyIdentityOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageConvertOracleTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/PageStudioTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/PageTemplatesOracleTests.cs",
     "apps/urbe/csharp/tests/fixtures/assistant/pages-run-a.json",
     "apps/urbe/csharp/tests/fixtures/identity/reconcile-run-a.json",
+    "apps/urbe/csharp/tests/fixtures/pages/convert-run-a.json",
     "apps/urbe/csharp/tests/fixtures/pages/templates-run-a.json",
     "apps/urbe/csharp/tools/assistant-pages-oracle.mjs",
     "apps/urbe/csharp/tools/legacy-identity-oracle.mjs",
+    "apps/urbe/csharp/tools/pages-convert-oracle.mjs",
     "apps/urbe/csharp/tools/pages-engine-constants.mjs",
     "apps/urbe/csharp/tools/pages-templates-constants.mjs",
     "apps/urbe/csharp/tools/pages-templates-oracle.mjs",
@@ -78,12 +87,13 @@
     "Importar: pasta de vault, exportação ou backup agora restaura pela ImportTransaction (backup de tudo que substitui ou remove, diário de recuperação, recuperação ao abrir); Backups do vault lista e restaura os backups de .urbe/backup.",
     "Notas renomeadas ou movidas fora do app mantêm casa, bairro e anexos: .urbe/identity.json gravado com o mapa e reconciliado na abertura (identity.js, oráculo de 8 casos).",
     "Limpar referências órfãs e Diagnóstico do workspace; reorganização e adaptação registradas em vault.json.maintenance.",
-    "Estúdio de páginas (studio.js): modelo PageStudio no Core e tela PageStudioView com prévia, Seções, Tema, Página, Editar gerados dos campos, biblioteca de blocos/composições/meus blocos/modelos, JSON, desfazer/refazer, salvamento automático, Nova página, duplicar, salvar como modelo/bloco, separar capítulos. Variantes dos modelos provadas por oráculo."
+    "Estúdio de páginas (studio.js): modelo PageStudio no Core e tela PageStudioView com prévia, Seções, Tema, Página, Editar gerados dos campos, biblioteca de blocos/composições/meus blocos/modelos, JSON, desfazer/refazer, salvamento automático, Nova página, duplicar, salvar como modelo/bloco, separar capítulos. Variantes dos modelos provadas por oráculo.",
+    "Estúdio: prévia interativa (tocar seleciona, escrever no layout livre), Converter em layout livre (oráculo), fórmulas LaTeX nas páginas pelo renderizador nativo, Imprimir ou salvar PDF (Android/computador), arrastar seções, Desfazer no aviso. Composições da 1.8.4 viram páginas (UC-45, ADR-0009). Comandos da paleta com os nomes da 1.8.4."
   ],
   "verification": [
     {
       "kind": "automated",
-      "check": "Urbe.Core.Tests (792) e HeadlessUiTests de importação/restauração, identidade, manutenção, reorganização e lacunas, PageStudioTests, PageTemplatesOracleTests (variantes) e HeadlessUiTests.Studio_NewPageAddsABlockEditsUndoesAndSavesInTheVault",
+      "check": "Urbe.Core.Tests (792) e HeadlessUiTests de importação/restauração, identidade, manutenção, reorganização e lacunas, PageStudioTests, PageTemplatesOracleTests (variantes) e HeadlessUiTests.Studio_NewPageAddsABlockEditsUndoesAndSavesInTheVault, PageConvertOracleTests, PageMathTests, HeadlessUiTests.Compositions_BecomePagesWithTheSameNotesAndTheFileIsKept",
       "result": "passed",
       "evidence": "Import_RestoresAVaultFolderWithABackupOfWhatItReplaces (restaura, guarda o substituído em .urbe/backup/import-*, Backups do vault traz de volta), ImportStorageTests, Identity_ANoteRenamedOutsideTheAppKeepsItsHouse, Workspace_CleanOrphansForgetsOldHistoriesAndRecordsItAndDiagnosticsReports, Reorganize_BacksUpTheMapReorganizesAndUndoes (registro layout), LegacyIdentityOracleTests, PageTemplatesOracleTests, AssistantPagesOracleTests, ParityGapsUiTests. Core: 801 testes. CI de 9ce96056 falhou em 3 testes que listavam os arquivos do vault sem o novo .urbe/identity.json; ajustados."
     },
@@ -105,11 +115,11 @@
   "known_issues": [
     "As preferências guardadas num backup exportado ('Preferências do backup') ainda não são aplicadas na restauração.",
     "Composições não existem no cliente nativo; a limpeza de órfãos cobre os históricos (a lixeira não expira, como na 1.8.4).",
-    "Estúdio: falta editar texto e selecionar tocando na prévia, arrastar seções, Converter em layout livre, Imprimir/PDF e KaTeX nas páginas; tema de plugin e Procurar atualização (UC-24/25) também seguem pendentes."
+    "Ainda pendentes: Procurar atualização (sem canal de release do cliente nativo; UC-25), Ativar/Desativar aquário e cidades antigas (multi-cidade da instalação web, fora do escopo pelo DEC-0042), Preferências do backup na restauração."
   ],
   "blockers": [],
   "next_actions": [
-    "Prévia do estúdio interativa no Android (selecionar e escrever na prévia), Converter em layout livre e Imprimir/PDF."
+    "Validar no aparelho o estúdio, a impressão e a prévia interativa (NN-017); UC-25 (canal de release do cliente nativo) depende de decisão."
   ],
   "decisions_required": [],
   "normative_sources": [
