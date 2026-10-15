@@ -42,7 +42,10 @@ public sealed partial class HeadlessUiTests
                 Snapshot(window, "native-pages-home.png");
 
                 // the page inside the Urbe: the HTML of the page engine, with the note's text
-                ClickButtonWithText(view.Pages, "Meu site");
+                // (the card opens the studio; "⋯" → Ver página shows it as it is published)
+                ClickButtonWithTip(view.Pages, "Opções");
+                Dispatcher.UIThread.RunJobs();
+                ClickButtonWithText(view.Dialogs, "Ver página");
                 for (int i = 0; i < 40 && view.FilePreview.Shown != "viewer"; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
                 Assert.Equal("viewer", view.FilePreview.Shown);
                 Assert.Equal("Páginas/Meu site.page.json", view.FilePreview.GeneratedFrom);

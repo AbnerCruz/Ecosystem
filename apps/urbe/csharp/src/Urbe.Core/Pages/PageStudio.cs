@@ -334,13 +334,24 @@ public sealed class PageStudio
     }
 
     /// <summary>onInput/onChange: the value set at the path, coerced by its field.</summary>
-    public void Set(string path, JsonNode? raw, string? key = null)
+    /// <returns>false when the value is the one already there (no step, nothing to save).</returns>
+    public bool Set(string path, JsonNode? raw, string? key = null)
     {
-        if (path.StartsWith("fx|", StringComparison.Ordinal)) { SetFree(path, raw, key); return; }
+        if (path.StartsWith("fx|", StringComparison.Ordinal)) return SetFree(path, raw, key);
         var f = FieldAt(path);
         var value = Coerce(f, raw);
+        if (JsonNode.DeepEquals(Get(path), value)) return false;
         if (key is null) Break();
         Commit(sp => SetAt(sp, path, value), key);
+        return true;
+    }
+
+    /// <summary>The value of a free element's field (content, or the style of the bucket).</summary>
+    private JsonNode? GetFree(string path)
+    {
+        var q = path.Split('|');
+        if (q.Length < 5 || FreeRoot(Spec, q[1]) is not { } root || PageEngine.FreeFind(root, q[2]) is not { } hit) return null;
+        return hit.Node[q[3]] is JsonObject b ? b[q[4]] : null;
     }
 
     /// <summary>listOp(path, op, k): add (with the item's defaults), del, dup, up, down.</summary>
@@ -476,9 +487,11 @@ public sealed class PageStudio
     }
 
     /// <summary>fxSet: content always set; a style key emptied is removed (and an empty bucket too).</summary>
-    private void SetFree(string path, JsonNode? raw, string? key)
+    private bool SetFree(string path, JsonNode? raw, string? key)
     {
         var value = Coerce(FreeField(path), raw);
+        var current = GetFree(path);
+        if (JsonNode.DeepEquals(current, value) || current is null && value is JsonValue e && e.TryGetValue<string>(out var es) && es.Length == 0 && !path.Contains("|content|", StringComparison.Ordinal)) return false;
         if (key is null) Break();
         Commit(s =>
         {
@@ -496,6 +509,7 @@ public sealed class PageStudio
             else b[q[4]] = value;
             if (b.Count == 0) n.Remove(q[3]);
         }, key);
+        return true;
     }
 
     /// <summary>fxOp: up, down, out, in, wrap, dup, del, reset; add (an element type) inside a container or after the element.</summary>

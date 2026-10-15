@@ -8,7 +8,7 @@ namespace Urbe.Client;
 /// <summary>
 /// Páginas (pages.home, studio.js): the vault's .page.json files listed in their own panel and each shown inside the
 /// Urbe as the 1.8.4's page engine writes it (PageEngine, ported and proved byte for byte); "⋯" has Ver página, Abrir
-/// como texto (JSON) and Mover para a lixeira. The studio that creates and edits pages comes with UC-35.
+/// como texto (JSON) and Mover para a lixeira. A card opens the page in the studio (MainView.Studio.cs).
 /// </summary>
 public sealed partial class MainView
 {
@@ -21,7 +21,8 @@ public sealed partial class MainView
     private PagesPanel MakePagesPanel()
     {
         var panel = new PagesPanel();
-        panel.PageRequested += path => _ = ShowPageAsync(path);
+        panel.PageRequested += path => _ = OpenStudioAsync(path);
+        panel.NewRequested += () => _ = NewPageAsync();
         panel.MenuRequested += path => _ = ShowPageMenuAsync(path);
         _stage.Children.Insert(Math.Max(0, _stage.Children.IndexOf(FilePreview)), panel);
         return panel;
@@ -159,6 +160,7 @@ public sealed partial class MainView
         var name = path[(path.LastIndexOf('/') + 1)..];
         return Dialogs.MenuAsync(name,
         [
+            new DialogItem("Abrir no estúdio", UrbeTheme.Icons.Edit, "Editar seções, tema e página", Run: () => OpenStudioAsync(path)),
             new DialogItem("Ver página", UrbeTheme.Icons.Page, "A página dentro do Urbe.", Run: () => ShowPageAsync(path)),
             new DialogItem("Baixar HTML", UrbeTheme.Icons.Download, "Arquivo único, funciona em qualquer hospedagem", Run: () => DownloadPageHtmlAsync(path)),
             new DialogItem("Salvar HTML no vault", UrbeTheme.Icons.Storage, "Ao lado desta página", Run: () => SavePageHtmlInVaultAsync(path)),

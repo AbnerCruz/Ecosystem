@@ -106,7 +106,8 @@ public sealed partial class HeadlessUiTests
                 var files = Directory.GetFiles(vault, "*", SearchOption.AllDirectories)
                     .Select(f => Path.GetRelativePath(vault, f).Replace('\\', '/')).Order(StringComparer.Ordinal);
                 // the edit kept the previous text (Versões anteriores) next to the map
-                Assert.Equal([".urbe/history.v2.json", ".urbe/mapa.json", "Bairro/Dois (2).md", "Bairro/Dois.md", "Comece.md", "foto.png"], files);
+                // .urbe/identity.json follows the map save (identity.js); it is the derived record, written just after
+                Assert.Equal([".urbe/history.v2.json", ".urbe/mapa.json", "Bairro/Dois (2).md", "Bairro/Dois.md", "Comece.md", "foto.png"], files.Where(f => f != ".urbe/identity.json"));
                 Snapshot(window, "native-rename-editor.png");
                 window.Close();
 

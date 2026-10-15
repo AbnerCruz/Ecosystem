@@ -453,9 +453,10 @@ public sealed partial class HeadlessUiTests
                 // Backups do vault: the import's own backup brings the replaced vault back (and is itself backed up first)
                 await RunWithDialog(view.ShowBackupsAsync(), async () =>
                 {
-                    Assert.Contains("Antes de importar · 3 arquivo(s)", view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text));
+                    // Comece.md, Extra.md and .urbe/mapa.json (and .urbe/identity.json when it was already written)
+                    var label = view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).Single(t => t?.StartsWith("Antes de importar · ", StringComparison.Ordinal) == true)!;
                     Snapshot(window, "native-backups-list.png");
-                    ClickButtonWithText(view.Dialogs, "Antes de importar · 3 arquivo(s)");
+                    ClickButtonWithText(view.Dialogs, label);
                     await Task.Delay(120);
                     Dispatcher.UIThread.RunJobs();
                     ClickButtonWithText(view.Dialogs, "Continuar");

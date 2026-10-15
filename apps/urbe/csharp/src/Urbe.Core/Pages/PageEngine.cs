@@ -86,7 +86,7 @@ public sealed partial class PageEngine
 
     // ---------------------------------------------------------------- JS values
 
-    internal static bool Truthy(JsonNode? n) => n switch
+    public static bool Truthy(JsonNode? n) => n switch
     {
         null => false,
         JsonValue v when v.TryGetValue<bool>(out var b) => b,
