@@ -84,6 +84,14 @@ public sealed partial class MainView : IPageStudioHost
         _store is null ? [] : _store.List().Where(d => Regex.IsMatch(d.Path, @"\.(md|markdown|txt)$", RegexOptions.IgnoreCase))
             .OrderBy(d => d.Path, StringComparer.Ordinal).Select(d => (d.Path, d.Title)).ToList();
 
+    PageNote? IPageStudioHost.Note(string path)
+    {
+        var p = path.Trim();
+        var d = _store?.Get(p) ?? _store?.Get(p + ".md") ?? _store?.List().FirstOrDefault(x => x.Title.Length > 0 &&
+            string.Equals(x.Title, Regex.Replace(p, @"\.md$", "", RegexOptions.IgnoreCase), StringComparison.OrdinalIgnoreCase));
+        return d is null ? null : new PageNote(d.Path, d.Title, d.Content, d.Modified, d.Tags);
+    }
+
     IReadOnlyList<string> IPageStudioHost.Folders()
     {
         var set = new SortedSet<string>(StringComparer.Ordinal);

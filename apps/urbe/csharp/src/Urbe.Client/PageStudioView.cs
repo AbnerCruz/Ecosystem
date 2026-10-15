@@ -26,6 +26,8 @@ public interface IPageStudioHost
     bool Exists(string path);
     IReadOnlyList<(string Path, string Title)> Notes();
     IReadOnlyList<string> Folders();
+    /// <summary>noteFor(path): the note by path, path + .md, or title.</summary>
+    PageNote? Note(string path);
     IReadOnlyList<string> Tags();
     /// <summary>Páginas/Blocos/*.block.json: (path, name, description, section).</summary>
     IReadOnlyList<(string Path, string Name, string Description, JsonObject Section)> SavedBlocks();

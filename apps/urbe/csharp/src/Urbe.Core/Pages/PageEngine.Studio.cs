@@ -26,6 +26,9 @@ public sealed partial class PageEngine
     public PageBlockInfo? BlockInfo(string? type) =>
         type is not null && _blocks.TryGetValue(type, out var b) ? new PageBlockInfo(b.Type, b.Label, b.Icon, b.Group, b.Description, b.Fields) : null;
 
+    /// <summary>UrbeMath: draws a formula (tex, display) as HTML; null (the default, and the oracles) leaves $…$ as text.</summary>
+    public Func<string, bool, string>? MathHtml { get; set; }
+
     public JsonArray ThemeFields => _themeFields;
     public JsonArray LayoutFields => _layoutFields;
     public JsonArray MetaFields => _metaFields;

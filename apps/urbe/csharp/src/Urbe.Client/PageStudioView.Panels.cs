@@ -158,6 +158,15 @@ public sealed partial class PageStudioView
         if (i > 0) items.Add(new DialogItem("Mover para cima", UrbeTheme.Icons.ArrowUp, "Alt+↑", Run: () => { Move(id, -1); return Task.CompletedTask; }));
         if (i < n - 1) items.Add(new DialogItem("Mover para baixo", UrbeTheme.Icons.ArrowUp, "Alt+↓", Run: () => { Move(id, 1); return Task.CompletedTask; }));
         items.Add(new DialogItem("Duplicar", UrbeTheme.Icons.Copy, "Ctrl+D", Run: () => { Duplicate(id); return Task.CompletedTask; }));
+        if (PageEngine.FreeConvertible.Contains(S(sec["type"])))
+            items.Add(new DialogItem("Converter em layout livre", UrbeTheme.Icons.Layers, "Cada título e parágrafo vira uma peça solta", Run: () =>
+            {
+                if (!st.ConvertToFree(id, p => p is null ? null : _host.Note(p))) { Toast("Este bloco não pode ser convertido."); return Task.CompletedTask; }
+                if (!Wide) _sheet = "edit";
+                Changed();
+                Toast("Convertido: agora cada título e parágrafo é uma peça solta.");
+                return Task.CompletedTask;
+            }));
         if ((string?)sec["type"] == "chapters")
             items.Add(new DialogItem("Separar em capítulos", UrbeTheme.Icons.List, "Um bloco de capítulo por nota, editável um a um", Run: () => { SplitChapters(id); return Task.CompletedTask; }));
         items.Add(new DialogItem("Salvar como bloco reutilizável", UrbeTheme.Icons.Star, "Aparece em “Meus blocos” em qualquer página", Run: () => SaveBlockAsync(id)));

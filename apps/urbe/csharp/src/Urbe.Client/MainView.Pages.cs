@@ -13,7 +13,19 @@ namespace Urbe.Client;
 public sealed partial class MainView
 {
     private PagesPanel? _pagesPanel;
-    private readonly PageEngine _pageEngine = new();
+    private readonly PageEngine _pageEngine = new() { MathHtml = PageMath };
+
+    /// <summary>UrbeMath in the pages (KaTeX in the 1.8.4): the formula drawn as SVG by the native renderer; when it cannot be drawn, its TeX as written.</summary>
+    public static string PageMath(string tex, bool display)
+    {
+        var r = MathRenderer.RenderSvg(tex, display, 18);
+        // black is the formula's default: it takes the page's text color, and the size follows the text (em)
+        if (r.Success && r.Svg.Length > 0)
+            return System.Text.RegularExpressions.Regex.Replace(r.Svg.Replace("'#000000'", "'currentColor'"), "width='([0-9.]+)' height='([0-9.]+)'",
+                m => "style='vertical-align:middle;width:" + (double.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture) / 18).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) +
+                     "em;height:" + (double.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture) / 18).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) + "em'", System.Text.RegularExpressions.RegexOptions.None, TimeSpan.FromSeconds(1));
+        return "<code class=\"umath-error\" title=\"" + System.Net.WebUtility.HtmlEncode(r.Diagnostic ?? "") + "\">" + System.Net.WebUtility.HtmlEncode(tex) + "</code>";
+    }
 
     /// <summary>The Páginas panel, made the first time it opens (under the file preview, which shows a page).</summary>
     public PagesPanel Pages => _pagesPanel ??= MakePagesPanel();

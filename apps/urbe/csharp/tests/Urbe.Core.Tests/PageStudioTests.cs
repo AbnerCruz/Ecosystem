@@ -174,3 +174,39 @@ public sealed class PageStudioTests
         Assert.Equal("Páginas/Novo.page.json", PageStudio.RenameTarget("Páginas/Velho.page.json", "Novo", "Velho", _ => false));
     }
 }
+
+public sealed class PageStudioConvertTests
+{
+    [Fact]
+    public void ABlockConvertsToAFreeLayoutKeepingItsIdAndLook()
+    {
+        var engine = new PageEngine(2026);
+        var st = new PageStudio(engine, "{\"sections\":[{\"type\":\"text\",\"props\":{\"title\":\"Sobre\",\"markdown\":\"Um.\\n\\nDois.\"},\"style\":{\"padding\":\"l\"}}]}");
+        var id = (string)st.Sections[0]!["id"]!;
+        Assert.True(st.ConvertToFree(id));
+        var sec = st.Section(id)!;
+        Assert.Equal("free", (string?)sec["type"]);
+        Assert.Equal("l", (string?)sec["style"]!["padding"]);
+        Assert.Equal(3, sec["props"]!["root"]!["children"]!.AsArray().Count);
+        Assert.True(st.Undo());
+        Assert.Equal("text", (string?)st.Section(id)!["type"]);
+        Assert.False(new PageStudio(engine, "{\"sections\":[{\"type\":\"faq\"}]}") is var other && other.ConvertToFree((string)other.Sections[0]!["id"]!));
+    }
+}
+
+public sealed class PageMathTests
+{
+    [Fact]
+    public void FormulasAreDrawnWhenTheAppHasMath_AndKeptAsTextWithout()
+    {
+        var spec = "{\"sections\":[{\"type\":\"text\",\"props\":{\"markdown\":\"Área $a^2$ e preço $5.\\n\\n$$\\\\int_0^1 x\\\\,dx$$\"}}]}";
+        var plain = new PageEngine(2026).Render(spec);
+        Assert.Contains("$a^2$", plain);
+        var engine = new PageEngine(2026) { MathHtml = (tex, display) => "<b data-d=\"" + display + "\">" + tex + "</b>" };
+        var html = engine.Render(spec);
+        Assert.Contains("<span class=\"umath\" data-tex=\"a^2\" data-open=\"$\" data-close=\"$\"><b data-d=\"False\">a^2</b></span>", html);
+        Assert.Contains("<div class=\"umath umath-block\" data-tex=\"\\int_0^1 x\\,dx\"", html);
+        Assert.Contains("preço $5.", html);
+        Assert.DoesNotContain("<p><div", html);
+    }
+}

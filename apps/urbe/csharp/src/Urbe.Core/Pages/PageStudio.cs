@@ -238,6 +238,22 @@ public sealed class PageStudio
         Commit(sp => ((JsonArray)sp["sections"]!)[IndexOf(id)] = nb);
     }
 
+    /// <summary>convertToFree: the block becomes a free layout (same id and look); false when it does not convert.</summary>
+    public bool ConvertToFree(string id, Func<string?, PageNote?>? note = null)
+    {
+        var sec = Section(id);
+        if (sec is null || PageEngine.FreeFromBlock(sec, note) is not { } root) return false;
+        var book = IsBook;
+        var nsec = _engine.NewSection("free", new JsonObject { ["root"] = root, ["sheet"] = book && (string?)sec["type"] == "bookcover" ? "full" : "page" });
+        nsec["id"] = id;
+        nsec["style"] = sec["style"]!.DeepClone();
+        Break();
+        Commit(s => ((JsonArray)s["sections"]!)[IndexOf(id)] = nsec);
+        NodeSelected = null;
+        Selected = id;
+        return true;
+    }
+
     /// <summary>A ready theme: its preset, and the colors/fonts/mode/radius back to the theme's.</summary>
     public void SetPreset(string key)
     {
