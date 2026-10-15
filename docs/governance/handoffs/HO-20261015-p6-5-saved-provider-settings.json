@@ -1,0 +1,119 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261015-p6-5-saved-provider-settings",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-15T10:32:57.986198Z",
+  "agent": {
+    "id": "codex-ai-provider-settings",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/ai-saved-providers-20261015",
+  "base_commit": "4da582b16a20e122a9591171f3a6b83749709f96",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/docs-r4-android-native.md",
+    "apps/ecosystem-ai/src/EcosystemAi.Android/MainActivity.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Android/MainActivity.ModelSettings.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Android/ModelPreferences.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Product/ProductExecutionHost.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Product/SavedModelConfiguration.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/SavedModelConfigurationTests.cs",
+    "apps/ecosystem-ai/tools/smoke-android-project.py",
+    "docs/governance/handoffs/HO-20261015-p6-5-saved-provider-settings.json"
+  ],
+  "work_completed": [
+    "Diretriz explícita do proprietário em 15/10: configurar IA como no Urbe, com área dedicada, Novo provedor, provedores e modelos salvos e seleção sem reconfigurar. Fonte de produto persistida na documentação Android.",
+    "Área global de configurações com cadastro/edição/remoção de provedores e modelos, seleção persistente, filtro e listagem explícita GET /models; fallback manual por ID. Mantém o adapter Chat Completions existente.",
+    "Cofre local do Host Android com AES-GCM, IV aleatório, AAD e chave AndroidKeyStore não exportável; snapshot privado cifrado de configuração/credenciais. Sem chave em workspace, catálogo, journal, Bundle, export ou log; backup permanece desabilitado.",
+    "Carregar/selecionar modelo não autoriza gasto nem recria ProductExecutionHost; reservas continuam no mesmo ledger da instância. Após restart só se autoriza o teto, sem recadastrar credencial/modelo.",
+    "Testes portáteis de configurações/discovery e smoke Android de cadastro offline, reinício, seleção restaurada e ciphertext sem chave fictícia em claro."
+  ],
+  "verification": [
+    {
+      "check": "Build e testes do Product",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Build local SDK10.0.402: zero warnings/errors; execução do AgentRuntime.Tests.dll: 232 testes, zero falhas."
+    },
+    {
+      "check": "Compilação C# contra bindings Android",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Compilação local dos arquivos Android contra Mono.Android/Java.Interop36.1.2: zero warnings/errors. Não é APK nem ensaio DEVICE."
+    },
+    {
+      "check": "Consistency e smoke Android de persistência",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Consistency local será reexecutado com documentação corrigida; smoke Android e build APK serão executados pelo CI."
+    },
+    {
+      "check": "Configurar provedores, selecionar modelo e reabrir no moto g32",
+      "kind": "human",
+      "result": "pending",
+      "evidence": "Validar o APK novo exato, cadastro/edição/remoção, chave salva após restart e uso de provider real com autorização de gasto explícita.",
+      "object": "apps/ecosystem-ai/docs-r4-android-native.md",
+      "critical": true
+    }
+  ],
+  "known_issues": [
+    "Lista e inferência usam API compatível com Chat Completions; não adiciona protocolos nativos de outros fornecedores. Preços são cadastrados pelo operador.",
+    "Validação no moto g32 e provider comercial permanece pendente. Desinstalar/limpar dados apaga o cofre; não há sync/backup de credenciais."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Conferir CI/ensaio Android e entregar APK atualizável por cima da prévia.",
+    "Integrar pelo integrador governado, respeitando a classe de segurança; confirmar DEVICE do novo fluxo."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md",
+    "apps/ecosystem-ai/docs-r4-android-native.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Uma autoridade local de configuração, independente do catálogo e do ledger; troca de modelo não renova orçamento."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Persistência não concede permissão de agente nem autorização de gasto; segredo usado apenas pelo adapter."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes automatizados e DEVICE separados."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Sem fechamento de P6-5 nem alegação de DEVICE antes da prova."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "saved-providers-models-and-android-vault",
+      "status": "possible-candidate",
+      "rationale": "O padrão de UX tem outro consumidor, mas o cofre é implementação local do Host Android e usa o adapter atual. Não acopla Products nem extrai contrato/Service sem Extraction Review."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "security"
+    ],
+    "reason": "Atende ao pedido explícito de configuração persistente e passa a guardar credenciais em cofre AndroidKeyStore local. Amplia o lifecycle de credenciais de transitório para persistente; não cria gasto automático, nova permissão de agente nem autoridade paralela de orçamento."
+  }
+}
