@@ -50,6 +50,14 @@ public static class ContentViewers
     }
 }
 
+/// <summary>An HTML viewer that can show new HTML in place (the studio's preview: no new browser for every change).</summary>
+public interface IHtmlReloadable
+{
+    void Reload(string html);
+    /// <summary>A message posted to the page (window.postMessage), as the 1.8.4 posted to the preview's iframe.</summary>
+    void Post(string json);
+}
+
 /// <summary>A PDF opened by the platform: its pages, their size, and each page drawn as RGBA at a given width.</summary>
 public interface IPdfDocument : IDisposable
 {
@@ -162,4 +170,11 @@ public sealed class PdfPagesView : ScrollViewer
         foreach (var p in _pages) if (p.Source is IDisposable d) { p.Source = null; d.Dispose(); }
         _doc.Dispose();
     }
+}
+
+/// <summary>What the platform does for text input that Avalonia does not (the Android head sets it).</summary>
+public static class PlatformInput
+{
+    /// <summary>Brings up the on-screen keyboard for the focused text box (null on a computer).</summary>
+    public static Func<bool>? ShowKeyboard { get; set; }
 }

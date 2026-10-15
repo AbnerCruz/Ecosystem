@@ -1701,6 +1701,71 @@
       "decidedAt": "2026-10-14",
       "record": "docs/governance/addenda/ADD-0023-tudo-no-ecosystem-e-conteudo-dentro-do-urbe.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0047",
+      "status": "decided",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Urbe nativo: desempenho, resposta e acessibilidade no celular antes de tudo; release beta logo depois",
+      "context": "FATO OBSERVADO: nas observações da prévia nativa o proprietário relatou atraso geral, toques imprecisos, teclado que não abre, salvamento lento e um travamento ao fechar página HTML.",
+      "question": "Qual a prioridade do cliente nativo e quando sai a release?",
+      "alternatives": [
+        {
+          "option": "1 — Seguir portando recursos e lançar depois",
+          "consequences": "O app continua lento no celular."
+        },
+        {
+          "option": "2 — Desempenho, resposta e acessibilidade primeiro; release logo depois",
+          "consequences": "UC-48 antes de recursos novos; release beta do cliente nativo depois de validado no aparelho."
+        }
+      ],
+      "consequences": "DECISÃO DO PROPRIETÁRIO: 2 — 'Já quero release assim que melhorar a acessibilidade, performance, tempo de resposta etc... Essa é a prioridade. De resto, vai anotando e a gente vai desenvolvendo.' ROADMAP C# com UC-48 e as observações em UC-49 a UC-55.",
+      "manifestCompatibility": "Não muda boundaries nem formato de dados. Release continua pelo pipeline direto (ADD-0015) e pelos gates de validação humana (NN-017).",
+      "recommendation": "2 — ordem do proprietário.",
+      "related": [
+        "docs/governance/addenda/ADD-0024-urbe-nativo-desempenho-primeiro-e-release.md",
+        "apps/urbe/docs/csharp/ROADMAP.md"
+      ],
+      "raisedBy": "Proprietário",
+      "raisedAt": "2026-10-15",
+      "decision": "2 — Desempenho, tempo de resposta e acessibilidade no celular primeiro; release beta do cliente nativo assim que isso estiver feito e validado no aparelho.",
+      "decidedAt": "2026-10-15",
+      "record": "docs/governance/addenda/ADD-0024-urbe-nativo-desempenho-primeiro-e-release.md",
+      "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0048",
+      "status": "decided",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Urbe nativo publicado agora como \"beta 2.0\"",
+      "context": "FATO OBSERVADO: depois da primeira fatia do UC-48, o proprietário pediu a release do cliente nativo antes do fim da fatia de desempenho.",
+      "question": "A release beta do cliente nativo sai agora ou só depois do UC-48 validado no aparelho?",
+      "alternatives": [
+        {
+          "option": "1 — Esperar o UC-48 validado no aparelho",
+          "consequences": "Release adiada."
+        },
+        {
+          "option": "2 — Publicar agora como Urbe Beta 2.0 (pré-release) e continuar",
+          "consequences": "Canal C# Android passa a publicar o cliente nativo; validação no aparelho segue pendente."
+        }
+      ],
+      "consequences": "DECISÃO DO PROPRIETÁRIO: 2 — 'Pode fazer a release e depois continuar o desenvolvimento. Chamemos de versão beta 2.0'. O pipeline urbe-csharp-mobile-release publica o cliente nativo (app.urbe.csharp, 2.0.0-beta.10) no lugar da UI Blazor congelada.",
+      "manifestCompatibility": "Mesmo canal, identidade e certificado beta; não muda boundaries nem formato do vault. NN-017: validação no aparelho pendente.",
+      "recommendation": "2 — ordem do proprietário.",
+      "related": [
+        "docs/governance/addenda/ADD-0025-urbe-beta-2-0-nativa.md",
+        ".github/workflows/urbe-csharp-mobile-release.yml",
+        "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj"
+      ],
+      "raisedBy": "Proprietário",
+      "raisedAt": "2026-10-15",
+      "decision": "2 — Publicar agora o cliente nativo como Urbe Beta 2.0 (pré-release) e continuar o desenvolvimento.",
+      "decidedAt": "2026-10-15",
+      "record": "docs/governance/addenda/ADD-0025-urbe-beta-2-0-nativa.md",
+      "consequencesApplied": false
     }
   ]
 }

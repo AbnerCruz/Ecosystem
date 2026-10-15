@@ -12,7 +12,17 @@ using Urbe.Client;
 
 namespace Urbe.AndroidHost;
 
-[Application(Label = "Urbe nativo (prévia)", Icon = "@drawable/icon")]
+/// <summary>The name on the launcher: the beta channel (DEC-0048) or the preview built for each PR.</summary>
+internal static class AppInfo
+{
+#if URBE_BETA
+    public const string Name = "Urbe";
+#else
+    public const string Name = "Urbe nativo (prévia)";
+#endif
+}
+
+[Application(Label = AppInfo.Name, Icon = "@drawable/icon")]
 public sealed class UrbeAndroidApplication : AvaloniaAndroidApplication<UrbeApp>
 {
     public UrbeAndroidApplication(IntPtr javaReference, JniHandleOwnership transfer) : base(javaReference, transfer)
@@ -31,7 +41,7 @@ public sealed class UrbeAndroidApplication : AvaloniaAndroidApplication<UrbeApp>
 }
 
 [Activity(
-    Label = "Urbe nativo (prévia)",
+    Label = AppInfo.Name,
     Theme = "@style/UrbeTheme",
     Icon = "@drawable/icon",
     MainLauncher = true,
@@ -50,6 +60,15 @@ public sealed class MainActivity : AvaloniaMainActivity
     {
         Current = this;
         base.OnCreate(savedInstanceState);
+        // the editor asks for the keyboard when a block becomes an edit box: Android does not always open it by itself (UC-48)
+        PlatformInput.ShowKeyboard = () => Window?.DecorView is { } root && GetSystemService(InputMethodService) is Android.Views.InputMethods.InputMethodManager ime
+            ? ShowKeyboard(root, ime) : false;
+    }
+
+    private static bool ShowKeyboard(View root, Android.Views.InputMethods.InputMethodManager ime)
+    {
+        var target = root.FindFocus() ?? root;
+        return ime.ShowSoftInput(target, Android.Views.InputMethods.ShowFlags.Implicit);
     }
 
     /// <summary>workspace.js flushPending on visibilitychange hidden: write a pending map now.</summary>

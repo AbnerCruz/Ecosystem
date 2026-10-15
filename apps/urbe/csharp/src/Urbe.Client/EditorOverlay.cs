@@ -393,6 +393,9 @@ public sealed class EditorOverlay : Grid
     /// <summary>The "Mais ações" button (v23 overflow): the host shows the note's menu.</summary>
     public event Func<EditorOverlay, Task>? MoreRequested;
 
+    /// <summary>The Assistente button of the top bar (owner, UC-48: "não está com o botão da IA").</summary>
+    public event Action? AssistantRequested;
+
     /// <summary>The open note's file was renamed (renomearNota → v21RefreshEditorChrome): the same text,
     /// what was saved and the editor state are kept; only its path and the title change.</summary>
     public void Renamed(string path)
@@ -632,8 +635,15 @@ public sealed class EditorOverlay : Grid
             _visual.FinishEdit();
             if (MoreRequested is not null && _note is not null) await MoreRequested(this);
         };
+        var assistant = IconButton(UrbeTheme.Icons.Assistant, "Assistente");
+        assistant.Click += (_, _) =>
+        {
+            // the block being written is kept in the text, so the Assistente sees it and the selection
+            _visual.FinishEdit();
+            AssistantRequested?.Invoke();
+        };
         // no Salvar: the 1.8.4 saves by itself (autosave below, Ctrl+S) and says so in the footer
-        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { PluginButtons, _segment, more } };
+        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { PluginButtons, assistant, _segment, more } };
         DockPanel.SetDock(right, Dock.Right);
         bar.Children.Add(back);
         bar.Children.Add(right);

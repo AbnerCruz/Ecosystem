@@ -117,6 +117,7 @@ public sealed partial class MainView : Grid
         if (_vault is not null) Editor.SaveRequested += SaveNoteAsync;
         Editor.Editor.TextChanged += (_, _) => { EditorLinksChanged(); CaptureEditorHistory(); };
         Editor.MoreRequested += ShowEditorMenuAsync;
+        Editor.AssistantRequested += ToggleAssistant;
         Editor.Shown += path => NoteOpened?.Invoke(path);   // plugins: "nota:aberta"
 
         _stage.Children.Add(World);
@@ -1802,6 +1803,10 @@ public sealed partial class MainView : Grid
             Content = item,
             Background = Brushes.Transparent,
             BorderThickness = new Thickness(0),
+            // the whole third of the dock (or the rail's width) is the button: centred, and the touch area is all of it
+            // (owner's print, UC-48: the buttons sat at the left of each third)
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
             Padding = new Thickness(0)

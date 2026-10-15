@@ -69,6 +69,9 @@ public sealed partial class MainView : IPageStudioHost
 
     UrbeDialogs IPageStudioHost.Dialogs => Dialogs;
 
+    bool IPageStudioHost.PreviewCovered =>
+        _assistant?.IsVisible == true || FilePreview.IsVisible || _pluginPanels.Children.Any(c => c.IsVisible);
+
     string IPageStudioHost.Render(JsonObject spec, bool preview) => _pageEngine.Render(spec, new StoreNotes(_store), preview);
 
     Task<Avalonia.Controls.Control?> IPageStudioHost.PreviewAsync(string path, byte[] html, Action<string>? messages) =>
