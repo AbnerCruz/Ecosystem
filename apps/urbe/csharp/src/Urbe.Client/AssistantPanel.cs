@@ -142,8 +142,8 @@ public sealed partial class AssistantPanel : Border
         Child = new Grid { Children = { layout, _view } };
     }
 
-    /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, then customize/ai-tools.js).</summary>
-    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All];
+    /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, pages/ai-tools.js, customize/ai-tools.js, then the vault plugins).</summary>
+    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All];
 
     private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name) ?? (name == AssistantAgent.Delegate.Name ? AssistantAgent.Delegate : null);
 
