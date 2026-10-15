@@ -24,7 +24,7 @@
   },
   "devDependencies": {
     "@capacitor/android": "^8.0.0",
-    "@capacitor/cli": "^8.0.0",
+    "@capacitor/cli": "^8.5.3",
     "@capacitor/core": "^8.0.0",
     "@capacitor/filesystem": "^8.1.4",
     "electron": "^44.6.0",
