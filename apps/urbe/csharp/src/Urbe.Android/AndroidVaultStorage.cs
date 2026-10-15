@@ -17,6 +17,30 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     private const string DocumentIdColumn = "document_id";
     private const string DisplayNameColumn = "_display_name";
     private const string MimeTypeColumn = "mime_type";
+    private const string SizeColumn = "_size";
+    private const string LastModifiedColumn = "last_modified";
+
+    /// <summary>
+    /// What was read of each file (by document id), kept while the provider reports the same size and modification
+    /// time: a save no longer opens every file of the vault twice (UC-48: "demora horrores para salvar"). A file
+    /// changed less than 3 s before it was read, or bigger than 512 KB, is never kept, so a change in the same second is always read again.
+    /// </summary>
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (long Size, long Modified, byte[] Bytes)> FileCache = new();
+
+    /// <summary>The bytes of a listed file: from the cache when nothing about it changed, else read and kept.</summary>
+    private static byte[] ReadListed(AndroidUri uri, Entry entry)
+    {
+        if (entry.Modified > 0 && entry.Size >= 0 && FileCache.TryGetValue(entry.DocumentId, out var hit) &&
+            hit.Size == entry.Size && hit.Modified == entry.Modified && hit.Bytes.LongLength == entry.Size)
+            return hit.Bytes;
+        var bytes = ReadBytes(uri);
+        // only notes-sized files are kept (images and media are read again), so the cache stays small
+        if (entry.Modified > 0 && bytes.LongLength == entry.Size && bytes.LongLength <= 512 * 1024 &&
+            DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - entry.Modified > 3000)
+            FileCache[entry.DocumentId] = (entry.Size, entry.Modified, bytes);
+        else FileCache.TryRemove(entry.DocumentId, out _);
+        return bytes;
+    }
     private const long MaxFileBytes = 32L * 1024 * 1024;
     private const long MaxVaultBytes = 256L * 1024 * 1024;
     private const int MaxEntries = 10000;
@@ -712,7 +736,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         Android.App.Application.Context.ContentResolver
         ?? throw new IOException("ContentResolver indisponível.");
 
-    private sealed record Entry(string Name, string DocumentId, string MimeType);
+    private sealed record Entry(string Name, string DocumentId, string MimeType, long Size = -1, long Modified = 0);
 
     private static AndroidUri Root(AndroidUri tree) =>
         DocumentsContract.BuildDocumentUriUsingTree(tree, DocumentsContract.GetTreeDocumentId(tree))
@@ -724,7 +748,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         var children = DocumentsContract.BuildChildDocumentsUriUsingTree(tree, id)
             ?? throw new IOException("O provedor não retornou a pasta de documentos.");
         using var cursor = Resolver.Query(children,
-            [DocumentIdColumn, DisplayNameColumn, MimeTypeColumn],
+            [DocumentIdColumn, DisplayNameColumn, MimeTypeColumn, SizeColumn, LastModifiedColumn],
             null, null, null)
             ?? throw new IOException("Falha ao listar documentos da pasta.");
         var result = new List<Entry>();
@@ -737,7 +761,9 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 name.Contains('/') || name.Contains('\\'))
                 throw new InvalidDataException("Nome de documento inválido encontrado no vault.");
 
-            result.Add(new Entry(name, documentId, mime));
+            long size = cursor.IsNull(3) ? -1 : cursor.GetLong(3);
+            long modified = cursor.IsNull(4) ? 0 : cursor.GetLong(4);
+            result.Add(new Entry(name, documentId, mime, size, modified));
         }
         return result;
     }
@@ -775,7 +801,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 if (!includeAll && !IsIncluded(path))
                     continue;
 
-                var bytes = ReadBytes(uri);
+                var bytes = ReadListed(uri, entry);
                 if (bytes.LongLength > MaxFileBytes)
                     throw new IOException("Arquivo grande demais para esta beta: " + path);
 

@@ -1,3 +1,4 @@
+using Avalonia.VisualTree;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -154,6 +155,8 @@ public sealed class VisualSurface : StackPanel
             {
                 if (e.Handled) return;
                 e.Handled = true;
+                // the caret goes where the finger touched (before: at the end, and a second tap was needed — UC-48)
+                _tapAt = e.GetPosition(holder);
                 Edit(block.Start);
             };
         return holder;
@@ -213,6 +216,16 @@ public sealed class VisualSurface : StackPanel
         foreach (var key in new[] { "TextControlBorderBrush", "TextControlBorderBrushPointerOver", "TextControlBorderBrushFocused" })
             _box.Resources[key] = Brushes.Transparent;
         _box.TextChanged += OnBoxChanged;
+        // a double tap selects the word under the finger, to copy, cut or delete (UC-48; the mouse already does it)
+        _box.DoubleTapped += (_, e) =>
+        {
+            if (_box is null || e.Pointer.Type == Avalonia.Input.PointerType.Mouse) return;
+            var (from, to) = WordAt(_box.Text ?? "", _box.CaretIndex);
+            if (to <= from) return;
+            _box.SelectionStart = from;
+            _box.SelectionEnd = to;
+            e.Handled = true;
+        };
         _box.KeyDown += OnBoxKey;
         _box.AddHandler(KeyDownEvent, OnBoxKey, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         _box.PropertyChanged += (_, e) =>
@@ -225,11 +238,41 @@ public sealed class VisualSurface : StackPanel
             if (!_prompting && _box is not null && !_box.IsFocused && !IsKeyboardFocusWithin) FinishEdit();
         }, DispatcherPriority.Background);
         Rebuild();
+        var tap = _tapAt;
+        _tapAt = null;
         Dispatcher.UIThread.Post(() =>
         {
-            _box?.Focus();
-            if (_box is not null) _box.CaretIndex = _box.Text?.Length ?? 0;
+            if (_box is null) return;
+            _box.Focus();
+            _box.CaretIndex = CaretFromTap(_box, tap) ?? _box.Text?.Length ?? 0;
+            // a box focused by the app does not always bring up the phone's keyboard: ask for it (UC-48)
+            PlatformInput.ShowKeyboard?.Invoke();
         }, DispatcherPriority.Loaded);
+    }
+
+    private Point? _tapAt;
+
+    /// <summary>The letters and digits around a position (the word a double tap selects).</summary>
+    internal static (int From, int To) WordAt(string text, int at)
+    {
+        at = Math.Clamp(at, 0, text.Length);
+        static bool Word(char c) => char.IsLetterOrDigit(c) || c is '_' or '-' or '\'';
+        if (at == text.Length || !Word(text[at])) { if (at > 0 && Word(text[at - 1])) at--; else return (at, at); }
+        int from = at, to = at;
+        while (from > 0 && Word(text[from - 1])) from--;
+        while (to < text.Length && Word(text[to])) to++;
+        return (from, to);
+    }
+
+    /// <summary>The character under the point tapped on the rendered block, in the edit box laid out at the same place.</summary>
+    private static int? CaretFromTap(TextBox box, Point? tap)
+    {
+        if (tap is not { } p) return null;
+        var presenter = box.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.TextPresenter>().FirstOrDefault();
+        if (presenter?.TextLayout is not { } layout) return null;
+        var hit = layout.HitTestPoint(new Point(Math.Max(0, p.X - box.Padding.Left), Math.Max(0, p.Y - box.Padding.Top)));
+        var at = hit.TextPosition + (hit.IsTrailing ? 1 : 0);
+        return Math.Clamp(at, 0, box.Text?.Length ?? 0);
     }
 
     private Control EditorFor()
