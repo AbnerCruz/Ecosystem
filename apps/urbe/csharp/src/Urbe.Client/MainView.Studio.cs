@@ -60,10 +60,10 @@ public sealed partial class MainView : IPageStudioHost
 
     UrbeDialogs IPageStudioHost.Dialogs => Dialogs;
 
-    string IPageStudioHost.Render(JsonObject spec) => _pageEngine.Render(spec, new StoreNotes(_store));
+    string IPageStudioHost.Render(JsonObject spec, bool preview) => _pageEngine.Render(spec, new StoreNotes(_store), preview);
 
-    Task<Avalonia.Controls.Control?> IPageStudioHost.PreviewAsync(string path, byte[] html) =>
-        ContentViewers.CreateAsync(new ContentRequest(_vault, path, path[(path.LastIndexOf('/') + 1)..], VaultFileKinds.Html, html));
+    Task<Avalonia.Controls.Control?> IPageStudioHost.PreviewAsync(string path, byte[] html, Action<string>? messages) =>
+        ContentViewers.CreateAsync(new ContentRequest(_vault, path, path[(path.LastIndexOf('/') + 1)..], VaultFileKinds.Html, html) { Messages = messages });
 
     async Task IPageStudioHost.SaveAsync(string path, string text)
     {

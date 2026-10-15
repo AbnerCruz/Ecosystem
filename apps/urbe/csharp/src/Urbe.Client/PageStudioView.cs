@@ -16,9 +16,9 @@ public interface IPageStudioHost
 {
     UrbeDialogs Dialogs { get; }
     /// <summary>html(false): the page as the engine exports it, with the vault's notes.</summary>
-    string Render(JsonObject spec);
-    /// <summary>The platform's viewer for this HTML, or null (then the studio shows the page's outline).</summary>
-    Task<Control?> PreviewAsync(string path, byte[] html);
+    string Render(JsonObject spec, bool preview = false);
+    /// <summary>The platform's viewer for this HTML, or null (then the studio shows the page's outline); the page's messages go to <paramref name="messages"/>.</summary>
+    Task<Control?> PreviewAsync(string path, byte[] html, Action<string>? messages = null);
     /// <summary>Writes the page file (it exists) and verifies it.</summary>
     Task SaveAsync(string path, string text);
     /// <summary>The page file renamed (the title changed); returns the new path.</summary>
@@ -409,10 +409,10 @@ public sealed partial class PageStudioView : Border
     private async Task RenderPreviewAsync()
     {
         if (_st is null) return;
-        var html = _host.Render(_st.Spec);
+        var html = _host.Render(_st.Spec, preview: true);
         if (html == LastHtml && _preview.Content is not null) return;
         LastHtml = html;
-        var viewer = await _host.PreviewAsync(_path, System.Text.Encoding.UTF8.GetBytes(html));
+        var viewer = await _host.PreviewAsync(_path, System.Text.Encoding.UTF8.GetBytes(html), PreviewMessage);
         _preview.Content = viewer ?? Outline();
     }
 
@@ -433,6 +433,36 @@ public sealed partial class PageStudioView : Border
             });
         }
         return new ScrollViewer { Content = list, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+    }
+
+    /// <summary>
+    /// onFrameMessage: a part of the preview tapped selects its section (and the free element) and opens Editar;
+    /// text written straight into a free element becomes its content (a heading stays on one line).
+    /// </summary>
+    public void PreviewMessage(string json)
+    {
+        if (_st is null) return;
+        JsonObject? m;
+        try { m = JsonNode.Parse(json) as JsonObject; }
+        catch (System.Text.Json.JsonException) { return; }
+        var kind = S(m?["urbePage"]);
+        var id = S(m?["id"]);
+        var nid = m?["nid"] is JsonValue nv && nv.TryGetValue<string>(out var ns) ? ns : null;
+        if (kind == "select")
+        {
+            if (id != _st.Selected) _st.NodeSelected = null;
+            _st.Select(id.Length > 0 ? id : null);
+            if (nid is not null) _st.NodeSelected = nid;
+            if (!Wide && _st.Selected is not null) _sheet = "edit";
+            RenderPanels();
+            return;
+        }
+        if (kind != "text" || nid is null || _st.Section(id) is not { } sec || (string?)sec["type"] != "free") return;
+        if (PageEngine.FreeFind(sec["props"]?["root"] as JsonObject, nid) is not { } hit || hit.Node["content"] is not JsonObject content || content["text"] is null) return;
+        var text = System.Text.RegularExpressions.Regex.Replace(S(m!["text"]).Replace('\u00a0', ' '), "\n{3,}", "\n\n").Trim();
+        if ((string?)hit.Node["type"] == "heading") text = System.Text.RegularExpressions.Regex.Replace(text, @"\s*\n\s*", " ");
+        _st.Break();
+        if (_st.Set(PageStudio.FreePath(id, nid, "content", "text"), JsonValue.Create(text))) Changed();
     }
 
     private void Undo()

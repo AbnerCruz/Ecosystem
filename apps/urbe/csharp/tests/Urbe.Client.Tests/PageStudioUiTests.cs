@@ -36,6 +36,16 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains("Nova página", view.Studio.LastHtml);
                 Snapshot(window, "native-studio-new-page.png");
 
+                // the preview's messages (the 1.8.4 preview script): tapping a part selects it; text written in it is kept
+                var secId = (string)st.Sections[0]!["id"]!;
+                var headId = (string)st.Get("sections.0.props.root.children.0.id")!;
+                view.Studio.PreviewMessage("{\"urbePage\":\"select\",\"id\":\"" + secId + "\",\"nid\":\"" + headId + "\"}");
+                Assert.Equal(secId, st.Selected);
+                Assert.Equal(headId, st.NodeSelected);
+                view.Studio.PreviewMessage("{\"urbePage\":\"text\",\"id\":\"" + secId + "\",\"nid\":\"" + headId + "\",\"text\":\"Meu\\ntítulo\"}");
+                Assert.Equal("Meu título", (string?)st.Get("sections.0.props.root.children.0.content.text"));
+                Assert.Contains("data-sid=", view.Studio.LastHtml);
+
                 // ＋ → Blocos → Capa: a hero after the selected section, then edited in Editar
                 view.Studio.OpenLibrary();
                 Dispatcher.UIThread.RunJobs();

@@ -11,7 +11,14 @@ namespace Urbe.Client;
 /// (<see cref="Core.VaultFileKinds"/>), with its bytes when they were read, and the vault it comes from so a platform
 /// can reach the file itself (a large video is played from the vault, not loaded into memory).
 /// </summary>
-public sealed record ContentRequest(IUrbeVaultStorage? Storage, string Path, string Name, string Kind, byte[]? Bytes);
+public sealed record ContentRequest(IUrbeVaultStorage? Storage, string Path, string Name, string Kind, byte[]? Bytes)
+{
+    /// <summary>
+    /// The studio's preview: the page's messages ({urbePage:"select"|"text",…} as JSON, what the 1.8.4 preview posts to its
+    /// parent) are handed here, on the UI thread; null for every other viewer (isolated, no way back to the app).
+    /// </summary>
+    public Action<string>? Messages { get; init; }
+}
 
 /// <summary>
 /// The content viewers inside the Urbe (owner, ADD-0023: "dá um jeito da visualização aparecer no próprio Urbe,
