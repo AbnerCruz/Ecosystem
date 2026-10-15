@@ -1,0 +1,34 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261015-urbe-beta-11",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-15T23:16:41Z",
+  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "task_id": "UC-48",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "926f7fbd",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "docs/governance/handoffs/HO-20261015-urbe-beta-11.json"
+  ],
+  "work_completed": [
+    "Urbe Beta 2.0 — 2.0.0-beta.11 (versionCode 2000011): publica no canal beta (DEC-0048) o que entrou com o PR #578 — desempenho da cidade, AOT completo e GC concorrente no APK, comentários {\"…\"}, edição da proposta da IA e marca {ia:…}, crianças, decorações, AGENTS.md, busca no Mover — com o cliente de Windows na mesma release."
+  ],
+  "verification": [
+    { "kind": "automated", "check": "CI do PR #578 (urbe-checks e integrador) e bateria local do cliente", "result": "passed", "evidence": "160/160 testes do cliente, 810 do Core; build Android com AOT verde no CI." },
+    { "kind": "human", "check": "Fluidez da cidade e do app no aparelho com a beta.11", "result": "not-applicable", "evidence": "Desempenho percebido só se prova no aparelho (NN-017).", "object": "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj" }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": ["Depois da integração, conferir a release urbe-csharp-v2.0.0-beta.11 (APK e zip de Windows) e mandar os links ao proprietário."],
+  "decisions_required": [],
+  "normative_sources": ["AGENTS.md", "docs/distribution/direct-releases.md", "docs/governance/addenda/ADD-0025-urbe-beta-2-0-nativa.md"],
+  "invariants": [ { "id": "NN-001", "evidence": "A versão do canal muda só em Urbe.Android.csproj." } ],
+  "reuse_assessment": [ { "subject": "urbe-beta-release", "status": "product-specific", "rationale": "Versão do Urbe." } ],
+  "criticality": { "declared": "critical", "reason": "Nova versão publicada no canal de distribuição (Urbe.Android.csproj)." }
+}
