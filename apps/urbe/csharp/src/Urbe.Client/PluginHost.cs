@@ -59,8 +59,16 @@ public sealed partial class MainView
     public void SyncPlugins()
     {
         var on = Customization.SafeMode ? [] : PluginsOnHere();
+        // the vault's plugins (.plugin.json) run while approved for exactly their current text
+        var vault = Customization.ApprovedVaultPlugins();
+        var candidates = _available.Concat(vault.Select(v => (Manifest: new PluginManifest(v.Spec.Id, v.Spec.Name, v.Spec.Version, v.Spec.Description, v.Spec.Declared),
+            Make: (Func<IUrbePlugin>)(() => new Plugins.VaultPluginAdapter(v.Spec, v.Hash))))).ToList();
+        foreach (var v in vault) on.Add(v.Spec.Id);
         foreach (var id in _plugins.Keys.Where(id => !on.Contains(id)).ToList()) StopPlugin(id);
-        foreach (var (manifest, make) in _available)
+        // a changed file approved again: the old one stops, the new one starts
+        foreach (var v in vault)
+            if (_plugins.TryGetValue(v.Spec.Id, out var r) && r.Plugin is Plugins.VaultPluginAdapter a && a.Hash != v.Hash) StopPlugin(v.Spec.Id);
+        foreach (var (manifest, make) in candidates)
             if (on.Contains(manifest.Id) && !_plugins.ContainsKey(manifest.Id))
             {
                 var p = make();
@@ -200,6 +208,41 @@ public sealed partial class MainView
             Need(PluginPermissions.Data);
             host.Customization.Device.Set(DataKey(key), value);
         }
+
+        public void EditorButton(string title, string icon, Func<Task> run)
+        {
+            Need(PluginPermissions.Buttons);
+            var b = new Button
+            {
+                Content = UrbeTheme.Icon(icon, 20, UrbeTheme.Text2, 1.8), Width = 40, Height = 40, Padding = new Thickness(0), CornerRadius = new CornerRadius(10),
+                Background = Brushes.Transparent, BorderThickness = new Thickness(0), HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
+            };
+            ToolTip.SetTip(b, title);
+            Avalonia.Automation.AutomationProperties.SetName(b, title);
+            b.Click += async (_, _) =>
+            {
+                try { await run(); }
+                catch (Exception ex) { host.ShowLifeNotice(manifest.Name + ": " + ex.Message); }
+            };
+            host.Editor.PluginButtons.Children.Add(b);
+            _undo.Add(() => host.Editor.PluginButtons.Children.Remove(b));
+        }
+
+        public void InsertText(string text)
+        {
+            Need(PluginPermissions.WriteNotes);
+            if (!host.Editor.IsVisible || host.Editor.Current is null) throw new InvalidOperationException("Abra uma nota no editor para inserir texto.");
+            host.Editor.InsertText(text);
+        }
+
+        public void OpenNote(string path)
+        {
+            Need(PluginPermissions.ReadNotes);
+            if (!host._contents.ContainsKey(path)) throw new InvalidOperationException("A nota " + path + " não existe.");
+            host.OpenNoteByPath(path);
+        }
+
+        public string? OpenNotePath => host.Editor.IsVisible ? host.Editor.Current?.Path : null;
 
         public void CleanUp()
         {

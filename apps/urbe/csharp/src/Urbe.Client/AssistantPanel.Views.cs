@@ -57,7 +57,7 @@ public sealed partial class AssistantPanel
     private static readonly Dictionary<string, string> AccessIcon = new()
     {
         ["read"] = UrbeTheme.Icons.Search, ["write"] = UrbeTheme.Icons.Edit, ["destructive"] = UrbeTheme.Icons.Trash, ["ui"] = UrbeTheme.Icons.Open,
-        ["memory"] = UrbeTheme.Icons.Star, ["plan"] = UrbeTheme.Icons.Check
+        ["memory"] = UrbeTheme.Icons.Star, ["plan"] = UrbeTheme.Icons.Check, ["plugin"] = UrbeTheme.Icons.Layers
     };
 
     private AiChatBlock? ResultFor(string id)
@@ -147,23 +147,23 @@ public sealed partial class AssistantPanel
     private Control Approval(AiApprovalRequest p)
     {
         var pv = p.Preview;
-        bool danger = p.Access == "destructive";
+        bool danger = p.Access == "destructive", plugin = p.Access == "plugin";
         var box = new StackPanel { Spacing = 8 };
-        box.Children.Add(Wrap((danger ? "Confirmar exclusão" : "Aprovar alteração") + (pv is { Path.Length: > 0 } ? " · " + pv.Path : ""), 13, UrbeTheme.Text, FontWeight.Bold));
+        box.Children.Add(Wrap((danger ? "Confirmar exclusão" : plugin ? "Criar e ligar plugin" : "Aprovar alteração") + (pv is { Path.Length: > 0 } ? " · " + pv.Path : ""), 13, UrbeTheme.Text, FontWeight.Bold));
         if (pv?.Note is { Length: > 0 } note) box.Children.Add(Wrap(note, 13, UrbeTheme.Text2));
         if (pv is not null && (pv.Before is not null || pv.After is not null)) box.Children.Add(Diff(pv.Before, pv.After));
         var actions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right };
         var reject = TextButton("Recusar", () => Answer(AiApproval.Reject()));
         reject.Margin = new Thickness(0, 0, 8, 0);
         actions.Children.Add(reject);
-        if (!danger)
+        if (!danger && !plugin)
         {
             var all = TextButton("Aprovar todas", () => Answer(AiApproval.ApproveAll));
             ToolTip.SetTip(all, "Aprovar esta e as próximas alterações desta resposta");
             all.Margin = new Thickness(0, 0, 8, 0);
             actions.Children.Add(all);
         }
-        actions.Children.Add(TextButton(danger ? "Excluir" : "Aprovar", () => Answer(AiApproval.Approve), primary: !danger, danger: danger));
+        actions.Children.Add(TextButton(danger ? "Excluir" : plugin ? "Ligar plugin" : "Aprovar", () => Answer(AiApproval.Approve), primary: !danger, danger: danger));
         box.Children.Add(actions);
         return new Border { Child = box, Padding = new Thickness(10), CornerRadius = new CornerRadius(12), Background = UrbeTheme.Brush(UrbeTheme.Accent, .07) };
     }

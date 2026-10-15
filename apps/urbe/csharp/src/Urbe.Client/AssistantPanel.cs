@@ -32,6 +32,8 @@ public interface IAssistantApp
     void Notify(string text);
     /// <summary>The Personalização the appearance tools change.</summary>
     IAssistantAppearance? Appearance => null;
+    /// <summary>The city's plugins (write_plugin turns them on).</summary>
+    IAssistantPlugins? Plugins => null;
 }
 
 /// <summary>
@@ -141,7 +143,7 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, then customize/ai-tools.js).</summary>
-    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All, .. AssistantCustomizeTools.All];
+    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All];
 
     private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name) ?? (name == AssistantAgent.Delegate.Name ? AssistantAgent.Delegate : null);
 
@@ -383,6 +385,7 @@ public sealed partial class AssistantPanel : Border
         public void Remember(string fact) => panel.Remember(fact);
         public void SetPlan(IReadOnlyList<AiPlanStep> steps) { }
         public IAssistantAppearance? Appearance => panel._app.Appearance;
+        public IAssistantPlugins? Plugins => panel._app.Plugins;
     }
 
     private sealed class Undo(IAssistantApp app, DocumentStore documents) : IAssistantUndoHost

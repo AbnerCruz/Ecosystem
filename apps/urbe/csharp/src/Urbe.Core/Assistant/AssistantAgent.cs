@@ -225,7 +225,8 @@ public static class AssistantAgent
     public static bool NeedsApproval(string access, string policy, bool runAllow)
     {
         if (Read.Contains(access)) return false;
-        if (access == "destructive") return true;
+        // a plugin is code the person turns on: always asked, whatever the policy (not in the 1.8.4, whose plugins the person enabled by hand)
+        if (access is "destructive" or "plugin") return true;
         if (policy == "auto" || runAllow) return false;
         return true;
     }
@@ -413,6 +414,7 @@ public static class AssistantAgent
         public void Remember(string fact) => inner.Remember(fact);
         public void SetPlan(IReadOnlyList<AiPlanStep> steps) => setPlan(steps);
         public IAssistantAppearance? Appearance => inner.Appearance;
+        public IAssistantPlugins? Plugins => inner.Plugins;
     }
 
     private sealed record Out(string Content, bool IsError = false, string? Status = null, IReadOnlyList<AiChange>? Changes = null, IReadOnlyList<(string Path, AiPartial? Partial)>? Reads = null);

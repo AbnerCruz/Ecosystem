@@ -145,6 +145,7 @@ public sealed partial class MainView : Grid
         Customize.SetNativePlugin = SetNativePlugin;
         Customization.Applied += ApplyCustomization;
         Customization.Applied += SyncPlugins;   // the safe mode turns every plugin off
+        Customization.PluginsChanged += SyncPlugins;
         SetColumn(_stage, 1);
         Children.Add(_stage);
 

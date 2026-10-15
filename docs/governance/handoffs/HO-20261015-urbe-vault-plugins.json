@@ -1,0 +1,62 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261015-urbe-vault-plugins",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-15T04:19:14Z",
+  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "task_id": "UC-20",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "d00928cd",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Plugins/PluginScript.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Plugins/VaultPlugin.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantPluginTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Plugins/VaultPluginAdapter.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PluginHost.cs",
+    "apps/urbe/csharp/src/Urbe.Client/NativePlugins.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizationExtras.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizePanel.Sections.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultPluginTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantPluginUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261015-urbe-vault-plugins.json"
+  ],
+  "work_completed": [
+    "Pedido do proprietário (15/10/2026): o Assistente respondia que não podia criar plugins; para qualquer ideia de plugin isso não deveria acontecer. Plugins do vault (.plugin.json) para a API nativa: painel, botões na cidade e no editor, comandos, relógio, eventos, estado lembrado e ações numa linguagem de expressões fechada, executados pela mesma IPluginApi e permissões; validados antes de ligar; rodam só aprovados para o texto exato (SHA-256).",
+    "Assistente: plugin_guide (formato completo e exemplo) e write_plugin (valida, mostra o código, sempre pede aprovação, grava em Personalização/plugins e liga ao aprovar). Personalização → Plugins lista, liga, desliga e mostra erros; Novo plugin oferece o modelo nativo."
+  ],
+  "verification": [
+    { "kind": "automated", "check": "VaultPluginTests (5) e HeadlessUiTests.Assistant_WritesAPluginThatRunsInTheEditor", "result": "passed",
+      "evidence": "Expressões, validação com mensagens por campo, permissões recusadas, orçamento contra laços, estado guardado no aparelho; pedido 'faz um plugin de cronômetro para a aba do editor' com modelo roteirizado: aprovação, arquivo no vault, plugin ligado, botão no topo do editor, cronômetro contando e inserindo o tempo na nota, e tudo some ao desligar. Core: 774 testes." },
+    { "kind": "human", "check": "Pedir plugins variados ao Assistente com um provedor real no Android", "result": "not-applicable",
+      "evidence": "Qualidade dos plugins gerados por cada modelo e toque nos painéis só se provam no aparelho (NN-017).", "object": "apps/urbe/csharp/src/Urbe.Core/Plugins/VaultPlugin.cs" }
+  ],
+  "known_issues": [
+    "Ideias que precisem de algo fora das ações e funções (ex.: internet, sons, desenhar na cidade) ainda não têm ação; o validador explica o que existe e a lista cresce pelo mesmo formato."
+  ],
+  "blockers": [],
+  "next_actions": [ "Acrescentar ações conforme os pedidos reais de plugins (som, notificação do sistema, desenho no mapa)." ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md", "apps/urbe/AGENTS.md", "docs/governance/addenda/ADD-0021-urbe-plugins-api-nativa.md", "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    { "id": "NN-016", "evidence": "Permissões declaradas e checadas a cada chamada; sem permissão, a ação é recusada; liga só com aprovação da pessoa para o texto exato." },
+    { "id": "NN-011", "evidence": "ADD-0021 decidiu API nativa sem motor JavaScript e deixou o desenho da API como detalhe de implementação; nenhum código é carregado do vault, só uma descrição interpretada pela API nativa." },
+    { "id": "NN-017", "evidence": "Validação no aparelho pendente." }
+  ],
+  "reuse_assessment": [ { "subject": "vault-plugins", "status": "product-specific", "rationale": "Plugins do Urbe." } ],
+  "criticality": { "declared": "critical", "reason": "Muda a fronteira de execução de plugins do app (o que pode rodar a partir de arquivos do vault), dentro do que ADD-0021 decidiu." }
+}

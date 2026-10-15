@@ -592,7 +592,7 @@ public sealed class EditorOverlay : Grid
             if (MoreRequested is not null && _note is not null) await MoreRequested(this);
         };
         // no Salvar: the 1.8.4 saves by itself (autosave below, Ctrl+S) and says so in the footer
-        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { _segment, more } };
+        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { PluginButtons, _segment, more } };
         DockPanel.SetDock(right, Dock.Right);
         bar.Children.Add(back);
         bar.Children.Add(right);
@@ -811,6 +811,25 @@ public sealed class EditorOverlay : Grid
     }
 
     // ------------------------------------------------------------------ Fonte tools (app.js .mdBtn handlers)
+
+    /// <summary>The plugins' buttons in the editor's top bar (native plugin API, "onde": "editor").</summary>
+    public StackPanel PluginButtons { get; } = new() { Orientation = Orientation.Horizontal, Spacing = 2 };
+
+    /// <summary>A plugin's text at the caret (Fonte) or at the end of the note (Visual); the note saves by itself.</summary>
+    public void InsertText(string insert)
+    {
+        if (_note is null || insert.Length == 0) return;
+        _visual.FinishEdit();
+        var text = Editor.Text ?? "";
+        var (a, b) = VisualSurface.Range(Editor);
+        if (Mode == EditorMode.Visual)
+        {
+            a = b = text.Length;
+            if (text.Length > 0 && !text.EndsWith('\n')) insert = "\n" + insert;
+        }
+        ApplyEdit(new LegacyEditorTools.TextEdit(text[..a] + insert + text[b..], a + insert.Length, a + insert.Length));
+        if (Mode == EditorMode.Visual) _visual.SetText(Editor.Text ?? "");
+    }
 
     private void ApplyEdit(LegacyEditorTools.TextEdit edit)
     {

@@ -57,6 +57,16 @@ public sealed partial class MainView : IAssistantApp
 
     IAssistantAppearance? IAssistantApp.Appearance => new AppearanceAdapter(Customization);
 
+    IAssistantPlugins? IAssistantApp.Plugins => new PluginsAdapter(Customization);
+
+    /// <summary>The city's plugins for write_plugin: listed as Personalização lists them; turned on for their exact text.</summary>
+    private sealed class PluginsAdapter(Customization c) : IAssistantPlugins
+    {
+        public IReadOnlyList<(string Path, string Name, string Status)> List() =>
+            c.Plugins().Select(p => (p.Path, p.Name, Urbe.Core.Plugins.VaultPluginSpec.IsPluginPath(p.Path) && p.Status == "aprovado" ? "ligado" : p.Status)).ToList();
+        public void Enable(string path) => c.EnablePlugin(path);
+    }
+
     /// <summary>customize api for the appearance tools: get, normalize, replace (gravar: the vault file first), themes and packs.</summary>
     private sealed class AppearanceAdapter(Customization c) : IAssistantAppearance
     {
@@ -126,6 +136,13 @@ public sealed partial class MainView : IAssistantApp
     {
         RequireWritable();
         if (_store!.Get(path) is not null || _contents.ContainsKey(path)) throw new InvalidOperationException("Já existe " + path + ".");
+        if (path.StartsWith(LegacyCustomize.Folder + "/", StringComparison.Ordinal))
+        {
+            // Personalização (tema, plugins...): written as customize.js writes it, a house beside the others of the folder
+            await WriteVaultFileAsync(path, content, exists: false);
+            AfterAssistantWrite(path);
+            return _store.Get(path)!;
+        }
         await EnsureFolderAsync(FolderOf(path));
         await _vault!.CreateTextFileAsync(path, content);
         long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
