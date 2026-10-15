@@ -94,8 +94,13 @@ files = data + '/files'
 before = json.loads(shell('cat', files + '/catalog/catalog.json'))
 roster_before = shell('cat', files + '/catalog/roster.json')
 # A real symlink, not a string substitution. Keep the app UID/SELinux labels.
+owner = shell('stat', '-c', '%u:%g', files)
+context = shell('ls', '-Zd', files).split()[0]
 shell('mv', files, data + '/files-canonical')
 shell('ln', '-s', data + '/files-canonical', files)
+shell('chown', '-h', owner, files)
+shell('chcon', '-h', context, files)
+shell('ls', '-ldZ', files, data + '/files-canonical')
 shell('test', '-L', files)
 shell('am', 'start', '-W', '-a', 'android.intent.action.MAIN',
       '-c', 'android.intent.category.LAUNCHER', '-n', package + '/' + activity)
