@@ -582,6 +582,7 @@ public sealed partial class MainView
             var result = await ImportPipeline.ExecuteAsync(plan, new ImportTransaction(storage));
             suspended = false;
             await ReopenVaultAsync();
+            await ApplyBackupPreferencesAsync(inspection);
             ShowLifeNotice($"Vault restaurado. {result.Written} arquivo(s) gravado(s); {result.Unchanged} preservado(s), sem nova gravação.");
         }
         catch (Exception ex)
@@ -667,6 +668,22 @@ public sealed partial class MainView
             return;
         }
         await RestoreSelectionAsync(inspection);
+    }
+
+    /// <summary>
+    /// "Preferências do backup" (importarEntradasDestino + UrbeExportManifest.applyState): an export carries this device's
+    /// allowed preferences; applied only when the person says so, because plugin approvals come with them.
+    /// </summary>
+    private async Task ApplyBackupPreferencesAsync(ImportInspection inspection)
+    {
+        if (inspection.Manifest?.State is not { } state || state.LocalStorage.Count == 0 && (state.Plugins?.Count ?? 0) == 0) return;
+        if (!await Dialogs.ConfirmAsync("Preferências do backup",
+                "Aplicar as preferências deste backup? Permissões de plugins incluídas também serão autorizadas neste aparelho; mantenha as atuais se não confiar na origem.",
+                "Aplicar preferências", cancel: "Manter atuais"))
+            return;
+        foreach (var (key, value) in VaultExportStatePolicy.Apply(Customization.Device.All(), state, "Urbe").Writes)
+            Customization.Device.Set(key, value);
+        SyncPlugins();
     }
 
     /// <summary>abrirCidade(Disco.cidade): the same folder read again from disk.</summary>

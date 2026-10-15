@@ -11,6 +11,8 @@ public interface IDeviceStore
 {
     string? Get(string key);
     void Set(string key, string? value);
+    /// <summary>Every key and value (collectState of the export).</summary>
+    IReadOnlyDictionary<string, string> All() => new Dictionary<string, string>();
 }
 
 public sealed class MemoryDeviceStore : IDeviceStore
@@ -18,6 +20,7 @@ public sealed class MemoryDeviceStore : IDeviceStore
     private readonly Dictionary<string, string> _values = [];
     public string? Get(string key) => _values.GetValueOrDefault(key);
     public void Set(string key, string? value) { if (value is null) _values.Remove(key); else _values[key] = value; }
+    public IReadOnlyDictionary<string, string> All() => new Dictionary<string, string>(_values);
 }
 
 /// <summary>A small JSON file in the app's local data folder; a failure to read or write only costs persistence.</summary>
@@ -35,6 +38,8 @@ public sealed class FileDeviceStore(string? path = null) : IDeviceStore
     }
 
     public string? Get(string key) => Values().GetValueOrDefault(key);
+
+    public IReadOnlyDictionary<string, string> All() => new Dictionary<string, string>(Values());
 
     public void Set(string key, string? value)
     {

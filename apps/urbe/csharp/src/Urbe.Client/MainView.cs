@@ -1272,7 +1272,9 @@ public sealed partial class MainView : Grid
             {
                 AppVersion = "urbe-native-preview",
                 VaultName = vault.VaultName,
-                VaultFormatVersion = _snapshot.VaultFormatVersion
+                VaultFormatVersion = _snapshot.VaultFormatVersion,
+                // collectState: this device's preferences that travel with the export (tips, editor session, plugin approvals; never AI keys)
+                State = VaultExportStatePolicy.Collect(Customization.Device.All(), "Urbe")
             });
             var saved = await (SaveExport ?? SaveZipAsync)(zip.Bytes.ToArray());
             if (saved == true) ShowLifeNotice("Vault completo exportado.");

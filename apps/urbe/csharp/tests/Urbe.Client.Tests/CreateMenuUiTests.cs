@@ -551,4 +551,48 @@ public sealed partial class HeadlessUiTests
             }
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
+
+    [Fact]
+    public async Task Import_AnExportRestoresAndOffersItsPreferences() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var (view, window, vault, dir) = await OpenCreateVault();
+            try
+            {
+                var device = new MemoryDeviceStore();
+                device.Set("urbe.tip.link", "1");
+                device.Set("urbe.ia.key", "segredo");
+                view.Customization.Device = device;
+                byte[]? zip = null;
+                view.SaveExport = b => { zip = b; return Task.FromResult<bool?>(true); };
+                await view.ExportAsync();
+                Assert.NotNull(zip);
+                var manifest = System.Text.Encoding.UTF8.GetString(zip!);
+                Assert.DoesNotContain("segredo", manifest);
+
+                File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Mudou\n");
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                var fresh = new MemoryDeviceStore();
+                view.Customization.Device = fresh;
+                view.ImportPicker = _ => Task.FromResult<ImportSelection?>(new ImportSelection([new ImportSource("Urbe-vault.zip", _ => ValueTask.FromResult<Stream>(new MemoryStream(zip!)))]));
+                await PickFromCreateMenu(view, "Importar", async () =>
+                {
+                    ClickButtonWithText(view.Dialogs, "Arquivos");
+                    await Pump(120);
+                    ClickButtonWithText(view.Dialogs, "Continuar");
+                    await Pump(200);
+                    ClickButtonWithText(view.Dialogs, "Restaurar com backup");
+                    for (int i = 0; i < 100 && !view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == "Preferências do backup"); i++) await Pump(40);
+                    ClickButtonWithText(view.Dialogs, "Aplicar preferências");
+                    await Pump(200);
+                });
+                Assert.Equal("# Comece\n\n[[Um]]\n", File.ReadAllText(Path.Combine(vault, "Comece.md")));
+                Assert.Equal("1", fresh.Get("urbe.tip.link"));
+                Assert.Null(fresh.Get("urbe.ia.key"));
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
 }
