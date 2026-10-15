@@ -1,0 +1,136 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261015-p6-5-reviewed-project-file",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-15T15:51:21.377631Z",
+  "agent": {
+    "id": "codex-reviewed-project-file",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "codex/p6-5-reviewed-project-file",
+  "base_commit": "419b1b0a9fac1a63c8faa20bd9f59615d180f21a",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/README.md",
+    "apps/ecosystem-ai/docs-r4-android-native.md",
+    "apps/ecosystem-ai/docs-r4-reviewed-project-file.md",
+    "apps/ecosystem-ai/src/EcosystemAi.Android/MainActivity.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Android/MainActivity.ProjectFiles.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Product/ReviewedProjectFile.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/ReviewedProjectFileTests.cs",
+    "apps/ecosystem-ai/tools/smoke-android-project.py",
+    "docs/governance/handoffs/HO-20261015-p6-5-reviewed-project-file.json"
+  ],
+  "work_completed": [
+    "FATO: PR573/configuração persistente já integrado na main; direção P6-5 permanece aberta. Escopo rastreado na Issue #579 e issue-mãe #354.",
+    "Novo fluxo Android Salvar no projeto: nome simples .md/.txt, revisão integral, confirmação explícita e arquivo real disponível para leitura/reabertura.",
+    "Composição local usa IsolatedWorkspace/ChangeSet/ChangeIntegrator existentes com operador revisor distinto do produtor Host, verificador exato e autorização vinculados ao objeto. Sem aprovação automática de parecer ou tarefa.",
+    "Publicação de arquivo novo por temporário + flush + rename sem overwrite; recusa conflito/case collision, traversal, nomes reservados, symlinks e rebind; origem relida, propostas vinculadas ao Host e repetição recusada.",
+    "Testes portáteis usam filesystem real e smoke Android ampliado com resposta fictícia offline, cancelamento da revisão, confirmação, arquivo e restart. Nenhum recibo de inferência fictício, chamada de modelo ou gasto."
+  ],
+  "verification": [
+    {
+      "check": "Build e suíte AgentRuntime/Product",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "SDK10.0.402: build zero warnings/errors; execução AgentRuntime.Tests.dll: 250/250 testes, zero falhas/skip. Inclui 18 novos casos de publicação."
+    },
+    {
+      "check": "Consistency local",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22 checks; sem snapshot de Issues. Reexecutar após handoff e no CI combinado."
+    },
+    {
+      "check": "APK e smoke Android13",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Workflow existente do Product/preview construirá APK arm64 e smoke x86_64; acompanhar PR antes de entregar."
+    },
+    {
+      "check": "Salvar resposta revisada no moto g32",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/ecosystem-ai/docs-r4-reviewed-project-file.md",
+      "evidence": "No APK exato: escolher resposta, revisar/cancelar sem gravar, confirmar, abrir Arquivos, reabrir app e conferir conteúdo; colisão mantém arquivo anterior. CI não substitui DEVICE."
+    }
+  ],
+  "known_issues": [
+    "Slice restrito a um arquivo textual novo; não integra alterações multiarquivo nem sobrescrita, não conclui tarefa ou libera TeamPlan.",
+    "Propostas/recibos de publicação são efêmeros; arquivo é autoridade de conteúdo, sem replay/auditoria durável de integração. Crash pode deixar temporário oculto.",
+    "Workspace privado Android é o escopo de confiança; não protege contra ator hostil com mesmo UID/root trocando diretórios entre syscalls.",
+    "P6-5 permanece aberta; a Fase7 não é afetada."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Confirmar CI/APK/smoke e corrigir qualquer falha; fornecer APK de prévia quando verificado.",
+    "Integração pelo integrador governado; nova publicação em filesystem declarada crítica conforme ADR0020, sem merge manual nem label pelo agente.",
+    "Continuar integração supervisionada de mudanças, auditoria durável e critérios materiais de tarefa sem promover este salvamento a aceite técnico."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/adr/0020-r2-workspace-changes-e-integracao-local.md",
+    "docs/contracts/permissions.json",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "apps/ecosystem-ai/docs-r4-android-native.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Resposta vem do catálogo; arquivo salvo é autoridade de conteúdo; não cria run/custo/estado canônico paralelo."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue579, branch, handoff, testes e PR para revisão/integrador."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Implementação local de P6-5/ADR0020 sem alterar Core, contrato público, formato ou boundary transversal."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Somente confirmação da UI publica proposta exata; agente continua files.read, sem grant novo."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE separado de CI, pendente para APK exato."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Não fecha P6-5; recibo de publicação só exposto depois do rename real."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Implementação local em EcosystemAi.Product, sem extração ou Product→Product."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "reviewed-project-text-file-publication",
+      "status": "possible-candidate",
+      "rationale": "Composição experimental local ao Product, sem segundo consumidor real; reutiliza Core existente sem extração."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "security"
+    ],
+    "reason": "Primeira composição do ChangeIntegrator publicando arquivo no workspace real do Product, fronteira de publicação tratada como crítica no ADR0020. Somente arquivo textual novo por confirmação do operador; sem novo grant de agente ou overwrite."
+  }
+}
