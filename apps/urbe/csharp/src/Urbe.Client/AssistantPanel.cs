@@ -30,6 +30,8 @@ public interface IAssistantApp
     bool OpenReference(string reference);
     UrbeDialogs Dialogs { get; }
     void Notify(string text);
+    /// <summary>The Personalização the appearance tools change.</summary>
+    IAssistantAppearance? Appearance => null;
 }
 
 /// <summary>
@@ -137,6 +139,11 @@ public sealed partial class AssistantPanel : Border
         _view.Background = UrbeTheme.Brush(UrbeTheme.Bg);
         Child = new Grid { Children = { layout, _view } };
     }
+
+    /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, then customize/ai-tools.js).</summary>
+    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All, .. AssistantCustomizeTools.All];
+
+    private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name) ?? (name == AssistantAgent.Delegate.Name ? AssistantAgent.Delegate : null);
 
     /// <summary>The HTTP layer (tests replace the handler).</summary>
     public AssistantProviders Providers { get; set; } = new();
@@ -289,7 +296,7 @@ public sealed partial class AssistantPanel : Border
                 Host = new Host(this, documents, knowledge), Provider = p, Model = ModelId(), Messages = conv.Messages,
                 Agent = AssistantAgent.AgentById(conv.AgentId, _cfg.CustomAgents), Policy = conv.Policy, Cancel = cts.Token,
                 MaxSteps = _cfg.MaxSteps, ContextTokens = meta?.Context ?? 128000, Instructions = _cfg.Instructions, Memory = MemoryList(), VaultName = _app.VaultName,
-                Stream = Providers.StreamAsync, Approve = ApproveAsync, OnUpdate = OnUpdate
+                Stream = Providers.StreamAsync, Approve = ApproveAsync, OnUpdate = OnUpdate, Tools = Tools
             });
             run.Changes = r.Changes;
             run.Stopped = r.Stopped;
@@ -375,6 +382,7 @@ public sealed partial class AssistantPanel : Border
         public void OpenNote(string path) => panel._app.OpenReference(path);
         public void Remember(string fact) => panel.Remember(fact);
         public void SetPlan(IReadOnlyList<AiPlanStep> steps) { }
+        public IAssistantAppearance? Appearance => panel._app.Appearance;
     }
 
     private sealed class Undo(IAssistantApp app, DocumentStore documents) : IAssistantUndoHost

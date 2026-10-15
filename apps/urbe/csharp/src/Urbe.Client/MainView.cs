@@ -190,6 +190,7 @@ public sealed partial class MainView : Grid
         World.RegionHeld += region => { if (!Dialogs.IsOpen) _ = EditRegionAsync(region); };
         World.RegionTapped += region => { if (!Dialogs.IsOpen && World.Tool is null) BeginRegionShape(region); };
         RestoreTouchDebug();
+        WatchErrors();
         WireSplit();
     }
 
@@ -692,6 +693,8 @@ public sealed partial class MainView : Grid
             items.Add(new("Pasta no dispositivo", UrbeTheme.Icons.Storage, "Onde os arquivos ficam salvos", Run: () => OpenVaultAsync()));
         items.Add(new("Páginas", UrbeTheme.Icons.Page, "Sites e páginas HTML do vault", Run: () => { ShowPages(); return Task.CompletedTask; }));
         items.Add(new("Diagnóstico de toques", UrbeTheme.Icons.Select, TouchDebugOn ? "Ligado — toque para desligar" : "Para descobrir botões que não respondem", Run: ToggleTouchDebugAsync));
+        if (CrashLog.Read().Length > 0)
+            items.Add(new("Relatório de erros", UrbeTheme.Icons.List, "Erros que o Urbe registrou neste aparelho", Run: ShowErrorReportAsync));
         return Dialogs.MenuAsync("Configurações", items);
     }
 
@@ -779,6 +782,13 @@ public sealed partial class MainView : Grid
             }
         }
         _contents[path] = content;
+        // docs.upsert({...d, path, content}, {source:'customize'}): the document follows the file
+        if (_store is not null)
+        {
+            var today = LegacyCity.NowDate(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+            var doc = _store.Get(path);
+            _store.Upsert(new DocumentInput { Id = doc?.Id, Path = path, Title = doc?.Title, Content = content, Created = doc?.Created ?? today, Modified = today }, "customize");
+        }
         RefreshNotes();
     }
 

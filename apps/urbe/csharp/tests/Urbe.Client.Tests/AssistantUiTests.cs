@@ -120,6 +120,23 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal(original, File.ReadAllText(Path.Combine(vault, "Comece.md")));
                 Assert.True(panel.Conversation.Runs.Last().Reverted);
 
+                // appearance: set_appearance writes Personalização/tema.json (after the approval) and applies it; Desfazer takes it away
+                model.Chats.Enqueue(Sse(
+                    """{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_2","function":{"name":"set_appearance","arguments":"{\"config\":{\"tema\":\"sepia\"}}"}}]}}]}""",
+                    """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
+                model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Pronto, tema sépia."}}]}"""));
+                panel.Send("Deixe o Urbe em sépia");
+                for (int i = 0; i < 200 && panel.PendingApproval is null; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.Equal(("set_appearance", "Personalização/tema.json"), (panel.PendingApproval!.Call.Name, panel.PendingApproval.Preview!.Path));
+                Assert.False(File.Exists(Path.Combine(vault, "Personalização", "tema.json")));
+                panel.Answer(AiApproval.Approve);
+                await panel.CurrentRun!;
+                Assert.Contains("\"tema\": \"sepia\"", File.ReadAllText(Path.Combine(vault, "Personalização", "tema.json")));
+                Assert.Equal("sepia", (string?)view.Customization.Config["tema"]);
+                await panel.UndoLastAsync(confirmed: true);
+                Assert.False(File.Exists(Path.Combine(vault, "Personalização", "tema.json")));   // it did not exist: back to the trash
+                Assert.Equal("escuro", (string?)view.Customization.Config["tema"]);
+
                 // the conversation and the key stay in the app's data, never in the vault
                 Assert.NotEmpty(Directory.GetFiles(UrbeApp.AssistantFolder!, "conversa-*.json"));
                 Assert.Contains("sk-or-teste", File.ReadAllText(Path.Combine(UrbeApp.AssistantFolder!, "config.json")));

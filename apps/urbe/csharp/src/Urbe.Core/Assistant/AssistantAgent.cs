@@ -412,6 +412,7 @@ public static class AssistantAgent
         public void OpenNote(string path) => inner.OpenNote(path);
         public void Remember(string fact) => inner.Remember(fact);
         public void SetPlan(IReadOnlyList<AiPlanStep> steps) => setPlan(steps);
+        public IAssistantAppearance? Appearance => inner.Appearance;
     }
 
     private sealed record Out(string Content, bool IsError = false, string? Status = null, IReadOnlyList<AiChange>? Changes = null, IReadOnlyList<(string Path, AiPartial? Partial)>? Reads = null);

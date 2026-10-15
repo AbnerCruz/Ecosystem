@@ -81,7 +81,7 @@ public sealed partial class AssistantPanel
 
     private Control ToolCard(AiChatBlock b, AiChatMessage m)
     {
-        var tool = AssistantTools.Get(b.Name) ?? (b.Name == "delegate_research" ? AssistantAgent.Delegate : null);
+        var tool = ToolByName(b.Name);
         string label = tool is not null && !b.Pending ? SafeLabel(tool, b.Input) : b.Pending ? "Preparando " + b.Name + "…" : b.Name;
         var r = ResultFor(b.Id);
         bool pend = _pending is { } p && ReferenceEquals(p.Request.Call, b) || _pending is { } q && q.Request.Call.Id == b.Id && b.Id.Length > 0;

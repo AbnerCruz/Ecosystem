@@ -26,6 +26,7 @@ public sealed class UrbeApp : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        CrashLog.Install();
         switch (ApplicationLifetime)
         {
             case IClassicDesktopStyleApplicationLifetime desktop:
