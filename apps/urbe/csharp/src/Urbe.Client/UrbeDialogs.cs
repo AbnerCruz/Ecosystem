@@ -192,6 +192,44 @@ public sealed class UrbeDialogs : Grid
         return (body, null, Submit, input);
     });
 
+    /// <summary>
+    /// The comments on a word (<c>{"…"}</c>, UC-49): all of them, to scroll and read, and a box to write one more.
+    /// Returns the new comment, or null when closed without one.
+    /// </summary>
+    public Task<string?> CommentsAsync(string title, IReadOnlyList<string> comments) => Open<string?>(finish =>
+    {
+        var list = new StackPanel { Spacing = 8 };
+        foreach (var c in comments)
+            list.Children.Add(new Border
+            {
+                Background = UrbeTheme.Brush(UrbeTheme.Bg), CornerRadius = new CornerRadius(12), Padding = new Thickness(12, 10),
+                BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1),
+                Child = new SelectableTextBlock { Text = c, TextWrapping = TextWrapping.Wrap, FontFamily = UrbeTheme.UiFont, FontSize = 15, Foreground = UrbeTheme.Brush(UrbeTheme.Text) }
+            });
+        var scroll = new ScrollViewer { Content = list, MaxHeight = 280, Margin = new Thickness(0, 12, 0, 0), IsVisible = comments.Count > 0 };
+        var input = new TextBox
+        {
+            PlaceholderText = "Escreva um comentário", MinHeight = 50, Padding = new Thickness(14, 12), CornerRadius = new CornerRadius(12),
+            FontFamily = UrbeTheme.UiFont, FontSize = 16, AcceptsReturn = false, TextWrapping = TextWrapping.Wrap,
+            Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text), Margin = new Thickness(0, 12, 0, 0),
+            BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), CaretBrush = UrbeTheme.Brush(UrbeTheme.Accent)
+        };
+        Avalonia.Automation.AutomationProperties.SetName(input, "Novo comentário");
+        input.Resources["TextControlBackgroundFocused"] = UrbeTheme.Brush(UrbeTheme.Bg);
+        input.Resources["TextControlBorderBrushFocused"] = UrbeTheme.Brush(UrbeTheme.Accent);
+        void Submit() { var v = (input.Text ?? "").Trim(); finish(v.Length > 0 ? v : null); }
+        var close = Action("Fechar", false);
+        close.Click += (_, _) => finish(null);
+        var add = Action("Adicionar", true);
+        add.Click += (_, _) => Submit();
+        var actions = new Grid { ColumnDefinitions = new ColumnDefinitions("*,10,*"), Margin = new Thickness(0, 16, 0, 0) };
+        Grid.SetColumn(add, 2);
+        actions.Children.Add(close);
+        actions.Children.Add(add);
+        var count = comments.Count switch { 0 => "Nenhum comentário ainda.", 1 => "1 comentário", var n => n + " comentários" };
+        return (new StackPanel { Children = { Head(title, count, () => finish(null)), scroll, input, actions } }, null, Submit, input);
+    });
+
     /// <summary>UrbeDialogs.alert.</summary>
     public Task AlertAsync(string title, string message, string confirm = "Ok") => Open<bool>(finish =>
     {
@@ -243,10 +281,42 @@ public sealed class UrbeDialogs : Grid
                 HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, VerticalContentAlignment = VerticalAlignment.Center
             };
             b.Click += (_, _) => finish(index);
+            b.Tag = Fold(x.Label + " " + x.Detail);
             list.Children.Add(b);
         }
-        return (new StackPanel { Children = { Head(title, message, () => finish(null)), list } }, null, null, list.Children.Count > 0 ? list.Children[0] : null);
+        // a long list (the folders of "Mover para") gets a search box and scrolls (UC-54)
+        if (options.Count <= SearchFrom)
+            return (new StackPanel { Children = { Head(title, message, () => finish(null)), list } }, null, null, list.Children.Count > 0 ? list.Children[0] : null);
+        var search = new TextBox
+        {
+            PlaceholderText = "Buscar", MinHeight = 44, Padding = new Thickness(12, 10), CornerRadius = new CornerRadius(12), Margin = new Thickness(0, 12, 0, 0),
+            FontFamily = UrbeTheme.UiFont, FontSize = 15, Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text),
+            BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), CaretBrush = UrbeTheme.Brush(UrbeTheme.Accent)
+        };
+        Avalonia.Automation.AutomationProperties.SetName(search, "Buscar");
+        search.TextChanged += (_, _) =>
+        {
+            var q = Fold(search.Text ?? "");
+            foreach (var c in list.Children) c.IsVisible = q.Length == 0 || ((string?)c.Tag ?? "").Contains(q, StringComparison.Ordinal);
+        };
+        // Enter takes the first one still shown
+        void First() { if (list.Children.FirstOrDefault(c => c.IsVisible) is Button f) f.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent)); }
+        var scroll = new ScrollViewer { Content = list, MaxHeight = 420, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
+        return (new StackPanel { Children = { Head(title, message, () => finish(null)), search, scroll } }, null, First, search);
     });
+
+    /// <summary>From this many options a choice list has a search box.</summary>
+    public const int SearchFrom = 7;
+
+    /// <summary>Lower case without accents, for searching ("Ação" finds "acao").</summary>
+    private static string Fold(string text)
+    {
+        var d = text.Normalize(System.Text.NormalizationForm.FormD);
+        var sb = new System.Text.StringBuilder(d.Length);
+        foreach (var ch in d)
+            if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(ch) != System.Globalization.UnicodeCategory.NonSpacingMark) sb.Append(char.ToLowerInvariant(ch));
+        return sb.ToString();
+    }
 
     /// <summary>
     /// The region dialog of the 1.8.4 (#regionDialog: Nome, Descrição, Cor, "Salvar alterações"): the three values,

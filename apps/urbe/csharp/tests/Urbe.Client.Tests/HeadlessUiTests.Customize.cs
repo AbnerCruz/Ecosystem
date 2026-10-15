@@ -53,7 +53,8 @@ public sealed partial class HeadlessUiTests
             Dispatcher.UIThread.RunJobs();
             Assert.Contains("Todas as cores (14)", Texts(view.Customize));
             ClickButtonWithText(view.Customize, "Oceano");
-            await Task.Delay(50); Dispatcher.UIThread.RunJobs();
+            // the theme is written to tema.json and then applied: wait for it (a fixed 50 ms was flaky in CI)
+            for (int i = 0; i < 100 && UrbeTheme.Current(UrbeTheme.Bg) != "#081317"; i++) { await Task.Delay(20); Dispatcher.UIThread.RunJobs(); }
             // the shared token brush (used by every control that already exists) changed colour
             Assert.Equal(Avalonia.Media.Color.Parse("#081317"), bg.Color);
             Assert.Equal("#081317", UrbeTheme.Current(UrbeTheme.Bg));

@@ -29,6 +29,9 @@ public sealed class MarkdownReader
     /// opens the pane to edit it).</summary>
     public Action<int>? MathTapped { get; set; }
     private int _math;
+    /// <summary>The 💬 of a word's comments was tapped (UC-49): its index among the comment runs of this text, in order.</summary>
+    public Action<int>? CommentsTapped { get; set; }
+    private int _notes;
 
     private int _listLine;
 
@@ -169,6 +172,33 @@ public sealed class MarkdownReader
                     Foreground = UrbeTheme.Brush(UrbeTheme.Comment), Background = UrbeTheme.Brush(UrbeTheme.Warn, .12), FontStyle = FontStyle.Italic
                 });
                 length += inner.Length;
+                return;
+            }
+            case "span" when n.HasClass(NoteMarks.NotesClass):
+            {
+                // palavra{"comentário"} (UC-49): a small 💬 raised over the end of the word; a tap opens the comments
+                var notes = System.Text.Json.JsonSerializer.Deserialize<string[]>(n.Attr("data-comments")) ?? [];
+                int index = _notes++;
+                var mark = new Button
+                {
+                    Content = new TextBlock { Text = notes.Length > 1 ? "💬" + notes.Length : "💬", FontSize = Size * .62, Foreground = UrbeTheme.Brush(UrbeTheme.Accent) },
+                    Padding = new Thickness(1, 0), MinWidth = 0, MinHeight = 0, Margin = new Thickness(0, 0, 0, Size * .55),
+                    Background = Brushes.Transparent, BorderThickness = new Thickness(0), Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
+                };
+                ToolTip.SetTip(mark, string.Join("\n", notes));
+                Avalonia.Automation.AutomationProperties.SetName(mark, notes.Length == 1 ? "1 comentário" : notes.Length + " comentários");
+                mark.Click += (_, e) => { e.Handled = true; CommentsTapped?.Invoke(index); };
+                mark.Tapped += (_, e) => e.Handled = true;   // the block does not become an edit box under the 💬
+                into.Add(new InlineUIContainer(mark) { BaselineAlignment = BaselineAlignment.Top });
+                length += 1;
+                return;
+            }
+            case "span" when n.HasClass(NoteMarks.AiClass):
+            {
+                // {ia:"modelo"} (UC-51): text written by the Assistente — a tiny green "modelo" after it
+                var model = n.Attr("data-model");
+                into.Add(new Run(" " + model) { FontSize = Size * .55, Foreground = UrbeTheme.Brush("#3fb86b"), BaselineAlignment = BaselineAlignment.Superscript });
+                length += model.Length + 1;
                 return;
             }
             case "span" when n.HasClass("umath"):

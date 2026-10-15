@@ -151,8 +151,33 @@ public sealed partial class AssistantPanel
         var box = new StackPanel { Spacing = 8 };
         box.Children.Add(Wrap((danger ? "Confirmar exclusão" : plugin ? "Criar e ligar plugin" : "Aprovar alteração") + (pv is { Path.Length: > 0 } ? " · " + pv.Path : ""), 13, UrbeTheme.Text, FontWeight.Bold));
         if (pv?.Note is { Length: > 0 } note) box.Children.Add(Wrap(note, 13, UrbeTheme.Text2));
-        if (pv is not null && (pv.Before is not null || pv.After is not null)) box.Children.Add(Diff(pv.Before, pv.After));
+        Control? diff = pv is not null && (pv.Before is not null || pv.After is not null) ? Diff(pv.Before, pv.After) : null;
+        if (diff is not null) box.Children.Add(diff);
+        // UC-51: the proposed text can be edited before approving; what is written is the person's version
+        TextBox? editor = null;
         var actions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right };
+        if (AssistantTools.CanEdit(p.Tool, pv))
+        {
+            var edit = TextButton("Editar", () => { });
+            edit.Margin = new Thickness(0, 0, 8, 0);
+            edit.Click += (_, _) =>
+            {
+                if (editor is not null) return;
+                editor = new TextBox
+                {
+                    Text = pv!.After, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 120, MaxHeight = 360,
+                    FontFamily = UrbeTheme.MonoFont, FontSize = 13, Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text),
+                    CaretBrush = UrbeTheme.Brush(UrbeTheme.Accent)
+                };
+                Avalonia.Automation.AutomationProperties.SetName(editor, "Texto proposto");
+                var at = diff is not null ? box.Children.IndexOf(diff) : box.Children.Count - 1;
+                if (diff is not null) box.Children.Remove(diff);
+                box.Children.Insert(Math.Max(0, at), editor);
+                edit.IsVisible = false;
+                editor.Focus();
+            };
+            actions.Children.Add(edit);
+        }
         var reject = TextButton("Recusar", () => Answer(AiApproval.Reject()));
         reject.Margin = new Thickness(0, 0, 8, 0);
         actions.Children.Add(reject);
@@ -163,7 +188,8 @@ public sealed partial class AssistantPanel
             all.Margin = new Thickness(0, 0, 8, 0);
             actions.Children.Add(all);
         }
-        actions.Children.Add(TextButton(danger ? "Excluir" : plugin ? "Ligar plugin" : "Aprovar", () => Answer(AiApproval.Approve), primary: !danger, danger: danger));
+        actions.Children.Add(TextButton(danger ? "Excluir" : plugin ? "Ligar plugin" : "Aprovar",
+            () => Answer(editor is not null && editor.Text != pv?.After ? AiApproval.ApproveEdited(editor.Text ?? "") : AiApproval.Approve), primary: !danger, danger: danger));
         box.Children.Add(actions);
         return new Border { Child = box, Padding = new Thickness(10), CornerRadius = new CornerRadius(12), Background = UrbeTheme.Brush(UrbeTheme.Accent, .07) };
     }

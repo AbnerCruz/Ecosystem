@@ -231,10 +231,10 @@ public sealed class NotesExplorer : Border
     }
 
     /// <summary>The notes whose rows are shown, in order.</summary>
-    public IReadOnlyList<string> VisibleNotePaths => _visibleNotes.ToArray();
+    public IReadOnlyList<string> VisibleNotePaths { get { Fresh(); return _visibleNotes.ToArray(); } }
 
     /// <summary>The folders whose rows are shown, in order.</summary>
-    public IReadOnlyList<string> VisibleFolderPaths => _visibleFolders.ToArray();
+    public IReadOnlyList<string> VisibleFolderPaths { get { Fresh(); return _visibleFolders.ToArray(); } }
 
     /// <summary>On a window at least 900 px wide Notas is a 360 px panel beside the city (theme.css @media) and has Fechar.</summary>
     public bool Wide
@@ -280,7 +280,7 @@ public sealed class NotesExplorer : Border
     }
 
     /// <summary>The non-note file rows shown now.</summary>
-    public IReadOnlyList<string> VisibleFilePaths => _visibleFiles.ToArray();
+    public IReadOnlyList<string> VisibleFilePaths { get { Fresh(); return _visibleFiles.ToArray(); } }
 
     private readonly List<string> _visibleFiles = [];
 
@@ -303,6 +303,7 @@ public sealed class NotesExplorer : Border
     /// <summary>A tap on a visible non-note file row.</summary>
     public bool TryOpenFile(string path)
     {
+        Fresh();
         if (!_visibleFiles.Contains(path)) return false;
         FileRequested?.Invoke(path);
         return true;
@@ -314,6 +315,7 @@ public sealed class NotesExplorer : Border
     /// <summary>A hold on a visible non-note file row.</summary>
     public bool HoldFile(string path)
     {
+        Fresh();
         if (!_visibleFiles.Contains(path)) return false;
         FileMenuRequested?.Invoke(path);
         return true;
@@ -322,6 +324,7 @@ public sealed class NotesExplorer : Border
     /// <summary>The "⋯" of a visible folder row.</summary>
     public bool OpenFolderMenu(string folder)
     {
+        Fresh();
         if (!_visibleFolders.Contains(folder)) return false;
         FolderMenuRequested?.Invoke(folder);
         return true;
@@ -360,6 +363,7 @@ public sealed class NotesExplorer : Border
     /// closes it in the tree.</summary>
     public bool TapFolder(string folder)
     {
+        Fresh();
         if (!_visibleFolders.Contains(folder)) return false;
         if (_selected.Count > 0) { Toggle(FolderPrefix + folder); return true; }
         Expand(folder, !IsExpanded(folder));
@@ -371,6 +375,7 @@ public sealed class NotesExplorer : Border
     /// shown.</summary>
     public bool TryEnterFolder(string folder)
     {
+        Fresh();
         if (!_visibleFolders.Contains(folder)) return false;
         if (_selected.Count > 0) { Toggle(FolderPrefix + folder); return true; }
         if (!IsExpanded(folder)) { Expand(folder, true); Render(); }
@@ -380,6 +385,7 @@ public sealed class NotesExplorer : Border
     /// <summary>The hold of a visible folder row: model.select('folder:' + path, 'toggle').</summary>
     public bool HoldFolder(string folder)
     {
+        Fresh();
         if (!_visibleFolders.Contains(folder)) return false;
         Toggle(FolderPrefix + folder);
         return true;
@@ -388,6 +394,7 @@ public sealed class NotesExplorer : Border
     /// <summary>A tap on a visible note row (activate): toggles it while a selection exists, otherwise opens it.</summary>
     public bool TryOpenNote(string path)
     {
+        Fresh();
         if (!_visibleNotes.Contains(path)) return false;
         if (_selected.Count > 0) { Toggle(path); return true; }
         if (_notes.Find(n => n.Path == path) is { } note) NoteRequested?.Invoke(note);
@@ -397,6 +404,7 @@ public sealed class NotesExplorer : Border
     /// <summary>The hold of a visible note row (what the gesture raises): model.select(id,'toggle').</summary>
     public bool HoldNote(string path)
     {
+        Fresh();
         if (!_visibleNotes.Contains(path)) return false;
         Toggle(path);
         return true;
@@ -419,8 +427,25 @@ public sealed class NotesExplorer : Border
 
     // ------------------------------------------------------------------ render
 
-    private void Render()
+    private bool _stale;
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
+        base.OnPropertyChanged(change);
+        if (change.Property == IsVisibleProperty && IsVisible && _stale) Render();
+    }
+
+    /// <summary>The list as it is now, even while hidden (what callers read of it is never out of date).</summary>
+    private void Fresh()
+    {
+        if (_stale) Render(force: true);
+    }
+
+    private void Render(bool force = false)
+    {
+        // hidden: the list is rebuilt when it shows again, not on every save of a note behind the city (UC-48)
+        if (!IsVisible && !force) { _stale = true; return; }
+        _stale = false;
         // setHeader: the title of the view; back outside tree/search; the search field only in tree/search
         _title.Text = _view switch { "trash" => "Lixeira", "search" => "Busca", "collection" => _collection?.Title ?? "Explorer", _ => "Explorer" };
         _back.IsVisible = _view is "trash" or "collection";
@@ -449,13 +474,22 @@ public sealed class NotesExplorer : Border
         foreach (var f in _extraFolders) Ensure(f);
         foreach (var n in _notes) Ensure(Dir(n.Path));
         foreach (var f in _files) Ensure(Dir(f));
+        // what is in each folder, gathered once (it was searched again for every folder: slow with many notes — UC-48)
+        var inside = new Dictionary<string, List<(int Kind, string Path, string Name)>>(StringComparer.Ordinal);
+        void Put(string parent, (int, string, string) item)
+        {
+            if (!inside.TryGetValue(parent, out var list)) inside[parent] = list = [];
+            list.Add(item);
+        }
+        foreach (var f in folders) Put(Dir(f), (0, f, Base(f)));
+        var notesByPath = new Dictionary<string, CityNote>(StringComparer.Ordinal);
+        foreach (var n in _notes) { notesByPath.TryAdd(n.Path, n); Put(Dir(n.Path), (1, n.Path, Base(n.Path))); }
+        foreach (var f in _files) Put(Dir(f), (2, f, Base(f)));
         void Walk(string parent, int depth)
         {
+            if (!inside.TryGetValue(parent, out var here)) return;
             // folders first, then every file by its name with the extension (notes and attachments together)
-            var kids = folders.Where(f => Dir(f) == parent).Select(f => (Kind: 0, Path: f, Name: Base(f)))
-                .Concat(_notes.Where(n => Dir(n.Path) == parent).Select(n => (Kind: 1, n.Path, Name: Base(n.Path))))
-                .Concat(_files.Where(f => Dir(f) == parent).Select(f => (Kind: 2, Path: f, Name: Base(f))))
-                .OrderBy(k => k.Kind == 0 ? 0 : 1).ThenBy(k => k.Name, Locale).ToList();
+            var kids = here.OrderBy(k => k.Kind == 0 ? 0 : 1).ThenBy(k => k.Name, Locale).ToList();
             foreach (var k in kids)
             {
                 if (k.Kind == 0)
@@ -468,7 +502,7 @@ public sealed class NotesExplorer : Border
                     _list.Children.Add(row);
                     if (open) Walk(k.Path, depth + 1);
                 }
-                else if (k.Kind == 1) AddNoteRow(_notes.First(n => n.Path == k.Path), depth, withPath: false);
+                else if (k.Kind == 1) AddNoteRow(notesByPath[k.Path], depth, withPath: false);
                 else AddFileRow(k.Path, depth, withPath: false);
             }
         }

@@ -1,0 +1,156 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261015-urbe-comments-and-pause",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-15T15:05:59Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-48",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "419b1b0a",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/NoteMarks.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteMarksTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/VisualEditCrashUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/StudioPhoneUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantAgentOracleTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ChooseSearchUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/UserAgentsFile.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/UserAgentsFileTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/TownKids.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyVillagers.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/LifeRenderer.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/TownKidsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
+    "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/MapTool.cs",
+    "apps/urbe/csharp/src/Urbe.Core/WorldDecorations.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/DecorationToolUiTests.cs",
+    "docs/governance/handoffs/HO-20261015-urbe-comments-and-pause.json"
+  ],
+  "work_completed": [
+    "UC-48: a cidade deixa de simular e desenhar ~30 vezes por segundo atrás de uma tela opaca que a cobre inteira (estúdio de páginas, Páginas, tutorial, Personalização, Assistente no celular).",
+    "UC-48/UC-55: quando o Android não redimensiona a janela para o teclado, o app termina onde o teclado começa (InputPane), e a barra do editor e o texto ficam acima das teclas.",
+    "UC-49 (editor): palavra{\"comentário\"} mostra um 💬 sobre a palavra; tocar lista os comentários e acrescenta outro no próprio .md; páginas e HTML exportado deixam os comentários de fora.",
+    "UC-51: 'Editar' no cartão de aprovação do Assistente; aprovar grava a versão editada pela pessoa (create_note mantém a criação; as demais viram write_note da mesma nota) e o modelo é avisado. Marca d'água: texto escrito pelo Assistente termina com {ia:\"modelo\"} (opção MarkAiText ligada no app; os oráculos da 1.8.4 rodam sem ela), mostrado como 'modelo' minúsculo verde no editor e '· IA: modelo' nas páginas.",
+    "UC-54: escolhas longas (como 'Mover para') ganham busca sem acentos e rolagem, Enter escolhe a primeira mostrada; 'Mover para outra pasta' no menu do editor (a nota segue aberta no novo caminho).",
+    "UC-50: o Assistente lê Personalização/AGENTS.md a cada conversa — a parte Geral e a do modelo em uso (Nome: {…} ou ## Nome) — depois das instruções dele.",
+    "UC-52: crianças no mundo (TownKids) — algumas casas têm uma ou duas crianças brincando perto da porta, menores que os adultos, longe da água; entram com chuva e seguem o interruptor 'moradores'.",
+    "UC-48 desempenho (relato do proprietário na Beta 2.0): medição de um quadro da cidade (412×900, 200 notas, noite) — nuvens 6,5 ms por camada de opacidade de tela inteira → transparência embutida na imagem; brilhos, vaga-lumes, fogos e janelas idem; janelas acesas com filtro bilinear (13 → 5 ms); rótulos, pincéis e canetas em cache (160 → 119 KB alocados por quadro). APK Release com AOT completo e GC concorrente. Explorer só se reconstrói visível e monta a árvore em tempo linear.",
+    "UC-53: 15 decorações; a ferramenta coloca várias seguidas; tocar numa decoração permite Mover e 'Colocar mais desta'."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "NoteMarksTests.WordComments_AreFoundReadAddedAndLeftOutOfPages",
+      "result": "passed",
+      "evidence": "Grupos, escape de aspas, inclusão e remoção nas páginas; código intocado."
+    },
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.VisualEdit_WordCommentsShowAMarkThatListsAndAddsComments",
+      "result": "passed",
+      "evidence": "O 💬 aparece, lista o comentário, acrescenta outro e o bloco continua renderizado."
+    },
+    {
+      "kind": "automated",
+      "check": "AssistantAgentOracleTests.AnEditedApprovalWritesThePersonsText; NoteMarksTests.AiMark_IsAddedOnceAndRenderedAsAModelMark",
+      "result": "passed",
+      "evidence": "Core: 807 testes passando, oráculos do agente inalterados."
+    },
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.Choose_ALongListHasASearchThatFiltersWithoutAccentsAndEnterTakesTheFirst",
+      "result": "passed",
+      "evidence": "'acao' acha 'Ações'; Enter escolhe a primeira visível."
+    },
+    {
+      "kind": "automated",
+      "check": "UserAgentsFileTests",
+      "result": "passed",
+      "evidence": "Seções nas duas formas, chaves aninhadas, Geral + seção do modelo."
+    },
+    {
+      "kind": "automated",
+      "check": "TownKidsTests.SomeHousesHaveChildrenWhoPlayNearTheDoorAndNeverInTheWater",
+      "result": "passed",
+      "evidence": "2000 passos: perto da porta, fora d'água e de casas; desligado esvazia."
+    },
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.Decorations_PlaceSeveralInARowAndMoveOne; medição temporária de quadro (não versionada)",
+      "result": "passed",
+      "evidence": "Antes/depois por seção do desenho; a fluidez real no aparelho segue pendente (NN-017)."
+    },
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.World_PausesBehindTheStudioAndPagesAndRunsAgainAfter",
+      "result": "passed",
+      "evidence": "CityVisible falso atrás de Páginas e do estúdio; verdadeiro ao fechar."
+    },
+    {
+      "kind": "human",
+      "check": "No Android: comentários 💬, teclado sem cobrir a barra do editor, fluidez com páginas abertas",
+      "result": "not-applicable",
+      "evidence": "Toque, teclado e desempenho percebido só se provam no aparelho (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.cs"
+    }
+  ],
+  "known_issues": [
+    "UC-49: comentários ainda não aparecem adaptados dentro das páginas HTML (o editor de páginas os omite)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Seguir UC-48 (texto com aparência de negrito precisa de teste no aparelho) e UC-49 nas páginas."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0024-urbe-nativo-desempenho-primeiro-e-release.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Provado por testes headless; validação no aparelho pendente."
+    },
+    {
+      "id": "NN-001",
+      "evidence": "Os comentários vivem só no .md (sintaxe), sem arquivo paralelo."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "word-comments",
+      "status": "product-specific",
+      "rationale": "Sintaxe de notas do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Inclui mudança no Urbe.Android.csproj (AOT e GC do APK), zona crítica de distribuição; o resto é rotina."
+  }
+}
