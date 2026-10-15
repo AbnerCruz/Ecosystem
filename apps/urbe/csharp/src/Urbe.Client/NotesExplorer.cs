@@ -419,8 +419,19 @@ public sealed class NotesExplorer : Border
 
     // ------------------------------------------------------------------ render
 
+    private bool _stale;
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == IsVisibleProperty && IsVisible && _stale) Render();
+    }
+
     private void Render()
     {
+        // hidden: the list is rebuilt when it shows again, not on every save of a note behind the city (UC-48)
+        if (!IsVisible) { _stale = true; return; }
+        _stale = false;
         // setHeader: the title of the view; back outside tree/search; the search field only in tree/search
         _title.Text = _view switch { "trash" => "Lixeira", "search" => "Busca", "collection" => _collection?.Title ?? "Explorer", _ => "Explorer" };
         _back.IsVisible = _view is "trash" or "collection";
@@ -449,13 +460,22 @@ public sealed class NotesExplorer : Border
         foreach (var f in _extraFolders) Ensure(f);
         foreach (var n in _notes) Ensure(Dir(n.Path));
         foreach (var f in _files) Ensure(Dir(f));
+        // what is in each folder, gathered once (it was searched again for every folder: slow with many notes — UC-48)
+        var inside = new Dictionary<string, List<(int Kind, string Path, string Name)>>(StringComparer.Ordinal);
+        void Put(string parent, (int, string, string) item)
+        {
+            if (!inside.TryGetValue(parent, out var list)) inside[parent] = list = [];
+            list.Add(item);
+        }
+        foreach (var f in folders) Put(Dir(f), (0, f, Base(f)));
+        var notesByPath = new Dictionary<string, CityNote>(StringComparer.Ordinal);
+        foreach (var n in _notes) { notesByPath.TryAdd(n.Path, n); Put(Dir(n.Path), (1, n.Path, Base(n.Path))); }
+        foreach (var f in _files) Put(Dir(f), (2, f, Base(f)));
         void Walk(string parent, int depth)
         {
+            if (!inside.TryGetValue(parent, out var here)) return;
             // folders first, then every file by its name with the extension (notes and attachments together)
-            var kids = folders.Where(f => Dir(f) == parent).Select(f => (Kind: 0, Path: f, Name: Base(f)))
-                .Concat(_notes.Where(n => Dir(n.Path) == parent).Select(n => (Kind: 1, n.Path, Name: Base(n.Path))))
-                .Concat(_files.Where(f => Dir(f) == parent).Select(f => (Kind: 2, Path: f, Name: Base(f))))
-                .OrderBy(k => k.Kind == 0 ? 0 : 1).ThenBy(k => k.Name, Locale).ToList();
+            var kids = here.OrderBy(k => k.Kind == 0 ? 0 : 1).ThenBy(k => k.Name, Locale).ToList();
             foreach (var k in kids)
             {
                 if (k.Kind == 0)
@@ -468,7 +488,7 @@ public sealed class NotesExplorer : Border
                     _list.Children.Add(row);
                     if (open) Walk(k.Path, depth + 1);
                 }
-                else if (k.Kind == 1) AddNoteRow(_notes.First(n => n.Path == k.Path), depth, withPath: false);
+                else if (k.Kind == 1) AddNoteRow(notesByPath[k.Path], depth, withPath: false);
                 else AddFileRow(k.Path, depth, withPath: false);
             }
         }

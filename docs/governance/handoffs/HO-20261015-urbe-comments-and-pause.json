@@ -41,6 +41,13 @@
     "apps/urbe/csharp/src/Urbe.Client/World/LifeRenderer.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/TownKidsTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
+    "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/MapTool.cs",
+    "apps/urbe/csharp/src/Urbe.Core/WorldDecorations.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/DecorationToolUiTests.cs",
     "docs/governance/handoffs/HO-20261015-urbe-comments-and-pause.json"
   ],
   "work_completed": [
@@ -50,7 +57,9 @@
     "UC-51: 'Editar' no cartão de aprovação do Assistente; aprovar grava a versão editada pela pessoa (create_note mantém a criação; as demais viram write_note da mesma nota) e o modelo é avisado. Marca d'água: texto escrito pelo Assistente termina com {ia:\"modelo\"} (opção MarkAiText ligada no app; os oráculos da 1.8.4 rodam sem ela), mostrado como 'modelo' minúsculo verde no editor e '· IA: modelo' nas páginas.",
     "UC-54: escolhas longas (como 'Mover para') ganham busca sem acentos e rolagem, Enter escolhe a primeira mostrada; 'Mover para outra pasta' no menu do editor (a nota segue aberta no novo caminho).",
     "UC-50: o Assistente lê Personalização/AGENTS.md a cada conversa — a parte Geral e a do modelo em uso (Nome: {…} ou ## Nome) — depois das instruções dele.",
-    "UC-52: crianças no mundo (TownKids) — algumas casas têm uma ou duas crianças brincando perto da porta, menores que os adultos, longe da água; entram com chuva e seguem o interruptor 'moradores'."
+    "UC-52: crianças no mundo (TownKids) — algumas casas têm uma ou duas crianças brincando perto da porta, menores que os adultos, longe da água; entram com chuva e seguem o interruptor 'moradores'.",
+    "UC-48 desempenho (relato do proprietário na Beta 2.0): medição de um quadro da cidade (412×900, 200 notas, noite) — nuvens 6,5 ms por camada de opacidade de tela inteira → transparência embutida na imagem; brilhos, vaga-lumes, fogos e janelas idem; janelas acesas com filtro bilinear (13 → 5 ms); rótulos, pincéis e canetas em cache (160 → 119 KB alocados por quadro). APK Release com AOT completo e GC concorrente. Explorer só se reconstrói visível e monta a árvore em tempo linear.",
+    "UC-53: 15 decorações; a ferramenta coloca várias seguidas; tocar numa decoração permite Mover e 'Colocar mais desta'."
   ],
   "verification": [
     {
@@ -88,6 +97,12 @@
       "check": "TownKidsTests.SomeHousesHaveChildrenWhoPlayNearTheDoorAndNeverInTheWater",
       "result": "passed",
       "evidence": "2000 passos: perto da porta, fora d'água e de casas; desligado esvazia."
+    },
+    {
+      "kind": "automated",
+      "check": "HeadlessUiTests.Decorations_PlaceSeveralInARowAndMoveOne; medição temporária de quadro (não versionada)",
+      "result": "passed",
+      "evidence": "Antes/depois por seção do desenho; a fluidez real no aparelho segue pendente (NN-017)."
     },
     {
       "kind": "automated",
@@ -135,7 +150,7 @@
     }
   ],
   "criticality": {
-    "declared": "routine",
-    "reason": "Desempenho e recurso do editor; nenhum formato de dados, canal ou permissão muda."
+    "declared": "critical",
+    "reason": "Inclui mudança no Urbe.Android.csproj (AOT e GC do APK), zona crítica de distribuição; o resto é rotina."
   }
 }

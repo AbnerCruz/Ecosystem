@@ -23,7 +23,8 @@ public sealed class LifeRenderer
     private readonly Dictionary<string, FormattedText> _texts = new(StringComparer.Ordinal);
     private static readonly RenderOptions Pixelated = new() { BitmapInterpolationMode = BitmapInterpolationMode.None };
     private static readonly RenderOptions Additive = new() { BitmapBlendingMode = BitmapBlendingMode.Plus, BitmapInterpolationMode = BitmapInterpolationMode.None };
-    private static readonly RenderOptions AdditiveSmooth = new() { BitmapBlendingMode = BitmapBlendingMode.Plus, BitmapInterpolationMode = BitmapInterpolationMode.HighQuality };
+    // bilinear: a smooth radial looks the same, and the bicubic filter cost ~0.4 ms per lit window (UC-48)
+    private static readonly RenderOptions AdditiveSmooth = new() { BitmapBlendingMode = BitmapBlendingMode.Plus, BitmapInterpolationMode = BitmapInterpolationMode.LowQuality };
 
     // ---------------------------------------------------------------- caches
     private Bitmap Cached(string key, Func<Bitmap> make)
@@ -39,6 +40,27 @@ public sealed class LifeRenderer
             return Pixels.ToBitmap(px, w, h);
         });
 
+    private readonly Dictionary<(Bitmap, int), Bitmap> _faded = [];
+
+    /// <summary>
+    /// The image with its alpha scaled by <paramref name="alpha"/> (64 steps, cached). Drawing it equals drawing the
+    /// image under PushOpacity, without the full-screen layer an opacity push costs on every call (UC-48: night lamps,
+    /// fireflies, fireworks and lit windows each paid one).
+    /// </summary>
+    private Bitmap Faded(Bitmap source, double alpha)
+    {
+        int step = (int)Math.Round(Math.Clamp(alpha, 0, 1) * 64);
+        if (step >= 64 || source is not WriteableBitmap wb) return source;
+        if (_faded.TryGetValue((source, step), out var done)) return done;
+        int w = wb.PixelSize.Width, h = wb.PixelSize.Height;
+        var px = new byte[w * h * 4];
+        using (var frame = wb.Lock())
+            for (int y = 0; y < h; y++)
+                System.Runtime.InteropServices.Marshal.Copy(frame.Address + y * frame.RowBytes, px, y * w * 4, w * 4);
+        for (int i = 3; i < px.Length; i += 4) px[i] = (byte)(px[i] * step / 64);
+        return _faded[(source, step)] = Pixels.ToBitmap(px, w, h);
+    }
+
     private Bitmap Animal(string kind, int frame, bool flip) => Sprite("a:" + kind, LegacyLifeSprites.Animals[kind], frame, flip);
 
     private Bitmap GlowImage(string rgb) => Cached("glow:" + rgb, () =>
@@ -48,6 +70,21 @@ public sealed class LifeRenderer
     });
 
     private Bitmap CloudImage(int v, bool white) => Cached($"cloud:{v}:{white}", () => Pixels.ToBitmap(LegacyLifeSprites.Cloud(v, white), 200, 120));
+
+    /// <summary>
+    /// The cloud with its transparency in the pixels (UC-48): drawn straight, never through a full-screen opacity layer,
+    /// which cost more than the rest of the sky together on a phone. The alpha is kept in steps of 1/100.
+    /// </summary>
+    private Bitmap CloudImage(int v, bool white, double alpha)
+    {
+        int step = (int)Math.Round(Math.Clamp(alpha, 0, 1) * 100);
+        return Cached($"cloud:{v}:{white}:{step}", () =>
+        {
+            var px = (byte[])LegacyLifeSprites.Cloud(v, white).Clone();
+            for (int i = 3; i < px.Length; i += 4) px[i] = (byte)Math.Round(px[i] * step / 100.0);
+            return Pixels.ToBitmap(px, 200, 120);
+        });
+    }
 
     private Bitmap Solid(string hex) => Cached("solid:" + hex, () =>
     {
@@ -121,30 +158,30 @@ public sealed class LifeRenderer
     private void Glow(DrawingContext c, string rgb, double px, double py, double r, double a)
     {
         if (a <= .01) return;
-        using (c.PushOpacity(Math.Min(1, a))) Img(c, GlowImage(rgb), px - r, py - r, r * 2, r * 2);
+        Img(c, Faded(GlowImage(rgb), a), px - r, py - r, r * 2, r * 2);
     }
 
     /// <summary>fillRect under 'lighter'.</summary>
     private void AddRect(DrawingContext c, string hex, double x, double y, double w, double h, double a)
     {
-        using (c.PushOpacity(Math.Min(1, a))) Img(c, Solid(hex), x, y, w, h);
+        if (a <= .01) return;
+        Img(c, Faded(Solid(hex), a), x, y, w, h);
     }
 
     /// <summary>A stroked segment under 'lighter' (lineCap round adds the end discs).</summary>
     private void AddLine(DrawingContext c, Bitmap img, Point a, Point b, double width, double alpha, bool round)
     {
         double dx = b.X - a.X, dy = b.Y - a.Y, len = Math.Sqrt(dx * dx + dy * dy);
-        using (c.PushOpacity(Math.Min(1, alpha)))
+        if (alpha <= .01) return;
+        img = Faded(img, alpha);
+        if (len > 0)
+            using (c.PushTransform(Matrix.CreateRotation(Math.Atan2(dy, dx)) * Matrix.CreateTranslation(a.X, a.Y)))
+                Img(c, img, 0, -width / 2, len, width);
+        if (round)
         {
-            if (len > 0)
-                using (c.PushTransform(Matrix.CreateRotation(Math.Atan2(dy, dx)) * Matrix.CreateTranslation(a.X, a.Y)))
-                    Img(c, img, 0, -width / 2, len, width);
-            if (round)
-            {
-                var disc = Disc();
-                Img(c, disc, a.X - width / 2, a.Y - width / 2, width, width);
-                Img(c, disc, b.X - width / 2, b.Y - width / 2, width, width);
-            }
+            var disc = Faded(Disc(), alpha);
+            Img(c, disc, a.X - width / 2, a.Y - width / 2, width, width);
+            Img(c, disc, b.X - width / 2, b.Y - width / 2, width, width);
         }
     }
 
@@ -513,25 +550,24 @@ public sealed class LifeRenderer
         if (life.Clouds.Count > 0)
         {
             double an = (L.Darkness > .5 ? .07 : .11) * (1 + life.Rain.K * 1.4);
-            using (c.PushOpacity(Math.Min(.3, an)))
-                foreach (var nu in life.Clouds)
-                {
-                    var pn = v.P(nu.X, nu.Y);
-                    double rw = nu.R * v.T * 1.6, rh = nu.R * v.T;
-                    if (pn.X + rw < 0 || pn.X - rw > W || pn.Y + rh < 0 || pn.Y - rh > Hh) continue;
-                    Img(c, CloudImage(nu.V, false), pn.X - rw, pn.Y - rh, rw * 2, rh * 2);
-                }
+            foreach (var nu in life.Clouds)
+            {
+                var pn = v.P(nu.X, nu.Y);
+                double rw = nu.R * v.T * 1.6, rh = nu.R * v.T;
+                if (pn.X + rw < 0 || pn.X - rw > W || pn.Y + rh < 0 || pn.Y - rh > Hh) continue;
+                Img(c, CloudImage(nu.V, false, Math.Min(.3, an)), pn.X - rw, pn.Y - rh, rw * 2, rh * 2);
+            }
         }
         // fog
         if (life.Fog.K > .02)
         {
-            using (c.PushOpacity(Math.Min(.55, life.Fog.K * .5)))
-                foreach (var nb in life.FogBanks)
-                {
-                    var pnb = v.P(nb.X, nb.Y);
-                    double rw2 = nb.R * v.T * 1.8, rh2 = nb.R * v.T;
-                    Img(c, CloudImage(nb.V, true), pnb.X - rw2, pnb.Y - rh2, rw2 * 2, rh2 * 2);
-                }
+            foreach (var nb in life.FogBanks)
+            {
+                var pnb = v.P(nb.X, nb.Y);
+                double rw2 = nb.R * v.T * 1.8, rh2 = nb.R * v.T;
+                if (pnb.X + rw2 < 0 || pnb.X - rw2 > W || pnb.Y + rh2 < 0 || pnb.Y - rh2 > Hh) continue;
+                Img(c, CloudImage(nb.V, true, Math.Min(.55, life.Fog.K * .5)), pnb.X - rw2, pnb.Y - rh2, rw2 * 2, rh2 * 2);
+            }
             c.FillRectangle(Brush("#e8eef4", life.Fog.K * .12), new Rect(0, 0, W, Hh));
         }
         // rain or snow
@@ -624,7 +660,7 @@ public sealed class LifeRenderer
             double kk = Math.Min(1, (k - on) / .3) * (.9 + .1 * Math.Sin(nowMs / 700 + sem));
             var p = v.P(b.X + b.W / 2.0, b.Y + b.H * .7);
             double r = TILE * v.Zoom * 1.7;
-            using (c.PushOpacity(Math.Min(1, .42 * kk))) Img(c, img, p.X - r, p.Y - r, r * 2, r * 2);
+            Img(c, Faded(img, .42 * kk), p.X - r, p.Y - r, r * 2, r * 2);
         }
     }
 

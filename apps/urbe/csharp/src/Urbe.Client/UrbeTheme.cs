@@ -89,8 +89,20 @@ public static class UrbeTheme
         return brush;
     }
 
-    public static IBrush Brush(string hex, double opacity) =>
-        TokenKey.ContainsKey(hex) ? Live(hex, opacity) : new SolidColorBrush(Color.Parse(hex), opacity).ToImmutable();
+    public static IBrush Brush(string hex, double opacity)
+    {
+        if (TokenKey.ContainsKey(hex)) return Live(hex, opacity);
+        // cached (opacity in 1/255 steps): brushes were made anew on every draw, many per frame in the city (UC-48)
+        var key = (hex, (int)Math.Round(Math.Clamp(opacity, 0, 1) * 255));
+        if (!FixedBrushes.TryGetValue(key, out var brush))
+        {
+            if (FixedBrushes.Count > 8192) FixedBrushes.Clear();
+            FixedBrushes[key] = brush = new SolidColorBrush(Color.Parse(hex), key.Item2 / 255.0).ToImmutable();
+        }
+        return brush;
+    }
+
+    private static readonly Dictionary<(string, int), IBrush> FixedBrushes = [];
 
     private static SolidColorBrush Live(string hex, double opacity)
     {
