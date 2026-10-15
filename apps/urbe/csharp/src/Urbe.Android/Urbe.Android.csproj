@@ -14,6 +14,19 @@
     <ApplicationDisplayVersion>0.1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
     <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <!--
+      DEC-0048 / ADD-0025 — canal beta do Urbe C# no Android ("Urbe Beta 2.0"): única fonte da versão publicada.
+      urbe-csharp-mobile-release.yml compila com -p:UrbeChannel=beta; sem isso o APK é a prévia acima.
+    -->
+    <UrbeBetaVersion>2.0.0-beta.10</UrbeBetaVersion>
+    <UrbeBetaVersionCode>2000010</UrbeBetaVersionCode>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(UrbeChannel)' == 'beta'">
+    <ApplicationTitle>Urbe</ApplicationTitle>
+    <ApplicationId>app.urbe.csharp</ApplicationId>
+    <ApplicationDisplayVersion>$(UrbeBetaVersion)</ApplicationDisplayVersion>
+    <ApplicationVersion>$(UrbeBetaVersionCode)</ApplicationVersion>
+    <DefineConstants>$(DefineConstants);URBE_BETA</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia.Android" Version="$(AvaloniaVersion)" />
