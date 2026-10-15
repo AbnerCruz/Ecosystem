@@ -244,8 +244,15 @@ public sealed partial class MainView : Grid
         return _notice;
     }
 
+    private readonly List<string> _notices = [];
+
+    /// <summary>The notices shown lately (the last 20, oldest first): each notice is shown 4.5 s (tests).</summary>
+    public IReadOnlyList<string> Notices => _notices;
+
     private void ShowLifeNotice(string text)
     {
+        _notices.Add(text);
+        if (_notices.Count > 20) _notices.RemoveAt(0);
         _noticeText.Text = text;
         _notice.MaxWidth = Math.Max(120, Bounds.Width * .8);
         _notice.Opacity = 1;

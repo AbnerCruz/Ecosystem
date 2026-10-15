@@ -447,7 +447,7 @@ public sealed partial class HeadlessUiTests
                 var backup = Directory.GetDirectories(Path.Combine(vault, ".urbe", "backup"), "import-*").Single();
                 Assert.Equal("# Mudou\n", File.ReadAllText(Path.Combine(backup, "files", "Comece.md")));
                 Assert.Equal("# Extra\n", File.ReadAllText(Path.Combine(backup, "files", "Extra.md")));
-                Assert.StartsWith("Vault restaurado. ", view.LifeNoticeText);
+                Assert.StartsWith("Vault restaurado. ", view.Notices[^1]);
                 Assert.Null(view.World.City!.Buildings.FirstOrDefault(b => b.Path == "Extra.md"));
 
                 // Backups do vault: the import's own backup brings the replaced vault back (and is itself backed up first)
@@ -469,7 +469,7 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal("# Mudou\n", File.ReadAllText(Path.Combine(vault, "Comece.md")));
                 Assert.Equal("# Extra\n", File.ReadAllText(Path.Combine(vault, "Extra.md")));
                 Assert.Equal(2, Directory.GetDirectories(Path.Combine(vault, ".urbe", "backup"), "import-*").Length);
-                Assert.StartsWith("Vault restaurado. ", view.LifeNoticeText);
+                Assert.StartsWith("Vault restaurado. ", view.Notices[^1]);
                 window.Close();
                 return true;
             }
@@ -493,7 +493,7 @@ public sealed partial class HeadlessUiTests
                 var after = view.World.City!.Buildings.Single(b => b.Path == "Bairro/Um renomeado.md");
                 Assert.Equal(before.DocumentId, after.DocumentId);
                 Assert.Equal((before.X, before.Y), (after.X, after.Y));
-                Assert.Equal("Uma nota renomeada fora do app foi reconhecida: Bairro/Um renomeado.md.", view.LifeNoticeText);
+                Assert.Contains("Uma nota renomeada fora do app foi reconhecida: Bairro/Um renomeado.md.", view.Notices);
                 window.Close();
                 return true;
             }
@@ -536,7 +536,7 @@ public sealed partial class HeadlessUiTests
                 var record = meta["maintenance"]!.AsArray()[^1]!;
                 Assert.Equal("gc", (string)record["kind"]!);
                 Assert.Equal(1, (int)record["removed"]!["history"]!);
-                Assert.Equal("Limpeza feita e registrada no vault.", view.LifeNoticeText);
+                Assert.Contains("Limpeza feita e registrada no vault.", view.Notices);
                 await RunWithDialog(view.ShowDiagnosticsAsync(), async () =>
                 {
                     var texts = view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();

@@ -541,22 +541,29 @@ public sealed partial class PageStudioView : Border
 
     private static string S(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) ? s : n is null ? "" : LegacyCustomize.JsToString(n);
 
-    private void Toast(string text)
+    /// <summary>toast(msg, action): a short notice at the bottom, with an action button (5 s) or alone (2.4 s).</summary>
+    private void Toast(string text, string? actionLabel = null, Action? action = null)
     {
+        var line = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        line.Children.Add(new TextBlock { Text = text, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextWrapping = TextWrapping.Wrap, MaxWidth = 460, VerticalAlignment = VerticalAlignment.Center });
         var t = new Border
         {
             Background = UrbeTheme.Brush(UrbeTheme.Surface3), CornerRadius = new CornerRadius(12), Padding = new Thickness(14, 10), Margin = new Thickness(16, 0, 16, 76),
             HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Bottom, BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1),
-            Child = new TextBlock { Text = text, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextWrapping = TextWrapping.Wrap, MaxWidth = 520 }
+            Child = line
         };
         LastToast = text;
-        if (Child is Grid g)
+        if (Child is not Grid g) return;
+        if (actionLabel is not null && action is not null)
         {
-            foreach (var old in g.Children.OfType<Border>().Where(b => b.Tag as string == "toast").ToList()) g.Children.Remove(old);
-            t.Tag = "toast";
-            g.Children.Add(t);
-            DispatcherTimer.RunOnce(() => g.Children.Remove(t), TimeSpan.FromMilliseconds(2400));
+            var b = new Button { Content = new TextBlock { Text = actionLabel, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Accent) }, Background = Brushes.Transparent, Padding = new Thickness(6, 2) };
+            b.Click += (_, _) => { action(); g.Children.Remove(t); };
+            line.Children.Add(b);
         }
+        foreach (var old in g.Children.OfType<Border>().Where(x => x.Tag as string == "toast").ToList()) g.Children.Remove(old);
+        t.Tag = "toast";
+        g.Children.Add(t);
+        DispatcherTimer.RunOnce(() => g.Children.Remove(t), TimeSpan.FromMilliseconds(action is null ? 2400 : 5000));
     }
 
     /// <summary>The last toast (tests).</summary>

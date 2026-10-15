@@ -99,19 +99,26 @@ public sealed partial class PageStudioView
             var eye = Mini(hidden ? "◌" : "◉", hidden ? "Mostrar" : "Ocultar", () => { st.ToggleHidden(id); Changed(); });
             var menu = Mini("⋯", "Opções da seção", () => _ = SectionMenuAsync(id));
             var icon = new TextBlock { Text = l.Icon, FontSize = 18, Width = 28, TextAlignment = TextAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) };
+            // bindDrag: the grip moves the row; let go, the section goes where the row is
+            var grip = new TextBlock { Text = "⋮⋮", FontSize = 16, Width = 22, TextAlignment = TextAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.SizeNorthSouth), Background = Brushes.Transparent };
+            ToolTip.SetTip(grip, "Arraste para reordenar");
             var row = new DockPanel();
             var tools = new StackPanel { Orientation = Orientation.Horizontal, Children = { up, down, eye, menu } };
+            DockPanel.SetDock(grip, Dock.Left);
             DockPanel.SetDock(icon, Dock.Left);
             DockPanel.SetDock(tools, Dock.Right);
+            row.Children.Add(grip);
             row.Children.Add(icon);
             row.Children.Add(tools);
             row.Children.Add(main);
-            p.Children.Add(new Border
+            var card = new Border
             {
                 Child = row, Padding = new Thickness(6, 4), CornerRadius = new CornerRadius(12), Opacity = hidden ? .55 : 1,
                 Background = UrbeTheme.Brush(id == st.Selected ? UrbeTheme.Accent : UrbeTheme.Surface, id == st.Selected ? .16 : 1),
                 BorderBrush = UrbeTheme.Brush(id == st.Selected ? UrbeTheme.Accent : UrbeTheme.Line), BorderThickness = new Thickness(1)
-            });
+            };
+            Drag(grip, card, id);
+            p.Children.Add(card);
         }
         var add = new Button
         {
@@ -121,6 +128,37 @@ public sealed partial class PageStudioView
         add.Click += (_, _) => OpenLibrary();
         p.Children.Add(add);
         return p;
+    }
+
+    private void Drag(Control grip, Border card, string id)
+    {
+        double start = 0;
+        bool dragging = false;
+        grip.PointerPressed += (_, e) =>
+        {
+            start = e.GetPosition(this).Y;
+            dragging = true;
+            e.Pointer.Capture(grip);
+            card.ZIndex = 10;
+            e.Handled = true;
+        };
+        grip.PointerMoved += (_, e) =>
+        {
+            if (!dragging) return;
+            card.RenderTransform = new Avalonia.Media.TranslateTransform(0, e.GetPosition(this).Y - start);
+        };
+        void End(double y)
+        {
+            if (!dragging) return;
+            dragging = false;
+            card.RenderTransform = null;
+            card.ZIndex = 0;
+            double h = card.Bounds.Height + 10;
+            int delta = (int)Math.Round((y - start) / Math.Max(1, h));
+            if (delta != 0) Move(id, delta);
+        }
+        grip.PointerReleased += (_, e) => { End(e.GetPosition(this).Y); e.Pointer.Capture(null); };
+        grip.PointerCaptureLost += (_, _) => { if (dragging) { dragging = false; card.RenderTransform = null; card.ZIndex = 0; } };
     }
 
     private static Button Mini(string glyph, string tip, Action click)
@@ -144,7 +182,7 @@ public sealed partial class PageStudioView
     {
         var t = _st!.RemoveSection(id);
         Changed();
-        if (t is not null) Toast(t.Label + " removida. (Desfazer: ↶)");
+        if (t is not null) Toast(t.Label + " removida.", "Desfazer", Undo);
     }
 
     /// <summary>sectionMenu(id).</summary>
