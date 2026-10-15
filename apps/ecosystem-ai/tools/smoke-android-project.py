@@ -108,6 +108,11 @@ time.sleep(3)
 open_project()  # fails on the old AbsolutePath implementation with the reported dialog
 node('1 agentes • 0 equipes')
 node('CI_conversation')
+scroll = next(n for n in ui().iter('node') if n.get('class') == 'android.widget.ScrollView')
+x1, y1, x2, y2 = map(int, re.findall(r'\d+', scroll.get('bounds')))
+shell('input', 'swipe', str((x1+x2)//2), str(y1 + (y2-y1)*3//4),
+      str((x1+x2)//2), str(y1 + (y2-y1)//4), '350')
+time.sleep(.4)
 tap('Abrir conversa')
 node('CI_conversation')
 assert shell('cat', files + '/catalog/roster.json') == roster_before
