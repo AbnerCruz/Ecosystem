@@ -3,14 +3,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261014-p6-5-android-launch-smoke",
   "category": "HANDOFF",
-  "timestamp": "2026-10-14T23:44:09Z",
+  "timestamp": "2026-10-15T00:03:32Z",
   "agent": {
     "id": "codex-android-launch",
     "kind": "ai-agent"
   },
   "task_id": "P6-5",
   "component": "ecosystem-ai",
-  "state": "verifying",
+  "state": "review",
   "branch": "fix/p6-5-android-launch-smoke-20261014",
   "base_commit": "d3c2f6316529feafe68e74fcc797894a1227712d",
   "commit": null,
@@ -36,17 +36,25 @@
       "evidence": "Sintaxe dos scripts e whitespace validados localmente."
     },
     {
-      "check": "Reprodução negativa antes da correção",
+      "check": "Reprodução negativa detecta o abort nativo",
       "kind": "automated",
-      "result": "failed",
-      "evidence": "Workflow ecosystem-ai-ci 38656644999, job 116167875809: instalação e am start Status ok; processo aborta em 1 segundo. Logcat monodroid: class-init.c:2474 klass->instance_size == instance_size, SIGABRT. O teste de abertura reprova de verdade.",
+      "result": "passed",
+      "evidence": "Workflow ecosystem-ai-ci 38656644999, job 116167875809: instalação e am start Status ok; processo aborta em 1 segundo. Logcat monodroid: class-init.c:2474 klass->instance_size == instance_size, SIGABRT. O teste de abertura reprova de verdade. Resultado esperado do ensaio negativo: reprovar o APK anterior e identificar a causa.",
       "tested_commit": "4073c93f48a0a3cad04ff93426339a8c43c10fde"
     },
     {
-      "check": "APK real no emulador Android 13",
+      "check": "Abertura Release x86_64 no emulador Android 13 após correção",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguardando boot/teste com logcat e execução do CI; ainda não há causa confirmada."
+      "result": "passed",
+      "evidence": "Run 38657315435, job 116170045224: am start Status ok, processo continua vivo após 12 s, uiautomator confirma Comece com um projeto. Job e upload de artifact 11937019370 passaram. O teste não instala o APK arm64 no emulador.",
+      "tested_commit": "28e86b3855289fa8ac02fff78b0b92d8c6a9c567"
+    },
+    {
+      "check": "Runtime/ProjectStore tests e build Android com ensaio de abertura",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "ecosystem-ai-ci run 38657315380: test e android concluídos com sucesso.",
+      "tested_commit": "28e86b3855289fa8ac02fff78b0b92d8c6a9c567"
     },
     {
       "check": "Abertura no moto g32 após correção",
@@ -58,13 +66,13 @@
     }
   ],
   "known_issues": [
-    "A correção candidata remove o caminho AOT que abortou; o novo teste Android ainda precisa passar.",
-    "A compilação x86_64 do emulador não valida a arquitetura arm64 nem toda a combinação de hardware/runtime do moto g32."
+    "DEVICE no moto g32 continua pendente; o teste automatizado prova Release x86_64 no Android 13, não o hardware arm64.",
+    "O efeito de JIT no desempenho de inicialização não foi medido no moto g32. P6-5 permanece aberta para seus critérios restantes."
   ],
   "blockers": [],
   "next_actions": [
-    "Verificar abertura e tela inicial no CI após a configuração JIT.",
-    "Integrar pelo integrador e entregar APK arm64 identificado; repetir abertura no moto g32."
+    "Integrar pelo integrador automático, conferir checks combinados e entregar APK arm64 com identificação nova.",
+    "Atualizar por cima da prévia existente e confirmar abertura no moto g32."
   ],
   "decisions_required": [],
   "normative_sources": [
