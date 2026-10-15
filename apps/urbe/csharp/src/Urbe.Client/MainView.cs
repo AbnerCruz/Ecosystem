@@ -92,7 +92,8 @@ public sealed partial class MainView : Grid
         Explorer.FileRequested += path => _ = ShowFileAsync(path);
         Explorer.FileMenuRequested += path => _ = ShowAttachmentActionsAsync(path, withView: true);
         Explorer.FolderMenuRequested += folder => _ = ShowFolderMenuAsync(folder);
-        Explorer.MoveRequested += async (paths, folder) => { await MoveNotesToAsync(paths, folder); Explorer.ClearSelection(); };
+        Explorer.MoveRequested += async (paths, folder) => { await MoveSelectionToAsync(paths, folder); Explorer.ClearSelection(); };
+        Explorer.FileMoveRequested += (path, folder) => _ = MoveAttachmentAsync(path, folder);
         Explorer.PurgeRequested += id => _ = PurgeFromTrashAsync(id);
         Explorer.EmptyTrashRequested += () => _ = EmptyTrashAsync();
         Explorer.NoteRequested += note =>
@@ -1066,7 +1067,7 @@ public sealed partial class MainView : Grid
 
     /// <summary>
     /// The "⋯" of a folder in the Explorer (the 1.8.4 showed no options when a folder was selected, DEC-0045, UC-38):
-    /// Nova nota aqui, Nova subpasta, Mostrar na cidade and Mover para a lixeira, each the existing operation.
+    /// Nova nota aqui, Nova subpasta, Mostrar na cidade, Mover para (UC-54) and Mover para a lixeira.
     /// </summary>
     private Task ShowFolderMenuAsync(string folder)
     {
@@ -1086,6 +1087,7 @@ public sealed partial class MainView : Grid
                 World.CenterOnRegion(region);
                 return Task.CompletedTask;
             }));
+        items.Add(new("Mover para", UrbeTheme.Icons.Move, "A pasta e tudo o que há nela; o bairro vai junto.", Run: () => MoveFolderAsync(folder)));
         items.Add(new("Mover para a lixeira", UrbeTheme.Icons.Trash, "A pasta e as notas dela.", Run: () => SelectionActionAsync("delete", [NotesExplorer.FolderPrefix + folder])));
         return Dialogs.MenuAsync(folder[(folder.LastIndexOf('/') + 1)..], items);
     }
@@ -1398,10 +1400,12 @@ public sealed partial class MainView : Grid
         await MoveNotesToAsync(paths, folder);
     }
 
-    /// <summary>uiDestinoRegiao("Mover para"): Raiz or one of the folders; "" is the root, null when cancelled.</summary>
-    private async Task<string?> ChooseFolderAsync()
+    /// <summary>uiDestinoRegiao("Mover para"): Raiz or one of the folders; "" is the root, null when cancelled. A folder
+    /// being moved leaves itself and the folders below it out (UC-54).</summary>
+    private async Task<string?> ChooseFolderAsync(string? except = null)
     {
         var folders = NoteFolders();
+        if (except is { Length: > 0 }) folders.RemoveAll(f => f == except || f.StartsWith(except + "/", StringComparison.Ordinal));
         var options = new List<DialogItem> { new("Raiz", UrbeTheme.Icons.Notes, "Fora de qualquer pasta") };
         options.AddRange(folders.Select(f => new DialogItem(f[(f.LastIndexOf('/') + 1)..], UrbeTheme.Icons.Folder, f)));
         if (await Dialogs.ChooseAsync("Mover para", options) is not { } chosen) return null;

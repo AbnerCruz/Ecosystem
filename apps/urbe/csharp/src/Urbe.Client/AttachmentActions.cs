@@ -80,9 +80,15 @@ public sealed partial class MainView
         await MoveAttachmentToAsync(path, (dir.Length > 0 ? dir + "/" : "") + next, "Arquivo renomeado.");
     }
 
-    /// <summary>moverAsset: the folder (Raiz or one of them), the file keeping its name.</summary>
+    /// <summary>moverAsset: the folder (Raiz or one of them), the file keeping its name. Also what dragging a file that is
+    /// not a note onto a folder in the Explorer does (UC-54).</summary>
     public async Task MoveAttachmentAsync(string path, string? folder = null)
     {
+        if (!VaultWritable)
+        {
+            await Dialogs.AlertAsync("Mover", NoVaultMessage);
+            return;
+        }
         folder ??= await ChooseFolderAsync();
         if (folder is null) return;
         var name = path[(path.LastIndexOf('/') + 1)..];
@@ -93,7 +99,12 @@ public sealed partial class MainView
 
     private async Task MoveAttachmentToAsync(string from, string to, string notice)
     {
-        try { await _vault!.MoveFileAsync(from, to); }
+        // a text file that is not a note (.json, .csv…) moves as text, verified the same way (UC-54)
+        try
+        {
+            if (IUrbeVaultStorage.TextDocument(from)) await _vault!.MoveTextFileAsync(from, to);
+            else await _vault!.MoveFileAsync(from, to);
+        }
         catch (Exception ex)
         {
             await Dialogs.AlertAsync("Não foi possível mover o arquivo", ex.Message);
