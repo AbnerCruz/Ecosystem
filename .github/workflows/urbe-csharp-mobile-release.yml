@@ -28,6 +28,9 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
     defaults:
       run:
         working-directory: apps/urbe/csharp
@@ -180,6 +183,8 @@ jobs:
           - Assistente (IA) com o provedor que você conectar; plugins nativos (Relógio);
           - backup, exportação e restauração; lixeira e versões anteriores das notas.
 
+          No Windows: baixe o Urbe-CSharp-$VERSION-Windows-x64.zip, extraia e abra o Urbe.exe (não precisa instalar nada).
+
           Faça backup antes de instalar. As notas ficam na pasta que você escolhe; pode ser preciso escolhê-la de novo.
           Beta: a validação no aparelho ainda está em andamento.
 
@@ -195,3 +200,67 @@ jobs:
             --repo "$GITHUB_REPOSITORY" --target "$SHA" \
             --prerelease --latest=false --title "Urbe Beta 2.0 — nativo ($VERSION)" \
             --notes-file artifacts/mobile-release/release-notes.md
+
+  # Owner (15/10/2026): "Cadê o Urbe beta 2.0 desktop". The same native client for Windows (Urbe.Desktop,
+  # self-contained, one Urbe.exe) attached to the same release; a release that already exists without it gets it
+  # added (assets already there are never replaced).
+  windows:
+    needs: android
+    if: always() && needs.android.result == 'success' && needs.android.outputs.tag != ''
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: apps/urbe/csharp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Is the Windows build already in the release?
+        id: need
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.android.outputs.tag }}
+          VERSION: ${{ needs.android.outputs.version }}
+        run: |
+          set -euo pipefail
+          asset="Urbe-CSharp-$VERSION-Windows-x64.zip"
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::Release $TAG não existe"; exit 1
+          fi
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' | grep -qx "$asset"; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build the Windows client (self-contained, one Urbe.exe)
+        if: steps.need.outputs.skip != 'true'
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.android.outputs.version }}
+        run: |
+          dotnet publish src/Urbe.Desktop/Urbe.Desktop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o artifacts/windows-release/Urbe
+          if (-not (Test-Path artifacts/windows-release/Urbe/Urbe.exe)) { throw "Urbe.exe não foi gerado" }
+          Compress-Archive -Path artifacts/windows-release/Urbe/* -DestinationPath "artifacts/windows-release/Urbe-CSharp-$env:VERSION-Windows-x64.zip"
+          $hash = (Get-FileHash "artifacts/windows-release/Urbe-CSharp-$env:VERSION-Windows-x64.zip" -Algorithm SHA256).Hash.ToLower()
+          "$hash  Urbe-CSharp-$env:VERSION-Windows-x64.zip" | Out-File -Encoding ascii artifacts/windows-release/SHA256SUMS-Windows.txt
+
+      - name: Attach to the release
+        if: steps.need.outputs.skip != 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.android.outputs.tag }}
+          VERSION: ${{ needs.android.outputs.version }}
+        run: |
+          set -euo pipefail
+          gh release upload "$TAG" \
+            "artifacts/windows-release/Urbe-CSharp-$VERSION-Windows-x64.zip" \
+            "artifacts/windows-release/SHA256SUMS-Windows.txt" \
+            --repo "$GITHUB_REPOSITORY"
