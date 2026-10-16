@@ -498,6 +498,13 @@ public sealed partial class PageEngine
     /// <summary>render(input, ctx): the complete HTML of the page; with <paramref name="preview"/> the studio's selection script and hidden sections.</summary>
     public string Render(JsonNode? input, IPageNotes? documents = null, bool preview = false)
     {
+        if (!UrbeMarks) return RenderPage(input, documents, preview);
+        var marks = new PageCommentMarks(show: preview);
+        return marks.Finish(RenderPage(marks.Page(input), marks.Notes(documents), preview));
+    }
+
+    private string RenderPage(JsonNode? input, IPageNotes? documents, bool preview)
+    {
         var s = Normalize(input).Spec;
         var docs = documents;
         var anchors = new HashSet<string>(StringComparer.Ordinal);

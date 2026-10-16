@@ -202,6 +202,40 @@ public sealed class EditorTests
     }, CancellationToken.None));
 
     [Fact]
+    public async Task TypingCoalescesAutosavesAndAFlushWritesAtOnce() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        // UC-48: one save per pause in typing, not one every 400 ms; leaving the app writes what is pending
+        var editor = new EditorOverlay { SaveOnClose = true };
+        var window = new Window { Width = 800, Height = 500, Content = editor };
+        window.Show();
+        var saves = new List<string>();
+        editor.SaveRequested += n => { saves.Add(n.Content); return Task.CompletedTask; };
+        editor.Open(new CityNote("Notas/a.md", "um"));
+        editor.SetMode(EditorMode.Fonte);
+        for (var i = 0; i < 8; i++)
+        {
+            editor.Editor.Text += " " + i;
+            await Task.Delay(150);
+            Dispatcher.UIThread.RunJobs();
+        }
+        Assert.Empty(saves);
+        await editor.FlushAsync();
+        Assert.Equal(new[] { "um 0 1 2 3 4 5 6 7" }, saves);
+        Assert.False(editor.HasChanges);
+        // typing that never pauses is still written within the maximum wait
+        var start = DateTime.UtcNow;
+        while (saves.Count < 2 && DateTime.UtcNow - start < TimeSpan.FromSeconds(6))
+        {
+            editor.Editor.Text += ".";
+            await Task.Delay(100);
+            Dispatcher.UIThread.RunJobs();
+        }
+        Assert.Equal(2, saves.Count);
+        window.Close();
+        return true;
+    }, CancellationToken.None));
+
+    [Fact]
     public async Task NonMarkdownFilesOpenInFonteWithCodeTools() => Assert.True(await Session.Dispatch<bool>(() =>
     {
         var (editor, _) = Show("Personalização/tema.json", "{\"a\":[1,2]}");

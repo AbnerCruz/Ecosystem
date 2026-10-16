@@ -457,6 +457,55 @@ public sealed partial class LegacyCity
         Reindex();
     }
 
+    /// <summary>
+    /// A whole folder moved to another parent (UC-54; the 1.8.4 had no such move), after every file under it moved in
+    /// the vault: its neighbourhood keeps its lots, houses and sub-neighbourhoods and only changes parent; every house,
+    /// building and attachment entry under <paramref name="from"/> takes the path under <paramref name="to"/>. False,
+    /// with nothing changed, when the folder has no neighbourhood, the new parent has none, the parent is inside the
+    /// folder, or the names would not give exactly <paramref name="to"/> (or would rename another neighbourhood's
+    /// folder); the caller then moves each house as explorer.move does.
+    /// </summary>
+    public bool ApplyFolderReparent(string from, string to, long nowMs)
+    {
+        ArgumentNullException.ThrowIfNull(from);
+        ArgumentNullException.ThrowIfNull(to);
+        static string Dir(string p) => p.Contains('/') ? p[..p.LastIndexOf('/')] : "";
+        if (RegionByPath(from) is not { } region) return false;
+        var parentPath = Dir(to);
+        var parent = parentPath.Length > 0 ? RegionByPath(parentPath) : null;
+        if (parentPath.Length > 0 && parent is null) return false;
+        var subtree = RegionDescendants(region);
+        if (parent is not null && subtree.Contains(parent.Id)) return false;
+        var before = RegionPaths();
+        var oldParent = region.ParentId;
+        region.ParentId = parent?.Id;
+        var after = RegionPaths();
+        // only the moved subtree may change path, and the folder must land exactly where the files went
+        if (after[region.Id] != to || Regions.Any(r => !subtree.Contains(r.Id) && after[r.Id] != before[r.Id]))
+        {
+            region.ParentId = oldParent;
+            return false;
+        }
+        string Moved(string path) => path == from ? to
+            : path.StartsWith(from + "/", StringComparison.Ordinal) ? to + path[from.Length..] : path;
+        foreach (var b in Buildings)
+        {
+            var path = Moved(b.Path);
+            if (path != b.Path)
+            {
+                b.Path = path;
+                if (b.IsNote) b.Modified = JsonValue.Create(NowDate(nowMs));
+            }
+            if (b.IsNote || b.Files is not JsonArray files) continue;
+            foreach (var f in files)
+                if (f is JsonObject o)
+                    foreach (var key in new[] { "folderPath", "relPath" })
+                        if (o[key] is JsonValue v && v.TryGetValue<string>(out var value)) o[key] = Moved(value);
+        }
+        Reindex();
+        return true;
+    }
+
     /// <summary>removerAsset after the file left the vault: its entry goes, and a building left without files goes too.</summary>
     public void RemoveAttachment(string path)
     {

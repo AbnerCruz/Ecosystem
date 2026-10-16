@@ -14,7 +14,7 @@ namespace Urbe.Client;
 public sealed partial class MainView
 {
     private PagesPanel? _pagesPanel;
-    private readonly PageEngine _pageEngine = new() { MathHtml = PageMath };
+    private readonly PageEngine _pageEngine = new() { MathHtml = PageMath, UrbeMarks = true };
 
     /// <summary>UrbeMath in the pages (KaTeX in the 1.8.4): the formula drawn as SVG by the native renderer; when it cannot be drawn, its TeX as written.</summary>
     public static string PageMath(string tex, bool display)

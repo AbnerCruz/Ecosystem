@@ -82,6 +82,8 @@ public sealed class UrbeApp : Application
         if (ActiveView is not { } view) return;
         _ = Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
         {
+            try { await view.Editor.FlushAsync(); }
+            catch { /* shown by the editor's save state */ }
             try { await view.FlushMapAsync(); }
             catch { /* shown by the save state */ }
         });
