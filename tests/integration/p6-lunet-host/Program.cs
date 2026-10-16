@@ -17,6 +17,7 @@ try
     Ensure(first.Manifest.GameId != second.Manifest.GameId, "projetos precisam de identidades distintas");
     await RunVerifiedAsync(first, "p6-first");
     await RunVerifiedAsync(second, "p6-second");
+    await GuardRepeatedHostFailureAsync(first);
     await DenyWithoutAgentActAsync(first);
     await CheckHostGrantsRevocationAndCancelAsync(first);
     Console.WriteLine("P6-4 Lunet Host: PASS — 2 projetos reais, resultado verificado, deny-by-default, revogacao e cancelamento.");
@@ -24,6 +25,35 @@ try
 finally
 {
     Directory.Delete(temp, recursive: true);
+}
+
+static async Task GuardRepeatedHostFailureAsync(LunetProject project)
+{
+    using var host = LunetCapabilityHost.CreateDefault().OpenForProject(project);
+    var context = BoundContext(host);
+    var bridge = new LunetInspectionTool(host, context);
+    var provider = new ScriptedModelProvider("scripted");
+    for (var i = 0; i < 6; i++)
+        provider.ThenToolUse($"invalid-{i}", LunetTextInspectionCapability.CapabilityId, """{"text":42}""");
+    var clock = new FakeClock();
+    var budget = new BudgetScope(BudgetScopeKind.Agent, "failure-guard");
+    var ledger = new InMemoryLedger(clock, "BRL");
+    ledger.SetLimits(budget, new BudgetLimits(Total: new Money(100, "BRL")));
+    var log = new InMemoryEventLog();
+    var runner = new AgentRunner(new ProviderRegistry().Register(provider), new ToolHost().Register(bridge),
+        ledger, log, clock, DelegateVerifier.AlwaysFail("entrada invalida nao cumpre tarefa"));
+    var grant = ToolGrant.Of([LunetTextInspectionCapability.CapabilityId], [Permissions.AgentAct]);
+    var workspace = new WorkspaceSession("failure:" + project.Manifest.GameId, runner, context, grant, grant, [budget]);
+    var agent = new AgentDefinition(new AgentIdentity("failure-guard", "Pilot", "test"),
+        new ModelProfile("scripted", "test-no-network", new ModelCapabilities(true, false, true, false, false, 8_000), new Money(5, "BRL")),
+        "Use apenas a capability do Host.", 8, grant);
+    var result = await workspace.ExecuteAsync("p6-failure-guard", new TaskSpec("failure", "Inspecione texto", ["contagem correta"]), agent);
+    Ensure(result.State.Block == BlockReason.NoProgress, "falhas repetidas nao bloquearam");
+    Ensure(bridge.Invocations == 1, "Host real foi chamado de novo com a mesma entrada que falhou");
+    Ensure(provider.Calls == 4, "limite deveria parar antes da quinta chamada de modelo");
+    Ensure(!result.State.Verified, "falha nao pode produzir aceite");
+    Ensure(log.All.Count(e => e.Kind == EventKind.ToolDenied) == 3, "supressoes nao sao auditaveis");
+    Console.WriteLine("PASS falha repetida: Workspace + Runtime + Host real, uma invocacao, sem falso sucesso");
 }
 
 static async Task RunVerifiedAsync(LunetProject project, string runId)
