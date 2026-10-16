@@ -625,6 +625,7 @@ public sealed partial class MainView : Grid
         _vaultName.FontSize = 11;
         _vaultName.VerticalAlignment = VerticalAlignment.Center;
         _vaultName.Margin = new Thickness(8, 0, 0, 0);
+        _vaultName.TextTrimming = TextTrimming.CharacterEllipsis;
         // #urbeBiome::before{content:'·';margin:0 7px 0 1px;color:text-3}; 500 13px text-2
         var sep = new TextBlock { Text = "·", Foreground = UrbeTheme.Brush(UrbeTheme.Text3), FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 7, 0) };
         _biome.Foreground = UrbeTheme.Brush(UrbeTheme.Text2);
@@ -643,7 +644,10 @@ public sealed partial class MainView : Grid
             CornerRadius = new CornerRadius(22),
             Padding = new Thickness(12, 0, 14, 0),
             Height = 44,
-            Child = new StackPanel { Orientation = Orientation.Horizontal, Children = { _vaultDot, name, sep, _biome, _vaultName } }
+            // a dock, not a stack: on a narrow phone the biome and the notice give way (ellipsis) instead of pushing
+            // the round buttons off the screen ("Nenhuma pasta aberta" hid Configurações at 412 dp, UC-69)
+            Child = Pill(_vaultDot, name, sep, _biome, _vaultName),
+            HorizontalAlignment = HorizontalAlignment.Left
         };
         _brandPill = pill;
         ToolTip.SetTip(pill, "Estado da gravação");
@@ -655,11 +659,24 @@ public sealed partial class MainView : Grid
             Children = { SearchButton(), MapButton(), SettingsButton() }
         };
         _topButtons = buttons;   // the plugins' buttons go before Configurações
-        var bar = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"), Margin = new Thickness(12, 10, 12, 0), VerticalAlignment = VerticalAlignment.Top };
-        SetColumn(buttons, 2);
+        // the pill takes what the buttons leave; the buttons always keep their place
+        var bar = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(12, 10, 12, 0), VerticalAlignment = VerticalAlignment.Top };
+        pill.Margin = new Thickness(0, 0, 8, 0);
+        SetColumn(buttons, 1);
         bar.Children.Add(pill);
         bar.Children.Add(buttons);
         return bar;
+    }
+
+    private static DockPanel Pill(params Control[] parts)
+    {
+        var dock = new DockPanel { LastChildFill = true };
+        for (int i = 0; i < parts.Length; i++)
+        {
+            if (i < parts.Length - 1) DockPanel.SetDock(parts[i], Dock.Left);
+            dock.Children.Add(parts[i]);
+        }
+        return dock;
     }
 
     /// <summary>#v23VaultDot: ok (green), gravando (warn) or erro (danger), with a 3px ring of the same colour at 15 %.</summary>
