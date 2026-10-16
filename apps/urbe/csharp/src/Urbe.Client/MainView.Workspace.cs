@@ -30,7 +30,7 @@ public sealed partial class MainView
         var orphans = _historyReadOnly ? [] : _history.Orphans(known.Contains, now.ToUnixTimeMilliseconds(), OrphanDays);
         if (orphans.Count == 0)
         {
-            await Dialogs.AlertAsync("Nada para limpar", "Não há referências a notas que não existem mais.");
+            ShowLifeNotice("Nada para limpar: não há referências a notas que não existem mais.");   // informs only: a toast (UC-69)
             return;
         }
         var found = orphans.Count == 1 ? "1 histórico de uma nota que não existe mais há mais de 30 dias"
@@ -57,7 +57,7 @@ public sealed partial class MainView
             await Dialogs.AlertAsync("Não foi possível limpar", ex.Message);
             return;
         }
-        ShowLifeNotice("Limpeza feita e registrada no vault.");
+        ShowLifeNotice("Limpeza feita e registrada no vault.", Ui.ToastKind.Success);
     }
 
     /// <summary>layout-guard.js writeBackup: P.recordMaintenance({kind:'layout', reason, from, to, backup}); the backup is what matters, so a failure here is not one.</summary>

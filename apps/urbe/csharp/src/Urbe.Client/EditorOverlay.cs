@@ -931,7 +931,7 @@ public sealed class EditorOverlay : Grid
             var names = Notes?.Invoke().Where(n => n.Path != _note?.Path).Select(n => n.Name).ToList() ?? [];
             if (names.Count == 0 || Dialogs is null)
             {
-                if (Dialogs is { } d) await d.AlertAsync("Vincular nota", "Crie outra nota para poder vinculá-la.");
+                Notify("Crie outra nota para poder vinculá-la.");   // informs only: the editor's toast (UC-69)
                 return;
             }
             var pick = await Dialogs.ChooseAsync("Vincular nota", names.Select(n => new DialogItem(n, "file")).ToList());
@@ -1055,7 +1055,8 @@ public sealed class EditorOverlay : Grid
             VerticalContentAlignment = VerticalAlignment.Center
         };
         ToolTip.SetTip(b, tip);
-        return b;
+        if (Avalonia.Automation.AutomationProperties.GetName(b) is not { Length: > 0 }) Avalonia.Automation.AutomationProperties.SetName(b, tip);
+        return Ui.UrbeMotion.Pressable(b);
     }
 
     private static Button Segment(string text, bool active)
@@ -1071,7 +1072,8 @@ public sealed class EditorOverlay : Grid
             VerticalContentAlignment = VerticalAlignment.Center
         };
         Style(b, active);
-        return b;
+        Avalonia.Automation.AutomationProperties.SetName(b, text);
+        return Ui.UrbeMotion.Pressable(b);
     }
 
     private static void Style(Button b, bool active)

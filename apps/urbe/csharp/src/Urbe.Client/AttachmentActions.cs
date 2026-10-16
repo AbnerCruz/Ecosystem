@@ -42,7 +42,7 @@ public sealed partial class MainView
             if (read is null) { await Dialogs.AlertAsync("Baixar arquivo", "Arquivo não encontrado."); return; }
             if (read.Bytes is null) { await Dialogs.AlertAsync("Baixar arquivo", "O arquivo é grande demais para copiar por aqui."); return; }
             var saved = await (SaveFileCopy ?? SaveAnyFileAsync)(name, read.Bytes);
-            if (saved == true) ShowLifeNotice("Arquivo baixado.");
+            if (saved == true) ShowLifeNotice("Arquivo baixado.", Ui.ToastKind.Success);
         }
         catch (Exception ex) when (ex is not OperationCanceledException) { ShowLifeNotice("Não consegui salvar: " + ex.Message); }
     }

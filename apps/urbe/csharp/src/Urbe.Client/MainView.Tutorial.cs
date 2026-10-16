@@ -73,7 +73,7 @@ public sealed partial class MainView
                     if (!await ReplaceTutorialFileAsync(path, files.First(f => f.Path == path).Content)) { replace = false; break; }
         }
         await MarkTutorialAsync();
-        ShowLifeNotice(created > 0 || replace ? "Tutorial restaurado" : "O Tutorial já está completo");
+        ShowLifeNotice(created > 0 || replace ? "Tutorial restaurado" : "O Tutorial já está completo", created > 0 || replace ? Ui.ToastKind.Success : Ui.ToastKind.Info);
         if (openAfter) Tutorial.Open();
     }
 

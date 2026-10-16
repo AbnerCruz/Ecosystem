@@ -13,10 +13,15 @@ namespace Urbe.Client.Tests;
 
 public static class HeadlessApp
 {
-    public static AppBuilder BuildAvaloniaApp() =>
-        AppBuilder.Configure<UrbeApp>()
+    public static AppBuilder BuildAvaloniaApp()
+    {
+        // tests assert final states and sample frames: the interface's motion is off, as with "Remover animações" (UC-69);
+        // the motion tests ask for it explicitly
+        UrbeTokens.Motion.Reduced = true;
+        return AppBuilder.Configure<UrbeApp>()
             .UseSkia()
             .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false });
+    }
 }
 
 /// <summary>

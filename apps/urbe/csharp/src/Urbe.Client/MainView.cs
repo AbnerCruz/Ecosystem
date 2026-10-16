@@ -66,6 +66,9 @@ public sealed partial class MainView : Grid
             ? World.City.PropertiesText(house, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) : null;
         // v23Atualizar: v23Dock.hidden = editor (the rail of a wide window stays)
         Editor.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) _dock.IsVisible = !Editor.IsVisible && !(Bounds.Width >= WideBreakpoint); };
+        // overlays enter with a short fade + slide (UX.md P6); IsVisible flips at once, so nothing waits for the motion
+        Ui.UrbeMotion.EnterOnShow(Editor, dy: 12);
+        Ui.UrbeMotion.EnterOnShow(Explorer, dx: -16, dy: 0);
         Explorer.Closed += () => Explorer.IsVisible = false;
         Explorer.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty && !Explorer.IsVisible) Explorer.ZIndex = 0; };
         // a backlink opens its note; the panel then shows that note's context (document:updated → renderContext)
@@ -174,6 +177,8 @@ public sealed partial class MainView : Grid
         // nor while an opaque screen covers it all (the page studio, Páginas, the tutorial, Personalização, the Assistente
         // on a phone…): the world stops simulating and drawing 30 times a second behind it (UC-48: "tudo com delay")
         World.CityVisible = () => !Editor.IsVisible && (!Explorer.IsVisible || Explorer.Wide) && !CityCovered();
+        Editor.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateWorldOcclusion(); };
+        Explorer.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateWorldOcclusion(); };
         World.Notice += (_, text) => ShowLifeNotice(text);
         World.CameraChanged += (_, _) => _biome.Text = World.BiomeNameAtCentre();
         // app.js v21CanvasUp: a note opens its summary, a file building its preview (openFilePreview)
@@ -214,64 +219,24 @@ public sealed partial class MainView : Grid
         Editor.Open(new CityNote(path, _contents.GetValueOrDefault(path, "")));
     }
 
-    // ---- life.js avisar(): a discreet pill under the top bar, 4.5 s, fading in .6 s
-    private readonly Border _notice = new();
-    private readonly TextBlock _noticeText = new();
-    private DispatcherTimer? _noticeTimer;
+    // ---- life.js avisar(): a discreet pill under the top bar, 4.5 s, fading in .6 s (the shared toast, UC-69)
+    private readonly Ui.UrbeToast _notice = new(top: 70, fade: TimeSpan.FromSeconds(.6));
 
     /// <summary>The text of the event notice currently shown, or null.</summary>
-    public string? LifeNoticeText => _noticeShown ? _noticeText.Text : null;
-    private bool _noticeShown;
+    public string? LifeNoticeText => _notice.Text;
 
-    private Control LifeNotice()
-    {
-        _noticeText.Foreground = UrbeTheme.Brush("#eef2fa");
-        _noticeText.FontFamily = UrbeTheme.UiFont;
-        _noticeText.FontWeight = FontWeight.SemiBold;
-        _noticeText.FontSize = 13;
-        _noticeText.TextTrimming = TextTrimming.CharacterEllipsis;
-        _notice.Child = _noticeText;
-        _notice.Background = new SolidColorBrush(Color.FromArgb(189, 14, 18, 26));
-        _notice.CornerRadius = new CornerRadius(999);
-        _notice.Padding = new Thickness(14, 7);
-        _notice.HorizontalAlignment = HorizontalAlignment.Center;
-        _notice.VerticalAlignment = VerticalAlignment.Top;
-        _notice.Margin = new Thickness(0, 62, 0, 0);
-        _notice.IsHitTestVisible = false;
-        _notice.Opacity = 0;
-        _notice.BoxShadow = BoxShadows.Parse("0 4 18 0 #40000000");
-        _notice.Transitions =
-        [
-            new Avalonia.Animation.DoubleTransition { Property = OpacityProperty, Duration = TimeSpan.FromSeconds(.6) },
-            new Avalonia.Animation.ThicknessTransition { Property = MarginProperty, Duration = TimeSpan.FromSeconds(.6) }
-        ];
-        return _notice;
-    }
+    private Control LifeNotice() => _notice;
 
     private readonly List<string> _notices = [];
 
     /// <summary>The notices shown lately (the last 20, oldest first): each notice is shown 4.5 s (tests).</summary>
     public IReadOnlyList<string> Notices => _notices;
 
-    private void ShowLifeNotice(string text)
+    private void ShowLifeNotice(string text, Ui.ToastKind kind = Ui.ToastKind.Info)
     {
         _notices.Add(text);
         if (_notices.Count > 20) _notices.RemoveAt(0);
-        _noticeText.Text = text;
-        _notice.MaxWidth = Math.Max(120, Bounds.Width * .8);
-        _notice.Opacity = 1;
-        _noticeShown = true;
-        _notice.Margin = new Thickness(0, 70, 0, 0);
-        _noticeTimer?.Stop();
-        _noticeTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4.5) };
-        _noticeTimer.Tick += (_, _) =>
-        {
-            _noticeTimer?.Stop();
-            _notice.Opacity = 0;
-            _noticeShown = false;
-            _notice.Margin = new Thickness(0, 62, 0, 0);
-        };
-        _noticeTimer.Start();
+        _notice.Show(text, kind: kind);
     }
     public CityMapOverlay CityMap { get; }
 
@@ -775,7 +740,8 @@ public sealed partial class MainView : Grid
             Padding = new Thickness(0)
         };
         ToolTip.SetTip(b, tip);
-        return b;
+        Avalonia.Automation.AutomationProperties.SetName(b, tip);
+        return Ui.UrbeMotion.Pressable(b);
     }
 
     /// <summary>Personalização (customize.js): Personalização/tema.json of the open vault.</summary>
@@ -873,7 +839,7 @@ public sealed partial class MainView : Grid
         long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         if (city.CreateNote(region, typed, now) is not { } made)
         {
-            await Dialogs.AlertAsync("Nova nota", "Não encontrei lote livre.");
+            ShowLifeNotice("Não encontrei lote livre para a nova nota.");
             return null;
         }
         try
@@ -1616,8 +1582,9 @@ public sealed partial class MainView : Grid
             Margin = new Thickness(0, 0, 20, 20)
         };
         ToolTip.SetTip(b, "Criar");
+        Avalonia.Automation.AutomationProperties.SetName(b, "Criar");
         b.Click += async (_, _) => await ShowCreateMenuAsync();
-        return b;
+        return Ui.UrbeMotion.Pressable(b, haptic: true);
     }
 
     private Control LoadingLabel()
@@ -1812,6 +1779,24 @@ public sealed partial class MainView : Grid
         Margin = new Thickness(0, 0, 0, covered);
     }
 
+    private int _occlusion;
+
+    /// <summary>
+    /// The editor or Notas covering the whole city: once the overlay has entered, the world is not composed at all
+    /// (opacity 0), so a keystroke or a caret blink does not replay the city's drawing under it (UC-69: typing in a
+    /// 5 KB note cost ~45 ms more per key with the city behind it). Uncovered, it is back in the same pass.
+    /// </summary>
+    private void UpdateWorldOcclusion()
+    {
+        int gen = ++_occlusion;
+        if (World.CityVisible()) { World.Opacity = 1; return; }
+        if (UrbeTokens.Motion.Reduced) { World.Opacity = 0; return; }
+        DispatcherTimer.RunOnce(() => { if (gen == _occlusion && !World.CityVisible()) World.Opacity = 0; }, UrbeTokens.Motion.Slow);
+    }
+
+    /// <summary>True while the world is left out of composition behind an opaque overlay (tests).</summary>
+    public bool WorldOccluded => World.Opacity == 0;
+
     /// <summary>Something opaque over the whole city (the world need not run behind it).</summary>
     private bool CityCovered()
     {
@@ -1927,6 +1912,7 @@ public sealed partial class MainView : Grid
             ToolTip.SetTip(button, "Assistente: agentes que pesquisam, escrevem e organizam o vault");
             button.Click += (_, _) => ToggleAssistant();
         }
-        return button;
+        if (Avalonia.Automation.AutomationProperties.GetName(button) is not { Length: > 0 }) Avalonia.Automation.AutomationProperties.SetName(button, label);
+        return Ui.UrbeMotion.Pressable(button);
     }
 }
