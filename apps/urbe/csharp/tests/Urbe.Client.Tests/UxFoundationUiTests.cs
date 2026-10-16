@@ -60,12 +60,15 @@ public sealed partial class HeadlessUiTests
             int clicks = 0;
             primary.Click += (_, _) => clicks++;
             var p = Centre(primary, window);
+            // the press shows within the input event itself; timing only it keeps the other tests' jobs on the shared
+            // dispatcher out of the measure (as the typing budget does)
             var watch = Stopwatch.StartNew();
             window.MouseDown(p, MouseButton.Left);
-            Dispatcher.UIThread.RunJobs();   // one dispatcher pass
             watch.Stop();
             Assert.True(UrbeMotion.ShowsPressed(primary));
             Assert.True(watch.ElapsedMilliseconds < 100, watch.ElapsedMilliseconds + " ms");
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(UrbeMotion.ShowsPressed(primary));
             Assert.Contains(HapticKind.Tick, haptics);
             window.MouseUp(p, MouseButton.Left);
             Dispatcher.UIThread.RunJobs();
