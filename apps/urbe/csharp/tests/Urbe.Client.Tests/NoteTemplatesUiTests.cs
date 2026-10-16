@@ -3,6 +3,7 @@ using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Urbe.Client;
+using Urbe.Core;
 
 namespace Urbe.Client.Tests;
 
@@ -44,13 +45,25 @@ public sealed partial class HeadlessUiTests
             view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single().Text = "Gandalf";
             ClickButtonWithText(view.Dialogs, "Criar nota");
             await Settled();
+            // the template's other field is asked for after the name
+            Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "classe");
+            view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single().Text = "Mago {{data}}";
+            ClickButtonWithText(view.Dialogs, "Criar nota");
+            await Settled();
             var made = Path.Combine(vault, "Gandalf.md");
             Assert.True(File.Exists(made));
             var today = DateTime.Now.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-            Assert.Equal("# Gandalf\n\n:::ficha Gandalf\nCriada em " + today + "\n{{classe}}\n:::\n", File.ReadAllText(made));
+            Assert.Equal("# Gandalf\n\n:::ficha Gandalf\nCriada em " + today + "\nMago {{data}}\n:::\n", File.ReadAllText(made));
             Assert.True(view.Editor.IsVisible);
             // the template itself is untouched
             Assert.Equal("# {{titulo}}\n\n:::ficha {{titulo}}\nCriada em {{data}}\n{{classe}}\n:::\n", File.ReadAllText(Path.Combine(vault, "Modelos", "Ficha de personagem.md")));
+
+            // Cancelar on a field creates nothing
+            _ = view.CreateNoteFromTemplateAsync("Modelos/Ficha de personagem.md", "Saruman");
+            await Settled();
+            ClickButtonWithText(view.Dialogs, "Cancelar");
+            await Settled();
+            Assert.False(File.Exists(Path.Combine(vault, "Saruman.md")));
             window.Close();
             return true;
         }
@@ -97,5 +110,69 @@ public sealed partial class HeadlessUiTests
                 return true;
             }
             finally { window.Close(); }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task NoteContainers_CaixaFromTheSlashMenuWrapsTheBlockAndFonteWrapsTheSelection() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var surface = new VisualSurface();
+            var window = new Window { Width = 600, Height = 600, Content = surface };
+            window.Show();
+            try
+            {
+                surface.SetText("Antes\n\nfim\n");
+                surface.AskBox = () => Task.FromResult<(string, string)?>(("ficha", "Gandalf"));
+                Dispatcher.UIThread.RunJobs();
+                var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+                typeof(VisualSurface).GetMethod("Edit", flags)!.Invoke(surface, [surface.Text.IndexOf("fim", StringComparison.Ordinal)]);
+                Dispatcher.UIThread.RunJobs();
+                var edit = surface.GetLogicalDescendants().OfType<TextBox>().Single();
+                edit.Text = "/cai";
+                edit.CaretIndex = 4;
+                Dispatcher.UIThread.RunJobs();
+                // "/cai" finds Caixa in the menu
+                Assert.Contains(LegacyEditorTools.FilterSlashWithAddons("cai"), x => x.Act == "box");
+                typeof(VisualSurface).GetMethod("ChooseSlash", flags)!.Invoke(surface, ["box"]);
+                await Pump(60);
+                Assert.Equal(":::ficha Gandalf\n\n:::", edit.Text);
+                Assert.Equal(17, edit.CaretIndex);
+                surface.FinishEdit();
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal("Antes\n\n:::ficha Gandalf\n\n:::\n", surface.Text);
+                Assert.Single(surface.GetLogicalDescendants().OfType<Border>(), b => b.Classes.Contains("urbe-box"));
+            }
+            finally { window.Close(); }
+
+            // Fonte: the Caixa button asks for the type and the title and wraps the selection
+            var editor = new EditorOverlay();
+            var dialogs = new UrbeDialogs();
+            editor.Dialogs = dialogs;
+            var host = new Window { Width = 800, Height = 700, Content = new Grid { Children = { editor, dialogs } } };
+            host.Show();
+            try
+            {
+                editor.Open(new CityNote("Notas/x.md", "um dois três"));
+                editor.SetMode(EditorMode.Fonte);
+                editor.Editor.SelectionStart = 3;
+                editor.Editor.SelectionEnd = 7;
+                Dispatcher.UIThread.RunJobs();
+                host.UpdateLayout();
+                var button = editor.GetVisualDescendants().OfType<Button>().First(b => ToolTip.GetTip(b) as string == "Caixa");
+                button.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                await Pump(60);
+                dialogs.GetVisualDescendants().OfType<TextBox>().Single().Text = "dois tipos";
+                ClickButtonWithText(dialogs, "Continuar");
+                await Pump(40);
+                Assert.Contains(dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.Contains("palavra só", StringComparison.Ordinal) == true);
+                dialogs.GetVisualDescendants().OfType<TextBox>().Single().Text = "aviso";
+                ClickButtonWithText(dialogs, "Continuar");
+                await Pump(60);
+                ClickButtonWithText(dialogs, "Inserir");
+                await Pump(60);
+                Assert.Equal("um \n:::aviso\ndois\n:::\n três", editor.Editor.Text);
+                return true;
+            }
+            finally { host.Close(); }
         }, CancellationToken.None));
 }

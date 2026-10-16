@@ -172,5 +172,7 @@ internal sealed class SlashMenu : Border
         ["quote"] = "M5 8.5h5v5.5c0 2.5-1.5 4-4 4.5 M14 8.5h5v5.5c0 2.5-1.5 4-4 4.5",
         ["code"] = "M9 7.5L4.5 12 9 16.5 M15 7.5l4.5 4.5-4.5 4.5",
         ["rule"] = "M4 12h16",
+        // Caixa (UC-44): a box with a header line
+        ["box"] = "M6 4.5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2z M4 9h16",
     };
 }

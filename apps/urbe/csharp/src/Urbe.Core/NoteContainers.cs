@@ -60,6 +60,33 @@ public static partial class NoteContainers
         return top.AsReadOnly();
     }
 
+    /// <summary>Whether <paramref name="type"/> can open a container (letters, digits, _ and -).</summary>
+    public static bool IsType(string? type) => type is { Length: > 0 and <= 64 } && TypeRegex().IsMatch(type);
+
+    /// <summary>
+    /// A container around the selection (UC-44): `:::tipo título` on its own line, the selected text, `:::` on its own
+    /// line; with no selection the body is an empty line with the caret on it. Null when the type is not valid.
+    /// </summary>
+    public static LegacyEditorTools.TextEdit? Wrap(string text, int selectionStart, int selectionEnd, string type, string? title)
+    {
+        type = (type ?? "").Trim();
+        if (!IsType(type)) return null;
+        var a = Math.Clamp(Math.Min(selectionStart, selectionEnd), 0, text.Length);
+        var b = Math.Clamp(Math.Max(selectionStart, selectionEnd), 0, text.Length);
+        var head = ":::" + type;
+        var t = (title ?? "").ReplaceLineEndings(" ").Trim();
+        if (t.Length > 0) head += " " + t;
+        var before = a > 0 && text[a - 1] != '\n' ? "\n" : "";
+        var after = b < text.Length && text[b] != '\n' ? "\n" : "";
+        var body = text[a..b].TrimEnd('\n', '\r');
+        // line breaks that ended the selection stay after the box
+        var tail = text[(a + body.Length)..b];
+        var open = before + head + "\n";
+        var insert = open + body + "\n:::" + tail + (tail.Length > 0 ? "" : after);
+        int s = a + open.Length, e = s + body.Length;
+        return new(text[..a] + insert + text[b..], s, e);
+    }
+
     private sealed record Frame(int Start, int BodyStart, string Type, string Title)
     {
         public List<NoteContainer> Children { get; } = [];
@@ -67,4 +94,7 @@ public static partial class NoteContainers
 
     [GeneratedRegex(@"^:::([\p{L}\p{N}_-]+)(?:[ \t]+(.*))?$", RegexOptions.CultureInvariant)]
     private static partial Regex OpenRegex();
+
+    [GeneratedRegex(@"^[\p{L}\p{N}_-]+$", RegexOptions.CultureInvariant)]
+    private static partial Regex TypeRegex();
 }

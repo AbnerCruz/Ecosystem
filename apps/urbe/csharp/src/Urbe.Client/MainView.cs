@@ -1119,7 +1119,8 @@ public sealed partial class MainView : Grid
 
     /// <summary>
     /// UC-44 (DEC-0045): "A partir de um modelo" — pick a note of Modelos/, name the new note, and it is created (the
-    /// same verified path as Nova nota) with the template's content, {{titulo}} and {{data}} filled in.
+    /// same verified path as Nova nota) with the template's content, {{titulo}} and {{data}} filled in and each other
+    /// {{campo}} asked for after the name.
     /// </summary>
     public async Task CreateNoteFromTemplateAsync(string? templatePath = null, string? typedName = null, string? folder = null)
     {
@@ -1134,8 +1135,21 @@ public sealed partial class MainView : Grid
             templatePath = templates[i];
         }
         if (!_contents.TryGetValue(templatePath, out var template)) return;
-        await CreateNoteInNotesAsync(typedName, folder,
-            name => NoteTemplateEngine.Fill(template, ArtifactModel.IsText(name) ? System.IO.Path.GetFileNameWithoutExtension(name) : name, DateTime.Now));
+        await CreateNoteInNotesAsync(typedName, folder, async name =>
+        {
+            // the template's other {{campo}}: one question each, in order; Cancelar creates nothing
+            var values = new Dictionary<string, string>(StringComparer.Ordinal);
+            var fields = NoteTemplateEngine.InputFields(template);
+            for (int i = 0; i < fields.Count; i++)
+            {
+                var value = await Dialogs.PromptAsync(new PromptOptions(NoteTemplateEngine.NameOf(templatePath), Label: fields[i],
+                    Hint: fields.Count > 1 ? "Campo " + (i + 1) + " de " + fields.Count + " do modelo." : "Campo do modelo.",
+                    Confirm: i == fields.Count - 1 ? "Criar nota" : "Continuar", Required: false));
+                if (value is null) return null;
+                values[fields[i]] = value;
+            }
+            return NoteTemplateEngine.Fill(template, ArtifactModel.IsText(name) ? System.IO.Path.GetFileNameWithoutExtension(name) : name, DateTime.Now, values);
+        });
     }
 
     /// <summary>mobile-ui.js where(folder).</summary>
@@ -1155,7 +1169,7 @@ public sealed partial class MainView : Grid
     /// gets its house like any new document (document:created → urbeCasaParaDocumento), opens, and Notas closes. The
     /// empty file is written to the vault first.
     /// </summary>
-    public async Task CreateNoteInNotesAsync(string? typedName = null, string? folder = null, Func<string, string>? contentFor = null)
+    public async Task CreateNoteInNotesAsync(string? typedName = null, string? folder = null, Func<string, Task<string?>>? contentFor = null)
     {
         if (World.City is not { } city || _store is null) return;
         if (!VaultWritable)
@@ -1176,8 +1190,9 @@ public sealed partial class MainView : Grid
         if (name.Length == 0) return;
         var path = PathOf(name);
         if (_store.Get(path) is not null || _contents.ContainsKey(path)) return;
-        // UC-44: a note made from a template starts with its filled-in content
-        var content = contentFor?.Invoke(name) ?? "";
+        // UC-44: a note made from a template starts with its filled-in content (null: the person gave up)
+        var content = contentFor is null ? "" : await contentFor(name);
+        if (content is null) return;
         try { await _vault!.CreateTextFileAsync(path, content); }
         catch (Exception ex) { await Dialogs.AlertAsync("Não foi possível criar a nota", ex.Message); return; }
         var doc = _store.Upsert(new DocumentInput { Path = path, Content = content }, "explorer.create");

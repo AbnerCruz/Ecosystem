@@ -14,8 +14,8 @@ namespace Urbe.Client;
 public sealed record ContentRequest(IUrbeVaultStorage? Storage, string Path, string Name, string Kind, byte[]? Bytes)
 {
     /// <summary>
-    /// The studio's preview: the page's messages ({urbePage:"select"|"text",…} as JSON, what the 1.8.4 preview posts to its
-    /// parent) are handed here, on the UI thread; null for every other viewer (isolated, no way back to the app).
+    /// The studio's preview: the page's messages ({urbePage:"select"|"text",…} as JSON, what the 1.8.4 preview posts to its parent, and "comment" from a 💬, UC-49)
+    /// are handed here, on the UI thread; null for every other viewer (isolated, no way back to the app).
     /// </summary>
     public Action<string>? Messages { get; init; }
 }
