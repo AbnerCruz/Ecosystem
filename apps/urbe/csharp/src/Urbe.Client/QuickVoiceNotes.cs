@@ -34,7 +34,7 @@ public sealed partial class MainView
     /// <summary>The transcriber used here: <see cref="PlatformVoice.Transcribe"/> unless replaced (tests).</summary>
     public Func<Task<string?>>? Voice { get => _voice ?? PlatformVoice.Transcribe; set => _voice = value; }
 
-    /// <summary>True once the first city (vault or Tutorial) is shown.</summary>
+    /// <summary>True once the first city (the vault, or the empty world with no folder) is shown.</summary>
     public bool IsReady { get; private set; }
 
     /// <summary>Called when the first city is up: a widget request made while starting runs now.</summary>
