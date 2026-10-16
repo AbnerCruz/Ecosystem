@@ -1786,30 +1786,72 @@ public sealed partial class MainView : Grid
     }
 
     private Avalonia.Controls.Platform.IInputPane? _inputPane;
+    private TopLevel? _keyboardTop;
+    // the top of the phone's keyboard in window coordinates, or NaN while it is closed
+    private double _keyboardAt = double.NaN;
+    private readonly DispatcherTimer _keyboardClosed = new() { Interval = TimeSpan.FromMilliseconds(220) };
 
     protected override void OnAttachedToVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        // the phone's keyboard: when the window is not resized for it, the app ends where the keyboard starts, so the
-        // editor's formatting bar (bottom row on a phone) and the text being typed stay above the keys (UC-48/UC-55)
-        _inputPane = TopLevel.GetTopLevel(this)?.InputPane;
+        // the phone's keyboard: the app ends where the keyboard starts, so the editor's formatting bar (bottom row on
+        // a phone) and the text being typed stay above the keys (UC-48/UC-55)
+        _keyboardTop = TopLevel.GetTopLevel(this);
+        _inputPane = _keyboardTop?.InputPane;
         if (_inputPane is not null) _inputPane.StateChanged += OnInputPane;
+        if (_keyboardTop is not null) _keyboardTop.PropertyChanged += OnTopLevelResized;
+        _keyboardClosed.Tick += OnKeyboardClosed;
     }
 
     protected override void OnDetachedFromVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
     {
         if (_inputPane is not null) _inputPane.StateChanged -= OnInputPane;
+        if (_keyboardTop is not null) _keyboardTop.PropertyChanged -= OnTopLevelResized;
+        _keyboardClosed.Tick -= OnKeyboardClosed;
+        _keyboardClosed.Stop();
         _inputPane = null;
+        _keyboardTop = null;
         base.OnDetachedFromVisualTree(e);
     }
 
     private void OnInputPane(object? sender, Avalonia.Controls.Platform.InputPaneStateEventArgs e)
     {
-        double covered = 0;
-        if (e.NewState == Avalonia.Controls.Platform.InputPaneState.Open && TopLevel.GetTopLevel(this) is { } top &&
-            this.TranslatePoint(new Point(0, Bounds.Height), top) is { } bottom)
-            covered = Math.Max(0, bottom.Y + Margin.Bottom - e.EndRect.Top);
-        Margin = new Thickness(0, 0, 0, covered);
+        if (e.NewState == Avalonia.Controls.Platform.InputPaneState.Open)
+        {
+            _keyboardClosed.Stop();
+            _keyboardAt = e.EndRect.Top;
+            FitKeyboard();
+        }
+        // moving from one block to the next closes and reopens the keyboard: wait a moment before giving the
+        // space back, so the screen does not jump down and up again (16/10/2026)
+        else if (!_keyboardClosed.IsEnabled) _keyboardClosed.Start();
+    }
+
+    private void OnKeyboardClosed(object? sender, EventArgs e)
+    {
+        _keyboardClosed.Stop();
+        _keyboardAt = double.NaN;
+        FitKeyboard();
+    }
+
+    private void OnTopLevelResized(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == TopLevel.ClientSizeProperty) FitKeyboard();
+    }
+
+    /// <summary>
+    /// The space the keyboard covers at the bottom of the window. A system that already shrinks the window for the
+    /// keyboard (adjustResize, or insets applied by the platform) leaves nothing covered: before, the app also
+    /// subtracted the keyboard's height and ended half a screen above it (16/10/2026).
+    /// </summary>
+    public static double KeyboardCover(double windowHeight, double keyboardTop) =>
+        double.IsNaN(keyboardTop) ? 0 : Math.Max(0, windowHeight - keyboardTop);
+
+    private void FitKeyboard()
+    {
+        var height = _keyboardTop?.ClientSize.Height ?? 0;
+        var covered = height <= 0 ? 0 : KeyboardCover(height, _keyboardAt);
+        if (Math.Abs(Margin.Bottom - covered) > .5) Margin = new Thickness(0, 0, 0, covered);
     }
 
     /// <summary>Something opaque over the whole city (the world need not run behind it).</summary>
