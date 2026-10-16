@@ -1766,6 +1766,40 @@
       "decidedAt": "2026-10-15",
       "record": "docs/governance/addenda/ADD-0025-urbe-beta-2-0-nativa.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0050",
+      "status": "decided",
+      "component": "ecosystem",
+      "blocking": false,
+      "title": "Unificação da IA: experiência do Urbe e infraestrutura do Agent Runtime existente",
+      "context": "Ordem explícita do proprietário em 2026-10-16: levar a qualidade da IA do Urbe aos demais Products por infraestrutura reutilizável, preservando capacidades e independência.",
+      "question": "Qual é a direção permanente da IA do Ecosystem?",
+      "alternatives": [
+        {
+          "option": "1 — Manter ou copiar assistentes completos por Product",
+          "consequences": "Loops/providers e manutenção divergentes; alternativa rejeitada pelo proprietário."
+        },
+        {
+          "option": "2 — Convergir incrementalmente sobre AgentRuntime.Core com Urbe como referência funcional/UX",
+          "consequences": "Contratos e adapters por domínio, testes de equivalência, Extraction Review antes de promoção e preservação do loop do Urbe até paridade comprovada."
+        }
+      ],
+      "consequences": "Opção 2 ordenada pelo proprietário. ADD-0027 registra requisitos e restrições; ADR-0033 formaliza direção sem aprovar extração ou contrato concreto. Auditar código/testes/PRs atuais e implementar incrementos verificáveis; preservar RPG pay-as-you-go sem teto financeiro obrigatório.",
+      "manifestCompatibility": "Cumpre MANIFEST §20/39/48/54 e NN-001/002/003/006/009/011/016/017/020/022/023. Nenhum novo runtime, dependência entre Products ou no Hub.",
+      "recommendation": "2 — ordem expressa do proprietário, não inferência do agente.",
+      "related": [
+        "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+        "docs/adr/0033-unificacao-incremental-da-ia.md",
+        "docs/architecture/audits/ai-unification-2026-10-16.md",
+        "ROADMAP.md"
+      ],
+      "raisedBy": "Proprietário; registro por Codex",
+      "raisedAt": "2026-10-16",
+      "decision": "2 — Infraestrutura compartilhável/extensível/independente, Urbe como referência funcional e UX, Runtime existente como referência de infraestrutura. Sem migração destrutiva, terceiro runtime ou extração prematura.",
+      "decidedAt": "2026-10-16",
+      "record": "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+      "consequencesApplied": true
     }
   ]
 }

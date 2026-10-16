@@ -264,6 +264,12 @@ Programa **Agent Runtime** (diretiva [ADD-0013](docs/governance/addenda/ADD-0013
 - [ ] P6-5 — **R4 — Product de IA** consumindo exatamente o mesmo Runtime e o mesmo Workspace (prova: Runtime ≠ Product). O Product já existe desde o R1 (P6-2); este item entrega a **experiência** (chat, projetos, agentes, equipes, tarefas, artefatos, execuções, custos). Id `ecosystem-ai` e nome "Ecosystem AI" fixados pela DEC-0027 (alternativa B).
   - Saída: o Product sem loop agêntico nem cliente de provedor próprio. Depende de: P6-4. Evidência: handoff do slice.
 
+### Convergência permanente da IA (ADD-0027 / DEC-0050)
+
+- [~] AI-603 — **Auditoria atual e primeiro incremento de convergência**: matriz Urbe Assistant × Runtime/Workspace × Products, registro da diretriz e revisão de extração por responsabilidade. Implementar proteção contra ferramentas que falharam no Runtime existente, preservando o Urbe. Issue [#603](https://github.com/AbnerCruz/Ecosystem/issues/603), código [#604](https://github.com/AbnerCruz/Ecosystem/pull/604), [auditoria](docs/architecture/audits/ai-unification-2026-10-16.md), ADR-0033 e handoffs `HO-20261016-ai-runtime-failure-guard` / `HO-20261016-ai-unification-direction`. Gate: testes e CI integrados; não encerra P6-5 nem a missão de dois consumidores reais.
+
+Próximos incrementos (ainda sem implementação reivindicada): equivalência de transporte/providers e streaming/usage; política de segredos/migração; Extraction Review/contrato concreto; primeiro consumo real adicional elegível (recomendado: providers do Urbe mantendo loop/UI); integração progressiva nos roadmaps dos Products. [Plano e gates](docs/architecture/audits/ai-unification-2026-10-16.md). Não antecipar Fase 8 do Lunet ou IA de Math Authoring; RPG preserva gateway/intents/visões privadas e pay-as-you-go sem teto financeiro obrigatório. Nenhuma promoção pela mera intenção de reuso.
+
 **Gate:** o mesmo modelo conceitual de Agent Workspace opera com contexto do Urbe ou do Lunet por tools/capabilities diferentes.
 
 ## Fase 7 — Primeira Tool real compartilhada
