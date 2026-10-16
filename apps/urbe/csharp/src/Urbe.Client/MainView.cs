@@ -340,7 +340,8 @@ public sealed partial class MainView : Grid
                 }
                 catch (Exception ex) { _loading.Text = "Vault indisponível: " + ex.Message; }
             }
-            await LoadAsync(TutorialNotes.Load());
+            // no folder yet: an empty world (DEC-0045, UC-40/UC-64: the Tutorial is never built in the city)
+            await LoadAsync([]);
         }
         finally { MarkReady(); }   // UC-56: a widget's quick note waits for the first city
     }
@@ -493,7 +494,7 @@ public sealed partial class MainView : Grid
         scheduler.MarkSync();
     }
 
-    /// <summary>The map save of the open vault (null for the Tutorial preview and read-only vaults).</summary>
+    /// <summary>The map save of the open vault (null with no folder open and for read-only vaults).</summary>
     public MapSaveScheduler? MapSave => _mapSave;
 
     /// <summary>The documents of the open vault (DocumentStore of the city), or null.</summary>
@@ -648,13 +649,13 @@ public sealed partial class MainView : Grid
     /// <summary>
     /// #v23Top: the brand pill (#v23VaultDot: green, warn while writing, danger on an error — statusSinc; the vault name;
     /// "· biome") and the three round buttons Buscar notas, Mapa da cidade and Configurações. Both 44px tall, surface at
-    /// 82 %, a faint line and shadow-1. The native-only notices (Tutorial preview, read-only vault, a refused map) follow
+    /// 82 %, a faint line and shadow-1. The native-only notices (no folder open, read-only vault, a refused map) follow
     /// the biome in small text; the normal state shows none, as the original.
     /// </summary>
     private Control TopBar()
     {
         var name = _brandName = new TextBlock { Text = "Urbe", FontWeight = FontWeight.SemiBold, FontSize = 14, Foreground = UrbeTheme.Brush(UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center };
-        _vaultName.Text = "Tutorial · prévia";
+        _vaultName.Text = "Nenhuma pasta aberta";
         _vaultName.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
         _vaultName.FontSize = 11;
         _vaultName.VerticalAlignment = VerticalAlignment.Center;
@@ -860,7 +861,7 @@ public sealed partial class MainView : Grid
         if (World.City is not { } city) return null;
         if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly)
         {
-            await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar notas. O Tutorial desta prévia é só leitura.");
+            await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar notas.");
             return null;
         }
         var typed = typedName ?? await Dialogs.PromptAsync(new PromptOptions("Nova nota", Label: "Nome", Placeholder: "Ex.: Ideias",
@@ -945,7 +946,7 @@ public sealed partial class MainView : Grid
         if (World.City is not { } city || city.Buildings.Find(b => b.IsNote && b.Path == path) is not { } house) return;
         if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly)
         {
-            await Dialogs.AlertAsync("Renomear", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para renomear notas. O Tutorial desta prévia é só leitura.");
+            await Dialogs.AlertAsync("Renomear", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para renomear notas.");
             return;
         }
         var typed = typedName ?? await Dialogs.PromptAsync(new PromptOptions("Renomear", Label: "Nome do arquivo",
@@ -1000,7 +1001,7 @@ public sealed partial class MainView : Grid
         if (World.City is not { } city || city.Buildings.Find(b => b.IsNote && b.Path == path) is not { } house) return false;
         if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly || _store is null)
         {
-            await Dialogs.AlertAsync("Excluir", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para excluir notas. O Tutorial desta prévia é só leitura.");
+            await Dialogs.AlertAsync("Excluir", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para excluir notas.");
             return false;
         }
         if (_trashReadOnly)
@@ -1174,7 +1175,7 @@ public sealed partial class MainView : Grid
         if (World.City is not { } city || _store is null) return;
         if (!VaultWritable)
         {
-            await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar notas. O Tutorial desta prévia é só leitura.");
+            await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar notas.");
             return;
         }
         folder ??= Explorer.CurrentFolder;

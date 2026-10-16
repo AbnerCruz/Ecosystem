@@ -8,13 +8,15 @@ using Urbe.Core;
 namespace Urbe.Client;
 
 /// <summary>
-/// The Tutorial as a panel of its own (owner, DEC-0045, UC-40): the owner did not like the tutorial appearing as a
-/// neighbourhood in the world. Index by section, search, the article rendered, Anterior/Próximo and [[links]] that move
-/// inside the tutorial. The text is the 1.8.4's (apps/urbe/tutorial, embedded); nothing is written to the vault.
+/// The Tutorial as a panel of its own (owner, DEC-0045, UC-40, UC-64): documentation, only to read — never the note
+/// editor, never a neighbourhood in the world. Index by section, search in titles and text, the article rendered as
+/// the editor's Visual mode draws a note, Anterior/Próximo and [[links]] that move inside the tutorial. The text is the
+/// native app's (<see cref="AppDocs"/>); nothing is written to the vault.
 /// </summary>
 public sealed class TutorialPanel : Border
 {
     private readonly IReadOnlyList<CityNote> _articles;
+    private readonly TextBlock _section = new() { FontSize = 12, FontWeight = FontWeight.Bold, LetterSpacing = .6, Margin = new Thickness(20, 0, 20, 2) };
     private readonly TextBlock _title = new() { FontSize = 20, FontWeight = FontWeight.Bold, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
     private readonly TextBox _search = new()
     {
@@ -31,14 +33,15 @@ public sealed class TutorialPanel : Border
 
     public TutorialPanel(IReadOnlyList<CityNote> articles)
     {
-        // Comece aqui first, then by section and name (the order of the folders of the 1.8.4 tutorial)
-        _articles = articles.Where(a => a.Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
-            .OrderBy(a => a.Path == LegacyTutorial.Start ? 0 : 1)
-            .ThenBy(a => Section(a), StringComparer.CurrentCulture)
-            .ThenBy(a => TitleOf(a), StringComparer.CurrentCulture).ToList();
+        // Comece aqui first, then the articles in the given order, kept together by section
+        var md = articles.Where(a => a.Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase)).ToList();
+        var sections = md.Select(Section).Distinct().ToList();
+        _articles = md.OrderBy(a => a.Path == LegacyTutorial.Start ? 0 : 1)
+            .ThenBy(a => sections.IndexOf(Section(a))).ToList();
         IsVisible = false;
         Background = UrbeTheme.Brush(UrbeTheme.Bg);
         _title.Foreground = UrbeTheme.Brush(UrbeTheme.Text);
+        _section.Foreground = UrbeTheme.Brush(UrbeTheme.Accent);
         _back = HeadButton(UrbeTheme.Icons.Back, "Voltar ao índice");
         _back.Click += (_, _) => ShowIndex();
         var close = HeadButton(UrbeTheme.Icons.CloseUi, "Fechar o tutorial");
@@ -63,13 +66,15 @@ public sealed class TutorialPanel : Border
         _pager.Child = pagerRow;
         _pager.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line);
         _pager.BorderThickness = new Thickness(0, 1, 0, 0);
-        var grid = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto"), MaxWidth = 760 };
+        var grid = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,Auto,*,Auto"), MaxWidth = 760 };
         grid.Children.Add(head);
         Grid.SetRow(_search, 1);
         grid.Children.Add(_search);
-        Grid.SetRow(_scroll, 2);
+        Grid.SetRow(_section, 2);
+        grid.Children.Add(_section);
+        Grid.SetRow(_scroll, 3);
         grid.Children.Add(_scroll);
-        Grid.SetRow(_pager, 3);
+        Grid.SetRow(_pager, 4);
         grid.Children.Add(_pager);
         Child = grid;
     }
@@ -97,7 +102,15 @@ public sealed class TutorialPanel : Border
         Closed?.Invoke();
     }
 
-    public string SearchText { get => _search.Text ?? ""; set => _search.Text = value; }
+    public string SearchText
+    {
+        get => _search.Text ?? "";
+        set
+        {
+            _search.Text = value;
+            if (Article is null) RenderIndex();   // TextChanged comes later, on the dispatcher
+        }
+    }
 
     public void ShowIndex()
     {
@@ -105,6 +118,7 @@ public sealed class TutorialPanel : Border
         _title.Text = "Tutorial";
         _back.IsVisible = false;
         _search.IsVisible = true;
+        _section.IsVisible = false;
         _pager.IsVisible = false;
         RenderIndex();
     }
@@ -117,12 +131,15 @@ public sealed class TutorialPanel : Border
         _title.Text = TitleOf(article);
         _back.IsVisible = true;
         _search.IsVisible = false;
+        _section.Text = SectionName(Section(article)).ToUpperInvariant();
+        _section.IsVisible = true;
         _pager.IsVisible = true;
         int i = IndexOf(article);
         _prev.IsEnabled = i > 0;
         _next.IsEnabled = i < _articles.Count - 1;
+        // read only: the reader has no task toggles, formula or comment editing, only links
         var reader = new MarkdownReader { WikiLinkTapped = name => FollowLink(name) };
-        _scroll.Content = new Border { Padding = new Thickness(20, 4, 20, 32), Child = reader.Build(MarkdownTree.Parse(article.Content)) };
+        _scroll.Content = new Border { Padding = new Thickness(20, 4, 20, 32), Child = reader.BuildMarkdown(article.Content) };
         _scroll.Offset = default;
         return true;
     }
@@ -130,6 +147,8 @@ public sealed class TutorialPanel : Border
     /// <summary>A [[link]] of an article: another article of the tutorial with that name.</summary>
     public bool FollowLink(string name)
     {
+        // [[Nome#seção]] and [[Nome|texto]] go to Nome
+        name = name.Split('|')[0].Split('#')[0].Trim();
         var target = _articles.FirstOrDefault(a => string.Equals(TitleOf(a), name, StringComparison.OrdinalIgnoreCase)
             || string.Equals(a.Path, name, StringComparison.OrdinalIgnoreCase)
             || string.Equals(a.Path, LegacyTutorial.Folder + name + ".md", StringComparison.OrdinalIgnoreCase));
@@ -160,15 +179,20 @@ public sealed class TutorialPanel : Border
                 section = s;
                 list.Children.Add(new TextBlock
                 {
-                    Text = s.Length == 0 ? "Começo" : s, FontSize = 12, FontWeight = FontWeight.Bold, LetterSpacing = .6,
+                    Text = SectionName(s), FontSize = 12, FontWeight = FontWeight.Bold, LetterSpacing = .6,
                     Foreground = UrbeTheme.Brush(UrbeTheme.Text3), Margin = new Thickness(12, 16, 12, 6)
                 });
             }
             listed.Add(a.Path);
             var path = a.Path;
+            var label = new StackPanel { Spacing = 2 };
+            label.Children.Add(new TextBlock { Text = TitleOf(a), FontSize = 15, FontWeight = FontWeight.Medium, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextTrimming = TextTrimming.CharacterEllipsis });
+            // a search shows where the words are
+            if (q.Length > 0 && Excerpt(a.Content, q) is { } excerpt)
+                label.Children.Add(new TextBlock { Text = excerpt, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap, MaxLines = 2 });
             var row = new Button
             {
-                Content = new TextBlock { Text = TitleOf(a), FontSize = 15, FontWeight = FontWeight.Medium, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextTrimming = TextTrimming.CharacterEllipsis },
+                Content = label,
                 MinHeight = 44, Padding = new Thickness(12, 8), CornerRadius = new CornerRadius(12),
                 Background = Brushes.Transparent, BorderThickness = new Thickness(0),
                 HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left,
@@ -194,6 +218,20 @@ public sealed class TutorialPanel : Border
         _scroll.Content = list;
         _scroll.Offset = default;
     }
+
+    /// <summary>The line of <paramref name="content"/> holding the folded query, without Markdown marks; null in the title only.</summary>
+    internal static string? Excerpt(string content, string q)
+    {
+        foreach (var line in content.Split('\n'))
+        {
+            if (!LegacyEditorTools.Fold(line).Contains(q, StringComparison.Ordinal)) continue;
+            var plain = line.TrimStart('#', '-', '>', '|', ' ').Replace("**", "").Replace("`", "").Replace("[[", "").Replace("]]", "").Trim();
+            return plain.Length > 140 ? plain[..140] + "…" : plain;
+        }
+        return null;
+    }
+
+    private static string SectionName(string section) => section.Length == 0 ? "Começo" : section;
 
     private static string TitleOf(CityNote a) => System.IO.Path.GetFileNameWithoutExtension(a.Path);
 
