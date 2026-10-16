@@ -1,0 +1,68 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261016-urbe-beta-13",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-16T08:41:23Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-48",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "d118a195",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "docs/governance/handoffs/HO-20261016-urbe-beta-13.json"
+  ],
+  "work_completed": [
+    "Urbe Beta 2.0 — 2.0.0-beta.13 (versionCode 2000013): publica no canal beta (DEC-0048) os PRs #598 e #599 — relógio único da cidade (menos redesenhos), modelos de nota e caixas :::tipo, nota rápida por voz com widget no Android, variações/girar/espelhar/pincel nas decorações — com o cliente de Windows na mesma release."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "CI dos PRs #598 e #599 (urbe-checks, build Android e integrador)",
+      "result": "passed",
+      "evidence": "Os dois PRs integrados pela automação com os checks verdes."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: atualizar para a beta.13 e usar a nota rápida por voz (menu Criar e widget), modelos, caixas e decorações",
+      "result": "pending",
+      "critical": true,
+      "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.13"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Depois da integração, conferir a release urbe-csharp-v2.0.0-beta.13 (APK e zip de Windows) e mandar os links ao proprietário."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/distribution/direct-releases.md",
+    "docs/governance/addenda/ADD-0025-urbe-beta-2-0-nativa.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A versão do canal muda só em Urbe.Android.csproj."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-beta-release",
+      "status": "product-specific",
+      "rationale": "Versão do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Nova versão publicada no canal de distribuição (Urbe.Android.csproj)."
+  }
+}
