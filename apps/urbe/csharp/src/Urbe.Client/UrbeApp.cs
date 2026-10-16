@@ -91,9 +91,9 @@ public sealed class UrbeApp : Application
 }
 
 /// <summary>
-/// Preview content: the 1.8.4 Tutorial folder (apps/urbe/tutorial), embedded read-only, in the
-/// order of tutorial.js C.files (build-tutorial.mjs: ordinal sort of the paths).
-/// Opening a real vault folder is the next UC-19/UC-25 slice; nothing is written anywhere.
+/// The 1.8.4 Tutorial folder (apps/urbe/tutorial), embedded read-only, in the order of tutorial.js C.files
+/// (build-tutorial.mjs: ordinal sort of the paths). The immutable reference, used by the oracles and tests; the app
+/// shows its own documentation (<see cref="AppDocs"/>, UC-64). Nothing is written anywhere.
 /// </summary>
 public static class TutorialNotes
 {

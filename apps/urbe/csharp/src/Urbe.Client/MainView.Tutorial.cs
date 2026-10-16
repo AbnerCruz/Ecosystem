@@ -5,16 +5,17 @@ namespace Urbe.Client;
 
 /// <summary>
 /// The Tutorial. The 1.8.4 (tutorial.js) created a "Tutorial" folder in the city the first time it opened; the owner did
-/// not want it in the world (DEC-0045, UC-40), so it is read in its own panel (<see cref="TutorialPanel"/>). Copying it
-/// into the city as notes is still there, as the panel's own choice: what is missing is created, the notes that differ
-/// from the originals are replaced only after asking, and the mark .urbe/tutorial.json is written.
+/// not want it in the world (DEC-0045, UC-40), so it is read in its own panel (<see cref="TutorialPanel"/>), and its text
+/// is the native app's documentation (<see cref="AppDocs"/>, UC-64). Copying it into the city as notes is still there,
+/// as the panel's own choice: what is missing is created, the notes that differ from the originals are replaced only
+/// after asking, and the mark .urbe/tutorial.json is written.
 /// </summary>
 public sealed partial class MainView
 {
     private static IReadOnlyList<CityNote>? _tutorialFiles;
     private static string? _tutorialVersion;
 
-    private static IReadOnlyList<CityNote> TutorialFiles => _tutorialFiles ??= TutorialNotes.Load();
+    private static IReadOnlyList<CityNote> TutorialFiles => _tutorialFiles ??= AppDocs.Load();
 
     /// <summary>C.version (build-tutorial.mjs).</summary>
     public static string TutorialVersion => _tutorialVersion ??= LegacyTutorial.Version(TutorialFiles.Select(f => (f.Path, f.Content)));

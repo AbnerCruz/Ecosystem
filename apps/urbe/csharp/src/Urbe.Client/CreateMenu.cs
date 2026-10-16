@@ -17,7 +17,7 @@ namespace Urbe.Client;
 /// </summary>
 public sealed partial class MainView
 {
-    private const string NoVaultMessage = "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar pastas, construções e importar. O Tutorial desta prévia é só leitura.";
+    private const string NoVaultMessage = "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar pastas, construções e importar.";
 
     private readonly Border _toolDock = new();
     private readonly TextBlock _toolText = new();

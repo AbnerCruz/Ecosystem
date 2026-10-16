@@ -305,7 +305,8 @@ public sealed partial class MainView : Grid
                 }
                 catch (Exception ex) { _loading.Text = "Vault indisponível: " + ex.Message; }
             }
-            await LoadAsync(TutorialNotes.Load());
+            // no folder yet: an empty world (DEC-0045, UC-40/UC-64: the Tutorial is never built in the city)
+            await LoadAsync([]);
         }
         finally { MarkReady(); }   // UC-56: a widget's quick note waits for the first city
     }
@@ -458,7 +459,7 @@ public sealed partial class MainView : Grid
         scheduler.MarkSync();
     }
 
-    /// <summary>The map save of the open vault (null for the Tutorial preview and read-only vaults).</summary>
+    /// <summary>The map save of the open vault (null with no folder open and for read-only vaults).</summary>
     public MapSaveScheduler? MapSave => _mapSave;
 
     /// <summary>The documents of the open vault (DocumentStore of the city), or null.</summary>
@@ -613,13 +614,13 @@ public sealed partial class MainView : Grid
     /// <summary>
     /// #v23Top: the brand pill (#v23VaultDot: green, warn while writing, danger on an error — statusSinc; the vault name;
     /// "· biome") and the three round buttons Buscar notas, Mapa da cidade and Configurações. Both 44px tall, surface at
-    /// 82 %, a faint line and shadow-1. The native-only notices (Tutorial preview, read-only vault, a refused map) follow
+    /// 82 %, a faint line and shadow-1. The native-only notices (no folder open, read-only vault, a refused map) follow
     /// the biome in small text; the normal state shows none, as the original.
     /// </summary>
     private Control TopBar()
     {
         var name = _brandName = new TextBlock { Text = "Urbe", FontWeight = FontWeight.SemiBold, FontSize = 14, Foreground = UrbeTheme.Brush(UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center };
-        _vaultName.Text = "Tutorial · prévia";
+        _vaultName.Text = "Nenhuma pasta aberta";
         _vaultName.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
         _vaultName.FontSize = 11;
         _vaultName.VerticalAlignment = VerticalAlignment.Center;
@@ -826,7 +827,7 @@ public sealed partial class MainView : Grid
         if (World.City is not { } city) return null;
         if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly)
         {
-            await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar notas. O Tutorial desta prévia é só leitura.");
+            await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar notas.");
             return null;
         }
         var typed = typedName ?? await Dialogs.PromptAsync(new PromptOptions("Nova nota", Label: "Nome", Placeholder: "Ex.: Ideias",
@@ -911,7 +912,7 @@ public sealed partial class MainView : Grid
         if (World.City is not { } city || city.Buildings.Find(b => b.IsNote && b.Path == path) is not { } house) return;
         if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly)
         {
-            await Dialogs.AlertAsync("Renomear", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para renomear notas. O Tutorial desta prévia é só leitura.");
+            await Dialogs.AlertAsync("Renomear", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para renomear notas.");
             return;
         }
         var typed = typedName ?? await Dialogs.PromptAsync(new PromptOptions("Renomear", Label: "Nome do arquivo",
@@ -966,7 +967,7 @@ public sealed partial class MainView : Grid
         if (World.City is not { } city || city.Buildings.Find(b => b.IsNote && b.Path == path) is not { } house) return false;
         if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly || _store is null)
         {
-            await Dialogs.AlertAsync("Excluir", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para excluir notas. O Tutorial desta prévia é só leitura.");
+            await Dialogs.AlertAsync("Excluir", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para excluir notas.");
             return false;
         }
         if (_trashReadOnly)
@@ -1140,7 +1141,7 @@ public sealed partial class MainView : Grid
         if (World.City is not { } city || _store is null) return;
         if (!VaultWritable)
         {
-            await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar notas. O Tutorial desta prévia é só leitura.");
+            await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar notas.");
             return;
         }
         folder ??= Explorer.CurrentFolder;
@@ -1753,30 +1754,72 @@ public sealed partial class MainView : Grid
     }
 
     private Avalonia.Controls.Platform.IInputPane? _inputPane;
+    private TopLevel? _keyboardTop;
+    // the top of the phone's keyboard in window coordinates, or NaN while it is closed
+    private double _keyboardAt = double.NaN;
+    private readonly DispatcherTimer _keyboardClosed = new() { Interval = TimeSpan.FromMilliseconds(220) };
 
     protected override void OnAttachedToVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        // the phone's keyboard: when the window is not resized for it, the app ends where the keyboard starts, so the
-        // editor's formatting bar (bottom row on a phone) and the text being typed stay above the keys (UC-48/UC-55)
-        _inputPane = TopLevel.GetTopLevel(this)?.InputPane;
+        // the phone's keyboard: the app ends where the keyboard starts, so the editor's formatting bar (bottom row on
+        // a phone) and the text being typed stay above the keys (UC-48/UC-55)
+        _keyboardTop = TopLevel.GetTopLevel(this);
+        _inputPane = _keyboardTop?.InputPane;
         if (_inputPane is not null) _inputPane.StateChanged += OnInputPane;
+        if (_keyboardTop is not null) _keyboardTop.PropertyChanged += OnTopLevelResized;
+        _keyboardClosed.Tick += OnKeyboardClosed;
     }
 
     protected override void OnDetachedFromVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
     {
         if (_inputPane is not null) _inputPane.StateChanged -= OnInputPane;
+        if (_keyboardTop is not null) _keyboardTop.PropertyChanged -= OnTopLevelResized;
+        _keyboardClosed.Tick -= OnKeyboardClosed;
+        _keyboardClosed.Stop();
         _inputPane = null;
+        _keyboardTop = null;
         base.OnDetachedFromVisualTree(e);
     }
 
     private void OnInputPane(object? sender, Avalonia.Controls.Platform.InputPaneStateEventArgs e)
     {
-        double covered = 0;
-        if (e.NewState == Avalonia.Controls.Platform.InputPaneState.Open && TopLevel.GetTopLevel(this) is { } top &&
-            this.TranslatePoint(new Point(0, Bounds.Height), top) is { } bottom)
-            covered = Math.Max(0, bottom.Y + Margin.Bottom - e.EndRect.Top);
-        Margin = new Thickness(0, 0, 0, covered);
+        if (e.NewState == Avalonia.Controls.Platform.InputPaneState.Open)
+        {
+            _keyboardClosed.Stop();
+            _keyboardAt = e.EndRect.Top;
+            FitKeyboard();
+        }
+        // moving from one block to the next closes and reopens the keyboard: wait a moment before giving the
+        // space back, so the screen does not jump down and up again (16/10/2026)
+        else if (!_keyboardClosed.IsEnabled) _keyboardClosed.Start();
+    }
+
+    private void OnKeyboardClosed(object? sender, EventArgs e)
+    {
+        _keyboardClosed.Stop();
+        _keyboardAt = double.NaN;
+        FitKeyboard();
+    }
+
+    private void OnTopLevelResized(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == TopLevel.ClientSizeProperty) FitKeyboard();
+    }
+
+    /// <summary>
+    /// The space the keyboard covers at the bottom of the window. A system that already shrinks the window for the
+    /// keyboard (adjustResize, or insets applied by the platform) leaves nothing covered: before, the app also
+    /// subtracted the keyboard's height and ended half a screen above it (16/10/2026).
+    /// </summary>
+    public static double KeyboardCover(double windowHeight, double keyboardTop) =>
+        double.IsNaN(keyboardTop) ? 0 : Math.Max(0, windowHeight - keyboardTop);
+
+    private void FitKeyboard()
+    {
+        var height = _keyboardTop?.ClientSize.Height ?? 0;
+        var covered = height <= 0 ? 0 : KeyboardCover(height, _keyboardAt);
+        if (Math.Abs(Margin.Bottom - covered) > .5) Margin = new Thickness(0, 0, 0, covered);
     }
 
     private int _occlusion;

@@ -67,6 +67,7 @@ public class ArchitectureTests
         "System.Runtime", "System.Collections", "System.Linq", "System.Text.Json", "System.Threading",
         "System.Threading.Channels", "System.Memory", "System.Collections.Concurrent", "System.Runtime.InteropServices",
         "System.Text.Encoding.Extensions", "System.Threading.Tasks", "System.Runtime.Extensions",
+        "System.Security.Cryptography", // pure invocation digest; no key store, provider or IO
     ];
 
     // Os nomes de outros Products e do Control Plane são montados por partes: o check de arquitetura do repositório varre este
