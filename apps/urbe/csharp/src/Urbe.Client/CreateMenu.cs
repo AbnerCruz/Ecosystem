@@ -22,6 +22,11 @@ public sealed partial class MainView
     private readonly Border _toolDock = new();
     private readonly TextBlock _toolText = new();
     private readonly Button _toolOk = new();
+    // UC-53: the decoration tool's own buttons (variation, turn/mirror, brush), shown only while placing new decorations
+    private readonly Button _toolVariant = new();
+    private readonly Button _toolTurn = new();
+    private readonly Button _toolBrush = new();
+    private readonly StackPanel _toolExtras = new() { Orientation = Orientation.Horizontal, Spacing = 8, IsVisible = false };
 
     /// <summary>Replaces the system picker (tests, other platforms): true = a whole folder, false = files.</summary>
     public Func<bool, Task<ImportSelection?>>? ImportPicker { get; set; }
@@ -52,8 +57,26 @@ public sealed partial class MainView
         _toolOk.Foreground = UrbeTheme.Brush(UrbeTheme.AccentInk);
         _toolOk.IsVisible = false;
         _toolOk.Click += async (_, _) => await ConfirmPlacementAsync();
+        foreach (var b in new[] { _toolVariant, _toolTurn, _toolBrush })
+        {
+            b.Height = 40;
+            b.Padding = new Thickness(10, 0);
+            b.CornerRadius = new CornerRadius(12);
+            b.Background = UrbeTheme.Brush(UrbeTheme.Surface3);
+            b.Foreground = UrbeTheme.Brush(UrbeTheme.Text);
+            b.IsVisible = false;
+        }
+        _toolVariant.Content = "Variação";
+        _toolBrush.Content = "Pincel";
+        ToolTip.SetTip(_toolVariant, "Próxima variação desta decoração");
+        ToolTip.SetTip(_toolBrush, "Arraste para colocar uma em cada lote do caminho");
+        _toolVariant.Click += (_, _) => CycleToolVariant();
+        _toolTurn.Click += (_, _) => TurnToolDecoration();
+        _toolBrush.Click += (_, _) => ToggleBrush();
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { _toolText, _toolOk, cancel } };
-        _toolDock.Child = row;
+        // a second row, so the dock still fits a phone's width
+        _toolExtras.Children.AddRange([_toolVariant, _toolTurn, _toolBrush]);
+        _toolDock.Child = new StackPanel { Spacing = 8, Children = { row, _toolExtras } };
         _toolDock.Background = UrbeTheme.Brush(UrbeTheme.Surface2);
         _toolDock.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2);
         _toolDock.BorderThickness = new Thickness(1);
@@ -79,6 +102,7 @@ public sealed partial class MainView
         _toolText.Text = text;
         _toolOk.IsVisible = okVisible;
         _toolOk.IsEnabled = false;
+        _toolVariant.IsVisible = _toolTurn.IsVisible = _toolBrush.IsVisible = _toolExtras.IsVisible = false;
         _toolDock.IsVisible = true;
     }
 
@@ -89,6 +113,7 @@ public sealed partial class MainView
         World.Tool = null;
         _toolDock.IsVisible = false;
         _toolOk.IsVisible = false;
+        _toolVariant.IsVisible = _toolTurn.IsVisible = _toolBrush.IsVisible = _toolExtras.IsVisible = false;
         _toolOk.Content = "Construir";
         _copySource = null;
         _placementExt = ".md";
@@ -332,16 +357,100 @@ public sealed partial class MainView
         BeginDecoration(kinds[i]);
     }
 
+    /// <summary>The look last chosen for each kind (UC-53): new decorations of that kind are placed with it.</summary>
+    private readonly Dictionary<string, (int Variant, bool Flipped, bool Turned)> _decorationLooks = new(StringComparer.Ordinal);
+
+    /// <summary>The look new decorations of <paramref name="kind"/> get (the last chosen one; the default at first).</summary>
+    public (int Variant, bool Flipped, bool Turned) DecorationLook(WorldDecorations.Kind kind) =>
+        _decorationLooks.TryGetValue(kind.Id, out var look) ? look : (0, false, false);
+
     /// <summary>The placement of a decoration of <paramref name="kind"/> (tests and the menu).</summary>
     public void BeginDecoration(WorldDecorations.Kind kind)
     {
+        var moving = _movingDecoration;
+        var look = moving is { } m ? (m.Variant, m.Flipped, m.Turned) : DecorationLook(kind);
         var tool = new DecorationTool(kind, (x, y) => CanDecorate(kind, x, y), c =>
         {
             _toolOk.IsEnabled = c is { } p && CanDecorate(kind, p.X, p.Y);
-            _toolText.Text = kind.Label + (c is { } q ? $" · {q.X},{q.Y}" : " · toque no mapa");
-        });
-        BeginTool(tool, kind.Label + " · toque no mapa", okVisible: true);
-        _toolOk.Content = _movingDecoration is null ? "Colocar" : "Mover";
+            _toolText.Text = DecorationToolLabel(kind) + (c is { } q ? $" · {q.X},{q.Y}" : " · toque no mapa");
+        })
+        { Variant = look.Item1, Flipped = look.Item2, Turned = look.Item3, Painted = stroke => _ = PaintDecorationsAsync(stroke) };
+        BeginTool(tool, DecorationToolLabel(kind) + " · toque no mapa", okVisible: true);
+        _toolOk.Content = moving is null ? "Colocar" : "Mover";
+        if (moving is null)
+        {
+            _toolVariant.IsVisible = kind.Variations.Count > 1;
+            _toolTurn.IsVisible = kind.Turns || kind.Flips;
+            _toolTurn.Content = kind.Turns ? "Girar" : "Espelhar";
+            _toolBrush.IsVisible = true;
+            _toolBrush.Content = "Pincel";
+            _toolExtras.IsVisible = true;
+        }
+        _toolText.Text = DecorationToolLabel(kind) + " · toque no mapa";
+    }
+
+    /// <summary>The kind's name with the variation about to be placed (when it has more than one).</summary>
+    private string DecorationToolLabel(WorldDecorations.Kind kind)
+    {
+        int v = World.Tool is DecorationTool t && t.Kind == kind ? t.Variant : DecorationLook(kind).Variant;
+        return kind.Variations.Count > 1 ? $"{kind.Label} ({kind.Variations[WorldDecorations.VariantOf(kind, v)].Label})" : kind.Label;
+    }
+
+    /// <summary>Variação in the dock: the next variation for the decorations about to be placed.</summary>
+    public void CycleToolVariant()
+    {
+        if (World.Tool is not DecorationTool tool || tool.Kind.Variations.Count < 2) return;
+        tool.Variant = (WorldDecorations.VariantOf(tool.Kind, tool.Variant) + 1) % tool.Kind.Variations.Count;
+        RememberLook(tool);
+        _toolText.Text = DecorationToolLabel(tool.Kind) + (tool.Brush ? " · arraste para pintar" : " · toque no mapa");
+        World.InvalidateVisual();
+    }
+
+    /// <summary>Girar (fence) or Espelhar (cart, sign…) in the dock, for the decorations about to be placed.</summary>
+    public void TurnToolDecoration()
+    {
+        if (World.Tool is not DecorationTool tool) return;
+        if (tool.Kind.Turns) tool.Turned = !tool.Turned;
+        else if (tool.Kind.Flips) tool.Flipped = !tool.Flipped;
+        else return;
+        RememberLook(tool);
+        World.InvalidateVisual();
+    }
+
+    /// <summary>Pincel in the dock: a drag places one per tile along the stroke; again, back to one tap each.</summary>
+    public void ToggleBrush()
+    {
+        if (World.Tool is not DecorationTool tool || _movingDecoration is not null) return;
+        tool.Brush = !tool.Brush;
+        tool.Clear();
+        _toolBrush.Content = tool.Brush ? "Toque" : "Pincel";
+        _toolOk.IsVisible = !tool.Brush;
+        _toolOk.IsEnabled = false;
+        _toolText.Text = DecorationToolLabel(tool.Kind) + (tool.Brush ? " · arraste para pintar" : " · toque no mapa");
+        World.InvalidateVisual();
+    }
+
+    private void RememberLook(DecorationTool tool) => _decorationLooks[tool.Kind.Id] = (tool.Variant, tool.Flipped, tool.Turned);
+
+    /// <summary>The brush's stroke: one decoration per free tile, with the single placement's rule, saved at once.</summary>
+    public async Task PaintDecorationsAsync(IReadOnlyList<(int X, int Y)> stroke)
+    {
+        if (World.Tool is not DecorationTool tool || stroke.Count == 0) return;
+        var kind = tool.Kind;
+        // a fence follows the stroke: turned when it runs more north-south than east-west
+        bool turned = kind.Turns && stroke.Count > 1
+            ? Math.Abs(stroke[^1].Y - stroke[0].Y) > Math.Abs(stroke[^1].X - stroke[0].X) : tool.Turned;
+        var prefs = Customization.World;
+        var next = prefs.Paint(kind, stroke, (x, y) => CanDecorate(kind, x, y), out var placed, tool.Variant, tool.Flipped, turned);
+        if (placed.Count == 0) { ShowLifeNotice("Nenhum lugar livre no caminho."); return; }
+        try { await Customization.SetWorldAsync(next); }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or InvalidDataException)
+        {
+            await Dialogs.AlertAsync("Não foi possível colocar as decorações", ex.Message);
+            return;
+        }
+        World.InvalidateVisual();
+        _toolText.Text = $"{kind.Label}: {placed.Count} colocad{(placed.Count == 1 ? "a" : "as")} · arraste para mais";
     }
 
     private async Task ConfirmDecorationAsync(DecorationTool tool)
@@ -349,7 +458,9 @@ public sealed partial class MainView
         if (tool.Candidate is not { } p || !CanDecorate(tool.Kind, p.X, p.Y)) { ShowLifeNotice("Posição inválida."); return; }
         var prefs = Customization.World;
         var moving = _movingDecoration;
-        var placed = moving is null ? new WorldDecoration(prefs.NextDecorationId(), tool.Kind.Id, p.X, p.Y) : moving with { X = p.X, Y = p.Y };
+        var placed = moving is null
+            ? new WorldDecoration(prefs.NextDecorationId(), tool.Kind.Id, p.X, p.Y, WorldDecorations.VariantOf(tool.Kind, tool.Variant), tool.Flipped && tool.Kind.Flips, tool.Turned && tool.Kind.Turns)
+            : moving with { X = p.X, Y = p.Y };
         var list = moving is null ? [.. prefs.Decorations, placed] : prefs.Decorations.Select(d => d.Id == moving.Id ? placed : d).ToList();
         try { await Customization.SetWorldAsync(prefs with { Decorations = list }); }
         catch (Exception ex) when (ex is IOException or InvalidOperationException or InvalidDataException)
@@ -378,15 +489,50 @@ public sealed partial class MainView
                 BeginDecoration(kind);
                 return Task.CompletedTask;
             }));
-            items.Add(new("Colocar mais desta", UrbeTheme.Icons.Plus, "A mesma decoração, um toque para cada.", Run: () =>
+            if (kind.Variations.Count > 1)
+                items.Add(new("Variação", UrbeTheme.Icons.Brush, kind.Variations[WorldDecorations.VariantOf(kind, decoration.Variant)].Label,
+                    Run: () => ChooseDecorationVariantAsync(decoration)));
+            if (kind.Turns)
+                items.Add(new("Girar", UrbeTheme.Icons.Restore, decoration.Turned ? "De norte a sul" : "De leste a oeste",
+                    Run: () => ChangeDecorationAsync(decoration with { Turned = !decoration.Turned })));
+            else if (kind.Flips)
+                items.Add(new("Espelhar", UrbeTheme.Icons.Restore, "Virada para o outro lado.",
+                    Run: () => ChangeDecorationAsync(decoration with { Flipped = !decoration.Flipped })));
+            items.Add(new("Colocar mais desta", UrbeTheme.Icons.Plus, "A mesma decoração, um toque para cada (ou o Pincel).", Run: () =>
             {
                 _movingDecoration = null;
+                _decorationLooks[kind.Id] = (decoration.Variant, decoration.Flipped, decoration.Turned);
                 BeginDecoration(kind);
                 return Task.CompletedTask;
             }));
             items.Add(new("Remover decoração", UrbeTheme.Icons.Trash, Danger: true, Run: () => RemoveDecorationAsync(decoration)));
         }
         return Dialogs.MenuAsync(kind.Label, items, kind.Hint);
+    }
+
+    /// <summary>Variação on a decoration: the list of its kind's variations; the one chosen is applied and kept for the next ones.</summary>
+    public async Task ChooseDecorationVariantAsync(WorldDecoration decoration)
+    {
+        if (WorldDecorations.Find(decoration.Kind) is not { } kind) return;
+        int current = WorldDecorations.VariantOf(kind, decoration.Variant);
+        var options = kind.Variations.Select((v, i) => new DialogItem(v.Label + (i == current ? "  ✓" : ""), UrbeTheme.Icons.Flower)).ToList();
+        if (await Dialogs.ChooseAsync("Variação · " + kind.Label, options) is not { } chosen || chosen == current) return;
+        await ChangeDecorationAsync(decoration with { Variant = chosen });
+    }
+
+    /// <summary>A decoration with a new look (same id and place), saved; its look becomes the one for new ones of its kind.</summary>
+    public async Task ChangeDecorationAsync(WorldDecoration changed)
+    {
+        var prefs = Customization.World;
+        if (prefs.Decorations.All(d => d.Id != changed.Id)) return;
+        _decorationLooks[changed.Kind] = (changed.Variant, changed.Flipped, changed.Turned);
+        try { await Customization.SetWorldAsync(prefs with { Decorations = prefs.Decorations.Select(d => d.Id == changed.Id ? changed : d).ToList() }); }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or InvalidDataException)
+        {
+            await Dialogs.AlertAsync("Não foi possível mudar a decoração", ex.Message);
+            return;
+        }
+        World.InvalidateVisual();
     }
 
     public async Task RemoveDecorationAsync(WorldDecoration decoration)

@@ -81,29 +81,88 @@ public sealed class PlacementTool(Func<int, int, bool> valid, Action<(int X, int
 
 /// <summary>
 /// Placing a decoration (DEC-0045, UC-41): its sprite follows the finger, half transparent, framed in green where it fits
-/// and in red where it does not (water, a building, a street or another decoration).
+/// and in red where it does not (water, a building, a street or another decoration). UC-53: it carries the look to place
+/// (variation, mirrored, turned) and has a brush mode, where a drag paints one per tile along the stroke and the host is
+/// told the stroke when the finger lifts.
 /// </summary>
 public sealed class DecorationTool(WorldDecorations.Kind kind, Func<int, int, bool> valid, Action<(int X, int Y)?> changed) : MapTool
 {
+    private readonly List<(int X, int Y)> _stroke = [];
+
     public WorldDecorations.Kind Kind { get; } = kind;
     public (int X, int Y)? Candidate { get; private set; }
+    public int Variant { get; set; }
+    public bool Flipped { get; set; }
+    public bool Turned { get; set; }
+
+    /// <summary>Brush mode: a drag paints along its stroke instead of moving one ghost.</summary>
+    public bool Brush { get; set; }
+    /// <summary>The finished stroke of the brush (the tiles the finger crossed, in order).</summary>
+    public Action<IReadOnlyList<(int X, int Y)>>? Painted { get; init; }
+    /// <summary>The tiles of the stroke being drawn.</summary>
+    public IReadOnlyList<(int X, int Y)> Stroke => _stroke;
 
     private void Set(int tx, int ty) { Candidate = (tx, ty); changed(Candidate); }
     /// <summary>No ghost until the next tap (after one was placed).</summary>
     public void Clear() => Candidate = null;
-    public override void Down(int tx, int ty) => Set(tx, ty);
-    public override void Move(int tx, int ty) => Set(tx, ty);
-    public override void Up(int tx, int ty) => Set(tx, ty);
+
+    private void Extend(int tx, int ty)
+    {
+        if (_stroke.Count == 0) { _stroke.Add((tx, ty)); return; }
+        var (lx, ly) = _stroke[^1];
+        if ((lx, ly) == (tx, ty)) return;
+        _stroke.AddRange(WorldDecorations.Line(lx, ly, tx, ty).Skip(1));
+    }
+
+    public override void Down(int tx, int ty)
+    {
+        if (!Brush) { Set(tx, ty); return; }
+        _stroke.Clear();
+        Candidate = null;
+        Extend(tx, ty);
+    }
+
+    public override void Move(int tx, int ty) { if (Brush) Extend(tx, ty); else Set(tx, ty); }
+
+    public override void Up(int tx, int ty)
+    {
+        if (!Brush) { Set(tx, ty); return; }
+        if (_stroke.Count == 0) return;
+        Extend(tx, ty);
+        var stroke = _stroke.ToList();
+        _stroke.Clear();
+        Painted?.Invoke(stroke);
+    }
+
+    public override void Cancel() => _stroke.Clear();
+
+    /// <summary>The stroke's tiles that will take a decoration: valid and not covered by an earlier one of the stroke.</summary>
+    public IEnumerable<(int X, int Y)> Planned()
+    {
+        var taken = new HashSet<(int, int)>();
+        foreach (var t in _stroke.Distinct())
+        {
+            var tiles = WorldDecorations.Footprint(Kind, t.X, t.Y).ToList();
+            if (!valid(t.X, t.Y) || tiles.Any(taken.Contains)) continue;
+            foreach (var c in tiles) taken.Add(c);
+            yield return t;
+        }
+    }
 
     public override void Render(DrawingContext context, WorldView view)
     {
-        if (Candidate is not { } c) return;
-        var rect = view.DecorationRect(Kind, c.X, c.Y);
-        if (view.DecorationArt(Kind.Id) is { } art)
-            using (context.PushOpacity(.7))
-            using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = Avalonia.Media.Imaging.BitmapInterpolationMode.None }))
-                context.DrawImage(art, new Rect(0, 0, art.Size.Width, art.Size.Height), rect);
-        context.DrawRectangle(null, new Pen(UrbeTheme.Brush(valid(c.X, c.Y) ? "#7ef29a" : "#ef766f"), 3), rect);
+        var art = view.DecorationArt(Kind.Id, Variant, Flipped, Turned);
+        void Ghost(int x, int y, bool ok)
+        {
+            var rect = view.DecorationRect(Kind, x, y);
+            if (art is not null)
+                using (context.PushOpacity(.7))
+                using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = Avalonia.Media.Imaging.BitmapInterpolationMode.None }))
+                    context.DrawImage(art, new Rect(0, 0, art.Size.Width, art.Size.Height), rect);
+            context.DrawRectangle(null, new Pen(UrbeTheme.Brush(ok ? "#7ef29a" : "#ef766f"), 3), rect);
+        }
+        if (Brush) { foreach (var (x, y) in Planned()) Ghost(x, y, true); return; }
+        if (Candidate is { } c) Ghost(c.X, c.Y, valid(c.X, c.Y));
     }
 }
 
