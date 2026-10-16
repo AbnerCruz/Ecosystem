@@ -78,6 +78,7 @@ public sealed partial class MainView : Grid
         // [[link]] to a note that does not exist yet: created next to the open note, in its neighbourhood (DEC-0045, UC-37)
         Editor.CreateLinked = name =>
         {
+            if (CityNotReady()) return Task.FromResult<CityNote?>(null);
             var city = World.City;
             var house = Editor.Current is { } open ? city?.Buildings.Find(b => b.IsNote && b.Path == open.Path) : null;
             var region = house?.RegionId is { } id ? city?.Regions.Find(r => r.Id == id) : null;
@@ -131,6 +132,7 @@ public sealed partial class MainView : Grid
         _stage.Children.Add(CityMap);
         _stage.Children.Add(Explorer);
         _stage.Children.Add(Editor);
+        _stage.Children.Add(WorldLoadingPill());   // UC-59: over the editor, never in the way
         FilePreview.Storage = _vault;
         FilePreview.ActionsRequested += path => _ = ShowAttachmentActionsAsync(path);
         FilePreview.PageActionsRequested += path => _ = ShowPageMenuAsync(path);
@@ -202,6 +204,9 @@ public sealed partial class MainView : Grid
     }
 
     public WorldView World { get; }
+
+    /// <summary>True while the city of the opened vault is being built (the editor may already be open).</summary>
+    public bool WorldLoading { get; private set; }
 
     /// <summary>quick-open.js / command-palette.js / keymap.js: Buscar notas, Comandos and their shortcuts.</summary>
     public SearchFeature Search { get; }
@@ -336,7 +341,8 @@ public sealed partial class MainView : Grid
                 try
                 {
                     var snapshot = await _vault.RestoreAsync();
-                    if (snapshot is not null) { await ShowVaultAsync(snapshot); return; }
+                    // UC-59: the last note opens as soon as its text is read; the city follows behind it
+                    if (snapshot is not null) { await ShowVaultAsync(snapshot, restoreSession: true); return; }
                 }
                 catch (Exception ex) { _loading.Text = "Vault indisponível: " + ex.Message; }
             }
@@ -360,7 +366,7 @@ public sealed partial class MainView : Grid
         }
     }
 
-    private async Task ShowVaultAsync(VaultSnapshot snapshot)
+    private async Task ShowVaultAsync(VaultSnapshot snapshot, bool restoreSession = false)
     {
         // an import interrupted (app closed, error) left its journal: the vault is put back as it was first
         if (snapshot.Files.ContainsKey(ImportTransaction.JournalPath) && _vault?.ImportStorage is { } importer)
@@ -387,33 +393,55 @@ public sealed partial class MainView : Grid
         LoadHistory(Text);
         Editor.SaveOnClose = !snapshot.IsReadOnly;
         var texts = snapshot.Documents.Where(d => d.Text is not null).ToArray();
-        // every other file of the vault, by name only, for the Explorer (DEC-0045, UC-38); hidden folders (.urbe) stay out
-        _attachments.Clear();
-        if (_vault is not null)
-        {
-            try { foreach (var path in await _vault.ListFilePathsAsync()) _attachments.Add(path); }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { /* the Explorer shows the notes */ }
-        }
         var notes = texts.Select(d => new CityNote(d.Path, d.Text!)).ToArray();
         var ids = texts.ToDictionary(d => d.Path, d => d.Id, StringComparer.Ordinal);
         var mapJson = ReconcileIdentity(snapshot, notes, ids);
+        // UC-59 (P10): the texts are known now, so the last note of this vault opens before the city is built and
+        // can be edited and saved (verified write) while the world loads behind it
+        _contents.Clear();
+        foreach (var n in notes) _contents[n.Path] = n.Content;
+        _loadingIds = ids;
+        _savedWhileLoading.Clear();
+        WorldLoading = true;
+        ShowWorldLoading(true);
+        if (restoreSession) RestoreSession();
         // 1.8.4 abrirCidade: the saved map (.urbe/mapa.json) is respected.
         // The terrain is always UrbeTerrain.createWorld('urbe'); mapa.mundo only names its version.
         DocumentStore? store = null;
         LegacyCity? opened = null;
-        await LoadAsync(notes, city =>
+        try
         {
-            store = city.Open(notes.Select(n => (n.Path, n.Content)).ToList(), mapJson, ids,
-                DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-            opened = city;
-            return true;
-        });
+            // every other file of the vault, by name only, for the Explorer (DEC-0045, UC-38); hidden folders (.urbe) stay out
+            _attachments.Clear();
+            if (_vault is not null)
+            {
+                try { foreach (var path in await _vault.ListFilePathsAsync()) _attachments.Add(path); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { /* the Explorer shows the notes */ }
+            }
+            await LoadAsync(notes, city =>
+            {
+                store = city.Open(notes.Select(n => (n.Path, n.Content)).ToList(), mapJson, ids,
+                    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+                opened = city;
+                return true;
+            }, keepContents: true);
+        }
+        finally
+        {
+            WorldLoading = false;
+            _loadingIds = null;
+            ShowWorldLoading(false);
+        }
         _vaultName.Text = snapshot.IsReadOnly ? "Vault: somente leitura" : "";
         // v23Atualizar: the brand is Disco.cidade (the vault folder's name), 'Urbe' without one
         _brandName.Text = _vault?.VaultName is { Length: > 0 } folder ? folder : "Urbe";
         if (_brandPill is not null) ToolTip.SetTip(_brandPill, "Salvo na pasta escolhida no dispositivo");
         if (store is null || opened is null || !ReferenceEquals(World.City, opened)) return;
         _store = store;
+        // what was saved while the city was being built reaches its house and document now
+        foreach (var (path, content) in _savedWhileLoading) RecordSaved(path, content);
+        _savedWhileLoading.Clear();
+        if (Editor.IsVisible) Editor.RefreshProperties();   // the house exists now: its properties show
         VaultNotices(snapshot);
         TipsLoaded();
         if (opened.MigratedFromWorld is { } from) await AdaptedToNewWorldAsync(snapshot, opened, from);
@@ -556,19 +584,32 @@ public sealed partial class MainView : Grid
             throw new InvalidOperationException("Vault em modo somente leitura.");
         await _vault.SaveExistingTextFileAsync(note.Path, note.Content);
         _contents[note.Path] = note.Content;
-        // 1.8.4 editor input: b.modified=nowDate(); session.record(..., {modified:b.modified}) →
-        // document:updated → persistence schedule() + marcarSinc()
-        if (_store?.Get(note.Path) is { } doc && doc.Content != note.Content && World.City is { } city)
-        {
-            long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            if (city.Buildings.Find(b => b.IsNote && (b.DocumentId == doc.Id || (b.DocumentId is null && b.Path == doc.Path))) is { } house) city.NoteEdited(house, now);
-            _store.Upsert(new DocumentInput { Id = doc.Id, Path = doc.Path, Title = doc.Title, Content = note.Content,
-                Created = doc.Created, Modified = LegacyCity.NowDate(now) }, "editor.input");
-            _mapSave?.Schedule();
-            _mapSave?.MarkSync();
-        }
+        // the file is written; while the city is still being built its house and document catch up when it is ready
+        if (WorldLoading) _savedWhileLoading[note.Path] = note.Content;
+        else RecordSaved(note.Path, note.Content);
         await SaveHistoryAsync();
         NoteSaved?.Invoke(note.Path);   // plugins: "nota:salva"
+    }
+
+    /// <summary>Notes saved before the city of the vault was ready (UC-59): path → text written.</summary>
+    private readonly Dictionary<string, string> _savedWhileLoading = new(StringComparer.Ordinal);
+
+    /// <summary>The document ids of the vault being opened, for the history before the city exists.</summary>
+    private Dictionary<string, string>? _loadingIds;
+
+    /// <summary>
+    /// 1.8.4 editor input: b.modified=nowDate(); session.record(..., {modified:b.modified}) →
+    /// document:updated → persistence schedule() + marcarSinc()
+    /// </summary>
+    private void RecordSaved(string path, string content)
+    {
+        if (_store?.Get(path) is not { } doc || doc.Content == content || World.City is not { } city) return;
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        if (city.Buildings.Find(b => b.IsNote && (b.DocumentId == doc.Id || (b.DocumentId is null && b.Path == doc.Path))) is { } house) city.NoteEdited(house, now);
+        _store.Upsert(new DocumentInput { Id = doc.Id, Path = doc.Path, Title = doc.Title, Content = content,
+            Created = doc.Created, Modified = LegacyCity.NowDate(now) }, "editor.input");
+        _mapSave?.Schedule();
+        _mapSave?.MarkSync();
     }
 
     /// <summary>
@@ -589,10 +630,13 @@ public sealed partial class MainView : Grid
     /// framing: urbeEnquadrarNotas runs on workspace:loaded, before the houses exist); otherwise
     /// all houses are framed.
     /// </summary>
-    private async Task LoadAsync(IReadOnlyList<CityNote> files, Func<LegacyCity, bool> open, string seed = "urbe")
+    private async Task LoadAsync(IReadOnlyList<CityNote> files, Func<LegacyCity, bool> open, string seed = "urbe", bool keepContents = false)
     {
-        _contents.Clear();
-        foreach (var f in files) _contents[f.Path] = f.Content;
+        if (!keepContents)
+        {
+            _contents.Clear();
+            foreach (var f in files) _contents[f.Path] = f.Content;
+        }
         _today = DateTime.Now.ToString("yyyy-MM-dd");
         try
         {
@@ -606,7 +650,8 @@ public sealed partial class MainView : Grid
             });
             World.Load(world, city);
             CityMap.IsVisible = false;
-            Explorer.SetNotes(files, city.RegionPaths().Values);
+            // the texts as they are now: a note saved while the city was built keeps what was written
+            Explorer.SetNotes(keepContents ? _contents.Select(n => new CityNote(n.Key, n.Value)).ToList() : files, city.RegionPaths().Values);
             if (ownCamera) World.ShowCityCamera();
             else World.FitNotes();
             // workspace:loaded → customize recarregar(); it writes only with a writable vault folder
@@ -917,9 +962,10 @@ public sealed partial class MainView : Grid
         var title = house is not null ? LegacyCity.FullNoteName(house) : System.IO.Path.GetFileName(note.Path);
         return Dialogs.MenuAsync(title,
         [
-            new DialogItem("Renomear", UrbeTheme.Icons.Pencil, Run: () => RenameNoteAsync(note.Path)),
+            new DialogItem("Renomear", UrbeTheme.Icons.Pencil, Run: () => CityNotReady() ? Task.CompletedTask : RenameNoteAsync(note.Path)),
             new DialogItem("Mover para outra pasta", UrbeTheme.Icons.Folder, "A casa muda de bairro na cidade.", Run: async () =>
             {
+                if (CityNotReady()) return;
                 // UC-54: move from inside the editor (the note stays open at its new path)
                 if (await ChooseFolderAsync() is { } folder) await MoveNotesToAsync([note.Path], folder);
             }),
@@ -929,7 +975,7 @@ public sealed partial class MainView : Grid
             // DEC-0045, UC-39: the selection (or the whole note) stays at the top while writing
             new DialogItem("Fixar em painel", UrbeTheme.Icons.Pin, "A seleção, ou a nota inteira, fica no topo enquanto você escreve.",
                 Run: () => { editor.PinSelectionOrNote(); return Task.CompletedTask; }),
-            new DialogItem("Mover para a lixeira", UrbeTheme.Icons.Trash, Danger: true, Run: () => DeleteNoteAsync(note.Path))
+            new DialogItem("Mover para a lixeira", UrbeTheme.Icons.Trash, Danger: true, Run: () => CityNotReady() ? Task.CompletedTask : DeleteNoteAsync(note.Path))
         ]);
     }
 

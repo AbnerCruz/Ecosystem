@@ -27,7 +27,10 @@ public sealed partial class MainView
     /// <summary>legacy.documents syncBuilding('editor.input') → document:updated → history.capture, on every change.</summary>
     private void CaptureEditorHistory()
     {
-        if (Editor.Current is not { } note || _store?.Get(note.Path) is not { } doc) return;
+        if (Editor.Current is not { } note) return;
+        // while the city is built (UC-59) the note's id is already known from the vault
+        var id = _store?.Get(note.Path)?.Id ?? (WorldLoading ? _loadingIds?.GetValueOrDefault(note.Path) : null);
+        if (id is null) return;
         if (_historyNote != note.Path)
         {
             _historyNote = note.Path;   // the note just opened: its text is the one to keep at its first change
@@ -36,7 +39,7 @@ public sealed partial class MainView
         }
         var before = _historyText ?? "";
         _historyText = note.Content;
-        if (!_historyReadOnly && _history.Capture(doc.Id, doc.Path, before, note.Content, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()))
+        if (!_historyReadOnly && _history.Capture(id, note.Path, before, note.Content, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()))
             _historyDirty = true;
     }
 
