@@ -14,7 +14,7 @@
   "branch": "docs/ai-unification-direction",
   "base_commit": "3651207e7cd6a4d66cd977c8a306d9e7bbf5e484",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/605",
   "files_changed": [
     "AGENTS.md",
     "ROADMAP.md",
@@ -45,6 +45,18 @@
       "check": "Preservação do Urbe Core",
       "result": "passed",
       "evidence": "135/135 testes Assistant e UserAgentsFile no código main, sem falhas/skips; Product não alterado."
+    },
+    {
+      "kind": "automated",
+      "check": "Urbe UI Assistant e oráculos legados",
+      "result": "passed",
+      "evidence": "2/2 testes UI de edição/aprovação/desfazer e plugin no editor; cinco oráculos (agent/providers/tools/customize/pages) regenerados e idênticos às fixtures por comparação JSON."
+    },
+    {
+      "kind": "automated",
+      "check": "Simulação do integrador",
+      "result": "passed",
+      "evidence": "Todos os cenários passaram localmente, incluindo corrida de main/head, gates críticos e recusa de autorização indevida."
     }
   ],
   "known_issues": [

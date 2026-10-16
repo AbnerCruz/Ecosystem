@@ -173,7 +173,7 @@ invalidação por mutação reconstruídas do event log. Testes de replay, falha
 argumentos, isolamento, recusa/aprovação e logs antigos. 268/268 testes Runtime,
 11/11 ProjectStore, 135/135 testes do assistente/AGENTS do Urbe Core e piloto P6-4 passaram localmente. 22 checks de consistência
 passaram, com ROADMAP × Issues não verificado localmente por falta do snapshot.
-CI/integração são registrados pelo PR/handoff, não presumidos nesta auditoria.
+Os dois testes de interface Assistant (edição/aprovação/desfazer e plugin no editor) também passaram; os cinco oráculos agent/providers/tools/customize/pages foram regenerados e conferem semanticamente com as fixtures. A simulação do integrador passou em todos os cenários. CI/integração são registrados pelo PR/handoff, não presumidos nesta auditoria.
 
 Não houve chamada paga nem validação DEVICE. O Urbe não foi modificado. Não há
 segundo consumidor do Runtime em produção, nem equivalência completa ou missão
