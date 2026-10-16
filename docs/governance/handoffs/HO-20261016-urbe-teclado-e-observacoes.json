@@ -1,0 +1,37 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261016-urbe-teclado-e-observacoes",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-16T10:58:25Z",
+  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "task_id": "UC-57",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "3651207e",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/KeyboardFitTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261016-urbe-teclado-e-observacoes.json"
+  ],
+  "work_completed": [
+    "UC-57: com o teclado aberto o app terminava meia tela acima dele (captura do proprietário, beta.13): a margem usava a altura antiga da vista e somava o teclado a uma janela que o sistema já tinha encolhido. Agora a margem é a parte da janela atual abaixo do topo do teclado (MainView.KeyboardCover), recalculada quando a janela muda de tamanho; fechar e reabrir o teclado ao trocar de bloco espera 220 ms antes de devolver o espaço.",
+    "Registradas no ROADMAP C# as observações da beta.13 e da beta 2.0 (UC-57 a UC-68): editor no celular, primeira abertura guiada, abrir na hora, desempenho em qualquer vault, fluxo, páginas, IA, tutorial, automações, widget, reações e personalização dos moradores."
+  ],
+  "verification": [
+    { "kind": "automated", "check": "KeyboardFitTests e testes de editor, Visual e dock do cliente", "result": "passed", "evidence": "36/36 no cliente headless." },
+    { "kind": "human", "check": "No celular: abrir o teclado no editor e em outras abas — o app termina logo acima do teclado e a tela não pula ao trocar de bloco", "result": "pending", "critical": true, "object": "apps/urbe/csharp/src/Urbe.Client/MainView.cs" }
+  ],
+  "known_issues": ["Manter o bloco tocado no mesmo lugar ao trocar de bloco ainda não foi tratado."],
+  "blockers": [],
+  "next_actions": ["UC-59 (abrir na hora) e UC-57 restante; depois UC-64 e UC-65."],
+  "decisions_required": [],
+  "normative_sources": ["AGENTS.md", "apps/urbe/docs/csharp/ROADMAP.md", "docs/governance/addenda/ADD-0024-urbe-nativo-desempenho-primeiro-e-release.md"],
+  "invariants": [ { "id": "NN-009", "evidence": "As observações do proprietário foram persistidas no ROADMAP antes de sustentar implementação." }, { "id": "NN-017", "evidence": "Validação no aparelho registrada como pendente." } ],
+  "reuse_assessment": [ { "subject": "keyboard-fit", "status": "product-specific", "rationale": "Layout do Urbe." } ],
+  "criticality": { "declared": "routine", "reason": "Correção de layout e registro de observações no roadmap." }
+}
