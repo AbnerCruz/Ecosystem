@@ -8,6 +8,18 @@ O proprietário (16/10/2026): *"o ponto central das observações: EXPERIÊNCIA 
 
 O Urbe tem dois pilares: **desempenho** (ADD-0024) e **fluxo de produção** (observações da beta.13). Experiência de usuário é o que une os dois. Funcionalidade que existe mas não é agradável, imediata e óbvia **não está pronta**.
 
+## 0. Calibração (proprietário, 16/10/2026)
+
+Não há um app de referência. A escala dada pelo proprietário foi: *"o Notion tá frio, o Obsidian tá morno"*. O Urbe precisa estar **quente**.
+
+- **Frio (Notion):** correto e organizado, mas impessoal. Blocos e telas genéricos, sem personalidade e sem vida.
+- **Morno (Obsidian):** perto do que importa (local-first, poder e controle sobre as notas), mas ainda uma ferramenta seca, que pede configuração e esforço.
+- **Quente (Urbe):** o poder do Obsidian com alma.
+  - As notas moram numa cidade viva, e o app reage a quem escreve com movimento, som e tato discretos.
+  - Os pequenos momentos dão prazer: criar uma nota, ver a casa surgir, salvar, voltar ao trabalho.
+  - Tudo responde na hora e nada é burocrático.
+  - O calor vem do cuidado em cada detalhe, não de enfeite que atrapalha (P3, P11).
+
 ## 1. Princípios
 
 Cada princípio vem com a base (tecnologia ou psicologia) e com a forma de medir.
