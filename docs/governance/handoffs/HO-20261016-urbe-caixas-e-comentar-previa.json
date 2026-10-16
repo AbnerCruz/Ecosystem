@@ -1,0 +1,33 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261016-urbe-caixas-e-comentar-previa",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-16T09:50:28Z",
+  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "task_id": "UC-44",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "036ff90b",
+  "commit": null,
+  "pr": null,
+  "files_changed": ["apps/urbe/csharp/src/Urbe.Android/AndroidContentViewers.cs", "apps/urbe/csharp/src/Urbe.Client/ContentViewers.cs", "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs", "apps/urbe/csharp/src/Urbe.Client/EditorPopups.cs", "apps/urbe/csharp/src/Urbe.Client/MainView.Studio.cs", "apps/urbe/csharp/src/Urbe.Client/MainView.cs", "apps/urbe/csharp/src/Urbe.Client/PageStudioView.cs", "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs", "apps/urbe/csharp/src/Urbe.Core/LegacyEditorTools.cs", "apps/urbe/csharp/src/Urbe.Core/NoteContainers.cs", "apps/urbe/csharp/src/Urbe.Core/NoteTemplateEngine.cs", "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Boxes.cs", "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Comments.cs", "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteTemplatesUiTests.cs", "apps/urbe/csharp/tests/Urbe.Client.Tests/PageCommentsUiTests.cs", "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyEditorFindOracleTests.cs", "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteContainersTests.cs", "apps/urbe/csharp/tests/Urbe.Core.Tests/PageBoxMarksTests.cs", "apps/urbe/csharp/tests/Urbe.Core.Tests/PageCommentMarksTests.cs", "apps/urbe/docs/csharp/ROADMAP.md", "docs/governance/handoffs/HO-20261016-urbe-caixas-e-comentar-previa.json"],
+  "work_completed": [
+    "UC-44 (segunda fatia): Caixa no menu / e na barra do Fonte; campos {{campo}} dos modelos perguntados ao criar; caixas :::tipo nas páginas e exportação (atrás de UrbeMarks).",
+    "UC-49: Comentar no 💬 da prévia do estúdio grava o comentário no campo da página ou na nota mostrada.",
+    "Correção: Bloco de código do menu / do Visual só esvaziava o bloco; agora cria o bloco de código."
+  ],
+  "verification": [
+    { "kind": "automated", "check": "Core completo e testes do cliente de modelos, caixas, Visual, Fonte, comentários de páginas, estúdio e editor", "result": "passed", "evidence": "844/844 Core; 26/26 dos filtros do cliente no estado combinado." },
+    { "kind": "human", "check": "No celular: Caixa pelo /, modelos com campos e Comentar na prévia de páginas", "result": "pending", "critical": false, "object": "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Boxes.cs" }
+  ],
+  "known_issues": ["Comentar uma palavra sem 💬 a partir da seleção na prévia ainda não existe."],
+  "blockers": [],
+  "next_actions": ["Seguir o roadmap C# (UC-55 restante, UC-56 no Windows, UC-47 por último)."],
+  "decisions_required": [],
+  "normative_sources": ["AGENTS.md", "apps/urbe/docs/csharp/ROADMAP.md", "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md"],
+  "invariants": [ { "id": "NN-018", "evidence": "Testes automatizados novos; validação no aparelho pendente e visível." } ],
+  "reuse_assessment": [ { "subject": "note-containers", "status": "product-specific", "rationale": "Sintaxe .md do Urbe." } ],
+  "criticality": { "declared": "routine", "reason": "Recursos autorizados no roadmap; sem zonas críticas." }
+}
