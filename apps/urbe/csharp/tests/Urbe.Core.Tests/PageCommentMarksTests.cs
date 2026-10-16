@@ -46,6 +46,29 @@ public sealed class PageCommentMarksTests
     }
 
     [Fact]
+    public void Preview_MarkerKnowsWhereItsTextLives_AndTheGroupThere()
+    {
+        var html = new PageEngine(2026) { UrbeMarks = true }.Render(Page("Um{\"a\"} dois{\"b\"}{\"c\"}."), Vault, preview: true);
+        Assert.Contains("data-field=\"sections.0.props.markdown\" data-n=\"0\">💬</sup>", html);
+        Assert.Contains("data-field=\"sections.0.props.markdown\" data-n=\"1\">💬2</sup>", html);
+        Assert.Contains("data-note=\"Nota.md\" data-n=\"0\">💬</sup>", html);
+        // the popover's button posts {urbePage:"comment"} to the studio
+        Assert.Contains("'Comentar'", html);
+        Assert.Contains("urbePage:'comment'", html);
+    }
+
+    [Fact]
+    public void Add_WritesTheCommentAfterTheGroupsLast()
+    {
+        const string text = "Um{\"a\"} dois{\"b\"}{\"c\"} três.";
+        Assert.Equal("Um{\"a\"} dois{\"b\"}{\"c\"}{\"novo \\\"x\\\"\"} três.", PageComments.Add(text, 1, "  novo \"x\" "));
+        Assert.Equal("Um{\"a\"}{\"d\"} dois{\"b\"}{\"c\"} três.", PageComments.Add(text, 0, "d"));
+        Assert.Null(PageComments.Add(text, 2, "d"));
+        Assert.Null(PageComments.Add(text, 0, "   "));
+        Assert.Equal(["b", "c"], PageComments.At(text, 1)!.Comments);
+    }
+
+    [Fact]
     public void Export_LeavesTheCommentsOut()
     {
         var html = new PageEngine(2026) { UrbeMarks = true }.Render(Page("Uma palavra{\"primeiro\"} aqui. Texto{ia:\"modelo\"}"), Vault);

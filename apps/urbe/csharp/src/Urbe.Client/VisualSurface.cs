@@ -632,6 +632,8 @@ public sealed class VisualSurface : StackPanel
         Apply(LegacyVisualEdit.Slash(act));
         if (act == "link") { _box.Text = ""; Run("link"); }
         if (act == "box") Run("box");
+        // Slash("codeblock") has no edit of its own: the block becomes an empty fenced block
+        if (act == "codeblock") Run("codeblock");
     }
 
     private void InsertRule()
