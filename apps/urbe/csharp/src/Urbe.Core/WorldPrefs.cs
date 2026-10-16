@@ -9,7 +9,8 @@ namespace Urbe.Core;
 /// drop anything else the next time it saved. It holds how the neighbourhoods are drawn and the decorations placed in the
 /// city, and the look chosen for a building (by the path of its file, since the 1.8.4's building ids are made anew each
 /// time the city opens).
-/// <code>{ "versao": 1, "muralhas": true, "contornos": "suave", "decoracoes": [ { "id": "d1", "tipo": "poco", "x": 4, "y": 7 } ],
+/// <code>{ "versao": 1, "muralhas": true, "contornos": "suave", "decoracoes": [ { "id": "d1", "tipo": "poco", "x": 4, "y": 7 },
+///   { "id": "d2", "tipo": "cerca", "x": 5, "y": 7, "variacao": 1, "girada": true } ],
 ///   "construcoes": { "Projetos/Ideias.md": { "tipo": "tower", "variante": 2, "flores": true } } }</code>
 /// </summary>
 public sealed record WorldPrefs(bool Walls = true, string Outlines = WorldPrefs.Soft)
@@ -47,6 +48,27 @@ public sealed record WorldPrefs(bool Walls = true, string Outlines = WorldPrefs.
     public WorldDecoration? DecorationAt(int x, int y) => Decorations.LastOrDefault(d =>
         WorldDecorations.Find(d.Kind) is { } k && x >= d.X && x < d.X + k.W && y >= d.Y && y < d.Y + k.H);
 
+    /// <summary>
+    /// The brush (UC-53): one decoration of <paramref name="kind"/> per tile of <paramref name="path"/>, in order, with the
+    /// same rule as a single placement (<paramref name="fits"/>) and skipping tiles already taken, also by the ones just
+    /// painted (a two-tile kind takes every other tile). <paramref name="placed"/> gets the new ones.
+    /// </summary>
+    public WorldPrefs Paint(WorldDecorations.Kind kind, IEnumerable<(int X, int Y)> path, Func<int, int, bool> fits,
+        out IReadOnlyList<WorldDecoration> placed, int variant = 0, bool flipped = false, bool turned = false)
+    {
+        var current = this;
+        var added = new List<WorldDecoration>();
+        foreach (var (x, y) in path.Distinct())
+        {
+            if (!fits(x, y) || WorldDecorations.Footprint(kind, x, y).Any(t => current.DecorationAt(t.X, t.Y) is not null)) continue;
+            var d = new WorldDecoration(current.NextDecorationId(), kind.Id, x, y, WorldDecorations.VariantOf(kind, variant), flipped && kind.Flips, turned && kind.Turns);
+            added.Add(d);
+            current = current with { Decorations = [.. current.Decorations, d] };
+        }
+        placed = added;
+        return current;
+    }
+
     /// <summary>A new id for a decoration, not used by any other.</summary>
     public string NextDecorationId()
     {
@@ -83,7 +105,14 @@ public sealed record WorldPrefs(bool Walls = true, string Outlines = WorldPrefs.
                         && d["tipo"] is JsonValue t && t.TryGetValue<string>(out var kind) && WorldDecorations.Find(kind) is not null
                         && d["x"] is JsonValue jx && jx.TryGetValue<int>(out var x) && d["y"] is JsonValue jy && jy.TryGetValue<int>(out var y)
                         && decorations.TrueForAll(e => e.Id != dId))
-                        decorations.Add(new WorldDecoration(dId, kind, x, y));
+                    {
+                        // UC-53: optional look; missing or unknown = the default
+                        var k = WorldDecorations.Find(kind)!;
+                        int variant = d["variacao"] is JsonValue jv && jv.TryGetValue<int>(out var n) ? WorldDecorations.VariantOf(k, n) : 0;
+                        bool flipped = k.Flips && d["espelhada"] is JsonValue jf && jf.TryGetValue<bool>(out var f) && f;
+                        bool turned = k.Turns && d["girada"] is JsonValue jt && jt.TryGetValue<bool>(out var g) && g;
+                        decorations.Add(new WorldDecoration(dId, kind, x, y, variant, flipped, turned));
+                    }
             var looks = new Dictionary<string, BuildingLook>(StringComparer.Ordinal);
             if (o["construcoes"] is JsonObject buildings)
                 foreach (var (path, value) in buildings)
@@ -105,7 +134,15 @@ public sealed record WorldPrefs(bool Walls = true, string Outlines = WorldPrefs.
     {
         var o = new JsonObject { ["versao"] = Version, ["muralhas"] = Walls, ["contornos"] = Outlines };
         if (Decorations.Count > 0)
-            o["decoracoes"] = new JsonArray(Decorations.Select(d => (JsonNode)new JsonObject { ["id"] = d.Id, ["tipo"] = d.Kind, ["x"] = d.X, ["y"] = d.Y }).ToArray());
+            o["decoracoes"] = new JsonArray(Decorations.Select(d =>
+            {
+                var e = new JsonObject { ["id"] = d.Id, ["tipo"] = d.Kind, ["x"] = d.X, ["y"] = d.Y };
+                // only what differs from the default, so files without a look stay as they were
+                if (d.Variant != 0) e["variacao"] = d.Variant;
+                if (d.Flipped) e["espelhada"] = true;
+                if (d.Turned) e["girada"] = true;
+                return (JsonNode)e;
+            }).ToArray());
         if (Looks.Count > 0)
         {
             var buildings = new JsonObject();

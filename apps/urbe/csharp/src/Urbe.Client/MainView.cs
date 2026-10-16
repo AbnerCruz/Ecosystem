@@ -844,7 +844,7 @@ public sealed partial class MainView : Grid
             // Desenhar pasta); the city builds, draws, decorates and imports. Nova nota and Nova pasta stay in the Explorer.
             new DialogItem("Construção", UrbeTheme.Icons.House, "Um arquivo onde você tocar no mapa (.md, .html, .js…)", Run: BeginBuildingAsync),
             new DialogItem("Região", UrbeTheme.Icons.Region, "Uma pasta desenhada no mapa", Run: BeginDrawRegionAsync),
-            new DialogItem("Decoração", UrbeTheme.Icons.Flower, "Poço, roça, lenha, banco, fonte, canteiro", Run: BeginDecorationAsync),
+            new DialogItem("Decoração", UrbeTheme.Icons.Flower, "Poço, roça, cerca, lampião, árvore… com variações e pincel", Run: BeginDecorationAsync),
             new DialogItem("Importar", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync()),
             .. QuickVoiceItem() is { } voice ? [voice] : Array.Empty<DialogItem>()
         ]);
