@@ -581,6 +581,7 @@ public sealed class VisualSurface : StackPanel
             case "rule": InsertRule(); break;
             case "pin": if (b > a) PinRequested?.Invoke(text[a..b]); break;
             case "codeblock": Apply(LegacyVisualEdit.CodeBlock(text, _box.CaretIndex)); break;
+            case "box": _ = BoxAsync(text, a, b); break;
             case "comment":
                 // from the "/" menu the typed "/query" goes first
                 if (LegacyEditorTools.SlashQuery(text) is not null) { text = ""; a = b = 0; }
@@ -588,6 +589,23 @@ public sealed class VisualSurface : StackPanel
                 break;
         }
         if (act is "h2" or "quote" or "link" or "wiki" or "pin") _bubble.IsVisible = false;
+    }
+
+    /// <summary>The host's question for a new box (UC-44): its type and optional title, or null to cancel.</summary>
+    public Func<Task<(string Type, string Title)?>>? AskBox { get; set; }
+
+    // Caixa: `:::tipo título` … `:::` around the selection of the block, or empty with the caret inside
+    private async Task BoxAsync(string text, int a, int b)
+    {
+        if (AskBox is null) return;
+        if (LegacyEditorTools.SlashQuery(text) is not null) { text = ""; a = b = 0; }
+        (string Type, string Title)? r;
+        _prompting = true;
+        try { r = await AskBox(); }
+        finally { _prompting = false; }
+        if (_box is null) return;
+        if (r is { } box) Apply(NoteContainers.Wrap(text, a, b, box.Type, box.Title));
+        _box.Focus();
     }
 
     private async Task LinkAsync(string text, int a, int b)
@@ -613,6 +631,9 @@ public sealed class VisualSurface : StackPanel
         if (act is "formula" or "formulaBlock") { if (AskFormula is { } ask) _ = FormulaAsync((t, b) => ask(t, b, false), act == "formulaBlock"); return; }
         Apply(LegacyVisualEdit.Slash(act));
         if (act == "link") { _box.Text = ""; Run("link"); }
+        if (act == "box") Run("box");
+        // Slash("codeblock") has no edit of its own: the block becomes an empty fenced block
+        if (act == "codeblock") Run("codeblock");
     }
 
     private void InsertRule()

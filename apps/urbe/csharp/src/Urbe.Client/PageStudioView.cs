@@ -21,6 +21,8 @@ public interface IPageStudioHost
     Task<Control?> PreviewAsync(string path, byte[] html, Action<string>? messages = null);
     /// <summary>Writes the page file (it exists) and verifies it.</summary>
     Task SaveAsync(string path, string text);
+    /// <summary>Writes a note the page shows (it exists) and verifies it, like the editor (a comment written in the preview).</summary>
+    Task SaveNoteAsync(string path, string text);
     /// <summary>The page file renamed (the title changed); returns the new path.</summary>
     Task<string> RenameAsync(string path, string newPath);
     bool Exists(string path);
@@ -510,12 +512,50 @@ public sealed partial class PageStudioView : Border
             RenderPanels();
             return;
         }
+        if (kind == "comment")
+        {
+            _ = CommentAsync(m!["field"] is JsonValue fv && fv.TryGetValue<string>(out var f) ? f : null,
+                m["note"] is JsonValue nov && nov.TryGetValue<string>(out var note) ? note : null,
+                m["n"] is JsonValue cv && cv.TryGetValue<int>(out var n) ? n : -1);
+            return;
+        }
         if (kind != "text" || nid is null || _st.Section(id) is not { } sec || (string?)sec["type"] != "free") return;
         if (PageEngine.FreeFind(sec["props"]?["root"] as JsonObject, nid) is not { } hit || hit.Node["content"] is not JsonObject content || content["text"] is null) return;
         var text = System.Text.RegularExpressions.Regex.Replace(S(m!["text"]).Replace('\u00a0', ' '), "\n{3,}", "\n\n").Trim();
         if ((string?)hit.Node["type"] == "heading") text = System.Text.RegularExpressions.Regex.Replace(text, @"\s*\n\s*", " ");
         _st.Break();
         if (_st.Set(PageStudio.FreePath(id, nid, "content", "text"), JsonValue.Create(text))) Changed();
+    }
+
+    /// <summary>
+    /// "Comentar" in a 💬 of the preview (UC-49): its comments and a box for one more; the new one is written after them
+    /// in the page's own text (one undo step, saved like any change) or in the note the page shows (saved and verified).
+    /// </summary>
+    private async Task CommentAsync(string? field, string? note, int n)
+    {
+        if (_st is null || n < 0) return;
+        string? text = field is not null ? (_st.Get(field) is JsonValue v && v.TryGetValue<string>(out var s) ? s : null)
+            : note is not null ? _host.Note(note)?.Content : null;
+        if (PageComments.At(text, n) is not { } group) { Toast("O texto mudou; toque de novo no 💬."); return; }
+        var added = await _host.Dialogs.CommentsAsync("Comentários", group.Comments);
+        if (_st is null || string.IsNullOrWhiteSpace(added)) return;
+        if (field is not null)
+        {
+            // read again: the page may have changed while the box was open
+            var now = _st.Get(field) is JsonValue nv && nv.TryGetValue<string>(out var ns) ? ns : null;
+            if (now != text || PageComments.Add(now, n, added) is not { } updated) { Toast("O texto mudou; o comentário não foi gravado."); return; }
+            _st.Break();
+            if (_st.Set(field, JsonValue.Create(updated))) Changed();
+            return;
+        }
+        var current = _host.Note(note!);
+        if (current is null || current.Content != text || PageComments.Add(text, n, added) is not { } written) { Toast("A nota mudou; o comentário não foi gravado."); return; }
+        try
+        {
+            await _host.SaveNoteAsync(current.Path, written);
+            SchedulePreview();
+        }
+        catch (Exception ex) { Toast("Não foi possível gravar o comentário: " + ex.Message); }
     }
 
     private void Undo()
