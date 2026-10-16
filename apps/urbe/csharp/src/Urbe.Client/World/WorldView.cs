@@ -122,13 +122,13 @@ public sealed class WorldView : Control
     private readonly TownTrades _trades = new();
     // children playing by their doors (UC-52)
     private readonly TownKids _kids = new();
-    // app.js v25Ciclo every V25_FPS (33 ms)
-    private readonly DispatcherTimer _villagerTimer = new() { Interval = TimeSpan.FromMilliseconds(LegacyVillagers.FrameMs) };
     private readonly LifeRenderer _lifeArt = new();
     private readonly CityLifeHost _lifeHost;
-    // life.js tick every 33 ms and the app.js fauna ciclo every 40 ms (scheduler intervals)
-    private readonly DispatcherTimer _lifeTimer = new() { Interval = TimeSpan.FromMilliseconds(33) };
-    private readonly DispatcherTimer _faunaTimer = new() { Interval = TimeSpan.FromMilliseconds(40) };
+    // life.js tick and app.js v25Ciclo every 33 ms, the fauna ciclo every 40 ms (scheduler intervals). UC-48: one
+    // timer drives the three, so the city is redrawn once per 33 ms step instead of by three timers out of phase.
+    private readonly DispatcherTimer _frameTimer = new() { Interval = TimeSpan.FromMilliseconds(LegacyVillagers.FrameMs) };
+    private const double FaunaStepMs = 40;
+    private double _faunaDue;
     private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
     private double _lastTick, _lagAverage = 33, _lagT, _faunaMs, _faunaLast, _villagerMs = 3000, _villagerLast;
     private Bitmap? _lightTint;
@@ -144,9 +144,7 @@ public sealed class WorldView : Control
         _lifeHost = new CityLifeHost(this);
         _life = new LegacyWorldLife(_lifeHost, _fauna);
         _life.Notice += text => Notice?.Invoke(this, text);
-        _lifeTimer.Tick += (_, _) => LifeTick();
-        _faunaTimer.Tick += (_, _) => FaunaTick();
-        _villagerTimer.Tick += (_, _) => VillagerTick();
+        _frameTimer.Tick += (_, _) => FrameTick();
         _moveHold.Tick += (_, _) =>
         {
             _moveHold.Stop();
@@ -170,16 +168,13 @@ public sealed class WorldView : Control
         base.OnAttachedToVisualTree(e);
         RefreshLighting();
         _lastTick = 0;
-        _lifeTimer.Start();
-        _faunaTimer.Start();
-        _villagerTimer.Start();
+        _faunaDue = 0;
+        _frameTimer.Start();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _lifeTimer.Stop();
-        _faunaTimer.Stop();
-        _villagerTimer.Stop();
+        _frameTimer.Stop();
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -218,6 +213,21 @@ public sealed class WorldView : Control
         Camera.Viewport = Bounds.Size;
         var (x0, y0, x1, y1) = Camera.VisibleTiles();
         return new LegacyLifeView(Camera.X, Camera.Y, Camera.Zoom, Bounds.Width, Bounds.Height, x0, y0, x1, y1);
+    }
+
+    /// <summary>One step of the three schedulers; their invalidations land in the same frame.</summary>
+    private void FrameTick()
+    {
+        LifeTick();
+        VillagerTick();
+        double now = _clock.Elapsed.TotalMilliseconds;
+        if (_faunaDue == 0 || now - _faunaDue > 4 * FaunaStepMs) _faunaDue = now;
+        // the fauna keeps its 40 ms cycle on average: one call per 40 ms that has passed
+        while (_faunaDue <= now)
+        {
+            FaunaTick();
+            _faunaDue += FaunaStepMs;
+        }
     }
 
     /// <summary>life.js tick(): adaptive quality, light, then one simulation step.</summary>

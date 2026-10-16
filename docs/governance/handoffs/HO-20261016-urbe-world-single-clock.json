@@ -1,0 +1,35 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261016-urbe-world-single-clock",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-16T03:43:42Z",
+  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "task_id": "UC-48",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "a43c6367",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "docs/governance/handoffs/HO-20261016-urbe-world-single-clock.json"
+  ],
+  "work_completed": [
+    "UC-48: a cidade tinha três DispatcherTimer (vida 33 ms, moradores 33 ms, fauna 40 ms) fora de fase, cada um pedindo redesenho; agora um passo de 33 ms roda os três no mesmo quadro (no máximo ~30 redesenhos por segundo) e a fauna mantém o ciclo de 40 ms em média.",
+    "Medido também o custo por tecla no editor (nota de 40 KB): Visual 4,7 ms, Fonte ~29 ms, quase tudo no TextBox do Avalonia; os handlers por tecla somam ~1 ms. Notas comuns ficam em poucos ms; não alterado."
+  ],
+  "verification": [
+    { "kind": "automated", "check": "TradesUiTests, WorldAndCityTests, WorldWallsUiTests e HeadlessUiTests", "result": "passed", "evidence": "101/101 no cliente headless." },
+    { "kind": "human", "check": "Cidade mais fluida no celular com o relógio único", "result": "pending", "critical": false, "object": "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs" }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": ["Seguir UC-48 pelo que o proprietário apontar no aparelho."],
+  "decisions_required": [],
+  "normative_sources": ["AGENTS.md", "apps/urbe/docs/csharp/ROADMAP.md", "docs/governance/addenda/ADD-0024-urbe-nativo-desempenho-primeiro-e-release.md"],
+  "invariants": [ { "id": "NN-018", "evidence": "Testes do mundo verdes; validação no aparelho pendente e visível." } ],
+  "reuse_assessment": [ { "subject": "world-frame-clock", "status": "product-specific", "rationale": "Cidade do Urbe." } ],
+  "criticality": { "declared": "routine", "reason": "Detalhe de implementação da cidade." }
+}
