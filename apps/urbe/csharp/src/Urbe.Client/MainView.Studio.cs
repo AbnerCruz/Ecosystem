@@ -83,6 +83,12 @@ public sealed partial class MainView : IPageStudioHost
         await ((IAssistantApp)this).SaveNoteAsync(doc, text);
     }
 
+    async Task IPageStudioHost.SaveNoteAsync(string path, string text)
+    {
+        var doc = _store?.Get(path) ?? throw new InvalidOperationException("A nota não está mais no vault: " + path);
+        await ((IAssistantApp)this).SaveNoteAsync(doc, text);
+    }
+
     async Task<string> IPageStudioHost.RenameAsync(string path, string newPath)
     {
         var doc = _store?.Get(path) ?? throw new InvalidOperationException("A página não está mais no vault: " + path);
