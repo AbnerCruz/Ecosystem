@@ -72,7 +72,7 @@ public sealed class PinnedPanel : Border
         Text = markdown;
         SourcePath = sourcePath;
         _from.Text = "Fixado de " + System.IO.Path.GetFileName(sourcePath);
-        _scroll.Content = new MarkdownReader().Build(NoteMarks.Parse(markdown));
+        _scroll.Content = new MarkdownReader().BuildMarkdown(markdown);
         _scroll.Offset = default;
         IsVisible = true;
     }

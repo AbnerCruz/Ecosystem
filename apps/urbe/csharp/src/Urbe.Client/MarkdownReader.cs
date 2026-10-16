@@ -43,6 +43,57 @@ public sealed class MarkdownReader
         return panel;
     }
 
+    /// <summary>A note's Markdown with its `:::tipo` … `:::` containers (UC-44) drawn as boxes, the rest as <see cref="Build"/>.</summary>
+    public Control BuildMarkdown(string? markdown)
+    {
+        _listLine = 0;
+        var source = markdown ?? "";
+        var panel = new StackPanel { Orientation = Orientation.Vertical };
+        AddSource(panel, source, 0, source.Length, NoteContainers.Parse(source));
+        return panel;
+    }
+
+    private void AddSource(Panel panel, string source, int from, int to, IReadOnlyList<NoteContainer> boxes)
+    {
+        var at = from;
+        foreach (var box in boxes)
+        {
+            if (box.Start > at) foreach (var n in NoteMarks.Parse(source[at..box.Start])) AddBlock(panel, n);
+            panel.Children.Add(Container(source, box));
+            at = System.Math.Max(at, box.End);
+        }
+        if (to > at) foreach (var n in NoteMarks.Parse(source[at..to])) AddBlock(panel, n);
+    }
+
+    /// <summary>A container (UC-44): a bordered box with its type (and title) as a small header and its Markdown inside.
+    /// Every type, known or not, is the same box.</summary>
+    private Control Container(string source, NoteContainer box)
+    {
+        var header = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 0, 0, 4) };
+        header.Children.Add(new TextBlock
+        {
+            Text = box.Type.ToUpperInvariant(), FontSize = Size * .68, FontWeight = FontWeight.Bold, LetterSpacing = .6,
+            Foreground = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center
+        });
+        if (box.Title.Length > 0)
+            header.Children.Add(new TextBlock
+            {
+                Text = box.Title, FontSize = Size * .9, FontWeight = FontWeight.SemiBold, TextWrapping = TextWrapping.Wrap,
+                Foreground = UrbeTheme.Brush(UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center
+            });
+        var body = new StackPanel { Orientation = Orientation.Vertical };
+        AddSource(body, source, box.BodyStart, box.BodyEnd, box.Children);
+        var border = new Border
+        {
+            Margin = new Thickness(0, .6 * Size), Padding = new Thickness(.8 * Size, .5 * Size, .8 * Size, .3 * Size),
+            CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1),
+            BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), Background = UrbeTheme.Brush(UrbeTheme.Accent, .04),
+            Child = new StackPanel { Children = { header, body } }
+        };
+        border.Classes.Add("urbe-box");
+        return border;
+    }
+
     private void AddBlock(Panel parent, RichNode n)
     {
         if (n.Tag == RichNode.TextTag) { if (n.Text.Trim().Length > 0) parent.Children.Add(Para(n.Text)); return; }
@@ -298,7 +349,8 @@ public sealed class MarkdownReader
             VerticalAlignment = VerticalAlignment.Top, Cursor = new Cursor(StandardCursorType.Hand),
             Child = isChecked ? new Path { Data = Geometry.Parse("M3 9l3.5 3.5L14 5"), Stroke = UrbeTheme.Brush(UrbeTheme.AccentInk), StrokeThickness = 2, StrokeLineCap = PenLineCap.Round, StrokeJoin = PenLineJoin.Round, Width = 16, Height = 16 } : null
         };
-        box.Tapped += (_, e) => { e.Handled = true; TaskToggled?.Invoke(line, !isChecked); };
+        // without a handler (inside a container) the tap goes on to the block, which opens for editing
+        box.Tapped += (_, e) => { if (TaskToggled is not { } toggled) return; e.Handled = true; toggled(line, !isChecked); };
         return box;
     }
 

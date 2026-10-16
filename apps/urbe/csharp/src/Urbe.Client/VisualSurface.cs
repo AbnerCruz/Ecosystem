@@ -112,7 +112,7 @@ public sealed class VisualSurface : StackPanel
     private void Rebuild()
     {
         Children.Clear();
-        _blocks = MarkdownEngine.SplitBlocks(_text);
+        _blocks = WithContainers(MarkdownEngine.SplitBlocks(_text), NoteContainers.Parse(_text));
         if (_blocks.Count == 0 && _box is null)
         {
             var empty = new Border
@@ -140,17 +140,39 @@ public sealed class VisualSurface : StackPanel
         Children.Add(tail);
     }
 
+    /// <summary>A `:::tipo` … `:::` container (UC-44) is one block: the blocks it covers become a single "container"
+    /// block, edited as its whole source.</summary>
+    internal static IReadOnlyList<MarkdownBlock> WithContainers(IReadOnlyList<MarkdownBlock> blocks, IReadOnlyList<NoteContainer> boxes)
+    {
+        if (boxes.Count == 0) return blocks;
+        var result = new List<MarkdownBlock>();
+        int b = 0;
+        foreach (var box in boxes)
+        {
+            while (b < blocks.Count && blocks[b].End <= box.Start) result.Add(blocks[b++]);
+            int start = box.Start, end = box.End;
+            // a block that reaches into the container goes with it (and so does the previous merged one it touches)
+            while (b < blocks.Count && blocks[b].Start < end) { start = Math.Min(start, blocks[b].Start); end = Math.Max(end, blocks[b].End); b++; }
+            while (result.Count > 0 && result[^1].End > start) { start = Math.Min(start, result[^1].Start); end = Math.Max(end, result[^1].End); result.RemoveAt(result.Count - 1); }
+            result.Add(new MarkdownBlock(start, end, "container"));
+        }
+        while (b < blocks.Count) result.Add(blocks[b++]);
+        return result;
+    }
+
     private Control Rendered(MarkdownBlock block)
     {
         var source = _text[block.Start..block.End];
+        var container = block.Kind == "container";
         var reader = new MarkdownReader
         {
             WikiLinkTapped = name => WikiLinkTapped?.Invoke(name),
-            TaskToggled = (line, on) => ToggleTask(block, line, on),
+            // a task inside a container: the tap edits the block (its list lines are not the block's lines)
+            TaskToggled = container ? null : (line, on) => ToggleTask(block, line, on),
             MathTapped = index => _ = EditFormulaAsync(block.Start, index),
             CommentsTapped = index => _ = CommentsAsync(block.Start, index)
         };
-        var holder = new Border { Background = Brushes.Transparent, Child = reader.Build(NoteMarks.Parse(source)) };
+        var holder = new Border { Background = Brushes.Transparent, Child = container ? reader.BuildMarkdown(source) : reader.Build(NoteMarks.Parse(source)) };
         // a tap (press and release without moving), never the press: a finger that starts a scroll on a block
         // must scroll, not turn the block into an edit box under it (the 1.8.4's preview scrolls the same way)
         if (block.Kind != "frontmatter")

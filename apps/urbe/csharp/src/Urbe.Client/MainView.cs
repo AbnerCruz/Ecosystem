@@ -1098,12 +1098,38 @@ public sealed partial class MainView : Grid
     {
         if (Dialogs.IsOpen) return Task.CompletedTask;
         var folder = Explorer.CurrentFolder;
-        return Dialogs.MenuAsync("Criar",
-        [
-            new DialogItem("Nova nota", UrbeTheme.Icons.File, NotesWhere(folder), Run: () => CreateNoteInNotesAsync()),
-            new DialogItem("Nova pasta", UrbeTheme.Icons.Folder, "Vira uma região na cidade.",
+        var items = new List<DialogItem>
+        {
+            new("Nova nota", UrbeTheme.Icons.File, NotesWhere(folder), Run: () => CreateNoteInNotesAsync()),
+            new("Nova pasta", UrbeTheme.Icons.Folder, "Vira uma região na cidade.",
                 Run: () => CreateFolderAsync(World.City?.RegionByPath(folder)?.Id))
-        ]);
+        };
+        // UC-44: notes in Modelos/ are templates; with any, a note can start from one
+        if (NoteTemplateEngine.Templates(_contents.Keys).Count > 0)
+            items.Insert(1, new("A partir de um modelo", UrbeTheme.Icons.File, "Uma nota de “" + NoteTemplateEngine.Folder + "”. " + NotesWhere(folder),
+                Run: () => CreateNoteFromTemplateAsync()));
+        return Dialogs.MenuAsync("Criar", items);
+    }
+
+    /// <summary>
+    /// UC-44 (DEC-0045): "A partir de um modelo" — pick a note of Modelos/, name the new note, and it is created (the
+    /// same verified path as Nova nota) with the template's content, {{titulo}} and {{data}} filled in.
+    /// </summary>
+    public async Task CreateNoteFromTemplateAsync(string? templatePath = null, string? typedName = null, string? folder = null)
+    {
+        var templates = NoteTemplateEngine.Templates(_contents.Keys);
+        if (templates.Count == 0) return;
+        if (templatePath is null)
+        {
+            var pick = await Dialogs.ChooseAsync("A partir de um modelo",
+                templates.Select(p => new DialogItem(NoteTemplateEngine.NameOf(p), UrbeTheme.Icons.File)).ToList(),
+                "Notas da pasta “" + NoteTemplateEngine.Folder + "”.");
+            if (pick is not { } i) return;
+            templatePath = templates[i];
+        }
+        if (!_contents.TryGetValue(templatePath, out var template)) return;
+        await CreateNoteInNotesAsync(typedName, folder,
+            name => NoteTemplateEngine.Fill(template, ArtifactModel.IsText(name) ? System.IO.Path.GetFileNameWithoutExtension(name) : name, DateTime.Now));
     }
 
     /// <summary>mobile-ui.js where(folder).</summary>
@@ -1123,7 +1149,7 @@ public sealed partial class MainView : Grid
     /// gets its house like any new document (document:created → urbeCasaParaDocumento), opens, and Notas closes. The
     /// empty file is written to the vault first.
     /// </summary>
-    public async Task CreateNoteInNotesAsync(string? typedName = null, string? folder = null)
+    public async Task CreateNoteInNotesAsync(string? typedName = null, string? folder = null, Func<string, string>? contentFor = null)
     {
         if (World.City is not { } city || _store is null) return;
         if (!VaultWritable)
@@ -1144,11 +1170,13 @@ public sealed partial class MainView : Grid
         if (name.Length == 0) return;
         var path = PathOf(name);
         if (_store.Get(path) is not null || _contents.ContainsKey(path)) return;
-        try { await _vault!.CreateTextFileAsync(path, ""); }
+        // UC-44: a note made from a template starts with its filled-in content
+        var content = contentFor?.Invoke(name) ?? "";
+        try { await _vault!.CreateTextFileAsync(path, content); }
         catch (Exception ex) { await Dialogs.AlertAsync("Não foi possível criar a nota", ex.Message); return; }
-        var doc = _store.Upsert(new DocumentInput { Path = path, Content = "" }, "explorer.create");
+        var doc = _store.Upsert(new DocumentInput { Path = path, Content = content }, "explorer.create");
         city.AddDocumentHouse(doc, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-        _contents[path] = "";
+        _contents[path] = content;
         _mapSave?.Schedule();
         _mapSave?.MarkSync();
         RefreshNotes();
@@ -1156,7 +1184,7 @@ public sealed partial class MainView : Grid
         // document.open: touchRecent is not called by createNote; the editor opens and Notas closes
         _editorOpenedFromNotes = false;
         Explorer.IsVisible = false;
-        Editor.Open(new CityNote(path, ""));
+        Editor.Open(new CityNote(path, content));
     }
 
     /// <summary>

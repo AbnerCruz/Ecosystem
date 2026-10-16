@@ -71,6 +71,32 @@ public static partial class NoteTemplateEngine
         return true;
     }
 
+    /// <summary>The templates among the vault's paths (UC-44): notes under Modelos/ at the root, by name.</summary>
+    public static IReadOnlyList<string> Templates(IEnumerable<string>? paths) =>
+        (paths ?? []).Where(IsTemplatePath).Distinct(StringComparer.Ordinal)
+            .OrderBy(p => p, StringComparer.OrdinalIgnoreCase).ThenBy(p => p, StringComparer.Ordinal).ToArray();
+
+    /// <summary>The name shown for a template: its path under Modelos/ without the extension.</summary>
+    public static string NameOf(string? path)
+    {
+        var p = DocumentModel.NormalizePath(path);
+        if (p.StartsWith(Folder + "/", StringComparison.OrdinalIgnoreCase)) p = p[(Folder.Length + 1)..];
+        var dot = p.LastIndexOf('.');
+        return dot > p.LastIndexOf('/') + 1 ? p[..dot] : p;
+    }
+
+    /// <summary>
+    /// The content of a note made from a template (UC-44): {{titulo}} (or {{título}}) becomes the new note's name and
+    /// {{data}} the day (yyyy-MM-dd); any other placeholder and every other byte stay as written.
+    /// </summary>
+    public static string Fill(string? markdown, string title, DateTime date) =>
+        FieldRegex().Replace(markdown ?? string.Empty, match => match.Groups[1].Value switch
+        {
+            "titulo" or "título" => title,
+            "data" => date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+            _ => match.Value
+        });
+
     [GeneratedRegex(
         @"\{\{([\p{L}_][\p{L}\p{N}_-]{0,63})\}\}",
         RegexOptions.CultureInvariant)]
