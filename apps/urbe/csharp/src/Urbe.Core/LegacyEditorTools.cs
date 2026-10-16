@@ -270,11 +270,13 @@ public static partial class LegacyEditorTools
         new("formulaBlock", "Fórmula em destaque", "Equação centralizada", "formula destaque bloco equacao latex math display", Text: "∫"),
     ];
 
-    /// <summary>Items the 1.8.4 did not have, approved by the owner (DEC-0045): Bloco de código, which starts empty (UC-37).</summary>
+    /// <summary>Items the 1.8.4 did not have, approved by the owner (DEC-0045): Bloco de código, which starts empty (UC-37),
+    /// Comentário (UC-43) and Caixa, a `:::tipo` container (UC-44).</summary>
     public static IReadOnlyList<SlashItem> OwnSlashItems { get; } =
     [
         new("codeblock", "Bloco de código", "Código em várias linhas", "codigo code bloco programa", "code"),
         new("comment", "Comentário", "Nota sua, fora das páginas", "comentario comment nota anotacao", "quote"),
+        new("box", "Caixa", "Bloco :::tipo com título", "caixa box conteiner container ficha componente", "box"),
     ];
 
     /// <summary>The menu the app shows: the visual-tools.js items, the math ones and the app's own, with the same filter.</summary>

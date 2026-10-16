@@ -89,13 +89,25 @@ public static partial class NoteTemplateEngine
     /// The content of a note made from a template (UC-44): {{titulo}} (or {{título}}) becomes the new note's name and
     /// {{data}} the day (yyyy-MM-dd); any other placeholder and every other byte stay as written.
     /// </summary>
-    public static string Fill(string? markdown, string title, DateTime date) =>
+    public static string Fill(string? markdown, string title, DateTime date) => Fill(markdown, title, date, null);
+
+    /// <summary>
+    /// <see cref="Fill(string?, string, DateTime)"/> plus the values the person typed for the other fields (UC-44); a field
+    /// without a value stays as written. Values are inserted literally and never read again as placeholders.
+    /// </summary>
+    public static string Fill(string? markdown, string title, DateTime date, IReadOnlyDictionary<string, string>? values) =>
         FieldRegex().Replace(markdown ?? string.Empty, match => match.Groups[1].Value switch
         {
             "titulo" or "título" => title,
             "data" => date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+            var name when values is not null && values.TryGetValue(name, out var v) => v ?? string.Empty,
             _ => match.Value
         });
+
+    /// <summary>The fields the person is asked for when a note is made from the template: every distinct placeholder but
+    /// {{titulo}}/{{título}} and {{data}}, in order of first appearance, at most <see cref="MaxFields"/>.</summary>
+    public static IReadOnlyList<string> InputFields(string? markdown) =>
+        Fields(markdown).Where(f => f is not ("titulo" or "título" or "data")).Take(MaxFields).ToArray();
 
     [GeneratedRegex(
         @"\{\{([\p{L}_][\p{L}\p{N}_-]{0,63})\}\}",

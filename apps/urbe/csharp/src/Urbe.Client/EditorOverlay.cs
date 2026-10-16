@@ -169,6 +169,7 @@ public sealed class EditorOverlay : Grid
         _visual.ActiveToolsChanged += on => { if (Mode == EditorMode.Visual) ShowActiveTools(on); };
         _visual.WikiCandidates = Candidates;
         _visual.AskUrl = AskUrlAsync;
+        _visual.AskBox = AskBoxAsync;
         _visual.AskComment = comments => Dialogs?.CommentsAsync("Comentários", comments) ?? Task.FromResult<string?>(null);
 
         AddRow(TopBar(), 0);
@@ -684,6 +685,17 @@ public sealed class EditorOverlay : Grid
         ToolTip.SetTip(math, "Fórmula (LaTeX) — Ctrl+M");
         math.Click += async (_, _) => await StartFormulaAsync(false);
         _markdownTools.Children.Add(math);
+        // UC-44: Caixa, a `:::tipo` container (not a 1.8.4 button, so it stays out of LegacyEditorTools.Toolbar)
+        var box = new Button
+        {
+            Content = UrbeTheme.Icon(SlashMenu.Icons["box"], 20, UrbeTheme.Text2),
+            Width = 40, Height = 40, Padding = new Thickness(0), CornerRadius = new CornerRadius(8), Focusable = false,
+            Background = Brushes.Transparent, Foreground = UrbeTheme.Brush(UrbeTheme.Text2),
+            HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
+        };
+        ToolTip.SetTip(box, "Caixa");
+        box.Click += async (_, _) => await InsertBoxAsync();
+        _markdownTools.Children.Add(box);
         foreach (var (label, run) in new (string, Action)[]
                  {
                      ("⇥ Indentar", () => ApplyEdit(LegacyEditorTools.IndentSelection(Editor.Text ?? "", Editor.SelectionStart, Editor.SelectionEnd))),
@@ -978,6 +990,33 @@ public sealed class EditorOverlay : Grid
     {
         if (LegacyEditorTools.CommitWiki(Editor.Text ?? "", Editor.CaretIndex, name) is { } edit) ApplyEdit(edit);
         _wiki.Hide();
+    }
+
+    /// <summary>
+    /// Caixa (UC-44): asks for the type and an optional title, then `:::tipo título` … `:::` goes around the selection
+    /// (Fonte) or the selection of the block being edited (Visual); with none, an empty box with the caret inside.
+    /// </summary>
+    public async Task InsertBoxAsync()
+    {
+        if (_note is null || !IsMarkdown) return;
+        if (Mode == EditorMode.Visual) { _visual.Toolbar("box"); return; }
+        var text = Editor.Text ?? "";
+        var (a, b) = VisualSurface.Range(Editor);
+        if (await AskBoxAsync() is not { } box) { Editor.Focus(); return; }
+        if (NoteContainers.Wrap(Editor.Text ?? text, a, b, box.Type, box.Title) is { } edit) ApplyEdit(edit);
+    }
+
+    private async Task<(string Type, string Title)?> AskBoxAsync()
+    {
+        if (Dialogs is null) return null;
+        var type = await Dialogs.PromptAsync(new PromptOptions("Inserir caixa", "Tipo", Placeholder: "Ex.: ficha, aviso, dica",
+            Hint: "Uma palavra, sem espaços. Vira :::tipo no texto.", Confirm: "Continuar",
+            Validate: v => NoteContainers.IsType(v.Trim()) ? null : "Use uma palavra só (letras, números, - ou _)."));
+        if (type is null) return null;
+        var title = await Dialogs.PromptAsync(new PromptOptions("Inserir caixa", "Título (opcional)", Placeholder: "Ex.: Gandalf",
+            Confirm: "Inserir", Required: false));
+        if (title is null) return null;
+        return (type.Trim(), title.Trim());
     }
 
     private async Task<string?> AskUrlAsync() =>

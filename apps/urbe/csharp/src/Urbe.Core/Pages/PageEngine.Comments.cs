@@ -19,6 +19,7 @@ internal sealed class PageCommentMarks(bool show)
     private static readonly HashSet<string> RawKeys = new(StringComparer.Ordinal) { "code", "css", "head" };
 
     private readonly List<IReadOnlyList<string>> _groups = [];
+    private readonly PageBoxMarks _boxes = new();
 
     public string Text(string? markdown)
     {
@@ -38,7 +39,7 @@ internal sealed class PageCommentMarks(bool show)
                 text = text[..g.Start] + token + text[(g.Start + g.Length)..];
             }
         }
-        return NoteMarks.StripComments(text);
+        return _boxes.Text(NoteMarks.StripComments(text));
     }
 
     /// <summary>A copy of the page with every text field rewritten.</summary>
@@ -85,7 +86,9 @@ internal sealed class PageCommentMarks(bool show)
     }
 
     /// <summary>The rendered page with each comment run as its 💬 (text) or gone (inside tags, the title, scripts and styles).</summary>
-    public string Finish(string html)
+    public string Finish(string html) => _boxes.Finish(FinishComments(html), show);
+
+    private string FinishComments(string html)
     {
         if (html.IndexOf(Open) < 0) return html;
         var sb = new StringBuilder(html.Length + 256);
@@ -172,7 +175,7 @@ public sealed partial class PageEngine
     /// <summary>
     /// The Urbe's own marks of the notes (DEC-0045): on, <c>%%…%%</c> and <c>{"…"}</c> comments are left out of the
     /// page and <c>{ia:"modelo"}</c> shows as "· IA: modelo"; in the studio preview (<c>preview</c>) each word comment
-    /// shows as a 💬 that opens it (UC-49). Off (the default, and the oracles) renders the texts as the 1.8.4 does.
+    /// shows as a 💬 that opens it (UC-49); <c>:::tipo título</c> … <c>:::</c> containers are boxes (UC-44). Off (the default, and the oracles) renders the texts as the 1.8.4 does.
     /// </summary>
     public bool UrbeMarks { get; set; }
 }

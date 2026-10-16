@@ -78,4 +78,45 @@ public sealed class NoteContainersTests
         Assert.Equal("# Gandalf {{data}}\r\nCriada em 2026-10-16 · Gandalf {{data}}\n{{outro}} {{}}\n", text);
         Assert.Equal("", NoteTemplateEngine.Fill(null, "x", DateTime.Now));
     }
+
+    [Fact]
+    public void InputFieldsAreTheOtherPlaceholdersInOrderOnce()
+    {
+        Assert.Equal(["classe", "raça", "nivel_1"],
+            NoteTemplateEngine.InputFields("# {{titulo}} {{título}}\n{{data}} {{classe}} {{raça}}\n{{classe}} {{nivel_1}} {{}} {{1x}}"));
+        Assert.Empty(NoteTemplateEngine.InputFields("# {{titulo}} {{data}}"));
+        Assert.Empty(NoteTemplateEngine.InputFields(null));
+    }
+
+    [Fact]
+    public void FillWithValuesInsertsThemLiterallyAndKeepsUnknownFields()
+    {
+        var values = new Dictionary<string, string> { ["classe"] = "Mago {{titulo}} $1 \\", ["vazio"] = "" };
+        var text = NoteTemplateEngine.Fill("# {{titulo}}\n{{classe}}|{{vazio}}|{{outro}}|{{data}}", "Gandalf", new DateTime(2026, 10, 16), values);
+        Assert.Equal("# Gandalf\nMago {{titulo}} $1 \\||{{outro}}|2026-10-16", text);
+        // without values it is the first slice's Fill
+        Assert.Equal(NoteTemplateEngine.Fill("{{titulo}} {{x}}", "a", new DateTime(2026, 1, 1)),
+            NoteTemplateEngine.Fill("{{titulo}} {{x}}", "a", new DateTime(2026, 1, 1), null));
+    }
+
+    [Fact]
+    public void WrapPutsTheSelectionInABoxOrAnEmptyOneWithTheCaretInside()
+    {
+        // empty: the caret on the empty line of the body
+        var e = NoteContainers.Wrap("", 0, 0, "aviso", "")!;
+        Assert.Equal(":::aviso\n\n:::", e.Text);
+        Assert.Equal((9, 9), (e.SelectionStart, e.SelectionEnd));
+        // a selection in the middle of a line: the box gets lines of its own and the text stays selected
+        var s = NoteContainers.Wrap("Antes meio depois", 6, 10, "ficha", " Gandalf\nCinzento ")!;
+        Assert.Equal("Antes \n:::ficha Gandalf Cinzento\nmeio\n:::\n depois", s.Text);
+        Assert.Equal("meio", s.Text[s.SelectionStart..s.SelectionEnd]);
+        var box = Assert.Single(NoteContainers.Parse(s.Text));
+        Assert.Equal(("ficha", "Gandalf Cinzento"), (box.Type, box.Title));
+        // whole lines: the line breaks of the selection stay after the box
+        Assert.Equal("a\n:::dica\nb\nc\n:::\n\nd", NoteContainers.Wrap("a\nb\nc\n\nd", 2, 6, "dica", null)!.Text);
+        Assert.Null(NoteContainers.Wrap("x", 0, 0, "dois tipos", ""));
+        Assert.Null(NoteContainers.Wrap("x", 0, 0, " ", ""));
+        Assert.True(NoteContainers.IsType("ficha-rpg_2"));
+        Assert.False(NoteContainers.IsType("a:b"));
+    }
 }
