@@ -1,0 +1,47 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261016-urbe-ux-direcao-e-tutorial",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-16T11:15:13Z",
+  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "task_id": "UC-69",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "3651207e",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/602",
+  "files_changed": [
+    "docs/governance/addenda/ADD-0026-urbe-experiencia-de-usuario-topo-de-linha.md",
+    "docs/governance/decisions.json",
+    "apps/urbe/docs/csharp/UX.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/TutorialPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Tutorial.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs",
+    "apps/urbe/csharp/src/Urbe.Client/QuickVoiceNotes.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizePanel.Sections.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/TutorialUiTests.cs",
+    "docs/governance/handoffs/HO-20261016-urbe-ux-direcao-e-tutorial.json"
+  ],
+  "work_completed": [
+    "Ordem do proprietário registrada (NN-009): experiência de usuário topo de linha é o critério central do Urbe nativo — ADD-0026, DEC-0049, apps/urbe/docs/csharp/UX.md (13 princípios mensuráveis, fundação técnica, ordem de redesenho) e UC-69 no ROADMAP C#.",
+    "UC-64: o tutorial é um painel de documentação só leitura com 12 artigos novos do app nativo (AppDocs), busca sem acentos, links internos e índice; sem pasta aberta o app mostra um mundo vazio em vez de construir o tutorial da 1.8.4 na cidade."
+  ],
+  "verification": [
+    { "kind": "automated", "check": "Testes do tutorial e do teclado no estado combinado; consistency", "result": "passed", "evidence": "8/8 no cliente headless (Tutorial*, KeyboardFitTests)." },
+    { "kind": "human", "check": "Configurações → Tutorial no celular: leitura, busca e links; abrir o app sem pasta não constrói o tutorial no mundo", "result": "pending", "critical": false, "object": "apps/urbe/csharp/src/Urbe.Client/TutorialPanel.cs" }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": ["UC-69 fase 1: tokens de design, componentes únicos e transições; depois o redesenho do editor."],
+  "decisions_required": [],
+  "normative_sources": ["AGENTS.md", "MANIFEST.md", "docs/governance/communication.md", "apps/urbe/docs/csharp/ROADMAP.md", "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md", "docs/governance/addenda/ADD-0024-urbe-nativo-desempenho-primeiro-e-release.md"],
+  "invariants": [ { "id": "NN-009", "evidence": "A ordem dada no chat foi persistida em ADD-0026/DEC-0049 antes de sustentar implementação." }, { "id": "NN-017", "evidence": "Cada tela fecha só com validação no aparelho (UX.md §4)." } ],
+  "reuse_assessment": [ { "subject": "ux-criteria", "status": "product-specific", "rationale": "Critério do Urbe." } ],
+  "criticality": { "declared": "critical", "reason": "Registra decisão do proprietário (addenda e decisions.json)." }
+}
