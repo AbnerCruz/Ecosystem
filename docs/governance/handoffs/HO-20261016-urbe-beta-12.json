@@ -1,0 +1,68 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261016-urbe-beta-12",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-16T00:00:55Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-48",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "0922ed0e",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "docs/governance/handoffs/HO-20261016-urbe-beta-12.json"
+  ],
+  "work_completed": [
+    "Urbe Beta 2.0 — 2.0.0-beta.12 (versionCode 2000012): publica no canal beta (DEC-0048) o PR #592 — salvamento automático na pausa da digitação, mover pastas inteiras e arrastar arquivos, comentários 💬 na prévia de páginas e exportação sem comentários, código curto e botões do editor que desligam a marca — com o cliente de Windows na mesma release."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "CI do PR #592 (urbe-checks e integrador)",
+      "result": "passed",
+      "evidence": "PR #592 integrado pela automação com os checks verdes."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: atualizar para a beta.12 por cima da beta.11 e usar o editor, o Explorer e as páginas",
+      "result": "pending",
+      "critical": true,
+      "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.12"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Depois da integração, conferir a release urbe-csharp-v2.0.0-beta.12 (APK e zip de Windows) e mandar os links ao proprietário."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/distribution/direct-releases.md",
+    "docs/governance/addenda/ADD-0025-urbe-beta-2-0-nativa.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A versão do canal muda só em Urbe.Android.csproj."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-beta-release",
+      "status": "product-specific",
+      "rationale": "Versão do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Nova versão publicada no canal de distribuição (Urbe.Android.csproj)."
+  }
+}
