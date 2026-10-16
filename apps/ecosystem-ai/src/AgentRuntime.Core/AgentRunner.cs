@@ -37,6 +37,7 @@ public sealed class AgentRunner(
         public int VerificationAttempts { get; set; }
         public string? LastProgress { get; set; }
         public int ProgressCount { get; set; }
+        public ToolFailureGuard FailedTools { get; } = new();
     }
 
     /// <summary>Inicia um run novo. Falha se o run já existe: retomar é <see cref="ResumeAsync"/>.</summary>
@@ -65,6 +66,7 @@ public sealed class AgentRunner(
         var run = new Run(request) { Sequence = state.LastSequence, Steps = state.Steps };
         run.Artifacts.AddRange(state.Artifacts);
         if (state.IsTerminal) return new RunResult(state, null, state.Artifacts);
+        run.FailedTools.Replay(events);
 
         var rebuilt = ConversationRebuilder.Rebuild(events, _redactor.Redact(Prompt(request.Task)));
         run.Messages.AddRange(rebuilt.Messages);
@@ -246,6 +248,7 @@ public sealed class AgentRunner(
     {
         foreach (var use in uses)
         {
+            if (ct.IsCancellationRequested) return await CancelAsync(run);
             var tool = run.Resolved.Find(use.Name);
 
             if (started.Contains(use.Id) && tool is not { Descriptor.Idempotent: true })
@@ -259,6 +262,16 @@ public sealed class AgentRunner(
             {
                 var reason = run.Resolved.Denied.FirstOrDefault(d => d.CapabilityId == use.Name)?.Reason ?? "capability desconhecida ou não concedida";
                 await DenyAsync(run, results, use, reason);
+                continue;
+            }
+
+            var failureKey = ToolFailureGuard.Key(tool.Descriptor, use.Input);
+            if (run.FailedTools.Contains(failureKey))
+            {
+                await DenyAsync(run, results, use, ToolFailureGuard.RepeatReason, repeatedFailure: true);
+                run.FailedTools.Repeated();
+                if (run.FailedTools.Repeats >= run.Request.Policy.NoProgressRepeats)
+                    return await BlockAsync(run, BlockReason.NoProgress, "repetição de chamadas que já falharam");
                 continue;
             }
 
@@ -290,23 +303,37 @@ public sealed class AgentRunner(
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { return await CancelAsync(run); }
             catch (Exception ex) { outcome = ToolOutcome.Error($"defeito na ferramenta ({ex.GetType().Name})"); }
-            await ResultAsync(run, results, use, outcome);
+            await ResultAsync(run, results, use, outcome, failureKey,
+                invalidatesFailures: tool.Descriptor.Risk is RiskClass.Write or RiskClass.Destructive);
         }
         return null;
     }
 
-    private async Task DenyAsync(Run run, List<ContentBlock> results, ToolUseBlock use, string reason)
+    private async Task DenyAsync(Run run, List<ContentBlock> results, ToolUseBlock use, string reason, bool repeatedFailure = false)
     {
         var block = new ToolResultBlock(use.Id, $"negado: {reason}", true);
+        var data = Data(("callId", use.Id));
+        if (repeatedFailure) data[ToolFailureGuard.RepeatField] = "true";
         await EmitAsync(run, EventKind.ToolDenied, tool: use.Name, result: reason,
-            payload: ContentSerializer.ToJson([block]), data: Data(("callId", use.Id)));
+            payload: ContentSerializer.ToJson([block]), data: data);
         results.Add(block);
     }
 
-    private async Task ResultAsync(Run run, List<ContentBlock> results, ToolUseBlock use, ToolOutcome outcome)
+    private async Task ResultAsync(Run run, List<ContentBlock> results, ToolUseBlock use, ToolOutcome outcome,
+        string? failureKey = null, bool invalidatesFailures = false)
     {
         var block = new ToolResultBlock(use.Id, _redactor.Redact(outcome.Content), outcome.IsError);
         var data = Data(("callId", use.Id));
+        if (!outcome.IsError && invalidatesFailures)
+        {
+            data[ToolFailureGuard.InvalidateField] = "true";
+            run.FailedTools.Invalidate();
+        }
+        if (outcome.IsError && failureKey is not null)
+        {
+            data[ToolFailureGuard.KeyField] = failureKey;
+            run.FailedTools.Record(failureKey);
+        }
         if (outcome.Artifacts.Count > 0)
         {
             run.Artifacts.AddRange(outcome.Artifacts);

@@ -1,0 +1,118 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261016-ai-runtime-failure-guard",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-16T11:25:00.300948+00:00",
+  "agent": {
+    "id": "codex-ai-unification",
+    "kind": "ai-agent"
+  },
+  "task_id": "AI-603",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/ai-unification-first-increment",
+  "base_commit": "3651207e7cd6a4d66cd977c8a306d9e7bbf5e484",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/AgentRuntime.Core/AgentRunner.cs",
+    "apps/ecosystem-ai/src/AgentRuntime.Core/ToolFailureGuard.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/ArchitectureTests.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/RepeatedToolFailureTests.cs",
+    "apps/ecosystem-ai/docs-runtime-tool-failures.md",
+    "tests/integration/p6-lunet-host/Program.cs",
+    "docs/governance/handoffs/HO-20261016-ai-runtime-failure-guard.json"
+  ],
+  "work_completed": [
+    "AI-603: proteção contra repetição de ferramentas que falharam no AgentRunner existente, inspirada no comportamento verificado do AssistantAgent nativo; sem copiar o loop.",
+    "Chave canônica por capability/versão/argumentos; supressões auditáveis e limite NoProgressRepeats; retomada reconstrói falhas, invalidação por mutação e contagem do event log.",
+    "Piloto ADR-0031 ampliado: mesmo Workspace/Runner bloqueia entrada inválida repetida no Host real, sem repetir efeitos nem falso sucesso."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "AgentRuntime.Tests",
+      "result": "passed",
+      "evidence": "Build .NET 10.0.100, 0 avisos/erros; 268/268 testes passaram, sem falhas/skips."
+    },
+    {
+      "kind": "automated",
+      "check": "P6LunetHost",
+      "result": "passed",
+      "evidence": "Dois projetos reais; novo cenário de falha repetida + grants/revoke/cancel/close passaram."
+    },
+    {
+      "kind": "automated",
+      "check": "EcosystemAi.ProjectStore.Tests",
+      "result": "passed",
+      "evidence": "11/11 testes, sem falhas/skips."
+    },
+    {
+      "kind": "automated",
+      "check": "consistency e git diff --check",
+      "result": "passed",
+      "evidence": "22/22 checks passaram; ROADMAP × Issues não verificado localmente por falta de snapshot. Diff sem erros."
+    }
+  ],
+  "known_issues": [
+    "Nenhum segundo Product consome o Runtime em produção; Lunet apenas no piloto headless autorizado.",
+    "Falhas anteriores sem metadados não são inferidas; mutações externas não invalidam a memória de falhas."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Aguardar CI e integrador para este incremento local.",
+    "Concluir matriz/registro de direção e revisar extração antes de qualquer dependência de produção entre componentes."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/architecture/local-first.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/adr/0031-p6-4-piloto-headless-lunet.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Falhas e contagens derivadas do event log; sem armazenamento paralelo."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Referências entre Products apenas no composition root de teste já autorizado por ADR-0031."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Grants/aprovação existentes preservados, nenhuma permissão nova."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Teste headless não é DEVICE nem IA no APK."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review; CI/integração ainda não alegados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Runtime permanece no Product; nenhuma promoção/extracão."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "agent-tool-failure-guard",
+      "status": "possible-candidate",
+      "rationale": "Comportamento genérico no Runtime existente; o piloto prova a composição, não consumo de produção por outro Product."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Proteção local do runtime existente dentro do plano aprovado, sem contrato público, novas permissões, formato obrigatório ou extração."
+  }
+}
