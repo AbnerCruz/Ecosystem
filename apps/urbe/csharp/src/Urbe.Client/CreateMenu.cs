@@ -143,7 +143,7 @@ public sealed partial class MainView
         }
         if (!await WriteFolderAsync(city, region, undo: () => city.Regions.Remove(region))) return;
         World.InvalidateVisual();
-        ShowLifeNotice("Pasta criada.");
+        ShowLifeNotice("Pasta criada.", Ui.ToastKind.Success);
     }
 
     /// <summary>Makes the region's folder in the vault; on failure the region is taken back.</summary>
@@ -813,7 +813,7 @@ public sealed partial class MainView
         }
         if (backups.Count == 0)
         {
-            await Dialogs.AlertAsync("Backups do vault", "Nenhum backup neste vault. O Urbe guarda um backup em .urbe/backup antes de migrar, reorganizar ou importar.");
+            ShowLifeNotice("Nenhum backup neste vault. O Urbe guarda um backup em .urbe/backup antes de migrar, reorganizar ou importar.");
             return;
         }
         backups.Sort((x, y) => string.CompareOrdinal(y.At, x.At));

@@ -178,7 +178,7 @@ public sealed partial class MainView : IPageStudioHost
     public async Task PrintPageAsync(string path)
     {
         if (PageHtml(path) is not { } html) return;
-        if (ContentViewers.Printer is not { } print) { await Dialogs.AlertAsync("Imprimir ou salvar PDF", "Este aparelho não oferece impressão. Use Baixar HTML e imprima pelo navegador."); return; }
+        if (ContentViewers.Printer is not { } print) { ShowLifeNotice("Este aparelho não oferece impressão. Use Baixar HTML e imprima pelo navegador."); return; }
         try
         {
             ShowLifeNotice("Preparando o PDF…");
