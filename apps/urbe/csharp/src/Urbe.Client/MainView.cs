@@ -329,16 +329,20 @@ public sealed partial class MainView : Grid
 
     public async Task InitializeAsync()
     {
-        if (_vault is not null)
+        try
         {
-            try
+            if (_vault is not null)
             {
-                var snapshot = await _vault.RestoreAsync();
-                if (snapshot is not null) { await ShowVaultAsync(snapshot); return; }
+                try
+                {
+                    var snapshot = await _vault.RestoreAsync();
+                    if (snapshot is not null) { await ShowVaultAsync(snapshot); return; }
+                }
+                catch (Exception ex) { _loading.Text = "Vault indisponível: " + ex.Message; }
             }
-            catch (Exception ex) { _loading.Text = "Vault indisponível: " + ex.Message; }
+            await LoadAsync(TutorialNotes.Load());
         }
-        await LoadAsync(TutorialNotes.Load());
+        finally { MarkReady(); }   // UC-56: a widget's quick note waits for the first city
     }
 
     public async Task OpenVaultAsync()
@@ -841,7 +845,8 @@ public sealed partial class MainView : Grid
             new DialogItem("Construção", UrbeTheme.Icons.House, "Um arquivo onde você tocar no mapa (.md, .html, .js…)", Run: BeginBuildingAsync),
             new DialogItem("Região", UrbeTheme.Icons.Region, "Uma pasta desenhada no mapa", Run: BeginDrawRegionAsync),
             new DialogItem("Decoração", UrbeTheme.Icons.Flower, "Poço, roça, lenha, banco, fonte, canteiro", Run: BeginDecorationAsync),
-            new DialogItem("Importar", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync())
+            new DialogItem("Importar", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync()),
+            .. QuickVoiceItem() is { } voice ? [voice] : Array.Empty<DialogItem>()
         ]);
     }
 
@@ -1108,6 +1113,7 @@ public sealed partial class MainView : Grid
         if (NoteTemplateEngine.Templates(_contents.Keys).Count > 0)
             items.Insert(1, new("A partir de um modelo", UrbeTheme.Icons.File, "Uma nota de “" + NoteTemplateEngine.Folder + "”. " + NotesWhere(folder),
                 Run: () => CreateNoteFromTemplateAsync()));
+        if (QuickVoiceItem() is { } voice) items.Add(voice);
         return Dialogs.MenuAsync("Criar", items);
     }
 
