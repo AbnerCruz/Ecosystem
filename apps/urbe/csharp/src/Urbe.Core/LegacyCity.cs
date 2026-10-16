@@ -17,9 +17,38 @@ public sealed class LegacyCityTerrain(Func<int, int, LegacyBiome> biomeAt) : ILe
     private static readonly double[] Costs =
         [99, 99, 4, 6, 1.3, 1, 1, 1.6, 2.2, 3, 1.7, 1.4, 99, 2, 99, 99, 1.4, 1.1, 1.1];
 
-    public bool Buildable(int x, int y) => LegacyBiomeRules.Buildable(biomeAt(x, y));
-    public bool Roadable(int x, int y) => LegacyBiomeRules.Roadable(biomeAt(x, y));
-    public double RoadCost(int x, int y) => Costs[(int)biomeAt(x, y)];
+    public bool Buildable(int x, int y) => LegacyBiomeRules.Buildable(Biome(x, y));
+    public bool Roadable(int x, int y) => LegacyBiomeRules.Roadable(Biome(x, y));
+    public double RoadCost(int x, int y) => Costs[(int)Biome(x, y)];
+
+    // UC-59: the terrain is a pure function of the tile, asked millions of times while a city opens (lots, streets);
+    // its biomes are kept per 16×16 block (the world's chunk) so each tile is read from the world once.
+    private const int BlockShift = 4, BlockSize = 1 << BlockShift;
+    private sealed record Block(long Key, LegacyBiome[] Tiles);
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<long, Block> _blocks = new();
+    private volatile Block? _last;
+
+    private LegacyBiome Biome(int x, int y)
+    {
+        int bx = x >> BlockShift, by = y >> BlockShift;
+        long key = ((long)bx << 32) | (uint)by;
+        var block = _last;
+        if (block is null || block.Key != key)
+        {
+            block = _blocks.GetOrAdd(key, k => Fill(k, bx, by));
+            _last = block;
+        }
+        return block.Tiles[((y - (by << BlockShift)) << BlockShift) + (x - (bx << BlockShift))];
+    }
+
+    private Block Fill(long key, int bx, int by)
+    {
+        var tiles = new LegacyBiome[BlockSize * BlockSize];
+        for (int row = 0; row < BlockSize; row++)
+        for (int column = 0; column < BlockSize; column++)
+            tiles[(row << BlockShift) + column] = biomeAt((bx << BlockShift) + column, (by << BlockShift) + row);
+        return new Block(key, tiles);
+    }
 }
 
 /// <summary>A folder drawn as a neighbourhood (app.js world.regions).</summary>
@@ -244,7 +273,8 @@ public sealed partial class LegacyCity
 
     private const int Chunk = 16; // app.js CH
 
-    private static int ChunkOf(int v) => (int)Math.Floor(v / (double)Chunk);
+    // Math.floor(v / 16) for every int: an arithmetic shift (UC-59: called for every building on every lookup)
+    private static int ChunkOf(int v) => v >> 4;
 
     /// <summary>idxB: is the building listed under chunk (cx, cy)?</summary>
     private static bool Indexed(LegacyCityBuilding b, int cx, int cy) =>
@@ -257,10 +287,48 @@ public sealed partial class LegacyCity
         foreach (var b in Buildings) { b.IndexedX = b.X; b.IndexedY = b.Y; }
     }
 
+    /// <summary>
+    /// idxB as lists of building positions per chunk, built only while the streets are rebuilt (nothing moves then);
+    /// null otherwise, when <see cref="BuildingAt"/> scans every building (UC-59).
+    /// </summary>
+    private Dictionary<(int, int), List<int>>? _chunkIndex;
+
+    private void BuildChunkIndex()
+    {
+        var index = new Dictionary<(int, int), List<int>>();
+        for (int i = 0; i < Buildings.Count; i++)
+        {
+            var b = Buildings[i];
+            for (int cy = ChunkOf(b.IndexedY); cy <= ChunkOf(b.IndexedY + b.H - 1); cy++)
+            for (int cx = ChunkOf(b.IndexedX); cx <= ChunkOf(b.IndexedX + b.W - 1); cx++)
+            {
+                if (!index.TryGetValue((cx, cy), out var list)) index[(cx, cy)] = list = [];
+                list.Add(i);
+            }
+        }
+        _chunkIndex = index;
+    }
+
+    /// <summary>Runs <paramref name="read"/> with idxB indexed per chunk; nothing may add, move or reindex a building in it.</summary>
+    private T WithChunkIndex<T>(Func<T> read)
+    {
+        if (_chunkIndex is not null) return read();
+        BuildChunkIndex();
+        try { return read(); }
+        finally { _chunkIndex = null; }
+    }
+
     /// <summary>bAt: the last building (idxB order) on the tile.</summary>
     public LegacyCityBuilding? BuildingAt(int x, int y)
     {
         int cx = ChunkOf(x), cy = ChunkOf(y);
+        if (_chunkIndex is { } chunks)
+        {
+            if (!chunks.TryGetValue((cx, cy), out var listed)) return null;
+            for (int j = listed.Count - 1; j >= 0; j--)
+                if (Buildings[listed[j]].Contains(x, y)) return Buildings[listed[j]];
+            return null;
+        }
         for (int i = Buildings.Count - 1; i >= 0; i--)
             if (Indexed(Buildings[i], cx, cy) && Buildings[i].Contains(x, y)) return Buildings[i];
         return null;
@@ -274,6 +342,14 @@ public sealed partial class LegacyCity
         if (_accessGaps is not null) return _accessGaps.Contains((x, y));
         // the gap is just below the lot and may fall in the next chunk
         int cx = ChunkOf(x);
+        if (_chunkIndex is { } chunks)
+        {
+            foreach (var cy in new[] { ChunkOf(y), ChunkOf(y - 1) })
+                if (chunks.TryGetValue((cx, cy), out var listed))
+                    foreach (var i in listed)
+                        if (x == (int)LegacyJsMath.Round(Buildings[i].X + (Buildings[i].W - 1) / 2.0) && y == Buildings[i].Y + Buildings[i].H) return true;
+            return false;
+        }
         foreach (var cy in new[] { ChunkOf(y), ChunkOf(y - 1) })
         foreach (var b in Buildings)
             if (Indexed(b, cx, cy) && x == (int)LegacyJsMath.Round(b.X + (b.W - 1) / 2.0) && y == b.Y + b.H) return true;
@@ -382,7 +458,10 @@ public sealed partial class LegacyCity
     }
 
     /// <summary>urbeGradeBairro: 1 where the neighbourhood cannot grow.</summary>
-    private Grid DistrictGrid(LegacyCityRegion? parent, LegacyCityRegion? self, int x0, int y0, int x1, int y1)
+    private Grid DistrictGrid(LegacyCityRegion? parent, LegacyCityRegion? self, int x0, int y0, int x1, int y1) =>
+        WithChunkIndex(() => DistrictGridCore(parent, self, x0, y0, x1, y1));
+
+    private Grid DistrictGridCore(LegacyCityRegion? parent, LegacyCityRegion? self, int x0, int y0, int x1, int y1)
     {
         var g = new Grid(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
         var bl = g.Blocked;
@@ -882,6 +961,21 @@ public sealed partial class LegacyCity
     {
         // idxB chunks of the 8-tile window around the lot
         int cx0 = ChunkOf(x - 8), cx1 = ChunkOf(x + 8), cy0 = ChunkOf(y - 8), cy1 = ChunkOf(y + 8);
+        if (_chunkIndex is { } chunks)
+        {
+            // the same buildings: those idxB lists in a chunk of the window
+            for (int cy = cy0; cy <= cy1; cy++)
+            for (int cx = cx0; cx <= cx1; cx++)
+            {
+                if (!chunks.TryGetValue((cx, cy), out var listed)) continue;
+                foreach (var i in listed)
+                {
+                    var o = Buildings[i];
+                    if (!ignore.Contains(o.Id) && x < o.X + o.W + LotGap && x + 3 + LotGap > o.X && y < o.Y + o.H + LotGap && y + 3 + LotGap > o.Y) return true;
+                }
+            }
+            return false;
+        }
         foreach (var b in Buildings)
         {
             if (ignore.Contains(b.Id)) continue;
@@ -912,12 +1006,12 @@ public sealed partial class LegacyCity
     }
 
     /// <summary>posicaoAleatoriaNaRegiao (final): first free lot in organic order.</summary>
-    private (int X, int Y)? PlaceInRegion(LegacyCityRegion r, ISet<string> ignore)
+    private (int X, int Y)? PlaceInRegion(LegacyCityRegion r, ISet<string> ignore) => WithChunkIndex<(int X, int Y)?>(() =>
     {
         foreach (var l in Lots(r))
             if (LotIsValid(l.X, l.Y, ignore, r)) return (l.X, l.Y);
         return null;
-    }
+    });
 
     /// <summary>vagaNaRegiao: the neighbourhood grows when it is full.</summary>
     public (int X, int Y)? PlaceInRegion(LegacyCityRegion r, double seed, ISet<string>? ignore = null)
@@ -1438,9 +1532,10 @@ public sealed partial class LegacyCity
         int bestD = int.MaxValue;
         foreach (var n in nodes)
         {
-            if (!IsRoadNode(n.X, n.Y)) continue;
             int d = Manhattan(from, n);
-            if (d < bestD) { best = n; bestD = d; }
+            if (d >= bestD || !IsRoadNode(n.X, n.Y)) continue;   // only a closer node can win: tested first (UC-59)
+            best = n;
+            bestD = d;
         }
         return best;
     }
@@ -1450,6 +1545,8 @@ public sealed partial class LegacyCity
         ((int X, int Y) Join, (int X, int Y) Approach, int D)? best = null;
         foreach (var join in component)
         {
+            // an approach is one tile from its join, so d ≥ the join's distance: a join that cannot win is skipped (UC-59)
+            if (best is { } found && Manhattan(from, join) >= found.D) continue;
             var axes = Axes(join.X, join.Y);
             (int X, int Y)[] approaches;
             if (axes.H && !axes.V) approaches = [(join.X, join.Y - 1), (join.X, join.Y + 1)];
@@ -1638,6 +1735,7 @@ public sealed partial class LegacyCity
             for (int x = b.X; x < b.X + b.W; x++) _occupied.Add((x, y));
             _accessGaps.Add(((int)LegacyJsMath.Round(b.X + (b.W - 1) / 2.0), b.Y + b.H));
         }
+        BuildChunkIndex();
         try
         {
             _roads.Clear();
@@ -1668,6 +1766,7 @@ public sealed partial class LegacyCity
         {
             _occupied = null;
             _accessGaps = null;
+            _chunkIndex = null;
         }
     }
 
@@ -1681,13 +1780,15 @@ public sealed partial class LegacyCity
         ArgumentNullException.ThrowIfNull(index);
         static string NormName(string s) => LegacyJsMath.Slug(System.Text.RegularExpressions.Regex.Replace(s, @"\.md$", "",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase)).ToLowerInvariant();
-        var all = store.List();
-        var byPath = Buildings.GroupBy(b => b.Path, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
-        LegacyCityBuilding? ByLinkName(string name)
+        var byName = new Dictionary<string, UrbeDocument>(StringComparer.Ordinal);
+        foreach (var d in store.List())
         {
-            var doc = all.FirstOrDefault(d => NormName(d.Title) == name || NormName(d.Path) == name);
-            return doc is not null && byPath.TryGetValue(doc.Path, out var b) ? b : null;
+            byName.TryAdd(NormName(d.Title), d);
+            byName.TryAdd(NormName(d.Path), d);
         }
+        var byPath = Buildings.GroupBy(b => b.Path, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
+        LegacyCityBuilding? ByLinkName(string name) =>
+            byName.TryGetValue(name, out var doc) && byPath.TryGetValue(doc.Path, out var b) ? b : null;
         RebuildRoads(b =>
         {
             var doc = store.Get(b.Path);
