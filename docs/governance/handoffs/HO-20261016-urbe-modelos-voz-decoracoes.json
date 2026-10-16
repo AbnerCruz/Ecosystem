@@ -1,0 +1,36 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261016-urbe-modelos-voz-decoracoes",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-16T08:19:10Z",
+  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "task_id": "UC-44",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "3b7f43a0",
+  "commit": null,
+  "pr": null,
+  "files_changed": ["apps/urbe/csharp/src/Urbe.Android/MainActivity.cs", "apps/urbe/csharp/src/Urbe.Android/Resources/drawable/urbe_voice_widget_bg.xml", "apps/urbe/csharp/src/Urbe.Android/Resources/layout/urbe_voice_widget.xml", "apps/urbe/csharp/src/Urbe.Android/Resources/xml/urbe_voice_widget.xml", "apps/urbe/csharp/src/Urbe.Android/VoiceNoteWidget.cs", "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs", "apps/urbe/csharp/src/Urbe.Client/MainView.cs", "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs", "apps/urbe/csharp/src/Urbe.Client/PinnedPanel.cs", "apps/urbe/csharp/src/Urbe.Client/QuickVoiceNotes.cs", "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs", "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs", "apps/urbe/csharp/src/Urbe.Client/World/MapTool.cs", "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs", "apps/urbe/csharp/src/Urbe.Core/NoteContainers.cs", "apps/urbe/csharp/src/Urbe.Core/NoteTemplateEngine.cs", "apps/urbe/csharp/src/Urbe.Core/QuickNotes.cs", "apps/urbe/csharp/src/Urbe.Core/WorldDecorations.cs", "apps/urbe/csharp/src/Urbe.Core/WorldPrefs.cs", "apps/urbe/csharp/tests/Urbe.Client.Tests/DecorationVariantBrushUiTests.cs", "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteTemplatesUiTests.cs", "apps/urbe/csharp/tests/Urbe.Client.Tests/QuickVoiceNoteUiTests.cs", "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteContainersTests.cs", "apps/urbe/csharp/tests/Urbe.Core.Tests/QuickNotesTests.cs", "apps/urbe/csharp/tests/Urbe.Core.Tests/WorldDecorationVariantsTests.cs", "apps/urbe/docs/csharp/ROADMAP.md", "docs/governance/handoffs/HO-20261016-urbe-modelos-voz-decoracoes.json"],
+  "work_completed": [
+    "UC-44 (primeira fatia): modelos de nota em Modelos/ (Criar → A partir de um modelo, {{titulo}} e {{data}}) e caixas :::tipo … ::: aninháveis no editor Visual.",
+    "UC-56 (primeira fatia): nota rápida por voz pelo reconhecedor do Android, gravada em Notas rápidas/<data>.md pela escrita verificada, e widget 1x1 na tela inicial; sem vault gravável o texto fica para copiar.",
+    "UC-53: variações, girar/espelhar e pincel nas decorações (campos opcionais em .urbe/mundo.json, compatíveis), 18 tipos."
+  ],
+  "verification": [
+    { "kind": "automated", "check": "Core completo e testes do cliente das áreas tocadas no estado combinado", "result": "passed", "evidence": "836/836 Core; 24/24 dos filtros do cliente (decorações, ofícios, voz, modelos, caixas, Visual, Explorer). Build Android do widget e do reconhecedor fica para o CI do PR." },
+    { "kind": "human", "check": "No celular: nota rápida por voz e o widget na tela inicial; modelos e caixas no editor; variações e pincel das decorações", "result": "pending", "critical": false, "object": "apps/urbe/csharp/src/Urbe.Android/VoiceNoteWidget.cs" }
+  ],
+  "known_issues": ["Nota rápida por voz ainda não existe no Windows.", "Caixas :::tipo saem como texto nas páginas e exportação."],
+  "blockers": [],
+  "next_actions": ["Com o PR integrado, publicar a beta.13 (Urbe.Android.csproj) com o relógio único da cidade e estas fatias."],
+  "decisions_required": [],
+  "normative_sources": ["AGENTS.md", "apps/urbe/docs/csharp/ROADMAP.md", "docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md"],
+  "invariants": [
+    { "id": "NN-016", "evidence": "A voz usa o reconhecedor do sistema por intent; o Urbe não grava áudio nem pede RECORD_AUDIO." },
+    { "id": "NN-001", "evidence": "Modelos estendem o NoteTemplateEngine existente, sem segundo conceito de modelo." }
+  ],
+  "reuse_assessment": [ { "subject": "quick-voice-notes", "status": "product-specific", "rationale": "Recurso do Urbe." } ],
+  "criticality": { "declared": "routine", "reason": "Recursos autorizados no roadmap; nenhuma zona crítica alterada." }
+}

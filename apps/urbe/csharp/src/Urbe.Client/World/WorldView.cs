@@ -631,13 +631,18 @@ public sealed class WorldView : Control
 
     private readonly Dictionary<string, Avalonia.Media.Imaging.Bitmap> _decorArt = new(StringComparer.Ordinal);
 
-    /// <summary>The image of a decoration kind (cached per view: bitmaps belong to the view's thread).</summary>
-    public Avalonia.Media.Imaging.Bitmap? DecorationArt(string kind)
+    /// <summary>The image of a decoration kind in a variation, mirrored and/or turned (UC-53), cached per view: bitmaps
+    /// belong to the view's thread.</summary>
+    public Avalonia.Media.Imaging.Bitmap? DecorationArt(string kind, int variant = 0, bool flipped = false, bool turned = false)
     {
-        if (_decorArt.TryGetValue(kind, out var art)) return art;
         if (WorldDecorations.Find(kind) is not { } k) return null;
-        var (px, w, h) = LegacyLifeSprites.Render(k.Sprite, 0, false);
-        return _decorArt[kind] = Pixels.ToBitmap(px, w, h);
+        variant = WorldDecorations.VariantOf(k, variant);
+        flipped &= k.Flips;
+        turned &= k.Turns;
+        var key = $"{kind}/{variant}/{(flipped ? 1 : 0)}{(turned ? 1 : 0)}";
+        if (_decorArt.TryGetValue(key, out var art)) return art;
+        var (px, w, h) = LegacyLifeSprites.Render(WorldDecorations.Sprite(k, variant, turned), 0, flipped);
+        return _decorArt[key] = Pixels.ToBitmap(px, w, h);
     }
 
     /// <summary>The screen rectangle of a decoration of <paramref name="kind"/> with its corner at tile (x, y).</summary>
@@ -655,7 +660,7 @@ public sealed class WorldView : Control
         foreach (var d in Prefs.Decorations.OrderBy(d => d.Y))
         {
             if (WorldDecorations.Find(d.Kind) is not { } k || d.X > x1 || d.X + k.W < x0 || d.Y > y1 || d.Y + k.H < y0) continue;
-            if (DecorationArt(d.Kind) is not { } art) continue;
+            if (DecorationArt(d.Kind, d.Variant, d.Flipped, d.Turned) is not { } art) continue;
             context.DrawImage(art, new Rect(0, 0, art.Size.Width, art.Size.Height), DecorationRect(k, d.X, d.Y));
         }
     }
