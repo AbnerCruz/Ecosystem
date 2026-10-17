@@ -161,6 +161,15 @@ internal static class LaboratoryTemplate
             readonly TouchButton physicsMode = new(new RectangleF(24, 134, 312, 42));
             readonly TouchButton physicsRestart = new(new RectangleF(24, 518, 312, 42));
             readonly TouchButton physicsLoad = new(new RectangleF(24, 470, 312, 40));
+            readonly TouchButton physicsScenarioButton = new(new RectangleF(24, 180, 312, 36));
+            int physicsScenario;
+            float physicsClock;
+            bool physicsFilter = true;
+            RigidBody2D physicsPendulum = null!;
+            RigidBody2D physicsSlider = null!;
+            Fixture2D physicsVisitor = null!;
+            int physicsContactBegins, physicsContactEnds, physicsSensorEnds;
+            bool physicsRayHit;
             bool physicsVisible;
             bool physicsStress;
             PhysicsWorld physicsWorld = null!;
@@ -222,7 +231,7 @@ internal static class LaboratoryTemplate
                 scenePause.Cancel(); sceneHide.Cancel(); sceneAttach.Cancel();
                 debugToggle.Cancel(); debugRotate.Cancel(); debugReflect.Cancel(); debugView.Cancel();
                 themeDemoButton.Cancel(); themeDemoSlider.Cancel();
-                physicsMode.Cancel(); physicsRestart.Cancel(); physicsLoad.Cancel();
+                physicsMode.Cancel(); physicsRestart.Cancel(); physicsLoad.Cancel(); physicsScenarioButton.Cancel();
             }
 
             protected override void UnloadContent()
@@ -341,14 +350,40 @@ internal static class LaboratoryTemplate
             void ResetPhysics()
             {
                 physicsWorld?.Dispose();
-                physicsWorld = new PhysicsWorld(new Vector2(0f, 9.8f));
+                physicsWorld = new PhysicsWorld(physicsScenario == 2 ? Vector2.Zero : new Vector2(0f, 9.8f));
+                physicsClock = 0;
+                physicsSensorEvents = physicsSensorEnds = physicsContactBegins = physicsContactEnds = 0;
+                physicsRayHit = false;
+                System.Array.Clear(physicsStressBodies, 0, physicsStressBodies.Length);
+                if (physicsScenario == 1)
+                {
+                    var anchor = physicsWorld.CreateBody(PhysicsBodyType.Static, new Vector2(-2, -2));
+                    physicsPendulum = physicsWorld.CreateBody(PhysicsBodyType.Dynamic, new Vector2(-2, 0));
+                    physicsPendulum.AddFixture(Collider2D.Capsule(0.22f, 0.5f));
+                    physicsWorld.CreateRevoluteJoint(anchor, physicsPendulum, new Vector2(-2, -2));
+                    physicsPendulum.LinearVelocity = new Vector2(3, 0);
+                    physicsSlider = physicsWorld.CreateBody(PhysicsBodyType.Dynamic, new Vector2(1, -1));
+                    physicsSlider.AddFixture(Collider2D.Box(0.6f, 0.6f));
+                    physicsWorld.CreatePrismaticJoint(anchor, physicsSlider, new Vector2(1, -1), Vector2.UnitX);
+                    return;
+                }
+                if (physicsScenario == 2)
+                {
+                    var wall = physicsWorld.CreateBody(PhysicsBodyType.Static, Vector2.Zero);
+                    wall.AddFixture(Collider2D.Box(0.5f, 3)).SetCollisionFilter(2, 1);
+                    var sensorBody = physicsWorld.CreateBody(PhysicsBodyType.Static, new Vector2(-1.6f, 0));
+                    sensorBody.AddFixture(Collider2D.Box(0.5f, 3), sensor: true).SetCollisionFilter(4, 1);
+                    physicsBall = physicsWorld.CreateBody(PhysicsBodyType.Dynamic, new Vector2(-3, 0));
+                    physicsVisitor = physicsBall.AddFixture(Collider2D.Circle(0.3f));
+                    physicsVisitor.SetCollisionFilter(1, physicsFilter ? 6UL : 4UL);
+                    return;
+                }
                 var floor = physicsWorld.CreateBody(PhysicsBodyType.Static, new Vector2(0, 2.4f));
                 floor.AddFixture(Collider2D.Box(8, 0.5f), friction: 0.65f);
                 var detector = physicsWorld.CreateBody(PhysicsBodyType.Static, new Vector2(0, 0.75f));
                 detector.AddFixture(Collider2D.Box(1.2f, 0.25f), sensor: true);
                 physicsBall = physicsWorld.CreateBody(PhysicsBodyType.Dynamic, new Vector2(0, -2.0f));
                 physicsBall.AddFixture(Collider2D.Circle(0.38f), restitution: 0.65f);
-                System.Array.Clear(physicsStressBodies, 0, physicsStressBodies.Length);
                 if (physicsStress)
                 {
                     // Carga de medição real: 64 corpos dinâmicos, sem substituir o SAT.
@@ -381,7 +416,7 @@ internal static class LaboratoryTemplate
                 scenePause.Cancel(); sceneHide.Cancel(); sceneAttach.Cancel();
                 debugToggle.Cancel(); debugRotate.Cancel(); debugReflect.Cancel(); debugView.Cancel();
                 themeDemoButton.Cancel(); themeDemoSlider.Cancel();
-                physicsMode.Cancel(); physicsRestart.Cancel(); physicsLoad.Cancel();
+                physicsMode.Cancel(); physicsRestart.Cancel(); physicsLoad.Cancel(); physicsScenarioButton.Cancel();
             }
 
             bool UpdateNavigation()
@@ -495,9 +530,11 @@ internal static class LaboratoryTemplate
                 physicsMode.IsEnabled = page == 9;
                 physicsRestart.IsEnabled = page == 9 && physicsVisible;
                 physicsLoad.IsEnabled = page == 9 && physicsVisible;
+                physicsScenarioButton.IsEnabled = page == 9 && physicsVisible;
                 physicsMode.Update(Input);
                 physicsRestart.Update(Input);
                 physicsLoad.Update(Input);
+                physicsScenarioButton.Update(Input);
                 if (page >= 7) { UpdateAdvancedPage(time); return; }
                 if (page == 6)
                 {
@@ -668,12 +705,33 @@ internal static class LaboratoryTemplate
                     if (physicsMode.WasClicked) physicsVisible = !physicsVisible;
                     if (physicsVisible)
                     {
-                        if (physicsLoad.WasClicked) { physicsStress = !physicsStress; ResetPhysics(); }
+                        if (physicsScenarioButton.WasClicked)
+                        {
+                            physicsScenario = (physicsScenario + 1) % 3;
+                            ResetPhysics();
+                        }
+                        if (physicsLoad.WasClicked)
+                        {
+                            if (physicsScenario == 0) { physicsStress = !physicsStress; ResetPhysics(); }
+                            else if (physicsScenario == 1) physicsPendulum.ApplyImpulse(new Vector2(0.25f, 0));
+                            else { physicsFilter = !physicsFilter; ResetPhysics(); }
+                        }
                         if (physicsRestart.WasClicked) ResetPhysics();
                         if (time.DeltaSeconds > 0)
                         {
+                            physicsClock += time.DeltaSeconds;
+                            if (physicsScenario == 1)
+                                physicsSlider.LinearVelocity = new Vector2(((int)(physicsClock / 2) % 2 == 0) ? 1 : -1, 0);
+                            else if (physicsScenario == 2)
+                                physicsBall.LinearVelocity = new Vector2(((int)(physicsClock / 2) % 2 == 0) ? 2 : -2, 0);
                             physicsWorld.Step(System.MathF.Min(time.DeltaSeconds, 1f / 30f));
                             physicsSensorEvents += physicsWorld.SensorBeginCount;
+                            physicsSensorEnds += physicsWorld.SensorEndCount;
+                            physicsContactBegins += physicsWorld.ContactBeginCount;
+                            physicsContactEnds += physicsWorld.ContactEndCount;
+                            if (physicsScenario == 2)
+                                physicsRayHit = physicsWorld.RaycastFiltered(new Vector2(-3.5f, 1), Vector2.UnitX,
+                                    7, 1, 2, out var rayHit) && rayHit.Fixture.IsValid;
                         }
                         return;
                     }
@@ -777,20 +835,29 @@ internal static class LaboratoryTemplate
                 batch.Begin();
                 Title("Fisica Box2D", "Fase 4: gravidade, contatos e sensor");
                 DrawAction(physicsMode.Bounds, "VOLTAR PARA SAT");
-                batch.FillRect(new RectangleF(24, 186, 312, 306), new Color(27, 38, 58));
+                DrawAction(physicsScenarioButton.Bounds, physicsScenario == 0 ? "CENARIO: QUEDA / CARGA" :
+                    physicsScenario == 1 ? "CENARIO: JUNTAS" : "CENARIO: FILTROS / EVENTOS");
+                if (physicsScenario != 0)
+                {
+                    DrawAdvancedPhysics();
+                    batch.End();
+                    return;
+                }
+                batch.FillRect(new RectangleF(24, 222, 312, 192), new Color(27, 38, 58));
                 // Referência 1 m = 40 px; simulação e render separados.
                 batch.FillRect(new RectangleF(32, 386, 296, 20), new Color(74, 156, 91));
                 batch.Rect(new RectangleF(156, 325, 48, 10), Color.Yellow, 2);
                 var point = new Vector2(180, 300) + physicsBall.Position * 40;
-                batch.Draw(dot, new RectangleF(point.X - 15, point.Y - 15, 30, 30), null,
-                    Color.Yellow, physicsBall.Rotation, Vector2.Zero);
+                if (point.Y >= 237 && point.Y <= 399)
+                    batch.Draw(dot, new RectangleF(point.X - 15, point.Y - 15, 30, 30), null,
+                        Color.Yellow, physicsBall.Rotation, Vector2.Zero);
                 if (physicsStress)
                 {
                     for (int i = 0; i < physicsStressBodies.Length; i++)
                     {
                         var body = physicsStressBodies[i];
                         var p = new Vector2(180, 300) + body.Position * 40;
-                        if (p.X < 30 || p.X > 326 || p.Y < 194 || p.Y > 423) continue;
+                        if (p.X < 30 || p.X > 326 || p.Y < 230 || p.Y > 403) continue;
                         batch.Draw(dot, new RectangleF(p.X - 8, p.Y - 8, 16, 16), null,
                             new Color(89, 214, 230), body.Rotation, Vector2.Zero);
                     }
@@ -800,6 +867,41 @@ internal static class LaboratoryTemplate
                 DrawAction(physicsLoad.Bounds, physicsStress ? "CARGA: 64 CORPOS" : "CARGA: 1 CORPO");
                 DrawAction(physicsRestart.Bounds, "REINICIAR SIMULACAO");
                 batch.End();
+            }
+
+            void DrawAdvancedPhysics()
+            {
+                batch.FillRect(new RectangleF(24, 222, 312, 192), new Color(27, 38, 58));
+                var origin = new Vector2(180, 310);
+                if (physicsScenario == 1)
+                {
+                    var anchor = origin + new Vector2(-2, -2) * 28;
+                    var bob = origin + physicsPendulum.Position * 28;
+                    var slider = origin + physicsSlider.Position * 28;
+                    batch.Line(anchor, bob, Color.Yellow, 2);
+                    batch.Circle(anchor, 4, Color.White, 2);
+                    batch.Circle(bob, 9, Color.Yellow, 2);
+                    batch.Line(new Vector2(180, 282), new Vector2(300, 282), Color.White, 1);
+                    batch.FillRect(new RectangleF(slider.X - 9, slider.Y - 9, 18, 18), Color.CornflowerBlue);
+                    batch.DrawString(font, "Pendulo preso / bloco no trilho", new Vector2(24, 422), Color.White, 1.2f);
+                    batch.DrawString(font, $"Trilho Y: {physicsSlider.Position.Y:0.00} (alvo -1)",
+                        new Vector2(24, 442), Color.Yellow, 1.2f);
+                    DrawAction(physicsLoad.Bounds, "IMPULSO NO PENDULO");
+                }
+                else
+                {
+                    var ball = origin + physicsBall.Position * 28;
+                    batch.Rect(new RectangleF(128, 268, 14, 84), Color.Yellow, 2);
+                    batch.FillRect(new RectangleF(173, 268, 14, 84), physicsFilter ? Color.Red : Color.Green);
+                    batch.Circle(ball, 9, Color.White, 2);
+                    batch.Line(new Vector2(82, 338), new Vector2(278, 338), physicsRayHit ? Color.Green : Color.Red, 2);
+                    batch.DrawString(font, $"Sensor entra/sai: {physicsSensorEvents}/{physicsSensorEnds}",
+                        new Vector2(24, 422), Color.Yellow, 1.2f);
+                    batch.DrawString(font, $"Contato inicio/fim: {physicsContactBegins}/{physicsContactEnds}",
+                        new Vector2(24, 442), Color.White, 1.2f);
+                    DrawAction(physicsLoad.Bounds, physicsFilter ? "PAREDE: BLOQUEIA (TOQUE)" : "PAREDE: ATRAVESSA (TOQUE)");
+                }
+                DrawAction(physicsRestart.Bounds, "REINICIAR SIMULACAO");
             }
 
             void DrawFontsAndPanels()

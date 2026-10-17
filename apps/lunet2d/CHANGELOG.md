@@ -17,6 +17,8 @@
 
 ### Added
 
+- LUNET-435 / #629: cenários Juntas e Filtros/eventos dentro do módulo Colisões do Laboratório; pêndulo, trilho, impulso, colisão filtrada, raycast e contadores de entrada/saída de sensores e contatos, com reinício e troca segura de mundo. SAT e carga 1/64 preservados; validação Android específica ainda pendente.
+
 - Fase 4 / Tilemaps completos (em revisão): ponte imutável `TileMap.Create/WithTile/WithLayerSettings/RenameLayer/AddLayer/RemoveLayer/MoveLayer` para autoria de mapas JSON v1. Preserva dados antigos, valida camadas/células/IDs e atualiza maior tile após remoção; o Tile Studio visual continua Fase 5.
 
 - LUNET-435 (em revisão): cenário opcional de 64 corpos Box2D no módulo Colisões do Laboratório, comparável com o caso de 1 corpo pelo Profiler, reset seguro e testes de integração; desempenho no Android ainda precisa de medição real.

@@ -6,6 +6,17 @@
 - Release existente com os sistemas anteriores: [1000321](https://github.com/AbnerCruz/Ecosystem/releases/tag/lunet2d-v0.0.1-dev.1000321), commit `a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21`, ancestral da base auditada.
 - **Não é candidata final da fase:** novo ToJson e painel workspace do PR #493 ainda dependem de integração/release; há lacunas técnicas abaixo.
 
+## Reconciliação em 17/10/2026 — Issue #629
+
+Base atual consultada: `fccefa75bce650506eb8acbfee81a35df7fc4d9b`. Os trechos abaixo mantêm a auditoria de 11/10 como histórico; esta seção atualiza as pendências que mudaram desde então.
+
+- Round-trip/jogo conjunto: aprovação explícita #500, registrada em `HO-20261011-lunet-f4-audit`. Não equivale à aprovação de requisitos ainda ausentes.
+- Profiler no workspace: PR #493 integrado e DEVICE aprovado #502; não pedir novamente o aceite já registrado.
+- Carga física: PR #499 integrado e roteiro 1/64 corpos aprovado #503. Não há números brutos anexados para publicar como benchmark.
+- Ponte de edição TileMap v1: integrada; compatibilidade aprovada #515. A UI Tile Studio continua ausente e a aprovação de compatibilidade não cria esse editor.
+- Física avançada: novos cenários executáveis no Laboratório (juntas, filtros, sensores e contatos), Issue #629; CI/APK e DEVICE específico ainda devem ser conferidos. O cenário básico e SAT/carga são preservados.
+- Permanecem abertos: contador real de audio underruns; conexão UI com Tile Studio; aceite específico nine-slice; validação avançada da física e gate integral. Nenhuma fase foi adiantada nem requisito transferido silenciosamente.
+
 ## 1. Gate (§28)
 
 Jogos 2D substanciais apenas com APIs oficiais. O Laboratório executa 12 módulos sobre o framework público. O guia `gate-framework-advanced` agora fornece um jogo completo reproduzível com mapa/colisão física/sensores/câmera/animação/partículas/UI/áudio, vitória, derrota e reinício; sua execução portátil não equivale à aprovação no aparelho. Gate integral **não aprovado**. Fase 4 permanece em andamento; Fase 5 não iniciada.

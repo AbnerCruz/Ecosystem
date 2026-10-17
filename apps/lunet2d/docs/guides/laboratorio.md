@@ -21,7 +21,7 @@ Crie **Novo projeto → Laboratório** e toque em **Run**, sem copiar código. O
 11. **Fontes e painéis:** fonte bitmap proporcional e atlas procedural, alteração de escala e NineSlice preservando bordas.
 12. **Temas de UI:** `UiTheme.Dark`, `UiTheme.Light` e `UiTheme.HighContrast` oficiais, botão e slider reais com contador e valor.
 
-Os tiles, sprites e fontes de exemplo são gerados em memória, sem arquivos externos. Música e efeitos são os assets locais do template. A página de colisão cobre **SAT geométrico**, não física contínua; TrueType, mundo físico com juntas e editor Tile Studio seguem pendentes porque ainda não existem como recursos completos.
+Os tiles, sprites e fontes de exemplo são gerados em memória, sem arquivos externos. Música e efeitos são os assets locais do template. A página de colisão conserva o **SAT geométrico** e oferece cenários Box2D separados. Fontes TrueType têm guia próprio; o editor Tile Studio continua na Fase 5.
 
 ## Roteiro único de DEVICE
 
@@ -39,3 +39,16 @@ A página 10/12 agora alterna entre **SAT** (padrão e intocado) e **Física Box
 Na página **Colisões**, toque **VER FÍSICA BOX2D** e depois **CARGA: 1 CORPO** para alternar para **CARGA: 64 CORPOS**. O mesmo mundo físico passa a simular 64 corpos dinâmicos adicionais, com paredes de contenção, mantendo a bola e o sensor da demonstração original. Toque de novo no botão para retornar ao caso simples. **REINICIAR SIMULAÇÃO** recria o mundo no modo ativo. O SAT original permanece acessível.
 
 Para medir desempenho de verdade no Android, ligue **▥ Perf** no Preview, mantenha o caso de 64 corpos por 60 segundos, depois registre FPS, CPU Update/Draw, P95, hitches, GC e memória. Repita com 1 corpo no mesmo aparelho. Registre modelo/Android, versão do APK, orientação e taxas de atualização. Os testes automáticos comprovam presença dos 64 corpos, simulação e descarte, mas **não fornecem FPS nem aprovam desempenho em dispositivo**. Crie um novo projeto Laboratório para receber o template atualizado; projetos anteriores não são reescritos.
+
+
+## Juntas, filtros e eventos (Fase 4)
+
+Crie **um novo Laboratório** e abra **Índice → Colisões → Ver Física Box2D**. Abaixo de “Voltar para SAT”, o botão **Cenário** alterna três casos. Nenhum projeto antigo é alterado.
+
+1. **Queda / carga:** mantém o caso básico e a alternância de 1/64 corpos já existente.
+2. **Juntas:** o pêndulo amarelo permanece preso à âncora; o bloco azul se desloca sobre o trilho horizontal apesar da gravidade. **Impulso no pêndulo** aplica impulso real. O valor Y do trilho deve continuar próximo de −1. **Reiniciar** recria o mundo e as juntas.
+3. **Filtros / eventos:** uma bola atravessa o sensor amarelo e encontra a parede. Com **Parede: bloqueia**, ela para na parede vermelha e volta; os contadores de início/fim de contato e entrada/saída de sensor sobem. Espere pelo menos cinco segundos. Toque para **Parede: atravessa**: o cenário reinicia, a parede fica verde, a bola atravessa e os contatos físicos permanecem em zero; o sensor continua contando. O raio horizontal verde consulta somente a categoria da parede, independentemente do filtro da bola.
+
+Em ambos os Previews, pause/retome, ponha o app em segundo plano e retorne, reinicie cada cenário, volte ao SAT e então pare/rode novamente. Os controles não devem disparar ao soltar um dedo capturado antes de uma pausa. A troca de cenário descarta o mundo anterior; não acumula simulações. Responda passou/falhou/não testado para juntas, filtros, eventos e lifecycle, com versão do APK e aparelho.
+
+Este roteiro comprova a parte avançada da física quando executado no Android; não aprova automaticamente o gate inteiro da Fase 4 nem mede audio underruns.
