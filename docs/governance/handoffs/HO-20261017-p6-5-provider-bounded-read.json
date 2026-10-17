@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261017-p6-5-provider-bounded-read",
   "category": "HANDOFF",
-  "timestamp": "2026-10-17T20:02:39.055759Z",
+  "timestamp": "2026-10-17T20:07:35.607632Z",
   "agent": {
     "id": "codex-p6-5-provider-bounded-read",
     "kind": "ai-agent"
@@ -14,7 +14,7 @@
   "branch": "fix/p6-5-provider-bounded-read-20261017",
   "base_commit": "e20bcbd0610cd6d89b848951ebca6a1042040d9d",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/622",
   "files_changed": [
     "apps/ecosystem-ai/src/AgentRuntime.Providers.ChatCompletions/ChatCompletionsProvider.cs",
     "apps/ecosystem-ai/tests/AgentRuntime.Tests/ChatCompletionsResponseReadTests.cs",
@@ -32,13 +32,15 @@
       "check": "AgentRuntime.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "dotnet test --project tests/AgentRuntime.Tests: 282/282, incluindo nove casos novos de resposta HTTP."
+      "evidence": "dotnet test --project tests/AgentRuntime.Tests: 282/282, incluindo nove casos novos de resposta HTTP.",
+      "tested_commit": "ffad8d0ad67420a8899790318f5cb0ec567a650f"
     },
     {
       "check": "EcosystemAi.ProjectStore.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "dotnet test --project tests/EcosystemAi.ProjectStore.Tests: 11/11."
+      "evidence": "dotnet test --project tests/EcosystemAi.ProjectStore.Tests: 11/11.",
+      "tested_commit": "ffad8d0ad67420a8899790318f5cb0ec567a650f"
     },
     {
       "check": "Consistency",
@@ -47,10 +49,17 @@
       "evidence": "dotnet run tests/consistency/Check.cs: 22/22. Snapshot GitHub Issues ausente localmente; conferência completa pelo CI."
     },
     {
-      "check": "Self-test e CI",
+      "check": "Self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "PATH=/workspace/scratch/dotnet:$PATH dotnet run tests/consistency/Check.cs -- --self-test: exit 0, todos os checks provaram detectar suas violações. Primeira tentativa sem SDK no PATH falhou ao iniciar subprocessos; configuração corrigida e execução completa passou."
+    },
+    {
+      "check": "CI do código ffad8d0a",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Self-test local em execução com SDK no PATH; CI/Android/integrador serão executados no PR."
+      "evidence": "Tests Runtime/Product e pacotes Windows/Linux/macOS passaram: runs 39065155628 e 39065155611. Android/APK, consistency e integrador ainda em execução na última consulta. https://github.com/AbnerCruz/Ecosystem/pull/622",
+      "tested_commit": "ffad8d0ad67420a8899790318f5cb0ec567a650f"
     }
   ],
   "known_issues": [
@@ -59,7 +68,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Finalizar consistency/self-test; abrir PR pronto e observar CI/integrador."
+    "Conferir CI final e integração automática do PR #622 no estado combinado; corrigir eventual falha sem merge manual.",
+    "Manter P6-5, #603 e #610 abertos; este bugfix não encerra os gates."
   ],
   "decisions_required": [],
   "normative_sources": [
