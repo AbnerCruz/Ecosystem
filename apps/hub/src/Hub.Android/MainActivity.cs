@@ -112,34 +112,74 @@ public sealed partial class MainActivity : Activity
     {
         if (HubDownloads.Session.Status.Active || _destroyed) return;
         _load?.Cancel();
-        _load = new CancellationTokenSource();
-        var ct = _load.Token;
-        _refreshing = true;
-        _refresh!.Enabled = false;
-        UpdateDownloadControls();
-        _status!.Text = "Atualizando…";
-        _releaseNotes?.Refresh(_snapshot, true);
+        // Uma atualização anterior pode terminar depois da nova. Só a atualização
+        // ainda ativa pode reabilitar controles ou publicar resultados.
+        var request = new CancellationTokenSource();
+        _load = request;
+        var ct = request.Token;
 
-        HubSnapshot? fresh = null;
-        try { fresh = await Task.Run(() => new HubLoader(Http, Options).LoadAsync(ct), ct); }
-        catch (System.OperationCanceledException) { return; }
-        catch (Exception) { /* falha isolada: a política cai para o último estado bom */ }
+        try
+        {
+            _refreshing = true;
+            _refresh!.Enabled = false;
+            UpdateDownloadControls();
+            _status!.Text = "Atualizando…";
+            _releaseNotes?.Refresh(_snapshot, true);
 
-        if (ct.IsCancellationRequested || _destroyed) return;
+            HubSnapshot? fresh = null;
+            try { fresh = await Task.Run(() => new HubLoader(Http, Options).LoadAsync(ct), ct); }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested) { return; }
+            catch (Exception) { /* rede/catálogo falhou; política usa último estado bom */ }
 
-        var choice = SnapshotPolicy.Choose(fresh, ReadCache());
-        if (choice.ToCache is { } json) WriteCache(json);
-        _snapshot = choice.Show;
-        _renderer!.Render(HubScreenBuilder.Build(choice.Show));
-        _releaseNotes?.Refresh(_snapshot, false);
-        ShowDownloadChoices(choice.Show);
-        _status.Text = choice.Show is null ? "Nada para mostrar."
-            : choice.Show.Stale ? "Último estado conhecido — a leitura atual falhou."
-            : $"Atualizado às {DateTime.Now:HH:mm}.";
-        _refresh.Enabled = true;
-        _refreshing = false;
-        UpdateDownloadControls();
-        try { await RefreshInstallationTrust(ct); } catch (System.OperationCanceledException) { }
+            if (ct.IsCancellationRequested || _destroyed || !ReferenceEquals(_load, request)) return;
+
+            var choice = SnapshotPolicy.Choose(fresh, ReadCache());
+            if (choice.ToCache is { } json) WriteCache(json);
+            _snapshot = choice.Show;
+            _renderer!.Render(HubScreenBuilder.Build(choice.Show));
+            _releaseNotes?.Refresh(_snapshot, false);
+            ShowDownloadChoices(choice.Show);
+            _status.Text = choice.Show is null ? "Nada para mostrar."
+                : choice.Show.Stale ? "Último estado conhecido — a leitura atual falhou."
+                : $"Atualizado às {DateTime.Now:HH:mm}.";
+
+            try { await RefreshInstallationTrust(ct); }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested) { return; }
+            catch (Exception)
+            {
+                // Falha de rede/parsing da aprovação não pode virar exceção solta
+                // de async void nem autorização antiga para instalar/abrir.
+                if (ct.IsCancellationRequested || _destroyed || !ReferenceEquals(_load, request)) return;
+                _approvedPackages.Clear();
+                _status.Text += " Confiança de instalação indisponível; instalação bloqueada.";
+                UpdateInstallationControls();
+            }
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
+        catch (Exception)
+        {
+            // Nunca inferir sucesso; manter apenas a última projeção já exibida.
+            if (!_destroyed && !ct.IsCancellationRequested && ReferenceEquals(_load, request))
+            {
+                _approvedPackages.Clear();
+                _status!.Text = "Falha ao atualizar o Hub. Tente novamente; instalações bloqueadas.";
+                UpdateInstallationControls();
+            }
+        }
+        finally
+        {
+            if (ReferenceEquals(_load, request))
+            {
+                _load = null;
+                _refreshing = false;
+                if (!_destroyed)
+                {
+                    _releaseNotes?.Refresh(_snapshot, false);
+                    UpdateDownloadControls();
+                }
+            }
+            request.Dispose();
+        }
     }
 
     string? ReadCache()
