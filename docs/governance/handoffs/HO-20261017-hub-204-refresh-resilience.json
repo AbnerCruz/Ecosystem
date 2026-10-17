@@ -3,14 +3,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261017-hub-204-refresh-resilience",
   "category": "HANDOFF",
-  "timestamp": "2026-10-17T14:53:02.803Z",
+  "timestamp": "2026-10-17T14:56:43.348Z",
   "agent": {
     "id": "chatgpt-ecosystem-hub-204",
     "kind": "ai-agent"
   },
   "task_id": "HUB-204",
   "component": "hub",
-  "state": "verifying",
+  "state": "review",
   "branch": "fix/hub-204-refresh-resilience-20261017",
   "base_commit": "e18f7737d6d73cb8bd6fea275c3c29344afe0723",
   "commit": null,
@@ -31,8 +31,9 @@
     {
       "check": "Hub.Tests e APK Android em pull_request",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "CI será executado no PR #609; sem .NET/Android SDK no executor da conversa."
+      "result": "passed",
+      "evidence": "GitHub Actions hub-ci run 39042685515 (attempt 2): jobs Hub.Tests e Android APK verdes no commit f229301ec59686141492ca65d27fedd8de987770; APK de debug no artifact hub-debug-apk id 12104707203. No attempt 1 houve falha intermitente no teste pré-existente DeadlineIsTransportFailureAndSessionRemainsUsable (timeout de 25 ms) em código Hub.Core não alterado; rerun passou. https://github.com/AbnerCruz/Ecosystem/actions/runs/39042685515",
+      "tested_commit": "f229301ec59686141492ca65d27fedd8de987770"
     },
     {
       "check": "Consistency e self-test no estado combinado",
@@ -51,12 +52,13 @@
   ],
   "known_issues": [
     "O fechamento imediato relatado antes não foi reproduzido nem possui stack trace; esta correção trata um caminho concreto de exceção mas não prova causa ou cura do incidente.",
-    "CI e teste físico estão pendentes; a branch não deve ser declarada concluída."
+    "CI e teste físico estão pendentes; a branch não deve ser declarada concluída.",
+    "O teste Hub.Tests.AuthenticatedHostGatewayTests.DeadlineIsTransportFailureAndSessionRemainsUsable (25 ms) falhou na primeira execução em Core não alterado e passou no rerun; potencial instabilidade de CI a acompanhar."
   ],
   "blockers": [],
   "next_actions": [
-    "Conferir Hub.Tests, build Android e consistency; corrigir qualquer falha antes de sair de verifying.",
-    "Após CI, colocar o PR pronto para revisão e deixar o integrador validar o estado combinado sem merge manual.",
+    "Consistency e self-test ainda devem encerrar verdes no PR/estado combinado; Hub.Tests e APK Android já passaram em rerun (run 39042685515).",
+    "Deixar PR pronto para integrador automático; revisão combinada e integração dependem dos checks e das regras da main.",
     "Testar no dispositivo Android os cenários listados em apps/hub/docs/instalar-e-abrir.md; sem DEVICE manter a Issue aberta.",
     "Depois, retomar P6-5 e a unificação da IA conforme os gates aprovados."
   ],
