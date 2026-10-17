@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261016-ai-unification-direction",
   "category": "HANDOFF",
-  "timestamp": "2026-10-16T11:29:48.573260+00:00",
+  "timestamp": "2026-10-17T16:20:54.373Z",
   "agent": {
     "id": "codex-ai-unification",
     "kind": "ai-agent"
@@ -57,6 +57,12 @@
       "check": "Simulação do integrador",
       "result": "passed",
       "evidence": "Todos os cenários passaram localmente, incluindo corrida de main/head, gates críticos e recusa de autorização indevida."
+    },
+    {
+      "kind": "automated",
+      "check": "Reconciliação semântica Git (DEC-0049 + DEC-0050)",
+      "result": "passed",
+      "evidence": "Branch PR #605 atualizada por merge commit 3bbb2648c08aed16f3853847aff67c58061d9515, com pais 110a178a (trabalho original) e d43a5a2d (main). Auditoria comparou as 49 entradas de cada lado: apenas DEC-0049 existia na main e apenas DEC-0050 no PR, nenhuma decisão comum diferia; árvore resultante contém as 50 decisões sem duplicação. Hunks dos 4 arquivos comuns restantes aplicados à main sem divergência semântica; arquivos novos do PR preservados. CI combinado permanece por validar."
     }
   ],
   "known_issues": [
@@ -66,7 +72,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Integrar documentação pelo integrador com autorização crítica quando checks verdes.",
+    "Conflito DEC-0049/0050 conciliado; aguardar novo ciclo do integrador para CI combinado e autorização crítica do proprietário (sem merge manual).",
     "Integrar/testar código #604 separadamente.",
     "Implementar suíte de equivalência de transporte/providers e contrato concreto antes da extração."
   ],
