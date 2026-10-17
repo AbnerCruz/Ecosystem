@@ -128,7 +128,7 @@ public sealed partial class MainActivity : Activity
 
             HubSnapshot? fresh = null;
             try { fresh = await Task.Run(() => new HubLoader(Http, Options).LoadAsync(ct), ct); }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested) { return; }
+            catch (System.OperationCanceledException) when (ct.IsCancellationRequested) { return; }
             catch (Exception) { /* rede/catálogo falhou; política usa último estado bom */ }
 
             if (ct.IsCancellationRequested || _destroyed || !ReferenceEquals(_load, request)) return;
@@ -144,7 +144,7 @@ public sealed partial class MainActivity : Activity
                 : $"Atualizado às {DateTime.Now:HH:mm}.";
 
             try { await RefreshInstallationTrust(ct); }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested) { return; }
+            catch (System.OperationCanceledException) when (ct.IsCancellationRequested) { return; }
             catch (Exception)
             {
                 // Falha de rede/parsing da aprovação não pode virar exceção solta
@@ -155,7 +155,7 @@ public sealed partial class MainActivity : Activity
                 UpdateInstallationControls();
             }
         }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
+        catch (System.OperationCanceledException) when (ct.IsCancellationRequested) { }
         catch (Exception)
         {
             // Nunca inferir sucesso; manter apenas a última projeção já exibida.
