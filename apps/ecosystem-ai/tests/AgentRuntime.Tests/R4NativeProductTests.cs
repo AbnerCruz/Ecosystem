@@ -78,6 +78,13 @@ public sealed class R4NativeProductTests
         Assert.Contains(events, e => e.Kind == EventKind.ToolCalled && e.Tool == FileToolIds.Read);
         Assert.Contains(events, e => e.Kind == EventKind.VerificationPassed);
         Assert.DoesNotContain("sentinel-native-secret", string.Join("", events.Select(e => e.Payload)));
+        var audit = await ProductRunAudit.ReadAsync(f.Store.Read(), f.Project.Id, f.Session.Id,
+            result.Receipt.RunId, f.Journal);
+        Assert.Equal(RunAuditAvailability.Available, audit.Availability);
+        Assert.True(audit.Verified);
+        Assert.Equal(new RunTokenUsage(40, 20), audit.Tokens);
+        Assert.Equal(RunStatus.Succeeded, audit.Status);
+        Assert.Contains(audit.Events!, e => e.Kind == EventKind.ToolCalled);
         Assert.Equal(2, result.Receipt.CostMinor);
         Assert.Equal(20, host.ReservedCents);
         Assert.Equal(80, host.RemainingCents);

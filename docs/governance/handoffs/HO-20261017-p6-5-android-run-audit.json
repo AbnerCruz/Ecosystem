@@ -1,0 +1,150 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261017-p6-5-android-run-audit",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-17T20:23:08.843730Z",
+  "agent": {
+    "id": "codex-p6-5-android-run-audit",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-android-run-audit-20261017",
+  "base_commit": "83d6a1290377ddb3210cd7717d8be19f8e33ada6",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/624",
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Product/ProductRunAudit.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Android/MainActivity.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/ProductRunAuditTests.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4NativeProductTests.cs",
+    "apps/ecosystem-ai/docs-r4-android-native.md",
+    "docs/governance/handoffs/HO-20261017-p6-5-android-run-audit.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: Android apresentava recibos sem permitir conferir replay/eventos. Adicionada auditoria explícita por execução da conversa pelo journal existente.",
+    "Projeção portátil consulta RunState.Replay, verifica contexto/associação exclusiva e divergências de estado/verificação/custo/moeda. Sem payloads/textos livres ou nova persistência.",
+    "Lista nativa das últimas 50 execuções e detalhes dos últimos 100 eventos; IO fora da thread de UI, guard contra retorno para conversa diferente.",
+    "Testes com filesystem real e cenário de Host/HTTP mockado existente cobrem a consulta de uma execução real."
+  ],
+  "verification": [
+    {
+      "check": "AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Build serializado sem warnings/errors; execução direta de AgentRuntime.Tests.dll pelo xUnit v3: 286 testes, zero falhas (13 casos novos). dotnet test local encontrou falha de infraestrutura MSBuild/handshake; runner direto executou a suíte completa. Estado anterior ao incremento de tokens (#625); suíte completa atual com tokens: 305/305.",
+      "tested_commit": "25e419e1"
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks locais passaram; snapshot de Issues será conferido no CI."
+    },
+    {
+      "check": "DEVICE — histórico e auditoria Android",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/ecosystem-ai/docs-r4-android-native.md",
+      "critical": false,
+      "evidence": "Abrir histórico/detalhes, conferir rolagem de eventos longos, trocar conversa/voltar durante consulta; nenhum reenvio ou nova chamada/gasto."
+    },
+    {
+      "check": "Consistency final",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks locais passaram incluindo os dois handoffs; snapshot de Issues fica para CI."
+    },
+    {
+      "check": "Self-test de governança",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Execução completa exit 0: todos os checks provaram detectar suas violações. Checker inalterado; execução começou no slice de auditoria e terminou durante o incremento de tokens."
+    },
+    {
+      "check": "CI Android e estado combinado final",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "PR #624. Tests e pacotes desktop do primeiro commit 25e419e1 já verdes; telemetria adicionada exige CI da nova cabeça."
+    }
+  ],
+  "known_issues": [
+    "Runs interrompidos antes de persistir recibo ainda não são descobertos pela lista.",
+    "Auditoria estrutural não prova qualidade da resposta, custo faturado, DEVICE nem conclusão de P6-5."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Finalizar testes, consistency/self-test e PR; conferir CI Android e integração governada.",
+    "Prosseguir por lacunas globais acionáveis sem encerrar Fase 6 por CI sozinho."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+    "docs/architecture/audits/ai-unification-2026-10-16.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-android-native.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Journal/replay do Core continuam autoridades; DTO efêmero compara recibo, não grava estado."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Sem dependência de Hub."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #623, branch e handoff rastreáveis."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Somente leitura por recibo/contexto autorizado; nenhum grant, segredo ou payload exposto."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE separado e pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "CI e integração pendentes, sem declarar done."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Projeção do Runtime existente, sem novo laço ou serviço."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Código local no Product; sem extração ou dependência entre Products."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Distribuição standalone preservada."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "run-journal-audit-view",
+      "status": "possible-candidate",
+      "rationale": "Consulta de estado genérica pode servir futuros consumidores; permanece no Product e usa replay canônico, sem extração autorizada."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Visualização local read-only de dados já autorizados e persistidos, sem novos grants, transporte, contrato ou store."
+  },
+  "cost": null
+}

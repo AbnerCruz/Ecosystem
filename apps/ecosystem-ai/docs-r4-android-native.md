@@ -198,3 +198,46 @@ isolamento; executar com sucesso uma delas e confirmar limpeza local,
 mantendo o rascunho da outra. Encerrar e reiniciar o processo para conferir
 que textos não enviados não reaparecem. CI prova isolamento da camada
 portátil, não o comportamento tátil da Activity.
+
+## Auditoria de uma execução no Android
+
+Em **Histórico de execuções e custos**, selecione uma das últimas 50 execuções
+(mais recentes primeiro). A consulta explícita lê o journal fora da thread da
+interface e reconstrói o estado com `RunState.Replay`. Exibe estado, verificação,
+passos, chamadas de ferramentas, custo registrado e os últimos 100 eventos
+(tipos, sequência e horário). A contagem total permanece visível.
+
+Journal ausente/ilegível não vira confirmação de sucesso. Diferença de estado,
+verificação, moeda ou custo entre recibo e replay gera aviso de divergência.
+Eventos de outro projeto ou referência ambígua de run são recusados. A projeção
+não entrega payloads, prompts, respostas, argumentos, nomes de arquivos ou
+mensagens de exceção. Não cria store, não altera journal/recibo e não chama IA.
+Nenhuma retomada, reparo ou reenvio é executado ao abrir a auditoria. Runs sem
+recibo ainda não aparecem na lista; descoberta de runs interrompidos antes da
+gravação do recibo continua sendo lacuna separada.
+
+`ProductRunAuditTests` cobre filesystem real, isolamento, divergência, ausência,
+corrupção, privacidade, limites e cancelamento. O cenário do Host nativo com
+HTTP mockado também confere o replay do run real. **DEVICE pendente:** abrir
+lista e detalhes em aparelho, voltar/trocar conversa durante a consulta,
+conferir rolagem de histórico longo e ausência de nova chamada/gasto.
+
+### Tokens reportados pelas respostas
+
+Eventos `ModelResponded` novos guardam `inputTokens` e `outputTokens` no `Data`
+existente, em decimal invariante. A auditoria soma essas contagens e as mostra
+junto do custo. A soma vem do journal, não de um contador persistido na UI.
+Registros antigos sem os dois campos, contagens inválidas ou overflow deixam
+o total indisponível; zero medido continua distinto de informação ausente.
+
+O adapter informa `Usage.TokensKnown=false` quando não recebe ambos os
+contadores. Custo explícito pode existir sem contagem; estimativa por tarifa
+exige os dois números completos. Contagem malformada não é normalizada para
+zero. Provedores de teste gravados preservam o indicador opcional, com leitura
+compatível das gravações antigas que já traziam contagens explícitas.
+
+Os números cobrem **respostas registradas**, não garantem a fatura nem medem
+chamadas interrompidas sem resposta. Nada disso muda grants, saldo, reservas,
+política do ledger ou condições financeiras de outros Products. O roteiro
+DEVICE inclui conferir contagens com uma resposta conhecida e abrir um run
+histórico sem tokens, que deve mostrar indisponibilidade.

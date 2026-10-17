@@ -37,7 +37,11 @@ public sealed record ModelRequest(ModelProfile Profile, string System, IReadOnly
 
 public enum StopReason { EndTurn, ToolUse, MaxTokens }
 
-public sealed record Usage(long InputTokens, long OutputTokens, Money Cost);
+public sealed record Usage(long InputTokens, long OutputTokens, Money Cost)
+{
+    // Adapters que recebem custo sem contagem não podem apresentar zero como medição.
+    public bool TokensKnown { get; init; } = true;
+}
 
 public sealed record ModelResponse(IReadOnlyList<ContentBlock> Content, StopReason Stop, Usage Usage);
 

@@ -292,7 +292,7 @@ public sealed partial class MainActivity : Activity
             : $"Autorização restante: {_execution.RemainingCents} centavos USD • {_execution.RemainingRuns} execuções";
         _content.AddView(Text(remaining, 13));
         _content.AddView(Button("Agente / equipe: " + AssigneeName(project.Id), () => SelectAssignee(project.Id)));
-        _content.AddView(Button("Histórico de execuções e custos", () => ShowRuns(session)));
+        _content.AddView(Button("Histórico de execuções e custos", () => ShowRuns(project.Id, session.Id)));
         _content.AddView(Text("Conversa", 18, true));
         if (session.Turns.Count > 40) _content.AddView(Text("Mostrando as últimas 40 mensagens.", 13));
         for (var index = Math.Max(0, session.Turns.Count - 40); index < session.Turns.Count; index++)
@@ -461,12 +461,53 @@ public sealed partial class MainActivity : Activity
             Render();
         });
     }
-    private void ShowRuns(SessionEntry session)
+    private void ShowRuns(string projectId, string sessionId)
     {
-        var lines = session.Runs.TakeLast(50).Select(r =>
-            $"{r.RunId}\n{r.Status} • verificado: {r.Verified}\n{r.CostMinor} centavos {r.Currency} registrados{(r.CostEstimated ? " (estimativa)" : "")}\n{r.Verification}\n");
-        Notice("Recibos da conversa", session.Runs.Count == 0 ? "Nenhuma execução registrada." :
-            "Valores registrados no Runtime; confira a fatura do provedor.\n\n" + string.Join("\n", lines));
+        var session = _store.Read().Projects.Single(p => p.Id == projectId)
+            .Sessions.Single(s => s.Id == sessionId);
+        var runs = session.Runs.TakeLast(50).Reverse().ToArray();
+        if (runs.Length == 0) { Notice("Execuções da conversa", "Nenhuma execução registrada."); return; }
+        var labels = runs.Select(r => $"{r.Status} • {r.CostMinor} {r.Currency} • {r.At:dd/MM HH:mm}\n{r.RunId}").ToArray();
+        var dialog = new AlertDialog.Builder(this);
+        dialog.SetTitle("Execuções • selecione para auditar");
+        dialog.SetItems(labels, (sender, args) => { _ = ShowRunAuditAsync(projectId, sessionId, runs[args.Which].RunId); });
+        dialog.SetNegativeButton("Fechar", (_, _) => { });
+        dialog.Show();
+    }
+
+    private async Task ShowRunAuditAsync(string projectId, string sessionId, string runId)
+    {
+        try
+        {
+            var audit = await Task.Run(async () => await ProductRunAudit.ReadAsync(
+                _store.Read(), projectId, sessionId, runId, _journal));
+            if (IsFinishing || IsDestroyed || _projectId != projectId || _sessionId != sessionId) return;
+            if (audit.Availability == RunAuditAvailability.Missing)
+            { Notice("Auditoria indisponível", "Journal ausente. O recibo sozinho não comprova o replay da execução."); return; }
+            if (audit.Availability == RunAuditAvailability.Unavailable)
+            { Notice("Auditoria indisponível", "Não foi possível conferir o journal desta execução. Nenhum dado foi alterado."); return; }
+            var text = new StringBuilder();
+            if (audit.Availability == RunAuditAvailability.ReceiptMismatch)
+                text.AppendLine("ATENÇÃO: o recibo diverge do journal. Confira os dados antes de reenviar.\n");
+            text.AppendLine($"Estado no Runtime: {audit.Status} • verificado: {audit.Verified}");
+            text.AppendLine($"Passos: {audit.Steps} • chamadas de ferramenta: {audit.ToolCalls}");
+            text.AppendLine(audit.RecordedCost is { } cost
+                ? $"Valor registrado: {cost.Minor} {cost.Currency} em unidade mínima{(audit.CostEstimated ? " (estimativa)" : "")}."
+                : "Custo não informado no journal; não significa chamada gratuita.");
+            text.AppendLine(audit.Tokens is { } tokens
+                ? $"Tokens das respostas: {tokens.InputTokens} de entrada • {tokens.OutputTokens} de saída."
+                : "Tokens não disponíveis para todas as respostas deste run.");
+            text.AppendLine("Valores registrados não garantem a fatura do provedor. Nenhuma chamada ou retomada foi iniciada.");
+            text.AppendLine($"\nEventos: {audit.TotalEvents}. Mostrando os últimos {audit.Events!.Count}.");
+            foreach (var item in audit.Events)
+                text.AppendLine($"#{item.Sequence} • {item.At:HH:mm:ss} • {item.Kind}");
+            Notice("Auditoria da execução", text.ToString());
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            if (!IsFinishing && !IsDestroyed && _projectId == projectId && _sessionId == sessionId)
+                Notice("Auditoria indisponível", "Não foi possível conferir a execução. Nenhum dado foi alterado.");
+        }
     }
     private void ShowReviews(string projectId, string sessionId)
     {
