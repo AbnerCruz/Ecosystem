@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261017-p6-5-android-run-audit",
   "category": "HANDOFF",
-  "timestamp": "2026-10-17T20:23:08.843730Z",
+  "timestamp": "2026-10-17T20:33:38.417278Z",
   "agent": {
     "id": "codex-p6-5-android-run-audit",
     "kind": "ai-agent"
@@ -47,7 +47,7 @@
       "check": "DEVICE — histórico e auditoria Android",
       "kind": "human",
       "result": "pending",
-      "object": "apps/ecosystem-ai/docs-r4-android-native.md",
+      "object": "https://github.com/AbnerCruz/Ecosystem/actions/runs/39066490336",
       "critical": false,
       "evidence": "Abrir histórico/detalhes, conferir rolagem de eventos longos, trocar conversa/voltar durante consulta; nenhum reenvio ou nova chamada/gasto."
     },
@@ -66,8 +66,15 @@
     {
       "check": "CI Android e estado combinado final",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "PR #624. Tests e pacotes desktop do primeiro commit 25e419e1 já verdes; telemetria adicionada exige CI da nova cabeça."
+      "result": "passed",
+      "evidence": "PR #624 integrado automaticamente como rotina em fccefa75. CI Product Android/test e consistency no head ae641331 verdes; integrador no estado combinado aprovado: https://github.com/AbnerCruz/Ecosystem/actions/runs/39066517818 . CI Android da branch e artefato: https://github.com/AbnerCruz/Ecosystem/actions/runs/39066490336 .",
+      "tested_commit": "fccefa75bce650506eb8acbfee81a35df7fc4d9b"
+    },
+    {
+      "check": "Regressão local conjunta com descoberta de runs sem recibo",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Composição temporária main 7562e1d3 + ae641331 (#624) + 3390a10e (#627): 322/322 Runtime/Product, 11/11 ProjectStore, 22/22 consistency e piloto P6-4 com Host Lunet real passaram. Merges sem conflitos. Não é integração de #627 nem DEVICE."
     }
   ],
   "known_issues": [
@@ -76,8 +83,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Finalizar testes, consistency/self-test e PR; conferir CI Android e integração governada.",
-    "Prosseguir por lacunas globais acionáveis sem encerrar Fase 6 por CI sozinho."
+    "Validar DEVICE no APK do run 39066490336; manter review até evidência humana.",
+    "Conferir integração de #627 e prosseguir pelas lacunas de P6-5/#603/#610 sem antecipar gates."
   ],
   "decisions_required": [],
   "normative_sources": [
