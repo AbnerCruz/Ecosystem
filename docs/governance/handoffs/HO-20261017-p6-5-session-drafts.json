@@ -1,0 +1,131 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261017-p6-5-session-drafts",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-17T15:08:45.523Z",
+  "agent": {
+    "id": "chatgpt-p6-5-session-drafts",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "verifying",
+  "branch": "fix/ai-p6-5-session-drafts-20261017",
+  "base_commit": "d7f4d890c0e071dbbf7a5072d97b16cf798f0724",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/612",
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Product/SessionDraftCache.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Android/MainActivity.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/SessionDraftCacheTests.cs",
+    "apps/ecosystem-ai/docs-r4-android-native.md",
+    "docs/governance/handoffs/HO-20261017-p6-5-session-drafts.json"
+  ],
+  "work_completed": [
+    "Corrigido vazamento de rascunho entre projetos/conversas: campos globais substituídos por cache efêmero por par de IDs.",
+    "Callbacks de Android capturam os campos e a identidade da sessão original; os controles limitam entrada ao tamanho aceito pelo executor.",
+    "Executar com sucesso limpa somente a sessão que gerou o resultado; falha e cancelamento não apagam os demais rascunhos.",
+    "Teste puro cobre isolamento, limpeza, limites, LRU de 32 sessões e reinício sem persistência; documentação e roteiro DEVICE incluídos."
+  ],
+  "verification": [
+    {
+      "check": "AgentRuntime.Tests / SessionDraftCacheTests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardar CI ecosystem-ai-ci da branch e tests Product; sem .NET SDK local nesta execução."
+    },
+    {
+      "check": "APK Android do Ecosystem AI",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardar CI Android da branch."
+    },
+    {
+      "check": "Consistency e self-test",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardar consistency e integrador no estado combinado."
+    },
+    {
+      "check": "DEVICE — projetos e conversas isolados",
+      "kind": "human",
+      "result": "pending",
+      "object": "https://github.com/AbnerCruz/Ecosystem/pull/612",
+      "critical": false,
+      "evidence": "Testar duas conversas de um projeto e uma de outro: escrever e alternar, executar uma, cancelar outra, confirmar que nenhum rascunho aparece no contexto errado e que tudo some ao reiniciar o processo."
+    }
+  ],
+  "known_issues": [
+    "O incremento não conclui a experiência P6-5 nem a Fase 6; unificação depende de integração e ADR/decisões próprios.",
+    "Validação de UI em aparelho e integrador pendentes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verificar C# Product tests, Android APK e consistency na branch; corrigir qualquer falha antes de liberar para integrador.",
+    "Passar PR para ready-for-review após testes automatizados e integrar via integrador sem bypass.",
+    "Validar DEVICE, atualizar Issue #611 e preservar status review até evidência humana."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/communication.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-android-native.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Catálogo/sessões continuam autoridades; rascunhos efêmeros não são novo estado persistente concorrente."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhuma dependência nova de Hub ou outros Products."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #611, PR #612, branch e handoff rastreiam escopo e resultados."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Nenhum grant, credencial ou comunicação de rede introduzido no cache."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE da navegação real explicitamente pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying, CI e integração ainda não comprovados."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Mudança circunscrita ao Product e ao bug; sem Runtime/SDK adicional."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Cache permanece local ao Product, sem promoção arquitetural ou segundo consumidor."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Android do Ecosystem AI continua executável independentemente do Hub."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "session-draft-buffer",
+      "status": "product-specific",
+      "rationale": "Rascunhos efêmeros da experiência de chat do Ecosystem AI; sem segundo consumidor, sem necessidade de extração."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Correção de UX/privacidade de dados voláteis e não persistidos, dentro da fronteira do Product sem alteração de contrato ou armazenamento."
+  },
+  "cost": null
+}
