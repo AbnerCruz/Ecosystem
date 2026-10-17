@@ -1,0 +1,140 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261017-p6-5-project-run-recovery",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-17T20:26:22.170222Z",
+  "agent": {
+    "id": "codex-p6-5-project-run-recovery",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-project-run-recovery-20261017",
+  "base_commit": "83d6a1290377ddb3210cd7717d8be19f8e33ada6",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.RunJournal/LocalRunEventLog.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Product/ProductRunRecovery.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Android/MainActivity.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/ProjectRunRecoveryTests.cs",
+    "apps/ecosystem-ai/docs-r4-project-run-recovery.md",
+    "apps/ecosystem-ai/README.md",
+    "docs/governance/handoffs/HO-20261017-p6-5-project-run-recovery.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: run no journal antes de CompleteRun podia ficar invisível por ausência de recibo; inventário limitado do adapter existente e consulta no projeto o tornam descobrível. Issue #626.",
+    "Inventário lê no máximo 100 arquivos/16 MiB por padrão; mesmo decoder de ReadRunAsync valida checksum/versão/eventos/replay, sem segundo parser canônico ou índice persistido.",
+    "Projeção filtra contexto exato, exclui recibos do catálogo inteiro e sinaliza itens ilegíveis/consulta parcial; não infere conversa ou causa nem oferece retry/retomada.",
+    "UI nativa assíncrona no projeto exibe somente estado/contagens/custo registrado, com descarte de retorno para tela diferente.",
+    "Após integração do PR #622, branch avançada para main 7562e1d3 por fast-forward sem conflito; testes do conjunto foram reexecutados."
+  ],
+  "verification": [
+    {
+      "check": "Build portátil e AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Build zero warnings/errors; runner direto xUnit v3: 290/290 após atualização à main 7562e1d3 (oito novos casos, inclui regressões do #622)."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks locais passaram com o handoff, snapshot de Issues será conferido no CI."
+    },
+    {
+      "check": "DEVICE — runs sem recibo",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/ecosystem-ai/docs-r4-project-run-recovery.md",
+      "critical": false,
+      "evidence": "Consultar run sem recibo em projeto de teste, dados inválidos/limites, rolagem e navegação durante consulta; confirmar que nenhuma chamada/gasto é iniciada."
+    },
+    {
+      "check": "Self-test e CI Android",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Self-test local em execução. Android/APK e estado combinado pelo CI do PR."
+    }
+  ],
+  "known_issues": [
+    "Inventário parcial pode não alcançar outros runs; aviso explícito, sem alegar visão global dos mais recentes.",
+    "Não associa conversa nem reconcilia recibo automaticamente; custo desconhecido não significa gratuito.",
+    "Não encerra P6-5/#603/#610 nem prova DEVICE."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Finalizar checks e publicar PR pelo integrador; conferir Android e estado combinado com #624.",
+    "Preservar validação DEVICE pendente e evitar reenvio automático de chamadas com efeito desconhecido."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+    "docs/architecture/audits/ai-unification-2026-10-16.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-android-native.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Journal e RunState.Replay são autoridades; nenhum índice/recibo/conversa é criado pela consulta."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Sem Hub ou dependência entre Products."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #626, branch e handoff observáveis."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Journal fora do workspace, links recusados, consulta limitada e sem payloads/exceções livres."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE separado de provas de disco/headless."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying e CI/integração pendentes."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Extensão do adapter existente, decoder canônico único, sem runtime/serviço paralelo."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Código permanece no Product, sem extração ou novo contrato compartilhado."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Product continua standalone."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "journal-orphan-run-discovery",
+      "status": "possible-candidate",
+      "rationale": "Inventário genérico do adapter pode servir consumidores futuros; não justifica extração antes de review NN-022."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Consulta local read-only de journal já autorizado, sem ampliar grants, escrever dados, executar retomada ou mudar schema."
+  },
+  "cost": null
+}

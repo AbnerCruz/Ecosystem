@@ -219,3 +219,9 @@ não prova de instalação, provider real ou encerramento da P6-5.
 O adapter Chat Completions aplica limite durante a leitura HTTP e não repete
 automaticamente respostas interrompidas com cobrança desconhecida.
 [Limites e testes](docs-provider-response-limits.md).
+
+## Execuções sem recibo no projeto
+
+A prévia Android oferece consulta explícita do journal para descobrir runs
+que ainda não possuem recibo no catálogo, sem inferir conversa nem reenviar.
+[Limites, segurança e roteiro](docs-r4-project-run-recovery.md).

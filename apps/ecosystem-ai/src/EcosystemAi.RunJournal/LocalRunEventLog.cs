@@ -6,6 +6,10 @@ using AgentRuntime;
 
 namespace EcosystemAi.RunJournal;
 
+public sealed record JournalRunSummary(string RunId, string ContextRef, DateTimeOffset At,
+    RunStatus Status, bool Verified, int Steps, int ToolCalls, Money? RecordedCost);
+public sealed record RunJournalInventory(IReadOnlyList<JournalRunSummary> Runs, int UnavailableFiles, bool Truncated);
+
 internal sealed record RunJournalBody(int SchemaVersion, string RunId, IReadOnlyList<string> Events);
 internal sealed record RunJournalEnvelope(RunJournalBody Body, string Sha256);
 
@@ -81,6 +85,55 @@ public sealed class LocalRunEventLog : IEventLog
         return ValueTask.FromResult<IReadOnlyList<RuntimeEvent>>(Load(runId).ToArray());
     }
 
+    /// <summary>Inventário efêmero e limitado. Não cria índice, repara arquivo ou retoma execução.</summary>
+    public RunJournalInventory InspectRuns(int maxFiles = 100, long maxTotalBytes = 16 * 1024 * 1024,
+        CancellationToken cancellationToken = default)
+    {
+        if (maxFiles is < 1 or > 250 || maxTotalBytes is < 1 or > 16 * 1024 * 1024)
+            throw new ArgumentOutOfRangeException(nameof(maxFiles));
+        cancellationToken.ThrowIfCancellationRequested();
+        var runs = new List<JournalRunSummary>();
+        var unavailable = 0;
+        var visited = 0;
+        long bytesRead = 0;
+        // Enumerar sob demanda: OrderBy antes do limite materializaria diretórios ilimitados.
+        foreach (var path in Directory.EnumerateFiles(_root, "*.json", SearchOption.TopDirectoryOnly))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (visited++ >= maxFiles) return new(runs, unavailable, true);
+            try
+            {
+                EnsureNoSymlink(path);
+                var length = new FileInfo(path).Length;
+                if (length <= 0 || length > MaxJournalBytes) { unavailable++; continue; }
+                if (length > maxTotalBytes - bytesRead) return new(runs, unavailable, true);
+                bytesRead += length;
+                // Ler apenas o ID do envelope para passar pela mesma validação canônica de Load.
+                using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                if (stream.Length != length) { unavailable++; continue; }
+                var bytes = new byte[checked((int)length)];
+                stream.ReadExactly(bytes);
+                using var document = JsonDocument.Parse(bytes);
+                var id = document.RootElement.GetProperty("body").GetProperty("runId").GetString();
+                ValidateRunId(id);
+                if (!string.Equals(Path.GetFileName(path), Path.GetFileName(FileFor(id!)), StringComparison.Ordinal))
+                { unavailable++; continue; }
+                var events = Decode(id!, bytes);
+                var state = RunState.Replay(events);
+                if (events.Any(e => e.ContextRef != events[0].ContextRef)) { unavailable++; continue; }
+                runs.Add(new(id!, events[0].ContextRef, events[^1].At, state.Status, state.Verified,
+                    state.Steps, state.ToolCalls, state.Cost));
+            }
+            catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException
+                or JsonException or ArgumentException or InvalidOperationException or KeyNotFoundException
+                or InvalidEventLogException or OverflowException)
+            {
+                unavailable++; // Nenhum conteúdo ou mensagem de arquivo vai à projeção.
+            }
+        }
+        return new(runs, unavailable, false);
+    }
+
     private IReadOnlyList<RuntimeEvent> Load(string runId)
     {
         var path = FileFor(runId);
@@ -91,6 +144,11 @@ public sealed class LocalRunEventLog : IEventLog
             throw new InvalidDataException("Journal vazio ou acima do limite.");
         var bytes = new byte[checked((int)stream.Length)];
         stream.ReadExactly(bytes);
+        return Decode(runId, bytes);
+    }
+
+    private static IReadOnlyList<RuntimeEvent> Decode(string runId, byte[] bytes)
+    {
         RunJournalEnvelope envelope;
         try { envelope = JsonSerializer.Deserialize<RunJournalEnvelope>(bytes, Json)
             ?? throw new JsonException("Envelope vazio."); }
