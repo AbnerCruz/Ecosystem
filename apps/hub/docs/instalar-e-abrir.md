@@ -66,3 +66,27 @@ Chave pública de desenvolvimento limita substituições acidentais, mas **não 
 
 P4-3 fica em review até evidência em aparelho. P4-4 é gate separado por Product e
 caminho realmente disponível; esta implementação não aprova o corte do Product sem pin.
+
+## Falhas de atualização e recuperação — HUB-204 (candidato, DEVICE pendente)
+
+Uma atualização do catálogo e da confiança pode falhar por timeout, indisponibilidade
+do repositório ou conteúdo inválido. Isso **não** autoriza instalar/abrir com dados
+antigos: a consulta de confiança é reunida em um resultado temporário e só então
+publicada, após cancelamento e verificação de lifecycle. Se falhar, a UI remove
+as aprovações deste ciclo, informa que a instalação está bloqueada e preserva
+apenas a projeção de leitura já exibida. O botão de atualização volta a responder
+ao terminar um refresh, inclusive com erro; o término atrasado de uma requisição
+cancelada não pode alterar a UI da requisição mais nova. O Hub não converte
+estado de cache em confiança para instalar.
+
+**Roteiro de regressão Android (NN-017):** iniciar o Hub normalmente; abrir
+offline e atualizar; voltar à rede e atualizar novamente; alternar conexão
+durante a consulta de confiança; repetir toques de atualizar em sequência
+quando disponíveis; confirmar que não há fechamento do processo nem controles
+travados, e que instalar/abrir permanecem bloqueados se a confiança atual
+não pode ser conferida. Capturar `adb logcat` com stack trace caso o fechamento
+imediato volte a acontecer. CI verde **não** substitui este teste no aparelho.
+
+HUB-204 é um endurecimento defensivo específico. Sem stack trace e prova DEVICE,
+não afirmar que ele corrigiu definitivamente o fechamento imediato anteriormente
+relatado pelo proprietário.
