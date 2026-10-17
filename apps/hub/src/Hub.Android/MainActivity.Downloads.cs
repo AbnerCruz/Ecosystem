@@ -92,7 +92,7 @@ public sealed partial class MainActivity
 
     void DownloadChanged() => RunOnUiThread(() =>
     {
-        if (!_destroyed && _observingDownloads) RenderDownloadStatus();
+        if (!_destroyed && !_startupFailed && _observingDownloads) RenderDownloadStatus();
     });
 
     void RenderDownloadStatus()
