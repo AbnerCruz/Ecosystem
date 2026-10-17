@@ -28,12 +28,20 @@ public sealed partial class MainActivity : Activity
     CancellationTokenSource? _load;
     bool _refreshing;
     bool _destroyed;
+    bool _startupFailed;
 
     string CacheFile => System.IO.Path.Combine(FilesDir!.AbsolutePath, "hub-snapshot.json");
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
+        try { InitializeScreen(); }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        { HandleStartupFailure(error); }
+    }
+
+    private void InitializeScreen()
+    {
         HubInstaller.Changed += InstallationChanged;
 
         var root = new LinearLayout(this) { Orientation = Orientation.Vertical };
@@ -79,6 +87,44 @@ public sealed partial class MainActivity : Activity
         Refresh();
     }
 
+    private void HandleStartupFailure(Exception error)
+    {
+        _startupFailed = true;
+        _load?.Cancel();
+        // Callbacks de operações iniciadas antes da falha não podem visitar
+        // controles parcialmente construídos. OnDestroy também é idempotente.
+        UnobserveDownloads();
+        HubInstaller.Changed -= InstallationChanged;
+        _approvedPackages.Clear();
+        _refreshing = false;
+        if (_refresh is not null) _refresh.Enabled = false;
+
+        // Uma exceção gerenciada deve resultar em tela recuperável, não processo
+        // encerrado nem instalação autorizada por estado incompleto.
+        var diagnostic = HubStartupDiagnostic.From(error);
+        var root = new LinearLayout(this) { Orientation = Orientation.Vertical };
+        root.SetPadding(ScreenRenderer.Dp(this, 20), ScreenRenderer.Dp(this, 40),
+            ScreenRenderer.Dp(this, 20), ScreenRenderer.Dp(this, 20));
+        var title = new TextView(this) { Text = "Ecosystem Hub não iniciou", TextSize = 22 };
+        title.SetTypeface(null, global::Android.Graphics.TypefaceStyle.Bold);
+        var detail = new TextView(this) { Text = diagnostic.Explanation, TextSize = 16 };
+        var code = new TextView(this) { Text = "Diagnóstico: " + diagnostic.Id, TextSize = 14 };
+        var hint = new TextView(this)
+        {
+            Text = "Os dados e aplicativos instalados não foram apagados. " +
+                "Se o problema persistir, informe o código de diagnóstico.",
+            TextSize = 14
+        };
+        var retry = new Button(this) { Text = "Tentar novamente" };
+        retry.Click += (_, _) => Recreate(); // nova Activity; nenhuma instalação automática
+        root.AddView(title);
+        root.AddView(detail);
+        root.AddView(code);
+        root.AddView(hint);
+        root.AddView(retry);
+        SetContentView(root);
+    }
+
     protected override void OnDestroy()
     {
         UnobserveDownloads();
@@ -95,10 +141,16 @@ public sealed partial class MainActivity : Activity
     protected override void OnStart()
     {
         base.OnStart();
-        ObserveDownloads();
-        HubInstaller.Recover(this);
-        UpdateInstallationControls();
-        PromptPendingIpcPairing();
+        if (_startupFailed) return;
+        try
+        {
+            ObserveDownloads();
+            HubInstaller.Recover(this);
+            UpdateInstallationControls();
+            PromptPendingIpcPairing();
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        { HandleStartupFailure(error); }
     }
 
     protected override void OnStop()
@@ -110,7 +162,7 @@ public sealed partial class MainActivity : Activity
 
     async void Refresh()
     {
-        if (HubDownloads.Session.Status.Active || _destroyed) return;
+        if (_startupFailed || HubDownloads.Session.Status.Active || _destroyed) return;
         _load?.Cancel();
         // Uma atualização anterior pode terminar depois da nova. Só a atualização
         // ainda ativa pode reabilitar controles ou publicar resultados.
@@ -131,7 +183,7 @@ public sealed partial class MainActivity : Activity
             catch (System.OperationCanceledException) when (ct.IsCancellationRequested) { return; }
             catch (Exception) { /* rede/catálogo falhou; política usa último estado bom */ }
 
-            if (ct.IsCancellationRequested || _destroyed || !ReferenceEquals(_load, request)) return;
+            if (ct.IsCancellationRequested || _destroyed || _startupFailed || !ReferenceEquals(_load, request)) return;
 
             var choice = SnapshotPolicy.Choose(fresh, ReadCache());
             if (choice.ToCache is { } json) WriteCache(json);
@@ -149,7 +201,7 @@ public sealed partial class MainActivity : Activity
             {
                 // Falha de rede/parsing da aprovação não pode virar exceção solta
                 // de async void nem autorização antiga para instalar/abrir.
-                if (ct.IsCancellationRequested || _destroyed || !ReferenceEquals(_load, request)) return;
+                if (ct.IsCancellationRequested || _destroyed || _startupFailed || !ReferenceEquals(_load, request)) return;
                 _approvedPackages.Clear();
                 _status.Text += " Confiança de instalação indisponível; instalação bloqueada.";
                 UpdateInstallationControls();
@@ -159,7 +211,7 @@ public sealed partial class MainActivity : Activity
         catch (Exception)
         {
             // Nunca inferir sucesso; manter apenas a última projeção já exibida.
-            if (!_destroyed && !ct.IsCancellationRequested && ReferenceEquals(_load, request))
+            if (!_destroyed && !_startupFailed && !ct.IsCancellationRequested && ReferenceEquals(_load, request))
             {
                 _approvedPackages.Clear();
                 _status!.Text = "Falha ao atualizar o Hub. Tente novamente; instalações bloqueadas.";
@@ -172,7 +224,7 @@ public sealed partial class MainActivity : Activity
             {
                 _load = null;
                 _refreshing = false;
-                if (!_destroyed)
+                if (!_destroyed && !_startupFailed)
                 {
                     _releaseNotes?.Refresh(_snapshot, false);
                     UpdateDownloadControls();
