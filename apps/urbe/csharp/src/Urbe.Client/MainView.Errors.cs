@@ -29,7 +29,7 @@ public sealed partial class MainView
                 if (Avalonia.Controls.TopLevel.GetTopLevel(this)?.Clipboard is not { } clipboard) { ShowLifeNotice("Este aparelho não deixou copiar."); return; }
                 await clipboard.SetTextAsync(log);
                 CopiedText = log;
-                ShowLifeNotice("Relatório copiado.");
+                ShowLifeNotice("Relatório copiado.", Ui.ToastKind.Success);
             }),
             new DialogItem("Apagar relatório", UrbeTheme.Icons.Trash, Danger: true, Run: () => { CrashLog.Clear(); ShowLifeNotice("Relatório apagado."); return Task.CompletedTask; })
         ], tail);

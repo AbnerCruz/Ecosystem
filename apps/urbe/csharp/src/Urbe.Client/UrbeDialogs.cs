@@ -91,6 +91,9 @@ public sealed class UrbeDialogs : Grid
             _enter = enter;
             Layout(Bounds.Width);
             IsVisible = true;
+            // the scrim fades in and the card rises into place (UX.md P6); the dialog is usable at once
+            Ui.UrbeMotion.Enter(this, 0, 0, UrbeTokens.Motion.Fast);
+            Ui.UrbeMotion.Enter(_card, 0, Bounds.Width < Wide ? 32 : 8);
             Dispatcher.UIThread.Post(() => (focus ?? (Control)this).Focus(), DispatcherPriority.Loaded);
             await finished.Task;
         }
@@ -114,6 +117,8 @@ public sealed class UrbeDialogs : Grid
             Margin = new Thickness(0, 0, -8, 0), HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
         };
         ToolTip.SetTip(close, "Fechar");
+        Avalonia.Automation.AutomationProperties.SetName(close, "Fechar");
+        Ui.UrbeMotion.Pressable(close);
         close.Click += (_, _) => cancel();
         var t = new TextBlock { Text = title, FontFamily = UrbeTheme.UiFont, FontSize = 18, FontWeight = FontWeight.Bold, Foreground = UrbeTheme.Brush(UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap };
         var head = new DockPanel { Margin = new Thickness(0, 0, 0, 4) };
@@ -126,19 +131,12 @@ public sealed class UrbeDialogs : Grid
         return box;
     }
 
-    private static Button Action(string text, bool primary, bool danger = false)
-    {
-        var b = new Button
+    // .ui-btn / .ui-btn-primary / .ui-btn-danger: the shared button of the visual system (UC-69)
+    private static Button Action(string text, bool primary, bool danger = false) =>
+        new Ui.UrbeButton(text, danger ? Ui.ButtonKind.Danger : primary ? Ui.ButtonKind.Primary : Ui.ButtonKind.Secondary)
         {
-            Content = text, MinHeight = 48, Padding = new Thickness(18, 0), CornerRadius = new CornerRadius(12),
-            HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center,
-            FontFamily = UrbeTheme.UiFont, FontSize = 15, FontWeight = FontWeight.SemiBold,
-            BorderThickness = new Thickness(primary || danger ? 0 : 1), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2),
-            Background = UrbeTheme.Brush(danger ? UrbeTheme.Danger : primary ? UrbeTheme.Accent : UrbeTheme.Surface3),
-            Foreground = UrbeTheme.Brush(danger ? "#2a0a0e" : primary ? UrbeTheme.AccentInk : UrbeTheme.Text)
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
-        return b;
-    }
 
     // ---------------------------------------------------------------- dialogs
 

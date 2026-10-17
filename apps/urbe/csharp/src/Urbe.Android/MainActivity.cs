@@ -72,8 +72,20 @@ public sealed class MainActivity : AvaloniaMainActivity
             ? ShowKeyboard(root, ime) : false;
         // UC-56: the system recognizer listens and records (its own app and permission); this app gets only the text
         PlatformVoice.Transcribe = () => Current is { } activity ? activity.RecognizeSpeechAsync() : Task.FromResult<string?>(null);
+        // UC-69 (UX.md P7): haptics through the view, which follows the system touch-feedback setting and needs no VIBRATE permission
+        Urbe.Client.Ui.PlatformHaptics.Perform = kind => Current?.Window?.DecorView?.PerformHapticFeedback(Haptic(kind));
+        // "Remover animações" (animator duration scale 0) turns the interface's motion off (P6, P12)
+        UrbeTokens.Motion.Reduced = Android.Provider.Settings.Global.GetFloat(ContentResolver, Android.Provider.Settings.Global.AnimatorDurationScale, 1f) == 0f;
         HandleVoiceIntent(Intent);
     }
+
+    private static FeedbackConstants Haptic(Urbe.Client.Ui.HapticKind kind) => kind switch
+    {
+        Urbe.Client.Ui.HapticKind.Hold => FeedbackConstants.LongPress,
+        Urbe.Client.Ui.HapticKind.Confirm => OperatingSystem.IsAndroidVersionAtLeast(30) ? FeedbackConstants.Confirm : FeedbackConstants.ContextClick,
+        Urbe.Client.Ui.HapticKind.Error => OperatingSystem.IsAndroidVersionAtLeast(30) ? FeedbackConstants.Reject : FeedbackConstants.LongPress,
+        _ => FeedbackConstants.KeyboardTap
+    };
 
     protected override void OnNewIntent(Intent? intent)
     {
