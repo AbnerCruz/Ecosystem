@@ -467,3 +467,9 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Verificação local/CI em andamento. Underruns, Tile Studio, nine-slice específico e DEVICE avançado/gate ainda abertos; não iniciar Fase 5.
 
 - Verificado: build sem warnings/errors; 672/672 testes (incluindo dois cenários compilados e executados); 22/22 consistency. Self-test/CI Android/APK em acompanhamento; nada de DEVICE inferido. Git local sem credencial de push, envio pelo conector GitHub.
+
+### 20261017-codex-lunet-editor-vision — Codex → integrador — review
+- Correção solicitada pelo proprietário: registrar no repositório a ideia do editor visual integrado Aseprite/Photoshop/Illustrator/LPC, em vez de deixá-la apenas num arquivo avulso da conversa. Issue #631; branch `lunet-editor-vision-20261017`, base `13cf613c6955d61f4db3b7968201b8c8cb5088a6`.
+- Visão detalhada em `docs/plans/visual-editor-vision.md`, vinculada pelo SPEC §13 e pelo backlog futuro do ROADMAP. Manual + modular, componentes criados pelo usuário e preservação da edição/source; escopo detalhado ainda a planejar.
+- Sem implementação agora, sem alterar fase/gate atual, plataforma Android, arquitetura ou licença; sem confundir inspiração com autorização de copiar código/arte. Desenvolvimento F4 segue em frente separada #629/PR #630.
+
