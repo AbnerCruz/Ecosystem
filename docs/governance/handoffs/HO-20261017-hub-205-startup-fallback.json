@@ -1,0 +1,132 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261017-hub-205-startup-fallback",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-17T16:27:50.483Z",
+  "agent": {
+    "id": "chatgpt-ecosystem-hub-205",
+    "kind": "ai-agent"
+  },
+  "task_id": "HUB-205",
+  "component": "hub",
+  "state": "verifying",
+  "branch": "fix/hub-205-startup-fallback-20261017",
+  "base_commit": "d43a5a2dd527b5b08397b994803a9c89a2d0976a",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/614",
+  "files_changed": [
+    "apps/hub/src/Hub.Core/HubStartupDiagnostic.cs",
+    "apps/hub/tests/Hub.Tests/HubStartupDiagnosticTests.cs",
+    "apps/hub/src/Hub.Android/MainActivity.cs",
+    "apps/hub/docs/recuperacao-inicializacao.md",
+    "docs/governance/handoffs/HO-20261017-hub-205-startup-fallback.json"
+  ],
+  "work_completed": [
+    "Activity agora contém exceções gerenciadas ao montar a interface inicial e em OnStart, exibindo tela nativa recuperável.",
+    "Falha bloqueia refresh, esvazia aprovação temporária de instalação e evita continuar inicialização do Hub com controles parciais.",
+    "Diagnóstico opaco usa SHA-256 truncado de tipo/HResult/stack e explicações genéricas, sem expor message/token/path.",
+    "Adicionados testes determinísticos de privacidade/consistência e guia com roteiro Android e limites nativos."
+  ],
+  "verification": [
+    {
+      "check": "Hub.Tests incluindo HubStartupDiagnosticTests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardar workflow hub-ci do PR #614; sem execução .NET local nesta tarefa."
+    },
+    {
+      "check": "Build Android e artefato APK",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardar job Android hub-ci na branch."
+    },
+    {
+      "check": "Consistency + self-test + integrador",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardar consistency e integrador automático no estado combinado."
+    },
+    {
+      "check": "DEVICE — Activity e recuperação no Android físico",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "https://github.com/AbnerCruz/Ecosystem/pull/614",
+      "evidence": "Em APK de teste, simular falha gerenciada na inicialização; verificar página de diagnóstico, retry, nenhum botão de instalação, offline/online e ausência de perda de dados; não alegar cura de SIGABRT sem logcat."
+    }
+  ],
+  "known_issues": [
+    "Falha nativa SIGABRT antes de OnCreate não pode ser capturada por código gerenciado.",
+    "O encerramento original relatado pelo proprietário não tem logcat; esta proteção não comprova sua causa nem substitui DEVICE.",
+    "Sem ambiente Android físico no CI de unit tests; validar botão/recriação e lifecycle no dispositivo."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Aguardar Hub.Tests, Android APK e consistency; corrigir regressões antes de PR ready.",
+    "Deixar o PR para o integrador governado assim que CI estiver validado; não integrar manualmente.",
+    "Validar fallback em Android físico e registrar evidência em docs/validation e handoff antes de fechar issue #613."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "apps/hub/README.md",
+    "apps/hub/docs/instalar-e-abrir.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Dados de catálogo e confiança mantêm fontes existentes; fallback não altera persistência nem versão."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Hub continua não essencial para Products."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #613, PR #614 e handoff registram escopo, resultado e limites."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Instalação/abertura não são retomadas por tela de falha; approvals esvaziadas."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE explicitamente pending para visual/lifecycle."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying e automações CI pendentes; sem alegar done."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Tratamento local e diagnóstico no Hub, sem pacote extra compartilhado."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Erro de startup aparece na UI com diagnóstico e explicação genérica."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Nenhuma mudança no lifecycle/distribuição independente dos Products."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "hub-android-startup-recovery",
+      "status": "product-specific",
+      "rationale": "Proteção específica do lifecycle Android Hub; sem segundo consumidor nem extração."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Bugfix local de UI/diagnóstico sem mutação de dados, assinatura, políticas de instalação ou contracts."
+  },
+  "cost": null
+}
