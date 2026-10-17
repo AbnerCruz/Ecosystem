@@ -1,0 +1,99 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261017-hub-approved-fixes-reconciliation",
+  "category": "RESULT",
+  "timestamp": "2026-10-17T20:36:27.910920Z",
+  "agent": {
+    "id": "codex-platform-evidence",
+    "kind": "ai-agent"
+  },
+  "task_id": "HUB-205",
+  "component": "hub",
+  "state": "done",
+  "branch": "docs/p6-5-provider-evidence-20261017",
+  "base_commit": "fccefa75bce650506eb8acbfee81a35df7fc4d9b",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/628",
+  "files_changed": [
+    "docs/governance/handoffs/HO-20261017-hub-204-refresh-resilience.json",
+    "docs/governance/handoffs/HO-20261017-hub-205-startup-fallback.json",
+    "docs/governance/handoffs/HO-20261017-hub-approved-fixes-reconciliation.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: HUB-204/#608 e HUB-205/#613 já tinham código integrado e DEVICE aprovado pelo proprietário nas Issues #616/#615, mas os handoffs mantinham CI pendente e estado review/verifying.",
+    "Conferidos PRs #609/#614, status do integrador, CIs e registros canônicos de validação; estados/evidências reconciliados sem modificar nenhum campo das verificações humanas originais.",
+    "Nenhum código de Hub foi alterado; autoria original e registros de aprovação preservados. Esta mensagem atribui a reconciliação a Codex e não assume autoria das correções ou da validação humana."
+  ],
+  "verification": [
+    {
+      "check": "CI/integração HUB-204",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "d7f4d890c0e071dbbf7a5072d97b16cf798f0724",
+      "evidence": "Status success e PR #609 merged conferidos. https://github.com/AbnerCruz/Ecosystem/actions/runs/39042901987 concluiu success."
+    },
+    {
+      "check": "CI/integração HUB-205",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "dd481a15581f7a29c12c3c7f6ccd0ed12861e0b1",
+      "evidence": "Status do integrador success/PR #614 merged; Hub CI 39049647260 success no head ebcee89b. Integrador https://github.com/AbnerCruz/Ecosystem/actions/runs/39049718756 ."
+    },
+    {
+      "check": "Conferência das aprovações DEVICE existentes",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Inspeção dos registros originais: verificações kind human/result passed preservadas literalmente. Autor proprietário AbnerCruz nas Issues #616/#615 e responses VAL-HO-20261017-hub-204-refresh-resilience-f39ed28cdd79.md / VAL-HO-20261017-hub-205-startup-fallback-32d059b4f5fb.md. Isto é conferência documental, não validação humana feita por agente."
+    }
+  ],
+  "known_issues": [
+    "Não constitui diagnóstico da causa original do crash nem validação de toda build futura; escopo das correções/validações originais preservado."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Após integrar #628, reconciliar as Issues #608/#613 para state:done sem novo pedido de aprovação."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ecosystem.json",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "apps/hub/README.md",
+    "docs/governance/handoffs/HO-20261017-hub-204-refresh-resilience.json",
+    "docs/governance/handoffs/HO-20261017-hub-205-startup-fallback.json",
+    "docs/governance/responses/VAL-HO-20261017-hub-204-refresh-resilience-f39ed28cdd79.md",
+    "docs/governance/responses/VAL-HO-20261017-hub-205-startup-fallback-32d059b4f5fb.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Estado vivo continua nas Issues, evidências nos handoffs; não altera roadmap/gates."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Reconciliação atribuída a Codex em novo resultado/PR, preserva autores das implementações."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Aprovação vem dos registros canônicos do proprietário, não de inferência em chat."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE foi aprovado pelo proprietário; nenhuma aprovação humana foi criada/modificada por agente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Done sustentado por código integrado, CI e aprovação real, com links e hashes."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Reconciliação documental de trabalho já integrado e validado pelo proprietário, sem nova decisão, aprovação, código ou enfraquecimento de gate."
+  },
+  "cost": null
+}

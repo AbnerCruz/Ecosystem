@@ -3,14 +3,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261017-hub-205-startup-fallback",
   "category": "HANDOFF",
-  "timestamp": "2026-10-17T16:29:39.695Z",
+  "timestamp": "2026-10-17T20:36:27.910920Z",
   "agent": {
     "id": "chatgpt-ecosystem-hub-205",
     "kind": "ai-agent"
   },
   "task_id": "HUB-205",
   "component": "hub",
-  "state": "verifying",
+  "state": "done",
   "branch": "fix/hub-205-startup-fallback-20261017",
   "base_commit": "d43a5a2dd527b5b08397b994803a9c89a2d0976a",
   "commit": null,
@@ -29,26 +29,30 @@
     "Falha bloqueia refresh, esvazia aprovação temporária de instalação e evita continuar inicialização do Hub com controles parciais.",
     "Diagnóstico opaco usa SHA-256 truncado de tipo/HResult/stack e explicações genéricas, sem expor message/token/path.",
     "Adicionados testes determinísticos de privacidade/consistência e guia com roteiro Android e limites nativos.",
-    "Subscriptions de download/instalação são retiradas no fallback, e callbacks já enfileirados verificam `_startupFailed` antes de acessar widgets."
+    "Subscriptions de download/instalação são retiradas no fallback, e callbacks já enfileirados verificam `_startupFailed` antes de acessar widgets.",
+    "Reconciliação de evidências por codex-platform-evidence: integração/CI confirmados e aprovação DEVICE do proprietário já persistida na Issue #615; preservadas integralmente as verificações humanas originais."
   ],
   "verification": [
     {
       "check": "Hub.Tests incluindo HubStartupDiagnosticTests",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguardar workflow hub-ci do PR #614; sem execução .NET local nesta tarefa."
+      "result": "passed",
+      "evidence": "Reconciliação de estado por Codex: CI e integração concluídos com sucesso; PR já integrado em dd481a15581f7a29c12c3c7f6ccd0ed12861e0b1. Integrador https://github.com/AbnerCruz/Ecosystem/actions/runs/39049718756 . Para HUB-205, Hub.Tests/APK da branch também aprovados no run 39049647260 (head ebcee89b). Nenhuma verificação humana nova foi criada.",
+      "tested_commit": "dd481a15581f7a29c12c3c7f6ccd0ed12861e0b1"
     },
     {
       "check": "Build Android e artefato APK",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguardar job Android hub-ci na branch."
+      "result": "passed",
+      "evidence": "Reconciliação de estado por Codex: CI e integração concluídos com sucesso; PR já integrado em dd481a15581f7a29c12c3c7f6ccd0ed12861e0b1. Integrador https://github.com/AbnerCruz/Ecosystem/actions/runs/39049718756 . Para HUB-205, Hub.Tests/APK da branch também aprovados no run 39049647260 (head ebcee89b). Nenhuma verificação humana nova foi criada.",
+      "tested_commit": "dd481a15581f7a29c12c3c7f6ccd0ed12861e0b1"
     },
     {
       "check": "Consistency + self-test + integrador",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguardar consistency e integrador automático no estado combinado."
+      "result": "passed",
+      "evidence": "Reconciliação de estado por Codex: CI e integração concluídos com sucesso; PR já integrado em dd481a15581f7a29c12c3c7f6ccd0ed12861e0b1. Integrador https://github.com/AbnerCruz/Ecosystem/actions/runs/39049718756 . Para HUB-205, Hub.Tests/APK da branch também aprovados no run 39049647260 (head ebcee89b). Nenhuma verificação humana nova foi criada.",
+      "tested_commit": "dd481a15581f7a29c12c3c7f6ccd0ed12861e0b1"
     },
     {
       "check": "DEVICE — Activity e recuperação no Android físico",
@@ -66,9 +70,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Aguardar Hub.Tests, Android APK e consistency; corrigir regressões antes de PR ready.",
-    "Deixar o PR para o integrador governado assim que CI estiver validado; não integrar manualmente.",
-    "Validar fallback em Android físico e registrar evidência em docs/validation e handoff antes de fechar issue #613."
+    "Prosseguir pelo núcleo P6-5 e unificação de IA; este fechamento não diagnostica a causa do crash originalmente relatado nem altera gates."
   ],
   "decisions_required": [],
   "normative_sources": [
