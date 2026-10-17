@@ -12,8 +12,8 @@
   "component": "lunet2d",
   "state": "review",
   "branch": "lunet-roadmap-20261017",
-  "commit": "356bb22",
-  "pr": null,
+  "commit": "df08aba2b006436c6d0a201995228f4a89fa06e3",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/630",
   "base_commit": "fccefa75bce650506eb8acbfee81a35df7fc4d9b",
   "files_changed": [
     "apps/lunet2d/AgentsChat.md",
@@ -63,6 +63,13 @@
       "result": "pending",
       "object": "apps/lunet2d/docs/guides/laboratorio.md",
       "critical": false
+    },
+    {
+      "check": "CI Lunet2D",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "lunet2d-ci run 39067936021 concluído com success; consistency inicial detectou referência a commit local não enviado, corrigida para df08aba2 (commit canônico do envio via connector).",
+      "tested_commit": "df08aba2b006436c6d0a201995228f4a89fa06e3"
     }
   ],
   "known_issues": [
