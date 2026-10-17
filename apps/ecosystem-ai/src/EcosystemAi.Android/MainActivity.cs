@@ -42,8 +42,7 @@ public sealed partial class MainActivity : Activity
     private EditText? _requiredText;
     private string? _pendingExport;
     private TextView? _status;
-    private string _draftGoal = "";
-    private string _draftRequired = "";
+    private readonly SessionDraftCache _drafts = new();
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
@@ -309,15 +308,21 @@ public sealed partial class MainActivity : Activity
             }
             Panel(box);
         }
-        _message = Input("O que você quer produzir ou investigar?", _draftGoal, multi: true);
-        _requiredText = Input("Trecho exato obrigatório na resposta (opcional)", _draftRequired);
-        _message.TextChanged += (_, _) => _draftGoal = _message.Text ?? "";
-        _requiredText.TextChanged += (_, _) => _draftRequired = _requiredText.Text ?? "";
-        _message.Enabled = _active is null; _requiredText.Enabled = _active is null;
-        _content.AddView(_message); _content.AddView(_requiredText);
+        var draft = _drafts.Get(project.Id, session.Id);
+        var messageInput = _message = Input("O que você quer produzir ou investigar?", draft.Goal, multi: true);
+        var requiredInput = _requiredText = Input("Trecho exato obrigatório na resposta (opcional)", draft.RequiredText);
+        messageInput.SetFilters([new InputFilterLengthFilter(ProductExecutionHost.MaxText)]);
+        requiredInput.SetFilters([new InputFilterLengthFilter(SessionDraftCache.MaxRequiredText)]);
+        // Capturar projeto, conversa e campos desta tela: uma atualização atrasada
+        // nunca deve copiar o texto para outra conversa aberta na mesma Activity.
+        void SaveDraft() => _drafts.Save(project.Id, session.Id, messageInput.Text, requiredInput.Text);
+        messageInput.TextChanged += (_, _) => SaveDraft();
+        requiredInput.TextChanged += (_, _) => SaveDraft();
+        messageInput.Enabled = _active is null; requiredInput.Enabled = _active is null;
+        _content.AddView(messageInput); _content.AddView(requiredInput);
         _status = Text(_active is null ? "O agente lê os arquivos deste projeto; não sobrescreve nem exclui." : "Executando…", 13);
         _content.AddView(_status);
-        _content.AddView(Button("Enviar tarefa", () => StartRun(_message.Text ?? "", _requiredText.Text, null), true));
+        _content.AddView(Button("Enviar tarefa", () => StartRun(messageInput.Text ?? "", requiredInput.Text, null), true));
         if (_active is not null)
         {
             var cancel = Button("Cancelar execução", () => _active?.Cancel());
@@ -358,6 +363,7 @@ public sealed partial class MainActivity : Activity
         async Task RunAsync()
         {
             string? message = null;
+            bool clearDraft = false;
             try
             {
                 await Task.Run(async () =>
@@ -371,7 +377,7 @@ public sealed partial class MainActivity : Activity
                     else result = await execution.ExecuteAsync(settings, projectId, sessionId, goal, criterion,
                         assignee.StartsWith("agent:", StringComparison.Ordinal) ? assignee[6..] : null, cancel.Token);
                     if (planned is null && result.Receipt.Status == "succeeded")
-                    { _draftGoal = ""; _draftRequired = ""; }
+                        clearDraft = true;
                     if (planned is not null)
                     {
                         var ids = team?.Reviewer is null ? new[] { result.Receipt.RunId }
@@ -395,6 +401,7 @@ public sealed partial class MainActivity : Activity
                 _active = null; cancel.Dispose();
                 if (!IsFinishing && !IsDestroyed) RunOnUiThread(() =>
                 {
+                    if (clearDraft) _drafts.Clear(projectId, sessionId);
                     Guard(Render); if (message is not null) Notice("Execução", message);
                 });
             }
