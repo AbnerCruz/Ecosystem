@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261017-hub-205-startup-fallback",
   "category": "HANDOFF",
-  "timestamp": "2026-10-17T16:27:50.483Z",
+  "timestamp": "2026-10-17T16:29:39.695Z",
   "agent": {
     "id": "chatgpt-ecosystem-hub-205",
     "kind": "ai-agent"
@@ -20,13 +20,16 @@
     "apps/hub/tests/Hub.Tests/HubStartupDiagnosticTests.cs",
     "apps/hub/src/Hub.Android/MainActivity.cs",
     "apps/hub/docs/recuperacao-inicializacao.md",
-    "docs/governance/handoffs/HO-20261017-hub-205-startup-fallback.json"
+    "docs/governance/handoffs/HO-20261017-hub-205-startup-fallback.json",
+    "apps/hub/src/Hub.Android/MainActivity.Downloads.cs",
+    "apps/hub/src/Hub.Android/MainActivity.Installation.cs"
   ],
   "work_completed": [
     "Activity agora contém exceções gerenciadas ao montar a interface inicial e em OnStart, exibindo tela nativa recuperável.",
     "Falha bloqueia refresh, esvazia aprovação temporária de instalação e evita continuar inicialização do Hub com controles parciais.",
     "Diagnóstico opaco usa SHA-256 truncado de tipo/HResult/stack e explicações genéricas, sem expor message/token/path.",
-    "Adicionados testes determinísticos de privacidade/consistência e guia com roteiro Android e limites nativos."
+    "Adicionados testes determinísticos de privacidade/consistência e guia com roteiro Android e limites nativos.",
+    "Subscriptions de download/instalação são retiradas no fallback, e callbacks já enfileirados verificam `_startupFailed` antes de acessar widgets."
   ],
   "verification": [
     {
