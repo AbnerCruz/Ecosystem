@@ -14,6 +14,7 @@ namespace AgentRuntime.Providers.ChatCompletions;
 /// </summary>
 public sealed class ChatCompletionsProvider : IModelProvider
 {
+    private const int MaxResponseBytes = 2_000_000;
     private readonly HttpClient _client;
     private readonly Uri _endpoint;
     private readonly string? _token;
@@ -102,14 +103,33 @@ public sealed class ChatCompletionsProvider : IModelProvider
             if (!response.IsSuccessStatusCode)
                 throw new ProviderException($"http-{(int)response.StatusCode}", "Endpoint recusou a operação; detalhes não são copiados para logs.",
                     response.StatusCode is HttpStatusCode.TooManyRequests or HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout);
-            if (response.Content.Headers.ContentLength is > 2_000_000)
+            if (response.Content.Headers.ContentLength is > MaxResponseBytes)
                 throw new ProviderException("response-too-large", "Resposta do provider excedeu o limite.", false);
 
             string json;
-            try { json = await response.Content.ReadAsStringAsync(cancellationToken); }
+            try
+            {
+                await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                using var buffer = new MemoryStream();
+                var chunk = new byte[8192];
+                while (true)
+                {
+                    // Read at most one byte beyond the boundary, even without Content-Length.
+                    var remaining = MaxResponseBytes - (int)buffer.Length;
+                    var read = await stream.ReadAsync(chunk.AsMemory(0, Math.Min(chunk.Length, remaining + 1)), cancellationToken);
+                    if (read == 0) break;
+                    if (read > remaining)
+                        throw new ProviderException("response-too-large", "Resposta do provider excedeu o limite.", false);
+                    buffer.Write(chunk, 0, read);
+                }
+                using var boundedContent = new ByteArrayContent(buffer.ToArray());
+                boundedContent.Headers.ContentType = response.Content.Headers.ContentType;
+                json = await boundedContent.ReadAsStringAsync(cancellationToken);
+            }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
-            catch (Exception) { throw new ProviderException("read-response", "Falha ao ler resposta do provider.", true); }
-            if (json.Length > 2_000_000) throw new ProviderException("response-too-large", "Resposta do provider excedeu o limite.", false);
+            catch (ProviderException) { throw; }
+            catch (Exception)
+            { throw new ProviderException("read-response", "Falha ao ler resposta do provider; efeito remoto é desconhecido, sem retry automático.", false); }
             try
             {
                 using var document = JsonDocument.Parse(json);

@@ -1,0 +1,131 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261017-p6-5-provider-bounded-read",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-17T20:02:39.055759Z",
+  "agent": {
+    "id": "codex-p6-5-provider-bounded-read",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "fix/p6-5-provider-bounded-read-20261017",
+  "base_commit": "e20bcbd0610cd6d89b848951ebca6a1042040d9d",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/AgentRuntime.Providers.ChatCompletions/ChatCompletionsProvider.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/ChatCompletionsResponseReadTests.cs",
+    "apps/ecosystem-ai/docs-provider-response-limits.md",
+    "apps/ecosystem-ai/README.md",
+    "docs/governance/handoffs/HO-20261017-p6-5-provider-bounded-read.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: limite antigo era aplicado após buffer integral; leitura agora limitada a 2.000.000 bytes com probe de um byte, sem confiar em Content-Length.",
+    "Falhas de IO/transporte/timeout na leitura são genéricas e não transitórias; cancelamento explícito preservado e recursos descartados.",
+    "Nove casos de regressão determinísticos sem API paga; documentação preserva limites de memória, cobrança desconhecida e ausência de streaming de tokens. Issue #621."
+  ],
+  "verification": [
+    {
+      "check": "AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet test --project tests/AgentRuntime.Tests: 282/282, incluindo nove casos novos de resposta HTTP."
+    },
+    {
+      "check": "EcosystemAi.ProjectStore.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet test --project tests/EcosystemAi.ProjectStore.Tests: 11/11."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22. Snapshot GitHub Issues ausente localmente; conferência completa pelo CI."
+    },
+    {
+      "check": "Self-test e CI",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Self-test local em execução com SDK no PATH; CI/Android/integrador serão executados no PR."
+    }
+  ],
+  "known_issues": [
+    "Não encerra P6-5, #603 ou #610; não demonstra segundo consumidor de produção nem DEVICE.",
+    "Falha após POST não permite conciliar custo remoto desconhecido; não é chamada gratuita."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Finalizar consistency/self-test; abrir PR pronto e observar CI/integrador."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/README.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Mesmo provider, catálogo e ledger; sem nova autoridade."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhuma dependência de Hub."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #621, branch e handoff com evidências."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Sem novos grants ou credenciais; erros não copiam payload privado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Teste HTTP não representa validação Android/DEVICE."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "CI e integração aguardam evidência, sem declaração done."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Correção no adapter existente, sem Runtime/SDK novo."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Código permanece local, sem extração ou contrato novo."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Distribuição independente preservada."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "model-response-bounded-read",
+      "status": "possible-candidate",
+      "rationale": "Proteção no adapter existente; outros consumidores são potenciais, não autorizam extração."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Correção de limite já existente e falha de leitura, sem ampliar permissões, alterar credenciais ou fronteira de confiança."
+  },
+  "cost": null
+}
