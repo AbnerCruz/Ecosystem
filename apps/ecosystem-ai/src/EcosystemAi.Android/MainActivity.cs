@@ -268,6 +268,7 @@ public sealed partial class MainActivity : Activity
             var intent = new Intent(Intent.ActionOpenDocument); intent.SetType("*/*");
             intent.AddCategory(Intent.CategoryOpenable); StartActivityForResult(intent, ImportCode);
         }));
+        _content.AddView(Button("Execuções sem recibo neste projeto", () => { _ = ShowProjectRunRecoveryAsync(project.Id); }));
         _content.AddView(Text("Arquivos", 18, true));
         foreach (var file in Directory.GetFiles(project.WorkspaceDirectory).Take(40))
             _content.AddView(Text(System.IO.Path.GetFileName(file), 14));
@@ -280,6 +281,36 @@ public sealed partial class MainActivity : Activity
             var box = Column(); box.AddView(Text(session.Title, 20, true));
             box.AddView(Text($"{session.Turns.Count} mensagens • {session.Runs.Count} execuções", 14));
             box.AddView(Button("Abrir conversa", () => { _sessionId = session.Id; Render(); })); Panel(box);
+        }
+    }
+
+    private async Task ShowProjectRunRecoveryAsync(string projectId)
+    {
+        try
+        {
+            var recovery = await Task.Run(() => ProductRunRecovery.Read(_store.Read(), projectId, _journal));
+            if (IsFinishing || IsDestroyed || _projectId != projectId || _sessionId is not null) return;
+            if (recovery.JournalUnavailable)
+            { Notice("Journal indisponível", "Não foi possível conferir o journal. Nenhum dado foi alterado."); return; }
+            var text = new StringBuilder("Execuções deste projeto sem recibo no catálogo. A conversa de origem não é inferida.\n");
+            text.AppendLine("Abrir esta lista não retoma nem reenvia chamadas. Confira o provedor antes de executar novamente.\n");
+            if (recovery.Truncated) text.AppendLine("Consulta parcial: limite de arquivos ou bytes atingido. Pode haver outras execuções.");
+            if (recovery.UnavailableFiles > 0) text.AppendLine($"Arquivos não auditáveis no journal: {recovery.UnavailableFiles}.");
+            if (recovery.Runs.Count == 0) text.AppendLine("Nenhuma execução sem recibo encontrada no trecho consultado.");
+            foreach (var run in recovery.Runs)
+            {
+                text.AppendLine($"\n{run.RunId}\n{run.At:dd/MM HH:mm:ss} • {run.Status} • verificado: {run.Verified}");
+                text.AppendLine($"Passos: {run.Steps} • ferramentas: {run.ToolCalls}");
+                text.AppendLine(run.RecordedCost is { } cost
+                    ? $"Valor registrado: {cost.Minor} {cost.Currency} em unidade mínima; não garante a fatura."
+                    : "Custo desconhecido; não significa chamada gratuita.");
+            }
+            Notice("Execuções sem recibo", text.ToString());
+        }
+        catch (Exception error) when (error is not OutOfMemoryException)
+        {
+            if (!IsFinishing && !IsDestroyed && _projectId == projectId && _sessionId is null)
+                Notice("Consulta indisponível", "Não foi possível conferir as execuções. Nenhum dado foi alterado.");
         }
     }
 
