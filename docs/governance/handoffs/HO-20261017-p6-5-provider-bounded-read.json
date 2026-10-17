@@ -3,14 +3,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261017-p6-5-provider-bounded-read",
   "category": "HANDOFF",
-  "timestamp": "2026-10-17T20:07:35.607632Z",
+  "timestamp": "2026-10-17T20:29:50.830300Z",
   "agent": {
     "id": "codex-p6-5-provider-bounded-read",
     "kind": "ai-agent"
   },
   "task_id": "P6-5",
   "component": "ecosystem-ai",
-  "state": "review",
+  "state": "done",
   "branch": "fix/p6-5-provider-bounded-read-20261017",
   "base_commit": "e20bcbd0610cd6d89b848951ebca6a1042040d9d",
   "commit": null,
@@ -25,7 +25,8 @@
   "work_completed": [
     "FATO OBSERVADO: limite antigo era aplicado após buffer integral; leitura agora limitada a 2.000.000 bytes com probe de um byte, sem confiar em Content-Length.",
     "Falhas de IO/transporte/timeout na leitura são genéricas e não transitórias; cancelamento explícito preservado e recursos descartados.",
-    "Nove casos de regressão determinísticos sem API paga; documentação preserva limites de memória, cobrança desconhecida e ausência de streaming de tokens. Issue #621."
+    "Nove casos de regressão determinísticos sem API paga; documentação preserva limites de memória, cobrança desconhecida e ausência de streaming de tokens. Issue #621.",
+    "Evidência posterior reconciliada: PR #622 integrado, CI final e integrador aprovados; nenhuma validação humana foi inferida."
   ],
   "verification": [
     {
@@ -55,11 +56,11 @@
       "evidence": "PATH=/workspace/scratch/dotnet:$PATH dotnet run tests/consistency/Check.cs -- --self-test: exit 0, todos os checks provaram detectar suas violações. Primeira tentativa sem SDK no PATH falhou ao iniciar subprocessos; configuração corrigida e execução completa passou."
     },
     {
-      "check": "CI do código ffad8d0a",
+      "check": "CI e integração do PR #622",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Tests Runtime/Product e pacotes Windows/Linux/macOS passaram: runs 39065155628 e 39065155611. Android/APK, consistency e integrador ainda em execução na última consulta. https://github.com/AbnerCruz/Ecosystem/pull/622",
-      "tested_commit": "ffad8d0ad67420a8899790318f5cb0ec567a650f"
+      "result": "passed",
+      "tested_commit": "df7ac3e4a7d39df35c408ef06ea83eaf8a2a1cd9",
+      "evidence": "PR #622 integrado automaticamente como rotina em 7562e1d3e7857f11c92c4bb155d58003052458c3. Tests, Android/APK, consistency e pacotes Windows/Linux/macOS verdes no head final. Integrador success: https://github.com/AbnerCruz/Ecosystem/actions/runs/39065832254 . Código/integração confirmados pelo GitHub; sem DEVICE aplicável a esta correção HTTP pura."
     }
   ],
   "known_issues": [
@@ -68,8 +69,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Conferir CI final e integração automática do PR #622 no estado combinado; corrigir eventual falha sem merge manual.",
-    "Manter P6-5, #603 e #610 abertos; este bugfix não encerra os gates."
+    "Continuar os incrementos P6-5 de auditoria/tokens (#624) e runs sem recibo (#627); este registro encerra somente o bugfix #621."
   ],
   "decisions_required": [],
   "normative_sources": [
