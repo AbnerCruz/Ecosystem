@@ -4,7 +4,10 @@
   "message_id": "HO-20261016-urbe-abrir-na-hora",
   "category": "HANDOFF",
   "timestamp": "2026-10-16T14:05:24Z",
-  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
   "task_id": "UC-59",
   "component": "urbe",
   "state": "review",
@@ -12,21 +15,68 @@
   "base_commit": "a9c2373a",
   "commit": null,
   "pr": null,
-  "files_changed": ["apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs", "apps/urbe/csharp/src/Urbe.Client/MainView.History.cs", "apps/urbe/csharp/src/Urbe.Client/MainView.Startup.cs", "apps/urbe/csharp/src/Urbe.Client/MainView.cs", "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs", "apps/urbe/csharp/src/Urbe.Core/LegacyCityOpen.cs", "apps/urbe/csharp/tests/Urbe.Client.Tests/StartupPerfTests.cs", "apps/urbe/csharp/tests/Urbe.Client.Tests/StartupSessionUiTests.cs", "apps/urbe/docs/csharp/ROADMAP.md", "docs/governance/handoffs/HO-20261016-urbe-abrir-na-hora.json"],
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.History.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Startup.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCityOpen.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/StartupPerfTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/StartupSessionUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261016-urbe-abrir-na-hora.json"
+  ],
   "work_completed": [
     "UC-59: com sessão salva, a última nota abre editável cerca de 0,3 s após iniciar (500 e 2.000 notas, headless) e a cidade é construída por trás com o aviso discreto 'Carregando a cidade…'; gravar durante a carga usa a mesma gravação verificada e casa, documento e mapa alcançam quando a cidade fica pronta; ações que precisam da cidade avisam em vez de falhar.",
     "Construção da cidade 4–10× mais rápida sem mudar o resultado (oráculos da 1.8.4 intactos): terreno em blocos sem trava por lote, prédios indexados por bloco, links por dicionário, busca da rua mais próxima com corte por distância. 500 notas: reabrir a cidade 7,8 s → 2,0 s; 2.000 notas: primeira abertura de mais de 10 min → 74 s."
   ],
   "verification": [
-    { "kind": "automated", "check": "Core completo; StartupSessionUiTests, Tutorial, teclado e sessão no cliente", "result": "passed", "evidence": "844/844 Core; 13/13 dos filtros do cliente no estado combinado; benchmarks opcionais em StartupPerfTests (URBE_PERF=1)." },
-    { "kind": "human", "check": "No celular: reabrir o app cai na última nota na hora, dá para escrever enquanto a cidade carrega e o aviso some quando ela fica pronta", "result": "pending", "critical": true, "object": "apps/urbe/csharp/src/Urbe.Client/MainView.Startup.cs" }
+    {
+      "kind": "automated",
+      "check": "Core completo; StartupSessionUiTests, Tutorial, teclado e sessão no cliente",
+      "result": "passed",
+      "evidence": "844/844 Core; 13/13 dos filtros do cliente no estado combinado; benchmarks opcionais em StartupPerfTests (URBE_PERF=1)."
+    },
+    {
+      "kind": "human",
+      "check": "No celular: reabrir o app cai na última nota na hora, dá para escrever enquanto a cidade carrega e o aviso some quando ela fica pronta",
+      "result": "passed",
+      "critical": true,
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.Startup.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-17 (Issue https://github.com/AbnerCruz/Ecosystem/issues/618); registro em docs/governance/responses/VAL-HO-20261016-urbe-abrir-na-hora-f4b5380bbd72.md."
+    }
   ],
-  "known_issues": ["O traçado das ruas ainda cresce com links × lotes de rua (≈22 s para 2.000 notas): trocar o algoritmo exige item próprio contra os oráculos.", "A primeira abertura de um vault novo ainda espera a cidade inteira."],
+  "known_issues": [
+    "O traçado das ruas ainda cresce com links × lotes de rua (≈22 s para 2.000 notas): trocar o algoritmo exige item próprio contra os oráculos.",
+    "A primeira abertura de um vault novo ainda espera a cidade inteira."
+  ],
   "blockers": [],
-  "next_actions": ["Integrar a fundação de UX (UC-69 fase 1) depois de corrigir a interação com o #602; depois o redesenho do editor."],
+  "next_actions": [
+    "Integrar a fundação de UX (UC-69 fase 1) depois de corrigir a interação com o #602; depois o redesenho do editor."
+  ],
   "decisions_required": [],
-  "normative_sources": ["AGENTS.md", "apps/urbe/docs/csharp/ROADMAP.md", "apps/urbe/docs/csharp/UX.md", "docs/governance/addenda/ADD-0026-urbe-experiencia-de-usuario-topo-de-linha.md"],
-  "invariants": [ { "id": "NN-018", "evidence": "Medidas antes/depois e testes de sessão; validação no aparelho pendente." } ],
-  "reuse_assessment": [ { "subject": "instant-open", "status": "product-specific", "rationale": "Abertura do Urbe." } ],
-  "criticality": { "declared": "routine", "reason": "Otimização e ordem de abertura; dados gravados pelo mesmo caminho verificado." }
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/UX.md",
+    "docs/governance/addenda/ADD-0026-urbe-experiencia-de-usuario-topo-de-linha.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-018",
+      "evidence": "Medidas antes/depois e testes de sessão; validação no aparelho pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "instant-open",
+      "status": "product-specific",
+      "rationale": "Abertura do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Otimização e ordem de abertura; dados gravados pelo mesmo caminho verificado."
+  }
 }
