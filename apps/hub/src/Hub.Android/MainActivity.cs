@@ -91,6 +91,10 @@ public sealed partial class MainActivity : Activity
     {
         _startupFailed = true;
         _load?.Cancel();
+        // Callbacks de operações iniciadas antes da falha não podem visitar
+        // controles parcialmente construídos. OnDestroy também é idempotente.
+        UnobserveDownloads();
+        HubInstaller.Changed -= InstallationChanged;
         _approvedPackages.Clear();
         _refreshing = false;
         if (_refresh is not null) _refresh.Enabled = false;
