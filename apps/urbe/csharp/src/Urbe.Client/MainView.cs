@@ -78,6 +78,7 @@ public sealed partial class MainView : Grid
         // [[link]] to a note that does not exist yet: created next to the open note, in its neighbourhood (DEC-0045, UC-37)
         Editor.CreateLinked = name =>
         {
+            if (CityNotReady()) return Task.FromResult<CityNote?>(null);
             var city = World.City;
             var house = Editor.Current is { } open ? city?.Buildings.Find(b => b.IsNote && b.Path == open.Path) : null;
             var region = house?.RegionId is { } id ? city?.Regions.Find(r => r.Id == id) : null;
@@ -131,6 +132,7 @@ public sealed partial class MainView : Grid
         _stage.Children.Add(CityMap);
         _stage.Children.Add(Explorer);
         _stage.Children.Add(Editor);
+        _stage.Children.Add(WorldLoadingPill());   // UC-59: over the editor, never in the way
         FilePreview.Storage = _vault;
         FilePreview.ActionsRequested += path => _ = ShowAttachmentActionsAsync(path);
         FilePreview.PageActionsRequested += path => _ = ShowPageMenuAsync(path);
@@ -202,6 +204,9 @@ public sealed partial class MainView : Grid
     }
 
     public WorldView World { get; }
+
+    /// <summary>True while the city of the opened vault is being built (the editor may already be open).</summary>
+    public bool WorldLoading { get; private set; }
 
     /// <summary>quick-open.js / command-palette.js / keymap.js: Buscar notas, Comandos and their shortcuts.</summary>
     public SearchFeature Search { get; }
@@ -336,11 +341,13 @@ public sealed partial class MainView : Grid
                 try
                 {
                     var snapshot = await _vault.RestoreAsync();
-                    if (snapshot is not null) { await ShowVaultAsync(snapshot); return; }
+                    // UC-59: the last note opens as soon as its text is read; the city follows behind it
+                    if (snapshot is not null) { await ShowVaultAsync(snapshot, restoreSession: true); return; }
                 }
                 catch (Exception ex) { _loading.Text = "Vault indisponível: " + ex.Message; }
             }
-            await LoadAsync(TutorialNotes.Load());
+            // no folder yet: an empty world (DEC-0045, UC-40/UC-64: the Tutorial is never built in the city)
+            await LoadAsync([]);
         }
         finally { MarkReady(); }   // UC-56: a widget's quick note waits for the first city
     }
@@ -360,7 +367,7 @@ public sealed partial class MainView : Grid
         }
     }
 
-    private async Task ShowVaultAsync(VaultSnapshot snapshot)
+    private async Task ShowVaultAsync(VaultSnapshot snapshot, bool restoreSession = false)
     {
         // an import interrupted (app closed, error) left its journal: the vault is put back as it was first
         if (snapshot.Files.ContainsKey(ImportTransaction.JournalPath) && _vault?.ImportStorage is { } importer)
@@ -387,33 +394,55 @@ public sealed partial class MainView : Grid
         LoadHistory(Text);
         Editor.SaveOnClose = !snapshot.IsReadOnly;
         var texts = snapshot.Documents.Where(d => d.Text is not null).ToArray();
-        // every other file of the vault, by name only, for the Explorer (DEC-0045, UC-38); hidden folders (.urbe) stay out
-        _attachments.Clear();
-        if (_vault is not null)
-        {
-            try { foreach (var path in await _vault.ListFilePathsAsync()) _attachments.Add(path); }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { /* the Explorer shows the notes */ }
-        }
         var notes = texts.Select(d => new CityNote(d.Path, d.Text!)).ToArray();
         var ids = texts.ToDictionary(d => d.Path, d => d.Id, StringComparer.Ordinal);
         var mapJson = ReconcileIdentity(snapshot, notes, ids);
+        // UC-59 (P10): the texts are known now, so the last note of this vault opens before the city is built and
+        // can be edited and saved (verified write) while the world loads behind it
+        _contents.Clear();
+        foreach (var n in notes) _contents[n.Path] = n.Content;
+        _loadingIds = ids;
+        _savedWhileLoading.Clear();
+        WorldLoading = true;
+        ShowWorldLoading(true);
+        if (restoreSession) RestoreSession();
         // 1.8.4 abrirCidade: the saved map (.urbe/mapa.json) is respected.
         // The terrain is always UrbeTerrain.createWorld('urbe'); mapa.mundo only names its version.
         DocumentStore? store = null;
         LegacyCity? opened = null;
-        await LoadAsync(notes, city =>
+        try
         {
-            store = city.Open(notes.Select(n => (n.Path, n.Content)).ToList(), mapJson, ids,
-                DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-            opened = city;
-            return true;
-        });
+            // every other file of the vault, by name only, for the Explorer (DEC-0045, UC-38); hidden folders (.urbe) stay out
+            _attachments.Clear();
+            if (_vault is not null)
+            {
+                try { foreach (var path in await _vault.ListFilePathsAsync()) _attachments.Add(path); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { /* the Explorer shows the notes */ }
+            }
+            await LoadAsync(notes, city =>
+            {
+                store = city.Open(notes.Select(n => (n.Path, n.Content)).ToList(), mapJson, ids,
+                    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+                opened = city;
+                return true;
+            }, keepContents: true);
+        }
+        finally
+        {
+            WorldLoading = false;
+            _loadingIds = null;
+            ShowWorldLoading(false);
+        }
         _vaultName.Text = snapshot.IsReadOnly ? "Vault: somente leitura" : "";
         // v23Atualizar: the brand is Disco.cidade (the vault folder's name), 'Urbe' without one
         _brandName.Text = _vault?.VaultName is { Length: > 0 } folder ? folder : "Urbe";
         if (_brandPill is not null) ToolTip.SetTip(_brandPill, "Salvo na pasta escolhida no dispositivo");
         if (store is null || opened is null || !ReferenceEquals(World.City, opened)) return;
         _store = store;
+        // what was saved while the city was being built reaches its house and document now
+        foreach (var (path, content) in _savedWhileLoading) RecordSaved(path, content);
+        _savedWhileLoading.Clear();
+        if (Editor.IsVisible) Editor.RefreshProperties();   // the house exists now: its properties show
         VaultNotices(snapshot);
         TipsLoaded();
         if (opened.MigratedFromWorld is { } from) await AdaptedToNewWorldAsync(snapshot, opened, from);
@@ -493,7 +522,7 @@ public sealed partial class MainView : Grid
         scheduler.MarkSync();
     }
 
-    /// <summary>The map save of the open vault (null for the Tutorial preview and read-only vaults).</summary>
+    /// <summary>The map save of the open vault (null with no folder open and for read-only vaults).</summary>
     public MapSaveScheduler? MapSave => _mapSave;
 
     /// <summary>The documents of the open vault (DocumentStore of the city), or null.</summary>
@@ -556,19 +585,32 @@ public sealed partial class MainView : Grid
             throw new InvalidOperationException("Vault em modo somente leitura.");
         await _vault.SaveExistingTextFileAsync(note.Path, note.Content);
         _contents[note.Path] = note.Content;
-        // 1.8.4 editor input: b.modified=nowDate(); session.record(..., {modified:b.modified}) →
-        // document:updated → persistence schedule() + marcarSinc()
-        if (_store?.Get(note.Path) is { } doc && doc.Content != note.Content && World.City is { } city)
-        {
-            long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            if (city.Buildings.Find(b => b.IsNote && (b.DocumentId == doc.Id || (b.DocumentId is null && b.Path == doc.Path))) is { } house) city.NoteEdited(house, now);
-            _store.Upsert(new DocumentInput { Id = doc.Id, Path = doc.Path, Title = doc.Title, Content = note.Content,
-                Created = doc.Created, Modified = LegacyCity.NowDate(now) }, "editor.input");
-            _mapSave?.Schedule();
-            _mapSave?.MarkSync();
-        }
+        // the file is written; while the city is still being built its house and document catch up when it is ready
+        if (WorldLoading) _savedWhileLoading[note.Path] = note.Content;
+        else RecordSaved(note.Path, note.Content);
         await SaveHistoryAsync();
         NoteSaved?.Invoke(note.Path);   // plugins: "nota:salva"
+    }
+
+    /// <summary>Notes saved before the city of the vault was ready (UC-59): path → text written.</summary>
+    private readonly Dictionary<string, string> _savedWhileLoading = new(StringComparer.Ordinal);
+
+    /// <summary>The document ids of the vault being opened, for the history before the city exists.</summary>
+    private Dictionary<string, string>? _loadingIds;
+
+    /// <summary>
+    /// 1.8.4 editor input: b.modified=nowDate(); session.record(..., {modified:b.modified}) →
+    /// document:updated → persistence schedule() + marcarSinc()
+    /// </summary>
+    private void RecordSaved(string path, string content)
+    {
+        if (_store?.Get(path) is not { } doc || doc.Content == content || World.City is not { } city) return;
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        if (city.Buildings.Find(b => b.IsNote && (b.DocumentId == doc.Id || (b.DocumentId is null && b.Path == doc.Path))) is { } house) city.NoteEdited(house, now);
+        _store.Upsert(new DocumentInput { Id = doc.Id, Path = doc.Path, Title = doc.Title, Content = content,
+            Created = doc.Created, Modified = LegacyCity.NowDate(now) }, "editor.input");
+        _mapSave?.Schedule();
+        _mapSave?.MarkSync();
     }
 
     /// <summary>
@@ -589,10 +631,13 @@ public sealed partial class MainView : Grid
     /// framing: urbeEnquadrarNotas runs on workspace:loaded, before the houses exist); otherwise
     /// all houses are framed.
     /// </summary>
-    private async Task LoadAsync(IReadOnlyList<CityNote> files, Func<LegacyCity, bool> open, string seed = "urbe")
+    private async Task LoadAsync(IReadOnlyList<CityNote> files, Func<LegacyCity, bool> open, string seed = "urbe", bool keepContents = false)
     {
-        _contents.Clear();
-        foreach (var f in files) _contents[f.Path] = f.Content;
+        if (!keepContents)
+        {
+            _contents.Clear();
+            foreach (var f in files) _contents[f.Path] = f.Content;
+        }
         _today = DateTime.Now.ToString("yyyy-MM-dd");
         try
         {
@@ -606,7 +651,8 @@ public sealed partial class MainView : Grid
             });
             World.Load(world, city);
             CityMap.IsVisible = false;
-            Explorer.SetNotes(files, city.RegionPaths().Values);
+            // the texts as they are now: a note saved while the city was built keeps what was written
+            Explorer.SetNotes(keepContents ? _contents.Select(n => new CityNote(n.Key, n.Value)).ToList() : files, city.RegionPaths().Values);
             if (ownCamera) World.ShowCityCamera();
             else World.FitNotes();
             // workspace:loaded → customize recarregar(); it writes only with a writable vault folder
@@ -648,13 +694,13 @@ public sealed partial class MainView : Grid
     /// <summary>
     /// #v23Top: the brand pill (#v23VaultDot: green, warn while writing, danger on an error — statusSinc; the vault name;
     /// "· biome") and the three round buttons Buscar notas, Mapa da cidade and Configurações. Both 44px tall, surface at
-    /// 82 %, a faint line and shadow-1. The native-only notices (Tutorial preview, read-only vault, a refused map) follow
+    /// 82 %, a faint line and shadow-1. The native-only notices (no folder open, read-only vault, a refused map) follow
     /// the biome in small text; the normal state shows none, as the original.
     /// </summary>
     private Control TopBar()
     {
         var name = _brandName = new TextBlock { Text = "Urbe", FontWeight = FontWeight.SemiBold, FontSize = 14, Foreground = UrbeTheme.Brush(UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center };
-        _vaultName.Text = "Tutorial · prévia";
+        _vaultName.Text = "Nenhuma pasta aberta";
         _vaultName.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
         _vaultName.FontSize = 11;
         _vaultName.VerticalAlignment = VerticalAlignment.Center;
@@ -860,7 +906,7 @@ public sealed partial class MainView : Grid
         if (World.City is not { } city) return null;
         if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly)
         {
-            await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar notas. O Tutorial desta prévia é só leitura.");
+            await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar notas.");
             return null;
         }
         var typed = typedName ?? await Dialogs.PromptAsync(new PromptOptions("Nova nota", Label: "Nome", Placeholder: "Ex.: Ideias",
@@ -917,9 +963,10 @@ public sealed partial class MainView : Grid
         var title = house is not null ? LegacyCity.FullNoteName(house) : System.IO.Path.GetFileName(note.Path);
         return Dialogs.MenuAsync(title,
         [
-            new DialogItem("Renomear", UrbeTheme.Icons.Pencil, Run: () => RenameNoteAsync(note.Path)),
+            new DialogItem("Renomear", UrbeTheme.Icons.Pencil, Run: () => CityNotReady() ? Task.CompletedTask : RenameNoteAsync(note.Path)),
             new DialogItem("Mover para outra pasta", UrbeTheme.Icons.Folder, "A casa muda de bairro na cidade.", Run: async () =>
             {
+                if (CityNotReady()) return;
                 // UC-54: move from inside the editor (the note stays open at its new path)
                 if (await ChooseFolderAsync() is { } folder) await MoveNotesToAsync([note.Path], folder);
             }),
@@ -929,7 +976,7 @@ public sealed partial class MainView : Grid
             // DEC-0045, UC-39: the selection (or the whole note) stays at the top while writing
             new DialogItem("Fixar em painel", UrbeTheme.Icons.Pin, "A seleção, ou a nota inteira, fica no topo enquanto você escreve.",
                 Run: () => { editor.PinSelectionOrNote(); return Task.CompletedTask; }),
-            new DialogItem("Mover para a lixeira", UrbeTheme.Icons.Trash, Danger: true, Run: () => DeleteNoteAsync(note.Path))
+            new DialogItem("Mover para a lixeira", UrbeTheme.Icons.Trash, Danger: true, Run: () => CityNotReady() ? Task.CompletedTask : DeleteNoteAsync(note.Path))
         ]);
     }
 
@@ -945,7 +992,7 @@ public sealed partial class MainView : Grid
         if (World.City is not { } city || city.Buildings.Find(b => b.IsNote && b.Path == path) is not { } house) return;
         if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly)
         {
-            await Dialogs.AlertAsync("Renomear", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para renomear notas. O Tutorial desta prévia é só leitura.");
+            await Dialogs.AlertAsync("Renomear", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para renomear notas.");
             return;
         }
         var typed = typedName ?? await Dialogs.PromptAsync(new PromptOptions("Renomear", Label: "Nome do arquivo",
@@ -1000,7 +1047,7 @@ public sealed partial class MainView : Grid
         if (World.City is not { } city || city.Buildings.Find(b => b.IsNote && b.Path == path) is not { } house) return false;
         if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly || _store is null)
         {
-            await Dialogs.AlertAsync("Excluir", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para excluir notas. O Tutorial desta prévia é só leitura.");
+            await Dialogs.AlertAsync("Excluir", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para excluir notas.");
             return false;
         }
         if (_trashReadOnly)
@@ -1174,7 +1221,7 @@ public sealed partial class MainView : Grid
         if (World.City is not { } city || _store is null) return;
         if (!VaultWritable)
         {
-            await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar notas. O Tutorial desta prévia é só leitura.");
+            await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para criar notas.");
             return;
         }
         folder ??= Explorer.CurrentFolder;
@@ -1786,30 +1833,72 @@ public sealed partial class MainView : Grid
     }
 
     private Avalonia.Controls.Platform.IInputPane? _inputPane;
+    private TopLevel? _keyboardTop;
+    // the top of the phone's keyboard in window coordinates, or NaN while it is closed
+    private double _keyboardAt = double.NaN;
+    private readonly DispatcherTimer _keyboardClosed = new() { Interval = TimeSpan.FromMilliseconds(220) };
 
     protected override void OnAttachedToVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        // the phone's keyboard: when the window is not resized for it, the app ends where the keyboard starts, so the
-        // editor's formatting bar (bottom row on a phone) and the text being typed stay above the keys (UC-48/UC-55)
-        _inputPane = TopLevel.GetTopLevel(this)?.InputPane;
+        // the phone's keyboard: the app ends where the keyboard starts, so the editor's formatting bar (bottom row on
+        // a phone) and the text being typed stay above the keys (UC-48/UC-55)
+        _keyboardTop = TopLevel.GetTopLevel(this);
+        _inputPane = _keyboardTop?.InputPane;
         if (_inputPane is not null) _inputPane.StateChanged += OnInputPane;
+        if (_keyboardTop is not null) _keyboardTop.PropertyChanged += OnTopLevelResized;
+        _keyboardClosed.Tick += OnKeyboardClosed;
     }
 
     protected override void OnDetachedFromVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
     {
         if (_inputPane is not null) _inputPane.StateChanged -= OnInputPane;
+        if (_keyboardTop is not null) _keyboardTop.PropertyChanged -= OnTopLevelResized;
+        _keyboardClosed.Tick -= OnKeyboardClosed;
+        _keyboardClosed.Stop();
         _inputPane = null;
+        _keyboardTop = null;
         base.OnDetachedFromVisualTree(e);
     }
 
     private void OnInputPane(object? sender, Avalonia.Controls.Platform.InputPaneStateEventArgs e)
     {
-        double covered = 0;
-        if (e.NewState == Avalonia.Controls.Platform.InputPaneState.Open && TopLevel.GetTopLevel(this) is { } top &&
-            this.TranslatePoint(new Point(0, Bounds.Height), top) is { } bottom)
-            covered = Math.Max(0, bottom.Y + Margin.Bottom - e.EndRect.Top);
-        Margin = new Thickness(0, 0, 0, covered);
+        if (e.NewState == Avalonia.Controls.Platform.InputPaneState.Open)
+        {
+            _keyboardClosed.Stop();
+            _keyboardAt = e.EndRect.Top;
+            FitKeyboard();
+        }
+        // moving from one block to the next closes and reopens the keyboard: wait a moment before giving the
+        // space back, so the screen does not jump down and up again (16/10/2026)
+        else if (!_keyboardClosed.IsEnabled) _keyboardClosed.Start();
+    }
+
+    private void OnKeyboardClosed(object? sender, EventArgs e)
+    {
+        _keyboardClosed.Stop();
+        _keyboardAt = double.NaN;
+        FitKeyboard();
+    }
+
+    private void OnTopLevelResized(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == TopLevel.ClientSizeProperty) FitKeyboard();
+    }
+
+    /// <summary>
+    /// The space the keyboard covers at the bottom of the window. A system that already shrinks the window for the
+    /// keyboard (adjustResize, or insets applied by the platform) leaves nothing covered: before, the app also
+    /// subtracted the keyboard's height and ended half a screen above it (16/10/2026).
+    /// </summary>
+    public static double KeyboardCover(double windowHeight, double keyboardTop) =>
+        double.IsNaN(keyboardTop) ? 0 : Math.Max(0, windowHeight - keyboardTop);
+
+    private void FitKeyboard()
+    {
+        var height = _keyboardTop?.ClientSize.Height ?? 0;
+        var covered = height <= 0 ? 0 : KeyboardCover(height, _keyboardAt);
+        if (Math.Abs(Margin.Bottom - covered) > .5) Margin = new Thickness(0, 0, 0, covered);
     }
 
     /// <summary>Something opaque over the whole city (the world need not run behind it).</summary>

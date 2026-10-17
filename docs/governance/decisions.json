@@ -1768,6 +1768,39 @@
       "consequencesApplied": true
     },
     {
+      "id": "DEC-0049",
+      "status": "decided",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Experiência de usuário topo de linha como critério central do Urbe nativo",
+      "context": "FATO OBSERVADO: após a beta.13 o proprietário relatou editor pouco usável, abertura lenta, fluxo interrompido e páginas pouco fluidas; o agente registrou como itens de funcionalidade e o proprietário corrigiu que o ponto central é a experiência de usuário.",
+      "question": "Qual é o critério de aceite da interface do Urbe nativo?",
+      "alternatives": [
+        {
+          "option": "1 — Funcionalidade entregue e testada",
+          "consequences": "Telas podem existir sem ser agradáveis ou imediatas."
+        },
+        {
+          "option": "2 — Experiência de usuário topo de linha (UX.md) como critério central, ao lado do desempenho",
+          "consequences": "Fundação de design e redesenho tela por tela antes de novas funcionalidades; cada tela fecha com validação no aparelho."
+        }
+      ],
+      "consequences": "DECISÃO DO PROPRIETÁRIO: 2 — 'o ponto central das observações: EXPERIÊNCIA DE USUÁRIO. Topo de linha, mais moderno dos modernos, tecnologia e psicologia de ponta'. Critério em apps/urbe/docs/csharp/UX.md; UC-69 no ROADMAP C#.",
+      "manifestCompatibility": "Não muda boundaries, dados nem distribuição; a essência e os oráculos da 1.8.4 (ADD-0022) continuam valendo.",
+      "recommendation": "2 — ordem do proprietário.",
+      "related": [
+        "docs/governance/addenda/ADD-0026-urbe-experiencia-de-usuario-topo-de-linha.md",
+        "apps/urbe/docs/csharp/UX.md",
+        "apps/urbe/docs/csharp/ROADMAP.md"
+      ],
+      "raisedBy": "Proprietário",
+      "raisedAt": "2026-10-16",
+      "decision": "2 — Experiência de usuário topo de linha como critério central (UX.md).",
+      "decidedAt": "2026-10-16",
+      "record": "docs/governance/addenda/ADD-0026-urbe-experiencia-de-usuario-topo-de-linha.md",
+      "consequencesApplied": true
+    },
+    {
       "id": "DEC-0050",
       "status": "decided",
       "component": "ecosystem",

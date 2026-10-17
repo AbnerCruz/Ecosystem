@@ -428,12 +428,19 @@ public sealed partial class LegacyCity
     private void RebuildRoadsByDocument(DocumentStore store, KnowledgeIndex index)
     {
         static string NormName(string s) => LegacyJsMath.Slug(Regex.Replace(s, @"\.md$", "", RegexOptions.IgnoreCase)).ToLowerInvariant();
-        var all = store.List();
-        LegacyCityBuilding? ByLinkName(string name)
+        // the first document whose title or path has the name, and the first house of that document (as the
+        // linear searches of buildingByLinkName), looked up instead of searched for every link (UC-59)
+        var byName = new Dictionary<string, UrbeDocument>(StringComparer.Ordinal);
+        foreach (var d in store.List())
         {
-            var doc = all.FirstOrDefault(d => NormName(d.Title) == name || NormName(d.Path) == name);
-            return doc is null ? null : Buildings.Find(b => b.DocumentId == doc.Id);
+            byName.TryAdd(NormName(d.Title), d);
+            byName.TryAdd(NormName(d.Path), d);
         }
+        var byDocument = new Dictionary<string, LegacyCityBuilding>(StringComparer.Ordinal);
+        foreach (var b in Buildings)
+            if (b.DocumentId is { } did) byDocument.TryAdd(did, b);
+        LegacyCityBuilding? ByLinkName(string name) =>
+            byName.TryGetValue(name, out var doc) && byDocument.TryGetValue(doc.Id, out var house) ? house : null;
         RebuildRoads(b =>
         {
             // docs.get(b.documentId||b.path||b.name): the legacy building has no path field

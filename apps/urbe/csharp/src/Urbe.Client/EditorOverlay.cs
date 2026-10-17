@@ -387,11 +387,7 @@ public sealed class EditorOverlay : Grid
         ShowMode(canVisual && StartInVisual ? EditorMode.Visual : EditorMode.Fonte);
         UpdateChrome();
         UpdateStatus(changed: false);
-        // renderProps(b) on loadFile; the box is a div, so its line breaks collapse into spaces
-        var props = PropertiesFor?.Invoke(note.Path);
-        _propertiesText.Text = props is null ? "" : System.Text.RegularExpressions.Regex.Replace(props, @"\s+", " ");
-        _hasProperties = props is not null;
-        UpdateProperties();
+        RefreshProperties();
         IsVisible = true;
         // Focus after the overlay is laid out; on Android this brings up the soft keyboard (Fonte; Visual edits on tap).
         if (Mode == EditorMode.Fonte) Dispatcher.UIThread.Post(() => Editor.Focus(), DispatcherPriority.Loaded);
@@ -544,6 +540,16 @@ public sealed class EditorOverlay : Grid
     private bool IsMarkdown => _note is not null && CanVisual(_note.Path);
 
     private bool _hasProperties;
+
+    /// <summary>renderProps(b) on loadFile; the box is a div, so its line breaks collapse into spaces. Asked again once
+    /// the city exists (UC-59: the note may open before its house is built).</summary>
+    public void RefreshProperties()
+    {
+        var props = _note is null ? null : PropertiesFor?.Invoke(_note.Path);
+        _propertiesText.Text = props is null ? "" : System.Text.RegularExpressions.Regex.Replace(props, @"\s+", " ");
+        _hasProperties = props is not null;
+        UpdateProperties();
+    }
 
     /// <summary>#editorScroll.previewMode #propertiesBox{display:none}.</summary>
     private void UpdateProperties() => _properties.IsVisible = _hasProperties && Mode == EditorMode.Fonte;

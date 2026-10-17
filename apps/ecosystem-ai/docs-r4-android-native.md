@@ -174,3 +174,27 @@ seleção, remoção, validação e discovery mockado sem vazar payload de erro.
 O smoke Android cria um provedor com chave fictícia e modelo offline, mata o
 processo e verifica modelo selecionado, ausência de autorização financeira e
 ciphertext sem chave/URL em claro nas preferences. O teste não usa chave real.
+
+## Rascunhos por conversa (P6-5 / Issue #611)
+
+O texto ainda não enviado e o trecho exato de aceite pertencem ao par
+`(projectId, sessionId)`; navegar entre sessões ou projetos nunca reutiliza
+o rascunho de outra conversa. Rascunhos ficam **apenas na memória do processo**,
+com até 32 conversas recentes; não entram no catálogo, journal, workspace,
+`Bundle`, backup, exports nem pedidos ao modelo antes do gesto de enviar.
+Uma execução concluída com status `succeeded` limpa somente o rascunho
+da conversa executada. Cancelamento, erro ou resposta reprovada preservam
+o texto para edição e reenvio consciente, sem execução automática.
+
+O editor limita a solicitação a 16 Ki caracteres e o trecho exato a 512,
+os mesmos limites do Product Execution Host. Isso impede que um rascunho
+não enviável seja inadvertidamente preservado como se fosse executável.
+Troca de sessão durante uma ação não muda a identidade capturada pelos
+callbacks daquela tela.
+
+**DEVICE pendente:** em duas conversas de um mesmo projeto e em projetos
+diferentes, escrever sem enviar e alternar as telas, voltar e verificar
+isolamento; executar com sucesso uma delas e confirmar limpeza local,
+mantendo o rascunho da outra. Encerrar e reiniciar o processo para conferir
+que textos não enviados não reaparecem. CI prova isolamento da camada
+portátil, não o comportamento tátil da Activity.

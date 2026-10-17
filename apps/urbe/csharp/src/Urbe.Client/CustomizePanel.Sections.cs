@@ -752,7 +752,7 @@ public sealed partial class CustomizePanel
         try
         {
             if (!Customization.Documents.ContainsKey(p))
-                await Customization.UpsertAsync(p, "/* " + name.Trim() + " — estilo do Urbe.\n   Variáveis: --ui-accent, --ui-bg, --ui-surface, --ui-text, --ui-font, --ui-editor-font, --ui-r-m...\n   Veja Tutorial/Personalização/Estilos CSS. */\n\n/* títulos das notas na cor de destaque */\n#renderedPreview h1 { color: var(--ui-accent); }\n");
+                await Customization.UpsertAsync(p, "/* " + name.Trim() + " — estilo do Urbe.\n   Variáveis: --ui-accent, --ui-bg, --ui-surface, --ui-text, --ui-font, --ui-editor-font, --ui-r-m...\n   Veja o Tutorial, em Personalização. */\n\n/* títulos das notas na cor de destaque */\n#renderedPreview h1 { color: var(--ui-accent); }\n");
             await Set("estilos", new JsonObject { [p] = true });
             Toast("Estilo criado e ligado");
         }
