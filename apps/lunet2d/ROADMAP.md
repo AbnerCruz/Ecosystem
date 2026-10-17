@@ -395,6 +395,7 @@ Registro de escopo futuro; não autoriza avanço além do gate atual.
 
 | Capacidade | Destino | Condição / evidência futura |
 | --- | --- | --- |
+| LUNET-437 — Editor visual modular: Aseprite + Photoshop + Illustrator + LPC; desenho manual e montagem por peças criadas/reutilizadas pelo usuário | Evolução futura do Lunet Studio (SPEC §13), Issue #631; [visão registrada](docs/plans/visual-editor-vision.md) | Registro para não esquecer; sem implementação agora. Decompor requisitos e aceites antes de planejar; não altera fase/gate atual nem amplia automaticamente o gate da Fase 5. |
 | Debugger: breakpoints, watches, call stack, step in/out/over | Evolução da IDE após gate da Fase 3 | ADR de protocolo/backend; sessão real no Android |
 | Frame debugger, grafo de dependências de assets, profiler avançado | Evolução das Fases 4/5 | Métricas reais e fontes de assets documentadas |
 | Package manifest, SemVer, dependencies, lockfile, restore, pacotes locais | Extensão futura do planejamento de dependências, antes da 1.0 | ADR de formato/restore; offline, resolução determinística; registry posterior |

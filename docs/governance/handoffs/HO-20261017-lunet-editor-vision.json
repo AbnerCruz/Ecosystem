@@ -1,0 +1,78 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261017-lunet-editor-vision",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-17T20:44:00Z",
+  "agent": {
+    "id": "codex-lunet",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-437",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "lunet-editor-vision-20261017",
+  "commit": null,
+  "pr": null,
+  "base_commit": "13cf613c6955d61f4db3b7968201b8c8cb5088a6",
+  "files_changed": [
+    "apps/lunet2d/docs/plans/visual-editor-vision.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261017-lunet-editor-vision.json"
+  ],
+  "work_completed": [
+    "Direção futura do proprietário persistida no Product, Issue #631, com referências SPEC/ROADMAP.",
+    "Desenho manual, raster/vetorial e montagem modular com peças próprias preservados; sem implementação imediata nem antecipação de fase."
+  ],
+  "verification": [
+    {
+      "check": "Consistency e vínculos SPEC/ROADMAP",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 consistency após corrigir ID para o padrão do schema; links relativos SPEC→plano e ROADMAP→plano presentes. Documento Markdown sem código executável."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Integrar automaticamente a anotação e manter o desenvolvimento atual da Fase 4.",
+    "Detalhar capacidades, formatos, licenças e critérios de aceite quando a evolução entrar no planejamento, sem extração especulativa."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/docs/adr/0007-framework-ide-studio-code-first.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "Ordem do proprietário registrada em SPEC e referência detalhada do Product."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Sem escolher novo formato, contrato, backend ou plataforma."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Registro de intenção futura não equivale a implementação."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem extração ou componente compartilhado especulativo."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
