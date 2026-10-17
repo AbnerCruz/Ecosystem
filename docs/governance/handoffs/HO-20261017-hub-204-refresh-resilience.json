@@ -44,10 +44,10 @@
     {
       "check": "DEVICE — inicialização/refresh/offline em Android real",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "https://github.com/AbnerCruz/Ecosystem/pull/609",
       "critical": true,
-      "evidence": "Usar APK compilado desta mudança no aparelho; confirmar que erro de rede e falha de confiança não encerram Activity, instalação não usa cache e nenhum botão fica travado. Capturar logcat se houver crash."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-17 (Issue https://github.com/AbnerCruz/Ecosystem/issues/616); registro em docs/governance/responses/VAL-HO-20261017-hub-204-refresh-resilience-f39ed28cdd79.md."
     }
   ],
   "known_issues": [
