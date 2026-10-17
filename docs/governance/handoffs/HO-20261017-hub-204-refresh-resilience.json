@@ -54,7 +54,6 @@
   ],
   "known_issues": [
     "O fechamento imediato relatado antes não foi reproduzido nem possui stack trace; esta correção trata um caminho concreto de exceção mas não prova causa ou cura do incidente.",
-    "CI e teste físico estão pendentes; a branch não deve ser declarada concluída.",
     "O teste Hub.Tests.AuthenticatedHostGatewayTests.DeadlineIsTransportFailureAndSessionRemainsUsable (25 ms) falhou na primeira execução em Core não alterado e passou no rerun; potencial instabilidade de CI a acompanhar."
   ],
   "blockers": [],

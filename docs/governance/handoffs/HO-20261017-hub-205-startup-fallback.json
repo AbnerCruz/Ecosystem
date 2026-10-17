@@ -66,7 +66,7 @@
   "known_issues": [
     "Falha nativa SIGABRT antes de OnCreate não pode ser capturada por código gerenciado.",
     "O encerramento original relatado pelo proprietário não tem logcat; esta proteção não comprova sua causa nem substitui DEVICE.",
-    "Sem ambiente Android físico no CI de unit tests; validar botão/recriação e lifecycle no dispositivo."
+    "CI de unit tests não possui Android físico; a validação do proprietário permanece registrada separadamente na verificação DEVICE aprovada."
   ],
   "blockers": [],
   "next_actions": [
