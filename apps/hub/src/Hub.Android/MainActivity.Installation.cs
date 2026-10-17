@@ -57,21 +57,28 @@ public sealed partial class MainActivity
 
     async Task RefreshInstallationTrust(CancellationToken ct)
     {
-        _approvedPackages.Clear();
+        // Consulta isolada: um refresh cancelado não pode publicar aprovações
+        // parciais nem sobrescrever o resultado de uma requisição posterior.
         var source = new RepositoryFileSource(Http, Options.Repository, Options.Branch, Options.Token);
         var catalog = await source.ReadTextAsync("docs/architecture/hub-android-products.json", ct);
         AndroidProductTrust[] candidates = [];
         try { if (catalog.Availability == Availability.Derived && catalog.Value is not null) candidates = JsonSerializer.Deserialize<AndroidProductTrust[]>(catalog.Value) ?? []; }
         catch (JsonException) { }
+        var approvals = new Dictionary<string, AndroidProductTrust>();
         // Metadata alone never expands Android visibility. Fetch decisions/current channel only for eligible products.
         var ids = candidates.Where(x => VisiblePackages.Contains(x.PackageId)).Select(x => x.ProductId).ToHashSet();
         foreach (var choice in _choices.Where(x => ids.Contains(x.ProductId)).DistinctBy(x => x.ProductId).Take(8))
         {
-            try { if (await LoadTrust(choice, ct) is { } approved) _approvedPackages[choice.ProductId] = approved; }
-            catch (OperationCanceledException) { throw; }
+            ct.ThrowIfCancellationRequested();
+            try { if (await LoadTrust(choice, ct) is { } approved) approvals[choice.ProductId] = approved; }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
             catch (Exception) { /* no permission fallback or cached approval */ }
         }
-        if (!_destroyed) UpdateInstallationControls();
+        ct.ThrowIfCancellationRequested();
+        if (_destroyed) return;
+        _approvedPackages.Clear();
+        foreach (var (productId, approved) in approvals) _approvedPackages[productId] = approved;
+        UpdateInstallationControls();
     }
 
     void UpdateInstallationControls()
