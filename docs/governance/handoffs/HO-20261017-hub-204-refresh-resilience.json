@@ -3,14 +3,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261017-hub-204-refresh-resilience",
   "category": "HANDOFF",
-  "timestamp": "2026-10-17T14:56:43.348Z",
+  "timestamp": "2026-10-17T20:36:27.910920Z",
   "agent": {
     "id": "chatgpt-ecosystem-hub-204",
     "kind": "ai-agent"
   },
   "task_id": "HUB-204",
   "component": "hub",
-  "state": "review",
+  "state": "done",
   "branch": "fix/hub-204-refresh-resilience-20261017",
   "base_commit": "e18f7737d6d73cb8bd6fea275c3c29344afe0723",
   "commit": null,
@@ -25,7 +25,8 @@
     "Refresh assíncrono fecha os caminhos de exceção de rede/parse/compose e restaura controles em finally; cancellation fica limitada ao token efetivamente cancelado.",
     "Resultado de requisição atrasada não publica projeção/UI quando já há outra atualização ativa.",
     "Aprovações Android são produzidas em dicionário temporário e publicadas juntas após a consulta e verificação de cancelamento; falha da consulta bloqueia instalação/abertura.",
-    "Roteiro de dispositivo e limite de diagnóstico registrados; nenhuma nova permissão, nenhuma alteração do PackageInstaller."
+    "Roteiro de dispositivo e limite de diagnóstico registrados; nenhuma nova permissão, nenhuma alteração do PackageInstaller.",
+    "Reconciliação de evidências por codex-platform-evidence: integração/CI confirmados e aprovação DEVICE do proprietário já persistida na Issue #616; preservadas integralmente as verificações humanas originais."
   ],
   "verification": [
     {
@@ -38,8 +39,9 @@
     {
       "check": "Consistency e self-test no estado combinado",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Integrador automático verificará branch + main; sem execução local."
+      "result": "passed",
+      "evidence": "Reconciliação de estado por Codex: CI e integração concluídos com sucesso; PR já integrado em d7f4d890c0e071dbbf7a5072d97b16cf798f0724. Integrador https://github.com/AbnerCruz/Ecosystem/actions/runs/39042901987 . Para HUB-205, Hub.Tests/APK da branch também aprovados no run 39049647260 (head ebcee89b). Nenhuma verificação humana nova foi criada.",
+      "tested_commit": "d7f4d890c0e071dbbf7a5072d97b16cf798f0724"
     },
     {
       "check": "DEVICE — inicialização/refresh/offline em Android real",
@@ -52,15 +54,11 @@
   ],
   "known_issues": [
     "O fechamento imediato relatado antes não foi reproduzido nem possui stack trace; esta correção trata um caminho concreto de exceção mas não prova causa ou cura do incidente.",
-    "CI e teste físico estão pendentes; a branch não deve ser declarada concluída.",
     "O teste Hub.Tests.AuthenticatedHostGatewayTests.DeadlineIsTransportFailureAndSessionRemainsUsable (25 ms) falhou na primeira execução em Core não alterado e passou no rerun; potencial instabilidade de CI a acompanhar."
   ],
   "blockers": [],
   "next_actions": [
-    "Consistency e self-test ainda devem encerrar verdes no PR/estado combinado; Hub.Tests e APK Android já passaram em rerun (run 39042685515).",
-    "Deixar PR pronto para integrador automático; revisão combinada e integração dependem dos checks e das regras da main.",
-    "Testar no dispositivo Android os cenários listados em apps/hub/docs/instalar-e-abrir.md; sem DEVICE manter a Issue aberta.",
-    "Depois, retomar P6-5 e a unificação da IA conforme os gates aprovados."
+    "Prosseguir pelo núcleo P6-5 e unificação de IA; este fechamento não diagnostica a causa do crash originalmente relatado nem altera gates."
   ],
   "decisions_required": [],
   "normative_sources": [
