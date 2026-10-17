@@ -213,3 +213,9 @@ A chave é transitória e o agente só recebe leitura dos arquivos do projeto.
 [Uso, assinatura pública de teste, limites e roteiro DEVICE](docs-r4-android-native.md).
 O CI produz artefatos APK; disponibilidade de build é evidência do workflow,
 não prova de instalação, provider real ou encerramento da P6-5.
+
+## Leitura de respostas do modelo
+
+O adapter Chat Completions aplica limite durante a leitura HTTP e não repete
+automaticamente respostas interrompidas com cobrança desconhecida.
+[Limites e testes](docs-provider-response-limits.md).
