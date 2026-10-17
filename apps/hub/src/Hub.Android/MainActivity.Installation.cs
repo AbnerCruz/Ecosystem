@@ -171,5 +171,5 @@ public sealed partial class MainActivity
         finally { _checkingInstall = false; if (!_destroyed) UpdateInstallationControls(); }
     }
 
-    void InstallationChanged() => RunOnUiThread(() => { if (!_destroyed) { UpdateInstallationControls(); UpdateDownloadControls(); } });
+    void InstallationChanged() => RunOnUiThread(() => { if (!_destroyed && !_startupFailed) { UpdateInstallationControls(); UpdateDownloadControls(); } });
 }
