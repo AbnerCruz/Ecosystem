@@ -78,6 +78,7 @@ public sealed class RecordedModelProvider : IModelProvider
             stop = response.Stop.ToString(),
             input = response.Usage.InputTokens,
             output = response.Usage.OutputTokens,
+            tokensKnown = response.Usage.TokensKnown,
             cost = response.Usage.Cost.Minor,
             currency = response.Usage.Cost.Currency,
         });
@@ -96,7 +97,8 @@ public sealed class RecordedModelProvider : IModelProvider
         var content = ContentSerializer.FromJson(root.GetProperty("content").GetRawText());
         var stop = Enum.Parse<StopReason>(root.GetProperty("stop").GetString()!);
         var usage = new Usage(root.GetProperty("input").GetInt64(), root.GetProperty("output").GetInt64(),
-            new Money(root.GetProperty("cost").GetInt64(), root.GetProperty("currency").GetString()!));
+            new Money(root.GetProperty("cost").GetInt64(), root.GetProperty("currency").GetString()!))
+            { TokensKnown = !root.TryGetProperty("tokensKnown", out var known) || known.GetBoolean() };
         return ValueTask.FromResult(new ModelResponse(content, stop, usage));
     }
 }

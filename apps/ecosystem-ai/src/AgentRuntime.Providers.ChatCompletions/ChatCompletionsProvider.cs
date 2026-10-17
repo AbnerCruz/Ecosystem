@@ -160,16 +160,25 @@ public sealed class ChatCompletionsProvider : IModelProvider
                 if (blocks.Count == 0) throw new JsonException("resposta sem conteúdo nem chamada");
 
                 long prompt = 0, completion = 0;
+                bool promptKnown = false, completionKnown = false;
                 decimal? reportedUsd = null;
                 if (root.TryGetProperty("usage", out var usage) && usage.ValueKind == JsonValueKind.Object)
                 {
-                    if (usage.TryGetProperty("prompt_tokens", out var pt) && pt.TryGetInt64(out var p)) prompt = p;
-                    if (usage.TryGetProperty("completion_tokens", out var ct) && ct.TryGetInt64(out var c)) completion = c;
+                    if (usage.TryGetProperty("prompt_tokens", out var pt))
+                    {
+                        if (pt.ValueKind != JsonValueKind.Number || !pt.TryGetInt64(out prompt)) throw new JsonException("prompt_tokens inválido");
+                        promptKnown = true;
+                    }
+                    if (usage.TryGetProperty("completion_tokens", out var ct))
+                    {
+                        if (ct.ValueKind != JsonValueKind.Number || !ct.TryGetInt64(out completion)) throw new JsonException("completion_tokens inválido");
+                        completionKnown = true;
+                    }
                     if (usage.TryGetProperty("cost", out var cost) && cost.ValueKind == JsonValueKind.Number
                         && cost.TryGetDecimal(out var usd)) reportedUsd = usd;
                 }
                 if (prompt < 0 || completion < 0 || reportedUsd < 0) throw new JsonException("uso ou custo negativo");
-                if (reportedUsd is null && (prompt + completion == 0 || (_inputUsdPerMillion == 0 && _outputUsdPerMillion == 0)))
+                if (reportedUsd is null && (!promptKnown || !completionKnown || (prompt == 0 && completion == 0) || (_inputUsdPerMillion == 0 && _outputUsdPerMillion == 0)))
                     throw new ProviderException("cost-unknown", "Sem custo informado nem tarifa configurada; operação não pode ser conciliada com segurança.", false);
                 LastCostEstimated = reportedUsd is null;
                 var usdAmount = reportedUsd ?? (prompt * _inputUsdPerMillion + completion * _outputUsdPerMillion) / 1_000_000m;
@@ -182,7 +191,7 @@ public sealed class ChatCompletionsProvider : IModelProvider
                 if (finish is not (null or "stop" or "tool_calls"))
                     throw new ProviderException("finish-unknown", "Motivo de conclusão não reconhecido.", false);
                 var stop = blocks.OfType<ToolUseBlock>().Any() ? StopReason.ToolUse : StopReason.EndTurn;
-                return new ModelResponse(blocks, stop, new Usage(prompt, completion, new Money(cents, "USD")));
+                return new ModelResponse(blocks, stop, new Usage(prompt, completion, new Money(cents, "USD")) { TokensKnown = promptKnown && completionKnown });
             }
             catch (ProviderException) { throw; }
             catch (Exception e) when (e is JsonException or KeyNotFoundException or InvalidOperationException or OverflowException or FormatException)

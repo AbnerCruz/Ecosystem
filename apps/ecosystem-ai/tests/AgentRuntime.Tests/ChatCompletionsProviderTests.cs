@@ -128,6 +128,35 @@ public class ChatCompletionsProviderTests
         }
     }
 
+    [Theory]
+    [InlineData("{\"cost\":0.01}", false)]
+    [InlineData("{\"cost\":0.01,\"prompt_tokens\":10}", false)]
+    [InlineData("{\"cost\":0.01,\"prompt_tokens\":0,\"completion_tokens\":0}", true)]
+    [InlineData("{\"cost\":0.01,\"prompt_tokens\":10,\"completion_tokens\":2}", true)]
+    public async Task Custo_informado_nao_inventa_medicao_de_tokens(string usage, bool known)
+    {
+        var json = "{\"choices\":[{\"message\":{\"content\":\"ok\"},\"finish_reason\":\"stop\"}],\"usage\":" + usage + "}";
+        using var client = new HttpClient(new Handler(json));
+        var result = await new ChatCompletionsProvider(client, new Uri("https://provider.example.test/chat/completions"), null, 1, 1)
+            .CompleteAsync(Request(Message.User("x")), CancellationToken.None);
+        Assert.Equal(known, result.Usage.TokensKnown);
+    }
+
+    [Theory]
+    [InlineData("{\"cost\":0.01,\"prompt_tokens\":9223372036854775808,\"completion_tokens\":1}")]
+    [InlineData("{\"cost\":0.01,\"prompt_tokens\":1.5,\"completion_tokens\":1}")]
+    [InlineData("{\"cost\":0.01,\"prompt_tokens\":\"secret-token\",\"completion_tokens\":1}")]
+    [InlineData("{\"prompt_tokens\":10}")]
+    public async Task Tokens_malformados_ou_tarifa_com_contagem_parcial_falham_fechados(string usage)
+    {
+        var json = "{\"choices\":[{\"message\":{\"content\":\"ok\"},\"finish_reason\":\"stop\"}],\"usage\":" + usage + "}";
+        using var client = new HttpClient(new Handler(json));
+        var error = await Assert.ThrowsAsync<ProviderException>(async () => await new ChatCompletionsProvider(client,
+            new Uri("https://provider.example.test/chat/completions"), null, 1, 1).CompleteAsync(Request(Message.User("x")), CancellationToken.None));
+        Assert.False(error.IsTransient);
+        Assert.DoesNotContain("secret-token", error.Message);
+    }
+
     [Fact]
     public async Task Cli_help_e_exigencia_de_configuracao_fechada()
     {
