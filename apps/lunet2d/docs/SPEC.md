@@ -455,6 +455,12 @@ lasso, transform, flip, rotate, symmetry, grid, zoom, spritesheet,
 animation preview, PNG import/export e transparency. Touch e stylus são
 de primeira classe.
 
+### Visão futura de criação visual modular — registro de 17/10/2026
+
+Por ordem do proprietário (Issue #631), preservar a direção **Aseprite + Photoshop + Illustrator + Universal LPC Spritesheet Generator**: desenho livre pixel a pixel e por camadas, edição raster/vetorial e montagem de sprites animados por componentes reutilizáveis no mesmo projeto. O usuário pode desenhar uma peça, usá-la no personagem e salvá-la no catálogo para outras composições; cada montagem deve continuar editável.
+
+A visão detalhada está em [plans/visual-editor-vision.md](plans/visual-editor-vision.md). É uma evolução futura a detalhar, sem implementação imediata, antecipação de fases, cópia automática de código/arte LPC ou alteração da plataforma Android. Preservar a política Visual ↔ Source e o Editor SDK; não transforma a reprodução integral dos produtos de referência em requisito da Fase 5.
+
 ### Tile Studio
 
 Tilesets, map editing, layers, collision layer, properties, autotiling,

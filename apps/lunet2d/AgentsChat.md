@@ -458,3 +458,18 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - `TileMap` agora expõe edição imutável de mapa, célula e camadas com mesmo JSON v1: `Create/WithTile/WithLayerSettings/RenameLayer/AddLayer/RemoveLayer/MoveLayer`. Não muda arquivos salvos, TileMap.Parse/Draw anteriores ou formato; limite máximo de tile é recalculado após reduzir/remover IDs.
 - Testes incluem edição/round-trip/imutabilidade, colisão/A*, draw com atlas reduzido, validação de parâmetros e 32 camadas; catálogo API e guia offline atualizados.
 - **CI/APK e DEVICE pendentes até os checks do PR; nenhum Tile Studio visual alegado nem gate Fase 4 fechado.**
+
+
+### 20261017-codex-lunet-physics-scenarios — Codex → integrador — review
+- Retomada estrita da Fase 4 / LUNET-435, Issues #477/#495/#629, base `fccefa75bce650506eb8acbfee81a35df7fc4d9b`, branch `lunet-roadmap-20261017`.
+- Laboratório existente: casos Juntas e Filtros/eventos, com API física pública real, reinício/descarte, pausa e controles por toque; preserva SAT, 12 módulos e carga 1/64.
+- Aprovações #500/#502/#503/#515 reconciliadas no ROADMAP/auditoria; não ampliadas para requisitos ausentes. Sem implementação de LPC/Studio ou alteração de outros Products.
+- Verificação local/CI em andamento. Underruns, Tile Studio, nine-slice específico e DEVICE avançado/gate ainda abertos; não iniciar Fase 5.
+
+- Verificado: build sem warnings/errors; 672/672 testes (incluindo dois cenários compilados e executados); 22/22 consistency. Self-test/CI Android/APK em acompanhamento; nada de DEVICE inferido. Git local sem credencial de push, envio pelo conector GitHub.
+
+### 20261017-codex-lunet-editor-vision — Codex → integrador — review
+- Correção solicitada pelo proprietário: registrar no repositório a ideia do editor visual integrado Aseprite/Photoshop/Illustrator/LPC, em vez de deixá-la apenas num arquivo avulso da conversa. Issue #631; branch `lunet-editor-vision-20261017`, base `13cf613c6955d61f4db3b7968201b8c8cb5088a6`.
+- Visão detalhada em `docs/plans/visual-editor-vision.md`, vinculada pelo SPEC §13 e pelo backlog futuro do ROADMAP. Manual + modular, componentes criados pelo usuário e preservação da edição/source; escopo detalhado ainda a planejar.
+- Sem implementação agora, sem alterar fase/gate atual, plataforma Android, arquitetura ou licença; sem confundir inspiração com autorização de copiar código/arte. Desenvolvimento F4 segue em frente separada #629/PR #630.
+

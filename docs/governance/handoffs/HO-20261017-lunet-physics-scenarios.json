@@ -1,0 +1,133 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261017-lunet-physics-scenarios",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-17T20:43:00Z",
+  "agent": {
+    "id": "codex-lunet-physics",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-435",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "lunet-roadmap-20261017",
+  "commit": "df08aba2b006436c6d0a201995228f4a89fa06e3",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/630",
+  "base_commit": "fccefa75bce650506eb8acbfee81a35df7fc4d9b",
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/audits/fase-4-roteiro.md",
+    "apps/lunet2d/docs/audits/fase-4.md",
+    "apps/lunet2d/docs/guides/fisica-box2d.md",
+    "apps/lunet2d/docs/guides/laboratorio.md",
+    "apps/lunet2d/src/Lunet.Core/LaboratoryTemplate.cs",
+    "apps/lunet2d/tests/Lunet.Tests/AdvancedPhysicsLaboratoryTests.cs",
+    "docs/governance/handoffs/HO-20261017-lunet-physics-scenarios.json"
+  ],
+  "work_completed": [
+    "Issue #629: cenários Juntas e Filtros/eventos no módulo Colisões do Laboratório existente, apenas API pública física.",
+    "Pêndulo com impulso, bloco com junta prismática, filtro que altera colisão real e contadores de entrada/saída de sensor e contato; reset e descarte seguros.",
+    "SAT, 12 módulos, carga 1/64 e projetos existentes preservados.",
+    "ROADMAP/auditoria reconciliam aprovações #500/#502/#503/#515 sem expandir seu alcance nem encerrar o gate."
+  ],
+  "verification": [
+    {
+      "check": "Build portátil .NET 10",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet build Lunet.Tests --no-restore -m:1 -nr:false -p:UseSharedCompilation=false: zero warnings/errors, SDK 10.0.402."
+    },
+    {
+      "check": "Cenários compilados e executados pelo GameCompiler/GameHost",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "2/2 AdvancedPhysicsLaboratoryTests: posição/constraints após impulso, pausa/captura, filtro bloqueando/atravessando, eventos, mundos descartados e retorno SAT/carga."
+    },
+    {
+      "check": "Suíte completa Lunet e consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "672/672 testes, sem falhas/errors/skips; 22/22 consistency. Self-test global em execução; Android separado."
+    },
+    {
+      "check": "CI Android e APK",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "DEVICE: cenários avançados em Preview rápido e isolado",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/laboratorio.md",
+      "critical": false
+    },
+    {
+      "check": "CI Lunet2D",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "lunet2d-ci run 39067936021 concluído com success; consistency inicial detectou referência a commit local não enviado, corrigida para df08aba2 (commit canônico do envio via connector).",
+      "tested_commit": "df08aba2b006436c6d0a201995228f4a89fa06e3"
+    }
+  ],
+  "known_issues": [
+    "Fase 4 permanece aberta: audio underruns, conexão UI Tile Studio, roteiro nine-slice e gate integral não aprovados.",
+    "Novos cenários Android dependem de validação específica; testes portáteis não comprovam toque/GL/aparelho."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Confirmar suíte, checks, CI Android e integração automática; publicar release pelo pipeline existente.",
+    "Validar cenários no Android pelo guia laboratorio; continuar requisitos reais da Fase 4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/docs/adr/0009-physics-backend.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json",
+    "docs/architecture/local-first.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Mudança restrita ao Product Lunet, sem dependências entre Products."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #629, branch própria e handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE separado e pendente; aprovações históricas não estendidas."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Review, gate aberto, sem afirmar integração ou release inexistentes."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Somente template e guias de uso da física local, sem extração transversal."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-physics-validation-scenarios",
+      "status": "product-specific",
+      "rationale": "Cenários de aceitação do framework público Lunet no Laboratório já existente; não cria serviço nem ferramenta compartilhada."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

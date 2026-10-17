@@ -18,7 +18,7 @@ world.Raycast(new Vector2(0, -2), Vector2.UnitY, 20, out var hit);
 
 Um mundo não renderiza por conta própria: desenhe sprites na posição de cada corpo no `Game.Draw`. Chame `Step` somente no Update fixo, não no Draw. Use unidades consistentes (por exemplo, 1 metro físico = 32 pixels na cena) e descarte `PhysicsWorld` com o jogo. Consulte os eventos de início por `ContactBeginCount` / `CopyContactBegins` antes do próximo Step.
 
-A API desta entrega é inicial, não fecha toda a física da Fase 4: faltam juntas avançadas, filtros, eventos de término/sensores e validação Android.
+A API inclui juntas avançadas, filtros e eventos de término/sensores. O caso básico e a carga já têm aceite Android; a validação específica dos recursos avançados usa os cenários abaixo e continua separada do gate integral da Fase 4.
 
 ## Física avançada (Fase 4)
 
@@ -36,3 +36,7 @@ world.RaycastFiltered(Vector2.Zero, Vector2.UnitX, 10, categoryBits: 1, maskBits
 ```
 
 Os eventos pertencem apenas ao último passo e são descartados em destruição manual de fixture/corpo; IDs inválidos do backend são ignorados. Para distinguir um sensor, use `Fixture2D.IsSensor`. Juntas ancoradas em posições do mundo usam posições locais calculadas em cada corpo. Dispositivos Android ainda precisam de teste visual e de frame pacing.
+
+## Testar sem copiar código
+
+No novo Laboratório, abra Índice → Colisões → Ver Física Box2D → Cenário. Os casos **Juntas** e **Filtros / eventos** executam estas APIs com controles de impulso, filtro e reinício. O [roteiro do Laboratório](laboratorio.md#juntas-filtros-e-eventos-fase-4) explica o resultado esperado para cada caso. Projetos antigos conservam seus fontes.
