@@ -4,6 +4,8 @@
 > **Status: plano de arquitetura.** O aceite do ADR-0017 e a sequência do primeiro slice são do ADR e da **DEC-0026** ([`decisions.json`](../governance/decisions.json)), as autoridades (não copiadas aqui, ADR-0010); o que vem depois está em §13. Contratos e fases abaixo são **propostas** até o ADR de cada contrato ser aceito: nada aqui cria código, diretório, componente em `ecosystem.json`, schema, permissão ou fase vigente (NN-011, NN-020, NN-022). Estado de andamento: ROADMAP (itens P6-1..P6-5) e Issues.
 > Convenção do MANIFEST §53: **FATO** = verificado no repositório nesta tarefa; **INFERÊNCIA** = dedução; **PROPOSTA** = sugestão sujeita a decisão; **DECISÃO** = já registrada pelo proprietário.
 
+> **Leitura do estado atual (AI-603, 16/10/2026):** a auditoria de §2 e as propostas históricas abaixo não representam automaticamente a main. Consulte a [matriz de código e consumidores](audits/ai-unification-2026-10-16.md), o ROADMAP e as Issues/PRs. O Runtime e o Urbe Assistant nativo já existem. [ADD-0027](../governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md) / DEC-0050 / ADR-0033 fixam Urbe como referência funcional/UX e Runtime existente como infraestrutura, preservando gates de extração/paridade. A intenção de unificar não estabiliza os contratos esboçados neste plano nem promove componentes.
+
 ## 1. Resumo
 
 O ADD-0013 pede uma infraestrutura **universal** de IA e agentes: o proprietário declara objetivo, restrições, orçamento e permissões; agentes autorizados planejam, executam, verificam e escalam só o que for crítico. Este plano responde à primeira entrega pedida (§31 do ADD): auditoria, conflitos, desenho, contratos, fatiamento e ROADMAP — **sem implementar o monstro de uma vez**.

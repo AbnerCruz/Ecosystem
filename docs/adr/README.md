@@ -55,3 +55,5 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0030](0030-documento-canonico-de-autoria-matematica.md) | Documento canônico e autoria textual da matemática temporal | Aceito (DEC-0040-A) |
 | [0031](0031-p6-4-piloto-headless-lunet.md) | Piloto headless do Host Lunet para P6-4 | Aceito (DEC-0041, piloto restrito) |
 | [0032](0032-urbe-ui-nativa-sem-webview.md) | Urbe C#: interface nativa sem WebView, com a 1.8.4-beta como especificação | Aceito (DEC-0043) |
+
+| [0033](0033-unificacao-incremental-da-ia.md) | Unificação incremental da IA com preservação do Urbe | Aceito quanto à direção (DEC-0050), sem promoção/contrato novo |

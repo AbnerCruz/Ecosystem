@@ -1,0 +1,148 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261016-ai-unification-direction",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-17T16:20:54.373Z",
+  "agent": {
+    "id": "codex-ai-unification",
+    "kind": "ai-agent"
+  },
+  "task_id": "AI-603",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "docs/ai-unification-direction",
+  "base_commit": "3651207e7cd6a4d66cd977c8a306d9e7bbf5e484",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/605",
+  "files_changed": [
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/governance/decisions.json",
+    "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/adr/README.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/architecture/audits/ai-unification-2026-10-16.md",
+    "docs/governance/handoffs/HO-20261016-ai-unification-direction.json"
+  ],
+  "work_completed": [
+    "Diretriz explícita do proprietário registrada em ADD-0027/DEC-0050 e ADR-0033, com limites e gates preservados.",
+    "Matriz do código atual, melhorias UC-50/51/plugins e diferenças de provedores/streaming/credenciais/autorizações/retomada/custos.",
+    "Extraction Review preliminar sem promoção: dois Products não usam ainda a mesma implementação; recomendação de Urbe por transporte/providers mantendo loop/UI.",
+    "Próximo incremento rastreado no ROADMAP; pointer no plano antigo para impedir uso de auditoria histórica como estado atual.",
+    "Coordenado com #602: preservados ADD-0026/DEC-0049 e arquivos do cliente; nenhum código dos Products alterado neste PR."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "consistency",
+      "result": "passed",
+      "evidence": "22/22 consistency checks; snapshot de Issues ausente localmente, CI confere. git diff --check passou."
+    },
+    {
+      "kind": "automated",
+      "check": "Preservação do Urbe Core",
+      "result": "passed",
+      "evidence": "135/135 testes Assistant e UserAgentsFile no código main, sem falhas/skips; Product não alterado."
+    },
+    {
+      "kind": "automated",
+      "check": "Urbe UI Assistant e oráculos legados",
+      "result": "passed",
+      "evidence": "2/2 testes UI de edição/aprovação/desfazer e plugin no editor; cinco oráculos (agent/providers/tools/customize/pages) regenerados e idênticos às fixtures por comparação JSON."
+    },
+    {
+      "kind": "automated",
+      "check": "Simulação do integrador",
+      "result": "passed",
+      "evidence": "Todos os cenários passaram localmente, incluindo corrida de main/head, gates críticos e recusa de autorização indevida."
+    },
+    {
+      "kind": "automated",
+      "check": "Reconciliação semântica Git (DEC-0049 + DEC-0050)",
+      "result": "passed",
+      "evidence": "Branch PR #605 atualizada por merge commit 3bbb2648c08aed16f3853847aff67c58061d9515, com pais 110a178a (trabalho original) e d43a5a2d (main). Auditoria comparou as 49 entradas de cada lado: apenas DEC-0049 existia na main e apenas DEC-0050 no PR, nenhuma decisão comum diferia; árvore resultante contém as 50 decisões sem duplicação. Hunks dos 4 arquivos comuns restantes aplicados à main sem divergência semântica; arquivos novos do PR preservados. CI combinado permanece por validar."
+    }
+  ],
+  "known_issues": [
+    "Segredos do Urbe em JSON privado sem cifra e falhas de persistência ocultas exigem incremento próprio antes da promoção.",
+    "Não há segundo consumidor de produção do Runtime; piloto Lunet é apenas headless.",
+    "ADRs 0020/0021 continuam com status Proposto apesar de implementações integradas; auditoria preserva a distinção."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Conflito DEC-0049/0050 conciliado; aguardar novo ciclo do integrador para CI combinado e autorização crítica do proprietário (sem merge manual).",
+    "Integrar/testar código #604 separadamente.",
+    "Implementar suíte de equivalência de transporte/providers e contrato concreto antes da extração."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/architecture/local-first.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/adr/0020-r2-workspace-changes-e-integracao-local.md",
+    "docs/adr/0021-r3-sessao-local-do-agent-workspace.md",
+    "docs/adr/0031-p6-4-piloto-headless-lunet.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/tabletop-rpg/AGENTS.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "apps/math-authoring/AGENTS.md",
+    "apps/math-authoring/SPEC.md",
+    "apps/math-authoring/ROADMAP.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "Ordem explícita registrada, sem decisão inferida."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas consultadas diretamente e listadas."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "ADR restrito à direção já ordenada; nenhuma promoção/contrato concreto aceito."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Código/headless/integração/DEVICE distintos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Revisão preliminar responde cinco perguntas e não extrai sem consumidores efetivos."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "unified-ai-model-transport",
+      "status": "external-consumer-exists",
+      "consumers": [
+        "urbe"
+      ],
+      "extraction_review": "pending",
+      "rationale": "Ambos possuem transporte funcional com necessidades reais; ainda não há adoção da mesma implementação. Review preliminar registrada, promoção não executada."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution"
+    ],
+    "reason": "Registra direção permanente do proprietário, ADR e instruções de agentes; exige portão crítico do integrador."
+  }
+}

@@ -62,6 +62,10 @@ Mudanças de prioridade **não** derrubam gates, antecipam UC-21/Fase 8, abrem p
 
 **Precedência:** DEC-0043/ADR-0032 substituem o caminho de UI Blazor do ADR-0025. Qualquer roadmap/PR/README anterior que os contradiga é histórico e deve ser reconciliado, **não usado como desculpa para regredir**. Se houver bloqueio real, registrar qual e prosseguir na próxima fatia segura do produto.
 
+## 1.3 IA unificada — diretriz permanente (DEC-0050 / ADR-0033)
+
+Ao tocar IA de qualquer Product, ler [ADD-0027](docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md), [ADR-0033](docs/adr/0033-unificacao-incremental-da-ia.md) e a [matriz auditada](docs/architecture/audits/ai-unification-2026-10-16.md), além do código/testes atuais. Urbe nativo é referência funcional/UX; AgentRuntime.Core existente é referência de infraestrutura. Não copiar assistentes, criar terceiro Runtime, dependência entre Products ou obrigatoriedade do Hub. Extração exige review NN-022/contrato/consumidores reais; não trocar o loop do Urbe sem paridade. Preservar melhorias recentes, permissões, isolamento, segredos nativos e regras financeiras por produto, inclusive RPG pay-as-you-go sem teto obrigatório. Teste headless não significa integração no APK nem DEVICE. Estado vivo em Issues/PRs; o snapshot de auditoria não o substitui.
+
 ## 2. NON-NEGOTIABLES (reprodução operacional de MANIFEST §0.1)
 
 Estas invariantes são **obrigatórias**. Nenhuma pode ser removida, suavizada, ter seu escopo alterado ou ser tratada como recomendação. A matriz legível por máquina que associa cada invariante aos mecanismos de fiscalização é [`docs/governance/enforcement-matrix.json`](docs/governance/enforcement-matrix.json). A impossibilidade de automatizar uma regra **não** autoriza sua remoção.
