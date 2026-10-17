@@ -32,9 +32,10 @@
     {
       "kind": "human",
       "check": "Android físico: atualizar para a beta.13 e usar a nota rápida por voz (menu Criar e widget), modelos, caixas e decorações",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
-      "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.13"
+      "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.13",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-17 (Issue https://github.com/AbnerCruz/Ecosystem/issues/619); registro em docs/governance/responses/VAL-HO-20261016-urbe-beta-13-b06d1591abd3.md."
     }
   ],
   "known_issues": [],
