@@ -8,7 +8,7 @@ public enum RunAuditAvailability { Available, Missing, Unavailable, ReceiptMisma
 public sealed record RunAuditEvent(long Sequence, DateTimeOffset At, EventKind Kind);
 public sealed record ProductRunAuditResult(RunAuditAvailability Availability, RunStatus? Status = null,
     bool Verified = false, int Steps = 0, int ToolCalls = 0, Money? RecordedCost = null,
-    bool CostEstimated = false, int TotalEvents = 0, IReadOnlyList<RunAuditEvent>? Events = null);
+    bool CostEstimated = false, int TotalEvents = 0, IReadOnlyList<RunAuditEvent>? Events = null, RunTokenUsage? Tokens = null);
 
 /// <summary>
 /// Projeção somente leitura de um recibo da conversa sobre o journal canônico.
@@ -52,7 +52,7 @@ public static class ProductRunAudit
             return new(matches ? RunAuditAvailability.Available : RunAuditAvailability.ReceiptMismatch,
                 state.Status, state.Verified, state.Steps, state.ToolCalls, state.Cost,
                 receipt.CostEstimated, events.Count, events.TakeLast(MaxVisibleEvents)
-                    .Select(e => new RunAuditEvent(e.Sequence, e.At, e.Kind)).ToArray());
+                    .Select(e => new RunAuditEvent(e.Sequence, e.At, e.Kind)).ToArray(), RunTokenUsage.Read(events));
         }
         catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException or ArgumentException
             or InvalidOperationException or InvalidEventLogException or System.Text.Json.JsonException or OverflowException)

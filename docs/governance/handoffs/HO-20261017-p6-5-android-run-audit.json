@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261017-p6-5-android-run-audit",
   "category": "HANDOFF",
-  "timestamp": "2026-10-17T20:18:17.338193Z",
+  "timestamp": "2026-10-17T20:23:08.843730Z",
   "agent": {
     "id": "codex-p6-5-android-run-audit",
     "kind": "ai-agent"
@@ -14,7 +14,7 @@
   "branch": "feat/p6-5-android-run-audit-20261017",
   "base_commit": "83d6a1290377ddb3210cd7717d8be19f8e33ada6",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/624",
   "files_changed": [
     "apps/ecosystem-ai/src/EcosystemAi.Product/ProductRunAudit.cs",
     "apps/ecosystem-ai/src/EcosystemAi.Android/MainActivity.cs",
@@ -34,7 +34,8 @@
       "check": "AgentRuntime.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "Build serializado sem warnings/errors; execução direta de AgentRuntime.Tests.dll pelo xUnit v3: 286 testes, zero falhas (13 casos novos). dotnet test local encontrou falha de infraestrutura MSBuild/handshake; runner direto executou a suíte completa."
+      "evidence": "Build serializado sem warnings/errors; execução direta de AgentRuntime.Tests.dll pelo xUnit v3: 286 testes, zero falhas (13 casos novos). dotnet test local encontrou falha de infraestrutura MSBuild/handshake; runner direto executou a suíte completa. Estado anterior ao incremento de tokens (#625); suíte completa atual com tokens: 305/305.",
+      "tested_commit": "25e419e1"
     },
     {
       "check": "Consistency",
@@ -51,10 +52,22 @@
       "evidence": "Abrir histórico/detalhes, conferir rolagem de eventos longos, trocar conversa/voltar durante consulta; nenhum reenvio ou nova chamada/gasto."
     },
     {
-      "check": "Self-test/Android CI",
+      "check": "Consistency final",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks locais passaram incluindo os dois handoffs; snapshot de Issues fica para CI."
+    },
+    {
+      "check": "Self-test de governança",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Execução completa exit 0: todos os checks provaram detectar suas violações. Checker inalterado; execução começou no slice de auditoria e terminou durante o incremento de tokens."
+    },
+    {
+      "check": "CI Android e estado combinado final",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Self-test local em execução; CI Android será disparado pelo PR."
+      "evidence": "PR #624. Tests e pacotes desktop do primeiro commit 25e419e1 já verdes; telemetria adicionada exige CI da nova cabeça."
     }
   ],
   "known_issues": [

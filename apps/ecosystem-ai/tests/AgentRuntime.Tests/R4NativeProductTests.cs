@@ -82,6 +82,7 @@ public sealed class R4NativeProductTests
             result.Receipt.RunId, f.Journal);
         Assert.Equal(RunAuditAvailability.Available, audit.Availability);
         Assert.True(audit.Verified);
+        Assert.Equal(new RunTokenUsage(40, 20), audit.Tokens);
         Assert.Equal(RunStatus.Succeeded, audit.Status);
         Assert.Contains(audit.Events!, e => e.Kind == EventKind.ToolCalled);
         Assert.Equal(2, result.Receipt.CostMinor);

@@ -221,3 +221,23 @@ corrupção, privacidade, limites e cancelamento. O cenário do Host nativo com
 HTTP mockado também confere o replay do run real. **DEVICE pendente:** abrir
 lista e detalhes em aparelho, voltar/trocar conversa durante a consulta,
 conferir rolagem de histórico longo e ausência de nova chamada/gasto.
+
+### Tokens reportados pelas respostas
+
+Eventos `ModelResponded` novos guardam `inputTokens` e `outputTokens` no `Data`
+existente, em decimal invariante. A auditoria soma essas contagens e as mostra
+junto do custo. A soma vem do journal, não de um contador persistido na UI.
+Registros antigos sem os dois campos, contagens inválidas ou overflow deixam
+o total indisponível; zero medido continua distinto de informação ausente.
+
+O adapter informa `Usage.TokensKnown=false` quando não recebe ambos os
+contadores. Custo explícito pode existir sem contagem; estimativa por tarifa
+exige os dois números completos. Contagem malformada não é normalizada para
+zero. Provedores de teste gravados preservam o indicador opcional, com leitura
+compatível das gravações antigas que já traziam contagens explícitas.
+
+Os números cobrem **respostas registradas**, não garantem a fatura nem medem
+chamadas interrompidas sem resposta. Nada disso muda grants, saldo, reservas,
+política do ledger ou condições financeiras de outros Products. O roteiro
+DEVICE inclui conferir contagens com uma resposta conhecida e abrir um run
+histórico sem tokens, que deve mostrar indisponibilidade.

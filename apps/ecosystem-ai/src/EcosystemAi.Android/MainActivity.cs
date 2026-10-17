@@ -494,6 +494,9 @@ public sealed partial class MainActivity : Activity
             text.AppendLine(audit.RecordedCost is { } cost
                 ? $"Valor registrado: {cost.Minor} {cost.Currency} em unidade mínima{(audit.CostEstimated ? " (estimativa)" : "")}."
                 : "Custo não informado no journal; não significa chamada gratuita.");
+            text.AppendLine(audit.Tokens is { } tokens
+                ? $"Tokens das respostas: {tokens.InputTokens} de entrada • {tokens.OutputTokens} de saída."
+                : "Tokens não disponíveis para todas as respostas deste run.");
             text.AppendLine("Valores registrados não garantem a fatura do provedor. Nenhuma chamada ou retomada foi iniciada.");
             text.AppendLine($"\nEventos: {audit.TotalEvents}. Mostrando os últimos {audit.Events!.Count}.");
             foreach (var item in audit.Events)
