@@ -4,7 +4,10 @@
   "message_id": "HO-20261016-urbe-teclado-e-observacoes",
   "category": "HANDOFF",
   "timestamp": "2026-10-16T10:58:25Z",
-  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
   "task_id": "UC-57",
   "component": "urbe",
   "state": "review",
@@ -23,15 +26,53 @@
     "Registradas no ROADMAP C# as observações da beta.13 e da beta 2.0 (UC-57 a UC-68): editor no celular, primeira abertura guiada, abrir na hora, desempenho em qualquer vault, fluxo, páginas, IA, tutorial, automações, widget, reações e personalização dos moradores."
   ],
   "verification": [
-    { "kind": "automated", "check": "KeyboardFitTests e testes de editor, Visual e dock do cliente", "result": "passed", "evidence": "36/36 no cliente headless." },
-    { "kind": "human", "check": "No celular: abrir o teclado no editor e em outras abas — o app termina logo acima do teclado e a tela não pula ao trocar de bloco", "result": "pending", "critical": true, "object": "apps/urbe/csharp/src/Urbe.Client/MainView.cs" }
+    {
+      "kind": "automated",
+      "check": "KeyboardFitTests e testes de editor, Visual e dock do cliente",
+      "result": "passed",
+      "evidence": "36/36 no cliente headless."
+    },
+    {
+      "kind": "human",
+      "check": "No celular: abrir o teclado no editor e em outras abas — o app termina logo acima do teclado e a tela não pula ao trocar de bloco",
+      "result": "passed",
+      "critical": true,
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-17 (Issue https://github.com/AbnerCruz/Ecosystem/issues/617); registro em docs/governance/responses/VAL-HO-20261016-urbe-teclado-e-observacoes-43372f2b0916.md."
+    }
   ],
-  "known_issues": ["Manter o bloco tocado no mesmo lugar ao trocar de bloco ainda não foi tratado."],
+  "known_issues": [
+    "Manter o bloco tocado no mesmo lugar ao trocar de bloco ainda não foi tratado."
+  ],
   "blockers": [],
-  "next_actions": ["UC-59 (abrir na hora) e UC-57 restante; depois UC-64 e UC-65."],
+  "next_actions": [
+    "UC-59 (abrir na hora) e UC-57 restante; depois UC-64 e UC-65."
+  ],
   "decisions_required": [],
-  "normative_sources": ["AGENTS.md", "apps/urbe/docs/csharp/ROADMAP.md", "docs/governance/addenda/ADD-0024-urbe-nativo-desempenho-primeiro-e-release.md"],
-  "invariants": [ { "id": "NN-009", "evidence": "As observações do proprietário foram persistidas no ROADMAP antes de sustentar implementação." }, { "id": "NN-017", "evidence": "Validação no aparelho registrada como pendente." } ],
-  "reuse_assessment": [ { "subject": "keyboard-fit", "status": "product-specific", "rationale": "Layout do Urbe." } ],
-  "criticality": { "declared": "routine", "reason": "Correção de layout e registro de observações no roadmap." }
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0024-urbe-nativo-desempenho-primeiro-e-release.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "As observações do proprietário foram persistidas no ROADMAP antes de sustentar implementação."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação no aparelho registrada como pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "keyboard-fit",
+      "status": "product-specific",
+      "rationale": "Layout do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Correção de layout e registro de observações no roadmap."
+  }
 }
