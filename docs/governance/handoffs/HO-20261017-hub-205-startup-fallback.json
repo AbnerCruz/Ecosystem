@@ -53,10 +53,10 @@
     {
       "check": "DEVICE — Activity e recuperação no Android físico",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "https://github.com/AbnerCruz/Ecosystem/pull/614",
-      "evidence": "Em APK de teste, simular falha gerenciada na inicialização; verificar página de diagnóstico, retry, nenhum botão de instalação, offline/online e ausência de perda de dados; não alegar cura de SIGABRT sem logcat."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-17 (Issue https://github.com/AbnerCruz/Ecosystem/issues/615); registro em docs/governance/responses/VAL-HO-20261017-hub-205-startup-fallback-32d059b4f5fb.md."
     }
   ],
   "known_issues": [
