@@ -19,12 +19,14 @@
     "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
     "apps/urbe/docs/csharp/ROADMAP.md",
     "docs/governance/handoffs/HO-20261021-urbe-beta-14.json",
-    ".github/workflows/urbe-checks.yml"
+    ".github/workflows/urbe-checks.yml",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/UxFoundationUiTests.cs"
   ],
   "work_completed": [
     "Urbe Beta 2.0 — 2.0.0-beta.14 (versionCode 2000014): publica no canal beta (DEC-0048) o que entrou desde a beta.13 — app logo acima do teclado e sem pular entre blocos (UC-57), tutorial só leitura com documentação nova (UC-64), experiência de usuário como critério (ADD-0026), abrir na hora com a cidade por trás e 4–10× mais rápida (UC-59), fundação de UX com toque, vibração, avisos discretos e transições (UC-69 fase 1) — com o Windows na mesma release.",
     "Registra no ROADMAP C# as observações de 21/10/2026: widget que grava direto (UC-66) e destaque das ligações de uma construção (UC-70), com a solução detalhada.",
-    "CI: o job e2e do Urbe passou a falhar em todos os PRs porque ubuntu-latest virou Ubuntu 26.04 e o Playwright 1.56.1 não instala o Chromium nele ('Playwright does not support chromium on ubuntu26.04-x64'); o job fica fixado em ubuntu-24.04 até o Playwright suportar a nova imagem."
+    "CI: o job e2e do Urbe passou a falhar em todos os PRs porque ubuntu-latest virou Ubuntu 26.04 e o Playwright 1.56.1 não instala o Chromium nele ('Playwright does not support chromium on ubuntu26.04-x64'); o job fica fixado em ubuntu-24.04 até o Playwright suportar a nova imagem.",
+    "CI: os orçamentos de tempo dos testes Ux_ (toque < 100 ms, tecla < 25 ms) falhavam na suíte completa (CI: 816 ms e 698 ms) porque cada entrada headless também desenha as janelas abertas pelos outros testes; o tempo passa a ser registrado sempre e afirmado só isolado (URBE_PERF=1, como StartupPerfTests); as verificações funcionais (pressionado, háptico, texto, cidade fora da composição) continuam na suíte."
   ],
   "verification": [
     {
