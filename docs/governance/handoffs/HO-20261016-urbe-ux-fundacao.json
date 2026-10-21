@@ -4,7 +4,10 @@
   "message_id": "HO-20261016-urbe-ux-fundacao",
   "category": "HANDOFF",
   "timestamp": "2026-10-16T14:35:46Z",
-  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
   "task_id": "UC-69",
   "component": "urbe",
   "state": "review",
@@ -12,21 +15,82 @@
   "base_commit": "e18f7737",
   "commit": null,
   "pr": null,
-  "files_changed": ["apps/urbe/csharp/src/Urbe.Android/MainActivity.cs", "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs", "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs", "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs", "apps/urbe/csharp/src/Urbe.Client/MainView.Errors.cs", "apps/urbe/csharp/src/Urbe.Client/MainView.Studio.cs", "apps/urbe/csharp/src/Urbe.Client/MainView.Tutorial.cs", "apps/urbe/csharp/src/Urbe.Client/MainView.Workspace.cs", "apps/urbe/csharp/src/Urbe.Client/MainView.cs", "apps/urbe/csharp/src/Urbe.Client/Ui/BottomSheet.cs", "apps/urbe/csharp/src/Urbe.Client/Ui/PlatformHaptics.cs", "apps/urbe/csharp/src/Urbe.Client/Ui/UrbeButton.cs", "apps/urbe/csharp/src/Urbe.Client/Ui/UrbeMotion.cs", "apps/urbe/csharp/src/Urbe.Client/Ui/UrbeToast.cs", "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.cs", "apps/urbe/csharp/src/Urbe.Client/UrbeTokens.cs", "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs", "apps/urbe/csharp/tests/Urbe.Client.Tests/UxFoundationUiTests.cs", "apps/urbe/docs/csharp/ROADMAP.md", "docs/governance/handoffs/HO-20261016-urbe-ux-fundacao.json"],
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/MainActivity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Errors.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Studio.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Tutorial.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Workspace.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/BottomSheet.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/PlatformHaptics.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/UrbeButton.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/UrbeMotion.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/UrbeToast.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTokens.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/UxFoundationUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261016-urbe-ux-fundacao.json"
+  ],
   "work_completed": [
     "UC-69 fase 1 (ADD-0026, UX.md): tokens de design, componentes únicos com estado pressionado no mesmo evento do toque, avisos discretos, folha inferior com mola, transições, hápticos no Android sem permissão nova, cidade fora da composição atrás do editor (≈4× menos custo por tecla headless) e orçamentos de toque/tecla na suíte.",
     "Bug corrigido: sem pasta aberta, o aviso 'Nenhuma pasta aberta' no topo empurrava os botões redondos (Configurações) para fora da tela de 412 dp; a barra agora reserva o lugar dos botões e o texto corta com reticências."
   ],
   "verification": [
-    { "kind": "automated", "check": "Core e testes do cliente Ux_, Startup, Tutorial, teclado, Editor, Dialog, Explorer e Session no estado combinado", "result": "passed", "evidence": "56/56 em duas execuções seguidas; 844/844 Core." },
-    { "kind": "human", "check": "No celular: sensação de toque (pressionado e vibração), avisos discretos, folha que sobe, transições do editor e do Explorer, topo sem botões cortados", "result": "pending", "critical": true, "object": "apps/urbe/csharp/src/Urbe.Client/Ui/UrbeButton.cs" }
+    {
+      "kind": "automated",
+      "check": "Core e testes do cliente Ux_, Startup, Tutorial, teclado, Editor, Dialog, Explorer e Session no estado combinado",
+      "result": "passed",
+      "evidence": "56/56 em duas execuções seguidas; 844/844 Core."
+    },
+    {
+      "kind": "human",
+      "check": "No celular: sensação de toque (pressionado e vibração), avisos discretos, folha que sobe, transições do editor e do Explorer, topo sem botões cortados",
+      "result": "passed",
+      "critical": true,
+      "object": "apps/urbe/csharp/src/Urbe.Client/Ui/UrbeButton.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-21 (Issue https://github.com/AbnerCruz/Ecosystem/issues/635); registro em docs/governance/responses/VAL-HO-20261016-urbe-ux-fundacao-27896129d88b.md."
+    }
   ],
-  "known_issues": ["Head Android (hápticos, Remover animações) só é compilado no CI.", "Editor e Explorer ainda sem animação de saída."],
+  "known_issues": [
+    "Head Android (hápticos, Remover animações) só é compilado no CI.",
+    "Editor e Explorer ainda sem animação de saída."
+  ],
   "blockers": [],
-  "next_actions": ["UC-69 fase 2: redesenho do editor sob os princípios do UX.md."],
+  "next_actions": [
+    "UC-69 fase 2: redesenho do editor sob os princípios do UX.md."
+  ],
   "decisions_required": [],
-  "normative_sources": ["AGENTS.md", "apps/urbe/docs/csharp/UX.md", "docs/governance/addenda/ADD-0026-urbe-experiencia-de-usuario-topo-de-linha.md", "apps/urbe/docs/csharp/ROADMAP.md"],
-  "invariants": [ { "id": "NN-016", "evidence": "Háptico por PerformHapticFeedback, sem permissão nova." }, { "id": "NN-017", "evidence": "Sensação no aparelho registrada como validação pendente." } ],
-  "reuse_assessment": [ { "subject": "ux-foundation", "status": "product-specific", "rationale": "Sistema visual do Urbe." } ],
-  "criticality": { "declared": "routine", "reason": "Interface do produto, sem dados, distribuição ou zonas críticas." }
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/UX.md",
+    "docs/governance/addenda/ADD-0026-urbe-experiencia-de-usuario-topo-de-linha.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-016",
+      "evidence": "Háptico por PerformHapticFeedback, sem permissão nova."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sensação no aparelho registrada como validação pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "ux-foundation",
+      "status": "product-specific",
+      "rationale": "Sistema visual do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Interface do produto, sem dados, distribuição ou zonas críticas."
+  }
 }
