@@ -255,6 +255,8 @@ public sealed partial class LegacyCity
     public List<LegacyCityBuilding> Buildings { get; } = [];
     public IReadOnlyCollection<(int X, int Y)> Roads => _roadOrder;
     public List<(string From, string To)> Links { get; } = [];
+    /// <summary>Every resolved [[link]] with its direction (From links To), as the last street rebuild saw them (UC-70).</summary>
+    public List<(string From, string To)> DirectedLinks { get; } = [];
     public bool HasRoad(int x, int y) => _roads.Contains((x, y));
 
     /// <summary>app.js camera centre in world units (x, y); the default is the 1.8.4 start.</summary>
@@ -1742,12 +1744,15 @@ public sealed partial class LegacyCity
             _roadOrder.Clear();
             _componentId = null;
             Links.Clear();
+            DirectedLinks.Clear();
             var pairs = new List<(LegacyCityBuilding A, LegacyCityBuilding B)>();
             var seen = new HashSet<string>(StringComparer.Ordinal);
+            var directed = new HashSet<(string, string)>();
             foreach (var b in Buildings)
             foreach (var t in links(b))
             {
                 if (t is null || t == b) continue;
+                if (directed.Add((b.Id, t.Id))) DirectedLinks.Add((b.Id, t.Id));
                 var ids = new[] { b.Id, t.Id };
                 Array.Sort(ids, StringComparer.Ordinal);
                 if (!seen.Add(string.Join('|', ids))) continue;
