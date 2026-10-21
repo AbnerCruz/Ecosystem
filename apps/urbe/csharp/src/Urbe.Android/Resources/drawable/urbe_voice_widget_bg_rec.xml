@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- UC-66: the widget while recording (red ring) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#E6161A20" />
+    <stroke android:width="2dp" android:color="#FFE5484D" />
+    <corners android:radius="20dp" />
+</shape>
