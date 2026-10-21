@@ -1,0 +1,70 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261021-urbe-beta-14",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-21T12:50:50Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-48",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "778a3e56",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261021-urbe-beta-14.json"
+  ],
+  "work_completed": [
+    "Urbe Beta 2.0 — 2.0.0-beta.14 (versionCode 2000014): publica no canal beta (DEC-0048) o que entrou desde a beta.13 — app logo acima do teclado e sem pular entre blocos (UC-57), tutorial só leitura com documentação nova (UC-64), experiência de usuário como critério (ADD-0026), abrir na hora com a cidade por trás e 4–10× mais rápida (UC-59), fundação de UX com toque, vibração, avisos discretos e transições (UC-69 fase 1) — com o Windows na mesma release.",
+    "Registra no ROADMAP C# as observações de 21/10/2026: widget que grava direto (UC-66) e destaque das ligações de uma construção (UC-70), com a solução detalhada."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "CI dos PRs #602, #606 e #607 (urbe-checks, build Android e integrador)",
+      "result": "passed",
+      "evidence": "PRs integrados com checks verdes."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: atualizar para a beta.14; teclado no editor, abrir na hora na última nota, toque e vibração, tutorial",
+      "result": "pending",
+      "critical": true,
+      "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.14"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Depois da integração, disparar a release (o integrador não dispara workflows) e mandar os links ao proprietário."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/distribution/direct-releases.md",
+    "docs/governance/addenda/ADD-0025-urbe-beta-2-0-nativa.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A versão do canal muda só em Urbe.Android.csproj."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-beta-release",
+      "status": "product-specific",
+      "rationale": "Versão do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Nova versão publicada no canal de distribuição (Urbe.Android.csproj)."
+  }
+}
