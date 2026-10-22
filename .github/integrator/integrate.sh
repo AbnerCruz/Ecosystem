@@ -299,6 +299,7 @@ finish() {
     case "${R_ECOSYSTEM_AI:-}" in success|skipped|"") ;; *) failed="${failed} ecosystem-ai-ci(${R_ECOSYSTEM_AI})" ;; esac
     case "${R_TABLETOP_RPG:-}" in success|skipped|"") ;; *) failed="${failed} tabletop-rpg-ci(${R_TABLETOP_RPG})" ;; esac
     case "${R_MATH_AUTHORING:-}" in success|skipped|"") ;; *) failed="${failed} math-authoring-ci(${R_MATH_AUTHORING})" ;; esac
+    case "${R_ATLAS_FORGE:-}" in success|skipped|"") ;; *) failed="${failed} atlas-forge-ci(${R_ATLAS_FORGE})" ;; esac
     # Rotina: os checks da main sobre o candidato também precisam passar. Crítico: a divergência vira informação para o proprietário.
     [ "${TRUSTED:-success}" = success ] || [ "${REQUIRES_OWNER}" = "true" ] || failed="${failed} confiável-main(${TRUSTED_FAILURES:-?})"
     if [ -n "$failed" ]; then

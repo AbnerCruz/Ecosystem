@@ -1,0 +1,8 @@
+
+> atlas-forge-proposal@0.2.0-alpha.1 benchmark
+> node scripts/benchmark.mjs
+
+{"node":"v24.19.0","cpu":"AMD EPYC 9V74 80-Core Processor","platform":"linux","description":"Wall time in this cloud container; no mobile/DEVICE claim."}
+{"width":90,"height":45,"cells":4050,"warmMedianMs":10.431585000000005,"coldMs":17.996489999999998,"microsecondsPerCell":2.575700000000001,"serializeMs":1.3298830000000095,"projectKiB":75.732421875,"heapMiB":8.3482666015625}
+{"width":180,"height":90,"cells":16200,"warmMedianMs":32.608124000000004,"coldMs":36.397110999999995,"microsecondsPerCell":2.0128471604938274,"serializeMs":2.8106149999999843,"projectKiB":301.56640625,"heapMiB":16.930076599121094}
+{"width":360,"height":180,"cells":64800,"warmMedianMs":105.00104699999997,"coldMs":124.04079500000003,"microsecondsPerCell":1.6203865277777774,"serializeMs":8.42940299999998,"projectKiB":1205.1572265625,"heapMiB":29.350242614746094}

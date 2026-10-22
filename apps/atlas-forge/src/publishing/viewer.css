@@ -1,0 +1,164 @@
+:root {
+  color-scheme: dark;
+  font:
+    14px system-ui,
+    sans-serif;
+  color: #eae2cf;
+  background: #122028;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+header {
+  padding: 23px 30px;
+  border-bottom: 1px solid #344348;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+}
+header > div:last-child {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+h1,
+h2 {
+  font-family: Georgia, serif;
+  font-weight: 400;
+}
+h1 {
+  margin: 8px 0;
+  font-size: 31px;
+}
+.eyebrow {
+  color: #d7b981;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+}
+main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 310px;
+  min-height: calc(100vh - 125px);
+}
+.map-shell {
+  position: relative;
+  min-height: 470px;
+  background: radial-gradient(ellipse, #223b43, #122028);
+  display: flex;
+  flex-direction: column;
+}
+#map {
+  width: 100%;
+  height: calc(100vh - 160px);
+  min-height: 420px;
+  touch-action: none;
+}
+aside {
+  padding: 25px;
+  border-left: 1px solid #344348;
+}
+button,
+select {
+  font: inherit;
+  color: #eae2cf;
+  background: #23363b;
+  border: 1px solid #536156;
+  border-radius: 4px;
+  min-height: 42px;
+  padding: 9px;
+  cursor: pointer;
+}
+button:focus-visible,
+select:focus-visible,
+canvas:focus-visible {
+  outline: 2px solid #d7b981;
+}
+#places {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0;
+}
+#places button {
+  text-align: left;
+  font-size: 12px;
+}
+.markdown,
+p {
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.markdown h1 {
+  font-size: 25px;
+}
+.markdown pre {
+  overflow: auto;
+}
+.micro {
+  font-size: 10px;
+  color: #9aada8;
+  margin-top: 28px;
+}
+#coords {
+  font-size: 11px;
+  color: #a6b9af;
+  margin: 0;
+  padding: 12px 20px;
+}
+.viewer-zoom {
+  position: absolute;
+  bottom: 55px;
+  right: 20px;
+  display: flex;
+  gap: 5px;
+}
+.viewer-zoom button {
+  width: 42px;
+  font-size: 20px;
+}
+dialog {
+  background: #162a30;
+  color: #eae2cf;
+  width: min(850px, 94vw);
+  max-height: 95vh;
+  border: 1px solid #c3ab7d;
+  border-radius: 6px;
+  padding: 20px;
+}
+dialog::backdrop {
+  background: #000a;
+}
+#local-map {
+  width: 100%;
+  height: auto;
+}
+[hidden] {
+  display: none !important;
+}
+@media (max-width: 750px) {
+  header {
+    padding: 20px;
+    flex-wrap: wrap;
+  }
+  main {
+    display: flex;
+    flex-direction: column;
+  }
+  #map {
+    height: 58vh;
+    min-height: 330px;
+  }
+  .map-shell {
+    min-height: 360px;
+  }
+  aside {
+    border-left: 0;
+    border-top: 1px solid #344348;
+  }
+  #places {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+}

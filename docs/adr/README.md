@@ -58,3 +58,5 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 
 | [0033](0033-unificacao-incremental-da-ia.md) | Unificação incremental da IA com preservação do Urbe | Aceito quanto à direção (DEC-0050), sem promoção/contrato novo |
 | [0034](0034-urbe-sem-simulacao-visual.md) | Urbe nativo sem a simulação visual: o Explorer como base e o registro das notas | Aceito (DEC-0051) |
+
+| [0035](0035-atlas-forge-incorporacao-gradual.md) | Atlas Forge: implementação isolada e incorporação gradual | Aceito (DEC-0054, ADD-0031) |

@@ -1,0 +1,17 @@
+{
+  "results": [
+    "Initial generation, example castle and note",
+    "Brush, spherical edit journal, undo and redo",
+    "Regeneration preserves exact authored values",
+    "Worker termination preserves committed project and ignores cancelled results",
+    "Checkpoint restoration and non-destructive branch",
+    "Authored place, SHA-256 Markdown snapshot, hostile content escaped, persistent child map",
+    "JSON export and reimport preserve every project field",
+    "Future version rejected without corrupting committed data",
+    "Verified IndexedDB persistence survives browser reload",
+    "Published single HTML works via file:// with network disabled, clickable notes and child maps",
+    "Single HTML editor boots offline via file:// with blob Worker",
+    "390×844 mobile viewport, touch panels, layers and places; no horizontal overflow (not physical Android validation)"
+  ],
+  "errors": []
+}

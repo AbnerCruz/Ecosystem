@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#101c22" />
+    <title>Atlas Forge · Oficina de mundos</title>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Atlas Forge"
+        ><span class="brandmark">✧</span
+        ><span>ATLAS <b>FORGE</b><small>OFICINA DE MUNDOS</small></span></a
+      ><span class="project-chip"
+        ><i></i><span id="project-name">Aurora</span
+        ><span class="muted"> / projeto local</span></span
+      >
+      <nav aria-label="Projeto">
+        <button id="open-project">Abrir</button
+        ><button id="save-project">Salvar projeto</button
+        ><button id="publish" class="primary">↗ Exportar atlas</button>
+      </nav>
+    </header>
+    <div class="mobile-tabs">
+      <button data-panel="left">☷ Mundo e camadas</button
+      ><button data-panel="right">⌖ Inspetor</button>
+    </div>
+    <main class="workspace">
+      <aside class="sidebar left" id="left-panel">
+        <div class="eyebrow">SEU PRÓXIMO UNIVERSO</div>
+        <h1>Todo mundo<br />tem uma origem.</h1>
+        <p class="intro">
+          Dê forma à terra. Descubra suas águas.<br />Escreva as histórias que
+          vivem nela.
+        </p>
+        <details open>
+          <summary>01 <span>Origem do mundo</span></summary>
+          <label
+            >Nome do mundo<input id="world-name" maxlength="180" value="Aurora"
+          /></label>
+          <form id="generation-form">
+            <label
+              >Seed do planeta<input
+                id="seed"
+                value="AURORA-42"
+                maxlength="200"
+                required
+                autocomplete="off"
+            /></label>
+            <div class="two">
+              <label
+                >Oceanos <span>%</span
+                ><input
+                  id="ocean"
+                  type="number"
+                  min="5"
+                  max="95"
+                  step="1"
+                  value="68"
+                  required /></label
+              ><label
+                >Raio <span>km</span
+                ><input
+                  id="radius"
+                  type="number"
+                  min="100"
+                  max="100000"
+                  step="1"
+                  value="6371"
+                  required
+              /></label>
+            </div>
+            <div class="two">
+              <label
+                >Inclinação <span>°</span
+                ><input
+                  id="tilt"
+                  type="number"
+                  min="0"
+                  max="60"
+                  step="0.1"
+                  value="23.5"
+                  required /></label
+              ><label
+                >Base térmica <span>°C</span
+                ><input
+                  id="base-temp"
+                  type="number"
+                  min="-50"
+                  max="60"
+                  step="1"
+                  value="15"
+                  required
+              /></label>
+            </div>
+            <button type="submit" class="generate edit-action">
+              ✧ Gerar mundo
+            </button>
+            <p class="micro">
+              Intervenções e lugares são preservados ao gerar.
+            </p>
+            <button
+              id="clear-edits"
+              type="button"
+              class="text-button edit-action"
+            >
+              Descartar intervenções…
+            </button>
+          </form>
+        </details>
+        <details open>
+          <summary>
+            02 <span>Camadas do atlas</span><span class="count">08</span>
+          </summary>
+          <div
+            id="layers"
+            class="layer-list"
+            role="group"
+            aria-label="Camadas"
+          ></div>
+          <div class="switch-row">
+            <label><input id="rivers" type="checkbox" checked /> Rios</label
+            ><label
+              ><input id="grid" type="checkbox" checked /> Coordenadas</label
+            >
+          </div>
+          <label id="season-label" hidden
+            >Estação térmica<select id="season">
+              <option value="annual">Média anual</option>
+              <option value="june">Solstício de junho</option>
+              <option value="december">Solstício de dezembro</option>
+            </select></label
+          >
+        </details>
+        <details>
+          <summary>03 <span>Memória do mundo</span></summary>
+          <button id="checkpoint" class="edit-action full">
+            + Criar marco / ramificação</button
+          ><label
+            >Marcos preservados<select id="timeline">
+              <option value="">Nenhum marco</option>
+            </select></label
+          >
+          <p class="micro">
+            Marcos guardam estado e configuração. Não há simulação de eras neste
+            corte.
+          </p>
+          <div id="history-list"></div>
+        </details>
+        <footer class="side-footer">
+          <span class="tiny-orbit">◉</span> UM ATLAS, INFINITAS HISTÓRIAS<small
+            >Alpha 0.2 · Ecosystem</small
+          >
+        </footer>
+      </aside>
+      <section class="map-area" aria-label="Editor cartográfico">
+        <div class="map-header">
+          <div>
+            <span class="eyebrow">EXPEDIÇÃO CARTOGRÁFICA</span>
+            <h2 id="world-title">Aurora <em>· Mundo primordial</em></h2>
+          </div>
+          <div class="projection-control" role="group" aria-label="Projeção">
+            <button id="flat" class="active" aria-pressed="true">Mapa</button
+            ><button id="globe" aria-pressed="false">◉ Globo</button>
+          </div>
+        </div>
+        <div class="map-wrap">
+          <canvas
+            id="map"
+            aria-label="Mapa interativo do planeta. Use os controles de latitude e longitude no inspetor para selecionar uma célula por teclado."
+            tabindex="0"
+          ></canvas
+          ><span class="map-corner nw"></span
+          ><span class="map-corner se"></span>
+          <div class="map-label">
+            A U R O R A<span>UM MUNDO A SER DESCOBERTO</span>
+          </div>
+          <div class="compass" aria-hidden="true">N<br /><b>✧</b><br />S</div>
+          <div class="zoom-controls">
+            <button id="zoom-in" aria-label="Aproximar">+</button
+            ><button id="zoom-out" aria-label="Afastar">−</button
+            ><button id="reset-view" aria-label="Enquadrar planeta">⌖</button>
+          </div>
+          <div class="map-legend">
+            <span id="legend-title">Atlas natural</span>
+            <div id="legend-bar"></div>
+            <div id="legend-values"></div>
+          </div>
+          <div id="busy" class="busy" hidden>
+            <span class="eyebrow">FORJANDO GEOGRAFIA</span>
+            <h3 id="stage">Preparando mundo…</h3>
+            <progress id="progress" max="1" value="0"></progress
+            ><button id="cancel">Cancelar operação</button>
+          </div>
+        </div>
+        <div class="tool-dock" role="group" aria-label="Ferramentas">
+          <button class="active" data-tool="inspect" title="Inspecionar (V)">
+            <span>⌖</span> Explorar</button
+          ><button data-tool="raise" title="Elevar relevo (B)">
+            <span>△</span> Elevar</button
+          ><button data-tool="lower"><span>▽</span> Escavar</button
+          ><button data-tool="place"><span>⚑</span> Lugar</button
+          ><span class="divider"></span
+          ><button id="undo" aria-label="Desfazer relevo" title="Ctrl Z">
+            ↶</button
+          ><button id="redo" aria-label="Refazer relevo" title="Ctrl Shift Z">
+            ↷
+          </button>
+        </div>
+        <div id="brush-options" class="brush-options" hidden>
+          <label
+            >Raio
+            <input id="brush-size" type="range" min="2" max="18" value="6" />
+            <output id="brush-radius">6°</output></label
+          ><label
+            >Força
+            <input
+              id="brush-force"
+              type="range"
+              min="100"
+              max="2000"
+              step="100"
+              value="800"
+            />
+            <output id="brush-strength">800 m</output></label
+          >
+        </div>
+        <div class="map-status">
+          <span
+            ><i></i>
+            <span id="status" role="status" aria-live="polite"
+              >Preparando oficina…</span
+            ></span
+          ><span id="coordinates">LAT — &nbsp; LON —</span>
+        </div>
+      </section>
+      <aside class="sidebar right" id="right-panel">
+        <div class="eyebrow">CADERNO DE CAMPO</div>
+        <h2>O mundo em detalhe</h2>
+        <div class="inspector-location">
+          <span class="location-icon">⌖</span>
+          <div>
+            <strong id="location-title">Explore o desconhecido</strong
+            ><small id="location-subtitle">Selecione um ponto no mapa</small>
+          </div>
+        </div>
+        <div class="metrics">
+          <div>
+            <span>ALTITUDE</span><strong id="metric-elevation">—</strong>
+          </div>
+          <div><span>TEMPERATURA</span><strong id="metric-temp">—</strong></div>
+          <div>
+            <span>PRECIPITAÇÃO</span><strong id="metric-rain">—</strong>
+          </div>
+          <div><span>ESCOAMENTO</span><strong id="metric-flow">—</strong></div>
+        </div>
+        <p id="basin-info" class="micro">
+          As paisagens guardam pistas sobre o que pode viver aqui.
+        </p>
+        <details>
+          <summary>Ir para coordenadas</summary>
+          <form id="coordinate-form">
+            <div class="two">
+              <label
+                >Latitude<input
+                  id="latitude"
+                  type="number"
+                  min="-90"
+                  max="90"
+                  step="any"
+                  value="20"
+                  required /></label
+              ><label
+                >Longitude<input
+                  id="longitude"
+                  type="number"
+                  min="-180"
+                  max="180"
+                  step="any"
+                  value="0"
+                  required
+              /></label>
+            </div>
+            <button type="submit" class="full">Inspecionar célula</button>
+          </form>
+        </details>
+        <div class="section-heading">
+          <span class="eyebrow">LUGARES & HISTÓRIAS</span
+          ><span id="entity-count" class="count">0</span>
+        </div>
+        <label class="search-label"
+          ><span>⌕</span
+          ><input
+            id="search"
+            placeholder="Buscar lugares…"
+            aria-label="Buscar lugares"
+        /></label>
+        <div id="entities" class="entities"></div>
+        <section id="entity-editor" hidden>
+          <div class="section-heading">
+            <span class="eyebrow">LUGAR SELECIONADO</span
+            ><button
+              id="delete-entity"
+              class="text-button danger"
+              aria-label="Excluir lugar"
+            >
+              Excluir
+            </button>
+          </div>
+          <label>Nome<input id="entity-name" maxlength="180" /></label
+          ><label
+            >Tipo<select id="entity-type">
+              <option value="castle">Castelo</option>
+              <option value="city">Cidade</option>
+              <option value="ruin">Ruína</option>
+              <option value="dungeon">Dungeon</option>
+              <option value="cave">Caverna</option>
+              <option value="village">Aldeia</option>
+            </select></label
+          ><label
+            >Descrição<textarea
+              id="entity-desc"
+              rows="3"
+              maxlength="20000"
+            ></textarea></label
+          ><button id="update-entity" class="full edit-action">
+            Salvar lugar
+          </button>
+          <div class="note-actions">
+            <button id="link-note" class="full edit-action">
+              ↗ Vincular nota .md</button
+            ><button id="unlink-note" class="text-button" hidden>
+              Remover cópia
+            </button>
+          </div>
+          <p id="note-info" class="micro"></p>
+          <article id="note-preview" class="markdown"></article>
+          <button id="inspect-local" class="full edit-action">
+            Inspecionar mapa local ↗
+          </button>
+        </section>
+        <details class="model-info">
+          <summary>Sobre os modelos</summary>
+          <p>
+            <b>Relevo · A</b> — ruído esférico heurístico; sem tectônica física.
+          </p>
+          <p>
+            <b>Clima · A</b> — climatologia aproximada com altitude, latitude e
+            transporte zonal de umidade.
+          </p>
+          <p>
+            <b>Drenagem · B</b> — declive em distâncias esféricas, bacias
+            fechadas e vazão com runoff fixo de 35%. Sem lagos dinâmicos.
+          </p>
+          <p>
+            <b>Biomas · A</b> — classificação climática, sem populações
+            ecológicas.
+          </p>
+          <p>
+            Grade física 180 × 90. Sem validação científica geral. A legenda B
+            identifica modelo físico simplificado.
+          </p>
+        </details>
+      </aside>
+    </main>
+    <div class="bottom-strip">
+      <span>◈ &nbsp; LOCAL POR NATUREZA</span
+      ><span id="world-stats">Geometria esférica · altitudes em metros</span
+      ><button id="help">Guia da oficina ↗</button>
+    </div>
+    <dialog id="local-dialog">
+      <div class="dialog-header">
+        <div>
+          <span class="eyebrow">MAPA FILHO · ESQUEMA PROCEDURAL</span>
+          <h2 id="local-title"></h2>
+        </div>
+        <button id="close-local" aria-label="Voltar ao planeta">
+          ← Voltar ao planeta
+        </button>
+      </div>
+      <canvas id="local-canvas"></canvas>
+      <p class="micro">
+        Grafo conectado persistente · escala de referência: 100 m · não é
+        simulação urbana. Salas podem ser consultadas por clique.
+      </p>
+      <p id="room-info" role="status"></p>
+    </dialog>
+    <dialog id="help-dialog">
+      <div class="dialog-header">
+        <h2>Seu primeiro mundo</h2>
+        <button id="close-help">Fechar</button>
+      </div>
+      <ol>
+        <li>
+          Escolha uma seed e gere. Oceanos usam áreas esféricas, não contagem de
+          pixels.
+        </li>
+        <li>
+          Explore as camadas e selecione pontos para ler unidades e bacias.
+        </li>
+        <li>
+          Eleve uma cordilheira. Ao soltar o pincel, chuva e drenagem são
+          recalculadas; a intervenção fica preservada.
+        </li>
+        <li>
+          Use Lugar para criar um marco. Selecione-o, escreva e vincule uma
+          cópia de nota Markdown.
+        </li>
+        <li>
+          Crie um marco histórico antes de experimentar. Volte a ele e crie uma
+          ramificação.
+        </li>
+        <li>
+          Salve JSON ou exporte um atlas HTML offline. Notas originais nunca são
+          alteradas.
+        </li>
+      </ol>
+      <p>
+        Arraste com Explorar para mover ou girar o globo; use a roda para zoom.
+        Atalhos V, B e Ctrl Z. No celular, abra os painéis pelos botões
+        superiores. Este corte não simula eras geológicas, tectônica, ecologia
+        ou civilizações.
+      </p>
+    </dialog>
+    <input
+      id="project-file"
+      type="file"
+      accept=".json,application/json"
+      hidden
+    /><input id="note-file" type="file" accept=".md,text/markdown" hidden />
+  </body>
+</html>

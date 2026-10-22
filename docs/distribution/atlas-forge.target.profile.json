@@ -1,0 +1,18 @@
+{
+  "$schema": "../contracts/schemas/distribution-profile.schema.json",
+  "schemaVersion": 1,
+  "id": "atlas-forge-distribution-target",
+  "name": "Atlas Forge — artefato offline independente, sem canal de produção",
+  "status": "target",
+  "description": "DEC-0054 incorpora a aplicação e preserva seu HTML standalone. CI fornece artefatos de revisão, não uma release nem hospedagem de produção. Nenhum canal é anunciado como operacional; publicar/distribuir terá mecanismo e evidências próprios.",
+  "decisions": ["DEC-0054"],
+  "entries": [
+    {
+      "component": "atlas-forge",
+      "availability": "optional",
+      "visibility": "public",
+      "distribution": "none",
+      "commercialModel": "undecided"
+    }
+  ]
+}

@@ -202,6 +202,32 @@
       "extractionReason": "P5-5 possui dois consumidores reais da mesma capability. ADR-0028/DEC-0038-A aprova extrair apenas o algoritmo host-neutro; projeções determinísticas preservam autocontenção dos Products e evitam segunda autoridade.",
       "compatibility": "SemVer da Library; 1.x preserva a semântica de text.inspect@1.0.0. Mudança incompatível exige nova versão e revisão do contrato.",
       "dependencies": []
+    },
+    "atlas-forge": {
+      "name": "Atlas Forge",
+      "type": "product",
+      "language": "javascript",
+      "path": "apps/atlas-forge",
+      "status": "active",
+      "description": "Oficina independente e local de mundos esféricos de fantasia: autoria de relevo, clima/drenagem simplificados, lugares e notas, projetos e publicação HTML offline (ADR-0035, DEC-0054). Ainda Alpha; sem capability pública ou dependência de outro Product.",
+      "owners": [
+        "AbnerCruz"
+      ],
+      "version": {
+        "authority": "version-file",
+        "file": "apps/atlas-forge/package.json"
+      },
+      "docs": {
+        "readme": "apps/atlas-forge/README.md",
+        "spec": "apps/atlas-forge/SPEC.md",
+        "roadmap": "apps/atlas-forge/ROADMAP.md",
+        "agents": "apps/atlas-forge/AGENTS.md"
+      },
+      "commands": {
+        "build": "cd apps/atlas-forge && npm ci && npm run build",
+        "test": "cd apps/atlas-forge && npm ci && npx playwright install --with-deps chromium && npm run check"
+      },
+      "dependencies": []
     }
   }
 }

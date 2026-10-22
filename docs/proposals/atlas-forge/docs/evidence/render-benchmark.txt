@@ -1,0 +1,19 @@
+
+> atlas-forge-proposal@0.2.0-alpha.1 benchmark:render
+> node scripts/render-benchmark.mjs
+
+{
+  "viewport": "900×650 CSS px",
+  "browser": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.37 Safari/537.36",
+  "unit": "ms per synchronous Canvas render; excludes presentation to screen",
+  "projections": {
+    "flat": {
+      "medianMs": 0.5,
+      "p95Ms": 1.5
+    },
+    "globe": {
+      "medianMs": 3.8999999999068677,
+      "p95Ms": 6
+    }
+  }
+}
