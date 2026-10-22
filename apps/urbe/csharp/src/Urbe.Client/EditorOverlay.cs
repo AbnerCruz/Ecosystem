@@ -216,12 +216,15 @@ public sealed class EditorOverlay : Grid
         _sourceColumn = new StackPanel { Children = { _properties, Editor, _wiki }, HorizontalAlignment = HorizontalAlignment.Stretch };
         _sourceScroll = Column(_sourceColumn);
         _visualScroll = Column(_visual);
-        // the header gives the text room while scrolling down and comes back on the way up; the caret stays in sight
-        // when the visible area changes (the keyboard opens)
+        // the header gives the text room while scrolling down and comes back on the way up; a caret in sight stays in
+        // sight when the visible area changes (the keyboard opens), one scrolled away from is left alone
         _visualScroll.ScrollChanged += (_, e) => OnScrolled(_visualScroll, e);
         _sourceScroll.ScrollChanged += (_, e) => OnScrolled(_sourceScroll, e);
-        _visualScroll.SizeChanged += (_, e) => { if (e.HeightChanged) _visual.KeepCaretSoon(typing: true); };
-        _sourceScroll.SizeChanged += (_, e) => { if (e.HeightChanged) KeepSourceCaretSoon(typing: true); };
+        _visualScroll.SizeChanged += (_, e) => { if (e.HeightChanged && !HeaderMoving) _visual.KeepCaretAfterResize(e.PreviousSize.Height); };
+        _sourceScroll.SizeChanged += (_, e) =>
+        {
+            if (e.HeightChanged && !HeaderMoving && EditorScrolling.InSight(Editor, _sourceScroll, e.PreviousSize.Height)) KeepSourceCaretSoon(typing: true);
+        };
         // #mathDock: the formula bar of Fonte, over the bottom of the text
         MathBar = new MathDock(Editor, () => Mode == EditorMode.Fonte && IsVisible);
         var text = new Grid { Children = { _sourceScroll, _visualScroll, MathBar, Context, Connections } };
@@ -693,11 +696,14 @@ public sealed class EditorOverlay : Grid
     public bool HeaderHidden { get; private set; }
 
     private double _scrollRun;
-    private long _headerMovedAt;
+    private long _headerMovedAt = -10_000;
     private bool _pointerOnText;
     private long _userScrollAt = -10_000;
 
     /// <summary>A scroll caused by the reader: a finger or the mouse on the text, the glide after it, or the wheel.</summary>
+    /// <summary>The header is folding or unfolding: the text's height changes with it, and that is not the keyboard.</summary>
+    private bool HeaderMoving => Environment.TickCount64 - _headerMovedAt < UrbeTokens.Motion.Fast.TotalMilliseconds + 250;
+
     private bool UserScrolling => _pointerOnText || Environment.TickCount64 - _userScrollAt < 1500;
 
     // only the reader's own scrolling folds the header: the editor's moves (caret, a block kept in place) do not

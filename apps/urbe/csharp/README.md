@@ -1,6 +1,6 @@
 # Urbe C# — Android e Windows, nativo (beta 2.0)
 
-**Direção atual (DEC-0051 / ADR-0034, 22/10/2026):** o Urbe nativo são as notas Markdown numa pasta real, com o **Explorer como base**. Editor, busca, assistente, páginas e configurações abrem por cima dele. **A simulação visual (mundo, cidade, vida) saiu do produto** e está congelada no ramo `urbe-simulacao-congelada`. Ver `../docs/csharp/PRODUCT-DIRECTION.md`.
+**Direção atual (DEC-0051 / ADR-0034, 22/10/2026):** o Urbe nativo são as notas Markdown numa pasta real, com o **Explorer como base**. Editor, busca, assistente, páginas e configurações abrem por cima dele. A base passa a ser a **Área de trabalho**, com o Explorer como barra lateral (DEC-0053, ADD-0030). **A simulação visual (mundo, cidade, vida) saiu do produto** e está congelada no ramo `urbe-simulacao-congelada`. Ver `../docs/csharp/PRODUCT-DIRECTION.md`.
 
 | Projeto | Responsabilidade |
 |---|---|

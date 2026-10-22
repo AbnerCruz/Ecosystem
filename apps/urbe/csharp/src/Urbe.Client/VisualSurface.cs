@@ -527,6 +527,12 @@ public sealed class VisualSurface : StackPanel
         }, DispatcherPriority.Loaded);
     }
 
+    /// <summary>The visible area changed height: keeps the caret in sight only if it was in sight before (see <see cref="EditorScrolling.InSight"/>).</summary>
+    public void KeepCaretAfterResize(double previousHeight)
+    {
+        if (_box is { } box && Scroll is { } scroll && EditorScrolling.InSight(box, scroll, previousHeight)) KeepCaretSoon(typing: true);
+    }
+
     private Point? _tapAt;
 
     /// <summary>The letters and digits around a position (the word a double tap selects).</summary>

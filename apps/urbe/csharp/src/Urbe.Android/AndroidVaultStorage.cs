@@ -46,6 +46,8 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     private const int MaxEntries = 10000;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private AndroidUri? _tree;
+    /// <summary>The files listed by the walk of the last opening, for the Explorer's ListFilePathsAsync right after it.</summary>
+    private IReadOnlyList<string>? _listing;
     private IReadOnlyDictionary<string, VaultFile>? _baseline;
     public bool IsConnected => _tree is not null && _baseline is not null;
 
@@ -111,8 +113,10 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         await _gate.WaitAsync(cancellationToken);
         try
         {
-            var files = await Task.Run(() => ReadFiles(selected, cancellationToken), cancellationToken);
+            var listing = new List<string>();
+            var files = await Task.Run(() => ReadFiles(selected, cancellationToken, listing: listing), cancellationToken);
             var snapshot = VaultReader.Read(files);
+            _listing = listing;
             _tree = selected;
             _baseline = Snapshot(files);
             Preferences.Edit()?.PutString(PreferenceKey, selected.ToString())?.Apply();
@@ -131,8 +135,10 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         {
             var selected = AndroidUri.Parse(stored)
                 ?? throw new IOException("Pasta Android anteriormente selecionada é inválida.");
-            var files = await Task.Run(() => ReadFiles(selected, cancellationToken), cancellationToken);
+            var listing = new List<string>();
+            var files = await Task.Run(() => ReadFiles(selected, cancellationToken, listing: listing), cancellationToken);
             var snapshot = VaultReader.Read(files);
+            _listing = listing;
             _tree = selected;
             _baseline = Snapshot(files);
             return snapshot;
@@ -146,8 +152,10 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         try
         {
             if (_tree is not { } tree) return null;
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            var listing = new List<string>();
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken, listing: listing), cancellationToken);
             _baseline = Snapshot(files);
+            _listing = listing;
             return VaultReader.Read(files);
         }
         finally { _gate.Release(); }
@@ -222,6 +230,8 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         try
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            // the walk that just read the vault listed it already (once: later the folder may have changed)
+            if (Interlocked.Exchange(ref _listing, null) is { } fresh) return fresh;
             return await Task.Run(() =>
             {
                 // names only, from the document provider: no attachment is opened or read
@@ -714,11 +724,18 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         DocumentsContract.BuildDocumentUriUsingTree(tree, id)
         ?? throw new IOException("URI do documento não pôde ser construída.");
 
-    private static List<VaultFile> ReadFiles(AndroidUri tree, CancellationToken token, bool includeAll = false)
+    /// <summary>How many files are read at once: the provider answers each one over IPC, so reading them together is what makes the opening quick.</summary>
+    private const int ReadersAtOnce = 6;
+
+    /// <summary>
+    /// The vault's files, read together (observation of 22/10/2026: the opening was slow). <paramref name="listing"/>, when
+    /// given, gets every file of the vault by name, hidden folders out, from the same walk (no second walk to list them).
+    /// </summary>
+    private static List<VaultFile> ReadFiles(AndroidUri tree, CancellationToken token, bool includeAll = false, List<string>? listing = null)
     {
-        var files = new List<VaultFile>();
+        var wanted = new List<(string Path, AndroidUri Uri, Entry Entry)>();
         long total = 0;
-        void Walk(AndroidUri dir, string prefix, int depth)
+        void Walk(AndroidUri dir, string prefix, int depth, bool hidden)
         {
             token.ThrowIfCancellationRequested();
             if (depth > 32)
@@ -732,25 +749,40 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
 
                 var path = prefix + entry.Name;
                 var uri = DocumentUri(tree, entry.DocumentId);
+                bool hide = hidden || entry.Name.StartsWith('.');
                 if (entry.MimeType == DirectoryMime)
                 {
-                    Walk(uri, path + "/", depth + 1);
+                    Walk(uri, path + "/", depth + 1, hide);
                     continue;
                 }
+                if (!hide) listing?.Add(path);
 
                 // Read canonical text and metadata; assets stay untouched on
                 // disk, and are not rewritten/deleted by a text-only beta.
                 if (!includeAll && !IsIncluded(path))
                     continue;
-
-                var bytes = ReadListed(uri, entry);
-                if (bytes.LongLength > MaxFileBytes)
-                    throw new IOException("Arquivo grande demais para esta beta: " + path);
-
-                files.Add(new VaultFile(path, bytes));
+                wanted.Add((path, uri, entry));
             }
         }
-        Walk(Root(tree), string.Empty, 0);
+        Walk(Root(tree), string.Empty, 0, false);
+
+        var read = new byte[wanted.Count][];
+        try
+        {
+            Parallel.For(0, wanted.Count, new ParallelOptions { MaxDegreeOfParallelism = ReadersAtOnce, CancellationToken = token }, i =>
+            {
+                var bytes = ReadListed(wanted[i].Uri, wanted[i].Entry);
+                if (bytes.LongLength > MaxFileBytes)
+                    throw new IOException("Arquivo grande demais para esta beta: " + wanted[i].Path);
+                read[i] = bytes;
+            });
+        }
+        catch (System.AggregateException e) when (e.InnerExceptions.Count > 0)
+        {
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e.InnerExceptions[0]).Throw();
+        }
+        var files = new List<VaultFile>(wanted.Count);
+        for (int i = 0; i < wanted.Count; i++) files.Add(new VaultFile(wanted[i].Path, read[i]));
         var size = files.Sum(file => (long)file.Bytes.Length);
         if (size > MaxVaultBytes)
             throw new IOException("Vault excede o limite temporário de leitura da beta.");
