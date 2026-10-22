@@ -9,7 +9,8 @@ using Urbe.Core;
 namespace Urbe.Client;
 
 /// <summary>
-/// The app's screen (ADD-0028): the Explorer of the vault is the base, the editor and the other screens come over it;
+/// The app's screen (ADD-0028, DEC-0053): the Área de trabalho is the base, with the Explorer beside it (wide) or as
+/// a drawer (narrow); the editor and the other screens come over them;
 /// navigation rail (wide) or dock (narrow). The notes are the vault's files; their ids, dates and folders are the
 /// <see cref="NoteLibrary"/>, recorded in .urbe/notas.json.
 /// </summary>
@@ -80,13 +81,7 @@ public sealed partial class MainView : Grid
         Explorer.FileMoveRequested += (path, folder) => _ = MoveAttachmentAsync(path, folder);
         Explorer.PurgeRequested += id => _ = PurgeFromTrashAsync(id);
         Explorer.EmptyTrashRequested += () => _ = EmptyTrashAsync();
-        Explorer.NoteRequested += note =>
-        {
-            // openId: model.touchRecent(id)
-            if (_store?.Get(note.Path) is { } opened) ExplorerState.TouchRecent(opened.Id);
-            CloseNotesOverEditor();
-            Editor.Open(note);
-        };
+        Explorer.NoteRequested += OpenFromNotes;
         Editor.Closed += (_, _) =>
         {
             Editor.Context.IsVisible = false;
@@ -110,6 +105,7 @@ public sealed partial class MainView : Grid
         Explorer.Status = "Nenhuma pasta aberta";
         _stage.Children.Add(Explorer);
         _stage.Children.Add(Editor);
+        WireWorkspace();
         FilePreview.Storage = _vault;
         FilePreview.ActionsRequested += path => _ = ShowAttachmentActionsAsync(path);
         FilePreview.PageActionsRequested += path => _ = ShowPageMenuAsync(path);
@@ -185,13 +181,16 @@ public sealed partial class MainView : Grid
     /// <summary>The preview of a file that is not a note (openFilePreview).</summary>
     public FilePreviewPanel FilePreview { get; } = new();
 
-    /// <summary>The Explorer of the vault (1.8.4 Notas): back to its tree, up to date.</summary>
+    /// <summary>
+    /// The Explorer of the vault (1.8.4 Notas): back to its tree, up to date. Beside the Área de trabalho on a wide
+    /// window; over it (a drawer) on a phone, and over the editor while one is open.
+    /// </summary>
     public void ShowNotes()
     {
         Explorer.ShowTrash(null);
         Explorer.ShowCollection(null);
         RefreshNotes();
-        if (Editor.IsVisible) ShowNotesOverEditor();
+        if (Editor.IsVisible || !SidebarDocked) ShowNotesOverEditor();
     }
 
     /// <summary>
@@ -204,6 +203,7 @@ public sealed partial class MainView : Grid
         RefreshNotes();
         Explorer.Overlaid = true;
         Explorer.ZIndex = 1;
+        PlaceSidebar();
     }
 
     /// <summary>Notas goes back under the editor.</summary>
@@ -212,6 +212,7 @@ public sealed partial class MainView : Grid
         if (!Explorer.Overlaid) return;
         Explorer.Overlaid = false;
         Explorer.ZIndex = 0;
+        PlaceSidebar();
     }
 
     /// <summary>True while Notas is shown over the open editor.</summary>
@@ -244,7 +245,7 @@ public sealed partial class MainView : Grid
         {
             if (_vault is not null)
             {
-                Explorer.Opening = true;
+                Explorer.Opening = Workspace.Opening = true;
                 try
                 {
                     var snapshot = await _vault.RestoreAsync();
@@ -258,7 +259,7 @@ public sealed partial class MainView : Grid
         }
         finally
         {
-            Explorer.Opening = false;
+            Explorer.Opening = Workspace.Opening = false;
             MarkReady();   // UC-56: a widget's quick note waits for the first vault
         }
     }
@@ -268,7 +269,7 @@ public sealed partial class MainView : Grid
         if (_vault is null) return;
         try
         {
-            Explorer.Opening = true;   // only shows while the list is empty
+            Explorer.Opening = Workspace.Opening = true;   // only shows while the list is empty
             var snapshot = await _vault.PickAsync();
             if (snapshot is not null) await ShowVaultAsync(snapshot);
         }
@@ -276,7 +277,7 @@ public sealed partial class MainView : Grid
         {
             ShowLifeNotice("Não foi possível abrir a pasta: " + ex.Message, Ui.ToastKind.Warning);
         }
-        finally { Explorer.Opening = false; }
+        finally { Explorer.Opening = Workspace.Opening = false; }
     }
 
     private async Task ShowVaultAsync(VaultSnapshot snapshot, bool restoreSession = false)
@@ -322,6 +323,7 @@ public sealed partial class MainView : Grid
         Explorer.Status = snapshot.IsReadOnly ? "Somente leitura" : null;
         // v23Atualizar: the brand is Disco.cidade (the vault folder's name), 'Urbe' without one
         Explorer.HomeTitle = _vault?.VaultName is { Length: > 0 } folder ? folder : "Urbe";
+        Workspace.Title = Explorer.HomeTitle;
         if (restoreSession) RestoreSession();
         VaultNotices(snapshot);
         TipsLoaded();
@@ -806,6 +808,7 @@ public sealed partial class MainView : Grid
         var files = new HashSet<string>(_attachments, StringComparer.Ordinal);
         files.ExceptWith(_contents.Keys);
         Explorer.SetFiles(files);
+        RefreshWorkspace();
     }
 
     /// <summary>A file of the Explorer that is not a note (DEC-0045, UC-38): its preview (abrirEntradaTree → openFilePreview).</summary>
@@ -1442,7 +1445,7 @@ public sealed partial class MainView : Grid
         if (label == "Notas")
         {
             ToolTip.SetTip(button, "Notas e pastas do vault");
-            button.Click += (_, _) => { if (AssistantOpen) ToggleAssistant(); ShowNotes(); };
+            button.Click += (_, _) => { if (AssistantOpen) ToggleAssistant(); ShowWorkspace(); };
         }
         else
         {

@@ -92,7 +92,10 @@ public sealed partial class HeadlessUiTests
         window.Show();
         await view.LoadAsync(TutorialNotes.Load());
         await Settle(window, view);
-        static bool Shown(Control c) => c.GetSelfAndLogicalAncestors().OfType<Control>().All(x => x.IsVisible);
+        view.ShowNotes();   // DEC-0053: on a phone the Explorer is the drawer over the Área de trabalho
+        await Settle(window, view);
+        // the Área de trabalho under the drawer has cards with the same names (a note called Assistente): not these
+        static bool Shown(Control c) => c.GetSelfAndLogicalAncestors().OfType<Control>().All(x => x.IsVisible && x is not WorkspaceView);
         Button Named(Control root, string name) => root.GetLogicalDescendants().OfType<Button>().FirstOrDefault(b => Shown(b) && (AutomationProperties.GetName(b) ?? ToolTip.GetTip(b) as string) == name)
             ?? throw new InvalidOperationException(name + " not in: " + string.Join(", ", root.GetLogicalDescendants().OfType<Button>().Where(Shown).Select(b => AutomationProperties.GetName(b) ?? ToolTip.GetTip(b) as string ?? "?")));
 
@@ -135,7 +138,7 @@ public sealed partial class HeadlessUiTests
         }
         for (int i = 0; i < 20 && view.Editor.IsVisible; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
         Assert.False(view.Editor.IsVisible);   // Voltar closed the editor
-        Assert.True(view.Explorer.IsVisible);  // and the Explorer is under it
+        Assert.True(view.Workspace.IsVisible);  // and the Área de trabalho is under it (DEC-0053)
         window.Close();
         return true;
     }, CancellationToken.None));

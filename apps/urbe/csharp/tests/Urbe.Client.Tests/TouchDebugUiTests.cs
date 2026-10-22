@@ -32,7 +32,8 @@ public sealed partial class HeadlessUiTests
                 // a touch on a button below the panel (the panel sits on top, as the 1.8.4's): the click reaches it
                 var target = view.GetLogicalDescendants().OfType<Button>().Where(b => b.IsEffectivelyVisible && ToolTip.GetTip(b) is string && !view.TouchDebug.IsLogicalAncestorOf(b))
                     .Select(b => (B: b, At: b.TranslatePoint(new Point(b.Bounds.Width / 2, b.Bounds.Height / 2), window) ?? new Point(-1, -1))).Where(x => x.At.Y > 120 && x.At.Y < 750).OrderByDescending(x => x.At.Y).First();
-                var tip = (string)ToolTip.GetTip(target.B)!;
+                // the panel names a button as a screen reader does: its name, else its tip
+                var tip = Avalonia.Automation.AutomationProperties.GetName(target.B) is { Length: > 0 } name ? name : (string)ToolTip.GetTip(target.B)!;
                 var at = target.At;
                 window.MouseDown(at, MouseButton.Left);
                 window.MouseUp(at, MouseButton.Left);

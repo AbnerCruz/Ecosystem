@@ -81,6 +81,8 @@ public sealed partial class HeadlessUiTests
                 window.Show();
                 await view.OpenVaultAsync();
                 await Settle(window, view);
+                view.ShowNotes();   // DEC-0053: on a phone the Explorer is the drawer over the Área de trabalho
+                await Settle(window, view);
                 var e = view.Explorer;
                 // long enough that the scroll below always comes first on a loaded machine
                 e.HoldDelay = TimeSpan.FromMilliseconds(300);
@@ -200,6 +202,8 @@ public sealed partial class HeadlessUiTests
                 var window = new Window { Width = 412, Height = 860, Content = view };
                 window.Show();
                 await view.OpenVaultAsync();
+                await Settle(window, view);
+                view.ShowNotes();   // DEC-0053: on a phone the Explorer is the drawer over the Área de trabalho
                 await Settle(window, view);
                 var e = view.Explorer;
                 e.HoldDelay = TimeSpan.FromMilliseconds(250);
