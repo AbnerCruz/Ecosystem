@@ -59,6 +59,13 @@ public sealed partial class MainView : Grid
             ShowEditorContext();
             await going;
         };
+        // UC-71: a point or a row of Conexões opens its note, and the graph follows it (it joins the trail, like a backlink)
+        Editor.Connections.NoteChosen += async path =>
+        {
+            var going = Editor.NavigateAsync(new CityNote(path, _contents.GetValueOrDefault(path, "")));
+            ShowEditorConnections();
+            await going;
+        };
         // [[link]] to a note that does not exist yet: created next to the open note, in its folder (DEC-0045, UC-37)
         Editor.CreateLinked = name => CreateNoteAsync(Editor.Current is { } open ? NoteLibrary.FolderOf(open.Path) : "", name, open: false);
         Explorer.SelectionAction += (action, paths) => _ = SelectionActionAsync(action, paths);
@@ -83,6 +90,7 @@ public sealed partial class MainView : Grid
         Editor.Closed += (_, _) =>
         {
             Editor.Context.IsVisible = false;
+            Editor.Connections.IsVisible = false;
             SaveEditorToMemory();
             RefreshNotes();
         };
@@ -220,6 +228,14 @@ public sealed partial class MainView : Grid
             backlinks.AddRange(index.Backlinks(doc.Id).Select(d => (d.Title, d.Path)));
         }
         Editor.Context.Show(note.Content, backlinks);
+    }
+
+    /// <summary>"Conexões" (UC-71): the local graph of the open note, from its links as they are now.</summary>
+    public void ShowEditorConnections()
+    {
+        if (Editor.Current is not { } note || _store is null) return;
+        using var index = new KnowledgeIndex(_store);
+        if (LinkGraph.Around(_store, index, note.Path) is { } graph) Editor.Connections.Show(graph);
     }
 
     public async Task InitializeAsync()
@@ -598,7 +614,7 @@ public sealed partial class MainView : Grid
     /// <summary>
     /// The editor's "Mais ações" (v23 overflow → abrirMenuExplorer(nomeCompletoNota(currentFile), …)) with the
     /// actions the native app has, in the 1.8.4's order: Renomear, Mover para outra pasta, Mostrar nas notas, Versões
-    /// anteriores, Estrutura e backlinks, Fixar em painel and Mover para a lixeira.
+    /// anteriores, Conexões (UC-71), Estrutura e backlinks, Fixar em painel and Mover para a lixeira.
     /// </summary>
     private Task ShowEditorMenuAsync(EditorOverlay editor)
     {
@@ -613,6 +629,7 @@ public sealed partial class MainView : Grid
             }),
             new DialogItem("Mostrar nas notas", UrbeTheme.Icons.Notes, Run: () => { ShowNotesOverEditor(); return Task.CompletedTask; }),
             new DialogItem("Versões anteriores", UrbeTheme.Icons.Restore, Run: ShowVersionsAsync),
+            new DialogItem("Conexões", UrbeTheme.Icons.Connections, "As notas que ela cita e as que a citam.", Run: () => { ShowEditorConnections(); return Task.CompletedTask; }),
             new DialogItem("Estrutura e backlinks", UrbeTheme.Icons.List, Run: () => { ShowEditorContext(); return Task.CompletedTask; }),
             // DEC-0045, UC-39: the selection (or the whole note) stays at the top while writing
             new DialogItem("Fixar em painel", UrbeTheme.Icons.Pin, "A seleção, ou a nota inteira, fica no topo enquanto você escreve.",

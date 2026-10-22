@@ -107,7 +107,7 @@ public static partial class AppDocs
 
         ## Links
 
-        - Digite `[[` e escolha a nota nas sugestões. As duas notas ficam ligadas: **Mais ações → Estrutura e backlinks** mostra quem cita a nota.
+        - Digite `[[` e escolha a nota nas sugestões. As duas notas ficam ligadas: **Mais ações → Conexões** mostra a nota no meio de um céu calmo, com as que ela cita e as que a citam. Tocar num ponto abre aquela nota.
         - Tocar num link abre a nota. Se ela ainda não existe, o Urbe pergunta se quer **criar nota**.
 
         ## Fórmulas
@@ -140,7 +140,7 @@ public static partial class AppDocs
 
         ## Mais ações
 
-        **Renomear**, **Mover para outra pasta**, **Mostrar nas notas**, **Versões anteriores** (o histórico, para restaurar), **Estrutura e backlinks** (os títulos da nota e as notas que apontam para ela), **Fixar em painel** e **Mover para a lixeira**.
+        **Renomear**, **Mover para outra pasta**, **Mostrar nas notas**, **Versões anteriores** (o histórico, para restaurar), **Conexões** (as notas ligadas a ela, num desenho calmo), **Estrutura e backlinks** (os títulos da nota e as notas que apontam para ela), **Fixar em painel** e **Mover para a lixeira**.
 
         **Fixar em painel** deixa a seleção (ou a nota inteira) no topo, com rolagem própria, enquanto você escreve embaixo. O painel continua quando você abre outra nota.
 

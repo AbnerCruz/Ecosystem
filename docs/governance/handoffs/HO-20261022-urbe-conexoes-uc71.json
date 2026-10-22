@@ -1,0 +1,115 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-conexoes-uc71",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T08:39:57Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-71",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "111d4f31",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/csharp/src/Urbe.Client/ConnectionsPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LinkGraph.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ConnectionsUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LinkGraphTests.cs",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0029-urbe-conexoes-no-lugar-da-simulacao.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261022-urbe-conexoes-uc71.json"
+  ],
+  "work_completed": [
+    "ADD-0029/DEC-0052: o proprietário aceitou conexões calmas (posições estáveis, céu à noite, quase sem movimento, foco ao tocar) no lugar da simulação, em vez do grafo de forças do Obsidian; ROADMAP C# com UC-71 e UC-72, AGENTS.md §1.2, apps/urbe/AGENTS.md §9 e PRODUCT-DIRECTION atualizados.",
+    "UC-71: LinkGraph (Urbe.Core) monta o grafo local da nota — ligação mútua no anel de dentro, cita e citada por no de fora (girado pelo ângulo de ouro), ordem estável por hash do id, as 24 mais conectadas no desenho e todas na lista.",
+    "UC-71: Mais ações → Conexões abre o painel (ConnectionsPanel/ConnectionsGraph): céu escuro, pontos de luz na cor da pasta, linhas tênues, nada se move; tocar num ponto ou numa linha abre a nota e o painel a segue (entra no caminho do Voltar); nota sem ligações ensina a criar com [[; só leitura.",
+    "Documentação do app (tutorial) cita Conexões."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests -c Release",
+      "result": "passed",
+      "evidence": "629 de 629, incluindo LinkGraphTests (relações, anéis, ordem independente da leitura, limite com lista completa, nota sem ligações)."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests -c Release",
+      "result": "passed",
+      "evidence": "175 de 175, incluindo Connections_ShowTheLocalGraphAndAPointOpensItsNote (menu, grupos, toque num ponto segue a nota, céu vazio não faz nada, nota sem ligações, vault sem nenhuma gravação)."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet run tests/consistency/Check.cs; node apps/urbe/tools/native-continuation-policy.mjs",
+      "result": "passed",
+      "evidence": "Sem falhas no repositório (CHK-SINGLE-AUTHORITY local acusa só cópias em .claude/worktrees, fora do Git)."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: Mais ações → Conexões numa nota com ligações; o desenho é calmo e legível; tocar num ponto abre a nota",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/ConnectionsPanel.cs"
+    }
+  ],
+  "known_issues": [
+    "O foco ao tocar (escurecer o resto) e as posições guardadas entram com a constelação (UC-72).",
+    "Com muitas ligações próximas os rótulos podem se sobrepor; a lista abaixo do desenho tem todas."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Depois da integração e da validação no aparelho, seguir para o UC-72 (constelação do vault)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/addenda/ADD-0028-urbe-sem-simulacao-visual.md",
+    "docs/governance/addenda/ADD-0029-urbe-conexoes-no-lugar-da-simulacao.md",
+    "docs/governance/addenda/ADD-0026-urbe-experiencia-de-usuario-topo-de-linha.md",
+    "apps/urbe/docs/csharp/UX.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "As conexões são calculadas na hora a partir das notas; nada novo é gravado."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Só apps/urbe e governança."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "A decisão do proprietário está em ADD-0029/DEC-0052."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação no aparelho pendente; o item fica [ ] no ROADMAP."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "link-graph",
+      "status": "product-specific",
+      "rationale": "Grafo local das notas do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Registra decisão do proprietário (adendo e decisions.json)."
+  }
+}
