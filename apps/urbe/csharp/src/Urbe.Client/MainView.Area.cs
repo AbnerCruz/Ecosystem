@@ -42,11 +42,11 @@ public sealed partial class MainView
         Workspace.ZIndex = -1;
         _stage.Children.Insert(_stage.Children.IndexOf(Explorer) + 1, Workspace);
         Workspace.NoteRequested += path => OpenFromNotes(new CityNote(path, _contents.GetValueOrDefault(path, "")));
-        Workspace.FileRequested += path => _ = ShowFileAsync(path);
-        Workspace.NewProjectRequested += () => _ = CreateProjectAsync();
-        Workspace.NewNoteRequested += folder => _ = CreateNoteInNotesAsync(folder: folder);
-        Workspace.FolderMenuRequested += folder => _ = ShowFolderMenuAsync(folder);
-        Workspace.ItemHeld += path => _ = ShowItemSheetAsync(path);
+        Workspace.FileRequested += path => { if (!StillReading()) _ = ShowFileAsync(path); };
+        Workspace.NewProjectRequested += () => { if (!StillReading()) _ = CreateProjectAsync(); };
+        Workspace.NewNoteRequested += folder => { if (!StillReading()) _ = CreateNoteInNotesAsync(folder: folder); };
+        Workspace.FolderMenuRequested += folder => { if (!StillReading()) _ = ShowFolderMenuAsync(folder); };
+        Workspace.ItemHeld += path => { if (!StillReading()) _ = ShowItemSheetAsync(path); };
         Workspace.PresentationChanged += KeepPresentation;
         Workspace.SidebarRequested += () =>
         {
@@ -158,6 +158,7 @@ public sealed partial class MainView
     /// <summary>A note chosen in the Explorer or the Área de trabalho: it opens in the editor (and joins Recentes).</summary>
     private void OpenFromNotes(CityNote note)
     {
+        if (OpenWhenRead(note.Path)) return;
         // openId: model.touchRecent(id)
         if (_store?.Get(note.Path) is { } opened) ExplorerState.TouchRecent(opened.Id);
         CloseNotesOverEditor();
@@ -291,7 +292,7 @@ public sealed partial class MainView
     {
         var box = _area.Of(folder) ?? new AreaLayout.Box();
         var next = box with { Order = Workspace.Order == WorkspaceOrder.Recent ? null : Workspace.Order, AsList = Workspace.AsList ? true : null };
-        if (next == box || _areaReadOnly || _vault is null || !VaultWritable) return;
+        if (next == box || _areaReadOnly || _lastNames is not null || _vault is null || !VaultWritable) return;
         _area.Set(folder, next);
         _ = SaveAreaAsync();
     }

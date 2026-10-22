@@ -69,16 +69,16 @@ public sealed partial class MainView : Grid
         };
         // [[link]] to a note that does not exist yet: created next to the open note, in its folder (DEC-0045, UC-37)
         Editor.CreateLinked = name => CreateNoteAsync(Editor.Current is { } open ? NoteLibrary.FolderOf(open.Path) : "", name, open: false);
-        Explorer.SelectionAction += (action, paths) => _ = SelectionActionAsync(action, paths);
-        Explorer.MoreRequested += () => _ = ShowNotesMenuAsync();
-        Explorer.NewRequested += () => _ = ShowNotesCreateMenuAsync();
+        Explorer.SelectionAction += (action, paths) => { if (!StillReading()) _ = SelectionActionAsync(action, paths); };
+        Explorer.MoreRequested += () => { if (!StillReading()) _ = ShowNotesMenuAsync(); };
+        Explorer.NewRequested += () => { if (!StillReading()) _ = ShowNotesCreateMenuAsync(); };
         Explorer.CreateFirstNoteRequested += () => _ = CreateNoteInNotesAsync();
         Explorer.RestoreRequested += id => _ = RestoreFromTrashAsync(id);
-        Explorer.FileRequested += path => _ = ShowFileAsync(path);
-        Explorer.FileMenuRequested += path => _ = ShowAttachmentActionsAsync(path, withView: true);
-        Explorer.FolderMenuRequested += folder => _ = ShowFolderMenuAsync(folder);
-        Explorer.MoveRequested += async (paths, folder) => { await MoveSelectionToAsync(paths, folder); Explorer.ClearSelection(); };
-        Explorer.FileMoveRequested += (path, folder) => _ = MoveAttachmentAsync(path, folder);
+        Explorer.FileRequested += path => { if (!StillReading()) _ = ShowFileAsync(path); };
+        Explorer.FileMenuRequested += path => { if (!StillReading()) _ = ShowAttachmentActionsAsync(path, withView: true); };
+        Explorer.FolderMenuRequested += folder => { if (!StillReading()) _ = ShowFolderMenuAsync(folder); };
+        Explorer.MoveRequested += async (paths, folder) => { if (!StillReading()) await MoveSelectionToAsync(paths, folder); Explorer.ClearSelection(); };
+        Explorer.FileMoveRequested += (path, folder) => { if (!StillReading()) _ = MoveAttachmentAsync(path, folder); };
         Explorer.PurgeRequested += id => _ = PurgeFromTrashAsync(id);
         Explorer.EmptyTrashRequested += () => _ = EmptyTrashAsync();
         Explorer.NoteRequested += OpenFromNotes;
@@ -248,6 +248,8 @@ public sealed partial class MainView : Grid
             if (_vault is not null)
             {
                 Explorer.Opening = Workspace.Opening = true;
+                // UC-78: the tree of the last opening at once, from its names, while the folder is read
+                ShowLastNames();
                 try
                 {
                     var snapshot = await _vault.RestoreAsync();
@@ -261,6 +263,7 @@ public sealed partial class MainView : Grid
         }
         finally
         {
+            LeaveLastNames();
             Explorer.Opening = Workspace.Opening = false;
             MarkReady();   // UC-56: a widget's quick note waits for the first vault
         }
@@ -320,6 +323,7 @@ public sealed partial class MainView : Grid
             try { foreach (var path in await _vault.ListFilePathsAsync()) _attachments.Add(path); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { /* the Explorer shows the notes */ }
         }
+        _lastNames = null;   // UC-78: the folder read replaces the names of the last opening
         Open(NoteLibrary.Open(notes.Select(n => (n.Path, n.Content, ids[n.Path])).ToList(), record, snapshot.MapJson, _attachments), notes);
         // the other files only: a note deleted later must not stay behind as a file of its folder
         _attachments.ExceptWith(notes.Select(n => n.Path));
@@ -327,10 +331,13 @@ public sealed partial class MainView : Grid
         // v23Atualizar: the brand is Disco.cidade (the vault folder's name), 'Urbe' without one
         Explorer.HomeTitle = _vault?.VaultName is { Length: > 0 } folder ? folder : "Urbe";
         Workspace.Title = Explorer.HomeTitle;
-        if (restoreSession) RestoreSession();
+        // a note tapped while the folder was read opens now, instead of the last session's
+        if (TakeOpenWhenRead() is { } tapped) OpenFromNotes(new CityNote(tapped, _contents[tapped]));
+        else if (restoreSession) RestoreSession();
         VaultNotices(snapshot);
         TipsLoaded();
         StartNotesSaves(snapshot, record);
+        RememberNames();
         // tutorial.js: workspace:loaded → setTimeout(semear, 300)
     }
 
@@ -807,11 +814,13 @@ public sealed partial class MainView : Grid
     /// <summary>Notas shows the notes, every folder (empty ones too, like model.folders) and the other files.</summary>
     private void RefreshNotes()
     {
+        if (RefreshLastNames()) return;
         Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value) { Title = _store?.Get(n.Key)?.Title }), _library?.Folders);
         var files = new HashSet<string>(_attachments, StringComparer.Ordinal);
         files.ExceptWith(_contents.Keys);
         Explorer.SetFiles(files);
         RefreshWorkspace();
+        RememberNames();
     }
 
     /// <summary>A file of the Explorer that is not a note (DEC-0045, UC-38): its preview (abrirEntradaTree → openFilePreview).</summary>
