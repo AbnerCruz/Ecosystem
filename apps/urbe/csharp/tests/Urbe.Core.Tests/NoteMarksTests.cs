@@ -103,4 +103,22 @@ public sealed class NoteMarksTests
         Assert.Equal("Texto. · IA: claude-x\n", NoteMarks.StripComments("Texto. {ia:\"claude-x\"}\n"));
         Assert.DoesNotContain(All(NoteMarks.Parse("Texto. {ia:\"claude-x\"}\n")), n => n.Tag == RichNode.TextTag && n.Text.Contains("{ia:"));
     }
+
+    [Fact]
+    public void AgentRequests_AreChipsInTheEditorFoundInTheSourceAndLeftOutOfPages()
+    {
+        // UC-80: &Nome&: at the start of a line asks that agent; &&: the default one
+        const string text = "# Herói\n\n&Jarvis&: Dê uma sugestão de nome\n\n&&: resuma\n\nTexto & mais &x&: não.\n\n```\n&Jarvis&: em código\n```\n";
+        var calls = NoteMarks.AgentCalls(text);
+        Assert.Equal([("Jarvis", "Dê uma sugestão de nome"), ("", "resuma")], calls.Select(c => (c.Agent, c.Request)));
+        Assert.Equal("&Jarvis&: Dê uma sugestão de nome", text.Substring(calls[0].Start, calls[0].Length));
+        var chips = All(NoteMarks.Parse(text)).Where(n => n.HasClass(NoteMarks.AgentClass)).ToList();
+        Assert.Equal(["Jarvis", ""], chips.Select(c => c.Attr("data-agent")));
+        Assert.Equal("Dê uma sugestão de nome", chips[0].Children[0].Text);
+        var page = NoteMarks.StripComments(text);
+        Assert.DoesNotContain("Dê uma sugestão", page);
+        Assert.DoesNotContain("resuma", page);
+        Assert.Contains("Texto & mais &x&: não.", page);
+        Assert.Contains("&Jarvis&: em código", page);
+    }
 }

@@ -247,7 +247,8 @@ public sealed class VisualSurface : StackPanel
             // a task inside a container: the tap edits the block (its list lines are not the block's lines)
             TaskToggled = container ? null : (line, on) => ToggleTask(block, line, on),
             MathTapped = index => _ = EditFormulaAsync(block.Start, index),
-            CommentsTapped = index => _ = CommentsAsync(block.Start, index)
+            CommentsTapped = index => _ = CommentsAsync(block.Start, index),
+            AgentAsked = AgentAsked is null ? null : index => AskAgent(block.Start, index)
         };
         var holder = new Border { Background = Brushes.Transparent, Child = container ? reader.BuildMarkdown(source) : reader.Build(NoteMarks.Parse(source)) };
         // a tap (press and release without moving), never the press: a finger that starts a scroll on a block
@@ -719,6 +720,24 @@ public sealed class VisualSurface : StackPanel
     /// </summary>
     /// <summary>The comments on a word (UC-49): shown, and the one written added at the end of the run, in the .md.</summary>
     public Func<IReadOnlyList<string>, Task<string?>>? AskComment { get; set; }
+
+    /// <summary>UC-80: a request to an agent asked from the note (its line's button, or Ctrl+Enter on it); the line in the note's text.</summary>
+    public event Action<NoteMarks.AgentCall>? AgentAsked;
+
+    /// <summary>The caret in the note's text while a block is edited, else null.</summary>
+    public int? SourceCaret => _box is null || _editStart < 0 ? null : _editStart + _box.CaretIndex;
+
+    private void AskAgent(int blockStart, int index)
+    {
+        var before = _text.Length;
+        var editingStart = _editStart;
+        FinishEdit();
+        var shift = _text.Length - before;
+        var start = blockStart > editingStart && editingStart >= 0 ? blockStart + shift : blockStart;
+        if (_blocks.FirstOrDefault(b => b.Start == start) is not { } block) return;
+        var calls = NoteMarks.AgentCalls(_text[block.Start..block.End]);
+        if (index >= 0 && index < calls.Count) AgentAsked?.Invoke(calls[index] with { Start = calls[index].Start + block.Start });
+    }
 
     private async Task CommentsAsync(int blockStart, int index)
     {

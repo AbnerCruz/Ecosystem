@@ -1,0 +1,90 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-agente-na-nota",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T18:13:09Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-80",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "64cb8d12",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/NoteMarks.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteMarksTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261022-urbe-agente-na-nota.json"
+  ],
+  "work_completed": [
+    "UC-80 fatias 1 e 2 (ideia do proprietário, 22/10/2026): '&Nome&: pedido' numa nota vira um cartão com o chip do agente e 'Pedir a Nome' (ou Ctrl+Enter). Só ao pedir, a nota é salva e o Assistente abre numa conversa 'Na nota X' com o agente daquele nome e a nota como contexto, pelo mesmo AssistantAgent (ADR-0033: sem segundo motor). Edições passam pela aprovação com diff; respostas ficam no painel. Linhas de pedido saem das páginas."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (655) e Urbe.Client.Tests (200)",
+      "result": "passed",
+      "evidence": "NoteMarksTests.AgentRequests_AreChipsInTheEditorFoundInTheSourceAndLeftOutOfPages e Assistant_ALineOfTheNoteAsksTheAgentByItsName (cartão, pedido, conversa 'Na nota', nome desconhecido)."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, escrever '&Jarvis&: …' numa nota, tocar em Pedir e aprovar a mudança",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs"
+    }
+  ],
+  "known_issues": [
+    "Fatia 3 (sugestão no próprio texto, sem o painel) e fatia 4 (desfazer em bloco) ainda faltam."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "UC-80 fatia 3; UC-84 fatia 4; UC-72."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": ".urbe/area.json só guarda apresentação e declara que as pastas e arquivos são a autoridade do conteúdo; nada nele cria, move ou apaga pastas."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "O arquivo novo é o previsto no ADD-0030, que o proprietário decidiu (DEC-0053)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Aparência e ordem no aparelho ficam pendentes; UC-85 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "agent-request-in-note",
+      "status": "product-specific",
+      "rationale": "Sintaxe .md do Urbe para pedir a um agente dentro da nota; usa o AssistantAgent do próprio Urbe (ADR-0033)."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Interface do editor e do Assistente e uma marca de sintaxe; as gravações continuam as verificadas de sempre."
+  }
+}

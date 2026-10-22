@@ -258,14 +258,44 @@ public sealed partial class AssistantPanel : Border
         Send(text);
     }
 
+    /// <summary>
+    /// UC-80: a <c>&amp;Nome&amp;:</c> line of a note asks its agent — a conversation of its own ("Na nota X") with the note as
+    /// context; an edit goes through the same approval and diff as any other, an answer is read and replied to here.
+    /// The problem (no such agent, a run going on), or null when it was sent.
+    /// </summary>
+    public string? AskInNote(string notePath, string noteTitle, NoteMarks.AgentCall call)
+    {
+        if (_running is not null) return "O Assistente ainda está trabalhando no pedido anterior.";
+        Open();
+        var agent = call.Agent.Length == 0 ? AssistantAgent.AgentById(_cfg.AgentId, _cfg.CustomAgents) : AgentNames.Find(call.Agent, _cfg);
+        if (agent is null)
+            return "Nenhum agente se chama " + call.Agent + ". Os seus agentes: " + string.Join(", ", AgentNames.All(_cfg).Select(a => AgentNames.CallName(a, _cfg))) +
+                   ". Dê esse nome a um deles em Assistente → Configurações → Nomes dos agentes.";
+        _conv = NewConversation();
+        _conv.AgentId = agent.Id;
+        _conv.Title = "Na nota " + noteTitle;
+        _views.Clear();
+        var line = "&" + call.Agent + "&: " + call.Request;
+        Send(call.Request, (notePath, "[Pedido feito dentro da nota " + notePath + ", nesta linha:\n" + line +
+            "\nLeia a nota inteira (read_note) como contexto. Se o pedido for uma mudança no texto, faça-a na própria nota com edit_note, trocando essa linha pelo resultado; se for uma pergunta, responda aqui.]"));
+        return null;
+    }
+
     /// <summary>send(): the request (with the open note as hidden context when the chip is on) and the run.</summary>
-    public void Send(string text)
+    public void Send(string text) => Send(text, null);
+
+    private void Send(string text, (string Path, string Text)? inNote)
     {
         if (_cfg.Providers.Count == 0) { ShowSettings("openrouter"); return; }
         if (ModelId().Length == 0) { _ = PickModelAsync(); return; }
         var e = EditorInfo();
         var msg = new AiChatMessage { Id = AssistantAgent.NewId("m"), Role = "user", Content = [AiChatBlock.TextBlock(text)], Meta = new AiChatMeta() };
-        if (e.Path is { Length: > 0 } path && _useOpen)
+        if (inNote is { } asked)
+        {
+            msg.Meta.Context = asked.Path;
+            msg.Content.Add(new AiChatBlock { Type = "text", Hidden = true, Text = asked.Text });
+        }
+        else if (e.Path is { Length: > 0 } path && _useOpen)
         {
             var sel = e.Selection ?? "";
             msg.Meta.Context = path + (sel.Length > 0 ? " · seleção" : "");

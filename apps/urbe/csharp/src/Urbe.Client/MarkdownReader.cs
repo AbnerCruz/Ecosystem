@@ -46,6 +46,9 @@ public sealed class MarkdownReader
     /// <summary>The 💬 of a word's comments was tapped (UC-49): its index among the comment runs of this text, in order.</summary>
     public Action<int>? CommentsTapped { get; set; }
     private int _notes;
+    /// <summary>The "Pedir" of a request to an agent (UC-80): its index among the <c>&amp;Nome&amp;:</c> lines of this text, in order.</summary>
+    public Action<int>? AgentAsked { get; set; }
+    private int _agents;
 
     private int _listLine;
 
@@ -123,6 +126,7 @@ public sealed class MarkdownReader
             case "h3": return Heading(n, 1.15, (FontWeight)650, new Thickness(0, 1.2 * Size, 0, .3 * Size));
             case "h4": case "h5": case "h6": return Heading(n, 1, FontWeight.Bold, new Thickness(0, 1.33 * Size, 0, 1.33 * Size));
             case "p" when n.HasClass(NoteMarks.TagClass): return Tagged(n);
+            case "p" when n.HasClass(NoteMarks.AgentClass): return AgentLine(n);
             case "p": { var t = Text(n.Children, Size); t.Margin = new Thickness(0, .6 * Size); return t; }
             case "hr": return new Border { Height = 1, Background = UrbeTheme.Brush(UrbeTheme.Line2), Margin = new Thickness(0, 2 * Size) };
             case "ul": case "ol": return List(n);
@@ -161,6 +165,50 @@ public sealed class MarkdownReader
             CornerRadius = new CornerRadius(8),
             Background = UrbeTheme.Brush(color, .1), BorderBrush = UrbeTheme.Brush(color, .9), BorderThickness = new Thickness(3, 0, 0, 0),
             Child = new StackPanel { Children = { label, body } }
+        };
+    }
+
+    /// <summary>
+    /// <c>&amp;Nome&amp;: pedido</c> (UC-80): the agent's chip, the request and, when the editor takes requests, "Pedir ao Nome".
+    /// Nothing is sent by itself: only the button (or Ctrl+Enter on the line) asks.
+    /// </summary>
+    private Control AgentLine(RichNode n)
+    {
+        int index = _agents++;
+        var name = n.Attr("data-agent");
+        var shown = name.Length > 0 ? name : "Assistente";
+        var chip = new Border
+        {
+            CornerRadius = new CornerRadius(10), Padding = new Thickness(7, 2, 9, 2), HorizontalAlignment = HorizontalAlignment.Left,
+            Background = UrbeTheme.Brush(UrbeTheme.Accent, .16),
+            Child = new StackPanel
+            {
+                Orientation = Orientation.Horizontal, Spacing = 4,
+                Children =
+                {
+                    UrbeTheme.Icon(UrbeTheme.Icons.Assistant, Size * .8, UrbeTheme.Accent, 1.6),
+                    new TextBlock { Text = shown, FontSize = Size * .75, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center }
+                }
+            }
+        };
+        var rows = new StackPanel { Spacing = 4, Children = { chip, Text(n.Children, Size) } };
+        if (AgentAsked is { } asked)
+        {
+            var ask = new Button
+            {
+                Content = "Pedir a " + shown, FontSize = Size * .75, Padding = new Thickness(10, 4), HorizontalAlignment = HorizontalAlignment.Left,
+                Background = UrbeTheme.Brush(UrbeTheme.Accent, .12), Foreground = UrbeTheme.Brush(UrbeTheme.Accent), BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(8)
+            };
+            Avalonia.Automation.AutomationProperties.SetName(ask, "Pedir a " + shown);
+            ask.Click += (_, e) => { e.Handled = true; asked(index); };
+            ask.Tapped += (_, e) => e.Handled = true;   // the block does not become an edit box under the button
+            rows.Children.Add(ask);
+        }
+        return new Border
+        {
+            Margin = new Thickness(0, .5 * Size), Padding = new Thickness(.75 * Size, .45 * Size), CornerRadius = new CornerRadius(10),
+            Background = UrbeTheme.Brush(UrbeTheme.Accent, .05), BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent, .35), BorderThickness = new Thickness(1),
+            Child = rows
         };
     }
 

@@ -96,6 +96,7 @@ public sealed partial class MainView : Grid
         Editor.RenameRequested += () => { if (Editor.Current is { } open) _ = RenameNoteAsync(open.Path); };
         Editor.SaveFailed += message => _notice.Show(message, TimeSpan.FromSeconds(8), "Tentar de novo", () => _ = Editor.RetrySavesAsync(), Ui.ToastKind.Warning);
         Editor.AssistantRequested += ToggleAssistant;
+        Editor.AgentAsked += call => _ = AskAgentInNoteAsync(call);
         Editor.Shown += path => NoteOpened?.Invoke(path);   // plugins: "nota:aberta"
 
         Explorer.TitleMark = _vaultDot;

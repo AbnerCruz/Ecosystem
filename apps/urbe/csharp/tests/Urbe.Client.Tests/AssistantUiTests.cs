@@ -210,6 +210,75 @@ public sealed partial class HeadlessUiTests
         }, CancellationToken.None));
 
     [Fact]
+    public async Task Assistant_ALineOfTheNoteAsksTheAgentByItsName() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // UC-80: "&Jarvis&: …" in a note; nothing is sent until "Pedir a Jarvis"
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-assistant-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(vault);
+            File.WriteAllText(Path.Combine(vault, "Herói.md"), "# Herói\n\nAlto, do norte.\n\n&Jarvis&: Dê uma sugestão de nome\n\n&Sexta&: e outro\n");
+            var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
+            var before = UrbeApp.AssistantFolder;
+            UrbeApp.AssistantFolder = Path.Combine(dir, "app", "assistant");
+            var view = new MainView(storage);
+            var window = new Window { Width = 1280, Height = 760, Content = view };
+            window.Show();
+            try
+            {
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                ClickButtonWithText(view, "Assistente");
+                var panel = view.Assistant;
+                var model = new ScriptedModel();
+                panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
+                panel.Config.Providers.Add(new AiProviderConfig("openrouter", "openrouter", ApiKey: "sk-teste"));
+                panel.Config.Model = "org/modelo-b";
+                Assert.Null(panel.RenameAgent("escritor", "Jarvis"));
+                panel.Close();
+
+                view.ShowNotes();
+                Assert.True(view.Explorer.TryOpenNote("Herói.md"));
+                await Settle(window, view);
+                Assert.Empty(model.Sent);
+                var texts = view.Editor.GetLogicalDescendants().OfType<TextBlock>()
+                    .Select(t => t.Inlines is { Count: > 0 } runs ? string.Concat(runs.OfType<Avalonia.Controls.Documents.Run>().Select(r => r.Text)) : t.Text).ToList();
+                Assert.Contains("Jarvis", texts);
+                Assert.Contains("Dê uma sugestão de nome", texts);
+                Assert.DoesNotContain(texts, t => t?.Contains("&Jarvis&", StringComparison.Ordinal) == true);
+                Snapshot(window, "native-agent-in-note.png");
+
+                model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Sugiro Aurora."}}]}"""));
+                ClickNamed(view.Editor, "Pedir a Jarvis");
+                for (int i = 0; i < 200 && panel.CurrentRun is null; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                if (panel.CurrentRun is { } run) await run;
+                for (int i = 0; i < 20; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                Assert.True(panel.IsVisible);
+                Assert.Equal(("Na nota Herói", "escritor"), (panel.Conversation.Title, panel.Conversation.AgentId));
+                var sent = Assert.Single(model.Sent);
+                Assert.Contains("Seu nome é Jarvis.", sent);
+                Assert.Contains("Pedido feito dentro da nota Herói.md, nesta linha:\\n&Jarvis&: Dê uma sugestão de nome", sent);
+                Assert.Contains(panel.GetLogicalDescendants().OfType<TextBlock>(), t => (t.Text ?? string.Concat(t.Inlines?.OfType<Avalonia.Controls.Documents.Run>().Select(r => r.Text) ?? [])).Contains("Sugiro Aurora.", StringComparison.Ordinal));
+                Snapshot(window, "native-agent-in-note-answer.png");
+
+                // a name no agent has: it says so, and nothing is sent
+                panel.Close();
+                ClickNamed(view.Editor, "Pedir a Sexta");
+                for (int i = 0; i < 20 && !view.Dialogs.IsOpen; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                Assert.True(view.Dialogs.IsOpen);
+                Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.StartsWith("Nenhum agente se chama Sexta.", StringComparison.Ordinal) == true);
+                Assert.Single(model.Sent);
+                return true;
+            }
+            finally
+            {
+                UrbeApp.AssistantFolder = before;
+                window.Close();
+                try { Directory.Delete(dir, recursive: true); } catch (IOException) { }
+            }
+        }, CancellationToken.None));
+
+    [Fact]
     public async Task Assistant_ALongConversationStaysLight() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
         {
