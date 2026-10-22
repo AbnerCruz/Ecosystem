@@ -285,4 +285,83 @@ public sealed partial class HeadlessUiTests
                 try { Directory.Delete(dir, true); } catch (IOException) { }
             }
         }, CancellationToken.None));
+
+    [Fact]
+    public async Task Workspace_BoxesKeepTheirLookAndOrderInAreaJson() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-area-look-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            var selection = Path.Combine(dir, "app", "sel.json");
+            var previous = UrbeApp.LocalStatePath;
+            UrbeApp.LocalStatePath = Path.Combine(dir, "app", "notes-state.json");
+            var file = Path.Combine(vault, ".urbe", "area.json");
+            async Task Until(Func<bool> done) { for (int i = 0; i < 300 && !done(); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); } }
+            // the app may be writing the file right now (an exclusive write): read it when it lets go
+            string Read() { try { return File.Exists(file) ? File.ReadAllText(file) : ""; } catch (IOException) { return ""; } }
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), selection));
+                var window = new Window { Width = 412, Height = 860, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                Assert.Equal(["Matemática", "Personagens"], view.Workspace.ProjectOrder);
+
+                // the order of the boxes
+                await view.MoveBoxAsync("Personagens", -1);
+                Assert.Equal(["Personagens", "Matemática"], view.Workspace.ProjectOrder);
+                await Until(() => Read().Contains("\"Personagens\"", StringComparison.Ordinal));
+                Assert.Contains("\"Personagens\"", Read());
+                Assert.Contains("única autoridade do conteúdo", Read());
+
+                // Aparência da caixa: colour, border, icon
+                var editing = view.EditBoxAsync("Matemática");
+                ClickButtonWithText(view.Dialogs, "Lilás");
+                await Until(() => view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Tracejada"));
+                ClickButtonWithText(view.Dialogs, "Tracejada");
+                await Until(() => view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Livro"));
+                ClickButtonWithText(view.Dialogs, "Livro");
+                await editing;
+                var box = view.Area.Of("Matemática")!;
+                Assert.Equal(("tracejada", "livro"), (box.Border, box.Icon));
+                Assert.Equal(3, view.Area.ColorOf("Matemática/curso de calculo"));   // Lilás, for the subfolders too
+                await Until(() => Read().Contains("\"tracejada\"", StringComparison.Ordinal));
+                Assert.Contains("\"tracejada\"", Read());
+                Snapshot(window, "native-area-look.png");
+
+                // a box keeps its order and its list
+                view.Workspace.Open("Personagens");
+                view.Workspace.Order = WorkspaceOrder.Name;
+                view.Workspace.AsList = true;
+                await Until(() => Read().Contains("\"lista\": true", StringComparison.Ordinal));
+                Assert.Equal((WorkspaceOrder?)WorkspaceOrder.Name, view.Area.Of("Personagens")!.Order);
+                view.Workspace.Open("");
+                view.Workspace.Open("Personagens");
+                Assert.True(view.Workspace.AsList);
+
+                // a folder renamed by the app: its box follows
+                Assert.True(await view.RenameFolderAsync("Matemática", "Exatas"));
+                await Until(() => Read().Contains("\"Exatas\"", StringComparison.Ordinal));
+                Assert.Null(view.Area.Of("Matemática"));
+                Assert.Equal("livro", view.Area.Of("Exatas")!.Icon);
+                window.Close();
+
+                // and it is all there on the next opening
+                var again = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), selection));
+                var window2 = new Window { Width = 412, Height = 860, Content = again };
+                window2.Show();
+                await again.InitializeAsync();
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal(["Personagens", "Exatas"], again.Workspace.ProjectOrder);
+                Assert.Equal("tracejada", again.Area.Of("Exatas")!.Border);
+                window2.Close();
+                return true;
+            }
+            finally
+            {
+                UrbeApp.LocalStatePath = previous;
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
+        }, CancellationToken.None));
 }

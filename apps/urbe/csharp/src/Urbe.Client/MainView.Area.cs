@@ -35,6 +35,7 @@ public sealed partial class MainView
         Workspace.NewNoteRequested += folder => _ = CreateNoteInNotesAsync(folder: folder);
         Workspace.FolderMenuRequested += folder => _ = ShowFolderMenuAsync(folder);
         Workspace.ItemHeld += path => _ = ShowItemSheetAsync(path);
+        Workspace.PresentationChanged += KeepPresentation;
         Workspace.SidebarRequested += ShowNotes;
         Workspace.SettingsRequested += () => _ = ShowSettingsAsync();
         _stage.SizeChanged += (_, e) => { if (e.WidthChanged) PlaceSidebar(); };
@@ -124,6 +125,100 @@ public sealed partial class MainView
                 : new("Favoritar", UrbeTheme.Icons.Star, "Aparece em Favoritos.", Run: () => { ExplorerState.Favorite(doc.Id); RefreshNotes(); return Task.CompletedTask; }),
             new("Mover para a lixeira", UrbeTheme.Icons.Trash, "Dá para restaurar pela Lixeira.", Danger: true, Run: () => SelectionActionAsync("delete", [path]))
         ], WorkspaceIndex.Describe(doc, cites, citedBy));
+    }
+
+    // ------------------------------------------------------------------ UC-85: how the boxes look (.urbe/area.json)
+
+    private AreaLayout _area = new();
+    private bool _areaReadOnly;
+
+    /// <summary>How the boxes look and are ordered (.urbe/area.json), as loaded and changed since.</summary>
+    public AreaLayout Area => _area;
+
+    private void LoadArea(string? json)
+    {
+        _area = AreaLayout.Parse(json, out _areaReadOnly);
+        Workspace.Layout = _area;
+    }
+
+    /// <summary>Writes .urbe/area.json with the verified write; a vault without it, a newer file or a protected vault are told, not written.</summary>
+    private async Task<bool> SaveAreaAsync()
+    {
+        if (_vault is null || !VaultWritable || _areaReadOnly)
+        {
+            await Dialogs.AlertAsync("Aparência das caixas", _areaReadOnly ? "A aparência das caixas foi gravada por uma versão mais nova do Urbe e não é alterada aqui." : NoVaultMessage);
+            return false;
+        }
+        try { await _vault.SaveAreaLayoutAsync(_area.Serialize()); }
+        catch (Exception ex)
+        {
+            await Dialogs.AlertAsync("Não foi possível gravar a aparência das caixas", ex.Message);
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>A folder renamed, moved (<paramref name="to"/>) or gone (null): its box follows, written in the background.</summary>
+    private void AreaFollows(string from, string? to)
+    {
+        if (_areaReadOnly || !(to is null ? _area.Removed(from) : _area.Renamed(from, to))) return;
+        _ = SaveAreaAsync();
+    }
+
+    /// <summary>The box items of a project's menu: its appearance and its place among the projects.</summary>
+    private IEnumerable<DialogItem> AreaMenuItems(string folder)
+    {
+        if (folder.Contains('/')) yield break;
+        yield return new("Aparência da caixa", UrbeTheme.Icons.Brush, "Cor, borda e ícone.", Run: () => EditBoxAsync(folder));
+        var order = Workspace.ProjectOrder;
+        int at = order.IndexOf(folder);
+        if (at > 0) yield return new("Mover caixa para antes", UrbeTheme.Icons.ArrowUp, null, Run: () => MoveBoxAsync(folder, -1));
+        if (at >= 0 && at < order.Count - 1) yield return new("Mover caixa para depois", UrbeTheme.Icons.Move, null, Run: () => MoveBoxAsync(folder, 1));
+    }
+
+    /// <summary>The names of the palette's colours, borders and icons, as the person reads them.</summary>
+    private static readonly string[] ColorNames = ["Azul", "Verde", "Âmbar", "Lilás", "Rosa", "Ciano", "Areia", "Lima"];
+    private static readonly (string Id, string Label)[] BorderNames = [("continua", "Contínua"), ("tracejada", "Tracejada"), ("dupla", "Dupla"), ("brilho", "Brilho")];
+    private static readonly (string Id, string Label)[] IconNames = [("pasta", "Pasta"), ("livro", "Livro"), ("estrela", "Estrela"), ("flor", "Flor"), ("casa", "Casa"), ("lista", "Lista"), ("imagem", "Imagem"), ("pagina", "Página")];
+
+    /// <summary>"Aparência da caixa": colour, then border, then icon; nothing changes until the last one is chosen.</summary>
+    public async Task EditBoxAsync(string project)
+    {
+        var box = _area.Of(project) ?? new AreaLayout.Box();
+        var colors = ColorNames.Select((n, i) => new DialogItem(n + (_area.ColorOf(project) == i ? " (atual)" : ""), UrbeTheme.Icons.Folder)).ToList();
+        if (await Dialogs.ChooseAsync("Cor de " + project, colors) is not { } color) return;
+        var borders = BorderNames.Select(b => new DialogItem(b.Label + ((box.Border ?? "continua") == b.Id ? " (atual)" : ""), UrbeTheme.Icons.Region)).ToList();
+        if (await Dialogs.ChooseAsync("Borda de " + project, borders) is not { } border) return;
+        var icons = IconNames.Select(i => new DialogItem(i.Label + ((box.Icon ?? "pasta") == i.Id ? " (atual)" : ""), WorkspaceView.IconFor(i.Id))).ToList();
+        if (await Dialogs.ChooseAsync("Ícone de " + project, icons) is not { } icon) return;
+        var before = _area.Serialize();
+        _area.Set(project, box with
+        {
+            Color = color == WorkspaceIndex.ColorOf(project) ? null : color,
+            Border = BorderNames[border].Id == "continua" ? null : BorderNames[border].Id,
+            Icon = IconNames[icon].Id == "pasta" ? null : IconNames[icon].Id
+        });
+        if (!await SaveAreaAsync()) { _area = AreaLayout.Parse(before, out _); Workspace.Layout = _area; return; }
+        Workspace.Layout = _area;
+    }
+
+    /// <summary>Moves a project's box one place before (-1) or after (+1) among the projects.</summary>
+    public async Task MoveBoxAsync(string project, int delta)
+    {
+        var before = _area.Serialize();
+        if (!_area.Move(project, delta, Workspace.ProjectOrder)) return;
+        if (!await SaveAreaAsync()) { _area = AreaLayout.Parse(before, out _); }
+        Workspace.Layout = _area;
+    }
+
+    /// <summary>A box's order or grid/list changed: kept for that folder.</summary>
+    private void KeepPresentation(string folder)
+    {
+        var box = _area.Of(folder) ?? new AreaLayout.Box();
+        var next = box with { Order = Workspace.Order == WorkspaceOrder.Recent ? null : Workspace.Order, AsList = Workspace.AsList ? true : null };
+        if (next == box || _areaReadOnly || _vault is null || !VaultWritable) return;
+        _area.Set(folder, next);
+        _ = SaveAreaAsync();
     }
 
     /// <summary>"+ Novo projeto": a folder at the top of the vault, shown as a new box, which opens.</summary>

@@ -102,11 +102,34 @@ public sealed class WorkspaceView : Grid
     /// <summary>Only items with this tag (null: any).</summary>
     public string? TagFilter { get => _tag; set { _tag = value; _shown = Page; Render(); } }
 
-    /// <summary>How the items are ordered.</summary>
-    public WorkspaceOrder Order { get => _order; set { _order = value; Render(); } }
+    /// <summary>How the items are ordered (kept for the open box, UC-85).</summary>
+    public WorkspaceOrder Order { get => _order; set { _order = value; Render(); if (Folder.Length > 0) PresentationChanged?.Invoke(Folder); } }
 
-    /// <summary>Items as a list of rows instead of a grid of cards.</summary>
-    public bool AsList { get => _asList; set { _asList = value; Render(); } }
+    /// <summary>Items as a list of rows instead of a grid of cards (kept for the open box, UC-85).</summary>
+    public bool AsList { get => _asList; set { _asList = value; Render(); if (Folder.Length > 0) PresentationChanged?.Invoke(Folder); } }
+
+    /// <summary>The open box's order or grid/list changed.</summary>
+    public event Action<string>? PresentationChanged;
+
+    private AreaLayout _layout = new();
+
+    /// <summary>How the boxes look and are ordered (UC-85, .urbe/area.json).</summary>
+    public AreaLayout Layout { get => _layout; set { _layout = value ?? new(); Render(); } }
+
+    /// <summary>The projects as the root shows them (their stored order first).</summary>
+    public List<string> ProjectOrder => [.. _layout.Arrange(_index.Projects, p => p.Folder).Select(p => p.Folder)];
+
+    private int ColorOf(string folder) => _layout.ColorOf(folder);
+
+    /// <summary>The icon a box shows: its own (UC-85), else a folder.</summary>
+    private string BoxIcon(string folder) => IconFor(_layout.Of(folder)?.Icon);
+
+    /// <summary>The drawing of one of <see cref="AreaLayout.Icons"/>.</summary>
+    public static string IconFor(string? id) => id switch
+    {
+        "livro" => UrbeTheme.Icons.Book, "estrela" => UrbeTheme.Icons.Star, "flor" => UrbeTheme.Icons.Flower, "casa" => UrbeTheme.Icons.House,
+        "lista" => UrbeTheme.Icons.List, "imagem" => UrbeTheme.Icons.Image, "pagina" => UrbeTheme.Icons.Page, _ => UrbeTheme.Icons.Folder
+    };
 
     /// <summary>A note's card was tapped.</summary>
     public event Action<string>? NoteRequested;
@@ -166,6 +189,9 @@ public sealed class WorkspaceView : Grid
         _shown = Page;
         _kind = null;
         _tag = null;
+        // each box keeps its order and its grid or list (UC-85); the root starts from the defaults
+        _order = _layout.Of(folder)?.Order ?? WorkspaceOrder.Recent;
+        _asList = _layout.Of(folder)?.AsList ?? false;
         _search.Text = "";
         Render();
         _scroll.Offset = default;
@@ -270,7 +296,7 @@ public sealed class WorkspaceView : Grid
 
     private void RenderRoot()
     {
-        var projects = _index.Projects;
+        var projects = _layout.Arrange(_index.Projects, p => p.Folder);
         var loose = _index.Loose;
         if (projects.Count == 0 && loose.Count == 0)
         {
@@ -365,13 +391,13 @@ public sealed class WorkspaceView : Grid
         else if (subs.Count == 0) content.Children.Add(new TextBlock { Text = "Vazio por enquanto.", FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
         if (box.Count > recent.Count)
         {
-            var all = Plain(new TextBlock { Text = "Ver tudo (" + box.Count + ")", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(PaletteHex(box.Color)) });
+            var all = Plain(new TextBlock { Text = "Ver tudo (" + box.Count + ")", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(PaletteHex(ColorOf(box.Folder))) });
             all.HorizontalAlignment = HorizontalAlignment.Left;
             all.Padding = new Thickness(4, 6);
             all.Click += (_, _) => Open(box.Folder);
             content.Children.Add(Ui.UrbeMotion.Pressable(all));
         }
-        return Glass(box.Color, content);
+        return Glass(box.Folder, content);
     }
 
     private Control LooseBox(IReadOnlyList<WorkspaceItem> loose)
@@ -418,14 +444,14 @@ public sealed class WorkspaceView : Grid
         if (items.Count > 0) content.Children.Add(ItemsView(items.Take(_shown).ToList(), CardColumns()));
         if (items.Count > _shown)
         {
-            var more = Plain(new TextBlock { Text = "Mostrar mais (" + (items.Count - _shown) + ")", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(PaletteHex(box.Color)) });
+            var more = Plain(new TextBlock { Text = "Mostrar mais (" + (items.Count - _shown) + ")", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(PaletteHex(ColorOf(box.Folder))) });
             more.HorizontalAlignment = HorizontalAlignment.Center;
             more.Click += (_, _) => { _shown += Page; Render(); };
             content.Children.Add(Ui.UrbeMotion.Pressable(more));
         }
         if (subs.Count == 0 && items.Count == 0)
         {
-            var add = Plain(new TextBlock { Text = "Nova nota aqui", FontSize = 15, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(PaletteHex(box.Color)) });
+            var add = Plain(new TextBlock { Text = "Nova nota aqui", FontSize = 15, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(PaletteHex(ColorOf(box.Folder))) });
             add.HorizontalAlignment = HorizontalAlignment.Center;
             add.Click += (_, _) => NewNoteRequested?.Invoke(Folder);
             content.Children.Add(new StackPanel
@@ -434,7 +460,7 @@ public sealed class WorkspaceView : Grid
                 Children = { new TextBlock { Text = "Pasta vazia", FontSize = 15, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), HorizontalAlignment = HorizontalAlignment.Center }, Ui.UrbeMotion.Pressable(add) }
             });
         }
-        _body.Children.Add(Glass(box.Color, content));
+        _body.Children.Add(Glass(box.Folder, content));
     }
 
     /// <summary>A search, a kind or a tag: in the open box (and its subfolders) as one catalogue, at the root grouped by project.</summary>
@@ -461,7 +487,7 @@ public sealed class WorkspaceView : Grid
             if (list.Count > 12) content.Children.Add(new TextBlock { Text = "e mais " + (list.Count - 12), FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
             boxes.Add(group.Key.Length == 0
                 ? new Border { Child = content, Padding = new Thickness(14), CornerRadius = new CornerRadius(18), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), Background = UrbeTheme.Brush(UrbeTheme.Surface, .6) }
-                : Glass(WorkspaceIndex.ColorOf(group.Key), content));
+                : Glass(group.Key, content));
         }
         _body.Children.Add(Columned(boxes));
     }
@@ -475,14 +501,18 @@ public sealed class WorkspaceView : Grid
 
     // ------------------------------------------------------------------ pieces
 
-    /// <summary>The glass: a translucent surface tinted by the project's colour, a light edge on top, the colour's border.</summary>
-    private static Border Glass(int color, Control content)
+    /// <summary>
+    /// The glass: a translucent surface tinted by the project's colour, a light edge on top, the colour's border — plain,
+    /// dashed, double or glowing, as the box was set (UC-85).
+    /// </summary>
+    private Control Glass(string folder, Control content)
     {
-        var c = Color.Parse(PaletteHex(color));
-        return new Border
+        var c = Color.Parse(PaletteHex(ColorOf(folder)));
+        var style = _layout.Of(WorkspaceIndex.ProjectOf(folder + "/"))?.Border ?? "continua";
+        var glass = new Border
         {
-            Child = content, Padding = new Thickness(14), CornerRadius = new CornerRadius(18), BorderThickness = new Thickness(1.5),
-            BorderBrush = new SolidColorBrush(c, .6),
+            Child = content, Padding = new Thickness(14), CornerRadius = new CornerRadius(18), BorderThickness = new Thickness(style is "tracejada" ? 0 : 1.5),
+            BorderBrush = new SolidColorBrush(c, style == "brilho" ? .85 : .6),
             Background = new LinearGradientBrush
             {
                 StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative), EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
@@ -493,18 +523,36 @@ public sealed class WorkspaceView : Grid
                     new GradientStop(Color.FromArgb(190, 0x15, 0x16, 0x1a), 1)
                 }
             },
-            BoxShadow = new BoxShadows(new BoxShadow { OffsetY = 6, Blur = 24, Color = Color.FromArgb(70, 0, 0, 0) })
+            BoxShadow = style == "brilho"
+                ? new BoxShadows(new BoxShadow { Blur = 22, Spread = 1, Color = Color.FromArgb(110, c.R, c.G, c.B) })
+                : new BoxShadows(new BoxShadow { OffsetY = 6, Blur = 24, Color = Color.FromArgb(70, 0, 0, 0) })
         };
+        if (style == "dupla")
+            return new Border { Child = glass, Padding = new Thickness(3), CornerRadius = new CornerRadius(21), BorderThickness = new Thickness(1), BorderBrush = new SolidColorBrush(c, .45) };
+        if (style == "tracejada")
+            return new Panel
+            {
+                Children =
+                {
+                    glass,
+                    new Avalonia.Controls.Shapes.Rectangle
+                    {
+                        RadiusX = 18, RadiusY = 18, Stroke = new SolidColorBrush(c, .75), StrokeThickness = 1.5,
+                        StrokeDashArray = new Avalonia.Collections.AvaloniaList<double> { 5, 4 }, IsHitTestVisible = false
+                    }
+                }
+            };
+        return glass;
     }
 
     /// <summary>A box's head: its icon in its colour, its name, how many items and when; tapping it opens the box.</summary>
     private Control BoxHead(WorkspaceBox box, bool open, int? count = null)
     {
-        var hex = PaletteHex(box.Color);
+        var hex = PaletteHex(ColorOf(box.Folder));
         var icon = new Border
         {
             Width = 36, Height = 36, CornerRadius = new CornerRadius(11), Background = UrbeTheme.Brush(hex, .16),
-            Child = UrbeTheme.Icon(UrbeTheme.Icons.Folder, 19, hex, 1.8)
+            Child = UrbeTheme.Icon(BoxIcon(box.Folder), 19, hex, 1.8)
         };
         var n = count ?? box.Count;
         var meta = (n == 1 ? "1 item" : n + " itens") + (box.Modified is { } m && When(m) is { } w ? " · " + w : "");
@@ -535,7 +583,7 @@ public sealed class WorkspaceView : Grid
 
     private Control SubfolderChip(WorkspaceBox box)
     {
-        var hex = PaletteHex(box.Color);
+        var hex = PaletteHex(ColorOf(box.Folder));
         var b = Ui.UrbeMotion.Pressable(new Button
         {
             Content = new StackPanel
@@ -559,7 +607,7 @@ public sealed class WorkspaceView : Grid
     /// <summary>A subfolder in an open box: a small glass box of its own.</summary>
     private Control SubfolderTile(WorkspaceBox box)
     {
-        var hex = PaletteHex(box.Color);
+        var hex = PaletteHex(ColorOf(box.Folder));
         var b = Ui.UrbeMotion.Pressable(new Button
         {
             Content = new StackPanel

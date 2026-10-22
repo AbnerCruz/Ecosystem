@@ -304,6 +304,7 @@ public sealed partial class MainView : Grid
             ? System.Text.Encoding.UTF8.GetString(file.Bytes.Span).TrimStart('﻿') : null;
         _trash = LegacyTrash.Read(Text(LegacyTrash.Path), Text(LegacyTrash.PathV1), out _trashReadOnly);
         LoadHistory(Text);
+        LoadArea(Text(AreaLayout.Path));
         Editor.SaveOnClose = !snapshot.IsReadOnly;
         var notes = snapshot.Documents.Where(d => d.Text is not null).Select(d => new CityNote(d.Path, d.Text!)).ToArray();
         // .urbe/notas.json: ids, dates and folders; a vault without it takes them from its 1.8.4 map, read only
@@ -827,7 +828,8 @@ public sealed partial class MainView : Grid
             new("Nova subpasta", UrbeTheme.Icons.Folder, "Dentro desta pasta.", Run: () => CreateFolderAsync(folder)),
             new("Renomear", UrbeTheme.Icons.Pencil, "Muda o nome da pasta no vault.", Run: () => RenameFolderAsync(folder)),
             new("Mover para", UrbeTheme.Icons.Move, "A pasta e tudo o que há nela.", Run: () => MoveFolderAsync(folder)),
-            new("Mover para a lixeira", UrbeTheme.Icons.Trash, "A pasta e as notas dela.", Run: () => SelectionActionAsync("delete", [NotesExplorer.FolderPrefix + folder]))
+            new("Mover para a lixeira", UrbeTheme.Icons.Trash, "A pasta e as notas dela.", Run: () => SelectionActionAsync("delete", [NotesExplorer.FolderPrefix + folder])),
+            .. AreaMenuItems(folder)
         ]);
     }
 
