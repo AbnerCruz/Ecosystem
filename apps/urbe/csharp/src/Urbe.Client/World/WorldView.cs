@@ -63,6 +63,9 @@ public sealed partial class WorldView : Control
     /// <summary>v20CanvasHold: a neighbourhood held 520 ms (outside its houses) asks for its edit dialog.</summary>
     public event Action<LegacyCityRegion>? RegionHeld;
     public const int RegionHoldMs = 520;
+
+    /// <summary>Off: pressing never turns into a hold (pick-up, neighbourhood dialog); only taps and drags remain.</summary>
+    public bool HoldGestures { get; set; } = true;
     private LegacyCityRegion? _pressRegion;
 
     /// <summary>The carried building was let go at a new lot (finalizarMovimentoMundo).</summary>
@@ -1139,7 +1142,7 @@ public sealed partial class WorldView : Control
             _pressRegion = _pressBuilding is null && Prefs.DecorationAt(tx, ty) is null ? City?.RegionAt(tx, ty) : null;
             _moveHold.Stop();
             _moveHold.Interval = TimeSpan.FromMilliseconds(_pressBuilding is not null ? MoveHoldMs : RegionHoldMs);
-            if ((_pressBuilding is not null && MoveValid is not null) || (_pressRegion is not null && RegionHeld is not null)) _moveHold.Start();
+            if (HoldGestures && ((_pressBuilding is not null && MoveValid is not null) || (_pressRegion is not null && RegionHeld is not null))) _moveHold.Start();
         }
         else { _moveHold.Stop(); if (Moving is not null) { Moving = null; } _pressAt = null; _pinchDistance = PinchDistance(); if (_toolGesture) { _toolGesture = false; Tool?.Cancel(); } }
         e.Handled = true;

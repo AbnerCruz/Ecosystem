@@ -42,8 +42,8 @@ public sealed partial class HeadlessUiTests
         window.Show();
         await view.LoadAsync(FocusNotes);
         await Settle(window, view);
-        // no hold-to-move here: a headless timer could otherwise turn a slow tap into a hold
-        view.World.MoveValid = null;
+        // no holds here: a slow headless frame between press and release could otherwise turn a tap into a hold
+        view.World.HoldGestures = false;
         // the neighbourhood framed in the upper part of the screen, above the card
         var j = FocusHouse(view, "Jardim");
         view.World.Camera.SetZoom(.9);
