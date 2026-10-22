@@ -55,9 +55,10 @@
     {
       "kind": "human",
       "check": "Android físico: escrever no editor redesenhado; gravar uma nota pelo widget sem abrir o app",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/urbe/csharp/src/Urbe.Android/VoiceNoteWidget.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Android/VoiceNoteWidget.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-22 (Issue https://github.com/AbnerCruz/Ecosystem/issues/650); registro em docs/governance/responses/VAL-HO-20261022-urbe-ux-fase2-foco-widget-eac0ae760eb6.md."
     }
   ],
   "known_issues": [
