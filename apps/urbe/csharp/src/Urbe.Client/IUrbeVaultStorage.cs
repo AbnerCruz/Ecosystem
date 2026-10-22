@@ -383,6 +383,29 @@ public interface IUrbeVaultStorage
         return (path, System.Text.Encoding.UTF8.GetBytes(json));
     }
 
+    /// <summary>
+    /// Rewrites .urbe/constelacao.json (UC-72: the Constelação's positions, derived from the notes) alone, with the same
+    /// safeguards as area.json. Hosts must override it.
+    /// </summary>
+    Task SaveConstellationAsync(string json, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não grava a Constelação.");
+
+    /// <summary>The checks of a constelacao.json rewrite: a file of the version this app knows, never over a newer or unreadable one.</summary>
+    static (string Path, byte[] Bytes) PlanConstellationWrite(IReadOnlyList<VaultFile> files, string json)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(json);
+        var snapshot = VaultReader.Read(files);
+        var existing = files.FirstOrDefault(f => string.Equals(f.Path, Constellation.Path, StringComparison.OrdinalIgnoreCase));
+        var path = existing?.Path ?? Constellation.Path;
+        if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal)
+            throw new InvalidOperationException("Vault protegido ou operação interrompida: escrita recusada.");
+        if (existing is not null && !Constellation.IsConstellation(System.Text.Encoding.UTF8.GetString(existing.Bytes.Span).TrimStart('\uFEFF')))
+            throw new InvalidOperationException("A Constelação é de uma versão mais nova do Urbe: escrita recusada.");
+        if (!Constellation.IsConstellation(json)) throw new InvalidDataException("constelacao.json inválido.");
+        return (path, System.Text.Encoding.UTF8.GetBytes(json));
+    }
+
     /// <summary>A folder path Urbe may create: vault-relative, no traversal, drive syntax, or hidden segment.</summary>
     static void EnsureWritableFolderPath(string path)
     {

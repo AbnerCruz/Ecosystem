@@ -464,4 +464,53 @@ public sealed partial class HeadlessUiTests
             }
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
+
+    [Fact]
+    public async Task Constellation_ShowsTheSkyFocusesAStarAndOpensItsNote() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // UC-72: the notes as a calm night sky; the places are kept in a file derived from the notes
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-sky-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            File.WriteAllText(Path.Combine(vault, "Personagens", "Herói.md"), "# Herói\n\nInimigo de [[Vilã]].\n");
+            var file = Path.Combine(vault, ".urbe", "constelacao.json");
+            string Read() { try { return File.Exists(file) ? File.ReadAllText(file) : ""; } catch (IOException) { return ""; } }
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 1280, Height = 800, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                Click(Named(view.Workspace, "Constelação"));
+                for (int i = 0; i < 300 && !(view.SkyPanel.IsVisible && Read().Length > 0); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.True(view.SkyPanel.IsVisible);
+                var kept = Read();
+                Assert.Contains("única autoridade", kept);
+                Assert.False(File.Exists(Path.Combine(vault, ".urbe", "mapa.json")));
+                Assert.False(File.Exists(Path.Combine(vault, ".urbe", "mundo.json")));
+                await Settle(window, view);
+                Snapshot(window, "native-constellation.png");
+
+                // a tap shows the star and its links, the rest dimmed; a second tap opens the note
+                var hero = view.Documents!.Get("Personagens/Herói.md")!.Id;
+                var sky = view.SkyPanel.Sky;
+                sky.TapAt(sky.PointOf(hero)!.Value);
+                Assert.Equal(hero, sky.FocusedStar);
+                await Settle(window, view);
+                Snapshot(window, "native-constellation-focus.png");
+                sky.TapAt(sky.PointOf(hero)!.Value);
+                Dispatcher.UIThread.RunJobs();
+                Assert.False(view.SkyPanel.IsVisible);
+                Assert.True(view.Editor.IsVisible);
+                Assert.Equal("Personagens/Herói.md", view.Editor.Current?.Path);
+
+                // opened again with the same notes: nobody moves, nothing is written
+                await view.ShowConstellationAsync();
+                Assert.Equal(kept, Read());
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
 }

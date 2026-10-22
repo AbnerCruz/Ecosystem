@@ -45,13 +45,18 @@ public sealed class WorkspaceView : Grid
         _add = add;
         _settings = HeaderButton(UrbeTheme.Icons.Settings, "Configurações");
         _settings.Click += (_, _) => SettingsRequested?.Invoke();
+        // UC-72: the Constelação, a sky to stroll through the notes
+        var sky = HeaderButton(UrbeTheme.Icons.Star, "Constelação");
+        sky.Click += (_, _) => SkyRequested?.Invoke();
         var head = new DockPanel { Margin = new Thickness(8, 6, 8, 0), Height = 52, LastChildFill = true };
         DockPanel.SetDock(_sidebar, Dock.Left);
         DockPanel.SetDock(_settings, Dock.Right);
         DockPanel.SetDock(add, Dock.Right);
+        DockPanel.SetDock(sky, Dock.Right);
         head.Children.Add(_sidebar);
         head.Children.Add(_settings);
         head.Children.Add(add);
+        head.Children.Add(sky);
         head.Children.Add(new ScrollViewer { Content = _crumbs, HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled, Margin = new Thickness(4, 0) });
         Children.Add(head);
 
@@ -152,6 +157,8 @@ public sealed class WorkspaceView : Grid
     public event Action? SidebarRequested;
     /// <summary>The header's Configurações (on a phone, where the sidebar with its own is not beside it).</summary>
     public event Action? SettingsRequested;
+    /// <summary>The header's Constelação (UC-72).</summary>
+    public event Action? SkyRequested;
 
     /// <summary>The folder open now ("" for the root, the projects).</summary>
     public string Folder { get; private set; } = "";

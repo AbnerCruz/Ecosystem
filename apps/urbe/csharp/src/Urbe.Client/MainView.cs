@@ -311,6 +311,7 @@ public sealed partial class MainView : Grid
         _trash = LegacyTrash.Read(Text(LegacyTrash.Path), Text(LegacyTrash.PathV1), out _trashReadOnly);
         LoadHistory(Text);
         LoadArea(Text(AreaLayout.Path));
+        _skyText = Text(Constellation.Path);
         Editor.SaveOnClose = !snapshot.IsReadOnly;
         var notes = snapshot.Documents.Where(d => d.Text is not null).Select(d => new CityNote(d.Path, d.Text!)).ToArray();
         // .urbe/notas.json: ids, dates and folders; a vault without it takes them from its 1.8.4 map, read only
@@ -1003,6 +1004,7 @@ public sealed partial class MainView : Grid
             new DialogItem("Buscar notas e comandos", UrbeTheme.Icons.SearchUi, "No texto das notas, e tudo o que o Urbe faz", Run: () => { Search.OpenQuickOpen(); return Task.CompletedTask; }),
             new DialogItem("Recentes", UrbeTheme.Icons.Clock, Run: () => { ShowCollection("recent"); return Task.CompletedTask; }),
             new DialogItem("Favoritos", UrbeTheme.Icons.Star, Run: () => { ShowCollection("favorites"); return Task.CompletedTask; }),
+            new DialogItem("Constelação", UrbeTheme.Icons.Star, "As notas como um céu à noite", Run: ShowConstellationAsync),
             new DialogItem("Importar arquivos", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync(Explorer.CurrentFolder)),
             new DialogItem("Exportar tudo (.zip)", UrbeTheme.Icons.Download, "Cópia de segurança de todas as notas", Run: () => ExportAsync()),
             new DialogItem("Lixeira", UrbeTheme.Icons.Trash, Detail: (n > 0 ? n.ToString(System.Globalization.CultureInfo.InvariantCulture) : "Nenhum") + " item(ns)",

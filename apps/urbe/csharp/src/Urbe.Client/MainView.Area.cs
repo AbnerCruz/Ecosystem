@@ -70,6 +70,7 @@ public sealed partial class MainView
         WireGrip();
         WireEdgeSwipe();
         Workspace.SettingsRequested += () => _ = ShowSettingsAsync();
+        Workspace.SkyRequested += () => { if (!StillReading()) _ = ShowConstellationAsync(); };
         _stage.SizeChanged += (_, e) => { if (e.WidthChanged) PlaceSidebar(); };
         Explorer.PropertyChanged += (_, e) => { if (e.Property == NotesExplorer.ZIndexProperty) PlaceSidebar(); };
         PlaceSidebar();
