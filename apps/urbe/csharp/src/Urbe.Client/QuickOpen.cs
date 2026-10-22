@@ -378,6 +378,14 @@ public sealed class SearchFeature
         Register("tutorial.menu", "Tutorial: abrir ou restaurar", "Ajuda", () => _ = view.ShowTutorialMenuAsync());
         Register("ui.settings", "Configurações", "Aplicativo", () => _ = view.ShowSettingsAsync());
         Register("ui.assistant", "Assistente", "Aplicativo", view.ToggleAssistant);
+        // UC-61: the screens and actions that came after the 1.8.4 (DEC-0053, DEC-0052, UC-80, UC-58)
+        Register("ui.workspace", "Área de trabalho", "Navegação", view.ShowWorkspace);
+        Register("ui.sidebar.toggle", "Mostrar ou recolher a barra lateral", "Navegação", view.ToggleSidebar);
+        Register("ui.constellation", "Constelação", "Navegação", () => _ = view.ShowConstellationAsync(), () => view.Documents is not null);
+        Register("editor.connections", "Conexões da nota", "Editor", view.ShowEditorConnections, () => view.Editor.IsVisible);
+        Register("workspace.newProject", "Novo projeto", "Workspace", () => _ = view.CreateProjectAsync());
+        Register("document.rename", "Renomear nota", "Documento", () => { if (view.Editor.Current is { } n) _ = view.RenameNoteAsync(n.Path); }, () => view.Editor.IsVisible);
+        Register("ui.firstRun", "Configuração inicial", "Aplicativo", view.ShowFirstRun);
 
         // document.addEventListener('keydown'): on the top level, so it works with nothing focused too
         void Hook()

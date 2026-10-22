@@ -56,12 +56,7 @@ public sealed partial class MainView
             else _ = MoveAttachmentAsync(path, folder);
         };
         Workspace.PresentationChanged += KeepPresentation;
-        Workspace.SidebarRequested += () =>
-        {
-            // wide: Pastas folds the sidebar away or brings it back; narrow: the drawer
-            if (SidebarDocked) { ExplorerState.SidebarCollapsed = !ExplorerState.SidebarCollapsed; PlaceSidebar(); }
-            else ShowNotes();
-        };
+        Workspace.SidebarRequested += ToggleSidebar;
         Explorer.ShowsSections = true;
         Explorer.SectionRequested += ShowCollection;
         _stage.Children.Insert(0, _scrim);
@@ -162,6 +157,13 @@ public sealed partial class MainView
         var files = new HashSet<string>(_attachments, StringComparer.Ordinal);
         files.ExceptWith(_contents.Keys);
         Workspace.SetIndex(new WorkspaceIndex(notes, files, _library?.Folders));
+    }
+
+    /// <summary>Pastas: wide, the sidebar folds away or comes back; narrow, the drawer opens.</summary>
+    public void ToggleSidebar()
+    {
+        if (SidebarDocked) { ExplorerState.SidebarCollapsed = !ExplorerState.SidebarCollapsed; PlaceSidebar(); }
+        else ShowNotes();
     }
 
     /// <summary>A note chosen in the Explorer or the Área de trabalho: it opens in the editor (and joins Recentes).</summary>

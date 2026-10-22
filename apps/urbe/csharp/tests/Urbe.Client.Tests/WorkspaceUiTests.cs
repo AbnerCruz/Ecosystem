@@ -508,6 +508,15 @@ public sealed partial class HeadlessUiTests
                 // opened again with the same notes: nobody moves, nothing is written
                 await view.ShowConstellationAsync();
                 Assert.Equal(kept, Read());
+
+                // UC-61: the new screens are commands too (Ctrl+K)
+                Assert.True(view.Search.Has("ui.constellation") && view.Search.Has("ui.workspace") && view.Search.Has("ui.sidebar.toggle"));
+                Assert.True(view.Search.Execute("ui.constellation"));
+                for (int i = 0; i < 100 && !view.SkyPanel.IsVisible; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                Assert.True(view.SkyPanel.IsVisible);
+                var collapsed = view.ExplorerState.SidebarCollapsed;
+                Assert.True(view.Search.Execute("ui.sidebar.toggle"));
+                Assert.NotEqual(collapsed, view.ExplorerState.SidebarCollapsed);
                 window.Close();
                 return true;
             }
