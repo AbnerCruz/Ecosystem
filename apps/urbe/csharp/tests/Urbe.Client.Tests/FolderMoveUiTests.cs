@@ -11,13 +11,13 @@ namespace Urbe.Client.Tests;
 
 /// <summary>
 /// UC-54: a whole folder moves (its "⋯" → Mover para, or held and dragged onto another folder) with every file under
-/// it and its neighbourhood, and a file that is not a note is dragged onto a folder like a note, through the real
+/// it, and a file that is not a note is dragged onto a folder like a note, through the real
 /// native UI against a real folder vault.
 /// </summary>
 public sealed partial class HeadlessUiTests
 {
     [Fact]
-    public async Task FolderMove_MovesTheSubtreeTheNeighbourhoodAndDraggedFiles() =>
+    public async Task FolderMove_MovesTheSubtreeAndDraggedFiles() =>
         Assert.True(await Session.Dispatch(FolderMoveScenario, CancellationToken.None));
 
     private static async Task<bool> FolderMoveScenario()
@@ -57,14 +57,8 @@ public sealed partial class HeadlessUiTests
             window.Show();
             await view.OpenVaultAsync();
             await Settle(window, view);
-            await UntilMapSaved(view);
-            var city = view.World.City!;
-            var area = city.RegionByPath("Área")!;
-            var antigas = city.RegionByPath("Área/Antigas")!;
-            var projetos = city.RegionByPath("Projetos")!;
-            var ideias = city.Buildings.Single(b => b.IsNote && b.Path == "Área/Ideias.md");
-            var (ix, iy) = (ideias.X, ideias.Y);
-            bool photoBuilding = city.AttachmentBuilding("Área/foto.png") is not null;
+            await UntilNotesSaved(view);
+            var ideias = view.Documents!.Get("Área/Ideias.md")!.Id;
 
             // the "⋯" of Área → Mover para: the list leaves Área and its sub-folders out; Projetos takes it
             view.ShowNotes();
@@ -89,17 +83,12 @@ public sealed partial class HeadlessUiTests
             Assert.Equal(new byte[] { 37, 80, 68, 70, 9 }, File.ReadAllBytes(Path.Combine(vault, "Projetos", "Área", "Antigas", "doc.pdf")));
             Assert.False(Directory.Exists(Path.Combine(vault, "Área")));
 
-            // the neighbourhood itself changed parent, with its sub-neighbourhood; the house kept its lot
-            Assert.Same(area, city.RegionByPath("Projetos/Área"));
-            Assert.Same(antigas, city.RegionByPath("Projetos/Área/Antigas"));
-            Assert.Equal(projetos.Id, area.ParentId);
-            Assert.Null(city.RegionByPath("Área"));
-            Assert.Equal("Projetos/Área/Ideias.md", ideias.Path);
-            Assert.Equal(area.Id, ideias.RegionId);
-            Assert.Equal((ix, iy), (ideias.X, ideias.Y));
-            Assert.Contains(city.Buildings, b => b.Path == "Projetos/Área/Antigas/Velha.md" && b.RegionId == antigas.Id);
-            if (photoBuilding) Assert.NotNull(city.AttachmentBuilding("Projetos/Área/foto.png"));
-            Assert.NotNull(view.Documents!.Get("Projetos/Área/Ideias.md"));
+            // the folders went with it, the notes kept their ids
+            Assert.Contains("Projetos/Área", view.Library!.Folders);
+            Assert.Contains("Projetos/Área/Antigas", view.Library.Folders);
+            Assert.DoesNotContain("Área", view.Library.Folders);
+            Assert.Equal(ideias, view.Documents.Get("Projetos/Área/Ideias.md")!.Id);
+            Assert.NotNull(view.Documents.Get("Projetos/Área/Antigas/Velha.md"));
             Assert.Null(view.Documents.Get("Área/Ideias.md"));
 
             // never into itself or below it, never onto a folder with that name
@@ -134,7 +123,8 @@ public sealed partial class HeadlessUiTests
             for (int i = 0; i < 100 && !File.Exists(Path.Combine(vault, "Projetos", "Outra", "Área", "z.md")); i++) await Settled();
             Assert.True(File.Exists(Path.Combine(vault, "Projetos", "Outra", "Área", "z.md")));
             Assert.False(Directory.Exists(Path.Combine(vault, "Outra")));
-            Assert.Equal(projetos.Id, city.RegionByPath("Projetos/Outra")!.ParentId);
+            Assert.Contains("Projetos/Outra/Área", view.Library.Folders);
+            Assert.DoesNotContain("Outra", view.Library.Folders);
 
             // a file that is not a note: held and let go shows its options; dragged onto a folder it moves there
             view.ShowNotes();
@@ -156,25 +146,18 @@ public sealed partial class HeadlessUiTests
             for (int i = 0; i < 100 && File.Exists(Path.Combine(vault, "livro.pdf")); i++) await Settled();
             Assert.Equal(new byte[] { 37, 80, 68, 70 }, File.ReadAllBytes(Path.Combine(vault, "Projetos", "livro.pdf")));
             Assert.False(File.Exists(Path.Combine(vault, "livro.pdf")));
-            await UntilMapSaved(view);
+            await UntilNotesSaved(view);
             window.Close();
 
-            // reopened, the map keeps the moved neighbourhoods where their folders are now
+            // reopened, the folders are where they were moved and the notes kept their ids
             var again = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
             var window2 = new Window { Width = 1280, Height = 760, Content = again };
             window2.Show();
             await again.OpenVaultAsync();
             await Settle(window2, again);
-            var reopened = again.World.City!;
-            // (region ids are the session's; the same neighbourhood is the same ground under its new parent)
-            var area2 = reopened.RegionByPath("Projetos/Área")!;
-            var antigas2 = reopened.RegionByPath("Projetos/Área/Antigas")!;
-            Assert.Equal((area.X, area.Y, area.W, area.H), (area2.X, area2.Y, area2.W, area2.H));
-            Assert.Equal((antigas.X, antigas.Y, antigas.W, antigas.H), (antigas2.X, antigas2.Y, antigas2.W, antigas2.H));
-            Assert.Equal(reopened.RegionByPath("Projetos")!.Id, area2.ParentId);
-            Assert.Null(reopened.RegionByPath("Área"));
-            Assert.Null(reopened.RegionByPath("Outra"));
-            Assert.Contains(reopened.Buildings, b => b.Path == "Projetos/Área/Ideias.md" && b.RegionId == area2.Id && (b.X, b.Y) == (ix, iy));
+            Assert.Equal(ideias, again.Documents!.Get("Projetos/Área/Ideias.md")!.Id);
+            Assert.Contains("Projetos/Área/Antigas", again.Library!.Folders);
+            Assert.DoesNotContain(again.Library.Folders, f => f == "Área" || f == "Outra");
             window2.Close();
             return true;
         }
@@ -210,9 +193,7 @@ public sealed partial class HeadlessUiTests
                 window.Show();
                 await view.OpenVaultAsync();
                 await Settle(window, view);
-                await UntilMapSaved(view);
-                var city = view.World.City!;
-                var pasta = city.RegionByPath("Pasta")!;
+                await UntilNotesSaved(view);
 
                 var task = view.MoveFolderAsync("Pasta", "Destino");
                 for (int i = 0; i < 200 && !view.Dialogs.IsOpen; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
@@ -227,13 +208,11 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal("# B\n", File.ReadAllText(Path.Combine(vault, "Destino", "Pasta", "B.md")));
                 Assert.False(File.Exists(Path.Combine(vault, "Pasta", "A.md")));
                 Assert.Equal(new byte[] { 1, 2, 3 }, File.ReadAllBytes(Path.Combine(vault, "Pasta", "ruim.png ")));
-                // the moved houses changed neighbourhood as moved notes do; the old one stays for what is left
-                var moved = city.RegionByPath("Destino/Pasta");
-                Assert.NotNull(moved);
-                Assert.Contains(city.Buildings, b => b.Path == "Destino/Pasta/A.md" && b.RegionId == moved!.Id);
-                Assert.Same(pasta, city.RegionByPath("Pasta"));
+                // what moved is in its new folder; the old folder stays for what is left
+                Assert.Contains("Destino/Pasta", view.Library!.Folders);
+                Assert.Contains("Pasta", view.Library.Folders);
                 Assert.NotNull(view.Documents!.Get("Destino/Pasta/B.md"));
-                await UntilMapSaved(view);
+                await UntilNotesSaved(view);
                 window.Close();
                 return true;
             }

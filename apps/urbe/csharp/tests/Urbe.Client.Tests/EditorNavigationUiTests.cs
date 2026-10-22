@@ -60,7 +60,7 @@ public sealed partial class HeadlessUiTests
             await follow;
             Assert.True(File.Exists(Path.Combine(vault, "Bairro", "Nova ideia.md")));
             Assert.Equal("Bairro/Nova ideia.md", editor.Current!.Path);
-            Assert.Contains(view.World.City!.Buildings, b => b.Path == "Bairro/Nova ideia.md");
+            Assert.NotNull(view.Documents!.Get("Bairro/Nova ideia.md"));
             Assert.Equal(1, editor.TrailDepth);
             await editor.BackAsync();
             Assert.Equal("Bairro/Casa.md", editor.Current!.Path);

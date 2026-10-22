@@ -53,7 +53,7 @@ public sealed partial class HeadlessUiTests
                 Snapshot(window, "native-plugin-clock.png");
                 now = now.AddMinutes(3);
                 clock.Update();
-                Assert.Equal("Temporizador: 5 min terminados.", view.LifeNoticeText);
+                Assert.Equal("Temporizador: 5 min terminados.", view.NoticeText);
                 Assert.Equal("5", view.Customization.Device.Get("urbe.plugin.relogio.minutos"));
 
                 // the safe mode turns it off, and everything it added goes
@@ -70,7 +70,7 @@ public sealed partial class HeadlessUiTests
                 var greedy = new GreedyPlugin();
                 view.AddPlugin(() => greedy);
                 view.SetNativePlugin("guloso", true);
-                Assert.Equal("olá", view.LifeNoticeText);
+                Assert.Equal("olá", view.NoticeText);
                 Assert.IsType<UnauthorizedAccessException>(greedy.Refused);
                 window.Close();
                 return true;

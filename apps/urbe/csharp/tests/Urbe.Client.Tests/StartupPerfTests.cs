@@ -62,7 +62,7 @@ public sealed partial class HeadlessUiTests
                 window.Show();
                 await first.OpenVaultAsync();
                 PerfLog($"PERF {count} first open: {sw.ElapsedMilliseconds} ms");
-                await first.FlushMapAsync();
+                await first.FlushPendingAsync();
                 first.OpenNoteByPath("Pasta 3/Sub 0/Nota 51.md");
                 Dispatcher.UIThread.RunJobs();
                 window.Close();
@@ -81,15 +81,8 @@ public sealed partial class HeadlessUiTests
                 PerfLog($"PERF {count} reopen: editor shown after {sw.ElapsedMilliseconds} ms (visible={again.Editor.IsVisible})");
                 await init;
                 PerfLog($"PERF {count} reopen: InitializeAsync done {sw.ElapsedMilliseconds} ms");
-                await again.WhenWorldReadyAsync();
-                PerfLog($"PERF {count} reopen: world ready {sw.ElapsedMilliseconds} ms");
                 again.Editor.IsVisible = false;
                 Dispatcher.UIThread.RunJobs();
-                var frame = Stopwatch.StartNew();
-                AvaloniaHeadlessPlatform.ForceRenderTimerTick();
-                Dispatcher.UIThread.RunJobs();
-                window2.CaptureRenderedFrame();
-                PerfLog($"PERF {count} first city frame {frame.ElapsedMilliseconds} ms");
                 var explorer = Stopwatch.StartNew();
                 again.ShowNotes();
                 Dispatcher.UIThread.RunJobs();
@@ -103,35 +96,26 @@ public sealed partial class HeadlessUiTests
     }
 }
 
-public sealed class CityOpenPerfTests
+public sealed class LibraryOpenPerfTests
 {
     [Theory]
     [InlineData(500)]
     [InlineData(1000)]
     [InlineData(2000)]
-    public void Perf_CityOpen(int count)
+    public void Perf_LibraryOpen(int count)
     {
         if (!HeadlessUiTests.PerfWanted(count)) return;
         var dir = Path.Combine(Path.GetTempPath(), "urbe-perfc-" + Guid.NewGuid().ToString("N"));
         var vault = HeadlessUiTests.GenerateVault(dir, count);
         var files = Directory.EnumerateFiles(vault, "*.md", SearchOption.AllDirectories).OrderBy(p => p, StringComparer.Ordinal)
-            .Select(p => (Path.GetRelativePath(vault, p).Replace('\\', '/'), File.ReadAllText(p))).ToList();
+            .Select(p => (Path.GetRelativePath(vault, p).Replace('\\', '/'), File.ReadAllText(p), "doc_" + Guid.NewGuid().ToString("N"))).ToList();
         Directory.Delete(dir, true);
-        var w = Urbe.Client.World.LegacyWorld.Shared("urbe");
-        Urbe.Core.LegacyCity NewCity()
-        {
-            int next = 0;
-            return new Urbe.Core.LegacyCity(new Urbe.Core.LegacyCityTerrain((x, y) => w.At(x, y).Biome), prefix => prefix + (++next).ToString("x"));
-        }
         var sw = Stopwatch.StartNew();
-        var city = NewCity();
-        var store = city.Open(files, null, null, 0);
-        HeadlessUiTests.PerfLog($"PERF city {count} first Open {sw.ElapsedMilliseconds} ms");
-        var map = new Urbe.Core.LegacyCityMap().Produce(city, store, 0, 0, 1, 0, Urbe.Core.LegacyCityMap.ReferenceVersion, out _)!;
-        var ids = store.List().ToDictionary(d => d.Path, d => d.Id);
+        var library = Urbe.Core.NoteLibrary.Open(files, null, null);
+        HeadlessUiTests.PerfLog($"PERF notes {count} first Open {sw.ElapsedMilliseconds} ms");
+        var record = library.Serialize();
         sw.Restart();
-        var again = NewCity();
-        again.Open(files, map, ids, 0);
-        HeadlessUiTests.PerfLog($"PERF city {count} reopen Open {sw.ElapsedMilliseconds} ms");
+        Urbe.Core.NoteLibrary.Open(files, record, null);
+        HeadlessUiTests.PerfLog($"PERF notes {count} reopen Open {sw.ElapsedMilliseconds} ms");
     }
 }

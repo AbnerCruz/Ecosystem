@@ -60,20 +60,6 @@ public sealed partial class MainView
         ShowLifeNotice("Limpeza feita e registrada no vault.", Ui.ToastKind.Success);
     }
 
-    /// <summary>layout-guard.js writeBackup: P.recordMaintenance({kind:'layout', reason, from, to, backup}); the backup is what matters, so a failure here is not one.</summary>
-    private async Task RecordLayoutAsync(string reason, string? from, string? to, string backup)
-    {
-        if (_vault is null) return;
-        try
-        {
-            await _vault.SaveMaintenanceAsync(new JsonObject
-            {
-                ["kind"] = "layout", ["reason"] = reason, ["from"] = from, ["to"] = to, ["backup"] = backup
-            });
-        }
-        catch (Exception ex) when (ex is IOException or InvalidOperationException or InvalidDataException or NotSupportedException or UnauthorizedAccessException) { }
-    }
-
     /// <summary>The version of this app, for the diagnosis.</summary>
     private static string AppVersion =>
         typeof(MainView).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0]
@@ -85,20 +71,24 @@ public sealed partial class MainView
     public async Task ShowDiagnosticsAsync()
     {
         var issues = new List<string>();
-        var city = World.City;
         if (_vault is null || !_vault.IsConnected) issues.Add("Persistência indisponível");
-        if (city is null) issues.Add("Aquário indisponível");
+        if (_notesSave?.State is "error" or "refused" && _notesSave.Problem is { Length: > 0 } problem) issues.Add("Registro das notas: " + problem);
         int documents = _store?.List().Count ?? 0;
-        if (documents > 0 && city is { Buildings.Count: 0 }) issues.Add("Documentos existem, mas nenhuma entidade foi projetada no aquário");
-        if (_mapSave?.State is "error" or "refused" && _mapSave.Problem is { Length: > 0 } problem) issues.Add("Mapa: " + problem);
-        var state = _mapSave?.State switch
+        int links = 0;
+        if (_store is not null)
+        {
+            using var index = new KnowledgeIndex(_store);
+            links = index.Stats().Links;
+        }
+        var state = _notesSave?.State switch
         {
             "saved" => "salvo", "saving" => "salvando", "dirty" => "aguardando", "error" => "erro", "refused" => "recusado", "idle" => "parado",
             null => null, var other => other
         };
         var message = (issues.Count == 0 ? "Nenhum problema encontrado." : "Problemas:\n- " + string.Join("\n- ", issues)) +
             "\n\nNotas e arquivos: " + documents +
-            (city is not null ? "\nConstruções na cidade: " + city.Buildings.Count + "\nLigações: " + city.Links.Count : "") +
+            "\nPastas: " + (_library?.Folders.Count ?? 0) +
+            "\nLigações: " + links +
             (state is not null ? "\nGravação: " + state + (_lastSavedAt is { } at ? " (" + at.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture) + ")" : "") : "") +
             "\nVersão: " + AppVersion;
         await Dialogs.AlertAsync(issues.Count == 0 ? "Tudo certo" : "Diagnóstico", message);

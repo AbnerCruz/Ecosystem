@@ -92,7 +92,7 @@ public static class UrbeTheme
     public static IBrush Brush(string hex, double opacity)
     {
         if (TokenKey.ContainsKey(hex)) return Live(hex, opacity);
-        // cached (opacity in 1/255 steps): brushes were made anew on every draw, many per frame in the city (UC-48)
+        // cached (opacity in 1/255 steps): brushes were made anew on every draw, many per frame (UC-48)
         var key = (hex, (int)Math.Round(Math.Clamp(opacity, 0, 1) * 255));
         if (!FixedBrushes.TryGetValue(key, out var brush))
         {

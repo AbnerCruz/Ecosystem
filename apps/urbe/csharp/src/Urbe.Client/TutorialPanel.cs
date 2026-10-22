@@ -9,7 +9,7 @@ namespace Urbe.Client;
 
 /// <summary>
 /// The Tutorial as a panel of its own (owner, DEC-0045, UC-40, UC-64): documentation, only to read — never the note
-/// editor, never a neighbourhood in the world. Index by section, search in titles and text, the article rendered as
+/// editor, never notes created in the vault by itself. Index by section, search in titles and text, the article rendered as
 /// the editor's Visual mode draws a note, Anterior/Próximo and [[links]] that move inside the tutorial. The text is the
 /// native app's (<see cref="AppDocs"/>); nothing is written to the vault.
 /// </summary>
@@ -87,7 +87,7 @@ public sealed class TutorialPanel : Border
 
     public event Action? Closed;
 
-    /// <summary>"Copiar o tutorial para a cidade": the articles as notes of the vault, only when asked.</summary>
+    /// <summary>"Copiar o tutorial para o vault": the articles as notes of the vault, only when asked.</summary>
     public event Action? CopyRequested;
 
     public void Open()
@@ -207,7 +207,7 @@ public sealed class TutorialPanel : Border
         {
             var copy = new Button
             {
-                Content = new TextBlock { Text = "Copiar o tutorial para a cidade, como notas", FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextWrapping = TextWrapping.Wrap },
+                Content = new TextBlock { Text = "Copiar o tutorial para o vault, como notas", FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextWrapping = TextWrapping.Wrap },
                 Margin = new Thickness(12, 24, 12, 0), Padding = new Thickness(12, 8), CornerRadius = new CornerRadius(12),
                 Background = Brushes.Transparent, BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1)
             };

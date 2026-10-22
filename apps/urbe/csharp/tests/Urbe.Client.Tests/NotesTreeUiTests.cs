@@ -12,8 +12,9 @@ public sealed partial class HeadlessUiTests
 {
     /// <summary>
     /// Folders first, then notes, by name; a tap opens and closes a folder (kept on the device); a selected folder is
-    /// where Nova creates ("Em “Bairro”."), and the new note gets a house, its empty file and the editor; the search lists
-    /// the notes with their folder; on a wide window Notas is a 360 px panel with Fechar beside the city.
+    /// where Nova creates ("Em “Bairro”."), and the new note gets its empty file and the editor; the search lists the
+    /// notes with their folder; on a wide window Notas fills the screen too, and "Mostrar nas notas" puts it over the
+    /// editor with Fechar.
     /// </summary>
     [Fact]
     public async Task Notes_IsTheExpandableTreeOfTheOriginal() =>
@@ -38,11 +39,11 @@ public sealed partial class HeadlessUiTests
             window.Show();
             await view.OpenVaultAsync();
             await Settle(window, view);
-            await UntilMapSaved(view);
+            await UntilNotesSaved(view);
             view.ShowNotes();
             Dispatcher.UIThread.RunJobs();
             var e = view.Explorer;
-            Assert.False(e.Wide);
+            Assert.False(e.Overlaid);
 
             // root: the folder first, then the notes by name (localeCompare: Árvore before Comece)
             Assert.Equal(new[] { "Bairro" }, e.VisibleFolderPaths);
@@ -89,22 +90,25 @@ public sealed partial class HeadlessUiTests
             Assert.Equal("", File.ReadAllText(Path.Combine(vault, "Bairro", "Ideias.md")));
             Assert.True(view.Editor.IsVisible);
             Assert.Equal("Bairro/Ideias.md", view.Editor.Current?.Path);
-            Assert.False(e.IsVisible);
-            var bairro = view.World.City!.RegionByPath("Bairro")!;
-            Assert.Contains(view.World.City.Buildings, b => b.Path == "Bairro/Ideias.md" && b.RegionId == bairro.Id);
-            view.Editor.IsVisible = false;
+            Assert.NotNull(view.Documents!.Get("Bairro/Ideias.md"));
 
-            // wide: a 360 px panel with Fechar, the city stays visible
+            // wide: the Explorer fills the window; over the editor it has Fechar, which goes back to the note
             window.Width = 1280;
             await Settled();
-            view.ShowNotes();
+            Assert.True(e.Bounds.Width > 1100);
+            var close = e.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == "Fechar");
+            Assert.False(close.IsVisible);
+            view.ShowNotesOverEditor();
             Dispatcher.UIThread.RunJobs();
-            Assert.True(e.Wide);
-            Assert.Equal(360, e.Width);
-            Assert.True(e.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == "Fechar").IsVisible);
-            Assert.True(view.World.CityVisible());
+            Assert.True(view.NotesOverEditor);
+            Assert.True(close.IsVisible);
             Snapshot(window, "native-notes-wide.png");
-            await UntilMapSaved(view);
+            close.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(view.NotesOverEditor);
+            Assert.True(view.Editor.IsVisible);
+            view.Editor.IsVisible = false;
+            await UntilNotesSaved(view);
             window.Close();
             return true;
         }

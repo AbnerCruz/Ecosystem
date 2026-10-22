@@ -31,6 +31,17 @@ public static class TouchTextScroll
         double velocity = 0;   // px per ms, positive = content moves up (offset grows)
         var clock = System.Diagnostics.Stopwatch.StartNew();
         DispatcherTimer? hold = null, fling = null;
+        // the last tap of a finger (anywhere in the scroll): a second one close by, soon after, selects the word
+        long lastTapMs = -10_000;
+        Point lastTapAt = default;
+        bool DoubleTap(Point p)
+        {
+            long now = clock.ElapsedMilliseconds;
+            bool twice = now - lastTapMs < DoubleTapMs && Math.Abs(p.X - lastTapAt.X) < DoubleTapSlop && Math.Abs(p.Y - lastTapAt.Y) < DoubleTapSlop;
+            lastTapMs = twice ? -10_000 : now;
+            lastTapAt = p;
+            return twice;
+        }
 
         void StopFling() => fling?.Stop();
 
@@ -57,6 +68,7 @@ public static class TouchTextScroll
                 hold!.Stop();
                 if (dragging || finger is null) return;
                 SelectWordAt(heldBox, heldAt);
+                Ui.PlatformHaptics.Hold();
                 finger = null;   // the hold ends the gesture: lifting the finger keeps the selection
             };
             hold.Start();
@@ -83,13 +95,21 @@ public static class TouchTextScroll
             if (e.Pointer.Type != PointerType.Touch) return;
             hold?.Stop();
             var tapped = box;
-            if (finger is null || e.Pointer != finger) { finger = null; return; }
+            if (finger is null || e.Pointer != finger)
+            {
+                // a tap outside a text box (a drawn block about to become one) still counts for a double tap
+                if (finger is null && box is null) DoubleTap(e.GetPosition(scroll));
+                finger = null;
+                return;
+            }
             finger = null;
             e.Pointer.Capture(null);
             e.Handled = true;
             if (!dragging)
             {
-                if (tapped is not null) PlaceCaret(tapped, e.GetPosition(tapped));
+                if (tapped is null) return;
+                if (DoubleTap(e.GetPosition(scroll))) { SelectWordAt(tapped, e.GetPosition(tapped)); Ui.PlatformHaptics.Tick(); }
+                else PlaceCaret(tapped, e.GetPosition(tapped));
                 return;
             }
             if (clock.ElapsedMilliseconds - lastMs > 80 || Math.Abs(velocity) < .05) return;
@@ -109,6 +129,9 @@ public static class TouchTextScroll
             velocity *= Friction;
         }
     }
+
+    private const int DoubleTapMs = 350;
+    private const double DoubleTapSlop = 32;
 
     private static double Clamp(ScrollViewer scroll, double y) =>
         Math.Clamp(y, 0, Math.Max(0, scroll.Extent.Height - scroll.Viewport.Height));
@@ -135,9 +158,7 @@ public static class TouchTextScroll
     {
         var text = box.Text ?? "";
         var i = Math.Min(IndexAt(box, inBox), text.Length);
-        int s = i, e = i;
-        while (s > 0 && char.IsLetterOrDigit(text[s - 1])) s--;
-        while (e < text.Length && char.IsLetterOrDigit(text[e])) e++;
+        var (s, e) = VisualSurface.WordAt(text, i);
         box.Focus(NavigationMethod.Pointer);
         box.SelectionStart = s;
         box.SelectionEnd = e;

@@ -36,40 +36,6 @@ public static class LegacyCustomizeTheme
         ("manuscrita", "Manuscrita", "\"Segoe Print\",\"Bradley Hand\",\"Comic Neue\",\"Comic Sans MS\",cursive"),
     ];
 
-    public static readonly (string Id, string Name)[] BiomeNameData =
-    [
-        ("grass", "Grama"),
-        ("meadow", "Prado"),
-        ("forest", "Floresta"),
-        ("dense", "Mata fechada"),
-        ("swamp", "Pântano"),
-        ("taiga", "Taiga"),
-        ("tundra", "Tundra"),
-        ("snow", "Neve"),
-        ("hills", "Colinas"),
-        ("mountain", "Montanha"),
-        ("peak", "Pico"),
-        ("desert", "Deserto"),
-        ("savanna", "Savana"),
-        ("steppe", "Estepe"),
-        ("beach", "Praia"),
-        ("sea", "Mar"),
-        ("deep", "Mar profundo"),
-        ("river", "Rio"),
-        ("lake", "Lago"),
-    ];
-
-    public static readonly (string Id, string Name)[] BuildingNameData =
-    [
-        ("house", "Casa (notas .md)"),
-        ("hall", "Salão (.html)"),
-        ("workshop", "Oficina (.js)"),
-        ("dyer", "Tinturaria (.css)"),
-        ("tower", "Torre (.json/.yaml)"),
-        ("market", "Mercado (.csv)"),
-        ("store", "Armazém (outros arquivos)"),
-    ];
-
     /// <summary>TOKEN: configuration colour name to the CSS variable it feeds.</summary>
     public static readonly (string Key, string Token)[] Tokens =
     [
@@ -105,8 +71,6 @@ public static class LegacyCustomizeTheme
         var v = LegacyCustomize.JsTrim(Regex.Replace(value ?? "", @"[;{}<>\\]", ""));
         return v.Length > 0 ? v : FontData[0].Css;
     }
-
-    public static string BiomeName(string id) => BiomeNameData.First(b => b.Id == id).Name;
 
     /// <summary>temaSalvo(nome): the parsed theme object of Personalização/temas, or null.</summary>
     public static SavedTheme? ParseSavedTheme(string path, string title, string content)

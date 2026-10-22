@@ -98,8 +98,9 @@ public sealed class VaultSnapshot
     public string? Mundo { get; }
 
     /// <summary>
-    /// The text of the map the 1.8.4 opens the city with (urbePersistence.meta): the metadata of a
-    /// recovered journal, else .urbe/mapa.json as read. Null when there is none. Never written here.
+    /// The text of the 1.8.4 map (urbePersistence.meta): the metadata of a recovered journal, else .urbe/mapa.json as
+    /// read. Null when there is none. Never written: the app only reads the notes' ids and dates of a vault that has no
+    /// .urbe/notas.json yet (NoteLibrary, ADD-0028).
     /// </summary>
     public string? MapJson { get; }
     public int HistoryCount { get; }

@@ -49,6 +49,8 @@ public static class LegacyCustomize
         ["forma"] = new JsonObject { ["cantos"] = "suaves", ["densidade"] = "normal", ["vidro"] = true },
         ["animacoes"] = "sistema",
         ["editor"] = new JsonObject { ["largura"] = "media", ["modoInicial"] = "visual", ["ortografia"] = true },
+        // the city's options (ADD-0028: the city left the app): still normalized, so the "cidade" section of a vault's
+        // tema.json is kept as it was when the file is written again; nothing in the app reads it
         ["cidade"] = new JsonObject
         {
             ["moradores"] = true, ["fauna"] = true, ["clima"] = true, ["eventos"] = true, ["nomes"] = true, ["bairros"] = true,

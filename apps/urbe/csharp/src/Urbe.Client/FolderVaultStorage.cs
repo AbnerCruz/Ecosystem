@@ -564,26 +564,8 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
     public Task SaveTutorialMarkAsync(string json, CancellationToken cancellationToken = default) =>
         SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanTutorialMarkWrite(files, json), "A marca do Tutorial", cancellationToken);
 
-    public Task SaveWorldAsync(string json, CancellationToken cancellationToken = default) =>
-        SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanWorldWrite(files, json), "O mundo", cancellationToken);
-
-    /// <summary>layout-guard.js writeBackup: the copy of the map, then its manifest, each a new file written and verified
-    /// with every other file of the vault unchanged. Returns the backup's folder.</summary>
-    public async Task<string> SaveLayoutBackupAsync(string mapJson, DateTimeOffset now, string reason = "reorganizar", CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(mapJson);
-        string? dir = null;
-        (string Path, byte[] Bytes) manifest = default;
-        await SaveUrbeFileAsync(files =>
-        {
-            var plan = IUrbeVaultStorage.PlanLayoutBackup(files, mapJson, now, reason);
-            dir = plan.Directory;
-            manifest = plan.Manifest;
-            return plan.Copy;
-        }, "A cópia de segurança do mapa", cancellationToken, createOnly: true);
-        await SaveUrbeFileAsync(_ => manifest, "O manifesto da cópia de segurança", cancellationToken, createOnly: true);
-        return dir!;
-    }
+    public Task SaveNotesRecordAsync(string json, CancellationToken cancellationToken = default) =>
+        SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanNotesRecordWrite(files, json), "O registro das notas", cancellationToken);
 
     /// <summary>One internal file of .urbe/ (the trash, the Tutorial's mark), planned on the files as they are now,
     /// written with verification of it and of every other file.</summary>
@@ -639,41 +621,6 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         }
         if (!File.ReadAllBytes(full).AsSpan().SequenceEqual(content))
             throw new IOException("O arquivo criado não passou na verificação: " + path);
-    }
-
-    public async Task SaveMapAsync(string json, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(json);
-        await _gate.WaitAsync(cancellationToken);
-        try
-        {
-            var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
-            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
-            EnsureUnchanged(baseline, files);
-            var (target, planned) = IUrbeVaultStorage.PlanMapWrite(files, json);
-            bool create = !baseline.ContainsKey(target);
-
-            await Task.Run(() =>
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                WriteVerified(root, target, planned, create);
-                var observed = Snapshot(ReadFiles(root, cancellationToken));
-                foreach (var pair in baseline)
-                {
-                    if (!observed.TryGetValue(pair.Key, out var actual) ||
-                        !actual.Bytes.Span.SequenceEqual(string.Equals(pair.Key, target, StringComparison.OrdinalIgnoreCase)
-                            ? planned : pair.Value.Bytes.Span))
-                        throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
-                }
-                if (create && (!observed.TryGetValue(target, out var made) || !made.Bytes.Span.SequenceEqual(planned)))
-                    throw new IOException("O mapa criado não passou na verificação: " + target);
-                if (observed.Count != baseline.Count + (create ? 1 : 0))
-                    throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
-                _baseline = observed;
-            }, cancellationToken);
-        }
-        finally { _gate.Release(); }
     }
 
     // ---------------------------------------------------------------- reading

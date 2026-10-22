@@ -28,8 +28,7 @@ public sealed partial class MainView
     private void CaptureEditorHistory()
     {
         if (Editor.Current is not { } note) return;
-        // while the city is built (UC-59) the note's id is already known from the vault
-        var id = _store?.Get(note.Path)?.Id ?? (WorldLoading ? _loadingIds?.GetValueOrDefault(note.Path) : null);
+        var id = _store?.Get(note.Path)?.Id;
         if (id is null) return;
         if (_historyNote != note.Path)
         {

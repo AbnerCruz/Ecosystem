@@ -34,7 +34,6 @@ public sealed class VaultWriteRequest
 {
     public required IEnumerable<VaultFile> Files { get; init; }
     public required IEnumerable<VaultWriteDocument> Documents { get; init; }
-    public string? MetadataJson { get; init; }
     public string? HistoryJson { get; init; }
     public string? TrashJson { get; init; }
     public string? CompositionsJson { get; init; }
@@ -141,9 +140,6 @@ public static class VaultWriter
 
         var desired = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
         var recovery = ReadRecoveryJournal(working);
-        var metadataJson = request.MetadataJson
-                           ?? RecoveryObjectJson(recovery, "metadata")
-                           ?? CurrentObjectJson(working, MapPath);
         var historyJson = request.HistoryJson
                           ?? RecoveryObjectJson(recovery, "history")
                           ?? CurrentLogicalSidecarJson(working, "history");
@@ -195,10 +191,7 @@ public static class VaultWriter
             desired[document.Path] = Encoding.UTF8.GetBytes(document.Content);
         }
 
-        if (!snapshot.IsMapReadOnly && metadataJson is not null)
-            // workspace.js desired(): JSON.stringify(metadata, null, 1), the 1.8.4 bytes of the map
-            desired[MapPath] = Encoding.UTF8.GetBytes(LegacyJson.Stringify(ParseObject(metadataJson, MapPath), 1));
-
+        // .urbe/mapa.json (the 1.8.4 city) is never planned: it stays on disk as it is (ADD-0028)
         WriteSidecarDesired(working, desired, future, "history", historyJson);
         WriteSidecarDesired(working, desired, future, "trash", trashJson);
         WriteSidecarDesired(working, desired, future, "compositions", compositionsJson);
@@ -259,7 +252,6 @@ public static class VaultWriter
             var journalBytes = BuildJournal(
                 documents,
                 now,
-                metadataJson,
                 historyJson,
                 trashJson,
                 compositionsJson);
@@ -595,7 +587,6 @@ public static class VaultWriter
     private static byte[] BuildJournal(
         IReadOnlyList<VaultWriteDocument> documents,
         DateTimeOffset now,
-        string? metadataJson,
         string? historyJson,
         string? trashJson,
         string? compositionsJson)
@@ -618,8 +609,6 @@ public static class VaultWriter
             ["documents"] = array
         };
 
-        if (metadataJson is not null)
-            root["metadata"] = JsonNode.Parse(metadataJson);
         if (trashJson is not null)
             root["trash"] = JsonNode.Parse(trashJson);
         if (historyJson is not null)

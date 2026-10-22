@@ -62,31 +62,6 @@ public sealed partial class Customization
         Applied?.Invoke();
     }
 
-    /// <summary>How the neighbourhoods are drawn (.urbe/mundo.json, DEC-0045, UC-41).</summary>
-    public WorldPrefs World { get; private set; } = WorldPrefs.Default;
-
-    /// <summary>Writes .urbe/mundo.json; null without a writable vault (or when the file is of a newer version).</summary>
-    public Func<string, Task>? WorldWriter { get; set; }
-
-    /// <summary>The world preferences read with the vault; a newer file is used as the defaults and never written over.</summary>
-    public void LoadWorld(string? text)
-    {
-        World = WorldPrefs.Parse(text, out var newer);
-        WorldNewer = newer;
-    }
-
-    /// <summary>True when .urbe/mundo.json is of a newer version of the app: it is left as it is.</summary>
-    public bool WorldNewer { get; private set; }
-
-    /// <summary>Changes the world preferences: written to .urbe/mundo.json (when it can be) and applied.</summary>
-    public async Task SetWorldAsync(WorldPrefs prefs)
-    {
-        if (prefs == World) return;
-        if (WorldWriter is { } write && !WorldNewer) await write(prefs.Text());
-        World = prefs;
-        Applied?.Invoke();
-    }
-
     public LegacyCustomize.Result Normalize(string text) => LegacyCustomize.Normalize(text, _savedTheme);
 
     /// <summary>normalize(config) of an object (the Assistente's set_appearance).</summary>
@@ -168,7 +143,6 @@ public sealed partial class Customization
     private void Apply(JsonObject config)
     {
         Config = config;
-        UpdateGround();
         Applied?.Invoke();
     }
 
@@ -178,8 +152,4 @@ public sealed partial class Customization
         catch (System.Text.Json.JsonException) { return false; }
     }
 
-    // ---------------------------------------------------------------- reading the configuration
-
-    public bool City(string key) => Config["cidade"] is JsonObject c && c[key] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
-    public string Ambient => Config["cidade"] is JsonObject c && c["ambiente"] is JsonValue v && v.TryGetValue<string>(out var s) ? s : "ciclo";
 }

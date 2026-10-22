@@ -20,21 +20,21 @@ public sealed partial class HeadlessUiTests
                 var path = QuickNotes.PathFor(DateTime.Now);
                 var file = Path.Combine(vault, path.Replace('/', Path.DirectorySeparatorChar));
 
-                // from the city's "Criar" menu: the note and its folder are made in the vault and in the city
-                await PickFromCreateMenu(view, "Nota rápida", () => Task.CompletedTask);
+                // from the Explorer's "Nova" menu: the note and its folder are made in the vault
+                await PickFromNewMenu(view, "Nota rápida", () => Task.CompletedTask);
                 Assert.True(File.Exists(file));
                 var first = File.ReadAllText(file);
                 Assert.StartsWith(QuickNotes.Header(DateTime.Now) + "\n\n- ", first);
                 Assert.EndsWith(" — comprar pão\n", first);
-                Assert.Contains(view.World.City!.Buildings, b => b.IsNote && b.Path == path);
-                Assert.NotNull(view.World.City.RegionByPath(QuickNotes.Folder));
+                Assert.NotNull(view.Documents!.Get(path));
+                Assert.Contains(QuickNotes.Folder, view.Library!.Folders);
 
                 // the next one is appended to the same day's note
                 await view.QuickVoiceNoteAsync();
                 var second = File.ReadAllText(file);
                 Assert.StartsWith(first, second);
                 Assert.EndsWith(" — ligar para a Ana\n", second);
-                Assert.Single(view.World.City.Buildings, b => b.IsNote && b.Path == path);
+                Assert.Single(view.Documents.List(), d => d.Path == path);
 
                 // cancelled (null): nothing changes
                 await view.QuickVoiceNoteAsync();
@@ -54,7 +54,7 @@ public sealed partial class HeadlessUiTests
             window.Show();
             await view.LoadAsync(TutorialNotes.Load());
             await Settle(window, view);
-            int houses = view.World.City!.Buildings.Count;
+            int notes = view.Documents!.List().Count;
             view.Voice = () => Task.FromResult<string?>("ideia para o projeto");
             await RunWithDialog(view.QuickVoiceNoteAsync(), () =>
             {
@@ -62,7 +62,7 @@ public sealed partial class HeadlessUiTests
                 ClickButtonWithText(view.Dialogs, "Fechar");
                 return Task.CompletedTask;
             });
-            Assert.Equal(houses, view.World.City.Buildings.Count);
+            Assert.Equal(notes, view.Documents.List().Count);
             window.Close();
             return true;
         }, CancellationToken.None));

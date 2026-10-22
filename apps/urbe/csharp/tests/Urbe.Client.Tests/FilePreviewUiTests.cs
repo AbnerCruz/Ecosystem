@@ -17,9 +17,15 @@ public sealed partial class HeadlessUiTests
             var (view, window, vault, dir) = await OpenCreateVault();
             try
             {
-                var art = LegacyWorldBuildings.CreateBuilding("tower", "temperate", 0, true);
+                // a 48×56 picture (any PNG of the vault)
+                var rgba = new byte[48 * 56 * 4];
+                for (int i = 0; i < rgba.Length; i += 4) (rgba[i], rgba[i + 1], rgba[i + 2], rgba[i + 3]) = ((byte)(i % 251), 90, 160, 255);
                 Directory.CreateDirectory(Path.Combine(vault, "Anexos"));
-                File.WriteAllBytes(Path.Combine(vault, "Anexos", "torre.png"), LegacyWorldSprites.EncodePng(art, LegacyWorldBuildings.Width, LegacyWorldBuildings.Height));
+                using (var png = new MemoryStream())
+                {
+                    Pixels.ToBitmap(rgba, 48, 56).Save(png, new Avalonia.Media.Imaging.PngBitmapEncoderOptions());
+                    File.WriteAllBytes(Path.Combine(vault, "Anexos", "torre.png"), png.ToArray());
+                }
                 File.WriteAllText(Path.Combine(vault, "registro.log"), "linha 1\nlinha 2\n");
                 using (var zip = ZipFile.Open(Path.Combine(vault, "pacote.zip"), ZipArchiveMode.Create))
                 {

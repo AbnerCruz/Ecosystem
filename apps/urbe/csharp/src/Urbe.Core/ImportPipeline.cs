@@ -123,7 +123,7 @@ public static class ImportPipeline
             catch (JsonException e) { throw new InvalidDataException("Documento estruturado inválido: " + candidate.Path, e); }
         }
         var hasMetadata = files.Keys.Any(p => p.StartsWith(".urbe/", StringComparison.OrdinalIgnoreCase));
-        if (hasMetadata && !backup && !files.ContainsKey(".urbe/vault.json") && !files.ContainsKey(".urbe/mapa.json"))
+        if (hasMetadata && !backup && !files.ContainsKey(".urbe/vault.json") && !files.ContainsKey(".urbe/mapa.json") && !files.ContainsKey(NoteLibrary.Path))
             throw new InvalidDataException("Os metadados selecionados não identificam um vault completo. Selecione a pasta inteira ou seu backup.");
         var kind = backup ? ImportKind.Backup : hasMetadata ? snapshot.FormatState == VaultFormatState.Absent || snapshot.VaultFormatVersion < 2 ? ImportKind.HistoricalVault : ImportKind.CurrentVault
             : manifest is not null ? ImportKind.Export : ImportKind.Documents;

@@ -1,18 +1,22 @@
 using Avalonia;
+using Avalonia.Animation;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Urbe.Client.Ui;
 using Urbe.Core;
+using C = Urbe.Client.UrbeTokens.Color;
 
 namespace Urbe.Client;
 
 public enum EditorMode { Visual, Fonte }
 
 /// <summary>
-/// The 1.8.4 full editor (#editorFull) over the city: top bar with back, file name and Visual/Fonte, the Markdown
+/// The 1.8.4 full editor (#editorFull) over the Explorer: top bar with back, file name and Visual/Fonte, the Markdown
 /// toolbar of the Fonte mode (LegacyEditorTools, checked against the original by tools/editor-oracle.mjs), the code tools
 /// of non-Markdown files, wikilink suggestions after "[[", the centred text column, the status line
 /// ("MD · n linhas · m palavras") and autosave through the vault host. Visual mode is <see cref="VisualSurface"/>.
@@ -23,7 +27,12 @@ public sealed class EditorOverlay : Grid
 {
     private readonly TextBlock _title = new();
     private readonly TextBlock _status = new();
-    private readonly TextBlock _saveState = new();
+    private readonly Border _saveDot = new();
+    private readonly UrbeToast _toast = new(top: 64);
+    private Border _header = null!;
+    private Border _footer = null!;
+    private Button _titleButton = null!;
+    private Border _done = null!;
     private readonly VisualSurface _visual = new();
     private readonly WikiSuggestList _wiki = new();
     private readonly ScrollViewer _visualScroll;
@@ -33,7 +42,7 @@ public sealed class EditorOverlay : Grid
     private readonly TextBlock _propertiesText = new();
 
     /// <summary>propertiesFor(b) of the open note, as renderProps writes it ("---\ntítulo: …\n---"), or null when the
-    /// file has no house; the host supplies it.</summary>
+    /// file is not a note of the vault; the host supplies it.</summary>
     public Func<string, string?>? PropertiesFor { get; set; }
     private readonly Border _toolbarHost = new();
     private readonly StackPanel _markdownTools = new() { Orientation = Orientation.Horizontal, Spacing = 2, Margin = new Thickness(8, 0) };
@@ -104,19 +113,24 @@ public sealed class EditorOverlay : Grid
         Pinned.Pin(text, _note.Path);
     }
 
-    /// <summary>Personalização → Editor and Texto: the text column width, the Fonte font size and the line height factor (--ui-editor-width, --ui-code-size, --ui-editor-line).</summary>
-    public void ApplyAppearance(double columnWidth, double codeSize, double lineHeight)
+    /// <summary>
+    /// Personalização → Editor and Texto: the text column width, the Fonte font size, the line height factor and the size
+    /// of the notes in Visual (--ui-editor-width, --ui-code-size, --ui-editor-line, --ui-editor-size: "Tamanho do texto").
+    /// </summary>
+    public void ApplyAppearance(double columnWidth, double codeSize, double lineHeight, double? textSize = null)
     {
         Editor.MaxWidth = columnWidth;
         Editor.FontSize = codeSize;
         Editor.LineHeight = codeSize * lineHeight;
+        _visual.ApplyText(textSize ?? _visual.TextSize, lineHeight);
+        FitReadingColumn();
     }
 
     public EditorOverlay()
     {
         Background = UrbeTheme.Brush(UrbeTheme.Bg);
         // top bar, find, toolbar (wide), text, footer, toolbar (narrow: on the last row, right above the soft keyboard)
-        RowDefinitions = new RowDefinitions("56,Auto,Auto,*,48,Auto");
+        RowDefinitions = new RowDefinitions("Auto,Auto,Auto,*,Auto,Auto");
         Editor = new TextBox
         {
             AcceptsReturn = true,
@@ -125,11 +139,13 @@ public sealed class EditorOverlay : Grid
             FontFamily = UrbeTheme.MonoFont,
             FontSize = 15,
             LineHeight = 15 * 1.7,
-            Foreground = UrbeTheme.Brush(UrbeTheme.Text),
+            Foreground = UrbeTheme.Brush(UrbeTheme.Text, MarkdownReader.BodyInk),
+            FontWeight = FontWeight.Normal,
             Background = Brushes.Transparent,
             BorderThickness = new Thickness(0),
             CaretBrush = UrbeTheme.Brush(UrbeTheme.Accent),
             SelectionBrush = UrbeTheme.Brush(UrbeTheme.Accent, .35),
+            SelectionForegroundBrush = UrbeTheme.Brush(UrbeTheme.Text),
             Padding = new Thickness(0),
             HorizontalAlignment = HorizontalAlignment.Stretch,
             VerticalAlignment = VerticalAlignment.Stretch,
@@ -140,10 +156,11 @@ public sealed class EditorOverlay : Grid
             Editor.Resources[key] = Brushes.Transparent;
         foreach (var key in new[] { "TextControlBorderBrush", "TextControlBorderBrushPointerOver", "TextControlBorderBrushFocused" })
             Editor.Resources[key] = Brushes.Transparent;
-        Editor.TextChanged += (_, _) => OnTextChanged();
+        AutomationProperties.SetName(Editor, "Texto da nota");
+        Editor.TextChanged += (_, _) => { OnTextChanged(); KeepSourceCaretSoon(typing: true); };
         Editor.PropertyChanged += (_, e) =>
         {
-            if (e.Property == TextBox.CaretIndexProperty) UpdateWiki();
+            if (e.Property == TextBox.CaretIndexProperty) { UpdateWiki(); KeepSourceCaretSoon(typing: false); }
             if (e.Property == TextBox.CaretIndexProperty || e.Property == TextBox.SelectionStartProperty || e.Property == TextBox.SelectionEndProperty)
                 UpdateActiveTools();
         };
@@ -167,12 +184,13 @@ public sealed class EditorOverlay : Grid
         _visual.WikiLinkTapped += name => _ = FollowLinkAsync(name);
         _visual.PinRequested += text => { if (_note is not null) Pinned.Pin(text, _note.Path); };
         _visual.ActiveToolsChanged += on => { if (Mode == EditorMode.Visual) ShowActiveTools(on); };
+        _visual.EditingChanged += _ => UpdateChrome();
         _visual.WikiCandidates = Candidates;
         _visual.AskUrl = AskUrlAsync;
         _visual.AskBox = AskBoxAsync;
         _visual.AskComment = comments => Dialogs?.CommentsAsync("Comentários", comments) ?? Task.FromResult<string?>(null);
 
-        AddRow(TopBar(), 0);
+        AddRow(_header = TopBar(), 0);
         // find-ui.js: the bar is prepended to #editorMain, above #mdToolbar
         FindBar = new EditorFindBar(() => Editor, () => SetMode(EditorMode.Fonte));
         AddRow(FindBar, 1);
@@ -198,6 +216,12 @@ public sealed class EditorOverlay : Grid
         _sourceColumn = new StackPanel { Children = { _properties, Editor, _wiki }, HorizontalAlignment = HorizontalAlignment.Stretch };
         _sourceScroll = Column(_sourceColumn);
         _visualScroll = Column(_visual);
+        // the header gives the text room while scrolling down and comes back on the way up; the caret stays in sight
+        // when the visible area changes (the keyboard opens)
+        _visualScroll.ScrollChanged += (_, e) => OnScrolled(_visualScroll, e);
+        _sourceScroll.ScrollChanged += (_, e) => OnScrolled(_sourceScroll, e);
+        _visualScroll.SizeChanged += (_, e) => { if (e.HeightChanged) _visual.KeepCaretSoon(typing: true); };
+        _sourceScroll.SizeChanged += (_, e) => { if (e.HeightChanged) KeepSourceCaretSoon(typing: true); };
         // #mathDock: the formula bar of Fonte, over the bottom of the text
         MathBar = new MathDock(Editor, () => Mode == EditorMode.Fonte && IsVisible);
         var text = new Grid { Children = { _sourceScroll, _visualScroll, MathBar, Context } };
@@ -218,7 +242,10 @@ public sealed class EditorOverlay : Grid
         bodyHost.Children.Add(body);
         bodyHost.SizeChanged += (_, e) => Pinned.MaxHeight = Math.Max(120, e.NewSize.Height * .4);
         AddRow(bodyHost, 3);
-        AddRow(Footer(), 4);
+        AddRow(_footer = Footer(), 4);
+        // saving errors and short notices: a discreet toast over the text, never a dialog (UX.md P3)
+        SetRowSpan(_toast, 6);
+        Children.Add(_toast);
         _autosave.Tick += async (_, _) => await AutosaveTickAsync();
         ApplyOptions(null, null);
         ShowMode(EditorMode.Visual);
@@ -227,7 +254,7 @@ public sealed class EditorOverlay : Grid
     public TextBox Editor { get; }
     public event EventHandler? Closed;
 
-    /// <summary>A note was opened in the editor (by any way: city, Notas, a link, a tab).</summary>
+    /// <summary>A note was opened in the editor (by any way: Notas, a search, a link, a tab).</summary>
     public event Action<string>? Shown;
 
     /// <summary>The formula pane (math/editor.js openPane) the host shows: the LaTeX, whether it is a display formula and
@@ -286,7 +313,7 @@ public sealed class EditorOverlay : Grid
 
     // ------------------------------------------------------------------ open / close
 
-    /// <summary>Opens a note fresh (from the city, Notas, a search…): the trail of followed links starts over.</summary>
+    /// <summary>Opens a note fresh (from Notas, a search…): the trail of followed links starts over.</summary>
     public void Open(CityNote note)
     {
         _trail.Clear();
@@ -309,8 +336,9 @@ public sealed class EditorOverlay : Grid
     /// <summary>Follows a link or a backlink to <paramref name="target"/>: saves the open note, remembers it and opens the target.</summary>
     public async Task NavigateAsync(CityNote target)
     {
-        if (!await LeaveCurrentAsync()) return;
+        var saving = LeaveCurrentAsync();
         Go(target);
+        await saving;
     }
 
     /// <summary>Notes Voltar went back from, for Avançar (editor.forward); following a new link clears it.</summary>
@@ -322,15 +350,16 @@ public sealed class EditorOverlay : Grid
     /// <summary>editor.forward: the note Voltar left, if it still exists.</summary>
     public async Task ForwardAsync()
     {
-        if (!await LeaveCurrentAsync()) return;
+        var saving = LeaveCurrentAsync();
         var notes = Notes?.Invoke().ToList() ?? [];
         while (_forward.TryPop(out var path))
         {
             if (notes.FirstOrDefault(n => n.Path == path) is not { } next) continue;
             if (_note is { } current) _trail.Push(current.Path);
             Show(next);
-            return;
+            break;
         }
+        await saving;
     }
 
     /// <summary>editor.undo / editor.redo: of the text being edited (Fonte, or the block in Visual).</summary>
@@ -347,7 +376,7 @@ public sealed class EditorOverlay : Grid
     /// <summary>Voltar: the previous note of the trail, or closes back to where the editor was opened from.</summary>
     public async Task BackAsync()
     {
-        if (!await LeaveCurrentAsync()) return;
+        var saving = LeaveCurrentAsync();
         var notes = Notes?.Invoke().ToList() ?? [];
         while (_trail.TryPop(out var path))
         {
@@ -355,27 +384,70 @@ public sealed class EditorOverlay : Grid
             {
                 if (_note is { } current) _forward.Push(current.Path);
                 Show(previous);
+                await saving;
                 return;
             }
         }
+        // the Explorer is back at once; the note finishes saving behind it
         IsVisible = false;
         Closed?.Invoke(this, EventArgs.Empty);
+        await saving;
     }
 
-    private async Task<bool> LeaveCurrentAsync()
+    /// <summary>
+    /// Leaving the open note never waits on the screen (UX.md P2): the edit is saved — through the same verified path —
+    /// while the next note or the Explorer is already showing. The task ends when the save does (the host and tests can
+    /// wait for it). A save that fails keeps the text: the note shows it again, still to be saved, and a toast offers to
+    /// try again.
+    /// </summary>
+    private Task LeaveCurrentAsync()
     {
         _visual.FinishEdit();
         _autosave.Stop();
-        return !(SaveOnClose && HasChanges && !await SaveAsync());
+        if (!SaveOnClose || !HasChanges || Current is not { } note) return Task.CompletedTask;
+        return SaveLeftAsync(note, _savedContent);
     }
+
+    private async Task SaveLeftAsync(CityNote note, string previous)
+    {
+        if (await SaveSnapshotAsync(note)) return;
+        // the text that did not reach the vault, and what the vault has, for the next open of this note
+        if (!_failed.ContainsKey(note.Path)) _failed[note.Path] = (note, previous);
+        else _failed[note.Path] = (note, _failed[note.Path].Previous);
+    }
+
+    /// <summary>Notes whose last save failed after the editor left them: their text and the text the vault still has.</summary>
+    private readonly Dictionary<string, (CityNote Note, string Previous)> _failed = new(StringComparer.Ordinal);
+
+    /// <summary>Notes whose text is not in the vault yet (a save failed after leaving them).</summary>
+    public IReadOnlyCollection<string> UnsavedNotes => _failed.Keys;
+
+    /// <summary>"Tentar de novo": saves again the notes whose save failed (the open one included).</summary>
+    public async Task RetrySavesAsync()
+    {
+        foreach (var (path, (note, _)) in _failed.ToList())
+        {
+            if (path == _note?.Path) continue;
+            if (await SaveSnapshotAsync(note)) _failed.Remove(path);
+        }
+        if (_note is not null && HasChanges) await SaveAsync();
+    }
+
+    /// <summary>A save failed while the editor was closed: the host shows it (message), with "Tentar de novo".</summary>
+    public event Action<string>? SaveFailed;
 
     private void Show(CityNote note)
     {
         _opening = true;
         _edited = false;
         _autosave.Stop();
+        _saveError = null;
+        // a note whose save failed comes back with the text that was not saved, still pending
+        var pendingFrom = (string?)null;
+        if (_failed.Remove(note.Path, out var failed)) { note = note with { Content = failed.Note.Content }; pendingFrom = failed.Previous; }
         _note = note;
-        _savedContent = note.Content;
+        _savedContent = pendingFrom ?? note.Content;
+        ShowHeader(animate: false);
         _title.Text = System.IO.Path.GetFileName(note.Path);
         TouchTab(note.Path);
         Shown?.Invoke(note.Path);
@@ -389,9 +461,21 @@ public sealed class EditorOverlay : Grid
         UpdateStatus(changed: false);
         RefreshProperties();
         IsVisible = true;
+        if (pendingFrom is not null) ScheduleAutosave();
         // Focus after the overlay is laid out; on Android this brings up the soft keyboard (Fonte; Visual edits on tap).
-        if (Mode == EditorMode.Fonte) Dispatcher.UIThread.Post(() => Editor.Focus(), DispatcherPriority.Loaded);
+        if (Mode == EditorMode.Fonte) Dispatcher.UIThread.Post(FocusSource, DispatcherPriority.Loaded);
     }
+
+    /// <summary>The Fonte text gets the focus and the phone's keyboard comes up (a focus set by the app does not always bring it).</summary>
+    private void FocusSource()
+    {
+        if (!IsVisible || Mode != EditorMode.Fonte) return;
+        Editor.Focus();
+        PlatformInput.ShowKeyboard?.Invoke();
+    }
+
+    /// <summary>The title was tapped: the host renames the note (renomearNota).</summary>
+    public event Action? RenameRequested;
 
     /// <summary>The "Mais ações" button (v23 overflow): the host shows the note's menu.</summary>
     public event Func<EditorOverlay, Task>? MoreRequested;
@@ -495,9 +579,10 @@ public sealed class EditorOverlay : Grid
     {
         if (path == _note?.Path) return;
         if (Notes?.Invoke().FirstOrDefault(n => n.Path == path) is not { } note) { _tabs.Remove(path); RenderTabs(); return; }
-        if (!await LeaveCurrentAsync()) return;
+        var saving = LeaveCurrentAsync();
         _trail.Clear();
         Show(note);
+        await saving;
     }
 
     /// <summary>× of a tab: it closes; if it was the open note, the last tab opens, or the editor closes when none is left.</summary>
@@ -509,18 +594,19 @@ public sealed class EditorOverlay : Grid
             RenderTabs();
             return;
         }
-        if (!await LeaveCurrentAsync()) return;
+        var saving = LeaveCurrentAsync();
         _tabs.Remove(path);
         var notes = Notes?.Invoke().ToList() ?? [];
         while (_tabs.Count > 0)
         {
             var next = _tabs[^1];
-            if (notes.FirstOrDefault(n => n.Path == next) is { } note) { _trail.Clear(); Show(note); return; }
+            if (notes.FirstOrDefault(n => n.Path == next) is { } note) { _trail.Clear(); Show(note); await saving; return; }
             _tabs.RemoveAt(_tabs.Count - 1);
         }
         RenderTabs();
         IsVisible = false;
         Closed?.Invoke(this, EventArgs.Empty);
+        await saving;
     }
 
     /// <summary>Text currently in the editor, as a note.</summary>
@@ -531,9 +617,21 @@ public sealed class EditorOverlay : Grid
     {
         var max = width switch { "estreita" => 600.0, "larga" => 920.0, "total" => double.PositiveInfinity, _ => 720.0 };
         _sourceColumn.MaxWidth = max;
-        _visual.MaxWidth = max;
+        _columnWidth = width ?? "media";
+        _columnMax = max;
+        FitReadingColumn();
         StartInVisual = initialMode != "texto";
     }
+
+    private string _columnWidth = "media";
+    private double _columnMax = 720;
+
+    /// <summary>
+    /// The reading column of Visual: on a large screen the default ("Média") keeps lines at about 70 characters, centred,
+    /// like a book page; the other widths are the person's choice and are kept.
+    /// </summary>
+    private void FitReadingColumn() =>
+        _visual.MaxWidth = _columnWidth == "media" ? Math.Min(_columnMax, Math.Round(_visual.TextSize * 38)) : _columnMax;
 
     private static bool CanVisual(string path) => Kind(path) is "md" or "markdown";
     private static string Kind(string path) => System.IO.Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
@@ -542,7 +640,7 @@ public sealed class EditorOverlay : Grid
     private bool _hasProperties;
 
     /// <summary>renderProps(b) on loadFile; the box is a div, so its line breaks collapse into spaces. Asked again once
-    /// the city exists (UC-59: the note may open before its house is built).</summary>
+    /// the vault's notes are known (a note restored at the opening).</summary>
     public void RefreshProperties()
     {
         var props = _note is null ? null : PropertiesFor?.Invoke(_note.Path);
@@ -575,7 +673,85 @@ public sealed class EditorOverlay : Grid
             Style(_sourceButton, !visual);
         }
         UpdateChrome();
-        if (!visual && IsVisible) Dispatcher.UIThread.Post(() => Editor.Focus(), DispatcherPriority.Loaded);
+        if (!visual && IsVisible) Dispatcher.UIThread.Post(FocusSource, DispatcherPriority.Loaded);
+        // the text switching modes fades in briefly (≤ 150 ms): it is the same note, seen another way
+        if (IsVisible && !UrbeTokens.Motion.Reduced) UrbeMotion.Enter(visual ? _visualScroll : _sourceScroll, 0, 0, UrbeTokens.Motion.Fast);
+    }
+
+    // ------------------------------------------------------------------ the header that gives way while scrolling
+
+    /// <summary>The header's height (56 dp, the 1.8.4 #editorTop).</summary>
+    public const double HeaderHeight = 56;
+
+    /// <summary>The header is folded away (the reader scrolled down).</summary>
+    public bool HeaderHidden { get; private set; }
+
+    private double _scrollRun;
+    private long _headerMovedAt;
+    private bool _pointerOnText;
+    private long _userScrollAt = -10_000;
+
+    /// <summary>A scroll caused by the reader: a finger or the mouse on the text, the glide after it, or the wheel.</summary>
+    private bool UserScrolling => _pointerOnText || Environment.TickCount64 - _userScrollAt < 1500;
+
+    // only the reader's own scrolling folds the header: the editor's moves (caret, a block kept in place) do not
+    private void OnScrolled(ScrollViewer scroll, ScrollChangedEventArgs e)
+    {
+        var dy = e.OffsetDelta.Y;
+        if (dy == 0 || !UserScrolling || EditorScrolling.MovedByEditor(scroll) || Environment.TickCount64 - _headerMovedAt < 320) return;
+        if (Math.Sign(dy) != Math.Sign(_scrollRun)) _scrollRun = 0;
+        _scrollRun += dy;
+        var y = scroll.Offset.Y;
+        var room = scroll.Extent.Height - scroll.Viewport.Height;
+        if (_scrollRun > 24 && !HeaderHidden && y > HeaderHeight && room - y > HeaderHeight && room > HeaderHeight * 3) HideHeader();
+        else if ((_scrollRun < -24 || y <= 0) && HeaderHidden) ShowHeader(animate: true);
+    }
+
+    private void HideHeader()
+    {
+        HeaderHidden = true;
+        _headerMovedAt = Environment.TickCount64;
+        _scrollRun = 0;
+        MoveHeader(0, animate: true);
+    }
+
+    private void ShowHeader(bool animate)
+    {
+        if (_header is null) return;
+        if (HeaderHidden) _headerMovedAt = Environment.TickCount64;
+        HeaderHidden = false;
+        _scrollRun = 0;
+        MoveHeader(HeaderHeight, animate);
+    }
+
+    private void MoveHeader(double height, bool animate)
+    {
+        _header.Transitions = animate && !UrbeTokens.Motion.Reduced
+            ? [new DoubleTransition { Property = HeightProperty, Duration = UrbeTokens.Motion.Fast, Easing = UrbeTokens.Motion.Standard },
+               new DoubleTransition { Property = OpacityProperty, Duration = UrbeTokens.Motion.Fast, Easing = UrbeTokens.Motion.Standard }]
+            : null;
+        _header.Height = height;
+        _header.Opacity = height > 0 ? 1 : 0;
+        _header.IsHitTestVisible = height > 0;
+    }
+
+    // ------------------------------------------------------------------ the caret in sight (Fonte)
+
+    private bool _sourceKeepPending, _sourceKeepTyping;
+
+    private void KeepSourceCaretSoon(bool typing)
+    {
+        if (Mode != EditorMode.Fonte || _opening) return;
+        _sourceKeepTyping |= typing;
+        if (_sourceKeepPending) return;
+        _sourceKeepPending = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            _sourceKeepPending = false;
+            var t = _sourceKeepTyping;
+            _sourceKeepTyping = false;
+            if (Mode == EditorMode.Fonte && IsVisible && Editor.IsFocused) EditorScrolling.KeepCaret(Editor, _sourceScroll, t);
+        }, DispatcherPriority.Loaded);
     }
 
     // ------------------------------------------------------------------ layout
@@ -588,13 +764,20 @@ public sealed class EditorOverlay : Grid
     /// <summary>Whether the formatting bar is on the bottom row, next to the soft keyboard.</summary>
     public bool ToolbarAtBottom => GetRow(_toolbarHost) == ToolbarRowBottom;
 
-    // The 1.8.4 kept #mdToolbar at the top, far from the thumbs while typing on the phone (owner, DEC-0045).
+    // The 1.8.4 kept #mdToolbar at the top, far from the thumbs while typing on the phone (owner, DEC-0045). On a phone
+    // it is the last row: the app ends where the keyboard starts (MainView.KeyboardCover), so it sits right on the keys.
     private void PlaceToolbar(double width)
     {
         var bottom = width > 0 && width < ToolbarBottomBelow;
+        if (bottom == ToolbarAtBottom && _toolbarPlaced) return;
+        _toolbarPlaced = true;
         SetRow(_toolbarHost, bottom ? ToolbarRowBottom : ToolbarRowTop);
         _toolbarHost.BorderThickness = bottom ? new Thickness(0, 1, 0, 0) : new Thickness(0, 0, 0, 1);
+        _done.IsVisible = bottom;
+        UpdateChrome();
     }
+
+    private bool _toolbarPlaced;
 
     private void AddRow(Control control, int row)
     {
@@ -604,7 +787,8 @@ public sealed class EditorOverlay : Grid
 
     private ScrollViewer Column(Control content)
     {
-        var host = new Border { Child = content, Padding = new Thickness(20, 28, 20, 48), HorizontalAlignment = HorizontalAlignment.Stretch };
+        // room below the last line, so it can be written in the upper part of the screen too
+        var host = new Border { Child = content, Padding = new Thickness(UrbeTokens.Space.L, UrbeTokens.Space.L, UrbeTokens.Space.L, 160), HorizontalAlignment = HorizontalAlignment.Stretch };
         var scroll = new ScrollViewer
         {
             Content = host,
@@ -613,106 +797,127 @@ public sealed class EditorOverlay : Grid
             HorizontalContentAlignment = HorizontalAlignment.Center
         };
         TouchTextScroll.Attach(scroll);
+        // the reader's own scrolling: a finger or the mouse on the text (and the glide after it), or the wheel
+        scroll.AddHandler(PointerPressedEvent, (_, _) => { _pointerOnText = true; _userScrollAt = Environment.TickCount64; }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+        scroll.AddHandler(PointerReleasedEvent, (_, _) => { _pointerOnText = false; _userScrollAt = Environment.TickCount64; }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+        scroll.AddHandler(PointerCaptureLostEvent, (_, _) => { _pointerOnText = false; _userScrollAt = Environment.TickCount64; }, Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+        scroll.AddHandler(PointerWheelChangedEvent, (_, _) => _userScrollAt = Environment.TickCount64, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
         return scroll;
     }
 
-    private Control TopBar()
+    /// <summary>
+    /// The header (UX.md P4, P5, P9): Voltar, the note's title (a tap renames it) with the save dot, the Assistente, the
+    /// Visual/Fonte switch and "Mais ações" — every target 48 dp, tokens only. No Salvar: the note saves by itself.
+    /// </summary>
+    private Border TopBar()
     {
-        var back = IconButton(UrbeTheme.Icons.Back, "Voltar");
+        var back = new UrbeIconButton(UrbeTheme.Icons.Back, "Voltar", 24, C.TextPrimary);
         back.Click += async (_, _) => await BackAsync();
-        _title.FontFamily = UrbeTheme.UiFont;
-        _title.FontWeight = FontWeight.SemiBold;
-        _title.FontSize = 16;
-        _title.Foreground = UrbeTheme.Brush(UrbeTheme.Text);
+        UrbeTokens.Type.BodyStrong.Apply(_title);
+        _title.LineHeight = double.NaN;
+        _title.Foreground = UrbeTheme.Brush(C.TextPrimary);
         _title.VerticalAlignment = VerticalAlignment.Center;
         _title.TextTrimming = TextTrimming.CharacterEllipsis;
 
-        _visualButton = Segment("Visual", active: true);
-        _sourceButton = Segment("Fonte", active: false);
+        // the save state: a tiny dot after the title — calm when saved, warm while pending, red on an error (P2, P3)
+        _saveDot.Width = _saveDot.Height = 8;
+        _saveDot.CornerRadius = new CornerRadius(4);
+        _saveDot.VerticalAlignment = VerticalAlignment.Center;
+        _saveDot.Margin = new Thickness(UrbeTokens.Space.Xs, 0, 0, 0);
+        _saveDot.RenderTransformOrigin = RelativePoint.Center;
+        var titleRow = new DockPanel { LastChildFill = true, VerticalAlignment = VerticalAlignment.Center };
+        DockPanel.SetDock(_saveDot, Dock.Right);
+        titleRow.Children.Add(_saveDot);
+        titleRow.Children.Add(_title);
+        _titleButton = new Button
+        {
+            Content = titleRow, MinHeight = UrbeTokens.MinTouch, Padding = new Thickness(UrbeTokens.Space.Xs, 0),
+            Background = Brushes.Transparent, BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(UrbeTokens.Radius.M),
+            HorizontalAlignment = HorizontalAlignment.Left, HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Center
+        };
+        _titleButton.Resources["ButtonBackgroundPointerOver"] = UrbeTheme.Brush(C.SurfaceOverlay, .6);
+        _titleButton.Resources["ButtonBackgroundPressed"] = UrbeTheme.Brush(C.SurfaceOverlay);
+        ToolTip.SetTip(_titleButton, "Renomear");
+        UrbeMotion.Pressable(_titleButton);
+        _titleButton.Click += (_, _) => { _visual.FinishEdit(); RenameRequested?.Invoke(); };
+
+        _visualButton = Segment("Visual");
+        _sourceButton = Segment("Fonte");
         _visualButton.Click += (_, _) => SetMode(EditorMode.Visual);
         _sourceButton.Click += (_, _) => SetMode(EditorMode.Fonte);
+        Style(_visualButton, true);
+        Style(_sourceButton, false);
         _segment = new Border
         {
-            Background = UrbeTheme.Brush(UrbeTheme.Surface2),
-            CornerRadius = new CornerRadius(10),
-            Padding = new Thickness(3),
-            Height = 36,
-            Child = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { _visualButton, _sourceButton } }
+            Background = UrbeTheme.Brush(C.SurfaceRaised),
+            CornerRadius = new CornerRadius(UrbeTokens.Radius.M),
+            Padding = new Thickness(2),
+            Height = 40,
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = new StackPanel { Orientation = Orientation.Horizontal, Children = { _visualButton, _sourceButton } }
         };
-        var bar = new DockPanel { Margin = new Thickness(8, 0, 12, 0), LastChildFill = true };
-        DockPanel.SetDock(back, Dock.Left);
-        // v23: the overflow "Mais ações" after Visual/Fonte (abrirMenuExplorer with the note's actions)
-        var more = IconButton(UrbeTheme.Icons.More, "Mais ações");
+        // v23: the overflow "Mais ações" after Visual/Fonte (the note's actions; a bottom sheet on a phone)
+        var more = new UrbeIconButton(UrbeTheme.Icons.MoreUi, "Mais ações");
         more.Click += async (_, _) =>
         {
             _visual.FinishEdit();
             if (MoreRequested is not null && _note is not null) await MoreRequested(this);
         };
-        var assistant = IconButton(UrbeTheme.Icons.Assistant, "Assistente");
+        var assistant = new UrbeIconButton(UrbeTheme.Icons.Assistant, "Assistente");
         assistant.Click += (_, _) =>
         {
             // the block being written is kept in the text, so the Assistente sees it and the selection
             _visual.FinishEdit();
             AssistantRequested?.Invoke();
         };
-        // no Salvar: the 1.8.4 saves by itself (autosave below, Ctrl+S) and says so in the footer
-        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { PluginButtons, assistant, _segment, more } };
+        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { PluginButtons, assistant, _segment, more } };
+        var bar = new DockPanel { Margin = new Thickness(UrbeTokens.Space.Xxs, 0), LastChildFill = true };
+        DockPanel.SetDock(back, Dock.Left);
         DockPanel.SetDock(right, Dock.Right);
         bar.Children.Add(back);
         bar.Children.Add(right);
-        bar.Children.Add(_title);
-        _title.Margin = new Thickness(6, 0);
+        bar.Children.Add(_titleButton);
         return new Border
         {
-            BorderBrush = UrbeTheme.Brush(UrbeTheme.Line),
+            Height = HeaderHeight,
+            ClipToBounds = true,
+            Background = UrbeTheme.Brush(C.Background),
+            BorderBrush = UrbeTheme.Brush(C.Border),
             BorderThickness = new Thickness(0, 0, 0, 1),
             Child = bar
         };
     }
 
+    /// <summary>
+    /// The order of the formatting bar (UX.md P4, P5): what is used most comes first, within reach of the thumb; the
+    /// rest scrolls sideways. "|" is a separator. The buttons and what they do are the 1.8.4's (LegacyEditorTools).
+    /// </summary>
+    public static readonly string[] ToolbarOrder =
+        ["bold", "italic", "list", "task", "|", "h1", "h2", "h3", "quote", "|", "noteLink", "link", "code", "box", "math", "rule"];
+
     // #mdToolbar (Markdown, in Fonte and in Visual, where it acts on the block of the caret) or .v21CodeTools (other text files, Fonte)
     private Control Toolbars()
     {
-        foreach (var button in LegacyEditorTools.Toolbar)
+        var tools = LegacyEditorTools.Toolbar.ToDictionary(t => t.Id);
+        foreach (var id in ToolbarOrder)
         {
-            _markdownTools.Children.Add(ToolButton(button));
-            if (LegacyEditorTools.SeparatorAfter.Contains(button.Id))
-                _markdownTools.Children.Add(new Border { Width = 1, Height = 20, Margin = new Thickness(6, 0), Background = UrbeTheme.Brush(UrbeTheme.Line2) });
+            if (id == "|") { _markdownTools.Children.Add(new Border { Width = 1, Height = 24, Margin = new Thickness(UrbeTokens.Space.Xxs, 0), Background = UrbeTheme.Brush(C.BorderStrong), VerticalAlignment = VerticalAlignment.Center }); continue; }
+            if (tools.TryGetValue(id, out var tool)) { _markdownTools.Children.Add(ToolButton(tool)); continue; }
+            // math/editor.js ∑ (mdMath) and the UC-44 Caixa, a `:::tipo` container (not 1.8.4 #mdToolbar buttons)
+            var (content, tip, run) = id == "math"
+                ? ((Control)new TextBlock { Text = "∑", FontFamily = new FontFamily("Georgia, serif"), FontWeight = FontWeight.Normal, FontSize = 19 }, "Fórmula (LaTeX) — Ctrl+M", (Func<Task>)(() => StartFormulaAsync(false)))
+                : (UrbeTheme.Icon(SlashMenu.Icons["box"], 22, C.TextSecondary, 1.8), "Caixa", InsertBoxAsync);
+            var b = ToolButtonView(content, tip);
+            b.Click += async (_, _) => await run();
+            _markdownTools.Children.Add(b);
         }
-        // math/editor.js: a separator and the ∑ button (mdMath) at the end of the bar
-        _markdownTools.Children.Add(new Border { Width = 1, Height = 20, Margin = new Thickness(6, 0), Background = UrbeTheme.Brush(UrbeTheme.Line2) });
-        var math = new Button
-        {
-            Content = new TextBlock { Text = "∑", FontFamily = new FontFamily("Georgia, serif"), FontWeight = FontWeight.SemiBold, FontSize = 16 },
-            Width = 40, Height = 40, Padding = new Thickness(0), CornerRadius = new CornerRadius(8), Focusable = false,
-            Background = Brushes.Transparent, Foreground = UrbeTheme.Brush(UrbeTheme.Text2),
-            HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
-        };
-        ToolTip.SetTip(math, "Fórmula (LaTeX) — Ctrl+M");
-        math.Click += async (_, _) => await StartFormulaAsync(false);
-        _markdownTools.Children.Add(math);
-        // UC-44: Caixa, a `:::tipo` container (not a 1.8.4 button, so it stays out of LegacyEditorTools.Toolbar)
-        var box = new Button
-        {
-            Content = UrbeTheme.Icon(SlashMenu.Icons["box"], 20, UrbeTheme.Text2),
-            Width = 40, Height = 40, Padding = new Thickness(0), CornerRadius = new CornerRadius(8), Focusable = false,
-            Background = Brushes.Transparent, Foreground = UrbeTheme.Brush(UrbeTheme.Text2),
-            HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
-        };
-        ToolTip.SetTip(box, "Caixa");
-        box.Click += async (_, _) => await InsertBoxAsync();
-        _markdownTools.Children.Add(box);
         foreach (var (label, run) in new (string, Action)[]
                  {
                      ("⇥ Indentar", () => ApplyEdit(LegacyEditorTools.IndentSelection(Editor.Text ?? "", Editor.SelectionStart, Editor.SelectionEnd))),
                      ("{ } Formatar", FormatCurrent)
                  })
         {
-            var b = new Button
-            {
-                Content = label, Height = 36, Padding = new Thickness(12, 0), CornerRadius = new CornerRadius(8), Focusable = false,
-                Background = UrbeTheme.Brush(UrbeTheme.Surface2), Foreground = UrbeTheme.Brush(UrbeTheme.Text2), FontSize = 13, FontWeight = FontWeight.SemiBold
-            };
+            var b = new UrbeButton(label, ButtonKind.Ghost) { Focusable = false, MinHeight = UrbeTokens.MinTouch };
             b.Click += (_, _) => run();
             _codeTools.Children.Add(b);
         }
@@ -722,38 +927,74 @@ public sealed class EditorOverlay : Grid
             // #mdToolbar{scrollbar-width:none}: it scrolls sideways with no bar
             HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
             VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
-            VerticalContentAlignment = VerticalAlignment.Center,
-            Height = 52
+            VerticalContentAlignment = VerticalAlignment.Center
         };
-        _toolbarHost.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line);
+        // "Concluir" (phone): leaves the block and lowers the keyboard — the way back to calm reading, one tap away
+        var doneButton = new UrbeIconButton(UrbeTheme.Icons.Check, "Concluir edição", 22, C.Primary) { Focusable = false };
+        doneButton.Click += (_, _) => FinishWriting();
+        _done = new Border
+        {
+            Child = doneButton, IsVisible = false, VerticalAlignment = VerticalAlignment.Center, Padding = new Thickness(UrbeTokens.Space.Xxs, 0),
+            BorderBrush = UrbeTheme.Brush(C.Border), BorderThickness = new Thickness(1, 0, 0, 0)
+        };
+        var row = new DockPanel { LastChildFill = true, Height = 56 };
+        DockPanel.SetDock(_done, Dock.Right);
+        row.Children.Add(_done);
+        row.Children.Add(scroll);
+        _toolbarHost.Background = UrbeTheme.Brush(C.Surface);
+        _toolbarHost.BorderBrush = UrbeTheme.Brush(C.Border);
         _toolbarHost.BorderThickness = new Thickness(0, 0, 0, 1);
-        _toolbarHost.Child = scroll;
+        _toolbarHost.Child = row;
+        AutomationProperties.SetName(_toolbarHost, "Formatação");
         return _toolbarHost;
+    }
+
+    /// <summary>Leaves the block being written (Visual) or the text (Fonte): the keyboard goes down, the note reads calm.</summary>
+    public void FinishWriting()
+    {
+        _wiki.Hide();
+        if (Mode == EditorMode.Visual) _visual.FinishEdit();
+        // the focus leaves the text (the overlay takes it): the platform lowers the keyboard
+        Focusable = true;
+        Focus();
+    }
+
+    /// <summary>A button of the bar: 48 dp, the pressed feedback and a haptic tick; it never takes the focus (the caret and the keyboard stay).</summary>
+    private static Button ToolButtonView(Control content, string tip)
+    {
+        var b = new Button
+        {
+            Content = content, Width = UrbeTokens.MinTouch, Height = UrbeTokens.MinTouch, Padding = new Thickness(0), CornerRadius = new CornerRadius(UrbeTokens.Radius.M), Focusable = false,
+            Background = Brushes.Transparent, Foreground = UrbeTheme.Brush(C.TextSecondary), BorderThickness = new Thickness(0),
+            HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
+        };
+        b.Resources["ButtonBackgroundPointerOver"] = UrbeTheme.Brush(C.SurfaceOverlay, .7);
+        b.Resources["ButtonBackgroundPressed"] = UrbeTheme.Brush(C.SurfaceOverlay);
+        b.Resources["ButtonForegroundPointerOver"] = UrbeTheme.Brush(C.TextPrimary);
+        b.Resources["ButtonForegroundPressed"] = UrbeTheme.Brush(C.TextPrimary);
+        ToolTip.SetTip(b, tip);
+        AutomationProperties.SetName(b, tip.Split(" — ")[0]);
+        return UrbeMotion.Pressable(b, haptic: true);
     }
 
     private Control ToolButton(LegacyEditorTools.ToolbarButton tool)
     {
-        Control content = tool.Id switch
+        (Control Off, Control On) content = tool.Id switch
         {
-            "h1" => Label("H1"), "h2" => Label("H2"), "h3" => Label("H3"),
-            "bold" => new TextBlock { Text = "B", FontWeight = FontWeight.ExtraBold, FontSize = 14 },
-            "italic" => new TextBlock { Text = "I", FontFamily = new FontFamily("Georgia, serif"), FontWeight = FontWeight.SemiBold, FontStyle = FontStyle.Italic, FontSize = 14 },
-            _ => UrbeTheme.Icon(SlashMenu.Icons[tool.Icon], 20, UrbeTheme.Text2)
+            "h1" or "h2" or "h3" => (Label(tool.Id.ToUpperInvariant(), FontWeight.SemiBold), Label(tool.Id.ToUpperInvariant(), FontWeight.SemiBold)),
+            "bold" => (Label("B", FontWeight.Bold), Label("B", FontWeight.Bold)),
+            "italic" => (Italic(), Italic()),
+            _ => (UrbeTheme.Icon(SlashMenu.Icons[tool.Icon], 22, C.TextSecondary, 1.8), UrbeTheme.Icon(SlashMenu.Icons[tool.Icon], 22, C.Primary, 2))
         };
-        var b = new Button
-        {
-            Content = content, Width = 40, Height = 40, Padding = new Thickness(0), CornerRadius = new CornerRadius(8), Focusable = false,
-            Background = Brushes.Transparent, Foreground = UrbeTheme.Brush(UrbeTheme.Text2),
-            HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
-        };
-        ToolTip.SetTip(b, tool.Title);
+        var b = ToolButtonView(content.Off, tool.Title);
         b.Click += async (_, _) => await RunToolAsync(tool);
-        _toolButtons[tool.Id] = b;
+        _toolButtons[tool.Id] = (b, content.Off, content.On);
         return b;
-        static TextBlock Label(string t) => new() { Text = t, FontWeight = FontWeight.Bold, FontSize = 14 };
+        static TextBlock Label(string t, FontWeight w) => new() { Text = t, FontWeight = w, FontSize = 16, FontFamily = UrbeTheme.UiFont };
+        static TextBlock Italic() => new() { Text = "I", FontFamily = new FontFamily("Georgia, serif"), FontStyle = FontStyle.Italic, FontSize = 18 };
     }
 
-    private readonly Dictionary<string, Button> _toolButtons = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, (Button Button, Control Off, Control On)> _toolButtons = new(StringComparer.Ordinal);
 
     /// <summary>The toolbar buttons that show as on now (tests and the host).</summary>
     public IReadOnlySet<string> ActiveTools { get; private set; } = new HashSet<string>();
@@ -766,33 +1007,49 @@ public sealed class EditorOverlay : Grid
         ShowActiveTools(LegacyEditorTools.ActiveTools(text, Editor.SelectionStart, Editor.SelectionEnd));
     }
 
+    // a lit button: a soft accent fill and its mark in the accent (never colour alone: the fill shows it too, P12)
     private void ShowActiveTools(IReadOnlySet<string> on)
     {
         ActiveTools = on;
-        foreach (var (id, button) in _toolButtons)
-            button.Background = on.Contains(id) ? UrbeTheme.Brush(UrbeTheme.Accent, .22) : Brushes.Transparent;
+        foreach (var (id, (button, off, lit)) in _toolButtons)
+        {
+            var active = on.Contains(id);
+            button.Background = active ? UrbeTheme.Brush(C.Primary, .16) : Brushes.Transparent;
+            button.Foreground = UrbeTheme.Brush(active ? C.Primary : C.TextSecondary);
+            var want = active ? lit : off;
+            if (!ReferenceEquals(button.Content, want)) button.Content = want;
+            AutomationProperties.SetItemStatus(button, active ? "ativo" : "");
+        }
     }
 
-    private Control Footer()
+    private Border Footer()
     {
-        _status.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
-        _saveState.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
-        _status.FontSize = _saveState.FontSize = 12;
-        _status.VerticalAlignment = _saveState.VerticalAlignment = VerticalAlignment.Center;
-        var bar = new DockPanel { Margin = new Thickness(16, 0) };
-        DockPanel.SetDock(_saveState, Dock.Right);
-        bar.Children.Add(_saveState);
-        bar.Children.Add(_status);
-        return new Border { BorderBrush = UrbeTheme.Brush(UrbeTheme.Line), BorderThickness = new Thickness(0, 1, 0, 0), Child = bar };
+        UrbeTokens.Type.Caption.Apply(_status);
+        _status.FontWeight = FontWeight.Normal;
+        _status.Foreground = UrbeTheme.Brush(C.TextTertiary);
+        _status.VerticalAlignment = VerticalAlignment.Center;
+        AutomationProperties.SetName(_status, "Estatísticas da nota");
+        return new Border { Height = 28, Padding = new Thickness(UrbeTokens.Space.M, 0), Child = _status };
     }
+
+    /// <summary>The calm reading mode (UX.md P3, P11): on a phone, Visual with no block being written shows only the text.</summary>
+    public bool Reading => Mode == EditorMode.Visual && !_visual.IsEditing && ToolbarAtBottom;
 
     private void UpdateChrome()
     {
         var fonte = Mode == EditorMode.Fonte;
-        // v23AtualizarToolbar: #mdToolbar shows for Markdown in both modes; the code tools only in Fonte
-        _toolbarHost.IsVisible = fonte || IsMarkdown;
+        // v23AtualizarToolbar: #mdToolbar shows for Markdown in both modes; the code tools only in Fonte — but not
+        // while just reading on a phone: the bar comes with the keyboard, right above it
+        var show = (fonte || IsMarkdown) && !Reading;
+        if (show != _toolbarHost.IsVisible)
+        {
+            _toolbarHost.IsVisible = show;
+            if (show && ToolbarAtBottom && !UrbeTokens.Motion.Reduced) UrbeMotion.Enter(_toolbarHost, 0, 12, UrbeTokens.Motion.Fast);
+        }
         _markdownTools.IsVisible = IsMarkdown;
         _codeTools.IsVisible = !IsMarkdown;
+        // writing a block on a phone: the numbers of the footer give their line to the text
+        if (_footer is not null) _footer.IsVisible = !(ToolbarAtBottom && Mode == EditorMode.Visual && _visual.IsEditing);
     }
 
     // ------------------------------------------------------------------ text changes, status, autosave
@@ -813,10 +1070,49 @@ public sealed class EditorOverlay : Grid
         // v21RefreshEditorChrome shows "MD · n linhas" when a note opens; updateStats (on input) adds the words
         var kind = _note is null ? "md" : Kind(_note.Path);
         _status.Text = _edited ? LegacyEditorTools.Stats(Editor.Text ?? "", kind) : LegacyEditorTools.ChromeStats(Editor.Text ?? "", kind);
-        // workspace:dirty → 'Alterado', workspace:saving → 'Salvando...', workspace:saved → 'Salvo'
-        _saveState.Text = _saving ? "Salvando..." :
-            SaveOnClose ? (HasChanges ? "Alterado" : "Salvo") :
-            (changed ? "Alterado (prévia: não grava no vault)" : "Prévia: não grava no vault");
+        _ = changed;
+        UpdateSaveDot();
+    }
+
+    private string? _saveError;
+
+    /// <summary>
+    /// The save state the dot shows (UX.md P2): "saved" (in the vault, verified), "pending" (changed or being written:
+    /// the same quiet dot, so a save never flickers), "error" (the last save failed; a toast offers to try again) or
+    /// "preview" (no vault: nothing is written).
+    /// </summary>
+    public string SaveState =>
+        !SaveOnClose || SaveRequested is null ? "preview" : _saveError is not null ? "error" : HasChanges || _saving ? "pending" : "saved";
+
+    private string _shownSaveState = "";
+
+    private void UpdateSaveDot()
+    {
+        var state = SaveState;
+        if (state == _shownSaveState) return;
+        var was = _shownSaveState;
+        _shownSaveState = state;
+        (string color, double opacity, string tip) = state switch
+        {
+            "saved" => (C.Success, .7, "Salvo e verificado no vault"),
+            "pending" => (C.Warning, .9, "Alterações sendo salvas"),
+            "error" => (C.Danger, 1.0, "Erro ao salvar: " + _saveError),
+            _ => (C.TextTertiary, .8, "Prévia: não grava no vault")
+        };
+        _saveDot.Background = state == "preview" ? Brushes.Transparent : UrbeTheme.Brush(color, opacity);
+        _saveDot.BorderBrush = UrbeTheme.Brush(color, opacity);
+        _saveDot.BorderThickness = new Thickness(state == "preview" ? 1.5 : 0);
+        ToolTip.SetTip(_saveDot, tip);
+        AutomationProperties.SetName(_saveDot, tip);
+        AutomationProperties.SetName(_titleButton, (_title.Text ?? "") + " — " + tip + ". Toque para renomear");
+        // done: a small warm pulse of the dot (the pleasure of a saved note, without a word in the way)
+        if (state == "saved" && was == "pending" && !UrbeTokens.Motion.Reduced)
+        {
+            _saveDot.Transitions = null;
+            _saveDot.RenderTransform = Avalonia.Media.Transformation.TransformOperations.Parse("scale(1.8)");
+            _saveDot.Transitions = [new TransformOperationsTransition { Property = RenderTransformProperty, Duration = UrbeTokens.Motion.Slow, Easing = UrbeTokens.Motion.Spring }];
+            _saveDot.RenderTransform = Avalonia.Media.Transformation.TransformOperations.Parse("scale(1)");
+        }
     }
 
     private void ScheduleAutosave()
@@ -845,13 +1141,16 @@ public sealed class EditorOverlay : Grid
     }
 
     /// <summary>Save only via the native vault adapter, never silently to an in-memory preview.</summary>
-    public async Task<bool> SaveAsync()
+    public Task<bool> SaveAsync() => Current is { } note ? SaveSnapshotAsync(note) : Task.FromResult(false);
+
+    // one save at a time: a save running (the autosave) is waited for, then what changed since is saved too
+    private async Task<bool> SaveSnapshotAsync(CityNote note)
     {
-        // a save already running (the autosave) is waited for, then what changed since is saved too
         bool waited = false;
         while (_saving && _saveRun is { } running) { await running; waited = true; }
-        if (_saving || Current is not { } note) return false;
-        if (waited && !HasChanges) return true;
+        if (_saving) return false;
+        var open = note.Path == _note?.Path;
+        if (open && waited) { if (!HasChanges) return true; note = Current!; }
         var done = new TaskCompletionSource();
         _saveRun = done.Task;
         try { return await SaveNowAsync(note); }
@@ -864,37 +1163,42 @@ public sealed class EditorOverlay : Grid
     {
         if (SaveRequested is null)
         {
-            _saveState.Text = "Sem armazenamento conectado";
+            UpdateSaveDot();
             return false;
         }
         _saving = true;
-        _saveState.Text = "Salvando...";
+        UpdateSaveDot();
         try
         {
             await SaveRequested(note);
-            _savedContent = note.Content;
-            _saveState.Text = "Salvo";
-            ToolTip.SetTip(_saveState, "Salvo e verificado no vault");
+            // the note shown may be another one by now (leaving never waits): only its own save marks it saved
+            if (note.Path == _note?.Path) { _savedContent = note.Content; _saveError = null; }
+            _failed.Remove(note.Path);
             return true;
         }
         catch (Exception ex)
         {
-            // workspace:saveError → 'Erro ao salvar'; the reason stays on the label
-            _saveState.Text = "Erro ao salvar";
-            ToolTip.SetTip(_saveState, ex.Message);
+            // workspace:saveError → 'Erro ao salvar': the dot turns red and a toast offers to try again (nothing is lost)
+            if (note.Path == _note?.Path) _saveError = ex.Message;
+            var name = System.IO.Path.GetFileNameWithoutExtension(note.Path);
+            var message = $"Não foi possível salvar “{name}”. {ex.Message}";
+            if (IsVisible) _toast.Show(message, TimeSpan.FromSeconds(8), "Tentar de novo", () => _ = RetrySavesAsync(), ToastKind.Warning);
+            else SaveFailed?.Invoke(message);
+            PlatformHaptics.Error();
             return false;
         }
-        finally { _saving = false; }
+        finally
+        {
+            _saving = false;
+            UpdateSaveDot();
+        }
     }
 
-    /// <summary>A short message in the status line (toast of the editor), then the status again.</summary>
-    public void Notify(string message)
-    {
-        _saveState.Text = message;
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(2600) };
-        timer.Tick += (_, _) => { timer.Stop(); UpdateStatus(changed: false); };
-        timer.Start();
-    }
+    /// <summary>A short notice over the text (a discreet toast that goes away by itself, UX.md P3).</summary>
+    public void Notify(string message) => _toast.Show(message, TimeSpan.FromSeconds(3));
+
+    /// <summary>The notice shown now, or null (tests).</summary>
+    public string? NoticeText => _toast.Text;
 
     // ------------------------------------------------------------------ Fonte tools (app.js .mdBtn handlers)
 
@@ -1041,50 +1345,43 @@ public sealed class EditorOverlay : Grid
         // The 1.8.4 only said the note did not exist (owner, DEC-0045): offer to create it, next to this one.
         if (CreateLinked is null || Dialogs is null || !LegacyEditorTools.IsCreatableLinkName(name)) { Notify("A nota vinculada não existe."); return; }
         if (!await Dialogs.ConfirmAsync("Criar nota", $"A nota “{name}” ainda não existe. Criar agora?", "Criar nota")) return;
-        if (!await LeaveCurrentAsync()) return;
+        var saving = LeaveCurrentAsync();
         if (await CreateLinked(name) is { } made) Go(made);
+        await saving;
     }
 
     // ------------------------------------------------------------------ small controls
 
-    private static Button IconButton(string icon, string tip)
-    {
-        var b = new Button
-        {
-            // #editorTop .iconBtn: 44×44, radius 12, text-2, a 22px icon of stroke 1.8
-            Content = UrbeTheme.Icon(icon == UrbeTheme.Icons.More ? UrbeTheme.Icons.MoreUi : icon, 22, UrbeTheme.Text2, 1.8),
-            Width = 44,
-            Height = 44,
-            CornerRadius = new CornerRadius(12),
-            Background = Brushes.Transparent,
-            HorizontalContentAlignment = HorizontalAlignment.Center,
-            VerticalContentAlignment = VerticalAlignment.Center
-        };
-        ToolTip.SetTip(b, tip);
-        if (Avalonia.Automation.AutomationProperties.GetName(b) is not { Length: > 0 }) Avalonia.Automation.AutomationProperties.SetName(b, tip);
-        return Ui.UrbeMotion.Pressable(b);
-    }
-
-    private static Button Segment(string text, bool active)
+    // a half of the Visual/Fonte switch: 36 dp tall inside the 40 dp track (the header row is the touch area, 48 dp+)
+    private static Button Segment(string text)
     {
         var b = new Button
         {
             Content = text,
-            Height = 30,
-            Padding = new Thickness(12, 0),
-            CornerRadius = new CornerRadius(7),
+            Height = 36,
+            MinWidth = 60,
+            Padding = new Thickness(UrbeTokens.Space.S, 0),
+            CornerRadius = new CornerRadius(UrbeTokens.Radius.M - 2),
+            FontFamily = UrbeTheme.UiFont,
             FontWeight = FontWeight.SemiBold,
-            FontSize = 13,
+            FontSize = UrbeTokens.Type.Label.Size,
+            BorderThickness = new Thickness(0),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center
         };
-        Style(b, active);
-        Avalonia.Automation.AutomationProperties.SetName(b, text);
-        return Ui.UrbeMotion.Pressable(b);
+        AutomationProperties.SetName(b, text);
+        ToolTip.SetTip(b, text == "Visual" ? "Ver a nota formatada" : "Ver o Markdown");
+        return UrbeMotion.Pressable(b, haptic: true);
     }
 
     private static void Style(Button b, bool active)
     {
-        b.Background = active ? UrbeTheme.Brush(UrbeTheme.Surface3) : Brushes.Transparent;
-        b.Foreground = UrbeTheme.Brush(active ? UrbeTheme.Text : UrbeTheme.Text3);
+        b.Background = active ? UrbeTheme.Brush(C.SurfaceOverlay) : Brushes.Transparent;
+        b.Foreground = UrbeTheme.Brush(active ? C.TextPrimary : C.TextTertiary);
+        b.Resources["ButtonBackgroundPointerOver"] = active ? UrbeTheme.Brush(C.SurfaceOverlay) : UrbeTheme.Brush(C.SurfaceOverlay, .5);
+        b.Resources["ButtonBackgroundPressed"] = UrbeTheme.Brush(C.SurfaceOverlay);
+        b.Resources["ButtonForegroundPointerOver"] = b.Foreground;
+        b.Resources["ButtonForegroundPressed"] = UrbeTheme.Brush(C.TextPrimary);
+        AutomationProperties.SetItemStatus(b, active ? "selecionado" : "");
     }
 }

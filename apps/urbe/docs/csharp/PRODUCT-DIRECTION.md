@@ -1,45 +1,48 @@
 # O que é o Urbe — direção do cliente C#
 
-> **Autoridade:** DEC-0043 / [ADD-0020](../../../../docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md) (ordem do proprietário, 2026-10-10) e [ADR-0032](../../../../docs/adr/0032-urbe-ui-nativa-sem-webview.md). Escopo e estado dos itens: [`ROADMAP.md`](ROADMAP.md). Este documento descreve o produto; não registra andamento.
+> **Autoridade:** DEC-0051 / [ADD-0028](../../../../docs/governance/addenda/ADD-0028-urbe-sem-simulacao-visual.md) e [ADR-0034](../../../../docs/adr/0034-urbe-sem-simulacao-visual.md) (ordem do proprietário, 2026-10-22), sobre DEC-0043 / [ADD-0020](../../../../docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md) e [ADR-0032](../../../../docs/adr/0032-urbe-ui-nativa-sem-webview.md). Escopo e estado dos itens: [`ROADMAP.md`](ROADMAP.md). Este documento descreve o produto; não registra andamento.
 
-## 1. O Urbe é a 1.8.4-beta
+## 1. O Urbe são as suas notas
 
-O Urbe é o aplicativo publicado como **1.8.4-beta** (`apps/urbe/`, JavaScript): **as suas notas em Markdown desenhadas como uma cidade**. Cada nota é uma casa, cada pasta é um bairro e cada `[[link]]` é uma rua. O mundo é um continente gerado proceduralmente (placas, serras, clima, rios), em pixel-art, com dia e noite, moradores e animais. Tudo continua sendo arquivo `.md` comum numa pasta real.
+O Urbe guarda **as suas notas em Markdown numa pasta real** do aparelho. Cada nota é um arquivo `.md` comum, que qualquer outro programa abre.
 
-**A cidade é o aplicativo.** Ela ocupa a tela inteira; tudo o mais aparece por cima dela:
+**A tela do Urbe é o Explorer.** Ele mostra as pastas, as notas e os outros arquivos do vault. O resto abre por cima dele:
 
-| Elemento da 1.8.4 | Onde (`apps/urbe/index.html`) | O que faz |
-|---|---|---|
-| Mundo | `#game` (canvas) | Cidade em tela cheia; arrastar move, pinça/roda dá zoom, toque seleciona |
-| Barra de ferramentas | `#tools` | Selecionar, Região, Construir, Explorador, Cidades |
-| Busca | `#busca` | Buscar nota e ir até a casa |
-| Minimapa e mapa | `#mini`, `#mapao` | Visão geral; tocar no mapa leva até o lugar |
-| HUD | `#hud` | Dica e contadores (notas, arquivos, regiões, conexões, zoom) |
-| Painel da casa | `#housePanel` | Casa selecionada: prévia, metadados, abrir nota, mover, copiar, excluir |
-| Explorador lateral | `#fileSidebar`, `#filePreview` | Árvore de arquivos, seleção múltipla, mover/agrupar/excluir, prévia |
-| Editor sobreposto | `#editorFull` | Visual e Fonte, barra de Markdown, propriedades, estatísticas, sugestão de `[[link]]` |
-| Assistente | `#aiPanel` | Agentes de IA sobre o vault |
-| Cidades (vaults) | `#menuCidades` | Trocar de cidade/pasta |
+| Peça | O que faz |
+|---|---|
+| Explorer | Árvore de pastas e arquivos; busca; seleção múltipla; mover, agrupar, renomear, duplicar e mandar para a lixeira |
+| Editor | Visual e Fonte, barra de Markdown, propriedades, estatísticas, sugestão de `[[link]]`, abas, versões anteriores |
+| Busca e paleta | Abrir nota pelo nome ou texto; todos os comandos do Urbe |
+| Assistente | Agentes de IA que pesquisam, escrevem e organizam o vault |
+| Páginas | Sites, páginas e livros feitos a partir das notas |
+| Configurações | Personalização, plugins, backups, importação, exportação, tutorial |
 
-**Regra para o cliente C#:** cada uma dessas peças é reproduzida com a mesma aparência e o mesmo comportamento, comparada lado a lado com a 1.8.4. Uma tela que não existe na 1.8.4 (por exemplo, um painel de "estado da migração" ou abas Início/Explorer/Editor/Cidade/Mais) não faz parte do Urbe até ser aprovada como melhoria.
+Na abertura, o app volta direto para a última nota que estava aberta.
 
-**A 1.8.4 é referência de essência, não de defeitos** (DEC-0045, [ADD-0022](../../../../docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md)). O mundo, a arte, a sensação de aquário vivo e os dados em `.md` comuns são os da 1.8.4. O que o proprietário apontou como defeito ou aprovou como melhoria nas observações de uso (moradores que somem, eventos frequentes demais, arco-íris, Voltar que sempre vai à cidade, menu `+` duplicado, tutorial criado no mundo, aba de notas sem as funções de um explorador) é corrigido no porte, não reproduzido. Os itens estão no ROADMAP (UC-36 a UC-47).
+**A simulação visual saiu do produto** (DEC-0051). O mundo procedural, a cidade (notas como casas, pastas como bairros, links como ruas) e a vida (moradores, fauna, clima) eram a interface da 1.8.4-beta e da beta 2.0 até a beta.14. Na prática, ficaram pesados e limitados por espaço. O estado com a simulação está congelado no ramo `urbe-simulacao-congelada`, até o proprietário decidir como substituí-la. Nenhuma parte dela volta sem nova ordem dele.
+
+**A 1.8.4 continua referência fora da simulação.** Isso vale para as regras do editor, do Explorer, da lixeira, do histórico, da importação, das páginas e do assistente. Mas ela é referência de essência, não de defeitos (DEC-0045, [ADD-0022](../../../../docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md)). O que o proprietário apontou como defeito ou aprovou como melhoria nas observações de uso é corrigido, não reproduzido.
+
+**Dados.** Id, datas e pastas das notas ficam em `.urbe/notas.json`. Os arquivos da cidade num vault antigo (`.urbe/mapa.json`, `.urbe/mundo.json`) são lidos uma vez e nunca apagados nem reescritos.
 
 ## 2. Tecnologia
 
 C# nativo em **Android e Windows**, sem WebView, HTML ou CSS como interface (ADR-0032). Android vem primeiro. Não há versão Web/PWA do cliente C#.
 
-O domínio já portado em `Urbe.Core` é aproveitado: vault, Markdown, editor visual, páginas e livros, matemática e o motor de mundo da 1.8.4 (terreno, rios, vegetação, texturas, sprites, prédios). A casca Blazor (`Urbe.UI`, `Urbe.App`, `Urbe.Web`) está congelada e sai quando o cliente nativo a substituir.
+O domínio fica em `Urbe.Core`: vault, notas, Markdown, editor visual, páginas e livros, matemática, assistente. A interface fica em `Urbe.Client` (Avalonia), com os heads `Urbe.Android` e `Urbe.Desktop`. A casca Blazor antiga foi retirada (UC-34).
 
-## 3. Para onde o Urbe vai depois (direção do proprietário)
+A experiência de usuário segue [`UX.md`](UX.md) (ADD-0026) e o desempenho vem primeiro (ADD-0024).
+
+## 3. Para onde o Urbe vai (direção do proprietário)
 
 Nas palavras do proprietário, o Urbe não deve ser só "um editor de texto como o antigo", mas **"um criador e produtor de artefatos que funciona em cima de todo o sistema de edição de texto"**. O **editor Visual** é a peça central dessa produção.
 
-Na prática, os artefatos são o que o `Urbe.Core` já sabe produzir a partir das notas: **páginas, sites e livros** (blocos, layout livre, modelos, temas), **composições** prontas para imprimir e **documentos com matemática**. A ordem é:
+Na prática, os artefatos são o que o `Urbe.Core` já sabe produzir a partir das notas: **páginas, sites e livros** (blocos, layout livre, modelos, temas), **composições** prontas para imprimir e **documentos com matemática**. Cada melhoria entra como item próprio do roadmap.
 
-1. Primeiro, o Urbe que o proprietário usa hoje (a 1.8.4) funcionando em C# nativo.
-2. Depois, a produção de artefatos como evolução, sobre o editor Visual e a cidade, cada melhoria como item próprio do roadmap.
+Decisões de 13/10/2026 (DEC-0045):
 
-A direção nova não troca a experiência da cidade por uma interface de "workspace". Ela acrescenta capacidade de produção a ela.
+- recursos novos de escrita (comentários, tags estilizadas, blocos aninhados) se expressam como **sintaxe Markdown** no próprio arquivo;
+- **composições passam a ser páginas**, sob o editor de páginas;
+- modelos de nota e componentes reutilizáveis são **um conceito só**.
 
-Decisões de 13/10/2026 (DEC-0045): recursos novos de escrita (comentários, tags estilizadas, blocos aninhados) se expressam como **sintaxe Markdown** no próprio arquivo; **composições passam a ser páginas**, sob o editor de páginas; modelos de nota e componentes reutilizáveis são **um conceito só**. A ideia de "Urbe como sistema operacional" (bairros como ambientes de trabalho) é **exploração**, a ser provada pelo uso, e não muda este princípio.
+A ideia de "Urbe como sistema operacional" (cada pasta como um ambiente de trabalho) é **exploração**, a ser provada pelo uso.

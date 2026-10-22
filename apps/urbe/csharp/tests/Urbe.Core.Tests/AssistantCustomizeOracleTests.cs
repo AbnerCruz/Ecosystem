@@ -75,7 +75,7 @@ public sealed class AssistantCustomizeOracleTests
         var tool = AssistantCustomizeTools.All.Single(t => t.Name == (string)c["name"]!);
         var input = (JsonObject)c["input"]!;
         var name = tool.Name + " " + input.ToJsonString();
-        Assert.Equal(((string)c["access"]!, (string)c["description"]!, S(c["parameters"]), (string)c["label"]!), (tool.Access, tool.Description, S(tool.Parameters), tool.Label(input)));
+        Assert.Equal(((string)c["access"]!, WithoutTheCity.Appearance((string)c["description"]!), S(c["parameters"]), (string)c["label"]!), (tool.Access, tool.Description, S(tool.Parameters), tool.Label(input)));
 
         static bool SameError(string expected, string? actual) =>
             expected.StartsWith("config não é JSON válido: ", StringComparison.Ordinal) ? actual?.StartsWith("config não é JSON válido: ", StringComparison.Ordinal) == true : expected == actual;
@@ -98,7 +98,7 @@ public sealed class AssistantCustomizeOracleTests
         else
         {
             Assert.True(error is null, name + ": " + error);
-            Assert.Equal((string)c["content"]!, output!.Content);
+            Assert.Equal(WithoutTheCity.Appearance((string)c["content"]!), output!.Content);
             Assert.Equal(S(c["changes"]), output.Changes is null ? "null" : S(new JsonArray(output.Changes.Select(x => (JsonNode)new JsonObject
             {
                 ["id"] = x.Id, ["before"] = x.Before is null ? null : new JsonObject { ["path"] = x.Before.Path, ["content"] = x.Before.Content },

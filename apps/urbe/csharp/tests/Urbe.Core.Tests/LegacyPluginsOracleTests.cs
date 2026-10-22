@@ -21,7 +21,7 @@ public sealed class LegacyPluginsOracleTests
         };
         var creates = new (string? Name, string Template)[]
         {
-            ("Meu plugin", "basico"), ("  Diário d'água  ", "diario"), ("a/b:c", "mapa"), ("", "assistente"), (null, "inexistente"), ("a", "basico")
+            ("Meu plugin", "basico"), ("  Diário d'água  ", "diario"), ("a/b:c", "assistente"), ("", "assistente"), (null, "inexistente"), ("a", "basico")
         };
         var input = new JsonObject
         {
@@ -45,7 +45,8 @@ public sealed class LegacyPluginsOracleTests
         using var json = JsonDocument.Parse(await stdout);
         var e = json.RootElement;
 
-        Assert.Equal(e.GetProperty("templates").EnumerateArray().Select(t => t.GetProperty("id").GetString() + "|" + t.GetProperty("nome").GetString() + "|" + t.GetProperty("descricao").GetString()),
+        Assert.Equal(e.GetProperty("templates").EnumerateArray().Where(t => t.GetProperty("id").GetString() != WithoutTheCity.MapTemplate)
+                .Select(t => WithoutTheCity.Native(t.GetProperty("id").GetString() + "|" + t.GetProperty("nome").GetString() + "|" + t.GetProperty("descricao").GetString())),
             LegacyPlugins.Templates.Select(t => t.Id + "|" + t.Name + "|" + t.Description));
 
         var list = files.Where(f => f.Key.StartsWith(LegacyPlugins.Folder, StringComparison.Ordinal) && f.Key.EndsWith(".js", StringComparison.OrdinalIgnoreCase))

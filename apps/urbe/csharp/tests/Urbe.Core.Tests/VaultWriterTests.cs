@@ -34,7 +34,6 @@ public sealed class VaultWriterTests
         {
             Files = files,
             Documents = documents,
-            MetadataJson = Text(files, ".urbe/mapa.json"),
             AppVersion = "1.8.3-beta",
             Now = now
         });
@@ -168,8 +167,9 @@ public sealed class VaultWriterTests
         Assert.Equal("recuperado\n", Encoding.UTF8.GetString(result.Files["A.md"].Bytes.Span));
         Assert.Equal("novo\n", Encoding.UTF8.GetString(result.Files["B.md"].Bytes.Span));
 
+        // the 1.8.4 city map is never planned (ADD-0028): it stays on disk as it is, even after a journal
         using var map = JsonDocument.Parse(result.Files[".urbe/mapa.json"].Bytes);
-        Assert.Equal("journal", map.RootElement.GetProperty("mundo").GetString());
+        Assert.Equal("disco", map.RootElement.GetProperty("mundo").GetString());
 
         using var history = JsonDocument.Parse(result.Files[".urbe/history.v2.json"].Bytes);
         Assert.True(history.RootElement.GetProperty("documents").TryGetProperty("doc_a", out _));
@@ -222,7 +222,6 @@ public sealed class VaultWriterTests
         {
             Files = files,
             Documents = documents,
-            MetadataJson = Text(files, ".urbe/mapa.json"),
             AppVersion = "1.8.3-beta",
             Now = new DateTimeOffset(2026, 10, 4, 13, 0, 0, TimeSpan.Zero)
         });

@@ -24,12 +24,12 @@ public static class PluginPermissions
     public static IReadOnlyDictionary<string, string> Labels { get; } = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         [Notices] = "Mostrar avisos",
-        [Buttons] = "Pôr botões na cidade",
+        [Buttons] = "Pôr botões no topo das notas",
         [Commands] = "Acrescentar comandos",
         [ReadNotes] = "Ler suas notas",
         [WriteNotes] = "Criar e mudar notas",
         [Events] = "Saber quando notas abrem e são salvas",
-        [Panels] = "Abrir painéis sobre a cidade e o editor",
+        [Panels] = "Abrir painéis sobre as notas e o editor",
         [Data] = "Guardar dados próprios neste aparelho",
     };
 }
@@ -50,10 +50,10 @@ public interface IPluginApi
 {
     string PluginId { get; }
 
-    /// <summary><see cref="PluginPermissions.Notices"/>: the life notice over the city.</summary>
+    /// <summary><see cref="PluginPermissions.Notices"/>: the discreet notice over the app.</summary>
     void Notice(string text);
 
-    /// <summary><see cref="PluginPermissions.Buttons"/>: a round button in the city's top bar (before Configurações).</summary>
+    /// <summary><see cref="PluginPermissions.Buttons"/>: a button in the Explorer's header (before Configurações).</summary>
     void Button(string title, string icon, Func<Task> run);
 
     /// <summary><see cref="PluginPermissions.Commands"/>: a command in the palette (Abrir comandos), under "Plugin · name".</summary>
@@ -71,7 +71,7 @@ public interface IPluginApi
     /// <summary><see cref="PluginPermissions.Events"/>: "nota:aberta" or "nota:salva", with the note's path.</summary>
     void On(string evt, Action<string> handler);
 
-    /// <summary><see cref="PluginPermissions.Panels"/>: a floating panel over the city and the editor; shown or hidden by the plugin.</summary>
+    /// <summary><see cref="PluginPermissions.Panels"/>: a floating panel over the Explorer and the editor; shown or hidden by the plugin.</summary>
     IPluginPanel Panel(string title, Control content);
 
     /// <summary><see cref="PluginPermissions.Data"/>: the plugin's own value kept on this device.</summary>

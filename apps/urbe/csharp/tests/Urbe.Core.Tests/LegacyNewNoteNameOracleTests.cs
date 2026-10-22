@@ -4,8 +4,8 @@ using Urbe.Core;
 
 namespace Urbe.Core.Tests;
 
-/// <summary>"Nova nota" names against the unmodified 1.8.4-beta safeName, v21UniqueName and
-/// separarNomeExtNota run by Node (tools/note-name-oracle.mjs).</summary>
+/// <summary>"Nova nota" names (NoteLibrary) against the unmodified 1.8.4-beta safeName, v21UniqueName and
+/// separarNomeExtNota run by Node (tools/note-name-oracle.mjs): the notes of the same folder are the taken names.</summary>
 public sealed class LegacyNewNoteNameOracleTests
 {
     private static readonly string[] Typed =
@@ -32,27 +32,18 @@ public sealed class LegacyNewNoteNameOracleTests
         Assert.True(process.ExitCode == 0, "Oráculo JS falhou: " + await stderr);
         using var json = JsonDocument.Parse(await stdout);
 
-        var city = new LegacyCity(new FlatTerrain(), p => p);
-        int i = 0;
-        foreach (var f in Taken)
-            city.Buildings.Add(new LegacyCityBuilding("b" + i++, "Pasta/" + f, Path.GetFileNameWithoutExtension(f), "r1", i * 10, 0, "house1"));
-        city.Buildings.Add(new LegacyCityBuilding("other", "Ideias (3).md", "Ideias (3)", null, 99, 0, "house1")); // another neighbourhood
+        // the folder's notes are taken; a note of another folder is not
+        var notes = Taken.Select(f => ("Pasta/" + f, "", "doc_" + f)).Append(("Ideias (3).md", "", "doc_root")).ToList();
+        var library = NoteLibrary.Open(notes, null, null);
         foreach (var e in json.RootElement.EnumerateArray())
         {
             var typed = e.GetProperty("typed").GetString()!;
-            var unique = city.UniqueNoteName(typed, "r1");
+            var unique = library.UniqueNoteName(typed, "Pasta");
             Assert.Equal(e.GetProperty("unique").GetString(), unique);
-            var (name, ext) = LegacyCity.SplitNoteName(unique);
+            var (name, ext) = NoteLibrary.SplitNoteName(unique);
             Assert.Equal(e.GetProperty("name").GetString(), name);
             Assert.Equal(e.GetProperty("ext").GetString(), ext);
         }
         Assert.Equal(Typed.Length, json.RootElement.GetArrayLength());
-    }
-
-    private sealed class FlatTerrain : ILegacyCityTerrain
-    {
-        public bool Buildable(int x, int y) => true;
-        public bool Roadable(int x, int y) => true;
-        public double RoadCost(int x, int y) => 1;
     }
 }

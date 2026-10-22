@@ -12,16 +12,17 @@ namespace Urbe.Client.Tests;
 /// <summary>"Renomear" from the editor's "Mais ações", driven through the real native UI against a real folder vault.</summary>
 public sealed partial class HeadlessUiTests
 {
-    private static async Task UntilMapSaved(MainView v)
+    /// <summary>Until the notes' record (.urbe/notas.json) waiting to be written has been written.</summary>
+    private static async Task UntilNotesSaved(MainView v)
     {
-        for (int i = 0; i < 300 && (v.MapSave!.HasPending || v.MapSave.IsBusy); i++)
+        for (int i = 0; i < 300 && (v.NotesSave!.HasPending || v.NotesSave.IsBusy); i++)
         {
             Dispatcher.UIThread.RunJobs();
             await Task.Delay(20);
         }
         Dispatcher.UIThread.RunJobs();
-        Assert.False(v.MapSave!.HasPending);
-        Assert.Equal("saved", v.MapSave.State);
+        Assert.False(v.NotesSave!.HasPending);
+        Assert.Equal("saved", v.NotesSave.State);
     }
 
     private static async Task RenameThroughTheEditorMenu(MainView view, string typed)
@@ -30,7 +31,7 @@ public sealed partial class HeadlessUiTests
         var more = view.Editor.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == "Mais ações");
         more.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
-        ClickButtonWithText(view.Dialogs, "Renomear");
+        ClickButtonWithText(view.ActionSheet, "Renomear");
         await Task.Delay(30);
         Dispatcher.UIThread.RunJobs();
         var input = view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single();
@@ -43,12 +44,12 @@ public sealed partial class HeadlessUiTests
     }
 
     /// <summary>
-    /// The file is moved in the vault with the text being edited, the old name disappears, the editor and the
-    /// house follow, the document keeps its id, and .urbe/mapa.json is rewritten with the new path; a name taken in
-    /// the same neighbourhood becomes " (2)"; reopening the folder finds the house at the same place.
+    /// The file is moved in the vault with the text being edited, the old name disappears, the editor follows, the
+    /// document keeps its id, and .urbe/notas.json records it at the new path; a name taken in the same folder becomes
+    /// " (2)"; reopening the folder finds the note with the same id.
     /// </summary>
     [Fact]
-    public async Task Rename_MovesTheFileAndTheMapFollows() =>
+    public async Task Rename_MovesTheFileAndTheNoteKeepsItsId() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
         {
             var dir = Path.Combine(Path.GetTempPath(), "urbe-rename-" + Guid.NewGuid().ToString("N"));
@@ -58,7 +59,7 @@ public sealed partial class HeadlessUiTests
             File.WriteAllText(Path.Combine(vault, "Bairro", "Um.md"), "# Um\n");
             File.WriteAllText(Path.Combine(vault, "Bairro", "Dois.md"), "# Dois\n");
             File.WriteAllBytes(Path.Combine(vault, "foto.png"), [1, 2, 3]);
-            var mapa = Path.Combine(vault, ".urbe", "mapa.json");
+            var record = Path.Combine(vault, ".urbe", "notas.json");
             try
             {
                 var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
@@ -67,10 +68,8 @@ public sealed partial class HeadlessUiTests
                 window.Show();
                 await view.OpenVaultAsync();
                 await Settle(window, view);
-                await UntilMapSaved(view);
-                var house = view.World.City!.Buildings.Single(b => b.Path == "Bairro/Um.md");
+                await UntilNotesSaved(view);
                 var id = view.Documents!.Get("Bairro/Um.md")!.Id;
-                var place = (house.X, house.Y);
 
                 // editing, not yet saved: the text goes with the file
                 view.OpenNoteByPath("Bairro/Um.md");
@@ -82,43 +81,37 @@ public sealed partial class HeadlessUiTests
 
                 Assert.False(File.Exists(Path.Combine(vault, "Bairro", "Um.md")));
                 Assert.Equal("# Um\n\nTexto novo.\n", File.ReadAllText(Path.Combine(vault, "Bairro", "Primeiro.md")));
-                Assert.Equal("Bairro/Primeiro.md", house.Path);
-                Assert.Equal("Primeiro", house.Name);
                 Assert.Equal("Bairro/Primeiro.md", view.Editor.Current!.Path);
                 Assert.Equal(id, view.Documents.Get("Bairro/Primeiro.md")!.Id);
                 Assert.Null(view.Documents.Get("Bairro/Um.md"));
-                await UntilMapSaved(view);
-                using (var m = System.Text.Json.JsonDocument.Parse(File.ReadAllText(mapa)))
+                await UntilNotesSaved(view);
+                using (var m = System.Text.Json.JsonDocument.Parse(File.ReadAllText(record)))
                 {
                     var notas = m.RootElement.GetProperty("notas");
                     Assert.False(notas.TryGetProperty("Bairro/Um.md", out _));
-                    var p = notas.GetProperty("Bairro/Primeiro.md");
-                    Assert.Equal(id, p.GetProperty("id").GetString());
-                    Assert.Equal(place, (p.GetProperty("x").GetInt32(), p.GetProperty("y").GetInt32()));
+                    Assert.Equal(id, notas.GetProperty("Bairro/Primeiro.md").GetProperty("id").GetString());
                 }
 
-                // a name another note of the neighbourhood has: v21UniqueName gives " (2)", nothing is overwritten
+                // a name another note of the folder has: v21UniqueName gives " (2)", nothing is overwritten
                 await RenameThroughTheEditorMenu(view, "Dois");
-                Assert.Equal("Bairro/Dois (2).md", house.Path);
+                Assert.Equal("Bairro/Dois (2).md", view.Editor.Current!.Path);
                 Assert.Equal("# Dois\n", File.ReadAllText(Path.Combine(vault, "Bairro", "Dois.md")));
                 Assert.Equal("# Um\n\nTexto novo.\n", File.ReadAllText(Path.Combine(vault, "Bairro", "Dois (2).md")));
-                await UntilMapSaved(view);
+                await UntilNotesSaved(view);
                 var files = Directory.GetFiles(vault, "*", SearchOption.AllDirectories)
                     .Select(f => Path.GetRelativePath(vault, f).Replace('\\', '/')).Order(StringComparer.Ordinal);
-                // the edit kept the previous text (Versões anteriores) next to the map
-                // .urbe/identity.json follows the map save (identity.js); it is the derived record, written just after
-                Assert.Equal([".urbe/history.v2.json", ".urbe/mapa.json", "Bairro/Dois (2).md", "Bairro/Dois.md", "Comece.md", "foto.png"], files.Where(f => f != ".urbe/identity.json"));
+                // the edit kept the previous text (Versões anteriores) next to the notes' record
+                // .urbe/identity.json follows the record's save (identity.js); it is the derived record, written just after
+                Assert.Equal([".urbe/history.v2.json", ".urbe/notas.json", "Bairro/Dois (2).md", "Bairro/Dois.md", "Comece.md", "foto.png"], files.Where(f => f != ".urbe/identity.json"));
                 Snapshot(window, "native-rename-editor.png");
                 window.Close();
 
-                // a new app on the same folder: the renamed house where it was
+                // a new app on the same folder: the renamed note with its id
                 var reopened = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app2", "sel.json")));
                 var window2 = new Window { Width = 1280, Height = 760, Content = reopened };
                 window2.Show();
                 await reopened.OpenVaultAsync();
                 await Settle(window2, reopened);
-                var again = reopened.World.City!.Buildings.Single(b => b.Path == "Bairro/Dois (2).md");
-                Assert.Equal(place, (again.X, again.Y));
                 Assert.Equal(id, reopened.Documents!.Get("Bairro/Dois (2).md")!.Id);
                 window2.Close();
                 return true;
@@ -183,8 +176,8 @@ public sealed partial class HeadlessUiTests
         }, CancellationToken.None));
 
     /// <summary>
-    /// The selection bar on a real vault: Mover para pasta (the file moves, the house joins the neighbourhood and keeps its
-    /// lot; a name the folder has is refused), Duplicar ("Um cópia.md", its house 4 tiles away), Favoritar and the
+    /// The selection bar on a real vault: Mover para pasta (the file moves and keeps its id; a name the folder has is not
+    /// overwritten), Duplicar ("Um cópia.md", a new note with the same text), Favoritar and the
     /// Favoritos and Recentes views, kept on the device.
     /// </summary>
     [Fact]
@@ -198,7 +191,7 @@ public sealed partial class HeadlessUiTests
             File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n\n[[Um]]\n");
             File.WriteAllText(Path.Combine(vault, "Bairro", "Um.md"), "# Um\n");
             File.WriteAllText(Path.Combine(vault, "Outro", "Comece.md"), "# Outro Comece\n");
-            var mapa = Path.Combine(vault, ".urbe", "mapa.json");
+            var record = Path.Combine(vault, ".urbe", "notas.json");
             var previous = UrbeApp.LocalStatePath;
             UrbeApp.LocalStatePath = Path.Combine(dir, "app", "notes-state.json");
             async Task Settled() { for (int i = 0; i < 40; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); } }
@@ -209,11 +202,7 @@ public sealed partial class HeadlessUiTests
                 window.Show();
                 await view.OpenVaultAsync();
                 await Settle(window, view);
-                await UntilMapSaved(view);
-                var city = view.World.City!;
-                var house = city.Buildings.Single(b => b.Path == "Bairro/Um.md");
-                var outro = city.Regions.Single(r => r.Name == "Outro");
-                var lot = (house.X, house.Y);
+                await UntilNotesSaved(view);
                 var id = view.Documents!.Get("Bairro/Um.md")!.Id;
                 void Bar(string tip) => view.Explorer.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == tip)
                     .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
@@ -229,8 +218,6 @@ public sealed partial class HeadlessUiTests
                 await Settled();
                 Assert.False(File.Exists(Path.Combine(vault, "Bairro", "Um.md")));
                 Assert.Equal("# Um\n", File.ReadAllText(Path.Combine(vault, "Outro", "Um.md")));
-                Assert.Equal(outro.Id, house.RegionId);
-                Assert.Equal(lot, (house.X, house.Y));                       // the 1.8.4 keeps the lot
                 Assert.Equal(id, view.Documents.Get("Outro/Um.md")!.Id);
                 Assert.Empty(view.Explorer.SelectedPaths);
 
@@ -249,8 +236,7 @@ public sealed partial class HeadlessUiTests
                 Bar("Duplicar");
                 await Settled();
                 Assert.Equal("# Um\n", File.ReadAllText(Path.Combine(vault, "Outro", "Um cópia.md")));
-                var copy = city.Buildings.Single(b => b.Path == "Outro/Um cópia.md");
-                Assert.Equal((house.X + 4, house.Y + 4), (copy.X, copy.Y));
+                Assert.NotEqual(id, view.Documents.Get("Outro/Um cópia.md")!.Id);
 
                 // Favoritar, then Notas → ⋯ → Favoritos; opening it puts it in Recentes
                 Assert.True(view.Explorer.TryEnterFolder("Outro"));
@@ -267,11 +253,11 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal(["Outro/Um cópia.md"], view.Explorer.VisibleNotePaths);
                 Assert.True(File.Exists(UrbeApp.LocalStatePath));
 
-                await UntilMapSaved(view);
-                using (var m = System.Text.Json.JsonDocument.Parse(File.ReadAllText(mapa)))
+                await UntilNotesSaved(view);
+                using (var m = System.Text.Json.JsonDocument.Parse(File.ReadAllText(record)))
                 {
                     var notas = m.RootElement.GetProperty("notas");
-                    Assert.Equal(lot, (notas.GetProperty("Outro/Um.md").GetProperty("x").GetInt32(), notas.GetProperty("Outro/Um.md").GetProperty("y").GetInt32()));
+                    Assert.Equal(id, notas.GetProperty("Outro/Um.md").GetProperty("id").GetString());
                     Assert.True(notas.TryGetProperty("Outro/Um cópia.md", out _));
                 }
                 window.Close();
@@ -295,12 +281,12 @@ public sealed partial class HeadlessUiTests
         }, CancellationToken.None));
 
     /// <summary>
-    /// Excluir from the house panel and "Mover para a lixeira" from the editor: the 1.8.4 confirmation, the file gone,
-    /// .urbe/trash.v2.json holding both notes, the houses gone from the city and the map; reopening keeps them deleted.
+    /// Mover para a lixeira from the Explorer and from the editor: the 1.8.4 confirmation, the file gone,
+    /// .urbe/trash.v2.json holding both notes, the documents gone from the notes' record; reopening keeps them deleted.
     /// Cancelling the confirmation deletes nothing.
     /// </summary>
     [Fact]
-    public async Task Delete_MovesTheNoteToTheTrashFromThePanelAndTheEditor() =>
+    public async Task Delete_MovesTheNoteToTheTrashFromTheExplorerAndTheEditor() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
         {
             var dir = Path.Combine(Path.GetTempPath(), "urbe-trash-" + Guid.NewGuid().ToString("N"));
@@ -323,32 +309,25 @@ public sealed partial class HeadlessUiTests
                 window.Show();
                 await view.OpenVaultAsync();
                 await Settle(window, view);
-                await UntilMapSaved(view);
-                var city = view.World.City!;
-
-                // the house panel: Excluir → "Mover para a lixeira?" → Cancelar keeps everything
-                var um = city.Buildings.Single(b => b.Path == "Bairro/Um.md");
-                view.World.Select(um);
-                Dispatcher.UIThread.RunJobs();
-                ClickButtonWithText(view, "Excluir");
+                await UntilNotesSaved(view);
+                // the Explorer: Mover para a lixeira → "Mover para a lixeira?" → Cancelar keeps everything
+                var first = view.DeleteNoteAsync("Bairro/Um.md");
                 await Settled();
                 Assert.Contains(view.Dialogs.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "“Um.md” poderá ser restaurada pela Lixeira, em Notas.");
                 Snapshot(window, "native-trash-confirm.png");
                 ClickButtonWithText(view.Dialogs, "Cancelar");
-                await Settled();
+                Assert.False(await first);
                 Assert.True(File.Exists(Path.Combine(vault, "Bairro", "Um.md")));
-                Assert.Contains(um, city.Buildings);
+                Assert.NotNull(view.Documents!.Get("Bairro/Um.md"));
 
                 // again, confirmed
-                view.World.Select(um);
-                Dispatcher.UIThread.RunJobs();
-                ClickButtonWithText(view, "Excluir");
+                var second = view.DeleteNoteAsync("Bairro/Um.md");
                 await Settled();
                 ClickButtonWithText(view.Dialogs, "Mover para a lixeira");
-                await Settled();
+                Assert.True(await second);
                 Assert.False(File.Exists(Path.Combine(vault, "Bairro", "Um.md")));
-                Assert.DoesNotContain(um, city.Buildings);
-                Assert.Null(view.Documents!.Get("Bairro/Um.md"));
+                Assert.Null(view.Documents.Get("Bairro/Um.md"));
+                Assert.DoesNotContain("Bairro/Um.md", view.Explorer.VisibleNotePaths);
                 Assert.Contains("\"originalPath\": \"Bairro/Um.md\"", File.ReadAllText(trashFile));
 
                 // the editor: Mais ações → Mover para a lixeira
@@ -357,7 +336,7 @@ public sealed partial class HeadlessUiTests
                 var more = view.Editor.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == "Mais ações");
                 more.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 Dispatcher.UIThread.RunJobs();
-                ClickButtonWithText(view.Dialogs, "Mover para a lixeira");
+                ClickButtonWithText(view.ActionSheet, "Mover para a lixeira");
                 await Settled();
                 ClickButtonWithText(view.Dialogs, "Mover para a lixeira");
                 await Settled();
@@ -366,8 +345,8 @@ public sealed partial class HeadlessUiTests
                 var trash = File.ReadAllText(trashFile);
                 Assert.Contains("\"content\": \"# Um\\n\"", trash);
                 Assert.Contains("\"content\": \"# Dois\\n\"", trash);
-                await UntilMapSaved(view);
-                using (var m = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(vault, ".urbe", "mapa.json"))))
+                await UntilNotesSaved(view);
+                using (var m = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(vault, ".urbe", "notas.json"))))
                     Assert.Equal(["Comece.md"], m.RootElement.GetProperty("notas").EnumerateObject().Select(p => p.Name));
                 window.Close();
 
@@ -377,7 +356,7 @@ public sealed partial class HeadlessUiTests
                 window2.Show();
                 await reopened.OpenVaultAsync();
                 await Settle(window2, reopened);
-                Assert.Equal(["Comece.md"], reopened.World.City!.Buildings.Where(b => b.IsNote).Select(b => b.Path));
+                Assert.Equal(["Comece.md"], reopened.Documents!.List().Select(d => d.Path));
                 Assert.Equal(trash, File.ReadAllText(trashFile));
                 window2.Close();
                 return true;
@@ -386,7 +365,7 @@ public sealed partial class HeadlessUiTests
         }, CancellationToken.None));
 
     /// <summary>
-    /// Notas → Mais opções → Lixeira: Restaurar brings the file and a house back, ✕ Excluir de vez and Esvaziar ask first
+    /// Notas → Mais opções → Lixeira: Restaurar brings the file back with its id, ✕ Excluir de vez and Esvaziar ask first
     /// and only rewrite .urbe/trash.v2.json; a new app on the folder finds the restored note.
     /// </summary>
     [Fact]
@@ -410,7 +389,7 @@ public sealed partial class HeadlessUiTests
                 window.Show();
                 await view.OpenVaultAsync();
                 await Settle(window, view);
-                await UntilMapSaved(view);
+                await UntilNotesSaved(view);
                 foreach (var p in new[] { "Bairro/Um.md", "Bairro/Dois.md", "Bairro/Tres.md" }) await view.DeleteNoteAsync(p, confirmed: true);
                 Assert.False(File.Exists(Path.Combine(vault, "Bairro", "Um.md")));
 
@@ -427,13 +406,13 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains(view.Explorer.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "3 item(ns) · restaure ou exclua de vez");
                 Snapshot(window, "native-trash-view.png");
 
-                // Restaurar "Um": the file with its text, a house in Bairro, one item less
+                // Restaurar "Um": the file with its text, its document back in Bairro, one item less
                 var um = view.Explorer.GetLogicalDescendants().OfType<Border>()
                     .First(b => b.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Bairro/Um.md"));
                 ClickButtonWithText(um, "Restaurar");
                 await Settled();
                 Assert.Equal("# Um\n\nTexto.\n", File.ReadAllText(Path.Combine(vault, "Bairro", "Um.md")));
-                Assert.Contains(view.World.City!.Buildings, b => b.Path == "Bairro/Um.md");
+                Assert.NotNull(view.Documents!.Get("Bairro/Um.md"));
                 Assert.DoesNotContain("Bairro/Um.md", File.ReadAllText(trashFile));
                 Assert.Contains(view.Explorer.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "2 item(ns) · restaure ou exclua de vez");
 
@@ -457,7 +436,7 @@ public sealed partial class HeadlessUiTests
                 await Settled();
                 Assert.Equal("{\n \"version\": 2,\n \"items\": []\n}", File.ReadAllText(trashFile));
                 Assert.Contains(view.Explorer.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "A lixeira está vazia");
-                await UntilMapSaved(view);
+                await UntilNotesSaved(view);
                 window.Close();
 
                 var reopened = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app2", "sel.json")));
@@ -465,7 +444,7 @@ public sealed partial class HeadlessUiTests
                 window2.Show();
                 await reopened.OpenVaultAsync();
                 await Settle(window2, reopened);
-                Assert.Equal(["Bairro/Um.md", "Comece.md"], reopened.World.City!.Buildings.Where(b => b.IsNote).Select(b => b.Path).Order(StringComparer.Ordinal));
+                Assert.Equal(["Bairro/Um.md", "Comece.md"], reopened.Documents!.List().Select(d => d.Path).Order(StringComparer.Ordinal));
                 window2.Close();
                 return true;
             }
@@ -481,14 +460,13 @@ public sealed partial class HeadlessUiTests
             window.Show();
             await view.LoadAsync(TutorialNotes.Load());
             await Settle(window, view);
-            var house = view.World.City!.Buildings.First(b => b.IsNote);
-            var (path, name) = (house.Path, house.Name);
+            var path = view.Documents!.List().First().Path;
             var rename = view.RenameNoteAsync(path);
             Dispatcher.UIThread.RunJobs();
             Assert.Empty(view.Dialogs.GetVisualDescendants().OfType<TextBox>());
             ClickButtonWithText(view.Dialogs, "Ok");
             await rename;
-            Assert.Equal((path, name), (house.Path, house.Name));
+            Assert.NotNull(view.Documents.Get(path));
             window.Close();
             return true;
         }, CancellationToken.None));

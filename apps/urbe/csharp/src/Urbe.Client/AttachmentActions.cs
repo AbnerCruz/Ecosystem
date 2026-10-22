@@ -4,9 +4,9 @@ namespace Urbe.Client;
 
 /// <summary>
 /// An attachment's actions, as the 1.8.4's menuEntradaExplorer: Renomear (renomearAsset: the extension is kept, "para
-/// preservar o tipo e o preview"), Mover (moverAsset: to a folder; a building of one file goes with it) and Excluir
-/// (removerAsset: "O arquivo será apagado do vault", after the person confirms). The file is changed in the vault
-/// first (IUrbeVaultStorage.MoveFileAsync / DeleteFileAsync, verified); only then the city and the map follow.
+/// preservar o tipo e o preview"), Mover (moverAsset: to a folder) and Excluir (removerAsset: "O arquivo será apagado
+/// do vault", after the person confirms). The file is changed in the vault first (IUrbeVaultStorage.MoveFileAsync /
+/// DeleteFileAsync, verified); only then the Explorer follows.
 /// </summary>
 public sealed partial class MainView
 {
@@ -111,16 +111,14 @@ public sealed partial class MainView
             return;
         }
         if (_attachments.Remove(from)) _attachments.Add(to);
-        World.City?.ApplyAttachmentMove(from, to, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-        _mapSave?.Schedule();
-        _mapSave?.MarkSync();
+        _library?.AddFolderOf(to);
+        NotesChanged();
         RefreshNotes();
-        World.InvalidateVisual();
-        if (FilePreview.IsVisible && FilePreview.Current == from) await FilePreview.OpenAsync(to, World.City?.AttachmentBuilding(to));
+        if (FilePreview.IsVisible && FilePreview.Current == from) await FilePreview.OpenAsync(to);
         ShowLifeNotice(notice);
     }
 
-    /// <summary>removerAsset: confirmed, the file is deleted from the vault, then its entry and empty building.</summary>
+    /// <summary>removerAsset: confirmed, the file is deleted from the vault, then its entry.</summary>
     public async Task DeleteAttachmentAsync(string path, bool confirmed = false)
     {
         var name = path[(path.LastIndexOf('/') + 1)..];
@@ -132,12 +130,8 @@ public sealed partial class MainView
             return;
         }
         _attachments.Remove(path);
-        World.City?.RemoveAttachment(path);
-        _mapSave?.Schedule();
-        _mapSave?.MarkSync();
         if (FilePreview.IsVisible && FilePreview.Current == path) FilePreview.Close();
         RefreshNotes();
-        World.InvalidateVisual();
         ShowLifeNotice("Arquivo excluído.");
     }
 }

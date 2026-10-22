@@ -9,13 +9,13 @@ namespace Urbe.Client.Tests;
 
 /// <summary>
 /// UC-40/UC-64 (DEC-0045): the Tutorial is a panel of its own, only to read. The 1.8.4 (tutorial.js) created a Tutorial
-/// neighbourhood in the city the first time it opened; now nothing is created unless asked, Configurações → Tutorial
+/// folder in the vault the first time it opened; now nothing is created unless asked, Configurações → Tutorial
 /// opens the panel, and its text is the native app's documentation (AppDocs).
 /// </summary>
 public sealed partial class HeadlessUiTests
 {
     [Fact]
-    public async Task Tutorial_IsAPanelAndTheCityIsLeftAlone() =>
+    public async Task Tutorial_IsAPanelAndTheVaultIsLeftAlone() =>
         Assert.True(await Session.Dispatch(TutorialScenario, CancellationToken.None));
 
     private static async Task<bool> TutorialScenario()
@@ -31,10 +31,10 @@ public sealed partial class HeadlessUiTests
             await view.OpenVaultAsync();
             for (int i = 0; i < 80; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
 
-            // an empty city stays empty: no Tutorial folder, no mark, no houses, no editor
+            // an empty vault stays empty: no Tutorial folder, no mark, no notes, no editor
             Assert.False(Directory.Exists(Path.Combine(empty, "Tutorial")));
             Assert.False(File.Exists(Path.Combine(empty, ".urbe", "tutorial.json")));
-            Assert.DoesNotContain(view.World.City!.Buildings, b => b.IsNote);
+            Assert.Empty(view.Documents!.List());
             Assert.False(view.Editor.IsVisible);
 
             // Configurações → Tutorial opens the panel on its index: every article, "Comece aqui" first
@@ -70,12 +70,12 @@ public sealed partial class HeadlessUiTests
             panel.Close();
             Assert.False(panel.IsVisible);
 
-            // copying it into the city is still possible, only when asked: the notes, their houses and the mark
+            // copying it into the vault is still possible, only when asked: the notes and the mark
             await view.RestoreTutorialAsync(false);
             foreach (var f in all)
                 Assert.Equal(f.Content, File.ReadAllText(Path.Combine(empty, f.Path)));
             Assert.StartsWith("{\"versao\":\"" + MainView.TutorialVersion + "\",\"em\":\"", File.ReadAllText(Path.Combine(empty, ".urbe", "tutorial.json")));
-            Assert.Equal(all.Count, view.World.City.Buildings.Count(b => b.IsNote));
+            Assert.Equal(all.Count, view.Documents.List().Count);
             await view.RestoreTutorialAsync(false);
             Assert.Contains(view.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "O Tutorial já está completo");
             window.Close();
@@ -97,9 +97,8 @@ public sealed partial class HeadlessUiTests
         await view.InitializeAsync();
         for (int i = 0; i < 40; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
 
-        // no folder open: an empty world, never the Tutorial built in the city
-        Assert.DoesNotContain(view.World.City!.Buildings, b => b.Path.StartsWith(LegacyTutorial.Folder, StringComparison.Ordinal));
-        Assert.DoesNotContain(view.World.City.Buildings, b => b.IsNote);
+        // no folder open: no notes, never the Tutorial created by itself
+        Assert.Empty(view.Documents!.List());
 
         var panel = view.Tutorial;
         panel.Open();

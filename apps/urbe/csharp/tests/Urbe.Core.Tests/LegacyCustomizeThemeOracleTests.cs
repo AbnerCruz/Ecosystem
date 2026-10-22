@@ -76,7 +76,7 @@ public sealed class LegacyCustomizeThemeOracleTests
     private static int Mod(int v, int m) => (v % m + m) % m;
 
     [Fact]
-    public async Task PaletteVariablesTexturesAndGroundMatchTheOriginal()
+    public async Task PaletteVariablesAndSavedThemesMatchTheOriginal()
     {
         var cases = Cases();
         var input = new JsonArray(cases.Select(c => (JsonNode)new JsonObject { ["text"] = c.Text, ["files"] = c.Files.DeepClone() }).ToArray());
@@ -128,57 +128,6 @@ public sealed class LegacyCustomizeThemeOracleTests
             var (themePath, themeText) = LegacyCustomizeTheme.ThemeFile(config, "Tema \"x\"/y é", Saved);
             Assert.Equal(e.GetProperty("savedTheme").GetProperty("path").GetString(), themePath);
             Assert.Equal(e.GetProperty("savedTheme").GetProperty("content").GetString(), themeText);
-
-            // carregarTexturas + configure
-            var packPath = ((config["cidade"] as JsonObject)?["texturas"] as JsonValue)?.GetValue<string>() ?? "";
-            string? content = files[packPath] is JsonValue pv ? pv.GetValue<string>() : null;
-            var pack = LegacyTexturePack.Load(content, LegacyGroundStyle.Original.BaseColor, null);
-            var et = e.GetProperty("textures");
-            var errors = et.GetProperty("errors").EnumerateArray().Select(x => x.GetString()!).ToList();
-            Assert.Equal(errors.Count, pack.Errors.Count);
-            for (int k = 0; k < errors.Count; k++)
-                Assert.Equal(errors[k].StartsWith("JSON inválido", StringComparison.Ordinal) ? "JSON inválido" : errors[k],
-                    pack.Errors[k].StartsWith("JSON inválido", StringComparison.Ordinal) ? "JSON inválido" : pack.Errors[k]);
-            var ePal = et.GetProperty("paleta").EnumerateObject().ToDictionary(p => p.Name, p => p.Value.EnumerateArray().Select(x => x.GetString()!).ToArray());
-            Assert.Equal(ePal.OrderBy(k => k.Key).Select(k => k.Key + ":" + string.Join(",", k.Value)), pack.Palette.OrderBy(k => k.Key).Select(k => k.Key + ":" + string.Join(",", k.Value)));
-            var eChao = et.GetProperty("chao").EnumerateObject().ToDictionary(p => p.Name, p => p.Value.EnumerateArray().Select(x => x.GetString()!).ToArray());
-            Assert.Equal(eChao.Keys.OrderBy(x => x), pack.Ground.Keys.OrderBy(x => x));
-            foreach (var (id, imgs) in eChao)
-                Assert.Equal(imgs, pack.Ground[id].Select(Convert.ToBase64String));
-            var eCons = et.GetProperty("construcoes").EnumerateObject().ToDictionary(p => p.Name, p => p.Value);
-            Assert.Equal(eCons.Keys.OrderBy(x => x), pack.Buildings.Keys.OrderBy(x => x));
-            foreach (var (id, art) in eCons)
-            {
-                Assert.Equal(art.GetProperty("w").GetInt32(), pack.Buildings[id].Width);
-                Assert.Equal(art.GetProperty("h").GetInt32(), pack.Buildings[id].Height);
-                Assert.Equal(art.GetProperty("data").GetString(), Convert.ToBase64String(pack.Buildings[id].Rgba));
-            }
-
-            var style = LegacyTexturePack.Style(config, pack);
-            var es = e.GetProperty("style");
-            foreach (var p in es.GetProperty("pal").EnumerateObject())
-                Assert.Equal(p.Value.EnumerateArray().Select(x => x.GetString()), style.Palette[p.Name]);
-            foreach (var p in es.GetProperty("tex").EnumerateObject())
-            {
-                int b = LegacyWorldPixelTextures.Biomes.ToList().IndexOf(p.Name);
-                var got = style.Textures[b].Select(Convert.ToBase64String).ToArray();
-                Assert.True(p.Value.EnumerateArray().Select(x => x.GetString()).SequenceEqual(got), at + " textura " + p.Name);
-            }
-
-            // chunks painted with that ground
-            foreach (var chunk in e.GetProperty("chunks").EnumerateObject())
-            {
-                bool mixed = chunk.Name == "mixed";
-                var actual = LegacyChunkPixels.Render(
-                    (x, y) =>
-                    {
-                        var biome = mixed ? new[] { 5, 6, 7, 13, 10, 14, 15, 12, 18 }[Mod(x + y * 2, 9)] : x < 8 ? 1 : 6;
-                        double elev = mixed ? .42 + (x % 7) * .007 - (y % 5) * .004 : x < 8 ? .34 : .56;
-                        return new LegacyTileSampler.Tile((LegacyBiome)biome, elev, .55, .55, false, 0);
-                    },
-                    (_, _) => [], mixed ? 1 : 0, mixed ? -1 : 0, style);
-                Assert.True(chunk.Value.GetString() == Convert.ToBase64String(actual), at + " chunk " + chunk.Name);
-            }
         }
     }
 

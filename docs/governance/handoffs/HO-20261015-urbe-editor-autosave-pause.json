@@ -59,7 +59,7 @@
       "check": "Arrastar pasta e arquivo no Explorer e o 💬 na prévia de páginas no celular",
       "result": "pending",
       "critical": false,
-      "object": "apps/urbe/csharp/src/Urbe.Client/FolderMoves.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs"
     }
   ],
   "known_issues": [

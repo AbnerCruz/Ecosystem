@@ -30,48 +30,12 @@ public sealed partial class MainView
     }
 
     // ---------------------------------------------------------------- identity.js (REQ-042)
+    // read at the opening (OpeningIds): a note renamed or moved outside the app while it was closed keeps its id
 
     private VaultIdentityState? _identity;
     private bool _identityReadOnly;
     private byte[]? _identityOnDisk;
     private string? _identityNotice;
-
-    /// <summary>
-    /// workspace.js load: the sidecar .urbe/identity.json is read (a newer version is preserved and never written) and
-    /// the notes renamed or moved outside the app while it was closed keep id, house, region and assets
-    /// (LegacyIdentity.Reconcile adjusts the map before the city opens); vault-notices.js tells what was recognized.
-    /// Returns the map the city opens with.
-    /// </summary>
-    private string? ReconcileIdentity(VaultSnapshot snapshot, IReadOnlyList<CityNote> notes, Dictionary<string, string> ids)
-    {
-        _identity = null;
-        _identityOnDisk = null;
-        _identityReadOnly = false;
-        _identityNotice = null;
-        var file = snapshot.Files.FirstOrDefault(f => string.Equals(f.Key, VaultIdentity.Path, StringComparison.OrdinalIgnoreCase)).Value;
-        if (file is not null)
-        {
-            _identityOnDisk = file.Bytes.ToArray();
-            _identity = VaultIdentity.Parse(file.Bytes, out var future);
-            _identityReadOnly = future;
-        }
-        if (_identity is null || snapshot.RecoveredFromJournal || snapshot.IsMapReadOnly) return snapshot.MapJson;
-        System.Text.Json.Nodes.JsonObject? meta = null;
-        try { meta = snapshot.MapJson is { } json ? System.Text.Json.Nodes.JsonNode.Parse(json) as System.Text.Json.Nodes.JsonObject : null; }
-        catch (System.Text.Json.JsonException) { return snapshot.MapJson; }
-        var notas = meta?["notas"] as System.Text.Json.Nodes.JsonObject;
-        var items = notes.Select(n => new LegacyIdentity.Item(n.Path, n.Content,
-            notas?[n.Path] is System.Text.Json.Nodes.JsonObject o && o["id"] is System.Text.Json.Nodes.JsonValue v && v.TryGetValue<string>(out var id) && id.Length > 0 ? id : null)).ToList();
-        var result = LegacyIdentity.Reconcile(items, meta, _identity, snapshot.Files.Keys.ToList());
-        foreach (var r in result.Renames) ids[r.To] = r.Id;
-        if (result.Ambiguous.Count > 0)
-            _identityNotice = "Notas idênticas apareceram fora do app (" + string.Join("; ", result.Ambiguous.Select(a => string.Join(", ", a.To))) + "): entraram como notas novas.";
-        else if (result.Renames.Count == 1)
-            _identityNotice = "Uma nota renomeada fora do app foi reconhecida: " + result.Renames[0].To + ".";
-        else if (result.Renames.Count > 1)
-            _identityNotice = result.Renames.Count + " notas renomeadas ou movidas fora do app foram reconhecidas.";
-        return result.Renames.Count > 0 && meta is not null ? meta.ToJsonString() : snapshot.MapJson;
-    }
 
     /// <summary>workspace.js flush: the sidecar rebuilt from the notes (seen kept for who did not change), written only when it differs.</summary>
     private async Task SaveIdentityAsync()
@@ -91,14 +55,13 @@ public sealed partial class MainView
         }
         catch (Exception ex) when (ex is IOException or InvalidOperationException or InvalidDataException or NotSupportedException or UnauthorizedAccessException)
         {
-            // derived record: the notes and the map are already saved; the next save tries again
+            // derived record: the notes and their record are already saved; the next save tries again
         }
     }
 
     // ---------------------------------------------------------------- tips.js
 
     private Border? _tip;
-    private int? _tipLinksBefore;
 
     private static bool TipSeen(Customization c, string k) => c.Device.Get("urbe.tip." + k) == "1";
     private static void TipMark(Customization c, string k) => c.Device.Set("urbe.tip." + k, "1");
@@ -121,34 +84,18 @@ public sealed partial class MainView
             if (Editor.IsVisible) HideTip();
             else DispatcherTimer.RunOnce(MaybeLinkTip, TimeSpan.FromMilliseconds(300));
         };
-        Explorer.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty && Explorer.IsVisible) HideTip(); };
-        NoteSaved += _ => CheckFirstRoad();
+        NoteSaved += _ => { if (TipShown == "link" && LinkCount() > 0) { TipMark(Customization, "link"); HideTip(); } };
     }
 
-    /// <summary>workspace:loaded: how many links there were (the first road is noticed from here).</summary>
-    private void TipsLoaded() => _tipLinksBefore = TipSeen(Customization, "road") ? null : LinkCount();
+    /// <summary>workspace:loaded: the link tip, a moment after the notes show.</summary>
+    private void TipsLoaded() => DispatcherTimer.RunOnce(MaybeLinkTip, TimeSpan.FromMilliseconds(300));
 
-    /// <summary>1) back in the city with notes but no link yet: "Ligue suas notas".</summary>
+    /// <summary>Back in the Explorer with notes but no link yet: "Ligue suas notas".</summary>
     public void MaybeLinkTip()
     {
-        if (Editor.IsVisible || Explorer.IsVisible || _store is null || _store.List().Count < 1) return;
+        if (Editor.IsVisible || _store is null || _store.List().Count < 1) return;
         if (TipSeen(Customization, "link") || LinkCount() > 0) return;
-        ShowTip("link", "Ligue suas notas", "Dentro de uma nota, digite [[ e escolha outra nota. Uma rua aparece ligando as duas casas.");
-    }
-
-    /// <summary>2) the first road was built: a notice once.</summary>
-    private void CheckFirstRoad()
-    {
-        if (_tipLinksBefore is not { } before || TipSeen(Customization, "road")) return;
-        var n = LinkCount();
-        if (before == 0 && n > 0)
-        {
-            TipMark(Customization, "road");
-            TipMark(Customization, "link");
-            HideTip();
-            ShowLifeNotice("Primeira rua construída! Volte à cidade para ver a ligação.");
-        }
-        _tipLinksBefore = n;
+        ShowTip("link", "Ligue suas notas", "Dentro de uma nota, digite [[ e escolha outra nota. As duas ficam ligadas, e cada uma mostra a outra em Estrutura e backlinks.");
     }
 
     private void ShowTip(string key, string title, string text)
@@ -163,7 +110,7 @@ public sealed partial class MainView
         bool wide = Bounds.Width >= WideBreakpoint;
         _tip = new Border
         {
-            // #urbeTip: 420 px card over the city, above the dock (or beside the rail on wide screens)
+            // #urbeTip: 420 px card over the Explorer, above the dock (or beside the rail on wide screens)
             MaxWidth = 420, Padding = new Thickness(20), CornerRadius = new CornerRadius(22), Background = UrbeTheme.Brush(UrbeTheme.Surface, .94),
             BorderBrush = UrbeTheme.Brush(UrbeTheme.Line), BorderThickness = new Thickness(1), BoxShadow = BoxShadows.Parse("0 18 60 0 #8C000000"),
             VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = wide ? HorizontalAlignment.Left : HorizontalAlignment.Stretch,

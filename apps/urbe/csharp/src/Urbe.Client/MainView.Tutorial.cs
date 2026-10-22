@@ -4,9 +4,9 @@ using Urbe.Core;
 namespace Urbe.Client;
 
 /// <summary>
-/// The Tutorial. The 1.8.4 (tutorial.js) created a "Tutorial" folder in the city the first time it opened; the owner did
-/// not want it in the world (DEC-0045, UC-40), so it is read in its own panel (<see cref="TutorialPanel"/>), and its text
-/// is the native app's documentation (<see cref="AppDocs"/>, UC-64). Copying it into the city as notes is still there,
+/// The Tutorial. The 1.8.4 (tutorial.js) created a "Tutorial" folder in the vault the first time it opened; the owner
+/// did not want that (DEC-0045, UC-40), so it is read in its own panel (<see cref="TutorialPanel"/>), and its text is the
+/// native app's documentation (<see cref="AppDocs"/>, UC-64). Copying it into the vault as notes is still there,
 /// as the panel's own choice: what is missing is created, the notes that differ from the originals are replaced only
 /// after asking, and the mark .urbe/tutorial.json is written.
 /// </summary>
@@ -37,7 +37,7 @@ public sealed partial class MainView
     }
 
     /// <summary>
-    /// Configurações → Tutorial. The 1.8.4 created a Tutorial neighbourhood in the city the first time it opened and opened
+    /// Configurações → Tutorial. The 1.8.4 created a Tutorial folder in the vault the first time it opened and opened
     /// "Comece aqui" in the editor; the owner preferred a panel of its own, with navigation and search (DEC-0045, UC-40).
     /// </summary>
     public Task ShowTutorialMenuAsync()
@@ -47,13 +47,13 @@ public sealed partial class MainView
     }
 
     /// <summary>
-    /// restaurar: creates what is missing (neighbourhoods sized first, prepararBairros); with notes that differ from
+    /// restaurar: creates what is missing; with notes that differ from
     /// the originals, asks "Substituir" / "Manter as minhas"; writes the mark; "Tutorial restaurado" or "O Tutorial já
     /// está completo"; then opens it.
     /// </summary>
     public async Task RestoreTutorialAsync(bool openAfter)
     {
-        if (!VaultWritable || World.City is null || _store is null)
+        if (!VaultWritable || _library is null || _store is null)
         {
             await Dialogs.AlertAsync("Tutorial", NoVaultMessage);
             return;
@@ -78,13 +78,11 @@ public sealed partial class MainView
         if (openAfter) Tutorial.Open();
     }
 
-    /// <summary>prepararBairros + criar: neighbourhoods of the right size, then one file and one house per note.</summary>
+    /// <summary>criar: one file per note, written and verified, then its document.</summary>
     private async Task<int> CreateTutorialFilesAsync(IReadOnlyList<string> paths)
     {
-        if (paths.Count == 0 || World.City is not { } city || _store is null) return 0;
-        city.EnsureFolders(LegacyCity.FolderQuantities(paths));
+        if (paths.Count == 0 || _library is not { } library) return 0;
         int made = 0;
-        bool links = false;
         foreach (var path in paths)
         {
             var content = TutorialFiles.First(f => f.Path == path).Content;
@@ -94,19 +92,13 @@ public sealed partial class MainView
                 await Dialogs.AlertAsync("Tutorial", "Não foi possível criar " + path + ": " + ex.Message);
                 break;
             }
-            var doc = _store.Upsert(new DocumentInput { Path = path, Content = content }, "tutorial");
-            city.AddDocumentHouse(doc, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+            library.AddNote(path, content, Now, "tutorial");
             _contents[path] = content;
-            links |= LegacyCity.LinkSignature(content).Length > 0;
             made++;
         }
         if (made == 0) return 0;
-        // document:created → urbeCasaParaDocumento (scheduleRoadRebuild when it has links) → marcarSinc
-        if (links) ScheduleRoadRebuild();
-        _mapSave?.Schedule();
-        _mapSave?.MarkSync();
+        NotesChanged();
         RefreshNotes();
-        World.InvalidateVisual();
         return made;
     }
 
@@ -118,12 +110,9 @@ public sealed partial class MainView
             await Dialogs.AlertAsync("Tutorial", "Não foi possível substituir " + path + ": " + ex.Message);
             return false;
         }
-        var before = _contents.GetValueOrDefault(path, "");
         _contents[path] = content;
         if (_store!.Get(path) is { } doc)
             _store.Upsert(new DocumentInput { Id = doc.Id, Path = doc.Path, Title = doc.Title, Content = content, Created = doc.Created, Modified = doc.Modified }, "tutorial");
-        // document:updated (not editor.input): a new [[link]] signature redraws the streets
-        if (LegacyCity.LinkSignature(before) != LegacyCity.LinkSignature(content)) ScheduleRoadRebuild();
         if (Editor.IsVisible && Editor.Current?.Path == path) Editor.Open(new CityNote(path, content));
         return true;
     }

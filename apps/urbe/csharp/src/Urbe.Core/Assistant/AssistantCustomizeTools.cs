@@ -14,25 +14,21 @@ public interface IAssistantAppearance
     Task ReplaceAsync(JsonObject config);
     /// <summary>themes(): the saved themes' ids (paths).</summary>
     IReadOnlyList<string> SavedThemes { get; }
-    /// <summary>packs(): the texture packs' paths.</summary>
-    IReadOnlyList<string> Packs { get; }
 }
 
 /// <summary>
 /// The Assistente's appearance tools of the 1.8.4 (src/customize/ai-tools.js), ported: appearance_schema (the tema.json
-/// format, ready themes, fonts, saved themes, texture packs and the current configuration) and set_appearance (merge or
-/// replace, validated before writing, with the diff for approval and undo). plugin_guide is not: the native app runs no
+/// format, ready themes, fonts, saved themes and the current configuration) and set_appearance (merge or replace,
+/// validated before writing, with the diff for approval and undo). The city's part of the 1.8.4 format (the "cidade"
+/// options, biomes and texture packs) is not offered since the city left the app (ADD-0028). plugin_guide is not: the native app runs no
 /// JavaScript plugins (ADD-0021). Proved by csharp/tools/assistant-customize-oracle.mjs.
 /// </summary>
 public static class AssistantCustomizeTools
 {
-    private static readonly string[] Biomes =
-        ["grama", "campo", "prado", "floresta", "mata", "mata-fechada", "pantano", "pântano", "taiga", "tundra", "neve", "colinas", "montanha", "pico", "deserto", "savana", "estepe", "praia", "mar", "profundo", "oceano", "rio", "lago"];
-
     private static readonly string[] Tokens =
         ["--ui-bg", "--ui-surface", "--ui-surface-2", "--ui-surface-3", "--ui-line", "--ui-line-2", "--ui-text", "--ui-text-2", "--ui-text-3", "--ui-accent", "--ui-danger", "--ui-ok", "--ui-warn", "--ui-code"];
 
-    /// <summary>customize.js schemaText(): the format of tema.json, saved themes, texture packs, styles and plugins.</summary>
+    /// <summary>customize.js schemaText(): the format of tema.json, saved themes, styles and plugins (without the city's part).</summary>
     public static string SchemaText() => string.Join("\n",
     [
         "ARQUIVO: " + LegacyCustomize.FilePath + " (JSON). Só escreva o que quiser mudar; o resto usa o padrão. Salvar o arquivo aplica na hora.",
@@ -43,22 +39,11 @@ public static class AssistantCustomizeTools
         "  \"forma\": { \"cantos\": \"retos\" | \"suaves\" | \"redondos\", \"densidade\": \"compacta\" | \"normal\" | \"confortavel\", \"vidro\": true|false },",
         "  \"animacoes\": \"sistema\" | \"ligadas\" | \"reduzidas\",",
         "  \"editor\": { \"largura\": \"estreita\" | \"media\" | \"larga\" | \"total\", \"modoInicial\": \"visual\" | \"texto\", \"ortografia\": true|false },",
-        "  \"cidade\": { \"moradores\": bool, \"fauna\": bool, \"clima\": bool, \"eventos\": bool, \"nomes\": bool, \"bairros\": bool, \"ambiente\": \"dia\" | \"entardecer\" | \"noite\" | \"auto\" | \"ciclo\",",
-        "              \"texturas\": \"Personalização/texturas/<pacote>.json\" | \"\", \"paleta\": { \"<bioma>\": [\"#base\", \"#sombra\", \"#luz\", \"#detalhe\"] } },",
         "  \"estilos\": { \"Personalização/estilos/<arquivo>.css\": true|false },",
         "  \"css\": \"regras CSS extras aplicadas por último\"",
         "}",
-        "Biomas: " + string.Join(", ", Biomes) + ", agua (rio+lago+mar).",
         "",
         "TEMA SALVO (Personalização/temas/<nome>.json): { \"nome\": \"...\", \"claro\": bool, \"base\": \"<tema pronto>\", \"cores\": { ...mesmas chaves de \"cores\"... } }",
-        "",
-        "PACOTE DE TEXTURAS (Personalização/texturas/<nome>.json):",
-        "{ \"nome\": \"...\",",
-        "  \"paleta\": { \"<bioma>\": [\"#base\", ...] },",
-        "  \"chao\": { \"<bioma>\": { \"cores\": { \"a\": \"#rrggbb\", \"b\": \"#rrggbb\" }, \"pixels\": [\"16 letras\", ... 16 linhas] }  |  { \"imagem\": \"data:image/png;base64,...\" }  |  [até 4 variações] },",
-        "  \"construcoes\": { \"casa\" | \"salao\" | \"oficina\" | \"tinturaria\" | \"torre\" | \"mercado\" | \"armazem\": { \"imagem\": \"data:...\" } | { \"cores\": {...}, \"pixels\": [...] } } }",
-        "Pixels: cada letra é uma cor de \"cores\"; \".\" usa a cor base do bioma. Grades de até 64×64 são reduzidas para 16×16 no chão.",
-        "Construções: desenho de 48×56 (3×3,5 tiles) fica igual às originais; outros tamanhos são esticados.",
         "",
         "ESTILOS: arquivos .css em Personalização/estilos/. Variáveis úteis: " + string.Join(", ", Tokens) + ", --ui-font, --ui-editor-font, --ui-editor-size, --ui-r-m.",
         "PLUGINS: arquivos .js em Personalização/plugins/ — veja plugin_guide."
@@ -106,7 +91,7 @@ public static class AssistantCustomizeTools
         new AiTool
         {
             Name = "appearance_schema", Access = "read",
-            Description = "Formato completo da personalização do Urbe: tema.json (tema, cores, fontes, forma, editor, cidade, texturas, estilos), temas salvos e pacotes de texturas. Mostra também a configuração atual. Chame antes de mudar a aparência.",
+            Description = "Formato completo da personalização do Urbe: tema.json (tema, cores, fontes, forma, editor, estilos) e temas salvos. Mostra também a configuração atual. Chame antes de mudar a aparência.",
             Parameters = Schema(new JsonObject()),
             Label = _ => "Lendo o formato da personalização",
             Run = (_, host) =>
@@ -114,9 +99,8 @@ public static class AssistantCustomizeTools
                 var c = C(host);
                 var presets = string.Join(", ", LegacyCustomizeTheme.Presets.Select(p => p.Id + " (" + p.Name + (p.Light ? ", claro" : ", escuro") + ")"));
                 var themes = c.SavedThemes.Count > 0 ? string.Join(", ", c.SavedThemes) : "nenhum";
-                var packs = c.Packs.Count > 0 ? string.Join(", ", c.Packs) : "nenhum";
                 return Task.FromResult(new AiToolOutput(SchemaText() + "\n\nTEMAS PRONTOS: " + presets + "\nFONTES: " + string.Join(", ", LegacyCustomize.Fonts) +
-                    "\nTEMAS SALVOS: " + themes + "\nPACOTES DE TEXTURAS: " + packs + "\n\nCONFIGURAÇÃO ATUAL:\n" + LegacyCustomize.Stringify(c.Current, 2)));
+                    "\nTEMAS SALVOS: " + themes + "\n\nCONFIGURAÇÃO ATUAL:\n" + LegacyCustomize.Stringify(c.Current, 2)));
             }
         },
         new AiTool

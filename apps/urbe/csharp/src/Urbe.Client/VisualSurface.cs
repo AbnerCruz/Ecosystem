@@ -1,6 +1,8 @@
 using Avalonia.VisualTree;
 using Avalonia;
+using Avalonia.Animation;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -27,6 +29,9 @@ public sealed class VisualSurface : StackPanel
     private readonly WikiSuggestList _wiki = new();
     private readonly SlashMenu _slash = new();
     private readonly Border _bubble;
+    private readonly Canvas _bubbleLayer = new() { Height = 0, VerticalAlignment = VerticalAlignment.Top };
+    private readonly Border _backdrop = new() { IsHitTestVisible = false };
+    private readonly Dictionary<int, Control> _holders = [];
 
     public VisualSurface()
     {
@@ -34,8 +39,42 @@ public sealed class VisualSurface : StackPanel
         _wiki.Chosen += CommitWiki;
         _slash.Chosen += ChooseSlash;
         _bubble = BuildBubble();
+        _bubbleLayer.Children.Add(_bubble);
         Rebuild();
     }
+
+    /// <summary>The body size of the notes (Personalização → Fonte das notas → Tamanho; --ui-editor-size).</summary>
+    public double TextSize { get; private set; } = UrbeTheme.EditorSize;
+
+    /// <summary>The line height factor (--ui-editor-line).</summary>
+    public double LineFactor { get; private set; } = 1.7;
+
+    /// <summary>Applies the text size and line height of Personalização (the note is drawn again when they change).</summary>
+    public void ApplyText(double size, double lineFactor)
+    {
+        if (size == TextSize && lineFactor == LineFactor) return;
+        TextSize = size;
+        LineFactor = lineFactor;
+        FinishEdit();
+        Rebuild();
+    }
+
+    /// <summary>A block entered (true) or left (false) edit mode.</summary>
+    public event Action<bool>? EditingChanged;
+
+    /// <summary>The text box of the block being edited (tests, the host), or null.</summary>
+    public TextBox? EditBox => _box;
+
+    /// <summary>The drawn block that starts at <paramref name="start"/> in the text, or null (tests, the host).</summary>
+    public Control? BlockView(int start) => _holders.GetValueOrDefault(start);
+
+    /// <summary>The blocks of the note as drawn (their start in the text, in order).</summary>
+    public IReadOnlyList<int> BlockStarts => _blocks.Select(b => b.Start).ToList();
+
+    /// <summary>The selection bubble (tests, screenshots).</summary>
+    public Control Bubble => _bubble;
+
+    private ScrollViewer? Scroll => this.FindAncestorOfType<ScrollViewer>();
 
     /// <summary>The whole note, Markdown (LF), after every edit.</summary>
     public string Text => _text;
@@ -68,10 +107,12 @@ public sealed class VisualSurface : StackPanel
     {
         _text = markdown.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
         // the block being edited goes: its buttons must not stay lit (UC-55)
-        if (_box is not null) ActiveToolsChanged?.Invoke(new HashSet<string>());
+        var was = _box is not null;
+        if (was) ActiveToolsChanged?.Invoke(new HashSet<string>());
         _box = null;
         _editStart = _editEnd = -1;
         Rebuild();
+        if (was) EditingChanged?.Invoke(false);
     }
 
     /// <summary>Leaves the block being edited (its text is already in <see cref="Text"/>) and draws it again.</summary>
@@ -81,19 +122,51 @@ public sealed class VisualSurface : StackPanel
     public void FinishEdit()
     {
         if (_box is null) return;
+        // the block keeps its place on the screen when it is drawn again (UC-57)
+        var scroll = Scroll;
+        double? before = scroll is null || _box.Parent is not Visual boxCell ? null : EditorScrolling.TopIn(boxCell, scroll);
+        int at = _editStart;
+        bool kept = _editEnd > _editStart;
         _box = null;
         ActiveToolsChanged?.Invoke(new HashSet<string>());
         _wiki.Hide();
         _slash.Hide();
+        _bubble.IsVisible = false;
         if (_editStart >= 0)
         {
             // an emptied block leaves no trace (the original drops empty paragraphs when serialising)
-            var hadText = _editEnd > _editStart;
-            if (!hadText) Collapse(_editStart);
+            if (!kept) Collapse(_editStart);
         }
         _editStart = _editEnd = -1;
         Rebuild();
+        if (kept && _holders.GetValueOrDefault(at) is { } drawn)
+        {
+            if (scroll is not null && before is { } y) KeepAt(drawn, y, scroll);
+            Settle(drawn);
+        }
         TextEdited?.Invoke(_text);
+        EditingChanged?.Invoke(false);
+    }
+
+    /// <summary>Scrolls so that <paramref name="c"/>'s top is again at <paramref name="y"/> on the screen.</summary>
+    private static void KeepAt(Control c, double y, ScrollViewer scroll)
+    {
+        scroll.UpdateLayout();
+        if (EditorScrolling.TopIn(c, scroll) is not { } now) return;
+        var delta = now - y;
+        if (Math.Abs(delta) < .5) return;
+        EditorScrolling.SetOffsetY(scroll, scroll.Offset.Y + delta);
+        scroll.UpdateLayout();
+    }
+
+    /// <summary>A block drawn again after editing settles in with a short fade (≤ 150 ms, UX.md P6).</summary>
+    private static void Settle(Control c)
+    {
+        if (UrbeTokens.Motion.Reduced) return;
+        c.Transitions = null;
+        c.Opacity = .55;
+        c.Transitions = [new DoubleTransition { Property = OpacityProperty, Duration = UrbeTokens.Motion.Fast, Easing = UrbeTokens.Motion.EaseOut }];
+        c.Opacity = 1;
     }
 
     private void Collapse(int at)
@@ -112,13 +185,14 @@ public sealed class VisualSurface : StackPanel
     private void Rebuild()
     {
         Children.Clear();
+        _holders.Clear();
         _blocks = WithContainers(MarkdownEngine.SplitBlocks(_text), NoteContainers.Parse(_text));
         if (_blocks.Count == 0 && _box is null)
         {
             var empty = new Border
             {
                 Background = Brushes.Transparent, MinHeight = 44,
-                Child = new TextBlock { Text = "Comece a escrever…", Foreground = UrbeTheme.Brush(UrbeTheme.Text3), FontSize = UrbeTheme.EditorSize }
+                Child = new TextBlock { Text = "Comece a escrever…", Foreground = UrbeTheme.Brush(UrbeTheme.Text3), FontSize = TextSize, FontFamily = UrbeTheme.EditorFont }
             };
             empty.Tapped += (_, e) => { e.Handled = true; AppendBlock(); };
             Children.Add(empty);
@@ -132,7 +206,9 @@ public sealed class VisualSurface : StackPanel
                 Children.Add(EditorFor());
                 if (block.Start == _editStart) continue;   // the block being edited
             }
-            Children.Add(Rendered(block));
+            var drawn = Rendered(block);
+            _holders[block.Start] = drawn;
+            Children.Add(drawn);
         }
         if (_box is not null && !editorAdded) Children.Add(EditorFor());
         var tail = new Border { Background = Brushes.Transparent, MinHeight = 160 };
@@ -166,6 +242,7 @@ public sealed class VisualSurface : StackPanel
         var container = block.Kind == "container";
         var reader = new MarkdownReader
         {
+            Size = TextSize, LineFactor = LineFactor,
             WikiLinkTapped = name => WikiLinkTapped?.Invoke(name),
             // a task inside a container: the tap edits the block (its list lines are not the block's lines)
             TaskToggled = container ? null : (line, on) => ToggleTask(block, line, on),
@@ -176,14 +253,22 @@ public sealed class VisualSurface : StackPanel
         // a tap (press and release without moving), never the press: a finger that starts a scroll on a block
         // must scroll, not turn the block into an edit box under it (the 1.8.4's preview scrolls the same way)
         if (block.Kind != "frontmatter")
+        {
             holder.Tapped += (_, e) =>
             {
-                if (e.Handled) return;
+                // a hold already opened this block (the release of the same touch), or a link/checkbox took the tap
+                if (e.Handled || !holder.IsAttachedToVisualTree()) return;
                 e.Handled = true;
-                // the caret goes where the finger touched (before: at the end, and a second tap was needed — UC-48)
-                _tapAt = e.GetPosition(holder);
-                Edit(block.Start);
+                TapBlock(block.Start, holder, e.Source as Visual, e.GetPosition(holder), select: false);
             };
+            // a long press selects the word under the finger, with the bubble and a haptic tick (UX.md P7, P8)
+            holder.AddHandler(InputElement.HoldingEvent, (object? _, HoldingRoutedEventArgs e) =>
+            {
+                if (e.HoldingState != HoldingState.Started || !holder.IsAttachedToVisualTree()) return;
+                e.Handled = true;
+                TapBlock(block.Start, holder, holder.InputHitTest(e.Position) as Visual, e.Position, select: true);
+            });
+        }
         return holder;
     }
 
@@ -211,6 +296,95 @@ public sealed class VisualSurface : StackPanel
         StartBox("", at, at);
     }
 
+    /// <summary>
+    /// A tap (or a long press: <paramref name="select"/>) on a drawn block: it becomes editable with the caret at the
+    /// character under the finger (mapped from the drawn text back to the Markdown), the block staying where it was on
+    /// the screen; a long press selects the word there.
+    /// </summary>
+    public void TapBlock(int blockStart, Control holder, Visual? hit, Point at, bool select)
+    {
+        var scroll = Scroll;
+        _anchorY = scroll is null ? null : EditorScrolling.TopIn(holder, scroll);
+        _tapAt = at;
+        var end = _blocks.FirstOrDefault(b => b.Start == blockStart)?.End ?? blockStart;
+        var source = _text[blockStart..Math.Clamp(end, blockStart, _text.Length)];
+        _tapCaret = RenderedIndex(holder, hit, at) is { } r ? SourceIndex(source, PlainText(holder), r) : null;
+        _selectWord = select;
+        Edit(blockStart);
+    }
+
+    private double? _anchorY;
+    private int? _tapCaret;
+    private bool _selectWord;
+
+    /// <summary>The note's text drawn in a block (its text blocks in order, a line break between them).</summary>
+    internal static string PlainText(Control holder) => string.Join('\n', TextBlocks(holder).Select(TextOf));
+
+    private static IEnumerable<TextBlock> TextBlocks(Control holder) =>
+        holder.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Classes.Contains(MarkdownReader.TextClass));
+
+    private static string TextOf(TextBlock tb)
+    {
+        if (tb.Inlines is not { Count: > 0 } inlines) return tb.Text ?? "";
+        var sb = new System.Text.StringBuilder();
+        void Add(Inline i)
+        {
+            switch (i)
+            {
+                case Run r: sb.Append(r.Text); break;
+                case LineBreak: sb.Append('\n'); break;
+                case InlineUIContainer: sb.Append('￼'); break;
+                case Span span: foreach (var c in span.Inlines) Add(c); break;
+            }
+        }
+        foreach (var i in inlines) Add(i);
+        return sb.ToString();
+    }
+
+    /// <summary>The index in <see cref="PlainText"/> of the character under <paramref name="at"/>, or null off the text.</summary>
+    private static int? RenderedIndex(Control holder, Visual? hit, Point at)
+    {
+        var blocks = TextBlocks(holder).ToList();
+        var tb = hit?.GetSelfAndVisualAncestors().OfType<TextBlock>().FirstOrDefault(t => t.Classes.Contains(MarkdownReader.TextClass));
+        // off a text (a margin, a bullet): the text block nearest to that height
+        tb ??= blocks.OrderBy(t => holder.TranslatePoint(at, t) is { } q ? (q.Y < 0 ? -q.Y : q.Y > t.Bounds.Height ? q.Y - t.Bounds.Height : 0) : double.MaxValue).FirstOrDefault();
+        if (tb is null || holder.TranslatePoint(at, tb) is not { } p) return null;
+        var h = tb.TextLayout.HitTestPoint(new Point(Math.Max(0, p.X), Math.Clamp(p.Y, 0, Math.Max(0, tb.Bounds.Height - 1))));
+        var index = h.TextPosition + (h.IsTrailing ? 1 : 0);
+        int offset = 0;
+        foreach (var b in blocks)
+        {
+            if (ReferenceEquals(b, tb)) return offset + Math.Clamp(index, 0, TextOf(b).Length);
+            offset += TextOf(b).Length + 1;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Maps an index in the drawn text to the Markdown source: the characters of the drawn text are found in order in the
+    /// source, the marks between them skipped (`**`, `[[`, `# `, `- `…). A drawn character not on the same source line (a
+    /// bullet, a placeholder) is passed over.
+    /// </summary>
+    public static int SourceIndex(string source, string plain, int at)
+    {
+        int i = 0;
+        at = Math.Clamp(at, 0, plain.Length);
+        for (int j = 0; j < at && i < source.Length; j++)
+        {
+            int k = i;
+            while (k < source.Length && source[k] != plain[j] && !(plain[j] != '\n' && source[k] == '\n')) k++;
+            if (k < source.Length && source[k] == plain[j]) i = k + 1;
+        }
+        // before the next drawn character: past the marks that open it (the caret lands inside **bold**, not before it)
+        if (at < plain.Length)
+        {
+            int k = i;
+            while (k < source.Length && source[k] != plain[at] && source[k] != '\n' && k - i < 8) k++;
+            if (k < source.Length && source[k] == plain[at]) i = k;
+        }
+        return Math.Clamp(i, 0, source.Length);
+    }
+
     private void Edit(int blockStart)
     {
         var before = _text.Length;
@@ -224,20 +398,46 @@ public sealed class VisualSurface : StackPanel
         StartBox(_text[block.Start..block.End], block.Start, block.End, block.Kind);
     }
 
+    /// <summary>The box's padding: the text inside sits where the drawn text was.</summary>
+    private const double PadX = 12, PadY = 6;
+
     private void StartBox(string source, int start, int end, string kind = "paragraph")
     {
         _editStart = start;
         _editEnd = end;
+        // the box reads like the drawn block: same font, size, line height and place (no jump between the two, UC-57)
+        var heading = System.Text.RegularExpressions.Regex.Match(source, @"^(#{1,6})\s");
+        var (em, weight, top) = heading.Success
+            ? heading.Groups[1].Length switch
+            {
+                1 => (1.9, (FontWeight)750, .2),
+                2 => (1.4, FontWeight.Bold, 1.4),
+                3 => (1.15, (FontWeight)650, 1.2),
+                _ => (1.0, FontWeight.Bold, 1.33)
+            }
+            : (kind == "code" ? .88 : 1.0, FontWeight.Normal, kind is "paragraph" ? .6 : .25);
+        var size = TextSize * em;
+        var margin = Math.Max(0, top * TextSize - PadY);
         _box = new TextBox
         {
             Text = source, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, BorderThickness = new Thickness(0),
-            Padding = new Thickness(8, 6), CornerRadius = new CornerRadius(8),
-            FontFamily = kind == "code" ? UrbeTheme.MonoFont : UrbeTheme.UiFont, FontSize = UrbeTheme.EditorSize,
-            Foreground = UrbeTheme.Brush(UrbeTheme.Text), Background = UrbeTheme.Brush(UrbeTheme.Accent, .07),
-            CaretBrush = UrbeTheme.Brush(UrbeTheme.Accent), SelectionBrush = UrbeTheme.Brush(UrbeTheme.Accent, .35)
+            Padding = new Thickness(PadX, PadY), Margin = new Thickness(-PadX, margin, -PadX, margin), CornerRadius = new CornerRadius(UrbeTokens.Radius.M),
+            FontFamily = kind == "code" ? UrbeTheme.MonoFont : heading.Success ? UrbeTheme.UiFont : UrbeTheme.EditorFont, FontSize = size, FontWeight = weight,
+            LineHeight = heading.Success ? size * 1.25 : size * LineFactor, MinHeight = 0,
+            Foreground = weight == FontWeight.Normal ? UrbeTheme.Brush(UrbeTheme.Text, MarkdownReader.BodyInk) : UrbeTheme.Brush(UrbeTheme.Text),
+            Background = Brushes.Transparent,
+            CaretBrush = UrbeTheme.Brush(UrbeTheme.Accent), SelectionBrush = UrbeTheme.Brush(UrbeTheme.Accent, .35),
+            SelectionForegroundBrush = UrbeTheme.Brush(UrbeTheme.Text)
         };
+        Avalonia.Automation.AutomationProperties.SetName(_box, "Bloco em edição");
+        // the block being written is marked by a soft, warm backdrop that fades in (UX.md P6)
+        _backdrop.Margin = _box.Margin;
+        _backdrop.CornerRadius = new CornerRadius(UrbeTokens.Radius.M);
+        _backdrop.Background = UrbeTheme.Brush(UrbeTheme.Accent, .07);
+        _backdrop.BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent, .22);
+        _backdrop.BorderThickness = new Thickness(1);
         foreach (var key in new[] { "TextControlBackground", "TextControlBackgroundPointerOver", "TextControlBackgroundFocused" })
-            _box.Resources[key] = _box.Background;
+            _box.Resources[key] = Brushes.Transparent;
         foreach (var key in new[] { "TextControlBorderBrush", "TextControlBorderBrushPointerOver", "TextControlBorderBrushFocused" })
             _box.Resources[key] = Brushes.Transparent;
         _box.TextChanged += OnBoxChanged;
@@ -250,12 +450,14 @@ public sealed class VisualSurface : StackPanel
             _box.SelectionStart = from;
             _box.SelectionEnd = to;
             e.Handled = true;
+            Ui.PlatformHaptics.Tick();
         };
         _box.KeyDown += OnBoxKey;
         _box.AddHandler(KeyDownEvent, OnBoxKey, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         _box.PropertyChanged += (_, e) =>
         {
             if (e.Property == TextBox.SelectionStartProperty || e.Property == TextBox.SelectionEndProperty || e.Property == TextBox.CaretIndexProperty) UpdateTools();
+            if (e.Property == TextBox.CaretIndexProperty) KeepCaretSoon(typing: false);
         };
         _box.LostFocus += (_, _) => Dispatcher.UIThread.Post(() =>
         {
@@ -264,14 +466,58 @@ public sealed class VisualSurface : StackPanel
         }, DispatcherPriority.Background);
         Rebuild();
         var tap = _tapAt;
+        var caret = _tapCaret;
+        var anchor = _anchorY;
+        var select = _selectWord;
         _tapAt = null;
+        _tapCaret = null;
+        _anchorY = null;
+        _selectWord = false;
+        var box = _box;
+        if (!UrbeTokens.Motion.Reduced) Ui.UrbeMotion.Enter(_backdrop, 0, 0, UrbeTokens.Motion.Fast);
+        // laid out now, in the same pass: the caret, the block's place and the keyboard come with the first frame
+        var scroll = Scroll;
+        if (box.IsAttachedToVisualTree())
+        {
+            if (scroll is not null) scroll.UpdateLayout(); else UpdateLayout();
+            if (scroll is not null && anchor is { } y && box.Parent is Control cell) KeepAt(cell, y, scroll);
+            Place(box, tap, caret, select);
+        }
+        EditingChanged?.Invoke(true);
+        // a box not laid out yet (the surface was not on screen): the same once it is
+        Dispatcher.UIThread.Post(() => { if (_box == box && !box.IsFocused) Place(box, tap, caret, select); }, DispatcherPriority.Loaded);
+    }
+
+    private void Place(TextBox box, Point? tap, int? caret, bool select)
+    {
+        box.Focus();
+        var len = box.Text?.Length ?? 0;
+        var at = caret is { } c ? Math.Clamp(c, 0, len) : CaretFromTap(box, tap) ?? len;
+        box.SelectionStart = box.SelectionEnd = box.CaretIndex = at;
+        if (select)
+        {
+            var (from, to) = WordAt(box.Text ?? "", at);
+            if (to > from) { box.SelectionStart = from; box.SelectionEnd = to; }
+            Ui.PlatformHaptics.Hold();
+        }
+        // a box focused by the app does not always bring up the phone's keyboard: ask for it (UC-48)
+        PlatformInput.ShowKeyboard?.Invoke();
+    }
+
+    private bool _keepPending, _keepTyping;
+
+    /// <summary>Keeps the caret line in sight after the next layout (typing: in the upper two thirds of the visible area).</summary>
+    public void KeepCaretSoon(bool typing)
+    {
+        _keepTyping |= typing;
+        if (_keepPending || _box is null) return;
+        _keepPending = true;
         Dispatcher.UIThread.Post(() =>
         {
-            if (_box is null) return;
-            _box.Focus();
-            _box.CaretIndex = CaretFromTap(_box, tap) ?? _box.Text?.Length ?? 0;
-            // a box focused by the app does not always bring up the phone's keyboard: ask for it (UC-48)
-            PlatformInput.ShowKeyboard?.Invoke();
+            _keepPending = false;
+            var t = _keepTyping;
+            _keepTyping = false;
+            if (_box is { } box && Scroll is { } scroll) EditorScrolling.KeepCaret(box, scroll, t);
         }, DispatcherPriority.Loaded);
     }
 
@@ -295,19 +541,21 @@ public sealed class VisualSurface : StackPanel
         if (tap is not { } p) return null;
         var presenter = box.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.TextPresenter>().FirstOrDefault();
         if (presenter?.TextLayout is not { } layout) return null;
-        var hit = layout.HitTestPoint(new Point(Math.Max(0, p.X - box.Padding.Left), Math.Max(0, p.Y - box.Padding.Top)));
+        // the box's text sits where the drawn block's text was: the point (in the drawn block) maps through the box's margin
+        var q = box.TranslatePoint(new Point(p.X - box.Margin.Left, p.Y - box.Margin.Top), presenter) ?? p;
+        var hit = layout.HitTestPoint(new Point(Math.Max(0, q.X), Math.Max(0, q.Y)));
         var at = hit.TextPosition + (hit.IsTrailing ? 1 : 0);
         return Math.Clamp(at, 0, box.Text?.Length ?? 0);
     }
 
     private Control EditorFor()
     {
-        // the bubble, the box and the menus are reused: take them out of the panel of the previous build first
-        Control[] parts = [_bubble, _box!, _slash, _wiki];
+        // the backdrop, the box, the bubble and the menus are reused: take them out of the panel of the previous build first
+        Control[] parts = [_backdrop, _box!, _bubbleLayer, _slash, _wiki];
         foreach (var c in parts) if (c.Parent is Panel old) old.Children.Remove(c);
-        var panel = new StackPanel();
-        panel.Children.AddRange(parts);
-        return panel;
+        // the bubble floats over the text (a canvas of no height): showing it never pushes the block down (UC-57)
+        var cell = new Grid { Children = { _backdrop, _box!, _bubbleLayer } };
+        return new StackPanel { Children = { cell, _slash, _wiki }, ZIndex = 1 };
     }
 
     // ------------------------------------------------------------------ editing
@@ -322,6 +570,7 @@ public sealed class VisualSurface : StackPanel
         _editEnd = _editStart + block.Length;
         TextEdited?.Invoke(_text);
         UpdateTools();
+        KeepCaretSoon(typing: true);
     }
 
     private void UpdateTools()
@@ -331,7 +580,7 @@ public sealed class VisualSurface : StackPanel
         // while a key or the keyboard (IME) changes the text, the selection can still point past its end
         var (a, b) = Range(_box);
         var bubbleOn = b > a && text[a..b].Trim().Length > 0;
-        _bubble.IsVisible = bubbleOn;
+        if (bubbleOn) ShowBubble(a); else _bubble.IsVisible = false;
         ActiveToolsChanged?.Invoke(LegacyEditorTools.ActiveTools(text, a, b));
 
         var slash = LegacyEditorTools.SlashQuery(text);
@@ -654,6 +903,46 @@ public sealed class VisualSurface : StackPanel
 
     // ------------------------------------------------------------------ the selection bubble (#urbeFormatBubble)
 
+    /// <summary>The bubble floats just above the selection (below it at the top of the screen), springing in.</summary>
+    private void ShowBubble(int selectionStart)
+    {
+        if (_box is null) return;
+        var was = _bubble.IsVisible;
+        _bubble.IsVisible = true;
+        _bubble.MaxWidth = Math.Max(120, Bounds.Width + PadX);
+        _bubble.Measure(Size.Infinity);
+        var size = _bubble.DesiredSize;
+        double x = 0, y = -size.Height - 8;
+        var presenter = _box.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.TextPresenter>().FirstOrDefault();
+        if (presenter is not null)
+        {
+            var r = presenter.TextLayout.HitTestTextPosition(Math.Clamp(selectionStart, 0, (_box.Text ?? "").Length));
+            if (presenter.TranslatePoint(r.TopLeft, _bubbleLayer) is { } p)
+            {
+                x = p.X - 16;
+                y = p.Y - size.Height - 8;
+                // too close to the top of the screen: under the line instead
+                if (Scroll is { } scroll && presenter.TranslatePoint(r.TopLeft, scroll) is { } s && s.Y - size.Height - 8 < 0)
+                    y = p.Y + Math.Max(r.Height, _box.LineHeight) + 8;
+            }
+        }
+        var room = Math.Max(0, Bounds.Width - size.Width);
+        Canvas.SetLeft(_bubble, Math.Clamp(x, -PadX / 2, room));
+        Canvas.SetTop(_bubble, y);
+        if (was || UrbeTokens.Motion.Reduced) return;
+        _bubble.RenderTransformOrigin = RelativePoint.Center;
+        _bubble.Transitions = null;
+        _bubble.Opacity = 0;
+        _bubble.RenderTransform = Avalonia.Media.Transformation.TransformOperations.Parse("scale(0.92)");
+        _bubble.Transitions =
+        [
+            new DoubleTransition { Property = OpacityProperty, Duration = UrbeTokens.Motion.Fast, Easing = UrbeTokens.Motion.EaseOut },
+            new TransformOperationsTransition { Property = RenderTransformProperty, Duration = UrbeTokens.Motion.Normal, Easing = UrbeTokens.Motion.Spring }
+        ];
+        _bubble.Opacity = 1;
+        _bubble.RenderTransform = Avalonia.Media.Transformation.TransformOperations.Parse("scale(1)");
+    }
+
     private Border BuildBubble()
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
@@ -661,11 +950,15 @@ public sealed class VisualSurface : StackPanel
         {
             var b = new Button
             {
-                Content = content, Width = 36, Height = 36, Padding = new Thickness(0), CornerRadius = new CornerRadius(8), Focusable = false,
+                Content = content, Width = 44, Height = 44, Padding = new Thickness(0), CornerRadius = new CornerRadius(UrbeTokens.Radius.M), Focusable = false,
                 Background = Brushes.Transparent, Foreground = UrbeTheme.Brush(UrbeTheme.Text),
                 HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
             };
+            b.Resources["ButtonBackgroundPointerOver"] = UrbeTheme.Brush(UrbeTheme.Surface3, .8);
+            b.Resources["ButtonBackgroundPressed"] = UrbeTheme.Brush(UrbeTheme.Surface3);
             ToolTip.SetTip(b, tip);
+            Avalonia.Automation.AutomationProperties.SetName(b, tip);
+            Ui.UrbeMotion.Pressable(b, haptic: true);
             b.Click += (_, _) => Run(act);
             row.Children.Add(b);
         }
@@ -683,10 +976,16 @@ public sealed class VisualSurface : StackPanel
         Sep();
         Add("comment", new TextBlock { Text = "%%", FontWeight = FontWeight.Bold, FontSize = 13 }, "Comentário");
         Add("pin", UrbeTheme.Icon(UrbeTheme.Icons.Pin, 18), "Fixar em painel");
-        var card = EditorChrome.Card(row);
+        // narrower than all its buttons (a phone): it scrolls sideways, never off the screen
+        var card = EditorChrome.Card(new ScrollViewer
+        {
+            Content = row, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Hidden,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
+        });
         card.IsVisible = true;
         card.Padding = new Thickness(4);
-        var holder = new Border { Child = card, IsVisible = false, Margin = new Thickness(0, 0, 0, 4), HorizontalAlignment = HorizontalAlignment.Left };
-        return holder;
+        card.CornerRadius = new CornerRadius(UrbeTokens.Radius.L);
+        card.BoxShadow = UrbeTokens.Elevation.Mid;
+        return new Border { Child = card, IsVisible = false, HorizontalAlignment = HorizontalAlignment.Left };
     }
 }

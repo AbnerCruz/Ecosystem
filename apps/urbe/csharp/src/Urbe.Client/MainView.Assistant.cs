@@ -5,26 +5,27 @@ namespace Urbe.Client;
 
 /// <summary>
 /// The Assistente (UC-21) in the native app: the rail/dock destination opens the panel; the agents' tools read the
-/// vault's documents and write through the same paths as the person (the vault file first, verified, then the store,
-/// the city and the map), so nothing changes in memory only. Conversations and keys stay on this device.
+/// vault's documents and write through the same paths as the person (the vault file first, verified, then the store
+/// and the notes' record), so nothing changes in memory only. Conversations and keys stay on this device.
 /// </summary>
 public sealed partial class MainView : IAssistantApp
 {
     private AssistantPanel? _assistant;
 
-    /// <summary>The Assistente panel, made the first time it opens (over the city and the editor, under the dialogs).</summary>
+    /// <summary>The Assistente panel, made the first time it opens (over the Explorer and the editor, under the dialogs).</summary>
     public AssistantPanel Assistant => _assistant ??= MakeAssistant();
 
     private AssistantPanel MakeAssistant()
     {
         IAssistantStorage storage = UrbeApp.AssistantFolder is { } folder ? new FolderAssistantStorage(folder) : new MemoryAssistantStorage();
         var panel = new AssistantPanel(this, storage);
-        _stage.Children.Add(panel);   // over the city, the editor, the previews and the plugins' panels; the dialogs stay above
+        _stage.Children.Add(panel);   // over the Explorer, the editor, the previews and the plugins' panels; the dialogs stay above
         PlaceAssistant(panel, Bounds.Width);
+        panel.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateNav(); };
         return panel;
     }
 
-    /// <summary>Wide screens: a 440 px panel at the right, beside the city or the editor; narrow ones: the whole screen.</summary>
+    /// <summary>Wide screens: a 440 px panel at the right, beside the Explorer or the editor; narrow ones: the whole screen.</summary>
     private static void PlaceAssistant(AssistantPanel? panel, double width)
     {
         if (panel is null) return;
@@ -32,6 +33,9 @@ public sealed partial class MainView : IAssistantApp
         panel.Width = side ? 440 : double.NaN;
         panel.HorizontalAlignment = side ? Avalonia.Layout.HorizontalAlignment.Right : Avalonia.Layout.HorizontalAlignment.Stretch;
     }
+
+    /// <summary>True while the Assistente panel is open.</summary>
+    private bool AssistantOpen => _assistant is { IsVisible: true };
 
     /// <summary>The rail/dock "Assistente": opens (or closes) the panel.</summary>
     public void ToggleAssistant()
@@ -59,7 +63,7 @@ public sealed partial class MainView : IAssistantApp
 
     IAssistantPlugins? IAssistantApp.Plugins => new PluginsAdapter(Customization);
 
-    /// <summary>The city's plugins for write_plugin: listed as Personalização lists them; turned on for their exact text.</summary>
+    /// <summary>The vault's plugins for write_plugin: listed as Personalização lists them; turned on for their exact text.</summary>
     private sealed class PluginsAdapter(Customization c) : IAssistantPlugins
     {
         public IReadOnlyList<(string Path, string Name, string Status)> List() =>
@@ -78,7 +82,6 @@ public sealed partial class MainView : IAssistantApp
             if (n.Errors.Count > 0) throw new InvalidOperationException(n.Errors[0].Path + ": " + n.Errors[0].Message);
         }
         public IReadOnlyList<string> SavedThemes => c.Themes().Select(t => t.Id).ToList();
-        public IReadOnlyList<string> Packs => c.Packs().Select(p => p.Path).ToList();
     }
 
     void IAssistantApp.Notify(string text) => ShowLifeNotice(text);
@@ -95,41 +98,25 @@ public sealed partial class MainView : IAssistantApp
 
     private void RequireWritable()
     {
-        if (!VaultWritable || _store is null || World.City is null)
+        if (!VaultWritable || _library is null)
             throw new InvalidOperationException("O vault está só para leitura. Abra a pasta do seu vault (Configurações → Pasta no dispositivo) para o Assistente alterar notas.");
     }
 
-    /// <summary>The folders of <paramref name="folder"/> as neighbourhoods, each made (region and vault folder) when missing.</summary>
+    /// <summary>The folders of <paramref name="folder"/>, each made in the vault when missing, and recorded.</summary>
     private async Task EnsureFolderAsync(string folder)
     {
-        var city = World.City!;
-        string? parent = null, prefix = "";
-        foreach (var part in folder.Split('/', StringSplitOptions.RemoveEmptyEntries))
-        {
-            prefix = prefix.Length == 0 ? part : prefix + "/" + part;
-            var region = city.RegionByPath(prefix);
-            if (region is null)
-            {
-                region = city.CreateFolder(part, parent, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
-                         ?? throw new InvalidOperationException("Não encontrei área livre na cidade para a pasta " + prefix + ".");
-                try { await _vault!.CreateDirectoryAsync(city.RegionPaths()[region.Id]); }
-                catch { city.Regions.Remove(region); throw; }
-            }
-            parent = region.Id;
-        }
+        if (folder.Length == 0 || NoteFolders().Contains(folder)) return;
+        await _vault!.CreateDirectoryAsync(folder);
+        _library!.AddFolder(folder);
+        NotesChanged();
     }
-
-    private static string FolderOf(string path) => path.LastIndexOf('/') is var i and >= 0 ? path[..i] : "";
 
     private void AfterAssistantWrite(string path)
     {
-        // a file of Personalização changed (tema.json, temas, texturas, tags): recarregar(), as customize.js does on document:updated
+        // a file of Personalização changed (tema.json, temas, tags): recarregar(), as customize.js does on document:updated
         if (path.StartsWith(LegacyCustomize.Folder + "/", StringComparison.Ordinal)) Customization.Load(_contents);
-        ScheduleRoadRebuild();
-        _mapSave?.Schedule();
-        _mapSave?.MarkSync();
+        NotesChanged();
         RefreshNotes();
-        World.InvalidateVisual();
     }
 
     async Task<UrbeDocument> IAssistantApp.CreateNoteAsync(string path, string content)
@@ -138,17 +125,14 @@ public sealed partial class MainView : IAssistantApp
         if (_store!.Get(path) is not null || _contents.ContainsKey(path)) throw new InvalidOperationException("Já existe " + path + ".");
         if (path.StartsWith(LegacyCustomize.Folder + "/", StringComparison.Ordinal))
         {
-            // Personalização (tema, plugins...): written as customize.js writes it, a house beside the others of the folder
+            // Personalização (tema, plugins...): written as customize.js writes it
             await WriteVaultFileAsync(path, content, exists: false);
             AfterAssistantWrite(path);
             return _store.Get(path)!;
         }
-        await EnsureFolderAsync(FolderOf(path));
+        await EnsureFolderAsync(DirOf(path));
         await _vault!.CreateTextFileAsync(path, content);
-        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var today = LegacyCity.NowDate(now);
-        var doc = _store.Upsert(new DocumentInput { Path = path, Content = content, Created = today, Modified = today }, "ai.agent");
-        World.City!.AddDocumentHouse(doc, now);
+        var doc = _library!.AddNote(path, content, Now, "ai.agent");
         _contents[path] = content;
         AfterAssistantWrite(path);
         return doc;
@@ -168,17 +152,15 @@ public sealed partial class MainView : IAssistantApp
     async Task<UrbeDocument> IAssistantApp.RenameNoteAsync(UrbeDocument doc, string newPath)
     {
         RequireWritable();
-        var city = World.City!;
-        var house = city.Buildings.Find(b => b.IsNote && b.Path == doc.Path) ?? throw new InvalidOperationException("A nota " + doc.Path + " não está na cidade.");
+        if (_store!.Get(doc.Path) is null) throw new InvalidOperationException("A nota " + doc.Path + " não está no vault.");
         bool editing = Editor.IsVisible && Editor.Current?.Path == doc.Path;
         if (editing && Editor.HasChanges && !await Editor.SaveAsync()) throw new InvalidOperationException("A nota tem alterações que não foram salvas no vault.");
-        await EnsureFolderAsync(FolderOf(newPath));
+        await EnsureFolderAsync(DirOf(newPath));
         var from = doc.Path;
         await _vault!.MoveTextFileAsync(from, newPath);
         if (_contents.Remove(from, out var text)) _contents[newPath] = text;
-        var moved = LegacyCity.MoveDocument(_store!, _store!.Get(doc.Id) ?? doc, newPath);
-        city.ApplyFolderMove(house, moved, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-        await CarryLooksAsync(new Dictionary<string, string>(StringComparer.Ordinal) { [from] = newPath });
+        var moved = NoteLibrary.MoveDocument(_store, _store.Get(doc.Id) ?? doc, newPath);
+        moved = _library!.Edited(moved.Path, moved.Content, Now) ?? moved;
         if (editing) Editor.Renamed(newPath);
         AfterAssistantWrite(newPath);
         return _store.Get(moved.Id) ?? moved;
@@ -189,7 +171,6 @@ public sealed partial class MainView : IAssistantApp
         RequireWritable();
         if (!await DeleteNoteAsync(doc.Path, confirmed: true)) throw new InvalidOperationException("Não foi possível mover " + doc.Path + " para a lixeira.");
         if (doc.Path.StartsWith(LegacyCustomize.Folder + "/", StringComparison.Ordinal)) Customization.Load(_contents);
-        ScheduleRoadRebuild();
     }
 
     async Task IAssistantApp.CreateFolderAsync(string path)
@@ -197,7 +178,6 @@ public sealed partial class MainView : IAssistantApp
         RequireWritable();
         await EnsureFolderAsync(path);
         RefreshNotes();
-        World.InvalidateVisual();
     }
 
     async Task<bool> IAssistantApp.RestoreTrashedAsync(string id)

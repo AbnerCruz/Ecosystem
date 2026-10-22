@@ -41,7 +41,7 @@ public sealed class UrbeToast : Border
         _text.MaxLines = 3;
         _text.TextTrimming = TextTrimming.CharacterEllipsis;
         _text.VerticalAlignment = VerticalAlignment.Center;
-        // the badge of a Success/Warning toast: a small round mark in the city's palette, springing in (warmth, UC-69)
+        // the badge of a Success/Warning toast: a small round mark in the app's palette, springing in (warmth, UC-69)
         _badge.Width = _badge.Height = 18;
         _badge.CornerRadius = new CornerRadius(9);
         _badge.Margin = new Thickness(-4, 0, 8, 0);

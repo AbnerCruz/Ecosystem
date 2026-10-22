@@ -107,7 +107,9 @@ public sealed partial class HeadlessUiTests
                 // a note the page shows: written into the note by the verified save
                 view.Studio.PreviewMessage("""{"urbePage":"comment","note":"Comece.md","n":0}""");
                 await Answer("da nota");
-                for (int i = 0; i < 60 && !File.ReadAllText(noteFile).Contains("da nota", StringComparison.Ordinal); i++) await Pump(20);
+                // wait on the app (its note changes only after the verified save), never by reading the file while it is
+                // being written: a read then holds the file and the save rightly fails, or the read itself fails
+                for (int i = 0; i < 200 && view.Documents!.Get("Comece.md")?.Content.Contains("da nota", StringComparison.Ordinal) != true; i++) await Pump(20);
                 Assert.Equal("# Comece\n\nUma casa{\"rever\"}{\"da nota\"} na rua.\n", File.ReadAllText(noteFile));
                 for (int i = 0; i < 60 && !view.Studio.LastHtml.Contains("rever\nda nota", StringComparison.Ordinal); i++) await Pump(20);
                 Assert.Contains("title=\"rever\nda nota\"", view.Studio.LastHtml);

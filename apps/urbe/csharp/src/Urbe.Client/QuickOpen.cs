@@ -214,7 +214,7 @@ public sealed class QuickOpenPanel : SearchPanel
         foreach (var r in view.Rows)
         {
             if (r.Create is { } create)
-                rows.Add(new SearchRow(Item(UrbeTheme.Icons.Plus, "Criar nota “" + create + "”", "Na raiz · vira uma casa nova na cidade", null, true),
+                rows.Add(new SearchRow(Item(UrbeTheme.Icons.Plus, "Criar nota “" + create + "”", "Na raiz · uma nota nova no vault", null, true),
                     () => Choose(() => CreateChosen?.Invoke(LegacyQuickOpen.CreatePath(create)))));
             else
             {
@@ -318,7 +318,7 @@ public sealed class CommandPalettePanel : SearchPanel
 /// <summary>
 /// The 1.8.4 search wiring on <see cref="MainView"/>: the toolbar "Buscar" button, Ctrl/Cmd+P (notas) and
 /// Ctrl/Cmd+K (comandos) through keymap.js, and the commands the native app already has.
-/// Choosing a note centres the city on its house and opens it; "Criar nota" makes a new house in the root.
+/// Choosing a note opens it; "Criar nota" makes a new note in the root.
 /// </summary>
 public sealed class SearchFeature
 {
@@ -343,11 +343,7 @@ public sealed class SearchFeature
         Register("ui.quickOpen.open", "Buscar notas", "Navegação", OpenQuickOpen);
         Register("ui.commandPalette.open", "Abrir comandos", "Interface", OpenPalette);
         Register("ui.explorer.open", "Abrir notas", "Navegação", view.ShowNotes);
-        Register("workspace.navigate.world", "Abrir cidade", "Navegação", () => { if (!view.Editor.IsVisible) view.Explorer.IsVisible = false; });
-        Register("document.create", "Nova nota", "Documento", () => _ = view.CreateNoteAsync(null));
-        Register("city.fit", "Enquadrar todas as notas", "Cidade", view.World.FitNotes);
-        Register("city.reorganize", "Organizar os bairros", "Cidade", () => _ = view.ReorganizeAsync());
-        Register("city.undoReorganize", "Desfazer reorganização", "Cidade", view.UndoReorganize, () => view.CanUndoReorganize);
+        Register("document.create", "Nova nota", "Documento", () => _ = view.CreateNoteAsync());
         Register("ui.customize", "Personalização", "Aplicativo", () => view.Customize.Open());
         Register("pages.home", "Páginas", "Páginas", view.ShowPages);
         Register("workspace.save", "Salvar workspace", "Workspace", () => _ = view.Editor.SaveAsync(), () => view.Editor.IsVisible);
@@ -426,16 +422,11 @@ public sealed class SearchFeature
 
     public void OpenPalette() { QuickOpen.Close(); Palette.Open(); }
 
-    private void OpenNote(string path)
-    {
-        var city = _view.World.City;
-        if (city?.Buildings.FirstOrDefault(b => b.Path == path) is { } house) _view.World.CenterOn(house);
-        _view.OpenNoteByPath(path);
-    }
+    private void OpenNote(string path) => _view.OpenNoteByPath(path);
 
     private async Task CreateOrOpenAsync(string path)
     {
-        if (_view.World.City?.Buildings.Any(b => b.Path == path) == true) { OpenNote(path); return; }
+        if (_view.Documents?.Get(path) is not null) { OpenNote(path); return; }
         await _view.CreateNoteAsync(null, Path.GetFileNameWithoutExtension(path));
     }
 

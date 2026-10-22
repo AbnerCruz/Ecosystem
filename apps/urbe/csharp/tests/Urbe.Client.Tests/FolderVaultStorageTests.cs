@@ -364,84 +364,72 @@ public sealed class FolderVaultStorageTests : IDisposable
         Assert.False(Directory.Exists(Path.Combine(_dir, "fora")));
     }
 
-    private const string Map1 = "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"camera\": {\n  \"x\": 1152,\n  \"y\": 800.5,\n  \"z\": 1.15\n },\n \"notas\": {\n  \"Área/Ideias.md\": {\n   \"x\": 3\n  }\n },\n \"salvo\": \"2025-10-09T08:53:20.000Z\"\n}";
-    private const string Map2 = "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"camera\": {\n  \"x\": 1200,\n  \"y\": 800.5,\n  \"z\": 1.15\n },\n \"notas\": {},\n \"salvo\": \"2025-10-09T08:54:20.000Z\"\n}";
+    private const string Record1 = "{\n \"versao\": 1,\n \"notas\": {\n  \"Área/Ideias.md\": {\n   \"id\": \"doc_a\"\n  }\n },\n \"pastas\": []\n}";
+    private const string Record2 = "{\n \"versao\": 1,\n \"notas\": {},\n \"pastas\": [\n  \"Área\"\n ]\n}";
 
     [Fact]
-    public async Task SavingTheMapWritesOnlyMapaJsonWithTheExactBytesAndNoRecoveryCopy()
+    public async Task SavingTheNotesRecordWritesOnlyNotasJsonWithTheExactBytes()
     {
         var storage = Storage();
         await storage.PickAsync(Ct);
         var before = Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).ToDictionary(f => f, File.ReadAllBytes);
-        var mapa = Path.Combine(Vault, ".urbe", "mapa.json");
+        var record = Path.Combine(Vault, ".urbe", "notas.json");
 
-        await storage.SaveMapAsync(Map1, Ct);                       // created (with .urbe/)
-        Assert.Equal(Encoding.UTF8.GetBytes(Map1), File.ReadAllBytes(mapa)); // no BOM, no reformatting, "Á" raw
-        await storage.SaveMapAsync(Map2, Ct);                       // replaced on the new baseline
-        Assert.Equal(Encoding.UTF8.GetBytes(Map2), File.ReadAllBytes(mapa));
+        await storage.SaveNotesRecordAsync(Record1, Ct);                 // created (with .urbe/)
+        Assert.Equal(Encoding.UTF8.GetBytes(Record1), File.ReadAllBytes(record)); // no BOM, no reformatting, "Á" raw
+        await storage.SaveNotesRecordAsync(Record2, Ct);                 // replaced on the new baseline
+        Assert.Equal(Encoding.UTF8.GetBytes(Record2), File.ReadAllBytes(record));
 
         var after = Directory.GetFiles(Vault, "*", SearchOption.AllDirectories);
-        Assert.Equal(before.Keys.Append(mapa).OrderBy(f => f, StringComparer.Ordinal), after.OrderBy(f => f, StringComparer.Ordinal));
+        Assert.Equal(before.Keys.Append(record).OrderBy(f => f, StringComparer.Ordinal), after.OrderBy(f => f, StringComparer.Ordinal));
         foreach (var (file, bytes) in before) Assert.Equal(bytes, File.ReadAllBytes(file));
 
-        // notes keep being saved after the map changed the folder
-        await storage.SaveExistingNoteAsync("Bairro/Um.md", "# Um\n\nDepois do mapa.\n", Ct);
-        Assert.Equal(Encoding.UTF8.GetBytes(Map2), File.ReadAllBytes(mapa));
+        // notes keep being saved after the record changed the folder
+        await storage.SaveExistingNoteAsync("Bairro/Um.md", "# Um\n\nDepois do registro.\n", Ct);
+        Assert.Equal(Encoding.UTF8.GetBytes(Record2), File.ReadAllBytes(record));
     }
 
     [Fact]
-    public async Task AMapThatTheCanonicalWriterWouldReformatIsRefused()
+    public async Task ANotesRecordThatIsNotOneIsRefused()
     {
         var storage = Storage();
         await storage.PickAsync(Ct);
-        // 2-space indentation is not JSON.stringify(map, null, 1): the plan would write other bytes
-        await Assert.ThrowsAsync<InvalidDataException>(() => storage.SaveMapAsync("{\n  \"v\": 4\n}", Ct));
-        await Assert.ThrowsAnyAsync<Exception>(() => storage.SaveMapAsync("[1]", Ct));
+        await Assert.ThrowsAsync<InvalidDataException>(() => storage.SaveNotesRecordAsync("{\"v\": 4}", Ct));
+        await Assert.ThrowsAnyAsync<Exception>(() => storage.SaveNotesRecordAsync("[1]", Ct));
         Assert.False(Directory.Exists(Path.Combine(Vault, ".urbe")));
     }
 
     [Fact]
-    public async Task AChangeOutsideUrbeBlocksTheMapSave()
+    public async Task AChangeOutsideUrbeBlocksTheRecordSave()
     {
-        Directory.CreateDirectory(Path.Combine(Vault, ".urbe"));
-        File.WriteAllText(Path.Combine(Vault, ".urbe", "mapa.json"), Map1);
         var storage = Storage();
         await storage.PickAsync(Ct);
-        File.WriteAllText(Path.Combine(Vault, ".urbe", "mapa.json"), Map1.Replace("1152", "7"));   // another device synced
-        await Assert.ThrowsAsync<IOException>(() => storage.SaveMapAsync(Map2, Ct));
-        Assert.Equal(Map1.Replace("1152", "7"), File.ReadAllText(Path.Combine(Vault, ".urbe", "mapa.json")));
-
-        // a new note outside Urbe also blocks it
-        var other = Storage();
-        await other.PickAsync(Ct);
-        File.WriteAllText(Path.Combine(Vault, "Fora.md"), "# Fora\n");
-        await Assert.ThrowsAsync<IOException>(() => other.SaveMapAsync(Map2, Ct));
-        Assert.Equal(Map1.Replace("1152", "7"), File.ReadAllText(Path.Combine(Vault, ".urbe", "mapa.json")));
-    }
-
-    [Theory]
-    [InlineData("{\n \"v\": 5,\n \"notas\": {}\n}")]          // a map of a future version
-    [InlineData("{\n \"v\": \"quatro\"\n}")]                   // an unknown version
-    public async Task AReadOnlyMapIsNeverRewritten(string existing)
-    {
-        Directory.CreateDirectory(Path.Combine(Vault, ".urbe"));
-        File.WriteAllText(Path.Combine(Vault, ".urbe", "mapa.json"), existing);
-        var storage = Storage();
-        var snapshot = await storage.PickAsync(Ct);
-        Assert.True(snapshot!.IsMapReadOnly);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => storage.SaveMapAsync(Map2, Ct));
-        Assert.Equal(existing, File.ReadAllText(Path.Combine(Vault, ".urbe", "mapa.json")));
+        File.WriteAllText(Path.Combine(Vault, "Fora.md"), "# Fora\n");   // another device synced a note
+        await Assert.ThrowsAsync<IOException>(() => storage.SaveNotesRecordAsync(Record1, Ct));
+        Assert.False(File.Exists(Path.Combine(Vault, ".urbe", "notas.json")));
     }
 
     [Fact]
-    public async Task AVaultOfAFutureFormatRefusesTheMap()
+    public async Task ARecordOfANewerVersionIsNeverRewritten()
+    {
+        Directory.CreateDirectory(Path.Combine(Vault, ".urbe"));
+        const string newer = "{\"versao\": 2, \"notas\": {}}";
+        File.WriteAllText(Path.Combine(Vault, ".urbe", "notas.json"), newer);
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => storage.SaveNotesRecordAsync(Record2, Ct));
+        Assert.Equal(newer, File.ReadAllText(Path.Combine(Vault, ".urbe", "notas.json")));
+    }
+
+    [Fact]
+    public async Task AVaultOfAFutureFormatRefusesTheRecord()
     {
         Directory.CreateDirectory(Path.Combine(Vault, ".urbe"));
         File.WriteAllText(Path.Combine(Vault, ".urbe", "vault.json"), "{\"formatVersion\":99}");
         var storage = Storage();
         var snapshot = await storage.PickAsync(Ct);
         Assert.True(snapshot!.IsReadOnly);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => storage.SaveMapAsync(Map2, Ct));
-        Assert.False(File.Exists(Path.Combine(Vault, ".urbe", "mapa.json")));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => storage.SaveNotesRecordAsync(Record2, Ct));
+        Assert.False(File.Exists(Path.Combine(Vault, ".urbe", "notas.json")));
     }
 }
