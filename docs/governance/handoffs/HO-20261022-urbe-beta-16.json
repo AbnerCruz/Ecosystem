@@ -1,0 +1,74 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-beta-16",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T11:03:34Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-73",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "1e766805",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTests.cs",
+    "docs/governance/handoffs/HO-20261022-urbe-beta-16.json"
+  ],
+  "work_completed": [
+    "Urbe Beta 2.0 — 2.0.0-beta.16 (versionCode 2000016): publica no canal beta (DEC-0048) as Conexões da nota aberta (UC-71, PR #643) e as correções de toque e teclado da observação de 22/10/2026 (UC-73 a UC-75, PR #644), com o Windows na mesma release e as notas da release já sem a cidade.",
+    "Source_DraggingAFingerScrolls (do #644) falhou no CI deste PR: o teste supunha que a nota ainda deslizava, mas numa máquina lenta o arrasto terminava sem deslizar e o toque seguinte era um toque comum. Agora o teste faz um impulso a cerca de 1 px/ms, solta logo após o último movimento e confere que a nota desliza antes do toque; 186 de 186 também com a CPU ocupada."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "CI dos PRs #643 e #644 (urbe-checks, build Android e Windows, integrador)",
+      "result": "passed",
+      "evidence": "PRs integrados com os checks do estado combinado verdes."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico, beta.16 por cima da beta.15: rolar notas e o Explorer sem selecionar nada nem abrir o teclado; tocar para parar a rolagem não abre nada; teclado sem faixa preta nem pulos; toque duplo mostra as alças; Mais ações → Conexões",
+      "result": "pending",
+      "critical": true,
+      "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.16"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Depois da integração, conferir a release (o merge do csproj dispara o workflow) e mandar os links do APK e do Windows."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/distribution/direct-releases.md",
+    "docs/governance/addenda/ADD-0025-urbe-beta-2-0-nativa.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A versão do canal muda só em Urbe.Android.csproj."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação no aparelho pendente e crítica."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-beta-release",
+      "status": "product-specific",
+      "rationale": "Versão do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Nova versão publicada no canal de distribuição (Urbe.Android.csproj)."
+  }
+}
