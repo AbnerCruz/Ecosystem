@@ -501,6 +501,16 @@ public sealed class EditorOverlay : Grid
     /// <summary>The Assistente button of the top bar (owner, UC-48: "não está com o botão da IA").</summary>
     public event Action? AssistantRequested;
 
+    /// <summary>UC-80: an agent's suggestion shown in the note (in Visual), or null to take it away.</summary>
+    public void ShowSuggestion(VisualSurface.Suggestion? suggestion)
+    {
+        if (suggestion is not null && Mode != EditorMode.Visual) SetMode(EditorMode.Visual);
+        _visual.ShowSuggestion(suggestion);
+    }
+
+    /// <summary>The suggestion shown in the note now, or null.</summary>
+    public VisualSurface.Suggestion? Suggestion => _visual.ShownSuggestion;
+
     /// <summary>UC-80: a <c>&amp;Nome&amp;:</c> line of the note asked its agent (the line's button, or Ctrl+Enter on it).</summary>
     public event Action<NoteMarks.AgentCall>? AgentAsked;
 

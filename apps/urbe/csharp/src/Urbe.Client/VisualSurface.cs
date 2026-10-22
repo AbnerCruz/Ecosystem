@@ -198,6 +198,7 @@ public sealed class VisualSurface : StackPanel
             Children.Add(empty);
         }
         var editorAdded = false;
+        var suggested = _suggestion is null;
         foreach (var block in _blocks)
         {
             if (_box is not null && !editorAdded && block.Start >= _editStart)
@@ -206,14 +207,72 @@ public sealed class VisualSurface : StackPanel
                 Children.Add(EditorFor());
                 if (block.Start == _editStart) continue;   // the block being edited
             }
+            // UC-80: the agent's suggestion takes the place of the lines it changes (or comes before the next block)
+            if (_suggestion is { } sg && (block.End > sg.Change.Start && block.Start < sg.Change.End || block.Start >= sg.Change.End))
+            {
+                if (!suggested) { suggested = true; Children.Add(SuggestionCard(sg)); }
+                if (block.Start < sg.Change.End) continue;
+            }
             var drawn = Rendered(block);
             _holders[block.Start] = drawn;
             Children.Add(drawn);
         }
+        if (!suggested) Children.Add(SuggestionCard(_suggestion!));
         if (_box is not null && !editorAdded) Children.Add(EditorFor());
         var tail = new Border { Background = Brushes.Transparent, MinHeight = 160 };
         tail.Tapped += (_, e) => { e.Handled = true; if (TouchIntent.IsIntended(tail)) AppendBlock(); };
         Children.Add(tail);
+    }
+
+    /// <summary>UC-80: an agent's suggestion in the note — the lines it changes, what takes their place, and the answers.</summary>
+    public sealed record Suggestion(LineChange Change, string Who, Action Accept, Action Refuse);
+
+    private Suggestion? _suggestion;
+
+    /// <summary>The suggestion shown now, or null.</summary>
+    public Suggestion? ShownSuggestion => _suggestion;
+
+    /// <summary>Shows an agent's suggestion in place of the lines it changes (null takes it away).</summary>
+    public void ShowSuggestion(Suggestion? suggestion)
+    {
+        if (_box is not null) FinishEdit();
+        _suggestion = suggestion;
+        Rebuild();
+    }
+
+    private Control SuggestionCard(Suggestion sg)
+    {
+        var reader = new MarkdownReader { Size = TextSize, LineFactor = LineFactor };
+        var replacement = sg.Change.Replacement.TrimEnd('\n');
+        var body = replacement.Length > 0 ? reader.Build(NoteMarks.Parse(replacement))
+            : new TextBlock { Text = "Apagar estas linhas.", FontSize = TextSize * .9, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) };
+        Button Answer(string text, bool primary, Action run)
+        {
+            var b = new Button
+            {
+                Content = text, Padding = new Thickness(14, 6), CornerRadius = new CornerRadius(8), BorderThickness = new Thickness(0), FontSize = TextSize * .85,
+                Background = primary ? UrbeTheme.Brush(UrbeTheme.Accent) : UrbeTheme.Brush(UrbeTheme.Text, .08),
+                Foreground = primary ? UrbeTheme.Brush(UrbeTheme.Bg) : UrbeTheme.Brush(UrbeTheme.Text)
+            };
+            Avalonia.Automation.AutomationProperties.SetName(b, text);
+            b.Click += (_, e) => { e.Handled = true; run(); };
+            return b;
+        }
+        return new Border
+        {
+            Margin = new Thickness(0, .5 * TextSize), Padding = new Thickness(.75 * TextSize, .5 * TextSize), CornerRadius = new CornerRadius(10),
+            Background = UrbeTheme.Brush(UrbeTheme.Accent, .1), BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent, .6), BorderThickness = new Thickness(1),
+            Child = new StackPanel
+            {
+                Spacing = 6,
+                Children =
+                {
+                    new TextBlock { Text = "Sugestão de " + sg.Who, FontSize = TextSize * .75, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Accent) },
+                    body,
+                    new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { Answer("Aceitar", true, sg.Accept), Answer("Recusar", false, sg.Refuse) } }
+                }
+            }
+        };
     }
 
     /// <summary>A `:::tipo` … `:::` container (UC-44) is one block: the blocks it covers become a single "container"
@@ -293,6 +352,7 @@ public sealed class VisualSurface : StackPanel
 
     private void AppendBlock()
     {
+        if (_suggestion is not null) return;
         FinishEdit();
         var sep = _text.Length == 0 || _text.EndsWith("\n\n", StringComparison.Ordinal) ? "" : _text.EndsWith('\n') ? "\n" : "\n\n";
         _text += sep;
@@ -309,6 +369,7 @@ public sealed class VisualSurface : StackPanel
     /// </summary>
     public void TapBlock(int blockStart, Control holder, Visual? hit, Point at, bool select)
     {
+        if (_suggestion is not null) return;   // an agent's suggestion waits for its answer first (UC-80)
         var scroll = Scroll;
         _anchorY = scroll is null ? null : EditorScrolling.TopIn(holder, scroll);
         _tapAt = at;

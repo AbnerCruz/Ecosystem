@@ -103,6 +103,18 @@ public sealed partial class MainView : IAssistantApp
 
     void IAssistantApp.Notify(string text) => ShowLifeNotice(text);
 
+    bool IAssistantApp.SuggestInNote(string path, LineChange change, string who, Action accept, Action refuse)
+    {
+        // only on the note as it is in the vault: unsaved typing would make the change land elsewhere
+        if (!Editor.IsVisible || Editor.Current?.Path != path || Editor.HasChanges) return false;
+        Editor.ShowSuggestion(new VisualSurface.Suggestion(change, who,
+            () => { Editor.ShowSuggestion(null); accept(); },
+            () => { Editor.ShowSuggestion(null); refuse(); }));
+        return true;
+    }
+
+    void IAssistantApp.EndSuggestion() { if (Editor.Suggestion is not null) Editor.ShowSuggestion(null); }
+
     bool IAssistantApp.OpenReference(string reference)
     {
         if (_store is null || reference.Length == 0) return false;

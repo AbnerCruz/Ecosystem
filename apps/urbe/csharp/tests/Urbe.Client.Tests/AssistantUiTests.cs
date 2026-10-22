@@ -279,6 +279,82 @@ public sealed partial class HeadlessUiTests
         }, CancellationToken.None));
 
     [Fact]
+    public async Task Assistant_TheAgentsChangeIsASuggestionInTheNote() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // UC-80 fatia 3: the change comes into the note itself, with Aceitar and Recusar; the panel stays closed
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-assistant-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(vault);
+            var file = Path.Combine(vault, "Herói.md");
+            File.WriteAllText(file, "# Herói\n\nAlto, do norte.\n\n&&: Dê uma sugestão de nome\n\n&&: e um apelido\n");
+            var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
+            var before = UrbeApp.AssistantFolder;
+            UrbeApp.AssistantFolder = Path.Combine(dir, "app", "assistant");
+            var view = new MainView(storage);
+            var window = new Window { Width = 1280, Height = 760, Content = view };
+            window.Show();
+            static string Edit(string id, string old, string now) =>
+                Sse("{\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"" + id + "\",\"function\":{\"name\":\"edit_note\",\"arguments\":" +
+                    System.Text.Json.JsonSerializer.Serialize(System.Text.Json.JsonSerializer.Serialize(new { path = "Herói", old_text = old, new_text = now })) + "}}]}}]}",
+                    """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}""");
+            try
+            {
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                ClickButtonWithText(view, "Assistente");
+                var panel = view.Assistant;
+                var model = new ScriptedModel();
+                panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
+                panel.Config.Providers.Add(new AiProviderConfig("openrouter", "openrouter", ApiKey: "sk-teste"));
+                panel.Config.Model = "org/modelo-b";
+                panel.Close();
+                view.ShowNotes();
+                Assert.True(view.Explorer.TryOpenNote("Herói.md"));
+                await Settle(window, view);
+
+                model.Chats.Enqueue(Edit("call_1", "&&: Dê uma sugestão de nome", "Nome sugerido: Aurora"));
+                model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Pronto."}}]}"""));
+                ClickNamed(view.Editor, "Pedir ao Assistente");
+                for (int i = 0; i < 300 && view.Editor.Suggestion is null; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                var sg = Assert.IsType<VisualSurface.Suggestion>(view.Editor.Suggestion);
+                Assert.Equal("Assistente", sg.Who);
+                Assert.StartsWith("Nome sugerido: Aurora", sg.Change.Replacement);
+                Assert.False(panel.IsVisible);
+                Assert.Contains("Sugestão de Assistente", view.Editor.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
+                Assert.Contains("&&: Dê uma sugestão de nome", File.ReadAllText(file));   // nothing written before the answer
+                Snapshot(window, "native-agent-suggestion.png");
+
+                ClickNamed(view.Editor, "Aceitar");
+                await panel.CurrentRun!;
+                for (int i = 0; i < 20; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                Assert.Null(view.Editor.Suggestion);
+                Assert.False(panel.IsVisible);
+                var text = File.ReadAllText(file);
+                Assert.Contains("Nome sugerido: Aurora {ia:\"modelo-b\"}", text);
+                Assert.DoesNotContain("Dê uma sugestão", text);
+                Assert.Equal(text, view.Editor.Current!.Content);
+
+                // Recusar: the note stays as it is, and the agent is told
+                model.Chats.Enqueue(Edit("call_2", "&&: e um apelido", "Apelido: Faísca"));
+                model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Tudo bem."}}]}"""));
+                ClickNamed(view.Editor, "Pedir ao Assistente");
+                for (int i = 0; i < 300 && view.Editor.Suggestion is null; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                ClickNamed(view.Editor, "Recusar");
+                await panel.CurrentRun!;
+                Assert.Equal(text, File.ReadAllText(file));
+                Assert.Contains("recusou a sugestão na nota", model.Sent.Last());
+                return true;
+            }
+            finally
+            {
+                UrbeApp.AssistantFolder = before;
+                window.Close();
+                try { Directory.Delete(dir, recursive: true); } catch (IOException) { }
+            }
+        }, CancellationToken.None));
+
+    [Fact]
     public async Task Assistant_ALongConversationStaysLight() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
         {

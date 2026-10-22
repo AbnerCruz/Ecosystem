@@ -194,12 +194,14 @@ public sealed class MarkdownReader
         var rows = new StackPanel { Spacing = 4, Children = { chip, Text(n.Children, Size) } };
         if (AgentAsked is { } asked)
         {
+            // the built-in agents are common nouns ("ao Assistente"); a name given by the person goes as a name ("a Jarvis")
+            var label = (shown is "Assistente" or "Pesquisador" or "Escritor" or "Organizador" ? "Pedir ao " : "Pedir a ") + shown;
             var ask = new Button
             {
-                Content = "Pedir a " + shown, FontSize = Size * .75, Padding = new Thickness(10, 4), HorizontalAlignment = HorizontalAlignment.Left,
+                Content = label, FontSize = Size * .75, Padding = new Thickness(10, 4), HorizontalAlignment = HorizontalAlignment.Left,
                 Background = UrbeTheme.Brush(UrbeTheme.Accent, .12), Foreground = UrbeTheme.Brush(UrbeTheme.Accent), BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(8)
             };
-            Avalonia.Automation.AutomationProperties.SetName(ask, "Pedir a " + shown);
+            Avalonia.Automation.AutomationProperties.SetName(ask, label);
             ask.Click += (_, e) => { e.Handled = true; asked(index); };
             ask.Tapped += (_, e) => e.Handled = true;   // the block does not become an edit box under the button
             rows.Children.Add(ask);

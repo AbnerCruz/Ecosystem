@@ -34,6 +34,10 @@ public interface IAssistantApp
     IAssistantAppearance? Appearance => null;
     /// <summary>The vault's plugins (write_plugin turns them on).</summary>
     IAssistantPlugins? Plugins => null;
+    /// <summary>UC-80: an agent's change to the note open in the editor, shown there to accept or refuse; false when it cannot be.</summary>
+    bool SuggestInNote(string path, LineChange change, string who, Action accept, Action refuse) => false;
+    /// <summary>UC-80: the suggestion in the note (if any) leaves the editor.</summary>
+    void EndSuggestion() { }
 }
 
 /// <summary>
@@ -170,19 +174,25 @@ public sealed partial class AssistantPanel : Border
     /// <summary>opened(): the panel shown, the configuration and the last conversation of this vault (if recent) loaded once.</summary>
     public void Open()
     {
-        if (!_loaded)
-        {
-            _loaded = true;
-            _cfg = _store.GetConfig();
-            var last = _store.ListConversations().FirstOrDefault(c => c.Vault == _app.VaultName);
-            _conv = last is not null && Now() - last.Updated < 6 * 3600_000 ? last : NewConversation();
-        }
+        Load();
         IsVisible = true;
         RenderAll();
         if (!OperatingSystem.IsAndroid()) Dispatcher.UIThread.Post(() => _input.Focus(), DispatcherPriority.Background);
     }
 
     public void Close() { CloseView(); IsVisible = false; }
+
+    private void Load()
+    {
+        if (_loaded) return;
+        _loaded = true;
+        _cfg = _store.GetConfig();
+        var last = _store.ListConversations().FirstOrDefault(c => c.Vault == _app.VaultName);
+        _conv = last is not null && Now() - last.Updated < 6 * 3600_000 ? last : NewConversation();
+    }
+
+    // UC-80: the request asked from a note: its conversation, the note and the agent's name
+    private (AiConversation Conv, string Path, string Who)? _inNote;
 
     /// <summary>prefill(): the composer with the start of a request (e.g. from Personalização or Páginas).</summary>
     public void Prefill(string text)
@@ -266,7 +276,7 @@ public sealed partial class AssistantPanel : Border
     public string? AskInNote(string notePath, string noteTitle, NoteMarks.AgentCall call)
     {
         if (_running is not null) return "O Assistente ainda está trabalhando no pedido anterior.";
-        Open();
+        Load();
         var agent = call.Agent.Length == 0 ? AssistantAgent.AgentById(_cfg.AgentId, _cfg.CustomAgents) : AgentNames.Find(call.Agent, _cfg);
         if (agent is null)
             return "Nenhum agente se chama " + call.Agent + ". Os seus agentes: " + string.Join(", ", AgentNames.All(_cfg).Select(a => AgentNames.CallName(a, _cfg))) +
@@ -275,6 +285,11 @@ public sealed partial class AssistantPanel : Border
         _conv.AgentId = agent.Id;
         _conv.Title = "Na nota " + noteTitle;
         _views.Clear();
+        // without a model the panel shows where to connect one; with it, the work goes on with the panel closed
+        if (_cfg.Providers.Count == 0 || ModelId().Length == 0) Open();
+        var who = AgentNames.CallName(agent, _cfg);
+        _inNote = (_conv, notePath, who);
+        if (!IsVisible) _app.Notify(who + " está trabalhando no pedido…");
         var line = "&" + call.Agent + "&: " + call.Request;
         Send(call.Request, (notePath, "[Pedido feito dentro da nota " + notePath + ", nesta linha:\n" + line +
             "\nLeia a nota inteira (read_note) como contexto. Se o pedido for uma mudança no texto, faça-a na própria nota com edit_note, trocando essa linha pelo resultado; se for uma pergunta, responda aqui.]"));
@@ -357,6 +372,14 @@ public sealed partial class AssistantPanel : Border
         {
             _running = null;
             _pending = null;
+            if (_inNote is { } asked && ReferenceEquals(asked.Conv, conv))
+            {
+                // UC-80: a change was made in the note (or refused there); an answer in words opens the panel to be read
+                _inNote = null;
+                _app.EndSuggestion();
+                if (run.Changes.Count > 0) _app.Notify(asked.Who + " alterou a nota.");
+                else if (!IsVisible && conv.Messages.LastOrDefault(m => m.Role == "assistant") is { } last && last.Content.Any(b => b.Type == "text" && !string.IsNullOrWhiteSpace(b.Text))) { _conv = conv; Open(); }
+            }
             conv.Runs.Add(run);
             if (conv.Runs.Count > 20) conv.Runs.RemoveRange(0, conv.Runs.Count - 20);
             if (ReferenceEquals(conv, _conv)) { _views.Clear(); RenderAll(); }
@@ -375,6 +398,18 @@ public sealed partial class AssistantPanel : Border
     {
         var answer = new TaskCompletionSource<AiApproval>(TaskCreationOptions.RunContinuationsAsynchronously);
         _pending = (req, answer);
+        // UC-80: a change to the note the request came from is shown in the note itself, to accept or refuse there
+        if (_inNote is { } asked && req.Preview is { Before: { } before, After: { } after } preview && preview.Path == asked.Path &&
+            LineChange.Of(before, after) is { } change &&
+            _app.SuggestInNote(asked.Path, change, asked.Who, () => Answer(AiApproval.Approve), () => Answer(AiApproval.Reject("O usuário recusou a sugestão na nota."))))
+        {
+            cancel.Register(() => Dispatcher.UIThread.Post(() =>
+            {
+                if (_pending is { } p && ReferenceEquals(p.Request, req)) { _pending = null; _app.EndSuggestion(); answer.TrySetResult(AiApproval.Reject()); }
+            }));
+            return answer.Task;
+        }
+        if (_inNote is not null && !IsVisible) Open();
         cancel.Register(() => Dispatcher.UIThread.Post(() =>
         {
             if (_pending is { } p && ReferenceEquals(p.Request, req)) { _pending = null; answer.TrySetResult(AiApproval.Reject()); }

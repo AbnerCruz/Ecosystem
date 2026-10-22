@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261022-urbe-agente-na-nota",
   "category": "HANDOFF",
-  "timestamp": "2026-10-22T18:13:09Z",
+  "timestamp": "2026-10-22T18:21:12Z",
   "agent": {
     "id": "claude-code-urbe-native-port",
     "kind": "ai-agent"
@@ -27,17 +27,20 @@
     "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteMarksTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
     "apps/urbe/docs/csharp/ROADMAP.md",
-    "docs/governance/handoffs/HO-20261022-urbe-agente-na-nota.json"
+    "docs/governance/handoffs/HO-20261022-urbe-agente-na-nota.json",
+    "apps/urbe/csharp/src/Urbe.Core/LineChange.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LineChangeTests.cs"
   ],
   "work_completed": [
-    "UC-80 fatias 1 e 2 (ideia do proprietário, 22/10/2026): '&Nome&: pedido' numa nota vira um cartão com o chip do agente e 'Pedir a Nome' (ou Ctrl+Enter). Só ao pedir, a nota é salva e o Assistente abre numa conversa 'Na nota X' com o agente daquele nome e a nota como contexto, pelo mesmo AssistantAgent (ADR-0033: sem segundo motor). Edições passam pela aprovação com diff; respostas ficam no painel. Linhas de pedido saem das páginas."
+    "UC-80 fatias 1 e 2 (ideia do proprietário, 22/10/2026): '&Nome&: pedido' numa nota vira um cartão com o chip do agente e 'Pedir a Nome' (ou Ctrl+Enter). Só ao pedir, a nota é salva e o Assistente abre numa conversa 'Na nota X' com o agente daquele nome e a nota como contexto, pelo mesmo AssistantAgent (ADR-0033: sem segundo motor). Edições passam pela aprovação com diff; respostas ficam no painel. Linhas de pedido saem das páginas.",
+    "UC-80 fatia 3: a mudança do agente na nota aparece no lugar das linhas (LineChange) como 'Sugestão de Nome' com Aceitar/Recusar, com o painel fechado; Aceitar grava pela gravação verificada, Recusar avisa o agente. Uma resposta em palavras abre o painel no fim."
   ],
   "verification": [
     {
       "kind": "automated",
-      "check": "dotnet test Urbe.Core.Tests (655) e Urbe.Client.Tests (200)",
+      "check": "dotnet test Urbe.Core.Tests (661) e Urbe.Client.Tests (201)",
       "result": "passed",
-      "evidence": "NoteMarksTests.AgentRequests_AreChipsInTheEditorFoundInTheSourceAndLeftOutOfPages e Assistant_ALineOfTheNoteAsksTheAgentByItsName (cartão, pedido, conversa 'Na nota', nome desconhecido)."
+      "evidence": "NoteMarksTests.AgentRequests_…, LineChangeTests, Assistant_ALineOfTheNoteAsksTheAgentByItsName e Assistant_TheAgentsChangeIsASuggestionInTheNote (Aceitar grava, Recusar mantém)."
     },
     {
       "kind": "human",
@@ -48,11 +51,11 @@
     }
   ],
   "known_issues": [
-    "Fatia 3 (sugestão no próprio texto, sem o painel) e fatia 4 (desfazer em bloco) ainda faltam."
+    "Fatia 4 (desfazer em bloco) ainda falta."
   ],
   "blockers": [],
   "next_actions": [
-    "UC-80 fatia 3; UC-84 fatia 4; UC-72."
+    "UC-84 fatia 4; UC-72; UC-77 próximas fatias."
   ],
   "decisions_required": [],
   "normative_sources": [
