@@ -275,6 +275,7 @@ public sealed partial class MainView : Grid
             LeaveLastNames();
             Explorer.Opening = Workspace.Opening = false;
             MarkReady();   // UC-56: a widget's quick note waits for the first vault
+            OfferFirstRun();   // UC-58: no folder yet, the first time on this device
         }
     }
 
@@ -519,7 +520,8 @@ public sealed partial class MainView : Grid
         var items = new List<DialogItem>
         {
             new("Personalização", UrbeTheme.Icons.Brush, "Tema, cores, fontes, editor, estilos e plugins", Run: () => { Customize.Open(); return Task.CompletedTask; }),
-            new("Tutorial", UrbeTheme.Icons.Book, "Guia completo de tudo o que o Urbe faz", Run: ShowTutorialMenuAsync)
+            new("Tutorial", UrbeTheme.Icons.Book, "Guia completo de tudo o que o Urbe faz", Run: ShowTutorialMenuAsync),
+            new("Configuração inicial", UrbeTheme.Icons.Select, "Pasta, aparência e Assistente, passo a passo", Run: () => { ShowFirstRun(); return Task.CompletedTask; })
         };
         if (_vault is not null)
             items.Add(new("Exportar tudo (.zip)", UrbeTheme.Icons.Download, "Cópia de segurança de todas as notas", Run: () => ExportAsync()));

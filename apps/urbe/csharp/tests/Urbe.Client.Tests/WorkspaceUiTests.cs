@@ -595,4 +595,46 @@ public sealed partial class HeadlessUiTests
             }
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
+
+    [Fact]
+    public async Task FirstRun_GuidesTheFolderTheThemeAndTheAssistantOnce() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // UC-58: the first opening on a device, with no folder yet: folder, appearance, Assistente — once
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-first-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            var device = new MemoryDeviceStore();
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"))) { OffersFirstRun = true };
+                view.Customization.Device = device;
+                var window = new Window { Width = 412, Height = 860, Content = view };
+                window.Show();
+                await view.InitializeAsync();
+                await Settle(window, view);
+                Assert.True(view.FirstRun.IsVisible);
+                Assert.Equal(0, view.FirstRun.Step);
+                Snapshot(window, "native-first-run.png");
+                Click(Named(view.FirstRun, "Escolher pasta"));
+                for (int i = 0; i < 300 && view.FirstRun.Step != 1; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.Equal(1, view.FirstRun.Step);
+                Click(Named(view.FirstRun, "Tema Sépia"));
+                for (int i = 0; i < 300 && view.FirstRun.Step != 2; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.Contains("sepia", File.ReadAllText(Path.Combine(vault, "Personalização", "tema.json")));
+                Click(Named(view.FirstRun, "Deixar para depois"));
+                Assert.False(view.FirstRun.IsVisible);
+                window.Close();
+
+                // the next opening on this device does not ask again
+                var again = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(null), Path.Combine(dir, "app2", "sel.json"))) { OffersFirstRun = true };
+                again.Customization.Device = device;
+                window = new Window { Width = 412, Height = 860, Content = again };
+                window.Show();
+                await again.InitializeAsync();
+                Assert.False(again.FirstRun.IsVisible);
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
 }
