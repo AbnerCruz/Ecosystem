@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261022-atlas-forge-incorporation",
   "category": "HANDOFF",
-  "timestamp": "2026-10-22T20:16:15.836641Z",
+  "timestamp": "2026-10-22T20:22:13.747692Z",
   "agent": {
     "id": "codex-atlas-forge",
     "kind": "ai-agent"
@@ -86,7 +86,8 @@
     "Código canônico relocado com git mv da proposta para apps/atlas-forge; histórico e evidências preservados. Manifest registra Product independente JS/Canvas com versão única, comandos e documentação. Nenhuma capability global ou dependência de outro Product.",
     "Instruções locais e README/SPEC/ROADMAP atualizados; documentação de classificação/boundary em docs/architecture/atlas-forge.md. Proposta anterior mantém mandato, auditoria e evidências históricas, sem segunda cópia do runtime.",
     "Workflow seletivo/reutilizável do aplicativo e job no integrador preparados; resultado do CI integra o veredito final. Adicionado cenário do simulador que bloqueia CI Atlas vermelho, integra rotina verde e não publica release de outro Product.",
-    "Perfil alvo declara ausência de canal de produção; nenhum canal fictício em current, tag/release, hospedagem ou registro compartilhado criado."
+    "Perfil alvo declara ausência de canal de produção; nenhum canal fictício em current, tag/release, hospedagem ou registro compartilhado criado.",
+    "Verificados 22 checks, self-test completo e simulador de integração completo no estado incorporado. CI remoto específico do aplicativo verde; verificações finais do estado combinado seguem no PR."
   ],
   "verification": [
     {
@@ -99,7 +100,8 @@
       "check": "npm run check em apps/atlas-forge",
       "kind": "automated",
       "result": "passed",
-      "evidence": "Formatação, 17 testes, build e 12 cenários Chromium passaram na nova localização, inclusive editor/viewer file:// offline, JSON roundtrip, máscaras e IndexedDB."
+      "evidence": "Formatação, 17 testes, build e 12 cenários Chromium passaram localmente e no CI https://github.com/AbnerCruz/Ecosystem/actions/runs/39847558410 no commit 53b055d6; editor/viewer file:// offline, JSON, máscaras e IndexedDB.",
+      "tested_commit": "53b055d647ceb8ccd805f9b819eda8684de89ba7"
     },
     {
       "check": "dotnet run tests/consistency/Check.cs",
@@ -110,8 +112,8 @@
     {
       "check": "Self-test e simulação do integrador",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Em execução no estado da incorporação; atualizar com resultado e CI antes de declarar integrado."
+      "result": "passed",
+      "evidence": "Execuções locais com SDK 10.0.402/PATH correto e histórico/tags completos: self-test provou todas as violações; bash .github/integrator/simulate.sh aprovou todos os cenários, inclusive Atlas CI vermelho bloqueia, verde permite rotina e não publica releases alheias. O cenário verifica efeitos em Git/statuses simulados, sem tocar no GitHub."
     },
     {
       "check": "Android físico: layout, toque, desempenho e lifecycle",

@@ -27,3 +27,7 @@ O build produz editor offline, JSON de exemplo, Markdown e viewer independente. 
 ## Limites preservados
 
 A aprovação de incorporação não valida ciência, Android ou corpus Alpha real. Relevo/clima/biomas heurísticos, drenagem simplificada, mapas locais esquemáticos e marcos de estado continuam explicitamente classificados. Tectônica, ecologia, civilizações e eras causais seguem no roadmap. A integração na main é um fato observado somente depois de o integrador registrá-la.
+
+## Evidência da incorporação
+
+Em AF-002, os 18 módulos de runtime foram comparados byte a byte à entrega `5e289cfd`; apenas localização, identidade de pacote/rodapé e governança mudaram. `npm run check` passou localmente e no [CI do aplicativo](https://github.com/AbnerCruz/Ecosystem/actions/runs/39847558410), commit `53b055d6`: 17 testes e 12 cenários Chromium. Os 22 checks locais, o self-test de violações e a simulação do integrador passaram, inclusive o novo cenário de CI Atlas vermelho/verde e ausência de release alheia. O handoff AF-002 registra resultados; integração na main continua sendo evento separado e observável.
