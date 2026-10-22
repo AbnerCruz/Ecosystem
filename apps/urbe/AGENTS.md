@@ -67,7 +67,7 @@ A regra de dados do §3 continua protegendo `.md`, gravações e metadados **atu
 **DECISÃO CONSOLIDADA — NÃO É PROPOSTA DE AGENTE. Prevalece sobre os §10 e §11 onde houver conflito.** Leia `docs/governance/addenda/ADD-0028-urbe-sem-simulacao-visual.md` e o ADR-0034 do Ecosystem antes de trabalhar no cliente C#.
 
 - **A simulação visual saiu do produto:** mundo, cidade, mapa, minimapa, vida, decorações, visual das construções e foco de ligações, com todas as funcionalidades que só existem por eles. Ela está **congelada** no ramo `urbe-simulacao-congelada` (commit `9c13dc2e`). Não reintroduza nenhuma parte dela, nem por paridade com a 1.8.4.
-- **O Explorer é a base do app.** Editor e painéis abrem por cima. Na abertura, o app volta para a última nota.
+- **A base do app passa a ser a Área de trabalho** (DEC-0053, `docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md`): projetos (pastas do topo) como caixas de vidro com catálogo em grid, e o Explorer como barra lateral em árvore (gaveta no celular). Até a primeira fatia (UC-84), o Explorer ocupa a tela. Editor e painéis abrem por cima. Na abertura, o app volta para a última nota.
 - **Notas:** id, datas e pastas ficam em `.urbe/notas.json` (`NoteLibrary`, `Urbe.Core`). Num vault vindo da cidade, vêm uma vez do `.urbe/mapa.json`. Os arquivos da cidade (`.urbe/mapa.json`, `.urbe/mundo.json`) **nunca são apagados nem reescritos**.
 - A interface continua **nativa, sem WebView/HTML/CSS** (Avalonia: `csharp/src/Urbe.Client`, `Urbe.Desktop`, `Urbe.Android`). Regras de domínio só em `Urbe.Core`. A casca Blazor foi retirada (UC-34).
 - A 1.8.4-beta (`apps/urbe/`, intocada) segue como referência **fora da simulação**: editor, Explorer, lixeira, histórico, importação, páginas e assistente.

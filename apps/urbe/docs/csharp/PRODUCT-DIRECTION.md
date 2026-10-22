@@ -6,7 +6,7 @@
 
 O Urbe guarda **as suas notas em Markdown numa pasta real** do aparelho. Cada nota é um arquivo `.md` comum, que qualquer outro programa abre.
 
-**A tela do Urbe é o Explorer.** Ele mostra as pastas, as notas e os outros arquivos do vault. O resto abre por cima dele:
+**A tela do Urbe passa a ser a Área de trabalho** (DEC-0053, [ADD-0030](../../../../docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md)). Cada projeto (uma pasta do topo) é uma caixa de vidro com borda colorida e um catálogo em grid das suas notas e arquivos, e o Explorer vira uma barra lateral em árvore. Até a primeira fatia, o Explorer ocupa a tela. Ele mostra as pastas, as notas e os outros arquivos do vault. O resto abre por cima:
 
 | Peça | O que faz |
 |---|---|
@@ -28,7 +28,7 @@ Na abertura, o app volta direto para a última nota que estava aberta.
 - quase nada se move;
 - tocar numa nota mostra as suas ligações.
 
-Primeiro vem o painel **Conexões** da nota aberta, depois a **constelação** do vault, como uma tela para passear. O Explorer continua a base.
+Primeiro vem o painel **Conexões** da nota aberta, depois a **constelação** do vault, como uma tela para passear. Nunca a base do app.
 
 **A 1.8.4 continua referência fora da simulação.** Isso vale para as regras do editor, do Explorer, da lixeira, do histórico, da importação, das páginas e do assistente. Mas ela é referência de essência, não de defeitos (DEC-0045, [ADD-0022](../../../../docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md)). O que o proprietário apontou como defeito ou aprovou como melhoria nas observações de uso é corrigido, não reproduzido.
 

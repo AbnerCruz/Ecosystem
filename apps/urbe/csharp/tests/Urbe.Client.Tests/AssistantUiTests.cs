@@ -157,4 +157,80 @@ public sealed partial class HeadlessUiTests
                 try { Directory.Delete(dir, recursive: true); } catch (IOException) { }
             }
         }, CancellationToken.None));
+
+    [Fact]
+    public async Task Assistant_ALongConversationStaysLight() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // observation of 22/10/2026: after 11 requests full of steps the Assistente froze the app
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-assistant-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(vault);
+            File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n\n- uma\n");
+            var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
+            var before = UrbeApp.AssistantFolder;
+            UrbeApp.AssistantFolder = Path.Combine(dir, "app", "assistant");
+            var view = new MainView(storage);
+            var window = new Window { Width = 1280, Height = 760, Content = view };
+            window.Show();
+            try
+            {
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                ClickButtonWithText(view, "Assistente");
+                var panel = view.Assistant;
+                var model = new ScriptedModel();
+                panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
+                panel.Config.Providers.Add(new AiProviderConfig("openrouter", "openrouter", ApiKey: "sk-teste"));
+                panel.Config.Model = "org/modelo-b";
+                // eleven earlier requests, ten steps each
+                var msgs = panel.Conversation.Messages;
+                for (int r = 0; r < 11; r++)
+                {
+                    msgs.Add(new AiChatMessage { Id = "u" + r, Role = "user", Content = [AiChatBlock.TextBlock("pedido " + r)] });
+                    for (int k = 0; k < 10; k++)
+                    {
+                        var id = "c" + r + "_" + k;
+                        msgs.Add(new AiChatMessage { Id = "a" + id, Role = "assistant", Content = [new AiChatBlock { Type = "tool_use", Id = id, Name = "read_note", Input = new System.Text.Json.Nodes.JsonObject { ["path"] = "Comece.md" } }] });
+                        msgs.Add(new AiChatMessage { Id = "r" + id, Role = "user", Meta = new AiChatMeta { ToolResults = true }, Content = [new AiChatBlock { Type = "tool_result", ToolUseId = id, Content = new string('x', 5000) }] });
+                    }
+                    msgs.Add(new AiChatMessage { Id = "f" + r, Role = "assistant", Content = [AiChatBlock.TextBlock("Resposta " + r + ".")] });
+                }
+                panel.RenderAll();
+                // each earlier request: what was asked, its steps in one folded line, the answer; the last one, every step
+                Assert.Equal(10 * 3 + 12, panel.Log.Children.Count);
+                var folded = panel.Log.Children.OfType<Expander>().ToList();
+                Assert.Equal(10, folded.Count);
+                Assert.All(folded, x => Assert.Null(x.Content));   // built only when opened
+                Assert.Contains("10 passos", panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
+                folded[0].IsExpanded = true;
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal(10, ((Panel)folded[0].Content!).Children.Count);
+
+                // a new request: while it streams and waits for approval, the earlier ones are not rebuilt
+                model.Chats.Enqueue(Sse(
+                    """{"model":"org/modelo-b","choices":[{"delta":{"content":"Vou "}}]}""",
+                    """{"choices":[{"delta":{"content":"trocar "}}]}""",
+                    """{"choices":[{"delta":{"content":"agora."}}]}""",
+                    """{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1","function":{"name":"edit_note","arguments":"{\"path\":\"Comece\",\"old_text\":\"- uma\",\"new_text\":\"- primeira\"}"}}]}}]}""",
+                    """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
+                model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Pronto."}}]}"""));
+                panel.Send("Troque a primeira tarefa");
+                var earlier = panel.Log.Children.Take(33).ToList();
+                for (int i = 0; i < 200 && panel.PendingApproval is null; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.NotNull(panel.PendingApproval);
+                for (int i = 0; i < 20; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                for (int i = 0; i < 33; i++) Assert.Same(earlier[i], panel.Log.Children[i]);
+                Assert.Contains("Aprovar alteração · Comece.md", panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
+                panel.Answer(AiApproval.Approve);
+                await panel.CurrentRun!;
+                return true;
+            }
+            finally
+            {
+                UrbeApp.AssistantFolder = before;
+                window.Close();
+                try { Directory.Delete(dir, recursive: true); } catch (IOException) { }
+            }
+        }, CancellationToken.None));
 }

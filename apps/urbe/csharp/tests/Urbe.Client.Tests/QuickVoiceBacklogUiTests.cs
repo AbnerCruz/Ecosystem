@@ -37,8 +37,8 @@ public sealed partial class HeadlessUiTests
                 await Task.Delay(50);
                 Dispatcher.UIThread.RunJobs();
 
-                var file = Path.Combine(vault, QuickNotes.Folder, "2026-10-21.md");
-                Assert.Equal("# Notas rápidas — 21/10/2026\n\n- 07:30 — comprar pão\n- 07:35 — ligar para a Ana\n", File.ReadAllText(file));
+                var file = Path.Combine(vault, QuickNotes.Folder, "2026-10.md");
+                Assert.Equal("# Notas rápidas — outubro de 2026\n\n## 21/10 — quarta-feira\n\n- 07:30 — comprar pão\n- 07:35 — ligar para a Ana\n", File.ReadAllText(file));
                 Assert.Equal(["a.wav", "f.wav"], transcribed);
                 // the written ones and their audio are gone; the failing one stays, with its audio
                 var left = Assert.Single(queue.Load());
@@ -47,7 +47,7 @@ public sealed partial class HeadlessUiTests
                 Assert.False(File.Exists(Path.Combine(queue.Folder, "a.wav")));
                 Assert.True(File.Exists(Path.Combine(queue.Folder, "f.wav")));
                 Assert.Equal("2 salva(s); 1 continua guardada para tentar depois.", view.Notices[^1]);
-                Assert.NotNull(view.Documents!.Get(QuickNotes.Folder + "/2026-10-21.md"));
+                Assert.NotNull(view.Documents!.Get(QuickNotes.Folder + "/2026-10.md"));
 
                 // nothing waiting: no offer
                 queue.Remove("f");

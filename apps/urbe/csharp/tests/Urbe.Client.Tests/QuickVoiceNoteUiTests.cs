@@ -24,12 +24,12 @@ public sealed partial class HeadlessUiTests
                 await PickFromNewMenu(view, "Nota rápida", () => Task.CompletedTask);
                 Assert.True(File.Exists(file));
                 var first = File.ReadAllText(file);
-                Assert.StartsWith(QuickNotes.Header(DateTime.Now) + "\n\n- ", first);
+                Assert.StartsWith(QuickNotes.Header(DateTime.Now) + "\n\n" + QuickNotes.DayHeading(DateTime.Now) + "\n\n- ", first);
                 Assert.EndsWith(" — comprar pão\n", first);
                 Assert.NotNull(view.Documents!.Get(path));
                 Assert.Contains(QuickNotes.Folder, view.Library!.Folders);
 
-                // the next one is appended to the same day's note
+                // the next one goes into the same day of the month's note
                 await view.QuickVoiceNoteAsync();
                 var second = File.ReadAllText(file);
                 Assert.StartsWith(first, second);

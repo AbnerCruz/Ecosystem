@@ -353,6 +353,57 @@ public static class AssistantAgent
         return o.Select(m => new AiMessage(m.Role, m.Content.Select(ToBlock).ToList())).ToList();
     }
 
+    // ---------------------------------------------------------------- past requests, settled
+
+    /// <summary>Results and written contents of earlier requests longer than this are cut down before being sent again.</summary>
+    public const int SettledChars = 1200;
+
+    /// <summary>
+    /// The working context, whatever the model's window: past it, <see cref="Prepare"/> shortens the oldest results and
+    /// drops old turns. A huge window is no reason to send everything on every step (observation of 22/10/2026: 11
+    /// requests in one conversation took 5,216k tokens and the app slowed down).
+    /// </summary>
+    public const int WorkingChars = 480_000;
+
+    /// <summary>
+    /// Earlier requests, settled: their long tool results and the long contents their tools wrote (a whole note, a page's
+    /// JSON) are cut to a short head with a note that the vault has the current version. The current request (from the
+    /// last message the person wrote) goes whole. The conversation is not changed: changed blocks are copies.
+    /// </summary>
+    public static List<AiChatMessage> SettlePast(IReadOnlyList<AiChatMessage> messages)
+    {
+        int current = messages.Count;
+        for (int i = messages.Count - 1; i >= 0; i--)
+            if (messages[i].Role == "user" && messages[i].Meta?.ToolResults != true && messages[i].Content.Any(b => b.Type == "text" && !b.Hidden && !string.IsNullOrEmpty(b.Text))) { current = i; break; }
+        return messages.Select((m, i) => i < current && m.Content.Any(IsLong) ? Settled(m) : m).ToList();
+    }
+
+    private static int Length(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) ? s.Length : n is null ? 0 : n.ToJsonString().Length;
+
+    private static bool IsLong(AiChatBlock b) => b.Type switch
+    {
+        "tool_result" => b.Content.Length > SettledChars,
+        "tool_use" => b.Input is JsonObject o && o.Any(p => Length(p.Value) > SettledChars),
+        _ => false
+    };
+
+    private static AiChatMessage Settled(AiChatMessage m) => new()
+    {
+        Id = m.Id, Role = m.Role, Meta = m.Meta,
+        Content = m.Content.Select(b => !IsLong(b) ? b : b.Type == "tool_result"
+            ? new AiChatBlock { Type = "tool_result", ToolUseId = b.ToolUseId, IsError = b.IsError, Content = b.Content[..400] + "\n…[resultado de um pedido anterior, encurtado; use as ferramentas para ver o estado atual]" }
+            : new AiChatBlock { Type = "tool_use", Id = b.Id, Name = b.Name, Input = SettledInput((JsonObject)b.Input!) }).ToList()
+    };
+
+    private static JsonObject SettledInput(JsonObject input)
+    {
+        var o = new JsonObject();
+        foreach (var (key, value) in input)
+            o[key] = Length(value) <= SettledChars ? value?.DeepClone()
+                : (value is JsonValue v && v.TryGetValue<string>(out var s) ? s[..400] : "") + "…[" + Length(value) + " caracteres já gravados num pedido anterior; leia a nota ou a página para ver a versão atual]";
+        return o;
+    }
+
     private static AiBlock ToBlock(AiChatBlock b) => b.Type switch
     {
         "text" => AiBlock.TextBlock(b.Text ?? ""),
@@ -445,7 +496,7 @@ public static class AssistantAgent
         var byName = new Dictionary<string, AiTool>();
         foreach (var t in tools) byName[t.Name] = t;
         var system = SystemPrompt(agent, policy, o.VaultName, o.Host.Documents.List().Count, o.Host.EditorContext().Path, o.Instructions, o.Memory, o.Now ?? DateTime.Now);
-        int budget = (int)Math.Max(20000, Math.Floor(contextTokens * 3.2 * 0.7));
+        int budget = (int)Math.Max(20000, Math.Min(WorkingChars, Math.Floor(contextTokens * 3.2 * 0.7)));
         int maxSteps = o.MaxSteps is null or 0 ? 30 : o.MaxSteps.Value;
         bool runAllow = false, nudged = false, partialNudged = false;
         var failed = new Dictionary<string, string>();
@@ -465,7 +516,7 @@ public static class AssistantAgent
             AiResult res;
             try
             {
-                var req = new AiRequest(o.Model, Prepare(messages.Take(messages.Count - 1), budget), system, schemas, o.MaxTokens is null or 0 ? 8192 : o.MaxTokens, o.Temperature);
+                var req = new AiRequest(o.Model, Prepare(SettlePast(messages.Take(messages.Count - 1).ToList()), budget), system, schemas, o.MaxTokens is null or 0 ? 8192 : o.MaxTokens, o.Temperature);
                 res = await o.Stream(o.Provider, req, e =>
                 {
                     switch (e.Type)

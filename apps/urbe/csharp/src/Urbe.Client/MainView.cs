@@ -244,6 +244,7 @@ public sealed partial class MainView : Grid
         {
             if (_vault is not null)
             {
+                Explorer.Opening = true;
                 try
                 {
                     var snapshot = await _vault.RestoreAsync();
@@ -255,7 +256,11 @@ public sealed partial class MainView : Grid
             // no folder yet: no notes (DEC-0045, UC-40/UC-64: the Tutorial is never created in the vault by itself)
             await LoadAsync([]);
         }
-        finally { MarkReady(); }   // UC-56: a widget's quick note waits for the first vault
+        finally
+        {
+            Explorer.Opening = false;
+            MarkReady();   // UC-56: a widget's quick note waits for the first vault
+        }
     }
 
     public async Task OpenVaultAsync()
@@ -263,6 +268,7 @@ public sealed partial class MainView : Grid
         if (_vault is null) return;
         try
         {
+            Explorer.Opening = true;   // only shows while the list is empty
             var snapshot = await _vault.PickAsync();
             if (snapshot is not null) await ShowVaultAsync(snapshot);
         }
@@ -270,6 +276,7 @@ public sealed partial class MainView : Grid
         {
             ShowLifeNotice("Não foi possível abrir a pasta: " + ex.Message, Ui.ToastKind.Warning);
         }
+        finally { Explorer.Opening = false; }
     }
 
     private async Task ShowVaultAsync(VaultSnapshot snapshot, bool restoreSession = false)

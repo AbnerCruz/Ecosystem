@@ -100,7 +100,7 @@ internal static class VoiceNotes
 /// UC-66: the widget's recorder. A tap starts it (foreground service, type microphone; no activity opens), a second
 /// tap or the notification stops it, and it also stops by itself after ~2.5 s of silence following speech or after
 /// 2 minutes. Android 13+: the Urbe records 16 kHz PCM to a private WAV and streams it to the on-device recognizer;
-/// before 13 the recognizer listens to the microphone itself. The line is appended to "Notas rápidas/&lt;dia&gt;.md"
+/// before 13 the recognizer listens to the microphone itself. The line is appended to "Notas rápidas/&lt;mês&gt;.md"
 /// with the verified write; the recording leaves the queue only after that, so turning the phone off loses nothing.
 /// </summary>
 [Service(Exported = false, ForegroundServiceType = ForegroundService.TypeMicrophone)]

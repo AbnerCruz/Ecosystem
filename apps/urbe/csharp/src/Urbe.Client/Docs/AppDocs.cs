@@ -68,7 +68,7 @@ public static partial class AppDocs
         - **Nova nota**, na pasta selecionada.
         - **A partir de um modelo**, quando há notas em `Modelos` (veja [[Modelos]]).
         - **Nova pasta**, na pasta selecionada.
-        - **Nota rápida**, por voz, quando disponível. No Android também há o widget **Urbe: nota rápida** na tela inicial, que grava sem abrir o app.
+        - **Nota rápida**, por voz, quando disponível. No Android também há o widget **Urbe: nota rápida** na tela inicial, que grava sem abrir o app. As notas rápidas ficam em **Notas rápidas**, uma nota por mês com um título para cada dia.
 
         ## Selecionar e mover
 

@@ -162,6 +162,8 @@ public sealed partial class AssistantPanel : Border
     public Task? CurrentRun { get; private set; }
     /// <summary>The input box (tests type in it).</summary>
     public TextBox Input => _input;
+    /// <summary>The conversation's log (tests).</summary>
+    public Panel Log => _log;
 
     private bool _loaded;
 
@@ -422,6 +424,7 @@ public sealed partial class AssistantPanel : Border
     {
         RenderChrome();
         _views.Clear();
+        _past.Clear();
         RenderLog();
         ScrollEnd();
     }
@@ -464,18 +467,113 @@ public sealed partial class AssistantPanel : Border
 
     private double? Estimate(AiUsage u) => ModelMeta()?.Price is { } price ? (u.Input * price.Input + u.Output * price.Output) / 1e6 : null;
 
+    /// <summary>
+    /// The log, light however long the conversation (observation of 22/10/2026: after 11 requests it froze the app).
+    /// The current request shows every step; an earlier one shows what was asked, its steps folded in one line (built
+    /// when opened) and its answer. Only what changed is replaced: a streamed word rebuilds its own message, not the log.
+    /// </summary>
     private void RenderLog()
     {
-        _log.Children.Clear();
-        if (_cfg.Providers.Count == 0) { _log.Children.Add(Onboarding()); return; }
-        if (_conv.Messages.Count == 0) { _log.Children.Add(Empty()); return; }
-        foreach (var m in _conv.Messages)
+        if (_cfg.Providers.Count == 0) { SetLog([Onboarding()]); return; }
+        if (_conv.Messages.Count == 0) { SetLog([Empty()]); return; }
+        IndexResults();
+        var msgs = _conv.Messages;
+        int current = msgs.FindLastIndex(IsRequest);
+        var desired = new List<Control>();
+        for (int i = 0; i < msgs.Count; i++)
         {
-            if (!_views.TryGetValue(m, out var view)) _views[m] = view = MessageView(m);
-            if (view.Parent is Panel old) old.Children.Remove(view);
-            _log.Children.Add(view);
+            // the results the loop sends back show in their cards, not as messages
+            if (msgs[i].Role == "user" && msgs[i].Meta?.ToolResults == true) continue;
+            if (i >= current || !IsRequest(msgs[i])) { desired.Add(View(msgs[i])); continue; }
+            desired.Add(View(msgs[i]));
+            int end = i + 1;
+            while (end < current && !IsRequest(msgs[end])) end++;
+            var steps = msgs.GetRange(i + 1, end - i - 1).Where(m => m.Role == "assistant").ToList();
+            var answer = steps.LastOrDefault() is { } last && last.Content.Any(b => b.Type == "text" && !string.IsNullOrWhiteSpace(b.Text)) && !last.Content.Any(b => b.Type == "tool_use") ? last : null;
+            var folded = steps.Where(m => m != answer).ToList();
+            if (folded.Count > 0)
+            {
+                if (!_past.TryGetValue(msgs[i], out var group)) _past[msgs[i]] = group = PastSteps(folded);
+                desired.Add(group);
+            }
+            if (answer is not null) desired.Add(View(answer));
+            i = end - 1;
         }
-        if (Tail() is { } tail) _log.Children.Add(tail);
+        if (Tail() is { } tail) desired.Add(tail);
+        SetLog(desired);
+    }
+
+    private Control View(AiChatMessage m)
+    {
+        if (!_views.TryGetValue(m, out var view)) _views[m] = view = MessageView(m);
+        return view;
+    }
+
+    /// <summary>A message the person wrote (not the results the loop sends back, nor its reminders).</summary>
+    private static bool IsRequest(AiChatMessage m) =>
+        m.Role == "user" && m.Meta?.ToolResults != true && m.Content.Any(b => b.Type == "text" && !b.Hidden && !string.IsNullOrEmpty(b.Text));
+
+    /// <summary>The log becomes <paramref name="desired"/>, keeping in place every view that did not change.</summary>
+    private void SetLog(IReadOnlyList<Control> desired)
+    {
+        var kids = _log.Children;
+        var wanted = new HashSet<Control>(desired);
+        for (int i = 0; i < desired.Count; i++)
+        {
+            var want = desired[i];
+            if (i < kids.Count && ReferenceEquals(kids[i], want)) continue;
+            // a message rebuilt in place (a streamed word, a tool finished)
+            if (i < kids.Count && want.Parent is null && !wanted.Contains(kids[i])) { kids[i] = want; continue; }
+            kids.RemoveRange(i, kids.Count - i);
+            for (int j = i; j < desired.Count; j++)
+            {
+                if (desired[j].Parent is Panel old) old.Children.Remove(desired[j]);
+                kids.Add(desired[j]);
+            }
+            return;
+        }
+        if (kids.Count > desired.Count) kids.RemoveRange(desired.Count, kids.Count - desired.Count);
+    }
+
+    /// <summary>The steps of an earlier request in one folded line; the cards are built when it opens.</summary>
+    private Control PastSteps(IReadOnlyList<AiChatMessage> steps)
+    {
+        int tools = steps.Sum(m => m.Content.Count(b => b.Type == "tool_use"));
+        var header = Row(UrbeTheme.Icon(UrbeTheme.Icons.Layers, 14, UrbeTheme.Text3), Label(tools == 0 ? "Raciocínio" : tools == 1 ? "1 passo" : tools + " passos", 12, UrbeTheme.Text3));
+        return Lazy(header, () =>
+        {
+            var list = new StackPanel { Spacing = 8 };
+            foreach (var m in steps) list.Children.Add(MessageView(m));
+            return list;
+        });
+    }
+
+    /// <summary>An expander whose content is built the first time it opens: folded, it costs one line.</summary>
+    private static Expander Lazy(Control header, Func<Control> content)
+    {
+        var x = new Expander { Header = header, HorizontalAlignment = HorizontalAlignment.Stretch };
+        x.PropertyChanged += (_, e) => { if (e.Property == Expander.IsExpandedProperty && x.IsExpanded && x.Content is null) x.Content = content(); };
+        return x;
+    }
+
+    private readonly Dictionary<AiChatMessage, Control> _past = [];
+    private readonly Dictionary<string, AiChatBlock> _results = [];
+    private string? _latestPlan;
+
+    /// <summary>Each call's result and the latest plan, once per render (not once per card).</summary>
+    private void IndexResults()
+    {
+        _results.Clear();
+        var plan = _latestPlan;
+        _latestPlan = null;
+        foreach (var m in _conv.Messages)
+            foreach (var b in m.Content)
+            {
+                if (m.Role == "user" && b.Type == "tool_result") _results[b.ToolUseId] = b;
+                else if (b is { Type: "tool_use", Name: "update_plan", Pending: false }) _latestPlan = b.Id;
+            }
+        // a newer plan: the older one folds back to a line
+        if (plan is not null && plan != _latestPlan && MessageOf(plan) is { } old) _views.Remove(old);
     }
 
     // ---------------------------------------------------------------- small builders
