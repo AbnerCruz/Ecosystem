@@ -30,7 +30,7 @@ public sealed partial class HeadlessUiTests
         var more = view.Editor.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == "Mais ações");
         more.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
-        ClickButtonWithText(view.Dialogs, "Renomear");
+        ClickButtonWithText(view.ActionSheet, "Renomear");
         await Task.Delay(30);
         Dispatcher.UIThread.RunJobs();
         var input = view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single();
@@ -357,7 +357,7 @@ public sealed partial class HeadlessUiTests
                 var more = view.Editor.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == "Mais ações");
                 more.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 Dispatcher.UIThread.RunJobs();
-                ClickButtonWithText(view.Dialogs, "Mover para a lixeira");
+                ClickButtonWithText(view.ActionSheet, "Mover para a lixeira");
                 await Settled();
                 ClickButtonWithText(view.Dialogs, "Mover para a lixeira");
                 await Settled();
