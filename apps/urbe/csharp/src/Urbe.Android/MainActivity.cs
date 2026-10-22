@@ -10,8 +10,9 @@ using Urbe.Client;
 
 // the Assistente talks to the model provider the person connects (OpenRouter, Anthropic, OpenAI, Gemini, Ollama…)
 [assembly: UsesPermission(Android.Manifest.Permission.Internet)]
-// UC-56 (NN-016): no RECORD_AUDIO. The quick note asks the system recognizer (RecognizerIntent) by intent; that app
-// holds the microphone and its own permission, and only the text comes back. No audio is recorded or stored here.
+// UC-56 (NN-016): the in-app "Nota rápida" asks the system recognizer (RecognizerIntent) by intent; that app holds the
+// microphone and only the text comes back. The home-screen widget records by itself (UC-66): its permissions
+// (RECORD_AUDIO, foreground service of type microphone, notifications) are declared in VoiceNoteService.cs.
 
 namespace Urbe.AndroidHost;
 
@@ -72,6 +73,9 @@ public sealed class MainActivity : AvaloniaMainActivity
             ? ShowKeyboard(root, ime) : false;
         // UC-56: the system recognizer listens and records (its own app and permission); this app gets only the text
         PlatformVoice.Transcribe = () => Current is { } activity ? activity.RecognizeSpeechAsync() : Task.FromResult<string?>(null);
+        // UC-66: the widget's voice notes not yet in the vault are offered again ("Tentar") once the city is up
+        PlatformVoice.Backlog = VoiceNotes.Backlog(ApplicationContext ?? this);
+        VoiceNoteWidget.Refresh(this, VoiceNoteService.IsRecording);
         // UC-69 (UX.md P7): haptics through the view, which follows the system touch-feedback setting and needs no VIBRATE permission
         Urbe.Client.Ui.PlatformHaptics.Perform = kind => Current?.Window?.DecorView?.PerformHapticFeedback(Haptic(kind));
         // "Remover animações" (animator duration scale 0) turns the interface's motion off (P6, P12)
@@ -93,7 +97,10 @@ public sealed class MainActivity : AvaloniaMainActivity
         HandleVoiceIntent(intent);
     }
 
-    /// <summary>The widget's 🎤: the quick note starts once the city is up; the extra is consumed so it runs once.</summary>
+    /// <summary>
+    /// An intent with <see cref="VoiceExtra"/> (the UC-56 widget's old tap; the widget now records by itself, UC-66):
+    /// the quick note starts once the city is up; the extra is consumed so it runs once.
+    /// </summary>
     private static void HandleVoiceIntent(Intent? intent)
     {
         if (intent is null || !intent.GetBooleanExtra(VoiceExtra, false)) return;

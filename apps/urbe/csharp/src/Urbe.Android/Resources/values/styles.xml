@@ -6,4 +6,8 @@
     <item name="android:statusBarColor">@color/urbe_bg</item>
     <item name="android:navigationBarColor">@color/urbe_bg</item>
   </style>
+  <!-- UC-66: the microphone permission is asked over the home screen, with nothing of the app drawn -->
+  <style name="UrbeTransparent" parent="@android:style/Theme.Translucent.NoTitleBar">
+    <item name="android:windowAnimationStyle">@null</item>
+  </style>
 </resources>
