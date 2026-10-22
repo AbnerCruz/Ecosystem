@@ -5,7 +5,7 @@ using Urbe.Core;
 namespace Urbe.Core.Tests;
 
 /// <summary>The reconciliation at the opening (identity.js reconcile) against csharp/tools/legacy-identity-oracle.mjs: the same
-/// fingerprints, ids, renames, ambiguous groups and the same map afterwards.</summary>
+/// fingerprints, ids, renames and ambiguous groups (the 1.8.4 also moved the city map; the city left the app, ADD-0028).</summary>
 public sealed class LegacyIdentityOracleTests
 {
     private static JsonArray Cases()
@@ -22,7 +22,7 @@ public sealed class LegacyIdentityOracleTests
         foreach (var c in Cases().OfType<JsonObject>())
         {
             var name = (string)c["name"]!;
-            var meta = c["metaBefore"] is JsonObject m ? (JsonObject)m.DeepClone() : null;
+            var meta = c["metaBefore"] as JsonObject;
             var notes = meta?["notas"] as JsonObject;
             var items = c["items"]!.AsArray().Select(i =>
             {
@@ -31,13 +31,11 @@ public sealed class LegacyIdentityOracleTests
             }).ToList();
             Assert.Equal(c["fingerprints"]!.AsArray().Select(f => (string)f!), items.Select(i => VaultIdentity.Fingerprint(i.Content)));
             var identity = c["identity"] is JsonObject s ? VaultIdentity.Parse(Encoding.UTF8.GetBytes(s.ToJsonString()), out _) : null;
-            var onDisk = c["onDisk"] is JsonArray d ? d.Select(p => (string)p!).ToList() : [];
-            var r = LegacyIdentity.Reconcile(items, meta, identity, onDisk);
+            var r = LegacyIdentity.Reconcile(items, identity);
             Assert.True(c["ids"]!.AsArray().Select(x => (string?)x).SequenceEqual(items.Select(i => i.Id)), name + " ids");
             Assert.True(c["renames"]!.AsArray().Select(x => ((string)x!["id"]!, (string)x["from"]!, (string)x["to"]!)).SequenceEqual(r.Renames.Select(x => (x.Id, x.From, x.To))), name + " renames");
             Assert.True(c["ambiguous"]!.AsArray().Select(x => string.Join("|", x!["to"]!.AsArray().Select(p => (string)p!)) + "<" + string.Join("|", x["from"]!.AsArray().Select(p => (string)p!)))
                 .SequenceEqual(r.Ambiguous.Select(x => string.Join("|", x.To) + "<" + string.Join("|", x.From))), name + " ambiguous");
-            Assert.True(JsonNode.DeepEquals(c["metaAfter"], meta), name + " map: " + meta?.ToJsonString());
         }
     }
 }

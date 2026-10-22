@@ -164,15 +164,17 @@ public sealed class LegacySearchOracleTests
         };
         var result = await RunAsync(cases);
         var bindings = result.GetProperty("bindings").EnumerateArray().Select(b => (b.GetProperty("shortcut").GetString()!, b.GetProperty("commandId").GetString()!)).ToArray();
-        Assert.Equal(bindings, LegacyKeymap.List().Select(b => (b.Shortcut, b.CommandId)).ToArray());
+        Assert.Equal(bindings.Where(b => b.Item2 != WithoutTheCity.WorldCommand), LegacyKeymap.List().Select(b => (b.Shortcut, b.CommandId)).ToArray());
         var expected = result.GetProperty("keys").EnumerateArray().ToArray();
         var n = 0;
         foreach (var (key, editable) in inputs)
             foreach (var available in new[] { true, false })
             {
                 var got = LegacyKeymap.Resolve(key, editable is not null, _ => available);
-                Assert.Equal(expected[n].GetProperty("executed").GetString(), got.CommandId);
-                Assert.Equal(expected[n].GetProperty("prevented").GetBoolean(), got.PreventDefault);
+                // Mod+Shift+M went with the city: the native app does nothing with it
+                bool world = expected[n].GetProperty("executed").GetString() == WithoutTheCity.WorldCommand;
+                Assert.Equal(world ? null : expected[n].GetProperty("executed").GetString(), got.CommandId);
+                Assert.Equal(!world && expected[n].GetProperty("prevented").GetBoolean(), got.PreventDefault);
                 n++;
             }
         Assert.Equal(expected.Length, n);
