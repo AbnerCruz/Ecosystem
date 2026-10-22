@@ -80,7 +80,8 @@ public sealed class VaultPluginSpec
             Need("botoes", where);
             if (Str(b["titulo"]).Length == 0) errors.Add(where + ".titulo: obrigatório.");
             var onde = Str(b["onde"]);
-            if (onde.Length > 0 && onde is not ("cidade" or "editor")) errors.Add(where + ".onde: use \"cidade\" ou \"editor\".");
+            // "cidade" (the city's top bar, before ADD-0028) is kept as a name of the Explorer's header: plugins already written still load
+            if (onde.Length > 0 && onde is not ("notas" or "cidade" or "editor")) errors.Add(where + ".onde: use \"notas\" ou \"editor\".");
             var bi = Str(b["icone"]);
             if (bi.Length > 0 && !Icons.Contains(bi)) errors.Add(where + ".icone: use um de " + string.Join(", ", Icons) + ".");
             if (b["acoes"] is JsonArray ba) CheckActions(ba, where + ".acoes", declared, errors);
@@ -242,8 +243,8 @@ public sealed class VaultPluginSpec
         "  \"estado\": { \"segundos\": 0, \"rodando\": false, \"voltas\": [] },   // variáveis e valores iniciais",
         "  \"guardar\": [\"voltas\"],                 // variáveis lembradas neste aparelho (precisa de \"dados\")",
         "  \"ao_ligar\": [ações],",
-        "  \"painel\": { \"titulo\": \"Cronômetro\", \"aberto\": false, \"itens\": [itens] },   // painel flutuante sobre a cidade e o editor (\"paineis\")",
-        "  \"botoes\": [ { \"titulo\": \"Cronômetro\", \"icone\": \"clock\", \"onde\": \"cidade\" | \"editor\", \"acoes\": [ações] } ],   // sem acoes: abre/fecha o painel (\"botoes\")",
+        "  \"painel\": { \"titulo\": \"Cronômetro\", \"aberto\": false, \"itens\": [itens] },   // painel flutuante sobre as notas e o editor (\"paineis\")",
+        "  \"botoes\": [ { \"titulo\": \"Cronômetro\", \"icone\": \"clock\", \"onde\": \"notas\" | \"editor\", \"acoes\": [ações] } ],   // sem acoes: abre/fecha o painel (\"botoes\")",
         "  \"comandos\": [ { \"titulo\": \"Zerar cronômetro\", \"acoes\": [ações] } ],   // na paleta de comandos (\"comandos\")",
         "  \"relogio\": { \"intervalo\": 1000, \"ativo\": false, \"acoes\": [ações] },   // repete as ações a cada intervalo (ms) enquanto ativo",
         "  \"eventos\": { \"nota:aberta\": [ações], \"nota:salva\": [ações] }   // a variável nota tem o caminho (\"eventos\")",
@@ -268,7 +269,7 @@ public sealed class VaultPluginSpec
         "  {\"repetir\": \"3\", \"acoes\": [ações]}                     até 1000 vezes; variável i",
         "  {\"relogio\": \"iniciar\" | \"parar\"}",
         "  {\"painel\": \"mostrar\" | \"ocultar\" | \"alternar\"}         (\"paineis\")",
-        "  {\"aviso\": \"Tempo esgotado: {formatarTempo(segundos)}\"}     aviso sobre a cidade (\"avisos\")",
+        "  {\"aviso\": \"Tempo esgotado: {formatarTempo(segundos)}\"}     aviso discreto no alto da tela (\"avisos\")",
         "  {\"escreverNota\": \"Diário/{data()}.md\", \"conteudo\": \"- {hora()} pausa\", \"modo\": \"acrescentar\"|\"substituir\"}   (\"notas.escrever\"; nunca em .urbe nem em plugins)",
         "  {\"inserirTexto\": \"⏱ {formatarTempo(segundos)}\"}          insere no cursor da nota aberta no editor (\"notas.escrever\")",
         "  {\"abrirNota\": \"Diário/{data()}.md\"}                      abre no editor (\"notas.ler\")",

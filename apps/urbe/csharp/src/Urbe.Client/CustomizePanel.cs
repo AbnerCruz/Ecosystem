@@ -12,14 +12,14 @@ namespace Urbe.Client;
 /// <summary>
 /// src/customize/panel.js natively: "Personalização" with its sections; a wide window with the
 /// section list on the left, full screen with scrolling tabs on a phone (≤ 760 px). Visual from
-/// styles/customize.css (.uc). Cidade and Arquivo are ported; the other sections say so.
+/// styles/customize.css (.uc).
 /// </summary>
 public sealed partial class CustomizePanel : Grid
 {
         private static readonly (string Id, string Name, string Icon)[] Sections =
     [
         ("aparencia", "Aparência", Icons.Palette), ("texto", "Texto", Icons.Type), ("editor", "Editor", Icons.Edit),
-        ("cidade", "Cidade", Icons.City), ("texturas", "Texturas", Icons.Image), ("estilos", "Estilos CSS", Icons.Brush),
+        ("estilos", "Estilos CSS", Icons.Brush),
         ("tags", "Tags", Icons.Palette), ("plugins", "Plugins", Icons.Puzzle), ("arquivo", "Arquivo", Icons.Code)
     ];
 
@@ -188,35 +188,11 @@ public sealed partial class CustomizePanel : Grid
             case "aparencia": AppearanceSection(); break;
             case "texto": TextSection(); break;
             case "editor": EditorSection(); break;
-            case "cidade": CitySection(); break;
-            case "texturas": TexturesSection(); break;
             case "estilos": StylesSection(); break;
             case "tags": TagsSection(); break;
             case "plugins": PluginsSection(); break;
             case "arquivo": FileSection(); break;
         }
-    }
-
-    private void CitySection()
-    {
-        var c = (JsonObject)Customization.Config["cidade"]!;
-        bool B(string k) => c[k] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
-        _body.Children.Add(Block("Vida na cidade",
-            Toggle("cidade.moradores", B("moradores"), "Moradores", "Pessoas andando entre notas ligadas"),
-            Toggle("cidade.fauna", B("fauna"), "Animais", "Rebanhos, cervos, patos, pássaros, peixes, borboletas, pombos e vaga-lumes"),
-            Toggle("cidade.clima", B("clima"), "Clima", "Nuvens, vento, folhas, chuva, neve e neblina"),
-            Toggle("cidade.eventos", B("eventos"), "Eventos", "Balão, festa e fogos, barcos, raposa, revoadas e estrelas cadentes"),
-            Toggle("cidade.nomes", B("nomes"), "Nomes das casas", "Letreiro com o nome da nota"),
-            Toggle("cidade.bairros", B("bairros"), "Nomes dos bairros", "Letreiro com o nome da pasta")));
-        // Muralha e contornos (DEC-0045, UC-41): kept in .urbe/mundo.json, never in tema.json
-        var world = Customization.World;
-        _body.Children.Add(Block("Bairros",
-            Toggle(world.Walls, "Muralha", "O bairro principal de cada pasta da raiz cercado por uma muralha de pedra",
-                v => Customization.SetWorldAsync(Customization.World with { Walls = v })),
-            Row("Contornos", "Dos bairros dentro de outros", OutlineSeg(world.Outlines))));
-        _body.Children.Add(GroundColorsBlock());
-        _body.Children.Add(Block("Luz", Row("Hora do dia", "Ciclo: um dia inteiro a cada 24 minutos. Auto segue o relógio do aparelho",
-            Seg("cidade.ambiente", (string)c["ambiente"]!, [("ciclo", "Ciclo"), ("dia", "Dia"), ("entardecer", "Tarde"), ("noite", "Noite"), ("auto", "Auto")]))));
     }
 
     /// <summary>
@@ -301,7 +277,7 @@ public sealed partial class CustomizePanel : Grid
         restore.Click += async (_, _) =>
         {
             var ok = await Dialogs.ChooseAsync("Restaurar padrão?", [new DialogItem("Restaurar", Danger: true), new DialogItem("Cancelar")],
-                "Volta cores, texto, editor e cidade ao padrão. Temas salvos, estilos, texturas e plugins continuam na pasta.");
+                "Volta cores, texto e editor ao padrão. Temas salvos, estilos e plugins continuam na pasta.");
             if (ok == 0) { await Customization.ResetAsync(); Render(); }
         };
         var openNote = SmallButton("Abrir como nota", false);
@@ -321,7 +297,7 @@ public sealed partial class CustomizePanel : Grid
         var actions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0), Children = { restore, openNote, apply } };
         foreach (var child in actions.Children) child.Margin = new Thickness(8, 0, 0, 8);
         _body.Children.Add(Block(LegacyCustomize.FilePath,
-            Help("Tudo desta tela fica neste arquivo. Você pode editar aqui, abrir como nota, copiar para outra cidade ou pedir ao Assistente que crie um tema para você."),
+            Help("Tudo desta tela fica neste arquivo. Você pode editar aqui, abrir como nota, copiar para outro vault ou pedir ao Assistente que crie um tema para você."),
             _json, _jsonState, actions));
         if (Customization.Warnings.Count > 0)
             _body.Children.Add(Block("Avisos", Issues(Customization.Warnings)));
@@ -473,30 +449,6 @@ public sealed partial class CustomizePanel : Grid
         return new Border
         {
             Tag = "seg", Child = _narrow ? grid : stack, Padding = new Thickness(3), CornerRadius = new CornerRadius(11), Background = UrbeTheme.Brush(UrbeTheme.Bg),
-            BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), VerticalAlignment = VerticalAlignment.Center
-        };
-    }
-
-    private Border OutlineSeg(string value)
-    {
-        var stack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
-        foreach (var (v, label) in new[] { (WorldPrefs.Soft, "Suaves"), (WorldPrefs.Strong, "Fortes"), (WorldPrefs.Hidden, "Ocultos") })
-        {
-            bool on = v == value;
-            var b = new Button
-            {
-                Content = label, MinHeight = 34, Padding = new Thickness(12, 0), CornerRadius = new CornerRadius(7), FontFamily = UrbeTheme.UiFont, FontSize = 13,
-                FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(on ? UrbeTheme.Text : UrbeTheme.Text2),
-                Background = on ? UrbeTheme.Brush(UrbeTheme.Surface3) : Brushes.Transparent, VerticalContentAlignment = VerticalAlignment.Center
-            };
-            AutomationName(b, "Contornos " + label);
-            var choice = v;
-            b.Click += async (_, _) => { await Customization.SetWorldAsync(Customization.World with { Outlines = choice }); Render(); };
-            stack.Children.Add(b);
-        }
-        return new Border
-        {
-            Child = stack, Padding = new Thickness(3), CornerRadius = new CornerRadius(11), Background = UrbeTheme.Brush(UrbeTheme.Bg),
             BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), VerticalAlignment = VerticalAlignment.Center
         };
     }

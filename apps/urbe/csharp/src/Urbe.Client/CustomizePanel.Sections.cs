@@ -9,7 +9,6 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
-using Urbe.Client.World;
 using Urbe.Core;
 
 namespace Urbe.Client;
@@ -54,7 +53,7 @@ public sealed class AutoFillPanel(double min, double gap) : Panel
     }
 }
 
-/// <summary>The sections of src/customize/panel.js beyond Cidade and Arquivo: Aparência, Texto, Editor, Texturas, Estilos CSS, Plugins and "Cores do chão".</summary>
+/// <summary>The sections of src/customize/panel.js beyond Arquivo: Aparência, Texto, Editor, Estilos CSS and Plugins.</summary>
 public sealed partial class CustomizePanel
 {
     private static readonly string[] NamesColor = ["destaque", "fundo", "superficie", "superficie2", "superficie3", "linha", "linha2", "texto", "texto2", "texto3", "perigo", "sucesso", "aviso", "codigo"];
@@ -65,16 +64,6 @@ public sealed partial class CustomizePanel
     };
     private static readonly string[] MainColors = ["destaque", "fundo", "superficie", "texto", "perigo", "sucesso"];
     private static readonly string[] Accents = ["#8fb3ff", "#b39cff", "#f08aa0", "#ff9f6b", "#f1c46e", "#8fd18a", "#5fd0e0", "#3b6fe0", "#a0582a", "#ffd400"];
-    private static readonly string[] GroundIds = ["grass", "meadow", "forest", "dense", "swamp", "taiga", "tundra", "snow", "hills", "mountain", "peak", "desert", "savanna", "steppe", "beach", "river", "lake", "sea", "deep"];
-    private static readonly Dictionary<string, string> PortugueseBiome = new()
-    {
-        ["grass"] = "grama", ["meadow"] = "prado", ["forest"] = "floresta", ["dense"] = "mata", ["swamp"] = "pantano", ["taiga"] = "taiga", ["tundra"] = "tundra", ["snow"] = "neve", ["hills"] = "colinas",
-        ["mountain"] = "montanha", ["peak"] = "pico", ["desert"] = "deserto", ["savanna"] = "savana", ["steppe"] = "estepe", ["beach"] = "praia", ["sea"] = "mar", ["deep"] = "profundo", ["river"] = "rio", ["lake"] = "lago"
-    };
-    private static readonly Dictionary<string, string> PortugueseBuilding = new()
-    {
-        ["house"] = "casa", ["hall"] = "salao", ["workshop"] = "oficina", ["dyer"] = "tinturaria", ["tower"] = "torre", ["market"] = "mercado", ["store"] = "armazem"
-    };
     private bool _moreColors;
     private Border? _toast;
     private DispatcherTimer? _toastTimer;
@@ -332,7 +321,7 @@ public sealed partial class CustomizePanel
                 Children =
                 {
                     SampleText("Exemplo de nota", 1.25, true),
-                    SampleText("Uma cidade se lê como um livro: cada casa guarda uma ideia, e as ruas mostram como elas se ligam.", 1, false),
+                    SampleText("Um vault se lê como um livro: cada nota guarda uma ideia, e os links mostram como elas se ligam.", 1, false),
                     new TextBlock { Text = "[[Outra nota]]", FontFamily = UrbeTheme.MonoFont, FontSize = N(t, "tamanhoEditor", 17) * .85, Foreground = UrbeTheme.Brush(UrbeTheme.Accent) }
                 }
             }
@@ -354,51 +343,6 @@ public sealed partial class CustomizePanel
             Row("Largura do texto", "Em telas grandes", Seg("editor.largura", S(e, "largura", "media"), [("estreita", "Estreita"), ("media", "Média"), ("larga", "Larga"), ("total", "Toda")])),
             Row("Abrir notas no modo", "Visual mostra formatado; Texto mostra o Markdown", Seg("editor.modoInicial", S(e, "modoInicial", "visual"), [("visual", "Visual"), ("texto", "Texto")])),
             Toggle("editor.ortografia", Bo(e, "ortografia", true), "Corretor ortográfico", "Sublinha palavras com erro enquanto você escreve")));
-    }
-
-    // ---------------------------------------------------------------- Cidade → Cores do chão
-
-    private Border GroundColorsBlock()
-    {
-        var pal = Sec("cidade")["paleta"] as JsonObject ?? [];
-        var inv = new Dictionary<string, string>();
-        foreach (var k in LegacyCustomize.Keys(pal))
-            foreach (var id in LegacyCustomize.BiomeId(k) ?? [])
-                if (pal[k] is JsonArray a && a.Count > 0) inv[id] = a[0]!.GetValue<string>();
-        var grid = new AutoFillPanel(150, 8);
-        foreach (var (id, name) in LegacyCustomizeTheme.BiomeNameData)
-        {
-            bool own = inv.ContainsKey(id);
-            var value = inv.GetValueOrDefault(id) ?? LegacyWorldPixelTextures.DefaultPalette(id)[0];
-            var row = new DockPanel();
-            var pick = ColorEditor.Button(value, name,
-                h => Customization.Preview(Patch("cidade.paleta", new JsonObject { [PortugueseBiome[id]] = new JsonArray(h) })),
-                async h => await Customization.SetAsync(Patch("cidade.paleta", new JsonObject { [PortugueseBiome[id]] = new JsonArray(h) })), 36, 36, 8);
-            pick.Margin = new Thickness(0, 0, 10, 0);
-            DockPanel.SetDock(pick, Dock.Left);
-            row.Children.Add(pick);
-            if (own)
-            {
-                var reset = Mini(Icons.Restore, "Cor original", async () =>
-                {
-                    var c = (JsonObject)Customization.Config.DeepClone();
-                    var p = (JsonObject)((JsonObject)c["cidade"]!)["paleta"]!;
-                    foreach (var k in p.Select(x => x.Key).ToList()) if ((LegacyCustomize.BiomeId(k) ?? []).Contains(id)) p.Remove(k);
-                    await Customization.SaveAsync(c);
-                }, 30);
-                DockPanel.SetDock(reset, Dock.Right);
-                row.Children.Add(reset);
-            }
-            row.Children.Add(Label(name, 13, FontWeight.SemiBold));
-            grid.Children.Add(new Border { Child = row, Padding = new Thickness(4, 4, 6, 4), MinHeight = 46, CornerRadius = new CornerRadius(12), Background = UrbeTheme.Brush(UrbeTheme.Surface), BorderBrush = UrbeTheme.Brush(own ? UrbeTheme.Accent : UrbeTheme.Line), BorderThickness = new Thickness(1) });
-        }
-        var restore = pal.Count > 0 ? Link("Restaurar", Icons.Restore, async () =>
-        {
-            var c = (JsonObject)Customization.Config.DeepClone();
-            ((JsonObject)c["cidade"]!)["paleta"] = new JsonObject();
-            await Customization.SaveAsync(c);
-        }) : null;
-        return BlockWith("Cores do chão", restore, Help("Toque num bioma para trocar a cor. Para desenhar o chão pixel a pixel, use Texturas."), grid);
     }
 
     // ---------------------------------------------------------------- toast
@@ -426,280 +370,6 @@ public sealed partial class CustomizePanel
 
     /// <summary>The last toast message (tests and accessibility).</summary>
     public string ToastText { get; private set; } = "";
-
-    // ---------------------------------------------------------------- Texturas
-
-    private (string Path, JsonObject? Data, string Content)? ActivePack()
-    {
-        var p = Customization.ResolvePack((Customization.Config["cidade"] as JsonObject)?["texturas"]?.GetValue<string>());
-        if (p is null) return null;
-        JsonObject? data = null;
-        try { data = LegacyCustomize.ParseJs(p.Value.Content) as JsonObject; } catch (System.Text.Json.JsonException) { }
-        return (p.Value.Path, data, p.Value.Content);
-    }
-
-    private async Task SavePack((string Path, JsonObject? Data, string Content) pack, JsonObject data)
-    {
-        try { await Customization.UpsertAsync(pack.Path, LegacyCustomize.Stringify(data, 2) + "\n"); }
-        catch (InvalidOperationException e) { await Dialogs.AlertAsync("Texturas", e.Message); }
-    }
-
-    private static string? GroundKey(JsonObject d, string id) =>
-        (d["chao"] as JsonObject)?.Select(x => x.Key).FirstOrDefault(k => (LegacyCustomize.BiomeId(k) ?? []).Length == 1 && (LegacyCustomize.BiomeId(k) ?? []).Contains(id));
-
-    private static string? BuildingKey(JsonObject d, string id) =>
-        (d["construcoes"] as JsonObject)?.Select(x => x.Key).FirstOrDefault(k => LegacyTexturePack.BuildingId(k) == id);
-
-    private void TexturesSection()
-    {
-        var active = (Customization.Config["cidade"] as JsonObject)?["texturas"]?.GetValue<string>() ?? "";
-        var packRow = new WrapPanel();
-        Button PackButton(string title, string sub, bool on, Func<Task> click, bool dashed = false)
-        {
-            var content = new StackPanel { Spacing = 2 };
-            content.Children.Add(Label(title, 14, FontWeight.SemiBold, dashed ? UrbeTheme.Accent : UrbeTheme.Text));
-            if (sub.Length > 0) content.Children.Add(new TextBlock { Text = sub, FontFamily = UrbeTheme.UiFont, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 160 });
-            var b = new Button
-            {
-                Content = content, MinWidth = 120, MinHeight = 56, Margin = new Thickness(0, 0, 8, 8), Padding = new Thickness(12, 8), CornerRadius = new CornerRadius(12), HorizontalContentAlignment = HorizontalAlignment.Left,
-                VerticalContentAlignment = VerticalAlignment.Center, Background = UrbeTheme.Brush(UrbeTheme.Surface), BorderBrush = UrbeTheme.Brush(on ? UrbeTheme.Accent : UrbeTheme.Line2), BorderThickness = new Thickness(on ? 2 : 1)
-            };
-            AutomationName(b, title);
-            b.Click += async (_, _) => await click();
-            return b;
-        }
-        packRow.Children.Add(PackButton("Nenhum", "arte original", active.Length == 0, () => Set("cidade.texturas", JsonValue.Create(""))));
-        foreach (var p in Customization.Packs()) packRow.Children.Add(PackButton(p.Name, p.Path.Split('/').Last(), p.Active, () => Set("cidade.texturas", JsonValue.Create(p.Path))));
-        packRow.Children.Add(PackButton("Novo pacote", "", false, NewPackAsync, true));
-
-        var pk = ActivePack();
-        if (pk is null)
-        {
-            _body.Children.Add(Block("Pacote de texturas", packRow, Help("Um pacote guarda desenhos próprios para o chão de cada bioma e para as construções. Crie um e desenhe pixel a pixel, ou use imagens do aparelho.")));
-            return;
-        }
-        if (pk.Value.Data is null)
-        {
-            var open = SmallButton("Abrir arquivo", false);
-            open.HorizontalAlignment = HorizontalAlignment.Left;
-            var path = pk.Value.Path;
-            open.Click += (_, _) => { Close(); RequestOpen(path); };
-            _body.Children.Add(Block("Pacote de texturas", packRow, Banner("err", "O arquivo " + path + " não é um JSON válido. Abra-o para corrigir."), open));
-            return;
-        }
-        var data = pk.Value.Data;
-        var chao = data["chao"] as JsonObject ?? [];
-        var ground = new AutoFillPanel(104, 10);
-        foreach (var id in GroundIds)
-        {
-            bool own = chao.Any(x => (LegacyCustomize.BiomeId(x.Key) ?? []).Contains(id));
-            int index = LegacyWorldPixelTextures.Biomes.ToList().IndexOf(id);
-            var preview = PixelImage(Customization.Ground.Textures[index][0], 16, 16, 64, 64);
-            ground.Children.Add(TextureCell(LegacyCustomizeTheme.BiomeName(id), preview, own,
-                () => _ = DrawGroundAsync(id), () => _ = ImageAsync(id, false), own ? () => _ = ClearAsync(id, false) : null));
-        }
-        var cons = data["construcoes"] as JsonObject ?? [];
-        var buildings = new AutoFillPanel(104, 10);
-        foreach (var (id, name) in LegacyCustomizeTheme.BuildingNameData)
-        {
-            bool own = cons.Any(x => LegacyTexturePack.BuildingId(x.Key) == id);
-            var art = BuildingPixels(id);
-            buildings.Children.Add(TextureCell(name, PixelImage(art.Rgba, art.Width, art.Height, 60, 70), own,
-                () => _ = DrawBuildingAsync(id), () => _ = ImageAsync(id, true), own ? () => _ = ClearAsync(id, true) : null));
-        }
-        var json = Link("Ver JSON", Icons.Code, () => { Close(); RequestOpen(pk.Value.Path); });
-        _body.Children.Add(BlockWith("Pacote de texturas", json, packRow));
-        if (Customization.GroundErrors.Count > 0) _body.Children.Add(Block("Avisos do pacote", Issues(Customization.GroundErrors.Select(e => new LegacyCustomize.Issue("", e)))));
-        _body.Children.Add(Block("Chão", Help("Cada bioma é um quadrado de 16×16 pixels que se repete pelo mapa."), ground));
-        _body.Children.Add(Block("Construções", Help("Desenho de 48×56 pixels, como as casas originais. Imagens de outro tamanho são ajustadas."), buildings));
-    }
-
-    /// <summary>The picture a building has now (pack image or the original art on the grass style).</summary>
-    private LegacyTexturePack.Art BuildingPixels(string id)
-    {
-        if (Customization.BuildingArt.TryGetValue(id, out var own)) return own;
-        return new LegacyTexturePack.Art(LegacyWorldBuildings.CreateBuilding(id, LegacyWorldBuildings.StyleForBiome("grass"), 0, false), LegacyWorldBuildings.Width, LegacyWorldBuildings.Height);
-    }
-
-    private static Control PixelImage(byte[] rgba, int w, int h, double width, double height)
-    {
-        var img = new Image { Source = Pixels.ToBitmap(rgba, w, h), Width = width, Height = height, Stretch = Stretch.Fill };
-        RenderOptions.SetBitmapInterpolationMode(img, BitmapInterpolationMode.None);
-        return new Border { Child = img, CornerRadius = new CornerRadius(6), ClipToBounds = true, HorizontalAlignment = HorizontalAlignment.Center };
-    }
-
-    private Border TextureCell(string name, Control preview, bool own, Action draw, Action image, Action? clear)
-    {
-        var act = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, HorizontalAlignment = HorizontalAlignment.Center };
-        act.Children.Add(Mini(Icons.Pencil, "Desenhar " + name, draw, 34));
-        act.Children.Add(Mini(Icons.Image, "Imagem para " + name, image, 34));
-        if (clear is not null) act.Children.Add(Mini(Icons.Restore, "Voltar ao original", clear, 34));
-        var stack = new StackPanel { Spacing = 6, Children = { preview, new TextBlock { Text = name, FontFamily = UrbeTheme.UiFont, FontSize = 12.5, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap }, act } };
-        return new Border { Child = stack, Padding = new Thickness(8), CornerRadius = new CornerRadius(12), Background = UrbeTheme.Brush(UrbeTheme.Surface), BorderBrush = UrbeTheme.Brush(own ? UrbeTheme.Accent : UrbeTheme.Line), BorderThickness = new Thickness(1) };
-    }
-
-    private async Task NewPackAsync()
-    {
-        var name = await Dialogs.PromptAsync(new PromptOptions("Novo pacote de texturas", "Nome", "Meu pacote", Confirm: "Criar"));
-        if (string.IsNullOrWhiteSpace(name)) return;
-        name = name.Trim();
-        var p = Customization.PackFolder + System.Text.RegularExpressions.Regex.Replace(name, @"[\\/:*?""<>|]", "-") + ".json";
-        for (int i = 2; Customization.Documents.ContainsKey(p); i++) p = System.Text.RegularExpressions.Regex.Replace(p, @"( \d+)?\.json$", " " + i + ".json");
-        try
-        {
-            await Customization.UpsertAsync(p, LegacyCustomize.Stringify(new JsonObject { ["nome"] = name, ["chao"] = new JsonObject(), ["construcoes"] = new JsonObject() }, 2) + "\n");
-            await Set("cidade.texturas", JsonValue.Create(p));
-            Toast("Pacote criado e ativado");
-        }
-        catch (InvalidOperationException e) { await Dialogs.AlertAsync("Texturas", e.Message); }
-    }
-
-    private async Task ClearAsync(string id, bool building)
-    {
-        var pk = ActivePack();
-        if (pk?.Data is not { } d) return;
-        if (building)
-        {
-            if (d["construcoes"] is not JsonObject cons) return;
-            foreach (var k in cons.Select(x => x.Key).ToList()) if (LegacyTexturePack.BuildingId(k) == id) cons.Remove(k);
-        }
-        else
-        {
-            if (d["chao"] is not JsonObject chao) return;
-            if (GroundKey(d, id) is { } k) chao.Remove(k);
-        }
-        await SavePack(pk.Value, d);
-    }
-
-    private static string[] FromRgba(byte[] data, int w, int h)
-    {
-        var o = new string[w * h];
-        for (int k = 0; k < o.Length; k++) o[k] = data[k * 4 + 3] < 128 ? "" : "#" + data[k * 4].ToString("x2") + data[k * 4 + 1].ToString("x2") + data[k * 4 + 2].ToString("x2");
-        return o;
-    }
-
-    private static List<string> ColorsOf(string[] px)
-    {
-        var count = new Dictionary<string, int>();
-        foreach (var c in px) if (c.Length > 0) count[c] = count.GetValueOrDefault(c) + 1;
-        return count.OrderByDescending(x => x.Value).Take(8).Select(x => x.Key).ToList();   // stable, like Array.sort
-    }
-
-    /// <summary>toGrid(px, w, h): the pixels as {cores, pixels} with one letter per colour.</summary>
-    public static JsonObject ToGrid(string[] px, int w, int h)
-    {
-        const string letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        var map = new Dictionary<string, char>();
-        var cores = new JsonObject();
-        var rows = new JsonArray();
-        for (int j = 0; j < h; j++)
-        {
-            var r = new System.Text.StringBuilder();
-            for (int i = 0; i < w; i++)
-            {
-                var c = px[j * w + i];
-                if (c.Length == 0) { r.Append('.'); continue; }
-                if (!map.TryGetValue(c, out var l))
-                {
-                    if (map.Count >= letters.Length) { r.Append(r.Length > 0 ? r[^1] : '.'); continue; }
-                    l = letters[map.Count]; map[c] = l; cores[l.ToString()] = c;
-                }
-                r.Append(l);
-            }
-            rows.Add(r.ToString());
-        }
-        return new JsonObject { ["cores"] = cores, ["pixels"] = rows };
-    }
-
-    private async Task DrawGroundAsync(string id)
-    {
-        var pk = ActivePack();
-        if (pk?.Data is not { } d) return;
-        int index = LegacyWorldPixelTextures.Biomes.ToList().IndexOf(id);
-        var px = FromRgba(Customization.Ground.Textures[index][0], 16, 16);
-        var baseColors = Customization.Ground.Palette[id];
-        var colors = baseColors.Concat(ColorsOf(px)).Distinct().ToList();
-        var edited = await EditPixelsAsync("Chão: " + LegacyCustomizeTheme.BiomeName(id), 16, 16, px, colors);
-        if (edited is null) return;
-        edited = edited.Select(c => c.Length > 0 ? c : baseColors[0]).ToArray();
-        var chao = d["chao"] as JsonObject ?? new JsonObject();
-        d["chao"] = chao;
-        if (GroundKey(d, id) is { } k) chao.Remove(k);
-        chao[PortugueseBiome[id]] = ToGrid(edited, 16, 16);
-        await SavePack(pk.Value, d);
-        Toast("Textura salva");
-    }
-
-    private async Task DrawBuildingAsync(string id)
-    {
-        var pk = ActivePack();
-        if (pk?.Data is not { } d) return;
-        var art = BuildingPixels(id);
-        var src = new LegacyTexturePack.DecodedImage(art.Rgba, art.Width, art.Height);
-        var px = FromRgba(TextureImages.Resize(src, 48, 56, false), 48, 56);
-        var edited = await EditPixelsAsync(LegacyCustomizeTheme.BuildingNameData.First(b => b.Id == id).Name, 48, 56, px, ColorsOf(px).Concat(["#000000", "#ffffff"]).ToList());
-        if (edited is null) return;
-        var cons = d["construcoes"] as JsonObject ?? new JsonObject();
-        d["construcoes"] = cons;
-        foreach (var k in cons.Select(x => x.Key).ToList()) if (LegacyTexturePack.BuildingId(k) == id) cons.Remove(k);
-        cons[PortugueseBuilding[id]] = ToGrid(edited, 48, 56);
-        await SavePack(pk.Value, d);
-        Toast("Construção salva");
-    }
-
-    private async Task ImageAsync(string id, bool building)
-    {
-        var pk = ActivePack();
-        if (pk?.Data is not { } d) return;
-        var bytes = await PickImageFileAsync();
-        if (bytes is null) return;
-        var url = TextureImages.ReduceToDataUrl(bytes, building ? 96 : 16, building ? 112 : 16);
-        if (url is null) { await Dialogs.AlertAsync("Imagem", "Não consegui ler essa imagem."); return; }
-        if (building)
-        {
-            var cons = d["construcoes"] as JsonObject ?? new JsonObject();
-            d["construcoes"] = cons;
-            foreach (var k in cons.Select(x => x.Key).ToList()) if (LegacyTexturePack.BuildingId(k) == id) cons.Remove(k);
-            cons[PortugueseBuilding[id]] = new JsonObject { ["imagem"] = url };
-        }
-        else
-        {
-            var chao = d["chao"] as JsonObject ?? new JsonObject();
-            d["chao"] = chao;
-            if (GroundKey(d, id) is { } k) chao.Remove(k);
-            chao[PortugueseBiome[id]] = new JsonObject { ["imagem"] = url };
-        }
-        await SavePack(pk.Value, d);
-        Toast(building ? "Construção trocada" : "Textura trocada");
-    }
-
-    private async Task<byte[]?> PickImageFileAsync()
-    {
-        if (ImagePicker is not null) return await ImagePicker();
-        var top = TopLevel.GetTopLevel(this);
-        if (top is null) return null;
-        var files = await top.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { AllowMultiple = false, FileTypeFilter = [FilePickerFileTypes.ImageAll] });
-        if (files.Count == 0) return null;
-        await using var s = await files[0].OpenReadAsync();
-        using var ms = new MemoryStream();
-        await s.CopyToAsync(ms);
-        return ms.ToArray();
-    }
-
-    /// <summary>Replaces the platform file picker (tests).</summary>
-    public Func<Task<byte[]?>>? ImagePicker { get; set; }
-
-    /// <summary>editorPixels(): the modal pixel editor; null when cancelled.</summary>
-    public Task<string[]?> EditPixelsAsync(string title, int w, int h, string[] initial, IReadOnlyList<string> colors)
-    {
-        var editor = new PixelEditor(title, w, h, initial, colors);
-        Children.Add(editor);
-        Editor = editor;
-        return editor.Result;
-    }
-
-    /// <summary>The pixel editor currently open (tests).</summary>
-    public PixelEditor? Editor { get; private set; }
 
     private void RequestOpen(string path) => OpenFileRequested?.Invoke(path);
 
@@ -788,7 +458,7 @@ public sealed partial class CustomizePanel
         _body.Children.Add(Banner("warn", "Plugins .plugin.json (os que você ou o Assistente criam) rodam no app depois de ligados, e só fazem o que declaram. Os .js da 1.8.4 não rodam no app nativo (DEC-0044): aqui você só os vê e aprova."));
         var items = new List<Control>();
         var list = Customization.Plugins();
-        if (list.Count == 0) items.Add(Help("Nenhum plugin nesta cidade. Crie um a partir de um modelo e veja o código funcionando."));
+        if (list.Count == 0) items.Add(Help("Nenhum plugin neste vault. Crie um a partir de um modelo e veja o código funcionando."));
         foreach (var p in list)
         {
             var native = Urbe.Core.Plugins.VaultPluginSpec.IsPluginPath(p.Path);
@@ -815,7 +485,7 @@ public sealed partial class CustomizePanel
             items.Add(new Border { Child = stack, Padding = new Thickness(0, 12), BorderThickness = new Thickness(0, 1, 0, 0), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line) });
         }
         items.Add(More("Novo plugin", Icons.Plus, async () => await NewPluginAsync()));
-        _body.Children.Add(Block("Plugins desta cidade", [.. items]));
+        _body.Children.Add(Block("Plugins deste vault", [.. items]));
         _body.Children.Add(Block("Segurança", Toggle(Customization.SafeMode, "Modo seguro", "Desliga todos os plugins e estilos, sem apagar nada. Útil se algo quebrar a tela.", v => { Customization.SafeMode = v; return Task.CompletedTask; })));
     }
 

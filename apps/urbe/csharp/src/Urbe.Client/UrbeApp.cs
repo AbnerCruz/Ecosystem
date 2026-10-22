@@ -39,13 +39,13 @@ public sealed class UrbeApp : Application
                     Background = UrbeTheme.Brush(UrbeTheme.Bg),
                     Content = view
                 };
-                // workspace.js flushPending on pagehide: a pending map save is written before the window closes
+                // workspace.js flushPending on pagehide: a pending save of the notes' record is written before the window closes
                 bool flushed = false;
                 window.Closing += async (_, e) =>
                 {
-                    if (flushed || view.MapSave is not { HasPending: true }) return;
+                    if (flushed || view.NotesSave is not { HasPending: true }) return;
                     e.Cancel = true;
-                    try { await view.FlushMapAsync(); }
+                    try { await view.FlushPendingAsync(); }
                     catch { /* the error state was shown; closing must not be blocked forever */ }
                     flushed = true;
                     window.Close();
@@ -62,7 +62,7 @@ public sealed class UrbeApp : Application
         base.OnFrameworkInitializationCompleted();
     }
 
-    /// <summary>The view of the running app (the Android head flushes its map on pause).</summary>
+    /// <summary>The view of the running app (the Android head flushes its pending saves on pause).</summary>
     public static MainView? ActiveView { get; private set; }
 
     public static MainView CreateMainView()
@@ -75,7 +75,7 @@ public sealed class UrbeApp : Application
 
     /// <summary>
     /// workspace.js flushPending (visibilitychange hidden): the app goes to the background, so a
-    /// pending map save is started now. Fire-and-forget: the platform does not wait for it.
+    /// pending save of the notes' record is started now. Fire-and-forget: the platform does not wait for it.
     /// </summary>
     public static void FlushPendingOnBackground()
     {
@@ -84,7 +84,7 @@ public sealed class UrbeApp : Application
         {
             try { await view.Editor.FlushAsync(); }
             catch { /* shown by the editor's save state */ }
-            try { await view.FlushMapAsync(); }
+            try { await view.FlushPendingAsync(); }
             catch { /* shown by the save state */ }
         });
     }

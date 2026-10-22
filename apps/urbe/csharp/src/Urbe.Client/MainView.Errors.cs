@@ -7,7 +7,7 @@ public sealed partial class MainView
 {
     private bool _errorNoticeShown;
 
-    /// <summary>The discreet notice over the city (life.js avisar), for commands and plugins.</summary>
+    /// <summary>The discreet notice over the app (life.js avisar), for commands and plugins.</summary>
     public void Notify(string text) => ShowLifeNotice(text);
 
     private void WatchErrors() => CrashLog.Reported += _ =>

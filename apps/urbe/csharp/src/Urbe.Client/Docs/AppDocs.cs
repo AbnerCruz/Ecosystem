@@ -13,8 +13,6 @@ public static partial class AppDocs
     public static IReadOnlyList<CityNote> Load() =>
     [
         new(LegacyTutorial.Start, ComeceAqui),
-        new("Tutorial/Cidade/A cidade.md", ACidade),
-        new("Tutorial/Cidade/Construir o mundo.md", ConstruirOMundo),
         new("Tutorial/Escrever/Explorer.md", Explorer),
         new("Tutorial/Escrever/Editor.md", Editor),
         new("Tutorial/Escrever/Modelos.md", Modelos),
@@ -29,7 +27,7 @@ public static partial class AppDocs
     private const string ComeceAqui = """
         # Comece aqui
 
-        Bem-vindo ao **Urbe**. Aqui suas notas viram uma cidade: cada nota é uma **casa**, cada pasta é um **bairro** e cada `[[link]]` entre notas abre uma **rua**. Quanto mais você escreve e liga ideias, mais a cidade cresce e ganha vida.
+        Bem-vindo ao **Urbe**. Suas notas são arquivos Markdown (`.md`) numa pasta sua: você escreve, organiza em pastas e liga uma ideia à outra com `[[links]]`. O Urbe também produz páginas, sites e livros a partir delas.
 
         ## O primeiro passo: a pasta
 
@@ -37,105 +35,31 @@ public static partial class AppDocs
 
         ## A tela
 
-        - **A cidade** ocupa a tela toda. Arraste para andar, faça pinça (ou use a roda do mouse) para aproximar.
-        - **No alto:** o nome da sua pasta, com um ponto que mostra se está tudo salvo (verde), gravando (amarelo) ou com erro (vermelho); depois **Buscar notas**, **Mapa da cidade** e **Configurações**.
-        - **Embaixo:** **Explorer** (arquivos e pastas), **Cidade**, **Assistente** e o botão **+**, que constrói no mundo.
+        - **O Explorer** ocupa a tela: as pastas e notas do seu vault, com a busca no alto.
+        - **No alto:** o nome da sua pasta, com um ponto que mostra se está tudo salvo (verde), gravando (amarelo) ou com erro (vermelho); depois **Nova**, **Mais opções** e **Configurações**.
+        - **Embaixo:** **Notas** e **Assistente**.
+        - Ao abrir, o Urbe volta direto para a nota em que você estava.
 
         ## Por onde seguir
 
-        - [[A cidade]]: o que você vê e como a vida acontece.
-        - [[Construir o mundo]]: construções, regiões e decorações.
         - [[Explorer]] e [[Editor]]: escrever e organizar.
+        - [[Modelos]]: notas que começam prontas.
         - [[Atalhos]]: os atalhos de teclado.
 
         Use a **busca** no alto do índice deste tutorial para achar qualquer assunto, e **Anterior / Próximo** para ler em sequência.
         """;
 
-    private const string ACidade = """
-        # A cidade
-
-        A cidade é o seu vault desenhado num mundo procedural, com terreno, rios, florestas e montanhas.
-
-        ## Casas, bairros e ruas
-
-        - **Casas** são notas e outros arquivos. O tipo do arquivo define a construção: uma nota `.md` é uma casa; `.html`, `.js`, `.css`, `.json`, `.csv` e `.txt` têm construções próprias.
-        - **Bairros** são pastas. Subpastas viram bairros dentro de bairros.
-        - **Ruas** ligam notas que têm `[[links]]` entre si. Escreva um link e a rua aparece.
-
-        ## Andar e olhar
-
-        - **Arraste** para andar e faça **pinça** ou use a **roda do mouse** para o zoom.
-        - **Mapa da cidade** (no alto) mostra o mundo inteiro, com os bairros e a área que você está vendo.
-        - **Buscar notas** encontra uma nota, leva a câmera até a casa dela e abre a nota.
-        - **Configurações → Organizar os bairros** redesenha pastas e subpastas e reagrupa as casas. Dá para voltar: **Ctrl+K → Desfazer reorganização**.
-
-        ## Tocar no mundo
-
-        - **Tocar numa casa** abre o cartão do arquivo: **Abrir e editar**, **Copiar**, **Visual** (o visual da construção), **Mover** (para outra pasta) e **Excluir** (vai para a lixeira).
-        - **Segurar uma casa** e arrastar leva a casa para outro lugar. Se ela mudar de bairro, o arquivo muda de pasta junto.
-        - **Tocar num bairro** mostra o contorno com alças; arraste-as e toque em **Aplicar** para mudar o formato.
-        - **Segurar um bairro** abre nome, cor e descrição da pasta.
-        - **Tocar numa decoração** abre as opções dela (veja [[Construir o mundo]]).
-
-        ## A vida
-
-        - **Moradores** andam pelas ruas entre notas ligadas e às vezes param para conversar.
-        - **Ofícios:** perto de um **poço**, de uma **roça** ou de uma **pilha de lenha**, alguém da casa mais próxima sai para buscar água, cuidar da roça ou cortar lenha, e depois volta para casa.
-        - **Crianças** brincam perto da porta de algumas casas, correm e voltam.
-        - **Animais**, **clima** (nuvens, vento, chuva, neve, neblina) e **eventos** (balão, festa, barcos, raposa, revoadas, estrelas cadentes).
-        - **Relógio:** a luz segue um ciclo de dia e noite. Em **Personalização → Cidade → Luz** você escolhe Ciclo, Dia, Tarde, Noite ou Auto (o relógio do aparelho).
-
-        Tudo isso pode ser ligado ou desligado em **Personalização → Cidade → Vida na cidade**.
-        """;
-
-    private const string ConstruirOMundo = """
-        # Construir o mundo
-
-        O botão **+** da cidade constrói direto no mapa. Tudo vai para a sua pasta; sem uma pasta aberta, o Urbe avisa e não constrói.
-
-        ## Construção
-
-        Um arquivo onde você tocar no mapa.
-
-        1. **+ → Construção** e escolha o tipo: Nota `.md`, Texto `.txt`, Página `.html`, Script `.js`, Estilo `.css`, Dados `.json` ou Tabela `.csv`. O tipo define a construção.
-        2. Toque no mapa para posicionar e confirme.
-        3. Dê um nome e toque em **Construir**.
-
-        ## Região
-
-        Uma pasta desenhada no mapa. **+ → Região**, **arraste** no mapa para delimitar a área e dê o nome. Casas soltas que ficarem dentro dela entram na pasta.
-
-        ## Decoração
-
-        **+ → Decoração** e escolha: poço, roça, lenha, banco, fonte, canteiros, arbusto, lampião, cerca, barris, caixotes, carroça, placa, varal, árvore frutífera, pedras, espantalho…
-
-        - Toque no mapa para posicionar e em **Colocar**.
-        - **Pincel:** arraste para pintar uma decoração em cada quadrado do caminho (bom para cercas e canteiros). Toque de novo para voltar a um toque por vez.
-        - **Tocar numa decoração** colocada: **Mover**, **Variação** (cada uma tem as suas, como telhado de palha, trigo ou abóboras), **Girar**, **Espelhar**, **Colocar mais desta** e **Remover decoração**.
-        - A última variação escolhida vale para as próximas do mesmo tipo.
-
-        Poço, roça e lenha também dão **ofícios** aos moradores (veja [[A cidade]]). As decorações ficam em `.urbe/mundo.json`.
-
-        ## Importar
-
-        **+ → Importar** traz **arquivos** ou uma **pasta inteira** do aparelho (notas, pastas ou `.zip`). Veja [[Backups, exportar e restaurar]].
-
-        ## Nota rápida
-
-        Quando o aparelho permite, **+ → Nota rápida** escuta o que você fala e escreve na nota do dia, em `Notas rápidas`. No Android também há o widget **Urbe: nota rápida** na tela inicial.
-        """;
-
     private const string Explorer = """
         # Explorer
 
-        O **Explorer** (embaixo, à esquerda) mostra a pasta como arquivos e pastas. Em telas largas ele fica num painel ao lado da cidade.
+        O **Explorer** é a tela principal: mostra a pasta como arquivos e pastas.
 
         ## Navegar
 
         - **Buscar arquivos** filtra por nome e caminho.
         - Toque numa **pasta** para abrir ou fechar; toque numa **nota** para abrir no [[Editor]].
         - Outros arquivos (imagens, PDF…) abrem para visualizar.
-        - O **⋯** de uma pasta: **Nova nota aqui**, **Nova subpasta**, **Editar nome, cor e descrição**, **Mostrar na cidade**, **Mover para** e **Mover para a lixeira**.
+        - O **⋯** de uma pasta: **Nova nota aqui**, **Nova subpasta**, **Renomear**, **Mover para** e **Mover para a lixeira**.
 
         ## Criar
 
@@ -143,17 +67,17 @@ public static partial class AppDocs
 
         - **Nova nota**, na pasta selecionada.
         - **A partir de um modelo**, quando há notas em `Modelos` (veja [[Modelos]]).
-        - **Nova pasta**, que vira um bairro na cidade.
-        - **Nota rápida**, por voz, quando disponível.
+        - **Nova pasta**, na pasta selecionada.
+        - **Nota rápida**, por voz, quando disponível. No Android também há o widget **Urbe: nota rápida** na tela inicial, que grava sem abrir o app.
 
         ## Selecionar e mover
 
         - **Segure** uma nota ou pasta para selecionar. A barra embaixo oferece **Abrir**, **Favoritar**, **Mover para pasta**, **Duplicar**, **Agrupar em nova pasta** e **Mover para a lixeira**.
-        - **Segure e arraste** sobre uma pasta para mover para ela. A casa muda de bairro junto.
+        - **Segure e arraste** sobre uma pasta para mover para ela. O arquivo muda de pasta no vault.
 
         ## Mais opções
 
-        O botão **⋯** do Explorer: **Recentes**, **Favoritos**, **Importar arquivos**, **Exportar tudo (.zip)**, **Lixeira** e **Pasta do Urbe no dispositivo**.
+        O botão **⋯** do Explorer: **Buscar notas e comandos**, **Recentes**, **Favoritos**, **Importar arquivos**, **Exportar tudo (.zip)**, **Lixeira** e **Pasta do Urbe no dispositivo**.
 
         ## Lixeira
 
@@ -163,7 +87,7 @@ public static partial class AppDocs
     private const string Editor = """
         # Editor
 
-        O editor abre por cima da cidade. Ele salva sozinho e confere a gravação no arquivo; o rodapé mostra o estado.
+        O editor abre por cima do Explorer. Ele salva sozinho e confere a gravação no arquivo; o rodapé mostra o estado.
 
         ## Visual e Fonte
 
@@ -181,9 +105,9 @@ public static partial class AppDocs
 
         Num bloco vazio, digite `/` para ver os blocos: títulos, lista, tarefa, citação, divisória, link para nota, link externo, fórmula, fórmula em destaque, bloco de código, comentário e caixa. Continue digitando para filtrar.
 
-        ## Links e ruas
+        ## Links
 
-        - Digite `[[` e escolha a nota nas sugestões. O link vira uma **rua** na cidade.
+        - Digite `[[` e escolha a nota nas sugestões. As duas notas ficam ligadas: **Mais ações → Estrutura e backlinks** mostra quem cita a nota.
         - Tocar num link abre a nota. Se ela ainda não existe, o Urbe pergunta se quer **criar nota**.
 
         ## Fórmulas
@@ -321,7 +245,7 @@ public static partial class AppDocs
 
         ## Relógio
 
-        O plugin nativo **Relógio** mostra **Agora**, um **Cronômetro** e um **Temporizador** (com tempos prontos) num painel sobre a cidade e o editor. Ligado, ele ganha um botão no alto da cidade e na barra do editor.
+        O plugin nativo **Relógio** mostra **Agora**, um **Cronômetro** e um **Temporizador** (com tempos prontos) num painel sobre as notas e o editor. Ligado, ele ganha um botão no alto do Explorer e na barra do editor.
 
         ## Plugins da sua pasta
 
@@ -342,8 +266,6 @@ public static partial class AppDocs
         - **Aparência:** tema (escuro, meia-noite, floresta, oceano, vinho, claro, sépia, alto contraste), cor de destaque, cores, cantos, densidade e animações.
         - **Texto:** fonte e tamanho da interface e das notas, altura da linha.
         - **Editor:** largura do texto e o modo em que as notas abrem (Visual ou Texto).
-        - **Cidade:** moradores, animais, clima, eventos, nomes das casas e dos bairros; **Muralha** e **Contornos** dos bairros; cores do chão; a **Luz** (hora do dia).
-        - **Texturas:** pacotes de texturas para o chão e as construções.
         - **Estilos CSS:** guardados no tema; o app nativo não usa CSS, eles valem na versão web.
         - **Tags:** a cor de cada `#Tag:` (veja [[Editor]]). Fica em `Personalização/tags.json`.
         - **Plugins:** veja [[Plugins]].
@@ -363,11 +285,11 @@ public static partial class AppDocs
 
         ## Importar e restaurar
 
-        **Configurações → Importar arquivos** (ou **+ → Importar**) traz **arquivos** ou uma **pasta inteira**: notas, pastas ou `.zip`. O Urbe confere os arquivos antes. Se o `.zip` for um export ou backup do Urbe, ele oferece restaurar; o que for substituído é guardado antes em backup.
+        **Configurações → Importar arquivos** (ou **⋯ → Importar arquivos** no Explorer) traz **arquivos** ou uma **pasta inteira**: notas, pastas ou `.zip`. O Urbe confere os arquivos antes. Se o `.zip` for um export ou backup do Urbe, ele oferece restaurar; o que for substituído é guardado antes em backup.
 
         ## Backups automáticos
 
-        Antes de migrar, reorganizar a cidade ou importar, o Urbe guarda um backup em `.urbe/backup`. Para ver e restaurar: **Ctrl+K → Backups do vault**.
+        Antes de migrar ou importar, o Urbe guarda um backup em `.urbe/backup`. Para ver e restaurar: **Ctrl+K → Backups do vault**.
 
         ## Versões e lixeira
 
@@ -390,13 +312,12 @@ public static partial class AppDocs
         | Ctrl+W | Fechar aba |
         | Alt+← / Alt+→ | Voltar / Avançar |
         | Ctrl+Shift+F | Abrir o Explorer |
-        | Ctrl+Shift+M | Voltar para a cidade |
         | Ctrl+M | Fórmula no texto |
         | Ctrl+Shift+M (no editor) | Fórmula em destaque |
         | Esc | Fechar a busca ou terminar de editar o bloco |
 
-        **Abrir comandos** (Ctrl+K) lista tudo o que o Urbe faz: organizar e desfazer a organização dos bairros, backups, painel dividido, restaurar versão, plugins e mais.
+        **Abrir comandos** (Ctrl+K) lista tudo o que o Urbe faz: backups, painel dividido, restaurar versão, plugins e mais.
 
-        No celular: arraste para andar, pinça para o zoom, toque para abrir e segure para mover ou selecionar. Se um botão não responde, **Configurações → Diagnóstico de toques** ajuda a descobrir o porquê.
+        No celular: toque para abrir e segure para selecionar ou arrastar. Se um botão não responde, **Configurações → Diagnóstico de toques** ajuda a descobrir o porquê.
         """;
 }

@@ -11,7 +11,7 @@ namespace Urbe.Client;
 /// <summary>
 /// The page studio inside the app (studio.js open/home/newPage): a card of Páginas opens its page in the studio, "Nova
 /// página" makes a page with a free layout ready to write in (quickPage) and opens it, and the studio saves through the
-/// vault like a note (written, verified, the city and the store follow). The studio's Exportar and ⋯ menus are here.
+/// vault like a note (written, verified, then the store follows). The studio's Exportar and ⋯ menus are here.
 /// </summary>
 public sealed partial class MainView : IPageStudioHost
 {

@@ -56,7 +56,7 @@ public sealed class AiToolException(string message) : Exception(message);
 
 /// <summary>
 /// What the tools need from the app. Reads come from the document store and the index (the source of truth); every
-/// write goes through the app, which changes the vault first and only then the store, the city and the map.
+/// write goes through the app, which changes the vault first and only then the store and the notes' record.
 /// </summary>
 public interface IAssistantHost
 {
@@ -77,7 +77,7 @@ public interface IAssistantHost
     void SetPlan(IReadOnlyList<AiPlanStep> steps);
     /// <summary>The Personalização the appearance tools change, when the app has one.</summary>
     IAssistantAppearance? Appearance => null;
-    /// <summary>The city's plugins the plugin tools create and turn on, when the app has them.</summary>
+    /// <summary>The vault's plugins the plugin tools create and turn on, when the app has them.</summary>
     IAssistantPlugins? Plugins => null;
 }
 
@@ -597,7 +597,7 @@ public static partial class AssistantTools
         new()
         {
             Name = "create_folder", Access = "write",
-            Description = "Cria uma pasta (que vira um bairro na cidade).",
+            Description = "Cria uma pasta no vault.",
             Parameters = Schema("""{"type":"object","properties":{"path":{"type":"string"}},"required":["path"],"additionalProperties":false}"""),
             Label = i => "Criar pasta " + Norm(Str(i, "path")),
             Preview = (i, _) => new AiPreview(Norm(Str(i, "path")) + "/", null, null, "Nova pasta"),

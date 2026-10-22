@@ -54,27 +54,16 @@ public sealed class FileDeviceStore(string? path = null) : IDeviceStore
     }
 }
 
-/// <summary>The remaining customize.js / plugins.js services: vault-backed lists (themes, styles, packs, plugins), safe mode, the ground the pack paints.</summary>
+/// <summary>The remaining customize.js / plugins.js services: vault-backed lists (themes, styles, plugins) and safe mode.</summary>
 public sealed partial class Customization
 {
     private const string PluginKey = "urbe.plugins.v1", SafeKey = "urbe.modoSeguro";
     private IReadOnlyDictionary<string, string> _documents = new Dictionary<string, string>();
-    private string _groundKey = "";
 
     public IDeviceStore Device { get; set; } = new FileDeviceStore();
     /// <summary>The vault documents (path → text) this service was loaded from.</summary>
     public IReadOnlyDictionary<string, string> Documents => _documents;
 
-    /// <summary>The ground (UrbeArt.configure) the configuration and the active pack describe; Original without a pack.</summary>
-    public LegacyGroundStyle Ground { get; private set; } = LegacyGroundStyle.Original;
-    /// <summary>Own building images from the pack, by building kind (house, hall, workshop, dyer, tower, market, store).</summary>
-    public IReadOnlyDictionary<string, LegacyTexturePack.Art> BuildingArt { get; private set; } = new Dictionary<string, LegacyTexturePack.Art>();
-    /// <summary>The problems found loading the pack (out.erros).</summary>
-    public IReadOnlyList<string> GroundErrors { get; private set; } = [];
-    /// <summary>Raised value that changes every time the ground or the building images change.</summary>
-    public int GroundVersion { get; private set; }
-
-    public static string PackFolder => LegacyCustomize.Folder + "/texturas/";
     public static string ThemeFolder => LegacyCustomize.Folder + "/temas/";
 
     // ---------------------------------------------------------------- colours
@@ -108,7 +97,7 @@ public sealed partial class Customization
         return path;
     }
 
-    // ---------------------------------------------------------------- styles, packs
+    // ---------------------------------------------------------------- styles
 
     public sealed record StyleEntry(string Path, string Name, bool On, int Size);
 
@@ -121,52 +110,7 @@ public sealed partial class Customization
             .Select(d => new StyleEntry(d.Key, Title(d.Key), on?[d.Key] is JsonValue v && v.TryGetValue<bool>(out var b) && b, d.Value.Length)).ToList();
     }
 
-    public sealed record PackEntry(string Path, string Name, bool Active);
-
-    /// <summary>pacotes(): the texture packs of Personalização/texturas.</summary>
-    public IReadOnlyList<PackEntry> Packs()
-    {
-        var active = (Config["cidade"] as JsonObject)?["texturas"]?.GetValue<string>() ?? "";
-        return _documents.Where(d => d.Key.StartsWith(PackFolder, StringComparison.Ordinal) && d.Key.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
-            .OrderBy(d => d.Key, StringComparer.InvariantCulture)
-            .Select(d =>
-            {
-                var name = Title(d.Key);
-                try { if (LegacyCustomize.ParseJs(d.Value) is JsonObject o && o["nome"] is JsonValue v && v.TryGetValue<string>(out var n) && n.Length > 0) name = n; }
-                catch (JsonException) { }
-                return new PackEntry(d.Key, name, active == d.Key);
-            }).ToList();
-    }
-
-    /// <summary>lerPacote(caminho): the path as is, inside Personalização/texturas, or with ".json".</summary>
-    public (string Path, string Content)? ResolvePack(string? path)
-    {
-        if (string.IsNullOrEmpty(path)) return null;
-        foreach (var p in new[] { path, PackFolder + path, PackFolder + path + ".json" })
-            if (_documents.TryGetValue(p, out var text)) return (p, text);
-        return null;
-    }
-
-    /// <summary>carregarTexturas(atual) of the active pack.</summary>
-    public LegacyTexturePack.Result LoadPack() =>
-        LegacyTexturePack.Load(ResolvePack((Config["cidade"] as JsonObject)?["texturas"]?.GetValue<string>())?.Content, Ground.BaseColor, TextureImages.Decode);
-
-    /// <summary>aplicarCidade (terrain and sprites): rebuilds the ground when the palette, the pack or its text changed.</summary>
-    private void UpdateGround()
-    {
-        var city = Config["cidade"] as JsonObject;
-        var pack = ResolvePack(city?["texturas"]?.GetValue<string>());
-        var key = LegacyCustomize.Stringify(city?["paleta"]) + "|" + pack?.Path + "|" + (pack is null ? "" : Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(pack.Value.Content))));
-        if (key == _groundKey) return;
-        _groundKey = key;
-        var loaded = LegacyTexturePack.Load(pack?.Content, Ground.BaseColor, TextureImages.Decode);
-        Ground = LegacyTexturePack.Style(Config, loaded);
-        BuildingArt = loaded.Buildings;
-        GroundErrors = loaded.Errors;
-        GroundVersion++;
-    }
-
-    /// <summary>Writes a Personalização file (docs.upsert of a style, theme, pack or plugin) and reloads the configuration.</summary>
+    /// <summary>Writes a Personalização file (docs.upsert of a style, theme or plugin) and reloads the configuration.</summary>
     public async Task UpsertAsync(string path, string content)
     {
         if (Writer is null) throw new InvalidOperationException("Selecione uma pasta real para gravar.");

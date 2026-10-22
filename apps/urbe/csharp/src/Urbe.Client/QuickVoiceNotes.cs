@@ -30,7 +30,7 @@ public static class PlatformVoice
     public static IVoiceNoteBacklog? Backlog { get; set; }
 
     /// <summary>
-    /// UC-66: writes a quick note through the open app (so its city, index and vault baseline stay in step), waiting
+    /// UC-66: writes a quick note through the open app (so its notes, index and vault baseline stay in step), waiting
     /// up to <paramref name="wait"/> for a starting app. Null when no app view can write a quick note: the caller
     /// then writes to the vault itself. True/false = the verified write succeeded or failed.
     /// </summary>
@@ -121,10 +121,10 @@ public sealed partial class MainView
     /// <summary>The transcriber used here: <see cref="PlatformVoice.Transcribe"/> unless replaced (tests).</summary>
     public Func<Task<string?>>? Voice { get => _voice ?? PlatformVoice.Transcribe; set => _voice = value; }
 
-    /// <summary>True once the first city (the vault, or the empty world with no folder) is shown.</summary>
+    /// <summary>True once the first vault (or the empty Explorer, with no folder) is shown.</summary>
     public bool IsReady { get; private set; }
 
-    /// <summary>Called when the first city is up: a widget request made while starting runs now.</summary>
+    /// <summary>Called when the first vault is shown: a widget request made while starting runs now.</summary>
     private void MarkReady()
     {
         IsReady = true;
@@ -212,8 +212,8 @@ public sealed partial class MainView
         return false;
     }
 
-    /// <summary>True when a quick note can be written now (a writable vault with its city).</summary>
-    public bool CanSaveQuickNote => World.City is not null && _store is not null && VaultWritable && _vault is not null;
+    /// <summary>True when a quick note can be written now (a writable vault).</summary>
+    public bool CanSaveQuickNote => _library is not null && VaultWritable && _vault is not null;
 
     /// <summary>
     /// Appends the entry with the verified write and no dialog: null when written, else why not (the caller keeps
@@ -236,11 +236,8 @@ public sealed partial class MainView
             if (doc is not null) await SaveNoteAsync(new CityNote(path, made.Content));
             else await CreateQuickNoteFileAsync(path, made.Content);
             if (editing) Editor.Open(new CityNote(path, made.Content));
-            ScheduleRoadRebuild();
-            _mapSave?.Schedule();
-            _mapSave?.MarkSync();
+            NotesChanged();
             RefreshNotes();
-            World.InvalidateVisual();
             ShowLifeNotice("Nota rápida salva em " + path + ".");
             return null;
         }
@@ -250,12 +247,9 @@ public sealed partial class MainView
     private async Task CreateQuickNoteFileAsync(string path, string content)
     {
         if (_contents.ContainsKey(path)) throw new InvalidOperationException("Já existe " + path + ".");
-        await EnsureFolderAsync(FolderOf(path));
+        await EnsureFolderAsync(DirOf(path));
         await _vault!.CreateTextFileAsync(path, content);
-        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-        var today = LegacyCity.NowDate(now);
-        var doc = _store!.Upsert(new DocumentInput { Path = path, Content = content, Created = today, Modified = today }, "quick.note");
-        World.City!.AddDocumentHouse(doc, now);
+        _library!.AddNote(path, content, Now, "quick.note");
         _contents[path] = content;
     }
 

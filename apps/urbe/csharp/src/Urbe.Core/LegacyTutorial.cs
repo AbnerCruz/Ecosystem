@@ -5,7 +5,7 @@ using System.Text;
 namespace Urbe.Core;
 
 /// <summary>
-/// tutorial.js (1.8.4): the "Tutorial" folder created once per city, its version (build-tutorial.mjs) and the mark
+/// tutorial.js (1.8.4): the "Tutorial" folder created once per vault, its version (build-tutorial.mjs) and the mark
 /// .urbe/tutorial.json that says it was already created in this vault.
 /// </summary>
 public static class LegacyTutorial

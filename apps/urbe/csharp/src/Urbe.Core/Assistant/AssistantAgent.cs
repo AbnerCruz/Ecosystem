@@ -247,7 +247,7 @@ public static class AssistantAgent
     {
         var lines = new List<string>
         {
-            "Você é " + a.Name + ", um agente do Urbe — um workspace local de notas em Markdown em que cada nota é uma casa numa cidade, pastas são bairros e links [[Título]] entre notas viram ruas.",
+            "Você é " + a.Name + ", um agente do Urbe — um workspace local de notas em Markdown, organizadas em pastas e ligadas por links [[Título]].",
             "Hoje é " + LongDate(now) + ". Vault: " + (string.IsNullOrEmpty(vaultName) ? "Urbe" : vaultName) + " (" + noteCount + " notas)." + (string.IsNullOrEmpty(openNote) ? "" : " Nota aberta no editor: " + openNote + "."),
             "",
             "## Como trabalhar",

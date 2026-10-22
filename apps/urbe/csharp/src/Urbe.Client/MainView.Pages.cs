@@ -182,10 +182,10 @@ public sealed partial class MainView
         return true;
     }
 
-    /// <summary>saveHtmlToVault(): the page's HTML next to it (x.page.json → x.html), created or replaced, then the city follows.</summary>
+    /// <summary>saveHtmlToVault(): the page's HTML next to it (x.page.json → x.html), created or replaced, then its document.</summary>
     public async Task SavePageHtmlInVaultAsync(string path)
     {
-        if (PageHtml(path) is not { } html || World.City is not { } city || _store is null) return;
+        if (PageHtml(path) is not { } html || _library is not { } library || _store is null) return;
         if (!VaultWritable) { await Dialogs.AlertAsync("Salvar HTML no vault", NoVaultMessage); return; }
         var target = System.Text.RegularExpressions.Regex.Replace(path, @"\.page\.json$", ".html", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         try
@@ -199,11 +199,8 @@ public sealed partial class MainView
             else
             {
                 await _vault!.CreateTextFileAsync(target, html);
-                var doc = _store.Upsert(new DocumentInput { Path = target, Content = html }, "pages.export");
-                city.AddDocumentHouse(doc, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-                _mapSave?.Schedule();
-                _mapSave?.MarkSync();
-                World.InvalidateVisual();
+                library.AddNote(target, html, Now, "pages.export");
+                NotesChanged();
             }
         }
         catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or InvalidDataException)

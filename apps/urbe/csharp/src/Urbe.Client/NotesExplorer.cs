@@ -8,10 +8,11 @@ using Avalonia.Media;
 namespace Urbe.Client;
 
 /// <summary>
-/// The Notas screen of the 1.8.4 (src/explorer/mobile-ui.js, styles/explorer-mobile.css + theme.css #urbeMobileExplorer):
-/// header "Notas" with Nova, Mais opções and Fechar, the "Buscar notas" field, the expandable tree of folders (each a
-/// neighbourhood) and notes (each a house), Recentes, Favoritos, the Lixeira and the floating selection bar. It never
-/// reads or writes the vault: the notes come from MainView/Urbe.Core and every action is raised as an event.
+/// The Notas screen of the 1.8.4 (src/explorer/mobile-ui.js, styles/explorer-mobile.css + theme.css #urbeMobileExplorer),
+/// the base of the app since the city left it (ADD-0028): header with the vault's name and save state, Nova, Mais
+/// opções and the host's actions, the "Buscar notas" field, the expandable tree of folders and notes, Recentes,
+/// Favoritos, the Lixeira and the floating selection bar. It never reads or writes the vault: the notes come from
+/// MainView/Urbe.Core and every action is raised as an event.
 /// </summary>
 public sealed class NotesExplorer : Border
 {
@@ -20,7 +21,10 @@ public sealed class NotesExplorer : Border
 
     private static readonly StringComparer Locale = StringComparer.InvariantCulture; // localeCompare
 
-    private readonly TextBlock _title = new() { Text = "Explorer", FontSize = 24, FontWeight = FontWeight.Bold, LetterSpacing = -0.48, VerticalAlignment = VerticalAlignment.Center };
+    private readonly TextBlock _title = new() { Text = "Explorer", FontSize = 24, FontWeight = FontWeight.Bold, LetterSpacing = -0.48, TextTrimming = TextTrimming.CharacterEllipsis };
+    private readonly TextBlock _status = new() { FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis, IsVisible = false };
+    private readonly Border _mark = new() { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
+    private string _homeTitle = "Explorer";
     private readonly Button _back, _new, _more, _close;
     private readonly Border _searchBox;
     private readonly TextBox _search = new()
@@ -51,7 +55,7 @@ public sealed class NotesExplorer : Border
     private string _view = "tree";
     private IReadOnlyList<TrashEntry>? _trash;
     private Collection? _collection;
-    private bool _wide;
+    private bool _overlaid;
 
     public NotesExplorer()
     {
@@ -90,14 +94,20 @@ public sealed class NotesExplorer : Border
         _close = HeaderButton(UrbeTheme.Icons.CloseUi, "Fechar");
         _close.Click += (_, _) => Closed?.Invoke();
 
+        _close.IsVisible = false;
+
         // #urbeMobileExplorer>header: min-height 60px, padding 0 8px 0 20px, gap 4px; strong flex 1; buttons gap 2px
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { _new, _more, _close } };
-        var header = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"), MinHeight = 60, Margin = new Thickness(20, 0, 8, 0) };
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { _new, _more, HeaderActions, _close } };
+        _status.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
+        var titles = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Children = { _title, _status } };
+        var header = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,*,Auto"), MinHeight = 60, Margin = new Thickness(20, 0, 8, 0) };
         Grid.SetColumn(_back, 0);
-        Grid.SetColumn(_title, 1);
-        Grid.SetColumn(buttons, 2);
+        Grid.SetColumn(_mark, 1);
+        Grid.SetColumn(titles, 2);
+        Grid.SetColumn(buttons, 3);
         header.Children.Add(_back);
-        header.Children.Add(_title);
+        header.Children.Add(_mark);
+        header.Children.Add(titles);
         header.Children.Add(buttons);
 
         // .ume-search: 12px above (measured in the 1.8.4: the field at y 72 under a 60px header), 16px sides, 8px below; label 44px, padding 0 14px, gap 10px, radius 12, surface-2
@@ -141,16 +151,18 @@ public sealed class NotesExplorer : Border
 
         KeyDown += (_, e) =>
         {
-            // Escape: clears the search, otherwise closes
+            // Escape: clears the search, otherwise goes back to the tree, or to the editor when shown over it
             if (e.Key != Key.Escape) return;
-            e.Handled = true;
             if ((_search.Text ?? "").Length > 0) SearchText = "";
-            else Closed?.Invoke();
+            else if (_view is "trash" or "collection") Show("tree");
+            else if (_overlaid) Closed?.Invoke();
+            else return;
+            e.Handled = true;
         };
         Render();
     }
 
-    /// <summary>Fechar (on wide screens, where Notas is a panel beside the city).</summary>
+    /// <summary>Fechar, while Notas is shown over the editor (<see cref="Overlaid"/>).</summary>
     public event Action? Closed;
     /// <summary>The header's Nova (newMenu: "Criar").</summary>
     public event Action? NewRequested;
@@ -240,25 +252,47 @@ public sealed class NotesExplorer : Border
     /// <summary>The folders whose rows are shown, in order.</summary>
     public IReadOnlyList<string> VisibleFolderPaths { get { Fresh(); return _visibleFolders.ToArray(); } }
 
-    /// <summary>On a window at least 900 px wide Notas is a 360 px panel beside the city (theme.css @media) and has Fechar.</summary>
-    public bool Wide
+    /// <summary>Notas shown over the open editor ("Mostrar nas notas"): it has Fechar, which goes back to the editor.</summary>
+    public bool Overlaid
     {
-        get => _wide;
+        get => _overlaid;
         set
         {
-            _wide = value;
-            Width = value ? 360 : double.NaN;
-            HorizontalAlignment = value ? HorizontalAlignment.Left : HorizontalAlignment.Stretch;
-            BorderBrush = UrbeTheme.Brush(UrbeTheme.Line);
-            BorderThickness = new Thickness(0, 0, value ? 1 : 0, 0);
-            BoxShadow = value ? BoxShadows.Parse("0 18 60 0 #8C000000") : default;
+            _overlaid = value;
             _close.IsVisible = value;
         }
     }
 
+    /// <summary>The host's buttons in the header, after Mais opções (plugins, Configurações).</summary>
+    public StackPanel HeaderActions { get; } = new() { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+
+    /// <summary>The title of the tree: the vault's name ("Explorer" without one).</summary>
+    public string HomeTitle
+    {
+        get => _homeTitle;
+        set { _homeTitle = string.IsNullOrWhiteSpace(value) ? "Explorer" : value; Render(); }
+    }
+
+    /// <summary>A short line under the title (no folder open, read only, a save that failed); null hides it.</summary>
+    public string? Status
+    {
+        get => _status.IsVisible ? _status.Text : null;
+        set { _status.Text = value ?? ""; _status.IsVisible = !string.IsNullOrEmpty(value); }
+    }
+
+    /// <summary>What stands before the title (the save state's dot).</summary>
+    public Control? TitleMark
+    {
+        get => _mark.Child;
+        set => _mark.Child = value;
+    }
+
+    /// <summary>The title shown now (the view's: the vault, Lixeira, Busca or a collection).</summary>
+    public string Title => _title.Text ?? "";
+
     /// <summary>
     /// The notes of the vault (documents) and the folders the tree shows even without notes (model.folders: the
-    /// neighbourhoods' paths, as loadFolders reads them from mapa.json regioes). The selection is cleared; the open
+    /// folders recorded in .urbe/notas.json, empty ones too). The selection is cleared; the open
     /// folders stay open, as the 1.8.4 keeps them.
     /// </summary>
     public void SetNotes(IEnumerable<CityNote> notes, IEnumerable<string>? folders = null)
@@ -461,11 +495,12 @@ public sealed class NotesExplorer : Border
 
     private void Render(bool force = false)
     {
-        // hidden: the list is rebuilt when it shows again, not on every save of a note behind the city (UC-48)
+        // hidden: the list is rebuilt when it shows again, not on every save of a note behind the editor (UC-48)
         if (!IsVisible && !force) { _stale = true; return; }
         _stale = false;
         // setHeader: the title of the view; back outside tree/search; the search field only in tree/search
-        _title.Text = _view switch { "trash" => "Lixeira", "search" => "Busca", "collection" => _collection?.Title ?? "Explorer", _ => "Explorer" };
+        _title.Text = _view switch { "trash" => "Lixeira", "search" => "Busca", "collection" => _collection?.Title ?? _homeTitle, _ => _homeTitle };
+        _mark.IsVisible = _view is "tree" or "search";
         _back.IsVisible = _view is "trash" or "collection";
         _searchBox.IsVisible = _view is "tree" or "search";
         _list.Children.Clear();
@@ -526,7 +561,7 @@ public sealed class NotesExplorer : Border
         }
         Walk("", 0);
         if (_list.Children.Count == 0)
-            _list.Children.Add(EmptyWithAction("Nenhuma nota ainda", "Cada nota vira uma casa na sua cidade.", "Criar primeira nota"));
+            _list.Children.Add(EmptyWithAction("Nenhuma nota ainda", "Suas notas são arquivos Markdown na pasta que você escolher.", "Criar primeira nota"));
     }
 
     /// <summary>renderSearch: documents whose path or title holds the query (lower case), at most 200, with their folder.</summary>

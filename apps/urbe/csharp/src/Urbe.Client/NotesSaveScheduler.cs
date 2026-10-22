@@ -1,20 +1,17 @@
 namespace Urbe.Client;
 
 /// <summary>
-/// When .urbe/mapa.json is written, as in the 1.8.4-beta:
+/// When .urbe/notas.json (the notes' ids, dates and folders, ADD-0028) is written, with the 1.8.4's persistence timing:
 /// <list type="bullet">
-/// <item>app.js marcarSinc: a city change waits 120 ms (coalescing), then rodarSinc asks the
-/// persistence to save (schedule);</item>
-/// <item>workspace.js schedule: the first request starts a 900 ms timer that later requests do NOT
-/// restart; flush then asks for the current map (metadataProvider) and writes it only when its text
-/// differs from what is on disk (snapshot); a request while a write runs makes flush loop again;</item>
+/// <item>marcarSinc: a change waits 120 ms (coalescing), then the save is asked for (schedule);</item>
+/// <item>workspace.js schedule: the first request starts a 900 ms timer that later requests do NOT restart; flush then
+/// asks for the current record and writes it only when its text differs from what is on disk; a request while a write
+/// runs makes flush loop again;</item>
 /// <item>workspace.js flushPending (pagehide/visibilitychange hidden): a pending save is written at once.</item>
 /// </list>
-/// A camera move alone requests nothing (v21CanvasUp 'pan' does not call marcarSinc): the camera is
-/// written with the next save. The map text comes from <c>produce</c> (LegacyCityMap) on the caller's
-/// thread; null means the save is refused and nothing is written.
+/// The text comes from <c>produce</c> on the caller's thread; null means the save is refused and nothing is written.
 /// </summary>
-public sealed class MapSaveScheduler
+public sealed class NotesSaveScheduler
 {
     public static readonly TimeSpan SyncDelay = TimeSpan.FromMilliseconds(120);
     public static readonly TimeSpan SaveDelay = TimeSpan.FromMilliseconds(900);
@@ -26,10 +23,10 @@ public sealed class MapSaveScheduler
     private bool _syncTimer, _timer, _pending, _busy, _stopped;
     private int _timerGeneration;
 
-    /// <param name="produce">The current map text, or null when it must not be written.</param>
-    /// <param name="write">Writes the map (IUrbeVaultStorage.SaveMapAsync).</param>
-    /// <param name="onDisk">The text of .urbe/mapa.json read at the open (workspace snapshot), or null.</param>
-    public MapSaveScheduler(Func<string?> produce, Func<string, Task> write, string? onDisk, Func<TimeSpan, Task>? delay = null)
+    /// <param name="produce">The current record, or null when it must not be written.</param>
+    /// <param name="write">Writes it (IUrbeVaultStorage.SaveNotesRecordAsync).</param>
+    /// <param name="onDisk">The text read at the open (workspace snapshot), or null.</param>
+    public NotesSaveScheduler(Func<string?> produce, Func<string, Task> write, string? onDisk, Func<TimeSpan, Task>? delay = null)
     {
         _produce = produce ?? throw new ArgumentNullException(nameof(produce));
         _write = write ?? throw new ArgumentNullException(nameof(write));
@@ -51,7 +48,7 @@ public sealed class MapSaveScheduler
     /// <summary>A save is being written.</summary>
     public bool IsBusy => _busy;
 
-    /// <summary>marcarSinc(): agendarSalvar after a change of the city.</summary>
+    /// <summary>marcarSinc(): agendarSalvar after a change of the notes.</summary>
     public async void MarkSync()
     {
         if (_stopped || _syncTimer) return;
@@ -121,7 +118,7 @@ public sealed class MapSaveScheduler
         finally { _busy = false; }
     }
 
-    /// <summary>Records why the map was not written (produce returned null).</summary>
+    /// <summary>Records why the record was not written (produce returned null).</summary>
     public void Refused(string reason) => Problem = reason;
 
     private void SetState(string state)

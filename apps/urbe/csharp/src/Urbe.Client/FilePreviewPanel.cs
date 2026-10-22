@@ -11,8 +11,8 @@ using Urbe.Core;
 namespace Urbe.Client;
 
 /// <summary>
-/// app.js openFilePreview / renderFilePreview natively: the file of a file building (or of the Explorer) with its
-/// title, "Imagem · 120 KB · pasta/arquivo.png", a chooser when the building holds several files, and the body by
+/// app.js openFilePreview / renderFilePreview natively: a file of the Explorer with its title, "Imagem · 120 KB ·
+/// pasta/arquivo.png", and the body by
 /// kind, always inside the Urbe (owner, ADD-0023): images drawn here, HTML as a page (or its source), PDF pages, audio
 /// and video in the platform's content viewers (<see cref="ContentViewers"/>); text and code as text; a .zip lists
 /// its entries. "Abrir" in another app stays as an extra. Read only: nothing is written to the vault.
@@ -30,7 +30,6 @@ public sealed class FilePreviewPanel : Grid
     private readonly ComboBox _choose = new() { HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 10, 0, 0), IsVisible = false };
     private readonly ContentControl _body = new() { Margin = new Thickness(0, 14, 0, 0) };
     private readonly Button _open = Action("Abrir", primary: true);
-    private readonly Button _show = Action("Mostrar na cidade", primary: false);
     private readonly StackPanel _htmlMode = new() { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(0, 10, 0, 0), IsVisible = false };
     private bool _htmlSource;
     private IReadOnlyList<(string Name, string? Path)> _files = [];
@@ -76,15 +75,7 @@ public sealed class FilePreviewPanel : Grid
             if (Current is { } path && Storage is { } s && !await s.OpenExternallyAsync(path))
                 _meta.Text += " · não foi possível abrir em outro app";
         };
-        _show.Click += (_, _) =>
-        {
-            var b = Building;
-            Close();
-            if (b is not null) ShowInCity?.Invoke(b);
-        };
-        var actions = new Grid { ColumnDefinitions = new ColumnDefinitions("*,10,*"), Margin = new Thickness(0, 16, 0, 0) };
-        Grid.SetColumn(_open, 2);
-        actions.Children.Add(_show);
+        var actions = new Grid { Margin = new Thickness(0, 16, 0, 0) };
         actions.Children.Add(_open);
         var layout = new DockPanel();
         // htmlRenderBtn / htmlSourceBtn: the page or its source
@@ -119,15 +110,10 @@ public sealed class FilePreviewPanel : Grid
     /// <summary>The vault the files are read from.</summary>
     public IUrbeVaultStorage? Storage { get; set; }
 
-    /// <summary>"Mostrar na cidade": the building of the file.</summary>
-    public event Action<LegacyCityBuilding>? ShowInCity;
-
     /// <summary>The vault path of the file shown, or null.</summary>
     public string? Current => _files.Count > 0 && Index < _files.Count ? _files[Index].Path : null;
 
     public int Index { get; private set; }
-
-    public LegacyCityBuilding? Building { get; private set; }
 
     /// <summary>What the body shows now: "image", "text", "zip", "viewer" (a content viewer) or "none" (tests).</summary>
     public string Shown { get; private set; } = "none";
@@ -135,12 +121,8 @@ public sealed class FilePreviewPanel : Grid
     /// <summary>The text of the body when it is text or a listing (tests).</summary>
     public string? ShownText { get; private set; }
 
-    /// <summary>openFilePreview(b, index): the files of a file building.</summary>
-    public Task OpenAsync(LegacyCityBuilding building, int index = 0) => OpenAsync(building.PreviewFiles, index, building);
-
-    /// <summary>One file of the vault by its path (the Explorer), with its building when the city has one.</summary>
-    public Task OpenAsync(string path, LegacyCityBuilding? building = null) =>
-        OpenAsync([(path[(path.LastIndexOf('/') + 1)..], path)], 0, building);
+    /// <summary>One file of the vault by its path (the Explorer).</summary>
+    public Task OpenAsync(string path) => OpenAsync([(path[(path.LastIndexOf('/') + 1)..], path)], 0);
 
     /// <summary>
     /// A page of the vault (Páginas): the HTML the page engine wrote for <paramref name="source"/> (a .page.json), shown
@@ -150,9 +132,7 @@ public sealed class FilePreviewPanel : Grid
     {
         _generated = (source, html);
         _files = [(title, null)];
-        Building = null;
         _htmlSource = false;
-        _show.IsVisible = false;
         _choose.IsVisible = false;
         IsVisible = true;
         Place();
@@ -168,13 +148,11 @@ public sealed class FilePreviewPanel : Grid
     /// <summary>"⋯" on a generated page: the host shows the page's actions.</summary>
     public event Action<string>? PageActionsRequested;
 
-    private async Task OpenAsync(IReadOnlyList<(string Name, string? Path)> files, int index, LegacyCityBuilding? building)
+    private async Task OpenAsync(IReadOnlyList<(string Name, string? Path)> files, int index)
     {
         _generated = null;
         _files = files;
-        Building = building;
         _htmlSource = false;
-        _show.IsVisible = building is not null;
         _choosing = true;
         _choose.ItemsSource = files.Select(f => f.Name).ToList();
         _choosing = false;
@@ -230,7 +208,7 @@ public sealed class FilePreviewPanel : Grid
         if (version != _version) return;
         if (read is null)
         {
-            _body.Content = Empty("Arquivo não encontrado", "O item existe no índice da cidade, mas não foi encontrado na pasta do vault.");
+            _body.Content = Empty("Arquivo não encontrado", "O item aparece no Explorer, mas não foi encontrado na pasta do vault.");
             return;
         }
         _meta.Text = (_generated is { } gen ? "Página · " + VaultFileKinds.FormatBytes(read.Size) + " · " + gen.Source

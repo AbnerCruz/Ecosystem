@@ -5,7 +5,7 @@ using Urbe.Core.Plugins;
 
 namespace Urbe.Core.Assistant;
 
-/// <summary>What the plugin tools need from the app: the plugins of the city and turning one on (this exact text).</summary>
+/// <summary>What the plugin tools need from the app: the plugins of the vault and turning one on (this exact text).</summary>
 public interface IAssistantPlugins
 {
     IReadOnlyList<(string Path, string Name, string Status)> List();
@@ -14,7 +14,7 @@ public interface IAssistantPlugins
 
 /// <summary>
 /// The Assistente's plugin tools for the native plugin API (owner, 15/10/2026: any idea of plugin must be possible):
-/// plugin_guide (the .plugin.json format, items, actions and functions, and the city's plugins) and write_plugin, which
+/// plugin_guide (the .plugin.json format, items, actions and functions, and the vault's plugins) and write_plugin, which
 /// checks the plugin before writing, shows it for approval (always asked, access "plugin") and, approved, writes it to
 /// Personalização/plugins and turns it on. The plugin then does only what it declared (deny-by-default, NN-016).
 /// </summary>
@@ -59,13 +59,13 @@ public static class AssistantPluginTools
         new AiTool
         {
             Name = "plugin_guide", Access = "read",
-            Description = "Como criar plugins do Urbe (arquivos .plugin.json em Personalização/plugins/): formato completo, itens do painel, ações, funções, permissões e um exemplo; lista também os plugins desta cidade. Chame antes de criar ou mudar um plugin; depois use write_plugin.",
+            Description = "Como criar plugins do Urbe (arquivos .plugin.json em Personalização/plugins/): formato completo, itens do painel, ações, funções, permissões e um exemplo; lista também os plugins deste vault. Chame antes de criar ou mudar um plugin; depois use write_plugin.",
             Parameters = new JsonObject { ["type"] = "object", ["properties"] = new JsonObject(), ["additionalProperties"] = false },
             Label = _ => "Lendo o guia de plugins",
             Run = (_, host) =>
             {
                 var list = host.Plugins?.List() ?? [];
-                return Task.FromResult(new AiToolOutput(VaultPluginSpec.Guide() + "\n\nPLUGINS NESTA CIDADE:\n" +
+                return Task.FromResult(new AiToolOutput(VaultPluginSpec.Guide() + "\n\nPLUGINS NESTE VAULT:\n" +
                     (list.Count > 0 ? string.Join("\n", list.Select(x => "- " + x.Path + " (" + x.Name + ", " + x.Status + ")")) : "nenhum") +
                     "\n\nPara mudar um plugin existente: read_note no arquivo, altere e envie tudo com write_plugin."));
             }
@@ -107,7 +107,7 @@ public static class AssistantPluginTools
                 var where = new List<string>();
                 if (spec.Panel is not null) where.Add("um painel");
                 foreach (var b in spec.Buttons.OfType<JsonObject>())
-                    where.Add("o botão “" + VaultPluginSpec.Str(b["titulo"]) + "” " + (VaultPluginSpec.Str(b["onde"]) == "editor" ? "no topo do editor" : "na cidade"));
+                    where.Add("o botão “" + VaultPluginSpec.Str(b["titulo"]) + "” " + (VaultPluginSpec.Str(b["onde"]) == "editor" ? "no topo do editor" : "no topo do Explorer"));
                 foreach (var c in spec.Commands.OfType<JsonObject>()) where.Add("o comando “" + VaultPluginSpec.Str(c["titulo"]) + "”");
                 return new AiToolOutput((d is null ? "Plugin criado e ligado: " : "Plugin atualizado e ligado: ") + path + " (" + spec.Name + ")." +
                     (where.Count > 0 ? " Ele aparece como " + string.Join(", ", where) + "." : "") +

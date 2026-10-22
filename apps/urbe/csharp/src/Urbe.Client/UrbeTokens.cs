@@ -8,7 +8,7 @@ namespace Urbe.Client;
 /// <summary>
 /// The one visual system of the interface (UX.md P9, UC-69): type scale, 8-pt spacing, radii, elevation, semantic
 /// colours and motion, defined once. Colours map onto the 1.8.4 tokens of <see cref="UrbeTheme"/> (same values, live
-/// brushes), so the city, the sprites and the palette stay as they are. The feel aimed at is warm (owner, UC-69: "o
+/// brushes), so the palette stays as it is. The feel aimed at is warm (owner, UC-69: "o
 /// Notion tá frio, o Obsidian tá morno"): generous rounded shapes, soft elevation, lively but discreet motion and a
 /// satisfying confirmation when something is done — never decoration in the way of writing.
 /// </summary>

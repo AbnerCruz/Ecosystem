@@ -40,7 +40,7 @@ internal static class VoiceNotes
         new VoiceNoteQueueBacklog(Queue(context), wav => VoiceSpeech.TranscribeFileAsync(context, wav), () => VoiceNoteService.ActiveId);
 
     /// <summary>
-    /// Appends the line with the verified write: through the open app when there is one (its city and vault stay in
+    /// Appends the line with the verified write: through the open app when there is one (its notes and vault stay in
     /// step), else straight to the vault folder chosen in the app (the persisted SAF tree). True only when written.
     /// </summary>
     public static async Task<bool> SaveAsync(string text, DateTime saidAt)

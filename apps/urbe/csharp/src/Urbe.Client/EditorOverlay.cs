@@ -16,7 +16,7 @@ namespace Urbe.Client;
 public enum EditorMode { Visual, Fonte }
 
 /// <summary>
-/// The 1.8.4 full editor (#editorFull) over the city: top bar with back, file name and Visual/Fonte, the Markdown
+/// The 1.8.4 full editor (#editorFull) over the Explorer: top bar with back, file name and Visual/Fonte, the Markdown
 /// toolbar of the Fonte mode (LegacyEditorTools, checked against the original by tools/editor-oracle.mjs), the code tools
 /// of non-Markdown files, wikilink suggestions after "[[", the centred text column, the status line
 /// ("MD · n linhas · m palavras") and autosave through the vault host. Visual mode is <see cref="VisualSurface"/>.
@@ -42,7 +42,7 @@ public sealed class EditorOverlay : Grid
     private readonly TextBlock _propertiesText = new();
 
     /// <summary>propertiesFor(b) of the open note, as renderProps writes it ("---\ntítulo: …\n---"), or null when the
-    /// file has no house; the host supplies it.</summary>
+    /// file is not a note of the vault; the host supplies it.</summary>
     public Func<string, string?>? PropertiesFor { get; set; }
     private readonly Border _toolbarHost = new();
     private readonly StackPanel _markdownTools = new() { Orientation = Orientation.Horizontal, Spacing = 2, Margin = new Thickness(8, 0) };
@@ -254,7 +254,7 @@ public sealed class EditorOverlay : Grid
     public TextBox Editor { get; }
     public event EventHandler? Closed;
 
-    /// <summary>A note was opened in the editor (by any way: city, Notas, a link, a tab).</summary>
+    /// <summary>A note was opened in the editor (by any way: Notas, a search, a link, a tab).</summary>
     public event Action<string>? Shown;
 
     /// <summary>The formula pane (math/editor.js openPane) the host shows: the LaTeX, whether it is a display formula and
@@ -313,7 +313,7 @@ public sealed class EditorOverlay : Grid
 
     // ------------------------------------------------------------------ open / close
 
-    /// <summary>Opens a note fresh (from the city, Notas, a search…): the trail of followed links starts over.</summary>
+    /// <summary>Opens a note fresh (from Notas, a search…): the trail of followed links starts over.</summary>
     public void Open(CityNote note)
     {
         _trail.Clear();
@@ -388,7 +388,7 @@ public sealed class EditorOverlay : Grid
                 return;
             }
         }
-        // the city is back at once; the note finishes saving behind it
+        // the Explorer is back at once; the note finishes saving behind it
         IsVisible = false;
         Closed?.Invoke(this, EventArgs.Empty);
         await saving;
@@ -396,7 +396,7 @@ public sealed class EditorOverlay : Grid
 
     /// <summary>
     /// Leaving the open note never waits on the screen (UX.md P2): the edit is saved — through the same verified path —
-    /// while the next note or the city is already showing. The task ends when the save does (the host and tests can
+    /// while the next note or the Explorer is already showing. The task ends when the save does (the host and tests can
     /// wait for it). A save that fails keeps the text: the note shows it again, still to be saved, and a toast offers to
     /// try again.
     /// </summary>
@@ -640,7 +640,7 @@ public sealed class EditorOverlay : Grid
     private bool _hasProperties;
 
     /// <summary>renderProps(b) on loadFile; the box is a div, so its line breaks collapse into spaces. Asked again once
-    /// the city exists (UC-59: the note may open before its house is built).</summary>
+    /// the vault's notes are known (a note restored at the opening).</summary>
     public void RefreshProperties()
     {
         var props = _note is null ? null : PropertiesFor?.Invoke(_note.Path);

@@ -635,26 +635,8 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     public Task SaveTutorialMarkAsync(string json, CancellationToken cancellationToken = default) =>
         SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanTutorialMarkWrite(files, json), "A marca do Tutorial", cancellationToken);
 
-    public Task SaveWorldAsync(string json, CancellationToken cancellationToken = default) =>
-        SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanWorldWrite(files, json), "O mundo", cancellationToken);
-
-    /// <summary>layout-guard.js writeBackup: the copy of the map, then its manifest, each a new file written and verified
-    /// with every other file of the vault unchanged. Returns the backup's folder.</summary>
-    public async Task<string> SaveLayoutBackupAsync(string mapJson, DateTimeOffset now, string reason = "reorganizar", CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(mapJson);
-        string? dir = null;
-        (string Path, byte[] Bytes) manifest = default;
-        await SaveUrbeFileAsync(files =>
-        {
-            var plan = IUrbeVaultStorage.PlanLayoutBackup(files, mapJson, now, reason);
-            dir = plan.Directory;
-            manifest = plan.Manifest;
-            return plan.Copy;
-        }, "A cópia de segurança do mapa", cancellationToken, createOnly: true);
-        await SaveUrbeFileAsync(_ => manifest, "O manifesto da cópia de segurança", cancellationToken, createOnly: true);
-        return dir!;
-    }
+    public Task SaveNotesRecordAsync(string json, CancellationToken cancellationToken = default) =>
+        SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanNotesRecordWrite(files, json), "O registro das notas", cancellationToken);
 
     /// <summary>One internal file of .urbe/ (the trash, the Tutorial's mark), planned on the files as they are now,
     /// written with verification of it and of every other file.</summary>
@@ -686,46 +668,6 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 if (!observed.TryGetValue(target, out var made) || !made.Bytes.Span.SequenceEqual(plannedBytes) ||
                     observed.Count != baseline.Count + (create ? 1 : 0))
                     throw new IOException(what + " não passou na verificação: " + target);
-                _baseline = observed;
-            }, cancellationToken);
-        }
-        finally { _gate.Release(); }
-    }
-
-    /// <summary>Writes .urbe/mapa.json only; the same checks and verification as a note.</summary>
-    public async Task SaveMapAsync(string json, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(json);
-        await _gate.WaitAsync(cancellationToken);
-        try
-        {
-            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
-            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
-            EnsureUnchanged(baseline, files);
-            var (target, plannedBytes) = IUrbeVaultStorage.PlanMapWrite(files, json);
-            var create = !baseline.ContainsKey(target);
-
-            await Task.Run(() =>
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                if (create && FindDocument(tree, target) is not null)
-                    throw new IOException("A pasta foi modificada fora do Urbe: " + target);
-                WriteVerified(tree, target, plannedBytes);
-                var persisted = ReadFiles(tree, cancellationToken);
-                var observed = Snapshot(persisted);
-                foreach (var pair in baseline)
-                {
-                    if (!observed.TryGetValue(pair.Key, out var actual) ||
-                        !actual.Bytes.Span.SequenceEqual(
-                            string.Equals(pair.Key, target, StringComparison.OrdinalIgnoreCase)
-                                ? plannedBytes : pair.Value.Bytes.Span))
-                        throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
-                }
-                if (create && (!observed.TryGetValue(target, out var made) || !made.Bytes.Span.SequenceEqual(plannedBytes)))
-                    throw new IOException("O mapa criado não passou na verificação: " + target);
-                if (observed.Count != baseline.Count + (create ? 1 : 0))
-                    throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
                 _baseline = observed;
             }, cancellationToken);
         }
@@ -844,7 +786,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
 
                 var path = prefix + child.Name;
                 if (path.Split('/').Any(segment => segment.StartsWith('.')))
-                    continue; // Internal .urbe tree is not an Explorer bairro.
+                    continue; // Internal .urbe tree is not an Explorer folder.
 
                 folders.Add(path);
                 Walk(DocumentUri(tree, child.DocumentId), path + "/", depth + 1);

@@ -73,7 +73,7 @@ public sealed class MainActivity : AvaloniaMainActivity
             ? ShowKeyboard(root, ime) : false;
         // UC-56: the system recognizer listens and records (its own app and permission); this app gets only the text
         PlatformVoice.Transcribe = () => Current is { } activity ? activity.RecognizeSpeechAsync() : Task.FromResult<string?>(null);
-        // UC-66: the widget's voice notes not yet in the vault are offered again ("Tentar") once the city is up
+        // UC-66: the widget's voice notes not yet in the vault are offered again ("Tentar") once the vault is shown
         PlatformVoice.Backlog = VoiceNotes.Backlog(ApplicationContext ?? this);
         VoiceNoteWidget.Refresh(this, VoiceNoteService.IsRecording);
         // UC-69 (UX.md P7): haptics through the view, which follows the system touch-feedback setting and needs no VIBRATE permission
@@ -99,7 +99,7 @@ public sealed class MainActivity : AvaloniaMainActivity
 
     /// <summary>
     /// An intent with <see cref="VoiceExtra"/> (the UC-56 widget's old tap; the widget now records by itself, UC-66):
-    /// the quick note starts once the city is up; the extra is consumed so it runs once.
+    /// the quick note starts once the vault is shown; the extra is consumed so it runs once.
     /// </summary>
     private static void HandleVoiceIntent(Intent? intent)
     {
