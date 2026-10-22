@@ -186,8 +186,8 @@ public sealed class EditorTests
         }
         window.TouchEnd(flick, new Point(flickFrom.X, flickFrom.Y - 120), RawInputModifiers.None);
         var released = scroll.Offset.Y;
-        await Task.Delay(40);
-        Dispatcher.UIThread.RunJobs();
+        // the glide's first frame comes from a timer: a slow machine may take longer than a frame to run it
+        for (int i = 0; i < 20 && scroll.Offset.Y <= released; i++) { await Task.Delay(20); Dispatcher.UIThread.RunJobs(); }
         Assert.True(scroll.Offset.Y > released, $"a nota não deslizou ({released} → {scroll.Offset.Y})");
 
         // the note still glides: a tap only stops it (no caret, so no keyboard), as on a phone (22/10/2026)
