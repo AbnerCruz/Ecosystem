@@ -62,9 +62,10 @@
     {
       "kind": "human",
       "check": "Android físico: Mais ações → Conexões numa nota com ligações; o desenho é calmo e legível; tocar num ponto abre a nota",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/urbe/csharp/src/Urbe.Client/ConnectionsPanel.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Client/ConnectionsPanel.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-22 (Issue https://github.com/AbnerCruz/Ecosystem/issues/649); registro em docs/governance/responses/VAL-HO-20261022-urbe-conexoes-uc71-c96d09d8de99.md."
     }
   ],
   "known_issues": [
