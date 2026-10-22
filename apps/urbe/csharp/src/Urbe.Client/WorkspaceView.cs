@@ -26,7 +26,7 @@ public sealed class WorkspaceView : Grid
     private readonly StackPanel _crumbs = new() { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
     private readonly TextBox _search;
     private readonly Button _sidebar;
-    private WorkspaceIndex _index = new([]);
+    private WorkspaceIndex _index = new(Array.Empty<WorkspaceNote>());
     private string _title = "Área de trabalho";
     private int _shown = Page;
     private double _laidOutFor;
@@ -35,7 +35,7 @@ public sealed class WorkspaceView : Grid
     public WorkspaceView()
     {
         Background = UrbeTheme.Brush(UrbeTheme.Bg);
-        RowDefinitions = new RowDefinitions("Auto,Auto,*");
+        RowDefinitions = new RowDefinitions("Auto,Auto,Auto,*");
 
         _sidebar = HeaderButton(UrbeTheme.Icons.List, "Pastas");
         _sidebar.Click += (_, _) => SidebarRequested?.Invoke();
@@ -71,9 +71,16 @@ public sealed class WorkspaceView : Grid
         SetRow(searchRow, 1);
         Children.Add(searchRow);
 
+        var tools = new ScrollViewer
+        {
+            Content = _tools, HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled, Margin = new Thickness(16, 0, 16, 6)
+        };
+        SetRow(tools, 2);
+        Children.Add(tools);
+
         _scroll = new ScrollViewer { Content = _body, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
         TouchIntent.Attach(_scroll);
-        SetRow(_scroll, 2);
+        SetRow(_scroll, 3);
         Children.Add(_scroll);
         SizeChanged += (_, e) =>
         {
@@ -83,11 +90,30 @@ public sealed class WorkspaceView : Grid
     }
 
     private readonly Button _add, _settings;
+    private readonly StackPanel _tools = new() { Orientation = Orientation.Horizontal, Spacing = 6 };
+    private WorkspaceItemKind? _kind;
+    private string? _tag;
+    private WorkspaceOrder _order;
+    private bool _asList;
+
+    /// <summary>Only items of this kind (null: all), in the open box and its subfolders, or everywhere at the root.</summary>
+    public WorkspaceItemKind? KindFilter { get => _kind; set { _kind = value; _shown = Page; Render(); } }
+
+    /// <summary>Only items with this tag (null: any).</summary>
+    public string? TagFilter { get => _tag; set { _tag = value; _shown = Page; Render(); } }
+
+    /// <summary>How the items are ordered.</summary>
+    public WorkspaceOrder Order { get => _order; set { _order = value; Render(); } }
+
+    /// <summary>Items as a list of rows instead of a grid of cards.</summary>
+    public bool AsList { get => _asList; set { _asList = value; Render(); } }
 
     /// <summary>A note's card was tapped.</summary>
     public event Action<string>? NoteRequested;
     /// <summary>A file's card was tapped (a page, an image, a PDF…).</summary>
     public event Action<string>? FileRequested;
+    /// <summary>A card was held (or right-clicked): its information and actions.</summary>
+    public event Action<string>? ItemHeld;
     /// <summary>"+ Novo projeto": a new top folder.</summary>
     public event Action? NewProjectRequested;
     /// <summary>"+" inside a folder: a new note there.</summary>
@@ -138,6 +164,8 @@ public sealed class WorkspaceView : Grid
     {
         Folder = folder;
         _shown = Page;
+        _kind = null;
+        _tag = null;
         _search.Text = "";
         Render();
         _scroll.Offset = default;
@@ -167,9 +195,50 @@ public sealed class WorkspaceView : Grid
         ToolTip.SetTip(_add, Folder.Length == 0 ? "Novo projeto" : "Nova nota aqui");
         _body.Children.Clear();
         var query = (_search.Text ?? "").Trim();
-        if (query.Length > 0) RenderSearch(query);
+        RenderTools(query);
+        if (query.Length > 0 || _kind is not null || _tag is not null) RenderMatches(query);
         else if (Folder.Length == 0) RenderRoot();
         else RenderFolder();
+    }
+
+    private static readonly (WorkspaceItemKind? Kind, string Label)[] Kinds =
+    [
+        (null, "Tudo"), (WorkspaceItemKind.Note, "Notas"), (WorkspaceItemKind.Page, "Páginas"), (WorkspaceItemKind.Image, "Imagens"),
+        (WorkspaceItemKind.Pdf, "PDF"), (WorkspaceItemKind.Media, "Mídia"), (WorkspaceItemKind.Other, "Outros")
+    ];
+
+    /// <summary>The row under the search (UC-84 fatia 3): kinds and tags present here, the order and grid or list.</summary>
+    private void RenderTools(string query)
+    {
+        _tools.Children.Clear();
+        var scope = Folder.Length == 0 ? _index.Recent("", int.MaxValue) : _index.Recent(Folder, int.MaxValue);
+        var present = scope.Select(i => i.Kind).ToHashSet();
+        foreach (var (kind, label) in Kinds)
+            if (kind is null || present.Contains(kind.Value))
+                _tools.Children.Add(Chip(label, _kind == kind, () => KindFilter = kind));
+        foreach (var tag in _index.TagsIn(Folder).Take(6))
+            _tools.Children.Add(Chip("#" + tag, string.Equals(_tag, tag, StringComparison.OrdinalIgnoreCase), () => TagFilter = string.Equals(_tag, tag, StringComparison.OrdinalIgnoreCase) ? null : tag));
+        var order = Chip(_order switch { WorkspaceOrder.Name => "Ordem: nome", WorkspaceOrder.Created => "Ordem: criação", _ => "Ordem: recentes" }, false,
+            () => Order = _order switch { WorkspaceOrder.Recent => WorkspaceOrder.Name, WorkspaceOrder.Name => WorkspaceOrder.Created, _ => WorkspaceOrder.Recent });
+        AutomationProperties.SetName(order, "Ordem");
+        _tools.Children.Add(order);
+        var view = HeaderButton(_asList ? UrbeTheme.Icons.Region : UrbeTheme.Icons.List, _asList ? "Ver em grade" : "Ver em lista");
+        view.Width = view.Height = 36;
+        view.Click += (_, _) => AsList = !_asList;
+        _tools.Children.Add(view);
+    }
+
+    private static Button Chip(string text, bool on, Action click)
+    {
+        var b = Ui.UrbeMotion.Pressable(new Button
+        {
+            Content = new TextBlock { Text = text, FontSize = 13, FontWeight = on ? FontWeight.SemiBold : FontWeight.Normal, Foreground = UrbeTheme.Brush(on ? UrbeTheme.AccentInk : UrbeTheme.Text2) },
+            Padding = new Thickness(12, 6), MinHeight = 34, CornerRadius = new CornerRadius(17), VerticalContentAlignment = VerticalAlignment.Center,
+            Background = on ? UrbeTheme.Brush(UrbeTheme.Accent) : UrbeTheme.Brush(UrbeTheme.Surface2), BorderBrush = UrbeTheme.Brush(on ? UrbeTheme.Accent : UrbeTheme.Line2), BorderThickness = new Thickness(1)
+        });
+        AutomationProperties.SetName(b, text);
+        b.Click += (_, _) => click();
+        return b;
     }
 
     private void RenderCrumbs()
@@ -345,8 +414,8 @@ public sealed class WorkspaceView : Grid
             foreach (var s in subs) grid.Children.Add(SubfolderTile(_index.Box(s)));
             content.Children.Add(grid);
         }
-        var items = _index.Items(Folder);
-        if (items.Count > 0) content.Children.Add(Cards(items.Take(_shown).ToList(), CardColumns()));
+        var items = WorkspaceIndex.Arrange(_index.Items(Folder), order: _order);
+        if (items.Count > 0) content.Children.Add(ItemsView(items.Take(_shown).ToList(), CardColumns()));
         if (items.Count > _shown)
         {
             var more = Plain(new TextBlock { Text = "Mostrar mais (" + (items.Count - _shown) + ")", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(PaletteHex(box.Color)) });
@@ -368,17 +437,18 @@ public sealed class WorkspaceView : Grid
         _body.Children.Add(Glass(box.Color, content));
     }
 
-    private void RenderSearch(string query)
+    /// <summary>A search, a kind or a tag: in the open box (and its subfolders) as one catalogue, at the root grouped by project.</summary>
+    private void RenderMatches(string query)
     {
+        IEnumerable<WorkspaceItem> pool = query.Length > 0 ? _index.Search(query, Folder.Length == 0 ? null : Folder) : _index.Recent(Folder, int.MaxValue);
+        var all = WorkspaceIndex.Arrange(pool, _kind, _tag, _order);
+        if (all.Count == 0) { _body.Children.Add(Nothing(query)); return; }
         if (Folder.Length > 0)
         {
-            var found = _index.Search(query, Folder);
-            _body.Children.Add(found.Count == 0 ? Nothing(query) : Cards(found.Take(200).ToList(), CardColumns()));
+            _body.Children.Add(ItemsView(all.Take(Math.Max(_shown, 200)).ToList(), CardColumns()));
             return;
         }
         // the root: grouped by project, the loose ones last
-        var all = _index.Search(query);
-        if (all.Count == 0) { _body.Children.Add(Nothing(query)); return; }
         var boxes = new List<Control>();
         foreach (var group in all.GroupBy(i => WorkspaceIndex.ProjectOf(i.Path)).OrderBy(g => g.Key.Length == 0 ? 1 : 0).ThenBy(g => g.Key, StringComparer.CurrentCultureIgnoreCase))
         {
@@ -387,7 +457,7 @@ public sealed class WorkspaceView : Grid
             var content = new StackPanel { Spacing = 10 };
             if (group.Key.Length == 0) content.Children.Add(new TextBlock { Text = "Soltas", FontSize = 15, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
             else content.Children.Add(BoxHead(_index.Box(group.Key), open: true, count: list.Count));
-            content.Children.Add(Cards(list.Take(12).ToList(), cardCols));
+            content.Children.Add(ItemsView(list.Take(12).ToList(), cardCols));
             if (list.Count > 12) content.Children.Add(new TextBlock { Text = "e mais " + (list.Count - 12), FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
             boxes.Add(group.Key.Length == 0
                 ? new Border { Child = content, Padding = new Thickness(14), CornerRadius = new CornerRadius(18), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), Background = UrbeTheme.Brush(UrbeTheme.Surface, .6) }
@@ -398,7 +468,7 @@ public sealed class WorkspaceView : Grid
 
     private static Control Nothing(string query) => new TextBlock
     {
-        Text = "Nada com “" + query + "”.", FontSize = 15, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 40)
+        Text = query.Length > 0 ? "Nada com “" + query + "”." : "Nada com esse filtro.", FontSize = 15, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 40)
     };
 
     private int CardColumns() => Math.Clamp((int)((Bounds.Width - 32 - 28) / 180), 2, 6);
@@ -511,6 +581,46 @@ public sealed class WorkspaceView : Grid
         return b;
     }
 
+    /// <summary>The items as cards in a grid, or as rows of a list.</summary>
+    private Control ItemsView(IReadOnlyList<WorkspaceItem> items, int columns)
+    {
+        if (!_asList) return Cards(items, columns);
+        var list = new StackPanel { Spacing = 2 };
+        foreach (var i in items) list.Children.Add(Row(i));
+        return list;
+    }
+
+    /// <summary>A note or file as a row: its kind, title, where it is and when it changed. Tap and hold as a card.</summary>
+    private Control Row(WorkspaceItem item)
+    {
+        var line = new DockPanel { LastChildFill = true };
+        if (item.Modified is { } m && When(m) is { } when)
+        {
+            var date = new TextBlock { Text = when, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
+            DockPanel.SetDock(date, Dock.Right);
+            line.Children.Add(date);
+        }
+        var icon = UrbeTheme.Icon(IconOf(item.Kind), 18, item.IsNote ? UrbeTheme.Text2 : UrbeTheme.Accent, 1.8);
+        icon.Margin = new Thickness(0, 0, 12, 0);
+        DockPanel.SetDock(icon, Dock.Left);
+        line.Children.Add(icon);
+        line.Children.Add(new StackPanel
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            Children =
+            {
+                new TextBlock { Text = item.Title, FontSize = 15, FontWeight = FontWeight.Medium, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextTrimming = TextTrimming.CharacterEllipsis },
+                new TextBlock { Text = item.Folder.Length == 0 ? "Soltas" : item.Folder, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis }
+            }
+        });
+        var b = new Button
+        {
+            Content = line, MinHeight = 56, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            Padding = new Thickness(12, 6), CornerRadius = new CornerRadius(10), Background = Brushes.Transparent, BorderThickness = new Thickness(0)
+        };
+        return Openable(b, item);
+    }
+
     private Control Cards(IReadOnlyList<WorkspaceItem> items, int columns)
     {
         var grid = new UniformGrid { Columns = columns };
@@ -551,10 +661,33 @@ public sealed class WorkspaceView : Grid
             VerticalContentAlignment = VerticalAlignment.Top, Padding = new Thickness(12, 10), Margin = new Thickness(0, 0, 8, 8),
             CornerRadius = new CornerRadius(12), Background = UrbeTheme.Brush(UrbeTheme.Surface2, .78), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1)
         });
+        return Openable(b, item);
+    }
+
+    /// <summary>A tap opens the item; a hold (touch) or a right click shows its information and actions.</summary>
+    private Button Openable(Button b, WorkspaceItem item)
+    {
         AutomationProperties.SetName(b, item.Title);
         ToolTip.SetTip(b, item.Path);
+        // a hold (touch) or a right click shows the item's information and actions; the release after a hold opens nothing
+        bool held = false;
+        b.AddHandler(Avalonia.Input.InputElement.PointerPressedEvent, (_, _) => held = false, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+        b.AddHandler(Avalonia.Input.InputElement.HoldingEvent, (object? _, Avalonia.Input.HoldingRoutedEventArgs e) =>
+        {
+            if (e.HoldingState != Avalonia.Input.HoldingState.Started || !TouchIntent.IsIntended(b)) return;
+            held = true;
+            e.Handled = true;
+            Ui.PlatformHaptics.Hold();
+            ItemHeld?.Invoke(item.Path);
+        });
+        b.ContextRequested += (_, e) =>
+        {
+            e.Handled = true;
+            if (!held) ItemHeld?.Invoke(item.Path);
+        };
         b.Click += (_, _) =>
         {
+            if (held) { held = false; return; }
             if (!TouchIntent.IsIntended(b)) return;
             if (item.IsNote) NoteRequested?.Invoke(item.Path); else FileRequested?.Invoke(item.Path);
         };

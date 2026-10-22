@@ -47,7 +47,7 @@ public sealed class WorkspaceIndexTests
         var w = Vault();
         Assert.Equal(WorkspaceIndex.ColorOf("Matemática"), WorkspaceIndex.ColorOf("Matemática/curso de calculo"));
         Assert.InRange(w.Box("Personagens").Color, 0, WorkspaceIndex.Palette - 1);
-        Assert.Equal(w.Box("Personagens").Color, new WorkspaceIndex([]).Box("Personagens").Color);
+        Assert.Equal(w.Box("Personagens").Color, new WorkspaceIndex(Array.Empty<WorkspaceNote>()).Box("Personagens").Color);
         Assert.Equal("Matemática", WorkspaceIndex.ProjectOf("Matemática/curso de calculo/Plano de Aulas.md"));
         Assert.Equal("", WorkspaceIndex.ProjectOf("Comece.md"));
     }
@@ -71,5 +71,41 @@ public sealed class WorkspaceIndexTests
         Assert.Equal("Texto da IA", WorkspaceIndex.Snippet("Texto da IA {ia:\"modelo\"}"));
         Assert.Equal("", WorkspaceIndex.Snippet("# Só título\n"));
         Assert.EndsWith("…", WorkspaceIndex.Snippet(new string('a', 300)));
+    }
+
+    [Fact]
+    public void AHeldNoteTellsWhereWhenHowLongAndHowLinked()
+    {
+        var store = new DocumentStore();
+        var doc = store.Upsert(new DocumentInput
+        {
+            Id = "doc_1", Path = "Personagens/Herói.md", Content = "# Herói\n\nAlto, de uma região do norte. #ficcao",
+            Created = "2026-10-20T10:00:00Z", Modified = "2026-10-22T08:30:00Z"
+        });
+        var text = WorkspaceIndex.Describe(doc, cites: 2, citedBy: 1, TimeZoneInfo.Utc);
+        Assert.Equal("Pasta: Personagens\nCriada em 20/10/2026 10:00 · alterada em 22/10/2026 08:30\n9 palavras · cita 2 · citada por 1"
+            + (doc.Tags.Count > 0 ? "\nTags: " + string.Join(" ", doc.Tags.Select(t => "#" + t.TrimStart('#'))) : ""), text);
+        var loose = store.Upsert(new DocumentInput { Id = "doc_2", Path = "Comece.md", Content = "um" });
+        Assert.Equal("Pasta: raiz do vault\n1 palavra · cita 0 · citada por 0", WorkspaceIndex.Describe(loose, 0, 0, TimeZoneInfo.Utc));
+    }
+
+    [Fact]
+    public void ItemsAreFilteredByKindAndTagAndOrdered()
+    {
+        var w = new WorkspaceIndex(
+            [
+                new WorkspaceNote("P/Beta.md", "Beta", "b", "2026-10-21T10:00:00Z", "2026-10-01T10:00:00Z", ["#aula", "calculo"]),
+                new WorkspaceNote("P/Alfa.md", "Alfa", "a", "2026-10-20T10:00:00Z", "2026-10-10T10:00:00Z", ["calculo"]),
+                new WorkspaceNote("P/Gama.md", "Gama", "g", "2026-10-22T10:00:00Z", "2026-09-01T10:00:00Z", [])
+            ],
+            ["P/Apostila.page.json", "P/foto.png"]);
+        var all = w.Items("P");
+        Assert.Equal(["Gama", "Beta", "Alfa", "Apostila", "foto.png"], WorkspaceIndex.Arrange(all).Select(i => i.Title));
+        Assert.Equal(["Alfa", "Apostila", "Beta", "foto.png", "Gama"], WorkspaceIndex.Arrange(all, order: WorkspaceOrder.Name).Select(i => i.Title));
+        Assert.Equal(["Alfa", "Beta", "Gama"], WorkspaceIndex.Arrange(all, kind: WorkspaceItemKind.Note, order: WorkspaceOrder.Created).Select(i => i.Title));
+        Assert.Equal(["Beta"], WorkspaceIndex.Arrange(all, tag: "AULA").Select(i => i.Title));
+        Assert.Equal(["Apostila"], WorkspaceIndex.Arrange(all, kind: WorkspaceItemKind.Page).Select(i => i.Title));
+        Assert.Equal(["calculo", "aula"], w.TagsIn("P"));
+        Assert.Empty(w.TagsIn("Outra"));
     }
 }

@@ -51,6 +51,12 @@ public sealed class ExplorerState
         Persist();
     }
 
+    /// <summary>favorite(id, false): out of Favoritos.</summary>
+    public void Unfavorite(string id)
+    {
+        if (_favorites.Remove(id)) Persist();
+    }
+
     /// <summary>isExpanded(path): the folder is open in the Notas tree.</summary>
     public bool IsExpanded(string path) => _expanded.Contains(path);
 

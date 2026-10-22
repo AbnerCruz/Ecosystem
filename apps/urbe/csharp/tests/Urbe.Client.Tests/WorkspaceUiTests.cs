@@ -1,9 +1,11 @@
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using Urbe.Client;
+using Urbe.Core;
 
 namespace Urbe.Client.Tests;
 
@@ -171,5 +173,116 @@ public sealed partial class HeadlessUiTests
                 return true;
             }
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task Workspace_HoldingACardShowsItsInformationAndActions() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-area-hold-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            var previous = UrbeApp.LocalStatePath;
+            UrbeApp.LocalStatePath = Path.Combine(dir, "app", "notes-state.json");
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 412, Height = 860, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                var w = view.Workspace;
+                // a hold (here the right click that stands for it) on a card: the sheet, and nothing opens
+                var card = Named(w, "Herói");
+                card.RaiseEvent(new ContextRequestedEventArgs());
+                Dispatcher.UIThread.RunJobs();
+                Assert.True(view.Dialogs.IsOpen);
+                Assert.False(view.Editor.IsVisible);
+                var texts = view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text ?? "").ToList();
+                Assert.Contains(texts, t => t.StartsWith("Pasta: Personagens", StringComparison.Ordinal) && t.Contains("palavras · cita 0 · citada por 0", StringComparison.Ordinal));
+                foreach (var action in new[] { "Abrir", "Renomear", "Mover para", "Duplicar", "Favoritar", "Mover para a lixeira" }) Assert.Contains(action, texts);
+                Snapshot(window, "native-area-hold.png");
+                // Favoritar: it joins the favourites
+                ClickButtonWithText(view.Dialogs, "Favoritar");
+                for (int i = 0; i < 40 && view.Dialogs.IsOpen; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.Contains(view.Documents!.Get("Personagens/Herói.md")!.Id, view.ExplorerState.Favorites);
+                // held again: Tirar dos favoritos
+                Named(w, "Herói").RaiseEvent(new ContextRequestedEventArgs());
+                Dispatcher.UIThread.RunJobs();
+                ClickButtonWithText(view.Dialogs, "Tirar dos favoritos");
+                for (int i = 0; i < 40 && view.Dialogs.IsOpen; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.DoesNotContain(view.Documents!.Get("Personagens/Herói.md")!.Id, view.ExplorerState.Favorites);
+                // Abrir opens it
+                Named(w, "Herói").RaiseEvent(new ContextRequestedEventArgs());
+                Dispatcher.UIThread.RunJobs();
+                ClickButtonWithText(view.Dialogs, "Abrir");
+                for (int i = 0; i < 40 && !view.Editor.IsVisible; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.Equal("Personagens/Herói.md", view.Editor.Current!.Path);
+                window.Close();
+                return true;
+            }
+            finally
+            {
+                UrbeApp.LocalStatePath = previous;
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task Workspace_FiltersByKindAndTagOrdersAndShowsAsAList() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-area-filter-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            File.WriteAllText(Path.Combine(vault, "Personagens", "Herói.md"), "# Herói\n\nAlto, de uma região do norte. #protagonista\n");
+            File.WriteAllBytes(Path.Combine(vault, "Personagens", "retrato.png"), [0x89, 0x50, 0x4E, 0x47]);
+            var previous = UrbeApp.LocalStatePath;
+            UrbeApp.LocalStatePath = Path.Combine(dir, "app", "notes-state.json");
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 412, Height = 860, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                var w = view.Workspace;
+                List<string?> Shown() => w.GetLogicalDescendants().OfType<Button>().Where(b => b.IsEffectivelyVisible && ToolTip.GetTip(b) is string tip && tip.Contains('/', StringComparison.Ordinal) || ToolTip.GetTip(b) as string == "Comece.md")
+                    .Select(AutomationProperties.GetName).ToList();
+
+                // the box of a project: its kinds as chips; Imagens shows only the picture
+                w.Open("Personagens");
+                Assert.Contains(w.GetLogicalDescendants().OfType<Button>(), b => AutomationProperties.GetName(b) == "Imagens");
+                Click(Named(w, "Imagens"));
+                Assert.Equal(["retrato.png"], Shown());
+                // a tag of the box
+                Click(Named(w, "Tudo"));
+                Click(Named(w, "#protagonista"));
+                Assert.Equal(["Herói"], Shown());
+                Click(Named(w, "#protagonista"));   // again: off
+                Assert.Null(w.TagFilter);
+
+                // the order: recentes → nome → criação
+                w.Open("Matemática/curso de calculo");
+                Click(Named(w, "Ordem"));
+                Assert.Equal(WorkspaceOrder.Name, w.Order);
+                Assert.Equal(["Matriz curricular", "Plano de Aulas"], Shown());
+                // as a list: rows instead of cards
+                Click(Named(w, "Ver em lista"));
+                Assert.True(w.AsList);
+                Assert.All(w.GetLogicalDescendants().OfType<Button>().Where(b => ToolTip.GetTip(b) is string t && t.StartsWith("Matemática/", StringComparison.Ordinal) && t.EndsWith(".md", StringComparison.Ordinal)),
+                    b => Assert.Equal(56, b.MinHeight));
+                Snapshot(window, "native-area-list.png");
+
+                // at the root, a kind looks in every project, grouped by box
+                w.Open("");
+                w.KindFilter = WorkspaceItemKind.Image;
+                Assert.Equal(["retrato.png"], Shown());
+                window.Close();
+                return true;
+            }
+            finally
+            {
+                UrbeApp.LocalStatePath = previous;
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
         }, CancellationToken.None));
 }

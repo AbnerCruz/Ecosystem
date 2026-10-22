@@ -1,0 +1,80 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-area-de-trabalho-f2",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T17:07:43Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-84",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "989d5a20",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/ExplorerState.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Area.cs",
+    "apps/urbe/csharp/src/Urbe.Client/WorkspaceView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/WorkspaceIndex.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/WorkspaceUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/WorkspaceIndexTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261022-urbe-area-de-trabalho-f2.json"
+  ],
+  "work_completed": [
+    "UC-84 fatia 2: segurar um cartão da Área de trabalho (ou clicar com o botão direito) abre a folha da nota sem abri-la. A folha traz a pasta, as datas, as palavras, quantas ela cita e por quantas é citada, e as tags. As ações são Abrir, Renomear, Mover para, Duplicar, Favoritar ou Tirar dos favoritos, e Mover para a lixeira, as mesmas operações do Explorer. Um arquivo que não é nota mostra as suas próprias ações. ExplorerState ganhou Unfavorite.",
+    "UC-84 fatia 3: filtros sob a busca, na raiz e na caixa aberta. Os tipos presentes e as tags mais usadas aparecem como etiquetas; com um filtro, a caixa inclui as subpastas e a raiz agrupa por projeto. A ordem pode ser por recentes, nome ou criação (WorkspaceIndex.Arrange). A grade pode virar lista, com linhas que se tocam e se seguram como os cartões. WorkspaceIndex passa a receber WorkspaceNote, com a data de criação e as tags."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests e Urbe.Client.Tests",
+      "result": "passed",
+      "evidence": "AHeldNoteTellsWhereWhenHowLongAndHowLinked e Workspace_HoldingACardShowsItsInformationAndActions, mais as suítes completas. Fatia 3: ItemsAreFilteredByKindAndTagAndOrdered e Workspace_FiltersByKindAndTagOrdersAndShowsAsAList."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: segurar um cartão da Área de trabalho mostra as informações e as ações, sem abrir a nota",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/WorkspaceView.cs"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "UC-85: personalizar e organizar as caixas (.urbe/area.json), ou o próximo item do ROADMAP."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/UX.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "As ações usam as operações verificadas já existentes; os favoritos continuam no estado do aparelho."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Segurar no aparelho fica pendente; UC-84 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "workspace-item-sheet",
+      "status": "product-specific",
+      "rationale": "Interface do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Cliente e núcleo do Urbe, testes e roadmap."
+  }
+}
