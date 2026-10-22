@@ -1,0 +1,120 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-leveza-abertura",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T12:47:53Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-77",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "8101c6f9",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/VoiceNoteService.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorScrolling.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/QuickNotes.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorRedesignUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/QuickVoiceBacklogUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/QuickVoiceNoteUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantContextTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/QuickNotesTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VoiceNoteQueueTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261022-urbe-leveza-abertura.json"
+  ],
+  "work_completed": [
+    "UC-76: o cursor só é trazido à vista numa mudança de altura se estava à vista antes; o cabeçalho que se recolhe ou volta ao rolar nunca move o texto. A rolagem rápida não teleporta mais para o cursor.",
+    "UC-77 (tela): o registro do Assistente troca só a mensagem que mudou. Pedidos anteriores mostram a pergunta, uma linha recolhida 'N passos' e a resposta. Detalhes, Raciocínio e os passos antigos só são montados ao abrir. Resultados das ferramentas indexados uma vez por desenho, em vez de uma vez por cartão.",
+    "UC-77 (contexto): AssistantAgent.SettlePast assenta os pedidos anteriores antes de cada passo: resultados e conteúdos gravados com mais de 1200 caracteres viram um começo curto com aviso. O pedido atual vai inteiro, e o contexto de trabalho tem teto de 480 mil caracteres. A conversa guardada não muda; os oráculos da 1.8.4 continuam iguais.",
+    "UC-78 (primeira fatia): o Explorer diz 'Abrindo suas notas…' enquanto a pasta é lida, em vez de 'Nenhuma nota ainda'. No Android as notas são lidas seis de cada vez e a mesma passada lista os outros arquivos, sem a segunda volta pela pasta.",
+    "UC-79: notas rápidas numa nota por mês (Notas rápidas/aaaa-mm.md) com um título por dia; as notas diárias antigas ficam como estão.",
+    "ROADMAP C#: UC-76 a UC-82 com causas e solução, incluindo as ideias do proprietário. UC-80: agente dentro da nota, &Nome&:. UC-81: agentes com nome. UC-82: marca de IA discreta nas páginas."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests e Urbe.Client.Tests",
+      "result": "passed",
+      "evidence": "Core 635 de 635; Client 190 de 190; dotnet build Urbe.Portable.slnx -c Release sem erros nem avisos. Novos testes: Editor_ScrollingAwayFromTheCaretNeverPullsTheTextBack (falha no código anterior: a nota volta ao offset 78), Editor_ACaretInSightStaysInSightWhenTheKeyboardOpens, AssistantContextTests (4), Assistant_ALongConversationStaysLight, Opening_WhileTheVaultIsReadTheExplorerSaysSoNotThatThereAreNoNotes, QuickNotesTests (5). Oráculos do Assistente da 1.8.4 inalterados."
+    },
+    {
+      "kind": "automated",
+      "check": "Build do APK (Urbe.Android) no CI do PR",
+      "result": "pending",
+      "evidence": "O workload android não está disponível no SDK deste ambiente; a leitura paralela do AndroidVaultStorage é conferida pelo build do CI."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: rolar rápido com o cursor posto não volta para o cursor; conversa longa no Assistente sem travar; abertura sem 'Nenhuma nota' e mais rápida; nota rápida vai para a nota do mês",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs"
+    }
+  ],
+  "known_issues": [
+    "A abertura ainda não é instantânea: falta mostrar a árvore da última abertura pelos nomes antes da leitura e virtualizar o Explorer (UC-78, próximas fatias).",
+    "A ideia da área de trabalho (Explorer como barra lateral em árvore e projetos como caixas com catálogo em grid) muda a base do app definida no ADD-0028; ela vai num registro próprio do proprietário (adendo e DEC) e não está neste PR."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Registrar a direção da área de trabalho (adendo do proprietário e DEC) em PR crítico próprio e começar pela primeira fatia.",
+    "Depois da integração, subir a beta e mandar os links."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/addenda/ADD-0024-urbe-nativo-desempenho-primeiro-e-release.md",
+    "docs/governance/addenda/ADD-0026-urbe-experiencia-de-usuario-topo-de-linha.md",
+    "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "apps/urbe/docs/csharp/UX.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O assentamento do contexto é uma projeção do envio; a conversa guardada continua a única fonte. As notas rápidas continuam no vault; nenhuma cópia de nota fora dele."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Só apps/urbe."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Toque, abertura e peso no aparelho dependem de validação humana; UC-76 a UC-79 ficam [ ]."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Teste do cursor que falha no código anterior e passa no novo; oráculos da 1.8.4 preservados."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "assistant-context-settling",
+      "status": "possible-candidate",
+      "rationale": "Assentar pedidos anteriores serve a qualquer loop de agente (ADR-0033), mas há só um consumidor: continua no Urbe até uma Extraction Review."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Código do cliente e do núcleo do Urbe, testes e roadmap; nenhum csproj, workflow, adendo ou decisão."
+  }
+}

@@ -32,11 +32,7 @@ public sealed partial class AssistantPanel
         var view = new StackPanel { Spacing = 8 };
         var meta = m.Meta;
         if (meta?.Reasoning is { Length: > 0 } reasoning)
-            view.Children.Add(new Expander
-            {
-                Header = Label(meta.Streaming == true && m.Content.Count == 0 ? "Pensando…" : "Raciocínio", 12, UrbeTheme.Text3), HorizontalAlignment = HorizontalAlignment.Stretch,
-                Content = Wrap(reasoning, 12, UrbeTheme.Text3)
-            });
+            view.Children.Add(Lazy(Label(meta.Streaming == true && m.Content.Count == 0 ? "Pensando…" : "Raciocínio", 12, UrbeTheme.Text3), () => Wrap(reasoning, 12, UrbeTheme.Text3)));
         foreach (var b in m.Content)
         {
             if (b.Type == "text")
@@ -60,24 +56,9 @@ public sealed partial class AssistantPanel
         ["memory"] = UrbeTheme.Icons.Star, ["plan"] = UrbeTheme.Icons.Check, ["plugin"] = UrbeTheme.Icons.Layers
     };
 
-    private AiChatBlock? ResultFor(string id)
-    {
-        for (int i = _conv.Messages.Count - 1; i >= 0; i--)
-        {
-            var m = _conv.Messages[i];
-            if (m.Role != "user") continue;
-            foreach (var b in m.Content) if (b.Type == "tool_result" && b.ToolUseId == id) return b;
-        }
-        return null;
-    }
+    private AiChatBlock? ResultFor(string id) => _results.GetValueOrDefault(id);
 
-    private string? LatestPlanId()
-    {
-        for (int i = _conv.Messages.Count - 1; i >= 0; i--)
-            for (int j = _conv.Messages[i].Content.Count - 1; j >= 0; j--)
-                if (_conv.Messages[i].Content[j] is { Type: "tool_use", Name: "update_plan", Pending: false } b) return b.Id;
-        return null;
-    }
+    private string? LatestPlanId() => _latestPlan;
 
     private Control ToolCard(AiChatBlock b, AiChatMessage m)
     {
@@ -106,10 +87,13 @@ public sealed partial class AssistantPanel
         if (pend && _pending is { } pending) card.Children.Add(Approval(pending.Request));
         else if (r is not null || !b.Pending)
         {
-            var more = new StackPanel { Spacing = 6 };
-            if (!b.Pending) more.Children.Add(Pre(ClipText(LegacyCustomize.Stringify(b.Input ?? new JsonObject(), 2), 3000), false));
-            if (r is not null) more.Children.Add(Pre(ClipText(r.Content, 20000) + (r.Content.Length > 20000 ? "\n…" : ""), r.IsError));
-            card.Children.Add(new Expander { Header = Label("Detalhes", 12, UrbeTheme.Text3), Content = more, HorizontalAlignment = HorizontalAlignment.Stretch });
+            card.Children.Add(Lazy(Label("Detalhes", 12, UrbeTheme.Text3), () =>
+            {
+                var more = new StackPanel { Spacing = 6 };
+                if (!b.Pending) more.Children.Add(Pre(ClipText(LegacyCustomize.Stringify(b.Input ?? new JsonObject(), 2), 3000), false));
+                if (r is not null) more.Children.Add(Pre(ClipText(r.Content, 20000) + (r.Content.Length > 20000 ? "\n…" : ""), r.IsError));
+                return more;
+            }));
         }
         var border = Card(card, status == "waiting" ? UrbeTheme.Accent : null);
         border.Padding = new Thickness(10, 8);

@@ -283,6 +283,18 @@ public sealed class NotesExplorer : Border
         set { _status.Text = value ?? ""; _status.IsVisible = !string.IsNullOrEmpty(value); }
     }
 
+    /// <summary>
+    /// The vault is being read: an empty list says so instead of "Nenhuma nota ainda" (observation of 22/10/2026: the
+    /// opening showed no notes, as if there were no vault).
+    /// </summary>
+    public bool Opening
+    {
+        get => _opening;
+        set { if (_opening == value) return; _opening = value; Render(); }
+    }
+
+    private bool _opening;
+
     /// <summary>What stands before the title (the save state's dot).</summary>
     public Control? TitleMark
     {
@@ -564,7 +576,8 @@ public sealed class NotesExplorer : Border
         }
         Walk("", 0);
         if (_list.Children.Count == 0)
-            _list.Children.Add(EmptyWithAction("Nenhuma nota ainda", "Suas notas são arquivos Markdown na pasta que você escolher.", "Criar primeira nota"));
+            _list.Children.Add(_opening ? Empty("Abrindo suas notas…", "")
+                : EmptyWithAction("Nenhuma nota ainda", "Suas notas são arquivos Markdown na pasta que você escolher.", "Criar primeira nota"));
     }
 
     /// <summary>renderSearch: documents whose path or title holds the query (lower case), at most 200, with their folder.</summary>

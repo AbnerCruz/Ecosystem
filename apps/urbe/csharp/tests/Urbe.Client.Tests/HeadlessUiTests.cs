@@ -271,6 +271,46 @@ public sealed partial class HeadlessUiTests : IDisposable
             throw new InvalidOperationException("read-only test storage");
     }
 
+    /// <summary>A vault that takes its time to be read (a phone's folder): RestoreAsync waits for <see cref="Release"/>.</summary>
+    private sealed class SlowStorage(VaultSnapshot snapshot) : IUrbeVaultStorage
+    {
+        private readonly TaskCompletionSource _read = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public void Release() => _read.TrySetResult();
+        public bool IsConnected => false;
+        public Task<VaultSnapshot?> PickAsync(CancellationToken cancellationToken = default) => Task.FromResult<VaultSnapshot?>(snapshot);
+        public async Task<VaultSnapshot?> RestoreAsync(CancellationToken cancellationToken = default) { await _read.Task; return snapshot; }
+        public Task SaveExistingNoteAsync(string path, string content, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("read-only test storage");
+        public Task CreateTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("read-only test storage");
+        public Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("read-only test storage");
+    }
+
+    [Fact]
+    public async Task Opening_WhileTheVaultIsReadTheExplorerSaysSoNotThatThereAreNoNotes() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // observation of 22/10/2026: the opening showed "no notes", as if there were no vault
+            var storage = new SlowStorage(VaultReader.Read([new VaultFile("Comece.md", System.Text.Encoding.UTF8.GetBytes("# Comece\n"))]));
+            var view = new MainView(storage);
+            var window = new Window { Width = 412, Height = 860, Content = view };
+            window.Show();
+            var init = view.InitializeAsync();
+            Dispatcher.UIThread.RunJobs();
+            var texts = view.Explorer.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
+            Assert.Contains("Abrindo suas notas…", texts);
+            Assert.DoesNotContain("Nenhuma nota ainda", texts);
+            storage.Release();
+            await init;
+            Dispatcher.UIThread.RunJobs();
+            texts = view.Explorer.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
+            Assert.DoesNotContain("Abrindo suas notas…", texts);
+            Assert.Contains("Comece.md", texts);
+            window.Close();
+            return true;
+        }, CancellationToken.None));
+
     [Fact]
     public async Task NewNote_IsWrittenToTheVaultAndEdited() =>
         Assert.True(await Session.Dispatch<bool>(async () =>

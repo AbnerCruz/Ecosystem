@@ -60,6 +60,15 @@ public static class EditorScrolling
         else if (r.Top < 0) SetOffsetY(scroll, scroll.Offset.Y + r.Top - 8);
     }
 
+    /// <summary>
+    /// True when the caret's line was inside a visible area <paramref name="height"/> tall (the area before it changed).
+    /// When the visible area changes, only a caret the person was looking at is kept in sight: the keyboard opening
+    /// over it. A caret the person scrolled away from stays where it is, whatever else changes the height (the header
+    /// folding away while scrolling fast once pulled the text back to the caret, observation of 22/10/2026).
+    /// </summary>
+    public static bool InSight(TextBox box, ScrollViewer scroll, double height) =>
+        CaretRect(box, scroll) is { } r && r.Bottom > 0 && r.Top < height;
+
     /// <summary>The y of <paramref name="c"/>'s top in the scroll viewer's coordinates, or null when not laid out there.</summary>
     public static double? TopIn(Visual c, ScrollViewer scroll) => c.TranslatePoint(default, scroll)?.Y;
 }

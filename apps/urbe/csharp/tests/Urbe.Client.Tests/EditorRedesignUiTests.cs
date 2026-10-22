@@ -294,6 +294,63 @@ public sealed partial class HeadlessUiTests
         }, CancellationToken.None));
 
     [Fact]
+    public async Task Editor_ScrollingAwayFromTheCaretNeverPullsTheTextBack() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // observation of 22/10/2026: a caret placed, a fast scroll down, and the text jumped back to the caret
+            var (editor, window) = StandaloneEditor(LongNote());
+            try
+            {
+                var scroll = VisualScroll(editor);
+                await Pump(window);
+                Tap(editor, window, 1);
+                await Pump(window);
+                var box = editor.Surface.EditBox!;
+                Assert.True(EditorScrolling.InSight(box, scroll, scroll.Viewport.Height));
+                var middle = new Point(200, 450);
+                // a fast scroll down, far from the caret (the header folds away)...
+                for (int i = 0; i < 24; i++) window.MouseWheel(middle, new Vector(0, -1));
+                await Pump(window, 3);
+                Assert.True(editor.HeaderHidden);
+                await Task.Delay(350);
+                // ...and a little back up: the header unfolds, the text gets shorter, and that is not the keyboard
+                for (int i = 0; i < 3 && editor.HeaderHidden; i++) { window.MouseWheel(middle, new Vector(0, 1)); await Pump(window, 2); }
+                Assert.False(editor.HeaderHidden);
+                for (int i = 0; i < 4; i++) { await Task.Delay(120); await Pump(window, 3); }
+                var away = scroll.Offset.Y;
+                Assert.False(EditorScrolling.InSight(box, scroll, scroll.Viewport.Height), $"o cursor deveria estar fora da vista (offset {away})");
+                Assert.True(away > 600, $"a nota voltou para o cursor (offset {away})");
+                Assert.Same(box, editor.Surface.EditBox);
+                return true;
+            }
+            finally { window.Close(); }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task Editor_ACaretInSightStaysInSightWhenTheKeyboardOpens() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var (editor, window) = StandaloneEditor(LongNote());
+            try
+            {
+                var scroll = VisualScroll(editor);
+                await Pump(window);
+                // a block low on the screen, then the keyboard takes the lower part
+                int index = editor.Surface.BlockStarts.Select((s, i) => (s, i))
+                    .First(p => editor.Surface.BlockView(p.s) is { } b && TopIn(b, scroll) > scroll.Viewport.Height * .7).i;
+                Tap(editor, window, index);
+                await Pump(window);
+                var box = editor.Surface.EditBox!;
+                window.Height = 520;
+                await Pump(window, 8);
+                var caret = EditorScrolling.CaretRect(box, scroll)!.Value;
+                Assert.True(caret.Top >= 0 && caret.Bottom <= scroll.Viewport.Height, $"cursor em {caret} de {scroll.Viewport.Height}");
+                return true;
+            }
+            finally { window.Close(); }
+        }, CancellationToken.None));
+
+    [Fact]
     public async Task Editor_SavingIsAQuietDotAndLeavingNeverWaits() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
         {
