@@ -45,8 +45,9 @@ public sealed partial class HeadlessUiTests
             var history = Path.Combine(vault, ".urbe", "history.v2.json");
             // the history and the note are two writes of the autosave; under load either may land first, so wait for both
             var note = Path.Combine(vault, "Casa.md");
-            for (int i = 0; i < 300 && !(File.Exists(history) && File.ReadAllText(note) == "# Casa\n\nSegundo texto.\n"); i++) { await Task.Delay(20); Dispatcher.UIThread.RunJobs(); }
-            Assert.Equal("# Casa\n\nSegundo texto.\n", File.ReadAllText(Path.Combine(vault, "Casa.md")));
+            // wait on the editor's verified save, not by reading the note while it is written (the read would hold it)
+            for (int i = 0; i < 300 && !(File.Exists(history) && view.Editor.SaveState == "saved" && !view.Editor.HasChanges); i++) { await Task.Delay(20); Dispatcher.UIThread.RunJobs(); }
+            Assert.Equal("# Casa\n\nSegundo texto.\n", File.ReadAllText(note));
             var saved = File.ReadAllText(history);
             Assert.StartsWith("{\"version\":2,\"documents\":{\"", saved);
             Assert.Contains("\"path\":\"Casa.md\",\"content\":\"# Casa\\n\\nPrimeiro texto.\\n\"}", saved);
