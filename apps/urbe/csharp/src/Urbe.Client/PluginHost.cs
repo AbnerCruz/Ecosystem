@@ -18,7 +18,6 @@ public sealed partial class MainView
     private readonly Dictionary<string, (IUrbePlugin Plugin, PluginApi Api)> _plugins = new(StringComparer.Ordinal);
     /// <summary>The plugins the app has (a new instance is made each time one is turned on).</summary>
     private readonly List<(PluginManifest Manifest, Func<IUrbePlugin> Make)> _available = BuiltInPlugins.All.Select(f => (f().Manifest, f)).ToList();
-    private StackPanel? _topButtons;
     private readonly StackPanel _pluginPanels = new()
     {
         Spacing = 10, Margin = new Thickness(12, 64, 12, 0),

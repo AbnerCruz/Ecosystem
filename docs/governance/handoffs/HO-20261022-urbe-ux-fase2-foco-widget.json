@@ -1,0 +1,103 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-ux-fase2-foco-widget",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T00:50:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-69",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-ux-fase2",
+  "base_commit": "3dd2125a",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorScrolling.cs",
+    "apps/urbe/csharp/src/Urbe.Client/TouchTextScroll.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/LinkFocusBar.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.LinkFocus.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.Focus.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LinkFocus.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VoiceNoteQueue.cs",
+    "apps/urbe/csharp/src/Urbe.Android/VoiceNoteService.cs",
+    "apps/urbe/csharp/src/Urbe.Android/VoiceNoteWidget.cs",
+    "apps/urbe/csharp/src/Urbe.Android/VoiceSpeech.cs",
+    "apps/urbe/csharp/src/Urbe.Android/VoicePermissionActivity.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorRedesignUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/LinkFocusUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/QuickVoiceBacklogUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LinkFocusTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VoiceNoteQueueTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261022-urbe-ux-fase2-foco-widget.json"
+  ],
+  "work_completed": [
+    "UC-69 fase 2: editor redesenhado sob o critério de UX (ADD-0026) — cabeçalho e barra enxutos, rolagem estável com o cursor sempre visível, leitura com tipografia de livro.",
+    "UC-70: tocar numa construção da cidade mostra só as suas ligações, em grupos com selo e cor (cita, citada por, mútua), com a cidade escurecida ao redor, cartão de foco com Abrir/Detalhes e saída tocando o chão vazio; o cálculo dos grupos fica em Urbe.Core (LinkFocus).",
+    "UC-66: o widget grava direto — o toque inicia um serviço em primeiro plano (VoiceNoteService) que reconhece a fala no aparelho (Android 13+) e enfileira a nota em files/voz/fila.json (VoiceNoteQueue); o app consome a fila ao abrir.",
+    "Teste do foco de ligações estabilizado: o toque no chão vazio caía dentro de um bairro e, numa suíte lenta, o intervalo entre apertar e soltar passava de 520 ms e virava o gesto de segurar (diálogo do bairro), não um toque. WorldView ganhou HoldGestures (padrão ligado) para o teste desligar os gestos de segurar."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests e Urbe.Client.Tests",
+      "result": "passed",
+      "evidence": "Core 857 e Client 208 testes locais verdes; Focus_* repetido 3 vezes sem falha depois de HoldGestures; CI do PR confirma."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: escrever no editor redesenhado; gravar uma nota pelo widget sem abrir o app",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Android/VoiceNoteWidget.cs"
+    }
+  ],
+  "known_issues": [
+    "Serviço em primeiro plano e reconhecimento de fala só foram compilados no CI; a gravação do widget depende de validação no aparelho (NN-017).",
+    "UC-70 (foco de ligações na cidade) saiu antes da integração junto com a simulação visual (ADD-0028/DEC-0051); fica no ramo ccr-ux-fase2 e o item está congelado. O editor redesenhado e o widget seguem pelo PR da remoção (HO-20261022-urbe-sem-simulacao)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Depois da integração, subir a versão para beta.15 em PR próprio (zona crítica), disparar a release e mandar os links."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0026-urbe-experiencia-de-usuario-topo-de-linha.md",
+    "apps/urbe/docs/csharp/UX.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Mudanças só em apps/urbe; nenhuma dependência para Lunet2D."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "A gravação do widget usa a permissão de microfone pedida em VoicePermissionActivity, sem acesso novo a dados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Widget, editor e foco ficam como validação humana pendente; CI verde não fecha o item."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "link-focus",
+      "status": "product-specific",
+      "rationale": "Destaque de ligações do mundo do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Nenhum csproj, vault, workflow ou adendo; a versão do canal não muda neste PR."
+  }
+}

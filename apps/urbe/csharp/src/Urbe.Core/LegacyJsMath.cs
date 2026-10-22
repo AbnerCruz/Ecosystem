@@ -66,9 +66,6 @@ public static class LegacyJsMath
         };
     }
 
-    /// <summary>app.js semente(txt): FNV-1a over UTF-16 code units.</summary>
-    public static uint Seed(string text) => LegacyTerrainMath.Hash32(text);
-
     /// <summary>app.js slug(s).</summary>
     public static string Slug(string s)
     {

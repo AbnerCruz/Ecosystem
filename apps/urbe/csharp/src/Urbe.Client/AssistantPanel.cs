@@ -32,7 +32,7 @@ public interface IAssistantApp
     void Notify(string text);
     /// <summary>The Personalização the appearance tools change.</summary>
     IAssistantAppearance? Appearance => null;
-    /// <summary>The city's plugins (write_plugin turns them on).</summary>
+    /// <summary>The vault's plugins (write_plugin turns them on).</summary>
     IAssistantPlugins? Plugins => null;
 }
 

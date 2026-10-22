@@ -4,6 +4,8 @@
 
 Aceito — **DEC-0043** (ordem do proprietário em 2026-10-10, [ADD-0020](../governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md)). A escolha concreta da pilha foi delegada pelo proprietário ("contanto que funcione em ambos") e fica condicionada ao gate **G-N0** abaixo. Substitui a parte de UI/hosts do [ADR-0025](0025-urbe-pilha-ui-hosts-csharp.md).
 
+**Parcialmente substituído (2026-10-22):** a cidade em tela cheia como interface do Urbe saiu do produto por ordem do proprietário ([ADR-0034](0034-urbe-sem-simulacao-visual.md), DEC-0051, ADD-0028); a simulação fica congelada no ramo `urbe-simulacao-congelada`. Avalonia, os heads Android/Desktop e "sem WebView" continuam valendo.
+
 ## Contexto
 
 FATO: o ADR-0025 (DEC-0035-A) escolheu Blazor WebAssembly PWA no Web e .NET MAUI Blazor Hybrid em Android/Windows. No Hybrid a interface é HTML/CSS renderizada numa WebView. O principal motivo da escolha foi o alvo Web/PWA e o editor sobre DOM.

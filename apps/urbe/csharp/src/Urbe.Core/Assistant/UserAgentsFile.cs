@@ -4,7 +4,7 @@ namespace Urbe.Core;
 
 /// <summary>
 /// The person's own instructions for the Assistente (owner, UC-50): <c>Personalização/AGENTS.md</c>, in the app's
-/// notes (never a house in the world). Each section is for a model or for all of them:
+/// notes (never an ordinary note). Each section is for a model or for all of them:
 /// <code>
 /// Geral: { escreva em português do Brasil }
 /// Claude 5: { seja breve; cite as notas }

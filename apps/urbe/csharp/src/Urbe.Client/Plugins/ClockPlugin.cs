@@ -9,12 +9,12 @@ namespace Urbe.Client.Plugins;
 
 /// <summary>
 /// "Relógio" (owner, DEC-0045, UC-46: "um relógio/cronômetro/timer nativo"), the first plugin of the native API
-/// (ADD-0021): a button in the city opens a floating panel — over the city and the editor — with the time now, a
+/// (ADD-0021): a button in the Explorer's header opens a floating panel — over the notes and the editor — with the time now, a
 /// stopwatch and a timer. It uses only what its manifest declares (button, command, panel, notices, its own data).
 /// </summary>
 public sealed class ClockPlugin : IUrbePlugin
 {
-    public PluginManifest Manifest { get; } = new("relogio", "Relógio", "1.0", "Hora, cronômetro e temporizador num painel sobre a cidade e o editor.",
+    public PluginManifest Manifest { get; } = new("relogio", "Relógio", "1.0", "Hora, cronômetro e temporizador num painel sobre as notas e o editor.",
         [PluginPermissions.Buttons, PluginPermissions.Commands, PluginPermissions.Panels, PluginPermissions.Notices, PluginPermissions.Data]);
 
     private readonly DispatcherTimer _tick = new() { Interval = TimeSpan.FromMilliseconds(250) };

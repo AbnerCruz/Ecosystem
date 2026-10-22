@@ -1,6 +1,5 @@
 using System.Text;
 using Urbe.Core;
-using Urbe.UI;
 
 namespace Urbe.Core.Tests;
 
@@ -57,29 +56,5 @@ public sealed class WikiLinkCompletionTests
         Assert.Null(WikiLinkCompletion.Complete(original, context, "[[nested]]"));
         Assert.Null(WikiLinkCompletion.Complete(original, context, "Outra\nnota"));
         Assert.Equal(original, original);
-    }
-
-    [Fact]
-    public void NewNoteLinkedInSameBairroProducesResolvableWikiLink()
-    {
-        using var session = new WorkspaceSession();
-        session.Load(VaultReader.Read([
-            new VaultFile("Centro/Origem.md", Encoding.UTF8.GetBytes("Visite [[Casa"))
-        ]), ["Centro"]);
-        Assert.True(session.Restore("Centro/Origem.md"));
-        var source = session.CurrentDocument!;
-        var context = WikiLinkCompletion.Find(source.Content, source.Content.Length);
-        Assert.NotNull(context);
-
-        var created = session.CreateLinkedNote(context.Query);
-        Assert.NotNull(created);
-        Assert.Equal("Centro/Casa.md", created.Path);
-
-        var completion = WikiLinkCompletion.Complete(source.Content, context,
-            ArtifactModel.WithoutNoteExtension(created.Path));
-        Assert.NotNull(completion);
-        Assert.NotNull(session.UpdateSource(completion.Markdown));
-        Assert.Contains(created, session.Links());
-        Assert.True(session.HasUnsavedChanges);
     }
 }

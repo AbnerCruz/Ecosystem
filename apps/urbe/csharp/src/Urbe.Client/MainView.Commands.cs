@@ -41,8 +41,6 @@ public sealed partial class MainView
             if ((string?)o["vault"] != _vault?.VaultName) return false;
             var tabs = (o["tabs"] as JsonArray ?? []).Select(x => (string?)x).OfType<string>().Where(_contents.ContainsKey).ToList();
             if (tabs.Count == 0) return false;
-            CityMap.IsVisible = false;
-            Explorer.IsVisible = false;
             Editor.RestoreSession(tabs, (string?)o["activeId"]);
             return true;
         }

@@ -31,7 +31,7 @@ public sealed partial class HeadlessUiTests
             window.Show();
             await view.OpenVaultAsync();
             await Settle(window, view);
-            await UntilMapSaved(view);
+            await UntilNotesSaved(view);
             view.ShowNotes();
             Dispatcher.UIThread.RunJobs();
 

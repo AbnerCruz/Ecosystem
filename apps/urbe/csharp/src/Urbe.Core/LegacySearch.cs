@@ -55,7 +55,7 @@ internal static class JsText
         return end > start ? s.Substring(start, end - start) : "";
     }
 
-    /// <summary>String.prototype.localeCompare (ICU collation), the same one LegacyCityOpen uses.</summary>
+    /// <summary>String.prototype.localeCompare (ICU collation).</summary>
     public static int LocaleCompare(string a, string b) => Collation.Compare(a, b, CompareOptions.None);
 
     /// <summary>String.prototype.toLowerCase: full case mapping (İ → i̇) and the final-sigma rule.</summary>
@@ -309,7 +309,6 @@ public static class LegacyKeymap
         new("Alt+ArrowRight", "editor.forward", true),
         new("Mod+\\\\", "editor.split.open", true),
         new("Mod+N", "document.create", false),
-        new("Mod+Shift+M", "workspace.navigate.world", false),
         new("Mod+Shift+F", "ui.explorer.open", true)
     ];
 

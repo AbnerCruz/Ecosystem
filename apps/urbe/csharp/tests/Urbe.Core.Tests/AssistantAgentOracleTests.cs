@@ -156,7 +156,7 @@ public sealed class AssistantAgentOracleTests
         Assert.Equal(expectedRequests.Count, requests.Count);
         for (int i = 0; i < expectedRequests.Count; i++)
         {
-            var e = expectedRequests[i]!;
+            var e = WithoutTheCity.Native(expectedRequests[i])!;
             var a = requests[i]!;
             Assert.Equal((string)e["system"]!, (string)a["system"]!);
             Assert.Equal(S(e["tools"]), S(a["tools"]));
@@ -210,7 +210,7 @@ public sealed class AssistantAgentOracleTests
         foreach (var p in f["prompts"]!.AsArray())
         {
             var mem = p!["memory"]!.AsArray().Select(x => (string)x!).ToList();
-            Assert.Equal((string)p["out"]!, AssistantAgent.SystemPrompt(AssistantAgent.AgentById((string)p["agent"]!), (string)p["policy"]!, (string?)p["vaultName"],
+            Assert.Equal(WithoutTheCity.Native((string)p["out"]!), AssistantAgent.SystemPrompt(AssistantAgent.AgentById((string)p["agent"]!), (string)p["policy"]!, (string?)p["vaultName"],
                 (int)p["noteCount"]!, (string?)p["openNote"], (string?)p["instructions"], mem, new DateTime(2025, 10, 9, 15, 0, 0)));
         }
         foreach (var t in f["titles"]!.AsArray()) Assert.Equal((string)t!["out"]!, AssistantAgent.TitleFrom((string?)t["text"]));

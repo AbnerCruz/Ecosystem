@@ -47,14 +47,15 @@ public sealed partial class HeadlessUiTests
             window.Show();
             await view.OpenVaultAsync();
             await Settle(window, view);
-            await UntilMapSaved(view);
+            await UntilNotesSaved(view);
             view.ShowNotes();
             Dispatcher.UIThread.RunJobs();
             var e = view.Explorer;
-            Assert.Equal("Explorer", view.ActiveDestination);
-            Assert.Contains(e.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Explorer");
+            Assert.Equal("Notas", view.ActiveDestination);
+            // the base of the app: its header carries the vault folder's name
+            Assert.Contains(e.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "vault");
 
-            // every file, with its extension; the map of the city (.urbe) stays out
+            // every file, with its extension; the hidden .urbe stays out
             Assert.Equal(new[] { "livro.pdf" }, e.VisibleFilePaths);
             Assert.Contains(e.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Comece.md");
             Assert.Contains(e.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "livro.pdf");
@@ -77,7 +78,7 @@ public sealed partial class HeadlessUiTests
             Assert.True(e.OpenFolderMenu("Bairro"));
             Dispatcher.UIThread.RunJobs();
             var options = view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
-            foreach (var o in new[] { "Nova nota aqui", "Nova subpasta", "Mostrar na cidade", "Mover para a lixeira" }) Assert.Contains(o, options);
+            foreach (var o in new[] { "Nova nota aqui", "Nova subpasta", "Renomear", "Mover para", "Mover para a lixeira" }) Assert.Contains(o, options);
             ClickButtonWithText(view.Dialogs, "Nova nota aqui");
             await Settled();
             view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single().Text = "Lá";
@@ -108,10 +109,9 @@ public sealed partial class HeadlessUiTests
             await Settled();
             Assert.True(File.Exists(Path.Combine(vault, "Bairro", "Comece.md")));
             Assert.False(File.Exists(Path.Combine(vault, "Comece.md")));
-            var bairro = view.World.City!.RegionByPath("Bairro")!;
-            Assert.Contains(view.World.City.Buildings, b => b.Path == "Bairro/Comece.md" && b.RegionId == bairro.Id);
+            Assert.NotNull(view.Documents!.Get("Bairro/Comece.md"));
             Assert.Empty(e.SelectedPaths);
-            await UntilMapSaved(view);
+            await UntilNotesSaved(view);
             window.Close();
             return true;
         }

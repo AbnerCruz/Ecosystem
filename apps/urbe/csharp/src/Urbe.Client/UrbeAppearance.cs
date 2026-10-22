@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -7,26 +6,21 @@ using Avalonia.Controls.Documents;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Urbe.Core;
-using Urbe.Client.World;
 
 namespace Urbe.Client;
 
 /// <summary>
-/// customize.js aplicarTela / aplicarCidade natively: the appearance Personalização describes
-/// (colours, fonts, text size, corner radii, density, editor column, the world's ground) applied to
-/// the running app. The original sets --ui-* variables; here they reach the design tokens
-/// (<see cref="UrbeTheme"/>), the inherited font, the corner radii of the controls and the world.
+/// customize.js aplicarTela natively: the appearance Personalização describes (colours, fonts, text size, corner
+/// radii, density, editor column) applied to the running app. The original sets --ui-* variables; here they reach the
+/// design tokens (<see cref="UrbeTheme"/>), the inherited font and the corner radii of the controls.
 /// </summary>
 public static class UrbeAppearance
 {
     private static readonly int[] DefaultRadii = [8, 12, 16, 22];
     private static readonly FontFamily DefaultUi = UrbeTheme.UiFont;
     private static int[] _radii = DefaultRadii;
-    private static readonly ConditionalWeakTable<MainView, State> States = new();
     private static readonly AttachedProperty<int> ShapeIndex = AvaloniaProperty.RegisterAttached<Control, Control, int>("ShapeIndex", -2);
     private static readonly AttachedProperty<bool> UsesUiFont = AvaloniaProperty.RegisterAttached<Control, Control, bool>("UsesUiFont");
-
-    private sealed class State { public int Ground = -1; }
 
     /// <summary>data-densidade: compacta, normal or confortavel.</summary>
     public static string Density { get; private set; } = "normal";
@@ -49,7 +43,7 @@ public static class UrbeAppearance
         _ => (54, new Thickness(12, 8))
     };
 
-    /// <summary>aplicarTela(c) + aplicarCidade(c): everything the configuration changes in the running app.</summary>
+    /// <summary>aplicarTela(c): everything the configuration changes in the running app.</summary>
     public static void Apply(MainView view)
     {
         var c = view.Customization;
@@ -78,18 +72,9 @@ public static class UrbeAppearance
 
         // editor column (the Fonte editor uses --ui-code-size and --ui-editor-line)
         var width = Var("--ui-editor-width");
-        view.Editor.ApplyAppearance(width.EndsWith('%') ? double.PositiveInfinity : Px(width), Px(Var("--ui-code-size")), double.Parse(Var("--ui-editor-line"), System.Globalization.CultureInfo.InvariantCulture));
-
-        // the world's ground and own building art
-        var state = States.GetOrCreateValue(view);
-        if (state.Ground != c.GroundVersion)
-        {
-            state.Ground = c.GroundVersion;
-            view.World.SetGround(c.Ground, c.BuildingArt);
-        }
+        view.Editor.ApplyAppearance(width.EndsWith('%') ? double.PositiveInfinity : Px(width), Px(Var("--ui-code-size")), double.Parse(Var("--ui-editor-line"), System.Globalization.CultureInfo.InvariantCulture), Px(Var("--ui-editor-size")));
 
         foreach (var d in view.GetVisualDescendants().OfType<Control>().Prepend(view)) Restyle(d);
-        view.World.InvalidateVisual();
     }
 
     /// <summary>--ui-r-s, -m, -l, -xl (index 0..3) as they are now.</summary>

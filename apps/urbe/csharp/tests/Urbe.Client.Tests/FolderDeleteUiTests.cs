@@ -13,12 +13,12 @@ public sealed partial class HeadlessUiTests
 {
     /// <summary>
     /// Holding a folder selects it ("1 pasta", only Mover para a lixeira enabled); confirming "Excluir a pasta “Área”?"
-    /// sends its notes and its sub-folder's to the Lixeira, removes the neighbourhoods and the emptied folders, keeps a
-    /// file that is not a note (and so its folder), and the map is saved without them. A folder and a note together
+    /// sends its notes and its sub-folder's to the Lixeira, removes the emptied folders, keeps a file that is not a note
+    /// (and so its folder), and the notes' record is saved without them. A folder and a note together
     /// ask "Excluir 1 pasta e 1 nota?"; a restored note comes back with its folder.
     /// </summary>
     [Fact]
-    public async Task Notes_DeletingAFolderSendsItsNotesToTheTrashAndRemovesTheNeighbourhood() =>
+    public async Task Notes_DeletingAFolderSendsItsNotesToTheTrashAndRemovesTheFolder() =>
         Assert.True(await Session.Dispatch(DeleteFolderScenario, CancellationToken.None));
 
     private static async Task<bool> DeleteFolderScenario()
@@ -33,7 +33,6 @@ public sealed partial class HeadlessUiTests
             File.WriteAllText(Path.Combine(vault, "Área", "Antigas", "Velha.md"), "# Velha\n");
             File.WriteAllText(Path.Combine(vault, "Projetos", "Plano.md"), "# Plano\n");
             File.WriteAllBytes(Path.Combine(vault, "Projetos", "Fotos", "foto.png"), [1, 2, 3]);
-            var mapa = Path.Combine(vault, ".urbe", "mapa.json");
             var previous = UrbeApp.LocalStatePath;
             UrbeApp.LocalStatePath = Path.Combine(dir, "app", "notes-state.json");
             async Task Settled() { for (int i = 0; i < 60; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); } }
@@ -44,9 +43,8 @@ public sealed partial class HeadlessUiTests
                 window.Show();
                 await view.OpenVaultAsync();
                 await Settle(window, view);
-                await UntilMapSaved(view);
-                var city = view.World.City!;
-                Assert.Contains(city.Regions, r => r.Name == "Antigas");
+                await UntilNotesSaved(view);
+                Assert.Contains("Área/Antigas", view.Library!.Folders);
                 Button Bar(string tip) => view.Explorer.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == tip);
                 string Count() => view.Explorer.GetLogicalDescendants().OfType<TextBlock>().First(t => t.Text is "1 pasta" or "1 pasta · 1 nota" or "1 nota").Text!;
 
@@ -62,17 +60,19 @@ public sealed partial class HeadlessUiTests
                 await Settled();
                 var texts = view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
                 Assert.Contains("Excluir a pasta “Área”?", texts);
-                Assert.Contains("2 notas vão para a Lixeira e podem ser restauradas. A pasta também sai da cidade.", texts);
+                Assert.Contains("2 notas vão para a Lixeira e podem ser restauradas. Outros arquivos da pasta ficam no vault.", texts);
                 ClickButtonWithText(view.Dialogs, "Excluir");
                 await Settled();
                 Assert.False(Directory.Exists(Path.Combine(vault, "Área")));
-                Assert.DoesNotContain(city.Regions, r => r.Name is "Área" or "Antigas");
-                Assert.DoesNotContain(city.Buildings, b => b.Path.StartsWith("Área/", StringComparison.Ordinal));
+                Assert.DoesNotContain(view.Library.Folders, f => f.StartsWith("Área", StringComparison.Ordinal));
+                Assert.DoesNotContain(view.Documents!.List(), d => d.Path.StartsWith("Área/", StringComparison.Ordinal));
                 Assert.Null(view.Documents!.Get("Área/Ideias.md"));
                 var trash = File.ReadAllText(Path.Combine(vault, ".urbe", "trash.v2.json"));
                 Assert.Contains("Área/Antigas/Velha.md", trash);
                 Assert.Contains("Área/Ideias.md", trash);
                 Assert.Empty(view.Explorer.SelectedPaths);
+                // a note in the trash is not left behind as a file of the Explorer
+                Assert.DoesNotContain(view.Explorer.VisibleFilePaths, p => p.StartsWith("Área/", StringComparison.Ordinal));
 
                 // 2. Projetos (holding a picture) + Comece → "Excluir 1 pasta e 1 nota?"; the picture stays with its folder
                 view.ShowNotes();
@@ -88,13 +88,14 @@ public sealed partial class HeadlessUiTests
                 Assert.False(File.Exists(Path.Combine(vault, "Comece.md")));
                 Assert.Equal(new byte[] { 1, 2, 3 }, File.ReadAllBytes(Path.Combine(vault, "Projetos", "Fotos", "foto.png")));
                 Assert.Equal("# Diário\n", File.ReadAllText(Path.Combine(vault, "Diário.md")));
-                Assert.Empty(city.Regions);
+                // the folder that still holds a file that is not a note stays, as on the disk
+                Assert.Equal(["Projetos", "Projetos/Fotos"], view.Library.Folders);
 
-                await UntilMapSaved(view);
-                using (var m = System.Text.Json.JsonDocument.Parse(File.ReadAllText(mapa)))
+                await UntilNotesSaved(view);
+                using (var m = System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(vault, ".urbe", "notas.json"))))
                 {
                     Assert.Equal(new[] { "Diário.md" }, m.RootElement.GetProperty("notas").EnumerateObject().Select(p => p.Name));
-                    Assert.Equal(0, m.RootElement.GetProperty("regioes").GetArrayLength());
+                    Assert.Equal(new[] { "Projetos", "Projetos/Fotos" }, m.RootElement.GetProperty("pastas").EnumerateArray().Select(p => p.GetString()));
                 }
 
                 // 3. Lixeira → Restaurar Velha: the note and its folder come back
@@ -106,7 +107,8 @@ public sealed partial class HeadlessUiTests
                 ClickButtonWithText(row, "Restaurar");
                 await Settled();
                 Assert.Equal("# Velha\n", File.ReadAllText(Path.Combine(vault, "Área", "Antigas", "Velha.md")));
-                Assert.Contains(city.Buildings, b => b.Path == "Área/Antigas/Velha.md");
+                Assert.NotNull(view.Documents.Get("Área/Antigas/Velha.md"));
+                Assert.Contains("Área/Antigas", view.Library.Folders);
                 window.Close();
                 return true;
             }

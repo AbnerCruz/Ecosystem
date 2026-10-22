@@ -70,7 +70,7 @@
       "kind": "human",
       "check": "DEVICE: Android e Windows reais — abrir vault, criar nota, fechar/pausar o app, reabrir: casa e câmera no lugar; .urbe/mapa.json legível pela 1.8.4 instalada",
       "result": "pending",
-      "object": "apps/urbe/csharp/src/Urbe.Core/LegacyCityMap.cs",
+      "object": "https://github.com/AbnerCruz/Ecosystem/blob/urbe-simulacao-congelada/apps/urbe/csharp/src/Urbe.Core/LegacyCityMap.cs",
       "evidence": "Testes headless e em pasta temporária não substituem aparelho (NN-017); SAF real e ciclo de vida Android não exercitados localmente.",
       "critical": false
     }

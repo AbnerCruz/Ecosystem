@@ -1833,6 +1833,44 @@
       "decidedAt": "2026-10-16",
       "record": "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0051",
+      "status": "decided",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Urbe nativo sem a simulação visual; a simulação fica congelada num ramo",
+      "context": "Ordem explícita do proprietário em 2026-10-22, depois de usar a beta 2.0.0-beta.14: a simulação visual (mundo, cidade, vida, decorações) não funciona como produto (peso, espaço). O Urbe continua o mesmo produto de notas Markdown locais.",
+      "question": "Como o Urbe nativo segue depois de a simulação não funcionar como produto?",
+      "alternatives": [
+        {
+          "option": "1 — main = produto sem simulação; simulação congelada no ramo urbe-simulacao-congelada",
+          "consequences": "Código da simulação removido do produto; o Explorer vira a base; ids, datas e pastas das notas passam a .urbe/notas.json; arquivos da cidade do vault preservados sem reescrita; mesma beta atualizada por cima."
+        },
+        {
+          "option": "2 — main mantém a simulação; o produto sem ela num ramo",
+          "consequences": "O desenvolvimento seguiria fora da main, contra o integrador e os pipelines diretos."
+        },
+        {
+          "option": "3 — esconder a simulação atrás de uma opção",
+          "consequences": "Contra a ordem de limpar o código; o peso continuaria no pacote."
+        }
+      ],
+      "consequences": "Opção 1 escolhida pelo proprietário. ADD-0028 registra a ordem e as escolhas; ADR-0034 registra a arquitetura (NoteLibrary, notas.json, Explorer como base, UC-34 executado). PR crítico; fecha só com validação no aparelho (abrir vault, editar, gravar, reabrir sem perda).",
+      "manifestCompatibility": "Cumpre NN-001 (uma autoridade para id/datas/pastas: notas.json), NN-005/NN-013 (sem reescrita de outros produtos; a 1.8.4 JS intacta), NN-009/NN-011 (ordem persistida em adendo e ADR), NN-017/NN-018 (validação no aparelho pendente). Nenhuma dependência nova entre Products ou com o Hub.",
+      "recommendation": "1 — escolha expressa do proprietário, não inferência do agente.",
+      "related": [
+        "docs/governance/addenda/ADD-0028-urbe-sem-simulacao-visual.md",
+        "docs/adr/0034-urbe-sem-simulacao-visual.md",
+        "apps/urbe/docs/csharp/ROADMAP.md",
+        "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md"
+      ],
+      "raisedBy": "Proprietário; registro por Claude Code",
+      "raisedAt": "2026-10-22",
+      "decision": "1 — A main segue como o produto, sem a simulação visual e sem as funcionalidades que só existem por ela. A simulação fica congelada no ramo urbe-simulacao-congelada até o proprietário decidir como substituí-la. O Explorer é a base do app; a mesma beta recebe a atualização sem perda de dados.",
+      "decidedAt": "2026-10-22",
+      "record": "docs/governance/addenda/ADD-0028-urbe-sem-simulacao-visual.md",
+      "consequencesApplied": true
     }
   ]
 }

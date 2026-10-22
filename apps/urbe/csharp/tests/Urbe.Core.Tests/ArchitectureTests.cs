@@ -56,8 +56,9 @@ public sealed class ArchitectureTests
 
     [Theory]
     [InlineData("Urbe.Core", "")]
-    [InlineData("Urbe.UI", "Urbe.Core")]
-    [InlineData("Urbe.App", "Urbe.UI")]
+    [InlineData("Urbe.Client", "Urbe.Core")]
+    [InlineData("Urbe.Desktop", "Urbe.Client")]
+    [InlineData("Urbe.Android", "Urbe.Client")]
     public void ReferencesRespectApprovedBoundaries(string name, string dependency)
     {
         var directory = Path.Combine(Root, "src", name);
@@ -67,34 +68,22 @@ public sealed class ArchitectureTests
         var expected = dependency.Length == 0 ? [] : new[] { Path.Combine(Root, "src", dependency, dependency + ".csproj") };
         Assert.Equal(expected, references);
         Assert.All(references, reference => Assert.True(File.Exists(reference)));
-        // Dependencies added via native/framework packages must not leak to the RCL.
-        if (name == "Urbe.UI") Assert.DoesNotContain(project.Descendants("PackageReference"), reference =>
-            reference.Attribute("Include")!.Value.Contains("Maui", StringComparison.OrdinalIgnoreCase));
     }
 
+    /// <summary>
+    /// ADD-0028 (DEC-0051): the visual simulation (world, city, life, decorations, building looks) left the product and
+    /// the frozen Blazor shell with it. It stays only in the branch urbe-simulacao-congelada; nothing of it comes back
+    /// here without a new order of the owner.
+    /// </summary>
     [Fact]
-    public void NativeBuildCannotReplaceExistingAndroidInstallation()
+    public void TheSimulationIsNotInTheProduct()
     {
-        var project = XDocument.Load(Path.Combine(Root, "src/Urbe.App/Urbe.App.csproj"));
-        Assert.Equal("app.urbe.csharp", project.Descendants("ApplicationId").Single().Value);
-        var version = project.Descendants("ApplicationDisplayVersion").Single().Value;
-        var code = int.Parse(project.Descendants("ApplicationVersion").Single().Value);
-        Assert.Matches(@"^2\.\d+\.\d+-beta\.\d+$", version);
-        Assert.True(code >= 2000001, "O versionCode Android deve ser crescente.");
-        Assert.NotEqual("app.urbe", project.Descendants("ApplicationId").Single().Value);
-        var manifest = XDocument.Load(Path.Combine(Root, "src/Urbe.App/Platforms/Android/AndroidManifest.xml"));
-        XNamespace android = "http://schemas.android.com/apk/res/android";
-        Assert.Equal("false", manifest.Descendants("application").Single().Attribute(android + "allowBackup")?.Value);
-        Assert.DoesNotContain(manifest.Descendants("uses-permission"), permission =>
-            permission.Attribute(android + "name")!.Value.Contains("STORAGE", StringComparison.Ordinal));
-    }
-
-    [Fact]
-    public void NativeAppComposesCanonicalRazorRoot()
-    {
-        var native = XDocument.Load(Path.Combine(Root, "src/Urbe.App/MainPage.xaml"));
-        var root = native.Descendants().Single(element => element.Name.LocalName == "RootComponent");
-        Assert.Equal("{x:Type ui:UrbeRoutes}", root.Attribute("ComponentType")?.Value);
-        Assert.Equal("clr-namespace:Urbe.UI;assembly=Urbe.UI", native.Root!.GetNamespaceOfPrefix("ui")!.NamespaceName);
+        foreach (var gone in new[] { "Urbe.UI", "Urbe.App", "Urbe.Web" })
+            Assert.False(Directory.Exists(Path.Combine(Root, "src", gone)), "src/" + gone + " voltou");
+        string[] simulation = ["LegacyCity", "LegacyWorld", "LegacyTile", "LegacyChunk", "LegacyVillager", "LegacyFauna", "LegacyVegetation",
+            "LegacyTerrain", "LegacyTexturePack", "LegacyGroundStyle", "TownKids", "TownTrades", "WorldPrefs", "WorldDecoration", "WorldProjection", "LinkFocus"];
+        var types = typeof(ProductIdentity).Assembly.GetTypes().Select(t => t.Name);
+        Assert.DoesNotContain(types, t => simulation.Any(s => t.StartsWith(s, StringComparison.Ordinal)));
+        Assert.False(Directory.Exists(Path.Combine(Root, "src", "Urbe.Client", "World")), "src/Urbe.Client/World voltou");
     }
 }

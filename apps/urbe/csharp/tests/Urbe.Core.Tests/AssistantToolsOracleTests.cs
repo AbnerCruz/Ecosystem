@@ -60,7 +60,7 @@ public sealed class AssistantToolsOracleTests
         {
             var mine = AssistantTools.Get((string)t!["name"]!)!;
             Assert.Equal((string)t["access"]!, mine.Access);
-            Assert.Equal((string)t["description"]!, mine.Description);
+            Assert.Equal(WithoutTheCity.Native((string)t["description"]!), mine.Description);
             Assert.Equal(S(t["parameters"]), S(mine.Parameters));
         }
     }

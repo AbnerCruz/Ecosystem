@@ -162,7 +162,7 @@ public sealed class LegacyTrash
         _items.Clear();
         if (root["items"] is not JsonArray items) return;
         foreach (var node in items)
-            if (node is JsonObject item && item["document"] is JsonObject doc && LegacyCityMap.Truthy(doc["id"]))
+            if (node is JsonObject item && item["document"] is JsonObject doc && Pages.PageEngine.Truthy(doc["id"]))
                 Set(JsString(doc["id"]), (JsonObject)item.DeepClone());
     }
 

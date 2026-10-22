@@ -20,7 +20,7 @@ public interface IUrbeVaultStorage
     /// <summary>Rewrites ONE existing user text file of any editable text type (e.g. tema.json).</summary>
     Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default);
 
-    /// <summary>Creates ONE user folder (a "Nova pasta" / drawn region), and the folders above it, inside
+    /// <summary>Creates ONE user folder (a "Nova pasta"), and the folders above it, inside
     /// the vault. Never inside .urbe/ or any hidden folder; an existing folder is accepted, a file with
     /// that name is refused. No file of the vault is touched. Hosts must override it.</summary>
     Task CreateDirectoryAsync(string path, CancellationToken cancellationToken = default) =>
@@ -89,7 +89,7 @@ public interface IUrbeVaultStorage
             .Contains(System.IO.Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Renames ONE folder of the vault (a neighbourhood renamed: openRegionEditDialog → confirmRegion), keeping it in
+    /// Renames ONE folder of the vault (Renomear pasta in the Explorer), keeping it in
     /// the same parent: <paramref name="from"/> and <paramref name="to"/> differ only in the last name. With the same
     /// safeguards as moving a note: nothing changed outside the Urbe since the open, nothing with the new name already
     /// there, and afterwards every file read back identical under the new path. A host that cannot rename throws.
@@ -218,7 +218,7 @@ public interface IUrbeVaultStorage
 
     /// <summary>
     /// Rewrites .urbe/trash.v2.json alone (a note restored, an item excluded for good, the trash emptied), with the same
-    /// safeguards as the map: nothing changed outside Urbe, a trash of another version or a vault that may not be
+    /// safeguards as a note: nothing changed outside Urbe, a trash of another version or a vault that may not be
     /// written is never rewritten, the bytes are verified and every file of the vault too. Hosts must override it.
     /// </summary>
     Task SaveTrashAsync(string trashJson, CancellationToken cancellationToken = default) =>
@@ -255,7 +255,7 @@ public interface IUrbeVaultStorage
 
     /// <summary>
     /// Rewrites .urbe/identity.json (identity.js: {version:1, docs:{id:{path, fingerprint, seen}}}), the derived record
-    /// that lets a note renamed outside the app keep its house, with the trash's safeguards. Hosts must override it.
+    /// that lets a note renamed outside the app keep its id, with the trash's safeguards. Hosts must override it.
     /// </summary>
     Task SaveIdentityAsync(byte[] identityJson, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException("Este armazenamento ainda não grava a identidade das notas.");
@@ -336,85 +336,26 @@ public interface IUrbeVaultStorage
     }
 
     /// <summary>
-    /// Rewrites .urbe/mundo.json (what the native app adds to the city, DEC-0045, UC-41) alone, with the trash's
-    /// safeguards. A file of a newer version is never written over. Hosts must override it.
+    /// Rewrites .urbe/notas.json (the notes' ids, dates and folders: NoteLibrary, ADD-0028) alone, with the trash's
+    /// safeguards: a record of a newer version, a protected vault or an interrupted operation is never written, the bytes
+    /// are verified and every file of the vault too. Hosts must override it.
     /// </summary>
-    Task SaveWorldAsync(string json, CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException("Este armazenamento ainda não grava o mundo.");
+    Task SaveNotesRecordAsync(string json, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento ainda não grava o registro das notas.");
 
-    /// <summary>
-    /// layout-guard.js writeBackup (REQ-043): before the city is reorganized, a copy of the map as it is now goes to
-    /// .urbe/backup/&lt;AAAAMMDD-HHMMSS&gt;-layout-layout/files/urbe/mapa.json, then its manifest.json (backup.js
-    /// create, the format workspace.restoreBackup reads). Only new files; nothing existing is touched. Hosts must
-    /// override it.
-    /// </summary>
-    Task<string> SaveLayoutBackupAsync(string mapJson, DateTimeOffset now, string reason = "reorganizar", CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException("Este armazenamento ainda não grava cópias de segurança do mapa.");
-
-    /// <summary>backup.js create(adapter, vault, ['.urbe/mapa.json'], {from:'layout', to:'layout', reason, contents}):
-    /// the folder (a "-2", "-3"… when one of that second exists), the copy and the manifest.</summary>
-    static (string Directory, (string Path, byte[] Bytes) Copy, (string Path, byte[] Bytes) Manifest) PlanLayoutBackup(
-        IReadOnlyList<VaultFile> files, string mapJson, DateTimeOffset now, string reason = "reorganizar")
-    {
-        ArgumentNullException.ThrowIfNull(files);
-        ArgumentNullException.ThrowIfNull(mapJson);
-        var snapshot = VaultReader.Read(files);
-        if (snapshot.IsReadOnly || snapshot.IsMapReadOnly || snapshot.RecoveredFromJournal)
-            throw new InvalidOperationException("Vault protegido ou operação interrompida: escrita recusada.");
-        var paths = new HashSet<string>(files.Select(f => f.Path), StringComparer.OrdinalIgnoreCase);
-        var baseDir = ".urbe/backup/" + now.UtcDateTime.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture) + "-layout-layout";
-        var dir = baseDir;
-        for (int n = 2; paths.Contains(dir + "/manifest.json"); n++) dir = baseDir + "-" + n;
-        var copyPath = dir + "/files/urbe/mapa.json";
-        if (paths.Contains(copyPath)) throw new IOException("A cópia de segurança já existe: " + copyPath);
-        var bytes = System.Text.Encoding.UTF8.GetBytes(mapJson);
-        var manifest = new System.Text.Json.Nodes.JsonObject
-        {
-            ["version"] = 1,
-            ["from"] = "layout",
-            ["to"] = "layout",
-            ["reason"] = reason,
-            ["at"] = now.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", System.Globalization.CultureInfo.InvariantCulture),
-            ["files"] = new System.Text.Json.Nodes.JsonArray(new System.Text.Json.Nodes.JsonObject
-            {
-                ["path"] = ".urbe/mapa.json",
-                ["size"] = mapJson.Length,   // JS text.length
-                ["sha256"] = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(bytes))
-            }),
-            ["absent"] = new System.Text.Json.Nodes.JsonArray()
-        };
-        // JSON.stringify(manifest, null, 1)
-        var text = manifest.ToJsonString(new System.Text.Json.JsonSerializerOptions
-        {
-            WriteIndented = true, IndentSize = 1, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-        });
-        return (dir, (copyPath, bytes), (dir + "/manifest.json", System.Text.Encoding.UTF8.GetBytes(text)));
-    }
-
-    /// <summary>The checks of a mundo.json rewrite: a JSON object with "versao" this app knows, never over a newer file.</summary>
-    static (string Path, byte[] Bytes) PlanWorldWrite(IReadOnlyList<VaultFile> files, string json)
+    /// <summary>The checks of a notas.json rewrite: a record of the version this app knows, never over a newer file.</summary>
+    static (string Path, byte[] Bytes) PlanNotesRecordWrite(IReadOnlyList<VaultFile> files, string json)
     {
         ArgumentNullException.ThrowIfNull(files);
         ArgumentNullException.ThrowIfNull(json);
         var snapshot = VaultReader.Read(files);
-        var existing = files.FirstOrDefault(f => string.Equals(f.Path, WorldPrefs.FilePath, StringComparison.OrdinalIgnoreCase));
-        var path = existing?.Path ?? WorldPrefs.FilePath;
+        var existing = files.FirstOrDefault(f => string.Equals(f.Path, NoteLibrary.Path, StringComparison.OrdinalIgnoreCase));
+        var path = existing?.Path ?? NoteLibrary.Path;
         if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal)
             throw new InvalidOperationException("Vault protegido ou operação interrompida: escrita recusada.");
-        if (existing is not null)
-        {
-            WorldPrefs.Parse(System.Text.Encoding.UTF8.GetString(existing.Bytes.Span), out var newer);
-            if (newer) throw new InvalidOperationException("O mundo desta cidade é de uma versão mais nova do Urbe: escrita recusada.");
-        }
-        try
-        {
-            using var doc = System.Text.Json.JsonDocument.Parse(json);
-            if (doc.RootElement.ValueKind != System.Text.Json.JsonValueKind.Object ||
-                !doc.RootElement.TryGetProperty("versao", out var v) || v.GetInt32() != WorldPrefs.Version)
-                throw new InvalidDataException("mundo.json inválido.");
-        }
-        catch (Exception ex) when (ex is System.Text.Json.JsonException or FormatException or InvalidOperationException)
-        { throw new InvalidDataException("mundo.json inválido."); }
+        if (existing is not null && NoteLibrary.IsFuture(System.Text.Encoding.UTF8.GetString(existing.Bytes.Span)))
+            throw new InvalidOperationException("O registro das notas é de uma versão mais nova do Urbe: escrita recusada.");
+        if (!NoteLibrary.IsRecord(json)) throw new InvalidDataException("notas.json inválido.");
         return (path, System.Text.Encoding.UTF8.GetBytes(json));
     }
 
@@ -425,53 +366,6 @@ public interface IUrbeVaultStorage
             throw new InvalidDataException("Caminho inválido no vault: " + path);
         if (path.Split('/').Any(s => s.Length == 0 || s is "." or ".." || s.StartsWith('.') || s.EndsWith(' ') || s.EndsWith('.')))
             throw new InvalidOperationException("Caminho interno ou inseguro no vault: " + path);
-    }
-
-    /// <summary>
-    /// Writes .urbe/mapa.json, and only it (workspace.js is its single writer in 1.8.4, REQ-040),
-    /// with the same safeguards as a note: nothing changed outside Urbe since the open, a map of a
-    /// future/unknown format or a read-only vault is never rewritten, the canonical writer
-    /// (VaultWriter.Plan with MetadataJson) must produce exactly <paramref name="json"/>, a recovery
-    /// copy is kept while replacing, and every file of the vault is verified afterwards.
-    /// </summary>
-    Task SaveMapAsync(string json, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// The bytes of .urbe/mapa.json the canonical writer plans for <paramref name="json"/> on these
-    /// files, refusing what the 1.8.4 refuses (vault.json of a future format, mapa.json of a future or
-    /// unknown version). Returns the existing path of the map (its case on disk) or the default path.
-    /// </summary>
-    static (string Path, byte[] Bytes) PlanMapWrite(IReadOnlyList<VaultFile> files, string json)
-    {
-        ArgumentNullException.ThrowIfNull(files);
-        ArgumentNullException.ThrowIfNull(json);
-        var snapshot = VaultReader.Read(files);
-        if (snapshot.IsReadOnly)
-            throw new InvalidOperationException("Formato futuro de vault: escrita recusada.");
-        if (snapshot.IsMapReadOnly || snapshot.FutureFiles.Contains(LegacyCityMap.Path, StringComparer.OrdinalIgnoreCase))
-            throw new InvalidOperationException("O mapa da cidade é de um formato futuro ou desconhecido: escrita recusada.");
-        // The 1.8.4 applies an interrupted operation's journal as a whole (every file) before anything
-        // else; writing only the map over it is not that, so it is refused.
-        if (snapshot.RecoveredFromJournal)
-            throw new InvalidOperationException("Há uma operação interrompida (diário de recuperação) neste vault: escrita do mapa recusada.");
-        var documents = snapshot.Documents.Where(d => d.Text is not null)
-            .Select(d => new VaultWriteDocument(d.Id, d.Path, d.Text!))
-            .ToList();
-        var plan = VaultWriter.Plan(new VaultWriteRequest
-        {
-            Files = files,
-            Documents = documents,
-            MetadataJson = json,
-            AppVersion = "urbe-native-preview"
-        });
-        var path = files.FirstOrDefault(f => string.Equals(f.Path, LegacyCityMap.Path, StringComparison.OrdinalIgnoreCase))?.Path
-                   ?? LegacyCityMap.Path;
-        if (!plan.Writable || !plan.Files.TryGetValue(path, out var planned))
-            throw new InvalidOperationException("O plano canônico recusou o mapa.");
-        var bytes = planned.Bytes.ToArray();
-        if (!bytes.AsSpan().SequenceEqual(System.Text.Encoding.UTF8.GetBytes(json)))
-            throw new InvalidDataException("O plano canônico modificaria o mapa inesperadamente.");
-        return (path, bytes);
     }
 
     /// <summary>The user files Urbe may write: the 1.8.4 text types, inside the vault, never in
