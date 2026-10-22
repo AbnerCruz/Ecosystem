@@ -13,6 +13,7 @@ public static partial class AppDocs
     public static IReadOnlyList<CityNote> Load() =>
     [
         new(LegacyTutorial.Start, ComeceAqui),
+        new("Tutorial/Escrever/Área de trabalho.md", AreaDeTrabalho),
         new("Tutorial/Escrever/Explorer.md", Explorer),
         new("Tutorial/Escrever/Editor.md", Editor),
         new("Tutorial/Escrever/Modelos.md", Modelos),
@@ -23,6 +24,31 @@ public static partial class AppDocs
         new("Tutorial/Ajustes/Backups, exportar e restaurar.md", Backups),
         new("Tutorial/Ajustes/Atalhos.md", Atalhos),
     ];
+
+    private const string AreaDeTrabalho = """
+        # Área de trabalho
+
+        A Área de trabalho é a tela de base do Urbe. Cada **projeto** (uma pasta no topo da sua pasta de notas) é uma caixa de vidro na sua cor, com as notas e os arquivos mais recentes à vista; as notas soltas na raiz ficam em **Soltas**.
+
+        ## Abrir e procurar
+
+        - Toque numa caixa (ou em **Ver tudo**) para abrir o catálogo do projeto, com o caminho de volta no alto.
+        - A busca procura em todos os projetos, ou só no aberto. Embaixo dela: tipos (Notas, Páginas, Imagens, PDF, Mídia), as tags mais usadas, a **ordem** (recentes, nome, criação) e **grade ou lista**. Cada caixa lembra a sua ordem e o seu modo.
+        - Toque num cartão para abrir a nota; **segure** (ou clique com o botão direito) para ver onde ela está, quando foi criada e mudada, quantas palavras tem, as ligações e as tags, com Abrir, Renomear, Mover para, Duplicar, Favoritar e Mover para a lixeira.
+
+        ## Organizar as caixas
+
+        - O **⋯** de um projeto tem **Aparência da caixa** (cor, borda contínua, tracejada, dupla ou com brilho, e ícone) e **Mover caixa** para antes ou depois. Isso fica em `.urbe/area.json`, que só guarda a aparência: as pastas continuam sendo o que vale.
+        - No computador, arraste um cartão até outra caixa para mover a nota para aquele projeto, e arraste o cabeçalho de uma caixa sobre outra para trocar a ordem.
+
+        ## A barra lateral
+
+        - No alto: **Favoritos** e **Recentes**, depois os **projetos** em árvore, com linhas que mostram os níveis.
+        - No computador, arraste a borda da barra para mudar a largura, e o botão de **Pastas** recolhe e devolve a barra. No celular, ela abre como uma gaveta pelo botão **Pastas** ou deslizando da borda esquerda; tocar fora fecha.
+        - Para renomear no lugar: segure a linha e toque em **Renomear** (ou F2 no computador). Enter confirma, Esc desiste.
+
+        A **Constelação** (a estrela no alto da Área de trabalho) mostra as notas como um céu: veja [[Editor]].
+        """;
 
     private const string ComeceAqui = """
         # Comece aqui
@@ -42,9 +68,11 @@ public static partial class AppDocs
 
         ## Por onde seguir
 
-        - [[Explorer]] e [[Editor]]: escrever e organizar.
+        - [[Área de trabalho]], [[Explorer]] e [[Editor]]: escrever e organizar.
         - [[Modelos]]: notas que começam prontas.
         - [[Atalhos]]: os atalhos de teclado.
+
+        Na primeira vez, a **Configuração inicial** leva pela pasta, pelo tema e pelo Assistente; ela pode ser refeita em **Configurações → Configuração inicial**.
 
         Use a **busca** no alto do índice deste tutorial para achar qualquer assunto, e **Anterior / Próximo** para ler em sequência.
         """;
