@@ -15,6 +15,24 @@ public enum WorkspaceItemKind
 public sealed record WorkspaceItem(string Path, string Title, string Folder, WorkspaceItemKind Kind, string? Modified, string Snippet)
 {
     public bool IsNote => Kind == WorkspaceItemKind.Note;
+    /// <summary>When the note was made (files: unknown).</summary>
+    public string? Created { get; init; }
+    /// <summary>The note's tags, without the #.</summary>
+    public IReadOnlyList<string> Tags { get; init; } = [];
+}
+
+/// <summary>A note for the Área de trabalho: its path, title, text, dates and tags as the vault has them.</summary>
+public sealed record WorkspaceNote(string Path, string? Title, string? Content, string? Modified, string? Created = null, IReadOnlyList<string>? Tags = null);
+
+/// <summary>How a box's items are ordered (UC-84 fatia 3).</summary>
+public enum WorkspaceOrder
+{
+    /// <summary>Most recently changed first.</summary>
+    Recent,
+    /// <summary>By title.</summary>
+    Name,
+    /// <summary>Most recently made first.</summary>
+    Created
 }
 
 /// <summary>A folder as a box: its name, its colour, how many items it holds (with its subfolders) and when one last changed.</summary>
@@ -36,12 +54,18 @@ public sealed class WorkspaceIndex
     private readonly List<WorkspaceItem> _all = [];
 
     public WorkspaceIndex(IEnumerable<(string Path, string? Title, string? Content, string? Modified)> notes, IEnumerable<string>? files = null, IEnumerable<string>? folders = null)
+        : this(notes.Select(n => new WorkspaceNote(n.Path, n.Title, n.Content, n.Modified)), files, folders) { }
+
+    public WorkspaceIndex(IEnumerable<WorkspaceNote> notes, IEnumerable<string>? files = null, IEnumerable<string>? folders = null)
     {
         ArgumentNullException.ThrowIfNull(notes);
         _children[""] = new SortedSet<string>(StringComparer.CurrentCultureIgnoreCase);
         foreach (var f in folders ?? []) AddFolder(f.Trim('/'));
-        foreach (var (path, title, content, modified) in notes)
-            Add(new WorkspaceItem(path, string.IsNullOrWhiteSpace(title) ? NameOf(path) : title!, NoteLibrary.FolderOf(path), KindOf(path), modified, Snippet(content)));
+        foreach (var n in notes)
+            Add(new WorkspaceItem(n.Path, string.IsNullOrWhiteSpace(n.Title) ? NameOf(n.Path) : n.Title!, NoteLibrary.FolderOf(n.Path), KindOf(n.Path), n.Modified, Snippet(n.Content))
+            {
+                Created = n.Created, Tags = n.Tags?.Select(t => t.TrimStart('#')).Where(t => t.Length > 0).ToArray() ?? []
+            });
         foreach (var path in files ?? [])
             Add(new WorkspaceItem(path, NameOf(path), NoteLibrary.FolderOf(path), KindOf(path), null, ""));
         foreach (var list in _direct.Values) list.Sort(Recent);
@@ -86,6 +110,27 @@ public sealed class WorkspaceIndex
         return [.. pool.Where(i => { var hay = Fold(i.Title + " " + NameOf(i.Path)); return words.All(w => hay.Contains(w, StringComparison.Ordinal)); })
             .OrderBy(i => i, Comparer<WorkspaceItem>.Create(Recent))];
     }
+
+    /// <summary>
+    /// UC-84 fatia 3: the items of a kind and with a tag (either may be null: any), in the order asked. Ties keep the
+    /// order by title, so a list never shuffles between two looks.
+    /// </summary>
+    public static IReadOnlyList<WorkspaceItem> Arrange(IEnumerable<WorkspaceItem> items, WorkspaceItemKind? kind = null, string? tag = null, WorkspaceOrder order = WorkspaceOrder.Recent)
+    {
+        var picked = items.Where(i => (kind is null || i.Kind == kind) && (tag is null || i.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase)));
+        var byTitle = StringComparer.Create(System.Globalization.CultureInfo.CurrentCulture, ignoreCase: true);
+        return order switch
+        {
+            WorkspaceOrder.Name => [.. picked.OrderBy(i => i.Title, byTitle).ThenBy(i => i.Path, StringComparer.Ordinal)],
+            WorkspaceOrder.Created => [.. picked.OrderByDescending(i => i.Created ?? "", StringComparer.Ordinal).ThenBy(i => i.Title, byTitle)],
+            _ => [.. picked.OrderByDescending(i => i.Modified ?? "", StringComparer.Ordinal).ThenBy(i => i.Title, byTitle)]
+        };
+    }
+
+    /// <summary>The tags used in a folder and its subfolders, the most used first (then by name).</summary>
+    public IReadOnlyList<string> TagsIn(string folder) =>
+        [.. Inside(folder).SelectMany(i => i.Tags).GroupBy(t => t, StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(g => g.Count()).ThenBy(g => g.Key, StringComparer.CurrentCultureIgnoreCase).Select(g => g.First())];
 
     /// <summary>The project a path belongs to (its top folder), or "" at the root.</summary>
     public static string ProjectOf(string path)

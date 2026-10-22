@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using Urbe.Client;
+using Urbe.Core;
 
 namespace Urbe.Client.Tests;
 
@@ -216,6 +217,65 @@ public sealed partial class HeadlessUiTests
                 ClickButtonWithText(view.Dialogs, "Abrir");
                 for (int i = 0; i < 40 && !view.Editor.IsVisible; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
                 Assert.Equal("Personagens/Herói.md", view.Editor.Current!.Path);
+                window.Close();
+                return true;
+            }
+            finally
+            {
+                UrbeApp.LocalStatePath = previous;
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task Workspace_FiltersByKindAndTagOrdersAndShowsAsAList() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-area-filter-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            File.WriteAllText(Path.Combine(vault, "Personagens", "Herói.md"), "# Herói\n\nAlto, de uma região do norte. #protagonista\n");
+            File.WriteAllBytes(Path.Combine(vault, "Personagens", "retrato.png"), [0x89, 0x50, 0x4E, 0x47]);
+            var previous = UrbeApp.LocalStatePath;
+            UrbeApp.LocalStatePath = Path.Combine(dir, "app", "notes-state.json");
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 412, Height = 860, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                var w = view.Workspace;
+                List<string?> Shown() => w.GetLogicalDescendants().OfType<Button>().Where(b => b.IsEffectivelyVisible && ToolTip.GetTip(b) is string tip && tip.Contains('/', StringComparison.Ordinal) || ToolTip.GetTip(b) as string == "Comece.md")
+                    .Select(AutomationProperties.GetName).ToList();
+
+                // the box of a project: its kinds as chips; Imagens shows only the picture
+                w.Open("Personagens");
+                Assert.Contains(w.GetLogicalDescendants().OfType<Button>(), b => AutomationProperties.GetName(b) == "Imagens");
+                Click(Named(w, "Imagens"));
+                Assert.Equal(["retrato.png"], Shown());
+                // a tag of the box
+                Click(Named(w, "Tudo"));
+                Click(Named(w, "#protagonista"));
+                Assert.Equal(["Herói"], Shown());
+                Click(Named(w, "#protagonista"));   // again: off
+                Assert.Null(w.TagFilter);
+
+                // the order: recentes → nome → criação
+                w.Open("Matemática/curso de calculo");
+                Click(Named(w, "Ordem"));
+                Assert.Equal(WorkspaceOrder.Name, w.Order);
+                Assert.Equal(["Matriz curricular", "Plano de Aulas"], Shown());
+                // as a list: rows instead of cards
+                Click(Named(w, "Ver em lista"));
+                Assert.True(w.AsList);
+                Assert.All(w.GetLogicalDescendants().OfType<Button>().Where(b => ToolTip.GetTip(b) is string t && t.StartsWith("Matemática/", StringComparison.Ordinal) && t.EndsWith(".md", StringComparison.Ordinal)),
+                    b => Assert.Equal(56, b.MinHeight));
+                Snapshot(window, "native-area-list.png");
+
+                // at the root, a kind looks in every project, grouped by box
+                w.Open("");
+                w.KindFilter = WorkspaceItemKind.Image;
+                Assert.Equal(["retrato.png"], Shown());
                 window.Close();
                 return true;
             }

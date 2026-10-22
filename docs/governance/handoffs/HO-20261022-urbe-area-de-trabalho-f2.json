@@ -26,14 +26,15 @@
     "docs/governance/handoffs/HO-20261022-urbe-area-de-trabalho-f2.json"
   ],
   "work_completed": [
-    "UC-84 fatia 2: segurar um cartão da Área de trabalho (ou clicar com o botão direito) abre a folha da nota sem abri-la. A folha traz a pasta, as datas, as palavras, quantas ela cita e por quantas é citada, e as tags. As ações são Abrir, Renomear, Mover para, Duplicar, Favoritar ou Tirar dos favoritos, e Mover para a lixeira, as mesmas operações do Explorer. Um arquivo que não é nota mostra as suas próprias ações. ExplorerState ganhou Unfavorite."
+    "UC-84 fatia 2: segurar um cartão da Área de trabalho (ou clicar com o botão direito) abre a folha da nota sem abri-la. A folha traz a pasta, as datas, as palavras, quantas ela cita e por quantas é citada, e as tags. As ações são Abrir, Renomear, Mover para, Duplicar, Favoritar ou Tirar dos favoritos, e Mover para a lixeira, as mesmas operações do Explorer. Um arquivo que não é nota mostra as suas próprias ações. ExplorerState ganhou Unfavorite.",
+    "UC-84 fatia 3: filtros sob a busca, na raiz e na caixa aberta. Os tipos presentes e as tags mais usadas aparecem como etiquetas; com um filtro, a caixa inclui as subpastas e a raiz agrupa por projeto. A ordem pode ser por recentes, nome ou criação (WorkspaceIndex.Arrange). A grade pode virar lista, com linhas que se tocam e se seguram como os cartões. WorkspaceIndex passa a receber WorkspaceNote, com a data de criação e as tags."
   ],
   "verification": [
     {
       "kind": "automated",
       "check": "dotnet test Urbe.Core.Tests e Urbe.Client.Tests",
       "result": "passed",
-      "evidence": "AHeldNoteTellsWhereWhenHowLongAndHowLinked e Workspace_HoldingACardShowsItsInformationAndActions, mais as suítes completas."
+      "evidence": "AHeldNoteTellsWhereWhenHowLongAndHowLinked e Workspace_HoldingACardShowsItsInformationAndActions, mais as suítes completas. Fatia 3: ItemsAreFilteredByKindAndTagAndOrdered e Workspace_FiltersByKindAndTagOrdersAndShowsAsAList."
     },
     {
       "kind": "human",
@@ -46,7 +47,7 @@
   "known_issues": [],
   "blockers": [],
   "next_actions": [
-    "UC-84 fatia 3: filtros por tipo e tag, ordem e grid ou lista."
+    "UC-85: personalizar e organizar as caixas (.urbe/area.json), ou o próximo item do ROADMAP."
   ],
   "decisions_required": [],
   "normative_sources": [

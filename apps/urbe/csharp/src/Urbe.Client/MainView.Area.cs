@@ -72,7 +72,7 @@ public sealed partial class MainView
         var notes = _contents.Select(n =>
         {
             var doc = _store?.Get(n.Key);
-            return (n.Key, doc?.Title, (string?)n.Value, doc?.Modified ?? doc?.Created);
+            return new WorkspaceNote(n.Key, doc?.Title, n.Value, doc?.Modified ?? doc?.Created, doc?.Created, doc?.Tags);
         }).ToList();
         var files = new HashSet<string>(_attachments, StringComparer.Ordinal);
         files.ExceptWith(_contents.Keys);
