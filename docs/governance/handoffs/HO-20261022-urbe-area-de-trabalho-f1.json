@@ -1,0 +1,104 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-area-de-trabalho-f1",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T13:43:07Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-84",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "dd43041f",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/ConnectionsPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Area.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/WorkspaceView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/WorkspaceIndex.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorChromeUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/NotesTreeUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/StartupSessionUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/TouchDebugUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/TouchIntentUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/UxFoundationUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/WorkspaceUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/WorkspaceIndexTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261022-urbe-area-de-trabalho-f1.json"
+  ],
+  "work_completed": [
+    "UC-84 fatia 1 (DEC-0053, ADD-0030): a Área de trabalho é a base do app. WorkspaceIndex (Core) monta os projetos (pastas do topo), as subpastas, os itens mais recentes, a busca sem acento e a cor estável de cada projeto, a mesma das Conexões. WorkspaceView (Client) mostra: caixas de vidro com a borda na cor do projeto e o grid de cartões; Soltas; + Novo projeto; a caixa aberta com o caminho de volta, as subpastas, os itens de 60 em 60 e a busca na caixa; e a busca na raiz agrupada por caixa.",
+    "UC-83 primeira fatia: no computador, o Explorer fica fixo à esquerda (320 dp) ao lado da Área de trabalho. No celular, abre por cima pelo botão Pastas, com Fechar, e fecha ao escolher uma nota. O botão Notas do dock volta para a raiz da Área de trabalho, e no celular o cabeçalho tem Configurações.",
+    "Testes que supunham o Explorer como base no celular foram atualizados para a nova base (abrem a gaveta antes de usar a árvore). AppDocs descreve a Área de trabalho. ROADMAP: UC-83 e UC-84 com o que foi feito e o que falta."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests e Urbe.Client.Tests; dotnet build Urbe.Portable.slnx -c Release",
+      "result": "passed",
+      "evidence": "Core 640 de 640 (WorkspaceIndexTests, 5); Client 193 de 193 (Workspace_*, 3, com toque nas caixas, nos cartões, nas migalhas e na busca); Release sem avisos. Prints no headless do celular e do computador conferidos."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: abrir na Área de trabalho, ver os projetos como caixas com as notas recentes, abrir uma caixa e voltar, buscar, abrir uma nota por um cartão, Pastas abre a árvore e Fechar volta; Novo projeto cria a pasta",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/WorkspaceView.cs"
+    }
+  ],
+  "known_issues": [
+    "Sem data nos cartões quando o registro da nota não tem data de modificação (vault novo).",
+    "Segurar um cartão (informações e ações), filtros e ordem, arrastar entre caixas e a personalização das caixas (.urbe/area.json) são as próximas fatias (UC-84 fatias 2 a 4, UC-85)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Abrir o PR depois da integração do #652 (beta.17).",
+    "UC-84 fatia 2: segurar um cartão abre informações e ações."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
+    "docs/governance/addenda/ADD-0026-urbe-experiencia-de-usuario-topo-de-linha.md",
+    "apps/urbe/docs/csharp/UX.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A Área de trabalho é uma visão montada das pastas e arquivos (WorkspaceIndex), nunca gravada; as cores vêm do nome da pasta. Nada novo no vault."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Só apps/urbe."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "A mudança da base do app segue a DEC-0053 decidida pelo proprietário."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Layout, toque e leitura das caixas dependem do aparelho; UC-83 e UC-84 ficam [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "workspace-index",
+      "status": "product-specific",
+      "rationale": "Visão das pastas do vault do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Cliente e núcleo do Urbe, testes, documentação do app e roadmap; nenhum csproj, workflow, adendo, decisão ou arquivo de vault."
+  }
+}

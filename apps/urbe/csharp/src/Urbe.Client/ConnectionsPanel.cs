@@ -126,8 +126,10 @@ public sealed class ConnectionsPanel : Border
 /// </summary>
 public sealed class ConnectionsGraph : Control
 {
-    private static readonly Color[] Palette =
-        new[] { "#8fb3ff", "#7fdca6", "#f1c46e", "#c3a6ff", "#ff9fb4", "#7fd0e6", "#e8b48c", "#b5d97a" }.Select(Color.Parse).ToArray();
+    /// <summary>The projects' colours (<see cref="WorkspaceIndex.ColorOf"/>), shared with the Área de trabalho.</summary>
+    public static readonly IReadOnlyList<string> PaletteHex = ["#8fb3ff", "#7fdca6", "#f1c46e", "#c3a6ff", "#ff9fb4", "#7fd0e6", "#e8b48c", "#b5d97a"];
+
+    private static readonly Color[] Palette = PaletteHex.Select(Color.Parse).ToArray();
 
     private LinkGraphView? _view;
 
@@ -156,8 +158,7 @@ public sealed class ConnectionsGraph : Control
     public static Color FolderColor(string folder)
     {
         if (folder.Length == 0) return Color.Parse("#cfd6e4");
-        var top = folder.Split('/')[0];
-        return Palette[LinkGraph.Hash(top) % (uint)Palette.Length];
+        return Palette[WorkspaceIndex.ColorOf(folder)];
     }
 
     /// <summary>Where a neighbour is drawn, in this control's coordinates (tests and taps).</summary>

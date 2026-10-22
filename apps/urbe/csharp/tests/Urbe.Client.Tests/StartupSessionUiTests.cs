@@ -55,7 +55,7 @@ public sealed partial class HeadlessUiTests
         }, CancellationToken.None));
 
     [Fact]
-    public async Task Startup_WithoutSessionOpensTheExplorer() =>
+    public async Task Startup_WithoutSessionOpensTheAreaDeTrabalho() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
         {
             var dir = Path.Combine(Path.GetTempPath(), "urbe-startup-" + Guid.NewGuid().ToString("N"));
@@ -76,7 +76,9 @@ public sealed partial class HeadlessUiTests
                 window2.Show();
                 await again.InitializeAsync();
                 Assert.False(again.Editor.IsVisible);
-                Assert.True(again.Explorer.IsVisible);
+                Assert.True(again.Workspace.IsVisible);   // DEC-0053: the base; on a phone the Explorer is the drawer
+                Assert.False(again.Explorer.IsVisible);
+                Assert.Equal(12, again.Workspace.Index.Count);
                 Assert.NotNull(again.Documents);
                 window2.Close();
                 return true;
