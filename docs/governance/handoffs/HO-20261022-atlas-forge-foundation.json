@@ -1,0 +1,256 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-atlas-forge-foundation",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T20:07:16.473576Z",
+  "agent": {
+    "id": "codex-atlas-forge",
+    "kind": "ai-agent"
+  },
+  "task_id": "AF-001",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "codex/atlas-forge-foundation",
+  "base_commit": "64cb8d121eec5ff834112e3f5c0a712e27868290",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/658",
+  "files_changed": [
+    ".github/workflows/atlas-forge-checks.yml",
+    "ROADMAP.md",
+    "docs/adr/0035-atlas-forge-incorporacao-gradual.md",
+    "docs/adr/README.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261022-atlas-forge-foundation.json",
+    "docs/proposals/atlas-forge/.gitignore",
+    "docs/proposals/atlas-forge/MISSION.md",
+    "docs/proposals/atlas-forge/README.md",
+    "docs/proposals/atlas-forge/ROADMAP.md",
+    "docs/proposals/atlas-forge/SPEC.md",
+    "docs/proposals/atlas-forge/docs/AUDIT.md",
+    "docs/proposals/atlas-forge/docs/FORMAT.md",
+    "docs/proposals/atlas-forge/docs/GUIDE.md",
+    "docs/proposals/atlas-forge/docs/MODELS.md",
+    "docs/proposals/atlas-forge/docs/VERIFICATION.md",
+    "docs/proposals/atlas-forge/docs/evidence/benchmark.txt",
+    "docs/proposals/atlas-forge/docs/evidence/browser-report.json",
+    "docs/proposals/atlas-forge/docs/evidence/desktop.png",
+    "docs/proposals/atlas-forge/docs/evidence/globe.png",
+    "docs/proposals/atlas-forge/docs/evidence/mobile.png",
+    "docs/proposals/atlas-forge/docs/evidence/offline-viewer.png",
+    "docs/proposals/atlas-forge/docs/evidence/render-benchmark.txt",
+    "docs/proposals/atlas-forge/fixtures/alpha-v1.synthetic.json",
+    "docs/proposals/atlas-forge/index.html",
+    "docs/proposals/atlas-forge/package-lock.json",
+    "docs/proposals/atlas-forge/package.json",
+    "docs/proposals/atlas-forge/scripts/benchmark.mjs",
+    "docs/proposals/atlas-forge/scripts/build.mjs",
+    "docs/proposals/atlas-forge/scripts/examples.mjs",
+    "docs/proposals/atlas-forge/scripts/render-benchmark.mjs",
+    "docs/proposals/atlas-forge/scripts/serve.mjs",
+    "docs/proposals/atlas-forge/src/app/editor.js",
+    "docs/proposals/atlas-forge/src/app/styles.css",
+    "docs/proposals/atlas-forge/src/app/worker.js",
+    "docs/proposals/atlas-forge/src/core/world.js",
+    "docs/proposals/atlas-forge/src/documents/markdown.js",
+    "docs/proposals/atlas-forge/src/generation/local-map.js",
+    "docs/proposals/atlas-forge/src/generation/pipeline.js",
+    "docs/proposals/atlas-forge/src/generation/random.js",
+    "docs/proposals/atlas-forge/src/geometry/sphere.js",
+    "docs/proposals/atlas-forge/src/publishing/export.js",
+    "docs/proposals/atlas-forge/src/publishing/viewer.css",
+    "docs/proposals/atlas-forge/src/publishing/viewer.js",
+    "docs/proposals/atlas-forge/src/rendering/local.js",
+    "docs/proposals/atlas-forge/src/rendering/map.js",
+    "docs/proposals/atlas-forge/src/solvers/climate.js",
+    "docs/proposals/atlas-forge/src/solvers/hydrology.js",
+    "docs/proposals/atlas-forge/src/storage/local.js",
+    "docs/proposals/atlas-forge/src/storage/project.js",
+    "docs/proposals/atlas-forge/tests/browser.mjs",
+    "docs/proposals/atlas-forge/tests/core.test.mjs"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: auditado snapshot da main e mandato; Alpha real não recebida. Inventário e limitações em docs/proposals/atlas-forge/docs/AUDIT.md.",
+    "Implementada proposta executável modular: esfera/D8, seed, mapa/globo, altitude SI, pincel autoral/undo/redo, Worker cancelável, clima orográfico e drenagem/bacias com cenários sintéticos.",
+    "Implementados lugares, snapshots Markdown/SHA-256, mapa filho persistente, JSON v2/fixture sintética v1, IndexedDB verificado, marcos/ramificações e viewer único offline seguro.",
+    "Gargalo medido no globo reduzido de mediana 83,3 ms para 4,1 ms com lookup de projeção, sem mudar grade física.",
+    "Preparados tutorial, contratos locais de persistência, notas de modelos/limites, roadmap, exemplo gerado, workflow seletivo de verificações e evidências desktop/mobile/offline.",
+    "PROPOSTA: ADR-0035/DEC-0054 para incorporação futura; nenhum apps/atlas-forge, componente global, alteração do Urbe ou release criado.",
+    "Primeiro CI remoto detectou ubuntu-latest em Ubuntu 26.04, incompatível com Playwright 1.56.1. Workflow de proposta fixado em Ubuntu 24.04 suportado; sem alterar workflows de outros componentes.",
+    "CI da implementação e CI específico da proposta verdes com URLs e commits testados; artefato offline e pacote editável preparados localmente. Nenhum merge ou release executado."
+  ],
+  "verification": [
+    {
+      "check": "npm run check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "CI remoto verde no commit a6d2145a97db3e16605ecad1e177d9886cd9943d: https://github.com/AbnerCruz/Ecosystem/actions/runs/39845060375 . Formatação, 17 testes de núcleo/boundary, build/exemplos e 12 cenários Chromium. Evidências locais em docs/proposals/atlas-forge/docs/VERIFICATION.md.",
+      "tested_commit": "a6d2145a97db3e16605ecad1e177d9886cd9943d"
+    },
+    {
+      "check": "Benchmark geração e Canvas",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "scripts benchmark e benchmark:render reproduzíveis; resultados em docs/proposals/atlas-forge/docs/evidence/benchmark.txt e render-benchmark.txt. Sem alegação DEVICE."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks passaram no baseline e após ADR/DEC/handoff; SDK 10.0.402. Comandos e limites em docs/proposals/atlas-forge/docs/VERIFICATION.md. Histórico completo obtido antes da conferência final."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Workflow consistency completo passou no commit da implementação: https://github.com/AbnerCruz/Ecosystem/actions/runs/39844932792 . Inclui 22 checks, piloto P6-4, self-test e simulação do integrador. Tentativas locais anteriores exigiram corrigir PATH do SDK e baixar tags do clone; após fetch completo os 22 checks locais passaram.",
+      "tested_commit": "005f34cfdad1aed6d2df315b5019e903dc938bfd"
+    },
+    {
+      "check": "Android físico: layout, toque, desempenho percebido e lifecycle",
+      "kind": "human",
+      "result": "pending",
+      "object": "docs/proposals/atlas-forge/README.md",
+      "critical": false,
+      "evidence": "Nenhum aparelho Android disponibilizado. Roteiro em docs/proposals/atlas-forge/docs/GUIDE.md; emulação não equivale a DEVICE."
+    }
+  ],
+  "known_issues": [
+    "Alpha original indisponível: corpus e compatibilidade v1 precisam de confirmação contra arquivos reais; fixture atual é sintética.",
+    "Clima/relevo/biomas heurísticos; drenagem simplificada sem lagos/overflow/erosão. Tectônica, ecologia, civilizações e eras causais não implementadas.",
+    "Recálculo é global; sem tiles/LOD ou solver regional. Marcos completos limitados a 12 e projeto a 24 MiB.",
+    "Gestos pinch e multisseleção, edição de salas/polígonos e hierarquia arbitrária não existem neste corte.",
+    "IndexedDB file:// depende do navegador; sempre há exportação/importação manual. Arquivos não possuem assinatura ou manifest global de integridade."
+  ],
+  "blockers": [
+    "Incorporação/registro aguarda DEC-0054; não bloqueia uso/testes da proposta isolada.",
+    "Integração crítica depende do integrador/owner; não houve merge manual."
+  ],
+  "next_actions": [
+    "Revisar PR e CI; integrador classifica e verifica estado combinado, sem o agente pôr integrar.",
+    "Responder DEC-0054 quando revisar incorporação; após decisão, PR próprio de constituição/registro se autorizado.",
+    "AF-003: obter corpus Alpha real e validar decoder/escala; AF-004: testar Android físico.",
+    "AF-007/008: lagos com armazenamento/transbordamento e clima métrico; AF-010: primeiro ecossistema limitado por recursos."
+  ],
+  "decisions_required": [
+    "DEC-0054"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "ecosystem.json",
+    "docs/architecture/product-model.md",
+    "docs/architecture/local-first.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/adr/0001-registro-de-decisoes-arquiteturais.md",
+    "docs/adr/0034-urbe-sem-simulacao-visual.md",
+    "docs/governance/addenda/ADD-0028-urbe-sem-simulacao-visual.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/contracts/schemas/decisions.schema.json",
+    "docs/proposals/atlas-forge/MISSION.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "state.elevation é autoridade; caches, publicação e evidências são projeções. Formato e ownership documentados."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nenhum import de outro Product; arquivos de Urbe/Lunet/Hub intactos."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Editor e viewer funcionam offline sem Hub, com teste real file://."
+    },
+    {
+      "id": "NN-004",
+      "evidence": "Nenhuma área shared ou abstração global criada."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Stack solicitado HTML/JS/Canvas permanece local na proposta; exceção de incorporação explícita no ADR-0035 Proposto."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "Nenhuma dependência ou identificação de Host concreto no runtime."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue AF-001 #657, branch, handoff e evidências locais persistidas."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Mandato anexado preservado em MISSION.md, SPEC e ADR/DEC propostos."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas consultadas diretamente e listadas neste registro."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Registro/incorporação não efetuados; ADR-0035 Proposto e DEC-0054 pending."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Versão local independente, sem release de qualquer Product."
+    },
+    {
+      "id": "NN-015",
+      "evidence": "GitHub apenas registro de desenvolvimento; nenhum request de runtime."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Arquivos só por seleção, dados não executam scripts, viewer sem rede/CSP, nenhuma credencial incorporada."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Chromium móvel é emulado; validação Android física explicitamente pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review, sem claim de roadmap completo, integração ou DEVICE."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "IDs de entidades, notas, marcos e tarefas persistem; migração v1 testada em fixture sintética."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Dependências de desenvolvimento limitadas a bundle, formatter e navegador; runtime sem bibliotecas externas."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Limites e bloqueios reais no diagnóstico, roadmap e proposta de incorporação."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Reuso avaliado como candidato, sem consumidor externo concreto ou extração."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Editor HTML e viewer independem da distribuição do Hub; sem canal/release de produção novo."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "spherical-world-authoring",
+      "status": "possible-candidate",
+      "rationale": "Editor e publicação têm valor independente; nenhum segundo Host/consumidor real do Ecosystem está integrado. Mantidos locais na proposta; não há Tool global ou contrato público."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane",
+      "user-data"
+    ],
+    "reason": "Adiciona workflow de teste e novo formato/importador de projetos locais. Incorporação permanece proposta; crítico não é integrado automaticamente sem autorização aplicável."
+  },
+  "cost": null
+}

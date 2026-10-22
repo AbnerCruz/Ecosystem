@@ -1939,6 +1939,40 @@
       "decidedAt": "2026-10-22",
       "record": "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0054",
+      "status": "decided",
+      "component": "ecosystem",
+      "blocking": false,
+      "title": "Atlas Forge: incorporação como aplicação independente, com editor web local",
+      "context": "O proprietário solicitou construir o Atlas Forge e idealmente torná-lo ferramenta do Ecosystem. O mandato fixa HTML5/JS modular/Canvas e início isolado. A proposta agora contém aplicação executável e testes, sem modificar Urbe, criar Tool global ou registrar componente. A classificação formal e a exceção de stack devem preceder a incorporação.",
+      "question": "Como incorporar a implementação do Atlas Forge ao Ecosystem após revisar o corte vertical?",
+      "alternatives": [
+        {
+          "option": "A — Aplicação independente atlas-forge em apps/atlas-forge, JS/Canvas local, distribuição offline; capability somente após consumidor real",
+          "consequences": "Aprova a direção e a exceção local de stack do ADR-0035; permite preparar PR próprio de registro/constituição. Não aprova merge crítico, canal de produção ou DEVICE."
+        },
+        {
+          "option": "B — Manter como proposta executável isolada em docs/proposals/atlas-forge por enquanto",
+          "consequences": "O editor e os artefatos continuam utilizáveis e testáveis; não registra Product nem capability. Incorporação pode ser decidida depois com mais evidência."
+        }
+      ],
+      "consequences": "Aprovada a opção A pelo proprietário depois da entrega revisável. Aplicação registrada com código local, instruções e CI seletivo; integração governada. Não autoriza capability global, alteração de outro Product, DEVICE alegado ou release de produção.",
+      "manifestCompatibility": "Preserva NN-002/003/007/020/022/023. A exceção JS/Canvas é local ao editor solicitado, não alteração silenciosa do padrão da plataforma. ADR-0035 está Proposto.",
+      "recommendation": "A, após revisar o software e as evidências; continuar independente e promover a Tool multi-host apenas quando houver consumidor concreto.",
+      "related": [
+        "docs/adr/0035-atlas-forge-incorporacao-gradual.md",
+        "docs/governance/addenda/ADD-0031-atlas-forge-no-ecosystem.md",
+        "apps/atlas-forge/README.md",
+        "apps/atlas-forge/ROADMAP.md"
+      ],
+      "raisedBy": "codex-atlas-forge",
+      "raisedAt": "2026-10-22",
+      "decision": "A — Incorporar Atlas Forge como aplicação independente atlas-forge em apps/atlas-forge, JS/Canvas local e funcionamento offline, conforme aprovação do proprietário nesta conversa: \"Pode por no ecosystem meu rei\".",
+      "decidedAt": "2026-10-22",
+      "record": "docs/governance/addenda/ADD-0031-atlas-forge-no-ecosystem.md",
+      "consequencesApplied": true
     }
   ]
 }

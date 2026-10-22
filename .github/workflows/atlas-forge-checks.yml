@@ -1,0 +1,50 @@
+name: atlas-forge-ci
+on:
+  pull_request:
+    paths:
+      - 'apps/atlas-forge/**'
+      - '.github/workflows/atlas-forge-checks.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/atlas-forge/**'
+      - '.github/workflows/atlas-forge-checks.yml'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit a testar no estado combinado do integrador
+        type: string
+        required: false
+        default: ''
+permissions:
+  contents: read
+jobs:
+  checks:
+    name: Atlas Forge offline checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/atlas-forge
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/atlas-forge/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run check
+      - run: npm run benchmark > test-results/benchmark.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: atlas-forge-ci-preview
+          path: |
+            apps/atlas-forge/dist/
+            apps/atlas-forge/test-results/
+          retention-days: 14

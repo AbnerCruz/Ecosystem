@@ -1,0 +1,14 @@
+# Tutorial — do planeta ao atlas
+
+1. Abra `dist/atlas-forge.html` ou execute `npm start` após o build. A primeira abertura gera Aurora e um castelo de exemplo. Reabrir no mesmo navegador restaura a cópia local quando disponível.
+2. Dê um nome ao mundo. Defina seed, oceanos, raio, inclinação e base térmica. Clique **Gerar mundo**. Se existir relevo autoral, ele permanece congelado. Para começar o terreno de novo, use **Descartar intervenções…** e confirme o efeito; notas e marcos ficam preservados.
+3. Selecione **Mapa** ou **Globo**. Arraste para mover o mapa ou girar o globo, use roda/+/− para zoom e ⌖ para reenquadrar. Toque em uma célula para ler altitude, temperatura, chuva, vazão e destino da bacia. O formulário **Ir para coordenadas** dá acesso por teclado.
+4. Ative **Temperatura** e compare junho/dezembro. Ative **Precipitação**, **Drenagem** e **Bacias**. Bacias fechadas estão identificadas; não são lagos dinâmicos. O painel **Sobre os modelos** explica A/B e os limites.
+5. Escolha **Elevar**, ajuste raio e força, desenhe sobre a terra e solte. O pincel usa distâncias esféricas e cruza o antimeridiano. Ao soltar, o Worker recalcula clima e drenagem. **Cancelar operação** conserva o último estado completo. Desfaça/refaça pelas setas ou Ctrl Z / Ctrl Shift Z; V explora, B eleva. Gestos pinch não estão implementados; use os botões no celular.
+6. Escolha **Lugar** e toque no mapa. Edite nome, tipo e descrição; clique **Salvar lugar**. Busque e selecione pela lista. **Vincular nota .md** lê uma cópia de até 1 MiB, sem alterar o original. Importar outra nota substitui a cópia; **Remover cópia** não exclui o arquivo de origem.
+7. Clique **Inspecionar mapa local**. A primeira abertura gera e guarda nove salas conectadas. Clique em uma sala para ler seu nome; volte ao planeta sem perder seleção. É um esquema de exploração, não um gerador de cidade completo.
+8. Em **Memória do mundo**, crie um marco antes de experimentar. Escolha um marco antigo e crie outro: o novo terá o marco antigo como pai e a história anterior permanecerá acessível. Não há passagem de tempo geológico.
+9. **Salvar projeto** baixa JSON. Guarde esse arquivo como backup; IndexedDB não é sincronização de uma pasta e pode ser removido pelo navegador. **Abrir** valida/importa uma cópia. Versões futuras são recusadas, preservando o mundo aberto.
+10. **Exportar atlas** baixa HTML interativo de leitura. Abra esse arquivo offline, alterne camadas, clique em lugares e notas, inspecione mapas filhos e retorne. O viewer não altera o projeto nem lê o vault.
+
+No celular, **Mundo e camadas** e **Inspetor** abrem painéis recolhíveis. Use Escape no desktop para fechar painéis/cancelar cálculo; os dialogs têm botões de retorno e fechamento. Testes automatizados cobrem viewport 390×844 e toque emulado; use aparelho real antes de considerar homologação Android.

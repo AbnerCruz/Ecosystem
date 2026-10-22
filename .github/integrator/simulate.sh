@@ -90,12 +90,12 @@ prep() {
     return "$code"
   fi
 }
-finish_eval() { # finish_eval <pr> <head> [R_URBE] [R_HUB] — termina a avaliação com os checks do candidato verdes (ou o resultado dado)
+finish_eval() { # finish_eval <pr> <head> [R_URBE] [R_HUB] [R_ATLAS_FORGE] — termina a avaliação com os checks do candidato verdes (ou o resultado dado)
   : > "$GHLOG"
   env GITHUB_OUTPUT=/dev/null ACTION=evaluate PR="$1" HEAD_SHA="$2" MAIN="$(out main_tested)" COMBINED="$(out combined)" CRITICALITY="$(out criticality)" \
     REQUIRES_OWNER="$(out requires_owner)" CRITICAL_CLASSES="$(out critical_classes)" CRITICAL_REASON="$(out critical_reason)" HANDOFFS="$(out handoffs)" \
     TRUSTED="$(out trusted)" TRUSTED_FAILURES="$(out trusted_failures)" AUTHORIZED="$(grep -qx integrar "$T/gh/labels/$1" && echo true || echo false)" MORE=false \
-    R_CONSISTENCY=success R_URBE="${3:-skipped}" R_LUNET2D=skipped R_HUB="${4:-skipped}" bash .github/integrator/integrate.sh finish >"$T/finish.log" 2>&1
+    R_CONSISTENCY=success R_URBE="${3:-skipped}" R_LUNET2D=skipped R_HUB="${4:-skipped}" R_ATLAS_FORGE="${5:-skipped}" bash .github/integrator/integrate.sh finish >"$T/finish.log" 2>&1
 }
 finish_land() { # finish_land <pr> — execução 'land' decidida pela fila real
   : > "$GHLOG"; plan "$1"
@@ -304,6 +304,15 @@ if finish_eval 54 "$HD2" skipped success; then check "dispatch recusado precisa 
 else check "dispatch recusado reprova o job" true; fi
 unset FAIL_HUB_DISPATCH
 check "dispatch recusado: código continua integrado, falha de publicação explícita, fila continua" 'main_is "$C16" && last_status "$HD2" | grep -q "^integrado" && grep -q "::error::Código integrado" "$T/finish.log" && logged "Publicação do APK pendente" && logged "workflow run integrate.yml"'
+
+# 17. Novo Product: CI de Atlas Forge vermelho bloqueia o estado combinado.
+AF="$(branch atlas-forge-ci-red 'echo "// CI fixture" >> apps/atlas-forge/src/core/world.js')"; open_pr 55 "$AF"
+prep 55 "$AF"; AF_MAIN="$(git --git-dir="$T/origin.git" rev-parse main)"
+finish_eval 55 "$AF" skipped skipped failure
+check "Atlas Forge: CI vermelho impede integração" 'main_is "$AF_MAIN" && last_status "$AF" | grep -q "^falhou"'
+finish_eval 55 "$AF" skipped skipped success
+check "Atlas Forge: CI verde permite integração rotineira do estado testado" 'in_main "$AF" && last_status "$AF" | grep -q "^integrado"'
+check "Atlas Forge: integrar não publica release de outro Product" '! logged "workflow run lunet2d-release.yml" && ! logged "workflow run hub-release.yml" && ! logged "workflow run urbe-release.yml"'
 
 check "a main só avançou por fast-forward (nenhum force)" '( for x in "$MAIN" "$CA" "$CU" "$CC" "$CB" "$M2" "$CR" "$CH" "$C14" "$C16"; do in_main "$x" || exit 1; done )'
 

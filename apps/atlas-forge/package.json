@@ -1,0 +1,24 @@
+{
+  "name": "atlas-forge",
+  "version": "0.2.0-alpha.1",
+  "private": true,
+  "type": "module",
+  "description": "Oficina independente de mundos esféricos do Ecosystem, local e offline",
+  "scripts": {
+    "build": "node scripts/build.mjs && node scripts/examples.mjs",
+    "start": "node scripts/serve.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:e2e": "node tests/browser.mjs",
+    "benchmark": "node scripts/benchmark.mjs",
+    "check": "npm run lint && npm test && npm run build && npm run test:e2e",
+    "examples": "node scripts/examples.mjs",
+    "lint": "prettier --check src scripts tests index.html package.json",
+    "format": "prettier --write src scripts tests index.html package.json",
+    "benchmark:render": "node scripts/render-benchmark.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "playwright": "1.56.1",
+    "prettier": "3.6.2"
+  }
+}

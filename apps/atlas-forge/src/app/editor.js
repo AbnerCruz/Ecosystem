@@ -1,0 +1,744 @@
+import {
+  definition,
+  stats,
+  brush,
+  record,
+  history,
+  checkpoint,
+  restore,
+} from "../core/world.js";
+import { coord, index, clamp } from "../geometry/sphere.js";
+import { BIOMES } from "../solvers/climate.js";
+import { MapRenderer, LAYERS, LEGENDS } from "../rendering/map.js";
+import { drawLocal } from "../rendering/local.js";
+import { localMap } from "../generation/local-map.js";
+import { markdown, noteFromFile, verifyNotes } from "../documents/markdown.js";
+import {
+  parseProject,
+  serialize,
+  download,
+  MAX_BYTES,
+} from "../storage/project.js";
+import { loadLocal, saveLocal } from "../storage/local.js";
+import { publish } from "../publishing/export.js";
+const $ = (id) => document.getElementById(id),
+  renderer = new MapRenderer($("map"));
+let world,
+  derived,
+  worker,
+  job = 0,
+  busy = false,
+  tool = "inspect",
+  selected,
+  location,
+  drag,
+  saveTimer,
+  persistenceQueue = Promise.resolve();
+function status(message) {
+  $("status").textContent = message;
+}
+function error(e) {
+  status(e.message || String(e));
+}
+function setBusy(value) {
+  busy = value;
+  $("busy").hidden = !value;
+  document
+    .querySelectorAll(".edit-action,#publish,#save-project,#undo,#redo")
+    .forEach((b) => (b.disabled = value));
+}
+function cancel(quiet = false) {
+  if (worker) {
+    worker.terminate();
+    worker = null;
+    job++;
+  }
+  setBusy(false);
+  if (world && derived) {
+    renderer.setWorld(world, derived);
+    renderer.render();
+  }
+  if (!quiet) status("Operação cancelada; último estado preservado.");
+}
+function syncConfig() {
+  const d = world.definition,
+    p = d.planet;
+  $("seed").value = d.seed;
+  $("ocean").value = p.ocean;
+  $("radius").value = p.radius / 1000;
+  $("tilt").value = p.tilt;
+  $("base-temp").value = p.baseTemp;
+}
+function autosave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    const snapshot = structuredClone(world);
+    persistenceQueue = persistenceQueue
+      .catch(() => {})
+      .then(async () => {
+        try {
+          await saveLocal(snapshot);
+          status(
+            "Cópia local verificada · exporte JSON para manter um backup.",
+          );
+        } catch {
+          status(
+            "Cópia local indisponível. Use Salvar projeto para baixar JSON.",
+          );
+        }
+      });
+  }, 600);
+}
+function refresh() {
+  renderer.selected = selected;
+  renderer.setWorld(world, derived);
+  renderer.render();
+  $("world-name").value = world.state.name;
+  $("project-name").textContent = world.state.name;
+  $("world-title").firstChild.textContent = world.state.name + " ";
+  document.querySelector(".map-label").firstChild.textContent = world.state.name
+    .toUpperCase()
+    .split("")
+    .join(" ");
+  const s = stats(world, derived);
+  $("world-stats").textContent =
+    `${world.definition.grid.width} × ${world.definition.grid.height} células · ${s.ocean.toFixed(1)}% oceanos · cume ${Math.round(s.max).toLocaleString("pt-BR")} m`;
+  $("undo").disabled = busy || !world.journal.undo.length;
+  $("redo").disabled = busy || !world.journal.redo.length;
+  const timeline = $("timeline");
+  timeline.replaceChildren();
+  const o = document.createElement("option");
+  o.value = "";
+  o.textContent = "Escolha um marco";
+  timeline.append(o);
+  for (const c of world.timeline.checkpoints) {
+    const option = document.createElement("option");
+    option.value = c.id;
+    option.textContent = `${c.parent ? "↳ " : ""}${c.label}`;
+    timeline.append(option);
+  }
+  timeline.value = world.timeline.active ?? "";
+  renderEntities();
+  inspectEntity();
+  if (location) inspectLocation(location);
+  autosave();
+}
+function run(type, draft, def, overrides = {}, onComplete) {
+  cancel(true);
+  const id = ++job;
+  setBusy(true);
+  $("progress").value = 0;
+  $("stage").textContent =
+    type === "generate"
+      ? "Preparando superfície…"
+      : "Recalculando dependências…";
+  const url = URL.createObjectURL(
+    new Blob([__WORKER_SOURCE__], { type: "text/javascript" }),
+  );
+  worker = new Worker(url);
+  URL.revokeObjectURL(url);
+  worker.onmessage = ({ data }) => {
+    if (data.id !== job) return;
+    if (data.progress) {
+      $("stage").textContent = data.progress.stage;
+      $("progress").value = data.progress.value;
+      return;
+    }
+    if (data.error) {
+      cancel(true);
+      status(data.error);
+      return;
+    }
+    const result = data.result;
+    if (type === "generate" && draft) {
+      result.world.state = {
+        ...draft.state,
+        elevation: result.world.state.elevation,
+        overrides: result.world.state.overrides,
+      };
+      result.world.journal = structuredClone(draft.journal);
+      result.world.timeline = structuredClone(draft.timeline);
+    }
+    world = result.world;
+    derived = result.derived;
+    worker.terminate();
+    worker = null;
+    setBusy(false);
+    onComplete?.();
+    syncConfig();
+    refresh();
+    status("Mundo pronto · explore, transforme e conte histórias.");
+  };
+  worker.onerror = (e) => {
+    cancel(true);
+    status(`Falha no cálculo: ${e.message}`);
+  };
+  worker.postMessage({ id, type, world: draft, definition: def, overrides });
+}
+function deriveDraft(draft, done) {
+  run("derive", draft, undefined, {}, done);
+}
+function inspectLocation(p) {
+  location = p;
+  const i = index(p.lat, p.lon, world.definition.grid),
+    end = derived.basin[i],
+    terminal = derived.terminal[end];
+  $("location-title").textContent = BIOMES[derived.biome[i]];
+  $("location-subtitle").textContent =
+    `${Math.abs(p.lat).toFixed(2)}° ${p.lat >= 0 ? "N" : "S"} · ${Math.abs(p.lon).toFixed(2)}° ${p.lon >= 0 ? "E" : "W"}`;
+  $("metric-elevation").textContent =
+    `${Math.round(world.state.elevation[i]).toLocaleString("pt-BR")} m`;
+  $("metric-temp").textContent = `${derived.temperature[i].toFixed(1)} °C`;
+  $("metric-rain").textContent = `${Math.round(derived.rain[i])} mm/ano`;
+  $("metric-flow").textContent =
+    `${Math.round(derived.discharge[i]).toLocaleString("pt-BR")} m³/s`;
+  $("basin-info").textContent =
+    world.state.elevation[i] <= 0
+      ? "Célula oceânica · datum: nível do mar."
+      : `Bacia ${end} · ${terminal === 2 ? "fechada: retém água em depressão; extensão de lago não modelada" : "saída oceânica"} · runoff assumido: 35% da chuva.`;
+  $("latitude").value = p.lat.toFixed(2);
+  $("longitude").value = p.lon.toFixed(2);
+  $("coordinates").textContent =
+    `LAT ${p.lat.toFixed(2)}°  LON ${p.lon.toFixed(2)}°`;
+}
+const types = {
+  castle: "Castelo",
+  city: "Cidade",
+  ruin: "Ruína",
+  dungeon: "Dungeon",
+  cave: "Caverna",
+  village: "Aldeia",
+};
+function renderEntities() {
+  const term = $("search").value.toLowerCase(),
+    list = $("entities");
+  list.replaceChildren();
+  $("entity-count").textContent = world.state.entities.length;
+  for (const e of world.state.entities.filter((e) =>
+    e.name.toLowerCase().includes(term),
+  )) {
+    const b = document.createElement("button");
+    b.className = "entity" + (e.id === selected ? " selected" : "");
+    const symbol = document.createElement("span");
+    symbol.className = "entity-icon";
+    symbol.textContent = e.type === "city" ? "♜" : "♖";
+    const text = document.createElement("span"),
+      name = document.createElement("strong"),
+      detail = document.createElement("small");
+    name.textContent = e.name;
+    detail.textContent = `${types[e.type] ?? e.type} · ${e.note ? "nota vinculada" : "sem nota"}`;
+    text.append(name, detail);
+    b.append(symbol, text);
+    b.onclick = () => select(e);
+    list.append(b);
+  }
+  if (!list.children.length) {
+    const p = document.createElement("p");
+    p.className = "micro";
+    p.textContent = term
+      ? "Nenhum lugar encontrado."
+      : "Use ⚑ Lugar para começar uma história.";
+    list.append(p);
+  }
+}
+function select(e) {
+  selected = e.id;
+  renderer.selected = selected;
+  renderer.render();
+  inspectLocation(e);
+  renderEntities();
+  inspectEntity();
+  if (innerWidth <= 900) {
+    $("right-panel").classList.add("panel-open");
+    $("left-panel").classList.remove("panel-open");
+  }
+}
+function inspectEntity() {
+  const e = world.state.entities.find((e) => e.id === selected);
+  $("entity-editor").hidden = !e;
+  if (!e) return;
+  $("entity-name").value = e.name;
+  $("entity-type").value = types[e.type] ? e.type : "castle";
+  $("entity-desc").value = e.desc;
+  $("note-preview").innerHTML = e.note ? markdown(e.note.markdown) : "";
+  $("note-info").textContent = e.note
+    ? `${e.note.name} · cópia incorporada · SHA-256 ${e.note.hash ? e.note.hash.slice(0, 12) + "…" : "pendente (legado)"}`
+    : "O arquivo de origem permanece intacto. Importe novamente para atualizar a cópia.";
+  $("unlink-note").hidden = !e.note;
+}
+function mutate(action) {
+  cancel(true);
+  try {
+    action();
+    refresh();
+  } catch (e) {
+    error(e);
+  }
+}
+function current() {
+  return world.state.entities.find((e) => e.id === selected);
+}
+const swatches = [
+  "#6d8d72",
+  "#b8a67d",
+  "#bd8e73",
+  "#608f9a",
+  "#7eb9be",
+  "#977fad",
+  "#6b8c5b",
+  "#d7b981",
+];
+for (const [i, [key, name]] of Object.entries(LAYERS).entries()) {
+  const b = document.createElement("button");
+  b.className = "layer" + (key === "atlas" ? " active" : "");
+  b.dataset.layer = key;
+  b.setAttribute("aria-pressed", key === "atlas");
+  b.innerHTML = `<span class="swatch" style="--swatch:${swatches[i]}"></span><span></span><span class="layer-indicator">◉</span>`;
+  b.children[1].textContent = name;
+  b.onclick = () => {
+    renderer.layer = key;
+    document.querySelectorAll(".layer").forEach((x) => {
+      x.classList.toggle("active", x === b);
+      x.setAttribute("aria-pressed", String(x === b));
+    });
+    $("legend-title").textContent = name;
+    $("legend-values").replaceChildren(
+      ...LEGENDS[key].map((v) => {
+        const s = document.createElement("span");
+        s.textContent = v;
+        return s;
+      }),
+    );
+    $("legend-bar").style.background =
+      key === "temperature"
+        ? "linear-gradient(to right,#6a86b3,#b2c8c1,#dbc478,#bf583d)"
+        : key === "rain"
+          ? "linear-gradient(to right,#b89b69,#8ba989,#408491,#484e8f)"
+          : key === "basins"
+            ? "linear-gradient(to right,#9878a8,#a8b779,#779eb7)"
+            : key === "authored"
+              ? "linear-gradient(to right,#49665d,#e7ad52)"
+              : "";
+    $("season-label").hidden = key !== "temperature";
+    renderer.render();
+  };
+  $("layers").append(b);
+}
+$("layers").firstChild.click();
+$("world-name").onchange = () =>
+  mutate(() => {
+    world.state.name = $("world-name").value.trim() || "Mundo sem nome";
+  });
+$("clear-edits").onclick = () => {
+  if (!world || busy) return;
+  if (
+    !confirm(
+      "Descartar todas as intervenções do relevo e regenerar pela seed atual? Lugares e marcos históricos serão preservados.",
+    )
+  )
+    return;
+  const draft = structuredClone(world);
+  draft.state.overrides = {};
+  draft.journal = { undo: [], redo: [] };
+  run("generate", draft, draft.definition, {});
+};
+$("generation-form").onsubmit = (e) => {
+  e.preventDefault();
+  if (!$("generation-form").reportValidity()) return;
+  const def = definition(
+    $("seed").value,
+    {
+      ocean: Number($("ocean").value),
+      radius: Number($("radius").value) * 1000,
+      tilt: Number($("tilt").value),
+      baseTemp: Number($("base-temp").value),
+    },
+    world?.definition.grid.width ?? 180,
+  );
+  run("generate", world, def, world?.state.overrides ?? {});
+};
+for (const projection of ["flat", "globe"])
+  $(projection).onclick = () => {
+    renderer.projection = projection;
+    renderer.pan = { x: 0, y: 0 };
+    renderer.zoom = 1;
+    for (const p of ["flat", "globe"]) {
+      $(p).classList.toggle("active", p === projection);
+      $(p).setAttribute("aria-pressed", String(p === projection));
+    }
+    renderer.render();
+  };
+$("rivers").onchange = () => {
+  renderer.showRivers = $("rivers").checked;
+  renderer.render();
+};
+$("grid").onchange = () => {
+  renderer.showGrid = $("grid").checked;
+  renderer.render();
+};
+$("season").onchange = () => {
+  renderer.season = $("season").value;
+  renderer.render();
+};
+function setTool(value) {
+  tool = value;
+  document.querySelectorAll("[data-tool]").forEach((b) => {
+    const active = b.dataset.tool === value;
+    b.classList.toggle("active", active);
+    b.setAttribute("aria-pressed", String(active));
+  });
+  $("brush-options").hidden = !["raise", "lower"].includes(value);
+  $("map").style.cursor =
+    value === "inspect" ? "grab" : value === "place" ? "crosshair" : "cell";
+}
+document
+  .querySelectorAll("[data-tool]")
+  .forEach((b) => (b.onclick = () => setTool(b.dataset.tool)));
+$("brush-size").oninput = () =>
+  ($("brush-radius").value = $("brush-size").value + "°");
+$("brush-force").oninput = () =>
+  ($("brush-strength").value = $("brush-force").value + " m");
+function zoom(f) {
+  renderer.zoom = clamp(renderer.zoom * f, 0.6, 6);
+  renderer.render();
+}
+$("zoom-in").onclick = () => zoom(1.2);
+$("zoom-out").onclick = () => zoom(1 / 1.2);
+$("reset-view").onclick = () => {
+  renderer.zoom = 1;
+  renderer.pan = { x: 0, y: 0 };
+  renderer.rotation = 0;
+  renderer.render();
+};
+$("map").addEventListener(
+  "wheel",
+  (e) => {
+    e.preventDefault();
+    zoom(e.deltaY > 0 ? 0.9 : 1.1);
+  },
+  { passive: false },
+);
+function pointer(e) {
+  const r = $("map").getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+function paint(p, pressure) {
+  const delta =
+    Number($("brush-force").value) *
+    (tool === "lower" ? -1 : 1) *
+    (pressure > 0 ? clamp(pressure * 2, 0.2, 2) : 1);
+  const changes = brush(
+    drag.draft,
+    p.lat,
+    p.lon,
+    Number($("brush-size").value),
+    delta,
+  );
+  for (const c of changes) {
+    const first = drag.changes.get(c.i);
+    if (first) first.after = c.after;
+    else drag.changes.set(c.i, c);
+  }
+  renderer.setWorld(drag.draft, derived);
+  renderer.render();
+}
+$("map").onpointerdown = (e) => {
+  if (busy || !world || e.button !== 0 || drag) return;
+  $("map").setPointerCapture(e.pointerId);
+  const p = pointer(e),
+    geo = renderer.geographic(p.x, p.y);
+  drag = {
+    id: e.pointerId,
+    start: p,
+    last: p,
+    moved: false,
+    changes: new Map(),
+    draft: tool === "raise" || tool === "lower" ? structuredClone(world) : null,
+  };
+  if (drag.draft && geo) paint(geo, e.pressure);
+};
+$("map").onpointermove = (e) => {
+  const p = pointer(e),
+    geo = renderer.geographic(p.x, p.y);
+  if (geo)
+    $("coordinates").textContent =
+      `LAT ${geo.lat.toFixed(2)}°  LON ${geo.lon.toFixed(2)}°`;
+  if (!drag || e.pointerId !== drag.id) return;
+  const dx = p.x - drag.last.x,
+    dy = p.y - drag.last.y;
+  if (Math.hypot(p.x - drag.start.x, p.y - drag.start.y) > 4) drag.moved = true;
+  if (drag.draft && geo && Math.hypot(dx, dy) > 2) paint(geo, e.pressure);
+  else if (tool === "inspect" && drag.moved) {
+    if (renderer.projection === "globe") renderer.rotation -= dx * 0.4;
+    else {
+      renderer.pan.x += dx;
+      renderer.pan.y += dy;
+    }
+    renderer.render();
+  }
+  drag.last = p;
+};
+$("map").onpointerup = (e) => {
+  if (!drag || e.pointerId !== drag.id) return;
+  const end = drag;
+  drag = null;
+  if (end.draft) {
+    record(end.draft, Array.from(end.changes.values()));
+    if (end.changes.size) deriveDraft(end.draft);
+    return;
+  }
+  if (end.moved) return;
+  const p = pointer(e),
+    geo = renderer.geographic(p.x, p.y);
+  if (!geo) return;
+  if (tool === "place") {
+    mutate(() => {
+      const entity = {
+        id: crypto.randomUUID(),
+        type: "castle",
+        name: `Lugar ${world.state.entities.length + 1}`,
+        lat: geo.lat,
+        lon: geo.lon,
+        desc: "",
+      };
+      world.state.entities.push(entity);
+      select(entity);
+    });
+  } else {
+    const e = renderer.hit(p.x, p.y);
+    if (e) select(e);
+    else inspectLocation(geo);
+  }
+};
+$("map").onpointercancel = () => {
+  drag = null;
+  if (world && derived) {
+    renderer.setWorld(world, derived);
+    renderer.render();
+  }
+};
+$("coordinate-form").onsubmit = (e) => {
+  e.preventDefault();
+  if (world)
+    inspectLocation({
+      lat: Number($("latitude").value),
+      lon: Number($("longitude").value),
+    });
+};
+function undo(direction) {
+  if (busy || !world) return;
+  const draft = structuredClone(world);
+  if (history(draft, direction)) deriveDraft(draft);
+}
+$("undo").onclick = () => undo("undo");
+$("redo").onclick = () => undo("redo");
+$("search").oninput = () => world && renderEntities();
+$("update-entity").onclick = () =>
+  mutate(() => {
+    const e = current();
+    if (!e) return;
+    e.name = $("entity-name").value.trim() || "Lugar sem nome";
+    e.type = $("entity-type").value;
+    e.desc = $("entity-desc").value;
+    status("Lugar salvo no projeto.");
+  });
+$("delete-entity").onclick = () =>
+  mutate(() => {
+    world.state.entities = world.state.entities.filter(
+      (e) => e.id !== selected,
+    );
+    selected = null;
+  });
+$("link-note").onclick = () => $("note-file").click();
+$("note-file").onchange = async (e) => {
+  const file = e.target.files[0],
+    target = selected,
+    sourceWorld = world;
+  e.target.value = "";
+  if (!file) return;
+  try {
+    const note = await noteFromFile(file);
+    if (world !== sourceWorld)
+      throw new Error(
+        "O mundo mudou durante a importação da nota. Selecione o arquivo novamente.",
+      );
+    mutate(() => {
+      const entity = world.state.entities.find((e) => e.id === target);
+      if (entity) {
+        if (entity.note?.name === note.name) note.id = entity.note.id;
+        entity.note = note;
+      }
+    });
+    status("Cópia Markdown incorporada; arquivo original intacto.");
+  } catch (e) {
+    error(e);
+  }
+};
+$("unlink-note").onclick = () =>
+  mutate(() => {
+    delete current().note;
+  });
+$("inspect-local").onclick = () =>
+  mutate(() => {
+    const entity = current();
+    if (!entity) return;
+    if (!entity.localMap)
+      entity.localMap = localMap(entity, world.definition.seed);
+    $("local-title").textContent = entity.name;
+    drawLocal($("local-canvas"), entity);
+    $("room-info").textContent = "Selecione uma sala.";
+    $("local-dialog").showModal();
+    $("local-canvas").onclick = (e) => {
+      const r = e.currentTarget.getBoundingClientRect(),
+        x = ((e.clientX - r.left) / r.width) * 100,
+        y = ((e.clientY - r.top) / r.height) * 100;
+      const room = entity.localMap.rooms.find(
+        (s) => x >= s.x && x <= s.x + s.w && y >= s.y && y <= s.y + s.h,
+      );
+      $("room-info").textContent = room?.name ?? "Corredor";
+    };
+  });
+$("close-local").onclick = () => $("local-dialog").close();
+$("help").onclick = () => $("help-dialog").showModal();
+$("close-help").onclick = () => $("help-dialog").close();
+$("save-project").onclick = () => {
+  if (!world) return;
+  try {
+    download("atlas-forge-world.json", serialize(world));
+    status("JSON preparado para download; mantenha sua cópia em local seguro.");
+  } catch (e) {
+    error(e);
+  }
+};
+$("publish").onclick = () => {
+  if (!world) return;
+  try {
+    download("atlas-publicado.html", publish(world, derived), "text/html");
+    status("Atlas HTML independente preparado · abra o arquivo offline.");
+  } catch (e) {
+    error(e);
+  }
+};
+$("open-project").onclick = () => $("project-file").click();
+$("project-file").onchange = async (e) => {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  try {
+    if (file.size > MAX_BYTES) throw new Error("Projeto excede 24 MiB.");
+    const incoming = await verifyNotes(parseProject(await file.text()));
+    selected = null;
+    deriveDraft(incoming);
+  } catch (e) {
+    error(e);
+  }
+};
+$("checkpoint").onclick = () =>
+  mutate(() => {
+    checkpoint(
+      world,
+      `Marco ${world.timeline.checkpoints.length + 1} · ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`,
+    );
+    status(
+      "Marco completo preservado; alterações seguintes não modificam o passado.",
+    );
+  });
+$("timeline").onchange = () => {
+  if (!$("timeline").value) return;
+  const draft = structuredClone(world);
+  try {
+    restore(draft, $("timeline").value);
+    selected = null;
+    deriveDraft(draft);
+  } catch (e) {
+    error(e);
+  }
+};
+$("cancel").onclick = () => cancel();
+document.querySelectorAll("[data-panel]").forEach(
+  (b) =>
+    (b.onclick = () => {
+      const p = $(b.dataset.panel + "-panel"),
+        was = p.classList.contains("panel-open");
+      document
+        .querySelectorAll(".sidebar")
+        .forEach((x) => x.classList.remove("panel-open"));
+      p.classList.toggle("panel-open", !was);
+    }),
+);
+document.addEventListener("keydown", (e) => {
+  if (/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+    e.preventDefault();
+    undo(e.shiftKey ? "redo" : "undo");
+  }
+  if (e.key.toLowerCase() === "v") setTool("inspect");
+  if (e.key.toLowerCase() === "b") setTool("raise");
+  if (e.key === "Escape") {
+    if (busy) cancel();
+    document
+      .querySelectorAll(".sidebar")
+      .forEach((x) => x.classList.remove("panel-open"));
+  }
+  if (e.target === $("map")) {
+    if (e.key === "+") zoom(1.2);
+    if (e.key === "-") zoom(1 / 1.2);
+    if (e.key === "ArrowLeft") {
+      renderer.pan.x -= 20;
+      renderer.rotation -= 5;
+      renderer.render();
+    }
+    if (e.key === "ArrowRight") {
+      renderer.pan.x += 20;
+      renderer.rotation += 5;
+      renderer.render();
+    }
+  }
+});
+new ResizeObserver(() => renderer.render()).observe($("map"));
+async function init() {
+  try {
+    const saved = await loadLocal();
+    if (saved) {
+      deriveDraft(saved);
+      return;
+    }
+  } catch {
+    status("Armazenamento local indisponível; use exportação JSON.");
+  }
+  run("generate", null, definition(), {}, () => {
+    let best = 0;
+    for (let i = 0; i < world.state.elevation.length; i++) {
+      const p = coord(i, world.definition.grid);
+      if (
+        world.state.elevation[i] > 150 &&
+        world.state.elevation[i] < 800 &&
+        Math.abs(p.lat) < 45
+      ) {
+        best = i;
+        break;
+      }
+    }
+    const p = coord(best, world.definition.grid);
+    const entity = {
+      id: "demo-miravento",
+      type: "castle",
+      name: "Fortaleza de Miravento",
+      ...p,
+      desc: "Lugar de exemplo: uma fortaleza sobre as colinas do primeiro mundo.",
+      note: {
+        id: "demo-note",
+        name: "Miravento.md",
+        markdown:
+          "# Fortaleza de Miravento\n\nEntre o mar e as antigas colinas, os guardiões observam a mudança dos ventos.\n\n## Caderno de exploração\n- Este é um lugar de exemplo, editável.\n- Vincule uma nota sua para começar uma nova história.",
+        hash: "",
+        importedAt: "exemplo incorporado",
+      },
+    };
+    entity.localMap = localMap(entity, world.definition.seed);
+    world.state.entities.push(entity);
+    selected = entity.id;
+    location = p;
+  });
+}
+init();
