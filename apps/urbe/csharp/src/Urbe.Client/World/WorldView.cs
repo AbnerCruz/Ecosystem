@@ -16,7 +16,7 @@ namespace Urbe.Client.World;
 /// roads and bridges, trees, houses, house labels, neighbourhood labels.
 /// World and city come from Urbe.Core (LegacyCity, LegacyChunkPixels, LegacyChunkFarPixels).
 /// </summary>
-public sealed class WorldView : Control
+public sealed partial class WorldView : Control
 {
     private const double Far = .5;           // app.js URBE_LONGE
     private const int MaxChunks = 96;        // app.js URBE_CHUNKS_MAX (desktop)
@@ -76,11 +76,13 @@ public sealed class WorldView : Control
     {
         if (City is null) return;
         if (City.BuildingAt(tx, ty) is null && Prefs.DecorationAt(tx, ty) is { } decoration) { Select(null); DecorationTapped?.Invoke(decoration); }
-        else if (City.BuildingAt(tx, ty) is { } tapped) Select(tapped);
+        else if (City.BuildingAt(tx, ty) is { } tapped) { if (!TapLinked(tapped)) Select(tapped); }
         else
         {
+            // in the links focus a tap on empty ground only leaves it (UC-70)
+            bool wasFocused = Linked is not null;
             Select(null);
-            if (City.RegionAt(tx, ty) is { } region) RegionTapped?.Invoke(region);
+            if (!wasFocused && City.RegionAt(tx, ty) is { } region) RegionTapped?.Invoke(region);
         }
     }
 
@@ -396,6 +398,7 @@ public sealed class WorldView : Control
         _pending.Clear();
         _texts.Clear();
         Selected = null;
+        ResetLinkFocus();
         World = world;
         City = city;
         _shapes.Clear();
@@ -409,6 +412,7 @@ public sealed class WorldView : Control
     public void RoadsChanged()
     {
         _villagers.RoadsChanged(_lifeHost);
+        RefreshLinkFocus();
         InvalidateVisual();
     }
 
@@ -424,6 +428,8 @@ public sealed class WorldView : Control
 
     public void Select(LegacyCityBuilding? house)
     {
+        // another building (or none) ends the links focus
+        if (Linked is not null && house != Linked.Focus) ClearLinkFocus();
         Selected = house;
         InvalidateVisual();
         SelectionChanged?.Invoke(this, house);
@@ -499,6 +505,7 @@ public sealed class WorldView : Control
         _lifeArt.Glow(context, _life, _lifeHost.People, life);
         DrawWorldLabels(context);
         DrawRootDistrictName(context);
+        DrawLinkFocus(context);
         RequestChunks(missing);
         Tool?.Render(context, this);
     }
@@ -866,7 +873,7 @@ public sealed class WorldView : Control
             foreach (var b in city.Buildings)
             {
                 if (b.X > x1 || b.X + b.W < x0 || b.Y > y1 || b.Y + b.H < y0) continue;
-                if (b == Selected)
+                if (b == Selected && _drawnFocus?.Focus != b)   // the links focus draws its own light (UC-70)
                 {
                     var sp = Camera.WorldToScreen((b.X - .15) * T, (b.Y - .45) * T);
                     var halo = new Rect(sp.X, sp.Y, (b.W + .3) * T * z, (b.H + .6) * T * z);

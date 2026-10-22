@@ -136,6 +136,7 @@ public sealed partial class MainView : Grid
         _stage.Children.Add(LifeNotice());
         _stage.Children.Add(ToolDock());
         _stage.Children.Add(HousePanel());
+        _stage.Children.Add(FocusBar);
         _stage.Children.Add(LoadingLabel());
         _stage.Children.Add(CityMap);
         _stage.Children.Add(Explorer);
@@ -197,8 +198,11 @@ public sealed partial class MainView : Grid
                 _ = FilePreview.OpenAsync(file);
                 return;
             }
+            // the links focus shows its own card; the house card comes with "Detalhes" (UC-70)
+            if (house is not null && World.Linked?.Focus == house) { ShowHouse(null); ShowFocusBar(); return; }
             ShowHouse(house);
         };
+        WireLinkFocus();
         World.DecorationTapped += decoration => _ = ShowDecorationAsync(decoration);
         // v21MoveHold: holding a house carries it (only with a vault that can be written)
         World.MoveValid = (b, x, y) => World.City?.ValidMove(b, x, y).Ok ?? false;
@@ -2022,7 +2026,7 @@ public sealed partial class MainView : Grid
     {
         // v23Atualizar: with Notas open the top bar and the + are hidden (they show again beside a wide panel otherwise)
         if (_top is not null) _top.IsVisible = !Explorer.IsVisible;
-        if (_fab is not null) _fab.IsVisible = !Explorer.IsVisible;
+        if (_fab is not null) _fab.IsVisible = !Explorer.IsVisible && World.Linked is null;
         foreach (var (label, icon, ico, text) in _nav)
         {
             bool active = label == ActiveDestination;
