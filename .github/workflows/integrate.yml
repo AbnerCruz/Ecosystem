@@ -154,9 +154,19 @@ jobs:
     with:
       ref: ${{ needs.plan.outputs.combined }}
 
+  atlas-forge:
+    name: CI do Atlas Forge no estado combinado
+    needs: plan
+    if: needs.plan.outputs.action == 'evaluate' && contains(fromJSON(needs.plan.outputs.products), 'atlas-forge')
+    permissions:
+      contents: read
+    uses: ./.github/workflows/atlas-forge-checks.yml
+    with:
+      ref: ${{ needs.plan.outputs.combined }}
+
   finish:
     name: Integrar, marcar pronto ou devolver ao autor
-    needs: [plan, consistency, urbe, lunet2d, hub, ecosystem-ai, tabletop-rpg, math-authoring]
+    needs: [plan, consistency, urbe, lunet2d, hub, ecosystem-ai, tabletop-rpg, math-authoring, atlas-forge]
     if: always() && needs.plan.result == 'success' && contains(fromJSON('["evaluate","land","blocked"]'), needs.plan.outputs.action)
     runs-on: ubuntu-latest
     permissions:
@@ -193,6 +203,7 @@ jobs:
       R_ECOSYSTEM_AI: ${{ needs.ecosystem-ai.result }}
       R_TABLETOP_RPG: ${{ needs.tabletop-rpg.result }}
       R_MATH_AUTHORING: ${{ needs.math-authoring.result }}
+      R_ATLAS_FORGE: ${{ needs.atlas-forge.result }}
     steps:
       - uses: actions/checkout@v7
         with:

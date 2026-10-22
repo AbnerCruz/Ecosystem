@@ -1,9 +1,9 @@
 {
-  "name": "atlas-forge-proposal",
+  "name": "atlas-forge",
   "version": "0.2.0-alpha.1",
   "private": true,
   "type": "module",
-  "description": "Proposta executável independente de autoria de mundos esféricos para o Ecosystem",
+  "description": "Oficina independente de mundos esféricos do Ecosystem, local e offline",
   "scripts": {
     "build": "node scripts/build.mjs && node scripts/examples.mjs",
     "start": "node scripts/serve.mjs",

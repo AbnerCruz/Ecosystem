@@ -1,11 +1,11 @@
 # Atlas Forge — escopo e próximos incrementos
 
-Fonte do escopo completo: [MISSION.md](MISSION.md). Estado vivo: [Issue AF-001 #657](https://github.com/AbnerCruz/Ecosystem/issues/657); evidências: [VERIFICATION.md](docs/VERIFICATION.md) e handoff `HO-20261022-atlas-forge-foundation`. Não há marco M0–M8 globalmente declarado concluído. Os estados abaixo significam verificação local, aguardando revisão/integração e validação onde aplicável.
+Fonte do escopo completo: [MISSION.md](../../docs/proposals/atlas-forge/MISSION.md). Estado vivo: [Issue AF-001 #657](https://github.com/AbnerCruz/Ecosystem/issues/657); evidências: [VERIFICATION.md](../../docs/proposals/atlas-forge/docs/VERIFICATION.md) e handoffs `HO-20261022-atlas-forge-foundation` e `HO-20261022-atlas-forge-incorporation`. Não há marco M0–M8 globalmente declarado concluído. Os estados abaixo significam verificação local, aguardando revisão/integração e validação onde aplicável.
 
 | Tarefa | Marco | Entrega / próximo critério | Evidência ou limite |
 |---|---|---|---|
 | AF-001 | M0/M1/M3 parcial | Corte vertical: seed, esfera, edição, clima/drenagem, notas, persistência e publicação | Implementado e verificado localmente; revisão/integração pendente na Issue #657 |
-| AF-002 | M0 | Incorporação em `apps/atlas-forge` como aplicação independente | Proposta ADR-0035/DEC-0054; não registrada como capability global |
+| AF-002 | M0 | Incorporação em `apps/atlas-forge` como aplicação independente | Autorizada em DEC-0054/ADD-0031; registro, boundary e CI preparados na Issue #659/PR #658; integração/revisão pendente. Sem capability global |
 | AF-003 | M0/M1 | Receber Alpha e ampliar corpus real | Só mandato recebido; fixture sintética explicitamente identificada |
 | AF-004 | M1 | Validar toque, teclado, acessibilidade e desempenho Android real | Pendente; Chromium móvel não é DEVICE |
 | AF-005 | M1 | Tiles/LOD, métricas de frame e invalidação por região | Recálculo atual é do planeta inteiro; viewport separado da grade |
@@ -16,7 +16,7 @@ Fonte do escopo completo: [MISSION.md](MISSION.md). Estado vivo: [Issue AF-001 #
 | AF-010 | M4 | Catálogo/traços, produtor–herbívoro–predador e capacidade de suporte | Central à missão; primeiro cenário: herbívoro sem alimento declina |
 | AF-011 | M5 | Eras causais com escalas de tempo e diffs | Marcos atuais são snapshots, não simulação temporal |
 | AF-012 | M6 | Geradores de cidade/caverna/dungeon, hierarquia e edição vetorial | Hoje grafo de nove salas, persistente e conectado |
-| AF-013 | M7 | Arquivo de projeto grande, hashes por campo, assets e adapter autorizado | JSON limitado a 24 MiB; nunca escrever `.urbe/*` |
-| AF-014 | M8 | Dois consumidores reais, Extraction Review e capability se justificada | Sem extração antecipada; Hub nunca obrigatório |
+| AF-013 | M7 | Arquivo de projeto grande, hashes por campo, assets e adapter autorizado | JSON limitado a 24 MiB; sem escrever arquivos internos de outro aplicativo |
+| AF-014 | M8 | Dois consumidores reais, Extraction Review e capability se justificada | Sem extração antecipada; Runtime central nunca obrigatório |
 
 Cada avanço deve atravessar modelo → UI → persistência → teste → publicação quando aplicável. Não declarar todos os gates por ter controles visuais. O primeiro próximo trabalho técnico, independente da incorporação, é AF-007; AF-010 depende de recursos e habitats mensuráveis.

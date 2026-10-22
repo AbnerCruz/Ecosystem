@@ -1,6 +1,6 @@
 # Especificação do corte vertical AF-001
 
-Fonte: [mandato do proprietário](MISSION.md), primeira entrega obrigatória A–G. Autorização: construir aplicação independente e preparar incorporação governada; não integrar criticamente, alterar Urbe ou publicar releases por conta própria.
+Fonte: [mandato do proprietário](../../docs/proposals/atlas-forge/MISSION.md), primeira entrega obrigatória A–G. Autorização inicial: construir aplicação independente. DEC-0054/ADR-0035 aprova a incorporação em apps/atlas-forge; integração segue os mecanismos vigentes. Não alterar outro Product ou publicar release por conta própria.
 
 | ID | Comportamento observável | Implementação / evidência |
 |---|---|---|

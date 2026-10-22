@@ -1,0 +1,254 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-atlas-forge-incorporation",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T20:16:15.836641Z",
+  "agent": {
+    "id": "codex-atlas-forge",
+    "kind": "ai-agent"
+  },
+  "task_id": "AF-002",
+  "component": "atlas-forge",
+  "state": "review",
+  "branch": "codex/atlas-forge-foundation",
+  "base_commit": "64cb8d121eec5ff834112e3f5c0a712e27868290",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/658",
+  "files_changed": [
+    ".github/integrator/integrate.sh",
+    ".github/integrator/simulate.sh",
+    ".github/workflows/atlas-forge-checks.yml",
+    ".github/workflows/integrate.yml",
+    "ROADMAP.md",
+    "apps/atlas-forge/.gitignore",
+    "apps/atlas-forge/AGENTS.md",
+    "apps/atlas-forge/README.md",
+    "apps/atlas-forge/ROADMAP.md",
+    "apps/atlas-forge/SPEC.md",
+    "apps/atlas-forge/docs/FORMAT.md",
+    "apps/atlas-forge/docs/GUIDE.md",
+    "apps/atlas-forge/docs/MODELS.md",
+    "apps/atlas-forge/fixtures/alpha-v1.synthetic.json",
+    "apps/atlas-forge/index.html",
+    "apps/atlas-forge/package-lock.json",
+    "apps/atlas-forge/package.json",
+    "apps/atlas-forge/scripts/benchmark.mjs",
+    "apps/atlas-forge/scripts/build.mjs",
+    "apps/atlas-forge/scripts/examples.mjs",
+    "apps/atlas-forge/scripts/render-benchmark.mjs",
+    "apps/atlas-forge/scripts/serve.mjs",
+    "apps/atlas-forge/src/app/editor.js",
+    "apps/atlas-forge/src/app/styles.css",
+    "apps/atlas-forge/src/app/worker.js",
+    "apps/atlas-forge/src/core/world.js",
+    "apps/atlas-forge/src/documents/markdown.js",
+    "apps/atlas-forge/src/generation/local-map.js",
+    "apps/atlas-forge/src/generation/pipeline.js",
+    "apps/atlas-forge/src/generation/random.js",
+    "apps/atlas-forge/src/geometry/sphere.js",
+    "apps/atlas-forge/src/publishing/export.js",
+    "apps/atlas-forge/src/publishing/viewer.css",
+    "apps/atlas-forge/src/publishing/viewer.js",
+    "apps/atlas-forge/src/rendering/local.js",
+    "apps/atlas-forge/src/rendering/map.js",
+    "apps/atlas-forge/src/solvers/climate.js",
+    "apps/atlas-forge/src/solvers/hydrology.js",
+    "apps/atlas-forge/src/storage/local.js",
+    "apps/atlas-forge/src/storage/project.js",
+    "apps/atlas-forge/tests/browser.mjs",
+    "apps/atlas-forge/tests/core.test.mjs",
+    "docs/adr/0035-atlas-forge-incorporacao-gradual.md",
+    "docs/adr/README.md",
+    "docs/architecture/atlas-forge.md",
+    "docs/distribution/atlas-forge.target.profile.json",
+    "docs/governance/addenda/ADD-0031-atlas-forge-no-ecosystem.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261022-atlas-forge-incorporation.json",
+    "docs/proposals/atlas-forge/README.md",
+    "docs/proposals/atlas-forge/dist/atlas-forge.html",
+    "docs/proposals/atlas-forge/dist/examples/Miravento.md",
+    "docs/proposals/atlas-forge/dist/examples/miravento.html",
+    "docs/proposals/atlas-forge/dist/examples/miravento.world.json",
+    "docs/proposals/atlas-forge/dist/index.html",
+    "docs/proposals/atlas-forge/test-results/benchmark.txt",
+    "docs/proposals/atlas-forge/test-results/desktop.png",
+    "docs/proposals/atlas-forge/test-results/globe.png",
+    "docs/proposals/atlas-forge/test-results/mobile.png",
+    "docs/proposals/atlas-forge/test-results/offline-viewer.png",
+    "docs/proposals/atlas-forge/test-results/published.html",
+    "docs/proposals/atlas-forge/test-results/render-benchmark.txt",
+    "docs/proposals/atlas-forge/test-results/report.json",
+    "ecosystem.json"
+  ],
+  "work_completed": [
+    "DECISÃO DO PROPRIETÁRIO: depois da entrega revisável, autorizou incorporação: \"Pode por no ecosystem meu rei\". Registro ADD-0031, DEC-0054 decidida A e ADR-0035 Aceito.",
+    "Código canônico relocado com git mv da proposta para apps/atlas-forge; histórico e evidências preservados. Manifest registra Product independente JS/Canvas com versão única, comandos e documentação. Nenhuma capability global ou dependência de outro Product.",
+    "Instruções locais e README/SPEC/ROADMAP atualizados; documentação de classificação/boundary em docs/architecture/atlas-forge.md. Proposta anterior mantém mandato, auditoria e evidências históricas, sem segunda cópia do runtime.",
+    "Workflow seletivo/reutilizável do aplicativo e job no integrador preparados; resultado do CI integra o veredito final. Adicionado cenário do simulador que bloqueia CI Atlas vermelho, integra rotina verde e não publica release de outro Product.",
+    "Perfil alvo declara ausência de canal de produção; nenhum canal fictício em current, tag/release, hospedagem ou registro compartilhado criado."
+  ],
+  "verification": [
+    {
+      "check": "Paridade do runtime na relocação",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "18 módulos src comparados byte a byte com 5e289cfd: todos idênticos. Mudanças locais de identidade/rodapé e documentação; schema, algoritmo e chaves IndexedDB preservados."
+    },
+    {
+      "check": "npm run check em apps/atlas-forge",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Formatação, 17 testes, build e 12 cenários Chromium passaram na nova localização, inclusive editor/viewer file:// offline, JSON roundtrip, máscaras e IndexedDB."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks passaram após manifest, ADR/DEC, CI e boundary; histórico Git e tags completos."
+    },
+    {
+      "check": "Self-test e simulação do integrador",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Em execução no estado da incorporação; atualizar com resultado e CI antes de declarar integrado."
+    },
+    {
+      "check": "Android físico: layout, toque, desempenho e lifecycle",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/atlas-forge/README.md",
+      "critical": false,
+      "evidence": "Não foi disponibilizado aparelho; emulação Chromium não é DEVICE."
+    }
+  ],
+  "known_issues": [
+    "Corpus real da Alpha não recebido; migração v1 tem fixture sintética.",
+    "Modelos e lacunas científicas permanecem no roadmap; incorporação não acrescenta tectônica, ecologia, civilizações ou eras causais.",
+    "Artefatos CI são de revisão, com retenção; não representam canal de produção permanente."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrador deve verificar estado combinado atual e aplicar a autorização do proprietário pelo mecanismo vigente; nenhum merge manual.",
+    "Após integração observada, reconciliar status de AF-002/Issue e referências para main sem declarar DEVICE concluído.",
+    "Prosseguir AF-003/004/007/008/010 conforme corpus, dispositivo e próxima fatia causal."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "ecosystem.json",
+    "docs/adr/0035-atlas-forge-incorporacao-gradual.md",
+    "docs/governance/addenda/ADD-0031-atlas-forge-no-ecosystem.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json",
+    "docs/architecture/product-model.md",
+    "docs/architecture/local-first.md",
+    "docs/architecture/distribution.md",
+    "docs/distribution/direct-releases.md",
+    "docs/contracts/schemas/ecosystem.schema.json",
+    "docs/contracts/schemas/distribution-profile.schema.json",
+    "apps/atlas-forge/AGENTS.md",
+    "apps/atlas-forge/SPEC.md",
+    "apps/atlas-forge/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Código/versão locais únicos; proposta histórica não duplica runtime e viewer continua projeção."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Dependency array vazio e runtime autocontido; nenhum outro Product alterado."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Editor e viewer standalone/offline demonstrados em Chromium."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Exceção local JS/Canvas aprovada no ADR-0035/DEC-0054; padrão da plataforma não mudou."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #659, PR #658 e handoff com estado review/evidências."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Instrução real do proprietário persistida integralmente no ADD-0031, sem clique/merge inventado."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas consultadas diretamente e listadas."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Decisão de incorporação registrada antes de mover/registrar; integração continua governada."
+    },
+    {
+      "id": "NN-012",
+      "evidence": "git mv preserva histórico dos módulos; nenhuma importação externa foi descartada."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Relocação preserva comportamento; 18 módulos byte a byte idênticos e testes antes/depois."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "CI seletivo, versão e artefato independentes; sem release alheia."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Sem rede/permissões de host ou filesystem adicionais no runtime."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação física Android permanece explicitamente pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "review até integração/validações pertinentes; não declarado done."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "Identidade atlas-forge registrada; entidades/notas/projetos e storage mantêm IDs."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Nenhum serviço, Library, Registry ou runtime compartilhado criado."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Mapa canônico registra componente, comandos, docs e limites."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Possível candidato a ferramenta multi-host; não há segundo consumidor integrado ou extração."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Distribuição do HTML independe de um control plane externo; nenhum canal de produção inventado."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "atlas-forge-offline-world-editor",
+      "status": "possible-candidate",
+      "rationale": "Há uso standalone real, mas nenhum consumidor externo integrado que justifique Tool multi-host ou capability pública. Domínio e módulos permanecem no Product."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution",
+      "architecture",
+      "control-plane"
+    ],
+    "reason": "Registra decisão real do proprietário, incorpora Product no manifest, adiciona instruções locais e integra seu workflow/resultado ao integrador. Não altera autorização, classificação ou guardas de integração."
+  },
+  "cost": null
+}
