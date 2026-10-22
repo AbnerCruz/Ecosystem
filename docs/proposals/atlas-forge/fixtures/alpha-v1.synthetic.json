@@ -1,0 +1,33 @@
+{
+  "format": "atlasforge.world",
+  "version": 1,
+  "width": 12,
+  "height": 6,
+  "seed": "SYNTHETIC-ALPHA",
+  "params": {
+    "ocean": 68,
+    "tilt": 23.5,
+    "radius": 6371,
+    "baseTemp": 15
+  },
+  "elevation": "AACbAzYH0QpsDgcSohU9GdgccyAOJKknRCvfLnoyFTawOUs95kCBRBxIt0tST+1SiFYjWr5dWWH0ZI9oKmzFb2Bz+3aWejF+zYFohQOJnow5kNSTb5cKm6WeQKLbpXapEa2ssEe04rd9uxi/s8JOxunJhM0f0brUVdjw24vfJuPB5lzq9+2S8S31yPhj/P//",
+  "entities": [
+    {
+      "id": "legacy-castle",
+      "type": "castle",
+      "name": "Fortaleza legada",
+      "lat": 37,
+      "lon": -9,
+      "desc": "Fixture sintética do contrato documentado; não é arquivo original da Alpha.",
+      "mdName": "fortaleza.md",
+      "md": "# Nota legada\nConteúdo preservado."
+    }
+  ],
+  "era": 0,
+  "eras": [
+    {
+      "year": 0,
+      "height": "AACbAzYH0QpsDgcSohU9GdgccyAOJKknRCvfLnoyFTawOUs95kCBRBxIt0tST+1SiFYjWr5dWWH0ZI9oKmzFb2Bz+3aWejF+zYFohQOJnow5kNSTb5cKm6WeQKLbpXapEa2ssEe04rd9uxi/s8JOxunJhM0f0brUVdjw24vfJuPB5lzq9+2S8S31yPhj/P//"
+    }
+  ]
+}

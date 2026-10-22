@@ -294,3 +294,5 @@ Objetivo: extrair uma ferramenta com boundary claro (ex.: Sprite Studio ou Edito
 ## Propostas de novos Products
 
 - [~] MSP-001 — Constituição do Product de autoria matemática temporal. DEC-0040 escolheu o ID técnico `math-authoring`; MA-001 está em execução na Issue [#282](https://github.com/AbnerCruz/Ecosystem/issues/282), com escopo e milestones no [roadmap canônico do Product](apps/math-authoring/ROADMAP.md). O nome público permanece em aberto; sem nova fase global ou alteração do roadmap de outro Product.
+
+- [~] AF-001 — Atlas Forge: proposta executável independente com geometria esférica, autoria, clima/drenagem, notas, projeto e viewer offline. [Issue #657](https://github.com/AbnerCruz/Ecosystem/issues/657), [implementação](docs/proposals/atlas-forge/README.md), [roadmap local](docs/proposals/atlas-forge/ROADMAP.md), ADR-0035/DEC-0054 (incorporação proposta; nenhum novo componente registrado). Evidência: handoff `HO-20261022-atlas-forge-foundation`; não altera fases/gates globais.
