@@ -541,4 +541,58 @@ public sealed partial class HeadlessUiTests
             window.Close();
             return true;
         }, CancellationToken.None));
+
+    [Fact]
+    public async Task Sidebar_ARowIsRenamedInPlace() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // UC-83: select one row and Renomear (or F2): its name becomes a box; Enter renames, Esc leaves it
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-rename-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 1280, Height = 800, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                var explorer = view.Explorer;
+
+                // a note: hold to select, then Renomear in the bar
+                Assert.True(explorer.HoldNote("Comece.md"));
+                Dispatcher.UIThread.RunJobs();
+                Click(Named(explorer, "Renomear"));
+                Assert.Equal("Comece.md", explorer.Renaming);
+                var box = explorer.GetLogicalDescendants().OfType<TextBox>().First(t => AutomationProperties.GetName(t) == "Novo nome");
+                Assert.Equal("Comece.md", box.Text);
+                await Settle(window, view);
+                Assert.Equal((0, 6), (box.SelectionStart, box.SelectionEnd));   // the name, not the extension
+                Snapshot(window, "native-sidebar-rename.png");
+                box.Text = "Boas-vindas.md";
+                box.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.Enter });
+                Assert.Null(explorer.Renaming);
+                var renamed = Path.Combine(vault, "Boas-vindas.md");
+                for (int i = 0; i < 300 && (!File.Exists(renamed) || File.Exists(Path.Combine(vault, "Comece.md"))); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.True(File.Exists(renamed));
+                Assert.False(File.Exists(Path.Combine(vault, "Comece.md")));
+
+                // a folder by its "⋯" → Renomear; Esc leaves it as it was
+                Assert.True(explorer.OpenFolderMenu("Personagens"));
+                for (int i = 0; i < 20 && !view.Dialogs.IsOpen; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                ClickButtonWithText(view.Dialogs, "Renomear");
+                for (int i = 0; i < 50 && explorer.Renaming is null; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                Assert.Equal(NotesExplorer.FolderPrefix + "Personagens", explorer.Renaming);
+                box = explorer.GetLogicalDescendants().OfType<TextBox>().First(t => AutomationProperties.GetName(t) == "Novo nome");
+                box.Text = "Gente";
+                box.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.Escape });
+                Assert.Null(explorer.Renaming);
+                await Task.Delay(50);
+                Dispatcher.UIThread.RunJobs();
+                Assert.True(Directory.Exists(Path.Combine(vault, "Personagens")));
+                Assert.False(Directory.Exists(Path.Combine(vault, "Gente")));
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
 }

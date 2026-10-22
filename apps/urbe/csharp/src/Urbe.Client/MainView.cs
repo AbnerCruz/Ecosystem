@@ -76,7 +76,15 @@ public sealed partial class MainView : Grid
         Explorer.RestoreRequested += id => _ = RestoreFromTrashAsync(id);
         Explorer.FileRequested += path => { if (!StillReading()) _ = ShowFileAsync(path); };
         Explorer.FileMenuRequested += path => { if (!StillReading()) _ = ShowAttachmentActionsAsync(path, withView: true); };
-        Explorer.FolderMenuRequested += folder => { if (!StillReading()) _ = ShowFolderMenuAsync(folder); };
+        Explorer.FolderMenuRequested += folder => { if (!StillReading()) _ = ShowFolderMenuAsync(folder, inExplorer: true); };
+        // UC-83: a row renamed in place goes through the same verified renames as the dialogs
+        Explorer.RenameCommitted += (key, name) =>
+        {
+            if (StillReading()) return;
+            _ = key.StartsWith(NotesExplorer.FolderPrefix, StringComparison.Ordinal)
+                ? RenameFolderAsync(key[NotesExplorer.FolderPrefix.Length..], name)
+                : RenameNoteAsync(key, name);
+        };
         Explorer.MoveRequested += async (paths, folder) => { if (!StillReading()) await MoveSelectionToAsync(paths, folder); Explorer.ClearSelection(); };
         Explorer.FileMoveRequested += (path, folder) => { if (!StillReading()) _ = MoveAttachmentAsync(path, folder); };
         Explorer.PurgeRequested += id => _ = PurgeFromTrashAsync(id);
@@ -832,14 +840,15 @@ public sealed partial class MainView : Grid
     /// The "⋯" of a folder in the Explorer (the 1.8.4 showed no options when a folder was selected, DEC-0045, UC-38):
     /// Nova nota aqui, Nova subpasta, Renomear, Mover para (UC-54) and Mover para a lixeira.
     /// </summary>
-    private Task ShowFolderMenuAsync(string folder)
+    private Task ShowFolderMenuAsync(string folder, bool inExplorer = false)
     {
         if (Dialogs.IsOpen) return Task.CompletedTask;
         return Dialogs.MenuAsync(LastName(folder),
         [
             new("Nova nota aqui", UrbeTheme.Icons.File, NotesWhere(folder), Run: () => CreateNoteInNotesAsync(folder: folder)),
             new("Nova subpasta", UrbeTheme.Icons.Folder, "Dentro desta pasta.", Run: () => CreateFolderAsync(folder)),
-            new("Renomear", UrbeTheme.Icons.Pencil, "Muda o nome da pasta no vault.", Run: () => RenameFolderAsync(folder)),
+            new("Renomear", UrbeTheme.Icons.Pencil, "Muda o nome da pasta no vault.",
+                Run: () => inExplorer && Explorer.BeginRename(NotesExplorer.FolderPrefix + folder) ? Task.CompletedTask : RenameFolderAsync(folder)),
             new("Mover para", UrbeTheme.Icons.Move, "A pasta e tudo o que há nela.", Run: () => MoveFolderAsync(folder)),
             new("Mover para a lixeira", UrbeTheme.Icons.Trash, "A pasta e as notas dela.", Run: () => SelectionActionAsync("delete", [NotesExplorer.FolderPrefix + folder])),
             .. AreaMenuItems(folder)

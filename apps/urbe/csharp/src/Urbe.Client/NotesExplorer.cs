@@ -43,6 +43,7 @@ public sealed class NotesExplorer : Border
     private readonly Border _bar = new();
     private readonly TextBlock _count = new() { FontSize = 14, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0) };
     private readonly List<Button> _noteActions = [];
+    private Button _renameAction = new();
     private readonly List<CityNote> _notes = [];
     private readonly List<string> _files = [];
     private readonly Dictionary<Control, string> _folderRows = [];
@@ -157,6 +158,8 @@ public sealed class NotesExplorer : Border
 
         KeyDown += (_, e) =>
         {
+            // F2 (UC-83): the one item selected is renamed in its row
+            if (e.Key == Key.F2 && _selected.Count == 1 && BeginRename(_selected.First())) { e.Handled = true; return; }
             // Escape: clears the search, otherwise goes back to the tree, or to the editor when shown over it
             if (e.Key != Key.Escape) return;
             if ((_search.Text ?? "").Length > 0) SearchText = "";
@@ -583,7 +586,8 @@ public sealed class NotesExplorer : Border
                     var folder = k.Path;
                     var name = k.Name;
                     var d = depth;
-                    Emit(() =>
+                    if (_renaming == FolderPrefix + folder) Emit(() => RenameRow(FolderPrefix + folder, name, d));
+                    else Emit(() =>
                     {
                         var row = FolderRow(folder, name, d, open);
                         _folderRows[row] = folder;
@@ -611,6 +615,67 @@ public sealed class NotesExplorer : Border
         if (_list.Children.Count == 0)
             _list.Children.Add(_opening ? Empty("Abrindo suas notas…", "")
                 : EmptyWithAction("Nenhuma nota ainda", "Suas notas são arquivos Markdown na pasta que você escolher.", "Criar primeira nota"));
+    }
+
+    // ------------------------------------------------------------------ renaming in place (UC-83)
+
+    private string? _renaming;
+
+    /// <summary>A row renamed in place: the item (a note's path, or <see cref="FolderPrefix"/> and the folder) and the name typed.</summary>
+    public event Action<string, string>? RenameCommitted;
+
+    /// <summary>The item being renamed in place now, or null (tests).</summary>
+    public string? Renaming => _renaming;
+
+    /// <summary>
+    /// Turns the row of a note (its path) or folder (<see cref="FolderPrefix"/> and the folder) into a box with its name:
+    /// Enter (or leaving the box) renames it, Esc leaves it as it was. False when the row is not in the tree now.
+    /// </summary>
+    public bool BeginRename(string key)
+    {
+        bool folder = key.StartsWith(FolderPrefix, StringComparison.Ordinal);
+        if (_view != "tree" || (folder ? !_visibleFolders.Contains(key[FolderPrefix.Length..]) : !_visibleNotes.Contains(key))) return false;
+        _selected.Clear();
+        _renaming = key;
+        Render();
+        return true;
+    }
+
+    private Control RenameRow(string key, string name, int depth)
+    {
+        bool folder = key.StartsWith(FolderPrefix, StringComparison.Ordinal);
+        var box = new TextBox
+        {
+            Text = name, FontSize = 15, MinHeight = 40, VerticalContentAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(8 + depth * 16, 2, 8, 2), CornerRadius = new CornerRadius(10),
+            Background = UrbeTheme.Brush(UrbeTheme.Surface2), Foreground = UrbeTheme.Brush(UrbeTheme.Text), BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent)
+        };
+        Avalonia.Automation.AutomationProperties.SetName(box, "Novo nome");
+        bool done = false;
+        void Finish(bool keep)
+        {
+            if (done) return;
+            done = true;
+            _renaming = null;
+            var typed = (box.Text ?? "").Trim();
+            Render();
+            if (keep && typed.Length > 0 && typed != name) RenameCommitted?.Invoke(key, typed);
+        }
+        box.KeyDown += (_, e) =>
+        {
+            if (e.Key == Avalonia.Input.Key.Enter) { e.Handled = true; Finish(true); }
+            else if (e.Key == Avalonia.Input.Key.Escape) { e.Handled = true; Finish(false); }
+        };
+        box.LostFocus += (_, _) => Avalonia.Threading.Dispatcher.UIThread.Post(() => Finish(true));
+        box.AttachedToVisualTree += (_, _) => Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            box.Focus();
+            // the name without its extension is selected, as a file explorer does
+            int dot = folder ? -1 : name.LastIndexOf('.');
+            box.SelectionStart = 0;
+            box.SelectionEnd = dot > 0 ? dot : name.Length;
+        });
+        return box;
     }
 
     // ------------------------------------------------------------------ many rows (UC-78)
@@ -713,6 +778,7 @@ public sealed class NotesExplorer : Border
     {
         _visibleNotes.Add(n.Path);
         var path = n.Path;
+        if (_renaming == path) { Emit(() => RenameRow(path, Base(path), depth)); return; }
         // the file name with its extension, as an explorer shows it (the 1.8.4 showed the title)
         Emit(() => PressableRow(RowFrame(IconFor(path), name ?? Base(path), withPath && path.Contains('/') ? Dir(path) : null, false, false, null),
             depth, _selected.Contains(path), () => TryOpenNote(path), () => { if (HoldNote(path)) ArmDrag(); }, () => HoldDelay));
@@ -1103,6 +1169,10 @@ public sealed class NotesExplorer : Border
             return b;
         }
         var clear = Act(UrbeTheme.Icons.CloseUi, "Limpar seleção", null, UrbeTheme.Text2);
+        // UC-83: one item selected is renamed right there, in its row
+        _renameAction = Act(UrbeTheme.Icons.Pencil, "Renomear", null, UrbeTheme.Text2);
+        Avalonia.Automation.AutomationProperties.SetName(_renameAction, "Renomear");
+        _renameAction.Click += (_, _) => { if (_selected.Count == 1) BeginRename(_selected.First()); };
         clear.Click += (_, _) => ClearSelection();
         _count.Foreground = UrbeTheme.Brush(UrbeTheme.Text2);
         _count.Margin = new Thickness(6, 0);
@@ -1113,6 +1183,7 @@ public sealed class NotesExplorer : Border
             Children =
             {
                 Act(UrbeTheme.Icons.Open, "Abrir", "open", UrbeTheme.Text2),
+                _renameAction,
                 Act(UrbeTheme.Icons.Star, "Favoritar", "favorite", UrbeTheme.Text2),
                 Act(UrbeTheme.Icons.Move, "Mover para pasta", "move", UrbeTheme.Text2),
                 Act(UrbeTheme.Icons.Copy, "Duplicar", "duplicate", UrbeTheme.Text2),
@@ -1150,6 +1221,7 @@ public sealed class NotesExplorer : Border
         static string Plural(int n, string one, string many) => n + " " + (n == 1 ? one : many);
         _count.Text = string.Join(" · ", new[] { f > 0 ? Plural(f, "pasta", "pastas") : "", d > 0 ? Plural(d, "nota", "notas") : "" }.Where(x => x.Length > 0));
         foreach (var b in _noteActions) b.IsEnabled = d > 0;
+        _renameAction.IsEnabled = _selected.Count == 1;
     }
 
     private static string Dir(string path) => path.Contains('/') ? path[..path.LastIndexOf('/')] : "";
