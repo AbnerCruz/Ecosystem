@@ -43,7 +43,7 @@ public sealed partial class HeadlessUiTests
             view.ShowNotes();
             Dispatcher.UIThread.RunJobs();
             var e = view.Explorer;
-            Assert.False(e.Overlaid);
+            Assert.True(e.Overlaid && e.IsVisible);   // DEC-0053: on a phone, the drawer over the Área de trabalho
 
             // root: the folder first, then the notes by name (localeCompare: Árvore before Comece)
             Assert.Equal(new[] { "Bairro" }, e.VisibleFolderPaths);
@@ -92,16 +92,19 @@ public sealed partial class HeadlessUiTests
             Assert.Equal("Bairro/Ideias.md", view.Editor.Current?.Path);
             Assert.NotNull(view.Documents!.Get("Bairro/Ideias.md"));
 
-            // wide: the Explorer fills the window; over the editor it has Fechar, which goes back to the note
+            // wide: the Explorer is the sidebar beside the Área de trabalho (DEC-0053); over the editor it fills the
+            // window and has Fechar, which goes back to the note
             window.Width = 1280;
             await Settled();
-            Assert.True(e.Bounds.Width > 1100);
+            Assert.Equal(MainView.SidebarWidth, e.Bounds.Width);
             var close = e.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == "Fechar");
             Assert.False(close.IsVisible);
             view.ShowNotesOverEditor();
             Dispatcher.UIThread.RunJobs();
             Assert.True(view.NotesOverEditor);
             Assert.True(close.IsVisible);
+            await Settled();
+            Assert.True(e.Bounds.Width > 1100);
             Snapshot(window, "native-notes-wide.png");
             close.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
             Dispatcher.UIThread.RunJobs();

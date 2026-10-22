@@ -37,7 +37,7 @@ public sealed partial class HeadlessUiTests : IDisposable
     public void Dispose() { }
 
     [Fact]
-    public async Task App_OpensOnTheExplorerAndTheEditorComesOverIt() => Assert.True(await Session.Dispatch<bool>(async () =>
+    public async Task App_OpensOnTheAreaDeTrabalhoWithTheExplorerBesideIt() => Assert.True(await Session.Dispatch<bool>(async () =>
         {
             var view = new MainView();
             var window = new Window { Width = 1280, Height = 760, Content = view };
@@ -46,17 +46,26 @@ public sealed partial class HeadlessUiTests : IDisposable
             await Settle(window, view);
             Snapshot(window, "native-desktop-explorer.png");
 
-            // ADD-0028: the Explorer is the base of the app, the whole stage; no city behind it
+            // DEC-0053: the Área de trabalho is the base; on a wide window the Explorer is a sidebar beside it
+            Assert.True(view.SidebarDocked);
             Assert.True(view.Explorer.IsVisible);
-            Assert.True(view.Explorer.Bounds.Width > 1100 && view.Explorer.Bounds.Height > 700);
+            Assert.Equal(MainView.SidebarWidth, view.Explorer.Bounds.Width);
+            Assert.True(view.Workspace.IsVisible);
+            Assert.True(view.Workspace.Bounds.Width > 800 && view.Workspace.Bounds.Height > 700);
+            Assert.False(view.Workspace.ShowsSidebarButton);
             Assert.Equal("Explorer", view.Explorer.Title);
             Assert.Equal("Nenhuma pasta aberta", view.Explorer.Status);
             Assert.Contains(view.Explorer.HeaderActions.Children.OfType<Button>(), b => ToolTip.GetTip(b) as string == "Configurações");
+            Assert.Contains(view.Workspace.Index.Projects, p => p.Folder == "Tutorial");
 
-            Assert.True(view.Explorer.TryEnterFolder("Tutorial"));
-            Assert.True(view.Explorer.TryOpenNote("Tutorial/Comece aqui.md"));
+            // the Tutorial's box opens into its folder; a card opens the note in the editor, over both
+            ClickButtonWithText(view.Workspace, "Tutorial");
+            Assert.Equal("Tutorial", view.Workspace.Folder);
+            var card = view.Workspace.GetLogicalDescendants().OfType<Button>().First(b => Avalonia.Automation.AutomationProperties.GetName(b) == view.Workspace.Index.Items("Tutorial").First(i => i.Path == "Tutorial/Comece aqui.md").Title);
+            card.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
             await Settle(window, view);
             Assert.True(view.Editor.IsVisible);
+            Assert.Equal("Tutorial/Comece aqui.md", view.Editor.Current!.Path);
             Assert.Equal(EditorMode.Visual, view.Editor.Mode);   // 1.8.4 opens notes in Visual (editor.modoInicial)
             Snapshot(window, "native-desktop-editor-visual.png");
             view.Editor.SetMode(EditorMode.Fonte);
@@ -68,10 +77,12 @@ public sealed partial class HeadlessUiTests : IDisposable
             Assert.StartsWith("Olá, ação! ", view.Editor.Editor.Text);
             Snapshot(window, "native-desktop-editor.png");
 
-            // leaving the editor shows the Explorer again, where it was
+            // leaving the editor shows the Área de trabalho again, where it was, and the sidebar
             view.Editor.IsVisible = false;
             Dispatcher.UIThread.RunJobs();
             Assert.True(view.Explorer.IsVisible);
+            Assert.Equal("Tutorial", view.Workspace.Folder);
+            Assert.True(view.Explorer.TryEnterFolder("Tutorial"));
             Assert.Contains("Tutorial/Comece aqui.md", view.Explorer.VisibleNotePaths);
             window.Close();
             return true;
@@ -86,10 +97,23 @@ public sealed partial class HeadlessUiTests : IDisposable
             await view.LoadAsync(TutorialNotes.Load());
             await Settle(window, view);
             Snapshot(window, "native-phone-explorer.png");
-            Assert.True(view.Explorer.Bounds.Width >= 400);
-            var dock = view.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Text is "Notas" or "Assistente" or "Cidade" && t.IsEffectivelyVisible).Select(t => t.Text).ToList();
+            // DEC-0053: on a phone the Área de trabalho fills the screen; the Explorer is a drawer (Pastas)
+            Assert.True(view.Workspace.Bounds.Width >= 400);
+            Assert.False(view.Explorer.IsVisible);
+            Assert.True(view.Workspace.ShowsSidebarButton);
+            var dock = view.GetVisualDescendants().OfType<TextBlock>()
+                .Where(t => t.Text is "Notas" or "Assistente" or "Cidade" && t.IsEffectivelyVisible && t.FindAncestorOfType<WorkspaceView>() is null).Select(t => t.Text).ToList();
             Assert.Equal(["Notas", "Assistente"], dock);
             Assert.Equal("Notas", view.ActiveDestination);
+            ClickNamed(view.Workspace, "Pastas");
+            await Settle(window, view);
+            Assert.True(view.Explorer.IsVisible && view.Explorer.Overlaid);
+            Assert.True(view.Explorer.Bounds.Width >= 400);
+            Snapshot(window, "native-phone-drawer.png");
+            // Fechar (or a note chosen) closes the drawer
+            view.Explorer.GetLogicalDescendants().OfType<Button>().First(b => ToolTip.GetTip(b) as string == "Fechar").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            await Settle(window, view);
+            Assert.False(view.Explorer.IsVisible);
             window.Close();
             return true;
         }, CancellationToken.None));
@@ -298,7 +322,13 @@ public sealed partial class HeadlessUiTests : IDisposable
             window.Show();
             var init = view.InitializeAsync();
             Dispatcher.UIThread.RunJobs();
-            var texts = view.Explorer.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
+            // the base (the Área de trabalho, DEC-0053) says it is opening, not that there is nothing
+            var texts = view.Workspace.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
+            Assert.Contains("Abrindo suas notas…", texts);
+            Assert.DoesNotContain("Novo projeto", texts);
+            view.ShowNotes();
+            Dispatcher.UIThread.RunJobs();
+            texts = view.Explorer.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
             Assert.Contains("Abrindo suas notas…", texts);
             Assert.DoesNotContain("Nenhuma nota ainda", texts);
             storage.Release();
@@ -307,6 +337,7 @@ public sealed partial class HeadlessUiTests : IDisposable
             texts = view.Explorer.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
             Assert.DoesNotContain("Abrindo suas notas…", texts);
             Assert.Contains("Comece.md", texts);
+            Assert.Contains("Comece", view.Workspace.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
             window.Close();
             return true;
         }, CancellationToken.None));
@@ -451,6 +482,14 @@ public sealed partial class HeadlessUiTests : IDisposable
             window.Close();
             return true;
         }, CancellationToken.None));
+
+    /// <summary>Clicks the button named <paramref name="name"/> for screen readers (an icon button).</summary>
+    private static void ClickNamed(Control root, string name)
+    {
+        root.GetLogicalDescendants().OfType<Button>().First(b => Avalonia.Automation.AutomationProperties.GetName(b) == name)
+            .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+    }
 
     private static void ClickButtonWithText(Control root, string text)
     {

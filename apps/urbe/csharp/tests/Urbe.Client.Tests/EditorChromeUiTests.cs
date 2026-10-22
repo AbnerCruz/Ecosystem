@@ -28,10 +28,14 @@ public sealed partial class HeadlessUiTests
             await view.OpenVaultAsync();
             await Settle(window, view);
             Snapshot(window, "native-explorer-phone.png");
-            // the Explorer is the base (ADD-0028): its header has Nova nota, Mais opções and Configurações; settings.js menu
+            // the Área de trabalho is the base (DEC-0053) and has Configurações; the Explorer is its drawer, with Nova
+            // nota, Mais opções, Configurações and Fechar; settings.js menu
+            Assert.Contains(view.Workspace.GetLogicalDescendants().OfType<Button>(), b => b.IsEffectivelyVisible && ToolTip.GetTip(b) as string == "Configurações");
+            view.ShowNotes();
+            await Settle(window, view);
             var tops = view.Explorer.GetLogicalDescendants().OfType<Button>().Where(b => b.IsEffectivelyVisible && b.Height == 44)
                 .Select(b => ToolTip.GetTip(b) as string).Where(t => t is "Nova nota" or "Mais opções" or "Configurações" or "Fechar").ToList();
-            Assert.Equal(new[] { "Nova nota", "Mais opções", "Configurações" }, tops);
+            Assert.Equal(new[] { "Nova nota", "Mais opções", "Configurações", "Fechar" }, tops);
             Assert.Equal("ok", view.SaveDotState);
             _ = view.ShowSettingsAsync();
             Dispatcher.UIThread.RunJobs();

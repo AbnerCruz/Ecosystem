@@ -35,8 +35,8 @@ public static partial class AppDocs
 
         ## A tela
 
-        - **O Explorer** ocupa a tela: as pastas e notas do seu vault, com a busca no alto.
-        - **No alto:** o nome da sua pasta, com um ponto que mostra se está tudo salvo (verde), gravando (amarelo) ou com erro (vermelho); depois **Nova**, **Mais opções** e **Configurações**.
+        - **A Área de trabalho** ocupa a tela. Cada projeto (uma pasta no topo do vault) é uma caixa de vidro com a sua cor: dá para ver através dela as notas e os arquivos mais recentes, e tocar na caixa abre o catálogo do projeto. **+ Novo projeto** cria uma caixa nova. A busca no alto procura em todos os projetos, ou só no projeto aberto.
+        - **O Explorer** é a árvore de pastas e notas: no computador fica ao lado da Área de trabalho; no celular abre pelo botão **Pastas**. No alto dele: o nome da sua pasta, com um ponto que mostra se está tudo salvo (verde), gravando (amarelo) ou com erro (vermelho); depois **Nova**, **Mais opções** e **Configurações**.
         - **Embaixo:** **Notas** e **Assistente**.
         - Ao abrir, o Urbe volta direto para a nota em que você estava.
 
@@ -52,7 +52,7 @@ public static partial class AppDocs
     private const string Explorer = """
         # Explorer
 
-        O **Explorer** é a tela principal: mostra a pasta como arquivos e pastas.
+        O **Explorer** mostra a pasta como uma árvore de arquivos e pastas. No computador ele fica ao lado da Área de trabalho; no celular, abre pelo botão **Pastas** e fecha ao escolher uma nota.
 
         ## Navegar
 
@@ -87,7 +87,7 @@ public static partial class AppDocs
     private const string Editor = """
         # Editor
 
-        O editor abre por cima do Explorer. Ele salva sozinho e confere a gravação no arquivo; o rodapé mostra o estado.
+        O editor abre por cima da Área de trabalho e do Explorer. Ele salva sozinho e confere a gravação no arquivo; o rodapé mostra o estado.
 
         ## Visual e Fonte
 
