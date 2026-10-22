@@ -224,8 +224,11 @@ public sealed class EditorOverlay : Grid
         _sourceScroll.SizeChanged += (_, e) => { if (e.HeightChanged) KeepSourceCaretSoon(typing: true); };
         // #mathDock: the formula bar of Fonte, over the bottom of the text
         MathBar = new MathDock(Editor, () => Mode == EditorMode.Fonte && IsVisible);
-        var text = new Grid { Children = { _sourceScroll, _visualScroll, MathBar, Context } };
-        text.SizeChanged += (_, e) => { MathBar.Place(e.NewSize.Width); Context.Place(e.NewSize.Width); };
+        var text = new Grid { Children = { _sourceScroll, _visualScroll, MathBar, Context, Connections } };
+        text.SizeChanged += (_, e) => { MathBar.Place(e.NewSize.Width); Context.Place(e.NewSize.Width); Connections.Place(e.NewSize.Width); };
+        // one side panel at a time
+        Context.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty && Context.IsVisible) Connections.IsVisible = false; };
+        Connections.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty && Connections.IsVisible) Context.IsVisible = false; };
         // #urbeSplitPane: another note beside this one, (1 - ratio) of the width (editor/split-ui.js)
         var body = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
         body.Children.Add(text);
@@ -291,6 +294,9 @@ public sealed class EditorOverlay : Grid
 
     /// <summary>"Estrutura e backlinks" (editor/chrome.js .uec-context).</summary>
     public EditorContextPanel Context { get; } = new();
+
+    /// <summary>"Conexões": the local graph of the note (UC-71, ADD-0029).</summary>
+    public ConnectionsPanel Connections { get; } = new();
 
     /// <summary>The outline's tap: the caret at the start of that line of the text, focused.</summary>
     private void GoToLine(int line)

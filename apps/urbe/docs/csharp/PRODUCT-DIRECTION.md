@@ -21,6 +21,15 @@ Na abertura, o app volta direto para a última nota que estava aberta.
 
 **A simulação visual saiu do produto** (DEC-0051). O mundo procedural, a cidade (notas como casas, pastas como bairros, links como ruas) e a vida (moradores, fauna, clima) eram a interface da 1.8.4-beta e da beta 2.0 até a beta.14. Na prática, ficaram pesados e limitados por espaço. O estado com a simulação está congelado no ramo `urbe-simulacao-congelada`, até o proprietário decidir como substituí-la. Nenhuma parte dela volta sem nova ordem dele.
 
+**No lugar da simulação, conexões calmas** (DEC-0052, [ADD-0029](../../../../docs/governance/addenda/ADD-0029-urbe-conexoes-no-lugar-da-simulacao.md)). Não é o grafo de forças do Obsidian, mas um céu à noite:
+
+- cada nota fica sempre no mesmo lugar;
+- pontos de luz suaves, com a cor da pasta;
+- quase nada se move;
+- tocar numa nota mostra as suas ligações.
+
+Primeiro vem o painel **Conexões** da nota aberta, depois a **constelação** do vault, como uma tela para passear. O Explorer continua a base.
+
 **A 1.8.4 continua referência fora da simulação.** Isso vale para as regras do editor, do Explorer, da lixeira, do histórico, da importação, das páginas e do assistente. Mas ela é referência de essência, não de defeitos (DEC-0045, [ADD-0022](../../../../docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md)). O que o proprietário apontou como defeito ou aprovou como melhoria nas observações de uso é corrigido, não reproduzido.
 
 **Dados.** Id, datas e pastas das notas ficam em `.urbe/notas.json`. Os arquivos da cidade num vault antigo (`.urbe/mapa.json`, `.urbe/mundo.json`) são lidos uma vez e nunca apagados nem reescritos.

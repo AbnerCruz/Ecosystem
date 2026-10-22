@@ -1871,6 +1871,42 @@
       "decidedAt": "2026-10-22",
       "record": "docs/governance/addenda/ADD-0028-urbe-sem-simulacao-visual.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0052",
+      "status": "decided",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Urbe: conexões calmas no lugar da simulação visual",
+      "context": "Depois de retirar a simulação visual (DEC-0051), o proprietário perguntou em 2026-10-22 como substituí-la, citando o grafo de bolinhas do Obsidian e a ideia de o Urbe ser tranquilo e relaxante.",
+      "question": "O que substitui a simulação visual congelada?",
+      "alternatives": [
+        {
+          "option": "1 — Grafo de forças como o do Obsidian",
+          "consequences": "Identidade de outro produto; layout que se mexe e vira emaranhado; custo de processamento parecido com o que derrubou a simulação."
+        },
+        {
+          "option": "2 — Conexões calmas: posições estáveis, céu à noite, quase sem movimento; primeiro o painel da nota (UC-71), depois a constelação do vault (UC-72)",
+          "consequences": "Visão própria do Urbe, leve e útil; o Explorer continua a base; posições, quando guardadas, num arquivo novo e derivado."
+        },
+        {
+          "option": "3 — Nenhuma visão de conexões",
+          "consequences": "Só a lista de backlinks; perde a dimensão espacial que o proprietário valoriza."
+        }
+      ],
+      "consequences": "Opção 2 aceita pelo proprietário. ADD-0029 registra a ordem e os princípios; ROADMAP C# ganha UC-71 e UC-72. Cada passo validado no aparelho.",
+      "manifestCompatibility": "Cumpre NN-001 (posições, quando guardadas, num arquivo derivado que declara a fonte), NN-009 (ordem persistida), NN-017 (validação no aparelho). Nenhuma dependência nova entre Products ou com o Hub.",
+      "recommendation": "2 — proposta do agente aceita expressamente pelo proprietário.",
+      "related": [
+        "docs/governance/addenda/ADD-0029-urbe-conexoes-no-lugar-da-simulacao.md",
+        "apps/urbe/docs/csharp/ROADMAP.md"
+      ],
+      "raisedBy": "Proprietário; registro por Claude Code",
+      "raisedAt": "2026-10-22",
+      "decision": "2 — Conexões calmas no lugar da simulação, começando pelo painel Conexões da nota aberta (UC-71) e depois a constelação do vault (UC-72); o Explorer segue como base e nada da simulação volta.",
+      "decidedAt": "2026-10-22",
+      "record": "docs/governance/addenda/ADD-0029-urbe-conexoes-no-lugar-da-simulacao.md",
+      "consequencesApplied": true
     }
   ]
 }
