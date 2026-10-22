@@ -47,6 +47,14 @@ public sealed partial class MainView
         Workspace.NewNoteRequested += folder => { if (!StillReading()) _ = CreateNoteInNotesAsync(folder: folder); };
         Workspace.FolderMenuRequested += folder => { if (!StillReading()) _ = ShowFolderMenuAsync(folder); };
         Workspace.ItemHeld += path => { if (!StillReading()) _ = ShowItemSheetAsync(path); };
+        Workspace.ProjectDropped += (project, target) => { if (!StillReading()) _ = MoveBoxToAsync(project, target); };
+        // UC-84 fatia 4: a card dragged onto another box moves there, by the same verified moves as the Explorer
+        Workspace.ItemDropped += (path, folder) =>
+        {
+            if (StillReading()) return;
+            if (_contents.ContainsKey(path)) _ = MoveSelectionToAsync([path], folder);
+            else _ = MoveAttachmentAsync(path, folder);
+        };
         Workspace.PresentationChanged += KeepPresentation;
         Workspace.SidebarRequested += () =>
         {
@@ -279,10 +287,15 @@ public sealed partial class MainView
     }
 
     /// <summary>Moves a project's box one place before (-1) or after (+1) among the projects.</summary>
-    public async Task MoveBoxAsync(string project, int delta)
+    public Task MoveBoxAsync(string project, int delta) => ReorderBoxesAsync(area => area.Move(project, delta, Workspace.ProjectOrder));
+
+    /// <summary>A box dragged onto another takes its place (UC-84 fatia 4, UC-85).</summary>
+    public Task MoveBoxToAsync(string project, string target) => ReorderBoxesAsync(area => area.MoveTo(project, target, Workspace.ProjectOrder));
+
+    private async Task ReorderBoxesAsync(Func<AreaLayout, bool> move)
     {
         var before = _area.Serialize();
-        if (!_area.Move(project, delta, Workspace.ProjectOrder)) return;
+        if (!move(_area)) return;
         if (!await SaveAreaAsync()) { _area = AreaLayout.Parse(before, out _); }
         Workspace.Layout = _area;
     }

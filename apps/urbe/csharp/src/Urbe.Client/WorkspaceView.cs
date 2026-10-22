@@ -5,6 +5,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Urbe.Core;
 
 namespace Urbe.Client;
@@ -137,6 +138,10 @@ public sealed class WorkspaceView : Grid
     public event Action<string>? FileRequested;
     /// <summary>A card was held (or right-clicked): its information and actions.</summary>
     public event Action<string>? ItemHeld;
+    /// <summary>UC-84 fatia 4: a card dragged with the mouse onto a box: the item and the box's folder ("" = the root).</summary>
+    public event Action<string, string>? ItemDropped;
+    /// <summary>UC-84 fatia 4 / UC-85: a box's head dragged onto another box: the project and the one it goes before.</summary>
+    public event Action<string, string>? ProjectDropped;
     /// <summary>"+ Novo projeto": a new top folder.</summary>
     public event Action? NewProjectRequested;
     /// <summary>"+" inside a folder: a new note there.</summary>
@@ -417,11 +422,11 @@ public sealed class WorkspaceView : Grid
             all.Click += (_, _) => { _search.Text = ""; ShowLoose(); };
             content.Children.Add(Ui.UrbeMotion.Pressable(all));
         }
-        return new Border
+        return DropOn(new Border
         {
             Child = content, Padding = new Thickness(14), CornerRadius = new CornerRadius(18),
             BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), Background = UrbeTheme.Brush(UrbeTheme.Surface, .6)
-        };
+        }, "");
     }
 
     private void ShowLoose()
@@ -531,9 +536,9 @@ public sealed class WorkspaceView : Grid
                 : new BoxShadows(new BoxShadow { OffsetY = 6, Blur = 24, Color = Color.FromArgb(70, 0, 0, 0) })
         };
         if (style == "dupla")
-            return new Border { Child = glass, Padding = new Thickness(3), CornerRadius = new CornerRadius(21), BorderThickness = new Thickness(1), BorderBrush = new SolidColorBrush(c, .45) };
+            return DropOn(new Border { Child = glass, Padding = new Thickness(3), CornerRadius = new CornerRadius(21), BorderThickness = new Thickness(1), BorderBrush = new SolidColorBrush(c, .45) }, folder);
         if (style == "tracejada")
-            return new Panel
+            return DropOn(new Panel
             {
                 Children =
                 {
@@ -544,8 +549,8 @@ public sealed class WorkspaceView : Grid
                         StrokeDashArray = new Avalonia.Collections.AvaloniaList<double> { 5, 4 }, IsHitTestVisible = false
                     }
                 }
-            };
-        return glass;
+            }, folder);
+        return DropOn(glass, folder);
     }
 
     /// <summary>A box's head: its icon in its colour, its name, how many items and when; tapping it opens the box.</summary>
@@ -579,7 +584,18 @@ public sealed class WorkspaceView : Grid
         b.HorizontalAlignment = HorizontalAlignment.Stretch;
         b.HorizontalContentAlignment = HorizontalAlignment.Left;
         AutomationProperties.SetName(b, box.Name);
-        b.Click += (_, _) => { if (TouchIntent.IsIntended(b)) Open(box.Folder); };
+        // a project's head dragged with the mouse onto another project puts it in that one's place (UC-85)
+        if (!box.Folder.Contains('/'))
+            WireDrag(b, box.Name, BoxIcon(box.Folder), target =>
+            {
+                var project = WorkspaceIndex.ProjectOf(target + "/");
+                if (target.Length > 0 && project != box.Folder) ProjectDropped?.Invoke(box.Folder, project);
+            });
+        b.Click += (_, _) =>
+        {
+            if (_dragged) { _dragged = false; return; }
+            if (TouchIntent.IsIntended(b)) Open(box.Folder);
+        };
         row.Children.Add(Ui.UrbeMotion.Pressable(b));
         return row;
     }
@@ -603,6 +619,7 @@ public sealed class WorkspaceView : Grid
             Background = UrbeTheme.Brush(hex, .08), BorderBrush = UrbeTheme.Brush(hex, .35), BorderThickness = new Thickness(1)
         });
         AutomationProperties.SetName(b, box.Name);
+        DropOn(b, box.Folder);
         b.Click += (_, _) => { if (TouchIntent.IsIntended(b)) Open(box.Folder); };
         return b;
     }
@@ -736,13 +753,100 @@ public sealed class WorkspaceView : Grid
             e.Handled = true;
             if (!held) ItemHeld?.Invoke(item.Path);
         };
+        WireDrag(b, item.Title, IconOf(item.Kind), folder => { if (folder != item.Folder) ItemDropped?.Invoke(item.Path, folder); });
         b.Click += (_, _) =>
         {
+            if (_dragged) { _dragged = false; return; }
             if (held) { held = false; return; }
             if (!TouchIntent.IsIntended(b)) return;
             if (item.IsNote) NoteRequested?.Invoke(item.Path); else FileRequested?.Invoke(item.Path);
         };
         return b;
+    }
+
+    // ------------------------------------------------------------------ dragging (UC-84 fatia 4)
+
+    private const string DropClass = "ws-drop";
+    private Button? _pressed;
+    private Button? _dragging;
+    private bool _dragged;
+    private Point _dragFrom;
+    private Control? _dropTarget;
+    private Border? _ghost;
+
+    /// <summary>A box (or a subfolder chip) that takes a dragged card: its folder.</summary>
+    private static T DropOn<T>(T c, string folder) where T : Control
+    {
+        c.Classes.Add(DropClass);
+        c.Tag = folder;
+        return c;
+    }
+
+    /// <summary>With the mouse, a card (or a box's head) pressed and moved follows the pointer; released on a box, <paramref name="drop"/> gets its folder.</summary>
+    private void WireDrag(Button b, string title, string icon, Action<string> drop)
+    {
+        b.AddHandler(Avalonia.Input.InputElement.PointerPressedEvent, (_, e) =>
+        {
+            if (e.Pointer.Type != Avalonia.Input.PointerType.Mouse || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+            _pressed = b;
+            _dragFrom = e.GetPosition(this);
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+        b.AddHandler(Avalonia.Input.InputElement.PointerMovedEvent, (_, e) =>
+        {
+            if (!ReferenceEquals(_pressed, b) || e.Pointer.Type != Avalonia.Input.PointerType.Mouse) return;
+            var at = e.GetPosition(this);
+            if (_dragging is null && Math.Abs(at.X - _dragFrom.X) + Math.Abs(at.Y - _dragFrom.Y) < 8) return;
+            _dragging = b;
+            MoveGhost(title, icon, at);
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+        b.AddHandler(Avalonia.Input.InputElement.PointerReleasedEvent, (_, e) =>
+        {
+            _pressed = null;
+            if (!ReferenceEquals(_dragging, b)) return;
+            var folder = DropTargetAt(e.GetPosition(this))?.Tag as string;
+            EndDrag();
+            _dragged = true;
+            Dispatcher.UIThread.Post(() => _dragged = false);   // a release elsewhere raises no click to clear it
+            if (folder is not null) drop(folder);
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+    }
+
+    private void MoveGhost(string title, string icon, Point at)
+    {
+        if (_ghost is null)
+        {
+            _ghost = new Border
+            {
+                IsHitTestVisible = false, ZIndex = 20, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
+                Padding = new Thickness(10, 6), CornerRadius = new CornerRadius(10), Background = UrbeTheme.Brush(UrbeTheme.Surface2), Opacity = .92,
+                BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent, .6), BorderThickness = new Thickness(1),
+                BoxShadow = new BoxShadows(new BoxShadow { OffsetY = 6, Blur = 18, Color = Color.FromArgb(90, 0, 0, 0) }),
+                Child = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal, Spacing = 6,
+                    Children = { UrbeTheme.Icon(icon, 14, UrbeTheme.Text2, 1.8), new TextBlock { Text = title, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text), MaxWidth = 220, TextTrimming = TextTrimming.CharacterEllipsis } }
+                }
+            };
+            SetRowSpan(_ghost, 4);
+            Children.Add(_ghost);
+        }
+        _ghost.Margin = new Thickness(at.X + 12, at.Y + 8, 0, 0);
+        var target = DropTargetAt(at);
+        if (ReferenceEquals(target, _dropTarget)) return;
+        if (_dropTarget is not null) _dropTarget.Opacity = 1;
+        _dropTarget = target;
+        if (_dropTarget is not null) _dropTarget.Opacity = .7;
+    }
+
+    private Control? DropTargetAt(Point at) =>
+        (Avalonia.Input.InputExtensions.InputHitTest(this, at) as Visual)?.GetSelfAndVisualAncestors().OfType<Control>().FirstOrDefault(c => c.Classes.Contains(DropClass));
+
+    private void EndDrag()
+    {
+        _dragging = null;
+        if (_dropTarget is not null) _dropTarget.Opacity = 1;
+        _dropTarget = null;
+        if (_ghost is not null) { Children.Remove(_ghost); _ghost = null; }
     }
 
     private static string IconOf(WorkspaceItemKind kind) => kind switch

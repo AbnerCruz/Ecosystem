@@ -68,6 +68,19 @@ public sealed class AreaLayout
         return true;
     }
 
+    /// <summary>Puts a project in the place of <paramref name="target"/> among <paramref name="current"/> (dragging a box onto another); false when nothing moves.</summary>
+    public bool MoveTo(string project, string target, IReadOnlyList<string> current)
+    {
+        var list = current.ToList();
+        int from = list.IndexOf(project), to = list.IndexOf(target);
+        if (from < 0 || to < 0 || from == to) return false;
+        list.RemoveAt(from);
+        list.Insert(to, project);
+        _order.Clear();
+        _order.AddRange(list);
+        return true;
+    }
+
     /// <summary>A folder renamed or moved by the app: its box and its subfolders' follow it. False when nothing was kept for it.</summary>
     public bool Renamed(string from, string to)
     {

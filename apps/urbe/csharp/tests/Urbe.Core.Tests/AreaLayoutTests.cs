@@ -74,4 +74,16 @@ public sealed class AreaLayoutTests
         Assert.Null(a.Of("B"));
         Assert.Equal(["A", "C"], a.Arrange(["C", "A"], f => f));
     }
+
+    [Fact]
+    public void ABoxDraggedOntoAnotherTakesItsPlace()
+    {
+        var layout = new AreaLayout();
+        Assert.True(layout.MoveTo("C", "A", ["A", "B", "C"]));
+        Assert.Equal(["C", "A", "B"], layout.Arrange(["A", "B", "C"], x => x));
+        Assert.True(layout.MoveTo("C", "B", ["C", "A", "B"]));
+        Assert.Equal(["A", "B", "C"], layout.Arrange(["A", "B", "C"], x => x));
+        Assert.False(layout.MoveTo("A", "A", ["A", "B", "C"]));
+        Assert.False(layout.MoveTo("X", "A", ["A", "B", "C"]));
+    }
 }

@@ -409,4 +409,59 @@ public sealed partial class HeadlessUiTests
                 try { Directory.Delete(dir, true); } catch (IOException) { }
             }
         }, CancellationToken.None));
+
+    [Fact]
+    public async Task Workspace_ACardDraggedOntoAnotherBoxMovesThere() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // UC-84 fatia 4: with the mouse, a card dragged onto another box goes to that project
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-area-drag-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 1280, Height = 800, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                var card = Named(view.Workspace, "Herói");
+                var box = view.Workspace.GetLogicalDescendants().OfType<Control>().First(c => c.Classes.Contains("ws-drop") && c.Tag as string == "Matemática");
+                var from = card.TranslatePoint(new Point(card.Bounds.Width / 2, card.Bounds.Height / 2), window)!.Value;
+                var to = box.TranslatePoint(new Point(box.Bounds.Width / 2, 40), window)!.Value;
+                window.MouseDown(from, MouseButton.Left, RawInputModifiers.None);
+                for (int i = 1; i <= 6; i++)
+                {
+                    window.MouseMove(new Point(from.X + (to.X - from.X) * i / 6, from.Y + (to.Y - from.Y) * i / 6), RawInputModifiers.LeftMouseButton);
+                    Dispatcher.UIThread.RunJobs();
+                }
+                Snapshot(window, "native-workspace-drag.png");
+                window.MouseUp(to, MouseButton.Left, RawInputModifiers.None);
+                var moved = Path.Combine(vault, "Matemática", "Herói.md");
+                for (int i = 0; i < 300 && !File.Exists(moved); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.True(File.Exists(moved));
+                Assert.False(File.Exists(Path.Combine(vault, "Personagens", "Herói.md")));
+                Assert.False(view.Editor.IsVisible);   // the drop opened nothing
+
+                // a project's head dragged onto another project takes its place (kept in .urbe/area.json)
+                await Settle(window, view);
+                Assert.Equal(["Matemática", "Personagens"], view.Workspace.ProjectOrder);
+                var head = Named(view.Workspace, "Personagens");
+                var target = view.Workspace.GetLogicalDescendants().OfType<Control>().First(c => c.Classes.Contains("ws-drop") && c.Tag as string == "Matemática");
+                from = head.TranslatePoint(new Point(40, head.Bounds.Height / 2), window)!.Value;
+                to = target.TranslatePoint(new Point(target.Bounds.Width / 2, 40), window)!.Value;
+                window.MouseDown(from, MouseButton.Left, RawInputModifiers.None);
+                for (int i = 1; i <= 6; i++)
+                {
+                    window.MouseMove(new Point(from.X + (to.X - from.X) * i / 6, from.Y + (to.Y - from.Y) * i / 6), RawInputModifiers.LeftMouseButton);
+                    Dispatcher.UIThread.RunJobs();
+                }
+                window.MouseUp(to, MouseButton.Left, RawInputModifiers.None);
+                for (int i = 0; i < 300 && view.Workspace.ProjectOrder[0] != "Personagens"; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.Equal(["Personagens", "Matemática"], view.Workspace.ProjectOrder);
+                Assert.Equal("", view.Workspace.Folder);   // the drop opened no box
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
 }
