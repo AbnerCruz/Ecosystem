@@ -1907,6 +1907,38 @@
       "decidedAt": "2026-10-22",
       "record": "docs/governance/addenda/ADD-0029-urbe-conexoes-no-lugar-da-simulacao.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0053",
+      "status": "decided",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Urbe: a Área de trabalho como base, com o Explorer como barra lateral em árvore",
+      "context": "Usando a beta 2.0.0-beta.16, em 2026-10-22, o proprietário pediu que o Explorer vire uma barra lateral moderna em árvore e que o centro do app seja uma área de trabalho onde cada projeto (pasta do topo) é uma caixa de vidro com borda colorida e um catálogo em grid das suas notas e arquivos. Depois confirmou: \"Pode registrar a área de trabalho, está decidido\".",
+      "question": "Qual é a base do app nativo depois do Explorer (DEC-0051)?",
+      "alternatives": [
+        {
+          "option": "1 — Manter o Explorer como base, só melhorando o visual",
+          "consequences": "Menos trabalho; não atende ao pedido de diferenciar projetos nem ao catálogo em grid."
+        },
+        {
+          "option": "2 — Área de trabalho com projetos em caixas de vidro e catálogo em grid; Explorer como barra lateral em árvore (gaveta no celular)",
+          "consequences": "Navegação por projetos, visual próprio do Urbe; feito em fatias (UC-83 a UC-85), cada uma validada no aparelho; a aparência das caixas num arquivo novo de apresentação, .urbe/area.json."
+        }
+      ],
+      "consequences": "Opção 2, decidida pelo proprietário. ADD-0030 registra as palavras dele e a proposta do agente; o ROADMAP C# ganha UC-83 a UC-85; AGENTS.md, apps/urbe/AGENTS.md, PRODUCT-DIRECTION e ADR-0034 apontam a nova base.",
+      "manifestCompatibility": "Cumpre NN-001 (pastas continuam a autoridade do conteúdo; .urbe/area.json só guarda apresentação e declara a fonte), NN-009 (ordem persistida), NN-017 (validação no aparelho a cada fatia). Nenhuma dependência nova entre Products ou com o Hub.",
+      "recommendation": "2 — ordem do proprietário; o desenho detalhado é proposta do agente dentro dela.",
+      "related": [
+        "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
+        "apps/urbe/docs/csharp/ROADMAP.md"
+      ],
+      "raisedBy": "Proprietário; registro por Claude Code",
+      "raisedAt": "2026-10-22",
+      "decision": "2 — A Área de trabalho é a base do app: projetos como caixas de vidro com borda colorida e catálogo em grid, com busca, filtros e organização na caixa e na raiz; tocar abre, segurar mostra informações e edição. O Explorer vira barra lateral em árvore. A abertura continua na última nota.",
+      "decidedAt": "2026-10-22",
+      "record": "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
+      "consequencesApplied": true
     }
   ]
 }

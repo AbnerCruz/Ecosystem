@@ -4,6 +4,8 @@
 
 Aceito — **DEC-0051** (ordem do proprietário em 2026-10-22, [ADD-0028](../governance/addenda/ADD-0028-urbe-sem-simulacao-visual.md)). **Substitui** a parte do [ADR-0032](0032-urbe-ui-nativa-sem-webview.md) que faz da cidade em tela cheia a interface do Urbe; o restante do ADR-0032 (Avalonia, heads Android e Desktop, sem WebView) continua valendo.
 
+**Atualização (DEC-0053, 2026-10-22, [ADD-0030](../governance/addenda/ADD-0030-urbe-area-de-trabalho.md)):** a parte "o Explorer como base" é substituída pela Área de trabalho, com o Explorer como barra lateral em árvore. O registro das notas e o resto deste ADR continuam valendo.
+
 ## Contexto
 
 FATO: o proprietário usou a beta 2.0.0-beta.14 e concluiu que "absolutamente qualquer coisa referente a simulação simplesmente não funciona como produto" (peso, espaço). Ele mandou retirar a simulação visual inteira e todas as suas funcionalidades, limpar o código e seguir o desenvolvimento sem ela, mantendo o mesmo produto (ADD-0028).
