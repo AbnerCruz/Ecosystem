@@ -1,6 +1,6 @@
 # Evidências de execução — AF-001
 
-Execução local em 22/10/2026; não é resultado de CI remoto nem validação humana em aparelho.
+Evidências locais e remotas em 22/10/2026. Os registros de CI indicam explicitamente o commit testado; nenhuma evidência representa validação humana em aparelho.
 
 | Verificação | Resultado |
 |---|---|
@@ -11,6 +11,8 @@ Execução local em 22/10/2026; não é resultado de CI remoto nem validação h
 | Editor offline | Aberto por `file://` com rede desativada; Worker incorporado operacional |
 | Viewer offline | Aberto por `file://` com rede desativada; zero requisições HTTP, nota hostil inerte e mapa filho navegável |
 | Dados | Undo/redo exato; regeneração preserva máscaras; roundtrip JSON integral; versão futura rejeitada; cópia IndexedDB verificada e reaberta após reload |
+| CI remoto Atlas Forge | [Run 39845060375](https://github.com/AbnerCruz/Ecosystem/actions/runs/39845060375) verde no commit `a6d2145a`; 17 testes + 12 cenários + build e artefatos |
+| CI remoto governança | [Run 39844932792](https://github.com/AbnerCruz/Ecosystem/actions/runs/39844932792) verde no commit `005f34cf`: checks, piloto P6-4, self-test e simulação do integrador |
 | Ecosystem baseline | `dotnet run tests/consistency/Check.cs`: 22 checks passaram antes e depois das mudanças normativas; estado final no handoff |
 | Android físico | **Pendente**. Viewport móvel/toque emulado não é DEVICE, instalação ou lifecycle Android |
 | Alpha real | **Indisponível**. Fixture sintética não demonstra paridade com o aplicativo original |

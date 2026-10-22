@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261022-atlas-forge-foundation",
   "category": "HANDOFF",
-  "timestamp": "2026-10-22T20:00:25.422417Z",
+  "timestamp": "2026-10-22T20:07:16.473576Z",
   "agent": {
     "id": "codex-atlas-forge",
     "kind": "ai-agent"
@@ -76,14 +76,16 @@
     "Gargalo medido no globo reduzido de mediana 83,3 ms para 4,1 ms com lookup de projeção, sem mudar grade física.",
     "Preparados tutorial, contratos locais de persistência, notas de modelos/limites, roadmap, exemplo gerado, workflow seletivo de verificações e evidências desktop/mobile/offline.",
     "PROPOSTA: ADR-0035/DEC-0054 para incorporação futura; nenhum apps/atlas-forge, componente global, alteração do Urbe ou release criado.",
-    "Primeiro CI remoto detectou ubuntu-latest em Ubuntu 26.04, incompatível com Playwright 1.56.1. Workflow de proposta fixado em Ubuntu 24.04 suportado; sem alterar workflows de outros componentes."
+    "Primeiro CI remoto detectou ubuntu-latest em Ubuntu 26.04, incompatível com Playwright 1.56.1. Workflow de proposta fixado em Ubuntu 24.04 suportado; sem alterar workflows de outros componentes.",
+    "CI da implementação e CI específico da proposta verdes com URLs e commits testados; artefato offline e pacote editável preparados localmente. Nenhum merge ou release executado."
   ],
   "verification": [
     {
       "check": "npm run check",
       "kind": "automated",
       "result": "passed",
-      "evidence": "17 testes de núcleo/boundary, formatação, build e 12 cenários Chromium passaram; docs/proposals/atlas-forge/docs/VERIFICATION.md e docs/evidence/browser-report.json."
+      "evidence": "CI remoto verde no commit a6d2145a97db3e16605ecad1e177d9886cd9943d: https://github.com/AbnerCruz/Ecosystem/actions/runs/39845060375 . Formatação, 17 testes de núcleo/boundary, build/exemplos e 12 cenários Chromium. Evidências locais em docs/proposals/atlas-forge/docs/VERIFICATION.md.",
+      "tested_commit": "a6d2145a97db3e16605ecad1e177d9886cd9943d"
     },
     {
       "check": "Benchmark geração e Canvas",
@@ -100,8 +102,9 @@
     {
       "check": "dotnet run tests/consistency/Check.cs -- --self-test",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Execução local em andamento; resultado será atualizado antes da entrega."
+      "result": "passed",
+      "evidence": "Workflow consistency completo passou no commit da implementação: https://github.com/AbnerCruz/Ecosystem/actions/runs/39844932792 . Inclui 22 checks, piloto P6-4, self-test e simulação do integrador. Tentativas locais anteriores exigiram corrigir PATH do SDK e baixar tags do clone; após fetch completo os 22 checks locais passaram.",
+      "tested_commit": "005f34cfdad1aed6d2df315b5019e903dc938bfd"
     },
     {
       "check": "Android físico: layout, toque, desempenho percebido e lifecycle",
