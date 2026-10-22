@@ -1,0 +1,61 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-ci-sem-maui",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T01:34:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-34",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-urbe-ci-sem-maui",
+  "base_commit": "9c13dc2e",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/workflows/urbe-checks.yml",
+    "docs/governance/handoffs/HO-20261022-urbe-ci-sem-maui.json"
+  ],
+  "work_completed": [
+    "O job csharp-native (build e APK de desenvolvimento do Urbe.App, a casca Blazor/MAUI congelada) sai do urbe-checks. A casca só existe junto com a cidade, que o proprietário mandou retirar do produto (ADD-0028); o PR que remove a simulação apaga Urbe.UI/Urbe.App/Urbe.Web (UC-34). PR separado porque o integrador testa o estado combinado com os workflows da main: com o job ainda lá, o PR da remoção ficaria vermelho por compilar um projeto que não existe mais. Nenhum outro job muda; o cliente nativo (Android e Windows) continua compilado e testado."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Diff do workflow: só o job csharp-native removido; csharp-portable, csharp-client-native, checks e e2e intactos",
+      "result": "passed",
+      "evidence": "git diff: 2 inserções (comentário), 62 remoções (o job)."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Integrar antes do PR da remoção da simulação (ADD-0028)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma verificação do cliente nativo foi removida."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "ci-job-removal",
+      "status": "product-specific",
+      "rationale": "Job do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Altera workflow (.github/workflows)."
+  }
+}
