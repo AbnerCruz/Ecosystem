@@ -17,10 +17,12 @@
   "pr": null,
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTests.cs",
     "docs/governance/handoffs/HO-20261022-urbe-beta-16.json"
   ],
   "work_completed": [
-    "Urbe Beta 2.0 — 2.0.0-beta.16 (versionCode 2000016): publica no canal beta (DEC-0048) as Conexões da nota aberta (UC-71, PR #643) e as correções de toque e teclado da observação de 22/10/2026 (UC-73 a UC-75, PR #644), com o Windows na mesma release e as notas da release já sem a cidade."
+    "Urbe Beta 2.0 — 2.0.0-beta.16 (versionCode 2000016): publica no canal beta (DEC-0048) as Conexões da nota aberta (UC-71, PR #643) e as correções de toque e teclado da observação de 22/10/2026 (UC-73 a UC-75, PR #644), com o Windows na mesma release e as notas da release já sem a cidade.",
+    "Source_DraggingAFingerScrolls (do #644) falhou no CI deste PR: o teste supunha que a nota ainda deslizava, mas numa máquina lenta o arrasto terminava sem deslizar e o toque seguinte era um toque comum. Agora o teste faz um impulso a cerca de 1 px/ms, solta logo após o último movimento e confere que a nota desliza antes do toque; 186 de 186 também com a CPU ocupada."
   ],
   "verification": [
     {

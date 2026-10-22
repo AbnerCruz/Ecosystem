@@ -172,6 +172,24 @@ public sealed class EditorTests
         Assert.True(scroll.Offset.Y > 150, "rolou " + scroll.Offset.Y + " seleção " + editor.Editor.SelectionStart + "-" + editor.Editor.SelectionEnd);
         Assert.Equal(editor.Editor.SelectionStart, editor.Editor.SelectionEnd);   // the drag selected nothing
 
+        // a flick: the note glides on after the finger leaves (released right after the last move, at about
+        // 1 px/ms, so the glide is long enough on a slow machine and never runs into the end of the note)
+        scroll.Offset = default;
+        Dispatcher.UIThread.RunJobs();
+        await Task.Delay(TouchIntent.SettleMs + 50);
+        var flickFrom = editor.Editor.TranslatePoint(new Point(60, 400), window)!.Value;
+        var flick = window.TouchBegin(flickFrom, RawInputModifiers.None);
+        for (int i = 1; i <= 4; i++)
+        {
+            await Task.Delay(30);
+            window.TouchMove(flick, new Point(flickFrom.X, flickFrom.Y - i * 30), RawInputModifiers.None);
+        }
+        window.TouchEnd(flick, new Point(flickFrom.X, flickFrom.Y - 120), RawInputModifiers.None);
+        var released = scroll.Offset.Y;
+        await Task.Delay(40);
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(scroll.Offset.Y > released, $"a nota não deslizou ({released} → {scroll.Offset.Y})");
+
         // the note still glides: a tap only stops it (no caret, so no keyboard), as on a phone (22/10/2026)
         var caretBefore = editor.Editor.CaretIndex;
         var stopAt = editor.Editor.TranslatePoint(new Point(30, scroll.Offset.Y + 100), window)!.Value;
