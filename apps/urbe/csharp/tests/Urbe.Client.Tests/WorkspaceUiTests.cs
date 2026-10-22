@@ -513,4 +513,32 @@ public sealed partial class HeadlessUiTests
             }
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
+
+    [Fact]
+    public async Task Explorer_ManyNotesMakeOnlyTheRowsNearTheScreen() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // UC-78: three thousand notes in an open folder: only the rows near the screen are made, and scrolling makes the rest
+            var explorer = new NotesExplorer { State = new ExplorerState(null) };
+            var window = new Window { Width = 412, Height = 860, Content = explorer };
+            window.Show();
+            explorer.State!.Expand("Pasta", true);
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            explorer.SetNotes(Enumerable.Range(0, 3000).Select(i => new CityNote("Pasta/Nota " + i.ToString("0000", System.Globalization.CultureInfo.InvariantCulture) + ".md", "# Nota")));
+            Dispatcher.UIThread.RunJobs();
+            var took = watch.ElapsedMilliseconds;
+            Assert.True(explorer.MadeRows < 200, "linhas feitas: " + explorer.MadeRows);
+            string[] Texts() => [.. explorer.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text ?? "")];
+            Assert.Contains("Nota 0000.md", Texts());
+            Assert.DoesNotContain("Nota 2999.md", Texts());
+            // the end of the list
+            var scroll = explorer.GetLogicalDescendants().OfType<ScrollViewer>().First(s => s.Content is StackPanel);
+            for (int i = 0; i < 5; i++) { scroll.Offset = new Vector(0, scroll.Extent.Height); await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+            Assert.Contains("Nota 2999.md", Texts());
+            Assert.True(explorer.MadeRows < 200, "linhas feitas: " + explorer.MadeRows);
+            Assert.True(explorer.TryOpenNote("Pasta/Nota 1500.md"));
+            Console.WriteLine("explorer 3000 notas: " + took + " ms");
+            window.Close();
+            return true;
+        }, CancellationToken.None));
 }

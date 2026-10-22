@@ -138,6 +138,9 @@ public sealed class NotesExplorer : Border
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
         };
+        _scroll = scroll;
+        // UC-78: with many rows only the ones near the screen are made; scrolling makes the next ones
+        scroll.ScrollChanged += (_, _) => { if (_rows is not null) Realize(); };
         // a finger that scrolls the list, or only stops it, neither opens nor selects the row under it (22/10/2026)
         TouchIntent.Attach(scroll);
         var layout = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*") };
@@ -530,6 +533,8 @@ public sealed class NotesExplorer : Border
         _back.IsVisible = _view is "trash" or "collection";
         _searchBox.IsVisible = _view is "tree" or "search";
         _list.Children.Clear();
+        _rows = null;
+        _made.Clear();
         _visibleNotes.Clear();
         _visibleFolders.Clear();
         _visibleFiles.Clear();
@@ -576,9 +581,14 @@ public sealed class NotesExplorer : Border
                     bool open = IsExpanded(k.Path);
                     _visibleFolders.Add(k.Path);
                     var folder = k.Path;
-                    var row = FolderRow(folder, k.Name, depth, open);
-                    _folderRows[row] = folder;
-                    _list.Children.Add(row);
+                    var name = k.Name;
+                    var d = depth;
+                    Emit(() =>
+                    {
+                        var row = FolderRow(folder, name, d, open);
+                        _folderRows[row] = folder;
+                        return row;
+                    });
                     if (open) Walk(k.Path, depth + 1);
                 }
                 else if (k.Kind == 1) AddNoteRow(notesByPath[k.Path], depth, withPath: false);
@@ -586,10 +596,70 @@ public sealed class NotesExplorer : Border
             }
         }
         if (_sections && (_notes.Count > 0 || _files.Count > 0 || folders.Count > 0)) AddSections();
+        _pending = [];
         Walk("", 0);
+        var rows = _pending;
+        _pending = null;
+        if (rows.Count <= VirtualFrom) foreach (var make in rows) _list.Children.Add(make());
+        else
+        {
+            _rows = rows;
+            _rowsAt = _list.Children.Count;
+            _realized = (-1, -1);
+            Realize();
+        }
         if (_list.Children.Count == 0)
             _list.Children.Add(_opening ? Empty("Abrindo suas notas…", "")
                 : EmptyWithAction("Nenhuma nota ainda", "Suas notas são arquivos Markdown na pasta que você escolher.", "Criar primeira nota"));
+    }
+
+    // ------------------------------------------------------------------ many rows (UC-78)
+
+    /// <summary>From this many rows of the tree on, only the ones near the screen are made.</summary>
+    public const int VirtualFrom = 150;
+    private const int Spare = 40;            // rows made above and below the screen
+    private ScrollViewer? _scroll;
+    private List<Func<Control>>? _pending;  // the rows of the tree being walked
+    private List<Func<Control>>? _rows;     // all the rows, when they are many
+    private int _rowsAt;                     // where they start in the list (after the sections)
+    private (int First, int Last) _realized;
+    private double _rowHeight = 48;
+    private readonly Dictionary<int, Control> _made = [];
+
+    /// <summary>How many rows of the tree are made now (tests).</summary>
+    public int MadeRows => _rows is null ? _list.Children.Count : _made.Count;
+
+    private void Emit(Func<Control> make)
+    {
+        if (_pending is not null) _pending.Add(make);
+        else _list.Children.Add(make());
+    }
+
+    /// <summary>The rows near the screen, between two spacers the height of the rest.</summary>
+    private void Realize()
+    {
+        if (_rows is not { } rows || _scroll is null) return;
+        double top = Math.Max(0, _scroll.Offset.Y - _rowsAt * _rowHeight);
+        double height = _scroll.Viewport.Height > 0 ? _scroll.Viewport.Height : 900;
+        int first = Math.Clamp((int)(top / _rowHeight) - Spare, 0, rows.Count);
+        int last = Math.Clamp((int)((top + height) / _rowHeight) + Spare, first, rows.Count);
+        // scrolling inside what is made already changes nothing
+        if (_realized.First >= 0 && first >= _realized.First && last <= _realized.Last) return;
+        first = Math.Max(0, first - Spare / 2);
+        last = Math.Min(rows.Count, last + Spare / 2);
+        while (_list.Children.Count > _rowsAt) _list.Children.RemoveAt(_list.Children.Count - 1);
+        foreach (var gone in _made.Keys.Where(i => i < first || i >= last).ToList()) _made.Remove(gone);
+        _list.Children.Add(new Border { Height = first * _rowHeight });
+        for (int i = first; i < last; i++)
+        {
+            if (!_made.TryGetValue(i, out var row)) _made[i] = row = rows[i]();
+            _list.Children.Add(row);
+        }
+        _list.Children.Add(new Border { Height = (rows.Count - last) * _rowHeight });
+        _realized = (first, last);
+        // the rows' real height, once one has been laid out
+        if (_made.Values.FirstOrDefault(r => r.Bounds.Height > 20) is { } laid && Math.Abs(laid.Bounds.Height + laid.Margin.Top + laid.Margin.Bottom - _rowHeight) > .5)
+            _rowHeight = laid.Bounds.Height + laid.Margin.Top + laid.Margin.Bottom;
     }
 
     /// <summary>UC-83: Favoritos and Recentes as the sidebar's first rows, then the "Projetos" heading over the tree.</summary>
@@ -644,14 +714,14 @@ public sealed class NotesExplorer : Border
         _visibleNotes.Add(n.Path);
         var path = n.Path;
         // the file name with its extension, as an explorer shows it (the 1.8.4 showed the title)
-        _list.Children.Add(PressableRow(RowFrame(IconFor(path), name ?? Base(path), withPath && path.Contains('/') ? Dir(path) : null, false, false, null),
+        Emit(() => PressableRow(RowFrame(IconFor(path), name ?? Base(path), withPath && path.Contains('/') ? Dir(path) : null, false, false, null),
             depth, _selected.Contains(path), () => TryOpenNote(path), () => { if (HoldNote(path)) ArmDrag(); }, () => HoldDelay));
     }
 
     private void AddFileRow(string path, int depth, bool withPath)
     {
         _visibleFiles.Add(path);
-        _list.Children.Add(Row(IconFor(path), Base(path), withPath && path.Contains('/') ? Dir(path) : null, depth, false, false, false,
+        Emit(() => Row(IconFor(path), Base(path), withPath && path.Contains('/') ? Dir(path) : null, depth, false, false, false,
             () => TryOpenFile(path), () => ArmDrag(path)));
     }
 
