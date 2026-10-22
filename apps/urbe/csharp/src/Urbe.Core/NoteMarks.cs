@@ -79,8 +79,11 @@ public static partial class NoteMarks
         return m.Success ? m.Groups[1].Value : null;
     }
 
-    /// <summary>The Markdown without its comments (pages, books and exported HTML); code keeps its text as it is.</summary>
-    public static string StripComments(string? markdown)
+    /// <summary>
+    /// The Markdown without its comments (pages, books and exported HTML); code keeps its text as it is. The
+    /// Assistente's mark stays, as "· IA: modelo" or as <paramref name="aiMark"/> writes it (UC-82: pages show it discreetly).
+    /// </summary>
+    public static string StripComments(string? markdown, Func<string, string>? aiMark = null)
     {
         var text = markdown ?? "";
         if (!text.Contains("%%", StringComparison.Ordinal) && !text.Contains("{\"", StringComparison.Ordinal) && !text.Contains("{ia:", StringComparison.Ordinal)) return text;
@@ -91,7 +94,7 @@ public static partial class NoteMarks
         for (int i = 0; i < parts.Length; i++)
         {
             // the Assistente's mark stays visible in pages, as plain text (UC-51: AI text is always marked)
-            sb.Append(AiMarkRegex().Replace(NotesRegex().Replace(CommentRegex().Replace(parts[i], ""), ""), m => "· IA: " + m.Groups[1].Value));
+            sb.Append(AiMarkRegex().Replace(NotesRegex().Replace(CommentRegex().Replace(parts[i], ""), ""), m => aiMark?.Invoke(m.Groups[1].Value) ?? "· IA: " + m.Groups[1].Value));
             if (i < codes.Count) sb.Append(codes[i].Value);
         }
         return sb.ToString();
