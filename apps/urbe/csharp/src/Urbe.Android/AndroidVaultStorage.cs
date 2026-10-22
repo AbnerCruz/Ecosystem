@@ -777,7 +777,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 read[i] = bytes;
             });
         }
-        catch (AggregateException e) when (e.InnerExceptions.Count > 0)
+        catch (System.AggregateException e) when (e.InnerExceptions.Count > 0)
         {
             System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e.InnerExceptions[0]).Throw();
         }
