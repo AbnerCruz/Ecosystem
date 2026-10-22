@@ -34,9 +34,10 @@
     {
       "kind": "human",
       "check": "Android físico, beta.16 por cima da beta.15: rolar notas e o Explorer sem selecionar nada nem abrir o teclado; tocar para parar a rolagem não abre nada; teclado sem faixa preta nem pulos; toque duplo mostra as alças; Mais ações → Conexões",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
-      "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.16"
+      "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.16",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-22 (Issue https://github.com/AbnerCruz/Ecosystem/issues/647); registro em docs/governance/responses/VAL-HO-20261022-urbe-beta-16-79d88014f3f6.md."
     }
   ],
   "known_issues": [],
