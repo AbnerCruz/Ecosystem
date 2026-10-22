@@ -22,7 +22,7 @@
   ],
   "verification": [
     { "kind": "automated", "check": "TradesUiTests, WorldAndCityTests, WorldWallsUiTests e HeadlessUiTests", "result": "passed", "evidence": "101/101 no cliente headless." },
-    { "kind": "human", "check": "Cidade mais fluida no celular com o relógio único", "result": "pending", "critical": false, "object": "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs" }
+    { "kind": "human", "check": "Cidade mais fluida no celular com o relógio único", "result": "pending", "critical": false, "object": "https://github.com/AbnerCruz/Ecosystem/blob/urbe-simulacao-congelada/apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs" }
   ],
   "known_issues": [],
   "blockers": [],

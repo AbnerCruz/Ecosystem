@@ -54,15 +54,15 @@
     },
     {
       "kind": "human",
-      "check": "Android físico: escrever no editor redesenhado; tocar numa casa e ver só suas ligações; gravar uma nota pelo widget sem abrir o app",
+      "check": "Android físico: escrever no editor redesenhado; gravar uma nota pelo widget sem abrir o app",
       "result": "pending",
       "critical": false,
-      "object": "Urbe 2.0.0-beta.15 (APK) no aparelho do proprietário"
+      "object": "apps/urbe/csharp/src/Urbe.Android/VoiceNoteWidget.cs"
     }
   ],
   "known_issues": [
     "Serviço em primeiro plano e reconhecimento de fala só foram compilados no CI; a gravação do widget depende de validação no aparelho (NN-017).",
-    "UC-70: indicadores de ligações fora da tela e tom noturno ficam para um próximo incremento (ROADMAP)."
+    "UC-70 (foco de ligações na cidade) saiu antes da integração junto com a simulação visual (ADD-0028/DEC-0051); fica no ramo ccr-ux-fase2 e o item está congelado. O editor redesenhado e o widget seguem pelo PR da remoção (HO-20261022-urbe-sem-simulacao)."
   ],
   "blockers": [],
   "next_actions": [
