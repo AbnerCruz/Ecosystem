@@ -71,6 +71,7 @@ A regra de dados do §3 continua protegendo `.md`, gravações e metadados **atu
 - **Notas:** id, datas e pastas ficam em `.urbe/notas.json` (`NoteLibrary`, `Urbe.Core`). Num vault vindo da cidade, vêm uma vez do `.urbe/mapa.json`. Os arquivos da cidade (`.urbe/mapa.json`, `.urbe/mundo.json`) **nunca são apagados nem reescritos**.
 - A interface continua **nativa, sem WebView/HTML/CSS** (Avalonia: `csharp/src/Urbe.Client`, `Urbe.Desktop`, `Urbe.Android`). Regras de domínio só em `Urbe.Core`. A casca Blazor foi retirada (UC-34).
 - A 1.8.4-beta (`apps/urbe/`, intocada) segue como referência **fora da simulação**: editor, Explorer, lixeira, histórico, importação, páginas e assistente.
+- O substituto da simulação são **conexões calmas** (DEC-0052, `docs/governance/addenda/ADD-0029-urbe-conexoes-no-lugar-da-simulacao.md`): primeiro o UC-71 (conexões da nota aberta), depois o UC-72 (constelação do vault). Nunca a base do app.
 - A direção é o Urbe como **produtor de artefatos** sobre o editor Visual (UC-35).
 
 ## 10. Ordem do proprietário — o Urbe é a 1.8.4-beta, em C# nativo (DEC-0043, 2026-10-10)

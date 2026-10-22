@@ -195,6 +195,8 @@ public static class UrbeTheme
         public const string FileOther = "M14 3.5H7.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8z M14 3.5V8h4.5 M9 13h6 M9 16.5h4";
         public const string Pencil = "M4 20h4L19 9l-4-4L4 16z M14 6l4 4";
         public const string Open = "M14 4.5h5.5V10 M19.5 4.5L11 13 M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4";
+        // UC-71: three points joined (Conexões)
+        public const string Connections = "M12 3.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5z M5.5 15.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5z M18.5 15.5a2.5 2.5 0 1 0 0 5a2.5 2.5 0 1 0 0-5z M10.8 8.2l-4.1 7.3 M13.2 8.2l4.1 7.3 M8 18h8";
         public const string Star = "M12 4l2.4 5 5.3.6-3.9 3.6 1.1 5.3L12 15.9l-4.9 2.6 1.1-5.3-3.9-3.6 5.3-.6z";
         public const string Move = "M4.5 12h15M15 7.5l4.5 4.5-4.5 4.5";
         public const string Copy = "M10.5 8.5h7a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z M15.5 8.5V6.5a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2";
