@@ -335,6 +335,16 @@ public sealed partial class HeadlessUiTests
                 Assert.DoesNotContain("Dê uma sugestão", text);
                 Assert.Equal(text, view.Editor.Current!.Content);
 
+                // fatia 4: the notice's Desfazer takes the whole change back, in the vault and in the editor
+                var undo = view.GetLogicalDescendants().OfType<Button>().First(b => b.FindLogicalAncestorOfType<Urbe.Client.Ui.UrbeToast>() is not null &&
+                    (b.Content as string == "Desfazer" || b.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Desfazer")));
+                undo.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                await panel.CurrentUndo!;
+                var original = "# Herói\n\nAlto, do norte.\n\n&&: Dê uma sugestão de nome\n\n&&: e um apelido\n";
+                Assert.Equal(original, File.ReadAllText(file));
+                Assert.Equal(original, view.Editor.Current!.Content);
+                text = original;
+
                 // Recusar: the note stays as it is, and the agent is told
                 model.Chats.Enqueue(Edit("call_2", "&&: e um apelido", "Apelido: Faísca"));
                 model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Tudo bem."}}]}"""));

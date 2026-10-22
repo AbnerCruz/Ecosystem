@@ -30,6 +30,8 @@ public interface IAssistantApp
     bool OpenReference(string reference);
     UrbeDialogs Dialogs { get; }
     void Notify(string text);
+    /// <summary>A notice with an action (UC-80: "Desfazer" after an agent changed the note).</summary>
+    void Notify(string text, string action, Action onAction) => Notify(text);
     /// <summary>The Personalização the appearance tools change.</summary>
     IAssistantAppearance? Appearance => null;
     /// <summary>The vault's plugins (write_plugin turns them on).</summary>
@@ -162,6 +164,8 @@ public sealed partial class AssistantPanel : Border
     public bool Running => _running is not null;
     /// <summary>The approval waiting for the user, if any.</summary>
     public AiApprovalRequest? PendingApproval => _pending?.Request;
+    /// <summary>The undo started from a notice (tests await it).</summary>
+    public Task? CurrentUndo { get; private set; }
     /// <summary>The run going on now (tests await it).</summary>
     public Task? CurrentRun { get; private set; }
     /// <summary>The input box (tests type in it).</summary>
@@ -377,7 +381,7 @@ public sealed partial class AssistantPanel : Border
                 // UC-80: a change was made in the note (or refused there); an answer in words opens the panel to be read
                 _inNote = null;
                 _app.EndSuggestion();
-                if (run.Changes.Count > 0) _app.Notify(asked.Who + " alterou a nota.");
+                if (run.Changes.Count > 0) _app.Notify(asked.Who + " alterou a nota.", "Desfazer", () => CurrentUndo = UndoRunAsync(conv, run, confirmed: true));
                 else if (!IsVisible && conv.Messages.LastOrDefault(m => m.Role == "assistant") is { } last && last.Content.Any(b => b.Type == "text" && !string.IsNullOrWhiteSpace(b.Text))) { _conv = conv; Open(); }
             }
             conv.Runs.Add(run);
@@ -432,15 +436,17 @@ public sealed partial class AssistantPanel : Border
         _conv.Messages.FirstOrDefault(m => m.Role == "assistant" && m.Content.Any(b => b.Type == "tool_use" && b.Id == toolId));
 
     /// <summary>undoLast(): the last run's changes undone after a confirmation; notes edited afterwards are kept.</summary>
-    public async Task UndoLastAsync(bool confirmed = false)
+    public Task UndoLastAsync(bool confirmed = false) => _conv.Runs.LastOrDefault() is { } r ? UndoRunAsync(_conv, r, confirmed) : Task.CompletedTask;
+
+    /// <summary>Undoes one run's changes as a block (UC-80: also from the notice after a change in the note).</summary>
+    private async Task UndoRunAsync(AiConversation conv, AiRunRecord r, bool confirmed)
     {
-        var r = _conv.Runs.LastOrDefault();
-        if (r is null || r.Changes.Count == 0 || r.Reverted) return;
+        if (r.Changes.Count == 0 || r.Reverted) return;
         if (!confirmed && !await _app.Dialogs.ConfirmAsync("Desfazer as alterações?", "As notas voltam ao estado de antes desta resposta.", "Desfazer")) return;
         if (_app.Documents is not { } documents) return;
         var rep = await AssistantUndo.RevertAsync(new Undo(_app, documents), r.Changes);
         r.Reverted = true;
-        Persist();
+        if (conv.Messages.Count > 0) _store.SaveConversation(conv);
         RenderAll();
         if (rep.Skipped.Count > 0)
             await _app.Dialogs.AlertAsync("Algumas notas foram mantidas", "Você editou estas notas depois do Assistente, então elas não foram revertidas:\n" + string.Join("\n", rep.Skipped));

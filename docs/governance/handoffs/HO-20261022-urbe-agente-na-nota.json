@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261022-urbe-agente-na-nota",
   "category": "HANDOFF",
-  "timestamp": "2026-10-22T18:21:12Z",
+  "timestamp": "2026-10-22T18:30:51Z",
   "agent": {
     "id": "claude-code-urbe-native-port",
     "kind": "ai-agent"
@@ -33,7 +33,8 @@
   ],
   "work_completed": [
     "UC-80 fatias 1 e 2 (ideia do proprietário, 22/10/2026): '&Nome&: pedido' numa nota vira um cartão com o chip do agente e 'Pedir a Nome' (ou Ctrl+Enter). Só ao pedir, a nota é salva e o Assistente abre numa conversa 'Na nota X' com o agente daquele nome e a nota como contexto, pelo mesmo AssistantAgent (ADR-0033: sem segundo motor). Edições passam pela aprovação com diff; respostas ficam no painel. Linhas de pedido saem das páginas.",
-    "UC-80 fatia 3: a mudança do agente na nota aparece no lugar das linhas (LineChange) como 'Sugestão de Nome' com Aceitar/Recusar, com o painel fechado; Aceitar grava pela gravação verificada, Recusar avisa o agente. Uma resposta em palavras abre o painel no fim."
+    "UC-80 fatia 3: a mudança do agente na nota aparece no lugar das linhas (LineChange) como 'Sugestão de Nome' com Aceitar/Recusar, com o painel fechado; Aceitar grava pela gravação verificada, Recusar avisa o agente. Uma resposta em palavras abre o painel no fim.",
+    "UC-80 fatia 4: o aviso depois da mudança traz Desfazer, que volta o pedido inteiro em bloco pela reversão do Assistente."
   ],
   "verification": [
     {
@@ -50,9 +51,7 @@
       "object": "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs"
     }
   ],
-  "known_issues": [
-    "Fatia 4 (desfazer em bloco) ainda falta."
-  ],
+  "known_issues": [],
   "blockers": [],
   "next_actions": [
     "UC-84 fatia 4; UC-72; UC-77 próximas fatias."

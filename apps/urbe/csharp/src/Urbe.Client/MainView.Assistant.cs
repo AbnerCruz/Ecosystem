@@ -103,6 +103,8 @@ public sealed partial class MainView : IAssistantApp
 
     void IAssistantApp.Notify(string text) => ShowLifeNotice(text);
 
+    void IAssistantApp.Notify(string text, string action, Action onAction) => _notice.Show(text, TimeSpan.FromSeconds(8), action, onAction);
+
     bool IAssistantApp.SuggestInNote(string path, LineChange change, string who, Action accept, Action refuse)
     {
         // only on the note as it is in the vault: unsaved typing would make the change land elsewhere
