@@ -1,0 +1,100 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-toque-teclado",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T10:55:36Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-73",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-urbe-toque-teclado",
+  "base_commit": "992309f6",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/TouchIntent.cs",
+    "apps/urbe/csharp/src/Urbe.Client/TouchTextScroll.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/TouchIntentUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261022-urbe-toque-teclado.json"
+  ],
+  "work_completed": [
+    "UC-73: TouchIntent (Urbe.Client), ligado à rolagem do editor e do Explorer — um toque enquanto o conteúdo ainda desliza só o para; um conteúdo que rolou mais de 8 px desde o toque torna o toque rolagem. Blocos, links, tarefas, fórmulas, fim da nota e linhas do Explorer só abrem, seguram ou arrastam quando o conteúdo não se mexeu.",
+    "UC-73: TouchTextScroll não põe cursor nem seleciona quando o toque para a nota deslizando (sem teclado). Linhas do Explorer medem o dedo na tela, cancelam o segurar quando a lista assume o toque, ignoram linhas reconstruídas e não deixam a lista rolar sob uma linha segurada.",
+    "UC-74: teclado — sem margem quando o sistema encolhe a janela (sem edge-to-edge, Android até 14), eliminando a faixa preta e os pulos; no edge-to-edge (Android 15+), margem da área coberta medida no mesmo instante, acompanhando mudanças de altura do teclado.",
+    "UC-75: a palavra selecionada por toque duplo ou segurar mostra as alças nativas e a bolha Copiar/Recortar/Colar do TextBox do Avalonia (chamada interna por reflexão, protegida do trimming, com teste que falha se o Avalonia a renomear).",
+    "ROADMAP C#: UC-73, UC-74 e UC-75 com causas e solução."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests -c Release",
+      "result": "passed",
+      "evidence": "186 de 186. Novos: TouchIntentTests (5) e Touch_* (6, com toque real no headless). Touch_ATapThatStopsTheGlideDoesNotOpenABlock, Touch_AScrollNeverHoldsNorOpensARowOfTheExplorer e Touch_AScrollOverABlockDoesNotOpenItForEditing falham no código anterior e passam no novo. Source_DraggingAFingerScrolls agora prova que o toque que para a nota deslizando não põe o cursor."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests -c Release; dotnet build Urbe.Portable.slnx -c Release",
+      "result": "passed",
+      "evidence": "629 de 629; 0 erros e 0 avisos."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: rolar notas e o Explorer sem selecionar nada nem abrir o teclado; tocar para parar a rolagem não abre bloco nem nota; teclado sem faixa preta nem pulos; toque duplo numa palavra mostra as alças e elas ampliam a seleção",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/TouchIntent.cs"
+    }
+  ],
+  "known_issues": [
+    "O comportamento do teclado e das alças só se prova no aparelho; no headless não há teclado nem camada de alças visível.",
+    "A versão Windows da beta.15 está na release (subiu um minuto depois do APK)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Depois da integração, subir a beta para 2.0.0-beta.16 em PR próprio, deixar a release sair e mandar os links."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/addenda/ADD-0026-urbe-experiencia-de-usuario-topo-de-linha.md",
+    "apps/urbe/docs/csharp/UX.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Só apps/urbe."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Toque e teclado dependem do aparelho: validação humana pendente; UC-73 a UC-75 ficam [ ]."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Testes que falham no código anterior e passam no novo como evidência."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "touch-intent",
+      "status": "product-specific",
+      "rationale": "Gestos do cliente do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Código do cliente, testes e roadmap; nenhum csproj, vault, workflow ou adendo."
+  }
+}

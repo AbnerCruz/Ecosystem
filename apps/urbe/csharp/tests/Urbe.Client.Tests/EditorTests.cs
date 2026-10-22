@@ -153,7 +153,7 @@ public sealed class EditorTests
 
     /// <summary>In Fonte the same: a finger dragged over the text scrolls it.</summary>
     [Fact]
-    public async Task Source_DraggingAFingerScrolls() => Assert.True(await Session.Dispatch<bool>(() =>
+    public async Task Source_DraggingAFingerScrolls() => Assert.True(await Session.Dispatch<bool>(async () =>
     {
         var text = string.Join("\n\n", Enumerable.Range(1, 60).Select(i => "Parágrafo " + i + " com algum texto para ocupar a linha."));
         var (editor, window) = Show(text: text);
@@ -172,7 +172,17 @@ public sealed class EditorTests
         Assert.True(scroll.Offset.Y > 150, "rolou " + scroll.Offset.Y + " seleção " + editor.Editor.SelectionStart + "-" + editor.Editor.SelectionEnd);
         Assert.Equal(editor.Editor.SelectionStart, editor.Editor.SelectionEnd);   // the drag selected nothing
 
-        // a tap puts the caret under the finger
+        // the note still glides: a tap only stops it (no caret, so no keyboard), as on a phone (22/10/2026)
+        var caretBefore = editor.Editor.CaretIndex;
+        var stopAt = editor.Editor.TranslatePoint(new Point(30, scroll.Offset.Y + 100), window)!.Value;
+        var stop = window.TouchBegin(stopAt, RawInputModifiers.None);
+        window.TouchEnd(stop, stopAt, RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(caretBefore, editor.Editor.CaretIndex);
+        await Task.Delay(TouchIntent.SettleMs + 80);
+        Dispatcher.UIThread.RunJobs();
+
+        // once still, a tap puts the caret under the finger
         var tapAt = editor.Editor.TranslatePoint(new Point(30, scroll.Offset.Y + 100), window)!.Value;
         var tap = window.TouchBegin(tapAt, RawInputModifiers.None);
         window.TouchEnd(tap, tapAt, RawInputModifiers.None);

@@ -311,6 +311,7 @@ public sealed class MarkdownReader
     private void OnTextTapped(object? sender, TappedEventArgs e)
     {
         if (sender is not RichText tb || (tb.Wiki.Count == 0 && tb.Links.Count == 0)) return;
+        if (!TouchIntent.IsIntended(tb)) { e.Handled = true; return; }   // a scroll over a link does not follow it
         var hit = tb.TextLayout.HitTestPoint(e.GetPosition(tb));
         var pos = hit.TextPosition;
         foreach (var (s, l, name) in tb.Wiki)
@@ -371,7 +372,7 @@ public sealed class MarkdownReader
             Child = isChecked ? new Path { Data = Geometry.Parse("M3 9l3.5 3.5L14 5"), Stroke = UrbeTheme.Brush(UrbeTheme.AccentInk), StrokeThickness = 2, StrokeLineCap = PenLineCap.Round, StrokeJoin = PenLineJoin.Round, Width = 16, Height = 16 } : null
         };
         // without a handler (inside a container) the tap goes on to the block, which opens for editing
-        box.Tapped += (_, e) => { if (TaskToggled is not { } toggled) return; e.Handled = true; toggled(line, !isChecked); };
+        box.Tapped += (_, e) => { if (TaskToggled is not { } toggled) return; e.Handled = true; if (TouchIntent.IsIntended(box)) toggled(line, !isChecked); };
         return box;
     }
 
@@ -494,7 +495,7 @@ public sealed class MarkdownReader
         int index = _math++;
         if (MathTapped is not { } tapped) return view;
         var holder = new Border { Background = Brushes.Transparent, Child = view, HorizontalAlignment = view.HorizontalAlignment, Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand) };
-        holder.Tapped += (_, e) => { e.Handled = true; tapped(index); };
+        holder.Tapped += (_, e) => { e.Handled = true; if (TouchIntent.IsIntended(holder)) tapped(index); };
         return holder;
     }
 

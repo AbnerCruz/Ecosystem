@@ -11,8 +11,9 @@ namespace Urbe.Client;
 /// <summary>
 /// A finger on a text box inside the editor's scroll behaves as on a native text field (the 1.8.4's textarea in a
 /// browser): dragging scrolls the note, with inertia; a tap puts the caret where the finger touched; holding still
-/// selects the word. Without this the text box takes the touch for its caret and selection and the scroll sticks.
-/// Mouse and pen are left to the text box.
+/// selects the word, with the selection handles to widen it. Without this the text box takes the touch for its caret
+/// and selection and the scroll sticks. A touch that only stops the note while it still glides places nothing (and so
+/// opens no keyboard), as on a phone (22/10/2026). Mouse and pen are left to the text box.
 /// </summary>
 public static class TouchTextScroll
 {
@@ -26,7 +27,7 @@ public static class TouchTextScroll
         IPointer? finger = null;
         Point start = default, last = default;
         Vector startOffset = default;
-        bool dragging = false;
+        bool dragging = false, stopped = false;
         long lastMs = 0;
         double velocity = 0;   // px per ms, positive = content moves up (offset grows)
         var clock = System.Diagnostics.Stopwatch.StartNew();
@@ -48,6 +49,8 @@ public static class TouchTextScroll
         scroll.AddHandler(InputElement.PointerPressedEvent, (_, e) =>
         {
             if (e.Pointer.Type != PointerType.Touch) return;
+            // a finger on a note that still glides only stops it: no caret, no selection, no keyboard
+            stopped = fling?.IsEnabled == true || TouchIntent.Of(scroll)?.Intent.IsMoving(Environment.TickCount64) == true;
             StopFling();
             box = (e.Source as Visual)?.GetSelfAndVisualAncestors().OfType<TextBox>().FirstOrDefault();
             if (box is null || !box.GetVisualAncestors().Contains(scroll)) { box = null; return; }
@@ -62,6 +65,7 @@ public static class TouchTextScroll
             var heldBox = box;
             var heldAt = e.GetPosition(heldBox);
             hold?.Stop();
+            if (stopped) return;
             hold = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(HoldMs) };
             hold.Tick += (_, _) =>
             {
@@ -107,7 +111,7 @@ public static class TouchTextScroll
             e.Handled = true;
             if (!dragging)
             {
-                if (tapped is null) return;
+                if (tapped is null || stopped) return;
                 if (DoubleTap(e.GetPosition(scroll))) { SelectWordAt(tapped, e.GetPosition(tapped)); Ui.PlatformHaptics.Tick(); }
                 else PlaceCaret(tapped, e.GetPosition(tapped));
                 return;
@@ -162,5 +166,39 @@ public static class TouchTextScroll
         box.Focus(NavigationMethod.Pointer);
         box.SelectionStart = s;
         box.SelectionEnd = e;
+        ShowSelectionHandles(box);
     }
+
+    /// <summary>
+    /// The text box's own selection handles (and its Copiar/Recortar/Colar bubble) over a selection made here: the box
+    /// shows them only for a hold or a double tap it handled itself, and this class takes those touches. Avalonia keeps
+    /// the call internal (TextPresenter.EnsureTextSelectionLayer, TextSelectionHandleCanvas.Show); it is kept from
+    /// trimming below and <c>TouchTextScrollTests</c> fails if an Avalonia update renames it. False when unavailable.
+    /// </summary>
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicProperties, typeof(TextPresenter))]
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods, HandleCanvasType, "Avalonia.Controls")]
+    public static bool ShowSelectionHandles(TextBox box)
+    {
+        if (box.SelectionStart == box.SelectionEnd) return false;
+        var presenter = box.GetVisualDescendants().OfType<TextPresenter>().FirstOrDefault();
+        if (presenter is null || HandleApi is not var (ensure, canvasOf, show)) return false;
+        try
+        {
+            ensure.Invoke(presenter, null);
+            if (canvasOf.GetValue(presenter) is not { } canvas) return false;
+            show.Invoke(canvas, [true]);
+            return true;
+        }
+        catch (System.Reflection.TargetInvocationException) { return false; }
+    }
+
+    private const string HandleCanvasType = "Avalonia.Controls.Primitives.TextSelectionHandleCanvas";
+    private const System.Reflection.BindingFlags Internal = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+
+    /// <summary>The internal members behind <see cref="ShowSelectionHandles"/>, or null when this Avalonia has none.</summary>
+    public static (System.Reflection.MethodInfo Ensure, System.Reflection.PropertyInfo Canvas, System.Reflection.MethodInfo Show)? HandleApi { get; } =
+        typeof(TextPresenter).GetMethod("EnsureTextSelectionLayer", Internal, Type.EmptyTypes) is { } ensure
+        && typeof(TextPresenter).GetProperty("TextSelectionHandleCanvas", Internal) is { } canvas
+        && typeof(TextPresenter).Assembly.GetType(HandleCanvasType)?.GetMethod("Show", Internal, [typeof(bool)]) is { } show
+            ? (ensure, canvas, show) : null;
 }

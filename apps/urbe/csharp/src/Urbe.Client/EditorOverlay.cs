@@ -803,6 +803,8 @@ public sealed class EditorOverlay : Grid
             HorizontalContentAlignment = HorizontalAlignment.Center
         };
         TouchTextScroll.Attach(scroll);
+        // a tap or a hold that scrolled the note, or only stopped it, is not for the block under the finger (22/10/2026)
+        TouchIntent.Attach(scroll, () => EditorScrolling.MovedByEditor(scroll));
         // the reader's own scrolling: a finger or the mouse on the text (and the glide after it), or the wheel
         scroll.AddHandler(PointerPressedEvent, (_, _) => { _pointerOnText = true; _userScrollAt = Environment.TickCount64; }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
         scroll.AddHandler(PointerReleasedEvent, (_, _) => { _pointerOnText = false; _userScrollAt = Environment.TickCount64; }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
