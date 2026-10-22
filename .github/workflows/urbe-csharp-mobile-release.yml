@@ -175,11 +175,11 @@ jobs:
           cat > artifacts/mobile-release/release-notes.md <<'EOF'
           # Urbe Beta 2.0 — nativo ($VERSION, Android)
 
-          Primeira beta do cliente nativo do Urbe: a cidade da 1.8.4 em tela cheia, com a interface sobreposta.
-          Substitui, no mesmo canal (app.urbe.csharp), a interface anterior das betas 2.0 e atualiza no lugar.
+          O Urbe nativo: suas notas Markdown numa pasta real, com o Explorer como base e o editor por cima.
+          Atualiza no lugar, no mesmo canal (app.urbe.csharp). A simulação visual (cidade) saiu do produto (ADD-0028).
 
-          - cidade procedural: notas são casas, pastas são bairros, wikilinks são ruas; moradores, fauna, clima e eventos;
           - Explorer, editor Visual e Fonte, fórmulas, comentários e tags; estúdio de páginas; HTML, PDF, áudio e vídeo;
+          - Conexões de cada nota num desenho calmo (Mais ações → Conexões);
           - Assistente (IA) com o provedor que você conectar; plugins nativos (Relógio);
           - backup, exportação e restauração; lixeira e versões anteriores das notas.
 

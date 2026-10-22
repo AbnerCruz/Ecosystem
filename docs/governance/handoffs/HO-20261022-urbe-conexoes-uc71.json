@@ -16,6 +16,7 @@
   "commit": null,
   "pr": null,
   "files_changed": [
+    ".github/workflows/urbe-csharp-mobile-release.yml",
     "AGENTS.md",
     "apps/urbe/AGENTS.md",
     "apps/urbe/csharp/src/Urbe.Client/ConnectionsPanel.cs",
@@ -36,7 +37,8 @@
     "ADD-0029/DEC-0052: o proprietário aceitou conexões calmas (posições estáveis, céu à noite, quase sem movimento, foco ao tocar) no lugar da simulação, em vez do grafo de forças do Obsidian; ROADMAP C# com UC-71 e UC-72, AGENTS.md §1.2, apps/urbe/AGENTS.md §9 e PRODUCT-DIRECTION atualizados.",
     "UC-71: LinkGraph (Urbe.Core) monta o grafo local da nota — ligação mútua no anel de dentro, cita e citada por no de fora (girado pelo ângulo de ouro), ordem estável por hash do id, as 24 mais conectadas no desenho e todas na lista.",
     "UC-71: Mais ações → Conexões abre o painel (ConnectionsPanel/ConnectionsGraph): céu escuro, pontos de luz na cor da pasta, linhas tênues, nada se move; tocar num ponto ou numa linha abre a nota e o painel a segue (entra no caminho do Voltar); nota sem ligações ensina a criar com [[; só leitura.",
-    "Documentação do app (tutorial) cita Conexões."
+    "Documentação do app (tutorial) cita Conexões.",
+    "Notas da release do canal beta sem a cidade: o modelo em urbe-csharp-mobile-release.yml ainda descrevia a simulação (a beta.15 saiu com ele); a próxima beta descreve o Explorer como base e as Conexões. Uma versão já publicada é pulada pelo workflow, então o merge não republica a beta.15."
   ],
   "verification": [
     {
@@ -110,6 +112,6 @@
   ],
   "criticality": {
     "declared": "critical",
-    "reason": "Registra decisão do proprietário (adendo e decisions.json)."
+    "reason": "Registra decisão do proprietário (adendo e decisions.json) e altera o texto das notas no workflow de release."
   }
 }
