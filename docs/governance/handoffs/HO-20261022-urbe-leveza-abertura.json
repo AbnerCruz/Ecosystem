@@ -114,7 +114,7 @@
     }
   ],
   "criticality": {
-    "declared": "routine",
-    "reason": "Código do cliente e do núcleo do Urbe, testes e roadmap; nenhum csproj, workflow, adendo ou decisão."
+    "declared": "critical",
+    "reason": "Zona user-data da política (AndroidVaultStorage.cs): a leitura do vault no Android passa a ler as notas em paralelo e a reaproveitar a listagem da mesma passada. Nada é gravado de outro jeito, mas é o caminho que lê os dados do usuário: espera a autorização do proprietário."
   }
 }
