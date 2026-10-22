@@ -143,7 +143,7 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, pages/ai-tools.js, customize/ai-tools.js, then the vault plugins).</summary>
-    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All];
+    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, AgentNames.Tool];
 
     private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name) ?? (name == AssistantAgent.Delegate.Name ? AssistantAgent.Delegate : null);
 
@@ -208,6 +208,15 @@ public sealed partial class AssistantPanel : Border
     }
 
     private string VaultKey => _app.VaultName.Length > 0 ? _app.VaultName : "Urbe";
+
+    /// <summary>UC-81: the agent's call name on this device; the problem, or null when done.</summary>
+    public string? RenameAgent(string agentId, string name)
+    {
+        if (AgentNames.Set(_cfg, agentId, name) is { } problem) return problem;
+        SaveConfig();
+        Dispatcher.UIThread.Post(RenderAll);
+        return null;
+    }
 
     private void Remember(string fact)
     {
@@ -293,12 +302,14 @@ public sealed partial class AssistantPanel : Border
         var run = new AiRunRecord { Id = AssistantAgent.NewId("r"), Started = Now() };
         RenderAll();
         using var knowledge = new KnowledgeIndex(documents);
+        var agent = AssistantAgent.AgentById(conv.AgentId, _cfg.CustomAgents);
         try
         {
             var r = await AssistantAgent.RunAsync(new AiAgentRun
             {
-                Host = new Host(this, documents, knowledge), Provider = p, Model = ModelId(), Messages = conv.Messages,
-                Agent = AssistantAgent.AgentById(conv.AgentId, _cfg.CustomAgents), Policy = conv.Policy, Cancel = cts.Token, MarkAiText = true,
+                Host = new Host(this, documents, knowledge, agent.Id), Provider = p, Model = ModelId(), Messages = conv.Messages,
+                // UC-81: the agent introduces itself by its call name and may take a new one the person agrees to
+                Agent = AgentNames.Named(agent, _cfg), Naming = AgentNames.Naming(agent, _cfg), Policy = conv.Policy, Cancel = cts.Token, MarkAiText = true,
                 MaxSteps = _cfg.MaxSteps, ContextTokens = meta?.Context ?? 128000, Instructions = WithUserAgents(_cfg.Instructions, documents), Memory = MemoryList(), VaultName = _app.VaultName,
                 Stream = Providers.StreamAsync, Approve = ApproveAsync, OnUpdate = OnUpdate, Tools = Tools
             });
@@ -372,8 +383,10 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The tools' host: reads from the vault's documents, writes through the app, memory and links through the panel.</summary>
-    private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge) : IAssistantHost
+    private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge, string agentId) : IAssistantHost, IAssistantNames
     {
+        public IAssistantNames? Names => this;
+        public string? Rename(string name) => panel.RenameAgent(agentId, name);
         public DocumentStore Documents => documents;
         public KnowledgeIndex Knowledge => knowledge;
         public (string? Path, string? Selection) EditorContext() => panel.EditorInfo();
@@ -431,7 +444,7 @@ public sealed partial class AssistantPanel : Border
 
     private void RenderChrome()
     {
-        var a = AssistantAgent.AgentById(_conv.AgentId, _cfg.CustomAgents);
+        var a = AgentNames.Named(AssistantAgent.AgentById(_conv.AgentId, _cfg.CustomAgents), _cfg);
         var p = Provider();
         _agentButton.Content = Row(UrbeTheme.Icon(UrbeTheme.Icons.Assistant, 18, UrbeTheme.Accent, 1.8), Label(a.Name, 15, UrbeTheme.Text, FontWeight.SemiBold), UrbeTheme.Icon(UrbeTheme.Icons.Chevron, 14, UrbeTheme.Text3));
         _modelChip.Content = p is null ? Label("Conectar um modelo", 12, UrbeTheme.Text2) : Row(new Border { Width = 7, Height = 7, CornerRadius = new CornerRadius(4), Background = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center },

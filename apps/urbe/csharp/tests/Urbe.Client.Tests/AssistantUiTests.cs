@@ -159,6 +159,57 @@ public sealed partial class HeadlessUiTests
         }, CancellationToken.None));
 
     [Fact]
+    public async Task Assistant_AnAgentTakesTheNameThePersonAgreesTo() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // UC-81: "Jarvis, …" → the agent asks; with the yes it takes the name, on this device only
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-assistant-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(vault);
+            File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n");
+            var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
+            var before = UrbeApp.AssistantFolder;
+            UrbeApp.AssistantFolder = Path.Combine(dir, "app", "assistant");
+            var view = new MainView(storage);
+            var window = new Window { Width = 1280, Height = 760, Content = view };
+            window.Show();
+            try
+            {
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                ClickButtonWithText(view, "Assistente");
+                var panel = view.Assistant;
+                var model = new ScriptedModel();
+                panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
+                panel.Config.Providers.Add(new AiProviderConfig("openrouter", "openrouter", ApiKey: "sk-teste"));
+                panel.Config.Model = "org/modelo-b";
+                model.Chats.Enqueue(Sse(
+                    """{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1","function":{"name":"set_my_name","arguments":"{\"name\":\"Jarvis\"}"}}]}}]}""",
+                    """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
+                model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Combinado, sou o Jarvis."}}]}"""));
+                panel.Send("Sim, pode se chamar Jarvis");
+                for (int i = 0; i < 200 && panel.CurrentRun is null; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                if (panel.CurrentRun is { } run) await run;
+                for (int i = 0; i < 20; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                Assert.Contains("## Seu nome", model.Sent[0]);
+                Assert.Contains("Seu nome é Assistente.", model.Sent[0]);
+                Assert.Contains("\"set_my_name\"", model.Sent[0]);
+                Assert.Equal("Jarvis", panel.Config.AgentNames["geral"]);
+                // the chip says the new name, and the next request introduces it
+                Assert.Contains("Jarvis", panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
+                Assert.Contains("Jarvis", File.ReadAllText(Path.Combine(UrbeApp.AssistantFolder!, "config.json")));
+                Assert.DoesNotContain(Directory.GetFiles(vault, "*", SearchOption.AllDirectories), f => File.ReadAllText(f).Contains("Jarvis"));
+                return true;
+            }
+            finally
+            {
+                UrbeApp.AssistantFolder = before;
+                window.Close();
+                try { Directory.Delete(dir, recursive: true); } catch (IOException) { }
+            }
+        }, CancellationToken.None));
+
+    [Fact]
     public async Task Assistant_ALongConversationStaysLight() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
         {

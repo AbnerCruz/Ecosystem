@@ -185,6 +185,8 @@ public sealed class AiAgentRun
     public long? ContextTokens { get; init; }
     public string? Instructions { get; init; }
     public IReadOnlyList<string>? Memory { get; init; }
+    /// <summary>UC-81: the lines about the agent's call name (<see cref="AgentNames.Naming"/>); null leaves the prompt as the 1.8.4's.</summary>
+    public string? Naming { get; init; }
     public int? MaxSteps { get; init; }
     public int? MaxTokens { get; init; }
     public double? Temperature { get; init; }
@@ -243,7 +245,7 @@ public static class AssistantAgent
     /// <summary>toLocaleDateString('pt-BR', {weekday:'long', year:'numeric', month:'long', day:'numeric'}).</summary>
     public static string LongDate(DateTime d) => Weekdays[(int)d.DayOfWeek] + ", " + d.Day + " de " + Months[d.Month - 1] + " de " + d.Year;
 
-    public static string SystemPrompt(AiAgentDef a, string policy, string? vaultName, int noteCount, string? openNote, string? instructions, IReadOnlyList<string>? memory, DateTime now)
+    public static string SystemPrompt(AiAgentDef a, string policy, string? vaultName, int noteCount, string? openNote, string? instructions, IReadOnlyList<string>? memory, DateTime now, string? naming = null)
     {
         var lines = new List<string>
         {
@@ -272,6 +274,7 @@ public static class AssistantAgent
         if (policy == "readonly") lines.AddRange(["", "Modo somente leitura: você não pode alterar notas. Se algo precisar mudar, mostre a sugestão em texto."]);
         if (!string.IsNullOrEmpty(instructions)) lines.AddRange(["", "## Instruções do usuário", LegacyCustomize.JsTrim(instructions)]);
         if (memory is { Count: > 0 }) lines.AddRange(["", "## Memória (fatos que o usuário pediu para lembrar)", string.Join("\n", memory.Select(m => "- " + m))]);
+        if (!string.IsNullOrEmpty(naming)) lines.AddRange(["", "## Seu nome", naming]);
         return string.Join("\n", lines);
     }
 
@@ -470,6 +473,7 @@ public static class AssistantAgent
         public void SetPlan(IReadOnlyList<AiPlanStep> steps) => setPlan(steps);
         public IAssistantAppearance? Appearance => inner.Appearance;
         public IAssistantPlugins? Plugins => inner.Plugins;
+        public IAssistantNames? Names => inner.Names;
     }
 
     private sealed record Out(string Content, bool IsError = false, string? Status = null, IReadOnlyList<AiChange>? Changes = null, IReadOnlyList<(string Path, AiPartial? Partial)>? Reads = null);
@@ -495,7 +499,7 @@ public static class AssistantAgent
         var schemas = tools.Select(t => t.Schema).ToList();
         var byName = new Dictionary<string, AiTool>();
         foreach (var t in tools) byName[t.Name] = t;
-        var system = SystemPrompt(agent, policy, o.VaultName, o.Host.Documents.List().Count, o.Host.EditorContext().Path, o.Instructions, o.Memory, o.Now ?? DateTime.Now);
+        var system = SystemPrompt(agent, policy, o.VaultName, o.Host.Documents.List().Count, o.Host.EditorContext().Path, o.Instructions, o.Memory, o.Now ?? DateTime.Now, o.Naming);
         int budget = (int)Math.Max(20000, Math.Min(WorkingChars, Math.Floor(contextTokens * 3.2 * 0.7)));
         int maxSteps = o.MaxSteps is null or 0 ? 30 : o.MaxSteps.Value;
         bool runAllow = false, nudged = false, partialNudged = false;
