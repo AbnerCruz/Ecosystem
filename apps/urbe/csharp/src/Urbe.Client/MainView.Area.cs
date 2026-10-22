@@ -34,6 +34,7 @@ public sealed partial class MainView
         Workspace.NewProjectRequested += () => _ = CreateProjectAsync();
         Workspace.NewNoteRequested += folder => _ = CreateNoteInNotesAsync(folder: folder);
         Workspace.FolderMenuRequested += folder => _ = ShowFolderMenuAsync(folder);
+        Workspace.ItemHeld += path => _ = ShowItemSheetAsync(path);
         Workspace.SidebarRequested += ShowNotes;
         Workspace.SettingsRequested += () => _ = ShowSettingsAsync();
         _stage.SizeChanged += (_, e) => { if (e.WidthChanged) PlaceSidebar(); };
@@ -94,6 +95,35 @@ public sealed partial class MainView
         CloseNotesOverEditor();
         RefreshNotes();
         Workspace.Open("");
+    }
+
+    /// <summary>
+    /// A card held in the Área de trabalho (UC-84 fatia 2): a note's information (folder, dates, size, links, tags) and
+    /// its actions; a file's own actions.
+    /// </summary>
+    public Task ShowItemSheetAsync(string path)
+    {
+        if (Dialogs.IsOpen) return Task.CompletedTask;
+        if (!_contents.ContainsKey(path)) return ShowAttachmentActionsAsync(path, withView: true);
+        if (_store?.Get(path) is not { } doc) return Task.CompletedTask;
+        int cites, citedBy;
+        using (var index = new KnowledgeIndex(_store))
+        {
+            cites = index.Links(doc.Id).Count(d => d.Id != doc.Id);
+            citedBy = index.Backlinks(doc.Id).Count(d => d.Id != doc.Id);
+        }
+        bool favorite = ExplorerState.Favorites.Contains(doc.Id);
+        return Dialogs.MenuAsync(doc.Title,
+        [
+            new("Abrir", UrbeTheme.Icons.Open, null, Run: () => { OpenFromNotes(new CityNote(path, _contents.GetValueOrDefault(path, ""))); return Task.CompletedTask; }),
+            new("Renomear", UrbeTheme.Icons.Pencil, "Muda o nome do arquivo no vault.", Run: () => RenameNoteAsync(path)),
+            new("Mover para", UrbeTheme.Icons.Move, "Outro projeto ou pasta.", Run: () => SelectionActionAsync("move", [path])),
+            new("Duplicar", UrbeTheme.Icons.Copy, "Uma cópia ao lado.", Run: () => SelectionActionAsync("duplicate", [path])),
+            favorite
+                ? new("Tirar dos favoritos", UrbeTheme.Icons.Star, null, Run: () => { ExplorerState.Unfavorite(doc.Id); RefreshNotes(); return Task.CompletedTask; })
+                : new("Favoritar", UrbeTheme.Icons.Star, "Aparece em Favoritos.", Run: () => { ExplorerState.Favorite(doc.Id); RefreshNotes(); return Task.CompletedTask; }),
+            new("Mover para a lixeira", UrbeTheme.Icons.Trash, "Dá para restaurar pela Lixeira.", Danger: true, Run: () => SelectionActionAsync("delete", [path]))
+        ], WorkspaceIndex.Describe(doc, cites, citedBy));
     }
 
     /// <summary>"+ Novo projeto": a folder at the top of the vault, shown as a new box, which opens.</summary>

@@ -72,4 +72,20 @@ public sealed class WorkspaceIndexTests
         Assert.Equal("", WorkspaceIndex.Snippet("# Só título\n"));
         Assert.EndsWith("…", WorkspaceIndex.Snippet(new string('a', 300)));
     }
+
+    [Fact]
+    public void AHeldNoteTellsWhereWhenHowLongAndHowLinked()
+    {
+        var store = new DocumentStore();
+        var doc = store.Upsert(new DocumentInput
+        {
+            Id = "doc_1", Path = "Personagens/Herói.md", Content = "# Herói\n\nAlto, de uma região do norte. #ficcao",
+            Created = "2026-10-20T10:00:00Z", Modified = "2026-10-22T08:30:00Z"
+        });
+        var text = WorkspaceIndex.Describe(doc, cites: 2, citedBy: 1, TimeZoneInfo.Utc);
+        Assert.Equal("Pasta: Personagens\nCriada em 20/10/2026 10:00 · alterada em 22/10/2026 08:30\n9 palavras · cita 2 · citada por 1"
+            + (doc.Tags.Count > 0 ? "\nTags: " + string.Join(" ", doc.Tags.Select(t => "#" + t.TrimStart('#'))) : ""), text);
+        var loose = store.Upsert(new DocumentInput { Id = "doc_2", Path = "Comece.md", Content = "um" });
+        Assert.Equal("Pasta: raiz do vault\n1 palavra · cita 0 · citada por 0", WorkspaceIndex.Describe(loose, 0, 0, TimeZoneInfo.Utc));
+    }
 }

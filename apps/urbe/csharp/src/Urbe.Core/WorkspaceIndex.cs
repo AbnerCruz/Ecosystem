@@ -145,6 +145,26 @@ public sealed class WorkspaceIndex
         return "";
     }
 
+    /// <summary>
+    /// What a held card tells about a note (UC-84 fatia 2): where it is, when it was made and changed, how long it is,
+    /// how it is linked and its tags, one line each.
+    /// </summary>
+    public static string Describe(UrbeDocument doc, int cites, int citedBy, TimeZoneInfo? zone = null)
+    {
+        ArgumentNullException.ThrowIfNull(doc);
+        var lines = new List<string>();
+        var folder = NoteLibrary.FolderOf(doc.Path);
+        lines.Add("Pasta: " + (folder.Length == 0 ? "raiz do vault" : folder));
+        string? Date(string? iso) => DateTimeOffset.TryParse(iso, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out var at)
+            ? TimeZoneInfo.ConvertTime(at, zone ?? TimeZoneInfo.Local).ToString("dd/MM/yyyy HH:mm", System.Globalization.CultureInfo.InvariantCulture) : null;
+        var dates = new[] { Date(doc.Created) is { } c ? "Criada em " + c : null, Date(doc.Modified) is { } m ? "alterada em " + m : null }.Where(x => x is not null).ToList();
+        if (dates.Count > 0) lines.Add(string.Join(" · ", dates));
+        int words = JsText.Words(doc.Content).Length;
+        lines.Add((words == 1 ? "1 palavra" : words + " palavras") + " · cita " + cites + " · citada por " + citedBy);
+        if (doc.Tags.Count > 0) lines.Add("Tags: " + string.Join(" ", doc.Tags.Select(t => "#" + t.TrimStart('#'))));
+        return string.Join("\n", lines);
+    }
+
     private static string NameOf(string path)
     {
         var name = path.Contains('/') ? path[(path.LastIndexOf('/') + 1)..] : path;

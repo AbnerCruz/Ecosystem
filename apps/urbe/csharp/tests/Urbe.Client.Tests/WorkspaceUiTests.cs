@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using Urbe.Client;
@@ -171,5 +172,57 @@ public sealed partial class HeadlessUiTests
                 return true;
             }
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task Workspace_HoldingACardShowsItsInformationAndActions() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-area-hold-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            var previous = UrbeApp.LocalStatePath;
+            UrbeApp.LocalStatePath = Path.Combine(dir, "app", "notes-state.json");
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 412, Height = 860, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                var w = view.Workspace;
+                // a hold (here the right click that stands for it) on a card: the sheet, and nothing opens
+                var card = Named(w, "Herói");
+                card.RaiseEvent(new ContextRequestedEventArgs());
+                Dispatcher.UIThread.RunJobs();
+                Assert.True(view.Dialogs.IsOpen);
+                Assert.False(view.Editor.IsVisible);
+                var texts = view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text ?? "").ToList();
+                Assert.Contains(texts, t => t.StartsWith("Pasta: Personagens", StringComparison.Ordinal) && t.Contains("palavras · cita 0 · citada por 0", StringComparison.Ordinal));
+                foreach (var action in new[] { "Abrir", "Renomear", "Mover para", "Duplicar", "Favoritar", "Mover para a lixeira" }) Assert.Contains(action, texts);
+                Snapshot(window, "native-area-hold.png");
+                // Favoritar: it joins the favourites
+                ClickButtonWithText(view.Dialogs, "Favoritar");
+                for (int i = 0; i < 40 && view.Dialogs.IsOpen; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.Contains(view.Documents!.Get("Personagens/Herói.md")!.Id, view.ExplorerState.Favorites);
+                // held again: Tirar dos favoritos
+                Named(w, "Herói").RaiseEvent(new ContextRequestedEventArgs());
+                Dispatcher.UIThread.RunJobs();
+                ClickButtonWithText(view.Dialogs, "Tirar dos favoritos");
+                for (int i = 0; i < 40 && view.Dialogs.IsOpen; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.DoesNotContain(view.Documents!.Get("Personagens/Herói.md")!.Id, view.ExplorerState.Favorites);
+                // Abrir opens it
+                Named(w, "Herói").RaiseEvent(new ContextRequestedEventArgs());
+                Dispatcher.UIThread.RunJobs();
+                ClickButtonWithText(view.Dialogs, "Abrir");
+                for (int i = 0; i < 40 && !view.Editor.IsVisible; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.Equal("Personagens/Herói.md", view.Editor.Current!.Path);
+                window.Close();
+                return true;
+            }
+            finally
+            {
+                UrbeApp.LocalStatePath = previous;
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
         }, CancellationToken.None));
 }

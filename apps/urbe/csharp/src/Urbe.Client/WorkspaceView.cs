@@ -88,6 +88,8 @@ public sealed class WorkspaceView : Grid
     public event Action<string>? NoteRequested;
     /// <summary>A file's card was tapped (a page, an image, a PDF…).</summary>
     public event Action<string>? FileRequested;
+    /// <summary>A card was held (or right-clicked): its information and actions.</summary>
+    public event Action<string>? ItemHeld;
     /// <summary>"+ Novo projeto": a new top folder.</summary>
     public event Action? NewProjectRequested;
     /// <summary>"+" inside a folder: a new note there.</summary>
@@ -553,8 +555,25 @@ public sealed class WorkspaceView : Grid
         });
         AutomationProperties.SetName(b, item.Title);
         ToolTip.SetTip(b, item.Path);
+        // a hold (touch) or a right click shows the item's information and actions; the release after a hold opens nothing
+        bool held = false;
+        b.AddHandler(Avalonia.Input.InputElement.PointerPressedEvent, (_, _) => held = false, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+        b.AddHandler(Avalonia.Input.InputElement.HoldingEvent, (object? _, Avalonia.Input.HoldingRoutedEventArgs e) =>
+        {
+            if (e.HoldingState != Avalonia.Input.HoldingState.Started || !TouchIntent.IsIntended(b)) return;
+            held = true;
+            e.Handled = true;
+            Ui.PlatformHaptics.Hold();
+            ItemHeld?.Invoke(item.Path);
+        });
+        b.ContextRequested += (_, e) =>
+        {
+            e.Handled = true;
+            if (!held) ItemHeld?.Invoke(item.Path);
+        };
         b.Click += (_, _) =>
         {
+            if (held) { held = false; return; }
             if (!TouchIntent.IsIntended(b)) return;
             if (item.IsNote) NoteRequested?.Invoke(item.Path); else FileRequested?.Invoke(item.Path);
         };
