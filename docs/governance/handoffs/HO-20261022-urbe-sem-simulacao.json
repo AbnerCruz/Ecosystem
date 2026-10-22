@@ -356,13 +356,19 @@
       "kind": "automated",
       "check": "dotnet test Urbe.Client.Tests",
       "result": "passed",
-      "evidence": "174 de 174 testes headless locais verdes: abertura no Explorer, vault vindo da cidade mantém ids e datas e não reescreve mapa.json/mundo.json, gravação exata de notas.json, mudança por fora bloqueia, registro mais novo nunca reescrito, exclusão de pasta, importação e restauração."
+      "evidence": "174 de 174 testes headless locais verdes (Debug e Release): abertura no Explorer, vault vindo da cidade mantém ids e datas e não reescreve mapa.json/mundo.json, gravação exata de notas.json, mudança por fora bloqueia, registro mais novo nunca reescrito, exclusão de pasta, importação e restauração."
     },
     {
       "kind": "automated",
       "check": "dotnet build Urbe.Portable.slnx -c Release",
       "result": "passed",
       "evidence": "0 erros e 0 avisos; o build Android só roda no CI."
+    },
+    {
+      "kind": "automated",
+      "check": "npm run check (apps/urbe)",
+      "result": "passed",
+      "evidence": "Inclui o verificador do mandato do Urbe nativo, atualizado para a DEC-0051 (sem a simulação, congelada)."
     },
     {
       "kind": "automated",
@@ -381,7 +387,7 @@
   "known_issues": [
     "O APK só é compilado no CI; a abertura de um vault real no Android depende da validação no aparelho (NN-017).",
     "Notas criadas depois desta versão não aparecem no mapa do ramo congelado; se ele for aberto, as encaixa como notas novas.",
-    "O teste PageComments_CommentarInThePreviewWritesThePageAndTheNote falhou uma vez no CI do #640 por arquivo travado e passou na nova execução; não reproduziu aqui."
+    "O teste PageComments_CommentarInThePreviewWritesThePageAndTheNote falhava em 9 de 12 execuções em Release: o teste lia a nota em laço enquanto o app a gravava com acesso exclusivo. Corrigido no teste (espera a nota do app, 12 de 12); o mesmo padrão saiu de Editor_PreviousVersionsAreKeptAndRestored. Fora do app, outro programa que segure a nota durante a gravação faz o Urbe recusar e avisar, sem perder o texto."
   ],
   "blockers": [],
   "next_actions": [
