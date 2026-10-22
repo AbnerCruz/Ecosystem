@@ -79,7 +79,7 @@
     }
   ],
   "criticality": {
-    "declared": "critical",
-    "reason": "Zona user-data da política (IUrbeVaultStorage, FolderVaultStorage e AndroidVaultStorage): um arquivo novo no vault, .urbe/area.json, gravado pela gravação verificada. Espera a autorização do proprietário."
+    "declared": "routine",
+    "reason": "Só interface do cliente (Urbe.Client) e preferências do Explorer; nenhuma gravação nova no vault."
   }
 }
