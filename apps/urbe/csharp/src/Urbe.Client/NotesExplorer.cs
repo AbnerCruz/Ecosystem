@@ -206,6 +206,17 @@ public sealed class NotesExplorer : Border
     /// <summary>One item of the trash as the Lixeira lists it (renderTrash): the document's id and title, its path.</summary>
     public sealed record TrashEntry(string Id, string Title, string OriginalPath);
 
+    /// <summary>
+    /// UC-83: the tree starts with Favoritos and Recentes (with how many each holds) and a "Projetos" heading, as a
+    /// sidebar does; off, the tree is the 1.8.4's.
+    /// </summary>
+    public bool ShowsSections { get => _sections; set { _sections = value; Render(); } }
+
+    private bool _sections;
+
+    /// <summary>A section of the sidebar was chosen ("favorites" or "recent").</summary>
+    public event Action<string>? SectionRequested;
+
     /// <summary>A collection view (Recentes, Favoritos: renderCollection).</summary>
     public sealed record Collection(string Title, IReadOnlyList<CityNote> Notes, string EmptyTitle, string EmptyText);
 
@@ -574,10 +585,39 @@ public sealed class NotesExplorer : Border
                 else AddFileRow(k.Path, depth, withPath: false);
             }
         }
+        if (_sections && (_notes.Count > 0 || _files.Count > 0 || folders.Count > 0)) AddSections();
         Walk("", 0);
         if (_list.Children.Count == 0)
             _list.Children.Add(_opening ? Empty("Abrindo suas notas…", "")
                 : EmptyWithAction("Nenhuma nota ainda", "Suas notas são arquivos Markdown na pasta que você escolher.", "Criar primeira nota"));
+    }
+
+    /// <summary>UC-83: Favoritos and Recentes as the sidebar's first rows, then the "Projetos" heading over the tree.</summary>
+    private void AddSections()
+    {
+        foreach (var (id, label, icon, count) in new[]
+                 {
+                     ("favorites", "Favoritos", UrbeTheme.Icons.Star, State?.Favorites.Count ?? 0),
+                     ("recent", "Recentes", UrbeTheme.Icons.Clock, State?.Recent.Count ?? 0)
+                 })
+        {
+            var section = id;
+            var counter = new TextBlock { Text = count.ToString(System.Globalization.CultureInfo.InvariantCulture), FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center };
+            var row = new Button
+            {
+                Content = RowFrame(icon, label, null, false, false, counter), Background = Brushes.Transparent, BorderThickness = new Thickness(0),
+                CornerRadius = new CornerRadius(12), Padding = RowPadding(0), HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Center, MinHeight = 44
+            };
+            Avalonia.Automation.AutomationProperties.SetName(row, label);
+            row.Click += (_, _) => { if (TouchIntent.IsIntended(row)) SectionRequested?.Invoke(section); };
+            _list.Children.Add(Ui.UrbeMotion.Pressable(row));
+        }
+        _list.Children.Add(new TextBlock
+        {
+            Text = "PROJETOS", FontSize = 11, FontWeight = FontWeight.SemiBold, LetterSpacing = 1.2, Foreground = UrbeTheme.Brush(UrbeTheme.Text3),
+            Margin = new Thickness(14, 14, 0, 6)
+        });
     }
 
     /// <summary>renderSearch: documents whose path or title holds the query (lower case), at most 200, with their folder.</summary>
@@ -695,11 +735,14 @@ public sealed class NotesExplorer : Border
 
     private void Highlight(Control? row)
     {
-        if (_dropTarget is Button old && old != row)
-            old.BorderBrush = _folderRows.TryGetValue(old, out var f) && _selected.Contains(FolderPrefix + f) ? UrbeTheme.Brush(UrbeTheme.Accent, .35) : Brushes.Transparent;
+        if (_dropTarget is { } old && old != row && ButtonOf(old) is { } oldButton)
+            oldButton.BorderBrush = _folderRows.TryGetValue(old, out var f) && _selected.Contains(FolderPrefix + f) ? UrbeTheme.Brush(UrbeTheme.Accent, .35) : Brushes.Transparent;
         _dropTarget = row;
-        if (row is Button target) target.BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent);
+        if (row is not null && ButtonOf(row) is { } target) target.BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent);
     }
+
+    /// <summary>A row's button (a nested row is the button with its tree guides).</summary>
+    private static Button? ButtonOf(Control row) => row as Button ?? (row as Panel)?.Children.OfType<Button>().FirstOrDefault();
 
     /// <summary>Whether a held note, folder or file is being dragged now (tests).</summary>
     public bool Dragging => _dragging;
@@ -950,7 +993,12 @@ public sealed class NotesExplorer : Border
             if (!TouchIntent.IsIntended(button)) return;
             click();
         };
-        return button;
+        if (depth == 0) return button;
+        // UC-83: the tree's guides, one thin line per level, under the parent's icon
+        var guides = new Panel { IsHitTestVisible = false };
+        for (int i = 0; i < depth; i++)
+            guides.Children.Add(new Border { Width = 1, Background = UrbeTheme.Brush(UrbeTheme.Line2), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(12 + i * 18 + 10, 0, 0, 0) });
+        return new Panel { Children = { button, guides } };
     }
 
     // ------------------------------------------------------------------ selection bar

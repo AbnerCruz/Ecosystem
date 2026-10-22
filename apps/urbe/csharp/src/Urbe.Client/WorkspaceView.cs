@@ -152,7 +152,10 @@ public sealed class WorkspaceView : Grid
     public string Folder { get; private set; } = "";
 
     /// <summary>The header's Pastas button: only where the tree is not already beside the Área de trabalho.</summary>
-    public bool ShowsSidebarButton { get => _sidebar.IsVisible; set { _sidebar.IsVisible = value; _settings.IsVisible = value; } }
+    public bool ShowsSidebarButton { get => _sidebar.IsVisible; set => _sidebar.IsVisible = value; }
+
+    /// <summary>The header's Configurações: where the sidebar, which has its own, is not shown beside it.</summary>
+    public bool ShowsSettingsButton { get => _settings.IsVisible; set => _settings.IsVisible = value; }
 
     /// <summary>The name shown for the root (the vault's).</summary>
     public string Title { get => _title; set { _title = string.IsNullOrWhiteSpace(value) ? "Área de trabalho" : value; Render(); } }

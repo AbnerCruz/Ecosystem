@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.LogicalTree;
 using Avalonia.Threading;
@@ -356,6 +357,50 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal(["Personagens", "Exatas"], again.Workspace.ProjectOrder);
                 Assert.Equal("tracejada", again.Area.Of("Exatas")!.Border);
                 window2.Close();
+                return true;
+            }
+            finally
+            {
+                UrbeApp.LocalStatePath = previous;
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task Sidebar_TheEdgeDragsItsWidthAndTheTreeShowsItsLevels() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-sidebar-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            var previous = UrbeApp.LocalStatePath;
+            UrbeApp.LocalStatePath = Path.Combine(dir, "app", "notes-state.json");
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 1280, Height = 800, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                Assert.Equal(MainView.SidebarWidth, view.Explorer.Bounds.Width);
+                // the edge of the sidebar, dragged: wider, kept on the device
+                var edge = view.Explorer.TranslatePoint(new Point(view.Explorer.Bounds.Width - 1, 400), window)!.Value;
+                window.MouseDown(edge, MouseButton.Left);
+                window.MouseMove(edge + new Point(60, 0), RawInputModifiers.LeftMouseButton);
+                window.MouseMove(edge + new Point(120, 0), RawInputModifiers.LeftMouseButton);
+                window.MouseUp(edge + new Point(120, 0), MouseButton.Left);
+                await Settle(window, view);
+                Assert.InRange(view.CurrentSidebarWidth, 430, 470);
+                Assert.Equal(view.CurrentSidebarWidth, view.Explorer.Bounds.Width);
+                Assert.Equal(view.CurrentSidebarWidth, new ExplorerState(UrbeApp.LocalStatePath).SidebarWidth);
+
+                // a folder opened in the tree: its notes one level in, with the level's guide
+                Assert.True(view.Explorer.TryEnterFolder("Personagens"));
+                Dispatcher.UIThread.RunJobs();
+                var nested = view.Explorer.GetLogicalDescendants().OfType<Panel>()
+                    .Where(p => p.Children.OfType<Button>().Any(b => b.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Herói.md"))).ToList();
+                Assert.NotEmpty(nested);
+                Snapshot(window, "native-sidebar-desktop.png");
+                window.Close();
                 return true;
             }
             finally

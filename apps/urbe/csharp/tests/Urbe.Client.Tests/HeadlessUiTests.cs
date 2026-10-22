@@ -52,7 +52,19 @@ public sealed partial class HeadlessUiTests : IDisposable
             Assert.Equal(MainView.SidebarWidth, view.Explorer.Bounds.Width);
             Assert.True(view.Workspace.IsVisible);
             Assert.True(view.Workspace.Bounds.Width > 800 && view.Workspace.Bounds.Height > 700);
-            Assert.False(view.Workspace.ShowsSidebarButton);
+            Assert.False(view.Workspace.ShowsSettingsButton);   // the sidebar has its own
+            // UC-83: the sidebar starts with Favoritos and Recentes; Pastas folds it away and brings it back
+            Assert.Contains(view.Explorer.GetLogicalDescendants().OfType<Button>(), b => Avalonia.Automation.AutomationProperties.GetName(b) == "Favoritos");
+            ClickNamed(view.Workspace, "Pastas");
+            await Settle(window, view);
+            Assert.True(view.SidebarCollapsed);
+            Assert.False(view.Explorer.IsVisible);
+            Assert.True(view.Workspace.ShowsSettingsButton);
+            Assert.True(view.Workspace.Bounds.Width > 1150);
+            ClickNamed(view.Workspace, "Pastas");
+            await Settle(window, view);
+            Assert.False(view.SidebarCollapsed);
+            Assert.True(view.Explorer.IsVisible);
             Assert.Equal("Explorer", view.Explorer.Title);
             Assert.Equal("Nenhuma pasta aberta", view.Explorer.Status);
             Assert.Contains(view.Explorer.HeaderActions.Children.OfType<Button>(), b => ToolTip.GetTip(b) as string == "Configurações");
@@ -108,10 +120,22 @@ public sealed partial class HeadlessUiTests : IDisposable
             ClickNamed(view.Workspace, "Pastas");
             await Settle(window, view);
             Assert.True(view.Explorer.IsVisible && view.Explorer.Overlaid);
-            Assert.True(view.Explorer.Bounds.Width >= 400);
+            // UC-83: a drawer over part of the Área de trabalho, the rest dimmed
+            Assert.InRange(view.Explorer.Bounds.Width, 280, 360);
             Snapshot(window, "native-phone-drawer.png");
             // Fechar (or a note chosen) closes the drawer
             view.Explorer.GetLogicalDescendants().OfType<Button>().First(b => ToolTip.GetTip(b) as string == "Fechar").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            await Settle(window, view);
+            Assert.False(view.Explorer.IsVisible);
+            // a finger sliding in from the left edge opens it; a tap on the dimmed part closes it
+            var finger = window.TouchBegin(new Point(4, 400), RawInputModifiers.None);
+            window.TouchMove(finger, new Point(40, 402), RawInputModifiers.None);
+            window.TouchMove(finger, new Point(90, 404), RawInputModifiers.None);
+            window.TouchEnd(finger, new Point(90, 404), RawInputModifiers.None);
+            await Settle(window, view);
+            Assert.True(view.Explorer.IsVisible && view.Explorer.Overlaid);
+            window.MouseDown(new Point(400, 400), MouseButton.Left);
+            window.MouseUp(new Point(400, 400), MouseButton.Left);
             await Settle(window, view);
             Assert.False(view.Explorer.IsVisible);
             window.Close();

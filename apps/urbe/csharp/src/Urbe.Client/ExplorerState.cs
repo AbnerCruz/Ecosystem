@@ -13,6 +13,8 @@ public sealed class ExplorerState
     private readonly List<string> _favorites = [];
     private readonly List<string> _recent = [];
     private readonly List<string> _expanded = [""];
+    private double? _sidebarWidth;
+    private bool _sidebarCollapsed;
 
     public ExplorerState(string? path)
     {
@@ -31,6 +33,8 @@ public sealed class ExplorerState
                     if (x.ValueKind == JsonValueKind.String && x.GetString() is { } folder && !_expanded.Contains(folder)) _expanded.Add(folder);
                 if (!_expanded.Contains("")) _expanded.Add("");
             }
+            if (json.RootElement.ValueKind == JsonValueKind.Object && json.RootElement.TryGetProperty("sidebarWidth", out var w) && w.ValueKind == JsonValueKind.Number) _sidebarWidth = w.GetDouble();
+            if (json.RootElement.ValueKind == JsonValueKind.Object && json.RootElement.TryGetProperty("sidebarCollapsed", out var c) && c.ValueKind is JsonValueKind.True) _sidebarCollapsed = true;
         }
         catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
         {
@@ -55,6 +59,20 @@ public sealed class ExplorerState
     public void Unfavorite(string id)
     {
         if (_favorites.Remove(id)) Persist();
+    }
+
+    /// <summary>UC-83: the sidebar's width beside the Área de trabalho, as the person left it (null: the default).</summary>
+    public double? SidebarWidth
+    {
+        get => _sidebarWidth;
+        set { _sidebarWidth = value; Persist(); }
+    }
+
+    /// <summary>UC-83: the sidebar folded away on a wide window.</summary>
+    public bool SidebarCollapsed
+    {
+        get => _sidebarCollapsed;
+        set { _sidebarCollapsed = value; Persist(); }
     }
 
     /// <summary>isExpanded(path): the folder is open in the Notas tree.</summary>
@@ -89,7 +107,7 @@ public sealed class ExplorerState
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(_path))!);
-            File.WriteAllText(_path, JsonSerializer.Serialize(new { favorites = _favorites, recent = _recent, expanded = _expanded }));
+            File.WriteAllText(_path, JsonSerializer.Serialize(new { favorites = _favorites, recent = _recent, expanded = _expanded, sidebarWidth = _sidebarWidth, sidebarCollapsed = _sidebarCollapsed }));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

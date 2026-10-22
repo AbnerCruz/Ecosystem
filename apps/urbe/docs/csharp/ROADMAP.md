@@ -203,7 +203,9 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
   - Renomear no lugar e arrastar para mover, pelas mesmas operações verificadas de hoje.
   - No celular, gaveta pelo botão de menu ou deslizando da borda esquerda; no computador e no tablet (900 dp ou mais), fixa à esquerda, com largura ajustável e recolhível.
   - Só as linhas visíveis são montadas (lista virtualizada).
-  - **Primeira fatia (feita, 22/10/2026):** no computador (palco de 900 dp ou mais) o Explorer fica fixo à esquerda, com 320 dp, ao lado da Área de trabalho; no celular ele abre por cima pelo botão **Pastas** da Área de trabalho, em tela cheia com Fechar, e fecha ao escolher uma nota. **Falta:** as seções, as guias da árvore, a gaveta pela borda e com largura parcial, a largura ajustável e a lista virtualizada.
+  - **Primeira fatia (feita, 22/10/2026):** no computador (palco de 900 dp ou mais) o Explorer fica fixo à esquerda, com 320 dp, ao lado da Área de trabalho; no celular ele abre por cima pelo botão **Pastas** da Área de trabalho, em tela cheia com Fechar, e fecha ao escolher uma nota.
+  - **Segunda fatia (feita, 22/10/2026):** no topo da árvore, Favoritos e Recentes com contagem e o título PROJETOS; as pastas abertas mostram guias de recuo. No computador, a borda da barra arrasta a largura (240 a 520 dp, guardada nas preferências do Explorer) e o botão de menu da Área de trabalho recolhe e devolve a barra. No celular, a gaveta ocupa só parte da tela (280 a 360 dp) com sombra e fundo escurecido; tocar no fundo fecha, e deslizar da borda esquerda abre.
+  - **Falta:** renomear no lugar e a lista virtualizada (junto da UC-78).
 - [ ] UC-84 — **Área de trabalho com projetos em caixas** (DEC-0053, ADD-0030). A base do app: cada projeto (pasta do topo) é uma caixa de vidro com borda colorida e um catálogo em grid. **Solução:**
   - Na raiz: as caixas com cabeçalho (ícone, nome, número de itens, última mudança, menu), os itens mais recentes em grid (6 a 9 conforme a largura) e "Ver tudo (N)"; subpastas como caixas menores; as notas soltas numa faixa "Soltas".
   - Tela vazia: "+ Novo projeto" cria a pasta no topo com nome e cor.

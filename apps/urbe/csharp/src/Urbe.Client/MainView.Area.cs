@@ -15,8 +15,20 @@ public sealed partial class MainView
     /// <summary>From this width of the stage the Explorer stays beside the Área de trabalho.</summary>
     public const double SidebarBreakpoint = 900;
 
-    /// <summary>The sidebar's width beside the Área de trabalho.</summary>
+    /// <summary>The sidebar's width beside the Área de trabalho, until the person drags it (UC-83: 240 to 520).</summary>
     public const double SidebarWidth = 320;
+
+    /// <summary>The sidebar's width now: the person's, or the default.</summary>
+    public double CurrentSidebarWidth => Math.Clamp(ExplorerState.SidebarWidth ?? SidebarWidth, 240, 520);
+
+    /// <summary>The wide window's sidebar is folded away (Pastas brings it back).</summary>
+    public bool SidebarCollapsed => ExplorerState.SidebarCollapsed;
+
+    /// <summary>The phone's drawer: the Explorer over part of the Área de trabalho, the rest dimmed; a tap there closes it.</summary>
+    private readonly Border _scrim = new() { Background = UrbeTheme.Brush("#000000", .45), IsVisible = false, ZIndex = 1 };
+
+    /// <summary>The sidebar's edge, dragged to make it wider or narrower.</summary>
+    private readonly Border _grip = new() { Width = 8, Background = Avalonia.Media.Brushes.Transparent, HorizontalAlignment = HorizontalAlignment.Left, Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.SizeWestEast) };
 
     /// <summary>The Área de trabalho: projects as glass boxes, each a catalogue of its notes and files.</summary>
     public WorkspaceView Workspace { get; } = new();
@@ -36,7 +48,19 @@ public sealed partial class MainView
         Workspace.FolderMenuRequested += folder => _ = ShowFolderMenuAsync(folder);
         Workspace.ItemHeld += path => _ = ShowItemSheetAsync(path);
         Workspace.PresentationChanged += KeepPresentation;
-        Workspace.SidebarRequested += ShowNotes;
+        Workspace.SidebarRequested += () =>
+        {
+            // wide: Pastas folds the sidebar away or brings it back; narrow: the drawer
+            if (SidebarDocked) { ExplorerState.SidebarCollapsed = !ExplorerState.SidebarCollapsed; PlaceSidebar(); }
+            else ShowNotes();
+        };
+        Explorer.ShowsSections = true;
+        Explorer.SectionRequested += ShowCollection;
+        _stage.Children.Insert(0, _scrim);
+        _scrim.PointerPressed += (_, e) => { e.Handled = true; CloseNotesOverEditor(); };
+        _stage.Children.Add(_grip);
+        WireGrip();
+        WireEdgeSwipe();
         Workspace.SettingsRequested += () => _ = ShowSettingsAsync();
         _stage.SizeChanged += (_, e) => { if (e.WidthChanged) PlaceSidebar(); };
         Explorer.PropertyChanged += (_, e) => { if (e.Property == NotesExplorer.ZIndexProperty) PlaceSidebar(); };
@@ -44,27 +68,78 @@ public sealed partial class MainView
     }
 
     /// <summary>
-    /// The Explorer beside the Área de trabalho (wide), hidden under it (narrow), or over everything while it is open
-    /// as a drawer or over the editor.
+    /// The Explorer beside the Área de trabalho (wide, unless folded away), hidden under it (narrow), a drawer over part
+    /// of it on a phone, or over everything while it is open over the editor on a wide window.
     /// </summary>
     private void PlaceSidebar()
     {
-        bool docked = SidebarDocked;
-        Workspace.ShowsSidebarButton = !docked;
-        Workspace.Margin = new Thickness(docked ? SidebarWidth : 0, 0, 0, 0);
+        bool docked = SidebarDocked, shown = docked && !ExplorerState.SidebarCollapsed;
+        double width = CurrentSidebarWidth;
+        Workspace.ShowsSidebarButton = !shown || docked;
+        Workspace.ShowsSettingsButton = !shown;
+        Workspace.Margin = new Thickness(shown ? width : 0, 0, 0, 0);
+        _grip.IsVisible = shown && !Explorer.Overlaid;
+        _grip.Margin = new Thickness(width - 4, 0, 0, 0);
+        _scrim.IsVisible = Explorer.Overlaid && !docked;
         if (Explorer.Overlaid)
         {
             Explorer.IsVisible = true;
-            Explorer.HorizontalAlignment = HorizontalAlignment.Stretch;
-            Explorer.Width = double.NaN;
-            Explorer.BorderThickness = default;
+            // a phone: a drawer from the left; a wide window: over the editor, the whole stage
+            Explorer.HorizontalAlignment = docked ? HorizontalAlignment.Stretch : HorizontalAlignment.Left;
+            Explorer.Width = docked ? double.NaN : Math.Min(360, Math.Max(280, _stage.Bounds.Width * .86));
+            Explorer.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line);
+            Explorer.BorderThickness = docked ? default : new Thickness(0, 0, 1, 0);
+            Explorer.BoxShadow = docked ? default : new Avalonia.Media.BoxShadows(new Avalonia.Media.BoxShadow { OffsetX = 8, Blur = 32, Color = Avalonia.Media.Color.FromArgb(120, 0, 0, 0) });
             return;
         }
-        Explorer.IsVisible = docked;
-        Explorer.HorizontalAlignment = docked ? HorizontalAlignment.Left : HorizontalAlignment.Stretch;
-        Explorer.Width = docked ? SidebarWidth : double.NaN;
+        Explorer.BoxShadow = default;
+        Explorer.IsVisible = shown;
+        Explorer.HorizontalAlignment = shown ? HorizontalAlignment.Left : HorizontalAlignment.Stretch;
+        Explorer.Width = shown ? width : double.NaN;
         Explorer.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line);
-        Explorer.BorderThickness = docked ? new Thickness(0, 0, 1, 0) : default;
+        Explorer.BorderThickness = shown ? new Thickness(0, 0, 1, 0) : default;
+    }
+
+    /// <summary>UC-83: dragging the sidebar's edge sets its width (240 to 520), kept on the device.</summary>
+    private void WireGrip()
+    {
+        bool dragging = false;
+        _grip.PointerPressed += (_, e) =>
+        {
+            dragging = true;
+            e.Pointer.Capture(_grip);
+            e.Handled = true;
+        };
+        _grip.PointerMoved += (_, e) =>
+        {
+            if (!dragging) return;
+            var x = e.GetPosition(_stage).X;
+            ExplorerState.SidebarWidth = Math.Clamp(Math.Round(x), 240, 520);
+            PlaceSidebar();
+        };
+        _grip.PointerReleased += (_, e) => { dragging = false; e.Pointer.Capture(null); };
+        _grip.PointerCaptureLost += (_, _) => dragging = false;
+    }
+
+    /// <summary>UC-83: on a phone, a finger sliding in from the left edge of the Área de trabalho opens the drawer.</summary>
+    private void WireEdgeSwipe()
+    {
+        Point? from = null;
+        Workspace.AddHandler(PointerPressedEvent, (_, e) =>
+        {
+            var p = e.GetPosition(_stage);
+            from = !SidebarDocked && e.Pointer.Type == Avalonia.Input.PointerType.Touch && p.X <= 20 ? p : null;
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+        Workspace.AddHandler(PointerMovedEvent, (_, e) =>
+        {
+            if (from is not { } start) return;
+            var p = e.GetPosition(_stage);
+            if (Math.Abs(p.Y - start.Y) > 40) { from = null; return; }
+            if (p.X - start.X < 48) return;
+            from = null;
+            ShowNotes();
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+        Workspace.AddHandler(PointerReleasedEvent, (_, _) => from = null, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
     }
 
     /// <summary>The Área de trabalho as the vault is now.</summary>

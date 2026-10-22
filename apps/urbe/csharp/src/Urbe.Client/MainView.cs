@@ -204,6 +204,8 @@ public sealed partial class MainView : Grid
         Explorer.Overlaid = true;
         Explorer.ZIndex = 1;
         PlaceSidebar();
+        // a phone's drawer slides in from the left (UX.md P6)
+        if (!SidebarDocked) Ui.UrbeMotion.Enter(Explorer, dx: -24, dy: 0);
     }
 
     /// <summary>Notas goes back under the editor.</summary>
