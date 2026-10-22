@@ -1,0 +1,75 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-beta-15",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T08:11:01Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-34",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "8e8d3fef",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "docs/governance/handoffs/HO-20261022-urbe-beta-15.json"
+  ],
+  "work_completed": [
+    "Urbe Beta 2.0 — 2.0.0-beta.15 (versionCode 2000015): publica no canal beta (DEC-0048) o Urbe sem a simulação visual (ADD-0028/DEC-0051, PR #641) — Explorer como base, registro das notas em .urbe/notas.json, arquivos da cidade preservados — com o editor redesenhado e o widget de voz que grava direto, e o Windows na mesma release."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "CI dos PRs #640 e #641 (urbe-checks, build Android e Windows, integrador)",
+      "result": "passed",
+      "evidence": "PRs integrados pelo proprietário com os checks do estado combinado verdes."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico, beta.15 instalada por cima da beta.14: abrir o vault de sempre; notas e pastas com os mesmos nomes; editar, gravar, fechar e reabrir sem perder nada; .urbe/mapa.json e .urbe/mundo.json continuam no vault; editor redesenhado e widget de voz",
+      "result": "pending",
+      "critical": true,
+      "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.15"
+    }
+  ],
+  "known_issues": [
+    "O mapa e o mundo da cidade ficam só no ramo urbe-simulacao-congelada; notas criadas na beta.15 não estão nele."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Depois da integração, disparar urbe-csharp-mobile-release.yml (o integrador não dispara workflows) e mandar os links do APK e do Windows ao proprietário."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/distribution/direct-releases.md",
+    "docs/governance/addenda/ADD-0025-urbe-beta-2-0-nativa.md",
+    "docs/governance/addenda/ADD-0028-urbe-sem-simulacao-visual.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A versão do canal muda só em Urbe.Android.csproj."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "A validação no aparelho fica pendente e crítica."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-beta-release",
+      "status": "product-specific",
+      "rationale": "Versão do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Nova versão publicada no canal de distribuição (Urbe.Android.csproj)."
+  }
+}
