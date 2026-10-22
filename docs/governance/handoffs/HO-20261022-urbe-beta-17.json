@@ -20,25 +20,25 @@
     "docs/governance/handoffs/HO-20261022-urbe-beta-17.json"
   ],
   "work_completed": [
-    "Urbe Beta 2.0 — 2.0.0-beta.17 (versionCode 2000017): publica no canal beta (DEC-0048) as correções do PR #646. Rolar para longe do cursor não puxa mais a nota de volta (UC-76). O Assistente fica leve em conversas longas e reenvia menos ao modelo (UC-77). A abertura mostra 'Abrindo suas notas…' e lê o vault em paralelo no Android (UC-78). As notas rápidas vão para uma nota por mês (UC-79). O Windows sai na mesma release."
+    "Urbe Beta 2.0 — 2.0.0-beta.17 (versionCode 2000017): publica no canal beta (DEC-0048) as correções do PR #646. Rolar para longe do cursor não puxa mais a nota de volta (UC-76). O Assistente fica leve em conversas longas e reenvia menos ao modelo (UC-77). A abertura mostra 'Abrindo suas notas…' e lê o vault em paralelo no Android (UC-78). As notas rápidas vão para uma nota por mês (UC-79). Também publica a primeira fatia da Área de trabalho (DEC-0053; UC-84 fatia 1 e UC-83): projetos como caixas de vidro com catálogo em grid e o Explorer ao lado (computador) ou em Pastas (celular). O Windows sai na mesma release."
   ],
   "verification": [
     {
       "kind": "automated",
-      "check": "CI do PR #646 (urbe-checks, build Android e Windows, e2e, integrador)",
+      "check": "CI do PR #646 e deste PR (urbe-checks, build Android e Windows, e2e, integrador)",
       "result": "passed",
-      "evidence": "PR integrado com os checks do estado combinado verdes."
+      "evidence": "#646 integrado com os checks verdes; a fatia da Área de trabalho com Core 640 de 640 e Client 193 de 193 localmente, conferida pelo CI deste PR."
     },
     {
       "kind": "human",
-      "check": "Android físico, beta.17 por cima da beta.16: rolar rápido com o cursor posto não volta para ele; conversa longa no Assistente sem travar; abertura sem 'Nenhuma nota' e mais rápida; nota rápida vai para Notas rápidas/aaaa-mm.md",
+      "check": "Android físico, beta.17 por cima da beta.16: rolar rápido com o cursor posto não volta para ele; conversa longa no Assistente sem travar; abertura sem 'Nenhuma nota'; nota rápida em Notas rápidas/aaaa-mm.md; a Área de trabalho abre com os projetos em caixas, Pastas abre a árvore",
       "result": "pending",
       "critical": true,
       "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.17"
     }
   ],
   "known_issues": [
-    "A Área de trabalho (DEC-0053) ainda não está nesta beta; vem em fatias (UC-83 a UC-85)."
+    "A Área de trabalho está na primeira fatia: segurar um cartão, filtros, arrastar entre caixas e personalizar as caixas vêm depois (UC-84, UC-85)."
   ],
   "blockers": [],
   "next_actions": [
