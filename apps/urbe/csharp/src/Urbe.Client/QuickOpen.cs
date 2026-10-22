@@ -400,6 +400,12 @@ public sealed class SearchFeature
         Hook();
     }
 
+    /// <summary>UC-61: the person's shortcuts (Personalização/atalhos.json), over the defaults.</summary>
+    public Func<IReadOnlyDictionary<string, string>?>? UserShortcuts { get; set; }
+
+    /// <summary>The title of a command, or null.</summary>
+    public string? TitleOf(string id) => _commands.LastOrDefault(c => c.Info.Id == id)?.Info.Title;
+
     public QuickOpenPanel QuickOpen { get; }
     public CommandPalettePanel Palette { get; }
 
@@ -444,7 +450,7 @@ public sealed class SearchFeature
         var input = new LegacyKeyInput(key, e.KeyModifiers.HasFlag(KeyModifiers.Control), e.KeyModifiers.HasFlag(KeyModifiers.Meta),
             e.KeyModifiers.HasFlag(KeyModifiers.Alt), e.KeyModifiers.HasFlag(KeyModifiers.Shift));
         var editable = e.Source is TextBox or Avalonia.Controls.Presenters.TextPresenter;
-        var resolved = LegacyKeymap.Resolve(input, editable, Has);
+        var resolved = LegacyKeymap.Resolve(input, editable, Has, UserShortcuts?.Invoke());
         if (resolved.CommandId is null) return;
         e.Handled = resolved.PreventDefault;
         Execute(resolved.CommandId);

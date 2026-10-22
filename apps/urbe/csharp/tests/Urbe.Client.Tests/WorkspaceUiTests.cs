@@ -646,4 +646,40 @@ public sealed partial class HeadlessUiTests
             }
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
+
+    [Fact]
+    public async Task Shortcuts_AreListedAndMineRunFromAtalhosJson() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // UC-61: Configurações → Atalhos lists every shortcut; "Editar meus atalhos" makes atalhos.json from a model
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-keys-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 1280, Height = 800, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                var showing = view.ShowShortcutsAsync();
+                Dispatcher.UIThread.RunJobs();
+                var texts = view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
+                Assert.Contains("Ctrl+K", texts);
+                Assert.Contains("Abrir comandos", texts);
+                ClickButtonWithText(view.Dialogs, "Editar meus atalhos");
+                var file = Path.Combine(vault, "Personalização", "atalhos.json");
+                for (int i = 0; i < 300 && !(File.Exists(file) && view.Editor.IsVisible); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.Contains("ui.constellation", File.ReadAllText(file));
+                Assert.Equal("Personalização/atalhos.json", view.Editor.Current?.Path);
+                await showing;
+
+                // Ctrl+Shift+K (from the model) opens the Constelação
+                window.KeyPress(Key.K, RawInputModifiers.Control | RawInputModifiers.Shift, PhysicalKey.K, "K");
+                for (int i = 0; i < 100 && !view.SkyPanel.IsVisible; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                Assert.True(view.SkyPanel.IsVisible);
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
 }

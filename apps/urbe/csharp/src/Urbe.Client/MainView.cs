@@ -149,6 +149,7 @@ public sealed partial class MainView : Grid
             Children.Add(overlay);
         }
         Search = new SearchFeature(this, () => _contents.Select(n => new CityNote(n.Key, n.Value)).ToList());
+        Search.UserShortcuts = MyShortcuts;
         RestoreTouchDebug();
         WatchErrors();
         WatchSession();
@@ -521,6 +522,7 @@ public sealed partial class MainView : Grid
         {
             new("Personalização", UrbeTheme.Icons.Brush, "Tema, cores, fontes, editor, estilos e plugins", Run: () => { Customize.Open(); return Task.CompletedTask; }),
             new("Tutorial", UrbeTheme.Icons.Book, "Guia completo de tudo o que o Urbe faz", Run: ShowTutorialMenuAsync),
+            new("Atalhos", UrbeTheme.Icons.List, "Os atalhos de teclado, e os seus em atalhos.json", Run: ShowShortcutsAsync),
             new("Configuração inicial", UrbeTheme.Icons.Select, "Pasta, aparência e Assistente, passo a passo", Run: () => { ShowFirstRun(); return Task.CompletedTask; })
         };
         if (_vault is not null)

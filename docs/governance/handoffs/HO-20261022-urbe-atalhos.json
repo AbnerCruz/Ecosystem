@@ -1,0 +1,85 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-atalhos",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T23:55:50Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-61",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "7eb15181",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacySearch.cs",
+    "apps/urbe/csharp/src/Urbe.Client/QuickOpen.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Shortcuts.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/UserShortcutsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/WorkspaceUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261022-urbe-atalhos.json"
+  ],
+  "work_completed": [
+    "UC-61: atalhos próprios em Personalização/atalhos.json (sintaxe .md do vault, criada só ao pedir), por cima dos padrões da 1.8.4; Configurações → Atalhos lista todos."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (667) e Urbe.Client.Tests (207)",
+      "result": "passed",
+      "evidence": "UserShortcutsTests e Shortcuts_AreListedAndMineRunFromAtalhosJson (Ctrl+Shift+K abre a Constelação)."
+    },
+    {
+      "kind": "human",
+      "check": "No Windows, editar atalhos.json e usar o atalho novo",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.Shortcuts.cs"
+    }
+  ],
+  "known_issues": [
+    "Barra do editor e menu / configuráveis continuam na UC-61."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Próximos itens do ROADMAP C#."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": ".urbe/area.json só guarda apresentação e declara que as pastas e arquivos são a autoridade do conteúdo; nada nele cria, move ou apaga pastas."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "O arquivo novo é o previsto no ADD-0030, que o proprietário decidiu (DEC-0053)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Aparência e ordem no aparelho ficam pendentes; UC-85 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "area-layout",
+      "status": "product-specific",
+      "rationale": "Apresentação da Área de trabalho do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Interface nova; grava só pelo seletor de pasta e pela Personalização existentes."
+  }
+}
