@@ -1272,9 +1272,10 @@ public sealed partial class MainView : Grid
     }
 
     private Avalonia.Controls.Platform.IInputPane? _inputPane;
+    private Avalonia.Controls.Platform.IInsetsManager? _insets;
     private TopLevel? _keyboardTop;
-    // the top of the phone's keyboard in window coordinates, or NaN while it is closed
-    private double _keyboardAt = double.NaN;
+    // the keyboard counts as open (a short close while moving from one block to the next does not give the space back)
+    private bool _keyboardOpen;
     private readonly DispatcherTimer _keyboardClosed = new() { Interval = TimeSpan.FromMilliseconds(220) };
 
     protected override void OnAttachedToVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
@@ -1284,7 +1285,9 @@ public sealed partial class MainView : Grid
         // a phone) and the text being typed stay above the keys (UC-48/UC-55)
         _keyboardTop = TopLevel.GetTopLevel(this);
         _inputPane = _keyboardTop?.InputPane;
+        _insets = _keyboardTop?.InsetsManager;
         if (_inputPane is not null) _inputPane.StateChanged += OnInputPane;
+        if (_insets is not null) _insets.SafeAreaChanged += OnSafeArea;
         if (_keyboardTop is not null) _keyboardTop.PropertyChanged += OnTopLevelResized;
         _keyboardClosed.Tick += OnKeyboardClosed;
     }
@@ -1292,10 +1295,12 @@ public sealed partial class MainView : Grid
     protected override void OnDetachedFromVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
     {
         if (_inputPane is not null) _inputPane.StateChanged -= OnInputPane;
+        if (_insets is not null) _insets.SafeAreaChanged -= OnSafeArea;
         if (_keyboardTop is not null) _keyboardTop.PropertyChanged -= OnTopLevelResized;
         _keyboardClosed.Tick -= OnKeyboardClosed;
         _keyboardClosed.Stop();
         _inputPane = null;
+        _insets = null;
         _keyboardTop = null;
         base.OnDetachedFromVisualTree(e);
     }
@@ -1305,7 +1310,7 @@ public sealed partial class MainView : Grid
         if (e.NewState == Avalonia.Controls.Platform.InputPaneState.Open)
         {
             _keyboardClosed.Stop();
-            _keyboardAt = e.EndRect.Top;
+            _keyboardOpen = true;
             FitKeyboard();
         }
         // moving from one block to the next closes and reopens the keyboard: wait a moment before giving the
@@ -1316,9 +1321,12 @@ public sealed partial class MainView : Grid
     private void OnKeyboardClosed(object? sender, EventArgs e)
     {
         _keyboardClosed.Stop();
-        _keyboardAt = double.NaN;
+        _keyboardOpen = false;
         FitKeyboard();
     }
+
+    // the keyboard grew or shrank (suggestions, emoji), or the system bars changed
+    private void OnSafeArea(object? sender, Avalonia.Controls.Platform.SafeAreaChangedArgs e) => FitKeyboard();
 
     private void OnTopLevelResized(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
@@ -1326,17 +1334,20 @@ public sealed partial class MainView : Grid
     }
 
     /// <summary>
-    /// The space the keyboard covers at the bottom of the window. A system that already shrinks the window for the
-    /// keyboard (adjustResize, or insets applied by the platform) leaves nothing covered: before, the app also
-    /// subtracted the keyboard's height and ended half a screen above it (16/10/2026).
+    /// The space the keyboard covers at the bottom of the window, from the window's height and the keyboard's top taken
+    /// at the same moment. A window the system shrinks for the keyboard (Android up to 14: adjustResize, the app not
+    /// edge-to-edge) is never covered: adding the keyboard's height there pushed the app up and left the window's black
+    /// background between it and the keys (16/10 and 22/10/2026). Only an edge-to-edge window (Android 15+) is covered.
     /// </summary>
-    public static double KeyboardCover(double windowHeight, double keyboardTop) =>
-        double.IsNaN(keyboardTop) ? 0 : Math.Max(0, windowHeight - keyboardTop);
+    public static double KeyboardCover(double windowHeight, double keyboardTop, bool windowShrinks = false) =>
+        windowShrinks || double.IsNaN(keyboardTop) ? 0 : Math.Max(0, windowHeight - keyboardTop);
 
     private void FitKeyboard()
     {
         var height = _keyboardTop?.ClientSize.Height ?? 0;
-        var covered = height <= 0 ? 0 : KeyboardCover(height, _keyboardAt);
+        // the keyboard's place now, not the one announced when it started to open (the window may have changed since)
+        var top = _keyboardOpen && _inputPane is { } pane && pane.OccludedRect.Height > 0 ? pane.OccludedRect.Top : double.NaN;
+        var covered = height <= 0 ? 0 : KeyboardCover(height, top, windowShrinks: _insets is { DisplaysEdgeToEdge: false });
         if (Math.Abs(Margin.Bottom - covered) > .5) Margin = new Thickness(0, 0, 0, covered);
     }
 

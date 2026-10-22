@@ -138,6 +138,8 @@ public sealed class NotesExplorer : Border
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
         };
+        // a finger that scrolls the list, or only stops it, neither opens nor selects the row under it (22/10/2026)
+        TouchIntent.Attach(scroll);
         var layout = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*") };
         Grid.SetRow(header, 0);
         Grid.SetRow(_searchBox, 1);
@@ -638,6 +640,8 @@ public sealed class NotesExplorer : Border
     private void OnDragMoved(object? sender, Avalonia.Input.PointerEventArgs e)
     {
         if (!_dragArmed) return;
+        // a held row follows the finger: the list does not scroll under it
+        e.PreventGestureRecognition();
         if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) { EndDrag(); return; }
         var at = e.GetPosition(_list);
         _dragFrom ??= at;
@@ -892,30 +896,45 @@ public sealed class NotesExplorer : Border
             VerticalContentAlignment = VerticalAlignment.Center,
             MinHeight = 48
         };
-        // the hold: 430 ms without moving more than 12 px selects, and the click that follows opens nothing
+        // the hold: 430 ms without moving more than 12 px selects, and the click that follows opens nothing. The finger is
+        // measured on the screen, not on the row: the row scrolls with the finger, so on it a scroll looked still and a
+        // slow scroll selected the row and armed its drag (22/10/2026). A scroll, or a touch that only stops one, never
+        // holds nor opens (TouchIntent).
         bool held = false;
         Avalonia.Threading.DispatcherTimer? timer = null;
         Point start = default;
+        void Cancel() { timer?.Stop(); timer = null; }
         button.AddHandler(PointerPressedEvent, (_, e) =>
         {
             if (e.GetCurrentPoint(button).Properties.IsRightButtonPressed) return;
             held = false;
-            start = e.GetPosition(button);
-            timer?.Stop();
+            start = e.GetPosition(null);
+            Cancel();
+            // the list this touch began in: the row may be rebuilt (and leave the screen) while the list scrolls
+            var list = TouchIntent.Of(button);
             timer = new Avalonia.Threading.DispatcherTimer { Interval = holdDelay() };
-            timer.Tick += (_, _) => { timer!.Stop(); timer = null; held = true; hold(); };
+            timer.Tick += (_, _) =>
+            {
+                Cancel();
+                if (!TouchIntent.IsIntended(button) || list is { } l && !l.Intent.Allows(l.Scroll.Offset.Y)) return;
+                held = true;
+                hold();
+            };
             timer.Start();
         }, Avalonia.Interactivity.RoutingStrategies.Tunnel | Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
         button.AddHandler(PointerMovedEvent, (_, e) =>
         {
-            var p = e.GetPosition(button);
-            if (timer is not null && Math.Sqrt(Math.Pow(p.X - start.X, 2) + Math.Pow(p.Y - start.Y, 2)) > 12) { timer.Stop(); timer = null; }
+            var p = e.GetPosition(null);
+            if (timer is not null && Math.Sqrt(Math.Pow(p.X - start.X, 2) + Math.Pow(p.Y - start.Y, 2)) > 12) Cancel();
         }, Avalonia.Interactivity.RoutingStrategies.Tunnel | Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
-        button.AddHandler(PointerReleasedEvent, (_, _) => { timer?.Stop(); timer = null; },
+        button.AddHandler(PointerReleasedEvent, (_, _) => Cancel(),
             Avalonia.Interactivity.RoutingStrategies.Tunnel | Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+        // the list took the finger to scroll
+        button.AddHandler(PointerCaptureLostEvent, (_, _) => Cancel(), Avalonia.Interactivity.RoutingStrategies.Direct | Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
         button.Click += (_, _) =>
         {
             if (held) { held = false; return; }
+            if (!TouchIntent.IsIntended(button)) return;
             click();
         };
         return button;

@@ -194,7 +194,7 @@ public sealed class VisualSurface : StackPanel
                 Background = Brushes.Transparent, MinHeight = 44,
                 Child = new TextBlock { Text = "Comece a escrever…", Foreground = UrbeTheme.Brush(UrbeTheme.Text3), FontSize = TextSize, FontFamily = UrbeTheme.EditorFont }
             };
-            empty.Tapped += (_, e) => { e.Handled = true; AppendBlock(); };
+            empty.Tapped += (_, e) => { e.Handled = true; if (TouchIntent.IsIntended(empty)) AppendBlock(); };
             Children.Add(empty);
         }
         var editorAdded = false;
@@ -212,7 +212,7 @@ public sealed class VisualSurface : StackPanel
         }
         if (_box is not null && !editorAdded) Children.Add(EditorFor());
         var tail = new Border { Background = Brushes.Transparent, MinHeight = 160 };
-        tail.Tapped += (_, e) => { e.Handled = true; AppendBlock(); };
+        tail.Tapped += (_, e) => { e.Handled = true; if (TouchIntent.IsIntended(tail)) AppendBlock(); };
         Children.Add(tail);
     }
 
@@ -259,12 +259,17 @@ public sealed class VisualSurface : StackPanel
                 // a hold already opened this block (the release of the same touch), or a link/checkbox took the tap
                 if (e.Handled || !holder.IsAttachedToVisualTree()) return;
                 e.Handled = true;
+                // a touch that scrolled the note, or only stopped it, does not open the block (22/10/2026)
+                if (!TouchIntent.IsIntended(holder)) return;
                 TapBlock(block.Start, holder, e.Source as Visual, e.GetPosition(holder), select: false);
             };
             // a long press selects the word under the finger, with the bubble and a haptic tick (UX.md P7, P8)
             holder.AddHandler(InputElement.HoldingEvent, (object? _, HoldingRoutedEventArgs e) =>
             {
                 if (e.HoldingState != HoldingState.Started || !holder.IsAttachedToVisualTree()) return;
+                // the hold timer does not see a scroll (the block moves with the finger): a finger that scrolled the
+                // note, even slowly, never selects nor opens the keyboard (22/10/2026)
+                if (!TouchIntent.IsIntended(holder)) return;
                 e.Handled = true;
                 TapBlock(block.Start, holder, holder.InputHitTest(e.Position) as Visual, e.Position, select: true);
             });
@@ -449,6 +454,7 @@ public sealed class VisualSurface : StackPanel
             if (to <= from) return;
             _box.SelectionStart = from;
             _box.SelectionEnd = to;
+            TouchTextScroll.ShowSelectionHandles(_box);
             e.Handled = true;
             Ui.PlatformHaptics.Tick();
         };
