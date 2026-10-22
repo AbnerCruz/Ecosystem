@@ -19,7 +19,21 @@ namespace Urbe.Client;
 /// </summary>
 public sealed class MarkdownReader
 {
-    private const double Size = UrbeTheme.EditorSize;     // --ui-editor-size
+    /// <summary>The body size (--ui-editor-size, Personalização → Fonte das notas → Tamanho).</summary>
+    public double Size { get; init; } = UrbeTheme.EditorSize;
+    /// <summary>The line height factor (--ui-editor-line).</summary>
+    public double LineFactor { get; init; } = 1.7;
+    /// <summary>The font of the notes (--ui-editor-font); the UI font by default.</summary>
+    public FontFamily? Family { get; init; }
+
+    /// <summary>
+    /// Body ink: light text on a dark ground looks heavier than it is (irradiation), which made the notes read as bold
+    /// (owner, beta.13). Body text is drawn a touch softer than headings; the colour is still the theme's.
+    /// </summary>
+    public const double BodyInk = .87;
+
+    private IBrush Ink(string color, FontWeight weight = FontWeight.Normal) =>
+        color == UrbeTheme.Text && weight == FontWeight.Normal ? UrbeTheme.Brush(color, BodyInk) : UrbeTheme.Brush(color);
 
     /// <summary>A [[wikilink]] was tapped (target note name).</summary>
     public Action<string>? WikiLinkTapped { get; set; }
@@ -150,7 +164,10 @@ public sealed class MarkdownReader
         };
     }
 
-    private static Control Para(string text) => new TextBlock { Text = text, Margin = new Thickness(0, .6 * Size), TextWrapping = TextWrapping.Wrap };
+    /// <summary>The class of the text blocks that carry the note's text (a tap maps their characters back to the source).</summary>
+    public const string TextClass = "md-text";
+
+    private Control Para(string text) => new TextBlock { Classes = { TextClass }, Text = text, FontSize = Size, LineHeight = Size * LineFactor, FontFamily = Family ?? UrbeTheme.EditorFont, Foreground = Ink(UrbeTheme.Text), Margin = new Thickness(0, .6 * Size), TextWrapping = TextWrapping.Wrap };
 
     private Control Heading(RichNode n, double em, FontWeight weight, Thickness margin)
     {
@@ -173,10 +190,11 @@ public sealed class MarkdownReader
     {
         var tb = new RichText
         {
-            FontSize = size, Foreground = UrbeTheme.Brush(color), FontWeight = weight, TextWrapping = TextWrapping.Wrap,
-            LineHeight = size * 1.7,
-            FontFamily = family ?? UrbeTheme.UiFont
+            FontSize = size, Foreground = Ink(color, weight), FontWeight = weight, TextWrapping = TextWrapping.Wrap,
+            LineHeight = size * LineFactor,
+            FontFamily = family ?? Family ?? UrbeTheme.EditorFont
         };
+        tb.Classes.Add(TextClass);
         var length = 0;
         foreach (var c in children) Inline(tb, c, tb.Inlines!, ref length, new Style { Color = color });
         tb.Tapped += OnTextTapped;
@@ -269,11 +287,14 @@ public sealed class MarkdownReader
         foreach (var c in n.Children) Inline(host, c, into, ref length, st);
     }
 
-    private static void AddRun(RichText host, InlineCollection into, string text, Style st, ref int length)
+    private void AddRun(RichText host, InlineCollection into, string text, Style st, ref int length)
     {
         if (text.Length == 0) return;
         // only bold/italic marks set the run's weight and style: plain text keeps the block's (a heading is 750/700/650)
-        var run = new Run(text) { Foreground = UrbeTheme.Brush(st.Code ? "#f0d9a8" : st.Color) };
+        // plain text inherits the block's ink; bold, code and coloured runs set their own
+        var run = new Run(text);
+        if (st.Code) run.Foreground = UrbeTheme.Brush(UrbeTheme.Code);
+        else if (st.Bold || st.Color != UrbeTheme.Text) run.Foreground = UrbeTheme.Brush(st.Color);
         if (st.Bold) run.FontWeight = FontWeight.Bold;
         if (st.Italic) run.FontStyle = FontStyle.Italic;
         if (st.Code) { run.FontFamily = UrbeTheme.MonoFont; run.FontSize = Size * .88; run.Background = UrbeTheme.Brush(UrbeTheme.Surface2); }
@@ -326,7 +347,7 @@ public sealed class MarkdownReader
             Control marker = task ? Checkbox(checkedBox, line) : new TextBlock
             {
                 Text = ordered ? n + "." : "•", Foreground = UrbeTheme.Brush(UrbeTheme.Text3), FontSize = Size,
-                LineHeight = Size * 1.7, Margin = new Thickness(0, .25 * Size, 8, 0), HorizontalAlignment = HorizontalAlignment.Right,
+                LineHeight = Size * LineFactor, Margin = new Thickness(0, .25 * Size, 8, 0), HorizontalAlignment = HorizontalAlignment.Right,
                 MinWidth = ordered ? 22 : 12
             };
             var row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), Margin = new Thickness(task ? 0 : 1.4 * Size - 22 > 0 ? 6 : 0, 0, 0, 0) };
@@ -354,13 +375,13 @@ public sealed class MarkdownReader
         return box;
     }
 
-    private static Control Pre(RichNode pre)
+    private Control Pre(RichNode pre)
     {
         var code = string.Concat(pre.Children.Select(Plain));
         var inner = new StackPanel();
         inner.Children.Add(new TextBlock
         {
-            Text = code, FontFamily = UrbeTheme.MonoFont, FontSize = Size * .88, Foreground = UrbeTheme.Brush(UrbeTheme.Text),
+            Classes = { TextClass }, Text = code, FontFamily = UrbeTheme.MonoFont, FontSize = Size * .88, Foreground = UrbeTheme.Brush(UrbeTheme.Text),
             TextWrapping = TextWrapping.NoWrap
         });
         var lang = pre.Attr("data-lang");

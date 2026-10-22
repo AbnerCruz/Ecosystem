@@ -53,9 +53,9 @@ public sealed partial class HeadlessUiTests
             // #editorTop: Voltar, the file name, Visual/Fonte, Mais ações; no Salvar (the 1.8.4 saves by itself)
             Assert.DoesNotContain(editor.GetLogicalDescendants().OfType<Button>(), b => b.Content as string == "Salvar");
             Assert.NotNull(Tip("Mais ações"));
-            // #editorBottom: "MD · 6 linhas" until the first edit, "Salvo"
+            // #editorBottom: "MD · 6 linhas" until the first edit; saved (UC-69: a quiet dot in the header, no word)
             Assert.True(Texts().Contains("MD · 6 linhas"), string.Join(" / ", Texts()));
-            Assert.Contains("Salvo", Texts());
+            Assert.Equal("saved", editor.SaveState);
             // the dock is hidden under the editor on a phone (v23Dock.hidden = editor)
             Assert.DoesNotContain(view.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Explorer" && Shown(t));
             // #propertiesBox only in Fonte
@@ -65,7 +65,9 @@ public sealed partial class HeadlessUiTests
             // #mdToolbar in Visual too (v23): with no block being edited, Título 2 acts on the first block (the caret lands
             // at the start of the text), turning the H1 into an H2; again, it goes back to a paragraph
             var h2 = Tip("Título 2")!;
-            Assert.True(Shown(h2));
+            // UC-69: on a phone the bar rests while the note is only read (it comes with the keyboard); it still acts
+            Assert.False(Shown(h2));
+            Assert.True(editor.Reading);
             h2.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
             Dispatcher.UIThread.RunJobs();
             editor.Surface.FinishEdit();
@@ -87,13 +89,13 @@ public sealed partial class HeadlessUiTests
             Assert.True(editor.Editor.Bounds.Width >= 360, "coluna Fonte " + editor.Editor.Bounds.Width);
             Snapshot(window, "native-editor-source.png");
 
-            // an edit: "Alterado", then the autosave writes it and says "Salvo"; the words join the count
+            // an edit: pending, then the autosave writes it and the dot says saved; the words join the count
             editor.Editor.Text += "mais\n";
             Dispatcher.UIThread.RunJobs();
-            Assert.Contains("Alterado", Texts());
+            Assert.Equal("pending", editor.SaveState);
             Assert.Contains(Texts(), t => t.StartsWith("MD · 7 linhas · ", StringComparison.Ordinal) && t.EndsWith(" palavras", StringComparison.Ordinal));
-            for (int i = 0; i < 200 && (editor.HasChanges || !Texts().Contains("Salvo")); i++) { await Task.Delay(20); Dispatcher.UIThread.RunJobs(); }
-            Assert.Contains("Salvo", Texts());
+            for (int i = 0; i < 200 && (editor.HasChanges || editor.SaveState != "saved"); i++) { await Task.Delay(20); Dispatcher.UIThread.RunJobs(); }
+            Assert.Equal("saved", editor.SaveState);
             Assert.EndsWith("mais\n", File.ReadAllText(Path.Combine(vault, "Casa.md")));
             editor.IsVisible = false;
             Dispatcher.UIThread.RunJobs();

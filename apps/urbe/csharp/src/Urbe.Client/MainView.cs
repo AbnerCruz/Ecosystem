@@ -75,8 +75,10 @@ public sealed partial class MainView : Grid
         Editor.Context.BacklinkChosen += async path =>
         {
             // a followed backlink joins the editor's trail, so Voltar comes back here (DEC-0045, UC-37)
-            await Editor.NavigateAsync(new CityNote(path, _contents.GetValueOrDefault(path, "")));
+            // the note opens at once (the one left saves behind it, UC-69), and so does its context
+            var going = Editor.NavigateAsync(new CityNote(path, _contents.GetValueOrDefault(path, "")));
             ShowEditorContext();
+            await going;
         };
         // [[link]] to a note that does not exist yet: created next to the open note, in its neighbourhood (DEC-0045, UC-37)
         Editor.CreateLinked = name =>
@@ -122,6 +124,9 @@ public sealed partial class MainView : Grid
         if (_vault is not null) Editor.SaveRequested += SaveNoteAsync;
         Editor.Editor.TextChanged += (_, _) => { EditorLinksChanged(); CaptureEditorHistory(); };
         Editor.MoreRequested += ShowEditorMenuAsync;
+        // UC-69: a tap on the title renames the note; a save that failed after leaving the editor is told here
+        Editor.RenameRequested += () => { if (Editor.Current is { } open && !CityNotReady()) _ = RenameNoteAsync(open.Path); };
+        Editor.SaveFailed += message => _notice.Show(message, TimeSpan.FromSeconds(8), "Tentar de novo", () => _ = Editor.RetrySavesAsync(), Ui.ToastKind.Warning);
         Editor.AssistantRequested += ToggleAssistant;
         Editor.Shown += path => NoteOpened?.Invoke(path);   // plugins: "nota:aberta"
 
@@ -131,6 +136,7 @@ public sealed partial class MainView : Grid
         _stage.Children.Add(LifeNotice());
         _stage.Children.Add(ToolDock());
         _stage.Children.Add(HousePanel());
+        _stage.Children.Add(FocusBar);
         _stage.Children.Add(LoadingLabel());
         _stage.Children.Add(CityMap);
         _stage.Children.Add(Explorer);
@@ -167,7 +173,7 @@ public sealed partial class MainView : Grid
         // .uc and .udlg are position:fixed over the whole app, bottom navigation included
         // #mathPane (z-index 10400), under the dialogs
         Editor.AskFormula = (tex, block, editing) => Formula.ShowAsync(tex, block, editing);
-        foreach (var overlay in new Control[] { Customize, Formula, Dialogs })
+        foreach (var overlay in new Control[] { Customize, Formula, ActionSheet, Dialogs })
         {
             SetRowSpan(overlay, 2);
             SetColumnSpan(overlay, 2);
@@ -192,8 +198,11 @@ public sealed partial class MainView : Grid
                 _ = FilePreview.OpenAsync(file);
                 return;
             }
+            // the links focus shows its own card; the house card comes with "Detalhes" (UC-70)
+            if (house is not null && World.Linked?.Focus == house) { ShowHouse(null); ShowFocusBar(); return; }
             ShowHouse(house);
         };
+        WireLinkFocus();
         World.DecorationTapped += decoration => _ = ShowDecorationAsync(decoration);
         // v21MoveHold: holding a house carries it (only with a vault that can be written)
         World.MoveValid = (b, x, y) => World.City?.ValidMove(b, x, y).Ok ?? false;
@@ -939,12 +948,15 @@ public sealed partial class MainView : Grid
     /// actions the native app already has, in the 1.8.4's order: Renomear, Mostrar nas notas, Versões anteriores,
     /// Estrutura e backlinks and Mover para a lixeira. Assistente joins with the assistant.
     /// </summary>
+    /// <summary>The sheet of the editor's "Mais ações" (UX.md P4, P8: it rises from the bottom, a swipe down closes it).</summary>
+    public Ui.BottomSheet ActionSheet { get; } = new();
+
     private Task ShowEditorMenuAsync(EditorOverlay editor)
     {
-        if (Dialogs.IsOpen || editor.Current is not { } note) return Task.CompletedTask;
+        if (Dialogs.IsOpen || ActionSheet.IsOpen || editor.Current is not { } note) return Task.CompletedTask;
         var house = World.City?.Buildings.Find(b => b.IsNote && b.Path == note.Path);
         var title = house is not null ? LegacyCity.FullNoteName(house) : System.IO.Path.GetFileName(note.Path);
-        return Dialogs.MenuAsync(title,
+        return SheetMenuAsync(title,
         [
             new DialogItem("Renomear", UrbeTheme.Icons.Pencil, Run: () => CityNotReady() ? Task.CompletedTask : RenameNoteAsync(note.Path)),
             new DialogItem("Mover para outra pasta", UrbeTheme.Icons.Folder, "A casa muda de bairro na cidade.", Run: async () =>
@@ -961,6 +973,60 @@ public sealed partial class MainView : Grid
                 Run: () => { editor.PinSelectionOrNote(); return Task.CompletedTask; }),
             new DialogItem("Mover para a lixeira", UrbeTheme.Icons.Trash, Danger: true, Run: () => CityNotReady() ? Task.CompletedTask : DeleteNoteAsync(note.Path))
         ]);
+    }
+
+    /// <summary>A menu in the <see cref="ActionSheet"/>: a title and one 56 dp row per action; a choice closes it, then runs.</summary>
+    private Task SheetMenuAsync(string title, IReadOnlyList<DialogItem> items)
+    {
+        var done = new TaskCompletionSource();
+        var list = new StackPanel { Spacing = 2 };
+        list.Children.Add(new TextBlock
+        {
+            Text = title, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Title.Size, FontWeight = FontWeight.Bold, TextTrimming = TextTrimming.CharacterEllipsis,
+            Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextPrimary), Margin = new Thickness(UrbeTokens.Space.Xs, 0, UrbeTokens.Space.Xs, UrbeTokens.Space.Xs)
+        });
+        bool chosen = false;
+        foreach (var x in items)
+        {
+            var item = x;
+            var ink = item.Danger ? UrbeTokens.Color.Danger : UrbeTokens.Color.TextPrimary;
+            var text = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+            text.Children.Add(new TextBlock { Text = item.Label, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Body.Size, FontWeight = FontWeight.Medium, Foreground = UrbeTheme.Brush(ink) });
+            if (item.Detail is not null)
+                text.Children.Add(new TextBlock { Text = item.Detail, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextTertiary), TextTrimming = TextTrimming.CharacterEllipsis });
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = UrbeTokens.Space.M };
+            if (item.Icon is not null)
+                row.Children.Add(new Border
+                {
+                    Width = 40, Height = 40, CornerRadius = new CornerRadius(UrbeTokens.Radius.M),
+                    Background = item.Danger ? UrbeTheme.Brush(UrbeTokens.Color.Danger, .12) : UrbeTheme.Brush(UrbeTokens.Color.SurfaceOverlay),
+                    Child = new Border { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Child = UrbeTheme.Icon(item.Icon, 20, item.Danger ? UrbeTokens.Color.Danger : UrbeTokens.Color.TextSecondary, 1.8) }
+                });
+            row.Children.Add(text);
+            var b = new Button
+            {
+                Content = row, MinHeight = 56, Padding = new Thickness(UrbeTokens.Space.Xs, UrbeTokens.Space.Xxs), CornerRadius = new CornerRadius(UrbeTokens.Radius.M),
+                Background = Brushes.Transparent, BorderThickness = new Thickness(0),
+                HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, VerticalContentAlignment = VerticalAlignment.Center
+            };
+            b.Resources["ButtonBackgroundPointerOver"] = UrbeTheme.Brush(UrbeTokens.Color.SurfaceOverlay, .6);
+            b.Resources["ButtonBackgroundPressed"] = UrbeTheme.Brush(UrbeTokens.Color.SurfaceOverlay);
+            Avalonia.Automation.AutomationProperties.SetName(b, item.Detail is null ? item.Label : item.Label + ". " + item.Detail);
+            Ui.UrbeMotion.Pressable(b, haptic: true);
+            b.Click += async (_, _) =>
+            {
+                if (chosen) return;
+                chosen = true;
+                _ = ActionSheet.CloseAsync();
+                try { if (item.Run is { } run) await run(); }
+                finally { done.TrySetResult(); }
+            };
+            list.Children.Add(b);
+        }
+        void OnClosed() { ActionSheet.Closed -= OnClosed; if (!chosen) done.TrySetResult(); }
+        ActionSheet.Closed += OnClosed;
+        ActionSheet.Open(new ScrollViewer { Content = list, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled });
+        return done.Task;
     }
 
     /// <summary>
@@ -1960,7 +2026,7 @@ public sealed partial class MainView : Grid
     {
         // v23Atualizar: with Notas open the top bar and the + are hidden (they show again beside a wide panel otherwise)
         if (_top is not null) _top.IsVisible = !Explorer.IsVisible;
-        if (_fab is not null) _fab.IsVisible = !Explorer.IsVisible;
+        if (_fab is not null) _fab.IsVisible = !Explorer.IsVisible && World.Linked is null;
         foreach (var (label, icon, ico, text) in _nav)
         {
             bool active = label == ActiveDestination;

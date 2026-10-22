@@ -78,7 +78,7 @@ public static class UrbeAppearance
 
         // editor column (the Fonte editor uses --ui-code-size and --ui-editor-line)
         var width = Var("--ui-editor-width");
-        view.Editor.ApplyAppearance(width.EndsWith('%') ? double.PositiveInfinity : Px(width), Px(Var("--ui-code-size")), double.Parse(Var("--ui-editor-line"), System.Globalization.CultureInfo.InvariantCulture));
+        view.Editor.ApplyAppearance(width.EndsWith('%') ? double.PositiveInfinity : Px(width), Px(Var("--ui-code-size")), double.Parse(Var("--ui-editor-line"), System.Globalization.CultureInfo.InvariantCulture), Px(Var("--ui-editor-size")));
 
         // the world's ground and own building art
         var state = States.GetOrCreateValue(view);

@@ -57,7 +57,8 @@ public sealed partial class HeadlessUiTests
             window.Width = 412;
             await Settle(window, view);
 
-            // Visual: a tap at the start of the heading opens it with the caret at 0, and H1 is lit at once
+            // Visual: a tap at the start of the heading opens it with the caret on the tapped letter, after the "# " mark
+            // (UC-69: the drawn character is mapped back to the Markdown), and H1 is lit at once
             var heading = RenderedText(editor, "Título");
             var start = heading.TranslatePoint(new Point(1, heading.Bounds.Height / 2), window)!.Value;
             window.MouseDown(start, MouseButton.Left);
@@ -65,7 +66,7 @@ public sealed partial class HeadlessUiTests
             await Ticks(window);
             var box = editor.Surface.GetLogicalDescendants().OfType<TextBox>().Single();
             Assert.Equal("# Título", box.Text);
-            Assert.Equal(0, box.CaretIndex);
+            Assert.Equal("# ".Length, box.CaretIndex);
             Assert.Contains("h1", editor.ActiveTools);
 
             // the caret inside **forte**: B is lit, and tapping it takes the marks off (it used to add another pair)

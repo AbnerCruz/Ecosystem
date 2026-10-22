@@ -207,6 +207,7 @@ public sealed partial class LegacyCity
         _roadOrder.Clear();
         _componentId = null;
         Links.Clear();
+        DirectedLinks.Clear();
         MigratedFromWorld = null;
         LayoutBeforeMigration = null;
 

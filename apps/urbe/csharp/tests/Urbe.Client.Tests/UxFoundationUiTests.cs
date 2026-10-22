@@ -128,9 +128,9 @@ public sealed partial class HeadlessUiTests
             if (name == "Fonte") Assert.Equal(EditorMode.Fonte, view.Editor.Mode);   // the tap's effect is synchronous too
             if (name == "Mais ações")
             {
-                Assert.True(view.Dialogs.IsOpen);
+                Assert.True(view.ActionSheet.IsOpen);   // UC-69: the note's actions rise in a bottom sheet
                 window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
-                for (int i = 0; i < 20 && view.Dialogs.IsOpen; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                for (int i = 0; i < 20 && view.ActionSheet.IsVisible; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
             }
         }
         for (int i = 0; i < 20 && view.Editor.IsVisible; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
