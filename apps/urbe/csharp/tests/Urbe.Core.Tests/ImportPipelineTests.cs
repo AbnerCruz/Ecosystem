@@ -19,6 +19,9 @@ public sealed class ImportPipelineTests
         var x=await Inspect(Select(Text(".urbe/vault.json","{\"formatVersion\":"+version+"}"),Text("A.md","# A")));
         Assert.Equal(kind,x.Kind);Assert.True(x.Files.ContainsKey(".urbe/vault.json"));Assert.Equal(ImportMode.Restore,ImportPipeline.Plan(x,VaultReader.Read([]),"rev").Mode);
     }
+    // a vault of the app without the city (ADD-0028) has its notes record and no map: it is a vault, restored whole
+    [Fact] public async Task AVaultWithOnlyTheNotesRecordIsAVault()=>Assert.Equal(ImportKind.HistoricalVault,(await Inspect(Select(Text(NoteLibrary.Path,"{\"versao\":1,\"notas\":{},\"pastas\":[]}"),Text(".urbe/identity.json","{\"version\":1,\"docs\":{}}"),Text("A.md","a")))).Kind);
+    [Fact] public async Task MetadataThatIdentifiesNoVaultIsRefused()=>await Assert.ThrowsAsync<InvalidDataException>(()=>Inspect(Select(Text(".urbe/identity.json","{\"version\":1,\"docs\":{}}"),Text("A.md","a"))).AsTask());
     [Fact] public async Task HistoricalVaultWithoutEnvelopeIsDetected()=>Assert.Equal(ImportKind.HistoricalVault,(await Inspect(Select(Text(".urbe/mapa.json","{\"v\":1}"),Text("A.md","a")))).Kind);
     [Theory][InlineData(".urbe/vault.json","{\"formatVersion\":99}")][InlineData(".urbe/vault.json","{")][InlineData(".urbe/mapa.json","{\"v\":99}")][InlineData(".urbe/history.v2.json","{\"version\":99}")]
     public async Task FutureOrCorruptVaultIsRefused(string path,string value)=>await Assert.ThrowsAsync<InvalidDataException>(()=>Inspect(Select(Text(path,value),Text("A.md","a"))).AsTask());

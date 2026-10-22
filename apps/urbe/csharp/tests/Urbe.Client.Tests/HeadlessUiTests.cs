@@ -6,7 +6,6 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Avalonia.LogicalTree;
 using Urbe.Client;
-using Urbe.Client.World;
 using Urbe.Core;
 
 namespace Urbe.Client.Tests;
@@ -38,38 +37,24 @@ public sealed partial class HeadlessUiTests : IDisposable
     public void Dispose() { }
 
     [Fact]
-    public async Task City_RendersFullScreenWithHousesAndOpensTheEditorFromAHouse() => Assert.True(await Session.Dispatch<bool>(async () =>
+    public async Task App_OpensOnTheExplorerAndTheEditorComesOverIt() => Assert.True(await Session.Dispatch<bool>(async () =>
         {
             var view = new MainView();
             var window = new Window { Width = 1280, Height = 760, Content = view };
             window.Show();
             await view.LoadAsync(TutorialNotes.Load());
             await Settle(window, view);
-            Snapshot(window, "native-desktop-city.png");
+            Snapshot(window, "native-desktop-explorer.png");
 
-            // city.fit: the whole tutorial city at the 1.8.4 framing zoom (clamped to [.45, 1.3])
-            Assert.InRange(view.World.Camera.Zoom, .45, 1.3);
-            Assert.True(view.World.ReadyChunks > 0);
-            Assert.True(view.World.Bounds.Width > 1100 && view.World.Bounds.Height > 700);
+            // ADD-0028: the Explorer is the base of the app, the whole stage; no city behind it
+            Assert.True(view.Explorer.IsVisible);
+            Assert.True(view.Explorer.Bounds.Width > 1100 && view.Explorer.Bounds.Height > 700);
+            Assert.Equal("Explorer", view.Explorer.Title);
+            Assert.Equal("Nenhuma pasta aberta", view.Explorer.Status);
+            Assert.Contains(view.Explorer.HeaderActions.Children.OfType<Button>(), b => ToolTip.GetTip(b) as string == "Configurações");
 
-            // closer: near ground, individual trees, roads with pebbles
-            view.World.Camera.SetZoom(1.15);
-            var house = view.World.City!.Buildings.Single(b => b.Path == "Tutorial/Comece aqui.md");
-            view.World.CenterOn(house);
-            await Settle(window, view);
-            Snapshot(window, "native-desktop-near.png");
-
-            // tap the house → 1.8.4 house card → "Abrir e editar" → editor over the city
-            var centre = view.World.Camera.WorldToScreen((house.X + 1.5) * 32, (house.Y + 1.5) * 32);
-            var p = view.World.TranslatePoint(centre, window)!.Value;
-            window.MouseDown(p, MouseButton.Left);
-            window.MouseUp(p, MouseButton.Left);
-            Dispatcher.UIThread.RunJobs();
-            Assert.Same(house, view.World.Selected);
-            await Settle(window, view);
-            Snapshot(window, "native-desktop-house.png");
-
-            view.Editor.Open(new CityNote(house.Path, TutorialNotes.Load().Single(f => f.Path == house.Path).Content));
+            Assert.True(view.Explorer.TryEnterFolder("Tutorial"));
+            Assert.True(view.Explorer.TryOpenNote("Tutorial/Comece aqui.md"));
             await Settle(window, view);
             Assert.True(view.Editor.IsVisible);
             Assert.Equal(EditorMode.Visual, view.Editor.Mode);   // 1.8.4 opens notes in Visual (editor.modoInicial)
@@ -82,19 +67,30 @@ public sealed partial class HeadlessUiTests : IDisposable
             Dispatcher.UIThread.RunJobs();
             Assert.StartsWith("Olá, ação! ", view.Editor.Editor.Text);
             Snapshot(window, "native-desktop-editor.png");
+
+            // leaving the editor shows the Explorer again, where it was
+            view.Editor.IsVisible = false;
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(view.Explorer.IsVisible);
+            Assert.Contains("Tutorial/Comece aqui.md", view.Explorer.VisibleNotePaths);
+            window.Close();
             return true;
         }, CancellationToken.None));
 
     [Fact]
-    public async Task City_OnPhoneUsesTheBottomDock() => Assert.True(await Session.Dispatch<bool>(async () =>
+    public async Task Phone_UsesTheBottomDockWithNotasAndAssistente() => Assert.True(await Session.Dispatch<bool>(async () =>
         {
             var view = new MainView();
             var window = new Window { Width = 412, Height = 860, Content = view };
             window.Show();
             await view.LoadAsync(TutorialNotes.Load());
             await Settle(window, view);
-            Snapshot(window, "native-phone-city.png");
-            Assert.True(view.World.Bounds.Width >= 400);
+            Snapshot(window, "native-phone-explorer.png");
+            Assert.True(view.Explorer.Bounds.Width >= 400);
+            var dock = view.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Text is "Notas" or "Assistente" or "Cidade" && t.IsEffectivelyVisible).Select(t => t.Text).ToList();
+            Assert.Equal(["Notas", "Assistente"], dock);
+            Assert.Equal("Notas", view.ActiveDestination);
+            window.Close();
             return true;
         }, CancellationToken.None));
 
@@ -141,9 +137,9 @@ public sealed partial class HeadlessUiTests : IDisposable
             view.Explorer.SearchText = "Comece";
             Assert.Contains("Tutorial/Comece aqui.md", view.Explorer.VisibleNotePaths);
             Assert.True(view.Explorer.TryOpenNote("Tutorial/Comece aqui.md"));
-            Assert.False(view.Explorer.IsVisible);
             Assert.True(view.Editor.IsVisible);
             Assert.Equal("Tutorial/Comece aqui.md", view.Editor.Current?.Path);
+            window.Close();
             return true;
         }, CancellationToken.None));
 
@@ -172,165 +168,94 @@ public sealed partial class HeadlessUiTests : IDisposable
             return true;
         }, CancellationToken.None));
 
-    [Fact]
-    public async Task NativeWorld_LightingMatchesLegacyRgbWithoutTintingHouseLabels() =>
-        Assert.True(await Session.Dispatch<bool>(() =>
-        {
-            var world = new WorldView();
-            var window = new Window { Width = 800, Height = 480, Content = world };
-            window.Show();
-            world.LightingMode = "dia";
-            var day = world.CurrentLight;
-            Assert.Equal((255, 255, 255), (day.Red, day.Green, day.Blue));
-            Assert.Equal(0, day.Darkness);
-            world.LightingMode = "noite";
-            var night = world.CurrentLight;
-            var expected = LegacyWorldLife.LightAt(23);
-            Assert.Equal(expected, night);
-            Assert.True(night.Darkness > .9);
-            world.LightingMode = "entardecer";
-            var dusk = world.CurrentLight;
-            Assert.True(dusk.Red > dusk.Blue);
-            Assert.Throws<ArgumentOutOfRangeException>(() => { world.LightingMode = "unsupported"; });
-            return true;
-        }, CancellationToken.None));
-
-    [Fact]
-    public async Task NativeWorld_LifeOfTheWorldRunsOverTheCityAndPausesUnderTheEditor() =>
-        Assert.True(await Session.Dispatch<bool>(async () =>
-        {
-            var view = new MainView();
-            var window = new Window { Width = 1280, Height = 760, Content = view };
-            window.Show();
-            await view.LoadAsync(TutorialNotes.Load());
-            await Settle(window, view);
-            var world = view.World;
-            world.Camera.SetZoom(1);
-            await Settle(window, view);
-
-            // night: the party becomes fireworks, the lamps and windows light up
-            world.LightingMode = "noite";
-            var v = world.LifeView();
-            world.Life.Start("festa", v);
-            Assert.NotNull(world.Life.TheParty);
-            Assert.True(world.Life.TheParty!.Night);
-            Assert.StartsWith("🎆 Fogos sobre ", view.LifeNoticeText);
-            world.AdvanceLife(6);
-            Assert.True(world.Life.Rockets.Count + world.Life.Sparks.Count + world.Life.Flashes.Count > 0, $"fogos: T={world.Life.Time} festa={world.Life.TheParty?.Name}");
-            Assert.NotEmpty(world.Life.Lamps());
-            Assert.NotEmpty(world.Life.Clouds);
-            await Settle(window, view);
-            Snapshot(window, "native-life-night.png");
-
-            // day: rain over the city, animals and butterflies around it
-            world.LightingMode = "dia";
-            world.Life.Start("chuva", world.LifeView());
-            world.AdvanceLife(8);
-            Assert.True(world.Life.Rain.K > .2, $"chuva {world.Life.Rain.K}");
-            Assert.NotEmpty(world.Life.Drops);
-            Assert.True(world.Life.CurrentLight.Red < 255, "luz");
-            await Settle(window, view);
-            Snapshot(window, "native-life-rain.png");
-            world.AdvanceLife(30);
-            Assert.NotEmpty(world.Fauna.Animals);
-            // the tutorial notes link to each other: villagers walk the streets between them
-            Assert.Contains(world.Villagers.People, p => p.Kind == "andarilho");
-            await Settle(window, view);
-            Snapshot(window, "native-life-day.png");
-
-            // v25MapaVisivel(): under the editor the city does not live
-            view.Editor.Open(new CityNote("Tutorial/Comece aqui.md", "x"));
-            double t = world.Life.Time;
-            world.LifeTick();
-            world.LifeTick();
-            Assert.Equal(t, world.Life.Time);
-            return true;
-        }, CancellationToken.None));
-
-    [Fact]
-    public async Task CityMap_OnPhoneNavigatesOriginalWorldWithoutChangingZoom() =>
-        Assert.True(await Session.Dispatch<bool>(async () =>
-        {
-            var view = new MainView();
-            var window = new Window { Width = 412, Height = 860, Content = view };
-            window.Show();
-            await view.LoadAsync(TutorialNotes.Load());
-            await Settle(window, view);
-            view.ShowMap();
-            Dispatcher.UIThread.RunJobs();
-            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
-            Assert.True(view.CityMap.IsVisible);
-            Assert.True(view.CityMap.HasWorld);
-            Assert.True(view.CityMap.MapSize.Width > 100);
-            Assert.False(view.CityMap.TryNavigate(new Point(-5, -5)));
-            var zoom = view.World.Camera.Zoom;
-            var lim = MapSurface.MapLimits(view.World.City!, view.World.Camera,
-                view.CityMap.MapSize.Width / view.CityMap.MapSize.Height);
-            var targetX = (lim.X0 + lim.X1) / 2 * Urbe.Client.World.LegacyWorld.Tile;
-            var targetY = (lim.Y0 + lim.Y1) / 2 * Urbe.Client.World.LegacyWorld.Tile;
-            Assert.True(view.CityMap.TryNavigate(new Point(
-                view.CityMap.MapSize.Width / 2, view.CityMap.MapSize.Height / 2)));
-            Assert.False(view.CityMap.IsVisible);
-            Assert.Equal(zoom, view.World.Camera.Zoom);
-            Assert.InRange(Math.Abs(view.World.Camera.X - targetX), 0, .01);
-            Assert.InRange(Math.Abs(view.World.Camera.Y - targetY), 0, .01);
-            return true;
-        }, CancellationToken.None));
-
-    [Fact]
-    public void CityMap_LimitsIncludeTheCameraAndRespectAspect()
-    {
-        var city = new LegacyCity(new LegacyCityTerrain((_, _) => LegacyBiome.Grass),
-            prefix => prefix + "1");
-        var camera = new Urbe.Client.World.Camera { X = 720 * 32, Y = -400 * 32 };
-        var limits = MapSurface.MapLimits(city, camera, 16.0 / 9);
-        Assert.True(limits.X0 < 720 && limits.X1 > 720);
-        Assert.True(limits.Y0 < -400 && limits.Y1 > -400);
-        Assert.InRange(limits.Width / limits.Height, 1.7777, 1.7779);
-    }
-
     /// <summary>
-    /// A real vault opens as 1.8.4 abrirCidade: the saved .urbe/mapa.json geometry and camera are
-    /// respected (fixture recorded from the original, csharp/tools/legacy-open-oracle.mjs), the
-    /// terrain is the 'urbe' world even though mapa.mundo names its version, and nothing is framed.
+    /// ADD-0028, the safety of the person's data: a vault opened by the city keeps the ids and dates its .urbe/mapa.json
+    /// gave its notes (history, trash and pages depend on the ids), now recorded in .urbe/notas.json; the city files
+    /// (.urbe/mapa.json, .urbe/mundo.json) are never rewritten, not at the opening, not after creating or renaming a note,
+    /// and a new app on the same folder finds the same ids.
     /// </summary>
     [Fact]
-    public async Task Vault_OpensWithItsSavedMapAndCamera() => Assert.True(await Session.Dispatch<bool>(async () =>
+    public async Task Vault_OpenedByTheCityKeepsItsIdsAndDatesAndTheCityFilesAreNeverRewritten() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
         {
-            var dir = new DirectoryInfo(AppContext.BaseDirectory);
-            while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "csharp", "Urbe.Portable.slnx"))) dir = dir.Parent;
-            using var json = System.Text.Json.JsonDocument.Parse(File.ReadAllBytes(
-                Path.Combine(dir!.FullName, "csharp", "tests", "fixtures", "legacy-city", "open-vault-run-a.json")));
-            var o = json.RootElement.GetProperty("mapa");
-            var files = o.GetProperty("files").EnumerateObject()
-                .Select(p => new VaultFile(p.Name, System.Text.Encoding.UTF8.GetBytes(p.Value.GetString()!)))
-                .Append(new VaultFile(".urbe/mapa.json", System.Text.Encoding.UTF8.GetBytes(o.GetProperty("mapaJson").GetString()!)))
-                .ToList();
-            var view = new MainView(new SnapshotStorage(VaultReader.Read(files)));
-            var window = new Window { Width = 1280, Height = 760, Content = view };
-            window.Show();
-            await view.InitializeAsync();
-            await Settle(window, view);
-            Snapshot(window, "native-vault-mapa.png");
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-city-vault-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(Path.Combine(vault, "Projetos", "Vazia"));
+            Directory.CreateDirectory(Path.Combine(vault, ".urbe"));
+            File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n\n[[Plano]]\n");
+            File.WriteAllText(Path.Combine(vault, "Projetos", "Plano.md"), "# Plano\n");
+            File.WriteAllBytes(Path.Combine(vault, "foto.png"), [1, 2, 3]);
+            var mapa = """
+                {
+                 "v": 4,
+                 "mundo": "placas-1",
+                 "camera": {"x": 10, "y": 20, "z": 1.2},
+                 "regioes": [{"id": "reg_p", "caminho": "Projetos", "nome": "Projetos", "x": 1, "y": 1, "w": 9, "h": 9}, {"id": "reg_v", "caminho": "Projetos/Vazia", "nome": "Vazia", "x": 2, "y": 2, "w": 3, "h": 3}],
+                 "notas": {"Comece.md": {"id": "doc_comece", "x": 5, "y": 5, "sprite": "house2", "tags": [], "criado": "2025-02-03", "modificado": "2025-04-05"},
+                           "Projetos/Plano.md": {"id": "doc_plano", "x": 3, "y": 3, "criado": "2025-01-01", "modificado": "2025-01-02"}},
+                 "construcoes": []
+                }
+                """;
+            var mundo = """{"versao":1,"muralha":true,"decoracoes":[{"tipo":"poco","x":4,"y":4}]}""";
+            File.WriteAllText(Path.Combine(vault, ".urbe", "mapa.json"), mapa);
+            File.WriteAllText(Path.Combine(vault, ".urbe", "mundo.json"), mundo);
+            void CityFilesUntouched()
+            {
+                Assert.Equal(mapa, File.ReadAllText(Path.Combine(vault, ".urbe", "mapa.json")));
+                Assert.Equal(mundo, File.ReadAllText(Path.Combine(vault, ".urbe", "mundo.json")));
+            }
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 1280, Height = 760, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                Assert.Equal("vault", view.Explorer.Title);
+                Assert.Equal(("doc_comece", "2025-02-03", "2025-04-05"), (view.Documents!.Get("Comece.md")!.Id, view.Documents.Get("Comece.md")!.Created, view.Documents.Get("Comece.md")!.Modified));
+                Assert.Equal("doc_plano", view.Documents.Get("Projetos/Plano.md")!.Id);
+                // the empty folder of the old neighbourhood is still a folder
+                Assert.Contains("Projetos/Vazia", view.Library!.Folders);
+                Assert.Contains("foto.png", view.Explorer.VisibleFilePaths);
 
-            var city = view.World.City!;
-            using var mapa = System.Text.Json.JsonDocument.Parse(o.GetProperty("mapaJson").GetString()!);
-            var saved = mapa.RootElement.GetProperty("notas").GetProperty("Comece.md");
-            var comece = city.Buildings.Single(b => b.Path == "Comece.md");
-            Assert.Equal((saved.GetProperty("x").GetInt32(), saved.GetProperty("y").GetInt32()), (comece.X, comece.Y));
-            var projetos = mapa.RootElement.GetProperty("regioes").EnumerateArray().Single(r => r.GetProperty("caminho").GetString() == "Projetos");
-            Assert.Equal(projetos.GetProperty("cells").EnumerateArray().Select(c => c.GetString()!),
-                city.Regions.Single(r => r.Name == "Projetos").Cells.Select(c => c.X + "," + c.Y));
-            Assert.Equal(9, city.Buildings.Count(b => b.IsNote));
-            Assert.Single(city.Buildings, b => !b.IsNote); // the file building of mapa.construcoes
-            Assert.NotEmpty(city.Roads);
-            var camera = o.GetProperty("camera");
-            Assert.Equal((camera.GetProperty("x").GetDouble(), camera.GetProperty("y").GetDouble(), camera.GetProperty("z").GetDouble()),
-                (view.World.Camera.X, view.World.Camera.Y, view.World.Camera.Zoom));
-            Assert.Equal(LegacyCity.WorldVersion, mapa.RootElement.GetProperty("mundo").GetString());
-            Assert.Equal(new LegacyWorld("urbe").Spawn.CellIndex, view.World.World!.Spawn.CellIndex);
-            window.Close();
-            return true;
+                // the first save records them in .urbe/notas.json; the city files stay byte for byte
+                await UntilNotesSaved(view);
+                var record = File.ReadAllText(Path.Combine(vault, NoteLibrary.Path));
+                Assert.Contains("\"doc_comece\"", record);
+                Assert.Contains("\"Projetos/Vazia\"", record);
+                CityFilesUntouched();
+
+                // a new note and a rename: the files and the record change, the city files never
+                var create = view.CreateNoteAsync("", "Ideias");
+                Dispatcher.UIThread.RunJobs();
+                await create;
+                view.Editor.IsVisible = false;
+                await view.RenameNoteAsync("Projetos/Plano.md", "Roteiro");
+                await UntilNotesSaved(view);
+                Assert.True(File.Exists(Path.Combine(vault, "Ideias.md")));
+                Assert.True(File.Exists(Path.Combine(vault, "Projetos", "Roteiro.md")));
+                Assert.Equal("doc_plano", view.Documents.Get("Projetos/Roteiro.md")!.Id);
+                CityFilesUntouched();
+                Assert.Equal([1, 2, 3], File.ReadAllBytes(Path.Combine(vault, "foto.png")));
+                var ideias = view.Documents.Get("Ideias.md")!.Id;
+                window.Close();
+
+                // a new app on the same folder: the same ids, from the record now (the map still says Plano.md)
+                var reopened = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app2", "sel.json")));
+                var window2 = new Window { Width = 1280, Height = 760, Content = reopened };
+                window2.Show();
+                await reopened.OpenVaultAsync();
+                await Settle(window2, reopened);
+                Assert.Equal("doc_plano", reopened.Documents!.Get("Projetos/Roteiro.md")!.Id);
+                Assert.Equal("doc_comece", reopened.Documents.Get("Comece.md")!.Id);
+                Assert.Equal(ideias, reopened.Documents.Get("Ideias.md")!.Id);
+                Assert.Equal("2025-02-03", reopened.Documents.Get("Comece.md")!.Created);
+                await UntilNotesSaved(reopened);
+                CityFilesUntouched();
+                window2.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
 
     private sealed class SnapshotStorage(VaultSnapshot snapshot) : IUrbeVaultStorage
@@ -344,12 +269,10 @@ public sealed partial class HeadlessUiTests : IDisposable
             throw new InvalidOperationException("read-only test storage");
         public Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("read-only test storage");
-        public Task SaveMapAsync(string json, CancellationToken cancellationToken = default) =>
-            throw new InvalidOperationException("read-only test storage");
     }
 
     [Fact]
-    public async Task NewNote_FromThePlusMenuIsBuiltInTheCityWrittenToTheVaultAndEdited() =>
+    public async Task NewNote_IsWrittenToTheVaultAndEdited() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
         {
             var dir = Path.Combine(Path.GetTempPath(), "urbe-new-note-" + Guid.NewGuid().ToString("N"));
@@ -365,20 +288,8 @@ public sealed partial class HeadlessUiTests : IDisposable
                 window.Show();
                 await view.OpenVaultAsync();
                 await Settle(window, view);
-                int houses = view.World.City!.Buildings.Count;
+                int notes = view.Documents!.List().Count;
 
-                // the "+" (DEC-0045): Construção, Região, Decoração, Importar; a new note by name is the Explorer's Nova nota,
-                // the same CreateNoteAsync
-                var plus = view.ShowCreateMenuAsync();
-                Dispatcher.UIThread.RunJobs();
-                Assert.True(view.Dialogs.IsOpen);
-                var labels = view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
-                foreach (var item in new[] { "Construção", "Região", "Decoração", "Importar" }) Assert.Contains(item, labels);
-                Assert.DoesNotContain("Nova nota", labels);
-                Snapshot(window, "native-create-menu.png");
-                window.KeyPress(Avalonia.Input.Key.Escape, Avalonia.Input.RawInputModifiers.None, Avalonia.Input.PhysicalKey.Escape, null);
-                for (int i = 0; i < 20 && view.Dialogs.IsOpen; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
-                await plus;
                 var menu = view.CreateNoteAsync(null);
                 Dispatcher.UIThread.RunJobs();
                 await Task.Delay(50);
@@ -391,11 +302,10 @@ public sealed partial class HeadlessUiTests : IDisposable
 
                 var path = Path.Combine(vault, "Ideias.md");
                 Assert.Equal("# ", File.ReadAllText(path));
-                var house = view.World.City!.Buildings.Single(b => b.Path == "Ideias.md");
-                Assert.Equal(houses + 1, view.World.City.Buildings.Count);
-                Assert.Same(house, view.World.Selected);
+                Assert.Equal(notes + 1, view.Documents.List().Count);
                 Assert.True(view.Editor.IsVisible);
                 Assert.Equal("# ", view.Editor.Editor.Text);
+                Assert.Contains("Ideias.md", view.Explorer.VisibleNotePaths);
 
                 // the new note is an ordinary vault file from now on
                 view.Editor.Editor.Text = "# Ideias\n\nPrimeira.\n";
@@ -417,102 +327,6 @@ public sealed partial class HeadlessUiTests : IDisposable
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
 
-    /// <summary>
-    /// The map is written like the 1.8.4 (marcarSinc 120 ms → schedule 900 ms → flush): after the open
-    /// and after a new note, with nothing but .urbe/mapa.json and the note touched; a camera move alone
-    /// saves nothing; reopening the folder in a new app puts the new house and the camera back.
-    /// </summary>
-    [Fact]
-    public async Task Map_IsSavedAfterANewNoteAndTheHouseIsThereOnReopen() =>
-        Assert.True(await Session.Dispatch<bool>(async () =>
-        {
-            var dir = Path.Combine(Path.GetTempPath(), "urbe-save-map-" + Guid.NewGuid().ToString("N"));
-            var vault = Path.Combine(dir, "vault");
-            Directory.CreateDirectory(Path.Combine(vault, "Bairro"));
-            File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n\n[[Um]]\n");
-            File.WriteAllText(Path.Combine(vault, "Bairro", "Um.md"), "# Um\n");
-            File.WriteAllBytes(Path.Combine(vault, "foto.png"), [1, 2, 3]);
-            var mapa = Path.Combine(vault, ".urbe", "mapa.json");
-            async Task UntilSaved(MainView v)
-            {
-                for (int i = 0; i < 300 && (v.MapSave!.HasPending || v.MapSave.IsBusy); i++)
-                {
-                    Dispatcher.UIThread.RunJobs();
-                    await Task.Delay(20);
-                }
-                Dispatcher.UIThread.RunJobs();
-                Assert.False(v.MapSave!.HasPending);
-                Assert.Equal("saved", v.MapSave.State);
-            }
-            try
-            {
-                var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
-                var view = new MainView(storage);
-                var window = new Window { Width = 1280, Height = 760, Content = view };
-                window.Show();
-                await view.OpenVaultAsync();
-                await Settle(window, view);
-                Assert.NotNull(view.MapSave);
-
-                // abrirCidade → marcarSinc: the first save writes the map of the opened city
-                await UntilSaved(view);
-                var first = File.ReadAllText(mapa);
-                using (var m = System.Text.Json.JsonDocument.Parse(first))
-                {
-                    Assert.Equal(4, m.RootElement.GetProperty("v").GetInt32());
-                    var um = m.RootElement.GetProperty("notas").GetProperty("Bairro/Um.md");
-                    var house = view.World.City!.Buildings.Single(b => b.Path == "Bairro/Um.md");
-                    Assert.Equal((house.X, house.Y), (um.GetProperty("x").GetInt32(), um.GetProperty("y").GetInt32()));
-                }
-
-                // camera only: nothing is scheduled, the file stays as it was
-                view.World.Camera.X += 77.25;
-                Dispatcher.UIThread.RunJobs();
-                Assert.False(view.MapSave!.HasPending);
-                Assert.Equal(first, File.ReadAllText(mapa));
-
-                // + → Nova nota, loose in the root
-                var create = view.CreateNoteAsync(null);
-                Dispatcher.UIThread.RunJobs();
-                view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single().Text = "Ideias";
-                ClickButtonWithText(view.Dialogs, "Criar nota");
-                await create;
-                var made = view.World.City!.Buildings.Single(b => b.Path == "Ideias.md");
-                Assert.True(view.MapSave.HasPending);
-                await UntilSaved(view);
-                var camera = (view.World.Camera.X, view.World.Camera.Y, view.World.Camera.Zoom);
-                var files = Directory.GetFiles(vault, "*", SearchOption.AllDirectories)
-                    .Select(f => Path.GetRelativePath(vault, f).Replace('\\', '/')).Order(StringComparer.Ordinal);
-                // .urbe/identity.json follows the map save (identity.js); it is the derived record, written just after
-                Assert.Equal([".urbe/mapa.json", "Bairro/Um.md", "Comece.md", "Ideias.md", "foto.png"], files.Where(f => f != ".urbe/identity.json"));
-                Assert.Equal([1, 2, 3], File.ReadAllBytes(Path.Combine(vault, "foto.png")));
-                window.Close();
-
-                // a new app on the same folder: the house where it was, the camera where it was
-                var reopened = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app2", "sel.json")));
-                var window2 = new Window { Width = 1280, Height = 760, Content = reopened };
-                window2.Show();
-                await reopened.OpenVaultAsync();
-                await Settle(window2, reopened);
-                var again = reopened.World.City!.Buildings.Single(b => b.Path == "Ideias.md");
-                Assert.Equal((made.X, made.Y, made.Sprite), (again.X, again.Y, again.Sprite));
-                Assert.Equal(camera, (reopened.World.Camera.X, reopened.World.Camera.Y, reopened.World.Camera.Zoom));
-                foreach (var b in view.World.City.Buildings)
-                    Assert.Equal((b.X, b.Y), reopened.World.City.Buildings.Single(o => o.Path == b.Path) is var o ? (o.X, o.Y) : default);
-                // the reopened city's first save describes the same city (only "salvo", the instant, moves)
-                await UntilSaved(reopened);
-                using (var a = System.Text.Json.JsonDocument.Parse(File.ReadAllText(mapa)))
-                {
-                    var notas = a.RootElement.GetProperty("notas");
-                    Assert.Equal(3, notas.EnumerateObject().Count());
-                    Assert.Equal((made.X, made.Y), (notas.GetProperty("Ideias.md").GetProperty("x").GetInt32(), notas.GetProperty("Ideias.md").GetProperty("y").GetInt32()));
-                }
-                window2.Close();
-                return true;
-            }
-            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
-        }, CancellationToken.None));
-
     [Fact]
     public async Task NewNote_WithoutAWritableVaultIsNotCreatedInMemory() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
@@ -522,7 +336,7 @@ public sealed partial class HeadlessUiTests : IDisposable
             window.Show();
             await view.LoadAsync(TutorialNotes.Load());
             await Settle(window, view);
-            int houses = view.World.City!.Buildings.Count;
+            int notes = view.Documents!.List().Count;
             var create = view.CreateNoteAsync(null);
             Dispatcher.UIThread.RunJobs();
             Assert.True(view.Dialogs.IsOpen);
@@ -530,87 +344,9 @@ public sealed partial class HeadlessUiTests : IDisposable
             Snapshot(window, "native-new-note-readonly.png");
             ClickButtonWithText(view.Dialogs, "Ok");
             await create;
-            Assert.Equal(houses, view.World.City.Buildings.Count);
+            Assert.Equal(notes, view.Documents.List().Count);
             window.Close();
             return true;
-        }, CancellationToken.None));
-
-    [Fact]
-    public async Task Customize_CityOptionsAreAppliedAndKeptInTemaJsonOfTheVault() =>
-        Assert.True(await Session.Dispatch<bool>(async () =>
-        {
-            var dir = Path.Combine(Path.GetTempPath(), "urbe-customize-" + Guid.NewGuid().ToString("N"));
-            var vault = Path.Combine(dir, "vault");
-            Directory.CreateDirectory(vault);
-            File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n");
-            var tema = Path.Combine(vault, "Personalização", "tema.json");
-            try
-            {
-                var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
-                var view = new MainView(storage);
-                var window = new Window { Width = 1280, Height = 760, Content = view };
-                window.Show();
-                await view.OpenVaultAsync();
-                await Settle(window, view);
-                Assert.True(view.World.Life.Options.Fauna);
-                Assert.Equal("ciclo", view.World.LightingMode);
-
-                view.Customize.Open();
-                Assert.Equal("aparencia", view.Customize.Section);
-                ClickButtonWithText(view.Customize, "Cidade");
-                Assert.Equal("cidade", view.Customize.Section);
-                Dispatcher.UIThread.RunJobs();
-                Snapshot(window, "native-customize-city.png");
-
-                // Animais off → tema.json is created with only what differs, and it is a house of the city
-                var animals = view.Customize.GetLogicalDescendants().OfType<Border>()
-                    .First(b => b.Tag as string == "row" && Avalonia.Automation.AutomationProperties.GetName(b) == "Animais");
-                await view.Customization.SetAsync(new System.Text.Json.Nodes.JsonObject { ["cidade"] = new System.Text.Json.Nodes.JsonObject { ["fauna"] = false } });
-                Assert.NotNull(animals);
-                Assert.Equal("{\n  \"$schema\": \"urbe-tema-1\",\n  \"versao\": 1,\n  \"cidade\": {\n    \"fauna\": false\n  }\n}\n", File.ReadAllText(tema));
-                Assert.False(view.World.Life.Options.Fauna);
-                Assert.Contains(view.World.City!.Buildings, b => b.Path == "Personalização/tema.json");
-                Assert.Contains(view.World.City.Regions, r => r.Name == "Personalização");
-
-                // Luz → Noite
-                ClickButtonWithText(view.Customize, "Noite");
-                await Task.Delay(50);
-                Dispatcher.UIThread.RunJobs();
-                Assert.Equal("noite", view.World.LightingMode);
-                Assert.Contains("\"ambiente\": \"noite\"", File.ReadAllText(tema));
-
-                // Arquivo: what is typed is validated, then applied and written as typed
-                ClickButtonWithText(view.Customize, "Arquivo");
-                var box = view.Customize.GetLogicalDescendants().OfType<TextBox>().Single();
-                box.Text = "{\"cidade\":{\"nomes\":5}}";
-                Dispatcher.UIThread.RunJobs();
-                Assert.Contains(view.Customize.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.Contains("cidade.nomes use true ou false") == true);
-                Snapshot(window, "native-customize-file.png");
-                var typed = "{\n  \"$schema\": \"urbe-tema-1\",\n  \"cidade\": { \"nomes\": false }\n}\n";
-                box.Text = typed;
-                Dispatcher.UIThread.RunJobs();
-                ClickButtonWithText(view.Customize, "Aplicar");
-                await Task.Delay(50);
-                Dispatcher.UIThread.RunJobs();
-                Assert.Equal(typed, File.ReadAllText(tema));
-                Assert.False(view.World.ShowHouseNames);
-                Assert.True(view.World.Life.Options.Fauna);   // the file no longer turns the animals off
-                window.Close();
-
-                // reopening the vault keeps the configuration
-                var again = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
-                var window2 = new Window { Width = 412, Height = 860, Content = again };
-                window2.Show();
-                await again.InitializeAsync();
-                await Settle(window2, again);
-                Assert.False(again.World.ShowHouseNames);
-                again.Customize.Open("cidade");
-                Dispatcher.UIThread.RunJobs();
-                Snapshot(window2, "native-customize-phone.png");
-                window2.Close();
-                return true;
-            }
-            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
 
     [Fact]
@@ -622,16 +358,15 @@ public sealed partial class HeadlessUiTests : IDisposable
             await view.LoadAsync(TutorialNotes.Load());
             await Settle(window, view);
 
-            // the toolbar "Buscar" button opens Buscar notas; with nothing typed it lists the recent notes
-            var button = view.GetVisualDescendants().OfType<Button>().First(b => ToolTip.GetTip(b) as string == "Buscar notas");
-            button.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            // Buscar notas; with nothing typed it lists the recent notes
+            view.Search.OpenQuickOpen();
             Dispatcher.UIThread.RunJobs();
             Assert.True(view.Search.QuickOpen.IsOpen);
             Assert.True(view.Search.QuickOpen.RowCount > 0);
             Assert.Contains(view.Search.QuickOpen.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "RECENTES");
             Snapshot(window, "native-quick-open.png");
 
-            // typing ranks (no accents, no case); the arrows move; Enter centres the city on the house and opens it
+            // typing ranks (no accents, no case); the arrows move; Enter opens the note
             view.Search.QuickOpen.Input.Text = "COMECE";
             Dispatcher.UIThread.RunJobs();
             var docs = view.Search.QuickOpen.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
@@ -642,25 +377,24 @@ public sealed partial class HeadlessUiTests : IDisposable
             Assert.Equal(Math.Min(1, view.Search.QuickOpen.RowCount - 1), view.Search.QuickOpen.ActiveIndex);
             window.KeyPress(Key.Up, RawInputModifiers.None, PhysicalKey.ArrowUp, null);
             Assert.Equal(0, view.Search.QuickOpen.ActiveIndex);
-            var house = view.World.City!.Buildings.Single(b => b.Path == "Tutorial/Comece aqui.md");
-            view.World.Camera.X = 0;
-            view.World.Camera.Y = 0;
             window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
             Dispatcher.UIThread.RunJobs();
             Assert.False(view.Search.QuickOpen.IsOpen);
             Assert.True(view.Editor.IsVisible);
             Assert.Equal("Tutorial/Comece aqui.md", view.Editor.Current!.Path);
-            Assert.Equal((house.X + house.W / 2.0) * 32, view.World.Camera.X);
             view.Editor.IsVisible = false;
 
             // keymap.js: Ctrl+K opens the palette, which filters the commands; Esc closes
             window.KeyPress(Key.K, RawInputModifiers.Control, PhysicalKey.K, "k");
             Dispatcher.UIThread.RunJobs();
             Assert.True(view.Search.Palette.IsOpen);
-            view.Search.Palette.Input.Text = "enquadrar";
+            view.Search.Palette.Input.Text = "tema.json";
             Dispatcher.UIThread.RunJobs();
             Assert.Equal(1, view.Search.Palette.RowCount);
             Snapshot(window, "native-command-palette.png");
+            view.Search.Palette.Input.Text = "cidade";
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(0, view.Search.Palette.RowCount);   // no command of the city is left (ADD-0028)
             window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
             Assert.False(view.Search.Palette.IsOpen);
 
@@ -671,7 +405,7 @@ public sealed partial class HeadlessUiTests : IDisposable
             view.Search.QuickOpen.Input.Text = "zzz inexistente";
             Dispatcher.UIThread.RunJobs();
             Assert.Equal(1, view.Search.QuickOpen.RowCount);
-            Assert.Contains(view.Search.QuickOpen.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "Na raiz · vira uma casa nova na cidade");
+            Assert.Contains(view.Search.QuickOpen.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "Na raiz · uma nota nova no vault");
             window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
             Assert.False(view.Search.QuickOpen.IsOpen);
             window.Close();
@@ -686,19 +420,16 @@ public sealed partial class HeadlessUiTests : IDisposable
         Dispatcher.UIThread.RunJobs();
     }
 
+    /// <summary>Lets the layout, the pending jobs and two frames run (the screen as the person would see it).</summary>
     private static async Task Settle(Window window, MainView view)
     {
-        for (int i = 0; i < 600; i++)
+        for (int i = 0; i < 3; i++)
         {
             AvaloniaHeadlessPlatform.ForceRenderTimerTick();
             Dispatcher.UIThread.RunJobs();
             window.CaptureRenderedFrame();
-            // settled once a frame drawn after the first one finds every visible chunk ready and none pending: a frame of
-            // the city costs seconds headless, so waiting for six of them (as before) made the suite outgrow its CI limit
-            if (view.World.ReadyChunks > 0 && view.World.PendingChunks == 0 && i > 0) break;
-            await Task.Delay(20);
+            await Task.Delay(10);
         }
-        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
         Dispatcher.UIThread.RunJobs();
     }
 

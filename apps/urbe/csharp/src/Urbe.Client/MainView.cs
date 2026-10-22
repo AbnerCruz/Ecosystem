@@ -294,6 +294,8 @@ public sealed partial class MainView : Grid
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { /* the Explorer shows the notes */ }
         }
         Open(NoteLibrary.Open(notes.Select(n => (n.Path, n.Content, ids[n.Path])).ToList(), record, snapshot.MapJson, _attachments), notes);
+        // the other files only: a note deleted later must not stay behind as a file of its folder
+        _attachments.ExceptWith(notes.Select(n => n.Path));
         Explorer.Status = snapshot.IsReadOnly ? "Somente leitura" : null;
         // v23Atualizar: the brand is Disco.cidade (the vault folder's name), 'Urbe' without one
         Explorer.HomeTitle = _vault?.VaultName is { Length: > 0 } folder ? folder : "Urbe";

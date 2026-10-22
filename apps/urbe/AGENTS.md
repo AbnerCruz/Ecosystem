@@ -62,25 +62,51 @@ O proprietário exige **migração e paridade de funcionalidades** do Urbe JavaS
 
 A regra de dados do §3 continua protegendo `.md`, gravações e metadados **atuais**: nada de apagar automaticamente vault legado, fingir que dados em memória foram salvos ou sacrificar segurança de escrita. O JS 1.8.4-beta permanece canal existente enquanto o C# experimental for validado. **DEC-0042 autoriza a direção; PRs críticos ainda seguem o integrador e a label `integrar` aplicada pelo proprietário.** Não declarar gates de release aprovados sem CI/dispositivo quando requeridos.
 
-## 9. Ordem do proprietário — o Urbe é a 1.8.4-beta, em C# nativo (DEC-0043, 2026-10-10)
+## 9. Ordem do proprietário — o Urbe nativo sem a simulação visual (DEC-0051, 2026-10-22)
 
-**DECISÃO CONSOLIDADA — NÃO É PROPOSTA DE AGENTE.** Leia `docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md`, o ADR-0032 do Ecosystem e `docs/csharp/PRODUCT-DIRECTION.md` antes de trabalhar no cliente C#.
+**DECISÃO CONSOLIDADA — NÃO É PROPOSTA DE AGENTE. Prevalece sobre os §10 e §11 onde houver conflito.** Leia `docs/governance/addenda/ADD-0028-urbe-sem-simulacao-visual.md` e o ADR-0034 do Ecosystem antes de trabalhar no cliente C#.
 
-- A **1.8.4-beta é a especificação** de experiência e visual: a cidade em tela cheia é o aplicativo; painéis e editor aparecem por cima dela. Não crie telas que não existam na 1.8.4 sem aprovação.
-- A interface C# é **nativa, sem WebView/HTML/CSS** (Avalonia: `csharp/src/Urbe.Client`, `Urbe.Desktop`, `Urbe.Android`). **Não acrescente funcionalidade a `Urbe.UI`, `Urbe.App` ou `Urbe.Web`** (casca Blazor congelada; sai no UC-34).
+- **A simulação visual saiu do produto:** mundo, cidade, mapa, minimapa, vida, decorações, visual das construções e foco de ligações, com todas as funcionalidades que só existem por eles. Ela está **congelada** no ramo `urbe-simulacao-congelada` (commit `9c13dc2e`). Não reintroduza nenhuma parte dela, nem por paridade com a 1.8.4.
+- **O Explorer é a base do app.** Editor e painéis abrem por cima. Na abertura, o app volta para a última nota.
+- **Notas:** id, datas e pastas ficam em `.urbe/notas.json` (`NoteLibrary`, `Urbe.Core`). Num vault vindo da cidade, vêm uma vez do `.urbe/mapa.json`. Os arquivos da cidade (`.urbe/mapa.json`, `.urbe/mundo.json`) **nunca são apagados nem reescritos**.
+- A interface continua **nativa, sem WebView/HTML/CSS** (Avalonia: `csharp/src/Urbe.Client`, `Urbe.Desktop`, `Urbe.Android`). Regras de domínio só em `Urbe.Core`. A casca Blazor foi retirada (UC-34).
+- A 1.8.4-beta (`apps/urbe/`, intocada) segue como referência **fora da simulação**: editor, Explorer, lixeira, histórico, importação, páginas e assistente.
+- A direção é o Urbe como **produtor de artefatos** sobre o editor Visual (UC-35).
+
+## 10. Ordem do proprietário — o Urbe é a 1.8.4-beta, em C# nativo (DEC-0043, 2026-10-10)
+
+**Histórico na parte da cidade (substituída pelo §9, DEC-0051).** Leia `docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md`, o ADR-0032 do Ecosystem e `docs/csharp/PRODUCT-DIRECTION.md` antes de trabalhar no cliente C#.
+
+- A interface C# é **nativa, sem WebView/HTML/CSS**.
 - Regras de domínio continuam somente em `Urbe.Core`; o cliente nativo apenas desenha e encaminha entrada.
-- Depois da paridade, a direção é o Urbe como **produtor de artefatos** sobre o editor Visual (UC-35).
+- Não crie telas sem aprovação do proprietário.
 
-## 10. Mandato de execução de TODOS os agentes Urbe — 10/10/2026
+## 11. Mandato de execução de TODOS os agentes Urbe — 10/10/2026
 
-**Ordem expressa do proprietário para TODOS os agentes**, não apenas o agente que registrou este documento: o objetivo imediato é concluir a **migração fiel do Urbe 1.8.4-beta** para Android/Windows **C# nativo** sobre o `Urbe.Core`, respeitando DEC-0043, ADD-0020, ADR-0032 e o `docs/csharp/PRODUCT-DIRECTION.md`. Este mandato vale para desenvolvimento, planejamento, revisão, integrador e qualquer agente futuro. O código 1.8.4 é referência funcional e visual, inclusive **mundo aberto procedural e simulador vivo**; não é uma coleção de notas num tabuleiro.
+**Ordem expressa do proprietário para TODOS os agentes**, atualizada pelo §9 (DEC-0051): o objetivo é o Urbe nativo em Android/Windows **C#** sobre o `Urbe.Core`, sem a simulação visual. Este mandato vale para desenvolvimento, planejamento, revisão, integrador e qualquer agente futuro.
 
-**Para toda ordem genérica `continue o Urbe`:** ler primeiro `AGENTS.md` da raiz (§1.2), este arquivo, `docs/csharp/ROADMAP.md`, o estado de `main`, Issues, PRs e CI. Avançar uma lacuna concreta do **cliente Avalonia ativo** (UC-33/UC-19/UC-18/UC-25); não iniciar UI alternativa, não reabrir decisões, não acrescentar funcionalidade à casca Blazor `Urbe.UI`/`Urbe.App`/`Urbe.Web`. PRs anteriores de Blazor (#287, #333, #426, #428 e quaisquer outros) exigem reconciliação antes de integrar: conservar apenas lógica Core/testes úteis e documentos atuais, rejeitar renderers Web obsoletos.
+**Para toda ordem genérica `continue o Urbe`:** ler primeiro `AGENTS.md` da raiz (§1.2), este arquivo, `docs/csharp/ROADMAP.md`, o estado de `main`, Issues, PRs e CI. Avançar uma lacuna concreta do **cliente Avalonia** sem reabrir decisões e sem iniciar UI alternativa.
 
-**Critérios objetivos do produto:** iniciar mundo nativo procedural como a 1.8.4; navegar por gesto/pinça; acessar **vault físico** Android com seleção persistente; abrir, criar, salvar e reabrir .md com verificação real; respeitar `.urbe/mapa.json`; manter casas/bairros/ruas; portar `life.js` (tempo, iluminação, clima, habitantes, fauna, eventos); restaurar minimapa/HUD/construção/Explorer/editor Visual e Fonte sobrepostos. Cada incremento deve indicar provas automatizadas + o que ainda exige aparelho físico. **CI verde não é paridade visual nem liberação para distribuição.** Beta própria só após instalação/toque/IME/persistência validados; depois portar funções restantes e só então expandir produção de artefatos.
+**Critérios objetivos do produto:**
 
-**Essência, não defeitos (DEC-0045, 13/10/2026):** a 1.8.4 é referência de essência; os defeitos e melhorias listados em `docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md` (UC-36 a UC-47 do ROADMAP C#) são corrigidos no porte, não reproduzidos. Onde há oráculo da 1.8.4, ele continua com os valores originais pedidos explicitamente.
+- acessar o **vault físico** Android com seleção persistente;
+- abrir, criar, salvar e reabrir `.md` com verificação real;
+- Explorer, editor Visual e Fonte, busca, lixeira, histórico, importação, páginas e assistente funcionando;
+- desempenho e experiência de usuário de primeira linha (ADD-0024, ADD-0026).
+
+Cada incremento indica as provas automatizadas e o que ainda exige aparelho físico. **CI verde não é validação no aparelho nem liberação para distribuição.**
+
+**Essência, não defeitos (DEC-0045, 13/10/2026):** os defeitos e melhorias listados em `docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md` são corrigidos no porte, não reproduzidos. Os itens da cidade estão congelados (DEC-0051).
 
 **Conteúdo dentro do Urbe (ADD-0023/DEC-0046, 14/10/2026):** HTML, PDF, áudio e vídeo do vault e os produtos HTML do projeto são vistos **num painel do próprio Urbe** (`ContentViewers`), nunca mandados a outro app como forma de ver. O visualizador (WebView do sistema isolada, PdfRenderer, player) é conteúdo dentro de painel nativo, não camada de interface.
 
-**Proibições:** nova versão Web, WebView na interface, refazer arte, screenshots exportados como motor de jogo, tela inicial de migração, grade estática de notas, duplicar storage/dominio, publicar prévia que não salva dados como beta utilizável, apagar estado do usuário e marcar gate humano aprovado por teste headless. Usar um único Core canônico, preservar a 1.8.4-beta instalada e obedecer às regras de merge/gates do Ecosystem.
+**Proibições:**
+
+- nova versão Web ou WebView na interface;
+- reintroduzir a simulação ou parte dela (DEC-0051);
+- duplicar storage ou domínio;
+- publicar como beta utilizável uma prévia que não salva dados;
+- apagar estado do usuário, inclusive os arquivos da cidade no vault;
+- marcar gate humano aprovado por teste headless.
+
+Usar um único Core canônico, preservar a 1.8.4-beta instalada e obedecer às regras de merge/gates do Ecosystem.

@@ -27,10 +27,11 @@ public sealed partial class HeadlessUiTests
             window.Show();
             await view.OpenVaultAsync();
             await Settle(window, view);
-            Snapshot(window, "native-city-phone.png");
-            // #v23Top: the brand and three buttons (Buscar notas, Mapa da cidade, Configurações); settings.js menu
-            var tops = view.GetLogicalDescendants().OfType<Button>().Where(b => b.Width == 44 && b.CornerRadius.TopLeft == 22).Select(b => ToolTip.GetTip(b) as string).ToList();
-            Assert.Equal(new[] { "Buscar notas", "Mapa da cidade", "Configurações" }, tops);
+            Snapshot(window, "native-explorer-phone.png");
+            // the Explorer is the base (ADD-0028): its header has Nova nota, Mais opções and Configurações; settings.js menu
+            var tops = view.Explorer.GetLogicalDescendants().OfType<Button>().Where(b => b.IsEffectivelyVisible && b.Height == 44)
+                .Select(b => ToolTip.GetTip(b) as string).Where(t => t is "Nova nota" or "Mais opções" or "Configurações" or "Fechar").ToList();
+            Assert.Equal(new[] { "Nova nota", "Mais opções", "Configurações" }, tops);
             Assert.Equal("ok", view.SaveDotState);
             _ = view.ShowSettingsAsync();
             Dispatcher.UIThread.RunJobs();
@@ -99,7 +100,7 @@ public sealed partial class HeadlessUiTests
             Assert.EndsWith("mais\n", File.ReadAllText(Path.Combine(vault, "Casa.md")));
             editor.IsVisible = false;
             Dispatcher.UIThread.RunJobs();
-            Assert.Contains(view.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Explorer" && Shown(t));
+            Assert.Contains(view.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "vault" && Shown(t));   // back on the Explorer, the base
             window.Close();
             return true;
         }

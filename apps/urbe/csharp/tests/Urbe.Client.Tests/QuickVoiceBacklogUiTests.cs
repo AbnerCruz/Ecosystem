@@ -31,7 +31,7 @@ public sealed partial class HeadlessUiTests
                 });
 
                 view.OfferVoiceBacklog();
-                Assert.Equal("Há 3 notas de voz para transcrever.", view.LifeNoticeText);
+                Assert.Equal("Há 3 notas de voz para transcrever.", view.NoticeText);
                 ClickButtonWithText(view, "Tentar");
                 for (int i = 0; i < 100 && queue.Load().Count == 3; i++) { await Task.Delay(20); Dispatcher.UIThread.RunJobs(); }
                 await Task.Delay(50);
@@ -47,7 +47,7 @@ public sealed partial class HeadlessUiTests
                 Assert.False(File.Exists(Path.Combine(queue.Folder, "a.wav")));
                 Assert.True(File.Exists(Path.Combine(queue.Folder, "f.wav")));
                 Assert.Equal("2 salva(s); 1 continua guardada para tentar depois.", view.Notices[^1]);
-                Assert.Contains(view.World.City!.Buildings, b => b.IsNote && b.Path == QuickNotes.Folder + "/2026-10-21.md");
+                Assert.NotNull(view.Documents!.Get(QuickNotes.Folder + "/2026-10-21.md"));
 
                 // nothing waiting: no offer
                 queue.Remove("f");

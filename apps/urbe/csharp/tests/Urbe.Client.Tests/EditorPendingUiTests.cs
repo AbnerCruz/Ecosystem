@@ -134,7 +134,7 @@ public sealed partial class HeadlessUiTests
             for (int i = 0; i < 200 && editor.Current?.Path != "nova nota.md"; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
             Assert.Equal("nova nota.md", editor.Current!.Path);
             Assert.True(File.Exists(Path.Combine(vault, "nova nota.md")));
-            Assert.Contains(view.World.City!.Buildings, b => b.Path == "nova nota.md");
+            Assert.NotNull(view.Documents!.Get("nova nota.md"));
             Assert.Contains("[[nova nota]]", File.ReadAllText(Path.Combine(vault, "Casa.md")));   // the note left was saved
             Assert.Equal(1, editor.TrailDepth);
             return true;

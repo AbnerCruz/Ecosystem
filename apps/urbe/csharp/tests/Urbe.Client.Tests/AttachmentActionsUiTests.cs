@@ -70,24 +70,22 @@ public sealed partial class HeadlessUiTests
 public sealed partial class HeadlessUiTests
 {
     [Fact]
-    public async Task GroupIntoFolder_MovesTheNotesIntoANewNeighbourhood() =>
+    public async Task GroupIntoFolder_MovesTheNotesIntoANewFolder() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
         {
             var (view, window, vault, dir) = await OpenCreateVault();
             try
             {
-                var city = view.World.City!;
-                int regions = city.Regions.Count;
+                int folders = view.Library!.Folders.Count;
                 await view.GroupIntoFolderAsync(["Comece.md"], "Só uma");
-                Assert.Equal(regions, city.Regions.Count);   // at least two
+                Assert.Equal(folders, view.Library.Folders.Count);   // at least two
                 await view.GroupIntoFolderAsync(["Comece.md", "Bairro/Um.md"], "Grupo");
-                var grupo = city.RegionByPath("Grupo");
-                Assert.NotNull(grupo);
+                Assert.Contains("Grupo", view.Library.Folders);
                 Assert.True(File.Exists(Path.Combine(vault, "Grupo", "Comece.md")));
                 Assert.True(File.Exists(Path.Combine(vault, "Grupo", "Um.md")));
                 Assert.False(File.Exists(Path.Combine(vault, "Comece.md")));
-                Assert.All(city.Buildings.Where(b => b.IsNote), b => Assert.Equal(grupo!.Id, b.RegionId));
-                await UntilMapSaved(view);
+                Assert.All(view.Documents!.List(), d => Assert.StartsWith("Grupo/", d.Path));
+                await UntilNotesSaved(view);
                 window.Close();
                 return true;
             }

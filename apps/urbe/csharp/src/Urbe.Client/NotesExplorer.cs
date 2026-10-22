@@ -88,6 +88,7 @@ public sealed class NotesExplorer : Border
             VerticalContentAlignment = VerticalAlignment.Center
         };
         ToolTip.SetTip(_new, "Nova nota");
+        Ui.UrbeMotion.Pressable(_new);
         _new.Click += (_, _) => NewRequested?.Invoke();
         _more = HeaderButton(UrbeTheme.Icons.MoreUi, "Mais opções");
         _more.Click += (_, _) => MoreRequested?.Invoke();
@@ -805,7 +806,7 @@ public sealed class NotesExplorer : Border
             VerticalAlignment = VerticalAlignment.Center
         };
         ToolTip.SetTip(b, tip);
-        return b;
+        return Ui.UrbeMotion.Pressable(b);
     }
 
     /// <summary>The look of a .ume-row: 48px tall, columns 28px | name | caret or actions with a 10px gap, padding

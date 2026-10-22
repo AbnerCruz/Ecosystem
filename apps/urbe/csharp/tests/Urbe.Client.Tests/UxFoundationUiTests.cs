@@ -85,7 +85,7 @@ public sealed partial class HeadlessUiTests
     }, CancellationToken.None));
 
     [Fact]
-    public async Task Ux_HudAndEditorHeaderButtonsShowTheirPressInOneDispatcherPass() => Assert.True(await Session.Dispatch(async () =>
+    public async Task Ux_ExplorerAndEditorHeaderButtonsShowTheirPressInOneDispatcherPass() => Assert.True(await Session.Dispatch(async () =>
     {
         var view = new MainView();
         var window = new Window { Width = 412, Height = 860, Content = view };
@@ -93,10 +93,10 @@ public sealed partial class HeadlessUiTests
         await view.LoadAsync(TutorialNotes.Load());
         await Settle(window, view);
         static bool Shown(Control c) => c.GetSelfAndLogicalAncestors().OfType<Control>().All(x => x.IsVisible);
-        Button Named(Control root, string name) => root.GetLogicalDescendants().OfType<Button>().FirstOrDefault(b => Shown(b) && AutomationProperties.GetName(b) == name)
+        Button Named(Control root, string name) => root.GetLogicalDescendants().OfType<Button>().FirstOrDefault(b => Shown(b) && (AutomationProperties.GetName(b) ?? ToolTip.GetTip(b) as string) == name)
             ?? throw new InvalidOperationException(name + " not in: " + string.Join(", ", root.GetLogicalDescendants().OfType<Button>().Where(Shown).Select(b => AutomationProperties.GetName(b) ?? ToolTip.GetTip(b) as string ?? "?")));
 
-        foreach (var name in new[] { "Criar", "Buscar", "Configurações", "Explorer" })
+        foreach (var name in new[] { "Nova nota", "Mais opções", "Configurações", "Assistente" })
         {
             var b = Named(view, name);
             var p = Centre(b, window);
@@ -135,7 +135,7 @@ public sealed partial class HeadlessUiTests
         }
         for (int i = 0; i < 20 && view.Editor.IsVisible; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
         Assert.False(view.Editor.IsVisible);   // Voltar closed the editor
-        Assert.False(view.WorldOccluded);
+        Assert.True(view.Explorer.IsVisible);  // and the Explorer is under it
         window.Close();
         return true;
     }, CancellationToken.None));
@@ -256,7 +256,7 @@ public sealed partial class HeadlessUiTests
         {
             await view.CleanOrphansAsync();   // returns at once: nothing waits for an Ok
             Assert.False(view.Dialogs.IsOpen);
-            Assert.StartsWith("Nada para limpar", view.LifeNoticeText);
+            Assert.StartsWith("Nada para limpar", view.NoticeText);
             window.Close();
             return true;
         }
@@ -317,8 +317,6 @@ public sealed partial class HeadlessUiTests
         view.Editor.Editor.CaretIndex = text.Length / 2;
         window.KeyTextInput("a");   // warm up
         Dispatcher.UIThread.RunJobs();
-        // the editor covers the city: the world is out of composition, so the keystrokes do not replay its drawing
-        Assert.True(view.WorldOccluded);
         // the input is handled synchronously (text, layout, the editor's and the host's handlers): timing only it keeps
         // the other tests' jobs on the shared dispatcher out of the measure
         var watch = Stopwatch.StartNew();
@@ -333,7 +331,7 @@ public sealed partial class HeadlessUiTests
         if (Environment.GetEnvironmentVariable("URBE_PERF") == "1") Assert.True(each < 25, each.ToString("0.00") + " ms per keystroke");
         await view.Editor.BackAsync();
         Dispatcher.UIThread.RunJobs();
-        Assert.False(view.WorldOccluded);   // the city is back in the same pass
+        Assert.False(view.Editor.IsVisible);
         window.Close();
         return true;
     }, CancellationToken.None));

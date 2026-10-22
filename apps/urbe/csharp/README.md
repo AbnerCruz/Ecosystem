@@ -1,20 +1,30 @@
-**Direção atual (DEC-0043 / ADR-0032, 10/10/2026):** o Urbe é a 1.8.4-beta, em C# **nativo sem WebView** (Avalonia: `src/Urbe.Client`, `src/Urbe.Desktop`, `src/Urbe.Android`). A casca Blazor (`Urbe.UI`, `Urbe.App`, `Urbe.Web`) descrita abaixo está congelada e será removida no UC-34. Ver `../docs/csharp/PRODUCT-DIRECTION.md`.
+# Urbe C# — Android e Windows, nativo (beta 2.0)
 
-**Diretriz visual:** manter o visual EXATO do Urbe 1.8.4-beta, sem redesenho. Sprites/texturas são extraídos no build a partir do código original via `tools/export-legacy-v184.mjs` e empacotados no Android C#. O mundo contínuo e a HUD ainda requerem portabilidade fiel C#; ver `../docs/csharp/UC19-VISUAL-ACCEPTANCE.md`.
+**Direção atual (DEC-0051 / ADR-0034, 22/10/2026):** o Urbe nativo são as notas Markdown numa pasta real, com o **Explorer como base**. Editor, busca, assistente, páginas e configurações abrem por cima dele. **A simulação visual (mundo, cidade, vida) saiu do produto** e está congelada no ramo `urbe-simulacao-congelada`. Ver `../docs/csharp/PRODUCT-DIRECTION.md`.
 
-# Urbe C# — somente Android e Windows (beta 2.0.0-beta.8)
+| Projeto | Responsabilidade |
+|---|---|
+| `src/Urbe.Core` | Domínio puro .NET: vault, notas (`NoteLibrary`, `.urbe/notas.json`), Markdown, editor, páginas, matemática, assistente |
+| `src/Urbe.Client` | Interface Avalonia: Explorer, editor, painéis e diálogos |
+| `src/Urbe.Desktop` | Head Desktop (Windows; Linux para desenvolvimento e testes) |
+| `src/Urbe.Android` | Head Android (`app.urbe.csharp`), vault por SAF |
 
-**Direção do proprietário (09/10/2026):** não criar ou distribuir uma versão Web/PWA do cliente C#. Android é prioridade; desktop/Windows vem depois. O MAUI Blazor Hybrid renderiza os componentes em uma WebView interna, não em um site com backend. O vault Android é uma pasta real, selecionada pelo usuário.
+**Sem web:** não há WebView na interface, nem versão Web/PWA (ADR-0032). A casca Blazor antiga (`Urbe.UI`, `Urbe.App`, `Urbe.Web`) foi retirada (UC-34).
 
-**Release Android:** versão `2.0.0-beta.9`, ID `app.urbe.csharp`, versionCode `2000009`. Os 206 PNGs de sprites e texturas são gerados diretamente da arte 1.8.4-beta e o próprio APK assinado é inspecionado no CI para garantir presença, dimensões e SHA-256. A paridade do mundo/câmera/HUD continua pendente em UC-19.
+**Verificação:**
 
-**Verificação:** `dotnet restore Urbe.Portable.slnx && dotnet test --project tests/Urbe.Core.Tests -c Release`. Build Android: `dotnet build src/Urbe.App/Urbe.App.csproj -c Debug -f net10.0-android -p:UrbeBuildTarget=net10.0-android`. Windows usa `net10.0-windows10.0.19041.0`. Não há build ou release C# para Web.
+```bash
+dotnet test --project tests/Urbe.Core.Tests
+dotnet test --project tests/Urbe.Client.Tests
+```
 
-**Dados:** testar a primeira beta em pasta vazia e confirmar abrir/editar/salvar/reabrir no Android físico. A identidade nova não sobrescreve a instalação JS 1.8.4-beta.
+O build Android roda no CI (`urbe-csharp-mobile-release.yml`).
+
+**Dados:** a beta atualiza por cima da instalada e mantém o vault. Os arquivos da cidade de um vault antigo (`.urbe/mapa.json`, `.urbe/mundo.json`) são lidos uma vez e nunca apagados nem reescritos. A instalação JS 1.8.4-beta não é tocada.
 
 ---
 
-**Arquivo histórico de implementação UC-8 a UC-18:** as menções antigas a Urbe.Web/WASM/PWA abaixo não refletem a direção atual do produto.
+**Arquivo histórico de implementação UC-8 a UC-18:** as menções antigas a Urbe.UI/Urbe.App/Urbe.Web, WASM/PWA e ao mundo abaixo não refletem a direção atual do produto.
 
 # Cliente C# do Urbe — UC-8 a UC-16
 

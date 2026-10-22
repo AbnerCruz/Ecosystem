@@ -70,9 +70,9 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal(html, System.Text.Encoding.UTF8.GetString(downloaded.Value.Bytes));
                 await view.SavePageHtmlInVaultAsync("Páginas/Meu site.page.json");
                 Assert.Equal(html, File.ReadAllText(Path.Combine(vault, "Páginas", "Meu site.html")));
-                Assert.Contains(view.World.City!.Buildings, b => b.Path == "Páginas/Meu site.html");
+                Assert.NotNull(view.Documents!.Get("Páginas/Meu site.html"));
                 await view.SavePageHtmlInVaultAsync("Páginas/Meu site.page.json");   // again: replaced, not duplicated
-                Assert.Single(view.World.City!.Buildings, b => b.Path == "Páginas/Meu site.html");
+                Assert.Single(view.Documents.List(), d => d.Path == "Páginas/Meu site.html");
                 await view.CopyPageHtmlAsync("Páginas/Meu site.page.json");
                 if (TopLevel.GetTopLevel(view)?.Clipboard is not null) Assert.Equal(html, view.CopiedText);
 

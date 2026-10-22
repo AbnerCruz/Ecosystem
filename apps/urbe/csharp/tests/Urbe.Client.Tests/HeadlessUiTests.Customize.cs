@@ -111,10 +111,8 @@ public sealed partial class HeadlessUiTests
                 ["aparencia"] = ["Tema", "Cor de destaque", "Cores", "Forma", "Cantos", "Densidade", "Efeito de vidro", "Animações"],
                 ["texto"] = ["Fonte da interface", "Fonte das notas", "Tamanho", "Altura da linha"],
                 ["editor"] = ["Editor de notas", "Largura do texto", "Abrir notas no modo", "Corretor ortográfico"],
-                ["cidade"] = ["Vida na cidade", "Luz", "Cores do chão", "Grama", "Mar profundo"],
-                ["texturas"] = ["Pacote de texturas"],
                 ["estilos"] = ["Estilos", "CSS rápido"],
-                ["plugins"] = ["Plugins desta cidade", "Segurança", "Modo seguro"],
+                ["plugins"] = ["Plugins deste vault", "Segurança", "Modo seguro"],
                 ["arquivo"] = ["Personalização/tema.json"]
             };
             foreach (var (section, wanted) in expect)
@@ -134,88 +132,6 @@ public sealed partial class HeadlessUiTests
         }
         finally { ResetTheme(view); window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
     }, CancellationToken.None));
-
-    [Fact]
-    public async Task Customize_GroundColorsAndTexturePackRepaintTheWorld() => Assert.True(await Session.Dispatch<bool>(async () =>
-    {
-        var (view, window, dir, vault) = await VaultViewAsync();
-        try
-        {
-            Assert.Null(view.World.Ground);
-            // Cores do chão: every biome magenta → the near ground of the city turns magenta
-            var all = new JsonObject();
-            foreach (var name in new[] { "grama", "prado", "floresta", "mata", "pantano", "taiga", "tundra", "neve", "colinas", "montanha", "pico", "deserto", "savana", "estepe", "praia", "agua" })
-                all[name] = new JsonArray("#ff00ff");
-            await view.Customization.SetAsync(new JsonObject { ["cidade"] = new JsonObject { ["paleta"] = all } });
-            Assert.NotNull(view.World.Ground);
-            Assert.Equal("#ff00ff", view.World.Ground!.BaseColor("grass"));
-            Assert.Equal("#ff00ff", view.World.Ground!.BaseColor("deep"));
-            Assert.Equal(0, view.World.ReadyChunks);   // the old ground is gone, chunks are painted again
-            await Settle(window, view);
-            // the chunks are painted by a worker: on a slow runner the first ready chunk is not yet the whole ground,
-            // so wait for the condition itself (bounded) instead of a fixed number of frames
-            for (int i = 0; i < 600 && (i < 10 || MagentaShare(window) <= .25); i++)
-            { AvaloniaHeadlessPlatform.ForceRenderTimerTick(); Dispatcher.UIThread.RunJobs(); window.CaptureRenderedFrame(); await Task.Delay(20); }
-            Snapshot(window, "native-customize-ground-magenta.png");
-            Assert.True(MagentaShare(window) > .25, "o chão deveria ficar magenta, share=" + MagentaShare(window));
-
-            await view.Customization.ResetSectionAsync("cidade");
-            Assert.Null(view.World.Ground);
-
-            // a texture pack with an own 16×16 grass: palette + pixels reach the ground and the building art
-            var row = string.Concat(Enumerable.Repeat("ab", 8));
-            var pack = new JsonObject
-            {
-                ["nome"] = "Teste",
-                ["chao"] = new JsonObject { ["grama"] = new JsonObject { ["cores"] = new JsonObject { ["a"] = "#102030", ["b"] = "#405060" }, ["pixels"] = new JsonArray(Enumerable.Range(0, 16).Select(_ => (JsonNode)row).ToArray()) } },
-                ["construcoes"] = new JsonObject { ["casa"] = new JsonObject { ["cores"] = new JsonObject { ["x"] = "#ff0000" }, ["pixels"] = new JsonArray("xx", "xx") } }
-            };
-            var packPath = "Personalização/texturas/Teste.json";
-            await view.Customization.UpsertAsync(packPath, LegacyCustomize.Stringify(pack, 2) + "\n");
-            Assert.True(File.Exists(Path.Combine(vault, "Personalização", "texturas", "Teste.json")));
-            await view.Customization.SetAsync(new JsonObject { ["cidade"] = new JsonObject { ["paleta"] = new JsonObject(), ["texturas"] = packPath } });
-            Assert.Equal([0x10, 0x20, 0x30, 255], view.World.Ground!.Textures[Array.IndexOf(LegacyWorldPixelTextures.Biomes.ToArray(), "grass")][0].Take(4));
-            Assert.Equal([0x40, 0x50, 0x60, 255], view.World.Ground!.Textures[Array.IndexOf(LegacyWorldPixelTextures.Biomes.ToArray(), "grass")][2].Skip(4).Take(4));
-            Assert.True(view.Customization.BuildingArt.ContainsKey("house"));
-            Assert.Equal(2, view.Customization.BuildingArt["house"].Width);
-            var house = view.World.City!.Buildings.First(b => b.Ext is ".md" or "md");
-            var art = view.World.ArtOf(house)!;
-            Assert.Equal(2, art.PixelSize.Width);   // urbeSpritesProprios[house]
-
-            // the Texturas section lists the pack, the cells and what the pack owns
-            view.Customize.Open("texturas");
-            Dispatcher.UIThread.RunJobs();
-            var texts = Texts(view.Customize).ToList();
-            Assert.Contains("CHÃO", texts);
-            Assert.Contains("Grama", texts);
-            Assert.Contains("Casa (notas .md)", texts);
-            Assert.Contains("Teste", texts);
-
-            // back to "Nenhum": the original art returns
-            await view.Customization.SetAsync(new JsonObject { ["cidade"] = new JsonObject { ["texturas"] = "" } });
-            Assert.Null(view.World.Ground);
-            Assert.Empty(view.Customization.BuildingArt);
-            return true;
-        }
-        finally { ResetTheme(view); window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
-    }, CancellationToken.None));
-
-    private static double MagentaShare(Window window)
-    {
-        var frame = window.CaptureRenderedFrame()!;
-        int w = frame.PixelSize.Width, h = frame.PixelSize.Height;
-        var buffer = new byte[w * h * 4];
-        var handle = System.Runtime.InteropServices.GCHandle.Alloc(buffer, System.Runtime.InteropServices.GCHandleType.Pinned);
-        try { frame.CopyPixels(new Avalonia.PixelRect(0, 0, w, h), handle.AddrOfPinnedObject(), buffer.Length, w * 4); }
-        finally { handle.Free(); }
-        int hit = 0;
-        for (int i = 0; i < buffer.Length; i += 4)
-        {
-            int c0 = buffer[i], c1 = buffer[i + 1], c2 = buffer[i + 2];   // BGRA or RGBA: red and blue are both high, green low
-            if (c0 > 120 && c2 > 120 && c1 < c0 * .55 && c1 < c2 * .55) hit++;
-        }
-        return hit / (double)(w * h);
-    }
 
     [Fact]
     public async Task Customize_ThemesStylesAndPluginsPersistInTheVault() => Assert.True(await Session.Dispatch<bool>(async () =>
@@ -270,38 +186,5 @@ public sealed partial class HeadlessUiTests
             return true;
         }
         finally { ResetTheme(view); window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
-    }, CancellationToken.None));
-
-    [Fact]
-    public async Task Customize_PixelEditorDrawsFillsPicksAndProducesTheGridOfThePack() => Assert.True(await Session.Dispatch<bool>(async () =>
-    {
-        var (view, window, dir, _) = await VaultViewAsync();
-        try
-        {
-            var initial = Enumerable.Repeat("#112233", 16 * 16).ToArray();
-            var task = view.Customize.EditPixelsAsync("Chão: Grama", 16, 16, initial, ["#112233", "#445566"]);
-            var editor = view.Customize.Editor!;
-            editor.Color_ = "#445566";
-            editor.ApplyAt(1, 1, begin: true);                  // lápis
-            editor.Tool = "balde"; editor.Color_ = "#778899";
-            editor.ApplyAt(8, 8, begin: true);                  // balde: the rest of the 16×16
-            Assert.Equal("#445566", editor.Pixels[1 * 16 + 1]);
-            Assert.Equal("#778899", editor.Pixels[0]);
-            editor.Tool = "conta"; editor.ApplyAt(1, 1, begin: true);
-            Assert.Equal("#445566", editor.Color_);
-            Assert.True(editor.Parent is not null);
-            // Cancel returns null
-            var fail = view.Customize.GetLogicalDescendants().OfType<Button>().First(b => b.Content as string == "Salvar");
-            fail.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
-            var result = await task;
-            Assert.NotNull(result);
-            var grid = CustomizePanel.ToGrid(result!, 16, 16);
-            Assert.Equal("{\"a\":\"#778899\",\"b\":\"#445566\"}", grid["cores"]!.ToJsonString());
-            Assert.Equal("aaaaaaaaaaaaaaaa", (string)grid["pixels"]![0]!);
-            Assert.Equal("abaaaaaaaaaaaaaa", (string)grid["pixels"]![1]!);
-            Assert.Equal("..", (string)CustomizePanel.ToGrid(["", "", "", ""], 2, 2)["pixels"]![0]!);
-            return true;
-        }
-        finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
     }, CancellationToken.None));
 }

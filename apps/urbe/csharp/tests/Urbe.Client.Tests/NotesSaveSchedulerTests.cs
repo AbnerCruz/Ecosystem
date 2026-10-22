@@ -6,7 +6,7 @@ namespace Urbe.Client.Tests;
 /// The timing of the 1.8.4 map save (app.js marcarSinc + workspace.js schedule/flush/flushPending),
 /// with the timers under the test's control.
 /// </summary>
-public sealed class MapSaveSchedulerTests
+public sealed class NotesSaveSchedulerTests
 {
     private sealed class Clock
     {
@@ -33,16 +33,16 @@ public sealed class MapSaveSchedulerTests
         var clock = new Clock();
         string map = "A";
         var written = new List<string>();
-        var s = new MapSaveScheduler(() => map, t => { written.Add(t); return Task.CompletedTask; }, onDisk: null, clock.Delay);
+        var s = new NotesSaveScheduler(() => map, t => { written.Add(t); return Task.CompletedTask; }, onDisk: null, clock.Delay);
 
         s.MarkSync();
         s.MarkSync();                                        // coalesced (sincTimer already set)
         Assert.Single(clock.Timers);
-        Assert.Equal(MapSaveScheduler.SyncDelay, clock.Timers[0].Delay);
+        Assert.Equal(NotesSaveScheduler.SyncDelay, clock.Timers[0].Delay);
         Assert.True(s.HasPending);
         clock.Timers[0].Done.SetResult();
         await Until(() => clock.Timers.Count == 2);
-        Assert.Equal(MapSaveScheduler.SaveDelay, clock.Timers[1].Delay);
+        Assert.Equal(NotesSaveScheduler.SaveDelay, clock.Timers[1].Delay);
         Assert.Equal("dirty", s.State);
         s.Schedule();                                        // timer already running: not restarted
         Assert.Equal(2, clock.Timers.Count);
@@ -70,7 +70,7 @@ public sealed class MapSaveSchedulerTests
         var clock = new Clock();
         int produced = 0;
         var written = new List<string>();
-        var s = new MapSaveScheduler(() => "B" + ++produced, t => { written.Add(t); return Task.CompletedTask; }, onDisk: "B0", clock.Delay);
+        var s = new NotesSaveScheduler(() => "B" + ++produced, t => { written.Add(t); return Task.CompletedTask; }, onDisk: "B0", clock.Delay);
         await s.FlushAsync();                                // nothing pending: nothing happens
         Assert.Empty(written);
 
@@ -92,7 +92,7 @@ public sealed class MapSaveSchedulerTests
         var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         int produced = 0;
         var written = new List<string>();
-        var s = new MapSaveScheduler(() => "C" + ++produced, async t => { written.Add(t); if (written.Count == 1) await gate.Task; },
+        var s = new NotesSaveScheduler(() => "C" + ++produced, async t => { written.Add(t); if (written.Count == 1) await gate.Task; },
             onDisk: null, clock.Delay);
         var first = s.FlushAsync();                          // nothing pending
         s.Schedule();
@@ -114,7 +114,7 @@ public sealed class MapSaveSchedulerTests
         var clock = new Clock();
         bool fail = true;
         var written = new List<string>();
-        var s = new MapSaveScheduler(() => "D", t => fail ? throw new IOException("disco") : Task.Run(() => written.Add(t)), null, clock.Delay);
+        var s = new NotesSaveScheduler(() => "D", t => fail ? throw new IOException("disco") : Task.Run(() => written.Add(t)), null, clock.Delay);
         s.Schedule();
         await Assert.ThrowsAsync<IOException>(s.FlushAsync);
         Assert.Equal("error", s.State);
