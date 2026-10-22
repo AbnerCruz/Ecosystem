@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.LogicalTree;
 using Avalonia.Threading;
@@ -284,5 +285,401 @@ public sealed partial class HeadlessUiTests
                 UrbeApp.LocalStatePath = previous;
                 try { Directory.Delete(dir, true); } catch (IOException) { }
             }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task Workspace_BoxesKeepTheirLookAndOrderInAreaJson() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-area-look-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            var selection = Path.Combine(dir, "app", "sel.json");
+            var previous = UrbeApp.LocalStatePath;
+            UrbeApp.LocalStatePath = Path.Combine(dir, "app", "notes-state.json");
+            var file = Path.Combine(vault, ".urbe", "area.json");
+            async Task Until(Func<bool> done) { for (int i = 0; i < 300 && !done(); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); } }
+            // the app may be writing the file right now (an exclusive write): read it when it lets go
+            string Read() { try { return File.Exists(file) ? File.ReadAllText(file) : ""; } catch (IOException) { return ""; } }
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), selection));
+                var window = new Window { Width = 412, Height = 860, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                Assert.Equal(["Matemática", "Personagens"], view.Workspace.ProjectOrder);
+
+                // the order of the boxes
+                await view.MoveBoxAsync("Personagens", -1);
+                Assert.Equal(["Personagens", "Matemática"], view.Workspace.ProjectOrder);
+                await Until(() => Read().Contains("\"Personagens\"", StringComparison.Ordinal));
+                Assert.Contains("\"Personagens\"", Read());
+                Assert.Contains("única autoridade do conteúdo", Read());
+
+                // Aparência da caixa: colour, border, icon
+                var editing = view.EditBoxAsync("Matemática");
+                ClickButtonWithText(view.Dialogs, "Lilás");
+                await Until(() => view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Tracejada"));
+                ClickButtonWithText(view.Dialogs, "Tracejada");
+                await Until(() => view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Livro"));
+                ClickButtonWithText(view.Dialogs, "Livro");
+                await editing;
+                var box = view.Area.Of("Matemática")!;
+                Assert.Equal(("tracejada", "livro"), (box.Border, box.Icon));
+                Assert.Equal(3, view.Area.ColorOf("Matemática/curso de calculo"));   // Lilás, for the subfolders too
+                await Until(() => Read().Contains("\"tracejada\"", StringComparison.Ordinal));
+                Assert.Contains("\"tracejada\"", Read());
+                Snapshot(window, "native-area-look.png");
+
+                // a box keeps its order and its list
+                view.Workspace.Open("Personagens");
+                view.Workspace.Order = WorkspaceOrder.Name;
+                view.Workspace.AsList = true;
+                await Until(() => Read().Contains("\"lista\": true", StringComparison.Ordinal));
+                Assert.Equal((WorkspaceOrder?)WorkspaceOrder.Name, view.Area.Of("Personagens")!.Order);
+                view.Workspace.Open("");
+                view.Workspace.Open("Personagens");
+                Assert.True(view.Workspace.AsList);
+
+                // a folder renamed by the app: its box follows
+                Assert.True(await view.RenameFolderAsync("Matemática", "Exatas"));
+                await Until(() => Read().Contains("\"Exatas\"", StringComparison.Ordinal));
+                Assert.Null(view.Area.Of("Matemática"));
+                Assert.Equal("livro", view.Area.Of("Exatas")!.Icon);
+                window.Close();
+
+                // and it is all there on the next opening
+                var again = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), selection));
+                var window2 = new Window { Width = 412, Height = 860, Content = again };
+                window2.Show();
+                await again.InitializeAsync();
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal(["Personagens", "Exatas"], again.Workspace.ProjectOrder);
+                Assert.Equal("tracejada", again.Area.Of("Exatas")!.Border);
+                window2.Close();
+                return true;
+            }
+            finally
+            {
+                UrbeApp.LocalStatePath = previous;
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task Sidebar_TheEdgeDragsItsWidthAndTheTreeShowsItsLevels() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-sidebar-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            var previous = UrbeApp.LocalStatePath;
+            UrbeApp.LocalStatePath = Path.Combine(dir, "app", "notes-state.json");
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 1280, Height = 800, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                Assert.Equal(MainView.SidebarWidth, view.Explorer.Bounds.Width);
+                // the edge of the sidebar, dragged: wider, kept on the device
+                var edge = view.Explorer.TranslatePoint(new Point(view.Explorer.Bounds.Width - 1, 400), window)!.Value;
+                window.MouseDown(edge, MouseButton.Left);
+                window.MouseMove(edge + new Point(60, 0), RawInputModifiers.LeftMouseButton);
+                window.MouseMove(edge + new Point(120, 0), RawInputModifiers.LeftMouseButton);
+                window.MouseUp(edge + new Point(120, 0), MouseButton.Left);
+                await Settle(window, view);
+                Assert.InRange(view.CurrentSidebarWidth, 430, 470);
+                Assert.Equal(view.CurrentSidebarWidth, view.Explorer.Bounds.Width);
+                Assert.Equal(view.CurrentSidebarWidth, new ExplorerState(UrbeApp.LocalStatePath).SidebarWidth);
+
+                // a folder opened in the tree: its notes one level in, with the level's guide
+                Assert.True(view.Explorer.TryEnterFolder("Personagens"));
+                Dispatcher.UIThread.RunJobs();
+                var nested = view.Explorer.GetLogicalDescendants().OfType<Panel>()
+                    .Where(p => p.Children.OfType<Button>().Any(b => b.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Herói.md"))).ToList();
+                Assert.NotEmpty(nested);
+                Snapshot(window, "native-sidebar-desktop.png");
+                window.Close();
+                return true;
+            }
+            finally
+            {
+                UrbeApp.LocalStatePath = previous;
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task Workspace_ACardDraggedOntoAnotherBoxMovesThere() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // UC-84 fatia 4: with the mouse, a card dragged onto another box goes to that project
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-area-drag-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 1280, Height = 800, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                var card = Named(view.Workspace, "Herói");
+                var box = view.Workspace.GetLogicalDescendants().OfType<Control>().First(c => c.Classes.Contains("ws-drop") && c.Tag as string == "Matemática");
+                var from = card.TranslatePoint(new Point(card.Bounds.Width / 2, card.Bounds.Height / 2), window)!.Value;
+                var to = box.TranslatePoint(new Point(box.Bounds.Width / 2, 40), window)!.Value;
+                window.MouseDown(from, MouseButton.Left, RawInputModifiers.None);
+                for (int i = 1; i <= 6; i++)
+                {
+                    window.MouseMove(new Point(from.X + (to.X - from.X) * i / 6, from.Y + (to.Y - from.Y) * i / 6), RawInputModifiers.LeftMouseButton);
+                    Dispatcher.UIThread.RunJobs();
+                }
+                Snapshot(window, "native-workspace-drag.png");
+                window.MouseUp(to, MouseButton.Left, RawInputModifiers.None);
+                var moved = Path.Combine(vault, "Matemática", "Herói.md");
+                for (int i = 0; i < 300 && !File.Exists(moved); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.True(File.Exists(moved));
+                Assert.False(File.Exists(Path.Combine(vault, "Personagens", "Herói.md")));
+                Assert.False(view.Editor.IsVisible);   // the drop opened nothing
+
+                // a project's head dragged onto another project takes its place (kept in .urbe/area.json)
+                await Settle(window, view);
+                Assert.Equal(["Matemática", "Personagens"], view.Workspace.ProjectOrder);
+                var head = Named(view.Workspace, "Personagens");
+                var target = view.Workspace.GetLogicalDescendants().OfType<Control>().First(c => c.Classes.Contains("ws-drop") && c.Tag as string == "Matemática");
+                from = head.TranslatePoint(new Point(40, head.Bounds.Height / 2), window)!.Value;
+                to = target.TranslatePoint(new Point(target.Bounds.Width / 2, 40), window)!.Value;
+                window.MouseDown(from, MouseButton.Left, RawInputModifiers.None);
+                for (int i = 1; i <= 6; i++)
+                {
+                    window.MouseMove(new Point(from.X + (to.X - from.X) * i / 6, from.Y + (to.Y - from.Y) * i / 6), RawInputModifiers.LeftMouseButton);
+                    Dispatcher.UIThread.RunJobs();
+                }
+                window.MouseUp(to, MouseButton.Left, RawInputModifiers.None);
+                for (int i = 0; i < 300 && view.Workspace.ProjectOrder[0] != "Personagens"; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.Equal(["Personagens", "Matemática"], view.Workspace.ProjectOrder);
+                Assert.Equal("", view.Workspace.Folder);   // the drop opened no box
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task Constellation_ShowsTheSkyFocusesAStarAndOpensItsNote() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // UC-72: the notes as a calm night sky; the places are kept in a file derived from the notes
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-sky-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            File.WriteAllText(Path.Combine(vault, "Personagens", "Herói.md"), "# Herói\n\nInimigo de [[Vilã]].\n");
+            var file = Path.Combine(vault, ".urbe", "constelacao.json");
+            string Read() { try { return File.Exists(file) ? File.ReadAllText(file) : ""; } catch (IOException) { return ""; } }
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 1280, Height = 800, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                Click(Named(view.Workspace, "Constelação"));
+                for (int i = 0; i < 300 && !(view.SkyPanel.IsVisible && Read().Length > 0); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.True(view.SkyPanel.IsVisible);
+                var kept = Read();
+                Assert.Contains("única autoridade", kept);
+                Assert.False(File.Exists(Path.Combine(vault, ".urbe", "mapa.json")));
+                Assert.False(File.Exists(Path.Combine(vault, ".urbe", "mundo.json")));
+                await Settle(window, view);
+                Snapshot(window, "native-constellation.png");
+
+                // a tap shows the star and its links, the rest dimmed; a second tap opens the note
+                var hero = view.Documents!.Get("Personagens/Herói.md")!.Id;
+                var sky = view.SkyPanel.Sky;
+                sky.TapAt(sky.PointOf(hero)!.Value);
+                Assert.Equal(hero, sky.FocusedStar);
+                await Settle(window, view);
+                Snapshot(window, "native-constellation-focus.png");
+                sky.TapAt(sky.PointOf(hero)!.Value);
+                Dispatcher.UIThread.RunJobs();
+                Assert.False(view.SkyPanel.IsVisible);
+                Assert.True(view.Editor.IsVisible);
+                Assert.Equal("Personagens/Herói.md", view.Editor.Current?.Path);
+
+                // opened again with the same notes: nobody moves, nothing is written
+                await view.ShowConstellationAsync();
+                Assert.Equal(kept, Read());
+
+                // UC-61: the new screens are commands too (Ctrl+K)
+                Assert.True(view.Search.Has("ui.constellation") && view.Search.Has("ui.workspace") && view.Search.Has("ui.sidebar.toggle"));
+                Assert.True(view.Search.Execute("ui.constellation"));
+                for (int i = 0; i < 100 && !view.SkyPanel.IsVisible; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                Assert.True(view.SkyPanel.IsVisible);
+                var collapsed = view.ExplorerState.SidebarCollapsed;
+                Assert.True(view.Search.Execute("ui.sidebar.toggle"));
+                Assert.NotEqual(collapsed, view.ExplorerState.SidebarCollapsed);
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task Explorer_ManyNotesMakeOnlyTheRowsNearTheScreen() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // UC-78: three thousand notes in an open folder: only the rows near the screen are made, and scrolling makes the rest
+            var explorer = new NotesExplorer { State = new ExplorerState(null) };
+            var window = new Window { Width = 412, Height = 860, Content = explorer };
+            window.Show();
+            explorer.State!.Expand("Pasta", true);
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            explorer.SetNotes(Enumerable.Range(0, 3000).Select(i => new CityNote("Pasta/Nota " + i.ToString("0000", System.Globalization.CultureInfo.InvariantCulture) + ".md", "# Nota")));
+            Dispatcher.UIThread.RunJobs();
+            var took = watch.ElapsedMilliseconds;
+            Assert.True(explorer.MadeRows < 200, "linhas feitas: " + explorer.MadeRows);
+            string[] Texts() => [.. explorer.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text ?? "")];
+            Assert.Contains("Nota 0000.md", Texts());
+            Assert.DoesNotContain("Nota 2999.md", Texts());
+            // the end of the list
+            var scroll = explorer.GetLogicalDescendants().OfType<ScrollViewer>().First(s => s.Content is StackPanel);
+            for (int i = 0; i < 5; i++) { scroll.Offset = new Vector(0, scroll.Extent.Height); await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+            Assert.Contains("Nota 2999.md", Texts());
+            Assert.True(explorer.MadeRows < 200, "linhas feitas: " + explorer.MadeRows);
+            Assert.True(explorer.TryOpenNote("Pasta/Nota 1500.md"));
+            Console.WriteLine("explorer 3000 notas: " + took + " ms");
+            window.Close();
+            return true;
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task Sidebar_ARowIsRenamedInPlace() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // UC-83: select one row and Renomear (or F2): its name becomes a box; Enter renames, Esc leaves it
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-rename-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 1280, Height = 800, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                var explorer = view.Explorer;
+
+                // a note: hold to select, then Renomear in the bar
+                Assert.True(explorer.HoldNote("Comece.md"));
+                Dispatcher.UIThread.RunJobs();
+                Click(Named(explorer, "Renomear"));
+                Assert.Equal("Comece.md", explorer.Renaming);
+                var box = explorer.GetLogicalDescendants().OfType<TextBox>().First(t => AutomationProperties.GetName(t) == "Novo nome");
+                Assert.Equal("Comece.md", box.Text);
+                await Settle(window, view);
+                Assert.Equal((0, 6), (box.SelectionStart, box.SelectionEnd));   // the name, not the extension
+                Snapshot(window, "native-sidebar-rename.png");
+                box.Text = "Boas-vindas.md";
+                box.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.Enter });
+                Assert.Null(explorer.Renaming);
+                var renamed = Path.Combine(vault, "Boas-vindas.md");
+                for (int i = 0; i < 300 && (!File.Exists(renamed) || File.Exists(Path.Combine(vault, "Comece.md"))); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.True(File.Exists(renamed));
+                Assert.False(File.Exists(Path.Combine(vault, "Comece.md")));
+
+                // a folder by its "⋯" → Renomear; Esc leaves it as it was
+                Assert.True(explorer.OpenFolderMenu("Personagens"));
+                for (int i = 0; i < 20 && !view.Dialogs.IsOpen; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                ClickButtonWithText(view.Dialogs, "Renomear");
+                for (int i = 0; i < 50 && explorer.Renaming is null; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                Assert.Equal(NotesExplorer.FolderPrefix + "Personagens", explorer.Renaming);
+                box = explorer.GetLogicalDescendants().OfType<TextBox>().First(t => AutomationProperties.GetName(t) == "Novo nome");
+                box.Text = "Gente";
+                box.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.Escape });
+                Assert.Null(explorer.Renaming);
+                await Task.Delay(50);
+                Dispatcher.UIThread.RunJobs();
+                Assert.True(Directory.Exists(Path.Combine(vault, "Personagens")));
+                Assert.False(Directory.Exists(Path.Combine(vault, "Gente")));
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task FirstRun_GuidesTheFolderTheThemeAndTheAssistantOnce() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // UC-58: the first opening on a device, with no folder yet: folder, appearance, Assistente — once
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-first-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            var device = new MemoryDeviceStore();
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"))) { OffersFirstRun = true };
+                view.Customization.Device = device;
+                var window = new Window { Width = 412, Height = 860, Content = view };
+                window.Show();
+                await view.InitializeAsync();
+                await Settle(window, view);
+                Assert.True(view.FirstRun.IsVisible);
+                Assert.Equal(0, view.FirstRun.Step);
+                Snapshot(window, "native-first-run.png");
+                Click(Named(view.FirstRun, "Escolher pasta"));
+                for (int i = 0; i < 300 && view.FirstRun.Step != 1; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.Equal(1, view.FirstRun.Step);
+                Click(Named(view.FirstRun, "Tema Sépia"));
+                for (int i = 0; i < 300 && view.FirstRun.Step != 2; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.Contains("sepia", File.ReadAllText(Path.Combine(vault, "Personalização", "tema.json")));
+                Click(Named(view.FirstRun, "Deixar para depois"));
+                Assert.False(view.FirstRun.IsVisible);
+                window.Close();
+
+                // the next opening on this device does not ask again
+                var again = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(null), Path.Combine(dir, "app2", "sel.json"))) { OffersFirstRun = true };
+                again.Customization.Device = device;
+                window = new Window { Width = 412, Height = 860, Content = again };
+                window.Show();
+                await again.InitializeAsync();
+                Assert.False(again.FirstRun.IsVisible);
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task Shortcuts_AreListedAndMineRunFromAtalhosJson() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // UC-61: Configurações → Atalhos lists every shortcut; "Editar meus atalhos" makes atalhos.json from a model
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-keys-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 1280, Height = 800, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                var showing = view.ShowShortcutsAsync();
+                Dispatcher.UIThread.RunJobs();
+                var texts = view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
+                Assert.Contains("Ctrl+K", texts);
+                Assert.Contains("Abrir comandos", texts);
+                ClickButtonWithText(view.Dialogs, "Editar meus atalhos");
+                var file = Path.Combine(vault, "Personalização", "atalhos.json");
+                for (int i = 0; i < 300 && !(File.Exists(file) && view.Editor.IsVisible); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.Contains("ui.constellation", File.ReadAllText(file));
+                Assert.Equal("Personalização/atalhos.json", view.Editor.Current?.Path);
+                await showing;
+
+                // Ctrl+Shift+K (from the model) opens the Constelação
+                window.KeyPress(Key.K, RawInputModifiers.Control | RawInputModifiers.Shift, PhysicalKey.K, "K");
+                for (int i = 0; i < 100 && !view.SkyPanel.IsVisible; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                Assert.True(view.SkyPanel.IsVisible);
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
 }

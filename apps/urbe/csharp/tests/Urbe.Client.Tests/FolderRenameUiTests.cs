@@ -18,18 +18,18 @@ public sealed partial class HeadlessUiTests
             {
                 var id = view.Documents!.Get("Bairro/Um.md")!.Id;
 
-                // the "⋯" of the folder → Renomear: the name dialog
+                // the "⋯" of the folder → Renomear: its row becomes a box with the name (UC-83, renaming in place)
                 view.ShowNotes();
                 Assert.True(view.Explorer.OpenFolderMenu("Bairro"));
                 Dispatcher.UIThread.RunJobs();
                 ClickButtonWithText(view.Dialogs, "Renomear");
                 await Task.Delay(30);
                 Dispatcher.UIThread.RunJobs();
-                var box = view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single();
+                var box = view.Explorer.GetVisualDescendants().OfType<TextBox>().Single(t => Avalonia.Automation.AutomationProperties.GetName(t) == "Novo nome");
                 Assert.Equal("Bairro", box.Text);
                 Snapshot(window, "native-folder-rename.png");
                 box.Text = "Centro";
-                ClickButtonWithText(view.Dialogs, "Renomear");
+                box.RaiseEvent(new Avalonia.Input.KeyEventArgs { RoutedEvent = Avalonia.Input.InputElement.KeyDownEvent, Key = Avalonia.Input.Key.Enter });
                 for (int i = 0; i < 200 && Directory.Exists(Path.Combine(vault, "Bairro")); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
 
                 // the folder renamed on disk, the note inside it and its document following, with its id

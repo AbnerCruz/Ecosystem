@@ -1,0 +1,86 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-abertura-pelos-nomes",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T17:55:19Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-78",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "64cb8d12",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/MainActivity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Area.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Opening.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/OpeningNames.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs",
+    "apps/urbe/csharp/src/Urbe.Desktop/Program.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261022-urbe-abertura-pelos-nomes.json"
+  ],
+  "work_completed": [
+    "UC-78 fatia 2 (observação de 22/10/2026, abertura instantânea): a árvore e a Área de trabalho da última abertura aparecem na hora a partir só dos nomes (caminhos e aparência das caixas), guardados em opening-names.json nos dados do app, nunca no vault e nunca o texto das notas. Enquanto a pasta é lida, o Explorer diz 'Atualizando…' e as ações que mudam o vault esperam; uma nota tocada abre assim que a leitura termina. A pasta lida substitui os nomes (NN-001)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (198)",
+      "result": "passed",
+      "evidence": "Opening_TheLastTreeShowsAtOnceFromItsNamesAndATappedNoteOpensWhenRead: nomes guardados sem o texto, árvore e caixas na hora, ações bloqueadas, nota tocada aberta depois da leitura, nomes atualizados com a pasta nova."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: fechar e reabrir o app com um vault grande; a árvore aparece na hora e se atualiza",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.Opening.cs"
+    }
+  ],
+  "known_issues": [
+    "Lista virtualizada do Explorer e medição no aparelho continuam na UC-78."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "UC-78: Explorer virtualizado e medição no aparelho; UC-84 fatia 4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": ".urbe/area.json só guarda apresentação e declara que as pastas e arquivos são a autoridade do conteúdo; nada nele cria, move ou apaga pastas."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "O arquivo novo é o previsto no ADD-0030, que o proprietário decidiu (DEC-0053)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Aparência e ordem no aparelho ficam pendentes; UC-85 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "area-layout",
+      "status": "product-specific",
+      "rationale": "Apresentação da Área de trabalho do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Só o cliente e um arquivo nos dados do app (fora do vault); nenhuma gravação nova no vault."
+  }
+}

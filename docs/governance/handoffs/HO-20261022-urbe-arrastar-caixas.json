@@ -1,0 +1,74 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-arrastar-caixas",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T18:37:24Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-84",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "64cb8d12",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/WorkspaceView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Area.cs",
+    "apps/urbe/csharp/src/Urbe.Core/AreaLayout.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/WorkspaceUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AreaLayoutTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261022-urbe-arrastar-caixas.json"
+  ],
+  "work_completed": [
+    "UC-84 fatia 4 (DEC-0053, ADD-0030): no computador, arrastar um cartão com o mouse para outra caixa move o item para aquela pasta pelas mudanças verificadas do Explorer; arrastar o cabeçalho de um projeto sobre outro reordena as caixas (AreaLayout.MoveTo, .urbe/area.json). A caixa de destino fica marcada; soltar não abre nada."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests e Urbe.Client.Tests",
+      "result": "passed",
+      "evidence": "Workspace_ACardDraggedOntoAnotherBoxMovesThere (arquivo movido no vault, ordem das caixas trocada) e AreaLayoutTests.ABoxDraggedOntoAnotherTakesItsPlace."
+    },
+    {
+      "kind": "human",
+      "check": "No Windows, arrastar um cartão para outra caixa e o cabeçalho de uma caixa sobre outra",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/WorkspaceView.cs"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "UC-72 constelação; UC-77 próximas fatias; UC-78 lista virtualizada."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": ".urbe/area.json só guarda apresentação e declara que as pastas e arquivos são a autoridade do conteúdo; nada nele cria, move ou apaga pastas."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "O arquivo novo é o previsto no ADD-0030, que o proprietário decidiu (DEC-0053)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Aparência e ordem no aparelho ficam pendentes; UC-85 continua [ ]."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Interface da Área de trabalho; mover usa as operações verificadas existentes; area.json já é gravado pela UC-85 deste PR."
+  }
+}

@@ -30,10 +30,16 @@ public interface IAssistantApp
     bool OpenReference(string reference);
     UrbeDialogs Dialogs { get; }
     void Notify(string text);
+    /// <summary>A notice with an action (UC-80: "Desfazer" after an agent changed the note).</summary>
+    void Notify(string text, string action, Action onAction) => Notify(text);
     /// <summary>The Personalização the appearance tools change.</summary>
     IAssistantAppearance? Appearance => null;
     /// <summary>The vault's plugins (write_plugin turns them on).</summary>
     IAssistantPlugins? Plugins => null;
+    /// <summary>UC-80: an agent's change to the note open in the editor, shown there to accept or refuse; false when it cannot be.</summary>
+    bool SuggestInNote(string path, LineChange change, string who, Action accept, Action refuse) => false;
+    /// <summary>UC-80: the suggestion in the note (if any) leaves the editor.</summary>
+    void EndSuggestion() { }
 }
 
 /// <summary>
@@ -143,7 +149,7 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, pages/ai-tools.js, customize/ai-tools.js, then the vault plugins).</summary>
-    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All];
+    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, AgentNames.Tool];
 
     private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name) ?? (name == AssistantAgent.Delegate.Name ? AssistantAgent.Delegate : null);
 
@@ -158,6 +164,8 @@ public sealed partial class AssistantPanel : Border
     public bool Running => _running is not null;
     /// <summary>The approval waiting for the user, if any.</summary>
     public AiApprovalRequest? PendingApproval => _pending?.Request;
+    /// <summary>The undo started from a notice (tests await it).</summary>
+    public Task? CurrentUndo { get; private set; }
     /// <summary>The run going on now (tests await it).</summary>
     public Task? CurrentRun { get; private set; }
     /// <summary>The input box (tests type in it).</summary>
@@ -170,19 +178,25 @@ public sealed partial class AssistantPanel : Border
     /// <summary>opened(): the panel shown, the configuration and the last conversation of this vault (if recent) loaded once.</summary>
     public void Open()
     {
-        if (!_loaded)
-        {
-            _loaded = true;
-            _cfg = _store.GetConfig();
-            var last = _store.ListConversations().FirstOrDefault(c => c.Vault == _app.VaultName);
-            _conv = last is not null && Now() - last.Updated < 6 * 3600_000 ? last : NewConversation();
-        }
+        Load();
         IsVisible = true;
         RenderAll();
         if (!OperatingSystem.IsAndroid()) Dispatcher.UIThread.Post(() => _input.Focus(), DispatcherPriority.Background);
     }
 
     public void Close() { CloseView(); IsVisible = false; }
+
+    private void Load()
+    {
+        if (_loaded) return;
+        _loaded = true;
+        _cfg = _store.GetConfig();
+        var last = _store.ListConversations().FirstOrDefault(c => c.Vault == _app.VaultName);
+        _conv = last is not null && Now() - last.Updated < 6 * 3600_000 ? last : NewConversation();
+    }
+
+    // UC-80: the request asked from a note: its conversation, the note and the agent's name
+    private (AiConversation Conv, string Path, string Who)? _inNote;
 
     /// <summary>prefill(): the composer with the start of a request (e.g. from Personalização or Páginas).</summary>
     public void Prefill(string text)
@@ -208,6 +222,15 @@ public sealed partial class AssistantPanel : Border
     }
 
     private string VaultKey => _app.VaultName.Length > 0 ? _app.VaultName : "Urbe";
+
+    /// <summary>UC-81: the agent's call name on this device; the problem, or null when done.</summary>
+    public string? RenameAgent(string agentId, string name)
+    {
+        if (AgentNames.Set(_cfg, agentId, name) is { } problem) return problem;
+        SaveConfig();
+        Dispatcher.UIThread.Post(RenderAll);
+        return null;
+    }
 
     private void Remember(string fact)
     {
@@ -249,14 +272,49 @@ public sealed partial class AssistantPanel : Border
         Send(text);
     }
 
+    /// <summary>
+    /// UC-80: a <c>&amp;Nome&amp;:</c> line of a note asks its agent — a conversation of its own ("Na nota X") with the note as
+    /// context; an edit goes through the same approval and diff as any other, an answer is read and replied to here.
+    /// The problem (no such agent, a run going on), or null when it was sent.
+    /// </summary>
+    public string? AskInNote(string notePath, string noteTitle, NoteMarks.AgentCall call)
+    {
+        if (_running is not null) return "O Assistente ainda está trabalhando no pedido anterior.";
+        Load();
+        var agent = call.Agent.Length == 0 ? AssistantAgent.AgentById(_cfg.AgentId, _cfg.CustomAgents) : AgentNames.Find(call.Agent, _cfg);
+        if (agent is null)
+            return "Nenhum agente se chama " + call.Agent + ". Os seus agentes: " + string.Join(", ", AgentNames.All(_cfg).Select(a => AgentNames.CallName(a, _cfg))) +
+                   ". Dê esse nome a um deles em Assistente → Configurações → Nomes dos agentes.";
+        _conv = NewConversation();
+        _conv.AgentId = agent.Id;
+        _conv.Title = "Na nota " + noteTitle;
+        _views.Clear();
+        // without a model the panel shows where to connect one; with it, the work goes on with the panel closed
+        if (_cfg.Providers.Count == 0 || ModelId().Length == 0) Open();
+        var who = AgentNames.CallName(agent, _cfg);
+        _inNote = (_conv, notePath, who);
+        if (!IsVisible) _app.Notify(who + " está trabalhando no pedido…");
+        var line = "&" + call.Agent + "&: " + call.Request;
+        Send(call.Request, (notePath, "[Pedido feito dentro da nota " + notePath + ", nesta linha:\n" + line +
+            "\nLeia a nota inteira (read_note) como contexto. Se o pedido for uma mudança no texto, faça-a na própria nota com edit_note, trocando essa linha pelo resultado; se for uma pergunta, responda aqui.]"));
+        return null;
+    }
+
     /// <summary>send(): the request (with the open note as hidden context when the chip is on) and the run.</summary>
-    public void Send(string text)
+    public void Send(string text) => Send(text, null);
+
+    private void Send(string text, (string Path, string Text)? inNote)
     {
         if (_cfg.Providers.Count == 0) { ShowSettings("openrouter"); return; }
         if (ModelId().Length == 0) { _ = PickModelAsync(); return; }
         var e = EditorInfo();
         var msg = new AiChatMessage { Id = AssistantAgent.NewId("m"), Role = "user", Content = [AiChatBlock.TextBlock(text)], Meta = new AiChatMeta() };
-        if (e.Path is { Length: > 0 } path && _useOpen)
+        if (inNote is { } asked)
+        {
+            msg.Meta.Context = asked.Path;
+            msg.Content.Add(new AiChatBlock { Type = "text", Hidden = true, Text = asked.Text });
+        }
+        else if (e.Path is { Length: > 0 } path && _useOpen)
         {
             var sel = e.Selection ?? "";
             msg.Meta.Context = path + (sel.Length > 0 ? " · seleção" : "");
@@ -293,12 +351,14 @@ public sealed partial class AssistantPanel : Border
         var run = new AiRunRecord { Id = AssistantAgent.NewId("r"), Started = Now() };
         RenderAll();
         using var knowledge = new KnowledgeIndex(documents);
+        var agent = AssistantAgent.AgentById(conv.AgentId, _cfg.CustomAgents);
         try
         {
             var r = await AssistantAgent.RunAsync(new AiAgentRun
             {
-                Host = new Host(this, documents, knowledge), Provider = p, Model = ModelId(), Messages = conv.Messages,
-                Agent = AssistantAgent.AgentById(conv.AgentId, _cfg.CustomAgents), Policy = conv.Policy, Cancel = cts.Token, MarkAiText = true,
+                Host = new Host(this, documents, knowledge, agent.Id), Provider = p, Model = ModelId(), Messages = conv.Messages,
+                // UC-81: the agent introduces itself by its call name and may take a new one the person agrees to
+                Agent = AgentNames.Named(agent, _cfg), Naming = AgentNames.Naming(agent, _cfg), Guidance = AssistantAgent.UrbeGuidance, Policy = conv.Policy, Cancel = cts.Token, MarkAiText = true,
                 MaxSteps = _cfg.MaxSteps, ContextTokens = meta?.Context ?? 128000, Instructions = WithUserAgents(_cfg.Instructions, documents), Memory = MemoryList(), VaultName = _app.VaultName,
                 Stream = Providers.StreamAsync, Approve = ApproveAsync, OnUpdate = OnUpdate, Tools = Tools
             });
@@ -316,6 +376,14 @@ public sealed partial class AssistantPanel : Border
         {
             _running = null;
             _pending = null;
+            if (_inNote is { } asked && ReferenceEquals(asked.Conv, conv))
+            {
+                // UC-80: a change was made in the note (or refused there); an answer in words opens the panel to be read
+                _inNote = null;
+                _app.EndSuggestion();
+                if (run.Changes.Count > 0) _app.Notify(asked.Who + " alterou a nota.", "Desfazer", () => CurrentUndo = UndoRunAsync(conv, run, confirmed: true));
+                else if (!IsVisible && conv.Messages.LastOrDefault(m => m.Role == "assistant") is { } last && last.Content.Any(b => b.Type == "text" && !string.IsNullOrWhiteSpace(b.Text))) { _conv = conv; Open(); }
+            }
             conv.Runs.Add(run);
             if (conv.Runs.Count > 20) conv.Runs.RemoveRange(0, conv.Runs.Count - 20);
             if (ReferenceEquals(conv, _conv)) { _views.Clear(); RenderAll(); }
@@ -334,6 +402,18 @@ public sealed partial class AssistantPanel : Border
     {
         var answer = new TaskCompletionSource<AiApproval>(TaskCreationOptions.RunContinuationsAsynchronously);
         _pending = (req, answer);
+        // UC-80: a change to the note the request came from is shown in the note itself, to accept or refuse there
+        if (_inNote is { } asked && req.Preview is { Before: { } before, After: { } after } preview && preview.Path == asked.Path &&
+            LineChange.Of(before, after) is { } change &&
+            _app.SuggestInNote(asked.Path, change, asked.Who, () => Answer(AiApproval.Approve), () => Answer(AiApproval.Reject("O usuário recusou a sugestão na nota."))))
+        {
+            cancel.Register(() => Dispatcher.UIThread.Post(() =>
+            {
+                if (_pending is { } p && ReferenceEquals(p.Request, req)) { _pending = null; _app.EndSuggestion(); answer.TrySetResult(AiApproval.Reject()); }
+            }));
+            return answer.Task;
+        }
+        if (_inNote is not null && !IsVisible) Open();
         cancel.Register(() => Dispatcher.UIThread.Post(() =>
         {
             if (_pending is { } p && ReferenceEquals(p.Request, req)) { _pending = null; answer.TrySetResult(AiApproval.Reject()); }
@@ -356,15 +436,17 @@ public sealed partial class AssistantPanel : Border
         _conv.Messages.FirstOrDefault(m => m.Role == "assistant" && m.Content.Any(b => b.Type == "tool_use" && b.Id == toolId));
 
     /// <summary>undoLast(): the last run's changes undone after a confirmation; notes edited afterwards are kept.</summary>
-    public async Task UndoLastAsync(bool confirmed = false)
+    public Task UndoLastAsync(bool confirmed = false) => _conv.Runs.LastOrDefault() is { } r ? UndoRunAsync(_conv, r, confirmed) : Task.CompletedTask;
+
+    /// <summary>Undoes one run's changes as a block (UC-80: also from the notice after a change in the note).</summary>
+    private async Task UndoRunAsync(AiConversation conv, AiRunRecord r, bool confirmed)
     {
-        var r = _conv.Runs.LastOrDefault();
-        if (r is null || r.Changes.Count == 0 || r.Reverted) return;
+        if (r.Changes.Count == 0 || r.Reverted) return;
         if (!confirmed && !await _app.Dialogs.ConfirmAsync("Desfazer as alterações?", "As notas voltam ao estado de antes desta resposta.", "Desfazer")) return;
         if (_app.Documents is not { } documents) return;
         var rep = await AssistantUndo.RevertAsync(new Undo(_app, documents), r.Changes);
         r.Reverted = true;
-        Persist();
+        if (conv.Messages.Count > 0) _store.SaveConversation(conv);
         RenderAll();
         if (rep.Skipped.Count > 0)
             await _app.Dialogs.AlertAsync("Algumas notas foram mantidas", "Você editou estas notas depois do Assistente, então elas não foram revertidas:\n" + string.Join("\n", rep.Skipped));
@@ -372,8 +454,10 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The tools' host: reads from the vault's documents, writes through the app, memory and links through the panel.</summary>
-    private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge) : IAssistantHost
+    private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge, string agentId) : IAssistantHost, IAssistantNames
     {
+        public IAssistantNames? Names => this;
+        public string? Rename(string name) => panel.RenameAgent(agentId, name);
         public DocumentStore Documents => documents;
         public KnowledgeIndex Knowledge => knowledge;
         public (string? Path, string? Selection) EditorContext() => panel.EditorInfo();
@@ -431,7 +515,7 @@ public sealed partial class AssistantPanel : Border
 
     private void RenderChrome()
     {
-        var a = AssistantAgent.AgentById(_conv.AgentId, _cfg.CustomAgents);
+        var a = AgentNames.Named(AssistantAgent.AgentById(_conv.AgentId, _cfg.CustomAgents), _cfg);
         var p = Provider();
         _agentButton.Content = Row(UrbeTheme.Icon(UrbeTheme.Icons.Assistant, 18, UrbeTheme.Accent, 1.8), Label(a.Name, 15, UrbeTheme.Text, FontWeight.SemiBold), UrbeTheme.Icon(UrbeTheme.Icons.Chevron, 14, UrbeTheme.Text3));
         _modelChip.Content = p is null ? Label("Conectar um modelo", 12, UrbeTheme.Text2) : Row(new Border { Width = 7, Height = 7, CornerRadius = new CornerRadius(4), Background = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center },

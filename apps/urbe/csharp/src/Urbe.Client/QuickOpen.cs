@@ -378,6 +378,14 @@ public sealed class SearchFeature
         Register("tutorial.menu", "Tutorial: abrir ou restaurar", "Ajuda", () => _ = view.ShowTutorialMenuAsync());
         Register("ui.settings", "Configurações", "Aplicativo", () => _ = view.ShowSettingsAsync());
         Register("ui.assistant", "Assistente", "Aplicativo", view.ToggleAssistant);
+        // UC-61: the screens and actions that came after the 1.8.4 (DEC-0053, DEC-0052, UC-80, UC-58)
+        Register("ui.workspace", "Área de trabalho", "Navegação", view.ShowWorkspace);
+        Register("ui.sidebar.toggle", "Mostrar ou recolher a barra lateral", "Navegação", view.ToggleSidebar);
+        Register("ui.constellation", "Constelação", "Navegação", () => _ = view.ShowConstellationAsync(), () => view.Documents is not null);
+        Register("editor.connections", "Conexões da nota", "Editor", view.ShowEditorConnections, () => view.Editor.IsVisible);
+        Register("workspace.newProject", "Novo projeto", "Workspace", () => _ = view.CreateProjectAsync());
+        Register("document.rename", "Renomear nota", "Documento", () => { if (view.Editor.Current is { } n) _ = view.RenameNoteAsync(n.Path); }, () => view.Editor.IsVisible);
+        Register("ui.firstRun", "Configuração inicial", "Aplicativo", view.ShowFirstRun);
 
         // document.addEventListener('keydown'): on the top level, so it works with nothing focused too
         void Hook()
@@ -391,6 +399,12 @@ public sealed class SearchFeature
         view.AttachedToVisualTree += (_, _) => Hook();
         Hook();
     }
+
+    /// <summary>UC-61: the person's shortcuts (Personalização/atalhos.json), over the defaults.</summary>
+    public Func<IReadOnlyDictionary<string, string>?>? UserShortcuts { get; set; }
+
+    /// <summary>The title of a command, or null.</summary>
+    public string? TitleOf(string id) => _commands.LastOrDefault(c => c.Info.Id == id)?.Info.Title;
 
     public QuickOpenPanel QuickOpen { get; }
     public CommandPalettePanel Palette { get; }
@@ -436,7 +450,7 @@ public sealed class SearchFeature
         var input = new LegacyKeyInput(key, e.KeyModifiers.HasFlag(KeyModifiers.Control), e.KeyModifiers.HasFlag(KeyModifiers.Meta),
             e.KeyModifiers.HasFlag(KeyModifiers.Alt), e.KeyModifiers.HasFlag(KeyModifiers.Shift));
         var editable = e.Source is TextBox or Avalonia.Controls.Presenters.TextPresenter;
-        var resolved = LegacyKeymap.Resolve(input, editable, Has);
+        var resolved = LegacyKeymap.Resolve(input, editable, Has, UserShortcuts?.Invoke());
         if (resolved.CommandId is null) return;
         e.Handled = resolved.PreventDefault;
         Execute(resolved.CommandId);

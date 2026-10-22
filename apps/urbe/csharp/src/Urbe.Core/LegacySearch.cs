@@ -328,13 +328,79 @@ public static class LegacyKeymap
 
     /// <summary>The keydown listener: a binding runs unless focus is in an input/textarea/contentEditable and the binding
     /// is not allowInEditor, or its command is not registered; a handled key is preventDefault-ed.</summary>
-    public static LegacyKeyResolution Resolve(LegacyKeyInput e, bool targetIsEditable, Func<string, bool> hasCommand)
+    public static LegacyKeyResolution Resolve(LegacyKeyInput e, bool targetIsEditable, Func<string, bool> hasCommand) =>
+        Resolve(e, targetIsEditable, hasCommand, null);
+
+    /// <summary>
+    /// UC-61: the same, with the person's own shortcuts (Personalização/atalhos.json) over the defaults — a shortcut there
+    /// runs its command (an empty one turns the default off). A shortcut without Mod or Alt never runs while typing.
+    /// </summary>
+    public static LegacyKeyResolution Resolve(LegacyKeyInput e, bool targetIsEditable, Func<string, bool> hasCommand, IReadOnlyDictionary<string, string>? user)
     {
         var shortcut = Normalize(e);
+        if (user is not null && user.TryGetValue(shortcut, out var mine))
+        {
+            if (mine.Length == 0 || !hasCommand(mine)) return new LegacyKeyResolution(null, false);
+            if (targetIsEditable && !shortcut.StartsWith("Mod+", StringComparison.Ordinal) && !shortcut.StartsWith("Alt+", StringComparison.Ordinal)) return new LegacyKeyResolution(null, false);
+            return new LegacyKeyResolution(mine, true);
+        }
         var binding = Defaults.FirstOrDefault(b => b.Shortcut == shortcut);
         if (binding is null) return new LegacyKeyResolution(null, false);
         if (targetIsEditable && !binding.AllowInEditor) return new LegacyKeyResolution(null, false);
         if (!hasCommand(binding.CommandId)) return new LegacyKeyResolution(null, false);
         return new LegacyKeyResolution(binding.CommandId, true);
+    }
+}
+
+/// <summary>
+/// UC-61: the person's own shortcuts, Personalização/atalhos.json — {"versao": 1, "atalhos": {"Mod+Shift+K": "ui.constellation",
+/// "Mod+N": ""}}. Keys are written as the keymap normalizes them ("Mod+Alt+Shift+Key"); an empty command turns a default off.
+/// </summary>
+public static class UserShortcuts
+{
+    public const string Path = "Personalização/atalhos.json";
+
+    public const string Template = """
+        {
+          "versao": 1,
+          "atalhos": {
+            "Mod+Shift+K": "ui.constellation",
+            "Mod+Shift+E": "ui.workspace",
+            "Mod+B": "ui.sidebar.toggle"
+          }
+        }
+        """;
+
+    /// <summary>The shortcuts of the file (shortcut → command id), or none when it is missing or unreadable.</summary>
+    public static IReadOnlyDictionary<string, string> Parse(string? json)
+    {
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (string.IsNullOrWhiteSpace(json)) return result;
+        try
+        {
+            if (System.Text.Json.Nodes.JsonNode.Parse(json) is System.Text.Json.Nodes.JsonObject root && root["atalhos"] is System.Text.Json.Nodes.JsonObject map)
+                foreach (var (key, value) in map)
+                    if (Canonical(key) is { } shortcut && value is System.Text.Json.Nodes.JsonValue v && v.TryGetValue<string>(out var command)) result[shortcut] = command.Trim();
+        }
+        catch (System.Text.Json.JsonException) { }
+        return result;
+    }
+
+    /// <summary>A shortcut as the keymap writes it (modifiers in the order Mod, Alt, Shift; one-letter keys upper-case), or null.</summary>
+    public static string? Canonical(string written)
+    {
+        var parts = written.Split('+', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return null;
+        var key = parts[^1];
+        bool mod = false, alt = false, shift = false;
+        foreach (var p in parts[..^1])
+            switch (p.ToLowerInvariant())
+            {
+                case "mod" or "ctrl" or "cmd" or "control": mod = true; break;
+                case "alt": alt = true; break;
+                case "shift": shift = true; break;
+                default: return null;
+            }
+        return LegacyKeymap.Normalize(new LegacyKeyInput(key, mod, false, alt, shift));
     }
 }

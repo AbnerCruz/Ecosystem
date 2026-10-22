@@ -52,7 +52,19 @@ public sealed partial class HeadlessUiTests : IDisposable
             Assert.Equal(MainView.SidebarWidth, view.Explorer.Bounds.Width);
             Assert.True(view.Workspace.IsVisible);
             Assert.True(view.Workspace.Bounds.Width > 800 && view.Workspace.Bounds.Height > 700);
-            Assert.False(view.Workspace.ShowsSidebarButton);
+            Assert.False(view.Workspace.ShowsSettingsButton);   // the sidebar has its own
+            // UC-83: the sidebar starts with Favoritos and Recentes; Pastas folds it away and brings it back
+            Assert.Contains(view.Explorer.GetLogicalDescendants().OfType<Button>(), b => Avalonia.Automation.AutomationProperties.GetName(b) == "Favoritos");
+            ClickNamed(view.Workspace, "Pastas");
+            await Settle(window, view);
+            Assert.True(view.SidebarCollapsed);
+            Assert.False(view.Explorer.IsVisible);
+            Assert.True(view.Workspace.ShowsSettingsButton);
+            Assert.True(view.Workspace.Bounds.Width > 1150);
+            ClickNamed(view.Workspace, "Pastas");
+            await Settle(window, view);
+            Assert.False(view.SidebarCollapsed);
+            Assert.True(view.Explorer.IsVisible);
             Assert.Equal("Explorer", view.Explorer.Title);
             Assert.Equal("Nenhuma pasta aberta", view.Explorer.Status);
             Assert.Contains(view.Explorer.HeaderActions.Children.OfType<Button>(), b => ToolTip.GetTip(b) as string == "Configurações");
@@ -108,10 +120,22 @@ public sealed partial class HeadlessUiTests : IDisposable
             ClickNamed(view.Workspace, "Pastas");
             await Settle(window, view);
             Assert.True(view.Explorer.IsVisible && view.Explorer.Overlaid);
-            Assert.True(view.Explorer.Bounds.Width >= 400);
+            // UC-83: a drawer over part of the Área de trabalho, the rest dimmed
+            Assert.InRange(view.Explorer.Bounds.Width, 280, 360);
             Snapshot(window, "native-phone-drawer.png");
             // Fechar (or a note chosen) closes the drawer
             view.Explorer.GetLogicalDescendants().OfType<Button>().First(b => ToolTip.GetTip(b) as string == "Fechar").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            await Settle(window, view);
+            Assert.False(view.Explorer.IsVisible);
+            // a finger sliding in from the left edge opens it; a tap on the dimmed part closes it
+            var finger = window.TouchBegin(new Point(4, 400), RawInputModifiers.None);
+            window.TouchMove(finger, new Point(40, 402), RawInputModifiers.None);
+            window.TouchMove(finger, new Point(90, 404), RawInputModifiers.None);
+            window.TouchEnd(finger, new Point(90, 404), RawInputModifiers.None);
+            await Settle(window, view);
+            Assert.True(view.Explorer.IsVisible && view.Explorer.Overlaid);
+            window.MouseDown(new Point(400, 400), MouseButton.Left);
+            window.MouseUp(new Point(400, 400), MouseButton.Left);
             await Settle(window, view);
             Assert.False(view.Explorer.IsVisible);
             window.Close();
@@ -296,8 +320,9 @@ public sealed partial class HeadlessUiTests : IDisposable
     }
 
     /// <summary>A vault that takes its time to be read (a phone's folder): RestoreAsync waits for <see cref="Release"/>.</summary>
-    private sealed class SlowStorage(VaultSnapshot snapshot) : IUrbeVaultStorage
+    private sealed class SlowStorage(VaultSnapshot snapshot, string? name = null) : IUrbeVaultStorage
     {
+        public string? VaultName => name;
         private readonly TaskCompletionSource _read = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public void Release() => _read.TrySetResult();
         public bool IsConnected => false;
@@ -340,6 +365,69 @@ public sealed partial class HeadlessUiTests : IDisposable
             Assert.Contains("Comece", view.Workspace.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
             window.Close();
             return true;
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task Opening_TheLastTreeShowsAtOnceFromItsNamesAndATappedNoteOpensWhenRead() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // UC-78: the opening should be instant; the names of the last opening show while the folder is read
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-names-" + Guid.NewGuid().ToString("N"));
+            var namesFile = Path.Combine(dir, "opening-names.json");
+            static VaultFile F(string path, string text) => new(path, System.Text.Encoding.UTF8.GetBytes(text));
+            try
+            {
+                var first = new SlowStorage(VaultReader.Read([F("Projeto/Um.md", "# Um\n\nsegredo da nota\n"), F("Projeto/Dois.md", "# Dois\n"), F("Solta.md", "# Solta\n")]), "Meu vault");
+                var view = new MainView(first) { OpeningNames = new OpeningNames(namesFile) };
+                var window = new Window { Width = 412, Height = 860, Content = view };
+                window.Show();
+                first.Release();
+                await view.InitializeAsync();
+                window.Close();
+                // only names: never a note's text
+                var kept = File.ReadAllText(namesFile);
+                Assert.Contains("Projeto/Um.md", kept);
+                Assert.DoesNotContain("segredo", kept);
+
+                // the next opening: the folder changed meanwhile (Dois gone, Tres new)
+                var next = new SlowStorage(VaultReader.Read([F("Projeto/Um.md", "# Um\n\nsegredo da nota\n"), F("Projeto/Tres.md", "# Tres\n"), F("Solta.md", "# Solta\n")]), "Meu vault");
+                view = new MainView(next) { OpeningNames = new OpeningNames(namesFile) };
+                window = new Window { Width = 412, Height = 860, Content = view };
+                window.Show();
+                var init = view.InitializeAsync();
+                Dispatcher.UIThread.RunJobs();
+                Assert.True(view.ShowingLastNames);
+                var texts = view.Workspace.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
+                Assert.Contains("Projeto", texts);
+                Assert.DoesNotContain("Abrindo suas notas…", texts);
+                Assert.Equal("Meu vault", view.Explorer.HomeTitle);
+                Assert.Equal("Atualizando…", view.Explorer.Status);
+                view.ShowNotes();
+                Dispatcher.UIThread.RunJobs();
+                Assert.Contains("Solta.md", view.Explorer.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
+                // nothing changes the vault meanwhile; a tapped note waits for the folder
+                ClickNamed(view.Workspace, "Novo projeto");
+                Dispatcher.UIThread.RunJobs();
+                Assert.False(view.Dialogs.IsOpen);
+                Assert.True(view.Explorer.TryEnterFolder("Projeto"));
+                Assert.True(view.Explorer.TryOpenNote("Projeto/Um.md"));
+                Dispatcher.UIThread.RunJobs();
+                Assert.False(view.Editor.IsVisible);
+                next.Release();
+                await init;
+                Dispatcher.UIThread.RunJobs();
+                Assert.False(view.ShowingLastNames);
+                Assert.Null(view.Explorer.Status);
+                Assert.True(view.Editor.IsVisible);
+                Assert.Equal("Projeto/Um.md", view.Editor.Current?.Path);
+                Assert.Contains("segredo da nota", view.Editor.Current?.Content);
+                // the folder read replaces the names, and they are kept for the next opening
+                Assert.Contains("Projeto/Tres.md", File.ReadAllText(namesFile));
+                Assert.DoesNotContain("Projeto/Dois.md", File.ReadAllText(namesFile));
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
 
     [Fact]

@@ -5,6 +5,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Urbe.Core;
 
 namespace Urbe.Client;
@@ -44,13 +45,18 @@ public sealed class WorkspaceView : Grid
         _add = add;
         _settings = HeaderButton(UrbeTheme.Icons.Settings, "Configurações");
         _settings.Click += (_, _) => SettingsRequested?.Invoke();
+        // UC-72: the Constelação, a sky to stroll through the notes
+        var sky = HeaderButton(UrbeTheme.Icons.Star, "Constelação");
+        sky.Click += (_, _) => SkyRequested?.Invoke();
         var head = new DockPanel { Margin = new Thickness(8, 6, 8, 0), Height = 52, LastChildFill = true };
         DockPanel.SetDock(_sidebar, Dock.Left);
         DockPanel.SetDock(_settings, Dock.Right);
         DockPanel.SetDock(add, Dock.Right);
+        DockPanel.SetDock(sky, Dock.Right);
         head.Children.Add(_sidebar);
         head.Children.Add(_settings);
         head.Children.Add(add);
+        head.Children.Add(sky);
         head.Children.Add(new ScrollViewer { Content = _crumbs, HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled, Margin = new Thickness(4, 0) });
         Children.Add(head);
 
@@ -102,11 +108,34 @@ public sealed class WorkspaceView : Grid
     /// <summary>Only items with this tag (null: any).</summary>
     public string? TagFilter { get => _tag; set { _tag = value; _shown = Page; Render(); } }
 
-    /// <summary>How the items are ordered.</summary>
-    public WorkspaceOrder Order { get => _order; set { _order = value; Render(); } }
+    /// <summary>How the items are ordered (kept for the open box, UC-85).</summary>
+    public WorkspaceOrder Order { get => _order; set { _order = value; Render(); if (Folder.Length > 0) PresentationChanged?.Invoke(Folder); } }
 
-    /// <summary>Items as a list of rows instead of a grid of cards.</summary>
-    public bool AsList { get => _asList; set { _asList = value; Render(); } }
+    /// <summary>Items as a list of rows instead of a grid of cards (kept for the open box, UC-85).</summary>
+    public bool AsList { get => _asList; set { _asList = value; Render(); if (Folder.Length > 0) PresentationChanged?.Invoke(Folder); } }
+
+    /// <summary>The open box's order or grid/list changed.</summary>
+    public event Action<string>? PresentationChanged;
+
+    private AreaLayout _layout = new();
+
+    /// <summary>How the boxes look and are ordered (UC-85, .urbe/area.json).</summary>
+    public AreaLayout Layout { get => _layout; set { _layout = value ?? new(); Render(); } }
+
+    /// <summary>The projects as the root shows them (their stored order first).</summary>
+    public List<string> ProjectOrder => [.. _layout.Arrange(_index.Projects, p => p.Folder).Select(p => p.Folder)];
+
+    private int ColorOf(string folder) => _layout.ColorOf(folder);
+
+    /// <summary>The icon a box shows: its own (UC-85), else a folder.</summary>
+    private string BoxIcon(string folder) => IconFor(_layout.Of(folder)?.Icon);
+
+    /// <summary>The drawing of one of <see cref="AreaLayout.Icons"/>.</summary>
+    public static string IconFor(string? id) => id switch
+    {
+        "livro" => UrbeTheme.Icons.Book, "estrela" => UrbeTheme.Icons.Star, "flor" => UrbeTheme.Icons.Flower, "casa" => UrbeTheme.Icons.House,
+        "lista" => UrbeTheme.Icons.List, "imagem" => UrbeTheme.Icons.Image, "pagina" => UrbeTheme.Icons.Page, _ => UrbeTheme.Icons.Folder
+    };
 
     /// <summary>A note's card was tapped.</summary>
     public event Action<string>? NoteRequested;
@@ -114,6 +143,10 @@ public sealed class WorkspaceView : Grid
     public event Action<string>? FileRequested;
     /// <summary>A card was held (or right-clicked): its information and actions.</summary>
     public event Action<string>? ItemHeld;
+    /// <summary>UC-84 fatia 4: a card dragged with the mouse onto a box: the item and the box's folder ("" = the root).</summary>
+    public event Action<string, string>? ItemDropped;
+    /// <summary>UC-84 fatia 4 / UC-85: a box's head dragged onto another box: the project and the one it goes before.</summary>
+    public event Action<string, string>? ProjectDropped;
     /// <summary>"+ Novo projeto": a new top folder.</summary>
     public event Action? NewProjectRequested;
     /// <summary>"+" inside a folder: a new note there.</summary>
@@ -124,12 +157,17 @@ public sealed class WorkspaceView : Grid
     public event Action? SidebarRequested;
     /// <summary>The header's Configurações (on a phone, where the sidebar with its own is not beside it).</summary>
     public event Action? SettingsRequested;
+    /// <summary>The header's Constelação (UC-72).</summary>
+    public event Action? SkyRequested;
 
     /// <summary>The folder open now ("" for the root, the projects).</summary>
     public string Folder { get; private set; } = "";
 
     /// <summary>The header's Pastas button: only where the tree is not already beside the Área de trabalho.</summary>
-    public bool ShowsSidebarButton { get => _sidebar.IsVisible; set { _sidebar.IsVisible = value; _settings.IsVisible = value; } }
+    public bool ShowsSidebarButton { get => _sidebar.IsVisible; set => _sidebar.IsVisible = value; }
+
+    /// <summary>The header's Configurações: where the sidebar, which has its own, is not shown beside it.</summary>
+    public bool ShowsSettingsButton { get => _settings.IsVisible; set => _settings.IsVisible = value; }
 
     /// <summary>The name shown for the root (the vault's).</summary>
     public string Title { get => _title; set { _title = string.IsNullOrWhiteSpace(value) ? "Área de trabalho" : value; Render(); } }
@@ -166,6 +204,9 @@ public sealed class WorkspaceView : Grid
         _shown = Page;
         _kind = null;
         _tag = null;
+        // each box keeps its order and its grid or list (UC-85); the root starts from the defaults
+        _order = _layout.Of(folder)?.Order ?? WorkspaceOrder.Recent;
+        _asList = _layout.Of(folder)?.AsList ?? false;
         _search.Text = "";
         Render();
         _scroll.Offset = default;
@@ -270,7 +311,7 @@ public sealed class WorkspaceView : Grid
 
     private void RenderRoot()
     {
-        var projects = _index.Projects;
+        var projects = _layout.Arrange(_index.Projects, p => p.Folder);
         var loose = _index.Loose;
         if (projects.Count == 0 && loose.Count == 0)
         {
@@ -365,13 +406,13 @@ public sealed class WorkspaceView : Grid
         else if (subs.Count == 0) content.Children.Add(new TextBlock { Text = "Vazio por enquanto.", FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
         if (box.Count > recent.Count)
         {
-            var all = Plain(new TextBlock { Text = "Ver tudo (" + box.Count + ")", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(PaletteHex(box.Color)) });
+            var all = Plain(new TextBlock { Text = "Ver tudo (" + box.Count + ")", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(PaletteHex(ColorOf(box.Folder))) });
             all.HorizontalAlignment = HorizontalAlignment.Left;
             all.Padding = new Thickness(4, 6);
             all.Click += (_, _) => Open(box.Folder);
             content.Children.Add(Ui.UrbeMotion.Pressable(all));
         }
-        return Glass(box.Color, content);
+        return Glass(box.Folder, content);
     }
 
     private Control LooseBox(IReadOnlyList<WorkspaceItem> loose)
@@ -388,11 +429,11 @@ public sealed class WorkspaceView : Grid
             all.Click += (_, _) => { _search.Text = ""; ShowLoose(); };
             content.Children.Add(Ui.UrbeMotion.Pressable(all));
         }
-        return new Border
+        return DropOn(new Border
         {
             Child = content, Padding = new Thickness(14), CornerRadius = new CornerRadius(18),
             BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), Background = UrbeTheme.Brush(UrbeTheme.Surface, .6)
-        };
+        }, "");
     }
 
     private void ShowLoose()
@@ -418,14 +459,14 @@ public sealed class WorkspaceView : Grid
         if (items.Count > 0) content.Children.Add(ItemsView(items.Take(_shown).ToList(), CardColumns()));
         if (items.Count > _shown)
         {
-            var more = Plain(new TextBlock { Text = "Mostrar mais (" + (items.Count - _shown) + ")", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(PaletteHex(box.Color)) });
+            var more = Plain(new TextBlock { Text = "Mostrar mais (" + (items.Count - _shown) + ")", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(PaletteHex(ColorOf(box.Folder))) });
             more.HorizontalAlignment = HorizontalAlignment.Center;
             more.Click += (_, _) => { _shown += Page; Render(); };
             content.Children.Add(Ui.UrbeMotion.Pressable(more));
         }
         if (subs.Count == 0 && items.Count == 0)
         {
-            var add = Plain(new TextBlock { Text = "Nova nota aqui", FontSize = 15, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(PaletteHex(box.Color)) });
+            var add = Plain(new TextBlock { Text = "Nova nota aqui", FontSize = 15, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(PaletteHex(ColorOf(box.Folder))) });
             add.HorizontalAlignment = HorizontalAlignment.Center;
             add.Click += (_, _) => NewNoteRequested?.Invoke(Folder);
             content.Children.Add(new StackPanel
@@ -434,7 +475,7 @@ public sealed class WorkspaceView : Grid
                 Children = { new TextBlock { Text = "Pasta vazia", FontSize = 15, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), HorizontalAlignment = HorizontalAlignment.Center }, Ui.UrbeMotion.Pressable(add) }
             });
         }
-        _body.Children.Add(Glass(box.Color, content));
+        _body.Children.Add(Glass(box.Folder, content));
     }
 
     /// <summary>A search, a kind or a tag: in the open box (and its subfolders) as one catalogue, at the root grouped by project.</summary>
@@ -461,7 +502,7 @@ public sealed class WorkspaceView : Grid
             if (list.Count > 12) content.Children.Add(new TextBlock { Text = "e mais " + (list.Count - 12), FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
             boxes.Add(group.Key.Length == 0
                 ? new Border { Child = content, Padding = new Thickness(14), CornerRadius = new CornerRadius(18), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), Background = UrbeTheme.Brush(UrbeTheme.Surface, .6) }
-                : Glass(WorkspaceIndex.ColorOf(group.Key), content));
+                : Glass(group.Key, content));
         }
         _body.Children.Add(Columned(boxes));
     }
@@ -475,14 +516,18 @@ public sealed class WorkspaceView : Grid
 
     // ------------------------------------------------------------------ pieces
 
-    /// <summary>The glass: a translucent surface tinted by the project's colour, a light edge on top, the colour's border.</summary>
-    private static Border Glass(int color, Control content)
+    /// <summary>
+    /// The glass: a translucent surface tinted by the project's colour, a light edge on top, the colour's border — plain,
+    /// dashed, double or glowing, as the box was set (UC-85).
+    /// </summary>
+    private Control Glass(string folder, Control content)
     {
-        var c = Color.Parse(PaletteHex(color));
-        return new Border
+        var c = Color.Parse(PaletteHex(ColorOf(folder)));
+        var style = _layout.Of(WorkspaceIndex.ProjectOf(folder + "/"))?.Border ?? "continua";
+        var glass = new Border
         {
-            Child = content, Padding = new Thickness(14), CornerRadius = new CornerRadius(18), BorderThickness = new Thickness(1.5),
-            BorderBrush = new SolidColorBrush(c, .6),
+            Child = content, Padding = new Thickness(14), CornerRadius = new CornerRadius(18), BorderThickness = new Thickness(style is "tracejada" ? 0 : 1.5),
+            BorderBrush = new SolidColorBrush(c, style == "brilho" ? .85 : .6),
             Background = new LinearGradientBrush
             {
                 StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative), EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
@@ -493,18 +538,36 @@ public sealed class WorkspaceView : Grid
                     new GradientStop(Color.FromArgb(190, 0x15, 0x16, 0x1a), 1)
                 }
             },
-            BoxShadow = new BoxShadows(new BoxShadow { OffsetY = 6, Blur = 24, Color = Color.FromArgb(70, 0, 0, 0) })
+            BoxShadow = style == "brilho"
+                ? new BoxShadows(new BoxShadow { Blur = 22, Spread = 1, Color = Color.FromArgb(110, c.R, c.G, c.B) })
+                : new BoxShadows(new BoxShadow { OffsetY = 6, Blur = 24, Color = Color.FromArgb(70, 0, 0, 0) })
         };
+        if (style == "dupla")
+            return DropOn(new Border { Child = glass, Padding = new Thickness(3), CornerRadius = new CornerRadius(21), BorderThickness = new Thickness(1), BorderBrush = new SolidColorBrush(c, .45) }, folder);
+        if (style == "tracejada")
+            return DropOn(new Panel
+            {
+                Children =
+                {
+                    glass,
+                    new Avalonia.Controls.Shapes.Rectangle
+                    {
+                        RadiusX = 18, RadiusY = 18, Stroke = new SolidColorBrush(c, .75), StrokeThickness = 1.5,
+                        StrokeDashArray = new Avalonia.Collections.AvaloniaList<double> { 5, 4 }, IsHitTestVisible = false
+                    }
+                }
+            }, folder);
+        return DropOn(glass, folder);
     }
 
     /// <summary>A box's head: its icon in its colour, its name, how many items and when; tapping it opens the box.</summary>
     private Control BoxHead(WorkspaceBox box, bool open, int? count = null)
     {
-        var hex = PaletteHex(box.Color);
+        var hex = PaletteHex(ColorOf(box.Folder));
         var icon = new Border
         {
             Width = 36, Height = 36, CornerRadius = new CornerRadius(11), Background = UrbeTheme.Brush(hex, .16),
-            Child = UrbeTheme.Icon(UrbeTheme.Icons.Folder, 19, hex, 1.8)
+            Child = UrbeTheme.Icon(BoxIcon(box.Folder), 19, hex, 1.8)
         };
         var n = count ?? box.Count;
         var meta = (n == 1 ? "1 item" : n + " itens") + (box.Modified is { } m && When(m) is { } w ? " · " + w : "");
@@ -528,14 +591,25 @@ public sealed class WorkspaceView : Grid
         b.HorizontalAlignment = HorizontalAlignment.Stretch;
         b.HorizontalContentAlignment = HorizontalAlignment.Left;
         AutomationProperties.SetName(b, box.Name);
-        b.Click += (_, _) => { if (TouchIntent.IsIntended(b)) Open(box.Folder); };
+        // a project's head dragged with the mouse onto another project puts it in that one's place (UC-85)
+        if (!box.Folder.Contains('/'))
+            WireDrag(b, box.Name, BoxIcon(box.Folder), target =>
+            {
+                var project = WorkspaceIndex.ProjectOf(target + "/");
+                if (target.Length > 0 && project != box.Folder) ProjectDropped?.Invoke(box.Folder, project);
+            });
+        b.Click += (_, _) =>
+        {
+            if (_dragged) { _dragged = false; return; }
+            if (TouchIntent.IsIntended(b)) Open(box.Folder);
+        };
         row.Children.Add(Ui.UrbeMotion.Pressable(b));
         return row;
     }
 
     private Control SubfolderChip(WorkspaceBox box)
     {
-        var hex = PaletteHex(box.Color);
+        var hex = PaletteHex(ColorOf(box.Folder));
         var b = Ui.UrbeMotion.Pressable(new Button
         {
             Content = new StackPanel
@@ -552,6 +626,7 @@ public sealed class WorkspaceView : Grid
             Background = UrbeTheme.Brush(hex, .08), BorderBrush = UrbeTheme.Brush(hex, .35), BorderThickness = new Thickness(1)
         });
         AutomationProperties.SetName(b, box.Name);
+        DropOn(b, box.Folder);
         b.Click += (_, _) => { if (TouchIntent.IsIntended(b)) Open(box.Folder); };
         return b;
     }
@@ -559,7 +634,7 @@ public sealed class WorkspaceView : Grid
     /// <summary>A subfolder in an open box: a small glass box of its own.</summary>
     private Control SubfolderTile(WorkspaceBox box)
     {
-        var hex = PaletteHex(box.Color);
+        var hex = PaletteHex(ColorOf(box.Folder));
         var b = Ui.UrbeMotion.Pressable(new Button
         {
             Content = new StackPanel
@@ -685,13 +760,100 @@ public sealed class WorkspaceView : Grid
             e.Handled = true;
             if (!held) ItemHeld?.Invoke(item.Path);
         };
+        WireDrag(b, item.Title, IconOf(item.Kind), folder => { if (folder != item.Folder) ItemDropped?.Invoke(item.Path, folder); });
         b.Click += (_, _) =>
         {
+            if (_dragged) { _dragged = false; return; }
             if (held) { held = false; return; }
             if (!TouchIntent.IsIntended(b)) return;
             if (item.IsNote) NoteRequested?.Invoke(item.Path); else FileRequested?.Invoke(item.Path);
         };
         return b;
+    }
+
+    // ------------------------------------------------------------------ dragging (UC-84 fatia 4)
+
+    private const string DropClass = "ws-drop";
+    private Button? _pressed;
+    private Button? _dragging;
+    private bool _dragged;
+    private Point _dragFrom;
+    private Control? _dropTarget;
+    private Border? _ghost;
+
+    /// <summary>A box (or a subfolder chip) that takes a dragged card: its folder.</summary>
+    private static T DropOn<T>(T c, string folder) where T : Control
+    {
+        c.Classes.Add(DropClass);
+        c.Tag = folder;
+        return c;
+    }
+
+    /// <summary>With the mouse, a card (or a box's head) pressed and moved follows the pointer; released on a box, <paramref name="drop"/> gets its folder.</summary>
+    private void WireDrag(Button b, string title, string icon, Action<string> drop)
+    {
+        b.AddHandler(Avalonia.Input.InputElement.PointerPressedEvent, (_, e) =>
+        {
+            if (e.Pointer.Type != Avalonia.Input.PointerType.Mouse || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
+            _pressed = b;
+            _dragFrom = e.GetPosition(this);
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+        b.AddHandler(Avalonia.Input.InputElement.PointerMovedEvent, (_, e) =>
+        {
+            if (!ReferenceEquals(_pressed, b) || e.Pointer.Type != Avalonia.Input.PointerType.Mouse) return;
+            var at = e.GetPosition(this);
+            if (_dragging is null && Math.Abs(at.X - _dragFrom.X) + Math.Abs(at.Y - _dragFrom.Y) < 8) return;
+            _dragging = b;
+            MoveGhost(title, icon, at);
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+        b.AddHandler(Avalonia.Input.InputElement.PointerReleasedEvent, (_, e) =>
+        {
+            _pressed = null;
+            if (!ReferenceEquals(_dragging, b)) return;
+            var folder = DropTargetAt(e.GetPosition(this))?.Tag as string;
+            EndDrag();
+            _dragged = true;
+            Dispatcher.UIThread.Post(() => _dragged = false);   // a release elsewhere raises no click to clear it
+            if (folder is not null) drop(folder);
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+    }
+
+    private void MoveGhost(string title, string icon, Point at)
+    {
+        if (_ghost is null)
+        {
+            _ghost = new Border
+            {
+                IsHitTestVisible = false, ZIndex = 20, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top,
+                Padding = new Thickness(10, 6), CornerRadius = new CornerRadius(10), Background = UrbeTheme.Brush(UrbeTheme.Surface2), Opacity = .92,
+                BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent, .6), BorderThickness = new Thickness(1),
+                BoxShadow = new BoxShadows(new BoxShadow { OffsetY = 6, Blur = 18, Color = Color.FromArgb(90, 0, 0, 0) }),
+                Child = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal, Spacing = 6,
+                    Children = { UrbeTheme.Icon(icon, 14, UrbeTheme.Text2, 1.8), new TextBlock { Text = title, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text), MaxWidth = 220, TextTrimming = TextTrimming.CharacterEllipsis } }
+                }
+            };
+            SetRowSpan(_ghost, 4);
+            Children.Add(_ghost);
+        }
+        _ghost.Margin = new Thickness(at.X + 12, at.Y + 8, 0, 0);
+        var target = DropTargetAt(at);
+        if (ReferenceEquals(target, _dropTarget)) return;
+        if (_dropTarget is not null) _dropTarget.Opacity = 1;
+        _dropTarget = target;
+        if (_dropTarget is not null) _dropTarget.Opacity = .7;
+    }
+
+    private Control? DropTargetAt(Point at) =>
+        (Avalonia.Input.InputExtensions.InputHitTest(this, at) as Visual)?.GetSelfAndVisualAncestors().OfType<Control>().FirstOrDefault(c => c.Classes.Contains(DropClass));
+
+    private void EndDrag()
+    {
+        _dragging = null;
+        if (_dropTarget is not null) _dropTarget.Opacity = 1;
+        _dropTarget = null;
+        if (_ghost is not null) { Children.Remove(_ghost); _ghost = null; }
     }
 
     private static string IconOf(WorkspaceItemKind kind) => kind switch

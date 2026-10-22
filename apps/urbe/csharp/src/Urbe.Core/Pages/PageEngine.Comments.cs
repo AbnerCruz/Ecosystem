@@ -15,12 +15,16 @@ internal sealed class PageCommentMarks(bool show)
     // a comment run becomes Open + one char of its index: survives Markdown, escaping and slugs, and is cut out whole
     private const char Open = '';
     private const char First = '', Last = '';
+    // UC-82: the Assistente's mark {ia:"modelo"} becomes AiOpen + one char of the model's index, finished as a small "IA"
+    private const char AiOpen = '\ue04d';
     // raw text: fields that are code (blocks, CSS, the <head>) are never touched
     private static readonly HashSet<string> RawKeys = new(StringComparer.Ordinal) { "code", "css", "head" };
 
     // each 💬: its comments and where its text lives (a page field by dotted path, or a note), with the group's index there
     private readonly List<(IReadOnlyList<string> Comments, string? Field, string? Note, int N)> _groups = [];
     private readonly PageBoxMarks _boxes = new();
+    // the models whose marks the page has, in the order they first appear
+    private readonly List<string> _models = [];
 
     public string Text(string? markdown, string? field = null, string? note = null)
     {
@@ -40,7 +44,19 @@ internal sealed class PageCommentMarks(bool show)
                 text = text[..g.Start] + token + text[(g.Start + g.Length)..];
             }
         }
-        return _boxes.Text(NoteMarks.StripComments(text));
+        return _boxes.Text(NoteMarks.StripComments(text, AiToken));
+    }
+
+    private string AiToken(string model)
+    {
+        int index = _models.IndexOf(model);
+        if (index < 0)
+        {
+            if (First + _models.Count > Last) return "";
+            index = _models.Count;
+            _models.Add(model);
+        }
+        return AiOpen.ToString() + (char)(First + index);
     }
 
     /// <summary>A copy of the page with every text field rewritten.</summary>
@@ -93,14 +109,22 @@ internal sealed class PageCommentMarks(bool show)
 
     private string FinishComments(string html)
     {
-        if (html.IndexOf(Open) < 0) return html;
+        if (html.IndexOf(Open) < 0 && html.IndexOf(AiOpen) < 0) return html;
         var sb = new StringBuilder(html.Length + 256);
         bool inTag = false;
         string? raw = null; // the raw-text element we are inside (title, script, style, textarea)
-        int used = 0;
+        int used = 0, marked = 0;
         for (int i = 0; i < html.Length; i++)
         {
             var c = html[i];
+            if (c == AiOpen)
+            {
+                // UC-82: a small "IA" with the model in its title; inside a tag or the title, nothing
+                int model = i + 1 < html.Length && html[i + 1] is >= First and <= Last ? html[i + 1] - First : -1;
+                if (model >= 0) i++;
+                if (!inTag && raw is null && model >= 0 && model < _models.Count) { sb.Append(AiMarker(_models[model], show)); marked++; }
+                continue;
+            }
             if (c == Open)
             {
                 // a run cut in half (an excerpt) leaves only Open: it never reaches the page either
@@ -128,9 +152,10 @@ internal sealed class PageCommentMarks(bool show)
             }
         }
         var output = sb.ToString();
-        if (used == 0) return output;
+        if (used == 0 && marked == 0) return output;
         var at = output.LastIndexOf("</body>", StringComparison.Ordinal);
-        var extra = "<style>" + Css + "</style><script>" + Script + "</script>\n";
+        var extra = (marked > 0 ? AiNote(_models) + "<style>" + AiCss + "</style>" : "") +
+                    (used > 0 || (show && marked > 0) ? "<style>" + Css + "</style><script>" + Script + "</script>" : "") + "\n";
         return at < 0 ? output + extra : output.Insert(at, extra);
     }
 
@@ -158,6 +183,19 @@ internal sealed class PageCommentMarks(bool show)
                (comments.Count > 1 ? comments.Count.ToString(System.Globalization.CultureInfo.InvariantCulture) : "") + "</sup>";
     }
 
+    /// <summary>UC-82: the Assistente's mark in a page — a small "IA" in superscript, the model in its title.</summary>
+    /// In the studio preview it keeps its source, so a text written in place gets <c>{ia:"modelo"}</c> back.
+    public static string AiMarker(string model, bool preview = false) =>
+        "<sup class=\"urbe-ia\" title=\"Escrito com IA (" + PageMarkdown.Esc(model) + ")\"" +
+        (preview ? " data-src=\"" + PageMarkdown.Esc("{ia:\"" + model + "\"}") + "\"" : "") + ">IA</sup>";
+
+    /// <summary>UC-82: the page's foot says that parts of it were written with AI, and with which models.</summary>
+    public static string AiNote(IReadOnlyList<string> models) =>
+        "<p class=\"urbe-ia-note\">Partes deste documento foram escritas com IA (" + PageMarkdown.Esc(string.Join(", ", models)) + ").</p>";
+
+    private const string AiCss = ".urbe-ia{font-size:.55em;line-height:0;margin-left:.15em;vertical-align:super;font-weight:600;letter-spacing:.02em;opacity:.55;cursor:help;user-select:none;-webkit-user-select:none}" +
+        ".urbe-ia-note{max-width:72ch;margin:32px auto 24px;padding:0 16px;font:13px/1.4 system-ui,sans-serif;opacity:.6;text-align:center}";
+
     private const string Css = ".urbe-cm{cursor:pointer;font-size:.62em;line-height:0;margin-left:.08em;vertical-align:super;font-weight:600;color:var(--accent,#c58a2b);user-select:none;-webkit-user-select:none}" +
         ".urbe-cm-pop{position:absolute;z-index:2147483000;max-width:min(320px,calc(100vw - 24px));max-height:240px;overflow:auto;padding:10px 12px;border-radius:10px;" +
         "background:var(--surface,#fff);color:var(--text,#1d1d1f);border:1px solid color-mix(in srgb,currentColor 18%,transparent);box-shadow:0 8px 28px rgba(0,0,0,.25);font:14px/1.45 system-ui,sans-serif;text-align:left}" +
@@ -176,7 +214,7 @@ internal sealed class PageCommentMarks(bool show)
         "else if(!(e.target.closest&&e.target.closest('.urbe-cm-pop'))){close();e.preventDefault()}e.stopPropagation()}},true);" +
         "addEventListener('keydown',function(e){var m=e.target.closest&&e.target.closest('.urbe-cm');if(m&&(e.key==='Enter'||e.key===' ')){e.preventDefault();open(m)}if(e.key==='Escape')close()},true);" +
         "addEventListener('scroll',function(){if(pop&&pop._for&&!pop._for.isConnected)close()},{passive:true});" +
-        "function raw(n){n.querySelectorAll('.urbe-cm').forEach(function(m){m.replaceWith(d.createTextNode(m.dataset.src||''))})}" +
+        "function raw(n){n.querySelectorAll('.urbe-cm,.urbe-ia').forEach(function(m){m.replaceWith(d.createTextNode(m.dataset.src||''))})}" +
         "addEventListener('focusin',function(e){var n=e.target;if(n&&n.isContentEditable){close();raw(n)}},true);" +
         "addEventListener('focusout',function(e){var n=e.target;if(n&&n.isContentEditable)raw(n)},true)})();";
 }

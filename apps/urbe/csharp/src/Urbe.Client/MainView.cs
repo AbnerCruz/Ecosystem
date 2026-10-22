@@ -69,16 +69,24 @@ public sealed partial class MainView : Grid
         };
         // [[link]] to a note that does not exist yet: created next to the open note, in its folder (DEC-0045, UC-37)
         Editor.CreateLinked = name => CreateNoteAsync(Editor.Current is { } open ? NoteLibrary.FolderOf(open.Path) : "", name, open: false);
-        Explorer.SelectionAction += (action, paths) => _ = SelectionActionAsync(action, paths);
-        Explorer.MoreRequested += () => _ = ShowNotesMenuAsync();
-        Explorer.NewRequested += () => _ = ShowNotesCreateMenuAsync();
+        Explorer.SelectionAction += (action, paths) => { if (!StillReading()) _ = SelectionActionAsync(action, paths); };
+        Explorer.MoreRequested += () => { if (!StillReading()) _ = ShowNotesMenuAsync(); };
+        Explorer.NewRequested += () => { if (!StillReading()) _ = ShowNotesCreateMenuAsync(); };
         Explorer.CreateFirstNoteRequested += () => _ = CreateNoteInNotesAsync();
         Explorer.RestoreRequested += id => _ = RestoreFromTrashAsync(id);
-        Explorer.FileRequested += path => _ = ShowFileAsync(path);
-        Explorer.FileMenuRequested += path => _ = ShowAttachmentActionsAsync(path, withView: true);
-        Explorer.FolderMenuRequested += folder => _ = ShowFolderMenuAsync(folder);
-        Explorer.MoveRequested += async (paths, folder) => { await MoveSelectionToAsync(paths, folder); Explorer.ClearSelection(); };
-        Explorer.FileMoveRequested += (path, folder) => _ = MoveAttachmentAsync(path, folder);
+        Explorer.FileRequested += path => { if (!StillReading()) _ = ShowFileAsync(path); };
+        Explorer.FileMenuRequested += path => { if (!StillReading()) _ = ShowAttachmentActionsAsync(path, withView: true); };
+        Explorer.FolderMenuRequested += folder => { if (!StillReading()) _ = ShowFolderMenuAsync(folder, inExplorer: true); };
+        // UC-83: a row renamed in place goes through the same verified renames as the dialogs
+        Explorer.RenameCommitted += (key, name) =>
+        {
+            if (StillReading()) return;
+            _ = key.StartsWith(NotesExplorer.FolderPrefix, StringComparison.Ordinal)
+                ? RenameFolderAsync(key[NotesExplorer.FolderPrefix.Length..], name)
+                : RenameNoteAsync(key, name);
+        };
+        Explorer.MoveRequested += async (paths, folder) => { if (!StillReading()) await MoveSelectionToAsync(paths, folder); Explorer.ClearSelection(); };
+        Explorer.FileMoveRequested += (path, folder) => { if (!StillReading()) _ = MoveAttachmentAsync(path, folder); };
         Explorer.PurgeRequested += id => _ = PurgeFromTrashAsync(id);
         Explorer.EmptyTrashRequested += () => _ = EmptyTrashAsync();
         Explorer.NoteRequested += OpenFromNotes;
@@ -96,6 +104,7 @@ public sealed partial class MainView : Grid
         Editor.RenameRequested += () => { if (Editor.Current is { } open) _ = RenameNoteAsync(open.Path); };
         Editor.SaveFailed += message => _notice.Show(message, TimeSpan.FromSeconds(8), "Tentar de novo", () => _ = Editor.RetrySavesAsync(), Ui.ToastKind.Warning);
         Editor.AssistantRequested += ToggleAssistant;
+        Editor.AgentAsked += call => _ = AskAgentInNoteAsync(call);
         Editor.Shown += path => NoteOpened?.Invoke(path);   // plugins: "nota:aberta"
 
         Explorer.TitleMark = _vaultDot;
@@ -140,6 +149,7 @@ public sealed partial class MainView : Grid
             Children.Add(overlay);
         }
         Search = new SearchFeature(this, () => _contents.Select(n => new CityNote(n.Key, n.Value)).ToList());
+        Search.UserShortcuts = MyShortcuts;
         RestoreTouchDebug();
         WatchErrors();
         WatchSession();
@@ -204,6 +214,8 @@ public sealed partial class MainView : Grid
         Explorer.Overlaid = true;
         Explorer.ZIndex = 1;
         PlaceSidebar();
+        // a phone's drawer slides in from the left (UX.md P6)
+        if (!SidebarDocked) Ui.UrbeMotion.Enter(Explorer, dx: -24, dy: 0);
     }
 
     /// <summary>Notas goes back under the editor.</summary>
@@ -246,6 +258,8 @@ public sealed partial class MainView : Grid
             if (_vault is not null)
             {
                 Explorer.Opening = Workspace.Opening = true;
+                // UC-78: the tree of the last opening at once, from its names, while the folder is read
+                ShowLastNames();
                 try
                 {
                     var snapshot = await _vault.RestoreAsync();
@@ -259,8 +273,10 @@ public sealed partial class MainView : Grid
         }
         finally
         {
+            LeaveLastNames();
             Explorer.Opening = Workspace.Opening = false;
             MarkReady();   // UC-56: a widget's quick note waits for the first vault
+            OfferFirstRun();   // UC-58: no folder yet, the first time on this device
         }
     }
 
@@ -304,6 +320,8 @@ public sealed partial class MainView : Grid
             ? System.Text.Encoding.UTF8.GetString(file.Bytes.Span).TrimStart('﻿') : null;
         _trash = LegacyTrash.Read(Text(LegacyTrash.Path), Text(LegacyTrash.PathV1), out _trashReadOnly);
         LoadHistory(Text);
+        LoadArea(Text(AreaLayout.Path));
+        _skyText = Text(Constellation.Path);
         Editor.SaveOnClose = !snapshot.IsReadOnly;
         var notes = snapshot.Documents.Where(d => d.Text is not null).Select(d => new CityNote(d.Path, d.Text!)).ToArray();
         // .urbe/notas.json: ids, dates and folders; a vault without it takes them from its 1.8.4 map, read only
@@ -317,6 +335,7 @@ public sealed partial class MainView : Grid
             try { foreach (var path in await _vault.ListFilePathsAsync()) _attachments.Add(path); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { /* the Explorer shows the notes */ }
         }
+        _lastNames = null;   // UC-78: the folder read replaces the names of the last opening
         Open(NoteLibrary.Open(notes.Select(n => (n.Path, n.Content, ids[n.Path])).ToList(), record, snapshot.MapJson, _attachments), notes);
         // the other files only: a note deleted later must not stay behind as a file of its folder
         _attachments.ExceptWith(notes.Select(n => n.Path));
@@ -324,10 +343,13 @@ public sealed partial class MainView : Grid
         // v23Atualizar: the brand is Disco.cidade (the vault folder's name), 'Urbe' without one
         Explorer.HomeTitle = _vault?.VaultName is { Length: > 0 } folder ? folder : "Urbe";
         Workspace.Title = Explorer.HomeTitle;
-        if (restoreSession) RestoreSession();
+        // a note tapped while the folder was read opens now, instead of the last session's
+        if (TakeOpenWhenRead() is { } tapped) OpenFromNotes(new CityNote(tapped, _contents[tapped]));
+        else if (restoreSession) RestoreSession();
         VaultNotices(snapshot);
         TipsLoaded();
         StartNotesSaves(snapshot, record);
+        RememberNames();
         // tutorial.js: workspace:loaded → setTimeout(semear, 300)
     }
 
@@ -499,7 +521,9 @@ public sealed partial class MainView : Grid
         var items = new List<DialogItem>
         {
             new("Personalização", UrbeTheme.Icons.Brush, "Tema, cores, fontes, editor, estilos e plugins", Run: () => { Customize.Open(); return Task.CompletedTask; }),
-            new("Tutorial", UrbeTheme.Icons.Book, "Guia completo de tudo o que o Urbe faz", Run: ShowTutorialMenuAsync)
+            new("Tutorial", UrbeTheme.Icons.Book, "Guia completo de tudo o que o Urbe faz", Run: ShowTutorialMenuAsync),
+            new("Atalhos", UrbeTheme.Icons.List, "Os atalhos de teclado, e os seus em atalhos.json", Run: ShowShortcutsAsync),
+            new("Configuração inicial", UrbeTheme.Icons.Select, "Pasta, aparência e Assistente, passo a passo", Run: () => { ShowFirstRun(); return Task.CompletedTask; })
         };
         if (_vault is not null)
             items.Add(new("Exportar tudo (.zip)", UrbeTheme.Icons.Download, "Cópia de segurança de todas as notas", Run: () => ExportAsync()));
@@ -804,11 +828,13 @@ public sealed partial class MainView : Grid
     /// <summary>Notas shows the notes, every folder (empty ones too, like model.folders) and the other files.</summary>
     private void RefreshNotes()
     {
+        if (RefreshLastNames()) return;
         Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value) { Title = _store?.Get(n.Key)?.Title }), _library?.Folders);
         var files = new HashSet<string>(_attachments, StringComparer.Ordinal);
         files.ExceptWith(_contents.Keys);
         Explorer.SetFiles(files);
         RefreshWorkspace();
+        RememberNames();
     }
 
     /// <summary>A file of the Explorer that is not a note (DEC-0045, UC-38): its preview (abrirEntradaTree → openFilePreview).</summary>
@@ -818,16 +844,18 @@ public sealed partial class MainView : Grid
     /// The "⋯" of a folder in the Explorer (the 1.8.4 showed no options when a folder was selected, DEC-0045, UC-38):
     /// Nova nota aqui, Nova subpasta, Renomear, Mover para (UC-54) and Mover para a lixeira.
     /// </summary>
-    private Task ShowFolderMenuAsync(string folder)
+    private Task ShowFolderMenuAsync(string folder, bool inExplorer = false)
     {
         if (Dialogs.IsOpen) return Task.CompletedTask;
         return Dialogs.MenuAsync(LastName(folder),
         [
             new("Nova nota aqui", UrbeTheme.Icons.File, NotesWhere(folder), Run: () => CreateNoteInNotesAsync(folder: folder)),
             new("Nova subpasta", UrbeTheme.Icons.Folder, "Dentro desta pasta.", Run: () => CreateFolderAsync(folder)),
-            new("Renomear", UrbeTheme.Icons.Pencil, "Muda o nome da pasta no vault.", Run: () => RenameFolderAsync(folder)),
+            new("Renomear", UrbeTheme.Icons.Pencil, "Muda o nome da pasta no vault.",
+                Run: () => inExplorer && Explorer.BeginRename(NotesExplorer.FolderPrefix + folder) ? Task.CompletedTask : RenameFolderAsync(folder)),
             new("Mover para", UrbeTheme.Icons.Move, "A pasta e tudo o que há nela.", Run: () => MoveFolderAsync(folder)),
-            new("Mover para a lixeira", UrbeTheme.Icons.Trash, "A pasta e as notas dela.", Run: () => SelectionActionAsync("delete", [NotesExplorer.FolderPrefix + folder]))
+            new("Mover para a lixeira", UrbeTheme.Icons.Trash, "A pasta e as notas dela.", Run: () => SelectionActionAsync("delete", [NotesExplorer.FolderPrefix + folder])),
+            .. AreaMenuItems(folder)
         ]);
     }
 
@@ -989,6 +1017,7 @@ public sealed partial class MainView : Grid
             new DialogItem("Buscar notas e comandos", UrbeTheme.Icons.SearchUi, "No texto das notas, e tudo o que o Urbe faz", Run: () => { Search.OpenQuickOpen(); return Task.CompletedTask; }),
             new DialogItem("Recentes", UrbeTheme.Icons.Clock, Run: () => { ShowCollection("recent"); return Task.CompletedTask; }),
             new DialogItem("Favoritos", UrbeTheme.Icons.Star, Run: () => { ShowCollection("favorites"); return Task.CompletedTask; }),
+            new DialogItem("Constelação", UrbeTheme.Icons.Star, "As notas como um céu à noite", Run: ShowConstellationAsync),
             new DialogItem("Importar arquivos", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync(Explorer.CurrentFolder)),
             new DialogItem("Exportar tudo (.zip)", UrbeTheme.Icons.Download, "Cópia de segurança de todas as notas", Run: () => ExportAsync()),
             new DialogItem("Lixeira", UrbeTheme.Icons.Trash, Detail: (n > 0 ? n.ToString(System.Globalization.CultureInfo.InvariantCulture) : "Nenhum") + " item(ns)",
