@@ -60,9 +60,10 @@
     {
       "check": "DEVICE: cenários avançados em Preview rápido e isolado",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/laboratorio.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-22 (Issue https://github.com/AbnerCruz/Ecosystem/issues/638); registro em docs/governance/responses/VAL-HO-20261017-lunet-physics-scenarios-1877b0b11c5c.md."
     },
     {
       "check": "CI Lunet2D",
