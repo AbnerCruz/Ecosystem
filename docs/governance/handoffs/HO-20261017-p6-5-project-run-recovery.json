@@ -48,10 +48,10 @@
     {
       "check": "DEVICE — runs sem recibo",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "https://github.com/AbnerCruz/Ecosystem/actions/runs/39067207154",
       "critical": false,
-      "evidence": "Consultar run sem recibo em projeto de teste, dados inválidos/limites, rolagem e navegação durante consulta; confirmar que nenhuma chamada/gasto é iniciada."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-22 (Issue https://github.com/AbnerCruz/Ecosystem/issues/639); registro em docs/governance/responses/VAL-HO-20261017-p6-5-project-run-recovery-afd0a688db65.md."
     },
     {
       "check": "Self-test de governança",
