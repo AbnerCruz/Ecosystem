@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261022-atlas-forge-foundation",
   "category": "HANDOFF",
-  "timestamp": "2026-10-22T19:58:54.284781Z",
+  "timestamp": "2026-10-22T20:00:25.422417Z",
   "agent": {
     "id": "codex-atlas-forge",
     "kind": "ai-agent"
@@ -14,7 +14,7 @@
   "branch": "codex/atlas-forge-foundation",
   "base_commit": "64cb8d121eec5ff834112e3f5c0a712e27868290",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/658",
   "files_changed": [
     ".github/workflows/atlas-forge-checks.yml",
     "ROADMAP.md",
@@ -75,7 +75,8 @@
     "Implementados lugares, snapshots Markdown/SHA-256, mapa filho persistente, JSON v2/fixture sintética v1, IndexedDB verificado, marcos/ramificações e viewer único offline seguro.",
     "Gargalo medido no globo reduzido de mediana 83,3 ms para 4,1 ms com lookup de projeção, sem mudar grade física.",
     "Preparados tutorial, contratos locais de persistência, notas de modelos/limites, roadmap, exemplo gerado, workflow seletivo de verificações e evidências desktop/mobile/offline.",
-    "PROPOSTA: ADR-0035/DEC-0054 para incorporação futura; nenhum apps/atlas-forge, componente global, alteração do Urbe ou release criado."
+    "PROPOSTA: ADR-0035/DEC-0054 para incorporação futura; nenhum apps/atlas-forge, componente global, alteração do Urbe ou release criado.",
+    "Primeiro CI remoto detectou ubuntu-latest em Ubuntu 26.04, incompatível com Playwright 1.56.1. Workflow de proposta fixado em Ubuntu 24.04 suportado; sem alterar workflows de outros componentes."
   ],
   "verification": [
     {
