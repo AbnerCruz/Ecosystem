@@ -187,6 +187,8 @@ public sealed class AiAgentRun
     public IReadOnlyList<string>? Memory { get; init; }
     /// <summary>UC-81: the lines about the agent's call name (<see cref="AgentNames.Naming"/>); null leaves the prompt as the 1.8.4's.</summary>
     public string? Naming { get; init; }
+    /// <summary>How the Urbe wants things made (<see cref="UrbeGuidance"/>); null leaves the prompt as the 1.8.4's.</summary>
+    public string? Guidance { get; init; }
     public int? MaxSteps { get; init; }
     public int? MaxTokens { get; init; }
     public double? Temperature { get; init; }
@@ -217,6 +219,13 @@ public static class AssistantAgent
             "Seu papel: organizar o vault. Encontre notas soltas, duplicadas ou relacionadas; proponha e execute estrutura (pastas, notas-índice com [[links]], tags consistentes). Antes de mover ou renomear mais de 5 notas, apresente o plano em uma lista e pergunte se pode seguir. Nunca exclua sem pedido explícito.")
     ];
 
+    /// <summary>
+    /// UC-77 (observation of 22/10/2026: asked for an apostila, the agent only used Páginas after being told to): what the
+    /// app asks of every agent beyond the 1.8.4's prompt.
+    /// </summary>
+    public const string UrbeGuidance =
+        "- Quando o pedido for uma apostila, um livro, um caderno, um e-book, um manual ou outro material longo para ler ou imprimir, faça uma página no formato livro, sem precisar que o usuário peça: chame page_schema e use write_page com o modelo book (ou book-folder, para transformar uma pasta de notas em livro), em vez de escrever uma nota longa. Use os blocos note/notes para puxar o conteúdo das notas e abra a página com open_note no fim.";
+
     public static AiAgentDef AgentById(string? id, IEnumerable<AiAgentDef>? custom = null) =>
         Agents.Concat(custom ?? []).FirstOrDefault(a => a.Id == id) ?? Agents[0];
 
@@ -245,7 +254,7 @@ public static class AssistantAgent
     /// <summary>toLocaleDateString('pt-BR', {weekday:'long', year:'numeric', month:'long', day:'numeric'}).</summary>
     public static string LongDate(DateTime d) => Weekdays[(int)d.DayOfWeek] + ", " + d.Day + " de " + Months[d.Month - 1] + " de " + d.Year;
 
-    public static string SystemPrompt(AiAgentDef a, string policy, string? vaultName, int noteCount, string? openNote, string? instructions, IReadOnlyList<string>? memory, DateTime now, string? naming = null)
+    public static string SystemPrompt(AiAgentDef a, string policy, string? vaultName, int noteCount, string? openNote, string? instructions, IReadOnlyList<string>? memory, DateTime now, string? naming = null, string? guidance = null)
     {
         var lines = new List<string>
         {
@@ -274,6 +283,7 @@ public static class AssistantAgent
         if (policy == "readonly") lines.AddRange(["", "Modo somente leitura: você não pode alterar notas. Se algo precisar mudar, mostre a sugestão em texto."]);
         if (!string.IsNullOrEmpty(instructions)) lines.AddRange(["", "## Instruções do usuário", LegacyCustomize.JsTrim(instructions)]);
         if (memory is { Count: > 0 }) lines.AddRange(["", "## Memória (fatos que o usuário pediu para lembrar)", string.Join("\n", memory.Select(m => "- " + m))]);
+        if (!string.IsNullOrEmpty(guidance)) lines.AddRange(["", "## No Urbe", guidance]);
         if (!string.IsNullOrEmpty(naming)) lines.AddRange(["", "## Seu nome", naming]);
         return string.Join("\n", lines);
     }
@@ -499,7 +509,7 @@ public static class AssistantAgent
         var schemas = tools.Select(t => t.Schema).ToList();
         var byName = new Dictionary<string, AiTool>();
         foreach (var t in tools) byName[t.Name] = t;
-        var system = SystemPrompt(agent, policy, o.VaultName, o.Host.Documents.List().Count, o.Host.EditorContext().Path, o.Instructions, o.Memory, o.Now ?? DateTime.Now, o.Naming);
+        var system = SystemPrompt(agent, policy, o.VaultName, o.Host.Documents.List().Count, o.Host.EditorContext().Path, o.Instructions, o.Memory, o.Now ?? DateTime.Now, o.Naming, o.Guidance);
         int budget = (int)Math.Max(20000, Math.Min(WorkingChars, Math.Floor(contextTokens * 3.2 * 0.7)));
         int maxSteps = o.MaxSteps is null or 0 ? 30 : o.MaxSteps.Value;
         bool runAllow = false, nudged = false, partialNudged = false;

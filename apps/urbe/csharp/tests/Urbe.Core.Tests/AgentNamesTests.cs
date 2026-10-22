@@ -57,6 +57,11 @@ public sealed class AgentNamesTests
         Assert.StartsWith(plain, prompt);
         Assert.Contains("## Seu nome\nSeu nome é Assistente. Os outros agentes do usuário são: Pesquisador, Escritor, Organizador, Revisor.", prompt);
         Assert.Contains("set_my_name", prompt);
+        // UC-77: the app's guidance (an apostila becomes a page in the book format), after the 1.8.4's prompt
+        var guided = AssistantAgent.SystemPrompt(agent, "ask", "V", 1, null, null, null, new DateTime(2026, 10, 22), guidance: AssistantAgent.UrbeGuidance);
+        Assert.StartsWith(plain, guided);
+        Assert.Contains("## No Urbe\n- Quando o pedido for uma apostila", guided);
+        Assert.Contains("modelo book", guided);
 
         var host = new Host(c, "geral");
         var done = await AgentNames.Tool.Run(new JsonObject { ["name"] = "Jarvis" }, host);

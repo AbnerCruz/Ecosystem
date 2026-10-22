@@ -194,6 +194,7 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains("## Seu nome", model.Sent[0]);
                 Assert.Contains("Seu nome é Assistente.", model.Sent[0]);
                 Assert.Contains("\"set_my_name\"", model.Sent[0]);
+                Assert.Contains("uma apostila, um livro, um caderno", model.Sent[0]);   // UC-77: Páginas without being told
                 Assert.Equal("Jarvis", panel.Config.AgentNames["geral"]);
                 // the chip says the new name, and the next request introduces it
                 Assert.Contains("Jarvis", panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));

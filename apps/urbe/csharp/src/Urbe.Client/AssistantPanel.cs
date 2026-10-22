@@ -358,7 +358,7 @@ public sealed partial class AssistantPanel : Border
             {
                 Host = new Host(this, documents, knowledge, agent.Id), Provider = p, Model = ModelId(), Messages = conv.Messages,
                 // UC-81: the agent introduces itself by its call name and may take a new one the person agrees to
-                Agent = AgentNames.Named(agent, _cfg), Naming = AgentNames.Naming(agent, _cfg), Policy = conv.Policy, Cancel = cts.Token, MarkAiText = true,
+                Agent = AgentNames.Named(agent, _cfg), Naming = AgentNames.Naming(agent, _cfg), Guidance = AssistantAgent.UrbeGuidance, Policy = conv.Policy, Cancel = cts.Token, MarkAiText = true,
                 MaxSteps = _cfg.MaxSteps, ContextTokens = meta?.Context ?? 128000, Instructions = WithUserAgents(_cfg.Instructions, documents), Memory = MemoryList(), VaultName = _app.VaultName,
                 Stream = Providers.StreamAsync, Approve = ApproveAsync, OnUpdate = OnUpdate, Tools = Tools
             });
