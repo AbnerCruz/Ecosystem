@@ -170,6 +170,38 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     public Task CreateTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
         WriteTextFileAsync(path, content, create: true, cancellationToken);
 
+    public async Task CreateBinaryFileAsync(string path, byte[] bytes, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(bytes);
+        IUrbeVaultStorage.EnsureWritableBinaryPath(path);
+        if (bytes.LongLength > MaxFileBytes) throw new InvalidDataException("O arquivo passa do limite de 32 MB: " + path);
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            if (_baseline is null) throw new InvalidOperationException("Reabra a pasta do vault.");
+            await Task.Run(() =>
+            {
+                // a folder on the way that exists as a file is refused (EnsureDirectory would walk into it)
+                var parent = Root(tree);
+                foreach (var segment in Segments(path)[..^1])
+                {
+                    var child = Children(tree, parent).FirstOrDefault(x => string.Equals(x.Name, segment, StringComparison.Ordinal));
+                    if (child is null) break;
+                    if (child.MimeType != DirectoryMime) throw new IOException("Já existe um arquivo com esse nome: " + path);
+                    parent = DocumentUri(tree, child.DocumentId);
+                }
+                if (FindDocument(tree, path) is not null) throw new IOException("Já existe um arquivo com esse nome: " + path);
+                cancellationToken.ThrowIfCancellationRequested();
+                WriteVerified(tree, path, bytes);
+                // the provider keeps the name asked (never "foto (1).png") and the bytes read back are the ones written
+                if (FindDocument(tree, path) is not { } made || !ReadBytes(made).AsSpan().SequenceEqual(bytes))
+                    throw new IOException("O arquivo criado não passou na verificação: " + path);
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     public Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
         WriteTextFileAsync(path, content, create: false, cancellationToken);
 

@@ -17,6 +17,13 @@ public interface IUrbeVaultStorage
     /// exist yet, with the same checks; folders on its path are created when missing.</summary>
     Task CreateTextFileAsync(string path, string content, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// UC-63: creates a file that is not text (see <see cref="EnsureWritableBinaryPath"/>) with exactly these bytes,
+    /// never over an existing file, and reads it back. The text files the vault verifies are not touched.
+    /// </summary>
+    Task CreateBinaryFileAsync(string path, byte[] bytes, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento não grava arquivos que não são texto.");
+
     /// <summary>Rewrites ONE existing user text file of any editable text type (e.g. tema.json).</summary>
     Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default);
 
@@ -427,6 +434,25 @@ public interface IUrbeVaultStorage
         if (!WritableExtensions.Contains(Path.GetExtension(path)))
             throw new NotSupportedException("Tipo de arquivo que o Urbe não grava: " + path);
     }
+
+    /// <summary>
+    /// The files that are not text Urbe may create (UC-63: an image the Assistente made; an attachment imported):
+    /// pictures, PDFs, audio and video, inside the vault, never in .urbe/ or any hidden folder.
+    /// </summary>
+    static void EnsureWritableBinaryPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || path.StartsWith('/') || path.Contains('\\') || path.Contains(':'))
+            throw new InvalidDataException("Caminho inválido no vault: " + path);
+        if (path.Split('/').Any(s => s.Length == 0 || s is "." or ".." || s.StartsWith('.') || s.EndsWith(' ') || s.EndsWith('.')))
+            throw new InvalidOperationException("Caminho interno ou inseguro no vault: " + path);
+        if (!BinaryExtensions.Contains(Path.GetExtension(path)))
+            throw new NotSupportedException("Tipo de arquivo que o Urbe não grava: " + path);
+    }
+
+    static readonly HashSet<string> BinaryExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".pdf", ".mp3", ".m4a", ".ogg", ".oga", ".wav", ".flac", ".mp4", ".webm", ".mov"
+    };
 
     static readonly HashSet<string> WritableExtensions = new(StringComparer.OrdinalIgnoreCase)
     {

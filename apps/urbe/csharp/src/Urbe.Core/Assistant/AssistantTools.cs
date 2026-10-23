@@ -81,6 +81,8 @@ public interface IAssistantHost
     IAssistantPlugins? Plugins => null;
     /// <summary>UC-81: the call name of the run's agent, when the app keeps them.</summary>
     IAssistantNames? Names => null;
+    /// <summary>UC-63: drawing pictures with the run's provider and keeping them in the vault, when the app can.</summary>
+    IAssistantImages? Images => null;
 }
 
 /// <summary>A tool the agents use (tools.js def): name, description, JSON Schema, access, label, preview and run.</summary>

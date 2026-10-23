@@ -1,0 +1,104 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-imagens-e-anexos",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T00:58:40Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-63",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "2800f6ea",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantImageTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantProviders.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Import.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantImageToolsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultStorageTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ImportAttachmentsUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261023-urbe-imagens-e-anexos.json"
+  ],
+  "work_completed": [
+    "UC-63: generate_image (OpenAI images API, base64) com aprovação, guardando em Imagens/ e opcionalmente na nota; oferecida só com provedor que gera imagens.",
+    "Adaptadores de vault (Windows e Android): CreateBinaryFileAsync — só arquivo novo de imagem/PDF/áudio/vídeo, fora de .urbe e de pastas ocultas, lido de volta byte a byte.",
+    "Importação de documentos traz os anexos junto, sem gravar por cima de arquivo existente."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (674) e Urbe.Client.Tests (215)",
+      "result": "passed",
+      "evidence": "AssistantImageToolsTests (5), CreateBinaryFileWritesNewBytesNeverOverAFileAndKeepsTheNotesWritable, Import_BringsTheAttachmentsAlongAndKeepsTheOnesAlreadyThere."
+    },
+    {
+      "kind": "automated",
+      "check": "Build do Android no CI (o workload Android não existe neste contêiner)",
+      "result": "pending",
+      "evidence": "csharp-client-native (android) no PR."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, pedir uma imagem ao Assistente com OpenAI ou Gemini e importar uma pasta com fotos",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs"
+    }
+  ],
+  "known_issues": [
+    "AndroidVaultStorage.CreateBinaryFileAsync não foi compilado localmente (sem workload Android); o CI compila."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Lixeira em lote numa gravação só e verificação só dos arquivos tocados (UC-60/UC-65), em PR próprio."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-016",
+      "evidence": "generate_image tem acesso write (aprovação) e usa só o provedor escolhido pela pessoa; o adaptador recusa caminhos internos, ocultos e fora do vault."
+    },
+    {
+      "id": "NN-001",
+      "evidence": "As notas continuam verificadas pelo adaptador como antes; o arquivo binário novo nunca substitui outro."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Provedor real e aparelho pendentes; UC-63 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "binary-vault-write",
+      "status": "product-specific",
+      "rationale": "Adaptador de vault do Urbe."
+    },
+    {
+      "subject": "image-generation",
+      "status": "possible-candidate",
+      "rationale": "Outro Product com IA poderia gerar imagens; sem segundo consumidor real, fica no Urbe (ADR-0033)."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Muda os adaptadores de vault (*Storage*, *Vault*): nova operação de gravação de arquivo binário. Espera a autorização do proprietário."
+  }
+}

@@ -432,4 +432,27 @@ public sealed class FolderVaultStorageTests : IDisposable
         await Assert.ThrowsAsync<InvalidOperationException>(() => storage.SaveNotesRecordAsync(Record2, Ct));
         Assert.False(File.Exists(Path.Combine(Vault, ".urbe", "notas.json")));
     }
+
+    [Fact]
+    public async Task CreateBinaryFileWritesNewBytesNeverOverAFileAndKeepsTheNotesWritable()
+    {
+        // UC-63: an image the Assistente made, in a new folder; the notes stay writable afterwards
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        byte[] png = [0x89, 0x50, 0x4e, 0x47, 0, 1, 2, 255];
+        await storage.CreateBinaryFileAsync("Imagens/gato.png", png, Ct);
+        Assert.Equal(png, File.ReadAllBytes(Path.Combine(Vault, "Imagens", "gato.png")));
+        await storage.SaveExistingNoteAsync("Bairro/Um.md", "# Um\n\n![[Imagens/gato.png]]\n", Ct);
+        Assert.Equal("# Um\n\n![[Imagens/gato.png]]\n", File.ReadAllText(Path.Combine(Vault, "Bairro", "Um.md")));
+
+        // never over an existing file, never text, never inside .urbe or out of the vault, never through a file as a folder
+        await Assert.ThrowsAsync<IOException>(() => storage.CreateBinaryFileAsync("foto.png", [9], Ct));
+        Assert.Equal(new byte[] { 1, 2, 3 }, File.ReadAllBytes(Path.Combine(Vault, "foto.png")));
+        await Assert.ThrowsAsync<NotSupportedException>(() => storage.CreateBinaryFileAsync("Nota.md", [9], Ct));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => storage.CreateBinaryFileAsync(".urbe/x.png", [9], Ct));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => storage.CreateBinaryFileAsync("../fora.png", [9], Ct));
+        await Assert.ThrowsAsync<IOException>(() => storage.CreateBinaryFileAsync("Comece.md/x.png", [9], Ct));
+        Assert.False(File.Exists(Path.Combine(_dir, "fora.png")));
+        Assert.False(Directory.Exists(Path.Combine(Vault, ".urbe")) && File.Exists(Path.Combine(Vault, ".urbe", "x.png")));
+    }
 }

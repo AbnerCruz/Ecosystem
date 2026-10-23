@@ -254,6 +254,8 @@ public static partial class AppDocs
 
         O texto escrito pelo Assistente ganha no fim uma marca pequena com o nome do modelo, como `{ia:"modelo"}`, que aparece em verde no editor.
 
+        Com **OpenAI** ou **Google Gemini** (ou um servidor compatível que gere imagens), o Assistente também **gera imagens**: peça "faça um retrato da Lia em aquarela e ponha na nota dela". Ele mostra o pedido para você aprovar, guarda a imagem na pasta **Imagens** (sem nunca gravar por cima de um arquivo) e, se você quiser, coloca `![[Imagens/…]]` na nota.
+
         ## Ajustar
 
         - **Instruções para todos os agentes**, **Memória** (fatos para lembrar), **Agentes personalizados** e **Limite de passos por resposta**.
@@ -316,7 +318,7 @@ public static partial class AppDocs
 
         ## Importar e restaurar
 
-        **Configurações → Importar arquivos** (ou **⋯ → Importar arquivos** no Explorer) traz **arquivos** ou uma **pasta inteira**: notas, pastas ou `.zip`. O Urbe confere os arquivos antes. Se o `.zip` for um export ou backup do Urbe, ele oferece restaurar; o que for substituído é guardado antes em backup.
+        **Configurações → Importar arquivos** (ou **⋯ → Importar arquivos** no Explorer) traz **arquivos** ou uma **pasta inteira**: notas, pastas ou `.zip`. Imagens, PDFs, áudios e vídeos vêm junto com as notas (um arquivo que já existe na pasta fica como está). O Urbe confere os arquivos antes. Se o `.zip` for um export ou backup do Urbe, ele oferece restaurar; o que for substituído é guardado antes em backup.
 
         ## Backups automáticos
 
