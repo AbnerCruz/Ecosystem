@@ -41,9 +41,10 @@
     {
       "kind": "human",
       "check": "No aparelho, chamar o Assistente por um nome novo, aceitar e ver o nome no chip",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/urbe/csharp/src/Urbe.Core/Assistant/AgentNames.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Core/Assistant/AgentNames.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-23 (Issue https://github.com/AbnerCruz/Ecosystem/issues/677); registro em docs/governance/responses/VAL-HO-20261022-urbe-agentes-com-nome-c05051ecf72b.md."
     }
   ],
   "known_issues": [],
