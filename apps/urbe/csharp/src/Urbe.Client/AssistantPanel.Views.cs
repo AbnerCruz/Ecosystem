@@ -495,6 +495,8 @@ public sealed partial class AssistantPanel
                 c.Providers.RemoveAll(x => x.Id == p.Id);
                 c.ModelCache.Remove(p.Id);
                 if (c.ProviderId == p.Id) { c.ProviderId = c.Providers.FirstOrDefault()?.Id; c.Model = ""; }
+                if (c.ImageProviderId == p.Id) { c.ImageProviderId = null; c.ImageModel = ""; }
+                foreach (var id in c.AgentModels.Where(x => x.Value.ProviderId == p.Id).Select(x => x.Key).ToList()) c.AgentModels.Remove(id);
                 SaveConfig();
                 ShowSettings();
                 RenderChrome();
@@ -504,6 +506,14 @@ public sealed partial class AssistantPanel
         }
         var add = TextButton("+ Adicionar provedor", () => _ = AddProviderAsync());
         body.Children.Add(Section("Provedores de modelo", Hint("As chaves ficam salvas só neste aparelho e vão direto para o provedor."), provs, add));
+
+        var imageProvider = c.Providers.FirstOrDefault(p => p.Id == c.ImageProviderId);
+        var imageChoice = imageProvider is null ? "Automático (provedor de imagens disponível)"
+            : (imageProvider.Name ?? imageProvider.Id) + " · " + (c.ImageModel.Length > 0 ? c.ImageModel : AssistantProviders.ImageModel(imageProvider.Preset) ?? "Escolher modelo");
+        body.Children.Add(Section("Geração de imagens",
+            Hint("Independente do modelo de conversa. Selecione um provedor salvo e um modelo de imagem; use Automático para manter o comportamento anterior."),
+            Label(imageChoice, 13, UrbeTheme.Text, FontWeight.SemiBold),
+            TextButton("Selecionar provedor e modelo de imagem", () => _ = PickConfiguredModelAsync(null))));
 
         var instr = new TextBox { Text = c.Instructions, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 90, PlaceholderText = "Ex.: escreva em português do Brasil, frases curtas; use a pasta Diário para registros do dia." };
         instr.LostFocus += (_, _) => { c.Instructions = instr.Text ?? ""; SaveConfig(); };
@@ -530,9 +540,11 @@ public sealed partial class AssistantPanel
         foreach (var a in AgentNames.All(c))
         {
             var rename = TextButton("Renomear", () => _ = RenameAgentAsync(a));
+            var configure = TextButton("Configurar", () => EditAgentProfile(a));
             var row = new DockPanel();
-            DockPanel.SetDock(rename, Dock.Right);
-            row.Children.Add(rename);
+            var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { rename, configure } };
+            DockPanel.SetDock(actions, Dock.Right);
+            row.Children.Add(actions);
             var call = AgentNames.CallName(a, c);
             row.Children.Add(new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { Label(call, 14, UrbeTheme.Text, FontWeight.SemiBold), Hint(call == a.Name ? "Nome padrão" : a.Name) } });
             names.Children.Add(row);
@@ -545,8 +557,15 @@ public sealed partial class AssistantPanel
         {
             var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
             actions.Children.Add(TextButton("Editar", () => EditAgent(a)));
+            actions.Children.Add(TextButton("Modelo e blocos", () => EditAgentProfile(a)));
             var rm = IconButton(UrbeTheme.Icons.Trash, "Remover");
-            rm.Click += (_, _) => { c.CustomAgents.RemoveAll(x => x.Id == a.Id); SaveConfig(); ShowSettings(); };
+            rm.Click += (_, _) =>
+            {
+                c.CustomAgents.RemoveAll(x => x.Id == a.Id);
+                c.AgentModels.Remove(a.Id);
+                c.AgentInstructionBlocks.Remove(a.Id);
+                SaveConfig(); ShowSettings();
+            };
             actions.Children.Add(rm);
             custom.Children.Add(Card(new StackPanel
             {
@@ -690,11 +709,176 @@ public sealed partial class AssistantPanel
             int at = _cfg.CustomAgents.FindIndex(x => x.Id == made.Id);
             if (at >= 0) _cfg.CustomAgents[at] = made; else _cfg.CustomAgents.Add(made);
             SaveConfig();
-            ShowSettings();
+            EditAgentProfile(made);
         }, primary: true);
         var cancel = TextButton("Cancelar", () => ShowSettings());
         cancel.Margin = new Thickness(0, 0, 8, 0);
         body.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { cancel, save } });
+    }
+
+
+    /// <summary>Provider/model picker for images and for any agent. Never changes the conversation's model.</summary>
+    private async Task PickConfiguredModelAsync(string? agentId)
+    {
+        if (_cfg.Providers.Count == 0) { ShowSettings("openrouter"); return; }
+        bool image = agentId is null;
+        var agent = image ? null : AssistantAgent.AgentById(agentId, _cfg.CustomAgents);
+        void Back()
+        {
+            if (agent is null) ShowSettings();
+            else EditAgentProfile(agent);
+        }
+        var choice = image
+            ? new AiModelChoice(_cfg.ImageProviderId ?? "", _cfg.ImageModel)
+            : _cfg.AgentModels.GetValueOrDefault(agentId!) ?? new AiModelChoice("", "");
+        var providers = _cfg.Providers.Where(p => !image || AssistantProviders.Resolve(p).Kind == "openai" &&
+            p.Preset is "openrouter" or "openai" or "gemini" or "custom").ToList();
+        if (providers.Count == 0) { ShowSettings(); return; }
+        var selected = providers.FirstOrDefault(p => p.Id == choice.ProviderId) ?? providers[0];
+        var body = OpenView(image ? "Modelo de imagem" : "Modelo de " + AgentNames.CallName(agent!, _cfg), Back);
+        body.Children.Add(Hint(image
+            ? "O modelo de imagem funciona em separado do chat. A lista é exclusiva de imagens; você também pode informar um ID compatível."
+            : "Este modelo será usado somente pelo agente escolhido. Sem seleção, ele herda o modelo do Assistente."));
+        var auto = TextButton(image ? "Usar escolha automática" : "Herdar modelo do Assistente", () =>
+        {
+            if (image) { _cfg.ImageProviderId = null; _cfg.ImageModel = ""; }
+            else _cfg.AgentModels.Remove(agentId!);
+            SaveConfig(); Back(); RenderAll();
+        });
+        body.Children.Add(auto);
+        var tabs = new WrapPanel();
+        var search = new TextBox { PlaceholderText = "Buscar modelo" };
+        var manual = new TextBox { PlaceholderText = "Ou informe o ID exato do modelo" };
+        var list = new StackPanel { Spacing = 7 };
+        IReadOnlyList<AiModelInfo> models = [];
+        string? loadError = null;
+        void Choose(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id)) return;
+            if (image) { _cfg.ImageProviderId = selected.Id; _cfg.ImageModel = id.Trim(); }
+            else _cfg.AgentModels[agentId!] = new AiModelChoice(selected.Id, id.Trim());
+            SaveConfig(); Back(); RenderAll();
+        }
+        var use = TextButton("Usar ID", () => Choose(manual.Text ?? ""), primary: true);
+        var manualRow = new DockPanel { Margin = new Thickness(0, 4, 0, 4) };
+        DockPanel.SetDock(use, Dock.Right);
+        manualRow.Children.Add(use);
+        manualRow.Children.Add(manual);
+        body.Children.Add(tabs);
+        body.Children.Add(search);
+        body.Children.Add(manualRow);
+        body.Children.Add(list);
+        void Paint()
+        {
+            list.Children.Clear();
+            if (loadError is not null) list.Children.Add(Wrap(loadError, 12, "#c0504d"));
+            var query = (search.Text ?? "").Trim();
+            var filtered = models.Where(m => query.Length == 0 || (m.Id + " " + m.Name).Contains(query, StringComparison.OrdinalIgnoreCase))
+                .Take(150).ToList();
+            if (filtered.Count == 0) list.Children.Add(Hint(image ? "Nenhum modelo de imagem encontrado. Informe o ID manualmente." : "Nenhum modelo encontrado."));
+            foreach (var m in filtered)
+            {
+                string id = m.Id;
+                var chosen = choice.ProviderId == selected.Id && choice.Model == id;
+                var button = new Button
+                {
+                    HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left,
+                    Padding = new Thickness(12, 8), CornerRadius = new CornerRadius(12),
+                    Background = UrbeTheme.Brush(chosen ? UrbeTheme.Accent : UrbeTheme.Surface, chosen ? .14 : 1),
+                    BorderThickness = new Thickness(0),
+                    Content = new StackPanel { Spacing = 2, Children = { Label(m.Name, 14, UrbeTheme.Text, FontWeight.SemiBold), Wrap(id, 12, UrbeTheme.Text3) } }
+                };
+                button.Click += (_, _) => Choose(id);
+                list.Children.Add(button);
+            }
+        }
+        async Task Load()
+        {
+            list.Children.Clear();
+            list.Children.Add(Hint("Carregando modelos…"));
+            loadError = null;
+            try
+            {
+                if (image) models = await Providers.ListImageModelsAsync(selected);
+                else if (_cfg.ModelCache.TryGetValue(selected.Id, out var cached) && Now() - cached.At < 6 * 3600_000) models = cached.List;
+                else
+                {
+                    models = await Providers.ListModelsAsync(selected);
+                    _cfg.ModelCache[selected.Id] = new AiModelCache(Now(), models);
+                    SaveConfig();
+                }
+            }
+            catch (Exception e)
+            {
+                models = [];
+                loadError = e.Message + " Você ainda pode informar um ID manualmente.";
+            }
+            if (image && models.Count == 0 && AssistantProviders.ImageModel(selected.Preset) is { Length: > 0 } defaultModel)
+                models = [new AiModelInfo(defaultModel, defaultModel + " (padrão)", null, null, null)];
+            Paint();
+        }
+        void Tabs()
+        {
+            tabs.Children.Clear();
+            foreach (var p in providers)
+            {
+                var provider = p;
+                var button = TextButton(provider.Name ?? provider.Id, () => { selected = provider; Tabs(); _ = Load(); }, primary: provider.Id == selected.Id);
+                button.Margin = new Thickness(0, 0, 6, 6);
+                tabs.Children.Add(button);
+            }
+        }
+        search.TextChanged += (_, _) => Paint();
+        Tabs();
+        await Load();
+    }
+
+    /// <summary>Edit ordered instruction blocks and the optional provider/model override for built-in or custom agents.</summary>
+    private void EditAgentProfile(AiAgentDef agent)
+    {
+        var body = OpenView("Configurar " + AgentNames.CallName(agent, _cfg), () => ShowSettings());
+        body.Children.Add(Hint(agent.Description.Length > 0 ? agent.Description : "Agente personalizado."));
+        var selected = _cfg.AgentModels.GetValueOrDefault(agent.Id);
+        var provider = selected is null ? null : _cfg.Providers.FirstOrDefault(p => p.Id == selected.ProviderId);
+        var choice = provider is null ? "Padrão do Assistente (herdado)" : (provider.Name ?? provider.Id) + " · " + selected!.Model;
+        var blocksPanel = new StackPanel { Spacing = 10 };
+        var rows = new List<(TextBox Title, TextBox Body, Control Card)>();
+
+        void AddBlock(AiInstructionBlock block)
+        {
+            var title = new TextBox { Text = block.Title, PlaceholderText = "Nome do bloco, ex.: Estilo de escrita" };
+            var details = new TextBox { Text = block.Content, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
+                MinHeight = 90, PlaceholderText = "Instruções detalhadas para este aspecto do trabalho." };
+            var field = new StackPanel { Spacing = 6 };
+            var card = Card(field);
+            var rm = TextButton("Remover bloco", () =>
+            {
+                rows.RemoveAll(r => ReferenceEquals(r.Card, card));
+                blocksPanel.Children.Remove(card);
+            });
+            field.Children.Add(title);
+            field.Children.Add(details);
+            field.Children.Add(rm);
+            rows.Add((title, details, card));
+            blocksPanel.Children.Add(card);
+        }
+        void SaveBlocks()
+        {
+            var values = rows.Select(r => new AiInstructionBlock((r.Title.Text ?? "").Trim(), (r.Body.Text ?? "").Trim()))
+                .Where(b => b.Content.Length > 0).ToList();
+            if (values.Count == 0) _cfg.AgentInstructionBlocks.Remove(agent.Id);
+            else _cfg.AgentInstructionBlocks[agent.Id] = values;
+            SaveConfig();
+        }
+        body.Children.Add(Section("Modelo de conversa", Hint("Opcional: se não escolher, este agente continua usando o modelo padrão."),
+            Label(choice, 13, UrbeTheme.Text, FontWeight.SemiBold),
+            TextButton("Selecionar provedor e modelo", () => { SaveBlocks(); _ = PickConfiguredModelAsync(agent.Id); })));
+        body.Children.Add(Section("Instruções por blocos", Hint("Você pode criar vários blocos. Todos são usados em conjunto com as instruções gerais, mantendo as permissões do agente."),
+            blocksPanel, TextButton("+ Adicionar bloco", () => AddBlock(new AiInstructionBlock("", "")))));
+        if (_cfg.AgentInstructionBlocks.TryGetValue(agent.Id, out var existing))
+            foreach (var block in existing) AddBlock(block);
+        var save = TextButton("Salvar instruções", () => { SaveBlocks(); ShowSettings(); }, primary: true);
+        body.Children.Add(save);
     }
 
     /// <summary>pickModel(): the provider's models (cached 6 h), search, price, the "sem ferramentas" warning, and a typed id.</summary>
@@ -703,6 +887,7 @@ public sealed partial class AssistantPanel
         if (_cfg.Providers.Count == 0) { ShowSettings("openrouter"); return; }
         var prov = Provider()!;
         var body = OpenView("Modelo");
+        body.Children.Add(Hint("Modelo padrão desta conversa; cada agente pode ter um modelo próprio em Configurações → Nomes dos agentes → Configurar."));
         var tabs = new WrapPanel();
         var search = new TextBox { PlaceholderText = "Buscar modelo (ex.: claude, gpt, gemini)" };
         var list = new StackPanel { Spacing = 6 };
