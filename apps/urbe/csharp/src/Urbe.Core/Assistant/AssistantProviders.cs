@@ -591,7 +591,7 @@ public sealed class AssistantProviders
         var p = Resolve(cfg);
         if (p.Kind != "openai") throw new AiProviderException("Este provedor não tem API de imagens compatível.");
         if (p.Preset == "gemini")
-            return ["gemini-2.5-flash-image", "gemini-3-pro-image-preview"]
+            return new[] { "gemini-2.5-flash-image", "gemini-3-pro-image-preview" }
                 .Select(m => new AiModelInfo(m, m, null, null, null)).ToList();
         if (p.Preset == "openrouter")
         {
