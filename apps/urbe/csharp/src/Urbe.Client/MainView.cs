@@ -831,10 +831,37 @@ public sealed partial class MainView : Grid
         _trash.Trash(_store, doc.Id, now, "explorer.delete");
         _contents.Remove(path);
         if (editing) Editor.IsVisible = false;
-        await CaptureRemovedAsync(doc);   // document:removed → history.captureRemoved
         NotesChanged();
+        if (_batch > 0)
+        {
+            // many at once (UC-65): the history is written and the tree redrawn once, at the end of the batch
+            CaptureRemoved(doc);
+            if (++_batchDone % 10 == 0 && _batchTotal > 10) ShowLifeNotice($"Movendo para a lixeira… {_batchDone} de {_batchTotal}");
+            return true;
+        }
+        await CaptureRemovedAsync(doc);   // document:removed → history.captureRemoved
         RefreshNotes();
         return true;
+    }
+
+    private int _batch, _batchDone, _batchTotal;
+
+    /// <summary>
+    /// UC-65: many notes to the trash at once (a folder, a selection). Each note is still trashed and verified on its
+    /// own, first in the trash and then off the disk; only the history's write and the tree's redraw wait for the end.
+    /// </summary>
+    private async Task<T> InBatchAsync<T>(int total, Func<Task<T>> work)
+    {
+        if (_batch++ == 0) { _batchDone = 0; _batchTotal = total; }
+        try { return await work(); }
+        finally
+        {
+            if (--_batch == 0)
+            {
+                await SaveHistoryAsync();
+                RefreshNotes();
+            }
+        }
     }
 
     /// <summary>The vault's files that are not notes (images, PDFs…), by path, for the Explorer.</summary>
@@ -1012,9 +1039,13 @@ public sealed partial class MainView : Grid
             message = notes.Count == 1 ? "A nota poderá ser restaurada pela Lixeira." : notes.Count + " notas poderão ser restauradas pela Lixeira.";
         }
         if (!await Dialogs.ConfirmAsync(title, message, folders.Count > 0 ? "Excluir" : "Mover para a lixeira", danger: true)) return;
-        foreach (var f in folders)
-            if (!await DeleteFolderAsync(f)) break;
-        foreach (var p in notes) await DeleteNoteAsync(p, confirmed: true);
+        await InBatchAsync(notes.Count + folders.Sum(f => NoteLibrary.FolderDocuments(_store!, f).Count), async () =>
+        {
+            foreach (var f in folders)
+                if (!await DeleteFolderAsync(f)) break;
+            foreach (var p in notes) await DeleteNoteAsync(p, confirmed: true);
+            return true;
+        });
         Explorer.ClearSelection();
     }
 
