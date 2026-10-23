@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261022-atlas-forge-cartographic-quality",
   "category": "HANDOFF",
-  "timestamp": "2026-10-23T00:05:06.394172Z",
+  "timestamp": "2026-10-23T00:12:16.138068Z",
   "agent": {
     "id": "codex-atlas-forge",
     "kind": "ai-agent"
@@ -47,7 +47,8 @@
     "Resolução nativa selecionável até 1.440 × 720, zoom ancorado 0,5–128×, gesto de dois dedos, grade adaptativa, curvas de nível derivadas e escala com limite físico visível. Globo projeta viewport HiDPI sem textura global limitada a 640 pixels.",
     "Refinamento em Worker mantém pegadas autorais, lugares e notas; marco conserva definição/estado/journal anteriores. Snapshots validados pela própria grade; preflight recusa resultado ou marco maior que 24 MiB antes do commit.",
     "Versão local 0.3.0-alpha.1, documentação reconciliada. Sem release, novo componente, serviço ou dependência de outro aplicativo.",
-    "PR #661 aberto para integração governada; CI remoto verifica o estado combinado."
+    "PR #661 aberto para integração governada; CI remoto verifica o estado combinado.",
+    "Raio mínimo de pincel acompanha a grade ativa/restaurada para evitar gestos menores que uma amostra; check completo 20/14 aprovado após o ajuste."
   ],
   "verification": [
     {

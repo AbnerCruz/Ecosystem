@@ -92,6 +92,12 @@ function syncConfig() {
   resolution.value = d.grid.width;
   resolution.disabled = true;
   $("refine-terrain").hidden = d.grid.width >= 1440;
+  const brushSize = $("brush-size");
+  const minimum = 360 / d.grid.width;
+  brushSize.min = minimum;
+  brushSize.max = Math.max(18, minimum);
+  brushSize.value = Math.max(minimum, Number(brushSize.value));
+  $("brush-radius").value = brushSize.value + "°";
 }
 function autosave() {
   clearTimeout(saveTimer);
