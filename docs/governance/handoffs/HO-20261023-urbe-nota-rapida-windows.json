@@ -1,0 +1,86 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-nota-rapida-windows",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T10:40:58Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-66",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "3b2654e2",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Desktop/DesktopQuickNote.cs",
+    "apps/urbe/csharp/src/Urbe.Desktop/Program.cs",
+    "apps/urbe/csharp/src/Urbe.Client/QuickVoiceNotes.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/QuickVoiceNoteUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261023-urbe-nota-rapida-windows.json",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Constellation.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ConnectionsUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PerformanceBudgetTests.cs"
+  ],
+  "work_completed": [
+    "UC-56/UC-66 no Windows: atalho global Ctrl+Alt+N (RegisterHotKey, liberado ao fechar) e ícone na bandeja (Nota rápida, Abrir o Urbe, Sair) trazem a janela e abrem a nota rápida.",
+    "A nota rápida no Windows é uma caixa onde o ditado do sistema (Win+H) escreve; o app não grava áudio (NN-016) e salva em Notas rápidas pela gravação verificada.",
+    "ROADMAP UC-20 e UC-55 atualizados com o que já estava feito (tema; barra perto do teclado).",
+    "Teste de Conexões: a espera pelo céu passou a esperar de verdade (a gravação de .urbe/constelacao.json é assíncrona); Ver na Constelação garante o painel fechado.",
+    "UC-60/UC-65: PerformanceBudgetTests com limites num vault de 2.000 notas (ler, abrir, índice, ligações, Constelação, plano de gravação, render de 50 KB, importar 500 notas, nota rápida), sempre na suíte."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (QuickNote_OnTheComputerIsWrittenInABoxWhereTheSystemDictates); dotnet build Urbe.Desktop; dotnet test Urbe.Core.Tests (693) e Urbe.Client.Tests (219)",
+      "result": "passed",
+      "evidence": "A caixa mostra a dica do Win+H, Salvar grava a linha no arquivo do mês, Cancelar não grava nada."
+    },
+    {
+      "kind": "human",
+      "check": "No Windows, apertar Ctrl+Alt+N com outro programa em foco, usar o ícone da bandeja e ditar com Win+H na caixa",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Desktop/DesktopQuickNote.cs"
+    }
+  ],
+  "known_issues": [
+    "O atalho e a bandeja não foram executados num Windows real neste ambiente (só compilados)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "UC-62: imagem tocada na prévia abre a escolha de imagem; itens finais do ROADMAP (UC-22, 24, 26–32)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-016",
+      "evidence": "Sem gravação de áudio no Windows: o ditado é do sistema, na caixa de texto."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação no Windows pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "desktop-quick-note",
+      "status": "product-specific",
+      "rationale": "Nota rápida do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Feature autorizada do ROADMAP (UC-66); nada de vault, csproj ou workflow."
+  }
+}

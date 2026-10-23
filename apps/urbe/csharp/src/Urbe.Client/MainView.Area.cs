@@ -207,6 +207,7 @@ public sealed partial class MainView
             new("Renomear", UrbeTheme.Icons.Pencil, "Muda o nome do arquivo no vault.", Run: () => RenameNoteAsync(path)),
             new("Mover para", UrbeTheme.Icons.Move, "Outro projeto ou pasta.", Run: () => SelectionActionAsync("move", [path])),
             new("Duplicar", UrbeTheme.Icons.Copy, "Uma cópia ao lado.", Run: () => SelectionActionAsync("duplicate", [path])),
+            new("Criar página daqui", UrbeTheme.Icons.Layers, "Uma página com esta nota.", Run: () => CreatePageFromAsync(notePath: path)),
             favorite
                 ? new("Tirar dos favoritos", UrbeTheme.Icons.Star, null, Run: () => { ExplorerState.Unfavorite(doc.Id); RefreshNotes(); return Task.CompletedTask; })
                 : new("Favoritar", UrbeTheme.Icons.Star, "Aparece em Favoritos.", Run: () => { ExplorerState.Favorite(doc.Id); RefreshNotes(); return Task.CompletedTask; }),
