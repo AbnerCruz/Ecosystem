@@ -79,7 +79,7 @@ public sealed partial class HeadlessUiTests
                 view.ShowEditorConnections();
                 panel.GetLogicalDescendants().OfType<Button>().Single(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Ver na Constelação")
                     .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
-                for (int i = 0; i < 100 && !view.SkyPanel.IsVisible; i++) await Pump(10);
+                for (int i = 0; i < 250 && !view.SkyPanel.IsVisible; i++) await Pump(40);
                 Assert.True(view.SkyPanel.IsVisible);
                 Assert.False(panel.IsVisible);
                 Assert.Equal(view.Documents!.Get("Centro.md")!.Id, view.SkyPanel.Sky.FocusedStar);

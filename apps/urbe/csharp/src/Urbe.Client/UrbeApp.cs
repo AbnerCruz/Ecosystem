@@ -21,6 +21,9 @@ public sealed class UrbeApp : Application
     /// <summary>A folder of the app's own data for the Assistente (conversations, providers and keys, memory); null keeps them for the session. Never the vault.</summary>
     public static string? AssistantFolder { get; set; }
 
+    /// <summary>UC-66: the desktop head adds the tray icon and the global shortcut to the window once it exists.</summary>
+    public static Action<Window>? DesktopWindowReady { get; set; }
+
     public override void Initialize()
     {
         RequestedThemeVariant = ThemeVariant.Dark;
@@ -54,6 +57,7 @@ public sealed class UrbeApp : Application
                     window.Close();
                 };
                 desktop.MainWindow = window;
+                DesktopWindowReady?.Invoke(window);
                 break;
             case IActivityApplicationLifetime activity:
                 activity.MainViewFactory = CreateMainView;

@@ -28,6 +28,7 @@ public static class Program
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(file) { UseShellExecute = true });
             return Task.CompletedTask;
         };
+        UrbeApp.DesktopWindowReady = DesktopQuickNote.Install;
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 

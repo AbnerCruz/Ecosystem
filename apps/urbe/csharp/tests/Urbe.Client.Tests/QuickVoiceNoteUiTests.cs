@@ -66,4 +66,37 @@ public sealed partial class HeadlessUiTests
             window.Close();
             return true;
         }, CancellationToken.None));
+
+    [Fact]
+    public async Task QuickNote_OnTheComputerIsWrittenInABoxWhereTheSystemDictates() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var (view, window, vault, dir) = await OpenCreateVault();
+            try
+            {
+                // UC-66 on Windows: the shortcut and the tray open this box (Win+H dictates into it)
+                view.Voice = PlatformVoice.TypedWithDictation("Para falar, aperte Win+H.", view);
+                var file = Path.Combine(vault, QuickNotes.PathFor(DateTime.Now).Replace('/', Path.DirectorySeparatorChar));
+                await RunWithDialog(view.QuickVoiceNoteAsync(), () =>
+                {
+                    Assert.Contains(view.Dialogs.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "Para falar, aperte Win+H.");
+                    view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single().Text = "revisar o capítulo 3";
+                    ClickButtonWithText(view.Dialogs, "Salvar");
+                    return Task.CompletedTask;
+                });
+                Assert.EndsWith(" — revisar o capítulo 3\n", File.ReadAllText(file));
+
+                // cancelled: nothing more is written
+                var before = File.ReadAllText(file);
+                await RunWithDialog(view.QuickVoiceNoteAsync(), () =>
+                {
+                    ClickButtonWithText(view.Dialogs, "Cancelar");
+                    return Task.CompletedTask;
+                });
+                Assert.Equal(before, File.ReadAllText(file));
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
 }

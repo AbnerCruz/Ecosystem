@@ -57,7 +57,11 @@ public sealed partial class MainView
             return new SkyStar(d.Id, d.Path, d.Title, Constellation.ProjectOf(d.Path), x, y, links[d.Id].Count, recent);
         }).ToList();
         SkyPanel.Sky.Show(stars, sky.Regions, id => links.GetValueOrDefault(id) ?? []);
-        if (focusId is not null) SkyPanel.Sky.FocusOn(focusId);
+        if (focusId is not null)
+        {
+            SkyPanel.Sky.FocusOn(focusId);
+            Editor.Connections.IsVisible = false;   // a pending opening may have shown the panel again meanwhile
+        }
         SkyPanel.IsVisible = true;
     }
 }
