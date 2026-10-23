@@ -106,3 +106,40 @@ public sealed partial class HeadlessUiTests
             finally { window.Close(); }
         }, CancellationToken.None));
 }
+
+/// <summary>Owner (UC-49): 💬 Comentar a palavra, in the selection bubble, comments a word with no 💬 yet.</summary>
+public sealed partial class HeadlessUiTests
+{
+    [Fact]
+    public async Task VisualEdit_CommentsTheSelectedWordWithoutAMarkYet() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var surface = new VisualSurface();
+            var window = new Window { Width = 600, Height = 500, Content = surface };
+            window.Show();
+            try
+            {
+                surface.SetText("Uma palavra aqui.\n");
+                IReadOnlyList<string>? shown = null;
+                surface.AskComment = list => { shown = list; return Task.FromResult<string?>("ver depois"); };
+                await Pump(60);
+                var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+                typeof(VisualSurface).GetMethod("Edit", flags)!.Invoke(surface, [0]);
+                await Pump(100);
+                var box = surface.GetLogicalDescendants().OfType<TextBox>().Single();
+                box.SelectionStart = 4; box.SelectionEnd = 11;   // "palavra"
+                surface.Run("wordComment");
+                await Pump(60);
+                Assert.Equal([], shown);
+                // no selection: the word at the caret
+                box.SelectionStart = box.SelectionEnd = box.Text!.IndexOf("aqui", StringComparison.Ordinal) + 2;
+                surface.AskComment = list => { shown = list; return Task.FromResult<string?>("lugar"); };
+                surface.Run("wordComment");
+                await Pump(60);
+                surface.FinishEdit();
+                Assert.Equal("Uma palavra{\"ver depois\"} aqui{\"lugar\"}.\n", surface.Text);
+                return true;
+            }
+            finally { window.Close(); }
+        }, CancellationToken.None));
+}
