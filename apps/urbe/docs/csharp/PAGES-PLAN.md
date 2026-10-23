@@ -44,7 +44,7 @@ Cada fatia tem teste e entra sozinha. Os oráculos da 1.8.4 ficam intactos: as n
    - **Salvar como modelo** grava a página atual (sem o conteúdo de texto, ou com ele, à escolha) em `Personalização/modelos-de-pagina/`, no vault, como os temas.
    - A lista de modelos mostra os da 1.8.4 e os da pessoa lado a lado.
    - Os modelos da 1.8.4 continuam iguais (oráculo).
-4. **Editar tudo pela prévia (feito em 23/10/2026, menos a imagem).** Os textos de uma linha sem Markdown de todas as seções (títulos, rótulos, itens) se escrevem no lugar na prévia (`PageEditMarks`, só com `UrbeMarks`). Textos com Markdown ou comentários continuam no painel Editar. Falta: a imagem tocada abrir a escolha de imagem; hoje o toque abre o painel Editar da seção.
+4. **Editar tudo pela prévia (feito em 23/10/2026).** Os textos de uma linha sem Markdown de todas as seções (títulos, rótulos, itens) se escrevem no lugar na prévia (`PageEditMarks`, só com `UrbeMarks`). Textos com Markdown ou comentários continuam no painel Editar. Uma imagem das seções tocada na prévia abre a escolha de imagem do seu campo; nas seções livres, o toque abre o painel Editar do elemento, onde está **Escolher**.
    - Todo texto da página se edita tocando na prévia, inclusive itens de lista, legendas, botões e citações, não só títulos e parágrafos.
    - Uma imagem tocada abre a escolha de imagem. O painel **Editar** continua para o resto.
 

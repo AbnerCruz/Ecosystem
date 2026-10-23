@@ -45,4 +45,26 @@ public sealed class PageEditInPlaceTests
     [InlineData("Com comentário{\"x\"}", false)]
     [InlineData("", false)]
     public void PlainIsOneLineWithoutMarks(string text, bool plain) => Assert.Equal(plain, PageEngine.PlainText(text));
+
+    [Fact]
+    public void AnImageOfTheSectionsCarriesItsFieldForTheImageChoice()
+    {
+        var page = new JsonObject
+        {
+            ["meta"] = new JsonObject { ["title"] = "Fotos" },
+            ["sections"] = new JsonArray(
+                new JsonObject { ["type"] = "hero", ["props"] = new JsonObject { ["title"] = "Capa", ["image"] = "https://exemplo.com/capa.jpg?a=1&b=2" } },
+                new JsonObject { ["type"] = "gallery", ["props"] = new JsonObject { ["items"] = new JsonArray(
+                    new JsonObject { ["image"] = "https://exemplo.com/um.jpg", ["caption"] = "Um" },
+                    new JsonObject { ["image"] = "https://exemplo.com/um.jpg", ["caption"] = "De novo" }) } })
+        };
+        var engine = new PageEngine(2026) { UrbeMarks = true };
+        var preview = engine.Render(engine.Normalize(page).Spec, preview: true);
+        Assert.Contains("<img data-urbe-img=\"sections.0.props.image\"", preview);
+        // the same address twice: each picture its own field, in the page's order
+        Assert.Contains("<img data-urbe-img=\"sections.1.props.items.0.image\"", preview);
+        Assert.Contains("<img data-urbe-img=\"sections.1.props.items.1.image\"", preview);
+        Assert.Contains("urbePage:'image'", preview);
+        Assert.DoesNotContain("data-urbe-img", engine.Render(engine.Normalize(page).Spec));
+    }
 }

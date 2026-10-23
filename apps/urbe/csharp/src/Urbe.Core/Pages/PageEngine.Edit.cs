@@ -10,13 +10,15 @@ namespace Urbe.Core.Pages;
 /// each such field gets an invisible opening and closing mark with its index; after it, a pair found in the page's text
 /// becomes an editable span with the field's dotted path (a pair inside a tag, the title, a script or a style is only
 /// cut out). The span tells the studio its new text when it loses the focus. Texts with Markdown, comments or Urbe
-/// marks are left to the Editar panel: their rendered words are not their source.
+/// marks are left to the Editar panel: their rendered words are not their source. An image field's picture (its
+/// <c>img</c>, found by its address) gets the field's path too, and a tap on it asks the studio for the image choice.
 /// </summary>
 internal sealed class PageEditMarks(PageEngine engine)
 {
     private const char Open = '', Close = '', First = '', Last = '';
     private const string Special = "*_`[]<>#|{}%&~\\$\n\r\t";
     private readonly List<string> _paths = [];
+    private readonly List<(string Path, string Url)> _images = [];
 
     /// <summary>True for a text that reads the same rendered and written: one line, no Markdown, no marks.</summary>
     public static bool Plain(string text) => text.Length is > 0 and <= 300 && text.IndexOfAny(Special.ToCharArray()) < 0 && text.All(c => c < '' || c > '');
@@ -46,6 +48,8 @@ internal sealed class PageEditMarks(PageEngine engine)
                 props[key] = Open.ToString() + (char)(First + _paths.Count) + text + Close;
                 _paths.Add(at + "." + key);
             }
+            else if (type == "image" && props[key] is JsonValue iv && iv.TryGetValue<string>(out var url) && url.Length > 0)
+                _images.Add((at + "." + key, url));
             else if (type == "list" && props[key] is JsonArray items && f["fields"] is JsonArray sub)
                 for (int j = 0; j < items.Count; j++)
                     if (items[j] is JsonObject item) Mark(item, sub, at + "." + key + "." + j.ToString(CultureInfo.InvariantCulture));
@@ -55,11 +59,41 @@ internal sealed class PageEditMarks(PageEngine engine)
     /// <summary>The rendered page with each marked text as an editable span (or bare, where a span cannot go).</summary>
     public string Finish(string html)
     {
-        if (html.IndexOf(Open) < 0) return html;
+        int made = 0;
+        if (html.IndexOf(Open) >= 0) html = Spans(html, ref made);
+        if (_images.Count > 0) html = Images(html, ref made);
+        if (made == 0) return html;
+        var at = html.LastIndexOf("</body>", StringComparison.Ordinal);
+        var extra = "<style>" + Css + "</style><script>" + Script + "</script>\n";
+        return at < 0 ? html + extra : html.Insert(at, extra);
+    }
+
+    // each image field's first picture not taken yet with the same address (the fields in the page's order)
+    private string Images(string html, ref int made)
+    {
+        var left = _images.ToList();
+        int count = 0;
+        var output = System.Text.RegularExpressions.Regex.Replace(html, @"<img\b[^>]*>", m =>
+        {
+            var src = System.Text.RegularExpressions.Regex.Match(m.Value, "\\ssrc=\"([^\"]*)\"");
+            if (!src.Success) return m.Value;
+            var url = System.Net.WebUtility.HtmlDecode(src.Groups[1].Value);
+            var i = left.FindIndex(x => x.Url == url);
+            if (i < 0) return m.Value;
+            var path = left[i].Path;
+            left.RemoveAt(i);
+            count++;
+            return "<img data-urbe-img=\"" + PageMarkdown.Esc(path) + "\"" + m.Value[4..];
+        });
+        made += count;
+        return output;
+    }
+
+    private string Spans(string html, ref int made)
+    {
         var sb = new StringBuilder(html.Length + _paths.Count * 64);
         bool inTag = false;
         string? raw = null;
-        int made = 0;
         for (int i = 0; i < html.Length; i++)
         {
             var c = html[i];
@@ -100,21 +134,21 @@ internal sealed class PageEditMarks(PageEngine engine)
                     }
             }
         }
-        var output = sb.ToString();
-        if (made == 0) return output;
-        var at = output.LastIndexOf("</body>", StringComparison.Ordinal);
-        var extra = "<style>" + Css + "</style><script>" + Script + "</script>\n";
-        return at < 0 ? output + extra : output.Insert(at, extra);
+        return sb.ToString();
     }
 
     private const string Css = ".urbe-ed{outline:none;border-radius:3px;cursor:text;transition:box-shadow .12s}" +
-        ".urbe-ed:hover{box-shadow:0 0 0 1px color-mix(in srgb,currentColor 30%,transparent)}.urbe-ed:focus{box-shadow:0 0 0 2px var(--accent,#c58a2b)}";
+        ".urbe-ed:hover{box-shadow:0 0 0 1px color-mix(in srgb,currentColor 30%,transparent)}.urbe-ed:focus{box-shadow:0 0 0 2px var(--accent,#c58a2b)}" +
+        "img[data-urbe-img]{cursor:pointer}img[data-urbe-img]:hover{outline:2px solid var(--accent,#c58a2b);outline-offset:2px}";
 
+    // a tapped image asks for the image choice (before the preview's own click, which would select the section);
     // the text written in place goes to the studio when the span loses the focus; Enter ends it (one line)
     private const string Script = "(function(){var d=document;d.querySelectorAll('.urbe-ed').forEach(function(n){n._was=n.textContent});" +
         "function ed(n){return n&&n.classList&&n.classList.contains('urbe-ed')}" +
         "addEventListener('focusout',function(e){var n=e.target;if(!ed(n))return;var t=n.textContent.replace(/\\s+/g,' ').trim();if(!t.length){n.textContent=n._was;return}" +
         "if(t!==n._was){n._was=t;parent.postMessage({urbePage:'field',path:n.dataset.path,text:t},'*')}},true);" +
         "addEventListener('keydown',function(e){var n=e.target;if(ed(n)&&e.key==='Enter'){e.preventDefault();n.blur()}if(ed(n)&&e.key==='Escape'){n.textContent=n._was;n.blur()}},true);" +
-        "addEventListener('click',function(e){var n=e.target.closest&&e.target.closest('.urbe-ed');if(n&&n.closest('a'))e.preventDefault()},true)})();";
+        "addEventListener('click',function(e){var n=e.target.closest&&e.target.closest('.urbe-ed');if(n&&n.closest('a'))e.preventDefault()},true);" +
+        "addEventListener('click',function(e){var i=e.target.closest&&e.target.closest('img[data-urbe-img]');if(!i)return;e.preventDefault();e.stopPropagation();" +
+        "parent.postMessage({urbePage:'image',path:i.dataset.urbeImg},'*')},true)})();";
 }

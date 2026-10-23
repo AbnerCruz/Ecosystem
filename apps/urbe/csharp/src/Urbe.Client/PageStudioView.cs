@@ -532,12 +532,27 @@ public sealed partial class PageStudioView : Border
             if (_st.Set(path, JsonValue.Create(written))) Changed();
             return;
         }
+        if (kind == "image")
+        {
+            // UC-62 slice 4: a picture tapped in the preview opens the image choice for its field
+            var path = S(m!["path"]);
+            if (_st.FieldType(path) == "image") _ = PickInPlaceAsync(path);
+            return;
+        }
         if (kind != "text" || nid is null || _st.Section(id) is not { } sec || (string?)sec["type"] != "free") return;
         if (PageEngine.FreeFind(sec["props"]?["root"] as JsonObject, nid) is not { } hit || hit.Node["content"] is not JsonObject content || content["text"] is null) return;
         var text = System.Text.RegularExpressions.Regex.Replace(S(m!["text"]).Replace('\u00a0', ' '), "\n{3,}", "\n\n").Trim();
         if ((string?)hit.Node["type"] == "heading") text = System.Text.RegularExpressions.Regex.Replace(text, @"\s*\n\s*", " ");
         _st.Break();
         if (_st.Set(PageStudio.FreePath(id, nid, "content", "text"), JsonValue.Create(text))) Changed();
+    }
+
+    private async Task PickInPlaceAsync(string path)
+    {
+        if (await _host.PickImageAsync() is not { } url || _st is null || _st.FieldType(path) != "image") return;
+        if (url.Length > 2_500_000) Toast("Imagem grande: a página ficará pesada.");
+        _st.Break();
+        if (_st.Set(path, JsonValue.Create(url))) Changed();
     }
 
     /// <summary>

@@ -133,6 +133,22 @@ public sealed class PageStudio
         if (changed) NodeSelected = null;
     }
 
+    /// <summary>
+    /// The type of the field at "sections.i.props.key" or "sections.i.props.list.j.key" in the block's own fields (for a
+    /// message of the preview to change only what the field is: an image only where an image goes); null when none.
+    /// </summary>
+    public string? FieldType(string path)
+    {
+        var m = Regex.Match(path, @"^sections\.(\d+)\.props\.([A-Za-z]\w*)(?:\.(\d+)\.([A-Za-z]\w*))?$");
+        if (!m.Success || !int.TryParse(m.Groups[1].Value, out var i) || i >= Sections.Count || Sections[i] is not JsonObject sec) return null;
+        if (_engine.BlockInfo(S(sec["type"])) is not { } b) return null;
+        var field = b.Fields.OfType<JsonObject>().FirstOrDefault(f => S(f["key"]) == m.Groups[2].Value);
+        if (field is null || !m.Groups[4].Success) return field is null ? null : S(field["type"]);
+        if (S(field["type"]) != "list" || field["fields"] is not JsonArray sub) return null;
+        if (sec["props"]?[m.Groups[2].Value] is not JsonArray items || !int.TryParse(m.Groups[3].Value, out var j) || j >= items.Count) return null;
+        return sub.OfType<JsonObject>().FirstOrDefault(f => S(f["key"]) == m.Groups[4].Value) is { } inner ? S(inner["type"]) : null;
+    }
+
     private static string S(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) ? s : n is null ? "" : LegacyCustomize.JsToString(n);
 
     /// <summary>secTitle(s).</summary>

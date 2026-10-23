@@ -252,6 +252,14 @@ public sealed partial class HeadlessUiTests
                 view.Studio.PreviewMessage("{\"urbePage\":\"field\",\"path\":\"meta.title\",\"text\":\"X\"}");
                 view.Studio.PreviewMessage("{\"urbePage\":\"field\",\"path\":\"sections.1.props.source\",\"text\":\"tag\"}");
                 Assert.Equal("Bairro", (string?)view.Studio.Model!.Meta["title"]);
+                // a picture tapped in the preview: the image choice for its field (and only for an image field)
+                view.PickImage = () => Task.FromResult<string?>("data:image/png;base64,AAAA");
+                view.Studio.PreviewMessage("{\"urbePage\":\"image\",\"path\":\"sections.0.props.image\"}");
+                for (int i = 0; i < 50 && (string?)view.Studio.Model!.Get("sections.0.props.image") != "data:image/png;base64,AAAA"; i++) await Pump(20);
+                Assert.Equal("data:image/png;base64,AAAA", (string?)view.Studio.Model!.Get("sections.0.props.image"));
+                view.Studio.PreviewMessage("{\"urbePage\":\"image\",\"path\":\"sections.0.props.title\"}");
+                await Pump(100);
+                Assert.Equal("Meu bairro", (string?)view.Studio.Model!.Get("sections.0.props.title"));
                 await view.Studio.FlushAsync();
                 Assert.Contains("Meu bairro", File.ReadAllText(Path.Combine(vault, "Páginas", "Bairro.page.json")));
                 await view.Studio.CloseAsync();
