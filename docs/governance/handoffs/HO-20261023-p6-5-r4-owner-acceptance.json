@@ -40,12 +40,6 @@
       "kind": "human",
       "result": "passed",
       "evidence": "Em 2026-10-23, proprietário declarou 'Pode fechar p6-5 ta funcionando. Agora continue o desenvolvimento'; registrado em comentário da Issue #354. Escopo de validação limitado a funcionamento declarado; sem nome do aparelho, hash de APK, provider comercial ou roteiro detalhado."
-    },
-    {
-      "check": "CHK-STATE-CONSISTENCY na primeira tentativa do PR #689",
-      "kind": "automated",
-      "result": "not-applicable",
-      "evidence": "Primeira execução #39896026894 falhou por oito subissues abertas; corrigido fechando cada Issue com evidências técnicas já integradas e aceite do proprietário. Executar CI da revisão atualizada para comprovar check no estado resultante."
     }
   ],
   "known_issues": [
