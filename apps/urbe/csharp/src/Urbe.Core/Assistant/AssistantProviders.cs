@@ -549,8 +549,8 @@ public sealed class AssistantProviders
     // ---------------------------------------------------------------- images (UC-63)
 
     /// <summary>
-    /// The image model of a preset that draws pictures through the OpenAI images API (images/generations): OpenAI and
-    /// Google Gemini (its OpenAI-compatible endpoint); a compatible server says its own. Null: the preset draws none.
+    /// Image models for the existing configured providers: OpenRouter's /images API, and the OpenAI-compatible
+    /// /images/generations endpoints for OpenAI and Gemini. Custom providers need an explicitly chosen image model.
     /// </summary>
     public static string? ImageModel(string preset) => preset switch
     {
