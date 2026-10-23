@@ -89,13 +89,25 @@ public sealed class AiConversation
 /// <summary>The models a provider listed, and when.</summary>
 public sealed record AiModelCache(long At, IReadOnlyList<AiModelInfo> List);
 
-/// <summary>The assistant's configuration (store.js DEFAULT_CONFIG): providers and keys, the chosen model, policy and agent, instructions, memory, own agents, step limit.</summary>
+/// <summary>A model and its configured provider; credentials remain in Providers.</summary>
+public sealed record AiModelChoice(string ProviderId, string Model);
+
+/// <summary>One titled instruction block for an individual agent.</summary>
+public sealed record AiInstructionBlock(string Title, string Content);
+
+/// <summary>Assistant configuration, with backward-compatible independent image and agent preferences.</summary>
 public sealed class AiConfig
 {
     public int Version { get; set; } = 1;
     public List<AiProviderConfig> Providers { get; set; } = [];
     public string? ProviderId { get; set; }
     public string Model { get; set; } = "";
+    /// <summary>Independent image provider and model; null/empty use existing automatic defaults.</summary>
+    public string? ImageProviderId { get; set; }
+    public string ImageModel { get; set; } = "";
+    /// <summary>Agent-specific overrides; no entry means inherit the conversation/default model.</summary>
+    public Dictionary<string, AiModelChoice> AgentModels { get; set; } = new(StringComparer.Ordinal);
+    public Dictionary<string, List<AiInstructionBlock>> AgentInstructionBlocks { get; set; } = new(StringComparer.Ordinal);
     public string Policy { get; set; } = "ask";
     public string AgentId { get; set; } = "geral";
     public string Instructions { get; set; } = "";
@@ -106,6 +118,23 @@ public sealed class AiConfig
     public Dictionary<string, string> AgentNames { get; set; } = new(StringComparer.Ordinal);
     public int MaxSteps { get; set; } = 30;
     public Dictionary<string, AiModelCache> ModelCache { get; set; } = new(StringComparer.Ordinal);
+
+    public AiModelChoice ModelFor(AiConversation conversation)
+    {
+        if (AgentModels.TryGetValue(conversation.AgentId, out var chosen) &&
+            !string.IsNullOrWhiteSpace(chosen.Model) && Providers.Any(p => p.Id == chosen.ProviderId))
+            return chosen;
+        var id = conversation.ProviderId ?? ProviderId ?? Providers.FirstOrDefault()?.Id ?? "";
+        return new AiModelChoice(id, conversation.Model.Length > 0 ? conversation.Model : Model);
+    }
+
+    public AiAgentDef AgentWithInstructions(AiAgentDef agent)
+    {
+        if (!AgentInstructionBlocks.TryGetValue(agent.Id, out var blocks)) return agent;
+        var additional = string.Join("\n\n", blocks.Where(b => !string.IsNullOrWhiteSpace(b.Content))
+            .Select(b => "### " + (string.IsNullOrWhiteSpace(b.Title) ? "Instrução" : b.Title.Trim()) + "\n" + b.Content.Trim()));
+        return additional.Length == 0 ? agent : agent with { Prompt = agent.Prompt.Length > 0 ? agent.Prompt + "\n\n" + additional : additional };
+    }
 }
 
 /// <summary>
@@ -192,12 +221,20 @@ public sealed class AssistantStore(IAssistantStorage storage)
         foreach (var (k, v) in c.Memory) memory[k] = new JsonArray(v.Select(x => (JsonNode)JsonValue.Create(x)).ToArray());
         var names = new JsonObject();
         foreach (var (k, v) in c.AgentNames.OrderBy(p => p.Key, StringComparer.Ordinal)) names[k] = v;
+        var agentModels = new JsonObject();
+        foreach (var (k, v) in c.AgentModels.OrderBy(p => p.Key, StringComparer.Ordinal))
+            agentModels[k] = new JsonObject { ["providerId"] = v.ProviderId, ["model"] = v.Model };
+        var instructionBlocks = new JsonObject();
+        foreach (var (k, v) in c.AgentInstructionBlocks.OrderBy(p => p.Key, StringComparer.Ordinal))
+            instructionBlocks[k] = new JsonArray(v.Select(b => (JsonNode)new JsonObject { ["title"] = b.Title, ["content"] = b.Content }).ToArray());
         var cache = new JsonObject();
         foreach (var (k, v) in c.ModelCache) cache[k] = new JsonObject { ["at"] = v.At, ["list"] = new JsonArray(v.List.Select(m => (JsonNode)ModelToJson(m)).ToArray()) };
         return new JsonObject
         {
             ["version"] = c.Version, ["providers"] = new JsonArray(c.Providers.Select(p => (JsonNode)ProviderToJson(p)).ToArray()), ["providerId"] = c.ProviderId,
-            ["model"] = c.Model, ["policy"] = c.Policy, ["agentId"] = c.AgentId, ["instructions"] = c.Instructions, ["memory"] = memory,
+            ["model"] = c.Model, ["imageProviderId"] = c.ImageProviderId, ["imageModel"] = c.ImageModel,
+            ["agentModels"] = agentModels, ["agentInstructionBlocks"] = instructionBlocks,
+            ["policy"] = c.Policy, ["agentId"] = c.AgentId, ["instructions"] = c.Instructions, ["memory"] = memory,
             ["customAgents"] = new JsonArray(c.CustomAgents.Select(a => (JsonNode)AgentToJson(a)).ToArray()), ["maxSteps"] = c.MaxSteps, ["modelCache"] = cache, ["agentNames"] = names
         };
     }
@@ -209,12 +246,22 @@ public sealed class AssistantStore(IAssistantStorage storage)
             Version = o["version"] is null ? 1 : (int)Num(o["version"]),
             Providers = (o["providers"] as JsonArray ?? []).OfType<JsonObject>().Select(ProviderFromJson).ToList(),
             ProviderId = o["providerId"] is JsonValue pid && pid.TryGetValue<string>(out var ps) ? ps : null,
-            Model = Str(o["model"]), Policy = Str(o["policy"], "ask"), AgentId = Str(o["agentId"], "geral"), Instructions = Str(o["instructions"]),
+            Model = Str(o["model"]),
+            ImageProviderId = o["imageProviderId"] is JsonValue iv && iv.TryGetValue<string>(out var imageId) ? imageId : null,
+            ImageModel = Str(o["imageModel"]), Policy = Str(o["policy"], "ask"), AgentId = Str(o["agentId"], "geral"), Instructions = Str(o["instructions"]),
             CustomAgents = (o["customAgents"] as JsonArray ?? []).OfType<JsonObject>().Select(AgentFromJson).ToList(),
             MaxSteps = o["maxSteps"] is null ? 30 : (int)Num(o["maxSteps"])
         };
+        if (o["agentModels"] is JsonObject models)
+            foreach (var (id, value) in models)
+                if (value is JsonObject choice && Str(choice["providerId"]).Length > 0 && Str(choice["model"]).Length > 0)
+                    c.AgentModels[id] = new AiModelChoice(Str(choice["providerId"]), Str(choice["model"]));
+        if (o["agentInstructionBlocks"] is JsonObject blocks)
+            foreach (var (id, value) in blocks)
+                c.AgentInstructionBlocks[id] = (value as JsonArray ?? []).OfType<JsonObject>()
+                    .Select(b => new AiInstructionBlock(Str(b["title"]), Str(b["content"]))).ToList();
         if (o["memory"] is JsonObject mem)
-            foreach (var (k, v) in mem) c.Memory[k] = (v as JsonArray ?? []).Select(x => Str(x)).Where(x => x.Length > 0).ToList();
+            foreach (var (k, v) in mem) c.Memory[k] = (v as JsonArray ?? []).Select(x => Str(x)).Where(x.Length > 0).ToList();
         if (o["agentNames"] is JsonObject an)
             foreach (var (k, v) in an) if (Str(v).Trim() is { Length: > 0 } name) c.AgentNames[k] = name;
         if (o["modelCache"] is JsonObject mc)
