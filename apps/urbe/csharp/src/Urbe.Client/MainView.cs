@@ -460,6 +460,7 @@ public sealed partial class MainView : Grid
         RecordSaved(note.Path, note.Content);
         await SaveHistoryAsync();
         NoteSaved?.Invoke(note.Path);   // plugins: "nota:salva"
+        if (note.Path == EditorLayout.Path) ApplyEditorLayout();
     }
 
     /// <summary>
@@ -523,6 +524,7 @@ public sealed partial class MainView : Grid
             new("Personalização", UrbeTheme.Icons.Brush, "Tema, cores, fontes, editor, estilos e plugins", Run: () => { Customize.Open(); return Task.CompletedTask; }),
             new("Tutorial", UrbeTheme.Icons.Book, "Guia completo de tudo o que o Urbe faz", Run: ShowTutorialMenuAsync),
             new("Atalhos", UrbeTheme.Icons.List, "Os atalhos de teclado, e os seus em atalhos.json", Run: ShowShortcutsAsync),
+            new("Barra do editor e menu /", UrbeTheme.Icons.Pencil, "Quais botões e em que ordem, em editor.json", Run: EditEditorLayoutAsync),
             new("Configuração inicial", UrbeTheme.Icons.Select, "Pasta, aparência e Assistente, passo a passo", Run: () => { ShowFirstRun(); return Task.CompletedTask; })
         };
         if (_vault is not null)
@@ -575,7 +577,16 @@ public sealed partial class MainView : Grid
     {
         UrbeAppearance.Apply(this);   // Personalização: tema, texto, forma e editor
         if (Customization.Config["editor"] is System.Text.Json.Nodes.JsonObject ed) Editor.ApplyOptions((string?)ed["largura"], (string?)ed["modoInicial"]);
+        ApplyEditorLayout();
         if (Editor.IsVisible) Editor.RefreshVisual();   // tag colours (DEC-0045, UC-43)
+    }
+
+    /// <summary>UC-61: Personalização/editor.json — the editor's bar and "/" menu.</summary>
+    private void ApplyEditorLayout()
+    {
+        var (bar, menu) = EditorLayout.Parse(_contents.GetValueOrDefault(EditorLayout.Path), EditorOverlay.ToolbarIds,
+            [.. LegacyEditorTools.FilterSlashWithAddons("").Select(x => x.Act)]);
+        Editor.ApplyLayout(bar, menu);
     }
 
     /// <summary>The customize.js writer (docs.upsert of a Personalização file): the vault file, and its document.</summary>

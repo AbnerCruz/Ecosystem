@@ -936,17 +936,16 @@ public sealed class EditorOverlay : Grid
     /// The order of the formatting bar (UX.md P4, P5): what is used most comes first, within reach of the thumb; the
     /// rest scrolls sideways. "|" is a separator. The buttons and what they do are the 1.8.4's (LegacyEditorTools).
     /// </summary>
-    public static readonly string[] ToolbarOrder =
-        ["bold", "italic", "list", "task", "|", "h1", "h2", "h3", "quote", "|", "noteLink", "link", "code", "box", "math", "rule"];
-
-    // #mdToolbar (Markdown, in Fonte and in Visual, where it acts on the block of the caret) or .v21CodeTools (other text files, Fonte)
-    private Control Toolbars()
+    /// <summary>The buttons of the bar, in <paramref name="order"/> ("|" a separator).</summary>
+    private void BuildMarkdownTools(IReadOnlyList<string> order)
     {
+        _markdownTools.Children.Clear();
         var tools = LegacyEditorTools.Toolbar.ToDictionary(t => t.Id);
-        foreach (var id in ToolbarOrder)
+        foreach (var id in order)
         {
             if (id == "|") { _markdownTools.Children.Add(new Border { Width = 1, Height = 24, Margin = new Thickness(UrbeTokens.Space.Xxs, 0), Background = UrbeTheme.Brush(C.BorderStrong), VerticalAlignment = VerticalAlignment.Center }); continue; }
             if (tools.TryGetValue(id, out var tool)) { _markdownTools.Children.Add(ToolButton(tool)); continue; }
+            if (id is not ("math" or "box")) continue;
             // math/editor.js ∑ (mdMath) and the UC-44 Caixa, a `:::tipo` container (not 1.8.4 #mdToolbar buttons)
             var (content, tip, run) = id == "math"
                 ? ((Control)new TextBlock { Text = "∑", FontFamily = new FontFamily("Georgia, serif"), FontWeight = FontWeight.Normal, FontSize = 19 }, "Fórmula (LaTeX) — Ctrl+M", (Func<Task>)(() => StartFormulaAsync(false)))
@@ -955,6 +954,28 @@ public sealed class EditorOverlay : Grid
             b.Click += async (_, _) => await run();
             _markdownTools.Children.Add(b);
         }
+    }
+
+    /// <summary>UC-61: the bar and the "/" menu as Personalização/editor.json asks (null: the default).</summary>
+    public void ApplyLayout(IReadOnlyList<string>? bar, IReadOnlyList<string>? menu)
+    {
+        BuildMarkdownTools(bar ?? ToolbarOrder);
+        _visual.SlashOrder = menu;
+    }
+
+    /// <summary>The names of the bar's buttons, in order ("|" a separator) — tests.</summary>
+    public IReadOnlyList<string> ToolbarNames => [.. _markdownTools.Children.Select(c => c is Button b ? AutomationProperties.GetName(b) ?? "" : "|")];
+
+    /// <summary>The ids the bar knows.</summary>
+    public static IReadOnlyCollection<string> ToolbarIds => [.. ToolbarOrder.Where(x => x != "|")];
+
+    public static readonly string[] ToolbarOrder =
+        ["bold", "italic", "list", "task", "|", "h1", "h2", "h3", "quote", "|", "noteLink", "link", "code", "box", "math", "rule"];
+
+    // #mdToolbar (Markdown, in Fonte and in Visual, where it acts on the block of the caret) or .v21CodeTools (other text files, Fonte)
+    private Control Toolbars()
+    {
+        BuildMarkdownTools(ToolbarOrder);
         foreach (var (label, run) in new (string, Action)[]
                  {
                      ("⇥ Indentar", () => ApplyEdit(LegacyEditorTools.IndentSelection(Editor.Text ?? "", Editor.SelectionStart, Editor.SelectionEnd))),

@@ -682,4 +682,38 @@ public sealed partial class HeadlessUiTests
             }
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
+
+    [Fact]
+    public async Task EditorLayout_TheBarFollowsEditorJson() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // UC-61: Personalização/editor.json chooses the bar's buttons and their order; saving it applies it
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-bar-" + Guid.NewGuid().ToString("N"));
+            var vault = WorkspaceVault(dir);
+            Directory.CreateDirectory(Path.Combine(vault, "Personalização"));
+            File.WriteAllText(Path.Combine(vault, "Personalização", "editor.json"), "{\"versao\":1,\"barra\":[\"h1\",\"|\",\"bold\"]}\n");
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 1280, Height = 800, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                Assert.Equal(3, view.Editor.ToolbarNames.Count);
+                Assert.Equal("|", view.Editor.ToolbarNames[1]);
+
+                // edited in the app and saved: the bar follows
+                await view.EditEditorLayoutAsync();
+                await Settle(window, view);
+                Assert.Equal("Personalização/editor.json", view.Editor.Current?.Path);
+                view.Editor.Editor.Text = "{\"versao\":1,\"barra\":[\"bold\",\"italic\",\"math\",\"box\"]}\n";
+                Assert.True(await view.Editor.SaveAsync());
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal(4, view.Editor.ToolbarNames.Count);
+                Assert.DoesNotContain("|", view.Editor.ToolbarNames);
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
 }

@@ -105,10 +105,12 @@ internal sealed class SlashMenu : Border
 
     public bool IsOpen => IsVisible;
     public event Action<string>? Chosen;
+    /// <summary>The items in the person's order (Personalização/editor.json), or null.</summary>
+    public IReadOnlyList<string>? Order { get; set; }
 
     public void Show(string query)
     {
-        _filtered = LegacyEditorTools.FilterSlashWithAddons(query);
+        _filtered = EditorLayout.Arrange(LegacyEditorTools.FilterSlashWithAddons(query), Order);
         _index = Math.Min(_index, Math.Max(0, _filtered.Count - 1));
         Render();
         IsVisible = true;

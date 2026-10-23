@@ -28,6 +28,9 @@ public sealed class VisualSurface : StackPanel
     private bool _prompting;
     private readonly WikiSuggestList _wiki = new();
     private readonly SlashMenu _slash = new();
+
+    /// <summary>UC-61: the "/" menu's items in the person's order (null: all, as they are).</summary>
+    public IReadOnlyList<string>? SlashOrder { get => _slash.Order; set => _slash.Order = value; }
     private readonly Border _bubble;
     private readonly Canvas _bubbleLayer = new() { Height = 0, VerticalAlignment = VerticalAlignment.Top };
     private readonly Border _backdrop = new() { IsHitTestVisible = false };

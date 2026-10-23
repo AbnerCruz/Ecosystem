@@ -1,0 +1,86 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-barra-do-editor",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T00:14:40Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-61",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "e01e7e09",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/EditorLayout.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyEditorTools.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorPopups.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Shortcuts.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/EditorLayoutTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/WorkspaceUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261023-urbe-barra-do-editor.json"
+  ],
+  "work_completed": [
+    "UC-61: barra do editor e menu / configuráveis em Personalização/editor.json (ordem e quais itens), criado a partir do que está na tela por Configurações; salvar aplica. Dica do menu / sem a cidade."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (669) e Urbe.Client.Tests (208)",
+      "result": "passed",
+      "evidence": "EditorLayoutTests e EditorLayout_TheBarFollowsEditorJson."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, editar editor.json e ver a barra e o menu / mudarem",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Core/EditorLayout.cs"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Próximos itens do ROADMAP C#."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": ".urbe/area.json só guarda apresentação e declara que as pastas e arquivos são a autoridade do conteúdo; nada nele cria, move ou apaga pastas."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "O arquivo novo é o previsto no ADD-0030, que o proprietário decidiu (DEC-0053)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Aparência e ordem no aparelho ficam pendentes; UC-85 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "area-layout",
+      "status": "product-specific",
+      "rationale": "Apresentação da Área de trabalho do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Interface nova; grava só pelo seletor de pasta e pela Personalização existentes."
+  }
+}
