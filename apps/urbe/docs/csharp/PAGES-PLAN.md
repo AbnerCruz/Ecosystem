@@ -1,6 +1,6 @@
 # Páginas mais robustas — plano (UC-62)
 
-> **Estado:** proposta para a decisão do proprietário (DEC-0055, pendente). Nada deste plano é implementado antes dela.
+> **Estado:** aprovado pelo proprietário em 23/10/2026 (DEC-0055, alternativa A: o plano inteiro, nas quatro fatias).
 > **Autoridade:** o escopo e o andamento ficam no [ROADMAP C#](ROADMAP.md) (UC-62); este documento só descreve o plano.
 
 ## O pedido (observação de 16/10/2026)

@@ -2008,7 +2008,7 @@
       "decision": "Alternativa A — A — O plano inteiro, nas quatro fatias, começando pela Lista de notas e por Criar página daqui (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/688).",
       "decidedAt": "2026-10-23",
       "record": "docs/governance/responses/DEC-0055.md",
-      "consequencesApplied": false
+      "consequencesApplied": true
     }
   ]
 }
