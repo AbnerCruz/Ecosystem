@@ -25,18 +25,20 @@
     "apps/urbe/docs/csharp/ROADMAP.md",
     "docs/governance/handoffs/HO-20261023-urbe-nota-rapida-windows.json",
     "apps/urbe/csharp/src/Urbe.Client/MainView.Constellation.cs",
-    "apps/urbe/csharp/tests/Urbe.Client.Tests/ConnectionsUiTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ConnectionsUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PerformanceBudgetTests.cs"
   ],
   "work_completed": [
     "UC-56/UC-66 no Windows: atalho global Ctrl+Alt+N (RegisterHotKey, liberado ao fechar) e ícone na bandeja (Nota rápida, Abrir o Urbe, Sair) trazem a janela e abrem a nota rápida.",
     "A nota rápida no Windows é uma caixa onde o ditado do sistema (Win+H) escreve; o app não grava áudio (NN-016) e salva em Notas rápidas pela gravação verificada.",
     "ROADMAP UC-20 e UC-55 atualizados com o que já estava feito (tema; barra perto do teclado).",
-    "Teste de Conexões: a espera pelo céu passou a esperar de verdade (a gravação de .urbe/constelacao.json é assíncrona); Ver na Constelação garante o painel fechado."
+    "Teste de Conexões: a espera pelo céu passou a esperar de verdade (a gravação de .urbe/constelacao.json é assíncrona); Ver na Constelação garante o painel fechado.",
+    "UC-60/UC-65: PerformanceBudgetTests com limites num vault de 2.000 notas (ler, abrir, índice, ligações, Constelação, plano de gravação, render de 50 KB, importar 500 notas, nota rápida), sempre na suíte."
   ],
   "verification": [
     {
       "kind": "automated",
-      "check": "dotnet test Urbe.Client.Tests (QuickNote_OnTheComputerIsWrittenInABoxWhereTheSystemDictates); dotnet build Urbe.Desktop",
+      "check": "dotnet test Urbe.Client.Tests (QuickNote_OnTheComputerIsWrittenInABoxWhereTheSystemDictates); dotnet build Urbe.Desktop; dotnet test Urbe.Core.Tests (693) e Urbe.Client.Tests (219)",
       "result": "passed",
       "evidence": "A caixa mostra a dica do Win+H, Salvar grava a linha no arquivo do mês, Cancelar não grava nada."
     },
@@ -53,7 +55,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "UC-60 limites de desempenho na suíte; UC-65 medir importação e nota rápida; UC-62 imagem tocada na prévia."
+    "UC-62: imagem tocada na prévia abre a escolha de imagem; itens finais do ROADMAP (UC-22, 24, 26–32)."
   ],
   "decisions_required": [],
   "normative_sources": [
