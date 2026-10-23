@@ -33,9 +33,10 @@
     {
       "kind": "human",
       "check": "No aparelho, com o teclado aberto, trocar de bloco numa nota longa e ver o texto parado",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-23 (Issue https://github.com/AbnerCruz/Ecosystem/issues/685); registro em docs/governance/responses/VAL-HO-20261023-urbe-bloco-no-lugar-ea0325f28231.md."
     }
   ],
   "known_issues": [],
