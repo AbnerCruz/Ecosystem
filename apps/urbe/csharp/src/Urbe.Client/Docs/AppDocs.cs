@@ -259,11 +259,13 @@ public static partial class AppDocs
 
         O texto escrito pelo Assistente ganha no fim uma marca pequena com o nome do modelo, como `{ia:"modelo"}`, que aparece em verde no editor.
 
-        No chat, peça **"gere uma imagem"** sem trocar o modelo da conversa. O Assistente usa um provedor visual já configurado (OpenRouter, OpenAI ou Google Gemini), pede aprovação, guarda o arquivo na pasta **Imagens** sem sobrescrever arquivos e, se você quiser, coloca `![[Imagens/…]]` na nota. Sem uma chave de imagens salva, ele informa qual provedor adicionar; não substitui a imagem por uma página.
+        No chat, peça **"gere uma imagem"** sem trocar o modelo da conversa. Em **Configurações do Assistente → Geração de imagens**, selecione o provedor salvo e o modelo de imagem: OpenRouter lista modelos pela API específica de imagens; OpenAI e Gemini também podem ser escolhidos, e é possível informar o ID manual de um modelo compatível. **Automático** mantém a escolha anterior. O Assistente pede aprovação, guarda o arquivo na pasta **Imagens** sem sobrescrever arquivos e, se você quiser, coloca `![[Imagens/…]]` na nota. Sem uma chave válida, ele informa o que falta; não substitui a imagem por uma página.
 
         ## Ajustar
 
         - **Instruções para todos os agentes**, **Memória** (fatos para lembrar), **Agentes personalizados** e **Limite de passos por resposta**.
+        - **Modelo por agente:** em Configurações → Nomes dos agentes → **Configurar**, você pode selecionar um provedor/modelo de conversa específico para qualquer agente (inclusive os prontos). Sem escolha, o agente herda o modelo normal do Assistente. Trocar de agente passa a trocar também o modelo efetivo, sem mudar o padrão salvo.
+        - **Instruções por blocos:** no mesmo painel, adicione quantos blocos titulados precisar (ex.: Tom, Fontes, Procedimento), edite e remova. Esses blocos se somam às instruções gerais e às instruções existentes do agente, sem ampliar as permissões. Os ajustes são guardados só na configuração local do Assistente.
         - **Nomes dos agentes**: cada agente pode ter um nome seu, como Jarvis. Numa conversa, chame-o por um nome novo ("Jarvis, resuma esta nota") e ele pergunta se deve passar a se chamar assim. O nome fica só neste aparelho.
         - **Pedir dentro da nota**: escreva numa linha `&Jarvis&: dê uma sugestão de nome` (ou `&&:` para o agente padrão). A linha vira um cartão com **Pedir a Jarvis** (ou Ctrl+Enter nela); só ao tocar o pedido vai, numa conversa própria "Na nota …", com a nota como contexto. Uma mudança na nota aparece no lugar da linha, como sugestão, com **Aceitar** e **Recusar**; uma resposta em palavras abre o Assistente, com **Pôr na nota** para guardá-la como citação logo abaixo da linha. Essas linhas não aparecem nas páginas.
         - **Personalização/AGENTS.md** na sua pasta: instruções suas, lidas a cada conversa. Separe por modelo:

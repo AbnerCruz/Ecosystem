@@ -1,0 +1,117 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-modelos-e-agentes-configuraveis",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T13:50:00Z",
+  "agent": {
+    "id": "chatgpt-gpt6",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-63",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-uc63-agent-profiles-image-models",
+  "base_commit": "4012e353060ea4da16f388b3653bec9b115fe311",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/702",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantProviders.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantStoreTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantImageToolsTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261023-urbe-modelos-e-agentes-configuraveis.json"
+  ],
+  "work_completed": [
+    "Configuração do Assistente mantém o modelo padrão e adiciona escolha independente de provedor/modelo para generate_image; fallback automático existente quando nenhum foi selecionado.",
+    "Listagem de modelos de imagem na API específica do OpenRouter GET /images/models, catálogo específico Gemini, filtragem de modelos de imagem nas APIs compatíveis e seleção manual de ID.",
+    "Cada agente interno ou personalizado pode ter um provedor/modelo de texto próprio, salvo por ID; sem override herda seleção da conversa. Resolução aplicada de verdade a Provider, Model, System Prompt AGENTS.md, UI e contagem de custos.",
+    "Painel de cada agente aceita blocos titulados de instruções com adicionar/remover/editar, somados ao prompt preexistente; permissões continuam no AgentDef.",
+    "Configuração preexistente é lida sem migração; campos novos são opcionais e não criam segundo arquivo de segredos nem alteram notas/vault.",
+    "Testes de roundtrip, legado sem novos campos, seleção de modelo por agente, integração de instruções, roteamento visual e catálogo do OpenRouter."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests e Urbe.Client.Tests + Android/Windows CI combinado",
+      "result": "pending",
+      "evidence": "Deverá rodar no PR; dotnet indisponível no ambiente de edição."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet run tests/consistency/Check.cs -- --integration <branch>",
+      "result": "pending",
+      "evidence": "O integrador verifica estado combinado."
+    },
+    {
+      "kind": "human",
+      "check": "Configurar provedor/modelo de imagem, gerar imagem real, criar agente com modelo alternativo e blocos, reiniciar APK e verificar persistência",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+      "evidence": "Validação em aparelho/conta de provedor real pendente."
+    }
+  ],
+  "known_issues": [
+    "Sem chamada paga real a OpenRouter/OpenAI/Gemini neste ambiente; seleção manual não garante que o ID informado suporte a API de imagens.",
+    "A configuração privada é escrita pelo armazenamento existente, cujo tratamento de erro é anterior a este incremento; não foi reescrito para reduzir regressão."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Corrigir qualquer falha de compilação/tests do PR e revalidar depois de eventuais movimentos da main.",
+    "A integração crítica do formato de configuração deve seguir a autorização do proprietário pelo integrador do Ecosystem.",
+    "Validar funcionalmente em Android e com API real antes de considerar concluída."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Novo estado opcional é persistido unicamente em AssistantStore.ConfigToJson/FromJson, no mesmo config.json local; sem segundo registro."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Configuração anterior sem chaves novas continua sendo lida e respeitada; teste de roundtrip e de legado adicionado."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Geração preserva generate_image Access=write e autorização existente; credenciais só são referenciadas pelos IDs dos provedores salvos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação em Android/com provedor pago fica declarada pendente, não atribuída a CI."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Alteração local do Urbe; sem novo runtime compartilhado nem dependência do Hub."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "assistant-agent-model-configuration",
+      "status": "possible-candidate",
+      "rationale": "Modelo por agente é extensível a outros produtos, mas fica no Urbe enquanto não houver contrato e segundo consumidor real (ADR-0033)."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data"
+    ],
+    "reason": "AssistantStore.cs é caminho crítico na política: gravação de configuração persistida, embora novos campos opcionais e retrocompatíveis."
+  }
+}

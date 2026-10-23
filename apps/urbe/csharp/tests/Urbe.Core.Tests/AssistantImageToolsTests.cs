@@ -17,7 +17,8 @@ public sealed class AssistantImageToolsTests
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            Seen.Add((request.RequestUri!.ToString(), (JsonObject)JsonNode.Parse(await request.Content!.ReadAsStringAsync(cancellationToken))!,
+            Seen.Add((request.RequestUri!.ToString(),
+                request.Content is null ? new JsonObject() : (JsonObject)JsonNode.Parse(await request.Content.ReadAsStringAsync(cancellationToken))!,
                 request.Headers.Authorization?.ToString()));
             return new HttpResponseMessage((HttpStatusCode)status) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
         }
@@ -100,6 +101,48 @@ public sealed class AssistantImageToolsTests
         await Assert.ThrowsAsync<AiProviderException>(() => providers.GenerateImageAsync(new AiProviderConfig("p", "openai", ApiKey: "k"), "x", cancel: Ct));
         providers = new AssistantProviders(new Answer(200, """{"data":[{"url":"https://exemplo/img.png"}]}"""));
         await Assert.ThrowsAsync<AiProviderException>(() => providers.GenerateImageAsync(new AiProviderConfig("p", "openai", ApiKey: "k"), "x", cancel: Ct));
+    }
+
+    [Fact]
+    public async Task ExplicitImageProviderAndImageModelOverrideAutomaticFallback()
+    {
+        var chat = new AiProviderConfig("text", "anthropic", ApiKey: "sk-ant");
+        var router = new AiProviderConfig("router", "openrouter", ApiKey: "sk-or");
+        var openai = new AiProviderConfig("openai", "openai", ApiKey: "sk-ai");
+        Assert.Equal(openai, AssistantProviders.PickImageProvider(chat, [chat, router, openai], "openai", "gpt-image-2.5-flare"));
+        Assert.Null(AssistantProviders.PickImageProvider(chat, [chat, router, openai], "missing", "any"));
+        Assert.Null(AssistantProviders.PickImageProvider(chat, [chat, new AiProviderConfig("empty", "openai")], "empty", "gpt-image-2.5-flare"));
+
+        var custom = new AiProviderConfig("custom", "custom", BaseUrl: "https://my-server.example/v1");
+        Assert.Null(AssistantProviders.PickImageProvider(chat, [custom], "custom"));
+        Assert.Equal(custom, AssistantProviders.PickImageProvider(chat, [custom], "custom", "flux-latest"));
+        var handler = new Answer(200, Drawn(Png));
+        await new AssistantProviders(handler).GenerateImageAsync(custom, "um castelo", model: "flux-latest", cancel: Ct);
+        Assert.Equal("flux-latest", (string?)Assert.Single(handler.Seen).Body["model"]);
+    }
+
+    [Fact]
+    public async Task OpenRouterUsesTheDedicatedImageModelCatalog()
+    {
+        var handler = new Answer(200, """{"data":[{"id":"bytedance-seed/seedream-4.5","name":"Seedream 4.5"},{"id":"other/image-gen","name":"Other Image"}]}""");
+        var catalog = await new AssistantProviders(handler).ListImageModelsAsync(
+            new AiProviderConfig("or", "openrouter", ApiKey: "sk-or"), Ct);
+        Assert.Equal(2, catalog.Count);
+        Assert.Equal("other/image-gen", catalog[1].Id);
+        var request = Assert.Single(handler.Seen);
+        Assert.Equal("https://openrouter.ai/api/v1/images/models", request.Url);
+        Assert.Equal("Bearer sk-or", request.Auth);
+    }
+
+    [Fact]
+    public void ImageModelDoesNotAffectTheChatModelChoice()
+    {
+        var cfg = new AiConfig { ProviderId = "text", Model = "anthropic/claude-sonnet" };
+        cfg.Providers.Add(new AiProviderConfig("text", "openrouter", ApiKey: "sk-or"));
+        cfg.ImageProviderId = "text";
+        cfg.ImageModel = "bytedance-seed/seedream-4.5";
+        Assert.Equal(new AiModelChoice("text", "anthropic/claude-sonnet"), cfg.ModelFor(new AiConversation { ProviderId = "text" }));
+        Assert.Equal("bytedance-seed/seedream-4.5", cfg.ImageModel);
     }
 
     [Fact]
