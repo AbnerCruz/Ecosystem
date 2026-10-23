@@ -254,7 +254,7 @@ public static partial class AppDocs
 
         O texto escrito pelo Assistente ganha no fim uma marca pequena com o nome do modelo, como `{ia:"modelo"}`, que aparece em verde no editor.
 
-        Com **OpenAI** ou **Google Gemini** (ou um servidor compatível que gere imagens), o Assistente também **gera imagens**: peça "faça um retrato da Lia em aquarela e ponha na nota dela". Ele mostra o pedido para você aprovar, guarda a imagem na pasta **Imagens** (sem nunca gravar por cima de um arquivo) e, se você quiser, coloca `![[Imagens/…]]` na nota.
+        No chat, peça **"gere uma imagem"** sem trocar o modelo da conversa. O Assistente usa um provedor visual já configurado (OpenRouter, OpenAI ou Google Gemini), pede aprovação, guarda o arquivo na pasta **Imagens** sem sobrescrever arquivos e, se você quiser, coloca `![[Imagens/…]]` na nota. Sem uma chave de imagens salva, ele informa qual provedor adicionar; não substitui a imagem por uma página.
 
         ## Ajustar
 
