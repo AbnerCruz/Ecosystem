@@ -17,6 +17,13 @@ public interface IUrbeVaultStorage
     /// exist yet, with the same checks; folders on its path are created when missing.</summary>
     Task CreateTextFileAsync(string path, string content, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// UC-63: creates a file that is not text (see <see cref="EnsureWritableBinaryPath"/>) with exactly these bytes,
+    /// never over an existing file, and reads it back. The text files the vault verifies are not touched.
+    /// </summary>
+    Task CreateBinaryFileAsync(string path, byte[] bytes, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento não grava arquivos que não são texto.");
+
     /// <summary>Rewrites ONE existing user text file of any editable text type (e.g. tema.json).</summary>
     Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default);
 
@@ -214,6 +221,54 @@ public interface IUrbeVaultStorage
         if (!held)
             throw new InvalidDataException("A lixeira não guarda o texto atual do arquivo: exclusão recusada.");
         return (source.Path, trashPath, System.Text.Encoding.UTF8.GetBytes(trashJson));
+    }
+
+    /// <summary>
+    /// UC-65: moves MANY user text files to the trash at once (a folder, a selection): .urbe/trash.v2.json, holding each
+    /// of them with its current text, is written and verified FIRST, then the files are removed and every file of the
+    /// vault is verified, once for all of them. The same refusals as <see cref="TrashTextFileAsync"/>. A host without
+    /// it moves them one by one.
+    /// </summary>
+    async Task TrashTextFilesAsync(IReadOnlyList<string> paths, string trashJson, CancellationToken cancellationToken = default)
+    {
+        foreach (var path in paths) await TrashTextFileAsync(path, trashJson, cancellationToken);
+    }
+
+    /// <summary>
+    /// The checks of <see cref="TrashTextFilesAsync"/> on these files, read once: every path a readable text document
+    /// of a vault that may be written, listed once, and held by <paramref name="trashJson"/> with exactly its text.
+    /// Returns the files' paths on disk, the trash file's path and the trash bytes.
+    /// </summary>
+    static (IReadOnlyList<string> Paths, string TrashPath, byte[] TrashBytes) PlanTrashMany(IReadOnlyList<VaultFile> files, IReadOnlyList<string> paths, string trashJson)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(paths);
+        ArgumentNullException.ThrowIfNull(trashJson);
+        if (paths.Count == 0) throw new ArgumentException("Nenhum arquivo para a lixeira.", nameof(paths));
+        if (paths.Distinct(StringComparer.OrdinalIgnoreCase).Count() != paths.Count) throw new ArgumentException("Um arquivo aparece duas vezes.", nameof(paths));
+        foreach (var path in paths) EnsureWritableTextPath(path);
+        var snapshot = VaultReader.Read(files);
+        var trashPath = files.FirstOrDefault(f => string.Equals(f.Path, LegacyTrash.Path, StringComparison.OrdinalIgnoreCase))?.Path ?? LegacyTrash.Path;
+        if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal ||
+            snapshot.FutureFiles.Any(f => string.Equals(f, trashPath, StringComparison.OrdinalIgnoreCase) || paths.Contains(f, StringComparer.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Formato futuro de vault, lixeira protegida ou operação interrompida: exclusão recusada.");
+        System.Text.Json.Nodes.JsonObject? root;
+        try { root = System.Text.Json.Nodes.JsonNode.Parse(trashJson) as System.Text.Json.Nodes.JsonObject; }
+        catch (System.Text.Json.JsonException) { root = null; }
+        if (root?["version"]?.GetValue<int>() != 2 || root["items"] is not System.Text.Json.Nodes.JsonArray items)
+            throw new InvalidDataException("A lixeira não guarda o texto atual dos arquivos: exclusão recusada.");
+        var held = new HashSet<(string, string)>();
+        foreach (var i in items)
+            if (i?["document"] is System.Text.Json.Nodes.JsonObject d && (string?)d["path"] is { } p && (string?)d["content"] is { } c) held.Add((p, c));
+        var byPath = files.ToDictionary(f => f.Path, StringComparer.Ordinal);
+        var texts = snapshot.Documents.Where(d => d.Text is not null).ToDictionary(d => d.Path, d => d.Text!, StringComparer.Ordinal);
+        foreach (var path in paths)
+        {
+            if (!byPath.ContainsKey(path)) throw new FileNotFoundException("O arquivo não existe na pasta.", path);
+            if (!texts.TryGetValue(path, out var text)) throw new InvalidDataException("O arquivo não pôde ser lido como texto seguro: " + path);
+            if (!held.Contains((path, text))) throw new InvalidDataException("A lixeira não guarda o texto atual de " + path + ": exclusão recusada.");
+        }
+        return (paths, trashPath, System.Text.Encoding.UTF8.GetBytes(trashJson));
     }
 
     /// <summary>
@@ -427,6 +482,25 @@ public interface IUrbeVaultStorage
         if (!WritableExtensions.Contains(Path.GetExtension(path)))
             throw new NotSupportedException("Tipo de arquivo que o Urbe não grava: " + path);
     }
+
+    /// <summary>
+    /// The files that are not text Urbe may create (UC-63: an image the Assistente made; an attachment imported):
+    /// pictures, PDFs, audio and video, inside the vault, never in .urbe/ or any hidden folder.
+    /// </summary>
+    static void EnsureWritableBinaryPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || path.StartsWith('/') || path.Contains('\\') || path.Contains(':'))
+            throw new InvalidDataException("Caminho inválido no vault: " + path);
+        if (path.Split('/').Any(s => s.Length == 0 || s is "." or ".." || s.StartsWith('.') || s.EndsWith(' ') || s.EndsWith('.')))
+            throw new InvalidOperationException("Caminho interno ou inseguro no vault: " + path);
+        if (!BinaryExtensions.Contains(Path.GetExtension(path)))
+            throw new NotSupportedException("Tipo de arquivo que o Urbe não grava: " + path);
+    }
+
+    static readonly HashSet<string> BinaryExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".pdf", ".mp3", ".m4a", ".ogg", ".oga", ".wav", ".flac", ".mp4", ".webm", ".mov"
+    };
 
     static readonly HashSet<string> WritableExtensions = new(StringComparer.OrdinalIgnoreCase)
     {

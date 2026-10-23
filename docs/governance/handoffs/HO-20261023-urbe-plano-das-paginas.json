@@ -1,0 +1,68 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-plano-das-paginas",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T01:33:50Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-62",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "2800f6ea",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/665",
+  "files_changed": [
+    "apps/urbe/docs/csharp/PAGES-PLAN.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261023-urbe-plano-das-paginas.json"
+  ],
+  "work_completed": [
+    "UC-62: plano das páginas mais robustas (quatro fatias) escrito e posto em decisão no portal (DEC-0055)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet run tests/consistency/Check.cs",
+      "result": "passed",
+      "evidence": "CHK-DECISIONS aceita DEC-0055 com o objeto em related (só CHK-SINGLE-AUTHORITY falha localmente, por .claude/worktrees)."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "O proprietário escolhe o plano do UC-62 no portal (DEC-0055); depois, implementar as fatias escolhidas, a partir da Lista de notas."
+  ],
+  "decisions_required": [
+    "DEC-0055"
+  ],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-011",
+      "evidence": "A direção nova das páginas vai ao proprietário (DEC-0055) antes de qualquer código."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "O plano está persistido em PAGES-PLAN.md e no registro de decisões."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "pages-plan",
+      "status": "product-specific",
+      "rationale": "Páginas do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Decisão de direção de produto (DEC-0055 pendente) e registro em decisions.json."
+  }
+}

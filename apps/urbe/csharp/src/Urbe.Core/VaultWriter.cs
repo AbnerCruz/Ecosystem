@@ -92,6 +92,44 @@ public static class VaultWriter
         ".json", ".yaml", ".yml", ".csv"
     };
 
+    /// <summary>
+    /// UC-60: what <see cref="Plan"/> gives ONE text document of the vault as it is (its bytes in the planned files),
+    /// without planning the whole vault: the same refusals for that document (a vault that may not be written, a file of
+    /// a future version, an original that is not UTF-8, a text file elsewhere that is not UTF-8 and the plan would
+    /// drop) and the same bytes (the original ones when the text did not change). Null where Plan is not writable or
+    /// leaves the document out. A single-file write (the vault adapters) needs only this; the tests hold the two equal.
+    /// </summary>
+    public static byte[]? PlanOne(IReadOnlyList<VaultFile> files, VaultSnapshot snapshot, string path, string content)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(snapshot);
+        ArgumentNullException.ThrowIfNull(content);
+        if (snapshot.IsReadOnly) return null;
+        var target = NormalizePath(path);
+        if (IsSystemPath(target)) throw new InvalidDataException("Documento em caminho de sistema: " + target);
+        var future = new HashSet<string>(snapshot.FutureFiles, StringComparer.OrdinalIgnoreCase);
+        if (future.Contains(target)) return null;
+        // the plan keeps the documents read as text and drops the other text files, refusing one that is not UTF-8
+        var kept = new HashSet<string>(snapshot.Documents.Where(d => d.Text is not null).Select(d => d.Path), StringComparer.OrdinalIgnoreCase) { target };
+        foreach (var file in files)
+            if (IsEditableText(file.Path) && !kept.Contains(file.Path) && !future.Contains(file.Path) && !IsValidUtf8(file.Bytes.Span))
+                throw new InvalidDataException(
+                    "Não é seguro mover ou excluir uma nota de codificação não UTF-8. " +
+                    "Converta o arquivo explicitamente: " + file.Path);
+        var original = files.FirstOrDefault(f => string.Equals(f.Path, target, StringComparison.OrdinalIgnoreCase));
+        if (original is not null)
+        {
+            var originalBytes = original.Bytes.ToArray();
+            if (string.Equals(Encoding.UTF8.GetString(originalBytes), content, StringComparison.Ordinal)) return originalBytes;
+            if (!IsValidUtf8(originalBytes))
+                throw new InvalidDataException(
+                    "O arquivo foi alterado, mas sua codificação original " +
+                    "não é UTF-8 válida. Converta-o explicitamente antes de editar: " +
+                    target);
+        }
+        return Encoding.UTF8.GetBytes(content);
+    }
+
     public static VaultWriteResult Plan(VaultWriteRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);

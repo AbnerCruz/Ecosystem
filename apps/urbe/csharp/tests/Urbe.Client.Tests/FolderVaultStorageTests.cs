@@ -292,6 +292,45 @@ public sealed class FolderVaultStorageTests : IDisposable
     }
 
     [Fact]
+    public async Task AnOldNoteChangedOutsideUrbeIsStillSeenWithTheReadCache()
+    {
+        // UC-60: notes written long ago are kept in memory between saves; one changed outside (same size even) is read again
+        foreach (var f in Directory.EnumerateFiles(Vault, "*", SearchOption.AllDirectories)) File.SetLastWriteTimeUtc(f, DateTime.UtcNow.AddDays(-2));
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        await storage.SaveExistingNoteAsync("Comece.md", "# Comece\n\nmais\n", Ct);   // reads (and keeps) the old notes
+        File.WriteAllText(Path.Combine(Vault, "Bairro", "Um.md"), "# Ux\n");             // same size, changed outside
+        File.SetLastWriteTimeUtc(Path.Combine(Vault, "Bairro", "Um.md"), DateTime.UtcNow.AddDays(-1));
+        await Assert.ThrowsAsync<IOException>(() => storage.SaveExistingNoteAsync("Comece.md", "# Comece\n", Ct));
+        Assert.Equal("# Comece\n\nmais\n", File.ReadAllText(Path.Combine(Vault, "Comece.md")));
+        Assert.Equal("# Ux\n", File.ReadAllText(Path.Combine(Vault, "Bairro", "Um.md")));
+    }
+
+    [Fact]
+    public async Task TrashingManyNotesWritesTheTrashOnceAndRemovesOnlyThoseFiles()
+    {
+        // UC-65: a folder at once — the trash with both texts first, then both files, every other file intact
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        var before = Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).ToDictionary(f => f, File.ReadAllBytes);
+        var store = new Urbe.Core.DocumentStore();
+        var docs = new[] { store.Upsert(new Urbe.Core.DocumentInput { Path = "Bairro/Um.md", Content = "# Um\n" }), store.Upsert(new Urbe.Core.DocumentInput { Path = "Comece.md", Content = "# Comece\n\n[[Bairro/Um]]\n" }) };
+        var trash = Urbe.Core.LegacyTrash.Read(null, null, out _).ExportWith(docs, 1760000000000);
+
+        // refused without a change: a path twice, a trash without one text, a note that is not there
+        await Assert.ThrowsAsync<ArgumentException>(() => storage.TrashTextFilesAsync(["Comece.md", "comece.md"], trash, Ct));
+        await Assert.ThrowsAsync<InvalidDataException>(() => storage.TrashTextFilesAsync(["Bairro/Um.md", "Comece.md"], TrashOf("Comece.md", "# Comece\n\n[[Bairro/Um]]\n"), Ct));
+        await Assert.ThrowsAsync<FileNotFoundException>(() => storage.TrashTextFilesAsync(["Bairro/Um.md", "Nada.md"], trash, Ct));
+        foreach (var (file, bytes) in before) Assert.Equal(bytes, File.ReadAllBytes(file));
+        Assert.False(File.Exists(Path.Combine(Vault, ".urbe", "trash.v2.json")));
+
+        await storage.TrashTextFilesAsync(["Bairro/Um.md", "Comece.md"], trash, Ct);
+        Assert.Equal(trash, File.ReadAllText(Path.Combine(Vault, ".urbe", "trash.v2.json")));
+        Assert.Equal(["foto.png", "trash.v2.json"], Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).Select(Path.GetFileName).Order().ToArray()!);
+        Assert.Equal(new byte[] { 1, 2, 3 }, File.ReadAllBytes(Path.Combine(Vault, "foto.png")));
+    }
+
+    [Fact]
     public async Task RewritingTheTrashTouchesOnlyItAndRefusesAnotherVersion()
     {
         var storage = Storage();
@@ -431,5 +470,28 @@ public sealed class FolderVaultStorageTests : IDisposable
         Assert.True(snapshot!.IsReadOnly);
         await Assert.ThrowsAsync<InvalidOperationException>(() => storage.SaveNotesRecordAsync(Record2, Ct));
         Assert.False(File.Exists(Path.Combine(Vault, ".urbe", "notas.json")));
+    }
+
+    [Fact]
+    public async Task CreateBinaryFileWritesNewBytesNeverOverAFileAndKeepsTheNotesWritable()
+    {
+        // UC-63: an image the Assistente made, in a new folder; the notes stay writable afterwards
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        byte[] png = [0x89, 0x50, 0x4e, 0x47, 0, 1, 2, 255];
+        await storage.CreateBinaryFileAsync("Imagens/gato.png", png, Ct);
+        Assert.Equal(png, File.ReadAllBytes(Path.Combine(Vault, "Imagens", "gato.png")));
+        await storage.SaveExistingNoteAsync("Bairro/Um.md", "# Um\n\n![[Imagens/gato.png]]\n", Ct);
+        Assert.Equal("# Um\n\n![[Imagens/gato.png]]\n", File.ReadAllText(Path.Combine(Vault, "Bairro", "Um.md")));
+
+        // never over an existing file, never text, never inside .urbe or out of the vault, never through a file as a folder
+        await Assert.ThrowsAsync<IOException>(() => storage.CreateBinaryFileAsync("foto.png", [9], Ct));
+        Assert.Equal(new byte[] { 1, 2, 3 }, File.ReadAllBytes(Path.Combine(Vault, "foto.png")));
+        await Assert.ThrowsAsync<NotSupportedException>(() => storage.CreateBinaryFileAsync("Nota.md", [9], Ct));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => storage.CreateBinaryFileAsync(".urbe/x.png", [9], Ct));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => storage.CreateBinaryFileAsync("../fora.png", [9], Ct));
+        await Assert.ThrowsAsync<IOException>(() => storage.CreateBinaryFileAsync("Comece.md/x.png", [9], Ct));
+        Assert.False(File.Exists(Path.Combine(_dir, "fora.png")));
+        Assert.False(Directory.Exists(Path.Combine(Vault, ".urbe")) && File.Exists(Path.Combine(Vault, ".urbe", "x.png")));
     }
 }

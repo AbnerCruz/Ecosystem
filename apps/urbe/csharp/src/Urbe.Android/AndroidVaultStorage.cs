@@ -170,6 +170,38 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     public Task CreateTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
         WriteTextFileAsync(path, content, create: true, cancellationToken);
 
+    public async Task CreateBinaryFileAsync(string path, byte[] bytes, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(bytes);
+        IUrbeVaultStorage.EnsureWritableBinaryPath(path);
+        if (bytes.LongLength > MaxFileBytes) throw new InvalidDataException("O arquivo passa do limite de 32 MB: " + path);
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            if (_baseline is null) throw new InvalidOperationException("Reabra a pasta do vault.");
+            await Task.Run(() =>
+            {
+                // a folder on the way that exists as a file is refused (EnsureDirectory would walk into it)
+                var parent = Root(tree);
+                foreach (var segment in Segments(path)[..^1])
+                {
+                    var child = Children(tree, parent).FirstOrDefault(x => string.Equals(x.Name, segment, StringComparison.Ordinal));
+                    if (child is null) break;
+                    if (child.MimeType != DirectoryMime) throw new IOException("Já existe um arquivo com esse nome: " + path);
+                    parent = DocumentUri(tree, child.DocumentId);
+                }
+                if (FindDocument(tree, path) is not null) throw new IOException("Já existe um arquivo com esse nome: " + path);
+                cancellationToken.ThrowIfCancellationRequested();
+                WriteVerified(tree, path, bytes);
+                // the provider keeps the name asked (never "foto (1).png") and the bytes read back are the ones written
+                if (FindDocument(tree, path) is not { } made || !ReadBytes(made).AsSpan().SequenceEqual(bytes))
+                    throw new IOException("O arquivo criado não passou na verificação: " + path);
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     public Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
         WriteTextFileAsync(path, content, create: false, cancellationToken);
 
@@ -480,22 +512,11 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
 
             // The canonical writer must agree that the document is writable. This is a single-file
             // write: do NOT apply unrelated migration, journal or delete operations from the plan.
-            var documents = snapshot.Documents.Where(d => d.Text is not null)
-                .Select(d => new VaultWriteDocument(d.Id, d.Path,
-                    string.Equals(d.Path, target, StringComparison.OrdinalIgnoreCase) ? content : d.Text!))
-                .ToList();
-            if (create) documents.Add(new VaultWriteDocument("doc-" + Guid.NewGuid().ToString("N"), target, content));
-            var plan = VaultWriter.Plan(new VaultWriteRequest
-            {
-                Files = files,
-                Documents = documents,
-                AppVersion = "urbe-native-preview"
-            });
-            if (!plan.Writable || !plan.Files.ContainsKey(target))
-                throw new InvalidOperationException("O plano canônico recusou o arquivo.");
+            // UC-60: the canonical writer's plan for this one file alone (the same refusals and bytes as the full plan).
+            var plannedBytes = VaultWriter.PlanOne(files, snapshot, target, content)
+                ?? throw new InvalidOperationException("O plano canônico recusou o arquivo.");
             var expected = Encoding.UTF8.GetBytes(content);
             // The writer can preserve UTF-8 BOM from an existing note; use its canonical bytes.
-            var plannedBytes = plan.Files[target].Bytes.ToArray();
             if (!plannedBytes.AsSpan().SequenceEqual(expected) &&
                 !(plannedBytes.Length == expected.Length + 3 && plannedBytes[0] == 0xef &&
                   plannedBytes[1] == 0xbb && plannedBytes[2] == 0xbf &&
@@ -617,6 +638,48 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 foreach (var pair in baseline)
                 {
                     if (string.Equals(pair.Key, source, StringComparison.OrdinalIgnoreCase)) continue;
+                    var expected = string.Equals(pair.Key, trashPath, StringComparison.OrdinalIgnoreCase) ? trashBytes : pair.Value.Bytes.ToArray();
+                    if (!observed.TryGetValue(pair.Key, out var actual) || !actual.Bytes.Span.SequenceEqual(expected))
+                        throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
+                }
+                if (!observed.TryGetValue(trashPath, out var written) || !written.Bytes.Span.SequenceEqual(trashBytes))
+                    throw new IOException("A lixeira não passou na verificação: " + trashPath);
+                _baseline = observed;
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
+    public async Task TrashTextFilesAsync(IReadOnlyList<string> paths, string trashJson, CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, files);
+            var (sources, trashPath, trashBytes) = IUrbeVaultStorage.PlanTrashMany(files, paths, trashJson);
+            var create = !baseline.ContainsKey(trashPath);
+            var gone = new HashSet<string>(sources, StringComparer.OrdinalIgnoreCase);
+
+            await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var uris = sources.Select(s => FindDocument(tree, s) ?? throw new FileNotFoundException("O arquivo não existe na pasta.", s)).ToList();
+                if (create && FindDocument(tree, trashPath) is not null)
+                    throw new IOException("A pasta foi modificada fora do Urbe: " + trashPath);
+                // the trash holds every text before any file goes
+                WriteVerified(tree, trashPath, trashBytes);
+                for (int i = 0; i < uris.Count; i++)
+                    if (!DocumentsContract.DeleteDocument(Resolver, uris[i]))
+                        throw new IOException("O provedor não removeu o arquivo: " + sources[i]);
+                var observed = Snapshot(ReadFiles(tree, cancellationToken));
+                if (observed.Count != baseline.Count - gone.Count + (create ? 1 : 0) || observed.Keys.Any(gone.Contains))
+                    throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
+                foreach (var pair in baseline)
+                {
+                    if (gone.Contains(pair.Key)) continue;
                     var expected = string.Equals(pair.Key, trashPath, StringComparison.OrdinalIgnoreCase) ? trashBytes : pair.Value.Bytes.ToArray();
                     if (!observed.TryGetValue(pair.Key, out var actual) || !actual.Bytes.Span.SequenceEqual(expected))
                         throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);

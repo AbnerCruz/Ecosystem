@@ -295,10 +295,8 @@ public sealed partial class MainView
         var dirs = new HashSet<string>(StringComparer.Ordinal) { folder };
         foreach (var f in _library.Folders.Where(f => f.StartsWith(folder + "/", StringComparison.Ordinal))) dirs.Add(f);
         foreach (var d in docs)
-        {
             for (var dir = DirOf(d.Path); dir.Length > folder.Length; dir = DirOf(dir)) dirs.Add(dir);
-            if (!await DeleteNoteAsync(d.Path, confirmed: true)) return false;
-        }
+        if (docs.Count > 0 && !await TrashNotesAsync(docs)) return false;
         // a folder that still holds a file that is not a note stays, as on the disk
         bool Holds(string dir) => _attachments.Any(p => p.StartsWith(dir + "/", StringComparison.Ordinal));
         foreach (var dir in dirs) if (!Holds(dir)) { _library.RemoveFolder(dir); AreaFollows(dir, null); }

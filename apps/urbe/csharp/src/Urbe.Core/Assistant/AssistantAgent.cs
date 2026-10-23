@@ -484,6 +484,7 @@ public static class AssistantAgent
         public IAssistantAppearance? Appearance => inner.Appearance;
         public IAssistantPlugins? Plugins => inner.Plugins;
         public IAssistantNames? Names => inner.Names;
+        public IAssistantImages? Images => inner.Images;
     }
 
     private sealed record Out(string Content, bool IsError = false, string? Status = null, IReadOnlyList<AiChange>? Changes = null, IReadOnlyList<(string Path, AiPartial? Partial)>? Reads = null);
