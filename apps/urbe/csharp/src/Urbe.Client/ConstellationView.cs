@@ -37,6 +37,8 @@ public sealed class ConstellationView : Control
 
     public ConstellationView()
     {
+        _breath.Tick += (_, _) => Breathe();
+        DetachedFromVisualTree += (_, _) => _breath.Stop();
         ClipToBounds = true;
         Focusable = true;
         AutomationProperties.SetName(this, "Constelação");
@@ -46,6 +48,29 @@ public sealed class ConstellationView : Control
     }
 
     private double _pinch = 1;
+
+    // UC-72: a slow breathing of the stars while the sky is being moved; it stops a little after you stop
+    private readonly Avalonia.Threading.DispatcherTimer _breath = new() { Interval = TimeSpan.FromMilliseconds(60) };
+    private DateTime _lastTouch;
+    private double _phase;
+
+    /// <summary>True while the stars breathe (tests).</summary>
+    public bool Breathing => _breath.IsEnabled;
+
+    /// <summary>The sky was moved: the breathing goes on for a moment after.</summary>
+    private void Stir()
+    {
+        if (UrbeTokens.Motion.Reduced) return;
+        _lastTouch = DateTime.UtcNow;
+        if (!_breath.IsEnabled) _breath.Start();
+    }
+
+    private void Breathe()
+    {
+        _phase += .06;
+        if ((DateTime.UtcNow - _lastTouch).TotalSeconds > 2.5) { _breath.Stop(); _phase = 0; }
+        InvalidateVisual();
+    }
 
     /// <summary>A focused star was tapped again: its note's path.</summary>
     public event Action<string>? NoteChosen;
@@ -129,6 +154,7 @@ public sealed class ConstellationView : Control
         var at = e.GetPosition(this);
         if (!_moved && Distance(at, start) < 8) return;
         _moved = true;
+        Stir();
         _offset -= (at - _last) / _scale;
         _last = at;
         InvalidateVisual();
@@ -154,6 +180,7 @@ public sealed class ConstellationView : Control
     public void ZoomAt(Point at, double factor)
     {
         if (!double.IsFinite(factor) || factor <= 0) return;
+        Stir();
         var before = ToSky(at);
         _scale = Math.Clamp(_scale * factor, .05, 4);
         var after = ToSky(at);
@@ -226,6 +253,8 @@ public sealed class ConstellationView : Control
             var c = ConnectionsGraph.FolderColor(s.Project);
             double r = (2.6 + Math.Min(3, Math.Sqrt(s.Degree) * .9)) * Math.Clamp(_scale, .9, 1.6);
             double alpha = !lit ? .12 : s.Recent ? 1 : .72;
+            // breathing: each star a little out of step with the others, never below 80 % of its light
+            if (_phase > 0) alpha *= .9 + .1 * Math.Sin(_phase + LinkGraph.Hash(s.Id) % 628 / 100.0);
             if (s.Recent && lit)
                 context.DrawEllipse(new RadialGradientBrush
                 {

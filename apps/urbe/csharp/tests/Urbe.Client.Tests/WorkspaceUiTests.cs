@@ -495,6 +495,11 @@ public sealed partial class HeadlessUiTests
                 // a tap shows the star and its links, the rest dimmed; a second tap opens the note
                 var hero = view.Documents!.Get("Personagens/Herói.md")!.Id;
                 var sky = view.SkyPanel.Sky;
+                // moving the sky makes the stars breathe; they stop a little after
+                sky.ZoomAt(new Point(400, 300), 1.1);
+                Assert.Equal(!UrbeTokens.Motion.Reduced, sky.Breathing);
+                for (int i = 0; i < 80 && sky.Breathing; i++) { await Task.Delay(50); Dispatcher.UIThread.RunJobs(); }
+                Assert.False(sky.Breathing);
                 sky.TapAt(sky.PointOf(hero)!.Value);
                 Assert.Equal(hero, sky.FocusedStar);
                 await Settle(window, view);
