@@ -14,7 +14,7 @@
   "branch": "feat/urbe-uc63-agent-profiles-image-models",
   "base_commit": "4012e353060ea4da16f388b3653bec9b115fe311",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/702",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantProviders.cs",
