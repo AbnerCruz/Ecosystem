@@ -17,7 +17,7 @@ Fonte do escopo completo: [MISSION.md](../../docs/proposals/atlas-forge/MISSION.
 | AF-011 | M5 | Eras causais com escalas de tempo e diffs | Marcos atuais são snapshots, não simulação temporal |
 | AF-012 | M6 | Geradores de cidade/caverna/dungeon, hierarquia e edição vetorial | Hoje grafo de nove salas, persistente e conectado |
 | AF-013 | M7 | Arquivo de projeto grande, hashes por campo, assets e adapter autorizado | JSON limitado a 24 MiB; sem escrever arquivos internos de outro aplicativo |
-| AF-015 | M1 | Autoria explícita: abertura vazia, sem exemplos inseridos, inspeção local sem geração | Issue #660: implementação e regressões; revisão no PR correspondente |
+| AF-015 | M1 | Autoria explícita: abertura vazia, sem exemplos inseridos, inspeção local sem geração | Issue #660: implementação e regressões; revisão no [PR #661](https://github.com/AbnerCruz/Ecosystem/pull/661) |
 | AF-014 | M8 | Dois consumidores reais, Extraction Review e capability se justificada | Sem extração antecipada; Runtime central nunca obrigatório |
 
 Cada avanço deve atravessar modelo → UI → persistência → teste → publicação quando aplicável. Não declarar todos os gates por ter controles visuais. A correção cartográfica solicitada pelo proprietário é prioritária em AF-005/015 (Issue #660); depois dela, retomar AF-007; AF-010 depende de recursos e habitats mensuráveis.

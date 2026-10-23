@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261022-atlas-forge-cartographic-quality",
   "category": "HANDOFF",
-  "timestamp": "2026-10-23T00:01:44.861900Z",
+  "timestamp": "2026-10-23T00:02:19.681785Z",
   "agent": {
     "id": "codex-atlas-forge",
     "kind": "ai-agent"
@@ -14,7 +14,7 @@
   "branch": "fix/atlas-forge-cartographic-detail",
   "base_commit": "7eb15181b7101683ae3423b26c4bfceb9d4ae9f2",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/661",
   "files_changed": [
     "apps/atlas-forge/README.md",
     "apps/atlas-forge/ROADMAP.md",
@@ -46,14 +46,16 @@
     "Primeira abertura vazia, sem gerar terreno/lugar/nota/interior. Recuperação preserva conteúdo salvo. Inspeção local não gera salas; comando separado explícito.",
     "Resolução nativa selecionável até 1.440 × 720, zoom ancorado 0,5–128×, gesto de dois dedos, grade adaptativa, curvas de nível derivadas e escala com limite físico visível. Globo projeta viewport HiDPI sem textura global limitada a 640 pixels.",
     "Refinamento em Worker mantém pegadas autorais, lugares e notas; marco conserva definição/estado/journal anteriores. Snapshots validados pela própria grade; preflight recusa resultado ou marco maior que 24 MiB antes do commit.",
-    "Versão local 0.3.0-alpha.1, documentação reconciliada. Sem release, novo componente, serviço ou dependência de outro aplicativo."
+    "Versão local 0.3.0-alpha.1, documentação reconciliada. Sem release, novo componente, serviço ou dependência de outro aplicativo.",
+    "PR #661 aberto para integração governada; CI remoto verifica o estado combinado."
   ],
   "verification": [
     {
       "check": "npm run check",
       "kind": "automated",
       "result": "passed",
-      "evidence": "20 testes de domínio/compatibilidade/câmera e 13 cenários E2E passaram; incluindo refinamento 720→1440 via Worker/UI, rejeição de checkpoint acima de 24 MiB, retorno integral à grade original e viewer offline com zoom >20×. Execução final completa aprovada após ajuste de legenda."
+      "evidence": "20 testes de domínio/compatibilidade/câmera e 13 cenários E2E passaram; incluindo refinamento 720→1440 via Worker/UI, rejeição de checkpoint acima de 24 MiB, retorno integral à grade original e viewer offline com zoom >20×. Execução final completa aprovada após ajuste de legenda.",
+      "tested_commit": "d65b6baa"
     },
     {
       "check": "npm run benchmark e npm run benchmark:render",
