@@ -111,6 +111,16 @@ public sealed class LegacyTrash
 
     /// <summary>The text of .urbe/trash.v2.json once <paramref name="d"/> is trashed at <paramref name="nowMs"/>, without
     /// changing this trash (what must be on disk before the document's file is removed).</summary>
+    /// <summary>UC-65: the trash as it will be with all of <paramref name="docs"/> in it (one copy for the whole batch).</summary>
+    public string ExportWith(IEnumerable<UrbeDocument> docs, long nowMs)
+    {
+        ArgumentNullException.ThrowIfNull(docs);
+        var copy = new LegacyTrash();
+        copy._items.AddRange(_items.Select(x => (x.Id, (JsonObject)x.Item.DeepClone())));
+        foreach (var d in docs) copy.Set(d.Id, Item(d, nowMs));
+        return copy.Export();
+    }
+
     public string ExportWith(UrbeDocument d, long nowMs)
     {
         ArgumentNullException.ThrowIfNull(d);

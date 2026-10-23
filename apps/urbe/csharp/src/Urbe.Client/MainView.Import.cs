@@ -101,28 +101,39 @@ public sealed partial class MainView
             return;
         }
 
-        var plan = ImportDocuments.Plan(inspection, _contents, folder is { Length: > 0 } ? folder : null);
+        var plan = ImportDocuments.Plan(inspection, _contents, folder is { Length: > 0 } ? folder : null, _attachments);
         var description = $"{inspection.DocumentCount} documento(s) e {inspection.AssetCount} arquivo(s). Os documentos serão incorporados ao vault atual, mantendo suas pastas e referências."
-            + (plan.Skipped.Count > 0 ? $" {plan.Skipped.Count} arquivo(s) (anexos que não são texto e metadados) não podem ser gravados no app nativo ainda e ficam de fora." : "")
-            + (plan.Kept.Count > 0 ? $" {plan.Kept.Count} documento(s) já existem com conteúdo diferente e serão mantidos como estão." : "");
+            + (plan.Attachments.Count > 0 ? $" {plan.Attachments.Count} anexo(s) (imagens, PDFs, áudio, vídeo) vêm junto." : "")
+            + (plan.Skipped.Count > 0 ? $" {plan.Skipped.Count} arquivo(s) de tipos que o Urbe não grava (ou metadados) ficam de fora." : "")
+            + (plan.Kept.Count > 0 ? $" {plan.Kept.Count} arquivo(s) já existem com conteúdo diferente e serão mantidos como estão." : "");
         if (await Dialogs.ChooseAsync("Documentos para incorporar", [new DialogItem("Continuar")], description) is null)
         {
             ShowLifeNotice("Importação cancelada.");
             return;
         }
-        int written = 0;
+        int written = 0, total = plan.New.Count + plan.Attachments.Count;
         try
         {
             foreach (var (path, content) in plan.New)
             {
-                if (written % 10 == 0) ShowLifeNotice($"Importando {written} de {plan.New.Count}…");
+                if (written % 10 == 0) ShowLifeNotice($"Importando {written} de {total}…");
                 await WriteVaultFileAsync(path, content, exists: false);
                 written++;
             }
+            foreach (var (path, bytes) in plan.Attachments)
+            {
+                if (written % 10 == 0) ShowLifeNotice($"Importando {written} de {total}…");
+                await EnsureFolderAsync(DirOf(path));
+                await _vault!.CreateBinaryFileAsync(path, bytes);
+                _attachments.Add(path);
+                written++;
+            }
+            if (plan.Attachments.Count > 0) RefreshNotes();
         }
         catch (Exception ex)
         {
-            await Dialogs.AlertAsync("Não foi possível importar", $"{written} de {plan.New.Count} documento(s) foram gravados antes do erro: {ex.Message}");
+            await Dialogs.AlertAsync("Não foi possível importar", $"{written} de {total} arquivo(s) foram gravados antes do erro: {ex.Message}");
+            if (plan.Attachments.Count > 0) RefreshNotes();
             return;
         }
         ShowLifeNotice($"Importação concluída. {written} arquivo(s) gravado(s); {plan.Unchanged} preservado(s), sem nova gravação.");
@@ -326,15 +337,23 @@ public sealed partial class MainView
 
 /// <summary>What a documents import will do to the current vault (importarEntradasDestino for text files).</summary>
 public sealed record ImportDocumentsPlan(IReadOnlyList<(string Path, string Content)> New, IReadOnlyList<string> Kept,
-    IReadOnlyList<string> Skipped, int Unchanged);
+    IReadOnlyList<string> Skipped, int Unchanged)
+{
+    /// <summary>UC-63: the new attachments (pictures, PDFs, audio, video) to create beside the documents.</summary>
+    public IReadOnlyList<(string Path, byte[] Bytes)> Attachments { get; init; } = [];
+}
 
 public static class ImportDocuments
 {
     /// <summary>The selection's text documents (under the target folder when one is chosen) against the
     /// vault's: new ones are written, identical ones are left alone, different ones are KEPT as they are
-    /// (the native vault has no backup-and-replace yet); non-text files and hidden metadata are skipped.</summary>
-    public static ImportDocumentsPlan Plan(ImportInspection inspection, IReadOnlyDictionary<string, string> current, string? targetFolder)
+    /// (the native vault has no backup-and-replace yet); attachments the app writes (pictures, PDFs, audio, video) are
+    /// created when new and kept when a file is already there; other files and hidden metadata are skipped.</summary>
+    public static ImportDocumentsPlan Plan(ImportInspection inspection, IReadOnlyDictionary<string, string> current, string? targetFolder,
+        IReadOnlySet<string>? attachments = null)
     {
+        var files = new HashSet<string>(attachments ?? new HashSet<string>(), StringComparer.OrdinalIgnoreCase);
+        var made = new List<(string, byte[])>();
         var existing = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var pair in current) existing[pair.Key] = pair.Value;
         var added = new List<(string, string)>();
@@ -344,7 +363,15 @@ public static class ImportDocuments
         foreach (var file in inspection.Files.Values.OrderBy(f => f.Path, StringComparer.Ordinal))
         {
             var path = string.IsNullOrEmpty(targetFolder) ? file.Path : targetFolder + "/" + file.Path;
-            if (!IUrbeVaultStorage.WritableExtensions.Contains(System.IO.Path.GetExtension(path)) || path.Split('/').Any(s => s.StartsWith('.')))
+            if (path.Split('/').Any(s => s.StartsWith('.'))) { skipped.Add(path); continue; }
+            if (IUrbeVaultStorage.BinaryExtensions.Contains(System.IO.Path.GetExtension(path)))
+            {
+                if (files.Contains(path) || existing.ContainsKey(path)) kept.Add(path);
+                else if (file.Bytes.Length > 32L * 1024 * 1024) skipped.Add(path);
+                else { made.Add((path, file.Bytes.ToArray())); files.Add(path); }
+                continue;
+            }
+            if (!IUrbeVaultStorage.WritableExtensions.Contains(System.IO.Path.GetExtension(path)))
             {
                 skipped.Add(path);
                 continue;
@@ -356,7 +383,7 @@ public static class ImportDocuments
             }
             else added.Add((path, text));
         }
-        return new ImportDocumentsPlan(added, kept, skipped, unchanged);
+        return new ImportDocumentsPlan(added, kept, skipped, unchanged) { Attachments = made };
     }
 
 }

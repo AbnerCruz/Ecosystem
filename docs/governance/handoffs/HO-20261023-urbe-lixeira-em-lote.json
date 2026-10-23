@@ -1,0 +1,86 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-lixeira-em-lote",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T01:12:31Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-65",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "2800f6ea",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/665",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyTrash.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultStorageTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261023-urbe-lixeira-em-lote.json"
+  ],
+  "work_completed": [
+    "UC-65: TrashTextFilesAsync nos adaptadores (Windows e Android) — lixeira com todas as notas gravada e verificada primeiro, arquivos removidos e vault verificado uma vez; excluir pasta e seleção usam essa operação. 120 notas: ≈1,2 s → ≈0,1 s (headless)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (674) e Urbe.Client.Tests (216)",
+      "result": "passed",
+      "evidence": "TrashingManyNotesWritesTheTrashOnceAndRemovesOnlyThoseFiles, Notes_DeletingABigFolderTrashesEveryNoteAndWritesTheHistoryOnce, Notes_DeletingAFolderSendsItsNotesToTheTrashAndRemovesTheFolder."
+    },
+    {
+      "kind": "automated",
+      "check": "Build do Android no CI",
+      "result": "pending",
+      "evidence": "csharp-client-native (android) no PR #665."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, excluir uma pasta grande e restaurar uma nota dela pela Lixeira",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs"
+    }
+  ],
+  "known_issues": [
+    "Uma falha do provedor no meio da remoção deixa a lixeira com notas cujo arquivo ainda existe (nada se perde; restaurar avisa que já existe); o app relê a pasta."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "UC-60: verificar só os arquivos tocados em cada gravação, em PR próprio."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A lixeira guarda o texto atual de cada nota antes de qualquer arquivo sair; nada muda na memória antes de o vault confirmar."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Aparelho pendente; UC-65 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "trash-batch",
+      "status": "product-specific",
+      "rationale": "Lixeira do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Nova operação de exclusão em lote nos adaptadores de vault (*Storage*, *Vault*). Espera a autorização do proprietário."
+  }
+}

@@ -117,6 +117,20 @@ public sealed partial class MainView : IAssistantApp
 
     void IAssistantApp.EndSuggestion() { if (Editor.Suggestion is not null) Editor.ShowSuggestion(null); }
 
+    async Task IAssistantApp.CreateBinaryFileAsync(string path, byte[] bytes)
+    {
+        RequireWritable();
+        if (((IAssistantApp)this).FileExists(path)) throw new InvalidOperationException("Já existe " + path + ".");
+        await EnsureFolderAsync(DirOf(path));
+        await _vault!.CreateBinaryFileAsync(path, bytes);
+        _attachments.Add(path);
+        RefreshNotes();
+    }
+
+    bool IAssistantApp.FileExists(string path) =>
+        _contents.Keys.Any(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase)) ||
+        _attachments.Any(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
+
     bool IAssistantApp.OpenReference(string reference)
     {
         if (_store is null || reference.Length == 0) return false;

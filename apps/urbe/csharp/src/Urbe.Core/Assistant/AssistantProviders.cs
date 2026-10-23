@@ -546,6 +546,65 @@ public sealed class AssistantProviders
         };
     }
 
+    // ---------------------------------------------------------------- images (UC-63)
+
+    /// <summary>
+    /// The image model of a preset that draws pictures through the OpenAI images API (images/generations): OpenAI and
+    /// Google Gemini (its OpenAI-compatible endpoint); a compatible server says its own. Null: the preset draws none.
+    /// </summary>
+    public static string? ImageModel(string preset) => preset switch
+    {
+        "openai" => "gpt-image-1",
+        "gemini" => "imagen-3.0-generate-002",
+        "custom" => "",
+        _ => null
+    };
+
+    /// <summary>True when the provider can draw pictures (see <see cref="ImageModel"/>).</summary>
+    public static bool DrawsImages(AiProviderConfig cfg)
+    {
+        var p = Resolve(cfg);
+        return p.Kind == "openai" && ImageModel(p.Preset) is not null;
+    }
+
+    /// <summary>The file extension of a picture's bytes (PNG, JPEG or WebP), or null when they are not one.</summary>
+    public static string? ImageExtension(ReadOnlySpan<byte> b) =>
+        b.Length > 8 && b[0] == 0x89 && b[1] == 0x50 && b[2] == 0x4e && b[3] == 0x47 ? ".png"
+        : b.Length > 3 && b[0] == 0xff && b[1] == 0xd8 && b[2] == 0xff ? ".jpg"
+        : b.Length > 12 && b[0] == (byte)'R' && b[1] == (byte)'I' && b[2] == (byte)'F' && b[3] == (byte)'F' && b[8] == (byte)'W' && b[9] == (byte)'E' && b[10] == (byte)'B' && b[11] == (byte)'P' ? ".webp"
+        : null;
+
+    /// <summary>
+    /// UC-63: one picture drawn by the provider from <paramref name="prompt"/>, as the bytes of a PNG, JPEG or WebP
+    /// (asked as base64, never a link to fetch). <paramref name="model"/> empty: the preset's image model.
+    /// </summary>
+    public async Task<byte[]> GenerateImageAsync(AiProviderConfig cfg, string prompt, string? model = null, string size = "1024x1024", CancellationToken cancel = default)
+    {
+        var p = Resolve(cfg);
+        if (p.Kind != "openai" || ImageModel(p.Preset) is not { } preset)
+            throw new AiProviderException(p.Name + " não gera imagens. Use OpenAI, Google Gemini ou um servidor compatível que gere.");
+        if (p.BaseUrl.Length == 0) throw new AiProviderException("Informe o endereço (URL base) do provedor " + p.Name + ".");
+        if (Presets.TryGetValue(p.Preset, out var pre) && pre.NeedsKey && p.ApiKey.Length == 0) throw new AiProviderException("Configure a chave de " + p.Name + " nas configurações do Assistente.");
+        var m = string.IsNullOrWhiteSpace(model) ? preset : model.Trim();
+        if (m.Length == 0) throw new AiProviderException("Informe o modelo de imagem do servidor.");
+        if (string.IsNullOrWhiteSpace(prompt)) throw new AiProviderException("Descreva a imagem.");
+        var body = new JsonObject { ["model"] = m, ["prompt"] = prompt, ["n"] = 1, ["size"] = size };
+        // the gpt-image models always answer in base64 and refuse the field; the others need it, or they send a link
+        if (!m.StartsWith("gpt-image", StringComparison.Ordinal)) body["response_format"] = "b64_json";
+        var url = Join(p.BaseUrl, "/images/generations");
+        using var res = await RequestAsync(p, url, () => Post(url, body, OpenAiHeaders(p)), cancel);
+        JsonNode? j;
+        try { j = JsonNode.Parse(await res.Content.ReadAsStringAsync(cancel)); }
+        catch (JsonException) { throw new AiProviderException("O provedor devolveu uma resposta que não é JSON."); }
+        var b64 = j?["data"] is JsonArray { Count: > 0 } data && data[0]?["b64_json"] is JsonValue v && v.TryGetValue<string>(out var text) ? text : null;
+        if (string.IsNullOrEmpty(b64)) throw new AiProviderException("O provedor não devolveu a imagem.");
+        byte[] bytes;
+        try { bytes = Convert.FromBase64String(b64); }
+        catch (FormatException) { throw new AiProviderException("O provedor devolveu uma imagem ilegível."); }
+        if (ImageExtension(bytes) is null) throw new AiProviderException("O provedor devolveu algo que não é uma imagem.");
+        return bytes;
+    }
+
     /// <summary>listModels(cfg).</summary>
     public Task<List<AiModelInfo>> ListModelsAsync(AiProviderConfig cfg, CancellationToken cancel = default)
     {

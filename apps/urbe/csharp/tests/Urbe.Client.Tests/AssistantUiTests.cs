@@ -262,6 +262,13 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains(panel.GetLogicalDescendants().OfType<TextBlock>(), t => (t.Text ?? string.Concat(t.Inlines?.OfType<Avalonia.Controls.Documents.Run>().Select(r => r.Text) ?? [])).Contains("Sugiro Aurora.", StringComparison.Ordinal));
                 Snapshot(window, "native-agent-in-note-answer.png");
 
+                // the answer kept in the note, as a quote under the line that asked it, marked as the Assistente's
+                ClickNamed(panel, "Pôr a resposta na nota");
+                for (int i = 0; i < 100 && !File.ReadAllText(Path.Combine(vault, "Herói.md")).Contains("> Sugiro", StringComparison.Ordinal); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                var kept = File.ReadAllText(Path.Combine(vault, "Herói.md"));
+                Assert.Matches(@"&Jarvis&: Dê uma sugestão de nome\n\n> Sugiro Aurora\. \{ia:""[^""]+""\}\n\n&Sexta&: e outro\n", kept);
+                Assert.False(panel.GetLogicalDescendants().OfType<Button>().Single(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Pôr a resposta na nota").IsEnabled);
+
                 // a name no agent has: it says so, and nothing is sent
                 panel.Close();
                 ClickNamed(view.Editor, "Pedir a Sexta");

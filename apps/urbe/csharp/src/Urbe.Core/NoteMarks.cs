@@ -42,6 +42,22 @@ public static partial class NoteMarks
         return result;
     }
 
+    /// <summary>
+    /// UC-80: the agent's answer kept in the note as a quote, right under the <c>&amp;Nome&amp;:</c> line that asked it
+    /// (the first one with that agent and request; at the end of the note when the line is gone), marked as written by
+    /// the Assistente.
+    /// </summary>
+    public static string PinAnswer(string note, string agent, string request, string answer, string model)
+    {
+        var quote = string.Join("\n", WithAiMark(answer.Trim(), model).Split('\n').Select(l => l.Length == 0 ? ">" : "> " + l));
+        var call = AgentCalls(note).FirstOrDefault(c => string.Equals(c.Agent, agent.Trim(), StringComparison.OrdinalIgnoreCase) && c.Request == request.Trim());
+        if (call is null)
+            return note.TrimEnd('\n') + (note.Length > 0 ? "\n\n" : "") + quote + "\n";
+        int end = call.Start + call.Length;
+        var rest = note[end..].TrimStart('\n');
+        return note[..end] + "\n\n" + quote + "\n" + (rest.Length > 0 ? "\n" + rest : "");
+    }
+
     /// <summary>The mark after text written by the Assistente: <c>{ia:"modelo"}</c>, the model's short name.</summary>
     public static string AiMark(string model)
     {

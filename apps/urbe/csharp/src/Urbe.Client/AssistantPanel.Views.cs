@@ -47,6 +47,15 @@ public sealed partial class AssistantPanel
         }
         if (meta?.Streaming == true && m.Content.Count == 0 && string.IsNullOrEmpty(meta.Reasoning))
             view.Children.Add(Label("•••", 18, UrbeTheme.Text3));
+        // UC-80: an answer to a request made in a note can be kept there, as a quote under the line that asked it
+        var answer = string.Join("\n\n", m.Content.Where(b => b.Type == "text" && !string.IsNullOrWhiteSpace(b.Text)).Select(b => b.Text!.Trim()));
+        if (meta?.Streaming != true && meta?.Draft != true && answer.Length > 0 && AskedInNote() is { } asked)
+        {
+            Button? pin = null;
+            pin = LinkButton("Pôr na nota", () => { pin!.IsEnabled = false; _ = PinAnswerAsync(asked.Path, asked.Agent, asked.Request, answer, meta?.Model ?? ModelId()); });
+            Avalonia.Automation.AutomationProperties.SetName(pin, "Pôr a resposta na nota");
+            view.Children.Add(pin);
+        }
         return view;
     }
 

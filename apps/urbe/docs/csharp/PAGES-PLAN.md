@@ -1,0 +1,59 @@
+# Páginas mais robustas — plano (UC-62)
+
+> **Estado:** proposta para a decisão do proprietário (DEC-0055, pendente). Nada deste plano é implementado antes dela.
+> **Autoridade:** o escopo e o andamento ficam no [ROADMAP C#](ROADMAP.md) (UC-62); este documento só descreve o plano.
+
+## O pedido (observação de 16/10/2026)
+
+O estúdio de páginas deve ser uma extensão do editor de notas e do Explorer. As ferramentas devem ser flexíveis e completas, e os modelos devem derivar delas, não o contrário. O estúdio deve ser inteligente com o vault e as notas.
+
+## Como está hoje (fatos observados no código)
+
+- **Motor:** o motor de páginas é o da 1.8.4, portado com oráculos (`Urbe.Core/Pages`, `engine.js`, `free.js`).
+- **Seções:**
+  - Há seções prontas (capa, citação, cartões…).
+  - Há seções **livres**, montadas com nós: caixa, título, texto, imagem, botão, lista, citação, ícone, divisória, espaço, vídeo, tabela, código, fórmula, selo, incorporação, quebra de página, HTML.
+  - O nó **nota** mostra uma nota inteira do vault.
+- **Modelos** (`PageTemplates`): especificações fixas da 1.8.4, aplicadas por substituição, por acréscimo ou só como tema.
+- **Ligação com o vault:**
+  - Não existe bloco que liste notas por pasta, tag, link ou busca.
+  - Uma página não muda quando as notas mudam, a não ser pelo nó **nota**.
+- **Edição pela prévia:** o texto de títulos e textos já se edita tocando na prévia (`PreviewMessage` "text"). Os outros campos ficam no painel **Editar**.
+- **Abrir:** abre-se uma página pela lista de Páginas. Uma nota ou uma pasta do Explorer não tem "Criar página daqui".
+
+## O plano, em quatro fatias
+
+Cada fatia tem teste e entra sozinha. Os oráculos da 1.8.4 ficam intactos: as novidades ficam atrás de opções do motor, como `UrbeMarks` hoje, e uma página da 1.8.4 abre e exporta igual.
+
+1. **Blocos ligados ao vault.**
+   - Um nó novo, **Lista de notas**, com uma consulta: pasta (com ou sem subpastas), tag, notas que ligam a uma nota, notas ligadas por ela, ou busca de texto.
+   - Ordem: nome, data ou mais recentes. Limite de itens.
+   - Aparência: lista, cartões com resumo, ou índice com links.
+   - A consulta fica na página (`.page.json`). O resultado é calculado ao abrir, na prévia e ao exportar, então a página acompanha as notas sem gravar nada além dela mesma (NN-001: as notas continuam a autoridade).
+   - No HTML exportado, cada item vira link para a página da nota quando ela for exportada junto, ou só o título.
+2. **Abrir a partir do Explorer.**
+   - Segurar uma nota ou pasta → **Criar página daqui**.
+   - De uma nota: uma página com a nota como conteúdo (nó **nota**).
+   - De uma pasta: uma página com a capa e uma **Lista de notas** daquela pasta.
+   - A página é gravada pela gravação verificada, em `Páginas/`.
+3. **Modelos como combinações salvas.**
+   - Os blocos (seções e nós) passam a ser as ferramentas. Um modelo vira uma combinação salva deles.
+   - **Salvar como modelo** grava a página atual (sem o conteúdo de texto, ou com ele, à escolha) em `Personalização/modelos-de-pagina/`, no vault, como os temas.
+   - A lista de modelos mostra os da 1.8.4 e os da pessoa lado a lado.
+   - Os modelos da 1.8.4 continuam iguais (oráculo).
+4. **Editar tudo pela prévia.**
+   - Todo texto da página se edita tocando na prévia, inclusive itens de lista, legendas, botões e citações, não só títulos e parágrafos.
+   - Uma imagem tocada abre a escolha de imagem. O painel **Editar** continua para o resto.
+
+## Fora do plano
+
+- Um segundo motor de páginas.
+- Mudar o formato `.page.json` de forma incompatível com a 1.8.4.
+- Qualquer coisa da simulação (ADD-0028).
+- Páginas que se atualizam sozinhas em segundo plano. O cálculo é sempre no abrir, na prévia ou na exportação.
+
+## Riscos e custo
+
+- **Desempenho:** a consulta da **Lista de notas** num vault grande usa o índice que já existe (`KnowledgeIndex`/`WorkspaceIndex`) e um limite de itens.
+- **Compatibilidade:** uma página com **Lista de notas** aberta na 1.8.4 mostra o nó como desconhecido. Isso fica documentado no tutorial.
+- **Tamanho:** quatro fatias de tamanho parecido com o do UC-35; a 1 e a 2 primeiro.
