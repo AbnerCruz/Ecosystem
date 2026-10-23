@@ -119,3 +119,41 @@ public sealed class LibraryOpenPerfTests
         HeadlessUiTests.PerfLog($"PERF notes {count} reopen Open {sw.ElapsedMilliseconds} ms");
     }
 }
+
+/// <summary>UC-65: creating a note in a big vault (URBE_PERF=1): the whole flow and the vault's own write.</summary>
+public sealed partial class HeadlessUiTests
+{
+    [Theory]
+    [InlineData(2000)]
+    public async Task Perf_CreateNoteInABigVault(int count)
+    {
+        if (!PerfWanted(count)) return;
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-perf-new-" + Guid.NewGuid().ToString("N"));
+            var vault = GenerateVault(Path.Combine(dir, "vault"), count);
+            try
+            {
+                var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
+                var view = new MainView(storage);
+                view.Customization.Device = new MemoryDeviceStore();
+                var window = new Window { Width = 412, Height = 900, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await view.FlushPendingAsync();
+                for (int k = 0; k < 3; k++)
+                {
+                    var sw = Stopwatch.StartNew();
+                    var note = await view.CreateNoteAsync("Pasta 1", "Nova " + k, open: false);
+                    var flow = sw.ElapsedMilliseconds;
+                    sw.Restart();
+                    await storage.CreateTextFileAsync("Pasta 2/Direta " + k + ".md", "# Direta\n");
+                    PerfLog($"PERF {count} create note: flow {flow} ms, vault write alone {sw.ElapsedMilliseconds} ms ({note?.Path})");
+                }
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+    }
+}
