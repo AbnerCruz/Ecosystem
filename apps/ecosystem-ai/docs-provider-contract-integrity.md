@@ -42,3 +42,17 @@ rede real, IA de outro Product ou Android.
 A verificação CI e a integração devem ser registradas no PR/handoff.
 Isso não encerra a tarefa P6-5, não estabelece contrato público nem
 substitui DEVICE ou validação de custo real de provedor.
+
+## Custos acumulados e correlação de ferramentas
+
+Uma execução pode chamar o modelo várias vezes. A indicação
+`LastCostEstimated` agora fica verdadeira se pelo menos uma resposta
+válida usou estimativa. Uma resposta posterior com custo informado não
+apaga a informação. Uma resposta inválida não altera o indicador.
+
+Na mesma resposta, identificadores de `tool_calls` devem ser únicos,
+pois cada resultado precisa corresponder à sua própria chamada.
+
+Testes locais simulam as duas ordens de custo e a recusa de IDs duplicados.
+A mudança não altera orçamento, grants ou persistência. Não equivale
+a validação com provedor comercial ou aparelho Android.
