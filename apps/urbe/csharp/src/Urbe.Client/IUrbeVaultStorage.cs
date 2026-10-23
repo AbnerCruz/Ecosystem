@@ -224,6 +224,54 @@ public interface IUrbeVaultStorage
     }
 
     /// <summary>
+    /// UC-65: moves MANY user text files to the trash at once (a folder, a selection): .urbe/trash.v2.json, holding each
+    /// of them with its current text, is written and verified FIRST, then the files are removed and every file of the
+    /// vault is verified, once for all of them. The same refusals as <see cref="TrashTextFileAsync"/>. A host without
+    /// it moves them one by one.
+    /// </summary>
+    async Task TrashTextFilesAsync(IReadOnlyList<string> paths, string trashJson, CancellationToken cancellationToken = default)
+    {
+        foreach (var path in paths) await TrashTextFileAsync(path, trashJson, cancellationToken);
+    }
+
+    /// <summary>
+    /// The checks of <see cref="TrashTextFilesAsync"/> on these files, read once: every path a readable text document
+    /// of a vault that may be written, listed once, and held by <paramref name="trashJson"/> with exactly its text.
+    /// Returns the files' paths on disk, the trash file's path and the trash bytes.
+    /// </summary>
+    static (IReadOnlyList<string> Paths, string TrashPath, byte[] TrashBytes) PlanTrashMany(IReadOnlyList<VaultFile> files, IReadOnlyList<string> paths, string trashJson)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(paths);
+        ArgumentNullException.ThrowIfNull(trashJson);
+        if (paths.Count == 0) throw new ArgumentException("Nenhum arquivo para a lixeira.", nameof(paths));
+        if (paths.Distinct(StringComparer.OrdinalIgnoreCase).Count() != paths.Count) throw new ArgumentException("Um arquivo aparece duas vezes.", nameof(paths));
+        foreach (var path in paths) EnsureWritableTextPath(path);
+        var snapshot = VaultReader.Read(files);
+        var trashPath = files.FirstOrDefault(f => string.Equals(f.Path, LegacyTrash.Path, StringComparison.OrdinalIgnoreCase))?.Path ?? LegacyTrash.Path;
+        if (snapshot.IsReadOnly || snapshot.RecoveredFromJournal ||
+            snapshot.FutureFiles.Any(f => string.Equals(f, trashPath, StringComparison.OrdinalIgnoreCase) || paths.Contains(f, StringComparer.OrdinalIgnoreCase)))
+            throw new InvalidOperationException("Formato futuro de vault, lixeira protegida ou operação interrompida: exclusão recusada.");
+        System.Text.Json.Nodes.JsonObject? root;
+        try { root = System.Text.Json.Nodes.JsonNode.Parse(trashJson) as System.Text.Json.Nodes.JsonObject; }
+        catch (System.Text.Json.JsonException) { root = null; }
+        if (root?["version"]?.GetValue<int>() != 2 || root["items"] is not System.Text.Json.Nodes.JsonArray items)
+            throw new InvalidDataException("A lixeira não guarda o texto atual dos arquivos: exclusão recusada.");
+        var held = new HashSet<(string, string)>();
+        foreach (var i in items)
+            if (i?["document"] is System.Text.Json.Nodes.JsonObject d && (string?)d["path"] is { } p && (string?)d["content"] is { } c) held.Add((p, c));
+        var byPath = files.ToDictionary(f => f.Path, StringComparer.Ordinal);
+        var texts = snapshot.Documents.Where(d => d.Text is not null).ToDictionary(d => d.Path, d => d.Text!, StringComparer.Ordinal);
+        foreach (var path in paths)
+        {
+            if (!byPath.ContainsKey(path)) throw new FileNotFoundException("O arquivo não existe na pasta.", path);
+            if (!texts.TryGetValue(path, out var text)) throw new InvalidDataException("O arquivo não pôde ser lido como texto seguro: " + path);
+            if (!held.Contains((path, text))) throw new InvalidDataException("A lixeira não guarda o texto atual de " + path + ": exclusão recusada.");
+        }
+        return (paths, trashPath, System.Text.Encoding.UTF8.GetBytes(trashJson));
+    }
+
+    /// <summary>
     /// Rewrites .urbe/trash.v2.json alone (a note restored, an item excluded for good, the trash emptied), with the same
     /// safeguards as a note: nothing changed outside Urbe, a trash of another version or a vault that may not be
     /// written is never rewritten, the bytes are verified and every file of the vault too. Hosts must override it.

@@ -292,6 +292,30 @@ public sealed class FolderVaultStorageTests : IDisposable
     }
 
     [Fact]
+    public async Task TrashingManyNotesWritesTheTrashOnceAndRemovesOnlyThoseFiles()
+    {
+        // UC-65: a folder at once — the trash with both texts first, then both files, every other file intact
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        var before = Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).ToDictionary(f => f, File.ReadAllBytes);
+        var store = new Urbe.Core.DocumentStore();
+        var docs = new[] { store.Upsert(new Urbe.Core.DocumentInput { Path = "Bairro/Um.md", Content = "# Um\n" }), store.Upsert(new Urbe.Core.DocumentInput { Path = "Comece.md", Content = "# Comece\n\n[[Bairro/Um]]\n" }) };
+        var trash = Urbe.Core.LegacyTrash.Read(null, null, out _).ExportWith(docs, 1760000000000);
+
+        // refused without a change: a path twice, a trash without one text, a note that is not there
+        await Assert.ThrowsAsync<ArgumentException>(() => storage.TrashTextFilesAsync(["Comece.md", "comece.md"], trash, Ct));
+        await Assert.ThrowsAsync<InvalidDataException>(() => storage.TrashTextFilesAsync(["Bairro/Um.md", "Comece.md"], TrashOf("Comece.md", "# Comece\n\n[[Bairro/Um]]\n"), Ct));
+        await Assert.ThrowsAsync<FileNotFoundException>(() => storage.TrashTextFilesAsync(["Bairro/Um.md", "Nada.md"], trash, Ct));
+        foreach (var (file, bytes) in before) Assert.Equal(bytes, File.ReadAllBytes(file));
+        Assert.False(File.Exists(Path.Combine(Vault, ".urbe", "trash.v2.json")));
+
+        await storage.TrashTextFilesAsync(["Bairro/Um.md", "Comece.md"], trash, Ct);
+        Assert.Equal(trash, File.ReadAllText(Path.Combine(Vault, ".urbe", "trash.v2.json")));
+        Assert.Equal(["foto.png", "trash.v2.json"], Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).Select(Path.GetFileName).Order().ToArray()!);
+        Assert.Equal(new byte[] { 1, 2, 3 }, File.ReadAllBytes(Path.Combine(Vault, "foto.png")));
+    }
+
+    [Fact]
     public async Task RewritingTheTrashTouchesOnlyItAndRefusesAnotherVersion()
     {
         var storage = Storage();

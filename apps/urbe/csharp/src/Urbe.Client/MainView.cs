@@ -847,6 +847,52 @@ public sealed partial class MainView : Grid
     private int _batch, _batchDone, _batchTotal;
 
     /// <summary>
+    /// UC-65: many notes to the trash in one go (a folder): the trash, holding all of them, is written and verified
+    /// first, then their files are removed and the vault verified, once. Nothing changes in memory until the vault
+    /// holds it; if the vault refuses half-way, it is read again so the screen shows what is on the disk.
+    /// </summary>
+    private async Task<bool> TrashNotesAsync(IReadOnlyList<UrbeDocument> docs)
+    {
+        if (_store is null || _vault is null) return false;
+        if (!TrashWritable(out var problem)) { await Dialogs.AlertAsync("Excluir", problem!); return false; }
+        if (docs.Count == 1) return await DeleteNoteAsync(docs[0].Path, confirmed: true);
+        // the note being written is saved first, so the trash keeps what is on the screen
+        var editing = Editor.IsVisible && Editor.Current?.Path is { } open && docs.Any(d => d.Path == open);
+        if (editing && Editor.HasChanges && !await Editor.SaveAsync())
+        {
+            await Dialogs.AlertAsync("Não foi possível excluir", "A nota aberta tem alterações que não foram salvas no vault.");
+            return false;
+        }
+        var current = docs.Select(d => _store.Get(d.Id)).OfType<UrbeDocument>().ToList();
+        long now = Now;
+        ShowLifeNotice($"Movendo {current.Count} notas para a lixeira…");
+        try
+        {
+            await _vault.TrashTextFilesAsync([.. current.Select(d => d.Path)], _trash.ExportWith(current, now));
+        }
+        catch (Exception ex)
+        {
+            await Dialogs.AlertAsync("Não foi possível excluir", ex.Message);
+            if (await _vault.ReloadAsync() is { } snapshot) await ShowVaultAsync(snapshot);
+            return false;
+        }
+        foreach (var doc in current)
+        {
+            _trash.Trash(_store, doc.Id, now, "explorer.delete");
+            _contents.Remove(doc.Path);
+            CaptureRemoved(doc);
+        }
+        if (editing) Editor.IsVisible = false;
+        NotesChanged();
+        if (_batch == 0)
+        {
+            await SaveHistoryAsync();
+            RefreshNotes();
+        }
+        return true;
+    }
+
+    /// <summary>
     /// UC-65: many notes to the trash at once (a folder, a selection). Each note is still trashed and verified on its
     /// own, first in the trash and then off the disk; only the history's write and the tree's redraw wait for the end.
     /// </summary>
@@ -1043,7 +1089,8 @@ public sealed partial class MainView : Grid
         {
             foreach (var f in folders)
                 if (!await DeleteFolderAsync(f)) break;
-            foreach (var p in notes) await DeleteNoteAsync(p, confirmed: true);
+            var picked = notes.Select(p => _store?.Get(p)).OfType<UrbeDocument>().ToList();
+            if (picked.Count > 0) await TrashNotesAsync(picked);
             return true;
         });
         Explorer.ClearSelection();

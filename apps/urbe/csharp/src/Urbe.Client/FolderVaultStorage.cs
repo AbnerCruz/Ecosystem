@@ -579,6 +579,43 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public async Task TrashTextFilesAsync(IReadOnlyList<string> paths, string trashJson, CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, files);
+            var (sources, trashPath, trashBytes) = IUrbeVaultStorage.PlanTrashMany(files, paths, trashJson);
+            bool create = !baseline.ContainsKey(trashPath);
+            var gone = new HashSet<string>(sources, StringComparer.OrdinalIgnoreCase);
+
+            await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                // the trash holds every text before any file goes
+                WriteVerified(root, trashPath, trashBytes, create);
+                foreach (var source in sources) File.Delete(Inside(root, source));
+                var observed = Snapshot(ReadFiles(root, cancellationToken));
+                if (observed.Count != baseline.Count - gone.Count + (create ? 1 : 0) || observed.Keys.Any(gone.Contains))
+                    throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
+                foreach (var pair in baseline)
+                {
+                    if (gone.Contains(pair.Key)) continue;
+                    var expected = string.Equals(pair.Key, trashPath, StringComparison.OrdinalIgnoreCase) ? trashBytes : pair.Value.Bytes.ToArray();
+                    if (!observed.TryGetValue(pair.Key, out var actual) || !actual.Bytes.Span.SequenceEqual(expected))
+                        throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
+                }
+                if (!observed.TryGetValue(trashPath, out var written) || !written.Bytes.Span.SequenceEqual(trashBytes))
+                    throw new IOException("A lixeira não passou na verificação: " + trashPath);
+                _baseline = observed;
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     public Task SaveTrashAsync(string trashJson, CancellationToken cancellationToken = default) =>
         SaveUrbeFileAsync(files => IUrbeVaultStorage.PlanTrashWrite(files, trashJson), "A lixeira", cancellationToken);
 
