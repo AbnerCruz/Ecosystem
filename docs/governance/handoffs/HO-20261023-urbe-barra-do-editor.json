@@ -42,9 +42,10 @@
     {
       "kind": "human",
       "check": "No aparelho, editar editor.json e ver a barra e o menu / mudarem",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/urbe/csharp/src/Urbe.Core/EditorLayout.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Core/EditorLayout.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-23 (Issue https://github.com/AbnerCruz/Ecosystem/issues/674); registro em docs/governance/responses/VAL-HO-20261023-urbe-barra-do-editor-b787ecbc22e5.md."
     }
   ],
   "known_issues": [],
