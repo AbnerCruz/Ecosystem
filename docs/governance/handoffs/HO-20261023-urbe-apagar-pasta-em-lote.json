@@ -36,9 +36,10 @@
     {
       "kind": "human",
       "check": "No aparelho, excluir uma pasta grande e ver o progresso e todas as notas na Lixeira",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-23 (Issue https://github.com/AbnerCruz/Ecosystem/issues/667); registro em docs/governance/responses/VAL-HO-20261023-urbe-apagar-pasta-em-lote-1c24361cea38.md."
     }
   ],
   "known_issues": [
