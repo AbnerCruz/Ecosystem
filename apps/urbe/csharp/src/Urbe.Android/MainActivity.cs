@@ -42,6 +42,16 @@ public sealed class UrbeAndroidApplication : AvaloniaAndroidApplication<UrbeApp>
         CrashLog.FilePath = System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? System.IO.Path.GetTempPath(), "erros.log");
         AndroidEnvironment.UnhandledExceptionRaiser += (_, e) => { CrashLog.Write(e.Exception, "android"); e.Handled = true; };
         UrbeApp.AssistantFolder = System.IO.Path.Combine(Android.App.Application.Context.FilesDir?.AbsolutePath ?? System.IO.Path.GetTempPath(), "assistant");
+        // Configurações → Verificar atualização: the APK of the newest direct release, over the installed one
+        UrbeApp.UpdateAsset = Urbe.Core.AppUpdate.AndroidAsset;
+        try
+        {
+            var context = Android.App.Application.Context;
+#pragma warning disable CA1422, CS0618 // the flags overload is the one every supported Android has
+            UrbeApp.InstalledVersion = context.PackageManager?.GetPackageInfo(context.PackageName ?? "", (Android.Content.PM.PackageInfoFlags)0)?.VersionName;
+#pragma warning restore CA1422, CS0618
+        }
+        catch (Exception) { /* the check still shows the newest release */ }
     }
 }
 

@@ -1,6 +1,6 @@
 # Páginas mais robustas — plano (UC-62)
 
-> **Estado:** proposta para a decisão do proprietário (DEC-0055, pendente). Nada deste plano é implementado antes dela.
+> **Estado:** aprovado pelo proprietário em 23/10/2026 (DEC-0055, alternativa A: o plano inteiro, nas quatro fatias).
 > **Autoridade:** o escopo e o andamento ficam no [ROADMAP C#](ROADMAP.md) (UC-62); este documento só descreve o plano.
 
 ## O pedido (observação de 16/10/2026)
@@ -16,8 +16,8 @@ O estúdio de páginas deve ser uma extensão do editor de notas e do Explorer. 
   - O nó **nota** mostra uma nota inteira do vault.
 - **Modelos** (`PageTemplates`): especificações fixas da 1.8.4, aplicadas por substituição, por acréscimo ou só como tema.
 - **Ligação com o vault:**
-  - Não existe bloco que liste notas por pasta, tag, link ou busca.
-  - Uma página não muda quando as notas mudam, a não ser pelo nó **nota**.
+  - A seção **Notas** da 1.8.4 já lista notas por pasta (com as subpastas), tag, escolha ou mais recentes, em cartões, lista ou grade, com resumo, calculada a cada render. (Correção de 23/10/2026: a primeira versão deste plano dizia que não havia bloco assim.)
+  - Faltam: listar pelas ligações (quem liga a uma nota, a quem ela liga), por busca de texto, e uma pasta sem as subpastas.
 - **Edição pela prévia:** o texto de títulos e textos já se edita tocando na prévia (`PreviewMessage` "text"). Os outros campos ficam no painel **Editar**.
 - **Abrir:** abre-se uma página pela lista de Páginas. Uma nota ou uma pasta do Explorer não tem "Criar página daqui".
 
@@ -25,23 +25,26 @@ O estúdio de páginas deve ser uma extensão do editor de notas e do Explorer. 
 
 Cada fatia tem teste e entra sozinha. Os oráculos da 1.8.4 ficam intactos: as novidades ficam atrás de opções do motor, como `UrbeMarks` hoje, e uma página da 1.8.4 abre e exporta igual.
 
-1. **Blocos ligados ao vault.**
-   - Um nó novo, **Lista de notas**, com uma consulta: pasta (com ou sem subpastas), tag, notas que ligam a uma nota, notas ligadas por ela, ou busca de texto.
-   - Ordem: nome, data ou mais recentes. Limite de itens.
-   - Aparência: lista, cartões com resumo, ou índice com links.
-   - A consulta fica na página (`.page.json`). O resultado é calculado ao abrir, na prévia e ao exportar, então a página acompanha as notas sem gravar nada além dela mesma (NN-001: as notas continuam a autoridade).
-   - No HTML exportado, cada item vira link para a página da nota quando ela for exportada junto, ou só o título.
-2. **Abrir a partir do Explorer.**
+1. **Blocos ligados ao vault (feito em 23/10/2026).**
+   - Em vez de um nó novo, a seção **Notas** que já existe ganhou as consultas que faltavam:
+     - **Ligam a uma nota**: as notas que têm `[[ela]]`.
+     - **Ligadas por uma nota**: os `[[links]]` dela.
+     - **Busca**: título ou texto, sem diferenciar maiúsculas.
+     - **Incluir subpastas** na origem Pasta.
+   - Ordem, limite, aparência, resumo e "texto completo abaixo" são os da 1.8.4.
+   - A consulta fica na página (`.page.json`) e o resultado é calculado a cada render, então a página acompanha as notas (NN-001).
+   - Só com as marcas do Urbe ligadas (`UrbeMarks`): os oráculos da 1.8.4 não mudam, e uma origem nova vista sem elas volta ao padrão da 1.8.4 (Pasta).
+2. **Abrir a partir do Explorer (feito em 23/10/2026).** No ⋯ de uma pasta, no cartão de uma nota e no Mais ações do editor.
    - Segurar uma nota ou pasta → **Criar página daqui**.
    - De uma nota: uma página com a nota como conteúdo (nó **nota**).
    - De uma pasta: uma página com a capa e uma **Lista de notas** daquela pasta.
    - A página é gravada pela gravação verificada, em `Páginas/`.
-3. **Modelos como combinações salvas.**
+3. **Modelos como combinações salvas (feito em 23/10/2026).** Já existia da 1.8.4: **Salvar como modelo** grava `Páginas/Modelos/<nome>.template.json`, e os modelos da pessoa aparecem ao lado dos prontos. Esse lugar fica, para a 1.8.4 continuar lendo os modelos. Entrou a escolha **Com os textos** ou **Só a estrutura**, que volta os textos ao padrão e mantém seções, aparência, ícones e o tamanho das listas (`PageStudio.StructureOnly`).
    - Os blocos (seções e nós) passam a ser as ferramentas. Um modelo vira uma combinação salva deles.
    - **Salvar como modelo** grava a página atual (sem o conteúdo de texto, ou com ele, à escolha) em `Personalização/modelos-de-pagina/`, no vault, como os temas.
    - A lista de modelos mostra os da 1.8.4 e os da pessoa lado a lado.
    - Os modelos da 1.8.4 continuam iguais (oráculo).
-4. **Editar tudo pela prévia.**
+4. **Editar tudo pela prévia (feito em 23/10/2026).** Os textos de uma linha sem Markdown de todas as seções (títulos, rótulos, itens) se escrevem no lugar na prévia (`PageEditMarks`, só com `UrbeMarks`). Textos com Markdown ou comentários continuam no painel Editar. Uma imagem das seções tocada na prévia abre a escolha de imagem do seu campo; nas seções livres, o toque abre o painel Editar do elemento, onde está **Escolher**.
    - Todo texto da página se edita tocando na prévia, inclusive itens de lista, legendas, botões e citações, não só títulos e parágrafos.
    - Uma imagem tocada abre a escolha de imagem. O painel **Editar** continua para o resto.
 

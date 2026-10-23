@@ -600,6 +600,28 @@ public sealed partial class HeadlessUiTests : IDisposable
         Dispatcher.UIThread.RunJobs();
     }
 
+    /// <summary>
+    /// The file's text once the app's write is over: a read while the verified write still holds the file (a busy
+    /// machine) is tried again, and with <paramref name="done"/> the text is awaited until it holds (up to 5 s).
+    /// </summary>
+    internal static async Task<string> ReadWhenWritten(string path, Func<string, bool>? done = null)
+    {
+        Exception? last = null;
+        string? text = null;
+        for (int i = 0; i < 250; i++)
+        {
+            try
+            {
+                text = File.ReadAllText(path);
+                if (done is null || done(text)) return text;
+            }
+            catch (IOException ex) { last = ex; }
+            await Task.Delay(20);
+            Dispatcher.UIThread.RunJobs();
+        }
+        return text ?? throw last ?? new FileNotFoundException(path);
+    }
+
     private static void Snapshot(Window window, string name)
     {
         var dir = Environment.GetEnvironmentVariable("URBE_SNAPSHOT_DIR");
