@@ -1,3 +1,5 @@
+import { SurfaceTiles } from "./surface.js";
+import { sampleSurface, MATERIALS, SURFACE_MODEL } from "./surface-field.js";
 import {
   clamp,
   coord,
@@ -16,6 +18,12 @@ export const LAYERS = {
   basins: "Bacias",
   biome: "Biomas",
   authored: "Intervenções",
+  insolation: "Insolação · W/m²",
+};
+export const SOLAR_FIELDS = {
+  annual: "solarAnnual",
+  june: "solarJune",
+  december: "solarDecember",
 };
 export const BIOME_COLORS = [
   [24, 62, 76],
@@ -50,6 +58,7 @@ export const LEGENDS = {
   basins: ["Cores por bacia", "Oceânica / fechada"],
   biome: ["Biomas climáticos · heurística"],
   authored: ["Relevo", "Área preservada"],
+  insolation: ["0", "500", "1.000 W/m² · topo da atmosfera"],
 };
 export function color(i, world, d, layer, season = "annual") {
   const e = world.state.elevation[i];
@@ -68,6 +77,18 @@ export function color(i, world, d, layer, season = "annual") {
         [0, [178, 200, 193]],
         [18, [219, 196, 120]],
         [45, [191, 88, 61]],
+      ],
+    );
+  else if (layer === "insolation")
+    c = gradient(
+      d[SOLAR_FIELDS[season] ?? SOLAR_FIELDS.annual][
+        Math.floor(i / world.definition.grid.width)
+      ],
+      [
+        [0, [24, 39, 66]],
+        [250, [95, 115, 147]],
+        [500, [225, 188, 94]],
+        [1000, [209, 100, 49]],
       ],
     );
   else if (layer === "rain")
@@ -99,7 +120,10 @@ export function color(i, world, d, layer, season = "annual") {
     c = mix(BIOME_COLORS[d.biome[i]], [156, 147, 123], clamp(e / 5000, 0, 0.8));
     if (e > 3000) c = mix(c, [231, 231, 214], (e - 3000) / 2500);
   }
-  if (!["temperature", "rain", "basins", "biome"].includes(layer) && e > 0) {
+  if (
+    !["temperature", "rain", "basins", "biome", "insolation"].includes(layer) &&
+    e > 0
+  ) {
     const { width: w } = world.definition.grid,
       left = Math.floor(i / w) * w + (((i % w) + w - 1) % w);
     const shade = clamp((world.state.elevation[left] - e) / 2300, -0.28, 0.28);
@@ -124,10 +148,18 @@ export class MapRenderer {
     this.raster = document.createElement("canvas");
     this.cache = "";
   }
-  setWorld(world, derived) {
+  setWorld(world, derived, forceTerrain = false) {
+    const changed =
+      forceTerrain ||
+      this.world?.state.elevation !== world.state.elevation ||
+      this.derived !== derived ||
+      this.sourceSeed !== world.definition.seed;
+    this.sourceSeed = world.definition.seed;
     this.world = world;
     this.derived = derived;
+    if (!changed) return;
     this.cache = "";
+    if (this.surface) this.surface.setWorld(world, derived);
     this.globeCache = null;
     this.contourCache = null;
     const grid = world.definition.grid;
@@ -145,12 +177,37 @@ export class MapRenderer {
   zoomAt(factor, x = this.w / 2, y = this.h / 2) {
     this.resize();
     const previous = this.zoom;
-    this.zoom = clamp(this.zoom * factor, 0.5, 128);
+    const maxZoom = this.world
+      ? Math.max(
+          128,
+          (2 * Math.PI * this.world.definition.planet.radius) /
+            (((this.scale * 2) / this.zoom) * 0.025),
+        )
+      : 128;
+    this.zoom = clamp(this.zoom * factor, 0.5, maxZoom);
     const f = this.zoom / previous;
     // Both projections scale about the translated camera origin.
     this.pan.x = x - this.w / 2 - (x - this.w / 2 - this.pan.x) * f;
     this.pan.y = y - this.h / 2 - (y - this.h / 2 - this.pan.y) * f;
     this.resize();
+  }
+  metresPerPixel() {
+    const a = this.geographic(this.w / 2, this.h / 2),
+      b = this.geographic(this.w / 2 + 1, this.h / 2 + 1);
+    return a && b && this.world
+      ? distance(a, b, this.world.definition.planet.radius) / Math.SQRT2
+      : Infinity;
+  }
+  setMetresPerPixel(target, p) {
+    this.resize();
+    if (p) this.focus(p.lat, p.lon);
+    this.zoomAt(this.metresPerPixel() / target);
+    this.render();
+  }
+  detailedLocation(p) {
+    if (!this.surface || !this.detailActive) return null;
+    const s = sampleSurface(this.surface.context, p.lat, p.lon);
+    return { ...s, materialName: MATERIALS[s.material] };
   }
   dragBy(dx, dy) {
     if (this.projection === "globe" && this.zoom <= 2)
@@ -230,9 +287,25 @@ export class MapRenderer {
     ctx.setTransform(this.ratio, 0, 0, this.ratio, 0, 0);
     ctx.clearRect(0, 0, this.w, this.h);
     if (!this.world || !this.derived) return;
+    this.detailActive =
+      ["atlas", "elevation", "authored"].includes(this.layer) &&
+      this.metresPerPixel() < 1500;
+    if (this.detailActive && !this.surface) {
+      this.surface = new SurfaceTiles(() => {
+        if (!this.surfaceFrame)
+          this.surfaceFrame = requestAnimationFrame(() => {
+            this.surfaceFrame = null;
+            this.render();
+          });
+      });
+      this.surface.setWorld(this.world, this.derived);
+    }
+    if (!this.detailActive && this.surface) this.surface.pause();
+    this.canvas.dataset.terrainActive = String(this.detailActive);
+    this.canvas.dataset.metresPerPixel = String(this.metresPerPixel());
     const { grid } = this.world.definition,
       key = `${this.layer}:${this.season}`;
-    if (this.cache !== key) {
+    if (this.cache !== key && !this.detailActive) {
       this.raster.width = grid.width;
       this.raster.height = grid.height;
       const rc = this.raster.getContext("2d"),
@@ -245,7 +318,21 @@ export class MapRenderer {
       this.source = im.data;
       this.cache = key;
     }
-    if (this.projection === "flat") {
+    if (this.detailActive) {
+      const center = this.geographic(this.w / 2, this.h / 2);
+      const c = center
+        ? color(
+            index(center.lat, center.lon, grid),
+            this.world,
+            this.derived,
+            this.layer,
+            this.season,
+          )
+        : [22, 38, 43];
+      ctx.fillStyle = `rgb(${c.join(",")})`;
+      ctx.fillRect(0, 0, this.w, this.h);
+      this.surface.render(this, ctx);
+    } else if (this.projection === "flat") {
       ctx.imageSmoothingEnabled = (this.scale * 2) / grid.width < 2;
       const span = this.scale * 2;
       const first = Math.floor(-this.left / span);
@@ -313,7 +400,10 @@ export class MapRenderer {
       }
       ctx.drawImage(off, 0, 0, this.w, this.h);
     }
-    if (["atlas", "elevation", "drainage"].includes(this.layer))
+    if (
+      !this.detailActive &&
+      ["atlas", "elevation", "drainage"].includes(this.layer)
+    )
       this.contours(ctx);
     if (this.showGrid) {
       ctx.strokeStyle = "#e4e7cf16";
@@ -352,6 +442,7 @@ export class MapRenderer {
       }
     }
     if (
+      !this.detailActive &&
       this.showRivers &&
       ["atlas", "drainage", "elevation"].includes(this.layer)
     ) {
@@ -512,17 +603,25 @@ export class MapRenderer {
       (Math.PI * radius) / this.world.definition.grid.height / 1000;
     ctx.font = "11px system-ui";
     ctx.textAlign = "left";
-    const text = `${this.zoom.toFixed(1)}× · grade ${nativeKm.toFixed(1)} km N–S`;
+    const spacing = Number(this.canvas.dataset.terrainSpacing);
+    const text = this.detailActive
+      ? `Terreno local · amostra ${spacing < 1 ? spacing.toFixed(2) + " m" : Math.round(spacing) + " m"}`
+      : `${this.zoom.toFixed(1)}× · grade ${nativeKm.toFixed(1)} km N–S`;
+    this.canvas.dataset.terrainModel = this.detailActive
+      ? "spherical-detail-1"
+      : "global-grid";
     this.canvas.dataset.zoom = this.zoom;
     this.canvas.dataset.resolution = nativeKm;
     const contoursVisible =
-      this.zoom >= 2 && ["atlas", "elevation", "drainage"].includes(this.layer);
+      !this.detailActive &&
+      this.zoom >= 2 &&
+      ["atlas", "elevation", "drainage"].includes(this.layer);
     ctx.fillStyle = "#101c22e8";
     ctx.fillRect(
       14,
       14,
       Math.max(235, ctx.measureText(text).width + 24),
-      contoursVisible ? 80 : 55,
+      contoursVisible || this.detailActive ? 80 : 55,
     );
     ctx.fillStyle = "#e9e5d4";
     ctx.fillText(text, 24, 33);
@@ -534,6 +633,13 @@ export class MapRenderer {
         24,
         76,
       );
+    if (this.detailActive && this.canvas.dataset.terrainReady !== "true") {
+      ctx.fillText(
+        this.surface.error || "Carregando blocos de terreno…",
+        24,
+        76,
+      );
+    }
     if (center && offset) {
       const km = distance(center, offset, radius) / 1000;
       const power = 10 ** Math.floor(Math.log10(km));

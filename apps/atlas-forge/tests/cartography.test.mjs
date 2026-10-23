@@ -142,7 +142,7 @@ test("Camera anchors both projections, wraps the date line and resolves native g
       "Adjacent source cells must remain distinct in the zoomed globe",
     );
     assert.deepEqual(result.backing, [2000, 1500]);
-    assert.equal(result.maxZoom, 128);
+    assert.ok(result.maxZoom >= 128);
     await page.screenshot({ path: "test-results/native-detail-globe.png" });
     // Exercise real two-touch event sequences; centroids pan while distance controls zoom.
     await page.evaluate(() => {

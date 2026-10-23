@@ -94,15 +94,16 @@
               /></label>
             </div>
             <label
-              >Resolução do terreno<select id="resolution">
+              >Grade dos modelos regionais<select id="resolution">
                 <option value="360">360 × 180 · rascunho</option>
-                <option value="720" selected>720 × 360 · detalhado</option>
-                <option value="1440">1.440 × 720 · alta resolução</option>
+                <option value="720" selected>720 × 360 · regional</option>
+                <option value="1440">1.440 × 720 · regional denso</option>
               </select></label
             >
             <p class="micro">
-              A resolução é escolhida ao criar o mundo. Lugares, notas e
-              interiores ficam por sua conta.
+              A grade controla os modelos regionais. O detalhe do terreno
+              carrega conforme você aproxima. Lugares, notas e interiores são
+              ações separadas.
             </p>
             <button type="submit" class="generate edit-action">
               ✧ Gerar mundo
@@ -116,7 +117,7 @@
               class="full edit-action"
               hidden
             >
-              Refinar terreno para 1.440 × 720…
+              Refinar grade regional para 1.440 × 720…
             </button>
             <button
               id="clear-edits"
@@ -129,7 +130,7 @@
         </details>
         <details open>
           <summary>
-            02 <span>Camadas do atlas</span><span class="count">08</span>
+            02 <span>Camadas do atlas</span><span class="count">09</span>
           </summary>
           <div
             id="layers"
@@ -144,7 +145,7 @@
             >
           </div>
           <label id="season-label" hidden
-            >Estação térmica<select id="season">
+            >Estação<select id="season">
               <option value="annual">Média anual</option>
               <option value="june">Solstício de junho</option>
               <option value="december">Solstício de dezembro</option>
@@ -168,7 +169,7 @@
         </details>
         <footer class="side-footer">
           <span class="tiny-orbit">◉</span> UM ATLAS, INFINITAS HISTÓRIAS<small
-            >Alpha 0.3 · Ecosystem</small
+            >Alpha 0.4 · Ecosystem</small
           >
         </footer>
       </aside>
@@ -178,6 +179,14 @@
             <span class="eyebrow">EXPEDIÇÃO CARTOGRÁFICA</span>
             <h2 id="world-title">Sem projeto <em>· Mundo primordial</em></h2>
           </div>
+          <label class="scale-picker"
+            >Escala<select id="detail-scale" aria-label="Escala do mapa">
+              <option value="planet">Planeta</option>
+              <option value="500">Região</option>
+              <option value="5">Terreno · 5 m/pixel</option>
+              <option value="0.03">Chão · tiles de grama</option>
+            </select></label
+          >
           <div class="projection-control" role="group" aria-label="Projeção">
             <button id="flat" class="active" aria-pressed="true">Mapa</button
             ><button id="globe" aria-pressed="false">◉ Globo</button>
@@ -285,11 +294,26 @@
           <div>
             <span>ALTITUDE</span><strong id="metric-elevation">—</strong>
           </div>
-          <div><span>TEMPERATURA</span><strong id="metric-temp">—</strong></div>
           <div>
-            <span>PRECIPITAÇÃO</span><strong id="metric-rain">—</strong>
+            <span>TEMPERATURA · CLIMA GLOBAL</span
+            ><strong id="metric-temp">—</strong>
           </div>
-          <div><span>ESCOAMENTO</span><strong id="metric-flow">—</strong></div>
+          <div>
+            <span>PRECIPITAÇÃO · CLIMA GLOBAL</span
+            ><strong id="metric-rain">—</strong>
+          </div>
+          <div>
+            <span>ESCOAMENTO · BACIA GLOBAL</span
+            ><strong id="metric-flow">—</strong>
+          </div>
+          <div>
+            <span>INSOLAÇÃO · TOPO DA ATMOSFERA</span
+            ><strong id="metric-solar">—</strong>
+          </div>
+          <div>
+            <span id="metric-area-label">ÁREA DA CÉLULA GLOBAL</span
+            ><strong id="metric-area">—</strong>
+          </div>
         </div>
         <p id="basin-info" class="micro">
           As paisagens guardam pistas sobre o que pode viver aqui.
@@ -353,6 +377,10 @@
               <option value="dungeon">Dungeon</option>
               <option value="cave">Caverna</option>
               <option value="village">Aldeia</option>
+              <option value="camp">Acampamento</option>
+              <option value="temple">Templo</option>
+              <option value="port">Porto</option>
+              <option value="realm">Reino · sede (sem fronteira)</option>
             </select></label
           ><label
             >Descrição<textarea
@@ -398,7 +426,10 @@
           </p>
           <p>
             Grade física escolhida ao criar: até 1.440 × 720. Sem validação
-            científica geral. A legenda B identifica modelo físico simplificado.
+            científica geral. Insolação B: fluxo solar no topo da atmosfera,
+            órbita circular; não inclui nuvens, atmosfera ou efeito estufa e
+            ainda não determina a temperatura. A legenda B identifica modelo
+            físico simplificado.
           </p>
         </details>
       </aside>

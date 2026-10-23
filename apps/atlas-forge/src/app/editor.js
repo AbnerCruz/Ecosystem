@@ -7,9 +7,14 @@ import {
   checkpoint,
   restore,
 } from "../core/world.js";
-import { index, clamp } from "../geometry/sphere.js";
+import { index, clamp, area } from "../geometry/sphere.js";
 import { BIOMES } from "../solvers/climate.js";
-import { MapRenderer, LAYERS, LEGENDS } from "../rendering/map.js";
+import {
+  MapRenderer,
+  LAYERS,
+  LEGENDS,
+  SOLAR_FIELDS,
+} from "../rendering/map.js";
 import { bindPinch } from "../rendering/gestures.js";
 import { drawLocal } from "../rendering/local.js";
 import { localMap } from "../generation/local-map.js";
@@ -132,7 +137,7 @@ function refresh() {
     .join(" ");
   const s = stats(world, derived);
   $("world-stats").textContent =
-    `${world.definition.grid.width} × ${world.definition.grid.height} células · ${s.ocean.toFixed(1)}% oceanos · cume ${Math.round(s.max).toLocaleString("pt-BR")} m`;
+    `Modelos regionais: ${world.definition.grid.width} × ${world.definition.grid.height} células · ${s.ocean.toFixed(1)}% oceanos · cume ${Math.round(s.max).toLocaleString("pt-BR")} m`;
   $("undo").disabled = busy || !world.journal.undo.length;
   $("redo").disabled = busy || !world.journal.redo.length;
   const timeline = $("timeline");
@@ -226,9 +231,23 @@ function inspectLocation(p) {
     terminal = derived.terminal[end];
   $("location-title").textContent = BIOMES[derived.biome[i]];
   $("location-subtitle").textContent =
-    `${Math.abs(p.lat).toFixed(2)}° ${p.lat >= 0 ? "N" : "S"} · ${Math.abs(p.lon).toFixed(2)}° ${p.lon >= 0 ? "E" : "W"}`;
-  $("metric-elevation").textContent =
-    `${Math.round(world.state.elevation[i]).toLocaleString("pt-BR")} m`;
+    `${Math.abs(p.lat).toFixed(renderer.detailActive ? 7 : 2)}° ${p.lat >= 0 ? "N" : "S"} · ${Math.abs(p.lon).toFixed(renderer.detailActive ? 7 : 2)}° ${p.lon >= 0 ? "E" : "W"}`;
+  const local = renderer.detailedLocation(p);
+  $("metric-elevation").textContent = local
+    ? `${local.elevation.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} m · local`
+    : `${Math.round(world.state.elevation[i]).toLocaleString("pt-BR")} m`;
+  if (local)
+    $("location-title").textContent = local.materialName + " · terreno local";
+  const row = Math.floor(i / world.definition.grid.width);
+  $("metric-solar").textContent =
+    `${derived[SOLAR_FIELDS[renderer.season]][row].toFixed(1)} W/m²`;
+  const pitch = Number(renderer.canvas.dataset.terrainSpacing);
+  $("metric-area-label").textContent = local
+    ? "ÁREA DA AMOSTRA LOCAL"
+    : "ÁREA DA CÉLULA GLOBAL";
+  $("metric-area").textContent = local
+    ? `${(pitch * pitch * Math.cos((p.lat * Math.PI) / 180)).toLocaleString("pt-BR", { maximumFractionDigits: 3 })} m²`
+    : `${(area(row, world.definition.grid, world.definition.planet.radius) / 1e6).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km²`;
   $("metric-temp").textContent = `${derived.temperature[i].toFixed(1)} °C`;
   $("metric-rain").textContent = `${Math.round(derived.rain[i])} mm/ano`;
   $("metric-flow").textContent =
@@ -237,10 +256,10 @@ function inspectLocation(p) {
     world.state.elevation[i] <= 0
       ? "Célula oceânica · datum: nível do mar."
       : `Bacia ${end} · ${terminal === 2 ? "fechada: retém água em depressão; extensão de lago não modelada" : "saída oceânica"} · runoff assumido: 35% da chuva.`;
-  $("latitude").value = p.lat.toFixed(2);
-  $("longitude").value = p.lon.toFixed(2);
+  $("latitude").value = p.lat.toFixed(renderer.detailActive ? 7 : 2);
+  $("longitude").value = p.lon.toFixed(renderer.detailActive ? 7 : 2);
   $("coordinates").textContent =
-    `LAT ${p.lat.toFixed(2)}°  LON ${p.lon.toFixed(2)}°`;
+    `LAT ${p.lat.toFixed(renderer.detailActive ? 7 : 2)}°  LON ${p.lon.toFixed(renderer.detailActive ? 7 : 2)}°`;
 }
 const types = {
   castle: "Castelo",
@@ -249,6 +268,10 @@ const types = {
   dungeon: "Dungeon",
   cave: "Caverna",
   village: "Aldeia",
+  camp: "Acampamento",
+  temple: "Templo",
+  port: "Porto",
+  realm: "Reino · sede",
 };
 function renderEntities() {
   const term = $("search").value.toLowerCase(),
@@ -333,6 +356,7 @@ const swatches = [
   "#977fad",
   "#6b8c5b",
   "#d7b981",
+  "#d9ad64",
 ];
 for (const [i, [key, name]] of Object.entries(LAYERS).entries()) {
   const b = document.createElement("button");
@@ -356,17 +380,20 @@ for (const [i, [key, name]] of Object.entries(LAYERS).entries()) {
       }),
     );
     $("legend-bar").style.background =
-      key === "temperature"
-        ? "linear-gradient(to right,#6a86b3,#b2c8c1,#dbc478,#bf583d)"
-        : key === "rain"
-          ? "linear-gradient(to right,#b89b69,#8ba989,#408491,#484e8f)"
-          : key === "basins"
-            ? "linear-gradient(to right,#9878a8,#a8b779,#779eb7)"
-            : key === "authored"
-              ? "linear-gradient(to right,#49665d,#e7ad52)"
-              : "";
-    $("season-label").hidden = key !== "temperature";
+      key === "insolation"
+        ? "linear-gradient(to right,#182742,#5f7393,#e1bc5e,#d16431)"
+        : key === "temperature"
+          ? "linear-gradient(to right,#6a86b3,#b2c8c1,#dbc478,#bf583d)"
+          : key === "rain"
+            ? "linear-gradient(to right,#b89b69,#8ba989,#408491,#484e8f)"
+            : key === "basins"
+              ? "linear-gradient(to right,#9878a8,#a8b779,#779eb7)"
+              : key === "authored"
+                ? "linear-gradient(to right,#49665d,#e7ad52)"
+                : "";
+    $("season-label").hidden = !["temperature", "insolation"].includes(key);
     renderer.render();
+    if (world && location) inspectLocation(location);
   };
   $("layers").append(b);
 }
@@ -460,6 +487,7 @@ $("grid").onchange = () => {
 $("season").onchange = () => {
   renderer.season = $("season").value;
   renderer.render();
+  if (world && location) inspectLocation(location);
 };
 function setTool(value) {
   tool = value;
@@ -483,6 +511,17 @@ function zoom(f, point) {
   renderer.zoomAt(f, point?.x, point?.y);
   renderer.render();
 }
+$("detail-scale").onchange = () => {
+  const value = $("detail-scale").value;
+  if (value === "planet") {
+    $("reset-view").click();
+    return;
+  }
+  if (!world) return;
+  const p = location ?? renderer.geographic(renderer.w / 2, renderer.h / 2);
+  renderer.setMetresPerPixel(Number(value), p);
+  if (p) inspectLocation(p);
+};
 $("zoom-in").onclick = () => zoom(1.2);
 $("zoom-out").onclick = () => zoom(1 / 1.2);
 $("reset-view").onclick = () => {
@@ -523,11 +562,17 @@ function paint(p, pressure) {
     if (first) first.after = c.after;
     else drag.changes.set(c.i, c);
   }
-  renderer.setWorld(drag.draft, derived);
+  renderer.setWorld(drag.draft, derived, true);
   renderer.render();
 }
 $("map").onpointerdown = (e) => {
   if (busy || !world || e.button !== 0 || drag) return;
+  if (renderer.detailActive && ["raise", "lower"].includes(tool)) {
+    status(
+      "Este pincel altera a grade regional. Afaste para editar relevo regional; edição métrica do solo ainda não está disponível.",
+    );
+    return;
+  }
   $("map").setPointerCapture(e.pointerId);
   const p = pointer(e),
     geo = renderer.geographic(p.x, p.y);
@@ -546,7 +591,7 @@ $("map").onpointermove = (e) => {
     geo = renderer.geographic(p.x, p.y);
   if (geo)
     $("coordinates").textContent =
-      `LAT ${geo.lat.toFixed(2)}°  LON ${geo.lon.toFixed(2)}°`;
+      `LAT ${geo.lat.toFixed(renderer.detailActive ? 7 : 2)}°  LON ${geo.lon.toFixed(renderer.detailActive ? 7 : 2)}°`;
   if (!drag || e.pointerId !== drag.id) return;
   const dx = p.x - drag.last.x,
     dy = p.y - drag.last.y;

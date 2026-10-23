@@ -1,4 +1,5 @@
-import { MapRenderer, LAYERS } from "../rendering/map.js";
+import { SURFACE_MODEL } from "../rendering/surface-field.js";
+import { MapRenderer, LAYERS, SOLAR_FIELDS } from "../rendering/map.js";
 import { bindPinch } from "../rendering/gestures.js";
 import { drawLocal } from "../rendering/local.js";
 import { index } from "../geometry/sphere.js";
@@ -6,6 +7,10 @@ import { markdown } from "../documents/markdown.js";
 const $ = (id) => document.getElementById(id),
   data = JSON.parse($("atlas-data").textContent),
   renderer = new MapRenderer($("map"));
+if (data.surfaceModel !== SURFACE_MODEL)
+  throw new Error(
+    "Versão de terreno local desconhecida; publicação preservada.",
+  );
 renderer.setWorld(data, data.derived);
 $("title").textContent = data.name;
 for (const [key, name] of Object.entries(LAYERS)) {
@@ -99,7 +104,7 @@ $("map").onpointerup = (e) => {
       if (p) {
         const i = index(p.lat, p.lon, data.definition.grid);
         $("coords").textContent =
-          `${p.lat.toFixed(2)}°, ${p.lon.toFixed(2)}° · ${Math.round(data.state.elevation[i])} m · ${data.derived.temperature[i].toFixed(1)} °C · ${Math.round(data.derived.rain[i])} mm/ano`;
+          `${p.lat.toFixed(2)}°, ${p.lon.toFixed(2)}° · ${Math.round(data.state.elevation[i])} m · ${data.derived.temperature[i].toFixed(1)} °C · ${Math.round(data.derived.rain[i])} mm/ano · ${data.derived[SOLAR_FIELDS[renderer.season]][Math.floor(i / data.definition.grid.width)].toFixed(1)} W/m² (topo da atmosfera)`;
       }
     }
   }
@@ -160,6 +165,13 @@ $("map").onkeydown = (e) => {
     renderer.pan.x -= 40;
     renderer.render();
   }
+};
+$("scale").onchange = () => {
+  if ($("scale").value === "planet") {
+    $("reset").click();
+    return;
+  }
+  renderer.setMetresPerPixel(Number($("scale").value));
 };
 $("reset").onclick = () => {
   renderer.zoom = 1;

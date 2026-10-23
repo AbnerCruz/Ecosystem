@@ -2,10 +2,13 @@ import { coord, vector, area, clamp } from "../geometry/sphere.js";
 import { noise } from "./random.js";
 import { createWorld } from "../core/world.js";
 import { climate, biomes } from "../solvers/climate.js";
+import { radiation } from "../solvers/radiation.js";
 import { hydrology } from "../solvers/hydrology.js";
 export function derive(world, progress = () => {}) {
   const { grid, planet } = world.definition,
     e = world.state.elevation;
+  progress("Insolação sazonal", 0.45);
+  const solar = radiation(grid, planet);
   progress("Clima e umidade", 0.55);
   const c = climate(e, grid, planet);
   progress("Drenagem e bacias", 0.8);
@@ -13,6 +16,7 @@ export function derive(world, progress = () => {}) {
   return {
     ...c,
     ...h,
+    ...solar,
     biome: biomes(e, c.temperature, c.rain),
     source: "state.elevation",
     algorithm: world.definition.algorithm,
