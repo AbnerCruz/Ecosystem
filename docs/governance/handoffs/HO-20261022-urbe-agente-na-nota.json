@@ -46,9 +46,10 @@
     {
       "kind": "human",
       "check": "No aparelho, escrever '&Jarvis&: …' numa nota, tocar em Pedir e aprovar a mudança",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-23 (Issue https://github.com/AbnerCruz/Ecosystem/issues/678); registro em docs/governance/responses/VAL-HO-20261022-urbe-agente-na-nota-05566d73d9e1.md."
     }
   ],
   "known_issues": [],
