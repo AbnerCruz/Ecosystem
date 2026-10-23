@@ -15,6 +15,7 @@ public static class Program
         var selection = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Urbe", "native-vault.json");
         UrbeApp.VaultStorageFactory = () => new FolderVaultStorage(PickFolderAsync, selection);
         UrbeApp.LocalStatePath = Path.Combine(Path.GetDirectoryName(selection)!, "notes-state.json");
+        UrbeApp.OpeningNamesPath = Path.Combine(Path.GetDirectoryName(selection)!, "opening-names.json");
         UrbeApp.AssistantFolder = Path.Combine(Path.GetDirectoryName(selection)!, "assistant");
         // Imprimir ou salvar PDF: the page in the browser, which opens its print dialog (the 1.8.4's print frame)
         ContentViewers.Printer = (title, html) =>

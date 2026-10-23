@@ -12,6 +12,8 @@ namespace Urbe.Core;
 /// pages and exported HTML like <c>%%…%%</c>.</item>
 /// <item><c>{ia:"modelo"}</c> — the mark the Assistente leaves after the text it wrote (UC-51): shown as a tiny green
 /// "modelo" in the editor.</item>
+/// <item><c>&amp;Nome&amp;: pedido</c> at the start of a line — a request to the agent called Nome (UC-80; <c>&amp;&amp;:</c>
+/// is the default agent): a chip in the editor, sent only when the person asks; left out of pages and exported HTML.</item>
 /// </list>
 /// Applied over the rendered tree (<see cref="MarkdownTree"/>), never inside the 1.8.4 renderer, whose output stays as the
 /// goldens prove.
@@ -22,6 +24,23 @@ public static partial class NoteMarks
     public const string TagClass = "urbe-tag";
     public const string NotesClass = "urbe-notes";
     public const string AiClass = "urbe-ai";
+    public const string AgentClass = "urbe-agent";
+
+    /// <summary>A request to an agent written in the note (UC-80): the line, the agent's name ("" = the default) and the request.</summary>
+    public sealed record AgentCall(int Start, int Length, string Agent, string Request);
+
+    /// <summary>The <c>&amp;Nome&amp;:</c> lines of a text, outside code, in order.</summary>
+    public static IReadOnlyList<AgentCall> AgentCalls(string? markdown)
+    {
+        var text = markdown ?? "";
+        var result = new List<AgentCall>();
+        if (!text.Contains("&:", StringComparison.Ordinal)) return result;
+        var code = CodeRegex().Matches(text).Select(m => (m.Index, End: m.Index + m.Length)).ToList();
+        foreach (Match m in AgentLineRegex().Matches(text))
+            if (!code.Any(c => m.Index >= c.Index && m.Index < c.End))
+                result.Add(new AgentCall(m.Index, m.Length - (m.Value.EndsWith('\n') ? 1 : 0), m.Groups[1].Value.Trim(), m.Groups[2].Value.Trim()));
+        return result;
+    }
 
     /// <summary>The mark after text written by the Assistente: <c>{ia:"modelo"}</c>, the model's short name.</summary>
     public static string AiMark(string model)
@@ -79,11 +98,14 @@ public static partial class NoteMarks
         return m.Success ? m.Groups[1].Value : null;
     }
 
-    /// <summary>The Markdown without its comments (pages, books and exported HTML); code keeps its text as it is.</summary>
-    public static string StripComments(string? markdown)
+    /// <summary>
+    /// The Markdown without its comments (pages, books and exported HTML); code keeps its text as it is. The
+    /// Assistente's mark stays, as "· IA: modelo" or as <paramref name="aiMark"/> writes it (UC-82: pages show it discreetly).
+    /// </summary>
+    public static string StripComments(string? markdown, Func<string, string>? aiMark = null)
     {
         var text = markdown ?? "";
-        if (!text.Contains("%%", StringComparison.Ordinal) && !text.Contains("{\"", StringComparison.Ordinal) && !text.Contains("{ia:", StringComparison.Ordinal)) return text;
+        if (!text.Contains("%%", StringComparison.Ordinal) && !text.Contains("{\"", StringComparison.Ordinal) && !text.Contains("{ia:", StringComparison.Ordinal) && !text.Contains("&:", StringComparison.Ordinal)) return text;
         // fenced code and inline code stay untouched; everything else loses %%…%%
         var parts = CodeRegex().Split(text);
         var codes = CodeRegex().Matches(text);
@@ -91,7 +113,8 @@ public static partial class NoteMarks
         for (int i = 0; i < parts.Length; i++)
         {
             // the Assistente's mark stays visible in pages, as plain text (UC-51: AI text is always marked)
-            sb.Append(AiMarkRegex().Replace(NotesRegex().Replace(CommentRegex().Replace(parts[i], ""), ""), m => "· IA: " + m.Groups[1].Value));
+            // a request to an agent (UC-80) is the writer's, like a comment: its line leaves the page
+            sb.Append(AiMarkRegex().Replace(NotesRegex().Replace(CommentRegex().Replace(AgentLineRegex().Replace(parts[i], ""), ""), ""), m => aiMark?.Invoke(m.Groups[1].Value) ?? "· IA: " + m.Groups[1].Value));
             if (i < codes.Count) sb.Append(codes[i].Value);
         }
         return sb.ToString();
@@ -111,6 +134,20 @@ public static partial class NoteMarks
             {
                 ["class"] = (n.Attr("class") + " " + TagClass).Trim(),
                 ["data-tag"] = tag
+            };
+            return n with { Attrs = attrs, Children = kids };
+        }
+        if (n.Tag == "p" && children.Count > 0 && children[0].Tag == RichNode.TextTag && AgentRegex().Match(children[0].Text) is { Success: true } agent)
+        {
+            // &Nome&: pedido (UC-80): the agent's chip, then the request
+            var first = children[0];
+            var rest = first.Text[agent.Length..];
+            var kids = new List<RichNode>(children);
+            if (rest.Length > 0) kids[0] = first with { Text = rest }; else kids.RemoveAt(0);
+            var attrs = new Dictionary<string, string>(n.Attrs)
+            {
+                ["class"] = (n.Attr("class") + " " + AgentClass).Trim(),
+                ["data-agent"] = agent.Groups[1].Value.Trim()
             };
             return n with { Attrs = attrs, Children = kids };
         }
@@ -177,6 +214,14 @@ public static partial class NoteMarks
 
     [GeneratedRegex(@"%%(.+?)%%|(?:\{""(?:[^""\\\n]|\\.)*""\})+|\{ia:""[^""\n]{1,80}""\}", RegexOptions.Singleline)]
     private static partial Regex MarksRegex();
+
+    // &Nome&: at the start of a paragraph's text (the name: empty, or a letter then letters, digits, space, . _ -)
+    [GeneratedRegex(@"^&((?:\p{L}[\p{L}\p{N} ._-]{0,23})?)&:[ \t]?")]
+    private static partial Regex AgentRegex();
+
+    // the whole line of a request, in the source
+    [GeneratedRegex(@"^[ \t]*&((?:\p{L}[\p{L}\p{N} ._-]{0,23})?)&:[ \t]?(.*)$\n?", RegexOptions.Multiline)]
+    private static partial Regex AgentLineRegex();
 
     [GeneratedRegex(@"```[\s\S]*?(?:```|$)|`[^`\n]*`")]
     private static partial Regex CodeRegex();

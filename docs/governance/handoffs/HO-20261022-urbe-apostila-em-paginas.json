@@ -1,0 +1,80 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-apostila-em-paginas",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T18:47:26Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-77",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "64cb8d12",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AgentNamesTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261022-urbe-apostila-em-paginas.json"
+  ],
+  "work_completed": [
+    "UC-77 (observação de 22/10/2026): pedidos de apostila, livro, caderno, e-book ou manual viram uma página no formato livro sem o usuário lembrar: o app junta ao prompt a seção 'No Urbe' (AssistantAgent.UrbeGuidance) pedindo page_schema e write_page com o modelo book/book-folder. O prompt da 1.8.4 continua igual (oráculos)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (665) e Urbe.Client.Tests (Assistant_*)",
+      "result": "passed",
+      "evidence": "AgentNamesTests confere a seção 'No Urbe' depois do prompt da 1.8.4; Assistant_AnAgentTakesTheNameThePersonAgreesTo confere o prompt enviado."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, pedir 'faça uma apostila sobre …' e ver a página no formato livro",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "UC-78 lista virtualizada; UC-83 renomear no lugar."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": ".urbe/area.json só guarda apresentação e declara que as pastas e arquivos são a autoridade do conteúdo; nada nele cria, move ou apaga pastas."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "O arquivo novo é o previsto no ADD-0030, que o proprietário decidiu (DEC-0053)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Aparência e ordem no aparelho ficam pendentes; UC-85 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "area-layout",
+      "status": "product-specific",
+      "rationale": "Apresentação da Área de trabalho do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Texto do prompt do Assistente no app; nenhuma gravação nova."
+  }
+}

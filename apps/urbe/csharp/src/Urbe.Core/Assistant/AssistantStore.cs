@@ -102,6 +102,8 @@ public sealed class AiConfig
     /// <summary>Facts to remember, by vault name ('*' for every vault).</summary>
     public Dictionary<string, List<string>> Memory { get; set; } = new(StringComparer.Ordinal);
     public List<AiAgentDef> CustomAgents { get; set; } = [];
+    /// <summary>UC-81: the call names the person gave the agents on this device, by agent id.</summary>
+    public Dictionary<string, string> AgentNames { get; set; } = new(StringComparer.Ordinal);
     public int MaxSteps { get; set; } = 30;
     public Dictionary<string, AiModelCache> ModelCache { get; set; } = new(StringComparer.Ordinal);
 }
@@ -188,13 +190,15 @@ public sealed class AssistantStore(IAssistantStorage storage)
     {
         var memory = new JsonObject();
         foreach (var (k, v) in c.Memory) memory[k] = new JsonArray(v.Select(x => (JsonNode)JsonValue.Create(x)).ToArray());
+        var names = new JsonObject();
+        foreach (var (k, v) in c.AgentNames.OrderBy(p => p.Key, StringComparer.Ordinal)) names[k] = v;
         var cache = new JsonObject();
         foreach (var (k, v) in c.ModelCache) cache[k] = new JsonObject { ["at"] = v.At, ["list"] = new JsonArray(v.List.Select(m => (JsonNode)ModelToJson(m)).ToArray()) };
         return new JsonObject
         {
             ["version"] = c.Version, ["providers"] = new JsonArray(c.Providers.Select(p => (JsonNode)ProviderToJson(p)).ToArray()), ["providerId"] = c.ProviderId,
             ["model"] = c.Model, ["policy"] = c.Policy, ["agentId"] = c.AgentId, ["instructions"] = c.Instructions, ["memory"] = memory,
-            ["customAgents"] = new JsonArray(c.CustomAgents.Select(a => (JsonNode)AgentToJson(a)).ToArray()), ["maxSteps"] = c.MaxSteps, ["modelCache"] = cache
+            ["customAgents"] = new JsonArray(c.CustomAgents.Select(a => (JsonNode)AgentToJson(a)).ToArray()), ["maxSteps"] = c.MaxSteps, ["modelCache"] = cache, ["agentNames"] = names
         };
     }
 
@@ -211,6 +215,8 @@ public sealed class AssistantStore(IAssistantStorage storage)
         };
         if (o["memory"] is JsonObject mem)
             foreach (var (k, v) in mem) c.Memory[k] = (v as JsonArray ?? []).Select(x => Str(x)).Where(x => x.Length > 0).ToList();
+        if (o["agentNames"] is JsonObject an)
+            foreach (var (k, v) in an) if (Str(v).Trim() is { Length: > 0 } name) c.AgentNames[k] = name;
         if (o["modelCache"] is JsonObject mc)
             foreach (var (k, v) in mc)
                 if (v is JsonObject e) c.ModelCache[k] = new AiModelCache(Num(e["at"]), (e["list"] as JsonArray ?? []).OfType<JsonObject>().Select(ModelFromJson).ToList());

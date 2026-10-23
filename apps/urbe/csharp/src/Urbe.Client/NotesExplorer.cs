@@ -43,6 +43,7 @@ public sealed class NotesExplorer : Border
     private readonly Border _bar = new();
     private readonly TextBlock _count = new() { FontSize = 14, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0) };
     private readonly List<Button> _noteActions = [];
+    private Button _renameAction = new();
     private readonly List<CityNote> _notes = [];
     private readonly List<string> _files = [];
     private readonly Dictionary<Control, string> _folderRows = [];
@@ -138,6 +139,9 @@ public sealed class NotesExplorer : Border
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
         };
+        _scroll = scroll;
+        // UC-78: with many rows only the ones near the screen are made; scrolling makes the next ones
+        scroll.ScrollChanged += (_, _) => { if (_rows is not null) Realize(); };
         // a finger that scrolls the list, or only stops it, neither opens nor selects the row under it (22/10/2026)
         TouchIntent.Attach(scroll);
         var layout = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*") };
@@ -154,6 +158,8 @@ public sealed class NotesExplorer : Border
 
         KeyDown += (_, e) =>
         {
+            // F2 (UC-83): the one item selected is renamed in its row
+            if (e.Key == Key.F2 && _selected.Count == 1 && BeginRename(_selected.First())) { e.Handled = true; return; }
             // Escape: clears the search, otherwise goes back to the tree, or to the editor when shown over it
             if (e.Key != Key.Escape) return;
             if ((_search.Text ?? "").Length > 0) SearchText = "";
@@ -205,6 +211,17 @@ public sealed class NotesExplorer : Border
 
     /// <summary>One item of the trash as the Lixeira lists it (renderTrash): the document's id and title, its path.</summary>
     public sealed record TrashEntry(string Id, string Title, string OriginalPath);
+
+    /// <summary>
+    /// UC-83: the tree starts with Favoritos and Recentes (with how many each holds) and a "Projetos" heading, as a
+    /// sidebar does; off, the tree is the 1.8.4's.
+    /// </summary>
+    public bool ShowsSections { get => _sections; set { _sections = value; Render(); } }
+
+    private bool _sections;
+
+    /// <summary>A section of the sidebar was chosen ("favorites" or "recent").</summary>
+    public event Action<string>? SectionRequested;
 
     /// <summary>A collection view (Recentes, Favoritos: renderCollection).</summary>
     public sealed record Collection(string Title, IReadOnlyList<CityNote> Notes, string EmptyTitle, string EmptyText);
@@ -519,6 +536,8 @@ public sealed class NotesExplorer : Border
         _back.IsVisible = _view is "trash" or "collection";
         _searchBox.IsVisible = _view is "tree" or "search";
         _list.Children.Clear();
+        _rows = null;
+        _made.Clear();
         _visibleNotes.Clear();
         _visibleFolders.Clear();
         _visibleFiles.Clear();
@@ -565,19 +584,175 @@ public sealed class NotesExplorer : Border
                     bool open = IsExpanded(k.Path);
                     _visibleFolders.Add(k.Path);
                     var folder = k.Path;
-                    var row = FolderRow(folder, k.Name, depth, open);
-                    _folderRows[row] = folder;
-                    _list.Children.Add(row);
+                    var name = k.Name;
+                    var d = depth;
+                    if (_renaming == FolderPrefix + folder) Emit(() => RenameRow(FolderPrefix + folder, name, d));
+                    else Emit(() =>
+                    {
+                        var row = FolderRow(folder, name, d, open);
+                        _folderRows[row] = folder;
+                        return row;
+                    });
                     if (open) Walk(k.Path, depth + 1);
                 }
                 else if (k.Kind == 1) AddNoteRow(notesByPath[k.Path], depth, withPath: false);
                 else AddFileRow(k.Path, depth, withPath: false);
             }
         }
+        if (_sections && (_notes.Count > 0 || _files.Count > 0 || folders.Count > 0)) AddSections();
+        _pending = [];
         Walk("", 0);
+        var rows = _pending;
+        _pending = null;
+        if (rows.Count <= VirtualFrom) foreach (var make in rows) _list.Children.Add(make());
+        else
+        {
+            _rows = rows;
+            _rowsAt = _list.Children.Count;
+            _realized = (-1, -1);
+            Realize();
+        }
         if (_list.Children.Count == 0)
             _list.Children.Add(_opening ? Empty("Abrindo suas notas…", "")
                 : EmptyWithAction("Nenhuma nota ainda", "Suas notas são arquivos Markdown na pasta que você escolher.", "Criar primeira nota"));
+    }
+
+    // ------------------------------------------------------------------ renaming in place (UC-83)
+
+    private string? _renaming;
+
+    /// <summary>A row renamed in place: the item (a note's path, or <see cref="FolderPrefix"/> and the folder) and the name typed.</summary>
+    public event Action<string, string>? RenameCommitted;
+
+    /// <summary>The item being renamed in place now, or null (tests).</summary>
+    public string? Renaming => _renaming;
+
+    /// <summary>
+    /// Turns the row of a note (its path) or folder (<see cref="FolderPrefix"/> and the folder) into a box with its name:
+    /// Enter (or leaving the box) renames it, Esc leaves it as it was. False when the row is not in the tree now.
+    /// </summary>
+    public bool BeginRename(string key)
+    {
+        bool folder = key.StartsWith(FolderPrefix, StringComparison.Ordinal);
+        if (_view != "tree" || (folder ? !_visibleFolders.Contains(key[FolderPrefix.Length..]) : !_visibleNotes.Contains(key))) return false;
+        _selected.Clear();
+        _renaming = key;
+        Render();
+        return true;
+    }
+
+    private Control RenameRow(string key, string name, int depth)
+    {
+        bool folder = key.StartsWith(FolderPrefix, StringComparison.Ordinal);
+        var box = new TextBox
+        {
+            Text = name, FontSize = 15, MinHeight = 40, VerticalContentAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(8 + depth * 16, 2, 8, 2), CornerRadius = new CornerRadius(10),
+            Background = UrbeTheme.Brush(UrbeTheme.Surface2), Foreground = UrbeTheme.Brush(UrbeTheme.Text), BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent)
+        };
+        Avalonia.Automation.AutomationProperties.SetName(box, "Novo nome");
+        bool done = false;
+        void Finish(bool keep)
+        {
+            if (done) return;
+            done = true;
+            _renaming = null;
+            var typed = (box.Text ?? "").Trim();
+            Render();
+            if (keep && typed.Length > 0 && typed != name) RenameCommitted?.Invoke(key, typed);
+        }
+        box.KeyDown += (_, e) =>
+        {
+            if (e.Key == Avalonia.Input.Key.Enter) { e.Handled = true; Finish(true); }
+            else if (e.Key == Avalonia.Input.Key.Escape) { e.Handled = true; Finish(false); }
+        };
+        box.LostFocus += (_, _) => Avalonia.Threading.Dispatcher.UIThread.Post(() => Finish(true));
+        box.AttachedToVisualTree += (_, _) => Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            box.Focus();
+            // the name without its extension is selected, as a file explorer does
+            int dot = folder ? -1 : name.LastIndexOf('.');
+            box.SelectionStart = 0;
+            box.SelectionEnd = dot > 0 ? dot : name.Length;
+        });
+        return box;
+    }
+
+    // ------------------------------------------------------------------ many rows (UC-78)
+
+    /// <summary>From this many rows of the tree on, only the ones near the screen are made.</summary>
+    public const int VirtualFrom = 150;
+    private const int Spare = 40;            // rows made above and below the screen
+    private ScrollViewer? _scroll;
+    private List<Func<Control>>? _pending;  // the rows of the tree being walked
+    private List<Func<Control>>? _rows;     // all the rows, when they are many
+    private int _rowsAt;                     // where they start in the list (after the sections)
+    private (int First, int Last) _realized;
+    private double _rowHeight = 48;
+    private readonly Dictionary<int, Control> _made = [];
+
+    /// <summary>How many rows of the tree are made now (tests).</summary>
+    public int MadeRows => _rows is null ? _list.Children.Count : _made.Count;
+
+    private void Emit(Func<Control> make)
+    {
+        if (_pending is not null) _pending.Add(make);
+        else _list.Children.Add(make());
+    }
+
+    /// <summary>The rows near the screen, between two spacers the height of the rest.</summary>
+    private void Realize()
+    {
+        if (_rows is not { } rows || _scroll is null) return;
+        double top = Math.Max(0, _scroll.Offset.Y - _rowsAt * _rowHeight);
+        double height = _scroll.Viewport.Height > 0 ? _scroll.Viewport.Height : 900;
+        int first = Math.Clamp((int)(top / _rowHeight) - Spare, 0, rows.Count);
+        int last = Math.Clamp((int)((top + height) / _rowHeight) + Spare, first, rows.Count);
+        // scrolling inside what is made already changes nothing
+        if (_realized.First >= 0 && first >= _realized.First && last <= _realized.Last) return;
+        first = Math.Max(0, first - Spare / 2);
+        last = Math.Min(rows.Count, last + Spare / 2);
+        while (_list.Children.Count > _rowsAt) _list.Children.RemoveAt(_list.Children.Count - 1);
+        foreach (var gone in _made.Keys.Where(i => i < first || i >= last).ToList()) _made.Remove(gone);
+        _list.Children.Add(new Border { Height = first * _rowHeight });
+        for (int i = first; i < last; i++)
+        {
+            if (!_made.TryGetValue(i, out var row)) _made[i] = row = rows[i]();
+            _list.Children.Add(row);
+        }
+        _list.Children.Add(new Border { Height = (rows.Count - last) * _rowHeight });
+        _realized = (first, last);
+        // the rows' real height, once one has been laid out
+        if (_made.Values.FirstOrDefault(r => r.Bounds.Height > 20) is { } laid && Math.Abs(laid.Bounds.Height + laid.Margin.Top + laid.Margin.Bottom - _rowHeight) > .5)
+            _rowHeight = laid.Bounds.Height + laid.Margin.Top + laid.Margin.Bottom;
+    }
+
+    /// <summary>UC-83: Favoritos and Recentes as the sidebar's first rows, then the "Projetos" heading over the tree.</summary>
+    private void AddSections()
+    {
+        foreach (var (id, label, icon, count) in new[]
+                 {
+                     ("favorites", "Favoritos", UrbeTheme.Icons.Star, State?.Favorites.Count ?? 0),
+                     ("recent", "Recentes", UrbeTheme.Icons.Clock, State?.Recent.Count ?? 0)
+                 })
+        {
+            var section = id;
+            var counter = new TextBlock { Text = count.ToString(System.Globalization.CultureInfo.InvariantCulture), FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center };
+            var row = new Button
+            {
+                Content = RowFrame(icon, label, null, false, false, counter), Background = Brushes.Transparent, BorderThickness = new Thickness(0),
+                CornerRadius = new CornerRadius(12), Padding = RowPadding(0), HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Center, MinHeight = 44
+            };
+            Avalonia.Automation.AutomationProperties.SetName(row, label);
+            row.Click += (_, _) => { if (TouchIntent.IsIntended(row)) SectionRequested?.Invoke(section); };
+            _list.Children.Add(Ui.UrbeMotion.Pressable(row));
+        }
+        _list.Children.Add(new TextBlock
+        {
+            Text = "PROJETOS", FontSize = 11, FontWeight = FontWeight.SemiBold, LetterSpacing = 1.2, Foreground = UrbeTheme.Brush(UrbeTheme.Text3),
+            Margin = new Thickness(14, 14, 0, 6)
+        });
     }
 
     /// <summary>renderSearch: documents whose path or title holds the query (lower case), at most 200, with their folder.</summary>
@@ -603,15 +778,16 @@ public sealed class NotesExplorer : Border
     {
         _visibleNotes.Add(n.Path);
         var path = n.Path;
+        if (_renaming == path) { Emit(() => RenameRow(path, Base(path), depth)); return; }
         // the file name with its extension, as an explorer shows it (the 1.8.4 showed the title)
-        _list.Children.Add(PressableRow(RowFrame(IconFor(path), name ?? Base(path), withPath && path.Contains('/') ? Dir(path) : null, false, false, null),
+        Emit(() => PressableRow(RowFrame(IconFor(path), name ?? Base(path), withPath && path.Contains('/') ? Dir(path) : null, false, false, null),
             depth, _selected.Contains(path), () => TryOpenNote(path), () => { if (HoldNote(path)) ArmDrag(); }, () => HoldDelay));
     }
 
     private void AddFileRow(string path, int depth, bool withPath)
     {
         _visibleFiles.Add(path);
-        _list.Children.Add(Row(IconFor(path), Base(path), withPath && path.Contains('/') ? Dir(path) : null, depth, false, false, false,
+        Emit(() => Row(IconFor(path), Base(path), withPath && path.Contains('/') ? Dir(path) : null, depth, false, false, false,
             () => TryOpenFile(path), () => ArmDrag(path)));
     }
 
@@ -695,11 +871,14 @@ public sealed class NotesExplorer : Border
 
     private void Highlight(Control? row)
     {
-        if (_dropTarget is Button old && old != row)
-            old.BorderBrush = _folderRows.TryGetValue(old, out var f) && _selected.Contains(FolderPrefix + f) ? UrbeTheme.Brush(UrbeTheme.Accent, .35) : Brushes.Transparent;
+        if (_dropTarget is { } old && old != row && ButtonOf(old) is { } oldButton)
+            oldButton.BorderBrush = _folderRows.TryGetValue(old, out var f) && _selected.Contains(FolderPrefix + f) ? UrbeTheme.Brush(UrbeTheme.Accent, .35) : Brushes.Transparent;
         _dropTarget = row;
-        if (row is Button target) target.BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent);
+        if (row is not null && ButtonOf(row) is { } target) target.BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent);
     }
+
+    /// <summary>A row's button (a nested row is the button with its tree guides).</summary>
+    private static Button? ButtonOf(Control row) => row as Button ?? (row as Panel)?.Children.OfType<Button>().FirstOrDefault();
 
     /// <summary>Whether a held note, folder or file is being dragged now (tests).</summary>
     public bool Dragging => _dragging;
@@ -950,7 +1129,12 @@ public sealed class NotesExplorer : Border
             if (!TouchIntent.IsIntended(button)) return;
             click();
         };
-        return button;
+        if (depth == 0) return button;
+        // UC-83: the tree's guides, one thin line per level, under the parent's icon
+        var guides = new Panel { IsHitTestVisible = false };
+        for (int i = 0; i < depth; i++)
+            guides.Children.Add(new Border { Width = 1, Background = UrbeTheme.Brush(UrbeTheme.Line2), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(12 + i * 18 + 10, 0, 0, 0) });
+        return new Panel { Children = { button, guides } };
     }
 
     // ------------------------------------------------------------------ selection bar
@@ -985,6 +1169,10 @@ public sealed class NotesExplorer : Border
             return b;
         }
         var clear = Act(UrbeTheme.Icons.CloseUi, "Limpar seleção", null, UrbeTheme.Text2);
+        // UC-83: one item selected is renamed right there, in its row
+        _renameAction = Act(UrbeTheme.Icons.Pencil, "Renomear", null, UrbeTheme.Text2);
+        Avalonia.Automation.AutomationProperties.SetName(_renameAction, "Renomear");
+        _renameAction.Click += (_, _) => { if (_selected.Count == 1) BeginRename(_selected.First()); };
         clear.Click += (_, _) => ClearSelection();
         _count.Foreground = UrbeTheme.Brush(UrbeTheme.Text2);
         _count.Margin = new Thickness(6, 0);
@@ -995,6 +1183,7 @@ public sealed class NotesExplorer : Border
             Children =
             {
                 Act(UrbeTheme.Icons.Open, "Abrir", "open", UrbeTheme.Text2),
+                _renameAction,
                 Act(UrbeTheme.Icons.Star, "Favoritar", "favorite", UrbeTheme.Text2),
                 Act(UrbeTheme.Icons.Move, "Mover para pasta", "move", UrbeTheme.Text2),
                 Act(UrbeTheme.Icons.Copy, "Duplicar", "duplicate", UrbeTheme.Text2),
@@ -1032,6 +1221,7 @@ public sealed class NotesExplorer : Border
         static string Plural(int n, string one, string many) => n + " " + (n == 1 ? one : many);
         _count.Text = string.Join(" · ", new[] { f > 0 ? Plural(f, "pasta", "pastas") : "", d > 0 ? Plural(d, "nota", "notas") : "" }.Where(x => x.Length > 0));
         foreach (var b in _noteActions) b.IsEnabled = d > 0;
+        _renameAction.IsEnabled = _selected.Count == 1;
     }
 
     private static string Dir(string path) => path.Contains('/') ? path[..path.LastIndexOf('/')] : "";

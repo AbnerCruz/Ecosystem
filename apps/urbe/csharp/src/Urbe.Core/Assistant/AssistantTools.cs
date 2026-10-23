@@ -79,6 +79,8 @@ public interface IAssistantHost
     IAssistantAppearance? Appearance => null;
     /// <summary>The vault's plugins the plugin tools create and turn on, when the app has them.</summary>
     IAssistantPlugins? Plugins => null;
+    /// <summary>UC-81: the call name of the run's agent, when the app keeps them.</summary>
+    IAssistantNames? Names => null;
 }
 
 /// <summary>A tool the agents use (tools.js def): name, description, JSON Schema, access, label, preview and run.</summary>

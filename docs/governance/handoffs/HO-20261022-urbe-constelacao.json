@@ -1,0 +1,83 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-constelacao",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T18:45:13Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-72",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "64cb8d12",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Constellation.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ConstellationView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Constellation.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Area.cs",
+    "apps/urbe/csharp/src/Urbe.Client/WorkspaceView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ConstellationTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/WorkspaceUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261022-urbe-constelacao.json"
+  ],
+  "work_completed": [
+    "UC-72 primeira fatia (DEC-0052, ADD-0029): a Constelação abre pela Área de trabalho e pelo Explorer (nunca a base). Posições estáveis em .urbe/constelacao.json, derivado das notas e com a fonte declarada (NN-001), gravado só quando uma nota entra ou sai, pela gravação verificada; mapa.json e mundo.json intocados. Névoa por projeto, recentes mais brilhantes, foco ao tocar com as ligações e o resto escurecido, tocar de novo abre, arrastar/zoom, de longe agrupa por projeto, só desenha o que está na tela."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (665) e Urbe.Client.Tests (203); build Release",
+      "result": "passed",
+      "evidence": "ConstellationTests (regiões, lugares estáveis, arquivo com fonte e guarda de versão) e Constellation_ShowsTheSkyFocusesAStarAndOpensItsNote."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, abrir a Constelação num vault grande: passear, aproximar, tocar numa estrela e abrir",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/ConstellationView.cs"
+    }
+  ],
+  "known_issues": [
+    "Sem o 'respirar' lento por enquanto; medição com milhares de notas pendente."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "UC-77 próximas fatias; UC-78 lista virtualizada; UC-83 renomear no lugar."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": ".urbe/area.json só guarda apresentação e declara que as pastas e arquivos são a autoridade do conteúdo; nada nele cria, move ou apaga pastas."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "O arquivo novo é o previsto no ADD-0030, que o proprietário decidiu (DEC-0053)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Aparência e ordem no aparelho ficam pendentes; UC-85 continua [ ]."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Zona user-data: IUrbeVaultStorage, FolderVaultStorage e AndroidVaultStorage gravam um arquivo novo no vault, .urbe/constelacao.json, pela gravação verificada."
+  }
+}

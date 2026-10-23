@@ -1,0 +1,87 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-agentes-com-nome",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T18:04:56Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-81",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "64cb8d12",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AgentNames.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AgentNamesTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261022-urbe-agentes-com-nome.json"
+  ],
+  "work_completed": [
+    "UC-81 (ideia do proprietário, 22/10/2026): cada agente pode ter um nome de chamada, guardado na configuração do Assistente deste aparelho (nunca no vault) e único entre os agentes. O agente se apresenta pelo nome; chamado por um nome novo, pergunta uma vez e, com o sim, usa set_my_name. Configurações → Nomes dos agentes renomeia; o id nunca muda (NN-019). O prompt da 1.8.4 fica igual quando não há nomes (oráculos intactos)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (654) e Urbe.Client.Tests (199)",
+      "result": "passed",
+      "evidence": "AgentNamesTests (3) e Assistant_AnAgentTakesTheNameThePersonAgreesTo; oráculos do AssistantAgent intactos."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, chamar o Assistente por um nome novo, aceitar e ver o nome no chip",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Core/Assistant/AgentNames.cs"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "UC-80: &Nome&: no editor (chip, pedido, resposta e sugestão)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": ".urbe/area.json só guarda apresentação e declara que as pastas e arquivos são a autoridade do conteúdo; nada nele cria, move ou apaga pastas."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "O arquivo novo é o previsto no ADD-0030, que o proprietário decidiu (DEC-0053)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Aparência e ordem no aparelho ficam pendentes; UC-85 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "named-agents",
+      "status": "product-specific",
+      "rationale": "Nomes de chamada dos agentes do Assistente do Urbe, guardados na configuração do aparelho; nenhum outro Product consome isso hoje (ADR-0033: sem extração sem segundo consumidor real)."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Toca AssistantStore.cs (zona *Store* da política): a configuração do Assistente no aparelho ganha agentNames. Nada no vault."
+  }
+}

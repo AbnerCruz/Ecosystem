@@ -320,7 +320,7 @@ public sealed partial class AssistantPanel
     private Control Empty()
     {
         var e = EditorInfo();
-        var a = AssistantAgent.AgentById(_conv.AgentId, _cfg.CustomAgents);
+        var a = AgentNames.Named(AssistantAgent.AgentById(_conv.AgentId, _cfg.CustomAgents), _cfg);
         var sug = new List<string>();
         if (e.Path is { Length: > 0 }) sug.AddRange(["Resuma esta nota em tópicos", "Revise o texto desta nota: clareza e erros", "Encontre notas relacionadas e sugira [[links]] para esta"]);
         sug.AddRange(["O que tem no meu vault? Dê uma visão geral", "Encontre notas sem nenhuma ligação e sugira conexões", "Crie uma nota-índice que ligue as notas por tema"]);
@@ -351,7 +351,7 @@ public sealed partial class AssistantPanel
     {
         if (_running is not null) return;
         var list = AssistantAgent.Agents.Concat(_cfg.CustomAgents).ToList();
-        var i = await _app.Dialogs.ChooseAsync("Agente", list.Select(a => new DialogItem(a.Name + (a.Id == _conv.AgentId ? "  ✓" : ""), UrbeTheme.Icons.Assistant,
+        var i = await _app.Dialogs.ChooseAsync("Agente", list.Select(a => new DialogItem(AgentNames.CallName(a, _cfg) + (a.Id == _conv.AgentId ? "  ✓" : ""), UrbeTheme.Icons.Assistant,
             a.Description.Length > 0 ? a.Description : a.Tools == "read" ? "Só leitura" : "Personalizado")).ToList());
         if (i is not { } k) return;
         _conv.AgentId = list[k].Id;
@@ -412,7 +412,7 @@ public sealed partial class AssistantPanel
         foreach (var c in list)
         {
             int n = c.Messages.Count(m => m.Role == "user" && m.Meta?.ToolResults != true);
-            var a = AssistantAgent.AgentById(c.AgentId, _cfg.CustomAgents);
+            var a = AgentNames.Named(AssistantAgent.AgentById(c.AgentId, _cfg.CustomAgents), _cfg);
             var when = DateTimeOffset.FromUnixTimeMilliseconds(c.Updated).LocalDateTime.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture);
             var open = new Button
             {
@@ -515,6 +515,20 @@ public sealed partial class AssistantPanel
             mem.Children.Add(row);
         }
         body.Children.Add(Section("Memória", Hint("Fatos que você pediu para o Assistente lembrar. Valem para este vault (" + v + ") e, os marcados como gerais, para todos."), mem));
+
+        // UC-81: each agent's call name, on this device (the chip, the prompt and &Nome&: in a note use it)
+        var names = new StackPanel { Spacing = 6 };
+        foreach (var a in AgentNames.All(c))
+        {
+            var rename = TextButton("Renomear", () => _ = RenameAgentAsync(a));
+            var row = new DockPanel();
+            DockPanel.SetDock(rename, Dock.Right);
+            row.Children.Add(rename);
+            var call = AgentNames.CallName(a, c);
+            row.Children.Add(new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { Label(call, 14, UrbeTheme.Text, FontWeight.SemiBold), Hint(call == a.Name ? "Nome padrão" : a.Name) } });
+            names.Children.Add(row);
+        }
+        body.Children.Add(Section("Nomes dos agentes", Hint("Como cada agente se chama. Numa conversa, chame-o por um nome novo (“Jarvis, …”) e ele pergunta se deve passar a se chamar assim."), names));
 
         var custom = new StackPanel { Spacing = 8 };
         if (c.CustomAgents.Count == 0) custom.Children.Add(Hint("Crie agentes com instruções próprias, ex.: “Revisor acadêmico”."));
@@ -631,6 +645,19 @@ public sealed partial class AssistantPanel
         var cancel = TextButton("Cancelar", () => ShowSettings());
         cancel.Margin = new Thickness(0, 0, 8, 0);
         body.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { cancel, save } });
+    }
+
+    /// <summary>UC-81: a new call name for an agent (empty gives it back its own name).</summary>
+    private async Task RenameAgentAsync(AiAgentDef a)
+    {
+        var typed = await _app.Dialogs.PromptAsync(new PromptOptions("Nome do agente", Label: "Como ele se chama", Value: AgentNames.CallName(a, _cfg),
+            Placeholder: a.Name, Hint: "Vazio volta ao nome padrão (" + a.Name + ").", Confirm: "Salvar",
+            Validate: v => v.Trim().Length == 0 || v.Trim() == a.Name ? null : AgentNames.Problem(v, a.Id, _cfg), Required: false));
+        if (typed is null) return;
+        if (AgentNames.Set(_cfg, a.Id, typed) is { } problem) { await _app.Dialogs.AlertAsync("Nome do agente", problem); return; }
+        SaveConfig();
+        RenderAll();
+        ShowSettings();
     }
 
     private void EditAgent(AiAgentDef? a)

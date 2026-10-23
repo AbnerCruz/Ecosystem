@@ -76,7 +76,11 @@ public sealed class PageCommentMarksTests
         Assert.DoesNotContain("primeiro", html);
         Assert.DoesNotContain("da nota", html);
         Assert.Contains("Uma palavra aqui.", html);
-        Assert.Contains("· IA: modelo", html);
+        // UC-82: the mark is a small "IA", the model in its title, and the foot of the page says so
+        Assert.DoesNotContain("· IA: modelo", html);
+        Assert.Contains("<sup class=\"urbe-ia\" title=\"Escrito com IA (modelo)\">IA</sup>", html);
+        Assert.Contains("Partes deste documento foram escritas com IA (modelo).", html);
+        Assert.True(html.IndexOf("urbe-ia-note", StringComparison.Ordinal) < html.LastIndexOf("</body>", StringComparison.Ordinal));
         Assert.Contains("{&quot;literal&quot;}", html);
     }
 
@@ -91,5 +95,24 @@ public sealed class PageCommentMarksTests
         var none = Page("Nada a marcar.", "Título");
         var clean = new Notes(new PageNote("Nota.md", "Nota", "# Nota\n\nCasa amarela."));
         Assert.Equal(new PageEngine(2026).Render(none, clean, preview: true), new PageEngine(2026) { UrbeMarks = true }.Render(none, clean, preview: true));
+    }
+
+    [Fact]
+    public void AiMarks_AreSmallAndTheFootNamesEachModelOnce()
+    {
+        var html = new PageEngine(2026) { UrbeMarks = true }.Render(Page("Um{ia:\"luna\"} dois{ia:\"luna\"} três{ia:\"sol\"} `código {ia:\"x\"}`"), Vault);
+        Assert.Equal(3, System.Text.RegularExpressions.Regex.Matches(html, "class=\"urbe-ia\"").Count);
+        Assert.Contains("Partes deste documento foram escritas com IA (luna, sol).", html);
+        // code keeps its text as written
+        Assert.Contains("{ia:&quot;x&quot;}", html);
+        Assert.DoesNotContain("\ue04d", html);
+    }
+
+    [Fact]
+    public void AiMarks_InTheStudioKeepTheirSourceForTextsWrittenInPlace()
+    {
+        var html = new PageEngine(2026) { UrbeMarks = true }.Render(Page("Texto{ia:\"luna/v2\"}"), Vault, preview: true);
+        Assert.Contains("data-src=\"{ia:&quot;luna/v2&quot;}\">IA</sup>", html);
+        Assert.Contains(".urbe-cm,.urbe-ia", html);
     }
 }

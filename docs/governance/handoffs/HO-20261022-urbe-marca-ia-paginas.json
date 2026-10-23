@@ -1,0 +1,79 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-marca-ia-paginas",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T17:58:17Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-82",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "64cb8d12",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/NoteMarks.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Comments.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageCommentMarksTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261022-urbe-marca-ia-paginas.json"
+  ],
+  "work_completed": [
+    "UC-82 (observação da apostila de 22/10/2026): nas páginas, a marca {ia:\"modelo\"} deixa de aparecer como '· IA: modelo' no meio do texto e vira um 'IA' pequeno em sobrescrito com o modelo no título; o pé da página diz 'Partes deste documento foram escritas com IA (modelos).'. A regra de marcar o texto de IA (UC-51) continua; código fica intocado; no estúdio a edição no lugar devolve a marca original."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (651)",
+      "result": "passed",
+      "evidence": "PageCommentMarksTests: Export_LeavesTheCommentsOut, AiMarks_AreSmallAndTheFootNamesEachModelOnce, AiMarks_InTheStudioKeepTheirSourceForTextsWrittenInPlace."
+    },
+    {
+      "kind": "human",
+      "check": "Exportar a apostila no aparelho e conferir a marca discreta e o rodapé",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Comments.cs"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "UC-80/UC-81: agente dentro da nota e agentes com nome."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": ".urbe/area.json só guarda apresentação e declara que as pastas e arquivos são a autoridade do conteúdo; nada nele cria, move ou apaga pastas."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "O arquivo novo é o previsto no ADD-0030, que o proprietário decidiu (DEC-0053)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Aparência e ordem no aparelho ficam pendentes; UC-85 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "area-layout",
+      "status": "product-specific",
+      "rationale": "Apresentação da Área de trabalho do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Só a apresentação da marca de IA no HTML das páginas; nenhuma gravação nova."
+  }
+}

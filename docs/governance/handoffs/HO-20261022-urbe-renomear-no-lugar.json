@@ -1,0 +1,79 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-renomear-no-lugar",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T18:56:40Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-83",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "64cb8d12",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/WorkspaceUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261022-urbe-renomear-no-lugar.json"
+  ],
+  "work_completed": [
+    "UC-83 terceira fatia: renomear no lugar na barra lateral — Renomear na barra de seleção, F2 ou ⋯ da pasta transformam a linha numa caixa com o nome; Enter ou sair renomeia pelas operações verificadas, Esc cancela."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests",
+      "result": "passed",
+      "evidence": "Sidebar_ARowIsRenamedInPlace: nota renomeada no vault, pasta mantida com Esc."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, segurar uma nota, tocar em Renomear e digitar o novo nome",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Próximos itens do ROADMAP C#."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": ".urbe/area.json só guarda apresentação e declara que as pastas e arquivos são a autoridade do conteúdo; nada nele cria, move ou apaga pastas."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "O arquivo novo é o previsto no ADD-0030, que o proprietário decidiu (DEC-0053)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Aparência e ordem no aparelho ficam pendentes; UC-85 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "area-layout",
+      "status": "product-specific",
+      "rationale": "Apresentação da Área de trabalho do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Interface do Explorer; renomear usa as operações verificadas existentes."
+  }
+}

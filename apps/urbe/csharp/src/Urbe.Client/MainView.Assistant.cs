@@ -34,6 +34,23 @@ public sealed partial class MainView : IAssistantApp
         panel.HorizontalAlignment = side ? Avalonia.Layout.HorizontalAlignment.Right : Avalonia.Layout.HorizontalAlignment.Stretch;
     }
 
+    /// <summary>
+    /// UC-80: a <c>&amp;Nome&amp;:</c> line asked its agent. The note is saved first (the agent reads and edits what is in the
+    /// vault), then the Assistente opens on a conversation of its own for this request.
+    /// </summary>
+    private async Task AskAgentInNoteAsync(NoteMarks.AgentCall call)
+    {
+        if (Editor.Current is not { } note || Dialogs.IsOpen) return;
+        if (call.Request.Length == 0) { ShowLifeNotice("Escreva o pedido depois de &" + call.Agent + "&:."); return; }
+        if (Editor.HasChanges && !await Editor.SaveAsync())
+        {
+            await Dialogs.AlertAsync("Pedir ao agente", "A nota ainda não foi salva no vault. O pedido espera a nota estar salva, para o agente ler o que você escreveu.");
+            return;
+        }
+        var title = _store?.Get(note.Path)?.Title ?? LastName(note.Path);
+        if (Assistant.AskInNote(note.Path, title, call) is { } problem) await Dialogs.AlertAsync("Pedir ao agente", problem);
+    }
+
     /// <summary>True while the Assistente panel is open.</summary>
     private bool AssistantOpen => _assistant is { IsVisible: true };
 
@@ -85,6 +102,20 @@ public sealed partial class MainView : IAssistantApp
     }
 
     void IAssistantApp.Notify(string text) => ShowLifeNotice(text);
+
+    void IAssistantApp.Notify(string text, string action, Action onAction) => _notice.Show(text, TimeSpan.FromSeconds(8), action, onAction);
+
+    bool IAssistantApp.SuggestInNote(string path, LineChange change, string who, Action accept, Action refuse)
+    {
+        // only on the note as it is in the vault: unsaved typing would make the change land elsewhere
+        if (!Editor.IsVisible || Editor.Current?.Path != path || Editor.HasChanges) return false;
+        Editor.ShowSuggestion(new VisualSurface.Suggestion(change, who,
+            () => { Editor.ShowSuggestion(null); accept(); },
+            () => { Editor.ShowSuggestion(null); refuse(); }));
+        return true;
+    }
+
+    void IAssistantApp.EndSuggestion() { if (Editor.Suggestion is not null) Editor.ShowSuggestion(null); }
 
     bool IAssistantApp.OpenReference(string reference)
     {

@@ -1,0 +1,88 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-urbe-caixas-uc85",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-22T17:23:29Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-85",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "989d5a20",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Area.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/WorkspaceView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/AreaLayout.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/WorkspaceUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AreaLayoutTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261022-urbe-caixas-uc85.json"
+  ],
+  "work_completed": [
+    "UC-85 (DEC-0053, ADD-0030): o '⋯' de um projeto traz Aparência da caixa (cor da paleta, borda contínua, tracejada, dupla ou brilho, e ícone) e Mover caixa para antes/depois. Cada caixa guarda a sua ordem e o seu modo grade ou lista. Tudo fica em .urbe/area.json (AreaLayout), que declara a fonte e só guarda apresentação. A gravação é verificada por SaveAreaLayoutAsync no desktop e no Android, nunca sobre um arquivo mais novo ou ilegível. Renomear, mover ou apagar uma pasta pelo app leva junto a sua caixa."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests e Urbe.Client.Tests",
+      "result": "passed",
+      "evidence": "AreaLayoutTests (7) e Workspace_BoxesKeepTheirLookAndOrderInAreaJson: ordem, aparência, ordem e lista por caixa, renomear e reabrir o vault, conferindo o arquivo gravado."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: mudar a cor, a borda e o ícone de uma caixa, mudar a ordem das caixas e reabrir o app",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Core/AreaLayout.cs"
+    }
+  ],
+  "known_issues": [
+    "Arrastar caixas no computador é a UC-84 fatia 4."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "UC-83: barra lateral com seções e gaveta parcial; UC-78: abertura imediata pelos nomes."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": ".urbe/area.json só guarda apresentação e declara que as pastas e arquivos são a autoridade do conteúdo; nada nele cria, move ou apaga pastas."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "O arquivo novo é o previsto no ADD-0030, que o proprietário decidiu (DEC-0053)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Aparência e ordem no aparelho ficam pendentes; UC-85 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "area-layout",
+      "status": "product-specific",
+      "rationale": "Apresentação da Área de trabalho do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Zona user-data da política (IUrbeVaultStorage, FolderVaultStorage e AndroidVaultStorage): um arquivo novo no vault, .urbe/area.json, gravado pela gravação verificada. Espera a autorização do proprietário."
+  }
+}

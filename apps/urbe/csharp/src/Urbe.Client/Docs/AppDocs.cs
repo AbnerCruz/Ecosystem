@@ -13,6 +13,7 @@ public static partial class AppDocs
     public static IReadOnlyList<CityNote> Load() =>
     [
         new(LegacyTutorial.Start, ComeceAqui),
+        new("Tutorial/Escrever/Área de trabalho.md", AreaDeTrabalho),
         new("Tutorial/Escrever/Explorer.md", Explorer),
         new("Tutorial/Escrever/Editor.md", Editor),
         new("Tutorial/Escrever/Modelos.md", Modelos),
@@ -23,6 +24,31 @@ public static partial class AppDocs
         new("Tutorial/Ajustes/Backups, exportar e restaurar.md", Backups),
         new("Tutorial/Ajustes/Atalhos.md", Atalhos),
     ];
+
+    private const string AreaDeTrabalho = """
+        # Área de trabalho
+
+        A Área de trabalho é a tela de base do Urbe. Cada **projeto** (uma pasta no topo da sua pasta de notas) é uma caixa de vidro na sua cor, com as notas e os arquivos mais recentes à vista; as notas soltas na raiz ficam em **Soltas**.
+
+        ## Abrir e procurar
+
+        - Toque numa caixa (ou em **Ver tudo**) para abrir o catálogo do projeto, com o caminho de volta no alto.
+        - A busca procura em todos os projetos, ou só no aberto. Embaixo dela: tipos (Notas, Páginas, Imagens, PDF, Mídia), as tags mais usadas, a **ordem** (recentes, nome, criação) e **grade ou lista**. Cada caixa lembra a sua ordem e o seu modo.
+        - Toque num cartão para abrir a nota; **segure** (ou clique com o botão direito) para ver onde ela está, quando foi criada e mudada, quantas palavras tem, as ligações e as tags, com Abrir, Renomear, Mover para, Duplicar, Favoritar e Mover para a lixeira.
+
+        ## Organizar as caixas
+
+        - O **⋯** de um projeto tem **Aparência da caixa** (cor, borda contínua, tracejada, dupla ou com brilho, e ícone) e **Mover caixa** para antes ou depois. Isso fica em `.urbe/area.json`, que só guarda a aparência: as pastas continuam sendo o que vale.
+        - No computador, arraste um cartão até outra caixa para mover a nota para aquele projeto, e arraste o cabeçalho de uma caixa sobre outra para trocar a ordem.
+
+        ## A barra lateral
+
+        - No alto: **Favoritos** e **Recentes**, depois os **projetos** em árvore, com linhas que mostram os níveis.
+        - No computador, arraste a borda da barra para mudar a largura, e o botão de **Pastas** recolhe e devolve a barra. No celular, ela abre como uma gaveta pelo botão **Pastas** ou deslizando da borda esquerda; tocar fora fecha.
+        - Para renomear no lugar: segure a linha e toque em **Renomear** (ou F2 no computador). Enter confirma, Esc desiste.
+
+        A **Constelação** (a estrela no alto da Área de trabalho) mostra as notas como um céu: veja [[Editor]].
+        """;
 
     private const string ComeceAqui = """
         # Comece aqui
@@ -42,9 +68,11 @@ public static partial class AppDocs
 
         ## Por onde seguir
 
-        - [[Explorer]] e [[Editor]]: escrever e organizar.
+        - [[Área de trabalho]], [[Explorer]] e [[Editor]]: escrever e organizar.
         - [[Modelos]]: notas que começam prontas.
         - [[Atalhos]]: os atalhos de teclado.
+
+        Na primeira vez, a **Configuração inicial** leva pela pasta, pelo tema e pelo Assistente; ela pode ser refeita em **Configurações → Configuração inicial**.
 
         Use a **busca** no alto do índice deste tutorial para achar qualquer assunto, e **Anterior / Próximo** para ler em sequência.
         """;
@@ -108,6 +136,7 @@ public static partial class AppDocs
         ## Links
 
         - Digite `[[` e escolha a nota nas sugestões. As duas notas ficam ligadas: **Mais ações → Conexões** mostra a nota no meio de um céu calmo, com as que ela cita e as que a citam. Tocar num ponto abre aquela nota.
+        - A **Constelação** (a estrela no alto da Área de trabalho, ou ⋯ do Explorer) mostra todas as notas como um céu: cada projeto é uma névoa na sua cor. Arraste para passear, aproxime com a pinça ou a roda; toque numa estrela para ver as ligações dela e toque de novo para abrir. As posições ficam em `.urbe/constelacao.json`.
         - Tocar num link abre a nota. Se ela ainda não existe, o Urbe pergunta se quer **criar nota**.
 
         ## Fórmulas
@@ -228,6 +257,8 @@ public static partial class AppDocs
         ## Ajustar
 
         - **Instruções para todos os agentes**, **Memória** (fatos para lembrar), **Agentes personalizados** e **Limite de passos por resposta**.
+        - **Nomes dos agentes**: cada agente pode ter um nome seu, como Jarvis. Numa conversa, chame-o por um nome novo ("Jarvis, resuma esta nota") e ele pergunta se deve passar a se chamar assim. O nome fica só neste aparelho.
+        - **Pedir dentro da nota**: escreva numa linha `&Jarvis&: dê uma sugestão de nome` (ou `&&:` para o agente padrão). A linha vira um cartão com **Pedir a Jarvis** (ou Ctrl+Enter nela); só ao tocar o pedido vai, numa conversa própria "Na nota …", com a nota como contexto. Uma mudança na nota aparece no lugar da linha, como sugestão, com **Aceitar** e **Recusar**; uma resposta em palavras abre o Assistente. Essas linhas não aparecem nas páginas.
         - **Personalização/AGENTS.md** na sua pasta: instruções suas, lidas a cada conversa. Separe por modelo:
 
         ```
@@ -317,6 +348,8 @@ public static partial class AppDocs
         | Esc | Fechar a busca ou terminar de editar o bloco |
 
         **Abrir comandos** (Ctrl+K) lista tudo o que o Urbe faz: backups, painel dividido, restaurar versão, plugins e mais.
+
+        **Seus atalhos:** Configurações → Atalhos lista todos e **Editar meus atalhos** abre `Personalização/atalhos.json`, por exemplo `"Mod+Shift+K": "ui.constellation"` (Mod é Ctrl). Um atalho seu vale por cima do padrão; `""` desliga um padrão. Os nomes dos comandos (como `ui.workspace`, `ui.sidebar.toggle`) aparecem no próprio arquivo de exemplo.
 
         No celular: toque para abrir e segure para selecionar ou arrastar. Se um botão não responde, **Configurações → Diagnóstico de toques** ajuda a descobrir o porquê.
         """;

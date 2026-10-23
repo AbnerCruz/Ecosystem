@@ -169,6 +169,14 @@ public sealed class EditorOverlay : Grid
         AddHandler(KeyDownEvent, (object? _, KeyEventArgs e) =>
         {
             var mod = e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.KeyModifiers.HasFlag(KeyModifiers.Meta);
+            // UC-80: Ctrl+Enter on a &Nome&: line asks that agent
+            if (mod && e.Key == Key.Enter && _note is not null && AgentAsked is not null && AgentCallAtCaret() is { } call)
+            {
+                e.Handled = true;
+                if (Mode == EditorMode.Visual) _visual.FinishEdit();
+                AgentAsked.Invoke(call);
+                return;
+            }
             if (!mod || e.KeyModifiers.HasFlag(KeyModifiers.Alt) || e.Key != Key.M || _note is null) return;
             e.Handled = true;
             _ = StartFormulaAsync(e.KeyModifiers.HasFlag(KeyModifiers.Shift));
@@ -188,6 +196,7 @@ public sealed class EditorOverlay : Grid
         _visual.WikiCandidates = Candidates;
         _visual.AskUrl = AskUrlAsync;
         _visual.AskBox = AskBoxAsync;
+        _visual.AgentAsked += call => AgentAsked?.Invoke(call);
         _visual.AskComment = comments => Dialogs?.CommentsAsync("Comentários", comments) ?? Task.FromResult<string?>(null);
 
         AddRow(_header = TopBar(), 0);
@@ -491,6 +500,27 @@ public sealed class EditorOverlay : Grid
 
     /// <summary>The Assistente button of the top bar (owner, UC-48: "não está com o botão da IA").</summary>
     public event Action? AssistantRequested;
+
+    /// <summary>UC-80: an agent's suggestion shown in the note (in Visual), or null to take it away.</summary>
+    public void ShowSuggestion(VisualSurface.Suggestion? suggestion)
+    {
+        if (suggestion is not null && Mode != EditorMode.Visual) SetMode(EditorMode.Visual);
+        _visual.ShowSuggestion(suggestion);
+    }
+
+    /// <summary>The suggestion shown in the note now, or null.</summary>
+    public VisualSurface.Suggestion? Suggestion => _visual.ShownSuggestion;
+
+    /// <summary>UC-80: a <c>&amp;Nome&amp;:</c> line of the note asked its agent (the line's button, or Ctrl+Enter on it).</summary>
+    public event Action<NoteMarks.AgentCall>? AgentAsked;
+
+    /// <summary>The request line under the caret (Fonte, or the block being edited in Visual), or null.</summary>
+    private NoteMarks.AgentCall? AgentCallAtCaret()
+    {
+        var text = Editor.Text ?? "";
+        int? caret = Mode == EditorMode.Visual ? _visual.SourceCaret : Editor.CaretIndex;
+        return caret is { } at ? NoteMarks.AgentCalls(text).FirstOrDefault(c => at >= c.Start && at <= c.Start + c.Length) : null;
+    }
 
     /// <summary>The open note's file was renamed (renomearNota → v21RefreshEditorChrome): the same text,
     /// what was saved and the editor state are kept; only its path and the title change.</summary>

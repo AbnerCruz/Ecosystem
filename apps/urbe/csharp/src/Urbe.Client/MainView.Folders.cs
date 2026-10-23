@@ -113,6 +113,7 @@ public sealed partial class MainView
         }
         foreach (var p in _attachments.Where(Inside).ToList()) { _attachments.Remove(p); _attachments.Add(Moved(p)); }
         _library.MoveFolder(folder, target);
+        AreaFollows(folder, target);
         ExplorerState.Forget(folder);
         if (Editor.IsVisible && Editor.Current is { } current && moves.TryGetValue(current.Path, out var renamed)) Editor.Renamed(renamed);
         NotesChanged();
@@ -210,6 +211,7 @@ public sealed partial class MainView
         if (failure is null)
         {
             _library.MoveFolder(folder, target);
+        AreaFollows(folder, target);
             ExplorerState.Forget(folder);
             await RemoveEmptyDirectoriesAsync(dirs);
         }
@@ -293,7 +295,7 @@ public sealed partial class MainView
         }
         // a folder that still holds a file that is not a note stays, as on the disk
         bool Holds(string dir) => _attachments.Any(p => p.StartsWith(dir + "/", StringComparison.Ordinal));
-        foreach (var dir in dirs) if (!Holds(dir)) _library.RemoveFolder(dir);
+        foreach (var dir in dirs) if (!Holds(dir)) { _library.RemoveFolder(dir); AreaFollows(dir, null); }
         ExplorerState.Forget(folder); // explorer.forgetFolder
         NotesChanged();
         await RemoveEmptyDirectoriesAsync(dirs.Where(d => !Holds(d)));
