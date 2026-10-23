@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261023-atlas-forge-metric-terrain",
   "category": "HANDOFF",
-  "timestamp": "2026-10-23T01:13:11.725009Z",
+  "timestamp": "2026-10-23T01:25:01.176700Z",
   "agent": {
     "id": "codex-atlas-forge",
     "kind": "ai-agent"
@@ -49,14 +49,15 @@
     "Superfície contínua spherical-detail-1 em coordenadas esféricas métricas, residual ancorado exatamente nos nós regionais e preservação de overrides. Tiles 96×96, geração em Worker por viewport, fila substituível, epoch e cache LRU até 96; nível máximo com passo N–S ≤1 m.",
     "Zoom por escala métrica até chão, presets e leitura de altitude/área locais. Normais, materiais e grama; desenho sem fissuras no plano e malha no globo. Marcadores/notas continuam usáveis e ganham tipos Acampamento/Templo/Porto/Reino-sede. Edição regional fica bloqueada no detalhe para evitar alterações acidentais gigantes; edição métrica persistente não foi fingida.",
     "Viewer reproduz o terreno local com versão incorporada e Worker de código confiável offline. Sem editor/solvers planetários/storage; CSP só permite Worker blob empacotado, sem executar dados/notas. Build usa callbacks de substituição para não interpretar $& do JS compilado como HTML.",
-    "AF-016: fluxo solar diário/anual por latitude em W/m², órbita circular, 96 fases, balanço S/4 e camadas/inspetor/publicação. Clima existente permanece heurístico e explicitamente não acoplado."
+    "AF-016: fluxo solar diário/anual por latitude em W/m², órbita circular, 96 fases, balanço S/4 e camadas/inspetor/publicação. Clima existente permanece heurístico e explicitamente não acoplado.",
+    "Corrigidos blocos retangulares de cobertura: materiais locais usam clima regional interpolado e lapse rate com altura local, em vez de ampliar IDs de bioma. Teste dedicado e fluxo multiescala completo aprovados após a correção."
   ],
   "verification": [
     {
       "check": "npm run check",
       "kind": "automated",
       "result": "passed",
-      "evidence": "24 testes, 14 fluxos de regressão e fluxo multiescala completo passaram. Chão: 0,795328 m N–S por amostra; ~0,03 m/pixel, LRU ≤96, sondagem e continuidade, marcador autoral, viewer offline plano/globo e irradiância sazonal. Capturas scale-*.png e terrain-*.png em test-results."
+      "evidence": "25 testes, 14 fluxos de regressão e fluxo multiescala completo passaram. Chão: 0,795328 m N–S por amostra; ~0,03 m/pixel, LRU ≤96, sondagem e continuidade, marcador autoral, viewer offline plano/globo e irradiância sazonal. Capturas scale-*.png e terrain-*.png em test-results."
     },
     {
       "check": "npm run benchmark e npm run benchmark:render",

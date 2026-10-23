@@ -127,3 +127,20 @@ test("Single HTML build preserves literal JavaScript replacement tokens and pars
     "Literal $& in compiled JS must not turn into </body>",
   );
 });
+
+test("Ground cover interpolates physical parent fields rather than enlarging biome pixels", () => {
+  const { world } = fixture();
+  const biome = Uint8Array.from({ length: 648 }, (_, i) =>
+    i % 36 < 1 ? 5 : 7,
+  );
+  const context = surfaceContext(world, {
+    biome,
+    temperature: new Float32Array(648).fill(20),
+    rain: new Float32Array(648).fill(500),
+  });
+  const left = sampleSurface(context, 5, -170.000001),
+    right = sampleSurface(context, 5, -169.999999);
+  assert.equal(left.material, 1);
+  assert.equal(right.material, 1);
+  assert.ok(Math.abs(left.elevation - right.elevation) < 0.02);
+});

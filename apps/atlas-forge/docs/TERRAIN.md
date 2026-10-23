@@ -6,7 +6,7 @@ O mapa regional é uma grade de amostras físicas; ampliar seus pixels não prod
 
 Algoritmo A `spherical-detail-1`: interpola o relevo regional e acrescenta um residual determinístico em coordenadas cartesianas da esfera. O ruído de valor usa oito escalas métricas (24 km até 1,5 m), stream independente e amplitudes versionadas. Subtrai a interpolação do residual nos nós regionais: toda amostra regional, inclusive override autoral, permanece uma âncora exata. O resultado tem altura consultável, gradiente e cobertura local; não é um novo continente sorteado por tile.
 
-A costa usa atenuação do residual próxima ao datum, e os polos têm valor único. Esse relevo é procedural e não simula tectônica/erosão. Materiais usam altitude local e bioma regional: água, grama, mata, areia, rocha e neve. Tufos de grama são representação da cobertura, não uma população vegetal simulada. O clima/drenagem continuam globais.
+A costa usa atenuação do residual próxima ao datum, e os polos têm valor único. Esse relevo é procedural e não simula tectônica/erosão. Materiais usam altitude local, temperatura e chuva regionais interpoladas e a aproximação de lapse rate. IDs discretos de bioma não são ampliados em blocos retangulares. Coberturas: água, grama, mata, areia, rocha e neve. Tufos de grama são representação da cobertura, não uma população vegetal simulada. O clima/drenagem continuam globais.
 
 O campo local é cache derivado de seed + grade + versão. A definição v2/algoritmo global implica a versão local 1; não trocar esse algoritmo mantendo o ID. Uma versão futura com edição métrica persistente precisa de formato/migração e uma autoridade explícita para suas restrições. Pincéis regionais são bloqueados no detalhe; marcadores/notas funcionam com coordenadas precisas.
 

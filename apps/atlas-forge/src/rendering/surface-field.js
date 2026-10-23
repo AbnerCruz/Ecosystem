@@ -45,6 +45,8 @@ export function surfaceContext(world, derived) {
     radius: planet.radius,
     elevation: world.state.elevation,
     biome: derived.biome,
+    temperature: derived.temperature,
+    rain: derived.rain,
     north: north / grid.width,
     south: south / grid.width,
     nodeResiduals: new Map(),
@@ -106,24 +108,63 @@ function rawResidual(ctx, lat, lon) {
       amplitudes[k];
   return detail;
 }
+function interpolatedClimate(ctx, values, lat, lon) {
+  const { width: w, height: h } = ctx.grid;
+  const fx = ((wrap(lon) + 180) / 360) * w - 0.5,
+    fy = clamp(((90 - lat) / 180) * h - 0.5, 0, h - 1);
+  const x = Math.floor(fx),
+    y = Math.floor(fy),
+    tx = fx - x,
+    ty = fy - y;
+  const read = (xx, yy) =>
+    values[Math.min(h - 1, yy) * w + (((xx % w) + w) % w)];
+  const a = read(x, y) * (1 - tx) + read(x + 1, y) * tx,
+    b = read(x, y + 1) * (1 - tx) + read(x + 1, y + 1) * tx;
+  return a + (b - a) * ty;
+}
 export function sampleSurface(ctx, lat, lon) {
   const base = baseHeight(ctx, lat, lon);
   const detail = rawResidual(ctx, lat, lon) - baseHeight(ctx, lat, lon, true);
   const coast = clamp(Math.abs(base) / 120, 0, 1);
   const elevation = base + detail * coast;
   const biome = ctx.biome[index(lat, lon, ctx.grid)];
-  const material =
-    elevation <= 0
-      ? 0
-      : biome === 1 || biome === 2
-        ? 5
-        : biome === 3
-          ? 3
-          : elevation > 3100 || biome === 9
+  let material;
+  if (ctx.temperature && ctx.rain) {
+    // Continuous parent climate plus the same standard lapse-rate approximation.
+    // Nearest-neighbour biome IDs would create continent-sized rectangular patches.
+    const temperature =
+      interpolatedClimate(ctx, ctx.temperature, lat, lon) -
+      0.0065 * (elevation - base);
+    const rain = interpolatedClimate(ctx, ctx.rain, lat, lon);
+    material =
+      elevation <= 0
+        ? 0
+        : temperature < 0
+          ? 5
+          : elevation > 3300
             ? 4
-            : [6, 7, 8].includes(biome)
-              ? 2
-              : 1;
+            : rain < 170
+              ? 3
+              : rain < 400
+                ? 1
+                : temperature < 6
+                  ? 2
+                  : rain < 850
+                    ? 1
+                    : 2;
+  } else
+    material =
+      elevation <= 0
+        ? 0
+        : biome === 1 || biome === 2
+          ? 5
+          : biome === 3
+            ? 3
+            : elevation > 3300 || biome === 9
+              ? 4
+              : [6, 7, 8].includes(biome)
+                ? 2
+                : 1;
   return { elevation, material, base, detail: elevation - base };
 }
 export function maxSurfaceLevel(radius) {

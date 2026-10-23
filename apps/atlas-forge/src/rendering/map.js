@@ -288,6 +288,7 @@ export class MapRenderer {
     ctx.clearRect(0, 0, this.w, this.h);
     if (!this.world || !this.derived) return;
     this.detailActive =
+      this.zoom >= 8 &&
       ["atlas", "elevation", "authored"].includes(this.layer) &&
       this.metresPerPixel() < 1500;
     if (this.detailActive && !this.surface) {
