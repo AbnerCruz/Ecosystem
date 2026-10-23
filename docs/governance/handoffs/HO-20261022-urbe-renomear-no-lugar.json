@@ -35,9 +35,10 @@
     {
       "kind": "human",
       "check": "No aparelho, segurar uma nota, tocar em Renomear e digitar o novo nome",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-23 (Issue https://github.com/AbnerCruz/Ecosystem/issues/673); registro em docs/governance/responses/VAL-HO-20261022-urbe-renomear-no-lugar-43bf915f8c51.md."
     }
   ],
   "known_issues": [],
