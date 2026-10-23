@@ -1,6 +1,6 @@
 # Atlas Forge
 
-Oficina local de mundos esféricos de alta fantasia do Ecosystem. Aplicação independente **Alpha 0.2**, com editor HTML/Canvas e visualizador offline. A fonte canônica do aplicativo é este diretório; a versão é `package.json`.
+Oficina local de mundos esféricos de alta fantasia do Ecosystem. Aplicação independente **Alpha 0.3**, com editor HTML/Canvas e visualizador offline. A fonte canônica do aplicativo é este diretório; a versão é `package.json`.
 
 ## Executar
 
@@ -17,7 +17,9 @@ Abra `http://localhost:4173` ou abra `dist/atlas-forge.html` diretamente no nave
 
 ## Usar
 
-Gere por seed; explore mapa/globo, altitude, temperatura sazonal, chuva, drenagem, bacias, biomas e intervenções. Pincele elevação/escavação, desfaça/refaça e regenere preservando o relevo autoral. Crie lugares com notas Markdown por cópia e mapas filhos persistentes. Salve JSON, crie marcos e ramificações e exporte um atlas HTML independente.
+Comece sem conteúdo inserido automaticamente. Gere terreno por seed e resolução explícitas (até 1.440 × 720); explore mapa/globo, altitude, temperatura sazonal, chuva, drenagem, bacias, biomas e intervenções. Pincele elevação/escavação, desfaça/refaça e regenere preservando o relevo autoral. Crie lugares com notas Markdown por cópia e mapas filhos persistentes. Salve JSON, crie marcos e ramificações e exporte um atlas HTML independente.
+
+Zoom ancorado até 128×, gesto de dois dedos, escala métrica, resolução real, curvas de nível e globo sem textura global limitada. Refinamento explícito preserva pegadas autorais e guarda um marco da grade original. Em escala terrestre, a melhor grade atual mede 27,8 km N–S por célula: não oferece detalhe urbano.
 
 O build inclui `dist/examples/miravento.world.json`, `Miravento.md` e `miravento.html`: planeta com relevo autoral, castelo, nota, mapa filho e dois marcos. Projetos e documentos permanecem locais, sem acesso automático a pastas externas.
 
@@ -31,7 +33,7 @@ npm run benchmark
 npm run benchmark:render
 ```
 
-`check` executa formatação, 17 testes do núcleo/boundaries, build e 12 cenários em Chromium, incluindo editor/viewer por `file://` com rede desativada. Evidências: [entrega inicial](../../docs/proposals/atlas-forge/docs/VERIFICATION.md); os caminhos de código anteriores no relatório são históricos. Android físico continua pendente.
+`check` executa formatação, 20 testes de domínio, compatibilidade, câmera e boundaries, build e 13 cenários em Chromium, incluindo editor/viewer por `file://` com rede desativada. Evidências: [entrega inicial](../../docs/proposals/atlas-forge/docs/VERIFICATION.md); os caminhos de código anteriores no relatório são históricos. Android físico continua pendente.
 
 ## Documentação e limites
 

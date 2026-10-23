@@ -4,14 +4,18 @@ import { generate } from "../src/generation/pipeline.js";
 import { definition } from "../src/core/world.js";
 const js = (
   await build({
-    entryPoints: ["src/rendering/map.js"],
+    stdin: {
+      contents:
+        'export { MapRenderer } from "./src/rendering/map.js"; export { generate } from "./src/generation/pipeline.js"; export { definition } from "./src/core/world.js";',
+      resolveDir: process.cwd(),
+    },
     bundle: true,
     write: false,
     format: "iife",
     globalName: "AtlasRender",
   })
 ).outputFiles[0].text;
-const { world, derived } = generate(definition("RENDER-BENCHMARK"));
+const { world, derived } = generate(definition("RENDER-BENCHMARK", {}, 720));
 const plain = Object.fromEntries(
   Object.entries(derived).map(([key, value]) => [
     key,
@@ -44,22 +48,29 @@ try {
             unit: "ms per synchronous Canvas render; excludes presentation to screen",
             projections: {},
           };
-          for (const projection of ["flat", "globe"]) {
-            renderer.projection = projection;
-            renderer.render();
-            const samples = [];
-            for (let i = 0; i < 12; i++) {
-              const t = performance.now();
-              renderer.rotation += 2;
+          for (const projection of ["flat", "globe"])
+            for (const zoom of [1, 8, 64]) {
+              renderer.projection = projection;
+              renderer.zoom = zoom;
+              renderer.pan = { x: 0, y: 0 };
+              const cold = performance.now();
               renderer.render();
-              samples.push(performance.now() - t);
+              const coldMs = performance.now() - cold;
+              const samples = [];
+              for (let i = 0; i < 12; i++) {
+                const t = performance.now();
+                if (projection === "globe") renderer.rotation += 0.1;
+                else renderer.pan.x += 2;
+                renderer.render();
+                samples.push(performance.now() - t);
+              }
+              samples.sort((a, b) => a - b);
+              out.projections[`${projection}@${zoom}x`] = {
+                coldMs,
+                medianMs: samples[6],
+                p95Ms: samples[11],
+              };
             }
-            samples.sort((a, b) => a - b);
-            out.projections[projection] = {
-              medianMs: samples[6],
-              p95Ms: samples[11],
-            };
-          }
           return out;
         },
         { world, derived: plain },

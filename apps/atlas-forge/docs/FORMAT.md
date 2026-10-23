@@ -23,3 +23,9 @@ Preserva seed, parâmetros (raio km → m), entidades/Markdown, elevação e sna
 Markdown é subconjunto de cabeçalhos, parágrafos, listas simples, ênfase e código; HTML ativo e links não são ativados. Publicação escapa `<` no JSON, incorpora somente JS confiável do viewer e impõe CSP com `connect-src 'none'`, `base-uri 'none'`, sem formulários/iframes/recursos remotos. Notas não podem fornecer código, regras mágicas ou assets executáveis.
 
 Sem ZIP ou paths de arquivo extraídos, não há extração com path traversal. Não existe acesso automático a pastas/vault, arquivos internos de outros aplicativos ou envio de dados pela rede. SHA-256 é verificado na abertura de projetos e na recuperação local, inclusive nos marcos; hash ausente em exemplo/legado é indicado. SHA-256 é metadado de snapshot, não prova de autoria; arquivos não são assinados e o JSON não possui manifest global de integridade. Hashes por campo e arquivo binário/tile são propostas AF-013, não contratos oficiais.
+
+## Compatibilidade da ampliação cartográfica 0.3
+
+A representação JSON v2 e o algoritmo `spherical-causal-1` permanecem iguais. O leitor 0.3 amplia a faixa de grades aceitas para larguras pares 12–1.440 (altura = largura/2). Todos os projetos aceitos pelo leitor anterior continuam aceitos; o leitor 0.2 recusa grades acima de 360, sem reinterpretá-las. Não há conversão automática nem redução de resolução ao salvar.
+
+Cada marco é validado pelas dimensões da **sua própria definição**, inclusive quando difere da grade atual depois de um refinamento. Isso corrige o uso incorreto das dimensões atuais para validar snapshots. Um refinamento novo acrescenta um marco original e inicia diário vazio para os novos índices; o diário anterior está integral no marco. Dimensões e autoridade das altitudes não são duplicadas em caches. O limite de 24 MiB não mudou; resultado de Worker e criação de marco são verificados antes de substituir o estado atual.

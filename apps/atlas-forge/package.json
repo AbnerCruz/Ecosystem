@@ -1,6 +1,6 @@
 {
   "name": "atlas-forge",
-  "version": "0.2.0-alpha.1",
+  "version": "0.3.0-alpha.1",
   "private": true,
   "type": "module",
   "description": "Oficina independente de mundos esféricos do Ecosystem, local e offline",

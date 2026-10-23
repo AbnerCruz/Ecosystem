@@ -153,8 +153,8 @@ export function validate(input) {
   if (!d || d.algorithm !== ALGORITHM) fail("versão de algoritmo desconhecida");
   const w = d.grid?.width,
     h = d.grid?.height;
-  if (!Number.isInteger(w) || w < 12 || w > 360 || w % 2 || h !== w / 2)
-    fail("grade não suportada (12–360 × metade)");
+  if (!Number.isInteger(w) || w < 12 || w > 1440 || w % 2 || h !== w / 2)
+    fail("grade não suportada (12–1440 × metade)");
   const planet = d.planet;
   finite(planet?.radius, 100000, 100000000, "raio");
   finite(planet.ocean, 5, 95, "oceanos");
@@ -182,20 +182,23 @@ export function validate(input) {
   const timeline = input.timeline ?? { active: null, checkpoints: [] };
   if (!Array.isArray(timeline.checkpoints) || timeline.checkpoints.length > 12)
     fail("marcos");
-  out.timeline.checkpoints = timeline.checkpoints.map((c) => ({
-    id: text(c.id, 120, "id de marco"),
-    parent: c.parent === null ? null : text(c.parent, 120, "ramo"),
-    label: text(c.label, 180, "rótulo"),
-    definition: validate({
+  out.timeline.checkpoints = timeline.checkpoints.map((c) => {
+    const snapshot = validate({
       ...input,
       definition: c.definition ?? input.definition,
       state: c.state,
       journal: c.journal,
       timeline: { active: null, checkpoints: [] },
-    }).definition,
-    state: state(c.state, w * h),
-    journal: journal(c.journal, w * h),
-  }));
+    });
+    return {
+      id: text(c.id, 120, "id de marco"),
+      parent: c.parent === null ? null : text(c.parent, 120, "ramo"),
+      label: text(c.label, 180, "rótulo"),
+      definition: snapshot.definition,
+      state: snapshot.state,
+      journal: snapshot.journal,
+    };
+  });
   const ids = new Set(out.timeline.checkpoints.map((c) => c.id));
   if (
     ids.size !== out.timeline.checkpoints.length ||

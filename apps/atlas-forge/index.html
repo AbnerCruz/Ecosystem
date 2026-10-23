@@ -12,11 +12,12 @@
         ><span class="brandmark">✧</span
         ><span>ATLAS <b>FORGE</b><small>OFICINA DE MUNDOS</small></span></a
       ><span class="project-chip"
-        ><i></i><span id="project-name">Aurora</span
+        ><i></i><span id="project-name">Sem projeto</span
         ><span class="muted"> / projeto local</span></span
       >
       <nav aria-label="Projeto">
-        <button id="open-project">Abrir</button
+        <button id="new-project">Novo</button
+        ><button id="open-project">Abrir</button
         ><button id="save-project">Salvar projeto</button
         ><button id="publish" class="primary">↗ Exportar atlas</button>
       </nav>
@@ -28,10 +29,9 @@
     <main class="workspace">
       <aside class="sidebar left" id="left-panel">
         <div class="eyebrow">SEU PRÓXIMO UNIVERSO</div>
-        <h1>Todo mundo<br />tem uma origem.</h1>
+        <h1>Mundo e camadas</h1>
         <p class="intro">
-          Dê forma à terra. Descubra suas águas.<br />Escreva as histórias que
-          vivem nela.
+          Configure o terreno, explore os dados e crie os seus lugares.
         </p>
         <details open>
           <summary>01 <span>Origem do mundo</span></summary>
@@ -93,12 +93,31 @@
                   required
               /></label>
             </div>
+            <label
+              >Resolução do terreno<select id="resolution">
+                <option value="360">360 × 180 · rascunho</option>
+                <option value="720" selected>720 × 360 · detalhado</option>
+                <option value="1440">1.440 × 720 · alta resolução</option>
+              </select></label
+            >
+            <p class="micro">
+              A resolução é escolhida ao criar o mundo. Lugares, notas e
+              interiores ficam por sua conta.
+            </p>
             <button type="submit" class="generate edit-action">
               ✧ Gerar mundo
             </button>
             <p class="micro">
               Intervenções e lugares são preservados ao gerar.
             </p>
+            <button
+              id="refine-terrain"
+              type="button"
+              class="full edit-action"
+              hidden
+            >
+              Refinar terreno para 1.440 × 720…
+            </button>
             <button
               id="clear-edits"
               type="button"
@@ -149,7 +168,7 @@
         </details>
         <footer class="side-footer">
           <span class="tiny-orbit">◉</span> UM ATLAS, INFINITAS HISTÓRIAS<small
-            >Alpha 0.2 · Ecosystem</small
+            >Alpha 0.3 · Ecosystem</small
           >
         </footer>
       </aside>
@@ -157,7 +176,7 @@
         <div class="map-header">
           <div>
             <span class="eyebrow">EXPEDIÇÃO CARTOGRÁFICA</span>
-            <h2 id="world-title">Aurora <em>· Mundo primordial</em></h2>
+            <h2 id="world-title">Sem projeto <em>· Mundo primordial</em></h2>
           </div>
           <div class="projection-control" role="group" aria-label="Projeção">
             <button id="flat" class="active" aria-pressed="true">Mapa</button
@@ -186,6 +205,17 @@
             <div id="legend-bar"></div>
             <div id="legend-values"></div>
           </div>
+          <div id="empty-state" class="empty-state" hidden>
+            <span class="eyebrow">SEU MUNDO COMEÇA COM VOCÊ</span>
+            <h3>Uma tela aberta para criar.</h3>
+            <p>
+              Abra um projeto existente ou escolha a seed e a resolução em
+              Origem do mundo e clique em Gerar mundo.
+            </p>
+            <p>
+              Nenhum lugar, história ou interior será criado automaticamente.
+            </p>
+          </div>
           <div id="busy" class="busy" hidden>
             <span class="eyebrow">FORJANDO GEOGRAFIA</span>
             <h3 id="stage">Preparando mundo…</h3>
@@ -210,7 +240,14 @@
         <div id="brush-options" class="brush-options" hidden>
           <label
             >Raio
-            <input id="brush-size" type="range" min="2" max="18" value="6" />
+            <input
+              id="brush-size"
+              type="range"
+              min="0.25"
+              max="18"
+              step="0.25"
+              value="6"
+            />
             <output id="brush-radius">6°</output></label
           ><label
             >Força
@@ -335,7 +372,10 @@
           </div>
           <p id="note-info" class="micro"></p>
           <article id="note-preview" class="markdown"></article>
-          <button id="inspect-local" class="full edit-action">
+          <button id="generate-local" class="full edit-action" hidden>
+            Gerar esquema de interior (9 salas)
+          </button>
+          <button id="inspect-local" hidden class="full edit-action">
             Inspecionar mapa local ↗
           </button>
         </section>
@@ -357,8 +397,8 @@
             ecológicas.
           </p>
           <p>
-            Grade física 180 × 90. Sem validação científica geral. A legenda B
-            identifica modelo físico simplificado.
+            Grade física escolhida ao criar: até 1.440 × 720. Sem validação
+            científica geral. A legenda B identifica modelo físico simplificado.
           </p>
         </details>
       </aside>
@@ -416,10 +456,11 @@
         </li>
       </ol>
       <p>
-        Arraste com Explorar para mover ou girar o globo; use a roda para zoom.
-        Atalhos V, B e Ctrl Z. No celular, abra os painéis pelos botões
-        superiores. Este corte não simula eras geológicas, tectônica, ecologia
-        ou civilizações.
+        Arraste com Explorar para navegar; no globo afastado, arraste para
+        girar. Use a roda ou dois dedos para aproximar até 128×. A escala mostra
+        a resolução real do terreno. Atalhos V, B e Ctrl Z. No celular, abra os
+        painéis pelos botões superiores. Este corte não simula eras geológicas,
+        tectônica, ecologia ou civilizações.
       </p>
     </dialog>
     <input

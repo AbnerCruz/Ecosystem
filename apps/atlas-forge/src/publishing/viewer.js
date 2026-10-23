@@ -1,4 +1,5 @@
 import { MapRenderer, LAYERS } from "../rendering/map.js";
+import { bindPinch } from "../rendering/gestures.js";
 import { drawLocal } from "../rendering/local.js";
 import { index } from "../geometry/sphere.js";
 import { markdown } from "../documents/markdown.js";
@@ -24,12 +25,14 @@ $("season").onchange = () => {
 $("projection").onclick = () => {
   renderer.projection = renderer.projection === "flat" ? "globe" : "flat";
   renderer.pan = { x: 0, y: 0 };
+  renderer.zoom = 1;
   $("projection").textContent =
     renderer.projection === "flat" ? "◉ Globo" : "▱ Mapa";
   renderer.render();
 };
 function select(entity) {
   renderer.selected = entity.id;
+  renderer.focus(entity.lat, entity.lon);
   renderer.render();
   $("entity-title").textContent = entity.name;
   $("description").textContent = entity.desc;
@@ -77,11 +80,7 @@ $("map").onpointermove = (e) => {
     dy = e.clientY - drag.lastY;
   if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 4) drag.moved = true;
   if (drag.moved) {
-    if (renderer.projection === "globe") renderer.rotation -= dx * 0.4;
-    else {
-      renderer.pan.x += dx;
-      renderer.pan.y += dy;
-    }
+    renderer.dragBy(dx, dy);
     renderer.render();
   }
   drag.lastX = e.clientX;
@@ -109,8 +108,8 @@ $("map").onpointerup = (e) => {
 $("map").onpointercancel = () => {
   drag = null;
 };
-function zoom(f) {
-  renderer.zoom = Math.max(0.6, Math.min(5, renderer.zoom * f));
+function zoom(f, x, y) {
+  renderer.zoomAt(f, x, y);
   renderer.render();
 }
 $("plus").onclick = () => zoom(1.2);
@@ -119,23 +118,57 @@ $("map").addEventListener(
   "wheel",
   (e) => {
     e.preventDefault();
-    zoom(e.deltaY > 0 ? 0.9 : 1.1);
+    const rect = $("map").getBoundingClientRect();
+    zoom(
+      Math.exp(-Math.max(-250, Math.min(250, e.deltaY)) * 0.003),
+      e.clientX - rect.left,
+      e.clientY - rect.top,
+    );
   },
   { passive: false },
 );
 $("map").onkeydown = (e) => {
+  if (
+    [
+      "ArrowLeft",
+      "ArrowRight",
+      "ArrowUp",
+      "ArrowDown",
+      "+",
+      "-",
+      "=",
+      "Home",
+    ].includes(e.key)
+  )
+    e.preventDefault();
+  if (e.key === "Home") $("reset").click();
+  if (e.key === "ArrowUp") {
+    renderer.pan.y += 40;
+    renderer.render();
+  }
+  if (e.key === "ArrowDown") {
+    renderer.pan.y -= 40;
+    renderer.render();
+  }
   if (e.key === "+" || e.key === "=") zoom(1.2);
   if (e.key === "-") zoom(1 / 1.2);
   if (e.key === "ArrowLeft") {
-    renderer.rotation -= 10;
-    renderer.pan.x -= 15;
+    renderer.pan.x += 40;
     renderer.render();
   }
   if (e.key === "ArrowRight") {
-    renderer.rotation += 10;
-    renderer.pan.x += 15;
+    renderer.pan.x -= 40;
     renderer.render();
   }
 };
+$("reset").onclick = () => {
+  renderer.zoom = 1;
+  renderer.rotation = 0;
+  renderer.pan = { x: 0, y: 0 };
+  renderer.render();
+};
+bindPinch($("map"), renderer, () => {
+  drag = null;
+});
 new ResizeObserver(() => renderer.render()).observe($("map"));
 renderer.render();
