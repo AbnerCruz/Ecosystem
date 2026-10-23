@@ -4,6 +4,8 @@ import {
   index,
   inverseOrtho,
   orthographic,
+  wrap,
+  distance,
 } from "../geometry/sphere.js";
 export const LAYERS = {
   atlas: "Atlas natural",
@@ -126,6 +128,46 @@ export class MapRenderer {
     this.world = world;
     this.derived = derived;
     this.cache = "";
+    this.globeCache = null;
+    this.contourCache = null;
+    const grid = world.definition.grid;
+    this.rivers = [];
+    for (let i = 0; i < world.state.elevation.length; i++) {
+      const j = derived.downstream[i];
+      if (
+        j >= 0 &&
+        derived.discharge[i] >= 1500 &&
+        world.state.elevation[i] > 0
+      )
+        this.rivers.push([coord(i, grid), coord(j, grid)]);
+    }
+  }
+  zoomAt(factor, x = this.w / 2, y = this.h / 2) {
+    this.resize();
+    const previous = this.zoom;
+    this.zoom = clamp(this.zoom * factor, 0.5, 128);
+    const f = this.zoom / previous;
+    // Both projections scale about the translated camera origin.
+    this.pan.x = x - this.w / 2 - (x - this.w / 2 - this.pan.x) * f;
+    this.pan.y = y - this.h / 2 - (y - this.h / 2 - this.pan.y) * f;
+    this.resize();
+  }
+  dragBy(dx, dy) {
+    if (this.projection === "globe" && this.zoom <= 2)
+      this.rotation -= (dx * 180) / (Math.PI * this.scale * 0.83);
+    else this.pan.x += dx;
+    this.pan.y += dy;
+  }
+  focus(lat, lon) {
+    this.resize();
+    if (this.projection === "globe") {
+      this.rotation = lon;
+      this.pan = { x: 0, y: 0 };
+    }
+    const p = this.point(lat, lon);
+    this.pan.x += this.w / 2 - p.x;
+    this.pan.y += this.h / 2 - p.y;
+    this.resize();
   }
   resize() {
     const rect = this.canvas.getBoundingClientRect(),
@@ -152,7 +194,15 @@ export class MapRenderer {
   point(lat, lon) {
     if (this.projection === "flat")
       return {
-        x: this.left + ((lon + 180) / 360) * this.scale * 2,
+        x:
+          this.left +
+          ((lon + 180) / 360) * this.scale * 2 +
+          Math.round(
+            (this.w / 2 - this.left - ((lon + 180) / 360) * this.scale * 2) /
+              (this.scale * 2),
+          ) *
+            this.scale *
+            2,
         y: this.top + ((90 - lat) / 180) * this.scale,
         visible: true,
       };
@@ -172,9 +222,7 @@ export class MapRenderer {
       );
     const lon = ((x - this.left) / (this.scale * 2)) * 360 - 180,
       lat = 90 - ((y - this.top) / this.scale) * 180;
-    return lon < -180 || lon >= 180 || lat < -90 || lat > 90
-      ? null
-      : { lat, lon };
+    return lat < -90 || lat > 90 ? null : { lat, lon: wrap(lon) };
   }
   render() {
     this.resize();
@@ -194,39 +242,46 @@ export class MapRenderer {
         im.data.set([...c, 255], i * 4);
       }
       rc.putImageData(im, 0, 0);
+      this.source = im.data;
       this.cache = key;
     }
     if (this.projection === "flat") {
-      ctx.imageSmoothingEnabled = true;
-      ctx.drawImage(
-        this.raster,
-        this.left,
-        this.top,
-        this.scale * 2,
-        this.scale,
-      );
+      ctx.imageSmoothingEnabled = (this.scale * 2) / grid.width < 2;
+      const span = this.scale * 2;
+      const first = Math.floor(-this.left / span);
+      const last = Math.ceil((this.w - this.left) / span);
+      for (let copy = first; copy < last; copy++)
+        ctx.drawImage(
+          this.raster,
+          this.left + copy * span,
+          this.top,
+          span,
+          this.scale,
+        );
     } else {
-      const r = this.scale * 0.83,
-        side = Math.max(1, Math.min(640, Math.ceil(r * 2)));
-      const key = `${side}:${grid.width}:${grid.height}`;
+      // Project only the visible screen, never enlarge a capped globe texture.
+      const r = this.scale * 0.83;
+      const density = this.ratio;
+      const width = Math.ceil(this.w * density),
+        height = Math.ceil(this.h * density);
+      const key = `${width}:${height}:${r}:${this.pan.x}:${this.pan.y}:${grid.width}`;
       if (this.globeCache?.key !== key) {
         const off = document.createElement("canvas");
-        off.width = off.height = side;
+        off.width = width;
+        off.height = height;
         const oc = off.getContext("2d"),
-          im = oc.createImageData(side, side);
-        const rows = new Int32Array(side * side).fill(-1),
-          longitudes = new Float64Array(side * side);
-        // Latitude and longitude relative to the camera are invariant under axial rotation.
-        // Cache the expensive inverse projection; rotation then only offsets longitude indices.
-        for (let y = 0; y < side; y++)
-          for (let x = 0; x < side; x++) {
+          im = oc.createImageData(width, height);
+        const rows = new Int32Array(width * height).fill(-1),
+          longitudes = new Float64Array(width * height);
+        for (let y = 0; y < height; y++)
+          for (let x = 0; x < width; x++) {
             const p = inverseOrtho(
-              ((x + 0.5) / side) * 2 - 1,
-              1 - ((y + 0.5) / side) * 2,
+              ((x + 0.5) / density - this.w / 2 - this.pan.x) / r,
+              -((y + 0.5) / density - this.h / 2 - this.pan.y) / r,
               0,
             );
             if (!p) continue;
-            const k = y * side + x;
+            const k = y * width + x;
             rows[k] =
               Math.floor(index(p.lat, 0, grid) / grid.width) * grid.width;
             longitudes[k] = ((p.lon + 180) / 360) * grid.width;
@@ -234,43 +289,67 @@ export class MapRenderer {
         this.globeCache = { key, off, oc, im, rows, longitudes };
       }
       const { off, oc, im, rows, longitudes } = this.globeCache;
-      const source = this.raster
-        .getContext("2d")
-        .getImageData(0, 0, grid.width, grid.height).data;
-      const shift = (this.rotation / 360) * grid.width,
-        w = grid.width;
-      for (let k = 0; k < rows.length; k++) {
-        if (rows[k] < 0) continue;
-        const i =
-            (rows[k] + (((Math.floor(longitudes[k] + shift) % w) + w) % w)) * 4,
-          t = k * 4;
-        im.data[t] = source[i];
-        im.data[t + 1] = source[i + 1];
-        im.data[t + 2] = source[i + 2];
-        im.data[t + 3] = 255;
+      const shift = (this.rotation / 360) * grid.width;
+      if (
+        this.globeCache.source !== this.source ||
+        this.globeCache.rotation !== this.rotation
+      ) {
+        for (let k = 0; k < rows.length; k++) {
+          if (rows[k] < 0) continue;
+          const i =
+            (rows[k] +
+              (((Math.floor(longitudes[k] + shift) % grid.width) + grid.width) %
+                grid.width)) *
+            4;
+          const t = k * 4;
+          im.data[t] = this.source[i];
+          im.data[t + 1] = this.source[i + 1];
+          im.data[t + 2] = this.source[i + 2];
+          im.data[t + 3] = 255;
+        }
+        oc.putImageData(im, 0, 0);
+        this.globeCache.source = this.source;
+        this.globeCache.rotation = this.rotation;
       }
-      oc.putImageData(im, 0, 0);
-      ctx.drawImage(
-        off,
-        this.w / 2 - r + this.pan.x,
-        this.h / 2 - r + this.pan.y,
-        r * 2,
-        r * 2,
-      );
+      ctx.drawImage(off, 0, 0, this.w, this.h);
     }
+    if (["atlas", "elevation", "drainage"].includes(this.layer))
+      this.contours(ctx);
     if (this.showGrid) {
       ctx.strokeStyle = "#e4e7cf16";
       ctx.lineWidth = 0.7;
-      for (let lat = -60; lat <= 60; lat += 30)
-        this.line(
-          Array.from({ length: 181 }, (_, i) => ({ lat, lon: -180 + i * 2 })),
-          ctx,
-        );
-      for (let lon = -180; lon < 180; lon += 30)
-        this.line(
-          Array.from({ length: 91 }, (_, i) => ({ lat: -90 + i * 2, lon })),
-          ctx,
-        );
+      const step =
+        this.zoom < 3 ? 30 : this.zoom < 10 ? 10 : this.zoom < 32 ? 2 : 0.5;
+      const bounds = this.visibleBounds();
+      const sample = Math.min(2, step / 3);
+      for (
+        let lat = Math.ceil(bounds.south / step) * step;
+        lat <= bounds.north;
+        lat += step
+      ) {
+        const points = [];
+        for (
+          let lon = bounds.west;
+          lon <= bounds.east + sample / 2;
+          lon += sample
+        )
+          points.push({ lat, lon: Math.min(lon, bounds.east) });
+        this.line(points, ctx);
+      }
+      for (
+        let lon = Math.ceil(bounds.west / step) * step;
+        lon <= bounds.east;
+        lon += step
+      ) {
+        const points = [];
+        for (
+          let lat = bounds.south;
+          lat <= bounds.north + sample / 2;
+          lat += sample
+        )
+          points.push({ lat: Math.min(lat, bounds.north), lon });
+        this.line(points, ctx);
+      }
     }
     if (
       this.showRivers &&
@@ -278,17 +357,25 @@ export class MapRenderer {
     ) {
       ctx.strokeStyle = "#8ec6c5aa";
       ctx.lineWidth = 0.8;
-      for (let i = 0; i < this.world.state.elevation.length; i++) {
-        const j = this.derived.downstream[i];
-        if (
-          j < 0 ||
-          this.derived.discharge[i] < 1500 ||
-          this.world.state.elevation[i] <= 0
-        )
-          continue;
-        this.line([coord(i, grid), coord(j, grid)], ctx);
+      ctx.beginPath();
+      for (const pair of this.rivers) this.line(pair, ctx, true);
+      ctx.stroke();
+    }
+    if (this.location) {
+      const p = this.point(this.location.lat, this.location.lon);
+      if (p.visible) {
+        ctx.strokeStyle = "#fff3c9";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 9, 0, Math.PI * 2);
+        ctx.moveTo(p.x - 15, p.y);
+        ctx.lineTo(p.x + 15, p.y);
+        ctx.moveTo(p.x, p.y - 15);
+        ctx.lineTo(p.x, p.y + 15);
+        ctx.stroke();
       }
     }
+
     for (const e of this.world.state.entities) {
       const p = this.point(e.lat, e.lon);
       if (!p.visible) continue;
@@ -307,9 +394,171 @@ export class MapRenderer {
       ctx.fillStyle = "#f2e7cf";
       ctx.fillText(e.name, p.x, p.y - 13);
     }
+    this.scaleBar(ctx);
   }
-  line(points, ctx) {
+  contours(ctx) {
+    if (this.zoom < 2) return;
+    const { grid } = this.world.definition,
+      { width: w, height: h } = grid;
+    const values = this.world.state.elevation;
+    const interval = this.zoom >= 8 ? 250 : 500;
+    ctx.lineWidth = 0.8;
     ctx.beginPath();
+    if (!this.contourCache) {
+      this.contourCache = [];
+      for (let y = 0; y < h - 1; y++)
+        for (let x = 0; x < w; x++) {
+          const v = [
+            values[y * w + x],
+            values[y * w + ((x + 1) % w)],
+            values[(y + 1) * w + ((x + 1) % w)],
+            values[(y + 1) * w + x],
+          ];
+          const low = Math.min(...v),
+            high = Math.max(...v);
+          // Most cells cross no contour. Allocate geometry only for actual crossings.
+          const first = Math.max(0, Math.ceil(low / 250) * 250);
+          if (first > high) continue;
+          const lat = 90 - ((y + 0.5) * 180) / h,
+            lon = -180 + ((x + 0.5) * 360) / w;
+          const vertices = [
+            { lat, lon },
+            { lat, lon: lon + 360 / w },
+            { lat: lat - 180 / h, lon: lon + 360 / w },
+            { lat: lat - 180 / h, lon },
+          ];
+          for (let level = first; level <= high; level += 250)
+            for (const triangle of [
+              [0, 1, 2],
+              [0, 2, 3],
+            ]) {
+              const crossings = [];
+              for (let edge = 0; edge < 3; edge++) {
+                const a = triangle[edge],
+                  b = triangle[(edge + 1) % 3];
+                if (v[a] < level === v[b] < level) continue;
+                const t = (level - v[a]) / (v[b] - v[a]);
+                crossings.push({
+                  lat:
+                    vertices[a].lat + (vertices[b].lat - vertices[a].lat) * t,
+                  lon:
+                    vertices[a].lon + (vertices[b].lon - vertices[a].lon) * t,
+                });
+              }
+              if (crossings.length === 2)
+                this.contourCache.push({ level, points: crossings });
+            }
+        }
+    }
+    for (const segment of this.contourCache) {
+      if (
+        segment.level &&
+        ((this.layer !== "elevation" && this.zoom < 5) ||
+          segment.level % interval)
+      )
+        continue;
+      const p = this.point(segment.points[0].lat, segment.points[0].lon),
+        q = this.point(segment.points[1].lat, segment.points[1].lon);
+      if (
+        (!p.visible && !q.visible) ||
+        Math.max(p.x, q.x) < 0 ||
+        Math.min(p.x, q.x) > this.w ||
+        Math.max(p.y, q.y) < 0 ||
+        Math.min(p.y, q.y) > this.h
+      )
+        continue;
+      this.line(segment.points, ctx, true);
+    }
+    ctx.strokeStyle = "#e6dbb860";
+    ctx.stroke();
+  }
+  visibleBounds() {
+    if (this.projection === "flat")
+      return {
+        west: (-this.left / (2 * this.scale)) * 360 - 180,
+        east: ((this.w - this.left) / (2 * this.scale)) * 360 - 180,
+        south: Math.max(-90, 90 - ((this.h - this.top) / this.scale) * 180),
+        north: Math.min(90, 90 + (this.top / this.scale) * 180),
+      };
+    const center = this.geographic(this.w / 2, this.h / 2);
+    const points = [];
+    for (let y = 0; y <= 4; y++)
+      for (let x = 0; x <= 4; x++) {
+        const p = this.geographic((this.w * x) / 4, (this.h * y) / 4);
+        if (!p || !center)
+          return { west: -180, east: 180, south: -90, north: 90 };
+        points.push({ lat: p.lat, lon: center.lon + wrap(p.lon - center.lon) });
+      }
+    const south = Math.max(-90, Math.min(...points.map((p) => p.lat)) - 2),
+      north = Math.min(90, Math.max(...points.map((p) => p.lat)) + 2);
+    return {
+      south,
+      north,
+      west:
+        south < -88 || north > 88
+          ? -180
+          : Math.min(...points.map((p) => p.lon)) - 2,
+      east:
+        south < -88 || north > 88
+          ? 180
+          : Math.max(...points.map((p) => p.lon)) + 2,
+    };
+  }
+  scaleBar(ctx) {
+    const center = this.geographic(this.w / 2, this.h / 2);
+    const offset = this.geographic(this.w / 2 + 80, this.h / 2);
+    const radius = this.world.definition.planet.radius;
+    const nativeKm =
+      (Math.PI * radius) / this.world.definition.grid.height / 1000;
+    ctx.font = "11px system-ui";
+    ctx.textAlign = "left";
+    const text = `${this.zoom.toFixed(1)}× · grade ${nativeKm.toFixed(1)} km N–S`;
+    this.canvas.dataset.zoom = this.zoom;
+    this.canvas.dataset.resolution = nativeKm;
+    const contoursVisible =
+      this.zoom >= 2 && ["atlas", "elevation", "drainage"].includes(this.layer);
+    ctx.fillStyle = "#101c22e8";
+    ctx.fillRect(
+      14,
+      14,
+      Math.max(235, ctx.measureText(text).width + 24),
+      contoursVisible ? 80 : 55,
+    );
+    ctx.fillStyle = "#e9e5d4";
+    ctx.fillText(text, 24, 33);
+    if (contoursVisible)
+      ctx.fillText(
+        this.layer === "elevation" || this.zoom >= 5
+          ? `Curvas ${this.zoom >= 8 ? 250 : 500} m · costa 0 m`
+          : "Costa · altitude 0 m",
+        24,
+        76,
+      );
+    if (center && offset) {
+      const km = distance(center, offset, radius) / 1000;
+      const power = 10 ** Math.floor(Math.log10(km));
+      const length =
+        [1, 2, 5, 10].filter((x) => x * power <= km).at(-1) * power;
+      const pixels = (80 * length) / km;
+      ctx.strokeStyle = "#e9e5d4";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(24, 47);
+      ctx.lineTo(24, 53);
+      ctx.moveTo(24, 50);
+      ctx.lineTo(24 + pixels, 50);
+      ctx.lineTo(24 + pixels, 47);
+      ctx.stroke();
+      ctx.fillText(
+        `${length >= 1 ? length.toLocaleString("pt-BR") + " km" : Math.round(length * 1000) + " m"} no centro`,
+        34 + pixels,
+        54,
+      );
+    } else
+      ctx.fillText("Arraste para reencontrar o planeta · ⌖ enquadra", 24, 54);
+  }
+  line(points, ctx, append = false) {
+    if (!append) ctx.beginPath();
     let prev;
     for (const geo of points) {
       const p = this.point(geo.lat, geo.lon);
@@ -321,7 +570,7 @@ export class MapRenderer {
       else ctx.moveTo(p.x, p.y);
       prev = p;
     }
-    ctx.stroke();
+    if (!append) ctx.stroke();
   }
   hit(x, y) {
     return this.world?.state.entities.find((e) => {

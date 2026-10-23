@@ -1,0 +1,161 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261022-atlas-forge-cartographic-quality",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T00:12:16.138068Z",
+  "agent": {
+    "id": "codex-atlas-forge",
+    "kind": "ai-agent"
+  },
+  "task_id": "AF-015",
+  "component": "atlas-forge",
+  "state": "review",
+  "branch": "fix/atlas-forge-cartographic-detail",
+  "base_commit": "7eb15181b7101683ae3423b26c4bfceb9d4ae9f2",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/661",
+  "files_changed": [
+    "apps/atlas-forge/README.md",
+    "apps/atlas-forge/ROADMAP.md",
+    "apps/atlas-forge/SPEC.md",
+    "apps/atlas-forge/docs/CARTOGRAPHY-VERIFICATION.md",
+    "apps/atlas-forge/docs/FORMAT.md",
+    "apps/atlas-forge/docs/GUIDE.md",
+    "apps/atlas-forge/docs/MODELS.md",
+    "apps/atlas-forge/index.html",
+    "apps/atlas-forge/package-lock.json",
+    "apps/atlas-forge/package.json",
+    "apps/atlas-forge/scripts/benchmark.mjs",
+    "apps/atlas-forge/scripts/render-benchmark.mjs",
+    "apps/atlas-forge/src/app/editor.js",
+    "apps/atlas-forge/src/app/styles.css",
+    "apps/atlas-forge/src/app/worker.js",
+    "apps/atlas-forge/src/generation/refine.js",
+    "apps/atlas-forge/src/publishing/export.js",
+    "apps/atlas-forge/src/publishing/viewer.js",
+    "apps/atlas-forge/src/rendering/gestures.js",
+    "apps/atlas-forge/src/rendering/map.js",
+    "apps/atlas-forge/src/storage/project.js",
+    "apps/atlas-forge/tests/browser.mjs",
+    "apps/atlas-forge/tests/cartography.test.mjs",
+    "docs/governance/handoffs/HO-20261022-atlas-forge-cartographic-quality.json"
+  ],
+  "work_completed": [
+    "Pedido real do proprietário prioriza zoom/detalhe e proíbe preencher conteúdo por conta própria; requisitos persistidos na SPEC AF-REQ-13/14/15, Issue #660.",
+    "Primeira abertura vazia, sem gerar terreno/lugar/nota/interior. Recuperação preserva conteúdo salvo. Inspeção local não gera salas; comando separado explícito.",
+    "Resolução nativa selecionável até 1.440 × 720, zoom ancorado 0,5–128×, gesto de dois dedos, grade adaptativa, curvas de nível derivadas e escala com limite físico visível. Globo projeta viewport HiDPI sem textura global limitada a 640 pixels.",
+    "Refinamento em Worker mantém pegadas autorais, lugares e notas; marco conserva definição/estado/journal anteriores. Snapshots validados pela própria grade; preflight recusa resultado ou marco maior que 24 MiB antes do commit.",
+    "Versão local 0.3.0-alpha.1, documentação reconciliada. Sem release, novo componente, serviço ou dependência de outro aplicativo.",
+    "PR #661 aberto para integração governada; CI remoto verifica o estado combinado.",
+    "Raio mínimo de pincel acompanha a grade ativa/restaurada para evitar gestos menores que uma amostra; check completo 20/14 aprovado após o ajuste."
+  ],
+  "verification": [
+    {
+      "check": "npm run check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "20 testes de domínio/compatibilidade/câmera e 14 cenários E2E passaram; incluindo refinamento 720→1440 via Worker/UI, rejeição de checkpoint acima de 24 MiB, retorno integral à grade original e viewer offline com zoom >20×. Execução final completa aprovada após ajuste de legenda. Regressão adicional: cancelar importação assíncrona impede commit tardio; restauração inicial também respeita o job atual."
+    },
+    {
+      "check": "npm run benchmark e npm run benchmark:render",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Benchmarks locais de 180/720/1440 e viewport 900×650 com zoom 1/8/64; resultados documentados em apps/atlas-forge/docs/CARTOGRAPHY-VERIFICATION.md."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks locais passaram no estado completo, incluindo documentação e este handoff."
+    },
+    {
+      "check": "Toque/desempenho Android físico",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/atlas-forge/README.md",
+      "evidence": "Chromium emulado não equivale a aparelho físico; nenhum DEVICE declarado."
+    }
+  ],
+  "known_issues": [
+    "Grade máxima no raio terrestre: 27,8 km N–S. Não representa ruas/prédios ou detalhe de metros; zoom não inventa informação.",
+    "Sem tiles físicos/LOD ou solver regional; AF-005 continua parcial. Recálculo global; clima heurístico depende da resolução.",
+    "Limite JSON 24 MiB restringe marcos em alta resolução; operação recusada conserva o projeto anterior. Corpus real Alpha e Android físico pendentes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrador deve verificar o estado combinado do PR; observar CI e integração, sem merge manual.",
+    "Validação física Android e feedback de uso permanecem abertos; tiles físicos/LOD e os próximos itens causais continuam no roadmap."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "docs/adr/0035-atlas-forge-incorporacao-gradual.md",
+    "docs/governance/decisions.json",
+    "docs/governance/addenda/ADD-0031-atlas-forge-no-ecosystem.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/communication.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/atlas-forge/AGENTS.md",
+    "apps/atlas-forge/SPEC.md",
+    "apps/atlas-forge/ROADMAP.md",
+    "apps/atlas-forge/docs/FORMAT.md",
+    "apps/atlas-forge/docs/MODELS.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "state.elevation única autoridade; cache/contornos/viewport são derivados; sem microterreno aleatório."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Editor/publicação permanecem locais e offline, sem runtime externo."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #660, branch e handoff observáveis."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Reclamação e critérios de produto persistidos na SPEC e roadmap."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas listadas consultadas; limites documentados diretamente no formato/modelos."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Somente versão do aplicativo; nenhum release alheio."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Emulação e benchmarks cloud declarados, sem DEVICE presumido."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Verifying até finalizar os checks; revisão e integração observadas separadamente."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Renderer/gestos/refinamento permanecem módulos locais com consumidor real editor/viewer; sem extração global."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "cartographic-navigation-and-view-renderer",
+      "status": "possible-candidate",
+      "rationale": "Reuso interno no editor e viewer; nenhum segundo Product consumidor ou contrato público que justifique extração."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Correção local do Product com representação v2 e algoritmo preservados. Amplia dimensões aceitas e corrige validação de marcos, sem remover compatibilidade, mover ownership ou mudar integração/permissões."
+  },
+  "cost": null
+}

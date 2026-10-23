@@ -1003,3 +1003,42 @@ dialog::backdrop {
     transition: none !important;
   }
 }
+
+.empty-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 36px;
+  text-align: center;
+  background: #101c22ed;
+  z-index: 3;
+  pointer-events: none;
+}
+.empty-state h3 {
+  font:
+    28px Georgia,
+    serif;
+  color: #e7c58e;
+  margin: 18px 0;
+}
+.empty-state p {
+  max-width: 400px;
+  color: #a8b7b7;
+  line-height: 1.7;
+}
+.empty-state[hidden] {
+  display: none;
+}
+
+.map-label {
+  display: none;
+}
+
+.map-legend {
+  background: #101c22dd;
+  padding: 12px;
+  border-radius: 4px;
+}

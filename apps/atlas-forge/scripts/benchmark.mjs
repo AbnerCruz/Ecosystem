@@ -11,7 +11,7 @@ console.log(
     description: "Wall time in this cloud container; no mobile/DEVICE claim.",
   }),
 );
-for (const width of [90, 180, 360]) {
+for (const width of [180, 720, 1440]) {
   let result;
   const times = [];
   for (let i = 0; i < 4; i++) {

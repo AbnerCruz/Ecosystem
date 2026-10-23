@@ -23,7 +23,10 @@ const context = await browser.newContext({
 });
 const page = await context.newPage(),
   errors = [];
-page.on("pageerror", (e) => errors.push(e.message));
+page.on("pageerror", (e) => {
+  errors.push(e.message);
+  console.error("BROWSER ERROR", e.message);
+});
 const ready = async () => {
   await page.waitForFunction(
     () =>
@@ -34,18 +37,29 @@ const ready = async () => {
 async function saveProject() {
   const event = page.waitForEvent("download");
   await page.locator("#save-project").click();
-  const d = await event;
+  const d = await event.catch(async (e) => {
+    throw new Error(
+      e.message + "; status: " + (await page.locator("#status").innerText()),
+    );
+  });
   return JSON.parse(await readFile(await d.path(), "utf8"));
 }
 try {
   await page.goto("http://localhost:4175");
+  await page.locator("#empty-state").waitFor({ state: "visible" });
+  await page.waitForTimeout(800);
+  assert.equal(await page.locator(".entity").count(), 0);
+  assert.equal(await page.locator("#save-project").isDisabled(), true);
+  await page.locator("#generation-form button[type=submit]").click();
   await ready();
-  await page.locator(".entity").first().click();
-  assert.match(await page.locator("#note-preview").innerText(), /Miravento/);
-  results.push("Initial generation, example castle and note");
+  assert.equal(await page.locator(".entity").count(), 0);
+  results.push(
+    "Empty first launch; terrain generation requires explicit action and inserts no places or notes",
+  );
   await page.screenshot({ path: "test-results/desktop.png", fullPage: true });
   const original = await saveProject();
-  assert.equal(original.state.elevation.length, 16200);
+  assert.equal(original.state.elevation.length, 259200);
+  assert.deepEqual(original.state.entities, []);
   await page.locator("[data-tool=raise]").click();
   const box = await page.locator("#map").boundingBox();
   const x = box.x + box.width * 0.53,
@@ -132,13 +146,39 @@ try {
       .textContent.includes("Memória segura"),
   );
   assert.equal(await page.evaluate(() => globalThis.PWNED), undefined);
-  await page.locator("#inspect-local").click();
+  const beforeLocal = await saveProject();
+  assert.equal(beforeLocal.state.entities.at(-1).localMap, undefined);
+  assert.equal(await page.locator("#inspect-local").isVisible(), false);
+  await page.locator("#generate-local").click();
   await page.locator("#close-local").click();
   const finalProject = await saveProject();
   assert.ok(finalProject.state.entities.at(-1).localMap);
   assert.equal(finalProject.state.entities.at(-1).note.hash.length, 64);
   results.push(
     "Authored place, SHA-256 Markdown snapshot, hostile content escaped, persistent child map",
+  );
+  await page.evaluate(
+    (source) => {
+      const transfer = new DataTransfer();
+      transfer.items.add(
+        new File([source], "cancelled-import.json", {
+          type: "application/json",
+        }),
+      );
+      const input = document.getElementById("project-file");
+      input.files = transfer.files;
+      input.dispatchEvent(new Event("change"));
+      document.getElementById("cancel").click();
+    },
+    JSON.stringify({
+      ...finalProject,
+      state: { ...finalProject.state, name: "IMPORT CANCELLED" },
+    }),
+  );
+  await page.waitForTimeout(300);
+  assert.deepEqual(await saveProject(), finalProject);
+  results.push(
+    "Cancelling asynchronous import prevents late data from replacing the committed world",
   );
   await page.locator("#project-file").setInputFiles({
     name: "world.json",
@@ -161,11 +201,31 @@ try {
   assert.deepEqual(await saveProject(), finalProject);
   results.push("Future version rejected without corrupting committed data");
   // Wait for the verified IndexedDB write before testing restart.
-  await page.waitForFunction(() =>
-    document
-      .getElementById("status")
-      .textContent.includes("Cópia local verificada"),
-  );
+  await page.waitForFunction(async (expected) => {
+    const value = await new Promise((resolve, reject) => {
+      const request = indexedDB.open("atlas-forge-projects", 1);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        const db = request.result;
+        const read = db
+          .transaction("projects")
+          .objectStore("projects")
+          .get("last");
+        read.onsuccess = () => {
+          db.close();
+          resolve(read.result);
+        };
+        read.onerror = () => {
+          db.close();
+          reject(read.error);
+        };
+      };
+    });
+    return (
+      value && JSON.stringify(JSON.parse(value)) === JSON.stringify(expected)
+    );
+  }, finalProject);
+
   await page.reload();
   await ready();
   assert.deepEqual(await saveProject(), finalProject);
@@ -200,6 +260,17 @@ try {
   await viewer.locator("#back").click();
   await viewer.locator("#layer").selectOption("temperature");
   await viewer.locator("#projection").click();
+  const viewerBox = await viewer.locator("#map").boundingBox();
+  await viewer.mouse.move(
+    viewerBox.x + viewerBox.width / 2,
+    viewerBox.y + viewerBox.height / 2,
+  );
+  for (let i = 0; i < 5; i++) await viewer.mouse.wheel(0, -240);
+  await viewer.waitForFunction(
+    () => Number(document.getElementById("map").dataset.zoom) > 20,
+  );
+  await viewer.locator("#reset").click();
+  assert.equal(await viewer.locator("#map").getAttribute("data-zoom"), "1");
   await viewer.screenshot({ path: "test-results/offline-viewer.png" });
   assert.deepEqual(requests, []);
   await offlineContext.close();
@@ -211,6 +282,9 @@ try {
     filePage = await fileContext.newPage();
   filePage.on("pageerror", (e) => errors.push("file editor: " + e.message));
   await filePage.goto("file://" + resolve("dist/atlas-forge.html"));
+  await filePage.locator("#empty-state").waitFor({ state: "visible" });
+  await filePage.locator("#resolution").selectOption("360");
+  await filePage.locator("#generation-form button[type=submit]").click();
   await filePage.waitForFunction(
     () =>
       document.getElementById("busy").hidden &&
@@ -218,6 +292,77 @@ try {
   );
   await fileContext.close();
   results.push("Single HTML editor boots offline via file:// with blob Worker");
+  const refinementContext = await browser.newContext({
+    viewport: { width: 1440, height: 1000 },
+    acceptDownloads: true,
+  });
+  const refinedPage = await refinementContext.newPage();
+  refinedPage.on("pageerror", (e) => errors.push("refinement: " + e.message));
+  await refinedPage.goto("file://" + resolve("dist/atlas-forge.html"));
+  await refinedPage.locator("#empty-state").waitFor({ state: "visible" });
+  await refinedPage.locator("#project-file").setInputFiles({
+    name: "before.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(original)),
+  });
+  await refinedPage.waitForFunction(
+    () =>
+      document.getElementById("busy").hidden &&
+      document.getElementById("world-stats").textContent.includes("720"),
+  );
+  refinedPage.once("dialog", (d) => d.accept());
+  await refinedPage.locator("#refine-terrain").click();
+  await refinedPage.waitForFunction(
+    () =>
+      document.getElementById("busy").hidden &&
+      document.getElementById("resolution").value === "1440",
+  );
+  assert.equal(await refinedPage.locator(".entity").count(), 0);
+  await refinedPage.locator("[data-layer=elevation]").click();
+  await refinedPage
+    .locator("summary")
+    .filter({ hasText: "Ir para coordenadas" })
+    .click();
+  await refinedPage.locator("#latitude").fill("20");
+  await refinedPage.locator("#longitude").fill("120");
+  await refinedPage.locator("#coordinate-form button").click();
+  for (let i = 0; i < 9; i++) await refinedPage.locator("#zoom-in").click();
+  await refinedPage.screenshot({
+    path: "test-results/refined-detail.png",
+    fullPage: true,
+  });
+  await refinedPage
+    .locator("summary")
+    .filter({ hasText: "Memória do mundo" })
+    .click();
+  await refinedPage.locator("#checkpoint").click();
+  await refinedPage.waitForFunction(() =>
+    document.getElementById("status").textContent.includes("excede 24 MiB"),
+  );
+  // The rejected oversized snapshot must not change the timeline or trap the project.
+  assert.equal(await refinedPage.locator("#timeline option").count(), 2);
+  const prior = await refinedPage
+    .locator("#timeline option")
+    .nth(1)
+    .getAttribute("value");
+  await refinedPage.locator("#timeline").selectOption(prior);
+  await refinedPage.waitForFunction(
+    () =>
+      document.getElementById("busy").hidden &&
+      document.getElementById("resolution").value === "720",
+  );
+  const restoredEvent = refinedPage.waitForEvent("download");
+  await refinedPage.locator("#save-project").click();
+  const restored = JSON.parse(
+    await readFile(await (await restoredEvent).path(), "utf8"),
+  );
+  assert.deepEqual(restored.definition, original.definition);
+  assert.deepEqual(restored.state, original.state);
+  assert.deepEqual(restored.journal, original.journal);
+  await refinementContext.close();
+  results.push(
+    "Explicit 1,440×720 refinement, no unsolicited places, detail view, oversized checkpoint rejected atomically, original resolution/state/history restored",
+  );
   const mobileContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
       isMobile: true,
@@ -229,10 +374,17 @@ try {
   await mobile.goto("http://localhost:4175");
   await mobile.waitForFunction(() => document.getElementById("busy").hidden);
   await mobile.locator("[data-panel=left]").tap();
+  await mobile.locator("#resolution").selectOption("360");
+  await mobile.locator("#generation-form button[type=submit]").tap();
+  await mobile.waitForFunction(
+    () =>
+      document.getElementById("world-stats").textContent.includes("células") &&
+      document.getElementById("busy").hidden,
+  );
   await mobile.locator("[data-layer=biome]").tap();
   await mobile.locator("[data-panel=left]").tap();
   await mobile.locator("[data-panel=right]").tap();
-  await mobile.locator(".entity").first().tap();
+  assert.equal(await mobile.locator(".entity").count(), 0);
   await mobile.screenshot({ path: "test-results/mobile.png", fullPage: true });
   assert.ok(
     await mobile.evaluate(

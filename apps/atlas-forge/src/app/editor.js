@@ -7,9 +7,10 @@ import {
   checkpoint,
   restore,
 } from "../core/world.js";
-import { coord, index, clamp } from "../geometry/sphere.js";
+import { index, clamp } from "../geometry/sphere.js";
 import { BIOMES } from "../solvers/climate.js";
 import { MapRenderer, LAYERS, LEGENDS } from "../rendering/map.js";
+import { bindPinch } from "../rendering/gestures.js";
 import { drawLocal } from "../rendering/local.js";
 import { localMap } from "../generation/local-map.js";
 import { markdown, noteFromFile, verifyNotes } from "../documents/markdown.js";
@@ -23,6 +24,7 @@ import { loadLocal, saveLocal } from "../storage/local.js";
 import { publish } from "../publishing/export.js";
 const $ = (id) => document.getElementById(id),
   renderer = new MapRenderer($("map"));
+let creating = false;
 let world,
   derived,
   worker,
@@ -45,18 +47,29 @@ function setBusy(value) {
   $("busy").hidden = !value;
   document
     .querySelectorAll(".edit-action,#publish,#save-project,#undo,#redo")
-    .forEach((b) => (b.disabled = value));
+    .forEach(
+      (b) =>
+        (b.disabled =
+          value ||
+          (!world &&
+            ["publish", "save-project", "undo", "redo"].includes(b.id))),
+    );
 }
 function cancel(quiet = false) {
   if (worker) {
     worker.terminate();
     worker = null;
-    job++;
   }
+  job++;
   setBusy(false);
   if (world && derived) {
     renderer.setWorld(world, derived);
     renderer.render();
+  }
+  if (!quiet && creating && world) {
+    creating = false;
+    syncConfig();
+    $("world-name").value = world.state.name;
   }
   if (!quiet) status("Operação cancelada; último estado preservado.");
 }
@@ -68,6 +81,23 @@ function syncConfig() {
   $("radius").value = p.radius / 1000;
   $("tilt").value = p.tilt;
   $("base-temp").value = p.baseTemp;
+  const resolution = $("resolution");
+  if (![...resolution.options].some((o) => Number(o.value) === d.grid.width))
+    resolution.add(
+      new Option(
+        `${d.grid.width} × ${d.grid.height} · importado`,
+        d.grid.width,
+      ),
+    );
+  resolution.value = d.grid.width;
+  resolution.disabled = true;
+  $("refine-terrain").hidden = d.grid.width >= 1440;
+  const brushSize = $("brush-size");
+  const minimum = 360 / d.grid.width;
+  brushSize.min = minimum;
+  brushSize.max = Math.max(18, minimum);
+  brushSize.value = Math.max(minimum, Number(brushSize.value));
+  $("brush-radius").value = brushSize.value + "°";
 }
 function autosave() {
   clearTimeout(saveTimer);
@@ -159,7 +189,16 @@ function run(type, draft, def, overrides = {}, onComplete) {
       result.world.journal = structuredClone(draft.journal);
       result.world.timeline = structuredClone(draft.timeline);
     }
+    try {
+      serialize(result.world);
+    } catch (e) {
+      cancel(true);
+      error(e);
+      return;
+    }
+    creating = false;
     world = result.world;
+    $("empty-state").hidden = true;
     derived = result.derived;
     worker.terminate();
     worker = null;
@@ -180,6 +219,8 @@ function deriveDraft(draft, done) {
 }
 function inspectLocation(p) {
   location = p;
+  renderer.location = p;
+  renderer.render();
   const i = index(p.lat, p.lon, world.definition.grid),
     end = derived.basin[i],
     terminal = derived.terminal[end];
@@ -246,6 +287,8 @@ function select(e) {
   renderer.selected = selected;
   renderer.render();
   inspectLocation(e);
+  renderer.focus(e.lat, e.lon);
+  renderer.render();
   renderEntities();
   inspectEntity();
   if (innerWidth <= 900) {
@@ -265,8 +308,11 @@ function inspectEntity() {
     ? `${e.note.name} · cópia incorporada · SHA-256 ${e.note.hash ? e.note.hash.slice(0, 12) + "…" : "pendente (legado)"}`
     : "O arquivo de origem permanece intacto. Importe novamente para atualizar a cópia.";
   $("unlink-note").hidden = !e.note;
+  $("inspect-local").hidden = !e.localMap;
+  $("generate-local").hidden = !!e.localMap;
 }
 function mutate(action) {
+  if (!world) return;
   cancel(true);
   try {
     action();
@@ -326,9 +372,20 @@ for (const [i, [key, name]] of Object.entries(LAYERS).entries()) {
 }
 $("layers").firstChild.click();
 $("world-name").onchange = () =>
+  !creating &&
   mutate(() => {
     world.state.name = $("world-name").value.trim() || "Mundo sem nome";
   });
+$("refine-terrain").onclick = () => {
+  if (!world || busy || world.definition.grid.width >= 1440) return;
+  if (
+    !confirm(
+      "Refinar o terreno para 1.440 × 720? A base será gerada novamente pela mesma seed; células com intervenções manterão suas altitudes. Lugares e notas serão preservados. Um marco guardará o estado anterior. O projeto terá limite de 24 MiB.",
+    )
+  )
+    return;
+  run("refine", world);
+};
 $("clear-edits").onclick = () => {
   if (!world || busy) return;
   if (
@@ -353,9 +410,33 @@ $("generation-form").onsubmit = (e) => {
       tilt: Number($("tilt").value),
       baseTemp: Number($("base-temp").value),
     },
-    world?.definition.grid.width ?? 180,
+    !creating && world
+      ? world.definition.grid.width
+      : Number($("resolution").value),
   );
-  run("generate", world, def, world?.state.overrides ?? {});
+  const name = $("world-name").value.trim() || "Mundo sem nome";
+  const newProject = creating || !world;
+  run(
+    "generate",
+    newProject ? null : world,
+    def,
+    newProject ? {} : world.state.overrides,
+    () => {
+      if (newProject) {
+        world.state.name = name;
+        selected = null;
+        location = null;
+        renderer.location = null;
+        renderer.zoom = 1;
+        renderer.pan = { x: 0, y: 0 };
+        renderer.rotation = 0;
+      }
+      creating = false;
+      document.querySelector(
+        "#generation-form button[type=submit]",
+      ).textContent = "Regenerar terreno";
+    },
+  );
 };
 for (const projection of ["flat", "globe"])
   $(projection).onclick = () => {
@@ -398,8 +479,8 @@ $("brush-size").oninput = () =>
   ($("brush-radius").value = $("brush-size").value + "°");
 $("brush-force").oninput = () =>
   ($("brush-strength").value = $("brush-force").value + " m");
-function zoom(f) {
-  renderer.zoom = clamp(renderer.zoom * f, 0.6, 6);
+function zoom(f, point) {
+  renderer.zoomAt(f, point?.x, point?.y);
   renderer.render();
 }
 $("zoom-in").onclick = () => zoom(1.2);
@@ -414,7 +495,10 @@ $("map").addEventListener(
   "wheel",
   (e) => {
     e.preventDefault();
-    zoom(e.deltaY > 0 ? 0.9 : 1.1);
+    zoom(
+      Math.exp(-Math.max(-250, Math.min(250, e.deltaY)) * 0.003),
+      pointer(e),
+    );
   },
   { passive: false },
 );
@@ -469,11 +553,7 @@ $("map").onpointermove = (e) => {
   if (Math.hypot(p.x - drag.start.x, p.y - drag.start.y) > 4) drag.moved = true;
   if (drag.draft && geo && Math.hypot(dx, dy) > 2) paint(geo, e.pressure);
   else if (tool === "inspect" && drag.moved) {
-    if (renderer.projection === "globe") renderer.rotation -= dx * 0.4;
-    else {
-      renderer.pan.x += dx;
-      renderer.pan.y += dy;
-    }
+    renderer.dragBy(dx, dy);
     renderer.render();
   }
   drag.last = p;
@@ -519,11 +599,15 @@ $("map").onpointercancel = () => {
 };
 $("coordinate-form").onsubmit = (e) => {
   e.preventDefault();
-  if (world)
-    inspectLocation({
+  if (world) {
+    const p = {
       lat: Number($("latitude").value),
       lon: Number($("longitude").value),
-    });
+    };
+    inspectLocation(p);
+    renderer.focus(p.lat, p.lon);
+    renderer.render();
+  }
 };
 function undo(direction) {
   if (busy || !world) return;
@@ -578,12 +662,19 @@ $("unlink-note").onclick = () =>
   mutate(() => {
     delete current().note;
   });
+$("generate-local").onclick = () => {
+  mutate(() => {
+    const entity = current();
+    if (!entity || entity.localMap) return;
+    entity.localMap = localMap(entity, world.definition.seed);
+  });
+  $("inspect-local").click();
+};
 $("inspect-local").onclick = () =>
   mutate(() => {
     const entity = current();
     if (!entity) return;
-    if (!entity.localMap)
-      entity.localMap = localMap(entity, world.definition.seed);
+    if (!entity.localMap) return;
     $("local-title").textContent = entity.name;
     drawLocal($("local-canvas"), entity);
     $("room-info").textContent = "Selecione uma sala.";
@@ -619,32 +710,66 @@ $("publish").onclick = () => {
     error(e);
   }
 };
+$("new-project").onclick = () => {
+  if (busy) return;
+  if (
+    world &&
+    !confirm(
+      "Preparar outro mundo? Salve uma cópia JSON do projeto atual antes de gerar. Ele continua aberto até a nova geração terminar.",
+    )
+  )
+    return;
+  creating = true;
+  $("resolution").disabled = false;
+  $("resolution").value = "720";
+  $("seed").value = crypto.randomUUID().slice(0, 8).toUpperCase();
+  $("world-name").value = "Mundo sem nome";
+  document.querySelector("#generation-form button[type=submit]").textContent =
+    "Criar novo mundo";
+  $("left-panel").classList.add("panel-open");
+  $("world-name").focus();
+  status(
+    "Escolha os parâmetros e gere o novo mundo. O projeto atual continua aberto.",
+  );
+};
 $("open-project").onclick = () => $("project-file").click();
 $("project-file").onchange = async (e) => {
   const file = e.target.files[0];
   e.target.value = "";
   if (!file) return;
+  cancel(true);
+  const request = ++job;
+  setBusy(true);
   try {
     if (file.size > MAX_BYTES) throw new Error("Projeto excede 24 MiB.");
     const incoming = await verifyNotes(parseProject(await file.text()));
+    if (request !== job) return;
     selected = null;
+    location = null;
+    renderer.location = null;
     deriveDraft(incoming);
   } catch (e) {
+    if (request !== job) return;
+    setBusy(false);
     error(e);
   }
 };
 $("checkpoint").onclick = () =>
   mutate(() => {
+    const draft = structuredClone(world);
     checkpoint(
-      world,
+      draft,
       `Marco ${world.timeline.checkpoints.length + 1} · ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`,
     );
+    serialize(draft);
+    world = draft;
     status(
       "Marco completo preservado; alterações seguintes não modificam o passado.",
     );
   });
 $("timeline").onchange = () => {
   if (!$("timeline").value) return;
+  if (!world) return;
   const draft = structuredClone(world);
   try {
     restore(draft, $("timeline").value);
@@ -681,64 +806,65 @@ document.addEventListener("keydown", (e) => {
       .forEach((x) => x.classList.remove("panel-open"));
   }
   if (e.target === $("map")) {
+    if (
+      [
+        "ArrowLeft",
+        "ArrowRight",
+        "ArrowUp",
+        "ArrowDown",
+        "+",
+        "-",
+        "=",
+        "Home",
+      ].includes(e.key)
+    )
+      e.preventDefault();
+    if (e.key === "Home") $("reset-view").click();
+    if (e.key === "ArrowUp") {
+      renderer.pan.y += 40;
+      renderer.render();
+    }
+    if (e.key === "ArrowDown") {
+      renderer.pan.y -= 40;
+      renderer.render();
+    }
     if (e.key === "+") zoom(1.2);
     if (e.key === "-") zoom(1 / 1.2);
     if (e.key === "ArrowLeft") {
-      renderer.pan.x -= 20;
-      renderer.rotation -= 5;
+      renderer.pan.x += 40;
       renderer.render();
     }
     if (e.key === "ArrowRight") {
-      renderer.pan.x += 20;
-      renderer.rotation += 5;
+      renderer.pan.x -= 40;
       renderer.render();
     }
   }
 });
+bindPinch($("map"), renderer, () => {
+  drag = null;
+  if (world && derived) renderer.setWorld(world, derived);
+});
 new ResizeObserver(() => renderer.render()).observe($("map"));
 async function init() {
+  const request = job;
   try {
     const saved = await loadLocal();
+    if (request !== job) return;
     if (saved) {
       deriveDraft(saved);
       return;
     }
   } catch {
+    if (request !== job) return;
     status("Armazenamento local indisponível; use exportação JSON.");
   }
-  run("generate", null, definition(), {}, () => {
-    let best = 0;
-    for (let i = 0; i < world.state.elevation.length; i++) {
-      const p = coord(i, world.definition.grid);
-      if (
-        world.state.elevation[i] > 150 &&
-        world.state.elevation[i] < 800 &&
-        Math.abs(p.lat) < 45
-      ) {
-        best = i;
-        break;
-      }
-    }
-    const p = coord(best, world.definition.grid);
-    const entity = {
-      id: "demo-miravento",
-      type: "castle",
-      name: "Fortaleza de Miravento",
-      ...p,
-      desc: "Lugar de exemplo: uma fortaleza sobre as colinas do primeiro mundo.",
-      note: {
-        id: "demo-note",
-        name: "Miravento.md",
-        markdown:
-          "# Fortaleza de Miravento\n\nEntre o mar e as antigas colinas, os guardiões observam a mudança dos ventos.\n\n## Caderno de exploração\n- Este é um lugar de exemplo, editável.\n- Vincule uma nota sua para começar uma nova história.",
-        hash: "",
-        importedAt: "exemplo incorporado",
-      },
-    };
-    entity.localMap = localMap(entity, world.definition.seed);
-    world.state.entities.push(entity);
-    selected = entity.id;
-    location = p;
-  });
+  $("empty-state").hidden = false;
+  $("save-project").disabled = true;
+  $("publish").disabled = true;
+  $("undo").disabled = true;
+  $("redo").disabled = true;
+  status(
+    "Oficina vazia · abra um projeto ou escolha os parâmetros e gere o seu mundo.",
+  );
 }
 init();

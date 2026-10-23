@@ -4,7 +4,7 @@ Classificação: **A** heurístico/visual; **B** físico simplificado com grande
 
 ## Geometria
 
-Datum: esfera ideal de raio R metros, altitude relativa a um nível do mar fixo z=0. Latitude em graus norte e longitude periódica em `[-180,180)`. Células amostradas nos centros de uma grade 180×90; importação admite grades pares 12–360, altura = largura/2. O bitmap do viewport e a grade física são diferentes.
+Datum: esfera ideal de raio R metros, altitude relativa a um nível do mar fixo z=0. Latitude em graus norte e longitude periódica em `[-180,180)`. Células amostradas nos centros de uma grade explícita: criação em 360×180, 720×360 ou 1.440×720; importação admite grades pares 12–1.440, altura = largura/2. O helper de domínio conserva seu default histórico 180×90; a UI pede 720×360 explicitamente. O bitmap do viewport e a grade física são diferentes.
 
 Área de uma célula: `R² Δλ [sin(φ_norte) − sin(φ_sul)]`. Soma global: `4πR²`. Distância usa haversine em círculo máximo, com clamp de arredondamento. Vizinha D8; ao cruzar polo, a linha reflete e longitude gira 180°. Não se conecta todo o anel polar a um supernó. As diagonais são arestas idealizadas; a malha não é isotrópica. Normas e unidades têm testes com tolerância relativa de 1e−12 para área e 1e−7 rad para roundtrips.
 
@@ -38,4 +38,10 @@ Biomas são classes discretas de temperatura, chuva e altitude. Não modelam sol
 
 ## Processamento e limites
 
-Pipeline: relevo → clima → hidrologia → biomas. Recálculo atual é global, executado em Worker. Cancelamento termina o Worker, invalida job ID e conserva o último estado completo; não há commit parcial. Raster por camada é cache derivado. O globo reaproveita lookup da projeção inversa (latitude/longitude relativas à câmera), aplica rotação por deslocamento longitudinal e limita o bitmap a 640×640; a grade física não muda. LOD, tiles, cache multirresolução e recálculo regional não existem ainda. Até 30 comandos por direção, 12 marcos completos e 24 MiB por projeto; esses limites evitam retenção sem limite, não substituem benchmark mobile.
+Pipeline: relevo → clima → hidrologia → biomas. Recálculo atual é global, executado em Worker. Cancelamento termina o Worker, invalida job ID e conserva o último estado completo; não há commit parcial. Raster por camada é cache derivado. O globo reaproveita lookup da projeção inversa (latitude/longitude relativas à câmera), aplica rotação por deslocamento longitudinal no viewport visível em até 2× DPR; a textura não é limitada a 640×640 nem cresce com a área invisível do planeta ampliado. A grade física só muda por criação/refinamento explícito. Curvas de nível usam interseções lineares em dois triângulos por célula; subdividir para desenhar não acrescenta informação física. LOD, tiles, cache multirresolução e recálculo regional não existem ainda. Até 30 comandos por direção, 12 marcos completos e 24 MiB por projeto; esses limites evitam retenção sem limite, não substituem benchmark mobile.
+
+## Resolução e autoria
+
+No raio terrestre, 1.440 × 720 equivale a cerca de **27,8 km N–S por célula** (E–W diminui com cos(latitude)). É resolução regional; ruas, edifícios e detalhes de metros não podem ser inferidos desse terreno. O zoom 128× serve também para selecionar, posicionar e inspecionar lugares autorais. A interface mostra o limite em vez de sintetizar texturas como se fossem dados. O campo procedural mantém seis bandas e a mesma versão de algoritmo; resolução maior amostra a mesma função com maior densidade, não acrescenta geologia.
+
+Refinar mantém altitudes absolutas em toda a pegada angular dos overrides e recalcula derivados. Não há invariância de precipitação à resolução neste modelo; essa limitação já existente permanece. O projeto anterior é preservado em marco com sua própria grade; ao restaurá-lo, suas dimensões, máscaras e diário retornam integralmente.
