@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261023-ai-603-keyless-local-provider",
   "category": "HANDOFF",
-  "timestamp": "2026-10-23T03:45:27Z",
+  "timestamp": "2026-10-23T03:48:28Z",
   "agent": {
     "id": "chatgpt-ai603-local-provider",
     "kind": "ai-agent"
@@ -29,7 +29,8 @@
     "Configuração Android dispensa chave no modo local e rejeita chave fornecida; quando provider HTTPS preexistente é editado para localhost HTTP, remove a chave antiga antes de salvar.",
     "Provedores remotos continuam HTTPS com chave; cofre Android, formato persistido, autorização financeira e runtime permanecem inalterados.",
     "Network Security Configuration Android com cleartext default false e exceção apenas para localhost/127.0.0.1; AndroidManifest mantém usesCleartextTraffic=false e aponta à nova policy.",
-    "Testes com HTTP mockado para URLs permitidas/recusadas, round-trip do modelo, HTTPS sem chave e discovery sem Authorization; documentação delimita Android localhost do computador na LAN."
+    "Testes com HTTP mockado para URLs permitidas/recusadas, round-trip do modelo, HTTPS sem chave e discovery sem Authorization; documentação delimita Android localhost do computador na LAN.",
+    "CI inicial #39896920466 identificou CHK-ARCH-REFS no documento local e CHK-HANDOFFS na validação humana pendente; ambos corrigidos na branch antes do fechamento dos gates."
   ],
   "verification": [
     {
@@ -49,7 +50,8 @@
       "kind": "human",
       "result": "pending",
       "object": "apps/ecosystem-ai/docs-r4-android-native.md",
-      "evidence": "Requer serviço Chat Completions realmente disponível no próprio aparelho Android, sem token; testar uso em HTTP localhost e recusa de IP da LAN. CI não equivale a essa prova."
+      "evidence": "Requer serviço Chat Completions realmente disponível no próprio aparelho Android, sem token; testar uso em HTTP localhost e recusa de IP da LAN. CI não equivale a essa prova.",
+      "critical": true
     }
   ],
   "known_issues": [
