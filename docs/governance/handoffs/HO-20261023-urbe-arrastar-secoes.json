@@ -34,9 +34,10 @@
     {
       "kind": "human",
       "check": "No aparelho, arrastar uma seção pela alça ⋮⋮ e remover uma seção e desfazer",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/urbe/csharp/src/Urbe.Client/PageStudioView.Panels.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Client/PageStudioView.Panels.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-23 (Issue https://github.com/AbnerCruz/Ecosystem/issues/686); registro em docs/governance/responses/VAL-HO-20261023-urbe-arrastar-secoes-64d11dc26698.md."
     }
   ],
   "known_issues": [],
