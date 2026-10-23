@@ -56,6 +56,48 @@ public sealed partial class MainView : IPageStudioHost
         ShowLifeNotice("Nova página. Dê um nome no topo e use ＋ para inserir o que quiser.");
     }
 
+    /// <summary>
+    /// UC-62 slice 2 (DEC-0055): "Criar página daqui" — a page from a note (the note itself, its "Nota" section) or from
+    /// a folder (a cover with the folder's name and a "Notas" section of that folder, which follows its notes), written
+    /// in Páginas/ by the verified write and opened in the studio.
+    /// </summary>
+    public async Task CreatePageFromAsync(string? notePath = null, string? folder = null)
+    {
+        if (!VaultWritable || _store is null) { await Dialogs.AlertAsync("Criar página", NoVaultMessage); return; }
+        string title;
+        System.Text.Json.Nodes.JsonArray sections;
+        if (notePath is not null)
+        {
+            if (_store.Get(notePath) is not { } doc) return;
+            title = doc.Title;
+            sections = [new System.Text.Json.Nodes.JsonObject { ["type"] = "note", ["props"] = new System.Text.Json.Nodes.JsonObject { ["path"] = doc.Path, ["showTitle"] = true } }];
+        }
+        else
+        {
+            var f = (folder ?? "").Trim('/');
+            title = f.Length == 0 ? (_vault?.VaultName ?? "Notas") : LastName(f);
+            sections =
+            [
+                new System.Text.Json.Nodes.JsonObject { ["type"] = "hero", ["props"] = new System.Text.Json.Nodes.JsonObject { ["title"] = title } },
+                new System.Text.Json.Nodes.JsonObject { ["type"] = "notes", ["props"] = new System.Text.Json.Nodes.JsonObject
+                {
+                    ["source"] = "folder", ["folder"] = f, ["layout"] = "cards", ["excerpt"] = true, ["sort"] = "title", ["limit"] = 200
+                } }
+            ];
+        }
+        var spec = _pageEngine.Normalize(new System.Text.Json.Nodes.JsonObject { ["meta"] = new System.Text.Json.Nodes.JsonObject { ["title"] = title }, ["sections"] = sections }).Spec;
+        var name = System.Text.RegularExpressions.Regex.Replace(title, @"[\\/:*?""<>|\u0000-\u001f]", "-").Trim();
+        var path = PageStudio.UniquePath("Páginas/" + (name.Length > 0 ? name : "Nova página") + ".page.json", ((IPageStudioHost)this).Exists);
+        try { await ((IAssistantApp)this).CreateNoteAsync(path, LegacyCustomize.Stringify(_pageEngine.Compact(spec), 2) + "\n"); }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or InvalidDataException or NotSupportedException)
+        {
+            await Dialogs.AlertAsync("Não foi possível criar a página", ex.Message);
+            return;
+        }
+        await OpenStudioAsync(path);
+        ShowLifeNotice(notePath is not null ? "Página criada a partir da nota." : "Página criada: ela acompanha as notas da pasta.");
+    }
+
     /// <summary>pages.open from the palette: the page chosen among the vault's pages opens in the studio.</summary>
     public async Task ChoosePageForStudioAsync()
     {
@@ -206,7 +248,11 @@ public sealed partial class MainView : IPageStudioHost
             Validate: v => PageStudio.CleanName(v).Length > 0 ? null : "Use um nome válido.")));
         if (name.Length == 0) return;
         var desc = await Dialogs.PromptAsync(new PromptOptions("Descrição (opcional)", "Para que serve este modelo?", "", Confirm: "Salvar", Required: false));
-        var spec = (JsonObject)st.Spec.DeepClone();
+        // UC-62 slice 3: the template keeps the texts, or only the structure (the sections and their look)
+        var keep = await Dialogs.ChooseAsync("O que o modelo guarda?",
+            [new DialogItem("Com os textos", UrbeTheme.Icons.File, "A página como está."), new DialogItem("Só a estrutura", UrbeTheme.Icons.Layers, "As seções e a aparência, sem os textos.")]);
+        if (keep is null) return;
+        var spec = keep == 1 ? PageStudio.StructureOnly(st.Spec, _pageEngine) : (JsonObject)st.Spec.DeepClone();
         spec["kind"] = "urbe-template";
         spec["template"] = new JsonObject { ["name"] = name, ["description"] = desc ?? "" };
         var target = PageStudio.UniquePath("Páginas/Modelos/" + name + ".template.json", ((IPageStudioHost)this).Exists);

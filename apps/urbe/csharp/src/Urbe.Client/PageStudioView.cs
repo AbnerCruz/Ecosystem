@@ -257,7 +257,8 @@ public sealed partial class PageStudioView : Border
     {
         _saveTimer.Stop();
         _path = path;
-        _st = new PageStudio(new PageEngine(), text);
+        // the Urbe's own fields too (UC-62: the vault's queries in Notas), the same engine options as the preview's
+        _st = new PageStudio(new PageEngine { UrbeMarks = true }, text);
         _st.Changed += (_, _) => { };
         _sheet = null;
         IsVisible = true;
@@ -519,12 +520,39 @@ public sealed partial class PageStudioView : Border
                 m["n"] is JsonValue cv && cv.TryGetValue<int>(out var n) ? n : -1);
             return;
         }
+        if (kind == "field")
+        {
+            // UC-62 slice 4: a plain text of a section written in place in the preview
+            var path = S(m!["path"]);
+            var written = System.Text.RegularExpressions.Regex.Replace(S(m["text"]).Replace('\u00a0', ' '), @"\s+", " ").Trim();
+            if (!System.Text.RegularExpressions.Regex.IsMatch(path, @"^sections\.\d+\.props\.[A-Za-z]\w*(\.\d+\.[A-Za-z]\w*)?$") || written.Length == 0) return;
+            // only over a text that is still plain: the field may have changed in the Editar panel meanwhile
+            if (_st.Get(path) is not JsonValue was || !was.TryGetValue<string>(out var old) || !PageEngine.PlainText(old) || old == written) return;
+            _st.Break();
+            if (_st.Set(path, JsonValue.Create(written))) Changed();
+            return;
+        }
+        if (kind == "image")
+        {
+            // UC-62 slice 4: a picture tapped in the preview opens the image choice for its field
+            var path = S(m!["path"]);
+            if (_st.FieldType(path) == "image") _ = PickInPlaceAsync(path);
+            return;
+        }
         if (kind != "text" || nid is null || _st.Section(id) is not { } sec || (string?)sec["type"] != "free") return;
         if (PageEngine.FreeFind(sec["props"]?["root"] as JsonObject, nid) is not { } hit || hit.Node["content"] is not JsonObject content || content["text"] is null) return;
         var text = System.Text.RegularExpressions.Regex.Replace(S(m!["text"]).Replace('\u00a0', ' '), "\n{3,}", "\n\n").Trim();
         if ((string?)hit.Node["type"] == "heading") text = System.Text.RegularExpressions.Regex.Replace(text, @"\s*\n\s*", " ");
         _st.Break();
         if (_st.Set(PageStudio.FreePath(id, nid, "content", "text"), JsonValue.Create(text))) Changed();
+    }
+
+    private async Task PickInPlaceAsync(string path)
+    {
+        if (await _host.PickImageAsync() is not { } url || _st is null || _st.FieldType(path) != "image") return;
+        if (url.Length > 2_500_000) Toast("Imagem grande: a página ficará pesada.");
+        _st.Break();
+        if (_st.Set(path, JsonValue.Create(url))) Changed();
     }
 
     /// <summary>

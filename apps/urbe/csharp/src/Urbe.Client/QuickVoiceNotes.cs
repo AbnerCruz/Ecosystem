@@ -22,6 +22,17 @@ public static class PlatformVoice
         else Interlocked.Exchange(ref _pending, 1);
     }
 
+    /// <summary>
+    /// UC-66 on Windows: there is no recognizer the app can call, so the note is written in a box where the system's
+    /// dictation (<paramref name="hint"/>, Win+H) types what is said, in <paramref name="view"/> or the running app's.
+    /// Null when the box was cancelled.
+    /// </summary>
+    public static Func<Task<string?>> TypedWithDictation(string hint, MainView? view = null) => async () =>
+        (view ?? UrbeApp.ActiveView) is { } shown
+            ? await shown.Dialogs.PromptAsync(new PromptOptions("Nota rápida", Label: "O que você quer guardar", Placeholder: "Fale ou escreva…",
+                Hint: hint, Confirm: "Salvar"))
+            : null;
+
     internal static bool TakePending() => Interlocked.Exchange(ref _pending, 0) == 1;
 
     /// <summary>

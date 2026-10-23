@@ -245,7 +245,7 @@ jobs:
         env:
           VERSION: ${{ needs.android.outputs.version }}
         run: |
-          dotnet publish src/Urbe.Desktop/Urbe.Desktop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o artifacts/windows-release/Urbe
+          dotnet publish src/Urbe.Desktop/Urbe.Desktop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:Version=$env:VERSION -o artifacts/windows-release/Urbe
           if (-not (Test-Path artifacts/windows-release/Urbe/Urbe.exe)) { throw "Urbe.exe não foi gerado" }
           Compress-Archive -Path artifacts/windows-release/Urbe/* -DestinationPath "artifacts/windows-release/Urbe-CSharp-$env:VERSION-Windows-x64.zip"
           $hash = (Get-FileHash "artifacts/windows-release/Urbe-CSharp-$env:VERSION-Windows-x64.zip" -Algorithm SHA256).Hash.ToLower()

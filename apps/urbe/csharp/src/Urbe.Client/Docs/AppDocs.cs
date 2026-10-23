@@ -74,6 +74,8 @@ public static partial class AppDocs
 
         Na primeira vez, a **Configuração inicial** leva pela pasta, pelo tema e pelo Assistente; ela pode ser refeita em **Configurações → Configuração inicial**.
 
+        Para atualizar: **Configurações → Verificar atualização** procura uma versão mais nova do Urbe (só quando você pede). O arquivo abre no navegador: no Android, instale por cima do Urbe atual; no Windows, extraia o .zip por cima da pasta do Urbe. Suas notas ficam onde estão.
+
         Use a **busca** no alto do índice deste tutorial para achar qualquer assunto, e **Anterior / Próximo** para ler em sequência.
         """;
 
@@ -96,7 +98,7 @@ public static partial class AppDocs
         - **Nova nota**, na pasta selecionada.
         - **A partir de um modelo**, quando há notas em `Modelos` (veja [[Modelos]]).
         - **Nova pasta**, na pasta selecionada.
-        - **Nota rápida**, por voz, quando disponível. No Android também há o widget **Urbe: nota rápida** na tela inicial, que grava sem abrir o app. As notas rápidas ficam em **Notas rápidas**, uma nota por mês com um título para cada dia.
+        - **Nota rápida**, por voz, quando disponível. No Android também há o widget **Urbe: nota rápida** na tela inicial, que grava sem abrir o app. No Windows, **Ctrl+Alt+N** (de qualquer programa) ou o ícone do Urbe na bandeja abrem a caixa da nota rápida: escreva, ou aperte **Win+H** para o ditado do Windows escrever o que você fala. As notas rápidas ficam em **Notas rápidas**, uma nota por mês com um título para cada dia.
 
         ## Selecionar e mover
 
@@ -216,6 +218,9 @@ public static partial class AppDocs
         - A página é feita de **blocos**: toque em **Adicionar bloco**, arraste para reordenar e use o menu de cada bloco para **Mover para cima / baixo**, **Duplicar**, **Salvar como bloco reutilizável**, **Trocar tipo de bloco** ou **Remover**.
         - Em **＋ → Modelos** há modelos prontos; aplicar um pode **substituir a página**, **adicionar as seções ao fim** ou trocar **só o visual**.
         - O estúdio salva sozinho e mostra **Salvo**.
+        - **Criar página daqui**, no ⋯ de uma pasta, de um cartão de nota ou no **Mais ações** do editor: de uma pasta, uma capa e as notas dela; de uma nota, a própria nota.
+        - Na prévia, títulos, rótulos e itens de uma linha se escrevem **no lugar**: toque, escreva e saia (Enter também termina). Tocar numa imagem abre a escolha de imagem. Textos com Markdown continuam no painel **Editar**.
+        - O bloco **Notas** lista notas do seu vault e acompanha as mudanças: de uma **pasta** (com ou sem as subpastas), de uma **tag**, as **escolhidas**, as **recentes**, as que **ligam a uma nota**, as **ligadas por uma nota** ou as de uma **busca**.
 
         ## Prévia e comentários
 
@@ -230,7 +235,7 @@ public static partial class AppDocs
         - **Salvar HTML no vault**, ao lado da página
         - **Copiar HTML**
 
-        No menu do estúdio também estão **Salvar como modelo**, **Duplicar página** e **Editar JSON**. O arquivo da página é um `.page.json` na sua pasta.
+        No menu do estúdio também estão **Salvar como modelo** (com os textos ou só a estrutura), **Duplicar página** e **Editar JSON**. O arquivo da página é um `.page.json` na sua pasta.
         """;
 
     private const string Assistente = """

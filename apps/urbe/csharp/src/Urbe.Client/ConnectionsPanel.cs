@@ -36,9 +36,20 @@ public sealed class ConnectionsPanel : Border
         });
         ToolTip.SetTip(close, "Fechar");
         close.Click += (_, _) => IsVisible = false;
+        // UC-71: the same note in the whole sky, in focus (its links lit, the rest dimmed)
+        var sky = Ui.UrbeMotion.Pressable(new Button
+        {
+            Content = UrbeTheme.Icon(UrbeTheme.Icons.Star, 18, UrbeTheme.Text2),
+            Background = Brushes.Transparent, BorderThickness = new Thickness(0), Padding = new Thickness(4)
+        });
+        ToolTip.SetTip(sky, "Ver na Constelação");
+        Avalonia.Automation.AutomationProperties.SetName(sky, "Ver na Constelação");
+        sky.Click += (_, _) => SkyRequested?.Invoke();
         var header = new DockPanel { Height = 42, Margin = new Thickness(12, 0) };
         DockPanel.SetDock(close, Dock.Right);
+        DockPanel.SetDock(sky, Dock.Right);
         header.Children.Add(close);
+        header.Children.Add(sky);
         header.Children.Add(_title);
         Graph.NoteChosen += path => NoteChosen?.Invoke(path);
         Child = new DockPanel
@@ -53,6 +64,9 @@ public sealed class ConnectionsPanel : Border
 
     /// <summary>A note was chosen (a point or a row): its path.</summary>
     public event Action<string>? NoteChosen;
+
+    /// <summary>"Ver na Constelação": the open note in the whole sky.</summary>
+    public event Action? SkyRequested;
 
     /// <summary>The drawing.</summary>
     public ConnectionsGraph Graph { get; } = new() { Height = 300, Margin = new Thickness(8) };

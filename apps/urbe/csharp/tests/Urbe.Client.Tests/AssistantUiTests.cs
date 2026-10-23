@@ -264,8 +264,7 @@ public sealed partial class HeadlessUiTests
 
                 // the answer kept in the note, as a quote under the line that asked it, marked as the Assistente's
                 ClickNamed(panel, "Pôr a resposta na nota");
-                for (int i = 0; i < 100 && !File.ReadAllText(Path.Combine(vault, "Herói.md")).Contains("> Sugiro", StringComparison.Ordinal); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
-                var kept = File.ReadAllText(Path.Combine(vault, "Herói.md"));
+                var kept = await ReadWhenWritten(Path.Combine(vault, "Herói.md"), t => t.Contains("> Sugiro", StringComparison.Ordinal));
                 Assert.Matches(@"&Jarvis&: Dê uma sugestão de nome\n\n> Sugiro Aurora\. \{ia:""[^""]+""\}\n\n&Sexta&: e outro\n", kept);
                 Assert.False(panel.GetLogicalDescendants().OfType<Button>().Single(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Pôr a resposta na nota").IsEnabled);
 
@@ -456,5 +455,6 @@ public sealed partial class HeadlessUiTests
         Assert.Contains(AssistantPanel.ToolsFor(router), tool => tool.Name == "generate_image");
         Assert.Equal("write", AssistantImageTools.Tool.Access);
     }
+
 
 }

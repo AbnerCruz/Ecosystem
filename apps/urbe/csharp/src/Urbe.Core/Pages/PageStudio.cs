@@ -133,6 +133,22 @@ public sealed class PageStudio
         if (changed) NodeSelected = null;
     }
 
+    /// <summary>
+    /// The type of the field at "sections.i.props.key" or "sections.i.props.list.j.key" in the block's own fields (for a
+    /// message of the preview to change only what the field is: an image only where an image goes); null when none.
+    /// </summary>
+    public string? FieldType(string path)
+    {
+        var m = Regex.Match(path, @"^sections\.(\d+)\.props\.([A-Za-z]\w*)(?:\.(\d+)\.([A-Za-z]\w*))?$");
+        if (!m.Success || !int.TryParse(m.Groups[1].Value, out var i) || i >= Sections.Count || Sections[i] is not JsonObject sec) return null;
+        if (_engine.BlockInfo(S(sec["type"])) is not { } b) return null;
+        var field = b.Fields.OfType<JsonObject>().FirstOrDefault(f => S(f["key"]) == m.Groups[2].Value);
+        if (field is null || !m.Groups[4].Success) return field is null ? null : S(field["type"]);
+        if (S(field["type"]) != "list" || field["fields"] is not JsonArray sub) return null;
+        if (sec["props"]?[m.Groups[2].Value] is not JsonArray items || !int.TryParse(m.Groups[3].Value, out var j) || j >= items.Count) return null;
+        return sub.OfType<JsonObject>().FirstOrDefault(f => S(f["key"]) == m.Groups[4].Value) is { } inner ? S(inner["type"]) : null;
+    }
+
     private static string S(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) ? s : n is null ? "" : LegacyCustomize.JsToString(n);
 
     /// <summary>secTitle(s).</summary>
@@ -171,6 +187,40 @@ public sealed class PageStudio
         var copy = (JsonObject)n.DeepClone();
         copy["id"] = PageEngine.NewSectionId();
         if ((string?)copy["type"] == "free" && copy["props"]?["root"] is JsonObject root) copy["props"]!["root"] = PageEngine.FreeClone(root);
+        return copy;
+    }
+
+    /// <summary>
+    /// UC-62 slice 3: a template of the page's structure only — the sections, their look and their lists' length stay,
+    /// the texts (titles, paragraphs, Markdown, code, the free nodes' words) go back to their defaults.
+    /// </summary>
+    public static JsonObject StructureOnly(JsonObject spec, PageEngine engine)
+    {
+        var copy = (JsonObject)spec.DeepClone();
+        static bool IsText(string? type) => type is "text" or "textarea" or "markdown" or "code";
+        static void Blank(JsonObject props, JsonArray fields)
+        {
+            foreach (var f in fields.OfType<JsonObject>())
+            {
+                var key = (string?)f["key"];
+                if (key is null || !props.ContainsKey(key)) continue;
+                var type = (string?)f["type"];
+                // icons are part of the look, not words
+                if (IsText(type) && key != "icon") props.Remove(key);
+                else if (type == "list" && props[key] is JsonArray items && f["fields"] is JsonArray sub)
+                    foreach (var item in items.OfType<JsonObject>()) Blank(item, sub);
+                else if (type == "tree" && props[key] is JsonObject root)
+                    PageEngine.FreeWalk(root, (n, _, _) =>
+                    {
+                        if (n["content"] is JsonObject content)
+                            foreach (var k in new[] { "text", "author", "md", "tex", "code" })
+                                if (content[k] is JsonValue) content[k] = "";
+                        return false;
+                    });
+            }
+        }
+        foreach (var sec in (copy["sections"] as JsonArray ?? []).OfType<JsonObject>())
+            if (sec["props"] is JsonObject props && engine.BlockInfo((string?)sec["type"]) is { } info) Blank(props, info.Fields);
         return copy;
     }
 
