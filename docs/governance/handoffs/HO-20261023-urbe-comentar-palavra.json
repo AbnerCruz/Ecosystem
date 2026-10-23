@@ -11,7 +11,7 @@
   "branch": "ccr-2e1b58fa-7mhpmx",
   "base_commit": "e01e7e09",
   "commit": null,
-  "pr": 662,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/662",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/VisualEditCrashUiTests.cs",
