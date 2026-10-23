@@ -1,0 +1,93 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-verificar-atualizacao",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T11:13:34Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-24",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "3b2654e2",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/AppUpdate.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Updates.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Android/MainActivity.cs",
+    "apps/urbe/csharp/src/Urbe.Desktop/Program.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AppUpdateTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AppUpdateUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261023-urbe-verificar-atualizacao.json"
+  ],
+  "work_completed": [
+    "UC-24/UC-25: Configurações → Verificar atualização, portado do update.check da 1.8.4 (bridge.js): manual, releases do Ecosystem filtradas pela tag urbe-csharp-v e pelo arquivo da plataforma (APK ou zip do Windows), download só pelas releases do Ecosystem, aberto no navegador; nunca /releases/latest e nada em segundo plano (docs/distribution/direct-releases.md item 4).",
+    "Android lê a versão instalada do pacote; Windows usa a versão do executável quando ela é 2.x."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (AppUpdateTests) e Urbe.Client.Tests (Update_IsOfferedOnlyWhenANewerReleaseHasThisPlatformsFile); dotnet build Urbe.Desktop",
+      "result": "passed",
+      "evidence": "Comparação de versões como a da 1.8.4 (beta.10 depois de beta.9, final depois das betas); rascunho, outro canal, outro host e release sem o arquivo da plataforma são ignorados; mesma versão não oferece; sem rede avisa."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho e no Windows, Configurações → Verificar atualização com uma release mais nova publicada, baixar e instalar por cima",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.Updates.cs"
+    }
+  ],
+  "known_issues": [
+    "O head Android não pôde ser compilado neste ambiente (sem a carga android); o CI do PR compila.",
+    "No Windows a versão instalada aparece como desconhecida até o publish do Windows receber -p:Version (mudança de workflow, crítica: vai no próximo PR de versão)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "No próximo bump de beta (crítico), passar -p:Version=$VERSION ao dotnet publish do Windows."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/distribution/direct-releases.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-015",
+      "evidence": "GitHub só como distribuição (lista de releases), sob pedido; nenhuma comunicação runtime entre apps."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Só rede, já declarada; nada é instalado pelo app."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Sem Hub: o app lê as releases do próprio Product."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Instalação e atualização reais pendentes."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "app-update-check",
+      "status": "possible-candidate",
+      "rationale": "Lunet2D poderia ter o mesmo verificador por tag; sem segundo consumidor real, fica no Urbe (NN-022)."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Feature do ROADMAP (UC-24/25) sem csproj, workflow, vault nem release."
+  }
+}

@@ -1,3 +1,4 @@
+using System.Reflection;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
@@ -29,6 +30,13 @@ public static class Program
             return Task.CompletedTask;
         };
         UrbeApp.DesktopWindowReady = DesktopQuickNote.Install;
+        if (OperatingSystem.IsWindows())
+        {
+            // Configurações → Verificar atualização: the zip of the newest direct release (extracted over this one)
+            UrbeApp.UpdateAsset = Urbe.Core.AppUpdate.WindowsAsset;
+            var version = typeof(Program).Assembly.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0];
+            UrbeApp.InstalledVersion = Urbe.Core.AppUpdate.Parts(version) is { Major: >= 2 } ? version : null;
+        }
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 

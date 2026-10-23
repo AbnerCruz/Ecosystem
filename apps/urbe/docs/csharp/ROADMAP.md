@@ -254,8 +254,8 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 ## M4 — Hosts e distribuição
 
 - [ ] UC-23 — Web/PWA: **não aplicável** após a direção do proprietário de 09/10/2026; ID preservado somente para rastreabilidade.
-- [ ] UC-24 — Windows (instalação e atualização).
-- [ ] UC-25 — Android.
+- [ ] UC-24 — Windows (instalação e atualização). **Feito (23/10/2026):** a release traz `Urbe-CSharp-<versão>-Windows-x64.zip` (um `Urbe.exe`, sem instalar nada; `urbe-csharp-mobile-release.yml`). **Verificar atualização** (Configurações), portado do `update.check` da 1.8.4: só quando a pessoa pede, lê as releases do Ecosystem (`releases?per_page=100`, nunca `/releases/latest`), fica com a mais nova de tag `urbe-csharp-v` que tem o arquivo desta plataforma baixável das releases do Ecosystem e abre o download no navegador; o app não instala nada sozinho (`AppUpdate`, `MainView.Updates`; testes `AppUpdateTests` e `Update_IsOfferedOnlyWhenANewerReleaseHasThisPlatformsFile`). Falta: a versão instalada no Windows (o `dotnet publish` do Windows ainda não recebe `-p:Version`; até lá a versão aparece como desconhecida e a mais nova é oferecida), validação de instalação e atualização no Windows.
+- [ ] UC-25 — Android. **Atualização (23/10/2026):** o mesmo **Verificar atualização**, com o APK `Urbe-CSharp-<versão>-Android.apk` e a versão instalada lida do pacote; a beta atualiza por cima da instalada (mesma assinatura). Falta: validação no aparelho.
 - [ ] UC-26 — Transição deliberada dos clientes sem migração histórica obrigatória (DEC-0042): suporte a vault limpo e cópia manual de Markdown; preservar instalação e dados legados sem conversão/sobrescrita automática. Não bloquear beta/corte por estados históricos.
 - [ ] UC-27 — Pipeline de release do cliente novo, sem exigir nenhum componente do plano de controle do ecossistema (NN-023).
 

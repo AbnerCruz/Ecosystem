@@ -545,6 +545,7 @@ public sealed partial class MainView : Grid
         items.Add(new("Assistente", UrbeTheme.Icons.Assistant, "Agentes que pesquisam, escrevem e organizam o vault", Run: () => { ToggleAssistant(); return Task.CompletedTask; }));
         items.Add(new("Páginas", UrbeTheme.Icons.Page, "Sites e páginas HTML do vault", Run: () => { ShowPages(); return Task.CompletedTask; }));
         items.Add(new("Diagnóstico de toques", UrbeTheme.Icons.Select, TouchDebugOn ? "Ligado — toque para desligar" : "Para descobrir botões que não respondem", Run: ToggleTouchDebugAsync));
+        if (UpdateItem() is { } update) items.Add(update);
         if (CrashLog.Read().Length > 0)
             items.Add(new("Relatório de erros", UrbeTheme.Icons.List, "Erros que o Urbe registrou neste aparelho", Run: ShowErrorReportAsync));
         return Dialogs.MenuAsync("Configurações", items);
