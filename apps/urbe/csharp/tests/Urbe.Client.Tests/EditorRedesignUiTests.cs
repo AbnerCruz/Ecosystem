@@ -97,6 +97,17 @@ public sealed partial class HeadlessUiTests
                 var nextBox = editor.Surface.EditBox!;
                 Assert.InRange(TopIn(Presenter(nextBox), window) - nextBefore, -2, 2);
 
+                // and back to a block above, the one below having grown: it stays where it was too
+                nextBox.Text += "\nmais\nlinhas\naqui";
+                await Pump(window);
+                var (aboveBefore, _) = Tap(editor, window, index);
+                await Pump(window);
+                Assert.InRange(TopIn(Presenter(editor.Surface.EditBox!), window) - aboveBefore, -2, 2);
+                (nextBefore, _) = Tap(editor, window, index + 1);
+                await Pump(window);
+                nextBox = editor.Surface.EditBox!;
+                Assert.InRange(TopIn(Presenter(nextBox), window) - nextBefore, -2, 2);
+
                 // leaving edit mode: the drawn block appears where the text being written was
                 var textTop = TopIn(Presenter(nextBox), window);
                 editor.Surface.FinishEdit();
