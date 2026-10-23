@@ -555,7 +555,8 @@ public sealed class AssistantProviders
     public static string? ImageModel(string preset) => preset switch
     {
         "openai" => "gpt-image-1",
-        "gemini" => "imagen-3.0-generate-002",
+        "gemini" => "gemini-2.5-flash-image",
+        "openrouter" => "bytedance-seed/seedream-4.5",
         "custom" => "",
         _ => null
     };
@@ -564,7 +565,15 @@ public sealed class AssistantProviders
     public static bool DrawsImages(AiProviderConfig cfg)
     {
         var p = Resolve(cfg);
-        return p.Kind == "openai" && ImageModel(p.Preset) is not null;
+        return p.Kind == "openai" && !string.IsNullOrWhiteSpace(ImageModel(p.Preset));
+    }
+
+    /// <summary>Keep the chat provider unchanged; find a configured image provider with valid credentials.</summary>
+    public static AiProviderConfig? PickImageProvider(AiProviderConfig chat, IEnumerable<AiProviderConfig> configured)
+    {
+        static bool Ready(AiProviderConfig p) =>
+            DrawsImages(p) && (!Presets.TryGetValue(p.Preset, out var preset) || !preset.NeedsKey || !string.IsNullOrWhiteSpace(p.ApiKey));
+        return Ready(chat) ? chat : configured.FirstOrDefault(Ready);
     }
 
     /// <summary>The file extension of a picture's bytes (PNG, JPEG or WebP), or null when they are not one.</summary>
@@ -588,10 +597,15 @@ public sealed class AssistantProviders
         var m = string.IsNullOrWhiteSpace(model) ? preset : model.Trim();
         if (m.Length == 0) throw new AiProviderException("Informe o modelo de imagem do servidor.");
         if (string.IsNullOrWhiteSpace(prompt)) throw new AiProviderException("Descreva a imagem.");
-        var body = new JsonObject { ["model"] = m, ["prompt"] = prompt, ["n"] = 1, ["size"] = size };
-        // the gpt-image models always answer in base64 and refuse the field; the others need it, or they send a link
-        if (!m.StartsWith("gpt-image", StringComparison.Ordinal)) body["response_format"] = "b64_json";
-        var url = Join(p.BaseUrl, "/images/generations");
+        bool openRouter = p.Preset == "openrouter";
+        // OpenRouter's dedicated Image API uses aspect_ratio; OpenAI and Gemini use size.
+        var body = openRouter
+            ? new JsonObject { ["model"] = m, ["prompt"] = prompt, ["aspect_ratio"] = size switch
+                { "1536x1024" => "3:2", "1024x1536" => "2:3", _ => "1:1" } }
+            : new JsonObject { ["model"] = m, ["prompt"] = prompt, ["n"] = 1, ["size"] = size };
+        // GPT Image models answer as base64 and refuse response_format. Gemini needs it.
+        if (!openRouter && !m.StartsWith("gpt-image", StringComparison.Ordinal)) body["response_format"] = "b64_json";
+        var url = Join(p.BaseUrl, openRouter ? "/images" : "/images/generations");
         using var res = await RequestAsync(p, url, () => Post(url, body, OpenAiHeaders(p)), cancel);
         JsonNode? j;
         try { j = JsonNode.Parse(await res.Content.ReadAsStringAsync(cancel)); }
