@@ -42,9 +42,10 @@
     {
       "kind": "human",
       "check": "Android físico: mudar a cor, a borda e o ícone de uma caixa, mudar a ordem das caixas e reabrir o app",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/urbe/csharp/src/Urbe.Core/AreaLayout.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Core/AreaLayout.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-23 (Issue https://github.com/AbnerCruz/Ecosystem/issues/672); registro em docs/governance/responses/VAL-HO-20261022-urbe-caixas-uc85-767328f3c3cc.md."
     }
   ],
   "known_issues": [
