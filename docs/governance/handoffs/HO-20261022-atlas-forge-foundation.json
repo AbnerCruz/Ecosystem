@@ -109,10 +109,10 @@
     {
       "check": "Android físico: layout, toque, desempenho percebido e lifecycle",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "docs/proposals/atlas-forge/README.md",
       "critical": false,
-      "evidence": "Nenhum aparelho Android disponibilizado. Roteiro em docs/proposals/atlas-forge/docs/GUIDE.md; emulação não equivale a DEVICE."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-23 (Issue https://github.com/AbnerCruz/Ecosystem/issues/682); registro em docs/governance/responses/VAL-HO-20261022-atlas-forge-foundation-64efda21cd10.md."
     }
   ],
   "known_issues": [
