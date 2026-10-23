@@ -2,6 +2,14 @@ import { chromium } from "playwright";
 import { build } from "esbuild";
 import { generate } from "../src/generation/pipeline.js";
 import { definition } from "../src/core/world.js";
+const terrainWorker = (
+  await build({
+    entryPoints: ["src/rendering/surface-worker.js"],
+    bundle: true,
+    write: false,
+    format: "iife",
+  })
+).outputFiles[0].text;
 const js = (
   await build({
     stdin: {
@@ -13,6 +21,7 @@ const js = (
     write: false,
     format: "iife",
     globalName: "AtlasRender",
+    define: { __TERRAIN_WORKER_SOURCE__: JSON.stringify(terrainWorker) },
   })
 ).outputFiles[0].text;
 const { world, derived } = generate(definition("RENDER-BENCHMARK", {}, 720));
@@ -37,7 +46,7 @@ try {
   console.log(
     JSON.stringify(
       await page.evaluate(
-        ({ world, derived }) => {
+        async ({ world, derived }) => {
           const renderer = new AtlasRender.MapRenderer(
             document.getElementById("map"),
           );
@@ -56,6 +65,13 @@ try {
               const cold = performance.now();
               renderer.render();
               const coldMs = performance.now() - cold;
+              const waitStart = performance.now();
+              while (renderer.canvas.dataset.terrainReady !== "true") {
+                if (performance.now() - waitStart > 60000)
+                  throw new Error("Terrain readiness timeout");
+                await new Promise((resolve) => setTimeout(resolve, 25));
+              }
+              const readyMs = performance.now() - cold;
               const samples = [];
               for (let i = 0; i < 12; i++) {
                 const t = performance.now();
@@ -67,6 +83,8 @@ try {
               samples.sort((a, b) => a - b);
               out.projections[`${projection}@${zoom}x`] = {
                 coldMs,
+                readyMs,
+                cachedTiles: renderer.surface.cache.size,
                 medianMs: samples[6],
                 p95Ms: samples[11],
               };

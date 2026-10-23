@@ -20,6 +20,7 @@ Fonte: [mandato do proprietário](../../docs/proposals/atlas-forge/MISSION.md), 
 | AF-REQ-15 | Criar terreno até 1.440 × 720 e refinar mundos existentes preservando autoria e retorno | Refinamento em Worker; teste de footprints e restauração integral do marco |
 | AF-REQ-16 | Aproximar do planeta até chão com amostras locais ≤1 m, sem alocar o planeta inteiro | Campo contínuo, tiles em Worker, cache LRU e teste offline planeta/região/terreno/grama |
 | AF-REQ-17 | Terreno e altitude não mudam ao trocar LOD ou cruzar tiles/costura | Campo em coordenadas esféricas, residual ancorado e testes de continuidade/reabertura |
+| AF-REQ-19 | Aproximar e afastar percorrem a mesma superfície e paleta; pais permanecem durante carregamento; retorno reproduz a imagem | AF-018, pirâmide única do planeta ao chão, wheel e evidência em vídeo |
 | AF-REQ-18 | Insolação diária/sazonal em W/m² e balanço global S/4 do modelo circular | AF-016, campo por latitude, editor/inspetor/viewer e testes |
 | AF-REQ-12 | Limites científicos e tecnológicos são claros | Classificação A/B na UI e em MODELS.md; sem DEVICE alegado |
 
@@ -42,3 +43,7 @@ Refinar é uma regeneração explícita em 1.440 × 720 com a mesma seed e algor
 O proprietário reafirmou física/geologia/meteorologia/química/ecologia e explicitou que quer aproximar até o tile de grama. Respondeu: natureza por seed, lugares opcionais; física natural, magia opcional configurável. O [prompt de execução atualizado](../../docs/proposals/atlas-forge/PROMPT_EXECUCAO.md) registra essas escolhas e remete ao mandato completo.
 
 O terreno local é um campo procedural contínuo em metros, derivado da seed, da grade regional e do algoritmo versionado. O renderer gera blocos sob demanda em Worker e conserva até 96 no LRU; o nível mais fino tem espaçamento N–S ≤1 m. O zoom passa a depender de escala métrica, com presets Planeta/Região/Terreno/Chão; não termina em 128×. A grade física global continua explícita para clima/drenagem. Dados locais não são apresentados como tectônica ou ecologia simuladas. Pincéis atuais são regionais e ficam bloqueados no detalhe para evitar alterações enormes acidentais; edição métrica persistente é o próximo item de dados, ainda pendente.
+
+## Correção AF-018 — Issue #687
+
+O proprietário rejeitou a troca de visualização entre zoom distante e próximo. Requisito: uma única superfície visual em todas as escalas naturais, com continuidade de altura, cobertura, posição e carregamento. Removido o limiar global/local do renderer; pais/filhos usam o mesmo campo e paleta. Atalhos são coordenadas de câmera, nunca modos. Teste específico percorre ida/volta por eventos wheel, sem depender dos atalhos. Esta correção não declara completos edição métrica, tectônica, ecologia ou eras.

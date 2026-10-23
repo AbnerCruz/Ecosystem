@@ -1,0 +1,153 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-atlas-forge-unified-zoom",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T10:14:22.685473Z",
+  "agent": {
+    "id": "codex-atlas-forge",
+    "kind": "ai-agent"
+  },
+  "task_id": "AF-018",
+  "component": "atlas-forge",
+  "state": "review",
+  "branch": "fix/atlas-forge-unified-zoom",
+  "base_commit": "4d37983dd1485cf0b130fefcdd3d15519291a0d7",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/atlas-forge/README.md",
+    "apps/atlas-forge/ROADMAP.md",
+    "apps/atlas-forge/SPEC.md",
+    "apps/atlas-forge/docs/GUIDE.md",
+    "apps/atlas-forge/docs/TERRAIN.md",
+    "apps/atlas-forge/index.html",
+    "apps/atlas-forge/package-lock.json",
+    "apps/atlas-forge/package.json",
+    "apps/atlas-forge/scripts/render-benchmark.mjs",
+    "apps/atlas-forge/src/app/editor.js",
+    "apps/atlas-forge/src/publishing/export.js",
+    "apps/atlas-forge/src/rendering/map.js",
+    "apps/atlas-forge/src/rendering/surface-field.js",
+    "apps/atlas-forge/src/rendering/surface.js",
+    "apps/atlas-forge/tests/zoom-browser.mjs",
+    "docs/governance/handoffs/HO-20261023-atlas-forge-unified-zoom.json",
+    "docs/proposals/atlas-forge/PROMPT_EXECUCAO.md"
+  ],
+  "work_completed": [
+    "O proprietário rejeitou a troca de visualização ao aproximar/afastar. AF-REQ-19 e prompt registram continuidade do mesmo terreno, materiais, posições e imagem no retorno. Issue #687.",
+    "Uma pirâmide de tiles para Atlas natural e Altitude desde o planeta até metros. Removido o limiar de 1500 m/pixel e a paleta global alternativa nessas camadas. Camadas de dados científicos e máscara autoral preservam suas grandezas.",
+    "Ancestrais residentes e requisitados antes dos filhos, cache limitado a 96, transição temporal de 180 ms combinada com fração contínua de LOD, grama com entrada gradual. Textura fina ancorada em coordenadas físicas, sem sorteio dependente de nível.",
+    "Globo usa projeção inversa por pixel da mesma pirâmide, cobrindo limbo/polos. Câmera métrica converge para a escala solicitada; atalhos são descritos como zoom. Rios não desaparecem no antigo limiar.",
+    "Teste específico usa wheel em ida/volta sem atalhos, mede âncora/altura/pixels/ausência de buracos durante carregamento e grava vídeo. Publicação usa o mesmo renderer offline."
+  ],
+  "verification": [
+    {
+      "check": "npm run check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "npm run check passou: 25 testes, 14 regressões, fluxo multiescala e wheel em 26 passos de ida/volta. Âncora/altura preservadas, hash de pixels idêntico na volta, nenhuma área vazia durante carregamento; ΔRGB médio 0,023 no antigo limiar; 6.035 amostras do globo sem buracos. Logs, relatório e vídeo em test-results/unified-check.log, zoom-continuity-report.json e zoom-continuity.webm."
+    },
+    {
+      "check": "npm run benchmark:render",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Benchmark concluído com Worker real e espera de terrainReady; tempos de carregamento e renders síncronos separados em test-results/unified-render.log. Não é alegação de 60 fps ou DEVICE."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks passaram em apps/atlas-forge/test-results/unified-consistency.log, após retomada do ambiente."
+    },
+    {
+      "check": "Experiência visual e Android físico",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/atlas-forge/docs/TERRAIN.md",
+      "critical": false,
+      "evidence": "Vídeo e capturas de revisão não substituem a validação do proprietário ou aparelho físico."
+    }
+  ],
+  "known_issues": [
+    "Campo procedural heurístico; solvers regionais e ausência de tectônica/ecologia/erosão física fina permanecem declarados.",
+    "Pincéis atuais alteram a grade regional e são bloqueados em escalas próximas; edição métrica persistente continua pendente.",
+    "A leitura das camadas climáticas/bacias/máscaras mostra sua grade de dados; continuidade de superfície vale para Atlas natural e Altitude."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar CI e integrador do PR, sem merge manual; entregar HTML 0.4.1, código e vídeo do percurso.",
+    "Revisão humana visual do artefato e Android físico permanecem separados dos checks. Demais sistemas científicos e autoria métrica seguem seus itens do roadmap."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "docs/adr/0035-atlas-forge-incorporacao-gradual.md",
+    "docs/governance/addenda/ADD-0031-atlas-forge-no-ecosystem.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/atlas-forge/AGENTS.md",
+    "apps/atlas-forge/SPEC.md",
+    "apps/atlas-forge/ROADMAP.md",
+    "apps/atlas-forge/docs/MODELS.md",
+    "apps/atlas-forge/docs/FORMAT.md",
+    "apps/atlas-forge/docs/TERRAIN.md",
+    "docs/proposals/atlas-forge/MISSION.md",
+    "docs/proposals/atlas-forge/PROMPT_EXECUCAO.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Mesmo campo versionado e alturas autorais; tiles são caches derivados."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Mudança local em Atlas Forge, sem dependências de outro Product."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Editor e viewer offline, Worker empacotado."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #687, branch e handoff próprios."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Pedido de continuidade persistido em SPEC, TERRAIN e prompt."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Formato e algoritmo de altura preservados; somente desenho, cache e câmera."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação humana/Android permanece separada de checks."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Review depende das evidências finais; sem conclusão global alegada."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Mesmo renderer usado internamente em editor/viewer, sem extração especulativa."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "continuous-terrain-rendering",
+      "status": "possible-candidate",
+      "rationale": "Há dois consumidores internos do mesmo Product; nenhum consumidor de outro Product que justifique contrato ou Tool global."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Correção local de renderização/câmera autorizada, sem mudança de formato, boundary, ownership, política ou release de produção."
+  },
+  "cost": null
+}

@@ -19,7 +19,7 @@ Para refinar um projeto de menor resolução, use **Refinar grade regional para 
 
 ## Do planeta ao chão
 
-Selecione um ponto de terra (clicando ou por coordenadas) e use **Escala**: Planeta, Região, Terreno ou Chão. A aproximação gera blocos de relevo; espere a indicação de carregamento terminar. Em Chão, as amostras chegam a ≤1 m N–S; em áreas de grama aparecem seus tufos. Altitude e área da amostra locais são consultáveis, com coordenadas de sete casas decimais. A camada Altitude no detalhe inclui curvas derivadas das alturas locais.
+Aproxime um ponto de terra com a roda do mouse, +/− ou gesto de dois dedos. O mapa permanece o mesmo em todo o percurso. **Atalhos de zoom** apenas posiciona essa câmera em escalas métricas; não abre outra visualização. O terreno já visível permanece enquanto chegam detalhes. Perto do chão, as amostras chegam a ≤1 m N–S; em áreas de grama aparecem seus tufos. Altitude e área da amostra locais são consultáveis, com coordenadas de sete casas decimais. A camada Altitude no detalhe inclui curvas derivadas das alturas locais.
 
 O campo é o mesmo ao aproximar/recuar ou arrastar. A grade de clima/drenagem continua global, identificada no inspetor. **Elevar/Escavar** ainda editam essa grade regional: no detalhe ficam bloqueados para não alterar uma região inteira por acidente. Posicionar um lugar, notas e exploração funcionam no detalhe. Há tipos Acampamento, Templo, Porto e Reino · sede; a sede não cria uma fronteira territorial.
 

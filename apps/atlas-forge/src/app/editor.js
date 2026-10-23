@@ -567,7 +567,7 @@ function paint(p, pressure) {
 }
 $("map").onpointerdown = (e) => {
   if (busy || !world || e.button !== 0 || drag) return;
-  if (renderer.detailActive && ["raise", "lower"].includes(tool)) {
+  if (renderer.metresPerPixel() < 1500 && ["raise", "lower"].includes(tool)) {
     status(
       "Este pincel altera a grade regional. Afaste para editar relevo regional; edição métrica do solo ainda não está disponível.",
     );

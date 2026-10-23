@@ -217,8 +217,20 @@ export function generateSurfaceTile(ctx, z, x, y) {
         0.35,
         1.3,
       );
+      // Stable physical texture, band-limited by the pixel footprint. Never seed by LOD.
+      const p = tileCoordinates(z, x, y, (i + 0.5) / size, (j + 0.5) / size);
+      const phi = p.lat * RAD,
+        lambda = p.lon * RAD,
+        r = ctx.radius / 0.7;
       const grain =
-        ((hash32(x * size + i, y * size + j, z, ctx.seed) % 19) - 9) * 0.55;
+        4 *
+        clamp(1 - metres / 3, 0, 1) *
+        noise(
+          r * Math.cos(phi) * Math.cos(lambda),
+          r * Math.sin(phi),
+          r * Math.cos(phi) * Math.sin(lambda),
+          ctx.seed + 90001,
+        );
       const c = palette[m];
       for (let a = 0; a < 3; a++)
         rgba[(j * size + i) * 4 + a] = clamp(
