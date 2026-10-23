@@ -568,12 +568,45 @@ public sealed class AssistantProviders
         return p.Kind == "openai" && !string.IsNullOrWhiteSpace(ImageModel(p.Preset));
     }
 
-    /// <summary>Keep the chat provider unchanged; find a configured image provider with valid credentials.</summary>
-    public static AiProviderConfig? PickImageProvider(AiProviderConfig chat, IEnumerable<AiProviderConfig> configured)
+    /// <summary>Explicit provider selection wins. Auto mode preserves the existing provider fallback.</summary>
+    public static AiProviderConfig? PickImageProvider(AiProviderConfig chat, IEnumerable<AiProviderConfig> configured,
+        string? selectedProviderId = null, string? selectedModel = null)
     {
-        static bool Ready(AiProviderConfig p) =>
-            DrawsImages(p) && (!Presets.TryGetValue(p.Preset, out var preset) || !preset.NeedsKey || !string.IsNullOrWhiteSpace(p.ApiKey));
-        return Ready(chat) ? chat : configured.FirstOrDefault(Ready);
+        static bool Credentials(AiProviderConfig p) =>
+            !Presets.TryGetValue(p.Preset, out var pre) || !pre.NeedsKey || !string.IsNullOrWhiteSpace(p.ApiKey);
+        static bool Supports(AiProviderConfig p, string? model) =>
+            Resolve(p).Kind == "openai" && (DrawsImages(p) || (p.Preset == "custom" && !string.IsNullOrWhiteSpace(model)));
+
+        if (!string.IsNullOrWhiteSpace(selectedProviderId))
+        {
+            var chosen = configured.FirstOrDefault(p => p.Id == selectedProviderId);
+            return chosen is not null && Credentials(chosen) && Supports(chosen, selectedModel) ? chosen : null;
+        }
+        return Credentials(chat) && Supports(chat, null) ? chat : configured.FirstOrDefault(p => Credentials(p) && Supports(p, null));
+    }
+
+    /// <summary>Only show image-capable models: OpenRouter exposes a dedicated image catalog.</summary>
+    public async Task<List<AiModelInfo>> ListImageModelsAsync(AiProviderConfig cfg, CancellationToken cancel = default)
+    {
+        var p = Resolve(cfg);
+        if (p.Kind != "openai") throw new AiProviderException("Este provedor não tem API de imagens compatível.");
+        if (p.Preset == "gemini")
+            return ["gemini-2.5-flash-image", "gemini-3-pro-image-preview"]
+                .Select(m => new AiModelInfo(m, m, null, null, null)).ToList();
+        if (p.Preset == "openrouter")
+        {
+            var url = Join(p.BaseUrl, "/images/models");
+            using var res = await RequestAsync(p, url, () => Get(url, OpenAiHeaders(p)), cancel);
+            var json = JsonNode.Parse(await res.Content.ReadAsStringAsync(cancel)) as JsonObject;
+            return (json?["data"] as JsonArray ?? []).OfType<JsonObject>()
+                .Select(m => new AiModelInfo((string?)m["id"] ?? "", (string?)m["name"] ?? (string?)m["id"] ?? "", null, null, null))
+                .Where(m => m.Id.Length > 0).ToList();
+        }
+        var catalog = await OpenAiModelsAsync(p, cancel);
+        return catalog.Where(m => m.Id.Contains("image", StringComparison.OrdinalIgnoreCase) ||
+                                  m.Id.Contains("imagen", StringComparison.OrdinalIgnoreCase) ||
+                                  m.Id.Contains("flux", StringComparison.OrdinalIgnoreCase) ||
+                                  m.Id.Contains("seedream", StringComparison.OrdinalIgnoreCase)).ToList();
     }
 
     /// <summary>The file extension of a picture's bytes (PNG, JPEG or WebP), or null when they are not one.</summary>
@@ -591,7 +624,7 @@ public sealed class AssistantProviders
     {
         var p = Resolve(cfg);
         if (p.Kind != "openai" || ImageModel(p.Preset) is not { } preset)
-            throw new AiProviderException(p.Name + " não gera imagens. Use OpenAI, Google Gemini ou um servidor compatível que gere.");
+            throw new AiProviderException(p.Name + " não gera imagens pela API configurada. Escolha um provedor de imagens compatível.");
         if (p.BaseUrl.Length == 0) throw new AiProviderException("Informe o endereço (URL base) do provedor " + p.Name + ".");
         if (Presets.TryGetValue(p.Preset, out var pre) && pre.NeedsKey && p.ApiKey.Length == 0) throw new AiProviderException("Configure a chave de " + p.Name + " nas configurações do Assistente.");
         var m = string.IsNullOrWhiteSpace(model) ? preset : model.Trim();
