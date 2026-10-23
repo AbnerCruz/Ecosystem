@@ -157,6 +157,29 @@ try {
   results.push(
     "Authored place, SHA-256 Markdown snapshot, hostile content escaped, persistent child map",
   );
+  await page.evaluate(
+    (source) => {
+      const transfer = new DataTransfer();
+      transfer.items.add(
+        new File([source], "cancelled-import.json", {
+          type: "application/json",
+        }),
+      );
+      const input = document.getElementById("project-file");
+      input.files = transfer.files;
+      input.dispatchEvent(new Event("change"));
+      document.getElementById("cancel").click();
+    },
+    JSON.stringify({
+      ...finalProject,
+      state: { ...finalProject.state, name: "IMPORT CANCELLED" },
+    }),
+  );
+  await page.waitForTimeout(300);
+  assert.deepEqual(await saveProject(), finalProject);
+  results.push(
+    "Cancelling asynchronous import prevents late data from replacing the committed world",
+  );
   await page.locator("#project-file").setInputFiles({
     name: "world.json",
     mimeType: "application/json",

@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261022-atlas-forge-cartographic-quality",
   "category": "HANDOFF",
-  "timestamp": "2026-10-23T00:02:19.681785Z",
+  "timestamp": "2026-10-23T00:05:06.394172Z",
   "agent": {
     "id": "codex-atlas-forge",
     "kind": "ai-agent"
@@ -54,8 +54,7 @@
       "check": "npm run check",
       "kind": "automated",
       "result": "passed",
-      "evidence": "20 testes de domínio/compatibilidade/câmera e 13 cenários E2E passaram; incluindo refinamento 720→1440 via Worker/UI, rejeição de checkpoint acima de 24 MiB, retorno integral à grade original e viewer offline com zoom >20×. Execução final completa aprovada após ajuste de legenda.",
-      "tested_commit": "d65b6baa"
+      "evidence": "20 testes de domínio/compatibilidade/câmera e 14 cenários E2E passaram; incluindo refinamento 720→1440 via Worker/UI, rejeição de checkpoint acima de 24 MiB, retorno integral à grade original e viewer offline com zoom >20×. Execução final completa aprovada após ajuste de legenda. Regressão adicional: cancelar importação assíncrona impede commit tardio; restauração inicial também respeita o job atual."
     },
     {
       "check": "npm run benchmark e npm run benchmark:render",

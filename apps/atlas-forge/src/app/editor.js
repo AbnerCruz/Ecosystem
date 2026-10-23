@@ -840,13 +840,16 @@ bindPinch($("map"), renderer, () => {
 });
 new ResizeObserver(() => renderer.render()).observe($("map"));
 async function init() {
+  const request = job;
   try {
     const saved = await loadLocal();
+    if (request !== job) return;
     if (saved) {
       deriveDraft(saved);
       return;
     }
   } catch {
+    if (request !== job) return;
     status("Armazenamento local indisponível; use exportação JSON.");
   }
   $("empty-state").hidden = false;

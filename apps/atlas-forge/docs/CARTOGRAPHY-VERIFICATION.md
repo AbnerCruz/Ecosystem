@@ -11,7 +11,7 @@ Pedido: Issue [#660](https://github.com/AbnerCruz/Ecosystem/issues/660). Fonte c
 - Globo com viewport 1.000×750 em DPR 2: projeção em 2.000×1.500 pixels, células nativas adjacentes distinguíveis em zoom 16×. O teste anterior com textura global 640 não passaria nesse critério.
 - Dois dedos em sequência de eventos touch do Chromium aumentam zoom e deslocam centro sem confirmar um pincel. Não substitui aparelho real.
 - Refinamento conserva altitudes na pegada dos overrides, entidades e fonte original sem mutação. Roundtrip e retorno ao marco restauram grade, estado e diário completos.
-- E2E: pincel/undo/redo, regeneração, cancelamento, marcos/ramificação, nota hostil/hash, JSON, versão futura, persistência IndexedDB, editor/viewer offline e viewport móvel. Cenário adicional percorre refinamento 720→1.440, limite de checkpoint e restauração na interface.
+- E2E (14 cenários): cancelamento de importação assíncrona impede commit tardio; pincel/undo/redo, regeneração, cancelamento, marcos/ramificação, nota hostil/hash, JSON, versão futura, persistência IndexedDB, editor/viewer offline e viewport móvel. Cenário adicional percorre refinamento 720→1.440, limite de checkpoint e restauração na interface.
 
 Comandos: `npm run check`, `npm run benchmark`, `npm run benchmark:render`; consistência: `dotnet run tests/consistency/Check.cs`. Logs e capturas são produzidos em `test-results` e no artefato CI; handoff registra o resultado final e o commit/PR.
 

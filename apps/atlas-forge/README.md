@@ -33,7 +33,7 @@ npm run benchmark
 npm run benchmark:render
 ```
 
-`check` executa formatação, 20 testes de domínio, compatibilidade, câmera e boundaries, build e 13 cenários em Chromium, incluindo editor/viewer por `file://` com rede desativada. Evidências: [entrega inicial](../../docs/proposals/atlas-forge/docs/VERIFICATION.md); os caminhos de código anteriores no relatório são históricos. Android físico continua pendente.
+`check` executa formatação, 20 testes de domínio, compatibilidade, câmera e boundaries, build e 14 cenários em Chromium, incluindo editor/viewer por `file://` com rede desativada. Evidências: [entrega inicial](../../docs/proposals/atlas-forge/docs/VERIFICATION.md); os caminhos de código anteriores no relatório são históricos. Android físico continua pendente.
 
 ## Documentação e limites
 
