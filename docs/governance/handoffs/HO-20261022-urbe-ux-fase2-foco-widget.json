@@ -10,7 +10,7 @@
   },
   "task_id": "UC-69",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "ccr-ux-fase2",
   "base_commit": "3dd2125a",
   "commit": null,

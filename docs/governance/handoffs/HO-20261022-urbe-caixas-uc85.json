@@ -10,7 +10,7 @@
   },
   "task_id": "UC-85",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "ccr-2e1b58fa-7mhpmx",
   "base_commit": "989d5a20",
   "commit": null,

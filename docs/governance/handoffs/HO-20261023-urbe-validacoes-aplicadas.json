@@ -1,0 +1,88 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-validacoes-aplicadas",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T08:11:02Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-72",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "5f5fad6d",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/Ui/UrbeMotion.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Constellation.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ConstellationTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261016-urbe-teclado-e-observacoes.json",
+    "docs/governance/handoffs/HO-20261016-urbe-ux-fundacao.json",
+    "docs/governance/handoffs/HO-20261022-urbe-agente-na-nota.json",
+    "docs/governance/handoffs/HO-20261022-urbe-agentes-com-nome.json",
+    "docs/governance/handoffs/HO-20261022-urbe-apostila-em-paginas.json",
+    "docs/governance/handoffs/HO-20261022-urbe-arrastar-caixas.json",
+    "docs/governance/handoffs/HO-20261022-urbe-caixas-uc85.json",
+    "docs/governance/handoffs/HO-20261022-urbe-constelacao.json",
+    "docs/governance/handoffs/HO-20261022-urbe-explorer-virtualizado.json",
+    "docs/governance/handoffs/HO-20261022-urbe-marca-ia-paginas.json",
+    "docs/governance/handoffs/HO-20261022-urbe-primeira-abertura.json",
+    "docs/governance/handoffs/HO-20261022-urbe-renomear-no-lugar.json",
+    "docs/governance/handoffs/HO-20261022-urbe-ux-fase2-foco-widget.json",
+    "docs/governance/handoffs/HO-20261023-urbe-apagar-pasta-em-lote.json",
+    "docs/governance/handoffs/HO-20261023-urbe-arrastar-secoes.json",
+    "docs/governance/handoffs/HO-20261023-urbe-barra-do-editor.json",
+    "docs/governance/handoffs/HO-20261023-urbe-bloco-no-lugar.json",
+    "docs/governance/handoffs/HO-20261023-urbe-comentar-palavra.json",
+    "docs/governance/handoffs/HO-20261023-urbe-saida-animada.json",
+    "docs/governance/handoffs/HO-20261023-urbe-validacoes-aplicadas.json"
+  ],
+  "work_completed": [
+    "Validações aprovadas pelo proprietário no portal aplicadas: UC-35, UC-49, UC-57, UC-58, UC-72, UC-81, UC-82 e UC-85 viram [x] no ROADMAP C#; os handoffs dessas e das outras UC aprovadas cujas verificações humanas estão todas aprovadas passam a done. UC-61, 65, 69, 77, 78, 80, 83 e 84 seguem [ ] porque ainda têm verificação humana pendente em outro handoff.",
+    "UC-72: medição com 5.000 notas; uma estrela nova não cai mais em cima de outra quando as regiões se sobrepõem (MinGap), sem mover as já postas.",
+    "UrbeMotion.Ghost não descarta mais à mão o bitmap da imagem de saída (suspeito da queda do processo de teste vista uma vez no CI)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (678) e Urbe.Client.Tests (217); consistência",
+      "result": "passed",
+      "evidence": "FiveThousandNotesGetTheirSkyQuicklyAndApart e os demais testes da Constelação; Ux_TheEditorAndThePhoneDrawerSlideAwayWhenTheyClose."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Aguardar DEC-0055 (UC-62) e as validações pendentes no portal."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Só viram [x] os itens cujas verificações humanas o proprietário aprovou no portal; os que têm verificação pendente em outro handoff ficam [ ]."
+    },
+    {
+      "id": "NN-001",
+      "evidence": ".urbe/constelacao.json continua derivado das notas; posições já gravadas não mudam."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "roadmap-state",
+      "status": "product-specific",
+      "rationale": "Estado do ROADMAP do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "ROADMAP, handoffs, posicionamento de estrelas novas e uma limpeza de animação; nada de vault, decisão ou workflow."
+  }
+}

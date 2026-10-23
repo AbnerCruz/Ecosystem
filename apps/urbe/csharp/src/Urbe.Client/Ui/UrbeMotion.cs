@@ -128,7 +128,9 @@ public static class UrbeMotion
         UseTransitions(ghost, M.Fast, M.EaseIn);
         ghost.Opacity = 0;
         ghost.RenderTransform = Shift(dx, dy);
-        DispatcherTimer.RunOnce(() => { host.Children.Remove(ghost); ghost.Source = null; bitmap.Dispose(); }, M.Fast + TimeSpan.FromMilliseconds(30));
+        // the picture is only let go, never disposed here: the compositor may still hold its last frame, and freeing the
+        // native surface under it is the likely cause of a test process crash seen once on CI; the runtime frees it later
+        DispatcherTimer.RunOnce(() => { host.Children.Remove(ghost); ghost.Source = null; }, M.Fast + TimeSpan.FromMilliseconds(30));
         return ghost;
     }
 
