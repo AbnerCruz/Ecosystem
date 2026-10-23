@@ -163,7 +163,7 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
   - **Nota sem ligações:** o painel ensina a criar uma com `[[`.
   - **Só leitura:** olhar as conexões não grava nada no vault.
   Provado por `LinkGraphTests` e `HeadlessUiTests.Connections_ShowTheLocalGraphAndAPointOpensItsNote`.
-  **Falta:** validação no aparelho (NN-017) e o foco ao tocar (escurecer o resto), que entra com a constelação.
+  O foco ao tocar (escurecer o resto) é o da Constelação: o painel ganhou **Ver na Constelação** (estrela no cabeçalho), que abre o céu centrado na nota aberta, em foco (23/10/2026, `ConstellationView.FocusOn`). **Falta:** validação no aparelho (NN-017).
 - [x] UC-72 — **Constelação do vault** (DEC-0052, ADD-0029; depois do UC-71). Uma tela para passear pelas notas como um céu à noite, nunca a base do app. **Solução:**
   - **Posições estáveis:** calculadas uma vez e só ajustadas para notas novas. Elas ficam num arquivo novo e derivado das notas, que declara a sua fonte (NN-001), nunca no `mapa.json` nem no `mundo.json`.
   - **Pastas:** cada pasta é uma região de névoa suave na sua cor.
@@ -234,7 +234,7 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
     - Tipos presentes ali como etiquetas (Tudo, Notas, Páginas, Imagens, PDF, Mídia, Outros) e as tags mais usadas (#tag, toque de novo para tirar). Com um filtro, a caixa mostra também o que está nas subpastas, e a raiz agrupa por projeto.
     - Ordem por recentes, nome ou criação (`WorkspaceIndex.Arrange`), e grade ou lista: linhas com ícone, título, pasta e data, com o mesmo toque e o mesmo segurar dos cartões.
     - Provado por `ItemsAreFilteredByKindAndTagAndOrdered` e `Workspace_FiltersByKindAndTagOrdersAndShowsAsAList`.
-    - **Falta:** guardar a ordem e o modo de cada projeto (UC-85).
+    - Guardar a ordem e o modo de cada projeto entrou com a UC-85 (`ordem` e `lista` de cada caixa em `.urbe/area.json`). **Falta:** validação no aparelho.
   - **Fatia 4 (feita, 22/10/2026):** no computador, um cartão arrastado com o mouse segue o ponteiro e, solto sobre outra caixa (ou uma subpasta dela, ou Soltas), vai para aquela pasta, pelas mesmas mudanças verificadas do Explorer; a caixa de destino fica marcada durante o arrasto e soltar não abre nada. O cabeçalho de um projeto arrastado sobre outro toma o lugar dele (`AreaLayout.MoveTo`, em `.urbe/area.json`). No celular, segurar continua abrindo a folha do item. Provado por `Workspace_ACardDraggedOntoAnotherBoxMovesThere` e `ABoxDraggedOntoAnotherTakesItsPlace`.
 - [x] UC-85 — **Personalizar e organizar as caixas** (DEC-0053, ADD-0030). Cor, estilo da borda (contínua, tracejada, dupla, brilho), ícone, ordem das caixas e modo de exibição de cada projeto. **Solução:** guardados em `.urbe/area.json`, que só guarda apresentação, indexada pelo caminho da pasta e atualizada quando o app renomeia ou move a pasta (NN-001: as pastas continuam a autoridade do conteúdo); sem o arquivo, cores de uma paleta estável pelo nome da pasta e ordem alfabética. `.urbe/mapa.json` e `.urbe/mundo.json` continuam intocados.
   - **Feito (22/10/2026):** no "⋯" de um projeto na Área de trabalho:

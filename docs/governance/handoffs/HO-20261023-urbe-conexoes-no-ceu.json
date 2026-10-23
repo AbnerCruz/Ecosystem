@@ -1,0 +1,73 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-conexoes-no-ceu",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T10:35:52Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-71",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "3b2654e2",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/ConnectionsPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ConstellationView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Constellation.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ConnectionsUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261023-urbe-conexoes-no-ceu.json"
+  ],
+  "work_completed": [
+    "UC-71: Ver na Constelação no painel Conexões — o céu abre centrado na nota aberta, em foco (ligações acesas, resto escurecido).",
+    "UC-84: a pendência 'guardar a ordem e o modo de cada projeto' já estava feita pela UC-85; ROADMAP atualizado."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (Connections_*)",
+      "result": "passed",
+      "evidence": "Connections_ShowTheLocalGraphAndAPointOpensItsNote estendido (Ver na Constelação foca a nota)."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, abrir Conexões de uma nota e tocar na estrela para ver a nota no céu",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/ConnectionsPanel.cs"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "UC-60 limites na suíte; UC-20 tema; UC-55 barra perto do teclado; UC-56/66 Windows."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Aparelho pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "connections-sky",
+      "status": "product-specific",
+      "rationale": "Conexões do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Feature autorizada pela DEC-0055; motor de páginas atrás de UrbeMarks; nada de vault ou workflow."
+  }
+}

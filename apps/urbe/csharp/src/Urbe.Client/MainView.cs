@@ -61,6 +61,12 @@ public sealed partial class MainView : Grid
             await going;
         };
         // UC-71: a point or a row of Conexões opens its note, and the graph follows it (it joins the trail, like a backlink)
+        Editor.Connections.SkyRequested += () =>
+        {
+            if (StillReading() || Editor.Current is not { } open || _store?.Get(open.Path) is not { } doc) return;
+            Editor.Connections.IsVisible = false;
+            _ = ShowConstellationAsync(doc.Id);
+        };
         Editor.Connections.NoteChosen += async path =>
         {
             var going = Editor.NavigateAsync(new CityNote(path, _contents.GetValueOrDefault(path, "")));
@@ -1112,7 +1118,7 @@ public sealed partial class MainView : Grid
             new DialogItem("Buscar notas e comandos", UrbeTheme.Icons.SearchUi, "No texto das notas, e tudo o que o Urbe faz", Run: () => { Search.OpenQuickOpen(); return Task.CompletedTask; }),
             new DialogItem("Recentes", UrbeTheme.Icons.Clock, Run: () => { ShowCollection("recent"); return Task.CompletedTask; }),
             new DialogItem("Favoritos", UrbeTheme.Icons.Star, Run: () => { ShowCollection("favorites"); return Task.CompletedTask; }),
-            new DialogItem("Constelação", UrbeTheme.Icons.Star, "As notas como um céu à noite", Run: ShowConstellationAsync),
+            new DialogItem("Constelação", UrbeTheme.Icons.Star, "As notas como um céu à noite", Run: () => ShowConstellationAsync()),
             new DialogItem("Importar arquivos", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync(Explorer.CurrentFolder)),
             new DialogItem("Exportar tudo (.zip)", UrbeTheme.Icons.Download, "Cópia de segurança de todas as notas", Run: () => ExportAsync()),
             new DialogItem("Lixeira", UrbeTheme.Icons.Trash, Detail: (n > 0 ? n.ToString(System.Globalization.CultureInfo.InvariantCulture) : "Nenhum") + " item(ns)",

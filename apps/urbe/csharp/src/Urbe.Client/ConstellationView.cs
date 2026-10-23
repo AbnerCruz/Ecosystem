@@ -108,6 +108,17 @@ public sealed class ConstellationView : Control
         InvalidateVisual();
     }
 
+    /// <summary>UC-71: the sky centred on a note's star, close enough to read, with it in focus (its links lit, the rest dimmed).</summary>
+    public void FocusOn(string id)
+    {
+        if (!_byId.TryGetValue(id, out var s)) return;
+        _fitted = true;
+        _scale = 1.4;
+        _offset = new Vector(s.X, s.Y);
+        _focus = null;
+        Choose(id);
+    }
+
     /// <summary>A tap on the sky: the nearest star within reach (or none: the focus goes away).</summary>
     public void TapAt(Point p)
     {

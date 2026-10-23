@@ -26,7 +26,7 @@ public sealed partial class MainView
     }
 
     /// <summary>Opens the Constelação of the notes on the screen; new notes get their place, written to the vault when it can be.</summary>
-    public async Task ShowConstellationAsync()
+    public async Task ShowConstellationAsync(string? focusId = null)
     {
         if (_store is null) return;
         var sky = Constellation.Parse(_skyText, out var future);
@@ -57,6 +57,7 @@ public sealed partial class MainView
             return new SkyStar(d.Id, d.Path, d.Title, Constellation.ProjectOf(d.Path), x, y, links[d.Id].Count, recent);
         }).ToList();
         SkyPanel.Sky.Show(stars, sky.Regions, id => links.GetValueOrDefault(id) ?? []);
+        if (focusId is not null) SkyPanel.Sky.FocusOn(focusId);
         SkyPanel.IsVisible = true;
     }
 }
