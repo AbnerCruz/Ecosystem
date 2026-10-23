@@ -10,7 +10,7 @@
   },
   "task_id": "UC-62",
   "component": "urbe",
-  "state": "blocked",
+  "state": "review",
   "branch": "ccr-2e1b58fa-7mhpmx",
   "base_commit": "2800f6ea",
   "commit": null,
@@ -33,11 +33,9 @@
     }
   ],
   "known_issues": [],
-  "blockers": [
-    "DEC-0055: o proprietário escolhe o plano do UC-62 no portal."
-  ],
+  "blockers": [],
   "next_actions": [
-    "Depois da decisão: implementar as fatias escolhidas, a partir da Lista de notas."
+    "O proprietário escolhe o plano do UC-62 no portal (DEC-0055); depois, implementar as fatias escolhidas, a partir da Lista de notas."
   ],
   "decisions_required": [
     "DEC-0055"
