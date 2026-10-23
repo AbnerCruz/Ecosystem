@@ -1973,6 +1973,38 @@
       "decidedAt": "2026-10-22",
       "record": "docs/governance/addenda/ADD-0031-atlas-forge-no-ecosystem.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0055",
+      "status": "pending",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Urbe: plano das páginas mais robustas (UC-62)",
+      "context": "O ROADMAP C# diz que o UC-62 (estúdio de páginas como extensão do editor e do Explorer, ferramentas das quais os modelos derivam, ligação com o vault) precisa de plano próprio aprovado pelo proprietário antes de implementar. O plano está em apps/urbe/docs/csharp/PAGES-PLAN.md: quatro fatias (Lista de notas ligada ao vault; Criar página daqui no Explorer; Salvar como modelo; editar todo texto pela prévia), com os oráculos da 1.8.4 intactos e as novidades atrás de opções do motor.",
+      "question": "Qual plano seguir para o UC-62?",
+      "alternatives": [
+        {
+          "option": "A — O plano inteiro, nas quatro fatias, começando pela Lista de notas e por Criar página daqui",
+          "consequences": "Os agentes implementam as fatias em ordem, cada uma com teste, ROADMAP e handoff; o formato .page.json ganha um nó novo (Lista de notas), compatível para frente e mostrado como desconhecido na 1.8.4."
+        },
+        {
+          "option": "B — Só as fatias 1 e 2 (vault e Explorer) agora; modelos e edição pela prévia depois",
+          "consequences": "Entrega a ligação com o vault mais cedo; a inversão ferramenta × modelo fica para uma decisão futura."
+        },
+        {
+          "option": "C — Adiar o UC-62 para depois de fechar a beta",
+          "consequences": "Nada muda nas páginas agora; o UC-62 fica [ ] no ROADMAP."
+        }
+      ],
+      "consequences": "Com A ou B, as fatias aprovadas viram trabalho de rotina (feature autorizada) e seguem pelo integrador; com C, o item fica parado até nova decisão.",
+      "manifestCompatibility": "Preserva NN-001 (as notas continuam a autoridade; a página só guarda a consulta), NN-005 (sem reescrita: o motor da 1.8.4 continua a base, com oráculos), NN-013 e ADD-0028 (nada da simulação). Sem extração para a plataforma (NN-022: product-specific).",
+      "recommendation": "A, começando pelas fatias 1 e 2.",
+      "related": [
+        "apps/urbe/docs/csharp/PAGES-PLAN.md",
+        "apps/urbe/docs/csharp/ROADMAP.md"
+      ],
+      "raisedBy": "claude-code-urbe-native-port",
+      "raisedAt": "2026-10-23"
     }
   ]
 }
