@@ -36,9 +36,10 @@
     {
       "kind": "human",
       "check": "Instalar limpo no aparelho e seguir a configuração inicial",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/urbe/csharp/src/Urbe.Client/FirstRunView.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Client/FirstRunView.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-23 (Issue https://github.com/AbnerCruz/Ecosystem/issues/668); registro em docs/governance/responses/VAL-HO-20261022-urbe-primeira-abertura-eb723c492809.md."
     }
   ],
   "known_issues": [],
