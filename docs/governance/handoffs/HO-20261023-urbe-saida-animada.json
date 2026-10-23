@@ -1,0 +1,71 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-saida-animada",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T00:29:33Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-69",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "e01e7e09",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/662",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/Ui/UrbeMotion.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/UxFoundationUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261023-urbe-saida-animada.json"
+  ],
+  "work_completed": [
+    "UC-69: saída animada do editor (Voltar, × da última aba) e da gaveta das notas no celular, por uma imagem do que sai; esconder continua imediato; desligada com Remover animações."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests",
+      "result": "passed",
+      "evidence": "Ux_TheEditorAndThePhoneDrawerSlideAwayWhenTheyClose."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, voltar do editor e fechar a gaveta das notas e ver a saída suave, sem travar",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/Ui/UrbeMotion.cs"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Próximos itens do ROADMAP C# (UC-35, UC-57)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Aparência e fluidez no aparelho pendentes; UC-69 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "exit-ghost",
+      "status": "product-specific",
+      "rationale": "Movimento da interface do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Só animação de interface; não grava nada."
+  }
+}

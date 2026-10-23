@@ -90,6 +90,8 @@ public sealed partial class MainView : Grid
         Explorer.PurgeRequested += id => _ = PurgeFromTrashAsync(id);
         Explorer.EmptyTrashRequested += () => _ = EmptyTrashAsync();
         Explorer.NoteRequested += OpenFromNotes;
+        // UC-69: Voltar slides the editor away the way it came (a picture of it; the screen under it is there at once)
+        Editor.Leaving += () => Ui.UrbeMotion.Ghost(Editor, _stage, dy: 12);
         Editor.Closed += (_, _) =>
         {
             Editor.Context.IsVisible = false;
@@ -222,6 +224,8 @@ public sealed partial class MainView : Grid
     private void CloseNotesOverEditor()
     {
         if (!Explorer.Overlaid) return;
+        // UC-69: the phone's drawer slides back to the left
+        if (!SidebarDocked) Ui.UrbeMotion.Ghost(Explorer, _stage, dx: -24, dy: 0);
         Explorer.Overlaid = false;
         Explorer.ZIndex = 0;
         PlaceSidebar();

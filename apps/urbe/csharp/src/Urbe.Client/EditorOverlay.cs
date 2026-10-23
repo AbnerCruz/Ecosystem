@@ -269,6 +269,9 @@ public sealed class EditorOverlay : Grid
     public TextBox Editor { get; }
     public event EventHandler? Closed;
 
+    /// <summary>Just before Voltar or the last tab's × hide the editor (UC-69: its leave animation).</summary>
+    public event Action? Leaving;
+
     /// <summary>A note was opened in the editor (by any way: Notas, a search, a link, a tab).</summary>
     public event Action<string>? Shown;
 
@@ -407,6 +410,7 @@ public sealed class EditorOverlay : Grid
             }
         }
         // the Explorer is back at once; the note finishes saving behind it
+        Leaving?.Invoke();
         IsVisible = false;
         Closed?.Invoke(this, EventArgs.Empty);
         await saving;
@@ -643,6 +647,7 @@ public sealed class EditorOverlay : Grid
             _tabs.RemoveAt(_tabs.Count - 1);
         }
         RenderTabs();
+        Leaving?.Invoke();
         IsVisible = false;
         Closed?.Invoke(this, EventArgs.Empty);
         await saving;
