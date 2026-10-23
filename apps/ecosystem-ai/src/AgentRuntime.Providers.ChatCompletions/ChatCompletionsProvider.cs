@@ -22,6 +22,8 @@ public sealed class ChatCompletionsProvider : IModelProvider
     private readonly decimal _outputUsdPerMillion;
 
     public string ProviderId => "chat-completions";
+    /// <summary>Verdadeiro se qualquer resposta válida deste provider precisou estimar custo.
+    /// Cada instância é criada por execução; uma resposta posterior não apaga essa evidência.</summary>
     public bool LastCostEstimated { get; private set; }
 
     /// <summary>Nome de wire compatível com function tools; ID de capability canônico nunca é alterado.</summary>
@@ -148,6 +150,7 @@ public sealed class ChatCompletionsProvider : IModelProvider
                         throw new JsonException("tool_calls deve ser array ou null");
                     if (calls.ValueKind == JsonValueKind.Array)
                     {
+                        var seenCallIds = new HashSet<string>(StringComparer.Ordinal);
                         foreach (var call in calls.EnumerateArray())
                         {
                             var function = call.GetProperty("function");
@@ -156,6 +159,8 @@ public sealed class ChatCompletionsProvider : IModelProvider
                             var arguments = function.GetProperty("arguments").GetString();
                             if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(id) || arguments is null)
                                 throw new JsonException("tool call malformada");
+                            // IDs duplicados tornam impossível atribuir cada resultado à chamada correta.
+                            if (!seenCallIds.Add(id)) throw new JsonException("tool call id duplicado");
                             // O provider só pode devolver tools anunciadas nesta requisição.
                             // Não converter nomes desconhecidos diretamente em capability IDs.
                             if (!request.Profile.Capabilities.Tools || !wireToId.TryGetValue(name, out var capabilityId))
@@ -194,7 +199,6 @@ public sealed class ChatCompletionsProvider : IModelProvider
                 if (prompt < 0 || completion < 0 || reportedUsd < 0) throw new JsonException("uso ou custo negativo");
                 if (reportedUsd is null && (!promptKnown || !completionKnown || (prompt == 0 && completion == 0) || (_inputUsdPerMillion == 0 && _outputUsdPerMillion == 0)))
                     throw new ProviderException("cost-unknown", "Sem custo informado nem tarifa configurada; operação não pode ser conciliada com segurança.", false);
-                LastCostEstimated = reportedUsd is null;
                 var usdAmount = reportedUsd ?? (prompt * _inputUsdPerMillion + completion * _outputUsdPerMillion) / 1_000_000m;
                 var cents = checked((long)decimal.Ceiling(usdAmount * 100m));
                 var finish = first.TryGetProperty("finish_reason", out var finishProperty) ? finishProperty.GetString() : null;
@@ -208,7 +212,11 @@ public sealed class ChatCompletionsProvider : IModelProvider
                 if (finish == "tool_calls" && !hasToolCalls)
                     throw new JsonException("Provider encerrou para tools sem entregar chamadas");
                 var stop = hasToolCalls ? StopReason.ToolUse : StopReason.EndTurn;
-                return new ModelResponse(blocks, stop, new Usage(prompt, completion, new Money(cents, "USD")) { TokensKnown = promptKnown && completionKnown });
+                var modelResponse = new ModelResponse(blocks, stop,
+                    new Usage(prompt, completion, new Money(cents, "USD")) { TokensKnown = promptKnown && completionKnown });
+                // Só contabilizar respostas válidas e nunca rebaixar estimativa anterior.
+                LastCostEstimated |= reportedUsd is null;
+                return modelResponse;
             }
             catch (ProviderException) { throw; }
             catch (Exception e) when (e is JsonException or KeyNotFoundException or InvalidOperationException or OverflowException or FormatException)
