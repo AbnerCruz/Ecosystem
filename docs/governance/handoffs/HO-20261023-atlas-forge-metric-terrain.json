@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261023-atlas-forge-metric-terrain",
   "category": "HANDOFF",
-  "timestamp": "2026-10-23T01:09:45.329379Z",
+  "timestamp": "2026-10-23T01:13:11.725009Z",
   "agent": {
     "id": "codex-atlas-forge",
     "kind": "ai-agent"
@@ -14,7 +14,7 @@
   "branch": "feat/atlas-forge-continuous-terrain",
   "base_commit": "2800f6eae57e6ee25a882ab217ab80f47dd933e3",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/680",
   "files_changed": [
     "apps/atlas-forge/README.md",
     "apps/atlas-forge/ROADMAP.md",
@@ -86,7 +86,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Concluir checks locais, evidências visuais e pacote offline; abrir PR e observar CI/integrador, sem merge manual.",
+    "Observar CI/integrador do PR e o estado combinado; nenhum merge manual.",
     "Próximo dado estrutural: restrições de desenho/edição métrica com formato e migração; depois acoplamento físico clima/água e ecologia conforme o prompt. Não declarar a missão completa."
   ],
   "decisions_required": [],
