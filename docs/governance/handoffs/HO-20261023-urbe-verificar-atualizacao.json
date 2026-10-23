@@ -26,11 +26,14 @@
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AppUpdateTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AppUpdateUiTests.cs",
     "apps/urbe/docs/csharp/ROADMAP.md",
-    "docs/governance/handoffs/HO-20261023-urbe-verificar-atualizacao.json"
+    "docs/governance/handoffs/HO-20261023-urbe-verificar-atualizacao.json",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    ".github/workflows/urbe-csharp-mobile-release.yml"
   ],
   "work_completed": [
     "UC-24/UC-25: Configurações → Verificar atualização, portado do update.check da 1.8.4 (bridge.js): manual, releases do Ecosystem filtradas pela tag urbe-csharp-v e pelo arquivo da plataforma (APK ou zip do Windows), download só pelas releases do Ecosystem, aberto no navegador; nunca /releases/latest e nada em segundo plano (docs/distribution/direct-releases.md item 4).",
-    "Android lê a versão instalada do pacote; Windows usa a versão do executável quando ela é 2.x."
+    "Android lê a versão instalada do pacote; Windows usa a versão do executável quando ela é 2.x.",
+    "Beta 2.0.0-beta.19 (pedido do proprietário: levar estas atualizações à versão que ele usa): versão no Urbe.Android.csproj e -p:Version no publish do Windows."
   ],
   "verification": [
     {
@@ -48,8 +51,7 @@
     }
   ],
   "known_issues": [
-    "O head Android não pôde ser compilado neste ambiente (sem a carga android); o CI do PR compila.",
-    "No Windows a versão instalada aparece como desconhecida até o publish do Windows receber -p:Version (mudança de workflow, crítica: vai no próximo PR de versão)."
+    "O head Android não pôde ser compilado neste ambiente (sem a carga android); o CI do PR compila."
   ],
   "blockers": [],
   "next_actions": [
@@ -87,7 +89,7 @@
     }
   ],
   "criticality": {
-    "declared": "routine",
-    "reason": "Feature do ROADMAP (UC-24/25) sem csproj, workflow, vault nem release."
+    "declared": "critical",
+    "reason": "Publica a release 2.0.0-beta.19 (versão em Urbe.Android.csproj) e muda o workflow de release (-p:Version no Windows)."
   }
 }
