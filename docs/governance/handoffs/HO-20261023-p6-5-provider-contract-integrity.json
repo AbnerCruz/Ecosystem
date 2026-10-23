@@ -1,0 +1,113 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-p6-5-provider-contract-integrity",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T00:30:11Z",
+  "agent": {
+    "id": "chatgpt-p6-5-provider-contract",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "verifying",
+  "branch": "fix/p6-5-provider-contract-integrity-20261022",
+  "base_commit": "e01e7e093ecd5750c3c653a3370c858317361416",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/AgentRuntime.Providers.ChatCompletions/ChatCompletionsProvider.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/ChatCompletionsProviderTests.cs",
+    "apps/ecosystem-ai/docs-provider-contract-integrity.md",
+    "apps/ecosystem-ai/README.md",
+    "docs/governance/handoffs/HO-20261023-p6-5-provider-contract-integrity.json"
+  ],
+  "work_completed": [
+    "Endurecido o provider Chat Completions existente: rejeita custo explicitamente malformado em vez de classificá-lo como ausente para estimativa.",
+    "Rejeita chamadas de funções não anunciadas, incluindo nome canônico cru e tools não permitidas pelo perfil; não altera grants nem AgentRunner.",
+    "Rejeita tool_calls mal tipadas e finish_reason=tool_calls sem chamada; mantém null/ausente compatível e teste de custo null estimado.",
+    "Regressões com HTTP mockado e documentação local, sem novo componente, contrato público ou esquema persistido."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "result": "pending",
+      "evidence": "SDK .NET indisponível no ambiente desta sessão; aguarda CI do PR."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet run tests/consistency/Check.cs",
+      "result": "pending",
+      "evidence": "SDK .NET indisponível no ambiente desta sessão; aguarda CI do PR."
+    }
+  ],
+  "known_issues": [
+    "Sem validação de provedor comercial/DEVICE; resposta recusada após POST ainda pode ter sido cobrada remotamente.",
+    "PR ainda não integrado; P6-5 e gate Fase 6 continuam abertos."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar checks do Product e consistency em CI no PR, corrigir eventuais regressões e registrar evidências.",
+    "Integrar apenas após gates aplicáveis e preservar os demais incrementos P6-5/AI-603.",
+    "Manter como pendentes validação física Android e conciliação real de custos; não declarar R4 completo."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/architecture/audits/ai-unification-2026-10-16.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Mesmo Usage/ledger do Runtime; rejeição de payload não cria fonte de custo paralela."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Wire names mapeados somente para tools anunciadas pelo contrato local da requisição."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff P6-5 e PR registram escopo, evidências e ausência de testes locais."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas consultadas diretamente no repositório."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Tools não anunciadas falham fechadas, sem grants implícitos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "HTTP mockado não é validação Android nem teste de cobrança comercial."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying com checks pendentes; nenhuma conclusão reivindicada."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Adapter permanece dentro de ecosystem-ai, sem extração antecipada."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "chat-completions-provider",
+      "status": "possible-candidate",
+      "rationale": "Melhoria local de adaptador existente; auditoria AI-603 ainda exige segundo consumidor real e Extraction Review antes de qualquer promoção."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Apenas validação fail-closed em adapter de Product existente e testes/documentação; sem grants, contrato público, formato persistido ou ownership alterados."
+  }
+}

@@ -219,6 +219,9 @@ não prova de instalação, provider real ou encerramento da P6-5.
 O adapter Chat Completions aplica limite durante a leitura HTTP e não repete
 automaticamente respostas interrompidas com cobrança desconhecida.
 [Limites e testes](docs-provider-response-limits.md).
+O adapter rejeita custos numéricos inválidos, chamadas de ferramentas não
+anunciadas e encerramentos de tool call inconsistentes, sem fingir conclusão.
+[Contrato e regressões](docs-provider-contract-integrity.md).
 
 ## Execuções sem recibo no projeto
 

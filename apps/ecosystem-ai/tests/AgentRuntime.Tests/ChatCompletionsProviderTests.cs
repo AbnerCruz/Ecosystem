@@ -157,6 +157,78 @@ public class ChatCompletionsProviderTests
         Assert.DoesNotContain("secret-token", error.Message);
     }
 
+
+    [Theory]
+    [InlineData("""{"cost":"0.10","prompt_tokens":10,"completion_tokens":10}""")]
+    [InlineData("""{"cost":true,"prompt_tokens":10,"completion_tokens":10}""")]
+    [InlineData("""{"cost":1e100,"prompt_tokens":10,"completion_tokens":10}""")]
+    public async Task Custo_explicito_invalido_nao_se_transforma_em_estimativa(string usage)
+    {
+        var json = "{\"choices\":[{\"message\":{\"content\":\"ok\"},\"finish_reason\":\"stop\"}],\"usage\":" + usage + "}";
+        using var client = new HttpClient(new Handler(json));
+        var provider = new ChatCompletionsProvider(client,
+            new Uri("https://provider.example.test/chat/completions"), null, 1, 1);
+        var error = await Assert.ThrowsAsync<ProviderException>(async () =>
+            await provider.CompleteAsync(Request(Message.User("texto")), CancellationToken.None));
+        Assert.Equal("bad-response", error.Kind);
+        Assert.False(error.IsTransient);
+        Assert.False(provider.LastCostEstimated);
+    }
+
+    [Fact]
+    public async Task Custo_null_continua_podendo_ser_estimado_com_tokens_e_tarifas()
+    {
+        const string json = """{"choices":[{"message":{"content":"ok"},"finish_reason":"stop"}],"usage":{"cost":null,"prompt_tokens":10,"completion_tokens":20}}""";
+        using var client = new HttpClient(new Handler(json));
+        var provider = new ChatCompletionsProvider(client,
+            new Uri("https://provider.example.test/chat/completions"), null, 1, 1);
+        var response = await provider.CompleteAsync(Request(Message.User("texto")), CancellationToken.None);
+        Assert.True(provider.LastCostEstimated);
+        Assert.Equal(1, response.Usage.Cost.Minor);
+    }
+
+    [Theory]
+    [InlineData("files.read")]
+    [InlineData("invented_tool")]
+    public async Task Provider_nao_pode_invocar_tool_nao_anunciada(string unadvertised)
+    {
+        var json = """
+        {"choices":[{"message":{"tool_calls":[{"id":"call-x","function":{"name":"WIRE_NAME","arguments":"{}"}}]},"finish_reason":"tool_calls"}],"usage":{"cost":0}}
+        """.Replace("WIRE_NAME", unadvertised, StringComparison.Ordinal);
+        using var client = new HttpClient(new Handler(json));
+        var provider = new ChatCompletionsProvider(client,
+            new Uri("https://provider.example.test/chat/completions"), null, 1, 1);
+        var error = await Assert.ThrowsAsync<ProviderException>(async () =>
+            await provider.CompleteAsync(Request(Message.User("texto")), CancellationToken.None));
+        Assert.Equal("bad-response", error.Kind);
+        Assert.False(error.IsTransient);
+    }
+
+    [Fact]
+    public async Task Finish_tool_calls_sem_chamada_nao_simula_conclusao()
+    {
+        const string json = """{"choices":[{"message":{"content":"parcial"},"finish_reason":"tool_calls"}],"usage":{"cost":0}}""";
+        using var client = new HttpClient(new Handler(json));
+        var provider = new ChatCompletionsProvider(client,
+            new Uri("https://provider.example.test/chat/completions"), null, 1, 1);
+        var error = await Assert.ThrowsAsync<ProviderException>(async () =>
+            await provider.CompleteAsync(Request(Message.User("texto")), CancellationToken.None));
+        Assert.Equal("bad-response", error.Kind);
+        Assert.False(error.IsTransient);
+    }
+
+    [Fact]
+    public async Task Tool_calls_de_tipo_invalido_nao_sao_ignoradas()
+    {
+        const string json = """{"choices":[{"message":{"content":"texto","tool_calls":"not-an-array"},"finish_reason":"stop"}],"usage":{"cost":0}}""";
+        using var client = new HttpClient(new Handler(json));
+        var provider = new ChatCompletionsProvider(client,
+            new Uri("https://provider.example.test/chat/completions"), null, 1, 1);
+        var error = await Assert.ThrowsAsync<ProviderException>(async () =>
+            await provider.CompleteAsync(Request(Message.User("texto")), CancellationToken.None));
+        Assert.Equal("bad-response", error.Kind);
+    }
+
     [Fact]
     public async Task Cli_help_e_exigencia_de_configuracao_fechada()
     {
