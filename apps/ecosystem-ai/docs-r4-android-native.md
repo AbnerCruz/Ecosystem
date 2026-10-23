@@ -14,8 +14,12 @@ planejamento, pareceres e `LocalRunEventLog`. Não é outro Runtime.
 3. Crie uma conversa. Agentes e equipes podem ser cadastrados no projeto,
    sem modelo nem gasto. Planejar/cancelar tarefas também funciona offline.
 4. Abra **Configurações de IA** (disponível também na home), toque em
-   **+ Novo provedor** e salve nome, URL base HTTPS e chave. Nesta versão,
-   use API compatível com Chat Completions (ex.: OpenRouter/OpenAI).
+   **+ Novo provedor** e salve nome, URL base e chave quando necessária.
+   Para provedores remotos, a configuração exige HTTPS e chave de API.
+   Para um serviço **Chat Completions compatível rodando no próprio Android**,
+   também é possível usar HTTP em `localhost` ou `127.0.0.1`, sem chave.
+   No Android, `localhost` **não aponta para o computador da rede**;
+   servidores externos/LAN sem TLS continuam recusados.
    Em **Modelos de …**, cadastre o ID ou toque em **Buscar modelos do provedor**
    para consultar `/models`. Configure uma vez nome, preços e limites por
    modelo. **Usar …** seleciona o modelo e volta à conversa. Provedores,
@@ -77,6 +81,33 @@ o app exibe um diagnóstico curto (tipo de erro e código), sem mostrar dados pr
   cumprimento de critérios arbitrários ou integração de ChangeSets.
 - Não há restauração automática de um run após processo morto. O journal
   preserva a execução incompleta para auditoria; não reenviar sem conferir.
+
+## Provider local sem chave (AI-603 / incremental)
+
+A URL base aceita HTTP exclusivamente para `localhost` e `127.0.0.1`
+(com porta explícita quando necessária). O Android usa uma Network Security
+Configuration com tráfego em claro proibido por padrão e exceção restrita
+a esses dois hosts. Não há permissão para IP de rede local, DNS arbitrário
+ou URL com credenciais, parâmetros e fragmentos. A exceção foi adicionada
+para servidores compatíveis no **mesmo aparelho**, não para afirmar que
+Ollama ou outro servidor esteja instalado no Android.
+
+Um provider com HTTP local **não envia Authorization**. A tela não aceita
+nova chave para essa URL, e troca de HTTPS para HTTP local descarta a
+chave antiga daquele provedor antes de salvar. Provedores remotos HTTPS
+continuam exigindo a chave. As configurações/seleção mantêm o mesmo
+cofre AES-GCM, sem alterar schemas persistidos ou migrar credenciais em
+claro. Descoberta `GET /models` continua opcional e explícita; se um
+servidor local não fornecer a rota compatível, o ID pode ser cadastrado
+manualmente.
+
+**Limites:** a interface ainda não oferece streaming de tokens e este
+incremento não prova paridade Anthropic/Gemini ou consumo por Urbe,
+Lunet2D e RPG. Nenhum crédito financeiro é autorizado ao salvar um
+provedor. Testes .NET verificam rejeição de HTTP remoto, chave
+obrigatória em HTTPS e descoberta local sem header de autenticação;
+o build/smoke Android verifica instalação e configuração de rede, mas
+não prova serviço HTTP realmente instalado e rodando no dispositivo.
 
 ## Compatibilidade de inicialização
 
