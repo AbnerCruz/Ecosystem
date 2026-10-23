@@ -118,10 +118,10 @@
     {
       "check": "Android físico: layout, toque, desempenho e lifecycle",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/atlas-forge/README.md",
       "critical": false,
-      "evidence": "Não foi disponibilizado aparelho; emulação Chromium não é DEVICE."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-23 (Issue https://github.com/AbnerCruz/Ecosystem/issues/681); registro em docs/governance/responses/VAL-HO-20261022-atlas-forge-incorporation-4d621a4c299f.md."
     }
   ],
   "known_issues": [
