@@ -142,19 +142,28 @@ public sealed class ChatCompletionsProvider : IModelProvider
                 var blocks = new List<ContentBlock>();
                 if (payload.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.String
                     && !string.IsNullOrEmpty(content.GetString())) blocks.Add(new TextBlock(content.GetString()!));
-                if (payload.TryGetProperty("tool_calls", out var calls) && calls.ValueKind == JsonValueKind.Array)
+                if (payload.TryGetProperty("tool_calls", out var calls))
                 {
-                    foreach (var call in calls.EnumerateArray())
+                    if (calls.ValueKind is not (JsonValueKind.Array or JsonValueKind.Null))
+                        throw new JsonException("tool_calls deve ser array ou null");
+                    if (calls.ValueKind == JsonValueKind.Array)
                     {
-                        var function = call.GetProperty("function");
-                        var name = function.GetProperty("name").GetString();
-                        var id = call.GetProperty("id").GetString();
-                        var arguments = function.GetProperty("arguments").GetString();
-                        if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(id) || arguments is null)
-                            throw new JsonException("tool call malformada");
-                        using var input = JsonDocument.Parse(arguments);
-                        if (input.RootElement.ValueKind != JsonValueKind.Object) throw new JsonException("arguments deve ser objeto");
-                        blocks.Add(new ToolUseBlock(id, wireToId.GetValueOrDefault(name, name), input.RootElement.Clone()));
+                        foreach (var call in calls.EnumerateArray())
+                        {
+                            var function = call.GetProperty("function");
+                            var name = function.GetProperty("name").GetString();
+                            var id = call.GetProperty("id").GetString();
+                            var arguments = function.GetProperty("arguments").GetString();
+                            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(id) || arguments is null)
+                                throw new JsonException("tool call malformada");
+                            // O provider só pode devolver tools anunciadas nesta requisição.
+                            // Não converter nomes desconhecidos diretamente em capability IDs.
+                            if (!request.Profile.Capabilities.Tools || !wireToId.TryGetValue(name, out var capabilityId))
+                                throw new JsonException("tool não anunciada pelo Host");
+                            using var input = JsonDocument.Parse(arguments);
+                            if (input.RootElement.ValueKind != JsonValueKind.Object) throw new JsonException("arguments deve ser objeto");
+                            blocks.Add(new ToolUseBlock(id, capabilityId, input.RootElement.Clone()));
+                        }
                     }
                 }
                 if (blocks.Count == 0) throw new JsonException("resposta sem conteúdo nem chamada");
@@ -174,8 +183,13 @@ public sealed class ChatCompletionsProvider : IModelProvider
                         if (ct.ValueKind != JsonValueKind.Number || !ct.TryGetInt64(out completion)) throw new JsonException("completion_tokens inválido");
                         completionKnown = true;
                     }
-                    if (usage.TryGetProperty("cost", out var cost) && cost.ValueKind == JsonValueKind.Number
-                        && cost.TryGetDecimal(out var usd)) reportedUsd = usd;
+                    if (usage.TryGetProperty("cost", out var cost) && cost.ValueKind != JsonValueKind.Null)
+                    {
+                        // Null = custo não informado; valor explícito inválido não vira estimativa.
+                        if (cost.ValueKind != JsonValueKind.Number || !cost.TryGetDecimal(out var usd))
+                            throw new JsonException("cost inválido");
+                        reportedUsd = usd;
+                    }
                 }
                 if (prompt < 0 || completion < 0 || reportedUsd < 0) throw new JsonException("uso ou custo negativo");
                 if (reportedUsd is null && (!promptKnown || !completionKnown || (prompt == 0 && completion == 0) || (_inputUsdPerMillion == 0 && _outputUsdPerMillion == 0)))
@@ -190,7 +204,10 @@ public sealed class ChatCompletionsProvider : IModelProvider
                     throw new ProviderException("filtered", "Provider não entregou conclusão utilizável.", false);
                 if (finish is not (null or "stop" or "tool_calls"))
                     throw new ProviderException("finish-unknown", "Motivo de conclusão não reconhecido.", false);
-                var stop = blocks.OfType<ToolUseBlock>().Any() ? StopReason.ToolUse : StopReason.EndTurn;
+                var hasToolCalls = blocks.OfType<ToolUseBlock>().Any();
+                if (finish == "tool_calls" && !hasToolCalls)
+                    throw new JsonException("Provider encerrou para tools sem entregar chamadas");
+                var stop = hasToolCalls ? StopReason.ToolUse : StopReason.EndTurn;
                 return new ModelResponse(blocks, stop, new Usage(prompt, completion, new Money(cents, "USD")) { TokensKnown = promptKnown && completionKnown });
             }
             catch (ProviderException) { throw; }
