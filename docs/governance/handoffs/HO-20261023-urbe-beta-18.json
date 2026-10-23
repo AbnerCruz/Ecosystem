@@ -1,0 +1,74 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-beta-18",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T10:09:31Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-77",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "3b2654e2",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "docs/governance/handoffs/HO-20261023-urbe-beta-18.json"
+  ],
+  "work_completed": [
+    "Urbe Beta 2.0 — 2.0.0-beta.18 (versionCode 2000018), a pedido do proprietário (23/10/2026: 'Não tem problema se tu fizer, eu vou baixar, usar e ir anotando'). Publica no canal beta (DEC-0048) o que entrou desde a beta.17 (PRs #654, #662, #665 e #691): Área de trabalho completa (segurar cartão, personalizar e arrastar caixas, barra lateral em árvore, renomear no lugar), abertura instantânea pelos nomes da última vez, Constelação do vault, agentes com nome e agente dentro da nota (&Nome&:, sugestão no lugar, Desfazer, Pôr na nota), barra do editor e menu / configuráveis, comentar a palavra, saída animada, seções arrastáveis no estúdio, o Assistente que gera imagens (OpenAI/Gemini), importação com anexos, excluir pasta em lote e gravação mais leve em vaults grandes. O Windows sai na mesma release."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "CI deste PR (urbe-checks, build Android e Windows, e2e, integrador)",
+      "result": "pending",
+      "evidence": "Os PRs #654, #662, #665 e #691 foram integrados com os checks verdes."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico, beta.18 por cima da beta.17: abrir o vault, usar a Área de trabalho, o editor e o Assistente; nenhuma nota perdida",
+      "result": "pending",
+      "critical": true,
+      "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.18"
+    }
+  ],
+  "known_issues": [
+    "UC-62 (páginas mais robustas) espera a decisão DEC-0055."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Depois da integração, conferir a release e mandar os links do APK e do Windows."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/distribution/direct-releases.md",
+    "docs/governance/addenda/ADD-0025-urbe-beta-2-0-nativa.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A versão do canal muda só em Urbe.Android.csproj."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação no aparelho pendente e crítica."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-beta-release",
+      "status": "product-specific",
+      "rationale": "Versão do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Publica uma release do canal beta (versão em Urbe.Android.csproj)."
+  }
+}
