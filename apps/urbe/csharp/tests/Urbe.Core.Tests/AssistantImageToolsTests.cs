@@ -51,15 +51,46 @@ public sealed class AssistantImageToolsTests
         var gemini = new AiProviderConfig("g", "gemini", ApiKey: "AIza-test");
         Assert.True(AssistantProviders.DrawsImages(gemini));
         await providers.GenerateImageAsync(gemini, "um farol", cancel: Ct);
-        Assert.Equal("imagen-3.0-generate-002", (string?)http.Seen[0].Body["model"]);
+        Assert.Equal("gemini-2.5-flash-image", (string?)http.Seen[0].Body["model"]);
         Assert.Equal("b64_json", (string?)http.Seen[0].Body["response_format"]);
 
         var anthropic = new AiProviderConfig("a", "anthropic", ApiKey: "sk-ant");
         Assert.False(AssistantProviders.DrawsImages(anthropic));
-        Assert.False(AssistantProviders.DrawsImages(new AiProviderConfig("o", "openrouter", ApiKey: "k")));
+        Assert.True(AssistantProviders.DrawsImages(new AiProviderConfig("o", "openrouter", ApiKey: "k")));
         await Assert.ThrowsAsync<AiProviderException>(() => providers.GenerateImageAsync(anthropic, "x", cancel: Ct));
         await Assert.ThrowsAsync<AiProviderException>(() => providers.GenerateImageAsync(new AiProviderConfig("p", "openai"), "x", cancel: Ct));   // no key
         Assert.Single(http.Seen);
+    }
+
+    [Fact]
+    public async Task OpenRouterDrawsWithoutChangingTheChatModel()
+    {
+        var http = new Answer(200, Drawn(Png));
+        var providers = new AssistantProviders(http);
+        var chat = new AiProviderConfig("claude", "anthropic", ApiKey: "sk-ant");
+        var visual = new AiProviderConfig("router", "openrouter", ApiKey: "sk-or");
+        Assert.Equal(visual, AssistantProviders.PickImageProvider(chat, [chat, visual]));
+        Assert.Equal(visual, AssistantProviders.PickImageProvider(visual, [chat, visual]));
+        var bytes = await providers.GenerateImageAsync(visual, "retrato", size: "1024x1536", cancel: Ct);
+        Assert.Equal(Png, bytes);
+        var (url, body, auth) = Assert.Single(http.Seen);
+        Assert.Equal("https://openrouter.ai/api/v1/images", url);
+        Assert.Equal("Bearer sk-or", auth);
+        Assert.Equal("bytedance-seed/seedream-4.5", (string?)body["model"]);
+        Assert.Equal("2:3", (string?)body["aspect_ratio"]);
+        Assert.Null(body["size"]);
+        Assert.Null(body["response_format"]);
+    }
+
+    [Fact]
+    public void SelectsAnotherConfiguredImageProviderButNeverAnUnconfiguredOne()
+    {
+        var chat = new AiProviderConfig("claude", "anthropic", ApiKey: "sk-ant");
+        var noKey = new AiProviderConfig("openai-no-key", "openai");
+        var visual = new AiProviderConfig("gemini", "gemini", ApiKey: "gemini-key");
+        Assert.Null(AssistantProviders.PickImageProvider(chat, [chat, noKey]));
+        Assert.Equal(visual, AssistantProviders.PickImageProvider(chat, [chat, noKey, visual]));
+        Assert.False(AssistantProviders.DrawsImages(new AiProviderConfig("custom", "custom", BaseUrl: "https://example.com/v1")));
     }
 
     [Fact]

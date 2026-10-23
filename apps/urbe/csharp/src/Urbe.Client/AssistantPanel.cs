@@ -155,9 +155,8 @@ public sealed partial class AssistantPanel : Border
     /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, pages/ai-tools.js, customize/ai-tools.js, then the vault plugins).</summary>
     public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, AgentNames.Tool, AssistantImageTools.Tool];
 
-    /// <summary>The tools of a run: generate_image only with a provider that draws pictures (UC-63; fewer tools, better choices).</summary>
-    public static IReadOnlyList<AiTool> ToolsFor(AiProviderConfig provider) =>
-        AssistantProviders.DrawsImages(provider) ? Tools : [.. Tools.Where(t => t.Name != AssistantImageTools.Tool.Name)];
+    /// <summary>UC-63: the image tool is always visible to the chat agent, independently of its provider.</summary>
+    public static IReadOnlyList<AiTool> ToolsFor(AiProviderConfig provider) => Tools;
 
     private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name) ?? (name == AssistantAgent.Delegate.Name ? AssistantAgent.Delegate : null);
 
@@ -486,8 +485,10 @@ public sealed partial class AssistantPanel : Border
     private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge, string agentId, AiProviderConfig provider) : IAssistantHost, IAssistantNames, IAssistantImages
     {
         public IAssistantImages? Images => this;
-        public bool CanDraw => AssistantProviders.DrawsImages(provider);
-        public Task<byte[]> DrawAsync(string prompt, string size, CancellationToken cancel) => panel.Providers.GenerateImageAsync(provider, prompt, null, size, cancel);
+        private AiProviderConfig? ImageProvider => AssistantProviders.PickImageProvider(provider, panel._cfg.Providers);
+        public bool CanDraw => ImageProvider is not null;
+        public Task<byte[]> DrawAsync(string prompt, string size, CancellationToken cancel) =>
+            panel.Providers.GenerateImageAsync(ImageProvider ?? throw new AiProviderException("Configure um provedor de imagens."), prompt, null, size, cancel);
         public Task SaveAsync(string path, byte[] bytes) => panel._app.CreateBinaryFileAsync(path, bytes);
         public bool Exists(string path) => panel._app.FileExists(path);
         public IAssistantNames? Names => this;

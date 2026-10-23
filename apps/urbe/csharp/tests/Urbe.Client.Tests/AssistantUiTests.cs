@@ -446,4 +446,14 @@ public sealed partial class HeadlessUiTests
                 try { Directory.Delete(dir, recursive: true); } catch (IOException) { }
             }
         }, CancellationToken.None));
+    [Fact]
+    public void ImageToolIsVisibleRegardlessOfChatProvider()
+    {
+        var claude = new AiProviderConfig("claude", "anthropic", ApiKey: "sk-ant");
+        var router = new AiProviderConfig("router", "openrouter", ApiKey: "sk-or");
+        Assert.Contains(AssistantPanel.ToolsFor(claude), tool => tool.Name == "generate_image");
+        Assert.Contains(AssistantPanel.ToolsFor(router), tool => tool.Name == "generate_image");
+        Assert.Equal("write", AssistantImageTools.Tool.Access);
+    }
+
 }

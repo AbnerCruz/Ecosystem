@@ -224,7 +224,8 @@ public static class AssistantAgent
     /// app asks of every agent beyond the 1.8.4's prompt.
     /// </summary>
     public const string UrbeGuidance =
-        "- Quando o pedido for uma apostila, um livro, um caderno, um e-book, um manual ou outro material longo para ler ou imprimir, faça uma página no formato livro, sem precisar que o usuário peça: chame page_schema e use write_page com o modelo book (ou book-folder, para transformar uma pasta de notas em livro), em vez de escrever uma nota longa. Use os blocos note/notes para puxar o conteúdo das notas e abra a página com open_note no fim.";
+        "- Quando o pedido for uma apostila, um livro, um caderno, um e-book, um manual ou outro material longo para ler ou imprimir, faça uma página no formato livro, sem precisar que o usuário peça: chame page_schema e use write_page com o modelo book (ou book-folder, para transformar uma pasta de notas em livro), em vez de escrever uma nota longa. Use os blocos note/notes para puxar o conteúdo das notas e abra a página com open_note no fim.\n" +
+        "- Para gerar, desenhar ou ilustrar uma IMAGEM, use generate_image, não write_page. O modelo do chat não muda: a ferramenta usa um provedor visual já configurado. Sem credencial disponível ou diante de falha, explique o problema e nunca diga que a imagem foi criada.";
 
     public static AiAgentDef AgentById(string? id, IEnumerable<AiAgentDef>? custom = null) =>
         Agents.Concat(custom ?? []).FirstOrDefault(a => a.Id == id) ?? Agents[0];

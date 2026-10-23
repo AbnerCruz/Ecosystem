@@ -1,0 +1,110 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-gerar-imagem-no-chat",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T13:20:13Z",
+  "agent": {
+    "id": "chatgpt-gpt6",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-63",
+  "component": "urbe",
+  "state": "review",
+  "branch": "fix/urbe-uc63-image-tool-any-chat-model",
+  "base_commit": "0856eda6278a4320ccee928200316d0421ff94c1",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/701",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantProviders.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantImageTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantImageToolsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
+    "docs/governance/handoffs/HO-20261023-urbe-gerar-imagem-no-chat.json"
+  ],
+  "work_completed": [
+    "Corrigido o bug em que generate_image era retirada do catálogo de ferramentas se o modelo de chat não gerasse imagens. O modelo de conversa permanece inalterado.",
+    "Novo roteamento de geração: reutiliza o provedor de chat se ele gera imagens ou escolhe um provedor visual já configurado e com credencial disponível; erros de configuração são explícitos.",
+    "OpenRouter passa a usar POST /api/v1/images via chave OpenRouter salva, com modelo visual padrão documentado e proporções quadrada/paisagem/retrato; endpoint de chat não foi modificado.",
+    "Modelo Gemini de imagem atualizado para gemini-2.5-flash-image; geração OpenAI preservada.",
+    "Instruções dos agentes distinguem pedidos de ilustração (generate_image) de pedidos de página (write_page). Documentação interna atualizada; testes de roteamento e de ferramenta disponíveis na branch."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test apps/urbe/csharp/tests/Urbe.Core.Tests e Urbe.Client.Tests + urbe-checks do PR",
+      "result": "pending",
+      "evidence": "CI no PR; ambiente de edição sem dotnet instalado."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet run tests/consistency/Check.cs e estado combinado com main",
+      "result": "pending",
+      "evidence": "Integrador do Ecosystem verifica no PR."
+    },
+    {
+      "kind": "human",
+      "check": "No Android, com um modelo de texto no chat e chave OpenRouter salva, pedir 'Gere um retrato...' e aprovar; confirmar o arquivo Imagens/ e que modelo do chat não mudou",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+      "evidence": "Requer teste com credencial real e dispositivo."
+    }
+  ],
+  "known_issues": [
+    "Prova com API real e aparelho pendente; sem chave para imagens, a ferramenta explica a configuração necessária. Não alegar produção comprovada.",
+    "Modelo visual padrão do OpenRouter está fixo neste incremento; catálogo dinâmico, custo estimado e seleção avançada ficam para melhoria posterior."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar o CI e corrigir eventuais falhas sem modificar o vault ou o editor de páginas.",
+    "Validar numa beta Android com o modelo de texto escolhido pelo usuário e uma conta OpenRouter, OpenAI ou Gemini já configurada."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/multi-agent.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Usa somente a configuração de provedores já existente no Assistente; não cria uma segunda autoridade de credenciais nem altera arquivos de nota."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "A geração continua no Urbe local, sem dependência do Hub."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "generate_image mantém access=write e a autorização do loop existente; não altera permissões de escrita, credenciais ou storage."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Prova de API real e validação em Android ficam pendentes, sem declarar UC-63 concluído."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem extração compartilhada ou alteração do AgentRuntime de outros Products."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "image-generation",
+      "status": "possible-candidate",
+      "rationale": "A capacidade permanece dentro do Urbe; não há segundo consumidor de produto nem extração aprovada."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Correção incremental da ferramenta UC-63 sem alteração de permissões, armazenamento de segredo, contratos públicos ou formatos do vault."
+  }
+}
