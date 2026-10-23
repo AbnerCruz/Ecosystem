@@ -1,0 +1,113 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-p6-5-run-cost-correlate",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T01:10:23Z",
+  "agent": {
+    "id": "chatgpt-p6-5-cost-correlation",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "verifying",
+  "branch": "fix/p6-5-run-accounting-and-tool-id-20261022",
+  "base_commit": "2800f6eae57e6ee25a882ab217ab80f47dd933e3",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/AgentRuntime.Providers.ChatCompletions/ChatCompletionsProvider.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/ChatCompletionsProviderTests.cs",
+    "apps/ecosystem-ai/docs-provider-contract-integrity.md",
+    "docs/governance/handoffs/HO-20261023-p6-5-run-cost-correlate.json"
+  ],
+  "work_completed": [
+    "Corrigido agregado de confiança de custo do mesmo adapter: estimativa em qualquer resposta válida de um run persiste até o fechamento, mesmo se as respostas seguintes forem informadas.",
+    "Rejeição por protocolo/truncamento não altera o indicador de estimativa (não inventa custos de respostas recusadas).",
+    "Rejeita ids de tool_calls duplicados em uma mesma resposta antes de retornar comandos ao AgentRunner.",
+    "Regressões determinísticas com HTTP mockado em ambas as ordens de estimativa/informação, resposta truncada, IDs duplicados e chamadas distintas válidas.",
+    "Documentada semântica acumulada sem alterar contratos compartilhados, autorização financeira ou journal."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "result": "pending",
+      "evidence": "Sem SDK dotnet local; o workflow ecosystem-ai-ci da branch verificará."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet run tests/consistency/Check.cs",
+      "result": "pending",
+      "evidence": "Sem SDK dotnet local; consistência e self-test pendentes no CI."
+    }
+  ],
+  "known_issues": [
+    "CI e integração ainda pendentes. Não existe validação de custos efetivos de provider remoto neste incremento.",
+    "Prova Android física ainda depende de DEVICE; P6-5 e Fase 6 permanecem abertos."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verificar testes, consistency, Android e integrador no PR; corrigir falhas antes de integrar.",
+    "Após integração, atualizar evidências de verificação sem declarar P6-5 ou Fase 6 encerrados.",
+    "Manter o roteiro DEVICE do Ecosystem AI e a convergência AI-603 como trabalho global remanescente."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/architecture/audits/ai-unification-2026-10-16.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Indicador no adapter existente; Usage, eventos e ledger permanecem fontes canônicas."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "IDs de chamadas unívocos preservam correlação das tools/capabilities anunciadas."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff P6-5 com branch, base, alterações e testes pendentes explícitos."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Consulta direta às fontes normativas e ao código do Product."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Bloqueio de IDs duplicados não concede tool ou permissão adicional."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes mockados não substituem validação real de aparelho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying sem claims de CI, merge ou DEVICE antes da evidência."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Adapter continua no mesmo Product, sem novo contrato, package ou extração."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "chat-completions-provider",
+      "status": "possible-candidate",
+      "rationale": "Adapter ainda local ao Ecosystem AI; promoção requer Extraction Review e segundo consumidor real de produção, não a simples expectativa de reuso."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Mudança local no cálculo de indicador de confiança e validação de payload, sem modificação de persistência, grants, interfaces públicas ou arquitetura."
+  }
+}
