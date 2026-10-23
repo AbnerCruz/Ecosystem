@@ -14,7 +14,7 @@
   "branch": "fix/urbe-uc63-image-tool-any-chat-model",
   "base_commit": "0856eda6278a4320ccee928200316d0421ff94c1",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/701",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantProviders.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantImageTools.cs",
