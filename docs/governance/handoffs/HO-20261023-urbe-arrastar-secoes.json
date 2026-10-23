@@ -1,0 +1,69 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-arrastar-secoes",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T00:35:57Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-35",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "e01e7e09",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/662",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/PageStudioView.Panels.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PageStudioUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261023-urbe-arrastar-secoes.json"
+  ],
+  "work_completed": [
+    "UC-35: arrastar seções no estúdio com as outras linhas abrindo espaço e toque leve a cada lugar; o destino fica dentro da lista; Desfazer no aviso de remoção coberto por teste."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests",
+      "result": "passed",
+      "evidence": "Studio_DragsASectionAndUndoesARemoval."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, arrastar uma seção pela alça ⋮⋮ e remover uma seção e desfazer",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/PageStudioView.Panels.cs"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Próximos itens do ROADMAP C#."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Toque no aparelho pendente; UC-35 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "studio-section-drag",
+      "status": "product-specific",
+      "rationale": "Estúdio de páginas do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Interface do estúdio; grava pelo caminho de edição existente."
+  }
+}

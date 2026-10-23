@@ -117,6 +117,7 @@ public sealed partial class PageStudioView
                 Background = UrbeTheme.Brush(id == st.Selected ? UrbeTheme.Accent : UrbeTheme.Surface, id == st.Selected ? .16 : 1),
                 BorderBrush = UrbeTheme.Brush(id == st.Selected ? UrbeTheme.Accent : UrbeTheme.Line), BorderThickness = new Thickness(1)
             };
+            card.Tag = "section";
             Drag(grip, card, id);
             p.Children.Add(card);
         }
@@ -130,13 +131,25 @@ public sealed partial class PageStudioView
         return p;
     }
 
+    /// <summary>
+    /// bindDrag: the grip moves the row and the rows it passes make room for it (a tick at each new place); let go,
+    /// the section goes to the place shown.
+    /// </summary>
     private void Drag(Control grip, Border card, string id)
     {
         double start = 0;
+        int slot = 0;
         bool dragging = false;
+        List<Border> Rows() => card.Parent is Panel list ? [.. list.Children.OfType<Border>().Where(c => c.Tag as string == "section")] : [card];
+        void Reset()
+        {
+            dragging = false;
+            foreach (var c in Rows()) { c.RenderTransform = null; c.ZIndex = 0; }
+        }
         grip.PointerPressed += (_, e) =>
         {
             start = e.GetPosition(this).Y;
+            slot = 0;
             dragging = true;
             e.Pointer.Capture(grip);
             card.ZIndex = 10;
@@ -145,20 +158,31 @@ public sealed partial class PageStudioView
         grip.PointerMoved += (_, e) =>
         {
             if (!dragging) return;
-            card.RenderTransform = new Avalonia.Media.TranslateTransform(0, e.GetPosition(this).Y - start);
+            var dy = e.GetPosition(this).Y - start;
+            card.RenderTransform = new Avalonia.Media.TranslateTransform(0, dy);
+            var rows = Rows();
+            int i = rows.IndexOf(card);
+            double h = card.Bounds.Height + 10;
+            int now = Math.Clamp((int)Math.Round(dy / Math.Max(1, h)), -i, rows.Count - 1 - i);
+            if (now == slot) return;
+            slot = now;
+            Ui.PlatformHaptics.Tick();
+            for (int j = 0; j < rows.Count; j++)
+            {
+                if (j == i) continue;
+                double shift = slot > 0 && j > i && j <= i + slot ? -h : slot < 0 && j < i && j >= i + slot ? h : 0;
+                rows[j].RenderTransform = shift == 0 ? null : new Avalonia.Media.TranslateTransform(0, shift);
+            }
         };
-        void End(double y)
+        grip.PointerReleased += (_, e) =>
         {
             if (!dragging) return;
-            dragging = false;
-            card.RenderTransform = null;
-            card.ZIndex = 0;
-            double h = card.Bounds.Height + 10;
-            int delta = (int)Math.Round((y - start) / Math.Max(1, h));
+            var delta = slot;
+            Reset();
+            e.Pointer.Capture(null);
             if (delta != 0) Move(id, delta);
-        }
-        grip.PointerReleased += (_, e) => { End(e.GetPosition(this).Y); e.Pointer.Capture(null); };
-        grip.PointerCaptureLost += (_, _) => { if (dragging) { dragging = false; card.RenderTransform = null; card.ZIndex = 0; } };
+        };
+        grip.PointerCaptureLost += (_, _) => { if (dragging) Reset(); };
     }
 
     private static Button Mini(string glyph, string tip, Action click)

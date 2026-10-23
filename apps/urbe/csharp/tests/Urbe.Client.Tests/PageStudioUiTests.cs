@@ -1,6 +1,9 @@
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.LogicalTree;
+using Avalonia.VisualTree;
+using Avalonia;
+using Avalonia.Headless;
 using Avalonia.Threading;
 using Urbe.Client;
 
@@ -160,5 +163,66 @@ public sealed partial class HeadlessUiTests
                 return true;
             }
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+}
+
+/// <summary>UC-35: a section dragged by its grip goes where it is let go (the others make room); a removed one comes back with Desfazer.</summary>
+public sealed partial class HeadlessUiTests
+{
+    [Fact]
+    public async Task Studio_DragsASectionAndUndoesARemoval() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var (view, window, vault, dir) = await OpenCreateVault();
+            try
+            {
+                view.ShowPages();
+                Dispatcher.UIThread.RunJobs();
+                var create = view.Pages.GetLogicalDescendants().OfType<Button>().First(b => AutomationProperties.GetName(b) == "Nova página");
+                create.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                for (int i = 0; i < 100 && view.Studio.Path is null; i++) await Pump(20);
+                var st = view.Studio.Model!;
+                view.Studio.OpenJson();
+                Dispatcher.UIThread.RunJobs();
+                view.Studio.JsonEditor!.Text = "{\"sections\":[{\"type\":\"quote\",\"props\":{\"text\":\"A\"}},{\"type\":\"quote\",\"props\":{\"text\":\"B\"}},{\"type\":\"quote\",\"props\":{\"text\":\"C\"}}]}";
+                ClickButtonWithText(view.Studio, "Aplicar");
+                await Pump();
+                string Order() => string.Concat(st.Sections.Select(s => (string?)s!["props"]!["text"]));
+                Assert.Equal("ABC", Order());
+                await Pump();
+                window.UpdateLayout();
+
+                // the grip of A, two rows down: B and C move up while dragging, then A is last
+                var grips = view.Studio.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Text == "⋮⋮").ToList();
+                Assert.Equal(3, grips.Count);
+                var cards = grips.Select(g => g.FindAncestorOfType<Border>(true)!).Select(b => b.Tag as string == "section" ? b : b.FindAncestorOfType<Border>()!).ToList();
+                var from = grips[0].TranslatePoint(new Avalonia.Point(grips[0].Bounds.Width / 2, grips[0].Bounds.Height / 2), window)!.Value;
+                double rowStep = cards[1].TranslatePoint(default, window)!.Value.Y - cards[0].TranslatePoint(default, window)!.Value.Y;
+                Assert.True(rowStep > 10);
+                window.MouseDown(from, Avalonia.Input.MouseButton.Left, Avalonia.Input.RawInputModifiers.None);
+                for (int k = 1; k <= 6; k++)
+                    window.MouseMove(from + new Avalonia.Point(0, rowStep * 2.1 * k / 6), Avalonia.Input.RawInputModifiers.LeftMouseButton);
+                Dispatcher.UIThread.RunJobs();
+                Assert.All(cards.Skip(1), c => Assert.IsType<Avalonia.Media.TranslateTransform>(c.RenderTransform));
+                window.MouseUp(from + new Avalonia.Point(0, rowStep * 2.1), Avalonia.Input.MouseButton.Left, Avalonia.Input.RawInputModifiers.None);
+                await Pump();
+                Assert.Equal("BCA", Order());
+
+                // Delete on the selected section: removed, with Desfazer in the notice
+                var a = (string)st.Sections[2]!["id"]!;
+                st.Select(a);
+                typeof(PageStudioView).GetMethod("Remove", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.Invoke(view.Studio, [a]);
+                await Pump();
+                Assert.Equal("BC", Order());
+                Assert.EndsWith("removida.", view.Studio.LastToast);
+                var undo = view.Studio.GetLogicalDescendants().OfType<Border>().Single(b => b.Tag as string == "toast")
+                    .GetLogicalDescendants().OfType<Button>().Single();
+                undo.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                await Pump();
+                Assert.Equal("BCA", Order());
+                await view.Studio.FlushAsync();
+                return true;
+            }
+            finally { window.Close(); }
         }, CancellationToken.None));
 }
