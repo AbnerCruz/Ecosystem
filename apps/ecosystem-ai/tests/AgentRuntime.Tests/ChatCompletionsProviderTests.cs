@@ -19,6 +19,22 @@ public class ChatCompletionsProviderTests
             return new HttpResponseMessage(status) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
         }
     }
+
+    private sealed class SequenceHandler(params string[] replies) : HttpMessageHandler
+    {
+        private readonly Queue<string> _replies = new(replies);
+        public int Calls { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
+        {
+            Calls++;
+            if (_replies.Count == 0) throw new InvalidOperationException("Resposta HTTP inesperada.");
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(_replies.Dequeue(), Encoding.UTF8, "application/json")
+            });
+        }
+    }
     private static ModelRequest Request(params Message[] messages) => new(
         new ModelProfile("chat-completions", "model-id", new ModelCapabilities(true, false, true, false, false, 8_000),
             new Money(100, "USD")),
@@ -227,6 +243,85 @@ public class ChatCompletionsProviderTests
         var error = await Assert.ThrowsAsync<ProviderException>(async () =>
             await provider.CompleteAsync(Request(Message.User("texto")), CancellationToken.None));
         Assert.Equal("bad-response", error.Kind);
+    }
+
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Estimativa_em_qualquer_resposta_mantem_recibo_da_execucao_estimado(bool primeiraEstimativa)
+    {
+        const string estimated = """{"choices":[{"message":{"content":"parcial"},"finish_reason":"stop"}],"usage":{"prompt_tokens":10,"completion_tokens":20}}""";
+        const string reported = """{"choices":[{"message":{"content":"fim"},"finish_reason":"stop"}],"usage":{"cost":0.01}}""";
+        var handler = new SequenceHandler(primeiraEstimativa ? estimated : reported,
+            primeiraEstimativa ? reported : estimated);
+        using var client = new HttpClient(handler);
+        var provider = new ChatCompletionsProvider(client,
+            new Uri("https://provider.example.test/chat/completions"), null, 1, 1);
+
+        await provider.CompleteAsync(Request(Message.User("primeira")), CancellationToken.None);
+        Assert.Equal(primeiraEstimativa, provider.LastCostEstimated);
+        await provider.CompleteAsync(Request(Message.User("segunda")), CancellationToken.None);
+
+        Assert.True(provider.LastCostEstimated);
+        Assert.Equal(2, handler.Calls);
+    }
+
+    [Fact]
+    public async Task Resposta_parcial_recusada_nao_contamina_estado_da_estimativa()
+    {
+        const string truncated = """{"choices":[{"message":{"content":"incompleto"},"finish_reason":"length"}],"usage":{"prompt_tokens":10,"completion_tokens":20}}""";
+        const string reported = """{"choices":[{"message":{"content":"completo"},"finish_reason":"stop"}],"usage":{"cost":0.01}}""";
+        var handler = new SequenceHandler(truncated, reported);
+        using var client = new HttpClient(handler);
+        var provider = new ChatCompletionsProvider(client,
+            new Uri("https://provider.example.test/chat/completions"), null, 1, 1);
+
+        var error = await Assert.ThrowsAsync<ProviderException>(async () =>
+            await provider.CompleteAsync(Request(Message.User("primeira")), CancellationToken.None));
+        Assert.Equal("truncated", error.Kind);
+        Assert.False(provider.LastCostEstimated);
+        await provider.CompleteAsync(Request(Message.User("segunda")), CancellationToken.None);
+        Assert.False(provider.LastCostEstimated);
+        Assert.Equal(2, handler.Calls);
+    }
+
+    [Fact]
+    public async Task IDs_duplicados_de_tool_calls_sao_recusados_antes_de_executar_qualquer_tool()
+    {
+        var wire = ChatCompletionsProvider.WireName("files.read");
+        var json = """
+        {"choices":[{"message":{"tool_calls":[
+          {"id":"same-id","function":{"name":"WIRE_NAME","arguments":"{\"path\":\"a.md\"}"}},
+          {"id":"same-id","function":{"name":"WIRE_NAME","arguments":"{\"path\":\"b.md\"}"}}
+        ]},"finish_reason":"tool_calls"}],"usage":{"cost":0.01}}
+        """.Replace("WIRE_NAME", wire, StringComparison.Ordinal);
+        using var client = new HttpClient(new Handler(json));
+        var provider = new ChatCompletionsProvider(client,
+            new Uri("https://provider.example.test/chat/completions"), null, 1, 1);
+        var error = await Assert.ThrowsAsync<ProviderException>(async () =>
+            await provider.CompleteAsync(Request(Message.User("leia")), CancellationToken.None));
+        Assert.Equal("bad-response", error.Kind);
+        Assert.False(error.IsTransient);
+        Assert.DoesNotContain("a.md", error.Message);
+    }
+
+    [Fact]
+    public async Task Tool_calls_com_ids_distintos_preservam_correlacao()
+    {
+        var wire = ChatCompletionsProvider.WireName("files.read");
+        var json = """
+        {"choices":[{"message":{"tool_calls":[
+          {"id":"call-a","function":{"name":"WIRE_NAME","arguments":"{}"}},
+          {"id":"call-b","function":{"name":"WIRE_NAME","arguments":"{}"}}
+        ]},"finish_reason":"tool_calls"}],"usage":{"cost":0.01}}
+        """.Replace("WIRE_NAME", wire, StringComparison.Ordinal);
+        using var client = new HttpClient(new Handler(json));
+        var provider = new ChatCompletionsProvider(client,
+            new Uri("https://provider.example.test/chat/completions"), null, 1, 1);
+        var response = await provider.CompleteAsync(Request(Message.User("leia")), CancellationToken.None);
+        Assert.Equal(StopReason.ToolUse, response.Stop);
+        Assert.Equal(["call-a", "call-b"], response.Content.OfType<ToolUseBlock>().Select(x => x.Id));
     }
 
     [Fact]
