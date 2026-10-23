@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261023-urbe-gerar-imagem-no-chat",
   "category": "HANDOFF",
-  "timestamp": "2026-10-23T13:20:13Z",
+  "timestamp": "2026-10-23T13:30:46Z",
   "agent": {
     "id": "chatgpt-gpt6",
     "kind": "ai-agent"
@@ -37,7 +37,7 @@
       "kind": "automated",
       "check": "dotnet test apps/urbe/csharp/tests/Urbe.Core.Tests e Urbe.Client.Tests + urbe-checks do PR",
       "result": "pending",
-      "evidence": "CI no PR; ambiente de edição sem dotnet instalado."
+      "evidence": "Run 39960698962: Urbe.Core.Tests 706/706 passed, Windows/Android builds and E2E passed; Urbe.Client.Tests 208/208 passed but Linux test host exited with native code 139 after the tests. Retesting the reconciled branch."
     },
     {
       "kind": "automated",
@@ -56,10 +56,12 @@
   ],
   "known_issues": [
     "Prova com API real e aparelho pendente; sem chave para imagens, a ferramenta explica a configuração necessária. Não alegar produção comprovada.",
-    "Modelo visual padrão do OpenRouter está fixo neste incremento; catálogo dinâmico, custo estimado e seleção avançada ficam para melhoria posterior."
+    "Modelo visual padrão do OpenRouter está fixo neste incremento; catálogo dinâmico, custo estimado e seleção avançada ficam para melhoria posterior.",
+    "Primeiro CI terminou com erro nativo 139 no processo de testes UI Linux após 208 testes passarem; precisa de nova execução para distinguir falha transitória de regressão."
   ],
   "blockers": [],
   "next_actions": [
+    "Reexecutar os testes de interface da branch reconciliada com a main mais recente; não integrar com CI vermelho.",
     "Acompanhar o CI e corrigir eventuais falhas sem modificar o vault ou o editor de páginas.",
     "Validar numa beta Android com o modelo de texto escolhido pelo usuário e uma conta OpenRouter, OpenAI ou Gemini já configurada."
   ],
