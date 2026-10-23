@@ -242,7 +242,7 @@ public static partial class LegacyEditorTools
         new("task", "Tarefa", "Caixa de seleção", "tarefa todo checkbox check", "task"),
         new("quote", "Citação", "Destaque de trecho", "citacao quote", "quote"),
         new("rule", "Divisória", "Linha horizontal", "divisoria linha separador hr", "rule"),
-        new("noteLink", "Link para nota", "Cria uma rua na cidade", "link nota wiki rua", "wikilink"),
+        new("noteLink", "Link para nota", "Liga esta nota a outra", "link nota wiki ligacao", "wikilink"),
         new("link", "Link externo", "Endereço da web", "link url web externo", "link"),
     ];
 

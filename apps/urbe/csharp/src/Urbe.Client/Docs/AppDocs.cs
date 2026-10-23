@@ -351,6 +351,8 @@ public static partial class AppDocs
 
         **Seus atalhos:** Configurações → Atalhos lista todos e **Editar meus atalhos** abre `Personalização/atalhos.json`, por exemplo `"Mod+Shift+K": "ui.constellation"` (Mod é Ctrl). Um atalho seu vale por cima do padrão; `""` desliga um padrão. Os nomes dos comandos (como `ui.workspace`, `ui.sidebar.toggle`) aparecem no próprio arquivo de exemplo.
 
+        **A barra do editor e o menu /:** Configurações → **Barra do editor e menu /** abre `Personalização/editor.json`, com a lista `barra` (os botões, na ordem; `|` separa) e a lista `menu` (os itens do `/`). Apague o que não usa, troque a ordem e salve.
+
         No celular: toque para abrir e segure para selecionar ou arrastar. Se um botão não responde, **Configurações → Diagnóstico de toques** ajuda a descobrir o porquê.
         """;
 }

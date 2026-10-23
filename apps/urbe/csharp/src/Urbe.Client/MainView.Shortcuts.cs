@@ -32,18 +32,25 @@ public sealed partial class MainView
 
     private static string Pretty(string shortcut) => shortcut.Replace("Mod+", "Ctrl+", StringComparison.Ordinal).Replace("ArrowLeft", "←", StringComparison.Ordinal).Replace("ArrowRight", "→", StringComparison.Ordinal);
 
-    private async Task EditShortcutsAsync()
+    private Task EditShortcutsAsync() => OpenPersonalFileAsync("Atalhos", UserShortcuts.Path, UserShortcuts.Template + "\n");
+
+    /// <summary>UC-61: Personalização/editor.json, made the first time from the bar and the "/" menu as they are.</summary>
+    public Task EditEditorLayoutAsync() => OpenPersonalFileAsync("Barra do editor", EditorLayout.Path,
+        EditorLayout.Template(EditorOverlay.ToolbarOrder, [.. LegacyEditorTools.FilterSlashWithAddons("").Select(x => x.Act)]));
+
+    /// <summary>A Personalização file opened in the editor, written from its model the first time.</summary>
+    private async Task OpenPersonalFileAsync(string title, string path, string model)
     {
-        if (!_contents.ContainsKey(UserShortcuts.Path))
+        if (!_contents.ContainsKey(path))
         {
-            if (!VaultWritable) { await Dialogs.AlertAsync("Atalhos", NoVaultMessage); return; }
-            try { await WriteVaultFileAsync(UserShortcuts.Path, UserShortcuts.Template + "\n", exists: false); }
+            if (!VaultWritable) { await Dialogs.AlertAsync(title, NoVaultMessage); return; }
+            try { await WriteVaultFileAsync(path, model, exists: false); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
             {
-                await Dialogs.AlertAsync("Atalhos", ex.Message);
+                await Dialogs.AlertAsync(title, ex.Message);
                 return;
             }
         }
-        OpenNoteByPath(UserShortcuts.Path);
+        OpenNoteByPath(path);
     }
 }

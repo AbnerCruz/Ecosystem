@@ -103,6 +103,35 @@ public static class UrbeMotion
         };
     }
 
+    /// <summary>
+    /// UC-69: the leave animation of an overlay that hides at once (the editor, the phone's drawer): a picture of it,
+    /// taken just before it hides, fades and slides out to (dx, dy) over <paramref name="host"/> in <see cref="M.Fast"/>
+    /// and is then dropped. The control itself is already hidden, so nothing waits for the motion and nothing under
+    /// the picture is blocked (it is not hit-testable). Nothing when motion is reduced. The picture is the one shown.
+    /// </summary>
+    public static Image? Ghost(Control c, Panel host, double dx = 0, double dy = 12, bool? animate = null)
+    {
+        if (!Animate(animate) || !c.IsVisible || c.Bounds.Width < 1 || c.Bounds.Height < 1) return null;
+        if (c.TranslatePoint(default, host) is not { } at) return null;
+        // at 96 dpi, not the screen's: a picture that is gone in a moment needs no more pixels (P8)
+        var bitmap = new Avalonia.Media.Imaging.RenderTargetBitmap(new PixelSize((int)Math.Ceiling(c.Bounds.Width), (int)Math.Ceiling(c.Bounds.Height)));
+        try { bitmap.Render(c); }
+        catch { bitmap.Dispose(); return null; }
+        var ghost = new Image
+        {
+            Source = bitmap, Width = c.Bounds.Width, Height = c.Bounds.Height, Stretch = Stretch.Fill,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Top,
+            Margin = new Thickness(at.X, at.Y, 0, 0), IsHitTestVisible = false, ZIndex = 1000
+        };
+        host.Children.Add(ghost);
+        ghost.RenderTransform = Shift(0, 0);
+        UseTransitions(ghost, M.Fast, M.EaseIn);
+        ghost.Opacity = 0;
+        ghost.RenderTransform = Shift(dx, dy);
+        DispatcherTimer.RunOnce(() => { host.Children.Remove(ghost); ghost.Source = null; bitmap.Dispose(); }, M.Fast + TimeSpan.FromMilliseconds(30));
+        return ghost;
+    }
+
     // ---------------------------------------------------------------- pressed feedback
 
     /// <summary>The scale a pressed control takes.</summary>

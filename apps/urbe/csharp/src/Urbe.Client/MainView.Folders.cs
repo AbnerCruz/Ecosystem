@@ -286,6 +286,12 @@ public sealed partial class MainView
     {
         if (_library is null || _store is null || _vault is null) return false;
         var docs = NoteLibrary.FolderDocuments(_store, folder);
+        return await InBatchAsync(docs.Count, () => DeleteFolderNotesAsync(folder, docs));
+    }
+
+    private async Task<bool> DeleteFolderNotesAsync(string folder, IReadOnlyList<UrbeDocument> docs)
+    {
+        if (_library is null || _vault is null) return false;
         var dirs = new HashSet<string>(StringComparer.Ordinal) { folder };
         foreach (var f in _library.Folders.Where(f => f.StartsWith(folder + "/", StringComparison.Ordinal))) dirs.Add(f);
         foreach (var d in docs)

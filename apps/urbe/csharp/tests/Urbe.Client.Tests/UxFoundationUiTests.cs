@@ -338,4 +338,44 @@ public sealed partial class HeadlessUiTests
         window.Close();
         return true;
     }, CancellationToken.None));
+
+    [Fact]
+    public async Task Ux_TheEditorAndThePhoneDrawerSlideAwayWhenTheyClose() => Assert.True(await Session.Dispatch(async () =>
+    {
+        // UC-69: Voltar hides the editor at once and a picture of it slides away over the screen, then leaves
+        var view = new MainView();
+        var window = new Window { Width = 412, Height = 860, Content = view };
+        window.Show();
+        await view.LoadAsync(TutorialNotes.Load());
+        await Settle(window, view);
+        view.Editor.Open(new CityNote("Tutorial/Uma.md", "# Uma\n\nTexto.\n"));
+        await Settle(window, view);
+        Image Ghost() => Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(view).OfType<Image>().Single(i => i.Source is Avalonia.Media.Imaging.RenderTargetBitmap && !i.IsHitTestVisible);
+        // the motion is on only while closing (the suite runs with it off; the ghost is taken synchronously)
+        T Moving<T>(Func<T> act) { UrbeTokens.Motion.Reduced = false; try { return act(); } finally { UrbeTokens.Motion.Reduced = true; } }
+        var back = Moving(view.Editor.BackAsync);
+        Assert.False(view.Editor.IsVisible);
+        var ghost = Ghost();
+        Assert.True(ghost.Opacity < 1 || ghost.Transitions is { Count: > 0 });   // leaving
+        await back;
+        await Task.Delay(UrbeTokens.Motion.Fast + TimeSpan.FromMilliseconds(120));
+        Dispatcher.UIThread.RunJobs();
+        Assert.DoesNotContain(Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(view).OfType<Image>(), i => i == ghost);
+
+        // the phone's drawer over the editor slides back to the left
+        view.Editor.Open(new CityNote("Tutorial/Uma.md", "# Uma\n\nTexto.\n"));
+        view.ShowNotesOverEditor();
+        await Settle(window, view);
+        Moving(() => typeof(MainView).GetMethod("CloseNotesOverEditor", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.Invoke(view, null));
+        Assert.False(view.NotesOverEditor);
+        Assert.True(Ghost().Margin.Left == 0 && Ghost().Width < 412);
+        await Task.Delay(UrbeTokens.Motion.Fast + TimeSpan.FromMilliseconds(120));
+        Dispatcher.UIThread.RunJobs();
+
+        // with the motion off (Remover animações) nothing is left behind
+        await view.Editor.BackAsync();
+        Assert.DoesNotContain(Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(view).OfType<Image>(), i => i.Source is Avalonia.Media.Imaging.RenderTargetBitmap);
+        window.Close();
+        return true;
+    }, CancellationToken.None));
 }

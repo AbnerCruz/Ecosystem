@@ -119,3 +119,56 @@ public sealed partial class HeadlessUiTests
             }
         }
 }
+
+/// <summary>UC-65: a big folder goes to the trash in one batch: every note trashed and verified, the history written at the end.</summary>
+public sealed partial class HeadlessUiTests
+{
+    [Fact]
+    public async Task Notes_DeletingABigFolderTrashesEveryNoteAndWritesTheHistoryOnce() =>
+        Assert.True(await Session.Dispatch(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-bigdel-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            const int n = 120;
+            Directory.CreateDirectory(Path.Combine(vault, "Arquivo"));
+            File.WriteAllText(Path.Combine(vault, "Fica.md"), "# Fica\n");
+            for (int i = 0; i < n; i++) File.WriteAllText(Path.Combine(vault, "Arquivo", $"Nota {i:000}.md"), $"# Nota {i}\n\nTexto {i}.\n");
+            var previous = UrbeApp.LocalStatePath;
+            UrbeApp.LocalStatePath = Path.Combine(dir, "app", "notes-state.json");
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 1280, Height = 760, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                await UntilNotesSaved(view);
+                view.ShowNotes();
+                Assert.True(view.Explorer.HoldFolder("Arquivo"));
+                view.Explorer.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == "Mover para a lixeira")
+                    .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                for (int i = 0; i < 40 && !view.Dialogs.IsOpen; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                ClickButtonWithText(view.Dialogs, "Excluir");
+                for (int i = 0; i < 3000 && Directory.Exists(Path.Combine(vault, "Arquivo")); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                watch.Stop();
+                PerfLog($"ux.deleteFolder {n} notes {watch.ElapsedMilliseconds} ms");
+                Assert.False(Directory.Exists(Path.Combine(vault, "Arquivo")));
+                Assert.Equal(["Fica.md"], view.Documents!.List().Select(d => d.Path));
+                var trash = File.ReadAllText(Path.Combine(vault, ".urbe", "trash.v2.json"));
+                for (int i = 0; i < n; i++) Assert.Contains($"Arquivo/Nota {i:000}.md", trash);
+                // the last text of every note removed is in the history, written once the batch ended
+                var history = File.ReadAllText(Path.Combine(vault, ".urbe", "history.v2.json"));
+                Assert.Contains("Texto 0.", history);
+                Assert.Contains($"Texto {n - 1}.", history);
+                Assert.DoesNotContain(view.Explorer.VisibleNotePaths, p => p.StartsWith("Arquivo/", StringComparison.Ordinal));
+                window.Close();
+                return true;
+            }
+            finally
+            {
+                UrbeApp.LocalStatePath = previous;
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
+        }, CancellationToken.None));
+}

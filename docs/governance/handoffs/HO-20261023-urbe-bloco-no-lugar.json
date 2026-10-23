@@ -1,0 +1,68 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-bloco-no-lugar",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T00:33:32Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-57",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "e01e7e09",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/662",
+  "files_changed": [
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorRedesignUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261023-urbe-bloco-no-lugar.json"
+  ],
+  "work_completed": [
+    "UC-57: conferido que o bloco tocado fica no lugar ao trocar de bloco (também para o bloco acima de um que cresceu) e que o cursor fica no terço de cima; teste estendido; ROADMAP atualizado."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests",
+      "result": "passed",
+      "evidence": "Editor_ATappedBlockStaysInPlaceEnteringAndLeavingEditMode (caso do bloco acima) e Editor_TheCaretStaysInTheUpperTwoThirdsWhileTyping."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, com o teclado aberto, trocar de bloco numa nota longa e ver o texto parado",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "UC-35: arrastar seções no estúdio e Desfazer no aviso de remoção."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Teclado e toque no aparelho pendentes; UC-57 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "editor-block-anchor",
+      "status": "product-specific",
+      "rationale": "Editor do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Só teste e documentação."
+  }
+}

@@ -57,10 +57,16 @@ public sealed partial class MainView
     /// <summary>captureRemoved: the trashed note's last text.</summary>
     private async Task CaptureRemovedAsync(UrbeDocument doc)
     {
+        CaptureRemoved(doc);
+        await SaveHistoryAsync();
+    }
+
+    /// <summary>captureRemoved in memory; the history is written by the next save.</summary>
+    private void CaptureRemoved(UrbeDocument doc)
+    {
         if (_historyReadOnly) return;
         _history.CaptureRemoved(doc, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         _historyDirty = true;
-        await SaveHistoryAsync();
     }
 
     /// <summary>

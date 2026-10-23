@@ -28,6 +28,9 @@ public sealed class VisualSurface : StackPanel
     private bool _prompting;
     private readonly WikiSuggestList _wiki = new();
     private readonly SlashMenu _slash = new();
+
+    /// <summary>UC-61: the "/" menu's items in the person's order (null: all, as they are).</summary>
+    public IReadOnlyList<string>? SlashOrder { get => _slash.Order; set => _slash.Order = value; }
     private readonly Border _bubble;
     private readonly Canvas _bubbleLayer = new() { Height = 0, VerticalAlignment = VerticalAlignment.Top };
     private readonly Border _backdrop = new() { IsHitTestVisible = false };
@@ -921,6 +924,7 @@ public sealed class VisualSurface : StackPanel
             case "noteLink": Apply(LegacyEditorTools.InsertAtCursor(text, a, b, "[[")); break;
             case "rule": InsertRule(); break;
             case "pin": if (b > a) PinRequested?.Invoke(text[a..b]); break;
+            case "wordComment": _ = WordCommentAsync(text, a, b); break;
             case "codeblock": Apply(LegacyVisualEdit.CodeBlock(text, _box.CaretIndex)); break;
             case "box": _ = BoxAsync(text, a, b); break;
             case "comment":
@@ -929,7 +933,28 @@ public sealed class VisualSurface : StackPanel
                 Apply(LegacyVisualEdit.Comment(text, a, b));
                 break;
         }
-        if (act is "h2" or "quote" or "link" or "wiki" or "pin") _bubble.IsVisible = false;
+        if (act is "h2" or "quote" or "link" or "wiki" or "pin" or "wordComment") _bubble.IsVisible = false;
+    }
+
+    /// <summary>
+    /// UC-49: a comment on the selected word (or the word at the caret) without a 💬 there yet — <c>{"…"}</c> right after
+    /// it, or after its run of comments when it has some.
+    /// </summary>
+    private async Task WordCommentAsync(string text, int a, int b)
+    {
+        if (AskComment is not { } ask) return;
+        if (b <= a) (a, b) = WordAt(text, a);
+        if (b <= a) return;
+        var at = b;
+        var existing = NoteMarks.CommentGroups(text).FirstOrDefault(g => g.Start == b);
+        if (existing is not null) at = existing.Start + existing.Length;
+        string? added;
+        _prompting = true;
+        try { added = await ask(existing?.Comments ?? []); }
+        finally { _prompting = false; }
+        if (string.IsNullOrWhiteSpace(added) || _box is null || _box.Text != text) return;
+        var quoted = NoteMarks.Quote(added);
+        Apply(new LegacyEditorTools.TextEdit(text.Insert(at, quoted), at + quoted.Length, at + quoted.Length));
     }
 
     /// <summary>The host's question for a new box (UC-44): its type and optional title, or null to cancel.</summary>
@@ -1067,6 +1092,7 @@ public sealed class VisualSurface : StackPanel
         Add("quote", Ic("quote"), "Citação");
         Sep();
         Add("comment", new TextBlock { Text = "%%", FontWeight = FontWeight.Bold, FontSize = 13 }, "Comentário");
+        Add("wordComment", new TextBlock { Text = "💬", FontSize = 14 }, "Comentar a palavra");
         Add("pin", UrbeTheme.Icon(UrbeTheme.Icons.Pin, 18), "Fixar em painel");
         // narrower than all its buttons (a phone): it scrolls sideways, never off the screen
         var card = EditorChrome.Card(new ScrollViewer

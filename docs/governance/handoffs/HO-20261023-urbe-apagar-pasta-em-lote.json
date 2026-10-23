@@ -1,0 +1,77 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-apagar-pasta-em-lote",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T00:42:28Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-65",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "e01e7e09",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/662",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.History.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderDeleteUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261023-urbe-apagar-pasta-em-lote.json"
+  ],
+  "work_completed": [
+    "UC-65: excluir pasta/seleção em lote — cada nota segue para a lixeira com gravação verificada; histórico gravado e árvore redesenhada uma vez no fim; progresso. 120 notas: ≈7,5 s → ≈1,2 s (headless)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests",
+      "result": "passed",
+      "evidence": "Notes_DeletingABigFolderTrashesEveryNoteAndWritesTheHistoryOnce e Notes_DeletingAFolderSendsItsNotesToTheTrashAndRemovesTheFolder."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, excluir uma pasta grande e ver o progresso e todas as notas na Lixeira",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs"
+    }
+  ],
+  "known_issues": [
+    "A lixeira ainda é regravada uma vez por nota; gravá-la em lote exige mudar o adaptador de vault (zona crítica), em PR próprio."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "PR crítico: gravação binária verificada no adaptador (imagens do Assistente, UC-63; anexos na importação) e lixeira em lote (UC-65)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Validação no aparelho pendente; UC-65 continua [ ]."
+    },
+    {
+      "id": "NN-001",
+      "evidence": "Lixeira e histórico continuam as autoridades; nada é apagado antes de a lixeira guardar a nota."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "trash-batch",
+      "status": "product-specific",
+      "rationale": "Lixeira do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Ordem das gravações do cliente; o adaptador de vault não muda e cada nota continua verificada."
+  }
+}

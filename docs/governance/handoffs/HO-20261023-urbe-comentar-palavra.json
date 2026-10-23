@@ -1,0 +1,51 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-comentar-palavra",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T00:20:19Z",
+  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "task_id": "UC-49",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "e01e7e09",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/662",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/VisualEditCrashUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261023-urbe-comentar-palavra.json"
+  ],
+  "work_completed": [
+    "UC-49: 💬 Comentar a palavra no balão da seleção do modo Visual grava {\"…\"} depois da palavra selecionada ou do cursor, sem precisar de um 💬 existente."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests",
+      "result": "passed",
+      "evidence": "VisualEdit_CommentsTheSelectedWordWithoutAMarkYet."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, selecionar uma palavra, tocar 💬 Comentar a palavra e ver o 💬 sobre ela",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": ["Próximos itens do ROADMAP C# (UC-35, UC-69, UC-57)."],
+  "decisions_required": [],
+  "normative_sources": ["AGENTS.md", "apps/urbe/docs/csharp/ROADMAP.md"],
+  "invariants": [
+    { "id": "NN-017", "evidence": "Validação no aparelho pendente; UC-49 continua [ ]." }
+  ],
+  "reuse_assessment": [
+    { "subject": "word-comment", "status": "product-specific", "rationale": "Sintaxe de comentário do Urbe." }
+  ],
+  "criticality": { "declared": "routine", "reason": "Ação nova do editor; grava pelo caminho de edição existente." }
+}

@@ -90,6 +90,8 @@ public sealed partial class MainView : Grid
         Explorer.PurgeRequested += id => _ = PurgeFromTrashAsync(id);
         Explorer.EmptyTrashRequested += () => _ = EmptyTrashAsync();
         Explorer.NoteRequested += OpenFromNotes;
+        // UC-69: Voltar slides the editor away the way it came (a picture of it; the screen under it is there at once)
+        Editor.Leaving += () => Ui.UrbeMotion.Ghost(Editor, _stage, dy: 12);
         Editor.Closed += (_, _) =>
         {
             Editor.Context.IsVisible = false;
@@ -222,6 +224,8 @@ public sealed partial class MainView : Grid
     private void CloseNotesOverEditor()
     {
         if (!Explorer.Overlaid) return;
+        // UC-69: the phone's drawer slides back to the left
+        if (!SidebarDocked) Ui.UrbeMotion.Ghost(Explorer, _stage, dx: -24, dy: 0);
         Explorer.Overlaid = false;
         Explorer.ZIndex = 0;
         PlaceSidebar();
@@ -460,6 +464,7 @@ public sealed partial class MainView : Grid
         RecordSaved(note.Path, note.Content);
         await SaveHistoryAsync();
         NoteSaved?.Invoke(note.Path);   // plugins: "nota:salva"
+        if (note.Path == EditorLayout.Path) ApplyEditorLayout();
     }
 
     /// <summary>
@@ -523,6 +528,7 @@ public sealed partial class MainView : Grid
             new("Personalização", UrbeTheme.Icons.Brush, "Tema, cores, fontes, editor, estilos e plugins", Run: () => { Customize.Open(); return Task.CompletedTask; }),
             new("Tutorial", UrbeTheme.Icons.Book, "Guia completo de tudo o que o Urbe faz", Run: ShowTutorialMenuAsync),
             new("Atalhos", UrbeTheme.Icons.List, "Os atalhos de teclado, e os seus em atalhos.json", Run: ShowShortcutsAsync),
+            new("Barra do editor e menu /", UrbeTheme.Icons.Pencil, "Quais botões e em que ordem, em editor.json", Run: EditEditorLayoutAsync),
             new("Configuração inicial", UrbeTheme.Icons.Select, "Pasta, aparência e Assistente, passo a passo", Run: () => { ShowFirstRun(); return Task.CompletedTask; })
         };
         if (_vault is not null)
@@ -575,7 +581,16 @@ public sealed partial class MainView : Grid
     {
         UrbeAppearance.Apply(this);   // Personalização: tema, texto, forma e editor
         if (Customization.Config["editor"] is System.Text.Json.Nodes.JsonObject ed) Editor.ApplyOptions((string?)ed["largura"], (string?)ed["modoInicial"]);
+        ApplyEditorLayout();
         if (Editor.IsVisible) Editor.RefreshVisual();   // tag colours (DEC-0045, UC-43)
+    }
+
+    /// <summary>UC-61: Personalização/editor.json — the editor's bar and "/" menu.</summary>
+    private void ApplyEditorLayout()
+    {
+        var (bar, menu) = EditorLayout.Parse(_contents.GetValueOrDefault(EditorLayout.Path), EditorOverlay.ToolbarIds,
+            [.. LegacyEditorTools.FilterSlashWithAddons("").Select(x => x.Act)]);
+        Editor.ApplyLayout(bar, menu);
     }
 
     /// <summary>The customize.js writer (docs.upsert of a Personalização file): the vault file, and its document.</summary>
@@ -816,10 +831,37 @@ public sealed partial class MainView : Grid
         _trash.Trash(_store, doc.Id, now, "explorer.delete");
         _contents.Remove(path);
         if (editing) Editor.IsVisible = false;
-        await CaptureRemovedAsync(doc);   // document:removed → history.captureRemoved
         NotesChanged();
+        if (_batch > 0)
+        {
+            // many at once (UC-65): the history is written and the tree redrawn once, at the end of the batch
+            CaptureRemoved(doc);
+            if (++_batchDone % 10 == 0 && _batchTotal > 10) ShowLifeNotice($"Movendo para a lixeira… {_batchDone} de {_batchTotal}");
+            return true;
+        }
+        await CaptureRemovedAsync(doc);   // document:removed → history.captureRemoved
         RefreshNotes();
         return true;
+    }
+
+    private int _batch, _batchDone, _batchTotal;
+
+    /// <summary>
+    /// UC-65: many notes to the trash at once (a folder, a selection). Each note is still trashed and verified on its
+    /// own, first in the trash and then off the disk; only the history's write and the tree's redraw wait for the end.
+    /// </summary>
+    private async Task<T> InBatchAsync<T>(int total, Func<Task<T>> work)
+    {
+        if (_batch++ == 0) { _batchDone = 0; _batchTotal = total; }
+        try { return await work(); }
+        finally
+        {
+            if (--_batch == 0)
+            {
+                await SaveHistoryAsync();
+                RefreshNotes();
+            }
+        }
     }
 
     /// <summary>The vault's files that are not notes (images, PDFs…), by path, for the Explorer.</summary>
@@ -997,9 +1039,13 @@ public sealed partial class MainView : Grid
             message = notes.Count == 1 ? "A nota poderá ser restaurada pela Lixeira." : notes.Count + " notas poderão ser restauradas pela Lixeira.";
         }
         if (!await Dialogs.ConfirmAsync(title, message, folders.Count > 0 ? "Excluir" : "Mover para a lixeira", danger: true)) return;
-        foreach (var f in folders)
-            if (!await DeleteFolderAsync(f)) break;
-        foreach (var p in notes) await DeleteNoteAsync(p, confirmed: true);
+        await InBatchAsync(notes.Count + folders.Sum(f => NoteLibrary.FolderDocuments(_store!, f).Count), async () =>
+        {
+            foreach (var f in folders)
+                if (!await DeleteFolderAsync(f)) break;
+            foreach (var p in notes) await DeleteNoteAsync(p, confirmed: true);
+            return true;
+        });
         Explorer.ClearSelection();
     }
 
