@@ -34,9 +34,10 @@
     {
       "kind": "human",
       "check": "No aparelho, abrir uma pasta com centenas de notas no Explorer e rolar até o fim",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-23 (Issue https://github.com/AbnerCruz/Ecosystem/issues/679); registro em docs/governance/responses/VAL-HO-20261022-urbe-explorer-virtualizado-dbb712aeb060.md."
     }
   ],
   "known_issues": [
