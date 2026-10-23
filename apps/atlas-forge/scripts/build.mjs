@@ -1,6 +1,6 @@
 import { build } from "esbuild";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
-const bundle = async (file) =>
+const bundle = async (file, define = {}) =>
   (
     await build({
       entryPoints: [file],
@@ -10,10 +10,14 @@ const bundle = async (file) =>
       target: "es2022",
       minify: true,
       legalComments: "none",
+      define,
     })
   ).outputFiles[0].text;
+const terrainWorker = await bundle("src/rendering/surface-worker.js");
 const worker = await bundle("src/app/worker.js"),
-  viewer = await bundle("src/publishing/viewer.js"),
+  viewer = await bundle("src/publishing/viewer.js", {
+    __TERRAIN_WORKER_SOURCE__: JSON.stringify(terrainWorker),
+  }),
   viewerCSS = await readFile("src/publishing/viewer.css", "utf8");
 const result = await build({
   entryPoints: ["src/app/editor.js"],
@@ -25,6 +29,7 @@ const result = await build({
   legalComments: "none",
   define: {
     __WORKER_SOURCE__: JSON.stringify(worker),
+    __TERRAIN_WORKER_SOURCE__: JSON.stringify(terrainWorker),
     __VIEWER_SOURCE__: JSON.stringify(viewer),
     __VIEWER_CSS__: JSON.stringify(viewerCSS),
   },
@@ -33,8 +38,8 @@ const css = await readFile("src/app/styles.css", "utf8"),
   html = await readFile("index.html", "utf8"),
   js = result.outputFiles[0].text.replace(/<\/script/gi, "<\\/script");
 const output = html
-  .replace("</head>", `<style>${css}</style></head>`)
-  .replace("</body>", `<script>${js}</script></body>`);
+  .replace("</head>", () => `<style>${css}</style></head>`)
+  .replace("</body>", () => `<script>${js}</script></body>`);
 await mkdir("dist", { recursive: true });
 await writeFile("dist/index.html", output);
 await writeFile("dist/atlas-forge.html", output);

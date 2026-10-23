@@ -1042,3 +1042,44 @@ dialog::backdrop {
   padding: 12px;
   border-radius: 4px;
 }
+
+.scale-picker {
+  font-size: 10px;
+  color: #a8b7b7;
+  margin-left: auto;
+  max-width: 200px;
+}
+.scale-picker select {
+  padding: 8px;
+  margin: 4px 10px 0 0;
+  font-size: 12px;
+}
+@media (max-width: 600px) {
+  .scale-picker {
+    max-width: 150px;
+  }
+  .scale-picker select {
+    max-width: 145px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .map-header {
+    flex-wrap: wrap;
+  }
+  .scale-picker {
+    order: 3;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+  .scale-picker select {
+    flex: 1;
+    max-width: none;
+    margin: 0;
+  }
+}

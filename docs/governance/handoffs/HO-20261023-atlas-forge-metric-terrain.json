@@ -1,0 +1,175 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-atlas-forge-metric-terrain",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T01:25:01.176700Z",
+  "agent": {
+    "id": "codex-atlas-forge",
+    "kind": "ai-agent"
+  },
+  "task_id": "AF-017",
+  "component": "atlas-forge",
+  "state": "review",
+  "branch": "feat/atlas-forge-continuous-terrain",
+  "base_commit": "2800f6eae57e6ee25a882ab217ab80f47dd933e3",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/680",
+  "files_changed": [
+    "apps/atlas-forge/README.md",
+    "apps/atlas-forge/ROADMAP.md",
+    "apps/atlas-forge/SPEC.md",
+    "apps/atlas-forge/docs/FORMAT.md",
+    "apps/atlas-forge/docs/GUIDE.md",
+    "apps/atlas-forge/docs/MODELS.md",
+    "apps/atlas-forge/docs/TERRAIN.md",
+    "apps/atlas-forge/index.html",
+    "apps/atlas-forge/package-lock.json",
+    "apps/atlas-forge/package.json",
+    "apps/atlas-forge/scripts/build.mjs",
+    "apps/atlas-forge/src/app/editor.js",
+    "apps/atlas-forge/src/app/styles.css",
+    "apps/atlas-forge/src/generation/pipeline.js",
+    "apps/atlas-forge/src/publishing/export.js",
+    "apps/atlas-forge/src/publishing/viewer.js",
+    "apps/atlas-forge/src/rendering/map.js",
+    "apps/atlas-forge/src/rendering/surface-field.js",
+    "apps/atlas-forge/src/rendering/surface-worker.js",
+    "apps/atlas-forge/src/rendering/surface.js",
+    "apps/atlas-forge/src/solvers/climate.js",
+    "apps/atlas-forge/src/solvers/radiation.js",
+    "apps/atlas-forge/tests/cartography.test.mjs",
+    "apps/atlas-forge/tests/surface.test.mjs",
+    "apps/atlas-forge/tests/terrain-browser.mjs",
+    "docs/governance/handoffs/HO-20261023-atlas-forge-metric-terrain.json",
+    "docs/proposals/atlas-forge/PROMPT_EXECUCAO.md"
+  ],
+  "work_completed": [
+    "Pedido atual do proprietário é zoom até chão/grama, além da grade global. Perguntas respondidas: natureza por seed com lugares opcionais; física natural como base e magia opcional configurável. Prompt de execução persistido em docs/proposals/atlas-forge/PROMPT_EXECUCAO.md, com critérios de física/química/ecologia/eras/mapas e limites da conexão com notas.",
+    "Superfície contínua spherical-detail-1 em coordenadas esféricas métricas, residual ancorado exatamente nos nós regionais e preservação de overrides. Tiles 96×96, geração em Worker por viewport, fila substituível, epoch e cache LRU até 96; nível máximo com passo N–S ≤1 m.",
+    "Zoom por escala métrica até chão, presets e leitura de altitude/área locais. Normais, materiais e grama; desenho sem fissuras no plano e malha no globo. Marcadores/notas continuam usáveis e ganham tipos Acampamento/Templo/Porto/Reino-sede. Edição regional fica bloqueada no detalhe para evitar alterações acidentais gigantes; edição métrica persistente não foi fingida.",
+    "Viewer reproduz o terreno local com versão incorporada e Worker de código confiável offline. Sem editor/solvers planetários/storage; CSP só permite Worker blob empacotado, sem executar dados/notas. Build usa callbacks de substituição para não interpretar $& do JS compilado como HTML.",
+    "AF-016: fluxo solar diário/anual por latitude em W/m², órbita circular, 96 fases, balanço S/4 e camadas/inspetor/publicação. Clima existente permanece heurístico e explicitamente não acoplado.",
+    "Corrigidos blocos retangulares de cobertura: materiais locais usam clima regional interpolado e lapse rate com altura local, em vez de ampliar IDs de bioma. Teste dedicado e fluxo multiescala completo aprovados após a correção."
+  ],
+  "verification": [
+    {
+      "check": "npm run check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "25 testes, 14 fluxos de regressão e fluxo multiescala completo passaram. Chão: 0,795328 m N–S por amostra; ~0,03 m/pixel, LRU ≤96, sondagem e continuidade, marcador autoral, viewer offline plano/globo e irradiância sazonal. Capturas scale-*.png e terrain-*.png em test-results."
+    },
+    {
+      "check": "npm run benchmark e npm run benchmark:render",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Geração 180/720/1440 e benchmark síncrono de render executados. Tempos completos de chegada de blocos medidos no browser: região ~946 ms, terreno ~1438 ms, chão ~44 ms neste ambiente; sem alegação DEVICE ou 60 fps. Logs nos artefatos."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks passaram com o handoff, novos requisitos e documentação."
+    },
+    {
+      "check": "Android físico e validação de ciência completa",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/atlas-forge/README.md",
+      "critical": false,
+      "evidence": "Chromium offline não é validação de aparelho, tectônica ou ecossistema real."
+    }
+  ],
+  "known_issues": [
+    "Detalhe local é um campo procedural A, não solução geodinâmica em metros. Clima/drenagem são campos globais; insolação B é entrada independente, sem balanço atmosférico completo.",
+    "Edição métrica persistente e restrições de desenho, ecologia trófica, química, eras causais e cidades completas continuam no mandato/roadmap. Pincéis atuais são regionais e não atuam no modo de detalhe.",
+    "Grade equiretangular tem passo E–W reduzido por cos(latitude); escala e área locais informam a métrica. Cache não representa refinamento dos solvers físicos."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Observar CI/integrador do PR e o estado combinado; nenhum merge manual.",
+    "Próximo dado estrutural: restrições de desenho/edição métrica com formato e migração; depois acoplamento físico clima/água e ecologia conforme o prompt. Não declarar a missão completa."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "docs/adr/0034-urbe-sem-simulacao-visual.md",
+    "docs/adr/0035-atlas-forge-incorporacao-gradual.md",
+    "docs/governance/addenda/ADD-0031-atlas-forge-no-ecosystem.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/atlas-forge/AGENTS.md",
+    "apps/atlas-forge/SPEC.md",
+    "apps/atlas-forge/ROADMAP.md",
+    "apps/atlas-forge/docs/MODELS.md",
+    "apps/atlas-forge/docs/FORMAT.md",
+    "apps/atlas-forge/docs/TERRAIN.md",
+    "docs/proposals/atlas-forge/MISSION.md",
+    "docs/proposals/atlas-forge/PROMPT_EXECUCAO.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Altitudes regionais canônicas são âncoras exatas. Superfície e cache são projeções derivadas com modelo único versionado; sem novos dados autorais ocultos."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Somente aplicativo e documentos relacionados; nenhum código de outro Product importado."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "HTML/editor/viewer offline, sem servidor de tiles ou runtime central."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #664, branch e handoff explícitos."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Escolhas reais do proprietário persistidas no prompt e SPEC, sem autorização estrutural inventada."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes consultadas diretamente e listadas."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Formato v2 e algoritmo global preservados; cache/modelo de visualização local documentados, sem ownership novo ou migração silenciosa. Edição métrica persistente fica para formato versionado próprio."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Versão local 0.4.0-alpha.1; nenhuma release alheia."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem validação Android física ou ciência completa alegada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Verifying até evidências finais, depois review; nenhum marco global concluído por controles visuais."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Avaliador/tiles reutilizados internamente no editor/viewer, sem extração para área compartilhada."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "continuous-terrain-rendering",
+      "status": "possible-candidate",
+      "rationale": "Há dois consumidores internos do mesmo Product; nenhum consumidor de outro Product que justifique contrato ou Tool global."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Incremento local autorizado de renderização/entrada científica, sem alteração de formato/ownership, fronteira de confiança de dados, componente global ou política de integração. Worker recebe código constante do build; notas/projetos não se tornam executáveis."
+  },
+  "cost": null
+}

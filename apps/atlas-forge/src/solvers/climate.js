@@ -1,14 +1,5 @@
 import { clamp, coord, RAD } from "../geometry/sphere.js";
-/** B: daily mean insolation (W/m²) on circular orbit, ideal clear sky. */
-export function insolation(lat, tilt, season) {
-  const p = lat * RAD,
-    d = tilt * RAD * Math.sin(season * Math.PI * 2);
-  const h = Math.acos(clamp(-Math.tan(p) * Math.tan(d), -1, 1));
-  return (
-    (1361 / Math.PI) *
-    (h * Math.sin(p) * Math.sin(d) + Math.cos(p) * Math.cos(d) * Math.sin(h))
-  );
-}
+export { insolation } from "./radiation.js";
 /** A: climatology with lapse rate and moisture sweeps. Not atmospheric CFD. */
 export function climate(elevation, grid, planet) {
   const n = elevation.length,

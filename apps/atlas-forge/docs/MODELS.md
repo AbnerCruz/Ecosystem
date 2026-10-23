@@ -45,3 +45,13 @@ Pipeline: relevo → clima → hidrologia → biomas. Recálculo atual é global
 No raio terrestre, 1.440 × 720 equivale a cerca de **27,8 km N–S por célula** (E–W diminui com cos(latitude)). É resolução regional; ruas, edifícios e detalhes de metros não podem ser inferidos desse terreno. O zoom 128× serve também para selecionar, posicionar e inspecionar lugares autorais. A interface mostra o limite em vez de sintetizar texturas como se fossem dados. O campo procedural mantém seis bandas e a mesma versão de algoritmo; resolução maior amostra a mesma função com maior densidade, não acrescenta geologia.
 
 Refinar mantém altitudes absolutas em toda a pegada angular dos overrides e recalcula derivados. Não há invariância de precipitação à resolução neste modelo; essa limitação já existente permanece. O projeto anterior é preservado em marco com sua própria grade; ao restaurá-lo, suas dimensões, máscaras e diário retornam integralmente.
+
+## Entrada solar sazonal — B (AF-016)
+
+`daily-mean-circular-1`: `Q = S0/π × [H sinφ sinδ + cosφ cosδ sinH]`, em W/m² no topo da atmosfera; `S0=1.361 W/m²`, `δ=tilt×sin(2πfase)`, `H=acos(clamp(-tanφ tanδ,-1,1))`. Órbita circular, amostras no centro das linhas; 96 fases para média anual. Junho/dezembro usam fases 0,25/0,75. Noite/dia polar são tratados pelo limite do ângulo horário.
+
+Campos por latitude, sem variação longitudinal neste modelo ideal. Testes em 720×360 e tilt 0/23,5/60 verificam média ponderada por área `S0/4 = 340,25 W/m²` nos três campos, erro absoluto <0,005 W/m². É uma identidade geométrica no modelo ideal, não calibração de uma atmosfera real. Não inclui albedo, nuvens, gases, órbita excêntrica ou calor oceânico; ainda não é a entrada do campo térmico heurístico. A interface e publicação identificam a separação.
+
+## Terreno métrico — A (AF-017)
+
+Ver [TERRAIN.md](TERRAIN.md). O detalhe local usa um campo contínuo e versionado, ancorado nas altitudes regionais, com amostras sob demanda ≤1 m N–S no nível mais fino. A resolução do chão não muda a resolução dos solvers globais. Grama é cobertura procedural; biologia trófica e efeitos de raízes/pastoreio continuam futuros.
