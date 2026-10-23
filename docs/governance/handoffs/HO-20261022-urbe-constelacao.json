@@ -44,9 +44,10 @@
     {
       "kind": "human",
       "check": "No aparelho, abrir a Constelação num vault grande: passear, aproximar, tocar numa estrela e abrir",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/urbe/csharp/src/Urbe.Client/ConstellationView.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Client/ConstellationView.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-23 (Issue https://github.com/AbnerCruz/Ecosystem/issues/670); registro em docs/governance/responses/VAL-HO-20261022-urbe-constelacao-e4c55aef5ae9.md."
     }
   ],
   "known_issues": [
