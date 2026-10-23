@@ -102,8 +102,7 @@ servidor local não fornecer a rota compatível, o ID pode ser cadastrado
 manualmente.
 
 **Limites:** a interface ainda não oferece streaming de tokens e este
-incremento não prova paridade Anthropic/Gemini ou consumo por Urbe,
-Lunet2D e RPG. Nenhum crédito financeiro é autorizado ao salvar um
+incremento não prova paridade Anthropic/Gemini nem consumo em outro Product. Nenhum crédito financeiro é autorizado ao salvar um
 provedor. Testes .NET verificam rejeição de HTTP remoto, chave
 obrigatória em HTTPS e descoberta local sem header de autenticação;
 o build/smoke Android verifica instalação e configuração de rede, mas
