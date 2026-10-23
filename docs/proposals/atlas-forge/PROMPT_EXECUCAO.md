@@ -110,3 +110,7 @@ A base existente possui esfera, grade global, autoria regional, clima/biomas heu
 Depois: restrições de desenho e edição local versionada; energia/clima e água/lagos; tectônica/erosão/solos; ecologia trófica; eras causais; mundo habitado/geradores locais. Pode haver trabalho incremental nessas frentes, mas nenhum gate é encerrado por existir um controle na UI.
 
 Execute o primeiro item verificável, prove o fluxo no navegador e publique o código pelos mecanismos vigentes. Entregue o HTML usável, as evidências, os limites restantes e a próxima dependência técnica concreta.
+
+### Correção explícita do proprietário — continuidade do zoom (AF-018)
+
+Aproximar e afastar devem percorrer o mesmo mundo continuamente. É inadequado trocar para uma visualização específica ao chegar perto, mesmo que use a mesma seed. Mesmas posições, alturas, materiais e paleta do planeta ao chão; detalhes revelados progressivamente; terreno existente visível durante carregamento; retorno ao mesmo enquadramento reproduz a imagem. Validar o percurso real com roda/pinch e vídeo, além de capturas isoladas. Atalhos de escala só mudam a câmera.

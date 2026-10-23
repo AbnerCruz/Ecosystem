@@ -20,6 +20,7 @@ Fonte do escopo completo: [MISSION.md](../../docs/proposals/atlas-forge/MISSION.
 | AF-015 | M1 | Autoria explícita: abertura vazia, sem exemplos inseridos, inspeção local sem geração | Issue #660: implementação e regressões; revisão no [PR #661](https://github.com/AbnerCruz/Ecosystem/pull/661) |
 | AF-016 | M3 | Entrada solar sazonal, W/m² e balanço global do modelo circular | Issue #664; não acopla automaticamente o clima heurístico |
 | AF-017 | M1 | Planeta → terreno → chão: campo contínuo, tiles ≤1 m, cache e viewer | Issue #664; edição métrica persistente e acoplamento físico fino pendentes |
+| AF-018 | M1 | Corrigir a troca visual no zoom: uma superfície do planeta ao chão, carregamento com ancestrais e ida/volta contínua | [Issue #687](https://github.com/AbnerCruz/Ecosystem/issues/687); evidências de wheel/globo/publicação no handoff |
 | AF-014 | M8 | Dois consumidores reais, Extraction Review e capability se justificada | Sem extração antecipada; Runtime central nunca obrigatório |
 
 Cada avanço deve atravessar modelo → UI → persistência → teste → publicação quando aplicável. Não declarar todos os gates por ter controles visuais. O pedido atual prioriza AF-017 (Issue #664): chegar ao chão, além da grade planetária. Depois: edição local versionada/desenho de restrições, AF-007/008 e os demais processos causais; AF-010 depende de recursos e habitats mensuráveis.

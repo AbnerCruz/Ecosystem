@@ -1,6 +1,6 @@
 # Atlas Forge
 
-Oficina local de mundos esféricos de alta fantasia do Ecosystem. Aplicação independente **Alpha 0.4**, com editor HTML/Canvas e visualizador offline. A fonte canônica do aplicativo é este diretório; a versão é `package.json`.
+Oficina local de mundos esféricos de alta fantasia do Ecosystem. Aplicação independente **Alpha 0.4.1**, com editor HTML/Canvas e visualizador offline. A fonte canônica do aplicativo é este diretório; a versão é `package.json`.
 
 ## Executar
 
@@ -19,7 +19,7 @@ Abra `http://localhost:4173` ou abra `dist/atlas-forge.html` diretamente no nave
 
 Comece sem conteúdo inserido automaticamente. Gere terreno por seed e resolução explícitas (até 1.440 × 720); explore mapa/globo, altitude, temperatura sazonal, chuva, drenagem, bacias, biomas e intervenções. Pincele elevação/escavação, desfaça/refaça e regenere preservando o relevo autoral. Crie lugares com notas Markdown por cópia e mapas filhos persistentes. Salve JSON, crie marcos e ramificações e exporte um atlas HTML independente.
 
-Zoom ancorado por escala métrica, do planeta até amostras locais ≤1 m, gesto de dois dedos, escala métrica, resolução real, curvas de nível e globo sem textura global limitada. Refinamento explícito preserva pegadas autorais e guarda um marco da grade original. A grade regional de clima/drenagem continua separada: 27,8 km N–S no raio terrestre na maior resolução. O detalhe local é procedural e não significa clima/geologia simulados em metros. Use Escala → Chão sobre um ponto de terra.
+Zoom ancorado por escala métrica, do planeta até amostras locais ≤1 m, gesto de dois dedos, escala métrica, resolução real, curvas de nível e globo sem textura global limitada. Refinamento explícito preserva pegadas autorais e guarda um marco da grade original. A grade regional de clima/drenagem continua separada: 27,8 km N–S no raio terrestre na maior resolução. O detalhe local é procedural e não significa clima/geologia simulados em metros. Aproxime e afaste com a roda, +/− ou dois dedos. O mesmo terreno permanece visível do planeta ao chão; os atalhos apenas ajustam o zoom.
 
 O build inclui `dist/examples/miravento.world.json`, `Miravento.md` e `miravento.html`: planeta com relevo autoral, castelo, nota, mapa filho e dois marcos. Projetos e documentos permanecem locais, sem acesso automático a pastas externas.
 
@@ -33,7 +33,7 @@ npm run benchmark
 npm run benchmark:render
 ```
 
-`check` executa formatação, 25 testes de domínio, compatibilidade, câmera, terreno e build, build e 14 cenários de regressão mais o fluxo multiescala em Chromium, incluindo editor/viewer por `file://` com rede desativada. Evidências: [entrega inicial](../../docs/proposals/atlas-forge/docs/VERIFICATION.md); os caminhos de código anteriores no relatório são históricos. Android físico continua pendente.
+`check` executa formatação, 25 testes de domínio, compatibilidade, câmera, terreno e build, build e 14 cenários de regressão mais os fluxos multiescala e de zoom contínuo em Chromium, incluindo editor/viewer por `file://` com rede desativada. Evidências: [entrega inicial](../../docs/proposals/atlas-forge/docs/VERIFICATION.md); os caminhos de código anteriores no relatório são históricos. Android físico continua pendente.
 
 ## Documentação e limites
 

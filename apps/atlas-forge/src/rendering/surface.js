@@ -5,19 +5,27 @@ import {
   maxSurfaceLevel,
   hash32,
 } from "./surface-field.js";
-import { wrap, distance } from "../geometry/sphere.js";
+import { wrap, clamp } from "../geometry/sphere.js";
+const FADE_MS = 180;
+const keyOf = (z, x, y) => `${z}/${x}/${y}`;
+const wrappedX = (x, n) => ((x % (2 * n)) + 2 * n) % (2 * n);
+
+/** One tile pyramid for every camera scale. Ancestors remain until children arrive. */
 export class SurfaceTiles {
   constructor(redraw) {
     this.redraw = redraw;
     this.cache = new Map();
     this.epoch = 0;
     this.signature = "";
+    this.wanted = new Set();
   }
   setWorld(world, derived) {
     this.context = surfaceContext(world, derived);
     this.epoch++;
     this.cache.clear();
     this.signature = "";
+    this.wanted.clear();
+    this.error = null;
     if (this.worker)
       this.worker.postMessage({
         type: "world",
@@ -50,133 +58,125 @@ export class SurfaceTiles {
     } else this.fallback = true;
   }
   accept(data) {
-    const canvas = document.createElement("canvas");
-    canvas.width = canvas.height = TILE_SIZE;
-    canvas
-      .getContext("2d")
-      .putImageData(new ImageData(data.rgba, TILE_SIZE, TILE_SIZE), 0, 0);
-    const elevationCanvas = document.createElement("canvas");
-    elevationCanvas.width = elevationCanvas.height = TILE_SIZE;
-    elevationCanvas
-      .getContext("2d")
-      .putImageData(new ImageData(data.topo, TILE_SIZE, TILE_SIZE), 0, 0);
-    const key = `${data.z}/${data.x}/${data.y}`;
-    this.cache.set(key, { ...data, canvas, elevationCanvas });
-    while (this.cache.size > 96)
-      this.cache.delete(this.cache.keys().next().value);
+    const make = (rgba) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = TILE_SIZE;
+      canvas
+        .getContext("2d")
+        .putImageData(new ImageData(rgba, TILE_SIZE, TILE_SIZE), 0, 0);
+      return canvas;
+    };
+    this.cache.set(keyOf(data.z, data.x, data.y), {
+      ...data,
+      canvas: make(data.rgba),
+      elevationCanvas: make(data.topo),
+      born: performance.now(),
+    });
+    while (this.cache.size > 96) {
+      const key = [...this.cache.keys()].find(
+        (k) => !this.wanted.has(k) && !k.startsWith("0/"),
+      );
+      if (!key) break;
+      this.cache.delete(key);
+    }
     this.redraw();
   }
   pause() {
-    if (!this.active) return;
     this.active = false;
     this.signature = "";
     if (this.worker)
       this.worker.postMessage({ type: "tiles", epoch: this.epoch, tiles: [] });
   }
+  bounds(renderer) {
+    if (renderer.projection === "flat") {
+      const b = renderer.visibleBounds();
+      return {
+        ...b,
+        west: Math.max(b.west, (b.west + b.east) / 2 - 180),
+        east: Math.min(b.east, (b.west + b.east) / 2 + 180),
+      };
+    }
+    const center = renderer.geographic(renderer.w / 2, renderer.h / 2);
+    const points = [];
+    for (let y = 0; y <= 4; y++)
+      for (let x = 0; x <= 4; x++) {
+        const p = renderer.geographic(
+          (renderer.w * x) / 4,
+          (renderer.h * y) / 4,
+        );
+        if (!p || !center)
+          return { west: -180, east: 180, south: -90, north: 90 };
+        points.push({ lat: p.lat, lon: center.lon + wrap(p.lon - center.lon) });
+      }
+    return {
+      west: Math.min(...points.map((p) => p.lon)),
+      east: Math.max(...points.map((p) => p.lon)),
+      south: Math.min(...points.map((p) => p.lat)),
+      north: Math.max(...points.map((p) => p.lat)),
+    };
+  }
+  range(bounds, z) {
+    const n = 2 ** z;
+    return {
+      firstX: Math.floor(((bounds.west + 180) / 180) * n),
+      lastX: Math.ceil(((bounds.east + 180) / 180) * n) - 1,
+      firstY: Math.max(0, Math.floor(((90 - bounds.north) / 180) * n)),
+      lastY: Math.min(n - 1, Math.floor(((90 - bounds.south) / 180) * n)),
+    };
+  }
   render(renderer, ctx) {
     this.active = true;
     this.start();
-    const center = renderer.geographic(renderer.w / 2, renderer.h / 2);
-    if (!center) return false;
-    const corners = [];
-    for (let y = 0; y <= 2; y++)
-      for (let x = 0; x <= 2; x++) {
-        const p = renderer.geographic(
-          (renderer.w * x) / 2,
-          (renderer.h * y) / 2,
-        );
-        if (p)
-          corners.push({
-            lat: p.lat,
-            lon: center.lon + wrap(p.lon - center.lon),
-          });
-      }
-    if (!corners.length) return false;
-    const radius = this.context.radius;
-    const p = renderer.geographic(renderer.w / 2 + 1, renderer.h / 2 + 1);
-    const mpp = p
-      ? distance(center, p, radius) / Math.SQRT2
-      : (Math.PI * radius) / renderer.scale;
-    let z = Math.max(
-      0,
-      Math.min(
-        maxSurfaceLevel(radius),
-        Math.ceil(
-          Math.log2((Math.PI * radius) / (TILE_SIZE * Math.max(0.001, mpp))),
-        ),
+    const bounds = this.bounds(renderer),
+      radius = this.context.radius;
+    // Latitude pitch controls the screen footprint; the field never depends on LOD.
+    const mpp =
+      renderer.projection === "flat"
+        ? (Math.PI * radius) / renderer.scale
+        : renderer.metresPerPixel();
+    let z = clamp(
+      Math.ceil(
+        Math.log2((Math.PI * radius) / (TILE_SIZE * Math.max(0.001, mpp))),
       ),
+      0,
+      maxSurfaceLevel(radius),
     );
-    let n = 2 ** z;
-    const west = Math.min(...corners.map((p) => p.lon)),
-      east = Math.max(...corners.map((p) => p.lon));
-    const north = Math.max(...corners.map((p) => p.lat)),
-      south = Math.min(...corners.map((p) => p.lat));
-    let firstX, lastX, firstY, lastY;
+    if (!Number.isFinite(z)) z = 0;
+    let range;
     for (;;) {
-      firstX = Math.floor(((west + 180) / 180) * n);
-      lastX = Math.floor(((east + 180) / 180) * n);
-      firstY = Math.max(0, Math.floor(((90 - north) / 180) * n));
-      lastY = Math.min(n - 1, Math.floor(((90 - south) / 180) * n));
-      if ((lastX - firstX + 1) * (lastY - firstY + 1) <= 80 || z === 0) break;
+      range = this.range(bounds, z);
+      if (
+        (range.lastX - range.firstX + 1) * (range.lastY - range.firstY + 1) <=
+          48 ||
+        z === 0
+      )
+        break;
       z--;
-      n = 2 ** z;
     }
-    const missing = [];
-    let ready = 0,
-      total = 0;
-    ctx.imageSmoothingEnabled = z < maxSurfaceLevel(radius);
-    for (let yy = firstY; yy <= lastY; yy++)
-      for (let xx = firstX; xx <= lastX; xx++) {
-        const x = ((xx % (2 * n)) + 2 * n) % (2 * n),
-          key = `${z}/${x}/${yy}`,
-          tile = this.cache.get(key);
-        total++;
-        if (!tile) {
-          missing.push([z, x, yy]);
-          continue;
-        }
-        ready++;
-        // Touch for true LRU, preserving bounded memory while panning.
-        this.cache.delete(key);
-        this.cache.set(key, tile);
-        const lon = -180 + (xx * 180) / n,
-          lat = 90 - (yy * 180) / n;
-        const a = renderer.point(lat, lon),
-          b = renderer.point(lat, lon + 180 / n),
-          c = renderer.point(lat - 180 / n, lon),
-          d = renderer.point(lat - 180 / n, lon + 180 / n);
-        if (![a, b, c, d].every((p) => p.visible)) continue;
-        const image =
-          renderer.layer === "elevation" ? tile.elevationCanvas : tile.canvas;
-        if (renderer.projection === "flat")
-          ctx.drawImage(image, a.x, a.y, b.x - a.x + 0.35, c.y - a.y + 0.35);
-        else {
-          this.triangle(ctx, image, a, b, c, [
-            0,
-            0,
-            TILE_SIZE,
-            0,
-            0,
-            TILE_SIZE,
-          ]);
-          this.triangle(ctx, image, d, c, b, [
-            TILE_SIZE,
-            TILE_SIZE,
-            0,
-            TILE_SIZE,
-            TILE_SIZE,
-            0,
-          ]);
-        }
-        if (
-          renderer.layer !== "elevation" &&
-          z === maxSurfaceLevel(radius) &&
-          Math.abs(b.x - a.x) / TILE_SIZE > 7
-        )
-          this.grass(ctx, renderer, tile, lon, lat, 180 / n);
-      }
+    const levels = [
+      ...new Set([
+        0,
+        Math.max(0, z - 4),
+        Math.max(0, z - 2),
+        Math.max(0, z - 1),
+        z,
+      ]),
+    ].sort((a, b) => a - b);
+    const wanted = [];
+    for (const level of levels) {
+      const r =
+          level === 0
+            ? { firstX: 0, lastX: 1, firstY: 0, lastY: 0 }
+            : this.range(bounds, level),
+        n = 2 ** level;
+      for (let y = r.firstY; y <= r.lastY; y++)
+        for (let x = r.firstX; x <= r.lastX; x++)
+          wanted.push([level, wrappedX(x, n), y]);
+    }
+    this.wanted = new Set(wanted.map((t) => keyOf(...t)));
+    const missing = wanted.filter((t) => !this.cache.has(keyOf(...t)));
     const signature = `${this.epoch}:${missing.map((t) => t.join("/")).join(",")}`;
-    if (missing.length && signature !== this.signature) {
+    if (signature !== this.signature) {
       this.signature = signature;
       if (this.worker)
         this.worker.postMessage({
@@ -185,57 +185,216 @@ export class SurfaceTiles {
           tiles: missing,
         });
       else {
-        const version = this.epoch;
-        for (const tile of missing)
-          setTimeout(() => {
-            if (version === this.epoch)
-              this.accept(generateSurfaceTile(this.context, ...tile));
-          }, 0);
+        this.fallbackQueue = missing;
+        if (!this.fallbackRunning) this.pumpFallback();
       }
     }
-    renderer.canvas.dataset.terrainReady = String(ready === total && total > 0);
+    const now = performance.now();
+    this.level = z;
+    this.levelBlend = clamp(
+      Math.log2((Math.PI * radius) / (TILE_SIZE * mpp)) - z + 1,
+      0,
+      1,
+    );
+    this.fading = false;
+    // Cached intermediate levels also remain usable when reversing or panning.
+    const tiles = [...this.cache.values()]
+      .filter((t) => t.z <= z)
+      .sort((a, b) => a.z - b.z);
+    if (renderer.projection === "flat") this.flat(renderer, ctx, tiles, now);
+    else this.globe(renderer, ctx, tiles, z, now);
+    let ready = true;
+    for (let y = range.firstY; y <= range.lastY; y++)
+      for (let x = range.firstX; x <= range.lastX; x++) {
+        const tile = this.cache.get(keyOf(z, wrappedX(x, 2 ** z), y));
+        if (!tile) ready = false;
+        else if (tile.z > 0 && now - tile.born < FADE_MS) {
+          ready = false;
+          this.fading = true;
+        }
+      }
+    renderer.canvas.dataset.terrainReady = String(ready);
     renderer.canvas.dataset.terrainLevel = String(z);
     renderer.canvas.dataset.terrainSpacing = String(
-      (Math.PI * radius) / (n * TILE_SIZE),
+      (Math.PI * radius) / (2 ** z * TILE_SIZE),
     );
     renderer.canvas.dataset.terrainTiles = String(this.cache.size);
+    renderer.canvas.dataset.terrainPipeline = "continuous-pyramid";
+    if (this.fading) this.redraw();
     return true;
   }
-  triangle(ctx, img, a, b, c, uv) {
-    const [u0, v0, u1, v1, u2, v2] = uv;
-    const det = (u1 - u0) * (v2 - v0) - (u2 - u0) * (v1 - v0);
-    const ax = ((b.x - a.x) * (v2 - v0) - (c.x - a.x) * (v1 - v0)) / det;
-    const bx = ((c.x - a.x) * (u1 - u0) - (b.x - a.x) * (u2 - u0)) / det;
-    const ay = ((b.y - a.y) * (v2 - v0) - (c.y - a.y) * (v1 - v0)) / det;
-    const by = ((c.y - a.y) * (u1 - u0) - (b.y - a.y) * (u2 - u0)) / det;
-    ctx.save();
-    ctx.beginPath();
-    const centre = { x: (a.x + b.x + c.x) / 3, y: (a.y + b.y + c.y) / 3 };
-    const expand = (p) => {
-      const r = Math.hypot(p.x - centre.x, p.y - centre.y);
-      return {
-        x: p.x + ((p.x - centre.x) / r) * 0.7,
-        y: p.y + ((p.y - centre.y) / r) * 0.7,
-      };
-    };
-    const aa = expand(a),
-      bb = expand(b),
-      cc = expand(c);
-    ctx.moveTo(aa.x, aa.y);
-    ctx.lineTo(bb.x, bb.y);
-    ctx.lineTo(cc.x, cc.y);
-    ctx.closePath();
-    ctx.clip();
-    ctx.transform(
-      ax,
-      ay,
-      bx,
-      by,
-      a.x - ax * u0 - bx * v0,
-      a.y - ay * u0 - by * v0,
-    );
-    ctx.drawImage(img, 0, 0);
-    ctx.restore();
+  pumpFallback() {
+    this.fallbackRunning = true;
+    const epoch = this.epoch;
+    setTimeout(() => {
+      const tile = this.fallbackQueue?.shift();
+      if (tile && epoch === this.epoch)
+        this.accept(generateSurfaceTile(this.context, ...tile));
+      this.fallbackRunning = false;
+      if (this.fallbackQueue?.length) this.pumpFallback();
+    }, 0);
+  }
+  alpha(tile, now) {
+    const a = tile.z === 0 ? 1 : clamp((now - tile.born) / FADE_MS, 0, 1);
+    if (a < 1) this.fading = true;
+    return a * (tile.z === this.level && tile.z > 0 ? this.levelBlend : 1);
+  }
+  flat(renderer, ctx, tiles, now) {
+    ctx.imageSmoothingEnabled = true;
+    const span = renderer.scale * 2;
+    for (const tile of tiles) {
+      const n = 2 ** tile.z,
+        size = renderer.scale / n;
+      const y = renderer.top + tile.y * size;
+      if (y > renderer.h || y + size < 0) continue;
+      const origin = renderer.left + tile.x * size;
+      const first = Math.ceil((-origin - size) / span),
+        last = Math.floor((renderer.w - origin) / span);
+      for (let copy = first; copy <= last; copy++) {
+        const x = origin + copy * span;
+        ctx.globalAlpha = this.alpha(tile, now);
+        ctx.drawImage(
+          renderer.layer === "elevation" ? tile.elevationCanvas : tile.canvas,
+          x,
+          y,
+          size + 0.1,
+          size + 0.1,
+        );
+        if (
+          renderer.layer !== "elevation" &&
+          tile.z === maxSurfaceLevel(this.context.radius)
+        ) {
+          // Blades emerge continuously at their physical size, without a ground mode.
+          ctx.globalAlpha *= clamp((size / TILE_SIZE - 3) / 14, 0, 1);
+          if (ctx.globalAlpha > 0)
+            this.grass(
+              ctx,
+              renderer,
+              tile,
+              -180 + (tile.x * 180) / n,
+              90 - (tile.y * 180) / n,
+              180 / n,
+            );
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+  globe(renderer, ctx, tiles, z, now) {
+    // Inverse projection covers the limb and poles without dropped tile triangles.
+    const density = renderer.ratio,
+      w = Math.ceil(renderer.w * density),
+      h = Math.ceil(renderer.h * density);
+    const camera = `${w}/${h}/${renderer.scale}/${renderer.pan.x}/${renderer.pan.y}`;
+    if (this.projection?.camera !== camera) {
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const off = canvas.getContext("2d"),
+        im = off.createImageData(w, h);
+      const u = new Float64Array(w * h).fill(-1),
+        v = new Float64Array(w * h);
+      for (let y = 0; y < h; y++)
+        for (let x = 0; x < w; x++) {
+          const p = renderer.geographic(
+            (x + 0.5) / density,
+            (y + 0.5) / density,
+          );
+          if (p) {
+            const k = y * w + x;
+            u[k] = (wrap(p.lon - renderer.rotation) + 180) / 360;
+            v[k] = clamp((90 - p.lat) / 180, 0, 1 - 1e-12);
+          }
+        }
+      this.projection = { camera, canvas, off, im, u, v };
+    }
+    const { canvas, off, im, u, v } = this.projection,
+      n = 2 ** z;
+    const groups = new Map();
+    for (let k = 0; k < u.length; k++) {
+      if (u[k] < 0) continue;
+      const longitude = (((u[k] + renderer.rotation / 360) % 1) + 1) % 1;
+      const x = Math.floor(longitude * 2 * n),
+        y = Math.floor(v[k] * n),
+        id = x + y * 2 * n;
+      let chain = groups.get(id);
+      if (!chain) {
+        chain = [];
+        for (let level = 0; level <= z; level++) {
+          const q = 2 ** level,
+            tile = this.cache.get(
+              keyOf(level, Math.floor(longitude * 2 * q), Math.floor(v[k] * q)),
+            );
+          if (tile) {
+            const alpha = this.alpha(tile, now);
+            if (alpha === 1) chain = [];
+            chain.push([tile, alpha]);
+          }
+        }
+        groups.set(id, chain);
+      }
+      const out = k * 4;
+      im.data[out + 3] = chain.length ? 255 : 0;
+      for (const [tile, alpha] of chain) {
+        const q = 2 ** tile.z;
+        const fx = clamp(
+            (longitude * 2 * q - tile.x) * TILE_SIZE - 0.5,
+            0,
+            TILE_SIZE - 1,
+          ),
+          fy = clamp((v[k] * q - tile.y) * TILE_SIZE - 0.5, 0, TILE_SIZE - 1);
+        const ix = Math.floor(fx),
+          iy = Math.floor(fy),
+          tx = fx - ix,
+          ty = fy - iy;
+        const a = (iy * TILE_SIZE + ix) * 4,
+          b = (iy * TILE_SIZE + Math.min(ix + 1, TILE_SIZE - 1)) * 4,
+          c = (Math.min(iy + 1, TILE_SIZE - 1) * TILE_SIZE + ix) * 4,
+          d =
+            (Math.min(iy + 1, TILE_SIZE - 1) * TILE_SIZE +
+              Math.min(ix + 1, TILE_SIZE - 1)) *
+            4;
+        const data = renderer.layer === "elevation" ? tile.topo : tile.rgba;
+        for (let channel = 0; channel < 3; channel++) {
+          const value =
+            (data[a + channel] * (1 - tx) + data[b + channel] * tx) * (1 - ty) +
+            (data[c + channel] * (1 - tx) + data[d + channel] * tx) * ty;
+          im.data[out + channel] =
+            alpha === 1
+              ? value
+              : im.data[out + channel] * (1 - alpha) + value * alpha;
+        }
+      }
+    }
+    off.putImageData(im, 0, 0);
+    ctx.drawImage(canvas, 0, 0, renderer.w, renderer.h);
+    if (
+      renderer.layer !== "elevation" &&
+      z === maxSurfaceLevel(this.context.radius)
+    ) {
+      const alpha = clamp(
+        ((Math.PI * this.context.radius) /
+          (2 ** z * TILE_SIZE) /
+          renderer.metresPerPixel() -
+          3) /
+          14,
+        0,
+        1,
+      );
+      for (const tile of tiles.filter((t) => t.z === z)) {
+        ctx.globalAlpha = alpha * this.alpha(tile, now);
+        if (ctx.globalAlpha > 0)
+          this.grass(
+            ctx,
+            renderer,
+            tile,
+            -180 + (tile.x * 180) / n,
+            90 - (tile.y * 180) / n,
+            180 / n,
+          );
+      }
+      ctx.globalAlpha = 1;
+    }
   }
   grass(ctx, renderer, tile, lon, lat, span) {
     const step = span / TILE_SIZE;

@@ -201,7 +201,12 @@ export class MapRenderer {
   setMetresPerPixel(target, p) {
     this.resize();
     if (p) this.focus(p.lat, p.lon);
-    this.zoomAt(this.metresPerPixel() / target);
+    // Geodesic metres/pixel changes slightly with the camera; converge on the target.
+    for (let i = 0; i < 5; i++) {
+      const factor = this.metresPerPixel() / target;
+      if (!Number.isFinite(factor) || Math.abs(factor - 1) < 1e-9) break;
+      this.zoomAt(factor);
+    }
     this.render();
   }
   detailedLocation(p) {
@@ -287,10 +292,7 @@ export class MapRenderer {
     ctx.setTransform(this.ratio, 0, 0, this.ratio, 0, 0);
     ctx.clearRect(0, 0, this.w, this.h);
     if (!this.world || !this.derived) return;
-    this.detailActive =
-      this.zoom >= 8 &&
-      ["atlas", "elevation", "authored"].includes(this.layer) &&
-      this.metresPerPixel() < 1500;
+    this.detailActive = ["atlas", "elevation"].includes(this.layer);
     if (this.detailActive && !this.surface) {
       this.surface = new SurfaceTiles(() => {
         if (!this.surfaceFrame)
@@ -320,18 +322,6 @@ export class MapRenderer {
       this.cache = key;
     }
     if (this.detailActive) {
-      const center = this.geographic(this.w / 2, this.h / 2);
-      const c = center
-        ? color(
-            index(center.lat, center.lon, grid),
-            this.world,
-            this.derived,
-            this.layer,
-            this.season,
-          )
-        : [22, 38, 43];
-      ctx.fillStyle = `rgb(${c.join(",")})`;
-      ctx.fillRect(0, 0, this.w, this.h);
       this.surface.render(this, ctx);
     } else if (this.projection === "flat") {
       ctx.imageSmoothingEnabled = (this.scale * 2) / grid.width < 2;
@@ -443,7 +433,6 @@ export class MapRenderer {
       }
     }
     if (
-      !this.detailActive &&
       this.showRivers &&
       ["atlas", "drainage", "elevation"].includes(this.layer)
     ) {
@@ -606,10 +595,10 @@ export class MapRenderer {
     ctx.textAlign = "left";
     const spacing = Number(this.canvas.dataset.terrainSpacing);
     const text = this.detailActive
-      ? `Terreno local · amostra ${spacing < 1 ? spacing.toFixed(2) + " m" : Math.round(spacing) + " m"}`
+      ? `Terreno · ${spacing < 1 ? spacing.toFixed(2) + " m" : spacing < 1000 ? Math.round(spacing) + " m" : (spacing / 1000).toFixed(1) + " km"} por amostra`
       : `${this.zoom.toFixed(1)}× · grade ${nativeKm.toFixed(1)} km N–S`;
     this.canvas.dataset.terrainModel = this.detailActive
-      ? "spherical-detail-1"
+      ? SURFACE_MODEL
       : "global-grid";
     this.canvas.dataset.zoom = this.zoom;
     this.canvas.dataset.resolution = nativeKm;
