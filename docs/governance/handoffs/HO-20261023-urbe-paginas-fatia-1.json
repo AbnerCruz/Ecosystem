@@ -74,7 +74,7 @@
     }
   ],
   "criticality": {
-    "declared": "routine",
-    "reason": "Feature autorizada pela DEC-0055; motor de páginas atrás de UrbeMarks; nada de vault ou workflow."
+    "declared": "critical",
+    "reason": "Toca zonas críticas da política: docs/governance/decisions.json (consequências da DEC-0055 aplicadas) e PageEngine.Vault.cs (casa com *Vault*.cs; é o motor de páginas lendo as notas, sem gravar no vault). Espera o integrar do proprietário."
   }
 }
