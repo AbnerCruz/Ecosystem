@@ -261,7 +261,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
                 c.AgentInstructionBlocks[id] = (value as JsonArray ?? []).OfType<JsonObject>()
                     .Select(b => new AiInstructionBlock(Str(b["title"]), Str(b["content"]))).ToList();
         if (o["memory"] is JsonObject mem)
-            foreach (var (k, v) in mem) c.Memory[k] = (v as JsonArray ?? []).Select(x => Str(x)).Where(x.Length > 0).ToList();
+            foreach (var (k, v) in mem) c.Memory[k] = (v as JsonArray ?? []).Select(x => Str(x)).Where(x => x.Length > 0).ToList();
         if (o["agentNames"] is JsonObject an)
             foreach (var (k, v) in an) if (Str(v).Trim() is { Length: > 0 } name) c.AgentNames[k] = name;
         if (o["modelCache"] is JsonObject mc)
