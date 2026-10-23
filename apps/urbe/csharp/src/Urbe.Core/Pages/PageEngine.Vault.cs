@@ -14,6 +14,9 @@ public sealed partial class PageEngine
 {
     public static readonly string[] VaultSources = ["links", "linked", "search"];
 
+    /// <summary>UC-62 slice 4: a text the preview lets one write in place (one line, no Markdown, no marks).</summary>
+    public static bool PlainText(string text) => PageEditMarks.Plain(text);
+
     private static readonly Regex WikiLinkRe = new(@"\[\[([^\]\|#\n]+)", RegexOptions.Compiled);
 
     /// <summary>The "Notas" section's fields with the vault's queries (once).</summary>
@@ -25,9 +28,12 @@ public sealed partial class PageEngine
         if (fields.OfType<JsonObject>().FirstOrDefault(f => (string?)f["key"] == "source") is { } source &&
             source["options"] is JsonArray options && source["labels"] is JsonArray labels)
         {
-            options.Add("links"); labels.Add("Ligam a uma nota");
-            options.Add("linked"); labels.Add("Ligadas por uma nota");
-            options.Add("search"); labels.Add("Busca");
+            // JsonValue.Create, not Add<string>: no reflection (the Android build has none)
+            foreach (var (option, label) in new[] { ("links", "Ligam a uma nota"), ("linked", "Ligadas por uma nota"), ("search", "Busca") })
+            {
+                options.Add((JsonNode?)JsonValue.Create(option));
+                labels.Add((JsonNode?)JsonValue.Create(label));
+            }
         }
         int at = fields.Select((f, i) => ((string?)f?["key"], i)).FirstOrDefault(x => x.Item1 == "paths").i + 1;
         fields.Insert(at, new JsonObject { ["key"] = "subfolders", ["label"] = "Incluir subpastas", ["type"] = "boolean", ["default"] = true });

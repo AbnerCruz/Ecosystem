@@ -174,6 +174,40 @@ public sealed class PageStudio
         return copy;
     }
 
+    /// <summary>
+    /// UC-62 slice 3: a template of the page's structure only — the sections, their look and their lists' length stay,
+    /// the texts (titles, paragraphs, Markdown, code, the free nodes' words) go back to their defaults.
+    /// </summary>
+    public static JsonObject StructureOnly(JsonObject spec, PageEngine engine)
+    {
+        var copy = (JsonObject)spec.DeepClone();
+        static bool IsText(string? type) => type is "text" or "textarea" or "markdown" or "code";
+        static void Blank(JsonObject props, JsonArray fields)
+        {
+            foreach (var f in fields.OfType<JsonObject>())
+            {
+                var key = (string?)f["key"];
+                if (key is null || !props.ContainsKey(key)) continue;
+                var type = (string?)f["type"];
+                // icons are part of the look, not words
+                if (IsText(type) && key != "icon") props.Remove(key);
+                else if (type == "list" && props[key] is JsonArray items && f["fields"] is JsonArray sub)
+                    foreach (var item in items.OfType<JsonObject>()) Blank(item, sub);
+                else if (type == "tree" && props[key] is JsonObject root)
+                    PageEngine.FreeWalk(root, (n, _, _) =>
+                    {
+                        if (n["content"] is JsonObject content)
+                            foreach (var k in new[] { "text", "author", "md", "tex", "code" })
+                                if (content[k] is JsonValue) content[k] = "";
+                        return false;
+                    });
+            }
+        }
+        foreach (var sec in (copy["sections"] as JsonArray ?? []).OfType<JsonObject>())
+            if (sec["props"] is JsonObject props && engine.BlockInfo((string?)sec["type"]) is { } info) Blank(props, info.Fields);
+        return copy;
+    }
+
     public void MoveSection(string id, int delta)
     {
         int i = IndexOf(id), j = Math.Clamp(i + delta, 0, Sections.Count - 1);

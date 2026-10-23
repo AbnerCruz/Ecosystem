@@ -226,3 +226,54 @@ public sealed partial class HeadlessUiTests
             finally { window.Close(); }
         }, CancellationToken.None));
 }
+
+/// <summary>UC-62 slice 2: "Criar página daqui" — a page from a folder follows its notes; a page from a note shows it.</summary>
+public sealed partial class HeadlessUiTests
+{
+    [Fact]
+    public async Task Studio_CreatesAPageFromAFolderAndFromANote() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var (view, window, vault, dir) = await OpenCreateVault();
+            try
+            {
+                await view.CreatePageFromAsync(folder: "Bairro");
+                for (int i = 0; i < 100 && view.Studio.Path is null; i++) await Pump(20);
+                Assert.Equal("Páginas/Bairro.page.json", view.Studio.Path);
+                var json = File.ReadAllText(Path.Combine(vault, "Páginas", "Bairro.page.json"));
+                Assert.Contains("\"type\": \"notes\"", json);   // "source": "folder" is the default, left out of the file
+                Assert.Contains("\"folder\": \"Bairro\"", json);
+                for (int i = 0; i < 60 && !view.Studio.LastHtml.Contains("<h3>Um</h3>", StringComparison.Ordinal); i++) await Pump(20);
+                Assert.Contains("<h3>Um</h3>", view.Studio.LastHtml);
+                // slice 4: the cover's title written in place in the preview; a path that is not a plain text is ignored
+                Assert.Contains("data-path=\"sections.0.props.title\"", view.Studio.LastHtml);
+                view.Studio.PreviewMessage("{\"urbePage\":\"field\",\"path\":\"sections.0.props.title\",\"text\":\"Meu  bairro\"}");
+                Assert.Equal("Meu bairro", (string?)view.Studio.Model!.Get("sections.0.props.title"));
+                view.Studio.PreviewMessage("{\"urbePage\":\"field\",\"path\":\"meta.title\",\"text\":\"X\"}");
+                view.Studio.PreviewMessage("{\"urbePage\":\"field\",\"path\":\"sections.1.props.source\",\"text\":\"tag\"}");
+                Assert.Equal("Bairro", (string?)view.Studio.Model!.Meta["title"]);
+                await view.Studio.FlushAsync();
+                Assert.Contains("Meu bairro", File.ReadAllText(Path.Combine(vault, "Páginas", "Bairro.page.json")));
+                await view.Studio.CloseAsync();
+
+                await view.CreatePageFromAsync(notePath: "Comece.md");
+                for (int i = 0; i < 100 && view.Studio.Path != "Páginas/Comece.page.json"; i++) await Pump(20);
+                Assert.Equal("Páginas/Comece.page.json", view.Studio.Path);
+                Assert.Contains("\"path\": \"Comece.md\"", File.ReadAllText(Path.Combine(vault, "Páginas", "Comece.page.json")));
+                await view.Studio.CloseAsync();
+
+                // a second page from the same folder never writes over the first
+                await view.CreatePageFromAsync(folder: "Bairro");
+                for (int i = 0; i < 100 && view.Studio.Path is null; i++) await Pump(20);
+                Assert.NotEqual("Páginas/Bairro.page.json", view.Studio.Path);
+                Assert.True(File.Exists(Path.Combine(vault, "Páginas", "Bairro.page.json")));
+                await view.Studio.CloseAsync();
+                return true;
+            }
+            finally
+            {
+                window.Close();
+                try { Directory.Delete(dir, true); } catch (IOException) { }
+            }
+        }, CancellationToken.None));
+}

@@ -520,6 +520,18 @@ public sealed partial class PageStudioView : Border
                 m["n"] is JsonValue cv && cv.TryGetValue<int>(out var n) ? n : -1);
             return;
         }
+        if (kind == "field")
+        {
+            // UC-62 slice 4: a plain text of a section written in place in the preview
+            var path = S(m!["path"]);
+            var written = System.Text.RegularExpressions.Regex.Replace(S(m["text"]).Replace('\u00a0', ' '), @"\s+", " ").Trim();
+            if (!System.Text.RegularExpressions.Regex.IsMatch(path, @"^sections\.\d+\.props\.[A-Za-z]\w*(\.\d+\.[A-Za-z]\w*)?$") || written.Length == 0) return;
+            // only over a text that is still plain: the field may have changed in the Editar panel meanwhile
+            if (_st.Get(path) is not JsonValue was || !was.TryGetValue<string>(out var old) || !PageEngine.PlainText(old) || old == written) return;
+            _st.Break();
+            if (_st.Set(path, JsonValue.Create(written))) Changed();
+            return;
+        }
         if (kind != "text" || nid is null || _st.Section(id) is not { } sec || (string?)sec["type"] != "free") return;
         if (PageEngine.FreeFind(sec["props"]?["root"] as JsonObject, nid) is not { } hit || hit.Node["content"] is not JsonObject content || content["text"] is null) return;
         var text = System.Text.RegularExpressions.Regex.Replace(S(m!["text"]).Replace('\u00a0', ' '), "\n{3,}", "\n\n").Trim();

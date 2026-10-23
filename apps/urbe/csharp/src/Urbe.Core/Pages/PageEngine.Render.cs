@@ -500,7 +500,10 @@ public sealed partial class PageEngine
     {
         if (!UrbeMarks) return RenderPage(input, documents, preview);
         var marks = new PageCommentMarks(show: preview);
-        return marks.Finish(RenderPage(marks.Page(input), marks.Notes(documents), preview));
+        if (!preview) return marks.Finish(RenderPage(marks.Page(input), marks.Notes(documents), preview));
+        // UC-62 slice 4: in the studio preview the plain texts of the sections are written in place
+        var edits = new PageEditMarks(this);
+        return edits.Finish(marks.Finish(RenderPage(marks.Page(edits.Page(input)), marks.Notes(documents), preview)));
     }
 
     private string RenderPage(JsonNode? input, IPageNotes? documents, bool preview)
