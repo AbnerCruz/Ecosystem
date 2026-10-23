@@ -1,0 +1,86 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-gravacao-mais-leve",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T01:25:26Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-60",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "2800f6ea",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/665",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/VaultWriter.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultWriterPlanOneTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultStorageTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/StartupPerfTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261023-urbe-gravacao-mais-leve.json"
+  ],
+  "work_completed": [
+    "UC-60: VaultWriter.PlanOne — plano canônico de um arquivo, igual ao do vault inteiro para aquele documento (teste de equivalência em todos os fixtures e em vaults com BOM, Latin-1, formato futuro, legado); usado pelos dois adaptadores na gravação de nota.",
+    "Cache de leitura por tamanho e data no adaptador do Windows, como o do Android (UC-48)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (676) e Urbe.Client.Tests (217)",
+      "result": "passed",
+      "evidence": "VaultWriterPlanOneTests (2), AnOldNoteChangedOutsideUrbeIsStillSeenWithTheReadCache, Perf_CreateNoteInABigVault (URBE_PERF=1): plano 120–250 ms → 1 ms."
+    },
+    {
+      "kind": "automated",
+      "check": "Build do Android no CI",
+      "result": "pending",
+      "evidence": "csharp-client-native (android) no PR #665."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, salvar notas num vault grande e sentir a gravação",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Core/VaultWriter.cs"
+    }
+  ],
+  "known_issues": [
+    "O cache de leitura (Windows e Android) não percebe uma mudança feita fora do Urbe que mantenha o mesmo tamanho e a mesma data exata de modificação; arquivos mudados há menos de 3 s são sempre relidos."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Benchmarks com limite na suíte (UC-60)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "As notas continuam a autoridade; o plano de um arquivo dá os mesmos bytes e recusas do plano completo (teste de equivalência)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Aparelho pendente; UC-60 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "vault-plan-one",
+      "status": "product-specific",
+      "rationale": "Gravador canônico do vault do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Muda a gravação dos adaptadores de vault e o gravador canônico (*Vault*, *Storage*). Espera a autorização do proprietário."
+  }
+}

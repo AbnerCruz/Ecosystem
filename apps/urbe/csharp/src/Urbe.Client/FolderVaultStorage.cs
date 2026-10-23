@@ -459,17 +459,10 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 throw new InvalidDataException("O arquivo não pôde ser lido como texto seguro.");
             var target = existing?.Path ?? path;
 
-            // The canonical writer must agree; only this one file is written.
-            var documents = snapshot.Documents.Where(d => d.Text is not null)
-                .Select(d => new VaultWriteDocument(d.Id, d.Path,
-                    string.Equals(d.Path, target, StringComparison.OrdinalIgnoreCase) ? content : d.Text!))
-                .ToList();
-            if (create) documents.Add(new VaultWriteDocument("doc-" + Guid.NewGuid().ToString("N"), target, content));
-            var plan = VaultWriter.Plan(new VaultWriteRequest { Files = files, Documents = documents, AppVersion = "urbe-native-preview" });
-            if (!plan.Writable || !plan.Files.ContainsKey(target))
-                throw new InvalidOperationException("O plano canônico recusou o arquivo.");
+            // The canonical writer must agree; only this one file is written (UC-60: its plan for this file alone)
+            var planned = VaultWriter.PlanOne(files, snapshot, target, content)
+                ?? throw new InvalidOperationException("O plano canônico recusou o arquivo.");
             var expected = Encoding.UTF8.GetBytes(content);
-            var planned = plan.Files[target].Bytes.ToArray();
             if (!planned.AsSpan().SequenceEqual(expected) &&
                 !(planned.Length == expected.Length + 3 && planned[0] == 0xef && planned[1] == 0xbb && planned[2] == 0xbf &&
                   planned.AsSpan(3).SequenceEqual(expected)))
@@ -718,13 +711,33 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 if (!includeAll && !IsIncluded(path)) continue;
                 var file = (FileInfo)entry;
                 if (file.Length > MaxFileBytes) throw new IOException("Arquivo grande demais para esta beta: " + path);
-                files.Add(new VaultFile(path, File.ReadAllBytes(file.FullName)));
+                files.Add(new VaultFile(path, ReadListed(file)));
             }
         }
         Walk(root, string.Empty, 0);
         if (files.Sum(f => (long)f.Bytes.Length) > MaxVaultBytes)
             throw new IOException("Vault excede o limite temporário de leitura da beta.");
         return files;
+    }
+
+    /// <summary>
+    /// UC-60, as the Android vault does (UC-48): what was read of each file, kept while the disk reports the same size
+    /// and modification time, so a save no longer reads every note of the vault twice. A file changed less than 3 s
+    /// before it was read, or bigger than 512 KB, is never kept: a change in the same second is always read again, and
+    /// the file a save writes is read back from the disk on its own.
+    /// </summary>
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (long Size, long Modified, byte[] Bytes)> FileCache = new();
+
+    private static byte[] ReadListed(FileInfo file)
+    {
+        long modified = file.LastWriteTimeUtc.Ticks, size = file.Length;
+        if (FileCache.TryGetValue(file.FullName, out var hit) && hit.Size == size && hit.Modified == modified && hit.Bytes.LongLength == size)
+            return hit.Bytes;
+        var bytes = File.ReadAllBytes(file.FullName);
+        if (bytes.LongLength == size && size <= 512 * 1024 && DateTime.UtcNow.Ticks - modified > TimeSpan.TicksPerSecond * 3)
+            FileCache[file.FullName] = (size, modified, bytes);
+        else FileCache.TryRemove(file.FullName, out _);
+        return bytes;
     }
 
     private static bool IsSupportedNote(string path) =>

@@ -292,6 +292,21 @@ public sealed class FolderVaultStorageTests : IDisposable
     }
 
     [Fact]
+    public async Task AnOldNoteChangedOutsideUrbeIsStillSeenWithTheReadCache()
+    {
+        // UC-60: notes written long ago are kept in memory between saves; one changed outside (same size even) is read again
+        foreach (var f in Directory.EnumerateFiles(Vault, "*", SearchOption.AllDirectories)) File.SetLastWriteTimeUtc(f, DateTime.UtcNow.AddDays(-2));
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        await storage.SaveExistingNoteAsync("Comece.md", "# Comece\n\nmais\n", Ct);   // reads (and keeps) the old notes
+        File.WriteAllText(Path.Combine(Vault, "Bairro", "Um.md"), "# Ux\n");             // same size, changed outside
+        File.SetLastWriteTimeUtc(Path.Combine(Vault, "Bairro", "Um.md"), DateTime.UtcNow.AddDays(-1));
+        await Assert.ThrowsAsync<IOException>(() => storage.SaveExistingNoteAsync("Comece.md", "# Comece\n", Ct));
+        Assert.Equal("# Comece\n\nmais\n", File.ReadAllText(Path.Combine(Vault, "Comece.md")));
+        Assert.Equal("# Ux\n", File.ReadAllText(Path.Combine(Vault, "Bairro", "Um.md")));
+    }
+
+    [Fact]
     public async Task TrashingManyNotesWritesTheTrashOnceAndRemovesOnlyThoseFiles()
     {
         // UC-65: a folder at once — the trash with both texts first, then both files, every other file intact

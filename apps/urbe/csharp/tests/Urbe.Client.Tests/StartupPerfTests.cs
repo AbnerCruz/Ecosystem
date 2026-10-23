@@ -132,6 +132,8 @@ public sealed partial class HeadlessUiTests
         {
             var dir = Path.Combine(Path.GetTempPath(), "urbe-perf-new-" + Guid.NewGuid().ToString("N"));
             var vault = GenerateVault(Path.Combine(dir, "vault"), count);
+            // a real vault's notes were written long ago (files changed in the last 3 s are always read again)
+            foreach (var f in Directory.EnumerateFiles(vault, "*", SearchOption.AllDirectories)) File.SetLastWriteTimeUtc(f, DateTime.UtcNow.AddDays(-1));
             try
             {
                 var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));

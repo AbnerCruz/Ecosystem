@@ -512,22 +512,11 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
 
             // The canonical writer must agree that the document is writable. This is a single-file
             // write: do NOT apply unrelated migration, journal or delete operations from the plan.
-            var documents = snapshot.Documents.Where(d => d.Text is not null)
-                .Select(d => new VaultWriteDocument(d.Id, d.Path,
-                    string.Equals(d.Path, target, StringComparison.OrdinalIgnoreCase) ? content : d.Text!))
-                .ToList();
-            if (create) documents.Add(new VaultWriteDocument("doc-" + Guid.NewGuid().ToString("N"), target, content));
-            var plan = VaultWriter.Plan(new VaultWriteRequest
-            {
-                Files = files,
-                Documents = documents,
-                AppVersion = "urbe-native-preview"
-            });
-            if (!plan.Writable || !plan.Files.ContainsKey(target))
-                throw new InvalidOperationException("O plano canônico recusou o arquivo.");
+            // UC-60: the canonical writer's plan for this one file alone (the same refusals and bytes as the full plan).
+            var plannedBytes = VaultWriter.PlanOne(files, snapshot, target, content)
+                ?? throw new InvalidOperationException("O plano canônico recusou o arquivo.");
             var expected = Encoding.UTF8.GetBytes(content);
             // The writer can preserve UTF-8 BOM from an existing note; use its canonical bytes.
-            var plannedBytes = plan.Files[target].Bytes.ToArray();
             if (!plannedBytes.AsSpan().SequenceEqual(expected) &&
                 !(plannedBytes.Length == expected.Length + 3 && plannedBytes[0] == 0xef &&
                   plannedBytes[1] == 0xbb && plannedBytes[2] == 0xbf &&
