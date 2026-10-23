@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace Urbe.Core.Assistant;
 
-/// <summary>UC-63: what the image tool needs from the app: the run's provider draws, the vault keeps the file.</summary>
+/// <summary>UC-63: image provider independent of the chat; the vault keeps the generated file.</summary>
 public interface IAssistantImages
 {
     /// <summary>True when the run's provider draws pictures.</summary>
@@ -20,7 +20,7 @@ public interface IAssistantImages
 }
 
 /// <summary>
-/// UC-63: generate_image — the Assistente draws a picture with the provider in use (when it draws pictures), keeps it in
+/// UC-63: generate_image — the Assistente draws with a configured image provider and keeps it in
 /// the vault as a new file (Imagens/ by default; never over a file) and, when asked, puts it in a note as
 /// <c>![[path]]</c>. Asked for approval like every tool that writes; the provider is the one the person chose.
 /// </summary>
@@ -65,7 +65,7 @@ public static class AssistantImageTools
     public static AiTool Tool { get; } = new()
     {
         Name = "generate_image", Access = "write",
-        Description = "Gera uma imagem a partir de uma descrição, com o provedor em uso (só se ele gerar imagens), e a guarda no vault (padrão: pasta Imagens). Com note, coloca a imagem no fim dessa nota. Descreva bem: assunto, estilo, cores, enquadramento.",
+        Description = "Gera uma imagem real a partir de uma descrição, usando um provedor visual configurado sem trocar o modelo do chat. Guarda em Imagens/; com note, insere na nota. Para pedidos de desenho ou ilustração, use generate_image, nunca write_page. Descreva assunto, estilo, cores, enquadramento.",
         Parameters = (JsonObject)JsonNode.Parse("""
             {"type":"object","properties":{
               "prompt":{"type":"string","description":"O que desenhar, em detalhe"},
@@ -80,13 +80,13 @@ public static class AssistantImageTools
             var note = Str(i, "note");
             var where = Str(i, "path") is { Length: > 0 } p ? AssistantTools.Norm(p) : Folder + "/";
             return new AiPreview(where, null, null,
-                "Gerar uma imagem com o provedor em uso (" + (Str(i, "size") is { Length: > 0 } s ? s : Sizes[0]) + ") e guardá-la em " + where +
+                "Gerar imagem com um provedor visual configurado, sem trocar o modelo do chat (" + (Str(i, "size") is { Length: > 0 } s ? s : Sizes[0]) + "), e guardá-la em " + where +
                 (note.Length > 0 ? " e colocá-la no fim de " + AssistantTools.Norm(note) : "") + ".\n\nDescrição: " + Str(i, "prompt"));
         },
         Run = async (i, host) =>
         {
             var images = I(host);
-            if (!images.CanDraw) throw new AiToolException("O provedor em uso não gera imagens. Peça ao usuário para escolher OpenAI, Google Gemini ou um servidor compatível nas configurações do Assistente.");
+            if (!images.CanDraw) throw new AiToolException("Nenhum provedor de imagens configurado. Adicione uma chave OpenRouter, OpenAI ou Google Gemini nas configurações do Assistente; não é necessário trocar o modelo do chat.");
             var prompt = Str(i, "prompt");
             if (prompt.Length == 0) throw new AiToolException("Descreva a imagem em prompt.");
             var size = Str(i, "size") is { Length: > 0 } s ? s : Sizes[0];
