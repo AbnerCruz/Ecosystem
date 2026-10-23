@@ -1,0 +1,80 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-paginas-fatia-1",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T10:23:04Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-62",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "3b2654e2",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PageStudioView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Comments.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Render.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Vault.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderDeleteUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageVaultQueriesTests.cs",
+    "apps/urbe/docs/csharp/PAGES-PLAN.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261023-urbe-paginas-fatia-1.json"
+  ],
+  "work_completed": [
+    "UC-62 fatia 1 (DEC-0055 A): a seção Notas lista também por ligações (ligam a / ligadas por uma nota), por busca de texto e pasta sem subpastas; só com UrbeMarks; o estúdio usa as mesmas opções da prévia. PAGES-PLAN.md corrigido: a seção Notas da 1.8.4 já listava por pasta/tag/escolha/recentes.",
+    "Teste de excluir pasta grande mais robusto sob a carga da suíte (espera a confirmação abrir)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (682) e Urbe.Client.Tests (217)",
+      "result": "passed",
+      "evidence": "PageVaultQueriesTests (4); Studio_* continuam passando."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, montar uma página com o bloco Notas ligado a uma nota e a uma busca",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Vault.cs"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "UC-62 fatia 2: Criar página daqui no Explorer."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A página guarda só a consulta; a lista vem das notas a cada render."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "O motor da 1.8.4 continua a base; oráculos intactos (as novidades só com UrbeMarks)."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "page-vault-queries",
+      "status": "product-specific",
+      "rationale": "Páginas do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Feature autorizada pela DEC-0055; motor de páginas atrás de UrbeMarks; nada de vault ou workflow."
+  }
+}

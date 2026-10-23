@@ -529,6 +529,9 @@ public sealed partial class PageEngine
             {
                 var f = JsText.Lower(Regex.Replace(T(p, "folder") ? S(p, "folder") : "", "^/+|/+$", ""));
                 output = all.Where(d => f.Length == 0 || JsText.Lower(d.Path).StartsWith(f + "/", StringComparison.Ordinal)).ToList();
+                // UC-62: only the folder itself, not its subfolders (an Urbe field; the 1.8.4 pages never set it)
+                if (p["subfolders"] is JsonValue sub && sub.TryGetValue<bool>(out var deep) && !deep)
+                    output = output.Where(d => d.Path.LastIndexOf('/') is var i && JsText.Lower(i < 0 ? "" : d.Path[..i]) == f).ToList();
             }
             else if (source == "tag")
             {
@@ -537,6 +540,8 @@ public sealed partial class PageEngine
             }
             else if (source == "list")
                 output = (T(p, "paths") ? S(p, "paths") : "").Split('\n').Select(NoteOf).Where(d => d is not null).Select(d => d!).ToList();
+            else if (source is "links" or "linked" or "search")
+                output = VaultQuery(p, all, NoteOf);
             else output = all.OrderBy(d => d.Modified ?? "", Comparer<string>.Create((a, b) => JsText.LocaleCompare(b, a))).ToList();
             if (source is not ("list" or "recent"))
             {

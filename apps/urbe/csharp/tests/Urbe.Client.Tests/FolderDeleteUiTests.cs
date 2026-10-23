@@ -147,7 +147,10 @@ public sealed partial class HeadlessUiTests
                 Assert.True(view.Explorer.HoldFolder("Arquivo"));
                 view.Explorer.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == "Mover para a lixeira")
                     .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
-                for (int i = 0; i < 40 && !view.Dialogs.IsOpen; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                // under the whole suite's load the confirmation can take a while to open: wait for it, then for its button
+                for (int i = 0; i < 500 && !(view.Dialogs.IsOpen && view.Dialogs.GetLogicalDescendants().OfType<Button>().Any(b => b.Content as string == "Excluir" || b.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Excluir"))); i++)
+                { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.True(view.Dialogs.IsOpen);
                 var watch = System.Diagnostics.Stopwatch.StartNew();
                 ClickButtonWithText(view.Dialogs, "Excluir");
                 for (int i = 0; i < 3000 && Directory.Exists(Path.Combine(vault, "Arquivo")); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }

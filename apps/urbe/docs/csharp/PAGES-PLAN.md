@@ -16,8 +16,8 @@ O estúdio de páginas deve ser uma extensão do editor de notas e do Explorer. 
   - O nó **nota** mostra uma nota inteira do vault.
 - **Modelos** (`PageTemplates`): especificações fixas da 1.8.4, aplicadas por substituição, por acréscimo ou só como tema.
 - **Ligação com o vault:**
-  - Não existe bloco que liste notas por pasta, tag, link ou busca.
-  - Uma página não muda quando as notas mudam, a não ser pelo nó **nota**.
+  - A seção **Notas** da 1.8.4 já lista notas por pasta (com as subpastas), tag, escolha ou mais recentes, em cartões, lista ou grade, com resumo, calculada a cada render. (Correção de 23/10/2026: a primeira versão deste plano dizia que não havia bloco assim.)
+  - Faltam: listar pelas ligações (quem liga a uma nota, a quem ela liga), por busca de texto, e uma pasta sem as subpastas.
 - **Edição pela prévia:** o texto de títulos e textos já se edita tocando na prévia (`PreviewMessage` "text"). Os outros campos ficam no painel **Editar**.
 - **Abrir:** abre-se uma página pela lista de Páginas. Uma nota ou uma pasta do Explorer não tem "Criar página daqui".
 
@@ -25,12 +25,15 @@ O estúdio de páginas deve ser uma extensão do editor de notas e do Explorer. 
 
 Cada fatia tem teste e entra sozinha. Os oráculos da 1.8.4 ficam intactos: as novidades ficam atrás de opções do motor, como `UrbeMarks` hoje, e uma página da 1.8.4 abre e exporta igual.
 
-1. **Blocos ligados ao vault.**
-   - Um nó novo, **Lista de notas**, com uma consulta: pasta (com ou sem subpastas), tag, notas que ligam a uma nota, notas ligadas por ela, ou busca de texto.
-   - Ordem: nome, data ou mais recentes. Limite de itens.
-   - Aparência: lista, cartões com resumo, ou índice com links.
-   - A consulta fica na página (`.page.json`). O resultado é calculado ao abrir, na prévia e ao exportar, então a página acompanha as notas sem gravar nada além dela mesma (NN-001: as notas continuam a autoridade).
-   - No HTML exportado, cada item vira link para a página da nota quando ela for exportada junto, ou só o título.
+1. **Blocos ligados ao vault (feito em 23/10/2026).**
+   - Em vez de um nó novo, a seção **Notas** que já existe ganhou as consultas que faltavam:
+     - **Ligam a uma nota**: as notas que têm `[[ela]]`.
+     - **Ligadas por uma nota**: os `[[links]]` dela.
+     - **Busca**: título ou texto, sem diferenciar maiúsculas.
+     - **Incluir subpastas** na origem Pasta.
+   - Ordem, limite, aparência, resumo e "texto completo abaixo" são os da 1.8.4.
+   - A consulta fica na página (`.page.json`) e o resultado é calculado a cada render, então a página acompanha as notas (NN-001).
+   - Só com as marcas do Urbe ligadas (`UrbeMarks`): os oráculos da 1.8.4 não mudam, e uma origem nova vista sem elas volta ao padrão da 1.8.4 (Pasta).
 2. **Abrir a partir do Explorer.**
    - Segurar uma nota ou pasta → **Criar página daqui**.
    - De uma nota: uma página com a nota como conteúdo (nó **nota**).

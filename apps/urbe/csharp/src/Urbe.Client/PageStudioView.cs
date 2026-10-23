@@ -257,7 +257,8 @@ public sealed partial class PageStudioView : Border
     {
         _saveTimer.Stop();
         _path = path;
-        _st = new PageStudio(new PageEngine(), text);
+        // the Urbe's own fields too (UC-62: the vault's queries in Notas), the same engine options as the preview's
+        _st = new PageStudio(new PageEngine { UrbeMarks = true }, text);
         _st.Changed += (_, _) => { };
         _sheet = null;
         IsVisible = true;
