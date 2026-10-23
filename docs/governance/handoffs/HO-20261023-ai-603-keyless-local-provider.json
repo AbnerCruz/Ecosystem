@@ -1,0 +1,128 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-ai-603-keyless-local-provider",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T03:45:27Z",
+  "agent": {
+    "id": "chatgpt-ai603-local-provider",
+    "kind": "ai-agent"
+  },
+  "task_id": "AI-603",
+  "component": "ecosystem-ai",
+  "state": "verifying",
+  "branch": "feat/ai-603-local-provider-loopback-20261023",
+  "base_commit": "ec095f5735005db1ff7d6e3beee0584d84d79c26",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Product/SavedModelConfiguration.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Android/MainActivity.ModelSettings.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Android/Properties/AndroidManifest.xml",
+    "apps/ecosystem-ai/src/EcosystemAi.Android/Resources/xml/network_security_config.xml",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/SavedModelConfigurationTests.cs",
+    "apps/ecosystem-ai/docs-r4-android-native.md",
+    "docs/governance/handoffs/HO-20261023-ai-603-keyless-local-provider.json"
+  ],
+  "work_completed": [
+    "Permite cadastrar API Chat Completions de servidor local executado no próprio dispositivo por HTTP somente em localhost ou 127.0.0.1; LAN e HTTP remoto recusados.",
+    "Configuração Android dispensa chave no modo local e rejeita chave fornecida; quando provider HTTPS preexistente é editado para localhost HTTP, remove a chave antiga antes de salvar.",
+    "Provedores remotos continuam HTTPS com chave; cofre Android, formato persistido, autorização financeira e runtime permanecem inalterados.",
+    "Network Security Configuration Android com cleartext default false e exceção apenas para localhost/127.0.0.1; AndroidManifest mantém usesCleartextTraffic=false e aponta à nova policy.",
+    "Testes com HTTP mockado para URLs permitidas/recusadas, round-trip do modelo, HTTPS sem chave e discovery sem Authorization; documentação delimita Android localhost do computador na LAN."
+  ],
+  "verification": [
+    {
+      "check": "ecosystem-ai-ci: tests Product/AgentRuntime",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Sem SDK dotnet local; rodar no CI do PR."
+    },
+    {
+      "check": "Android preview build and smoke + consistency",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Build de recursos XML, smoke Android e consistency pendentes da branch."
+    },
+    {
+      "check": "DEVICE local keyless API",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/ecosystem-ai/docs-r4-android-native.md",
+      "evidence": "Requer serviço Chat Completions realmente disponível no próprio aparelho Android, sem token; testar uso em HTTP localhost e recusa de IP da LAN. CI não equivale a essa prova."
+    }
+  ],
+  "known_issues": [
+    "Sem servidor local na execução desta sessão; não garante que Ollama ou outro provedor esteja disponível no Android.",
+    "Não inclui cliente de serviço no computador via 10.0.2.2/LAN HTTP; exige HTTPS para hosts remotos.",
+    "AI-603 é convergência contínua, não prova segundo Product consumidor; streaming e adapter Anthropic permanecem pendentes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Aguardar suite CI, corrigir eventuais falhas da policy de Android e dos testes .NET.",
+    "Submeter mudança de fronteira de rede à autorização crítica do proprietário conforme integration-policy.json (security).",
+    "Validar com provedor realmente executável em dispositivo (DEVICE) antes de alegar funcionamento comercial.",
+    "Seguir AI-603: auditoria de equivalência/streaming/segredos e primeiro consumidor real depois de Extraction Review."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ecosystem.json",
+    "docs/architecture/audits/ai-unification-2026-10-16.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Configuração local permanece no mesmo SavedModelConfiguration/Product e cofre Android; sem segundo store ou formato."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Reusa provider Chat Completions existente, sem mudança de capability pública ou grants."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff e PR separam implementação de testes/DEVICE ainda pendentes."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Escopo derivado do ROADMAP AI-603 e auditoria de convergência canônica; sem decisão estrutural inventada."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Mudança sensível de transport security escalada a critical/security, sujeita ao gate do proprietário."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Apenas 2 hosts loopback HTTP são permitidos por URL e policy Android, sem Authorization; todos os demais continuam HTTPS."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE e provider local real explicitamente pendentes, CI mockado não alegado como teste físico."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Ajuste local no Product; sem pacote compartilhado ou promessa de segundo consumidor."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "product-local-loopback-provider-config",
+      "status": "possible-candidate",
+      "rationale": "Sem extração nem contrato multi-Product; reavaliar apenas após contrato/segurança equivalentes e segundo consumidor real."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "security"
+    ],
+    "reason": "Nova exceção de tráfego HTTP no Android, ainda que restrita a loopback, modifica a fronteira de confiança; solicitar autorização do proprietário após verificações."
+  }
+}
