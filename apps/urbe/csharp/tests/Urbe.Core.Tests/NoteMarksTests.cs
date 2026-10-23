@@ -121,4 +121,15 @@ public sealed class NoteMarksTests
         Assert.Contains("Texto & mais &x&: não.", page);
         Assert.Contains("&Jarvis&: em código", page);
     }
+
+    [Fact]
+    public void AnAnswerIsPinnedAsAQuoteUnderTheLineThatAskedIt()
+    {
+        // UC-80: under the asking line, marked; at the end when the line is gone
+        const string note = "# Herói\n\n&Jarvis&: Dê um nome\n\nFim.\n";
+        Assert.Equal("# Herói\n\n&Jarvis&: Dê um nome\n\n> Aurora.\n>\n> Ou Lia. {ia:\"gpt-x\"}\n\nFim.\n",
+            NoteMarks.PinAnswer(note, "jarvis", "Dê um nome", "Aurora.\n\nOu Lia.", "openai/gpt-x"));
+        Assert.Equal("# Herói\n\n&Jarvis&: Dê um nome\n\n> Aurora. {ia:\"m\"}\n", NoteMarks.PinAnswer("# Herói\n\n&Jarvis&: Dê um nome", "Jarvis", "Dê um nome", "Aurora.", "m"));
+        Assert.Equal("# Herói\n\nSem linha.\n\n> Aurora. {ia:\"m\"}\n", NoteMarks.PinAnswer("# Herói\n\nSem linha.\n", "Jarvis", "Dê um nome", "Aurora.", "m"));
+    }
 }

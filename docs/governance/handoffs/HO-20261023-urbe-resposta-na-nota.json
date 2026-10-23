@@ -1,0 +1,73 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-resposta-na-nota",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T01:28:36Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-80",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "2800f6ea",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/665",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/NoteMarks.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteMarksTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261023-urbe-resposta-na-nota.json"
+  ],
+  "work_completed": [
+    "UC-80: Pôr na nota — a resposta de um pedido feito na nota entra como citação marcada logo abaixo da linha &Nome&:, pela gravação verificada."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests e Urbe.Client.Tests",
+      "result": "passed",
+      "evidence": "AnAnswerIsPinnedAsAQuoteUnderTheLineThatAskedIt e o teste do pedido na nota em AssistantUiTests."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, pedir algo com &Nome&: e pôr a resposta na nota",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs"
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Próximos itens do ROADMAP C#."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Aparelho pendente; UC-80 continua [ ]."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "pin-answer",
+      "status": "product-specific",
+      "rationale": "Sintaxe do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Interface do Assistente; grava pela gravação de nota existente."
+  }
+}

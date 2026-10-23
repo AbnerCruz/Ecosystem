@@ -308,6 +308,27 @@ public sealed partial class AssistantPanel : Border
         return null;
     }
 
+    /// <summary>UC-80: the note and the <c>&amp;Nome&amp;:</c> line the shown conversation was asked from, or null.</summary>
+    private (string Path, string Agent, string Request)? AskedInNote()
+    {
+        var first = _conv.Messages.FirstOrDefault(m => m.Role == "user");
+        if (first?.Meta?.Context is not { Length: > 0 } path) return null;
+        var hidden = first.Content.FirstOrDefault(b => b.Hidden && b.Text?.StartsWith("[Pedido feito dentro da nota ", StringComparison.Ordinal) == true)?.Text;
+        return hidden is not null && NoteMarks.AgentCalls(hidden).FirstOrDefault() is { } call ? (path, call.Agent, call.Request) : null;
+    }
+
+    /// <summary>UC-80: the answer as a quote under the asking line, through the verified write (marked as the Assistente's).</summary>
+    private async Task PinAnswerAsync(string path, string agent, string request, string answer, string model)
+    {
+        if (_app.Documents?.Get(path) is not { } doc) { _app.Notify("A nota " + path + " não existe mais."); return; }
+        try
+        {
+            await _app.SaveNoteAsync(doc, NoteMarks.PinAnswer(doc.Content, agent, request, answer, model));
+            _app.Notify("Resposta posta na nota.");
+        }
+        catch (Exception e) { await _app.Dialogs.AlertAsync("Não foi possível pôr na nota", e.Message); }
+    }
+
     /// <summary>send(): the request (with the open note as hidden context when the chip is on) and the run.</summary>
     public void Send(string text) => Send(text, null);
 
