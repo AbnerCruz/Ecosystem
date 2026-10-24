@@ -234,7 +234,8 @@ public static class AssistantAgent
     /// </summary>
     public const string UrbeGuidance =
         "- Quando o pedido for uma apostila, um livro, um caderno, um e-book, um manual ou outro material longo para ler ou imprimir, faça uma página no formato livro, sem precisar que o usuário peça: chame page_schema e use write_page com o modelo book (ou book-folder, para transformar uma pasta de notas em livro), em vez de escrever uma nota longa. Use os blocos note/notes para puxar o conteúdo das notas e abra a página com open_note no fim.\n" +
-        "- Para gerar, desenhar ou ilustrar uma IMAGEM, use generate_image, não write_page. O modelo do chat não muda: a ferramenta usa um provedor visual já configurado. Sem credencial disponível ou diante de falha, explique o problema e nunca diga que a imagem foi criada.";
+        "- Para gerar, desenhar ou ilustrar uma IMAGEM, use generate_image, não write_page. O modelo do chat não muda: a ferramenta usa um provedor visual já configurado. Sem credencial disponível ou diante de falha, explique o problema e nunca diga que a imagem foi criada.\\n" +
+        "- Antes de executar trabalho amplo, identifique lacunas e riscos. Se faltar algo que mude materialmente o resultado, use ask_user para UMA pergunta por vez e pause; não suponha. Após cada resposta reavalie as dúvidas, elimine as resolvidas (inclusive múltiplas pela mesma resposta), e acrescente só dúvidas realmente novas. Quando houver clareza suficiente, resuma entendimento e plano e execute, sem perguntas repetidas.";
 
     public static AiAgentDef AgentById(string? id, IEnumerable<AiAgentDef>? custom = null) =>
         Agents.Concat(custom ?? []).FirstOrDefault(a => a.Id == id) ?? Agents[0];
@@ -277,7 +278,6 @@ public static class AssistantAgent
             "- Para achar onde algo aparece (nomes, termos, datas, trechos) use grep_notes; para temas amplos, search_notes. Siga os [[links]] e backlinks (get_links) quando o assunto se espalhar por várias notas.",
             "- Chamadas de leitura independentes podem ir juntas na mesma resposta (elas rodam em paralelo); read_notes lê várias notas de uma vez.",
             "- Em tarefas com 3 ou mais passos, registre o plano com update_plan no começo e atualize conforme avança.",
-            "- Antes de executar trabalho amplo, identifique lacunas e riscos. Se faltar algo que mude materialmente o resultado, use ask_user para UMA pergunta por vez e pause; não suponha. Após cada resposta reavalie as dúvidas, elimine as resolvidas (inclusive múltiplas pela mesma resposta), e acrescente só dúvidas realmente novas. Quando houver clareza suficiente, resuma entendimento e plano e execute, sem perguntas repetidas.",
             "- Páginas HTML (sites, landing pages, portfólios) são arquivos .page.json editados no estúdio de páginas. Para criar ou alterar uma, chame page_schema e depois write_page com o JSON completo (ou um template); não escreva HTML à mão. Use os blocos note/notes para puxar o conteúdo real das notas.",
             "- Leia uma nota (read_note) antes de editá-la. Para mudanças parciais use edit_note copiando o trecho exato; write_note só para reescrever tudo.",
             "- Antes de criar uma nota, busque (search_notes) para não duplicar. Ligue notas relacionadas com [[Título]].",
