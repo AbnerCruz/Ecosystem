@@ -407,7 +407,7 @@ public sealed partial class AssistantPanel
                 foreach (var source in sources)
                 {
                     // Exact source URLs are persisted, clickable via the existing MarkdownReader link launcher.
-                    var safeTitle = source.Title.Replace("[", "").Replace("]", "").Replace("\\n", " ").Trim();
+                    var safeTitle = source.Title.Replace("[", "").Replace("]", "").Replace("\n", " ").Trim();
                     var url = source.FinalUrl;
                     try { AssistantWebSession.ValidateUrl(url); }
                     catch (AiToolException) { continue; }
