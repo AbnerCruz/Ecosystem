@@ -1,3 +1,8 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Layout;
+using Avalonia.Media;
 using Urbe.Core;
 using Urbe.Core.Assistant;
 
@@ -12,16 +17,99 @@ public sealed partial class MainView : IAssistantApp
 {
     private AssistantPanel? _assistant;
 
+    // A small, always-available launcher; no extra AI service or duplicate conversation.
+    private readonly Button _assistantLauncher = new();
+    private readonly Border _assistantMini = new() { IsVisible = false };
+    private string? _assistantMiniRenderedKey;
+
+    public Button AssistantLauncher => _assistantLauncher;
+    public Border AssistantMini => _assistantMini;
+
+    /// <summary>Called once after the editor and plugin surfaces have been added to the stage.</summary>
+    private void InstallAssistantLauncher()
+    {
+        _assistantLauncher.ZIndex = 20; // Keep accessible when the Notes drawer is open.
+        _assistantLauncher.Width = UrbeTokens.MinTouch;
+        _assistantLauncher.Height = UrbeTokens.MinTouch;
+        _assistantLauncher.MinWidth = UrbeTokens.MinTouch;
+        _assistantLauncher.MinHeight = UrbeTokens.MinTouch;
+        _assistantLauncher.Padding = new Thickness(0);
+        _assistantLauncher.CornerRadius = new CornerRadius(24);
+        _assistantLauncher.Background = UrbeTheme.Brush(UrbeTheme.Surface2, .94);
+        _assistantLauncher.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2);
+        _assistantLauncher.BorderThickness = new Thickness(1);
+        _assistantLauncher.Content = UrbeTheme.Icon(UrbeTheme.Icons.Assistant, 19, UrbeTheme.Accent);
+        _assistantLauncher.HorizontalAlignment = HorizontalAlignment.Right;
+        _assistantLauncher.VerticalAlignment = VerticalAlignment.Bottom;
+        _assistantLauncher.HorizontalContentAlignment = HorizontalAlignment.Center;
+        _assistantLauncher.VerticalContentAlignment = VerticalAlignment.Center;
+        _assistantLauncher.Margin = new Thickness(0, 0, 16, 16);
+        _assistantLauncher.Opacity = .9;
+        Avalonia.Automation.AutomationProperties.SetName(_assistantLauncher, "Abrir Assistente");
+        ToolTip.SetTip(_assistantLauncher, "Assistente");
+        _assistantLauncher.Click += (_, _) => ToggleAssistant();
+
+        _assistantMini.Background = UrbeTheme.Brush(UrbeTheme.Surface2, .98);
+        _assistantMini.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2);
+        _assistantMini.BorderThickness = new Thickness(1);
+        _assistantMini.CornerRadius = new CornerRadius(UrbeTokens.Radius.L);
+        _assistantMini.BoxShadow = UrbeTokens.Elevation.Low;
+        _assistantMini.Padding = new Thickness(UrbeTokens.Space.M);
+        _assistantMini.Margin = new Thickness(12, 0, 12, 76);
+        _assistantMini.MaxWidth = 440;
+        _assistantMini.ZIndex = 19; // Explorer drawer uses ZIndex=1; contextual UI must be above it.
+        _assistantMini.HorizontalAlignment = HorizontalAlignment.Right;
+        _assistantMini.VerticalAlignment = VerticalAlignment.Bottom;
+        Avalonia.Automation.AutomationProperties.SetName(_assistantMini, "Assistente contextual");
+        _stage.Children.Add(_assistantMini);
+        _stage.Children.Add(Ui.UrbeMotion.Pressable(_assistantLauncher));
+    }
+
+    private void RefreshAssistantMini()
+    {
+        var panel = _assistant;
+        bool showing = panel is { CompactActive: true, IsVisible: false };
+        _assistantMini.IsVisible = showing;
+        _assistantLauncher.IsVisible = panel is not { IsVisible: true };
+        if (!showing)
+        {
+            _assistantMiniRenderedKey = null;
+            _assistantMini.Child = null;
+            return;
+        }
+
+        // Leave live editors/buttons mounted while a tool streams more tokens. Don't erase user input.
+        var key = panel!.CompactRenderKey;
+        if (_assistantMiniRenderedKey == key && _assistantMini.Child is not null) return;
+        _assistantMiniRenderedKey = key;
+
+        // Keep the editor alive under this non-modal, bounded surface. Never move keyboard focus.
+        _assistantMini.Child = new ScrollViewer
+        {
+            MaxHeight = 380,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Content = panel!.CompactContent()
+        };
+        bool attention = panel.CompactStatus is "approval" or "question";
+        _assistantLauncher.BorderBrush = UrbeTheme.Brush(attention ? UrbeTheme.Accent : UrbeTheme.Line2);
+    }
+
     /// <summary>The Assistente panel, made the first time it opens (over the Explorer and the editor, under the dialogs).</summary>
     public AssistantPanel Assistant => _assistant ??= MakeAssistant();
 
     private AssistantPanel MakeAssistant()
     {
         IAssistantStorage storage = UrbeApp.AssistantFolder is { } folder ? new FolderAssistantStorage(folder) : new MemoryAssistantStorage();
-        var panel = new AssistantPanel(this, storage);
+        var panel = new AssistantPanel(this, storage) { ZIndex = 30 };
         _stage.Children.Add(panel);   // over the Explorer, the editor, the previews and the plugins' panels; the dialogs stay above
         PlaceAssistant(panel, Bounds.Width);
-        panel.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateNav(); };
+        panel.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == IsVisibleProperty) { UpdateNav(); RefreshAssistantMini(); }
+        };
+        panel.CompactChanged += RefreshAssistantMini;
+        RefreshAssistantMini();
         return panel;
     }
 

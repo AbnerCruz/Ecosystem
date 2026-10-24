@@ -57,7 +57,7 @@ public sealed partial class HeadlessUiTests
             {
                 await view.OpenVaultAsync();
                 await Settle(window, view);
-                ClickButtonWithText(view, "Assistente");
+                view.AssistantLauncher.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 var panel = view.Assistant;
                 var texts = () => panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text ?? "").ToList();
                 // the offline AI comes first, before the providers that need a key

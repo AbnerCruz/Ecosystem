@@ -101,7 +101,7 @@ public sealed partial class HeadlessUiTests : IDisposable
         }, CancellationToken.None));
 
     [Fact]
-    public async Task Phone_UsesTheBottomDockWithNotasAndAssistente() => Assert.True(await Session.Dispatch<bool>(async () =>
+    public async Task Phone_UsesTheBottomDockWithNotasAndFloatingAssistant() => Assert.True(await Session.Dispatch<bool>(async () =>
         {
             var view = new MainView();
             var window = new Window { Width = 412, Height = 860, Content = view };
@@ -115,7 +115,8 @@ public sealed partial class HeadlessUiTests : IDisposable
             Assert.True(view.Workspace.ShowsSidebarButton);
             var dock = view.GetVisualDescendants().OfType<TextBlock>()
                 .Where(t => t.Text is "Notas" or "Assistente" or "Cidade" && t.IsEffectivelyVisible && t.FindAncestorOfType<WorkspaceView>() is null).Select(t => t.Text).ToList();
-            Assert.Equal(["Notas", "Assistente"], dock);
+            Assert.Equal(["Notas"], dock);
+            Assert.True(view.AssistantLauncher.IsEffectivelyVisible);
             Assert.Equal("Notas", view.ActiveDestination);
             ClickNamed(view.Workspace, "Pastas");
             await Settle(window, view);
