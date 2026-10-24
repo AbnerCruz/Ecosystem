@@ -43,10 +43,10 @@
     {
       "check": "Validação de visual e desempenho em dispositivo Android físico",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/atlas-forge/index.html",
-      "evidence": "Capturas Chromium não substituem validação no Android do proprietário."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-24 (Issue https://github.com/AbnerCruz/Ecosystem/issues/729); registro em docs/governance/responses/VAL-HO-20261024-atlas-forge-ground-scale-0fcee2477978.md."
     }
   ],
   "known_issues": [
