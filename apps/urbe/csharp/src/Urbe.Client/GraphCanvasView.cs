@@ -11,6 +11,8 @@ namespace Urbe.Client;
 
 /// <summary>Editable native canvas, shared by the dedicated graph screen and read-only Markdown embeds.
 /// Never moves a referenced vault object: gestures only change the authored graph's coordinates.</summary>
+public enum GraphCanvasTool { Select, Draw, Erase }
+
 public sealed class GraphCanvasView : Control
 {
     private GraphDocument? _document;
@@ -23,6 +25,12 @@ public sealed class GraphCanvasView : Control
     private bool _moved;
     private bool _fitted;
     private double _pinch = 1;
+    private List<GraphPoint>? _drawing;
+    private readonly HashSet<string> _selectedIds = new(StringComparer.Ordinal);
+    public GraphCanvasTool Tool { get; set; }
+    public bool MultipleSelection { get; set; }
+    public IReadOnlyCollection<string> SelectedIds => _selectedIds;
+
 
     public bool ReadOnly { get; set; }
     public GraphDocument? Document => _document;
@@ -46,6 +54,9 @@ public sealed class GraphCanvasView : Control
         _document = document;
         ReadOnly = readOnly;
         _selected = null;
+        _selectedIds.Clear();
+        Tool = GraphCanvasTool.Select;
+        MultipleSelection = false;
         _origin = default;
         _zoom = 1;
         _fitted = false;
@@ -57,6 +68,8 @@ public sealed class GraphCanvasView : Control
     public void Select(string? id)
     {
         _selected = id;
+        _selectedIds.Clear();
+        if (id is not null) _selectedIds.Add(id);
         SelectionChanged?.Invoke();
         InvalidateVisual();
     }
@@ -106,9 +119,37 @@ public sealed class GraphCanvasView : Control
         if (!_fitted) Fit();
         _press = _last = e.GetPosition(this);
         _moved = false;
-        _pressedNode = _document?.Nodes.Reverse().FirstOrDefault(n => NodeRect(n).Contains(_last))?.Id;
-        if (_pressedNode != _selected) Select(_pressedNode);
         e.Pointer.Capture(this);
+        if (Tool == GraphCanvasTool.Draw && !ReadOnly)
+        {
+            var world = ToWorld(_last);
+            _drawing = [new GraphPoint(world.X, world.Y)];
+            _pressedNode = null;
+            return;
+        }
+        if (Tool == GraphCanvasTool.Erase && !ReadOnly)
+        {
+            var at = ToWorld(_last);
+            var selectedStroke = _document?.Strokes.LastOrDefault(st => st.Points.Any(p =>
+                Math.Sqrt(Math.Pow(p.X - at.X, 2) + Math.Pow(p.Y - at.Y, 2)) < 14 / _zoom));
+            if (selectedStroke is not null && _document!.RemoveStroke(selectedStroke.Id))
+            {
+                Changed?.Invoke();
+                InvalidateVisual();
+            }
+            _pressedNode = null;
+            return;
+        }
+        _pressedNode = _document?.Nodes.Where(n => n.Kind == GraphNodeKind.Group)
+            .Concat(_document.Nodes.Where(n => n.Kind != GraphNodeKind.Group))
+            .Reverse().FirstOrDefault(n => NodeRect(n).Contains(_last))?.Id;
+        if (MultipleSelection && _pressedNode is { } id)
+        {
+            if (!_selectedIds.Add(id)) _selectedIds.Remove(id);
+            _selected = _selectedIds.LastOrDefault();
+            SelectionChanged?.Invoke();
+        }
+        else if (_pressedNode != _selected || (_pressedNode is null && _selectedIds.Count > 0)) Select(_pressedNode);
     }
 
     protected override void OnPointerMoved(PointerEventArgs e)
@@ -116,13 +157,26 @@ public sealed class GraphCanvasView : Control
         base.OnPointerMoved(e);
         if (_press is null || _document is null) return;
         var at = e.GetPosition(this);
+        if (_drawing is not null)
+        {
+            var p = ToWorld(at);
+            if (_drawing.Count < 2500 && (_drawing.Count == 0 ||
+                Math.Sqrt(Math.Pow(p.X - _drawing[^1].X, 2) + Math.Pow(p.Y - _drawing[^1].Y, 2)) >= 3 / _zoom))
+                _drawing.Add(new GraphPoint(p.X, p.Y));
+            _last = at;
+            InvalidateVisual();
+            return;
+        }
+        if (Tool == GraphCanvasTool.Erase) return;
         var displacement = at - _press.Value;
         if (!_moved && Math.Sqrt(displacement.X * displacement.X + displacement.Y * displacement.Y) < 7) return;
+        if (!_moved && _pressedNode is not null && !ReadOnly && !MultipleSelection)
+            _document.BeginDrag();
         _moved = true;
-        if (_pressedNode is { } id && !ReadOnly)
+        if (_pressedNode is { } id && !ReadOnly && !MultipleSelection)
         {
             if (_document.Node(id) is { } node)
-                _document.MoveNode(id, node.X + (at.X - _last.X) / _zoom, node.Y + (at.Y - _last.Y) / _zoom);
+                _document.MoveNode(id, node.X + (at.X - _last.X) / _zoom, node.Y + (at.Y - _last.Y) / _zoom, recordHistory: false);
         }
         else _origin -= (at - _last) / _zoom;
         _last = at;
@@ -135,7 +189,17 @@ public sealed class GraphCanvasView : Control
         if (_press is null) return;
         _press = null;
         e.Pointer.Capture(null);
-        if (_moved && _pressedNode is not null && !ReadOnly) Changed?.Invoke();
+        if (_drawing is { } points)
+        {
+            _drawing = null;
+            if (points.Count > 1 && !ReadOnly)
+            {
+                _document?.AddStroke(points);
+                Changed?.Invoke();
+            }
+            InvalidateVisual();
+        }
+        else if (_moved && _pressedNode is not null && !ReadOnly && !MultipleSelection) Changed?.Invoke();
         _pressedNode = null;
     }
 
@@ -163,6 +227,18 @@ public sealed class GraphCanvasView : Control
             for (double y = yStart; y < Bounds.Height; y += grid) ctx.DrawLine(pen, new Point(0, y), new Point(Bounds.Width, y));
         }
         if (_document is null) return;
+        var drawnPen = new Pen(UrbeTheme.Brush(UrbeTheme.Text2), 2);
+        foreach (var stroke in _document.Strokes)
+        {
+            var pen = new Pen(UrbeTheme.Brush(UrbeTheme.Text2), Math.Clamp(stroke.Width * _zoom, 1, 14));
+            for (int i = 1; i < stroke.Points.Length; i++)
+                ctx.DrawLine(pen, ToScreen(stroke.Points[i - 1].X, stroke.Points[i - 1].Y),
+                    ToScreen(stroke.Points[i].X, stroke.Points[i].Y));
+        }
+        if (_drawing is { Count: > 1 })
+            for (int i = 1; i < _drawing.Count; i++)
+                ctx.DrawLine(drawnPen, ToScreen(_drawing[i - 1].X, _drawing[i - 1].Y),
+                    ToScreen(_drawing[i].X, _drawing[i].Y));
         var byId = _document.Nodes.ToDictionary(n => n.Id, StringComparer.Ordinal);
         foreach (var edge in _document.Edges)
         {
@@ -187,19 +263,25 @@ public sealed class GraphCanvasView : Control
                 }
             }
         }
-        foreach (var n in _document.Nodes)
+        foreach (var n in _document.Nodes.Where(n => n.Kind == GraphNodeKind.Group)
+            .Concat(_document.Nodes.Where(n => n.Kind != GraphNodeKind.Group)))
         {
             var bounds = NodeRect(n);
             if (!surface.Inflate(40).Intersects(bounds)) continue;
-            var selected = _selected == n.Id;
+            var selected = _selectedIds.Contains(n.Id);
             var stroke = selected ? UrbeTheme.Accent : UrbeTheme.Line2;
             var background = n.Kind switch
             {
+                GraphNodeKind.Group => UrbeTheme.Brush(UrbeTheme.Accent, .045),
                 GraphNodeKind.Folder => UrbeTheme.Brush(UrbeTheme.Accent, .13),
                 GraphNodeKind.Note => UrbeTheme.Brush(UrbeTheme.Accent, .09),
                 _ => UrbeTheme.Brush(UrbeTheme.Surface2)
             };
-            ctx.DrawRectangle(background, new Pen(UrbeTheme.Brush(stroke), selected ? 2 : 1), bounds, 11, 11);
+            var outline = new Pen(UrbeTheme.Brush(stroke), selected ? 2 : 1);
+            if (n.Kind == GraphNodeKind.Shape)
+                ctx.DrawEllipse(background, outline, bounds.Center, bounds.Width / 2, bounds.Height / 2);
+            else ctx.DrawRectangle(background, outline, bounds, n.Kind == GraphNodeKind.Group ? 4 : 11,
+                n.Kind == GraphNodeKind.Group ? 4 : 11);
             if (_zoom < .38) continue;
             var caption = n.Kind switch
             {
