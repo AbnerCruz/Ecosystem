@@ -251,6 +251,10 @@ public static partial class AppDocs
 
         Nas configurações do Assistente, **+ Adicionar provedor**: OpenRouter, Anthropic, OpenAI, Google Gemini, Ollama (local) ou um servidor compatível com OpenAI. Cole a chave, toque em **Testar** e escolha o modelo. As chaves ficam salvas só neste aparelho e vão direto para o provedor.
 
+        ### IA no aparelho (sem internet)
+
+        Em **Assistente → Configurações → IA no aparelho** você baixa uma vez um modelo (Gemma 4: o menor, ~3,3 GB, ou o maior, ~5,2 GB, que o Urbe recomenda conforme a memória do aparelho). Depois disso ele responde **sem internet e sem chave**, lendo e escrevendo as notas com as mesmas permissões. O download só começa quando você toca em **Baixar**, pode ser pausado e continuado, e o arquivo é conferido antes de ser usado; ele fica fora da sua pasta de notas. No celular, a primeira resposta demora mais (ele lê o contexto); as seguintes são mais rápidas. Imagens offline ainda não existem.
+
         ## Pedir
 
         Escreva em **Peça algo ao Assistente…**. Ele lê e busca as notas sozinho. Para mudar algo, ele **propõe**:

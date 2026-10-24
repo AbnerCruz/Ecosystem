@@ -2009,6 +2009,38 @@
       "decidedAt": "2026-10-23",
       "record": "docs/governance/responses/DEC-0055.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0056",
+      "status": "decided",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Urbe: IA padrão que funciona offline (texto agora, imagens depois)",
+      "context": "O proprietário quer que o Urbe tenha uma IA padrão que funcione sem internet, para texto e imagens, com os melhores modelos existentes. Os modelos de imagem de qualidade são pesados demais para a CPU de um celular e não há motor de imagem pronto para Android; o texto tem motor (llama.cpp) e modelos abertos adequados.",
+      "question": "Qual recorte entregar primeiro?",
+      "alternatives": [
+        {
+          "option": "A — Texto offline no Android e no Windows agora; imagens offline em passo seguinte",
+          "consequences": "Entrega o mais útil e viável já; o item de imagens fica no ROADMAP."
+        },
+        {
+          "option": "B — Esperar um motor de imagem para entregar tudo junto",
+          "consequences": "Nada de IA offline até lá."
+        }
+      ],
+      "consequences": "Opção A: provedor IA no aparelho (Gemma 4 via llama.cpp), download opcional e verificado, projeto Urbe.LocalAi referenciado só pelas heads. Imagens continuam pendentes.",
+      "manifestCompatibility": "Preserva NN-002 (sem dependência entre Products), NN-003/023 (o Hub não participa), NN-016 (rede só por ação da pessoa, modelo fora do vault), NN-017 (Android nativo declarado sem validação em aparelho) e NN-022 (product-specific).",
+      "recommendation": "A.",
+      "related": [
+        "docs/governance/addenda/ADD-0032-urbe-ia-no-aparelho.md",
+        "apps/urbe/docs/csharp/ROADMAP.md"
+      ],
+      "raisedBy": "claude-code-urbe-native-port",
+      "raisedAt": "2026-10-24",
+      "decision": "Alternativa A — texto offline primeiro no Android e no Windows, imagens depois (proprietário nesta conversa: \"Pode fazer e finaliza com release\", após ouvir os limites: \"Liberei\").",
+      "decidedAt": "2026-10-24",
+      "record": "docs/governance/addenda/ADD-0032-urbe-ia-no-aparelho.md",
+      "consequencesApplied": true
     }
   ]
 }

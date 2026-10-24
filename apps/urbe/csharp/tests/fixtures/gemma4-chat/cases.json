@@ -1,0 +1,659 @@
+{
+ "user_only": {
+  "request": {
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "Oi!"
+      }
+     ]
+    }
+   ]
+  },
+  "expected": "<bos><|turn>user\nOi!<turn|>\n<|turn>model\n"
+ },
+ "system_user": {
+  "request": {
+   "system": "  Você é o assistente do Urbe.  ",
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "  Resuma minha nota.  "
+      }
+     ]
+    }
+   ]
+  },
+  "expected": "<bos><|turn>system\nVocê é o assistente do Urbe.<turn|>\n<|turn>user\nResuma minha nota.<turn|>\n<|turn>model\n"
+ },
+ "multi_turn": {
+  "request": {
+   "system": "Seja breve.",
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "Quanto é 2+2?"
+      }
+     ]
+    },
+    {
+     "role": "assistant",
+     "content": [
+      {
+       "type": "text",
+       "text": "4"
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "E 3+3?"
+      }
+     ]
+    }
+   ]
+  },
+  "expected": "<bos><|turn>system\nSeja breve.<turn|>\n<|turn>user\nQuanto é 2+2?<turn|>\n<|turn>model\n4<turn|>\n<|turn>user\nE 3+3?<turn|>\n<|turn>model\n"
+ },
+ "tools_declared": {
+  "request": {
+   "system": "Você ajuda.",
+   "tools": [
+    {
+     "name": "ler_nota",
+     "description": "Lê uma nota do vault.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "caminho": {
+        "type": "string",
+        "description": "Caminho da nota"
+       }
+      },
+      "required": [
+       "caminho"
+      ]
+     }
+    },
+    {
+     "name": "buscar",
+     "description": "Busca notas por texto.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "consulta": {
+        "type": "string",
+        "description": "O que procurar"
+       },
+       "limite": {
+        "type": "integer",
+        "description": "Máximo de resultados"
+       },
+       "pastas": {
+        "type": "array",
+        "description": "Onde procurar",
+        "items": {
+         "type": "string"
+        }
+       },
+       "ordem": {
+        "type": "string",
+        "description": "Como ordenar",
+        "enum": [
+         "recentes",
+         "nome"
+        ]
+       },
+       "exata": {
+        "type": "boolean"
+       }
+      },
+      "required": [
+       "consulta"
+      ]
+     }
+    },
+    {
+     "name": "editar",
+     "description": "Muda trechos.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "caminho": {
+        "type": "string"
+       },
+       "trocas": {
+        "type": "array",
+        "description": "Trocas",
+        "items": {
+         "type": "object",
+         "properties": {
+          "de": {
+           "type": "string"
+          },
+          "para": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "de",
+          "para"
+         ]
+        }
+       },
+       "opcoes": {
+        "type": "object",
+        "description": "Opções",
+        "properties": {
+         "Salvar": {
+          "type": "boolean"
+         },
+         "aviso": {
+          "type": "string",
+          "nullable": true
+         }
+        }
+       }
+      },
+      "required": [
+       "caminho",
+       "trocas"
+      ]
+     }
+    }
+   ],
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "Ache a nota do plano."
+      }
+     ]
+    }
+   ]
+  },
+  "expected": "<bos><|turn>system\nVocê ajuda.<|tool>declaration:ler_nota{description:<|\"|>Lê uma nota do vault.<|\"|>,parameters:{properties:{caminho:{description:<|\"|>Caminho da nota<|\"|>,type:<|\"|>STRING<|\"|>}},required:[<|\"|>caminho<|\"|>],type:<|\"|>OBJECT<|\"|>}}<tool|><|tool>declaration:buscar{description:<|\"|>Busca notas por texto.<|\"|>,parameters:{properties:{consulta:{description:<|\"|>O que procurar<|\"|>,type:<|\"|>STRING<|\"|>},exata:{type:<|\"|>BOOLEAN<|\"|>},limite:{description:<|\"|>Máximo de resultados<|\"|>,type:<|\"|>INTEGER<|\"|>},ordem:{description:<|\"|>Como ordenar<|\"|>,enum:[<|\"|>recentes<|\"|>,<|\"|>nome<|\"|>],type:<|\"|>STRING<|\"|>},pastas:{description:<|\"|>Onde procurar<|\"|>,items:{type:<|\"|>STRING<|\"|>},type:<|\"|>ARRAY<|\"|>}},required:[<|\"|>consulta<|\"|>],type:<|\"|>OBJECT<|\"|>}}<tool|><|tool>declaration:editar{description:<|\"|>Muda trechos.<|\"|>,parameters:{properties:{caminho:{type:<|\"|>STRING<|\"|>},opcoes:{description:<|\"|>Opções<|\"|>,properties:{aviso:{nullable:true,type:<|\"|>STRING<|\"|>},Salvar:{type:<|\"|>BOOLEAN<|\"|>}},type:<|\"|>OBJECT<|\"|>},trocas:{description:<|\"|>Trocas<|\"|>,items:{properties:{de:{type:<|\"|>STRING<|\"|>},para:{type:<|\"|>STRING<|\"|>}},required:[<|\"|>de<|\"|>,<|\"|>para<|\"|>],type:<|\"|>OBJECT<|\"|>},type:<|\"|>ARRAY<|\"|>}},required:[<|\"|>caminho<|\"|>,<|\"|>trocas<|\"|>],type:<|\"|>OBJECT<|\"|>}}<tool|><turn|>\n<|turn>user\nAche a nota do plano.<turn|>\n<|turn>model\n"
+ },
+ "tool_call_open": {
+  "request": {
+   "system": "Você ajuda.",
+   "tools": [
+    {
+     "name": "ler_nota",
+     "description": "Lê uma nota do vault.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "caminho": {
+        "type": "string",
+        "description": "Caminho da nota"
+       }
+      },
+      "required": [
+       "caminho"
+      ]
+     }
+    },
+    {
+     "name": "buscar",
+     "description": "Busca notas por texto.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "consulta": {
+        "type": "string",
+        "description": "O que procurar"
+       },
+       "limite": {
+        "type": "integer",
+        "description": "Máximo de resultados"
+       },
+       "pastas": {
+        "type": "array",
+        "description": "Onde procurar",
+        "items": {
+         "type": "string"
+        }
+       },
+       "ordem": {
+        "type": "string",
+        "description": "Como ordenar",
+        "enum": [
+         "recentes",
+         "nome"
+        ]
+       },
+       "exata": {
+        "type": "boolean"
+       }
+      },
+      "required": [
+       "consulta"
+      ]
+     }
+    },
+    {
+     "name": "editar",
+     "description": "Muda trechos.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "caminho": {
+        "type": "string"
+       },
+       "trocas": {
+        "type": "array",
+        "description": "Trocas",
+        "items": {
+         "type": "object",
+         "properties": {
+          "de": {
+           "type": "string"
+          },
+          "para": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "de",
+          "para"
+         ]
+        }
+       },
+       "opcoes": {
+        "type": "object",
+        "description": "Opções",
+        "properties": {
+         "Salvar": {
+          "type": "boolean"
+         },
+         "aviso": {
+          "type": "string",
+          "nullable": true
+         }
+        }
+       }
+      },
+      "required": [
+       "caminho",
+       "trocas"
+      ]
+     }
+    }
+   ],
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "Leia Plano.md"
+      }
+     ]
+    },
+    {
+     "role": "assistant",
+     "content": [
+      {
+       "type": "tool_use",
+       "id": "a1",
+       "name": "ler_nota",
+       "input": {
+        "caminho": "Plano.md"
+       }
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "tool_result",
+       "tool_use_id": "a1",
+       "content": "# Plano\n\nfazer **isso**"
+      }
+     ]
+    }
+   ]
+  },
+  "expected": "<bos><|turn>system\nVocê ajuda.<|tool>declaration:ler_nota{description:<|\"|>Lê uma nota do vault.<|\"|>,parameters:{properties:{caminho:{description:<|\"|>Caminho da nota<|\"|>,type:<|\"|>STRING<|\"|>}},required:[<|\"|>caminho<|\"|>],type:<|\"|>OBJECT<|\"|>}}<tool|><|tool>declaration:buscar{description:<|\"|>Busca notas por texto.<|\"|>,parameters:{properties:{consulta:{description:<|\"|>O que procurar<|\"|>,type:<|\"|>STRING<|\"|>},exata:{type:<|\"|>BOOLEAN<|\"|>},limite:{description:<|\"|>Máximo de resultados<|\"|>,type:<|\"|>INTEGER<|\"|>},ordem:{description:<|\"|>Como ordenar<|\"|>,enum:[<|\"|>recentes<|\"|>,<|\"|>nome<|\"|>],type:<|\"|>STRING<|\"|>},pastas:{description:<|\"|>Onde procurar<|\"|>,items:{type:<|\"|>STRING<|\"|>},type:<|\"|>ARRAY<|\"|>}},required:[<|\"|>consulta<|\"|>],type:<|\"|>OBJECT<|\"|>}}<tool|><|tool>declaration:editar{description:<|\"|>Muda trechos.<|\"|>,parameters:{properties:{caminho:{type:<|\"|>STRING<|\"|>},opcoes:{description:<|\"|>Opções<|\"|>,properties:{aviso:{nullable:true,type:<|\"|>STRING<|\"|>},Salvar:{type:<|\"|>BOOLEAN<|\"|>}},type:<|\"|>OBJECT<|\"|>},trocas:{description:<|\"|>Trocas<|\"|>,items:{properties:{de:{type:<|\"|>STRING<|\"|>},para:{type:<|\"|>STRING<|\"|>}},required:[<|\"|>de<|\"|>,<|\"|>para<|\"|>],type:<|\"|>OBJECT<|\"|>},type:<|\"|>ARRAY<|\"|>}},required:[<|\"|>caminho<|\"|>,<|\"|>trocas<|\"|>],type:<|\"|>OBJECT<|\"|>}}<tool|><turn|>\n<|turn>user\nLeia Plano.md<turn|>\n<|turn>model\n<|tool_call>call:ler_nota{caminho:<|\"|>Plano.md<|\"|>}<tool_call|><|tool_response>response:ler_nota{value:<|\"|># Plano\n\nfazer **isso**<|\"|>}<tool_response|>"
+ },
+ "tool_call_then_answer": {
+  "request": {
+   "system": "Você ajuda.",
+   "tools": [
+    {
+     "name": "ler_nota",
+     "description": "Lê uma nota do vault.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "caminho": {
+        "type": "string",
+        "description": "Caminho da nota"
+       }
+      },
+      "required": [
+       "caminho"
+      ]
+     }
+    },
+    {
+     "name": "buscar",
+     "description": "Busca notas por texto.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "consulta": {
+        "type": "string",
+        "description": "O que procurar"
+       },
+       "limite": {
+        "type": "integer",
+        "description": "Máximo de resultados"
+       },
+       "pastas": {
+        "type": "array",
+        "description": "Onde procurar",
+        "items": {
+         "type": "string"
+        }
+       },
+       "ordem": {
+        "type": "string",
+        "description": "Como ordenar",
+        "enum": [
+         "recentes",
+         "nome"
+        ]
+       },
+       "exata": {
+        "type": "boolean"
+       }
+      },
+      "required": [
+       "consulta"
+      ]
+     }
+    },
+    {
+     "name": "editar",
+     "description": "Muda trechos.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "caminho": {
+        "type": "string"
+       },
+       "trocas": {
+        "type": "array",
+        "description": "Trocas",
+        "items": {
+         "type": "object",
+         "properties": {
+          "de": {
+           "type": "string"
+          },
+          "para": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "de",
+          "para"
+         ]
+        }
+       },
+       "opcoes": {
+        "type": "object",
+        "description": "Opções",
+        "properties": {
+         "Salvar": {
+          "type": "boolean"
+         },
+         "aviso": {
+          "type": "string",
+          "nullable": true
+         }
+        }
+       }
+      },
+      "required": [
+       "caminho",
+       "trocas"
+      ]
+     }
+    }
+   ],
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "Leia Plano.md"
+      }
+     ]
+    },
+    {
+     "role": "assistant",
+     "content": [
+      {
+       "type": "tool_use",
+       "id": "a1",
+       "name": "ler_nota",
+       "input": {
+        "caminho": "Plano.md"
+       }
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "tool_result",
+       "tool_use_id": "a1",
+       "content": "# Plano"
+      }
+     ]
+    },
+    {
+     "role": "assistant",
+     "content": [
+      {
+       "type": "text",
+       "text": "A nota diz: Plano."
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "Obrigado!"
+      }
+     ]
+    }
+   ]
+  },
+  "expected": "<bos><|turn>system\nVocê ajuda.<|tool>declaration:ler_nota{description:<|\"|>Lê uma nota do vault.<|\"|>,parameters:{properties:{caminho:{description:<|\"|>Caminho da nota<|\"|>,type:<|\"|>STRING<|\"|>}},required:[<|\"|>caminho<|\"|>],type:<|\"|>OBJECT<|\"|>}}<tool|><|tool>declaration:buscar{description:<|\"|>Busca notas por texto.<|\"|>,parameters:{properties:{consulta:{description:<|\"|>O que procurar<|\"|>,type:<|\"|>STRING<|\"|>},exata:{type:<|\"|>BOOLEAN<|\"|>},limite:{description:<|\"|>Máximo de resultados<|\"|>,type:<|\"|>INTEGER<|\"|>},ordem:{description:<|\"|>Como ordenar<|\"|>,enum:[<|\"|>recentes<|\"|>,<|\"|>nome<|\"|>],type:<|\"|>STRING<|\"|>},pastas:{description:<|\"|>Onde procurar<|\"|>,items:{type:<|\"|>STRING<|\"|>},type:<|\"|>ARRAY<|\"|>}},required:[<|\"|>consulta<|\"|>],type:<|\"|>OBJECT<|\"|>}}<tool|><|tool>declaration:editar{description:<|\"|>Muda trechos.<|\"|>,parameters:{properties:{caminho:{type:<|\"|>STRING<|\"|>},opcoes:{description:<|\"|>Opções<|\"|>,properties:{aviso:{nullable:true,type:<|\"|>STRING<|\"|>},Salvar:{type:<|\"|>BOOLEAN<|\"|>}},type:<|\"|>OBJECT<|\"|>},trocas:{description:<|\"|>Trocas<|\"|>,items:{properties:{de:{type:<|\"|>STRING<|\"|>},para:{type:<|\"|>STRING<|\"|>}},required:[<|\"|>de<|\"|>,<|\"|>para<|\"|>],type:<|\"|>OBJECT<|\"|>},type:<|\"|>ARRAY<|\"|>}},required:[<|\"|>caminho<|\"|>,<|\"|>trocas<|\"|>],type:<|\"|>OBJECT<|\"|>}}<tool|><turn|>\n<|turn>user\nLeia Plano.md<turn|>\n<|turn>model\n<|tool_call>call:ler_nota{caminho:<|\"|>Plano.md<|\"|>}<tool_call|><|tool_response>response:ler_nota{value:<|\"|># Plano<|\"|>}<tool_response|>A nota diz: Plano.<turn|>\n<|turn>user\nObrigado!<turn|>\n<|turn>model\n"
+ },
+ "two_calls": {
+  "request": {
+   "tools": [
+    {
+     "name": "ler_nota",
+     "description": "Lê uma nota do vault.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "caminho": {
+        "type": "string",
+        "description": "Caminho da nota"
+       }
+      },
+      "required": [
+       "caminho"
+      ]
+     }
+    },
+    {
+     "name": "buscar",
+     "description": "Busca notas por texto.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "consulta": {
+        "type": "string",
+        "description": "O que procurar"
+       },
+       "limite": {
+        "type": "integer",
+        "description": "Máximo de resultados"
+       },
+       "pastas": {
+        "type": "array",
+        "description": "Onde procurar",
+        "items": {
+         "type": "string"
+        }
+       },
+       "ordem": {
+        "type": "string",
+        "description": "Como ordenar",
+        "enum": [
+         "recentes",
+         "nome"
+        ]
+       },
+       "exata": {
+        "type": "boolean"
+       }
+      },
+      "required": [
+       "consulta"
+      ]
+     }
+    },
+    {
+     "name": "editar",
+     "description": "Muda trechos.",
+     "parameters": {
+      "type": "object",
+      "properties": {
+       "caminho": {
+        "type": "string"
+       },
+       "trocas": {
+        "type": "array",
+        "description": "Trocas",
+        "items": {
+         "type": "object",
+         "properties": {
+          "de": {
+           "type": "string"
+          },
+          "para": {
+           "type": "string"
+          }
+         },
+         "required": [
+          "de",
+          "para"
+         ]
+        }
+       },
+       "opcoes": {
+        "type": "object",
+        "description": "Opções",
+        "properties": {
+         "Salvar": {
+          "type": "boolean"
+         },
+         "aviso": {
+          "type": "string",
+          "nullable": true
+         }
+        }
+       }
+      },
+      "required": [
+       "caminho",
+       "trocas"
+      ]
+     }
+    }
+   ],
+   "messages": [
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "Compare A e B"
+      }
+     ]
+    },
+    {
+     "role": "assistant",
+     "content": [
+      {
+       "type": "tool_use",
+       "id": "c1",
+       "name": "ler_nota",
+       "input": {
+        "caminho": "A.md"
+       }
+      },
+      {
+       "type": "tool_use",
+       "id": "c2",
+       "name": "buscar",
+       "input": {
+        "consulta": "B",
+        "limite": 3,
+        "exata": true,
+        "pastas": [
+         "x",
+         "y"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "role": "user",
+     "content": [
+      {
+       "type": "tool_result",
+       "tool_use_id": "c1",
+       "content": "texto A"
+      },
+      {
+       "type": "tool_result",
+       "tool_use_id": "c2",
+       "content": "texto B"
+      }
+     ]
+    }
+   ]
+  },
+  "expected": "<bos><|turn>system\n<|tool>declaration:ler_nota{description:<|\"|>Lê uma nota do vault.<|\"|>,parameters:{properties:{caminho:{description:<|\"|>Caminho da nota<|\"|>,type:<|\"|>STRING<|\"|>}},required:[<|\"|>caminho<|\"|>],type:<|\"|>OBJECT<|\"|>}}<tool|><|tool>declaration:buscar{description:<|\"|>Busca notas por texto.<|\"|>,parameters:{properties:{consulta:{description:<|\"|>O que procurar<|\"|>,type:<|\"|>STRING<|\"|>},exata:{type:<|\"|>BOOLEAN<|\"|>},limite:{description:<|\"|>Máximo de resultados<|\"|>,type:<|\"|>INTEGER<|\"|>},ordem:{description:<|\"|>Como ordenar<|\"|>,enum:[<|\"|>recentes<|\"|>,<|\"|>nome<|\"|>],type:<|\"|>STRING<|\"|>},pastas:{description:<|\"|>Onde procurar<|\"|>,items:{type:<|\"|>STRING<|\"|>},type:<|\"|>ARRAY<|\"|>}},required:[<|\"|>consulta<|\"|>],type:<|\"|>OBJECT<|\"|>}}<tool|><|tool>declaration:editar{description:<|\"|>Muda trechos.<|\"|>,parameters:{properties:{caminho:{type:<|\"|>STRING<|\"|>},opcoes:{description:<|\"|>Opções<|\"|>,properties:{aviso:{nullable:true,type:<|\"|>STRING<|\"|>},Salvar:{type:<|\"|>BOOLEAN<|\"|>}},type:<|\"|>OBJECT<|\"|>},trocas:{description:<|\"|>Trocas<|\"|>,items:{properties:{de:{type:<|\"|>STRING<|\"|>},para:{type:<|\"|>STRING<|\"|>}},required:[<|\"|>de<|\"|>,<|\"|>para<|\"|>],type:<|\"|>OBJECT<|\"|>},type:<|\"|>ARRAY<|\"|>}},required:[<|\"|>caminho<|\"|>,<|\"|>trocas<|\"|>],type:<|\"|>OBJECT<|\"|>}}<tool|><turn|>\n<|turn>user\nCompare A e B<turn|>\n<|turn>model\n<|tool_call>call:ler_nota{caminho:<|\"|>A.md<|\"|>}<tool_call|><|tool_call>call:buscar{consulta:<|\"|>B<|\"|>,exata:true,limite:3,pastas:[<|\"|>x<|\"|>,<|\"|>y<|\"|>]}<tool_call|><|tool_response>response:ler_nota{value:<|\"|>texto A<|\"|>}<tool_response|><|tool_response>response:buscar{value:<|\"|>texto B<|\"|>}<tool_response|>"
+ }
+}

@@ -8,8 +8,11 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+    <!-- a IA que responde sem internet: o motor (llama.cpp) para CPU; os arquivos nativos seguem ao lado do executável -->
+    <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.30.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Urbe.Client/Urbe.Client.csproj" />
+    <ProjectReference Include="../Urbe.LocalAi/Urbe.LocalAi.csproj" />
   </ItemGroup>
 </Project>

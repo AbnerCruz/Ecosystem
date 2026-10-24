@@ -395,19 +395,24 @@ public sealed partial class AssistantPanel
 
     // ---------------------------------------------------------------- empty states
 
-    private static readonly string[] PresetOrder = ["openrouter", "anthropic", "openai", "gemini", "ollama", "custom"];
+    private static readonly string[] OnlinePresets = ["openrouter", "anthropic", "openai", "gemini", "ollama", "custom"];
+
+    /// <summary>The providers one can add; the model on the device first, where the device has one.</summary>
+    private static string[] PresetOrder => HasDeviceAi ? ["device", .. OnlinePresets] : OnlinePresets;
 
     private static readonly Dictionary<string, string> PresetDetail = new()
     {
         ["openrouter"] = "Recomendado · Claude, GPT, Gemini, Llama e outros com uma chave", ["anthropic"] = "Claude direto da Anthropic", ["openai"] = "GPT direto da OpenAI",
-        ["gemini"] = "Gemini do Google", ["ollama"] = "Modelos no seu computador, sem internet", ["custom"] = "LM Studio, vLLM, Groq… (API compatível)"
+        ["device"] = "Grátis e sem internet · baixa uma vez e funciona sempre, até no modo avião", ["gemini"] = "Gemini do Google", ["ollama"] = "Modelos no seu computador, sem internet", ["custom"] = "LM Studio, vLLM, Groq… (API compatível)"
     };
 
     private Control Onboarding()
     {
         var box = new StackPanel { Spacing = 10, Margin = new Thickness(4, 24, 4, 0) };
         box.Children.Add(Wrap("Conecte um modelo", 20, UrbeTheme.Text, FontWeight.Bold));
-        box.Children.Add(Wrap("O Assistente funciona com qualquer modelo: escolha um provedor e cole sua chave. Ela fica salva só neste aparelho.", 14, UrbeTheme.Text2));
+        box.Children.Add(Wrap(HasDeviceAi
+            ? "Use a IA que mora no seu aparelho (grátis, sem internet) ou conecte um provedor com a sua chave. A chave fica salva só neste aparelho."
+            : "O Assistente funciona com qualquer modelo: escolha um provedor e cole sua chave. Ela fica salva só neste aparelho.", 14, UrbeTheme.Text2));
         foreach (var k in PresetOrder)
         {
             var pre = AssistantProviders.Presets[k];
@@ -418,7 +423,7 @@ public sealed partial class AssistantPanel
                 Content = new StackPanel { Spacing = 2, Children = { Label(pre.Name, 15, UrbeTheme.Text, FontWeight.SemiBold), Wrap(PresetDetail[k], 12, UrbeTheme.Text3) } }
             };
             Avalonia.Automation.AutomationProperties.SetName(b, pre.Name);
-            b.Click += (_, _) => ShowSettings(k);
+            b.Click += (_, _) => { if (k == "device") ShowDevice(); else ShowSettings(k); };
             box.Children.Add(b);
         }
         return box;
@@ -706,7 +711,7 @@ public sealed partial class AssistantPanel
     private async Task AddProviderAsync()
     {
         var i = await _app.Dialogs.ChooseAsync("Qual provedor?", PresetOrder.Select(k => new DialogItem(AssistantProviders.Presets[k].Name, UrbeTheme.Icons.Storage)).ToList());
-        if (i is { } k) EditProvider(null, PresetOrder[k]);
+        if (i is { } k) { if (PresetOrder[k] == "device") ShowDevice(); else EditProvider(null, PresetOrder[k]); }
     }
 
     private async Task TestProviderAsync(AiProviderConfig p, TextBlock output)
@@ -739,6 +744,7 @@ public sealed partial class AssistantPanel
     /// <summary>editProvider(): name, API address and key; saved after the models list answers (a 401/403 stops it), then the model picker.</summary>
     private void EditProvider(AiProviderConfig? p, string preset)
     {
+        if (preset == "device") { ShowDevice(); return; }
         var pre = AssistantProviders.Presets.GetValueOrDefault(preset) ?? AssistantProviders.Presets["custom"];
         bool isNew = p is null;
         p ??= new AiProviderConfig(AssistantAgent.NewId("p"), preset, pre.Name, "", "");
