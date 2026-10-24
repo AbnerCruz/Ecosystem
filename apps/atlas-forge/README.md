@@ -29,6 +29,14 @@ Use **Terra/Mar** para desenhar limites ou **Novo oceano para desenhar continent
 
 Em **Biosfera e eras**, configure espécies e alimentos, salve e introduza a espécie numa região selecionada ou em todos os habitats adequados. As camadas Cobertura vegetal, Biomassa e Nitrogênio mostram os estoques regionais. Simule 100, 1.000 ou 10.000 anos; Cancelar preserva o estado anterior. O seletor de marcos recupera o estado completo antes de cada era. O HTML publicado permite consultar ano e estoques ao clicar no mapa.
 
+## Natureza local e escala humana — AF-021
+
+No mapa natural, a menos de 1,8 m/pixel, **Árvores e pedras** exibe símbolos de copas, arbustos e rochas. Os pontos são derivados determinísticamente da seed, das coordenadas físicas, do material do terreno e da cobertura vegetal regional; não são instâncias persistidas nem indivíduos da ecologia. A camada pode ser desligada para reduzir trabalho de desenho.
+
+**Escala humana** abre um quadro proporcional em zoom próximo, com altura humana convencional de 1,7 m e planta de casa de 10 × 8 m quando cabem no quadro. A referência é uma comparação gráfica, sem sugerir que a altura humana é uma pegada no mapa. O mapa já oferece régua em metros e altitude no inspetor. As coordenadas não alteram snapshots ou exportação JSON.
+
+A simulação física regional continua a mesma: materiais locais não representam depósitos minerais reais, e não há tectônica, química geral, meteorologia dinâmica ou organismos individuais. Validação de toque/percepção em Android físico ainda é necessária.
+
 ## Verificar
 
 ```bash

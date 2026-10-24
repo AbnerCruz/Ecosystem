@@ -522,6 +522,14 @@ $("grid").onchange = () => {
   renderer.showGrid = $("grid").checked;
   renderer.render();
 };
+$("nature").onchange = () => {
+  renderer.showNature = $("nature").checked;
+  renderer.render();
+};
+$("human-scale").onchange = () => {
+  renderer.showHumanScale = $("human-scale").checked;
+  renderer.render();
+};
 $("season").onchange = () => {
   renderer.season = $("season").value;
   renderer.render();

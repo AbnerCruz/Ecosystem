@@ -1,5 +1,6 @@
 import { vegetation } from "../geometry/ecology.js";
 import { SurfaceTiles } from "./surface.js";
+import { drawHumanScale, drawNature } from "./landmarks.js";
 import { sampleSurface, MATERIALS, SURFACE_MODEL } from "./surface-field.js";
 import {
   clamp,
@@ -166,6 +167,8 @@ export class MapRenderer {
     this.pan = { x: 0, y: 0 };
     this.showGrid = true;
     this.showRivers = true;
+    this.showNature = true;
+    this.showHumanScale = true;
     this.layer = "atlas";
     this.season = "annual";
     this.raster = document.createElement("canvas");
@@ -419,6 +422,7 @@ export class MapRenderer {
       ["atlas", "elevation", "drainage"].includes(this.layer)
     )
       this.contours(ctx);
+    if (this.detailActive && this.showNature) drawNature(this, ctx);
     if (this.showGrid) {
       ctx.strokeStyle = "#e4e7cf16";
       ctx.lineWidth = 0.7;
@@ -499,6 +503,7 @@ export class MapRenderer {
       ctx.fillText(e.name, p.x, p.y - 13);
     }
     this.scaleBar(ctx);
+    drawHumanScale(this, ctx);
   }
   contours(ctx) {
     if (this.zoom < 2) return;

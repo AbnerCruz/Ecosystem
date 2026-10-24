@@ -48,6 +48,10 @@ O terreno local é um campo procedural contínuo em metros, derivado da seed, da
 
 O proprietário rejeitou a troca de visualização entre zoom distante e próximo. Requisito: uma única superfície visual em todas as escalas naturais, com continuidade de altura, cobertura, posição e carregamento. Removido o limiar global/local do renderer; pais/filhos usam o mesmo campo e paleta. Atalhos são coordenadas de câmera, nunca modos. Teste específico percorre ida/volta por eventos wheel, sem depender dos atalhos. Esta correção não declara completos edição métrica, tectônica, ecologia ou eras.
 
+## AF-021 — objetos naturais cartográficos e escala humana
+
+Quando o mapa natural é aproximado até menos de 1,8 m/pixel, desenhar símbolos de árvores, arbustos e pedras ancorados em coordenadas geográficas quantizadas por metros, sem objetos salvos ou dependência de serviços. Variar símbolos por materiais do terreno e cobertura vegetal da biosfera regional, com limite explícito por render. Quadro de comparação próximo mostra pessoa convencional de 1,7 m de altura (diagrama vertical) e uma casa de 10 × 8 m de planta quando dimensionável. As chaves de projeto não mudam; testes verificam reprodutibilidade e ausência de símbolos no oceano. Isso não é simulação individual de árvores, nem geologia mineralógica, nem substitui validação DEVICE.
+
 ## AF-020 — autoria e ciclo causal (Issue #699)
 
 O pedido direto do proprietário prioriza produto funcional. 0.5 acrescenta oceano inicial explícito, pincéis Terra/Mar, catálogo editável, introdução em habitats, estoques tróficos/N, dispersão, erosão influenciada por vegetação e eras em Worker. Fluxo atravessa UI, v3 migrável, marcos e publicação offline. Testes: `ecosystem.test.mjs` e `ecosystem-browser.mjs`. A simulação é regional e simplificada, conforme MODELS; não declara a missão completa. Lugares continuam opcionais, notas são cópias locais independentes de outros aplicativos e zoom natural contínuo é preservado.
