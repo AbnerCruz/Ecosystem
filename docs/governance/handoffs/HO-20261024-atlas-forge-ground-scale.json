@@ -1,0 +1,139 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-atlas-forge-ground-scale",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T09:19:04.788Z",
+  "agent": {
+    "id": "gpt-6-atlas-forge",
+    "kind": "ai-agent"
+  },
+  "task_id": "AF-021",
+  "component": "atlas-forge",
+  "state": "review",
+  "branch": "feat/atlas-forge-scale-and-surface-life-20261024",
+  "base_commit": "105f01bdbb3b3e56db0ebfb714cb1b27b9b5e571",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/722",
+  "files_changed": [
+    "apps/atlas-forge/src/rendering/landmarks.js",
+    "apps/atlas-forge/src/rendering/map.js",
+    "apps/atlas-forge/src/app/editor.js",
+    "apps/atlas-forge/index.html",
+    "apps/atlas-forge/tests/landmarks.test.mjs",
+    "apps/atlas-forge/README.md",
+    "apps/atlas-forge/SPEC.md",
+    "apps/atlas-forge/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261024-atlas-forge-ground-scale.json"
+  ],
+  "work_completed": [
+    "Issue AF-021 #720: símbolos de árvores, arbustos e rochas determinísticos pela seed, material e biomassa regional; sem persistir populações individuais.",
+    "Malha de detalhes finos com espaçamento de 6 m no zoom próximo, quantidade limitada e cache de viewport; chave visual para ativar ou desativar.",
+    "Quadro de escala com pessoa de 1,7 m e casa de 10 × 8 m em proporções calculadas da escala do mapa, também desativável.",
+    "Renderização somente aditiva em MapRenderer de editor e viewer HTML offline; nenhum outro Product ou esquema de dados alterado.",
+    "Testes unitários para determinismo, ausência de elementos terrestres no oceano, limites de candidatos e ausência de mutação do mundo."
+  ],
+  "verification": [
+    {
+      "check": "npm run check e npm run benchmark no CI",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Execução https://github.com/AbnerCruz/Ecosystem/actions/runs/40081141514 concluída com sucesso. Inclui Prettier, testes unitários, build HTML e e2e Chromium offline; benchmark de geração."
+    },
+    {
+      "check": "Validação de visual e desempenho em dispositivo Android físico",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/atlas-forge/index.html",
+      "evidence": "Capturas Chromium não substituem validação no Android do proprietário."
+    }
+  ],
+  "known_issues": [
+    "Objetos locais são símbolos e não organismos individuais, árvores geométricas reais ou depósitos geológicos cientificamente validados.",
+    "Tectônica, meteorologia física, química dos recursos, fauna individualizada e edição métrica persistente continuam no roadmap, sem alegação de conclusão.",
+    "Escala humana compara dimensões de referência, não edifica construções persistentes.",
+    "Visual e performance em Android físico não foram validados nesta tarefa."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Submeter PR #722 ao integrador governado e validar modelo combinado; sem merge manual nem release de produção antecipada.",
+    "Fazer validação humana no celular e ajustar densidade de símbolos se necessário.",
+    "Continuar solvers científicos e edição métrica em etapas separadas conforme requisitos."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "docs/adr/0035-atlas-forge-incorporacao-gradual.md",
+    "docs/governance/addenda/ADD-0031-atlas-forge-no-ecosystem.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/atlas-forge/AGENTS.md",
+    "apps/atlas-forge/SPEC.md",
+    "apps/atlas-forge/ROADMAP.md",
+    "apps/atlas-forge/docs/MODELS.md",
+    "apps/atlas-forge/docs/FORMAT.md",
+    "apps/atlas-forge/docs/TERRAIN.md",
+    "docs/proposals/atlas-forge/MISSION.md",
+    "docs/proposals/atlas-forge/PROMPT_EXECUCAO.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Objetos cartográficos são projeções derivadas; WorldState é única fonte persistida."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Alterações limitadas a Atlas Forge; nenhuma dependência entre Products."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Editor e visualizador continuam funcionando offline."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Rastreio por Issue #720, PR #722, branch e handoff."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "SPEC, README e ROADMAP registram incremento e limitações."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Instruções e contratos normativos consultados antes do código."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Sem alteração de formato de projeto, ownership ou comportamento científico."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE explicitamente pendente, separado de E2E Chromium."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Verificações automatizadas concluídas; estado review até integração e inspeção humana."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem capability especulativa nem extração de renderer para outro Product."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "ground-scale-cartography",
+      "status": "product-specific",
+      "rationale": "Sobreposição interna do Atlas; sem consumidor externo real."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Incremento aditivo de visualização e documentação local, sem schema ou release."
+  },
+  "cost": null
+}
