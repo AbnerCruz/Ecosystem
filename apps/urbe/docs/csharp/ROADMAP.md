@@ -340,6 +340,14 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 
 - [~] UC-87.1 — **Tokens e memória sem limites arbitrários (24/10/2026)**: remover barreiras fixas de 5000 memórias/1600 caracteres/12 fatos por prompt; injeção contextual adaptada à janela do modelo, ao sistema e ao histórico, pesquisa paginada com orçamento expansível, UI incremental, sem sumarização paga em segundo plano. Branch `feat/urbe-uc87-adaptive-memory-cost-20261024`. Testes de expansão de recuperação, confidencialidade e escala. **Pendente de CI da PR e de validação humana do Android**. Os limites físicos de contexto e recursos do dispositivo continuam valendo. Os benchmarks semânticos externos, indexação persistente escalável e embeddings reais permanecem tarefas distintas, sem declaração de conclusão fictícia.
 
+## UC-63/UC-81 — Refinamento visual e miniassistente contextual (24/10/2026; issue #746)
+
+- [~] **Reduzir molduras redundantes** no Assistente nativo, mantendo linha de atividade, expansão das etapas, fontes, argumentos/resultados, imagens, consumo, custos, modelos, controles de acesso e memória. Implementação incremental na branch `feat/urbe-assistant-contextual-fab-20261024`.
+- [~] **Launcher IA flutuante** no canto inferior direito (alvo 48 dp, botão discreto, leitor de tela) substituindo o destino fixo "Assistente" no dock/rail. O painel completo continua disponível pelo launcher e Configurações.
+- [~] **Contexto `&Agente&:` sem sequestro do editor**: uma única conversa/executor; pop-up nativo não modal de estado, aprovação com diff e opção de edição/rejeição, pergunta, resultado/erro. A configuração de provedor/modelo ausente ainda pode abrir o painel completo. A sugestão inline existente não é substituída.
+- **Provas pendentes**: suite de UI headless e consistency do CI; inspeção visual, foco/IME, sobreposição e desempenho em Android físico; revisão de acessibilidade e estados de aprovação/pergunta; validação de continuidade e atualização antes de qualquer release. Não marcar como concluído por existir PR ou build.
+- **Fronteira:** sem alteração de modelo de dados, segredos, tokens, runtime, rede, segurança das ferramentas ou outros Products; nenhum APK/release nesta fatia antes de integração governada e validação.
+
 ## UC-88 — Grafos autorais e exploração visual (direção do proprietário, 24/10/2026)
 
 - [~] **UC-88.1 — Primeira fatia em PR:** `*.grafo.json` (domínio local, identidade estável de nós/arestas, referências a arquivos, notas e pastas), destino **Grafos**, criação/edição em canvas Avalonia, escrita verificada e `![[grafo]]` navegável. Branch `feat/urbe-grafos-livres-20261024`, especificação [GRAPHS.md](GRAPHS.md), ADR-0040. **Não marcar como concluído** antes de CI, testes UI e DEVICE.

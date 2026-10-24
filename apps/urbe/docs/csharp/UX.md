@@ -72,3 +72,13 @@ Cada tela é auditada contra P1–P13, redesenhada e entregue com testes e captu
 - Passa nos princípios mensuráveis acima, com teste automatizado sempre que for possível.
 - Tem capturas antes e depois anexadas ao PR.
 - É validada pelo proprietário no aparelho (NN-017). Validação no aparelho é o que fecha.
+
+## 4. Assistente contextual: execução presente, interface discreta (24/10/2026, issue #746)
+
+A interface do Assistente tem **duas apresentações do mesmo estado**, não dois agentes: a conversa completa e o cartão contextual para `&Agente&:` na nota. O launcher permanente de IA ocupa 48 dp no canto inferior direito. A navegação principal não reserva uma aba inteira para algo que pode ser invocado localmente. A ação explícita no launcher abre a conversa completa, com modelos, custos/tokens, memória, histórico, pesquisa, fontes, resultados e permissões; nada disso é eliminado.
+
+O pedido iniciado na nota não toma o foco nem abre a conversa quando começa ou termina. A folha contextual mostra apenas o estado atual: pensamento/etapa e progresso; pergunta com resposta; aprovação com prévia, edição e rejeição; ou resposta/erro. "Abrir conversa" é sempre uma decisão do usuário. Se o agente alterar a nota, a sugestão inline continua prioritária e o pop-up espelha a mesma aprovação, sem criar um caminho paralelo de autorização. Se faltar provedor/modelo, configuração completa é exceção justificada.
+
+**Regressões bloqueantes**: perda de parâmetros/resultados no painel completo; aprovação automática por abrir/fechar pop-up; teclado virtual aberto espontaneamente; perda da seleção/cursor ou saltos na rolagem do editor; o cartão cobrir permanentemente o texto; botão com alvo de toque inferior a 48 dp; rodar IA em thread UI; recriar o transcript inteiro a cada token; renderizar progresso animado sob configuração de movimento reduzido. Testar 412×900 e desktop amplo; prever teclado IME e gesto de voltar. O status do pop-up deve refletir a execução real, não um indicador simulado.
+
+**Inspiração, não cópia**: conversas modernas que mantêm conteúdo no fluxo sem dezenas de painéis; agentes/coders que deixam atividades auditáveis sob expansão; interfaces contextuais com ações pontuais e saída explícita para a visão completa. Uma estética minimalista depende de tipografia, ritmo e hierarquia, não de uma coleção de caixas translúcidas e bordas decorativas. As informações continuam descobríveis sem ritual de configuração.

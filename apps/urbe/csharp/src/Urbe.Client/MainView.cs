@@ -131,6 +131,7 @@ public sealed partial class MainView : Grid
         _stage.Children.Add(FilePreview);
         _stage.Children.Add(_notice);
         _stage.Children.Add(_pluginPanels);   // the plugins' panels, over the Explorer and the editor (ADD-0021)
+        InstallAssistantLauncher();          // contextual AI lives over the editor, not in a second destination
         Customize = new CustomizePanel(Customization, Dialogs);
         Customize.OpenFileRequested += path => Editor.Open(new CityNote(path, _contents.GetValueOrDefault(path, "")));
         Customize.NativePlugins = NativePlugins;
@@ -1511,8 +1512,9 @@ public sealed partial class MainView : Grid
 
     // ---------------- navigation (rail / dock) ----------------
 
+    // Assistente remains in its floating launcher; Grafos is the second work area.
     private static readonly (string Icon, string Label)[] Destinations =
-        [(UrbeTheme.Icons.Notes, "Notas"), (UrbeTheme.Icons.Layers, "Grafos"), (UrbeTheme.Icons.Assistant, "Assistente")];
+        [(UrbeTheme.Icons.Notes, "Notas"), (UrbeTheme.Icons.Layers, "Grafos")];
 
     private void BuildRail()
     {
@@ -1597,13 +1599,8 @@ public sealed partial class MainView : Grid
         }
         else if (label == "Grafos")
         {
-            ToolTip.SetTip(button, "Grafos: criação e navegação visual");
+            ToolTip.SetTip(button, "Grafos: criar, conectar e navegar no vault");
             button.Click += (_, _) => _ = ShowGraphsHomeAsync();
-        }
-        else
-        {
-            ToolTip.SetTip(button, "Assistente: agentes que pesquisam, escrevem e organizam o vault");
-            button.Click += async (_, _) => { if (GraphOpen && !await CloseGraphAsync()) return; ToggleAssistant(); };
         }
         if (Avalonia.Automation.AutomationProperties.GetName(button) is not { Length: > 0 }) Avalonia.Automation.AutomationProperties.SetName(button, label);
         return Ui.UrbeMotion.Pressable(button);

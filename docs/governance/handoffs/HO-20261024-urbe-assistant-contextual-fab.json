@@ -1,0 +1,115 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-assistant-contextual-fab",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T16:40:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-assistant-contextual",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-63",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-assistant-contextual-fab-20261024",
+  "base_commit": "e961173253073090457f96e10a1146dee3bba959",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Compact.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantCompactUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/DockLayoutUiTests.cs",
+    "apps/urbe/docs/csharp/UX.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261024-urbe-assistant-contextual-fab.json"
+  ],
+  "work_completed": [
+    "Inspecionados os PRs #732 e #738 integrados, o estado do Assistente na main, o componente ActivityTimeline e os testes de histórico e aprovação.",
+    "Substituído destino Assistente no dock/rail por botão IA flutuante acessível de 48 dp, com acesso explícito ao painel integral.",
+    "Adicionada apresentação contextual Avalonia com os mesmos objetos de conversa/execução/controle, apresentando somente estado de atividade, pergunta, aprovação com edição/diff, resultado ou erro.",
+    "Chamada `&Agente&:` deixa de abrir chat automaticamente para aprovação/resultado, preserva foco; sem provedor/modelo, continua a exigir configuração completa.",
+    "Reduzidas caixas/bordas em atividades e seções; a expansão mantém parâmetros, resultados e imagens no chat completo.",
+    "Adicionados testes headless de launcher/dock e conversa disparada da nota, e critérios de UX/roadmap."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "GitHub CI urbe-checks e consistency",
+      "result": "pending",
+      "evidence": "PR a executar; dotnet indisponível no ambiente da sessão."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico 412×900: IME/foco, pop-up, aprovação/pergunta, posição/rolagem, acesso à conversa",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs"
+    }
+  ],
+  "known_issues": [
+    "Não há validação visual em aparelho real; verificar obstrução do editor pelo popup ao abrir IME e comportamento do botão após mudança de orientação.",
+    "Os limites atuais do Assistente e suas políticas persistidas permanecem inalterados.",
+    "CI e testes headless pendentes após abertura do PR; sem APK/release anunciado."
+  ],
+  "blockers": [
+    "CI verde, revisão independente, integração governada e aceite Android para encerrar UX."
+  ],
+  "next_actions": [
+    "Verificar CI e corrigir qualquer falha de compilação/teste, em particular controles Avalonia e layout do dock.",
+    "Validar aprovação com diff, responder pergunta e encerramento não modal no Android físico sem abrir teclado inesperadamente.",
+    "Revisar posicionamento do launcher e pop-up em telas pequenas, incluindo IME e overlays do editor.",
+    "Integrar via fluxo governado, depois publicar release com novo bump somente se explicitamente solicitado e verificado."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/docs/csharp/UX.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/governance/addenda/ADD-0026-urbe-experiencia-de-usuario-topo-de-linha.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "CompactContent é projeção do AssistantPanel existente; não há outra fonte de conversas/autorizações."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "issue #746, branch, PR e handoff identificam execução, mudanças e gates pendentes."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhum boundary, protocolo, persistência ou runtime alterado; nova superfície apenas de UI."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Android físico mantido pendente, mesmo se CI ficar verde."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Tarefa declarada review até integração e testes."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma abstração compartilhada extraída, código circunscrito a Urbe.Client."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-assistant-contextual-presentation",
+      "status": "product-specific",
+      "rationale": "UX nativa Avalonia do Urbe, reusa o estado do Assistente; não há segundo consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Alteração de apresentação C# sem mudanças de dados, protocolo, segurança, rede ou release."
+  }
+}
