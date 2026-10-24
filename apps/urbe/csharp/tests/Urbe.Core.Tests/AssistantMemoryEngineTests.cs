@@ -276,7 +276,9 @@ public sealed class AssistantMemoryEngineTests
         var a = AssistantMemoryEngine.Remember(cfg, "O reino de Arthur tem capital em Roma", "Vault");
         var b = AssistantMemoryEngine.Remember(cfg, "O reino de Arthur tem capital em Paris", "Vault");
         var possible = AssistantMemoryEngine.PotentialConflicts(cfg, "Vault", "geral");
-        Assert.Contains(possible, p => p.Left.Id == a.Id && p.Right.Id == b.Id);
+        Assert.Contains(possible, p =>
+            p.Left.Id == a.Id && p.Right.Id == b.Id ||
+            p.Left.Id == b.Id && p.Right.Id == a.Id);
         Assert.All(cfg.MemoryRecords, m => Assert.Equal("active", m.State));
     }
 
