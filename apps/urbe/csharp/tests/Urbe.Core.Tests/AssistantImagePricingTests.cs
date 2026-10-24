@@ -29,10 +29,10 @@ public sealed class AssistantImagePricingTests
         Assert.Contains("/imagem", google.Rate);
         Assert.Contains("entrada", google.Explanation);
         Assert.Contains("ai.google.dev", google.SourceUrl);
-        var openai = AssistantImagePricing.Published("openai", "gpt-image-1");
+        var openai = AssistantImagePricing.Published("openai", "gpt-image-2.5-sunburst");
         Assert.NotNull(openai);
-        Assert.Contains("0,02", openai.Rate);
-        Assert.Contains("0,19", openai.Rate);
+        Assert.Contains("30/1M", openai.Rate);
+        Assert.Contains("tokens", openai.Rate);
         Assert.Null(AssistantImagePricing.Published("custom", "some-model"));
         Assert.Null(AssistantImagePricing.Published("openai", "invented-model"));
     }
