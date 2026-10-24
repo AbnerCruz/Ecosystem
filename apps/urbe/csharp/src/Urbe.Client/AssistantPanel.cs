@@ -119,7 +119,7 @@ public sealed partial class AssistantPanel : Border
         Chip(_policyChip, 12);
         _policyChip.Margin = new Thickness(6, 0, 0, 0);
         _policyChip.Click += (_, _) => _ = PickPolicyAsync();
-        // Wrap compact status chips instead of clipping model, permissions or usage on narrow phones.
+        // Reflow provider, approval and usage controls on smaller phones.
         var bar = new WrapPanel { Orientation = Orientation.Horizontal,
             Margin = new Thickness(12, 0, 12, 8), Children = { _modelChip, _policyChip, _usage } };
 
@@ -188,7 +188,7 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, pages/ai-tools.js, customize/ai-tools.js, then the vault plugins).</summary>
-    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, AgentNames.Tool, AssistantImageTools.Tool, AssistantQuestionTools.Ask];
+    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan"), AssistantAdaptivePlanTools.Update, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, AgentNames.Tool, AssistantImageTools.Tool, AssistantQuestionTools.Ask];
 
     /// <summary>UC-63: the image tool is always visible to the chat agent, independently of its provider.</summary>
     public static IReadOnlyList<AiTool> ToolsFor(AiProviderConfig provider) =>
@@ -201,7 +201,9 @@ public sealed partial class AssistantPanel : Border
     /// </summary>
     private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note"];
 
-    private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name) ?? (name == AssistantAgent.Delegate.Name ? AssistantAgent.Delegate : null);
+    private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name)
+        ?? AssistantWebTools.All.FirstOrDefault(t => t.Name == name)
+        ?? (name == AssistantAgent.Delegate.Name ? AssistantAgent.Delegate : null);
 
     /// <summary>The HTTP layer (tests replace the handler).</summary>
     public AssistantProviders Providers { get; set; } = new();
@@ -655,15 +657,22 @@ public sealed partial class AssistantPanel : Border
         RenderAll();
         using var knowledge = new KnowledgeIndex(documents);
         var agent = AssistantAgent.AgentById(conv.AgentId, _cfg.CustomAgents);
+        var agentName = AgentNames.CallName(agent, _cfg);
+        // Explicit network grant per agent, independent of vault-read permissions.
+        using var web = _cfg.Web.Allowed(agent.Id)
+            ? new AssistantWebSession(_cfg.Web, cts.Token, existingSources: conv.WebSources) : null;
+        PlatformAssistantActivity.RequestNotificationPermission?.Invoke();
+        PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(AssistantActivityKind.Running, agentName, conv.Id));
         try
         {
             var r = await AssistantAgent.RunAsync(new AiAgentRun
             {
-                Host = new Host(this, documents, knowledge, agent.Id, p), Provider = p, Model = ModelId(), Messages = conv.Messages,
+                Host = new Host(this, documents, knowledge, agent.Id, p, web), Provider = p, Model = ModelId(), Messages = conv.Messages,
                 // UC-81: the agent introduces itself by its call name and may take a new one the person agrees to
-                Agent = _cfg.AgentWithInstructions(AgentNames.Named(agent, _cfg)), Naming = AgentNames.Naming(agent, _cfg), Guidance = AssistantAgent.UrbeGuidance, Policy = conv.Policy, Cancel = cts.Token, MarkAiText = true,
-                MaxSteps = _cfg.MaxSteps, ContextTokens = meta?.Context ?? 128000, Instructions = WithUserAgents(_cfg.Instructions, documents, ModelId()), Memory = MemoryList(), VaultName = _app.VaultName,
-                Stream = Providers.StreamAsync, Approve = ApproveAsync, OnUpdate = OnUpdate, Tools = ToolsFor(p)
+                Agent = _cfg.AgentWithInstructions(AgentNames.Named(agent, _cfg)), Naming = AgentNames.Naming(agent, _cfg), Guidance = AssistantAgent.UrbeGuidance, Policy = conv.Policy, Cancel = cts.Token, MarkAiText = true, ReviewWrittenArtifacts = true,
+                ContextTokens = meta?.Context ?? 128000, Instructions = WithUserAgents(_cfg.Instructions, documents, ModelId()), Memory = MemoryList(), VaultName = _app.VaultName,
+                Stream = Providers.StreamAsync, Approve = ApproveAsync, OnUpdate = OnUpdate,
+                Tools = web is null ? ToolsFor(p) : [.. ToolsFor(p), .. AssistantWebTools.All]
             });
             run.Changes = r.Changes;
             run.Stopped = r.Stopped;
@@ -689,8 +698,17 @@ public sealed partial class AssistantPanel : Border
             }
             conv.Runs.Add(run);
             if (conv.Runs.Count > 20) conv.Runs.RemoveRange(0, conv.Runs.Count - 20);
+            if (web is not null) conv.WebSources = web.Sources.ToList();
             if (ReferenceEquals(conv, _conv)) { _views.Clear(); RenderAll(); }
             if (conv.Messages.Count > 0) _store.SaveConversation(conv);
+            var kind = run.Stopped switch
+            {
+                "needs_input" => AssistantActivityKind.QuestionNeeded,
+                "aborted" => AssistantActivityKind.Cancelled,
+                "error" => AssistantActivityKind.Failed,
+                _ => AssistantActivityKind.Completed
+            };
+            PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(kind, agentName, conv.Id));
         }
     }
 
@@ -705,6 +723,8 @@ public sealed partial class AssistantPanel : Border
     {
         var answer = new TaskCompletionSource<AiApproval>(TaskCreationOptions.RunContinuationsAsynchronously);
         _pending = (req, answer);
+        var chosen = AssistantAgent.AgentById(_conv.AgentId, _cfg.CustomAgents);
+        PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(AssistantActivityKind.ApprovalNeeded, AgentNames.CallName(chosen, _cfg), _conv.Id));
         // UC-80: a change to the note the request came from is shown in the note itself, to accept or refuse there
         if (_inNote is { } asked && req.Preview is { Before: { } before, After: { } after } preview && preview.Path == asked.Path &&
             LineChange.Of(before, after) is { } change &&
@@ -732,6 +752,11 @@ public sealed partial class AssistantPanel : Border
         if (_pending is not { } p) return;
         _pending = null;
         p.Answer.TrySetResult(answer);
+        if (_running is not null)
+        {
+            var chosen = AssistantAgent.AgentById(_conv.AgentId, _cfg.CustomAgents);
+            PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(AssistantActivityKind.Running, AgentNames.CallName(chosen, _cfg), _conv.Id));
+        }
         if (MessageOf(p.Request.Call.Id) is { } m) Schedule(m);
     }
 
@@ -757,9 +782,10 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The tools' host: reads from the vault's documents, writes through the app, memory and links through the panel.</summary>
-    private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge, string agentId, AiProviderConfig provider) : IAssistantHost, IAssistantNames, IAssistantImages
+    private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge, string agentId, AiProviderConfig provider, AssistantWebSession? web) : IAssistantHost, IAssistantNames, IAssistantImages
     {
         public IAssistantImages? Images => this;
+        public AssistantWebSession? Web => web;
         private AiProviderConfig? ImageProvider => AssistantProviders.PickImageProvider(provider, panel._cfg.Providers,
             panel._cfg.ImageProviderId, panel._cfg.ImageModel);
         public bool CanDraw => ImageProvider is not null;
@@ -866,9 +892,8 @@ public sealed partial class AssistantPanel : Border
 
     /// <summary>
     /// The log, light however long the conversation (observation of 22/10/2026: after 11 requests it froze the app).
-    /// Each request presents one activity summary rather than flooding the chat with raw tool cards.
-    /// Expanding reveals every operation and its full source/result. Earlier runs stay lazily folded.
-    /// The final answer, permission prompts, and generated images remain first-class content.
+    /// A compact activity summarizes tool work per request; tap to inspect every step and full results.
+    /// Final answers, approvals, questions and generated images remain first-class visible content.
     /// </summary>
     private void RenderLog()
     {

@@ -87,6 +87,8 @@ public sealed partial class HeadlessUiTests
                 model.Chats.Enqueue(Sse(
                     """{"choices":[{"delta":{"content":"Troquei a primeira tarefa em [[Comece]]."}}]}""",
                     """{"choices":[{"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":150,"completion_tokens":12}}"""));
+                // The native assistant reopens its saved work for one quality-review turn.
+                model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Revisei o conteúdo salvo e confirmei a alteração."}}]}"""));
                 panel.Input.Text = "Troque a primeira tarefa";
                 panel.Send(panel.Input.Text);
                 for (int i = 0; i < 200 && panel.PendingApproval is null; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
@@ -111,7 +113,7 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal(("end", 1), (run.Stopped, run.Changes.Count));
                 texts = panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
                 Assert.Contains("1 nota alterada", texts);
-                Assert.Equal(2, model.Sent.Count);
+                Assert.Equal(3, model.Sent.Count);
                 Assert.Contains("\"tool_call_id\":\"call_1\"", model.Sent[1]);
                 Assert.Equal(282L, panel.Conversation.Usage.Input + panel.Conversation.Usage.Output);
                 Snapshot(window, "native-assistant-done.png");
@@ -126,6 +128,7 @@ public sealed partial class HeadlessUiTests
                     """{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_2","function":{"name":"set_appearance","arguments":"{\"config\":{\"tema\":\"sepia\"}}"}}]}}]}""",
                     """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
                 model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Pronto, tema sépia."}}]}"""));
+                model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Revisei a personalização salva."}}]}"""));
                 panel.Send("Deixe o Urbe em sépia");
                 for (int i = 0; i < 200 && panel.PendingApproval is null; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
                 Assert.Equal(("set_appearance", "Personalização/tema.json"), (panel.PendingApproval!.Call.Name, panel.PendingApproval.Preview!.Path));
@@ -158,6 +161,8 @@ public sealed partial class HeadlessUiTests
                 Assert.DoesNotContain("Provedores de modelo", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 ClickNamed(panel, "Configurações: Contexto");
                 Assert.Contains("Memória", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
+                ClickNamed(panel, "Configurações: Pesquisa");
+                Assert.Contains("Configurar pesquisa web", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 ClickNamed(panel, "Configurações: Execução");
                 Assert.Contains("Autonomia e proteção", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 return true;

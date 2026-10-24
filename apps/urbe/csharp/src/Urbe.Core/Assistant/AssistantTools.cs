@@ -16,7 +16,7 @@ public sealed record AiChange(string Id, AiNoteSnap? Before, AiNoteSnap? After, 
 public sealed record AiPartial(string Path, int Next, int Total);
 
 /// <summary>A step of the agent's plan.</summary>
-public sealed record AiPlanStep(string Step, string Status);
+public sealed record AiPlanStep(string Step, string Status, string? Details = null, string? Acceptance = null);
 
 /// <summary>What a tool returns: the text for the model and what it changed or read.</summary>
 public sealed record AiToolOutput(string Content, IReadOnlyList<AiChange>? Changes = null, IReadOnlyList<(string Path, AiPartial? Partial)>? Reads = null);
@@ -83,6 +83,8 @@ public interface IAssistantHost
     IAssistantNames? Names => null;
     /// <summary>UC-63: drawing pictures with the run's provider and keeping them in the vault, when the app can.</summary>
     IAssistantImages? Images => null;
+    /// <summary>Explicitly authorized network gateway; null keeps every local feature offline.</summary>
+    AssistantWebSession? Web => null;
 }
 
 /// <summary>A tool the agents use (tools.js def): name, description, JSON Schema, access, label, preview and run.</summary>

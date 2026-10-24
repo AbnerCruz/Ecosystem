@@ -123,6 +123,8 @@ public sealed partial class AssistantPanel
         "generate_image" => "Criando uma imagem",
         "write_page" or "page_schema" => "Preparando uma página",
         "delegate_research" => "Pesquisando com outro agente",
+        "web_search" => "Pesquisando na internet",
+        "web_fetch" => "Analisando fontes públicas",
         _ => "Executando uma etapa"
     };
 

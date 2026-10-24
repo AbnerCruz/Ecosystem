@@ -39,6 +39,30 @@
   - editar, gravar e reabrir sem perder nada;
   - conferir que os arquivos da cidade continuam no vault.
 
+## Assistente: segundo plano, descoberta e qualidade (proprietário, 24/10/2026)
+
+**Escopo autorizado; proposta arquitetural no ADR-0037 (ainda sem gate de Android/device).** O Assistente deve continuar a tarefa ao minimizar o Urbe sem depender da Activity, com notificações distintas quando estiver executando, precisar de aprovação, aguardar resposta e concluir ou falhar. A implementação nativa inicial usa Foreground Service de uso especial declarado no Android, sem mover chaves, ferramentas ou estado de vault para outro runtime. O sistema não garante recuperação após force-stop, processo morto ou reinício: salvar checkpoint/journal e retomar de maneira idempotente, inclusive no meio de ferramenta/aprovação, é um **incremento obrigatório ainda aberto** para atender a expectativa completa de durabilidade.
+
+**Investigação e planejamento, sem fórmulas fixas:** a execução comum não impõe teto de chamadas de ferramentas/turnos; o plano não é truncado em 20 etapas e ask_user não tem contador máximo fictício. O agente deve avaliar contexto, identificar o que pode inferir do vault e o que precisa perguntar ao usuário; usar uma pergunta substantiva por vez e replanejar em ciclos. Não existe mínimo obrigatório de perguntas ou etapas. Preservar aprovações, cancelamento e proteção contra erros repetidos; instrumentar custo/duração e considerar controles voluntários de orçamento sem limites ocultos.
+
+**Qualidade e relações entre documentos:** para qualquer artefato, pesquisar o contexto, escolher a estrutura apropriada ao propósito e definir critérios de aceite adequados, sem injetar modelos ou campos próprios de um domínio específico nas instruções globais do agente. Investigar lacunas relevantes, desenvolver conteúdo substantivo e contextualizado, distinguir informações estabelecidas de propostas criativas e preservar a autonomia de escolha do usuário. Ao surgir uma ideia paralela relacionada, buscar notas existentes, investigar relações e atualizar/criar notas pertinentes com links, **respeitando autorização de escrita**. Depois de gravar, reler o conteúdo e conferir qualidade, consistência e pendências antes de afirmar conclusão.
+
+**Aceite não atendido ainda:** confirmar compilação/testes da PR, validar Foreground Service e notificações no dispositivo com app minimizado/tela bloqueada, testar concessão/negação de notificações, reconciliação em caso de morte do processo e integridade de alterações. Fazer prova end-to-end da ficha de personagem conectada a outras notas, incluindo rodada de perguntas, planejamento, entrega revisada e ideias paralelas. ADR-0037 é proposto, não aprovação automática nem release.
+
+## Pesquisa web e investigação pública — UC-63, missão do proprietário (24/10/2026)
+
+**Direção autorizada:** `web_search` e `web_fetch` no mesmo runtime da IA nativa. O Assistente pode pesquisar na internet pública e usar o conhecimento externo junto às notas do vault, desde que haja autorização de rede persistida e individual para cada agente. Pesquisar externamente **não** decorre da permissão de leitura local. O Pesquisador delegado só obtém acesso quando seu próprio grant também existe.
+
+**Arquitetura:** `AssistantWebSession` isolada por execução com Brave Search API como primeiro mecanismo pluggable; leitura HTML/texto por HTTP(S), validação de URL e DNS, pinagem de IP público, limitação de redirecionamentos, download, tempo, chamadas e cancelamento; extração de texto sem JavaScript. Armazenar custo como desconhecido se a API não fornecer cobrança. Salvar metadados `AiWebSource` junto às conversas e preservar URLs reais nas fontes clicáveis de notas/páginas. Usar `AssistantTools`, `AssistantPageTools` e editor existentes para criar artefatos, não inventar formato proprietário.
+
+**Pesquisa profunda:** planejar, buscar múltiplas perspectivas, ler páginas antes de fundamentar afirmações, refinar buscas, detectar divergências e datas e compor citações clicáveis. Consultas simples requerem poucas chamadas. Resultados de buscador não equivalem a confirmação. Conteúdo externo é não confiável e não pode operar sobre o vault ou credenciais.
+
+**Limitações deste incremento:** sem renderização JavaScript, sem parsing de PDF público pelo novo gateway; APIs com login/autenticação fora de escopo; validação Brave real depende de credencial disponível. Testes com transporte HTTP/DNS determinístico, CI Android/Windows/Core e validação no aparelho exigida (NN-017). ADR-0038 proposto; controles de rede e publicação dependem de integração governada.
+
+## Redesenho visual do Assistente — UC-63/UC-81 (24/10/2026, PR #732)
+
+O chat passa a mostrar uma atividade compacta por pedido, com estado real, progresso discreto, expansão por etapa e acesso integral a parâmetros e resultados. Aprovações, perguntas, respostas e imagens continuam visíveis fora das etapas recolhidas. Configurações em Modelos, Agentes, Contexto, Pesquisa e Execução; manter o controle de rede separado da PR #733, execução adaptativa da #726 e o uso offline. Testes headless/CI não substituem validação física Android (NN-017).
+
 ## Personalização do Assistente — extensão de UC-63/UC-81 (proprietário, 23/10/2026)
 
 **Novo escopo autorizado pelo proprietário:** configurar modelo e provedor **independentes para geração de imagens** no próprio painel do Assistente (o modelo da conversa não troca); permitir **modelo/provedor de texto por agente**, inclusive para os agentes prontos, herdando o modelo normal da conversa quando não houver configuração; criar e editar **blocos titulados de instruções por agente** na interface.
@@ -57,14 +81,6 @@ Fonte de requisitos: inventário de uso "Versão Beta Final.md", itens de Assist
 - **Não concluído como plataforma compartilhada:** transformação de toda a IA do Urbe em API atualizável e distribuível a todos os Apps. Esta iniciativa está sob ADR-0033/ADD-0027 e requer demonstração de segundo consumidor e contrato de equivalência; não criar um runtime paralelo nem alegar propagação automática.
 - **Não provado fisicamente:** seletor de arquivos SAF e interpretação multimodal em contas/provedores reais; custos, modelos e APIs variam por provedor. Testes simulados e CI não substituem essas verificações.
 - **Publicação:** a beta.20 é entregue por workflow nativo versionado e publicação condicionada a CI, assinatura e autorização de integração crítica, sem sobrescrever beta.19.
-
-## Redesenho nativo do Assistente — atividade progressiva e configurações minimalistas (24/10/2026)
-
-**Requisito do proprietário, escopo visual de UC-63/UC-81:** o chat não deve despejar dezenas de cartões de ferramentas enquanto o agente trabalha. Substituí-los por uma atividade compacta por pedido, com estado descritivo e animação leve enquanto executa, expansão para a sequência completa das operações e expansão de cada operação para parâmetros e resultado reais. Não suprimir raciocínio já fornecido pelo provedor, indicadores de erro, progresso, plano, aprovações, perguntas ou imagens geradas. Ações que exigem usuário permanecem visíveis mesmo com o histórico recolhido. Suportar acessibilidade, movimento reduzido, telas pequenas e histórico grande.
-
-**Configurações:** navegação por área de Modelos, Agentes, Contexto e Execução, mantendo provedores e chaves, modelos de imagem e preços, nomes e instruções por agente, agentes próprios, memória, instruções gerais, política de aprovação e limite legado da main. Não alterar a semântica funcional do motor por causa de um redesenho de interface; remoção do limite é tratada separadamente pela PR #726.
-
-**Entrega:** testes headless do agrupamento histórico e da inspeção até entradas/saídas das ferramentas, ações de aprovação fora do grupo e navegação entre seções. CI Android e teste físico no celular obrigatórios para validar a interface. Beta.25 solicitada via workflow nativo depois de integração autorizada; não anunciar publicação só porque o arquivo de versão foi alterado.
 
 ## Ajustes de apresentação e transparência — beta.21 (feedback do proprietário, 24/10/2026)
 

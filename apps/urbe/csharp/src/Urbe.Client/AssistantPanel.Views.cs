@@ -223,12 +223,17 @@ public sealed partial class AssistantPanel
 
     private static Control Plan(JsonArray steps)
     {
-        var list = new StackPanel { Spacing = 3, Margin = new Thickness(2, 2, 0, 2) };
+        var list = new StackPanel { Spacing = 6, Margin = new Thickness(2, 2, 0, 2) };
         foreach (var x in steps)
         {
             var s = (string?)x?["status"] ?? "pending";
             var mark = s switch { "done" => "✓", "in_progress" => "◐", _ => "○" };
-            list.Children.Add(Row(Label(mark, 13, s == "done" ? UrbeTheme.Accent : UrbeTheme.Text3), Wrap((string?)x?["step"] ?? "", 13, s == "done" ? UrbeTheme.Text3 : UrbeTheme.Text)));
+            var description = new StackPanel { Spacing = 2 };
+            description.Children.Add(Wrap((string?)x?["step"] ?? "", 13, s == "done" ? UrbeTheme.Text3 : UrbeTheme.Text));
+            if ((string?)x?["details"] is { Length: > 0 } details) description.Children.Add(Wrap(details, 12, UrbeTheme.Text2));
+            if ((string?)x?["acceptance"] is { Length: > 0 } acceptance)
+                description.Children.Add(Wrap("Concluído quando: " + acceptance, 11, UrbeTheme.Text3));
+            list.Children.Add(Row(Label(mark, 13, s == "done" ? UrbeTheme.Accent : UrbeTheme.Text3), description));
         }
         return list;
     }
@@ -370,7 +375,7 @@ public sealed partial class AssistantPanel
         }
         if (r.Error is { Length: > 0 }) tail.Children.Add(Note(r.Error, "Tentar de novo", () => CurrentRun = StartAsync(), error: true));
         else if (r.Stopped == "aborted") tail.Children.Add(Note("Interrompido.", "Continuar", () => Send("Continue de onde parou.")));
-        else if (r.Stopped == "max_steps") tail.Children.Add(Note("Parei no limite de " + _cfg.MaxSteps + " passos.", "Continuar", () => Send("Continue de onde parou.")));
+        else if (r.Stopped == "max_steps") tail.Children.Add(Note("Este trabalho foi interrompido por um limite de execução legado.", "Continuar", () => Send("Continue de onde parou.")));
         else if (r.Stopped == "loop") tail.Children.Add(Note("Parei: o agente repetia uma ação que falhava.", "Continuar", () => Send("Continue de onde parou.")));
         else if (r.Stopped == "max_tokens") tail.Children.Add(Note("A resposta foi cortada pelo limite do modelo.", "Continuar", () => Send("Continue de onde parou.")));
         if (r.Changes.Count > 0)
@@ -389,6 +394,31 @@ public sealed partial class AssistantPanel
             var list = new WrapPanel();
             foreach (var f in files.Take(8)) list.Children.Add(LinkButton(f, () => OpenRef(f)));
             tail.Children.Add(Card(new StackPanel { Spacing = 4, Children = { head, list } }));
+        }
+        if (_conv.WebSources.Count > 0)
+        {
+            var sources = _conv.WebSources.ToArray();
+            var read = sources.Count(s => s.Status == "página acessada");
+            var summary = Row(UrbeTheme.Icon(UrbeTheme.Icons.Search, 14, UrbeTheme.Text2),
+                Label("Fontes públicas · " + sources.Length + " (" + read + " páginas lidas)", 12, UrbeTheme.Text2, FontWeight.SemiBold));
+            tail.Children.Add(Card(Lazy(summary, () =>
+            {
+                var list = new StackPanel { Spacing = 8 };
+                foreach (var source in sources)
+                {
+                    // Exact source URLs are persisted, clickable via the existing MarkdownReader link launcher.
+                    var safeTitle = source.Title.Replace("[", "").Replace("]", "").Replace("\n", " ").Trim();
+                    var url = source.FinalUrl;
+                    try { AssistantWebSession.ValidateUrl(url); }
+                    catch (AiToolException) { continue; }
+                    list.Children.Add(Markdown("[" + source.Id + "] [" + (safeTitle.Length > 120 ? safeTitle[..120] : safeTitle) +
+                        "](" + url + ")"));
+                    list.Children.Add(Hint(source.Domain + " · " +
+                        (source.Status == "página acessada" ? "Página consultada" : "Somente resultado de busca") +
+                        " · " + (source.Published ?? "data desconhecida") + " · acesso " + source.Accessed));
+                }
+                return list;
+            })));
         }
         return tail.Children.Count > 0 ? tail : null;
     }
@@ -596,6 +626,7 @@ public sealed partial class AssistantPanel
         {
             ("models", "Modelos", "Provedores e imagens"),
             ("agents", "Agentes", "Identidade e perfis"),
+            ("web", "Pesquisa", "Internet e fontes"),
             ("context", "Contexto", "Instruções e memória"),
             ("execution", "Execução", "Autonomia e segurança")
         };
@@ -752,18 +783,20 @@ public sealed partial class AssistantPanel
 
         if (_settingsCategory == "execution")
         {
-        body.Children.Add(Section("Autonomia e proteção", Hint("O modo de aprovação de alterações pode ser trocado também na conversa."),
-            TextButton("Alterar permissões da conversa", () => _ = PickPolicyAsync())));
-        var steps = new TextBox { Text = c.MaxSteps.ToString(CultureInfo.InvariantCulture), Width = 100, HorizontalAlignment = HorizontalAlignment.Left };
-        steps.LostFocus += (_, _) =>
+            body.Children.Add(Section("Autonomia e proteção",
+                Hint("O modo de aprovação de alterações pode ser trocado também na conversa."),
+                TextButton("Alterar permissões da conversa", () => _ = PickPolicyAsync())));
+            body.Children.Add(Section("Profundidade da investigação",
+                Hint("O agente define quantas perguntas e etapas são necessárias a partir do objetivo, das respostas e das evidências. Você continua controlando aprovações e pode interromper a execução a qualquer momento.")));
+            body.Children.Add(Section("Transparência",
+                Hint("Atividades ficam agrupadas no chat; entradas, saídas, decisões e aprovações podem ser examinadas por etapa.")));
+        }
+        if (_settingsCategory == "web")
         {
-            c.MaxSteps = int.TryParse(steps.Text, out var n) && n > 0 ? Math.Clamp(n, 3, 100) : 30;
-            steps.Text = c.MaxSteps.ToString(CultureInfo.InvariantCulture);
-            SaveConfig();
-        };
-        body.Children.Add(Section("Limite de etapas da versão atual", steps,
-            Hint("Proteção legada desta versão. Cada leitura, busca ou edição consome uma etapa. É diferente do número de itens visuais no plano.")));
-        body.Children.Add(Section("Transparência", Hint("As operações do agente ficam agrupadas na conversa, mas entradas, saídas, decisões e aprovações podem ser inspecionadas individualmente.")));
+            body.Children.Add(Section("Pesquisa na internet",
+                Hint(_cfg.Web.Enabled ? "Rede habilitada · " + _cfg.Web.Provider : "Rede desabilitada · autorização explícita necessária"),
+                TextButton("Configurar pesquisa web", ShowWebSettings),
+                Hint("Permissões independentes do vault, configuráveis para cada agente.")));
         }
         if (addPreset is not null) EditProvider(null, addPreset);
     }

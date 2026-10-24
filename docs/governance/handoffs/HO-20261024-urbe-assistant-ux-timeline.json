@@ -12,9 +12,9 @@
   "component": "urbe",
   "state": "review",
   "branch": "feat/urbe-assistant-ux-timeline-settings-beta25-20261024",
-  "base_commit": "ff2f4f2f627fb4437cdce9c20d5ba435ed602a2b",
+  "base_commit": "6af05b64a6225ef10ad530be56cdb650cd715c56",
   "commit": "599b4e5bb6d073218205420043d879fbeeeeb571",
-  "pr": null,
+  "pr": 732,
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
@@ -29,7 +29,8 @@
     "Perguntas e aprovações em espera ficam visíveis sem exigir expansão do histórico. Históricos antigos permanecem preguiçosamente carregados.",
     "Configurações do assistente organizadas por Modelos, Agentes, Contexto e Execução, preservando ações de configuração individuais e informação crítica.",
     "Testes headless estendidos para abrir grupo da última conversa e cada operação, além de navegar pelas áreas de configuração.",
-    "Roadmap incrementado com aceite; solicitação de beta25 registrada sem assumir release já publicada."
+    "Roadmap incrementado com aceite; solicitação de beta25 registrada sem assumir release já publicada.",
+    "Conciliação semântica com main incluindo execução adaptativa PR #726 e controles independentes de pesquisa web PR #733; navegação recebeu aba Pesquisa e o limite legado foi removido da tela."
   ],
   "verification": [
     {
@@ -47,7 +48,6 @@
     }
   ],
   "known_issues": [
-    "Novo visual não remove limite do motor em main; a correção de execução adaptativa permanece na PR #726, ainda não integrada.",
     "Não há APK de beta25 verificado nesta etapa; release depende de integração governada, CI e workflow oficial.",
     "Expandir resultados muito longos pode consumir memória; conteúdo carrega apenas sob toque e o histórico recolhido é leve."
   ],
@@ -56,8 +56,9 @@
     "Validação visual no aparelho Android segue pendente."
   ],
   "next_actions": [
-    "Revisar CI, corrigir falhas e integrar UI quando aprovada.",
-    "Após integração autorizada, disparar build oficial beta25 e verificar asset APK e hash.",
+    "Executar CI da árvore reconciliada com main e corrigir falhas antes de integrar.",
+    "Submeter ao integrador com a label integrar já existente, sem contornar gates.",
+    "Validar no dispositivo Android a interface e as atividades.",
     "Validar em telefone Android com solicitações longas e painel de configurações."
   ],
   "decisions_required": [],

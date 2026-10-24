@@ -61,3 +61,5 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 
 | [0035](0035-atlas-forge-incorporacao-gradual.md) | Atlas Forge: implementação isolada e incorporação gradual | Aceito (DEC-0054, ADD-0031) |
 | [0036](0036-atlas-forge-biosfera-versionada.md) | Atlas Forge: biosfera persistente e sucessores temporais | Proposto |
+| [0037](0037-urbe-assistente-execucao-continuada.md) | Urbe: execução continuada, perguntas adaptativas e qualidade de artefatos | Proposto |
+| [0038](0038-urbe-pesquisa-web-segura.md) | Urbe: pesquisa pública autorizada, fontes e proteção de rede | Proposto |
