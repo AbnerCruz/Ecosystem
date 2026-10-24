@@ -8,7 +8,7 @@ using Urbe.Client;
 
 namespace Urbe.Client.Tests;
 
-/// <summary>Configurações → Diagnóstico de toques (touch-debug.js): each touch is a line, green when the button got it.</summary>
+/// <summary>Configurações → Diagnóstico de teclado e toques: focus, IME and touches share a copyable log.</summary>
 public sealed partial class HeadlessUiTests
 {
     [Fact]
@@ -22,8 +22,8 @@ public sealed partial class HeadlessUiTests
                 Assert.False(view.TouchDebugOn);
                 _ = view.ShowSettingsAsync();
                 Dispatcher.UIThread.RunJobs();
-                Assert.Contains("Para descobrir botões que não respondem", view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
-                ClickButtonWithText(view.Dialogs, "Diagnóstico de toques");
+                Assert.Contains("Registrar foco, rolagem, IME e toques; desligado por padrão", view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
+                ClickButtonWithText(view.Dialogs, "Diagnóstico de teclado e toques");
                 for (int i = 0; i < 40 && !view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Diagnóstico ligado"); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
                 Assert.True(view.TouchDebugOn);
                 ClickButtonWithText(view.Dialogs, "Ok");
@@ -37,15 +37,19 @@ public sealed partial class HeadlessUiTests
                 var at = target.At;
                 window.MouseDown(at, MouseButton.Left);
                 window.MouseUp(at, MouseButton.Left);
-                for (int i = 0; i < 100 && view.TouchDebug.Lines.Count == 0; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
-                var line = Assert.Single(view.TouchDebug.Lines);
+                for (int i = 0; i < 100 && !view.TouchDebug.Lines.Any(l => l.StartsWith("✓ Button “" + (tip.Length > 24 ? tip[..24] : tip) + "”", StringComparison.Ordinal)); i++)
+                {
+                    await Task.Delay(10);
+                    Dispatcher.UIThread.RunJobs();
+                }
+                var line = Assert.Single(view.TouchDebug.Lines.Where(l => l.StartsWith("✓ Button “" + (tip.Length > 24 ? tip[..24] : tip) + "”", StringComparison.Ordinal)));
                 Assert.StartsWith("✓ Button “" + (tip.Length > 24 ? tip[..24] : tip) + "”", line);
                 for (int i = 0; i < 5 && view.Dialogs.IsOpen; i++) window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
                 Dispatcher.UIThread.RunJobs();
 
                 Snapshot(window, "native-touch-debug.png");
                 var report = view.TouchDebug.Report();
-                Assert.StartsWith("Relatório de toques — Urbe nativo", report);
+                Assert.StartsWith("Relatório de teclado, foco, rolagem e toques — Urbe nativo", report);
                 Assert.Contains(line, report);
 
                 // the × turns it off, on this device too
