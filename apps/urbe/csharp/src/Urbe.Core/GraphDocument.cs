@@ -89,17 +89,17 @@ public sealed class GraphDocument
     public GraphNode AddText(string? text, double x = 0, double y = 0) =>
         AddNode(GraphNodeKind.Text, text ?? "", null, x, y);
 
-    public GraphNode AddReference(GraphNodeKind kind, string vaultPath, double x = 0, double y = 0, string? referenceId = null)
+    public GraphNode AddReference(GraphNodeKind kind, string vaultPath, double x = 0, double y = 0, string? referenceId = null, bool recordHistory = true)
     {
         if (kind is not (GraphNodeKind.Note or GraphNodeKind.File or GraphNodeKind.Folder))
             throw new ArgumentOutOfRangeException(nameof(kind), "A referência deve apontar para uma nota, arquivo ou pasta.");
         ValidateTarget(vaultPath);
         var label = Path.GetFileName(vaultPath.TrimEnd('/'));
-        return AddNode(kind, label, vaultPath, x, y, referenceId: referenceId);
+        return AddNode(kind, label, vaultPath, x, y, referenceId: referenceId, recordHistory: recordHistory);
     }
 
     public GraphNode AddNode(GraphNodeKind kind, string? label, string? target, double x, double y,
-        double width = 190, double height = 84, string? referenceId = null)
+        double width = 190, double height = 84, string? referenceId = null, bool recordHistory = true)
     {
         if (target is not null) ValidateTarget(target);
         if (kind is GraphNodeKind.Note or GraphNodeKind.File or GraphNodeKind.Folder && target is null)
@@ -108,20 +108,20 @@ public sealed class GraphDocument
         var node = new GraphNode("node_" + Guid.NewGuid().ToString("N"), kind, CleanLabel(label, ""), target,
             x, y, width, height, referenceId);
         if (_nodes.Count >= 10000) throw new InvalidOperationException("Limite de 10.000 elementos por grafo.");
-        Remember();
+        if (recordHistory) Remember();
         _nodes.Add(node);
         return node;
     }
 
     public GraphEdge Connect(string sourceId, string targetId, string? label = null, string? relation = null,
-        bool directed = false)
+        bool directed = false, bool recordHistory = true)
     {
         if (sourceId == targetId || !_nodes.Any(n => n.Id == sourceId) || !_nodes.Any(n => n.Id == targetId))
             throw new ArgumentException("Selecione dois elementos distintos que pertencem ao grafo.");
         if (_edges.Count >= 30000) throw new InvalidOperationException("Limite de 30.000 conexões por grafo.");
         var edge = new GraphEdge("edge_" + Guid.NewGuid().ToString("N"), sourceId, targetId,
             CleanLabel(label, ""), CleanLabel(relation, ""), directed);
-        Remember();
+        if (recordHistory) Remember();
         _edges.Add(edge);
         return edge;
     }
