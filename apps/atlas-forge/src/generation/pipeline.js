@@ -20,7 +20,7 @@ export function derive(world, progress = () => {}) {
     ...c,
     ...h,
     ...solar,
-    biome: biomes(e, c.temperature, c.rain),
+    biome: biomes(e, c.temperature, c.rain, world.definition.algorithm),
     source: "state.elevation",
     algorithm: world.definition.algorithm,
   };
