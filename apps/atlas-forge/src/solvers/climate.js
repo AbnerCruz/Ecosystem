@@ -112,7 +112,7 @@ export function climate(elevation, grid, planet, algorithm = "spherical-tectonic
       (2 * Math.PI * planet.radius * Math.max(0.006, Math.cos(lat * RAD))) /
         grid.width,
     );
-    const sourceFlux = (1300 + 450 * belt) * 650000;
+    const sourceFlux = (1300 + 450 * belt) * 2100000;
     for (let x = 0; x < grid.width; x++) {
       const i = y * grid.width + x,
         alt = Math.max(0, elevation[i]);
@@ -132,7 +132,7 @@ export function climate(elevation, grid, planet, algorithm = "spherical-tectonic
     }
     let q = sourceFlux * 0.65;
     const marineRecovery = 1 - Math.exp(-length / 420000);
-    const backgroundRelease = 1 - Math.exp(-length / 1350000);
+    const backgroundRelease = 1 - Math.exp(-length / 3700000);
     // 6 complete circumnavigations make the periodic seam independent of
     // a single initial moisture value without adding a climate-sized solver.
     for (let pass = 0; pass < 6; pass++) {
