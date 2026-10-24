@@ -217,7 +217,7 @@ public sealed class AiAgentRun
 public static class AssistantAgent
 {
     private const int ResultLimit = 30000;
-    private static readonly HashSet<string> Read = ["read", "ui", "memory", "plan"];
+    private static readonly HashSet<string> Read = ["read", "ui", "memory", "plan", "network"];
 
     public static IReadOnlyList<AiAgentDef> Agents { get; } =
     [
@@ -475,7 +475,7 @@ public static class AssistantAgent
     public static AiTool Delegate { get; } = new()
     {
         Name = "delegate_research", Access = "read",
-        Description = "Delega uma pesquisa a um subagente Pesquisador, que busca e lê várias notas por conta própria e devolve um resumo com as fontes. Use para perguntas amplas sobre o vault, para não encher esta conversa com leituras.",
+        Description = "Delega uma investigação ao Pesquisador, que cruza notas do vault e, se houver autorização de rede específica para ele, pesquisa e lê fontes públicas. Devolve síntese e URLs verificáveis.",
         Parameters = new JsonObject
         {
             ["type"] = "object",
@@ -507,6 +507,7 @@ public static class AssistantAgent
         public IAssistantPlugins? Plugins => inner.Plugins;
         public IAssistantNames? Names => inner.Names;
         public IAssistantImages? Images => inner.Images;
+        public AssistantWebSession? Web => inner.Web;
     }
 
     private sealed record Out(string Content, bool IsError = false, string? Status = null, IReadOnlyList<AiChange>? Changes = null, IReadOnlyList<(string Path, AiPartial? Partial)>? Reads = null);
@@ -783,7 +784,8 @@ public static class AssistantAgent
             var r = await RunAsync(new AiAgentRun
             {
                 Agent = AgentById("pesquisador"), Policy = "readonly", Messages = sub, IsSubagent = true, Approve = null,
-                Host = o.Host, Provider = o.Provider, Model = o.Model, Stream = o.Stream, Cancel = cancel, Tools = o.Tools, VaultName = o.VaultName,
+                Host = o.Host, Provider = o.Provider, Model = o.Model, Stream = o.Stream, Cancel = cancel,
+                Tools = o.Host.Web?.CanDelegateTo("pesquisador") == true ? o.Tools : o.Tools?.Where(t => t.Access != "network").ToList(), VaultName = o.VaultName,
                 ContextTokens = o.ContextTokens, Instructions = o.Instructions, Memory = o.Memory, MaxTokens = o.MaxTokens, Temperature = o.Temperature, Now = o.Now, Uid = o.Uid,
                 OnUpdate = e =>
                 {
