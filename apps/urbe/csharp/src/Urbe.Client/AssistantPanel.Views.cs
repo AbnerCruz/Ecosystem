@@ -287,7 +287,8 @@ public sealed partial class AssistantPanel
         actions.Children.Add(TextButton(danger ? "Excluir" : plugin ? "Ligar plugin" : "Aprovar",
             () => Answer(editor is not null && editor.Text != pv?.After ? AiApproval.ApproveEdited(editor.Text ?? "") : AiApproval.Approve), primary: !danger, danger: danger));
         box.Children.Add(actions);
-        return new Border { Child = box, Padding = new Thickness(10), CornerRadius = new CornerRadius(12), Background = UrbeTheme.Brush(UrbeTheme.Accent, .07) };
+        // The surrounding timeline or contextual sheet is already a surface; don't draw another container.
+        return new Border { Child = box, Padding = new Thickness(0, 8), Background = Brushes.Transparent };
     }
 
     /// <summary>diffLines(): an LCS line diff (huge files fall back to everything removed then added).</summary>
@@ -448,8 +449,10 @@ public sealed partial class AssistantPanel
             var pre = AssistantProviders.Presets[k];
             var b = new Button
             {
-                HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, Padding = new Thickness(14, 10), CornerRadius = new CornerRadius(14),
-                Background = UrbeTheme.Brush(UrbeTheme.Surface), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1),
+                HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left,
+                MinHeight = UrbeTokens.MinTouch, Padding = new Thickness(14, 12), CornerRadius = new CornerRadius(0),
+                Background = Brushes.Transparent, BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2, .55),
+                BorderThickness = new Thickness(0, 0, 0, 1),
                 Content = new StackPanel { Spacing = 2, Children = { Label(pre.Name, 15, UrbeTheme.Text, FontWeight.SemiBold), Wrap(PresetDetail[k], 12, UrbeTheme.Text3) } }
             };
             Avalonia.Automation.AutomationProperties.SetName(b, pre.Name);
@@ -479,7 +482,8 @@ public sealed partial class AssistantPanel
             var b = new Button
             {
                 Content = Wrap(s, 13, UrbeTheme.Text), HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, Padding = new Thickness(12, 9),
-                CornerRadius = new CornerRadius(12), Background = UrbeTheme.Brush(UrbeTheme.Surface), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1)
+                CornerRadius = new CornerRadius(0), Background = Brushes.Transparent,
+                BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2, .55), BorderThickness = new Thickness(0, 0, 0, 1)
             };
             b.Click += (_, _) => { _input.Text = s; Submit(); };
             box.Children.Add(b);
@@ -591,9 +595,11 @@ public sealed partial class AssistantPanel
         }
     }
 
+    // An editorial section: grouping is conveyed by rhythm and type, not enclosing every field in a box.
     private static Control Section(string title, params Control[] items)
     {
-        var s = new StackPanel { Spacing = 8, Children = { Label(title, 15, UrbeTheme.Text, FontWeight.Bold) } };
+        var s = new StackPanel { Spacing = UrbeTokens.Space.Xs, Margin = new Thickness(0, 14, 0, 4) };
+        s.Children.Add(Label(title, 16, UrbeTheme.Text, FontWeight.SemiBold));
         foreach (var i in items) s.Children.Add(i);
         return s;
     }
@@ -630,31 +636,32 @@ public sealed partial class AssistantPanel
             ("context", "Contexto", "Instruções e memória"),
             ("execution", "Execução", "Autonomia e segurança")
         };
-        var navigation = new WrapPanel { Orientation = Orientation.Horizontal, ItemWidth = 150,
-            ItemHeight = 66 };
+        // Flat navigation: no grid of outlined mini-cards. Categories are ALWAYS visible and can wrap on phones.
+        var navigation = new WrapPanel { Orientation = Orientation.Horizontal, ItemHeight = UrbeTokens.MinTouch };
         foreach (var choice in choices)
         {
             var selected = choice.Id == _settingsCategory;
             var item = new Button
             {
-                Width = 146, MinHeight = 60, Padding = new Thickness(11, 8),
-                CornerRadius = new CornerRadius(12), HorizontalContentAlignment = HorizontalAlignment.Left,
-                BorderThickness = new Thickness(1),
-                BorderBrush = UrbeTheme.Brush(selected ? UrbeTheme.Accent : UrbeTheme.Line2),
-                Background = UrbeTheme.Brush(selected ? UrbeTheme.Accent : UrbeTheme.Surface, selected ? .13 : 1),
-                Content = new StackPanel { Spacing = 2, Children =
-                {
-                    Label(choice.Title, 13, selected ? UrbeTheme.Accent : UrbeTheme.Text, FontWeight.SemiBold),
-                    Wrap(choice.Description, 11, UrbeTheme.Text3)
-                } }
+                MinHeight = UrbeTokens.MinTouch,
+                Padding = new Thickness(12, 9),
+                CornerRadius = new CornerRadius(0),
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                BorderThickness = selected ? new Thickness(0, 0, 0, 2) : new Thickness(0),
+                BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent),
+                Background = Brushes.Transparent,
+                Content = Label(choice.Title, 13, selected ? UrbeTheme.Accent : UrbeTheme.Text2,
+                    selected ? FontWeight.SemiBold : FontWeight.Normal)
             };
+            ToolTip.SetTip(item, choice.Description);
             Avalonia.Automation.AutomationProperties.SetName(item, "Configurações: " + choice.Title);
             item.Click += (_, _) => { _settingsCategory = choice.Id; ShowSettings(); };
             navigation.Children.Add(item);
         }
         body.Children.Add(navigation);
-        body.Children.Add(new Border { Height = 1, Background = UrbeTheme.Brush(UrbeTheme.Line2),
-            Margin = new Thickness(0, 4, 0, 2) });
+        body.Children.Add(Hint(choices.First(x => x.Id == _settingsCategory).Description));
+        body.Children.Add(new Border { Height = 1, Background = UrbeTheme.Brush(UrbeTheme.Line2, .55),
+            Margin = new Thickness(0, 8, 0, 4) });
 
         if (_settingsCategory == "models")
         {
