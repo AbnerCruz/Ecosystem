@@ -37,7 +37,7 @@ public static class AssistantImageTools
     public static string? SavedImagePath(string? result)
     {
         if (string.IsNullOrEmpty(result) || !result.StartsWith("Imagem guardada em ", StringComparison.Ordinal)) return null;
-        var match = Regex.Match(result, @"^Imagem guardada em (.+?\.(?:png|jpg|jpeg|webp))(?=\.\s|\s+e colocada|$)",
+        var match = Regex.Match(result, @"^Imagem guardada em (.+?\.(?:png|jpg|jpeg|webp))(?=\.(?:\s|$)|\s+e colocada|$)",
             RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
         if (!match.Success) return null;
         var path = match.Groups[1].Value;
