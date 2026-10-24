@@ -122,8 +122,8 @@ public sealed partial class AssistantPanel
         var info = call.Input as JsonObject ?? new JsonObject();
         var question = (string?)info["question"] ?? "O que você prefere?";
         var reason = (string?)info["reason"];
-        int total = Math.Max(1, (int?)info["total"] ?? 1);
-        int done = Math.Clamp((int?)info["resolved"] ?? 0, 0, total);
+        int total = Math.Max(1, (int)LegacyCustomize.JsToNumber(info["total"]));
+        int done = Math.Clamp((int)LegacyCustomize.JsToNumber(info["resolved"]), 0, total);
         var input = new TextBox { AcceptsReturn = true, MinHeight = 64, MaxHeight = 180,
             TextWrapping = TextWrapping.Wrap, PlaceholderText = "Responda aqui; uma resposta pode resolver várias dúvidas." };
         var panel = new StackPanel { Spacing = 8 };
