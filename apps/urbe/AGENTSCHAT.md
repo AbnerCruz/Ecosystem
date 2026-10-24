@@ -1,3 +1,10 @@
+### 2026-10-24 — ChatGPT — UC-87 memória de agentes (M1–M8)
+- Estado: implementação na branch feat/urbe-memory-engine-m1-m8-20261024, aguardando CI e gate crítico.
+- Feito: motor de memórias tipadas, recuperação contextual, isolamento de escopos, proveniência, link com KnowledgeIndex, episódios sem copiar notas, histórico temporal, ferramentas, UI nativa e testes. Documentação de limitações em apps/urbe/docs/csharp/ASSISTANT-MEMORY.md.
+- Decisão: priorizar o Urbe, sem criar infraestrutura duplicada no Ecosystem. Evolução do config.json é crítica e requer verificação de migração e backup.
+- Pendências: executar .NET 10/Android CI e validação real de aparelho, embeddings vetoriais/avaliações externas e inspeção de segurança/performance.
+- Próximos passos: corrigir falhas do CI, validar a migração local e solicitar aprovação somente dos arquivos críticos antes da integração.
+
 ### 2026-10-07 — ChatGPT — UC-18 terceira fatia: Explorer operacional
 
 - Base: `fab94d76` após integração das duas primeiras fatias de UC-18.

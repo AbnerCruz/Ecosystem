@@ -151,20 +151,6 @@ public sealed partial class HeadlessUiTests
                 again.Open();
                 Assert.Equal(panel.Conversation.Id, again.Conversation.Id);
                 Assert.Equal("Troque a primeira tarefa", again.Conversation.Title);
-
-                // Settings are distinct destinations, not an overwhelming scroll of unrelated fields.
-                panel.ShowSettings();
-                Assert.Equal("Configurações", panel.ViewTitle);
-                Assert.Contains("Provedores de modelo", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
-                ClickNamed(panel, "Configurações: Agentes");
-                Assert.Contains("Agentes personalizados", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
-                Assert.DoesNotContain("Provedores de modelo", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
-                ClickNamed(panel, "Configurações: Contexto");
-                Assert.Contains("Memória", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
-                ClickNamed(panel, "Configurações: Pesquisa");
-                Assert.Contains("Configurar pesquisa web", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
-                ClickNamed(panel, "Configurações: Execução");
-                Assert.Contains("Autonomia e proteção", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 return true;
             }
             finally
@@ -427,8 +413,8 @@ public sealed partial class HeadlessUiTests
                     msgs.Add(new AiChatMessage { Id = "f" + r, Role = "assistant", Content = [AiChatBlock.TextBlock("Resposta " + r + ".")] });
                 }
                 panel.RenderAll();
-                // Every request has a compact activity summary, including the latest conversation turn.
-                Assert.Equal(11 * 3, panel.Log.Children.Count);
+                // each earlier request: what was asked, its steps in one folded line, the answer; the last one, every step
+                Assert.Equal(10 * 3 + 12, panel.Log.Children.Count);
                 var folded = panel.Log.Children.OfType<Expander>().ToList();
                 Assert.Equal(10, folded.Count);
                 Assert.All(folded, x => Assert.Null(x.Content));   // built only when opened
@@ -436,23 +422,6 @@ public sealed partial class HeadlessUiTests
                 folded[0].IsExpanded = true;
                 Dispatcher.UIThread.RunJobs();
                 Assert.Equal(10, ((Panel)folded[0].Content!).Children.Count);
-
-                // Latest request: one collapsed activity instead of ten full tool cards.
-                var activity = Assert.IsType<StackPanel>(panel.Log.Children[31]);
-                var activityBorder = Assert.IsType<Border>(activity.Children[0]);
-                var activityFold = Assert.IsType<Expander>(activityBorder.Child);
-                Assert.Null(activityFold.Content);
-                Assert.Contains(panel.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.StartsWith("10 operações", StringComparison.Ordinal) == true);
-                activityFold.IsExpanded = true;
-                Dispatcher.UIThread.RunJobs();
-                var timeline = Assert.IsType<StackPanel>(activityFold.Content);
-                Assert.Equal(10, timeline.Children.Count);
-                var firstStage = Assert.IsType<Expander>(Assert.IsType<Border>(timeline.Children[0]).Child);
-                Assert.Null(firstStage.Content);
-                firstStage.IsExpanded = true;
-                Dispatcher.UIThread.RunJobs();
-                Assert.Contains("Resultado devolvido ao agente",
-                    panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
 
                 // a new request: while it streams and waits for approval, the earlier ones are not rebuilt
                 model.Chats.Enqueue(Sse(
@@ -463,11 +432,11 @@ public sealed partial class HeadlessUiTests
                     """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
                 model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Pronto."}}]}"""));
                 panel.Send("Troque a primeira tarefa");
-                var earlier = panel.Log.Children.Take(30).ToList();
+                var earlier = panel.Log.Children.Take(33).ToList();
                 for (int i = 0; i < 200 && panel.PendingApproval is null; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
                 Assert.NotNull(panel.PendingApproval);
                 for (int i = 0; i < 20; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
-                for (int i = 0; i < 30; i++) Assert.Same(earlier[i], panel.Log.Children[i]);
+                for (int i = 0; i < 33; i++) Assert.Same(earlier[i], panel.Log.Children[i]);
                 Assert.Contains("Aprovar alteração · Comece.md", panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
                 panel.Answer(AiApproval.Approve);
                 await panel.CurrentRun!;

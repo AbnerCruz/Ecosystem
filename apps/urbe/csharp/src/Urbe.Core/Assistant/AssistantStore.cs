@@ -114,6 +114,9 @@ public sealed class AiConfig
     public string Instructions { get; set; } = "";
     /// <summary>Facts to remember, by vault name ('*' for every vault).</summary>
     public Dictionary<string, List<string>> Memory { get; set; } = new(StringComparer.Ordinal);
+    /// <summary>Versioned structured memories. Old entries in Memory are migrated on first write.</summary>
+    public List<AiMemoryRecord> MemoryRecords { get; set; } = [];
+    public bool AutoCaptureEpisodes { get; set; } = true;
     public List<AiAgentDef> CustomAgents { get; set; } = [];
     /// <summary>UC-81: the call names the person gave the agents on this device, by agent id.</summary>
     public Dictionary<string, string> AgentNames { get; set; } = new(StringComparer.Ordinal);
@@ -158,6 +161,18 @@ public sealed class AssistantStore(IAssistantStorage storage)
     }
 
     public void SetConfig(AiConfig c) => storage.Write(ConfigFile, ConfigToJson(c).ToJsonString());
+
+    /// <summary>
+    /// Required for changes to persistent AI memory. The folder adapter historically swallows IO
+    /// failures: fail closed unless the saved bytes can be read back verbatim.
+    /// </summary>
+    public void SetConfigVerified(AiConfig c)
+    {
+        var payload = ConfigToJson(c).ToJsonString();
+        storage.Write(ConfigFile, payload);
+        if (!string.Equals(storage.Read(ConfigFile), payload, StringComparison.Ordinal))
+            throw new IOException("Não foi possível confirmar a gravação da configuração do assistente.");
+    }
 
     /// <summary>The conversations, the most recent first.</summary>
     public List<AiConversation> ListConversations() =>
@@ -247,6 +262,9 @@ public sealed class AssistantStore(IAssistantStorage storage)
             ["model"] = c.Model, ["imageProviderId"] = c.ImageProviderId, ["imageModel"] = c.ImageModel,
             ["agentModels"] = agentModels, ["agentInstructionBlocks"] = instructionBlocks,
             ["policy"] = c.Policy, ["agentId"] = c.AgentId, ["instructions"] = c.Instructions, ["memory"] = memory,
+            ["memorySchemaVersion"] = 2,
+            ["memoryRecords"] = JsonSerializer.SerializeToNode(c.MemoryRecords, new JsonSerializerOptions(JsonSerializerDefaults.Web)),
+            ["autoCaptureEpisodes"] = c.AutoCaptureEpisodes,
             ["customAgents"] = new JsonArray(c.CustomAgents.Select(a => (JsonNode)AgentToJson(a)).ToArray()), ["maxSteps"] = c.MaxSteps, ["modelCache"] = cache, ["agentNames"] = names
         };
     }
@@ -262,7 +280,10 @@ public sealed class AssistantStore(IAssistantStorage storage)
             ImageProviderId = o["imageProviderId"] is JsonValue iv && iv.TryGetValue<string>(out var imageId) ? imageId : null,
             ImageModel = Str(o["imageModel"]), Policy = Str(o["policy"], "ask"), AgentId = Str(o["agentId"], "geral"), Instructions = Str(o["instructions"]),
             CustomAgents = (o["customAgents"] as JsonArray ?? []).OfType<JsonObject>().Select(AgentFromJson).ToList(),
-            MaxSteps = o["maxSteps"] is null ? 30 : (int)Num(o["maxSteps"])
+            MaxSteps = o["maxSteps"] is null ? 30 : (int)Num(o["maxSteps"]),
+            AutoCaptureEpisodes = o["autoCaptureEpisodes"] is null || (bool?)o["autoCaptureEpisodes"] == true,
+            MemoryRecords = o["memoryRecords"] is JsonArray records
+                ? JsonSerializer.Deserialize<List<AiMemoryRecord>>(records.ToJsonString(), new JsonSerializerOptions(JsonSerializerDefaults.Web)) ?? [] : []
         };
         if (o["web"] is JsonObject w)
         {
