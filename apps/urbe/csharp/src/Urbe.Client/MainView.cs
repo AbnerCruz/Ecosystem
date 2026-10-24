@@ -1593,7 +1593,7 @@ public sealed partial class MainView : Grid
         if (label == "Notas")
         {
             ToolTip.SetTip(button, "Notas e pastas do vault");
-            button.Click += (_, _) => { if (AssistantOpen) ToggleAssistant(); ShowWorkspace(); };
+            button.Click += async (_, _) => { if (GraphOpen && !await CloseGraphAsync()) return; if (AssistantOpen) ToggleAssistant(); ShowWorkspace(); };
         }
         else if (label == "Grafos")
         {
@@ -1603,7 +1603,7 @@ public sealed partial class MainView : Grid
         else
         {
             ToolTip.SetTip(button, "Assistente: agentes que pesquisam, escrevem e organizam o vault");
-            button.Click += (_, _) => ToggleAssistant();
+            button.Click += async (_, _) => { if (GraphOpen && !await CloseGraphAsync()) return; ToggleAssistant(); };
         }
         if (Avalonia.Automation.AutomationProperties.GetName(button) is not { Length: > 0 }) Avalonia.Automation.AutomationProperties.SetName(button, label);
         return Ui.UrbeMotion.Pressable(button);
