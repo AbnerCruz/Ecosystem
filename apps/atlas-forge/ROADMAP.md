@@ -25,6 +25,8 @@ Fonte do escopo completo: [MISSION.md](../../docs/proposals/atlas-forge/MISSION.
 
 Cada avanço deve atravessar modelo → UI → persistência → teste → publicação quando aplicável. Não declarar todos os gates por ter controles visuais. O pedido atual prioriza AF-017 (Issue #664): chegar ao chão, além da grade planetária. Depois: edição local versionada/desenho de restrições, AF-007/008 e os demais processos causais; AF-010 depende de recursos e habitats mensuráveis.
 
+AF-022 ([Issue #727](https://github.com/AbnerCruz/Ecosystem/issues/727)): nova geração versionada por campo de placas esféricas, clima métrico de camada única, mosaicos de biomas e pixel-art procedural sem blur; teste unitário/E2E e benchmark obrigatórios. **Parcial M2/M3; não encerra AF-006/008**, que ainda exigem placas persistidas/editáveis, calibração, processos termodinâmicos e dinâmica temporal. DEVICE/performance Android pendentes.
+
 AF-021 ([Issue #720](https://github.com/AbnerCruz/Ecosystem/issues/720)): símbolos naturais locais por seed/material/cobertura vegetal e quadro de escala humana/edificação, sem mudança de JSON ou claims físicos. Revisão por PR e validação Android físico pendentes; vegetação individual, minerais geológicos e edição métrica persistente permanecem trabalho distinto.
 
 AF-020 ([Issue #699](https://github.com/AbnerCruz/Ecosystem/issues/699)): ciclo causal descrito na SPEC, parcial de M2/M4/M5, sem declarar marcos completos. Prioridade atual é o pedido direto do proprietário; nenhum documento substitui a funcionalidade pedida.
