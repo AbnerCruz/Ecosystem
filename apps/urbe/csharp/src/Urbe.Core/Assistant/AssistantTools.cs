@@ -629,8 +629,8 @@ public static partial class AssistantTools
         new()
         {
             Name = "update_plan", Access = "plan",
-            Description = "Plano vivo com número livre de etapas e detalhamento proporcional. Cada passo pode incluir details (método e dependências) e acceptance (critério verificável). Investigue objetivos, lacunas, decisões, riscos e informações relacionadas; decomponha entregas complexas, validações e revisões sem burocracia vazia. Replaneje conforme evidências e envie a lista inteira.",
-            Parameters = Schema("""{"type":"object","properties":{"steps":{"type":"array","items":{"type":"object","properties":{"step":{"type":"string"},"details":{"type":"string","description":"Escopo e método desta etapa"},"acceptance":{"type":"string","description":"Evidência objetiva que comprova a conclusão"},"status":{"type":"string","enum":["pending","in_progress","done"]}},"required":["step","status"]}}},"required":["steps"],"additionalProperties":false}"""),
+            Description = "Mostra ao usuário o seu plano como uma lista de passos com status. Use em tarefas com 3 ou mais passos: crie o plano no começo e atualize a cada passo concluído (envie a lista inteira).",
+            Parameters = Schema("""{"type":"object","properties":{"steps":{"type":"array","maxItems":20,"items":{"type":"object","properties":{"step":{"type":"string"},"status":{"type":"string","enum":["pending","in_progress","done"]}},"required":["step","status"]}}},"required":["steps"],"additionalProperties":false}"""),
             Label = i =>
             {
                 var st = (i["steps"] as JsonArray ?? []).ToList();
@@ -639,14 +639,12 @@ public static partial class AssistantTools
             },
             Run = (i, host) =>
             {
-                var st = (i["steps"] as JsonArray ?? []).OfType<JsonObject>().Where(x => LegacyCustomize.JsTrim(Str(x, "step")).Length > 0)
+                var st = (i["steps"] as JsonArray ?? []).OfType<JsonObject>().Where(x => LegacyCustomize.JsTrim(Str(x, "step")).Length > 0).Take(20)
                     .Select(x =>
                     {
                         var step = LegacyCustomize.JsTrim(Str(x, "step"));
                         var status = Str(x, "status");
-                        return new AiPlanStep(step.Length > 200 ? step[..200] : step, status is "pending" or "in_progress" or "done" ? status : "pending",
-                            Str(x, "details").Trim() is { Length: > 0 } details ? details : null,
-                            Str(x, "acceptance").Trim() is { Length: > 0 } acceptance ? acceptance : null);
+                        return new AiPlanStep(step.Length > 200 ? step[..200] : step, status is "pending" or "in_progress" or "done" ? status : "pending");
                     }).ToList();
                 if (st.Count == 0) throw new AiToolException("Envie ao menos um passo.");
                 host.SetPlan(st);
