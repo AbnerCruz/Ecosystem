@@ -65,4 +65,4 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0038](0038-urbe-pesquisa-web-segura.md) | Urbe: pesquisa pública autorizada, fontes e proteção de rede | Proposto |
 | [0039](0039-urbe-memoria-contextual-local.md) | Memória contextual local e aprendizado dos agentes do Urbe | Proposto |
 
-- [ADR-0040 — Grafos autorais como artefatos do Urbe](0040-urbe-grafos-autorais.md) (proposto, 2026-10-24).
+| [0040](0040-urbe-grafos-autorais.md) | Grafos autorais como artefatos do Urbe | Proposto |
