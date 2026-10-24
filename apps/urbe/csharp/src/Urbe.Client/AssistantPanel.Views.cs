@@ -592,6 +592,9 @@ public sealed partial class AssistantPanel
         var c = _cfg;
         var v = VaultKey;
         var body = OpenView("Configurações do Assistente");
+        body.Children.Add(Section("Pesquisa na internet",
+            Hint(_cfg.Web.Enabled ? "Rede habilitada · " + _cfg.Web.Provider : "Rede desabilitada · acesso externo exige autorização"),
+            TextButton("Configurar pesquisa web", ShowWebSettings)));
         var provs = new StackPanel { Spacing = 8 };
         if (c.Providers.Count == 0) provs.Children.Add(Hint("Nenhum provedor ainda."));
         foreach (var p in c.Providers)
