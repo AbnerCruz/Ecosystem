@@ -820,7 +820,7 @@ public sealed partial class AssistantPanel
             ShowMemoryManager();
         }));
         body.Children.Add(head);
-        var search = new TextBox { Watermark = "Pesquisar fatos, decisões, procedimentos ou fontes…",
+        var search = new TextBox { PlaceholderText = "Pesquisar fatos, decisões, procedimentos ou fontes…",
             MinHeight = 44 };
         body.Children.Add(search);
         var list = new StackPanel { Spacing = 8 };
