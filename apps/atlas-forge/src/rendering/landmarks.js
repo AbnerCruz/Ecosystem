@@ -1,5 +1,5 @@
 import { vegetation } from "../geometry/ecology.js";
-import { clamp, index, RAD } from "../geometry/sphere.js";
+import { index, RAD } from "../geometry/sphere.js";
 import { hash32, sampleSurface } from "./surface-field.js";
 
 // Cartographic symbols, not individual organisms or mineral deposits.
@@ -10,11 +10,13 @@ const MAX_MARKS = 1800;
 const U32 = 4294967296;
 const random = (a, b, salt, seed) => hash32(a, b, salt, seed) / U32;
 
-export function nearbyNature(world, surface, bounds, mpp) {
+export function nearbyNature(world, surface, bounds, mpp, spacing = CELL_METRES) {
   if (!world || !surface || !Number.isFinite(mpp) || mpp <= 0 || mpp > 1.8)
     return [];
+  const fine = spacing < CELL_METRES;
+  if (fine && mpp > 0.2) return [];
   const radius = surface.radius;
-  const rows = Math.max(1, Math.round((Math.PI * radius) / CELL_METRES));
+  const rows = Math.max(1, Math.round((Math.PI * radius) / spacing));
   const firstRow = Math.max(
     0,
     Math.floor(((Math.max(-90, bounds.south) + 90) / 180) * rows),
@@ -28,7 +30,7 @@ export function nearbyNature(world, surface, bounds, mpp) {
   for (let y = firstRow; y <= lastRow; y++) {
     const lat = -90 + ((y + 0.5) / rows) * 180;
     const circumference = 2 * Math.PI * radius * Math.cos(lat * RAD);
-    const cols = Math.max(1, Math.round(circumference / CELL_METRES));
+    const cols = Math.max(1, Math.round(circumference / spacing));
     const cell = 360 / cols;
     const firstCol = Math.floor((bounds.west + 180) / cell);
     const lastCol = Math.ceil((bounds.east + 180) / cell);
@@ -60,7 +62,17 @@ export function nearbyNature(world, surface, bounds, mpp) {
               : 0.015;
       const stones = material === 4 ? 0.7 : material === 3 ? 0.25 : 0.1;
       let kind;
-      if ((material === 1 || material === 2) && roll < forest) kind = "tree";
+      if (fine) {
+        const canopy = material === 2 ? 0.18 * cover : 0.02 * cover;
+        const undergrowth = material === 2 ? 0.65 * cover : 0.45 * cover;
+        const pebbles = material === 4 ? 0.6 : material === 3 ? 0.3 : 0.12;
+        if ((material === 1 || material === 2) && roll < canopy)
+          kind = "tree";
+        else if (roll < canopy + undergrowth) kind = "shrub";
+        else if (roll < canopy + undergrowth + pebbles) kind = "stone";
+        else continue;
+      } else if ((material === 1 || material === 2) && roll < forest)
+        kind = "tree";
       else if (roll < forest + shrubs) kind = "shrub";
       else if (roll < forest + shrubs + stones) kind = "stone";
       else continue;
@@ -69,7 +81,7 @@ export function nearbyNature(world, surface, bounds, mpp) {
         kind,
         // Stable, measurable symbol footprint; not a botanically validated size.
         diameterMetres:
-          (kind === "tree" ? 5 : kind === "shrub" ? 1.8 : 2.5) *
+          (kind === "tree" ? (fine ? 3.4 : 5) : kind === "shrub" ? (fine ? 1.2 : 1.8) : (fine ? 1.3 : 2.5)) *
           (0.75 + random(y, x, 14, surface.seed) * 0.7),
       });
     }
@@ -82,12 +94,40 @@ export function drawNature(renderer, ctx) {
   if (renderer.layer !== "atlas" || !renderer.showNature || mpp > 1.8) return;
   const surface = renderer.surface?.context;
   if (!surface) return;
-  const marks = nearbyNature(
-    renderer.world,
-    surface,
-    renderer.visibleBounds(),
-    mpp,
-  );
+  const bounds = renderer.visibleBounds();
+  const fine = mpp <= 0.2;
+  let cache = renderer.natureCache;
+  if (
+    !cache ||
+    cache.surface !== surface ||
+    cache.ecosystem !== renderer.world.state.ecosystem ||
+    cache.fine !== fine ||
+    bounds.west < cache.bounds.west ||
+    bounds.east > cache.bounds.east ||
+    bounds.south < cache.bounds.south ||
+    bounds.north > cache.bounds.north
+  ) {
+    const spanLon = bounds.east - bounds.west;
+    const spanLat = bounds.north - bounds.south;
+    const padded = {
+      west: bounds.west - spanLon * 0.2,
+      east: bounds.east + spanLon * 0.2,
+      south: Math.max(-90, bounds.south - spanLat * 0.2),
+      north: Math.min(90, bounds.north + spanLat * 0.2),
+    };
+    cache = {
+      surface,
+      ecosystem: renderer.world.state.ecosystem,
+      fine,
+      bounds: padded,
+      marks: [
+        ...nearbyNature(renderer.world, surface, padded, mpp),
+        ...(fine ? nearbyNature(renderer.world, surface, padded, mpp, 6) : []),
+      ],
+    };
+    renderer.natureCache = cache;
+  }
+  const marks = cache.marks;
   ctx.save();
   for (const mark of marks) {
     const p = renderer.point(mark.lat, mark.lon);
@@ -141,7 +181,7 @@ export function drawHumanScale(renderer, ctx) {
   if (!renderer.showHumanScale || !renderer.detailActive) return;
   const mpp = renderer.metresPerPixel();
   if (!Number.isFinite(mpp) || mpp <= 0 || mpp > 3) return;
-  const x = Math.max(6, renderer.w - 194);
+  const x = Math.max(6, renderer.w - 246);
   const y = Math.max(6, renderer.h - 110);
   ctx.save();
   ctx.fillStyle = "#101c22e8";
@@ -152,6 +192,7 @@ export function drawHumanScale(renderer, ctx) {
   ctx.fillText("ESCALA HUMANA", x + 10, y + 17);
   const humanPixels = 1.7 / mpp;
   const housePixels = 10 / mpp;
+  const houseFits = housePixels >= 6 && housePixels <= 78 && 8 / mpp <= 46;
   if (humanPixels >= 5 && humanPixels <= 63) {
     const hx = x + 25;
     const ground = y + 78;
@@ -178,21 +219,16 @@ export function drawHumanScale(renderer, ctx) {
   ctx.fillText(
     mpp > 0.34
       ? "Aproxime para ver a pessoa"
-      : housePixels > 110
-        ? "Casa maior que o quadro"
-        : "Dimensões proporcionais",
+      : houseFits
+        ? "Dimensões proporcionais"
+        : "Casa maior que o quadro",
     x + 10,
     y + 94,
   );
-  if (housePixels >= 6 && housePixels <= 110) {
+  if (houseFits) {
     ctx.strokeStyle = "#f2e7cf";
     ctx.lineWidth = 1;
-    ctx.strokeRect(
-      x + 50,
-      y + 73 - (8 / mpp) * 0.25,
-      housePixels,
-      (8 / mpp) * 0.25,
-    );
+    ctx.strokeRect(x + 105, y + 41, housePixels, 8 / mpp);
   }
   ctx.restore();
 }
