@@ -1,6 +1,6 @@
 import { validateSpecies, validateEcosystem } from "./ecosystem.js";
-import { ALGORITHM, LEGACY_ALGORITHM, createWorld, definition } from "../core/world.js";
-import { clamp, wrap } from "../geometry/sphere.js";
+import { ALGORITHM, createWorld, definition } from "../core/world.js";
+import { wrap } from "../geometry/sphere.js";
 export const MAX_BYTES = 24 * 1024 * 1024;
 function fail(message) {
   throw new Error(`Projeto inválido: ${message}`);
@@ -142,17 +142,11 @@ function journal(v, n) {
 export function validate(input) {
   if (!input || input.format !== "atlasforge.world")
     fail("formato desconhecido");
-  if (input.version === 1) return migrateV1(input);
-  if (![2, 3].includes(input.version))
-    fail("versão desconhecida; o arquivo original foi preservado");
-  if (
-    input.version === 2 &&
-    (input.state?.species?.length || input.state?.ecosystem)
-  )
-    fail("dados ecológicos sem versão compatível; original preservado");
+  if (input.version !== 3)
+    fail("projeto antigo incompatível com Atlas Forge 0.6; crie um mundo novo");
   const d = input.definition;
-  if (!d || ![ALGORITHM, LEGACY_ALGORITHM].includes(d.algorithm))
-    fail("versão de algoritmo desconhecida");
+  if (!d || d.algorithm !== ALGORITHM)
+    fail("mundo gerado pelo motor antigo; crie um novo mundo em Atlas Forge 0.6");
   const w = d.grid?.width,
     h = d.grid?.height;
   if (!Number.isInteger(w) || w < 12 || w > 1440 || w % 2 || h !== w / 2)
@@ -178,7 +172,6 @@ export function validate(input) {
     },
     w,
   );
-  def.algorithm = d.algorithm;
   const out = createWorld(def, []);
   out.state = state(input.state, w * h);
   out.journal = journal(input.journal, w * h);
@@ -233,72 +226,6 @@ export function serialize(world) {
   if (new TextEncoder().encode(source).length > MAX_BYTES)
     fail("projeto excede 24 MiB; reduza os marcos");
   return source;
-}
-function decode(value, n) {
-  if (
-    typeof value !== "string" ||
-    value.length > n * 3 ||
-    !/^[A-Za-z0-9+/]*={0,2}$/.test(value)
-  )
-    fail("base64 v1");
-  let binary;
-  try {
-    binary = atob(value);
-  } catch {
-    fail("base64 v1");
-  }
-  if (binary.length !== n * 2) fail("tamanho de altura v1");
-  return Array.from({ length: n }, (_, i) =>
-    clamp(
-      (((binary.charCodeAt(i * 2) + 256 * binary.charCodeAt(i * 2 + 1)) /
-        65535) *
-        2 -
-        1) *
-        6000,
-      -12000,
-      12000,
-    ),
-  );
-}
-export function migrateV1(v) {
-  const w = v.width,
-    h = v.height;
-  if (!Number.isInteger(w) || w < 12 || w > 360 || w % 2 || h !== w / 2)
-    fail("grade v1");
-  const def = definition(
-    text(v.seed ?? "ALPHA", 200, "seed"),
-    {
-      ocean: v.params?.ocean ?? 68,
-      tilt: v.params?.tilt ?? 23.5,
-      radius: (v.params?.radius ?? 6371) * 1000,
-      baseTemp: v.params?.baseTemp ?? 15,
-    },
-    w,
-  );
-  const world = createWorld(def, decode(v.elevation, w * h));
-  // Imported terrain is entirely authored: the unknown Alpha generator must not replace it.
-  world.state.overrides = Object.fromEntries(
-    world.state.elevation.map((e, i) => [i, e]),
-  );
-  if (!Array.isArray(v.entities ?? []) || (v.entities ?? []).length > 2000)
-    fail("entidades v1");
-  world.state.entities = (v.entities ?? []).map(entity);
-  if (!Array.isArray(v.eras ?? []) || (v.eras ?? []).length > 12)
-    fail("eras v1 excedem 12; divida o arquivo sem apagar o original");
-  for (const [i, era] of (v.eras ?? []).entries()) {
-    const s = structuredClone(world.state);
-    s.elevation = decode(era.height, w * h);
-    s.overrides = Object.fromEntries(s.elevation.map((e, j) => [j, e]));
-    world.timeline.checkpoints.push({
-      id: `alpha-era-${i}`,
-      parent: i ? `alpha-era-${i - 1}` : null,
-      label: `Alpha · ${finite(era.year, -1e12, 1e12, "ano da era")} anos`,
-      definition: structuredClone(def),
-      state: s,
-      journal: { undo: [], redo: [] },
-    });
-  }
-  return validate(world);
 }
 export function download(name, content, type = "application/json") {
   const url = URL.createObjectURL(new Blob([content], { type })),
