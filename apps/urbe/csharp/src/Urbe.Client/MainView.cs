@@ -335,7 +335,7 @@ public sealed partial class MainView : Grid
         LoadArea(Text(AreaLayout.Path));
         _skyText = Text(Constellation.Path);
         Editor.SaveOnClose = !snapshot.IsReadOnly;
-        var notes = snapshot.Documents.Where(d => d.Text is not null).Select(d => new CityNote(d.Path, d.Text!)).ToArray();
+        var notes = snapshot.Documents.Where(d => d.Text is not null && !GraphDocument.IsGraphPath(d.Path)).Select(d => new CityNote(d.Path, d.Text!)).ToArray();
         // .urbe/notas.json: ids, dates and folders; a vault without it takes them from its 1.8.4 map, read only
         var record = Text(NoteLibrary.Path);
         _notesReadOnly = NoteLibrary.IsFuture(record);
