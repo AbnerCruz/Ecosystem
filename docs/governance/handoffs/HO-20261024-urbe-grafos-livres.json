@@ -1,0 +1,140 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-grafos-livres",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T17:57:11.487Z",
+  "agent": {
+    "id": "chatgpt-urbe-grafos-autorais",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-88.1",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-grafos-livres-20261024",
+  "base_commit": "e961173253073090457f96e10a1146dee3bba959",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/GraphDocument.cs",
+    "apps/urbe/csharp/src/Urbe.Client/GraphCanvasView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Graphs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Embeds.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/GraphDocumentTests.cs",
+    "apps/urbe/docs/csharp/GRAPHS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "docs/adr/0040-urbe-grafos-autorais.md",
+    "docs/adr/README.md",
+    "docs/governance/handoffs/HO-20261024-urbe-grafos-livres.json"
+  ],
+  "work_completed": [
+    "Criado contrato nativo independente *.grafo.json, com IDs estaveis, nos, arestas, posicoes, referencias de vault e versao explicita.",
+    "Implementado canvas Avalonia com selecionar, arrastar no, pan e zoom, barra de criacao/edicao e painel Grafos.",
+    "Conectada criacao e gravacao de arquivos de grafo ao armazenamento ja verificado; o cartao referencia arquivos, mas a remocao nao apaga o alvo.",
+    "Integrado destino Grafos e abertura de grafo pelo Explorer; corrigida a classificacao de *.grafo.json para nao virar nota comum apos reler vault.",
+    "Adicionada transclusao visual navegavel por ![[Nome]] ou ![[Pasta/Nome.grafo.json]] e passagem ao editor completo.",
+    "Incluidos testes C# de round-trip, identidades, referencias seguras, conexoes orfas, versao futura e geometria, ainda nao executados.",
+    "Registrada direcao na SPEC de grafos, no roadmap UC-88 e no ADR-0040 proposto."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test apps/urbe/csharp/tests/Urbe.Core.Tests/Urbe.Core.Tests.csproj",
+      "result": "pending",
+      "evidence": "Ambiente deste agente nao possui SDK dotnet. Aguardar GitHub Actions no PR."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet build apps/urbe/csharp/src/Urbe.Client/Urbe.Client.csproj e Android",
+      "result": "pending",
+      "evidence": "Sem SDK local; CI deve certificar compilacao antes de integrar."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet run tests/consistency/Check.cs",
+      "result": "pending",
+      "evidence": "Sem SDK local; verificar no CI."
+    },
+    {
+      "kind": "human",
+      "check": "Abrir e editar grafo em Android fisico, incluindo teclado, salvamento, zoom, gestos e ![[grafo]]",
+      "result": "pending",
+      "object": "apps/urbe/csharp/src/Urbe.Client/GraphCanvasView.cs",
+      "critical": true,
+      "evidence": "Sem teste DEVICE; NN-017."
+    }
+  ],
+  "known_issues": [
+    "Editor inicial e funcionalmente parcial: ainda nao implementa desenhos livres, formas avancadas, edicao inline de blocos, multi-selecao, arrastar direto do Explorer, nem undo/redo.",
+    "Grafo estrutural automatico com hierarquia/escopo e representacoes de agentes/memoria ficam para UC-88.3/88.4.",
+    "Arquivo *.grafo.json pode ser vinculado por caminho; fora das notas, renomeacao externa do destino ainda nao conta com identidade estavel.",
+    "Selecao de vault por lista completa requer paginacao e pesquisa para vaults grandes.",
+    "Falta compilacao automatizada, prova headless de UX e dispositivo Android; nao declarar release ou produto completo.",
+    "Concorrencia com PR #747 no MainView pode exigir reconciliacao do destino Grafos com novo launcher de IA."
+  ],
+  "blockers": [
+    "SDK dotnet indisponivel nesta sessao; CI e device validation obrigatorios.",
+    "ADR-0040 e novo formato persistido sao mudanca critica sujeita a revisao e politica do integrador."
+  ],
+  "next_actions": [
+    "Executar e corrigir dotnet tests, build Android e consistency checks no estado combinado do PR.",
+    "Revisar conflito/UX do destino Grafos com #747 e preservar o assistente flutuante.",
+    "Validar pinch, pan, toque, teclado, apertura da referencia, transclusao e verificacao de gravacao no aparelho fisico.",
+    "Implementar fatias UC-88.2 a UC-88.4 separadamente, conforme testes e aprovacao da arquitetura."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/VAULT-CONTRACT.md",
+    "docs/governance/addenda/ADD-0029-urbe-conexoes-no-lugar-da-simulacao.md",
+    "docs/adr/0034-urbe-sem-simulacao-visual.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Vault e notas mantem autoridades atuais; *.grafo.json e autoridade apenas para a composicao visual autoral."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Mudancas, pendencias, verificacoes e gate Android descritos no handoff UC-88.1."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Direcao da conversa consolidada em GRAPHS.md e UC-88; ADR-0040 proposto."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Novo formato persistido e contrato declarados em ADR-0040 para integracao critica governada."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação em dispositivo registrada como pendente; sem fingir CI aprovado."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "IDs estaveis de grafo, nos, arestas e IDs da NoteLibrary para notas quando disponiveis."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma extracao shared ou novo runtime; responsabilidade de grafos permanece dentro do Urbe."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-graph-authoring",
+      "status": "product-specific",
+      "rationale": "Somente Urbe e consumidor confirmado; manter Core/Client locais ate provar segundo consumidor real."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Cria tipo novo de artefato persistido (*.grafo.json) e ADR-0040; integrar somente apos revisão e gates."
+  }
+}
