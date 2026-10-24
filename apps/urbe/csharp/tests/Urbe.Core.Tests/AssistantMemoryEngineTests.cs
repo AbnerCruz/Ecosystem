@@ -99,7 +99,8 @@ public sealed class AssistantMemoryEngineTests
             cfg.MemoryRecords.Add(new AiMemoryRecord
             {
                 Id = "unrelated" + i, Vault = "Vault", Scope = "vault",
-                Text = "História da cosmologia " + i, Kind = "fact"
+                Text = "História da cosmologia " + i, Kind = "fact",
+                UpdatedAt = AssistantMemoryEngine.Now()
             });
         AssistantMemoryEngine.Remember(cfg, "Prefiro português", "Vault", kind: "preference");
         var context = AssistantMemoryEngine.ForPromptAdaptive(cfg, "Vault", "escritor",
