@@ -11,7 +11,7 @@ public static class AssistantWebTools
     private static void GuardOutbound(string value, IAssistantHost host)
     {
         if (System.Text.RegularExpressions.Regex.IsMatch(value,
-                @"(?i)(?:sk-[a-z0-9_-]{16,}|bearer\\s+[a-z0-9._-]{12,}|(?:api[_-]?key|authorization|password|token)=|content://|file://|/data/user/0/|/storage/emulated/)"))
+                @"(?i)(?:sk-[a-z0-9_-]{16,}|bearer\s+[a-z0-9._-]{12,}|(?:api[_-]?key|authorization|password|token)=|content://|file://|/data/user/0/|/storage/emulated/)"))
             throw new AiToolException("Envio externo bloqueado: possível segredo, credencial ou caminho privado.");
         if (value.Length >= 70 && host.Documents.List().Any(doc =>
                 doc.Content.Contains(value, StringComparison.OrdinalIgnoreCase)))
