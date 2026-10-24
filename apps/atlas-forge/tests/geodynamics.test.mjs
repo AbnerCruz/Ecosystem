@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { plateModel, plateElevation } from "../src/generation/geodynamics.js";
-import { definition, LEGACY_ALGORITHM, ALGORITHM } from "../src/core/world.js";
+import { definition, ALGORITHM } from "../src/core/world.js";
 import { generate } from "../src/generation/pipeline.js";
 import { parseProject, serialize } from "../src/storage/project.js";
 import { climate } from "../src/solvers/climate.js";
@@ -25,18 +25,16 @@ test("Geodynamic plates have reproducible spherical centres, tangential rotation
   }
 });
 
-test("New generation has explicit model version; old projects retain old model on restore and regenerate", () => {
-  const next = definition("COMPATIBILITY", {}, 48);
-  assert.equal(next.algorithm, ALGORITHM);
-  const a = generate(next).world;
+test("New tectonic generation is reproducible and rejects obsolete algorithm projects", () => {
+  const def = definition("TECTONIC-ONLY", {}, 48);
+  assert.equal(def.algorithm, ALGORITHM);
+  const a = generate(def).world;
   assert.equal(parseProject(serialize(a)).definition.algorithm, ALGORITHM);
-  const old = definition("COMPATIBILITY", {}, 48);
-  old.algorithm = LEGACY_ALGORITHM;
-  const legacy = generate(old).world;
-  const reopened = parseProject(serialize(legacy));
-  assert.equal(reopened.definition.algorithm, LEGACY_ALGORITHM);
-  assert.deepEqual(generate(reopened.definition).world.state.elevation, legacy.state.elevation);
-  assert.notDeepEqual(a.state.elevation, legacy.state.elevation);
+  assert.deepEqual(generate(def).world.state.elevation, a.state.elevation);
+  const abandoned = structuredClone(a);
+  abandoned.definition.algorithm = "spherical-causal-1";
+  assert.throws(() => parseProject(JSON.stringify(abandoned)), /motor antigo/);
+  assert.deepEqual(parseProject(serialize(a)).state.elevation, a.state.elevation);
 });
 
 test("Tectonic sea level quantile is area weighted and elevations remain bounded", () => {
