@@ -43,7 +43,8 @@
     "Issue #754: implementação do pedido integral do proprietário com atividade plana e estados coerentes, seleção e clipboard, código copiável, preços em seletores e consumo por chamada, fontes pesquisáveis/evidências/citações, imagens proporcionais/exportação/zoom e rascunhos de intervenção preservados.",
     "Regressão de toque em fórmulas detectada e corrigida: seleção de conversa é opt-in, sem substituir o caminho de edição de notas.",
     "Versão canônica 2.0.0-beta.28 / 2000028, mantendo assinatura, pacote e workflow oficial.",
-    "Pesquisa e requisitos em apps/urbe/docs/csharp/ASSISTANT-EXPERIENCE.md; sem extração transversal, alteração de formato ou nova dependência."
+    "Pesquisa e requisitos em apps/urbe/docs/csharp/ASSISTANT-EXPERIENCE.md; sem extração transversal, alteração de formato ou nova dependência.",
+    "Revisão de memória: caches de transcript/imagens/expansão são liberados ao trocar de conversa; regressão com WeakReference verifica que a mensagem antiga pode ser coletada pelo GC."
   ],
   "verification": [
     {
@@ -56,7 +57,7 @@
       "kind": "automated",
       "check": "UI, clipboard, rascunhos, snapshots e regressões",
       "result": "passed",
-      "evidence": "236 testes UI passaram localmente. Teste adicional da mesma suíte cobre toque real no disclosure, busca de S25 e tarifa pequena no seletor. Capturas Skia mobile/desktop inspecionadas; regressão de fórmula corrigida e retestada."
+      "evidence": "236 testes UI completos passaram; nova regressão de liberação do histórico por WeakReference e três cenários de intervenção/fontes passaram após o ajuste final de cache. CI deve confirmar os 237 testes no head final. Capturas Skia mobile/desktop inspecionadas."
     },
     {
       "kind": "automated",

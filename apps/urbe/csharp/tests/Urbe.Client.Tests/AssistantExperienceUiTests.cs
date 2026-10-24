@@ -132,4 +132,45 @@ public sealed partial class HeadlessUiTests
         }
         finally { window.Close(); UrbeApp.AssistantFolder = before; }
     }, CancellationToken.None));
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static WeakReference<AiChatMessage> SeedOldAssistantHistory(AssistantPanel panel)
+    {
+        panel.Config.Providers.Add(new AiProviderConfig("test", "openrouter"));
+        panel.Config.ProviderId = "test";
+        panel.Config.Model = "test/model";
+        var request = new AiChatMessage { Id = "retained-request", Role = "user", Content = [AiChatBlock.TextBlock("Primeiro pedido")] };
+        panel.Conversation.Messages.Add(request);
+        panel.Conversation.Messages.Add(new AiChatMessage { Role = "assistant", Content = [new AiChatBlock { Type = "tool_use", Id = "old-read", Name = "read_note", Input = new JsonObject { ["path"] = "Comece.md" } }] });
+        panel.Conversation.Messages.Add(new AiChatMessage { Role = "assistant", Content = [AiChatBlock.TextBlock("Primeira resposta")] });
+        panel.Conversation.Messages.Add(new AiChatMessage { Role = "user", Content = [AiChatBlock.TextBlock("Segundo pedido")] });
+        panel.Conversation.Messages.Add(new AiChatMessage { Role = "assistant", Content = [AiChatBlock.TextBlock("Segunda resposta")] });
+        panel.RenderAll();
+        Assert.Single(panel.Log.Children.OfType<Expander>());
+        return new WeakReference<AiChatMessage>(request);
+    }
+
+    [Fact]
+    public async Task Assistant_NewConversationReleasesOldHistoryFromMemory() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        var before = UrbeApp.AssistantFolder;
+        UrbeApp.AssistantFolder = null;
+        var view = new MainView();
+        var window = new Window { Width = 412, Height = 900, Content = view };
+        window.Show();
+        try
+        {
+            await view.LoadAsync(TutorialNotes.Load());
+            var panel = view.Assistant;
+            panel.Open();
+            var previous = SeedOldAssistantHistory(panel);
+            ClickNamed(panel, "Nova conversa");
+            await Settle(window, view);
+            GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect();
+            Assert.False(previous.TryGetTarget(out _));
+            Assert.Empty(panel.Conversation.Messages);
+            return true;
+        }
+        finally { window.Close(); UrbeApp.AssistantFolder = before; }
+    }, CancellationToken.None));
+
 }

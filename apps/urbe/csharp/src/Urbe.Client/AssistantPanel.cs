@@ -976,8 +976,24 @@ public sealed partial class AssistantPanel : Border
         }, DispatcherPriority.Background);
     }
 
+    private AiConversation? _renderedConversation;
     public void RenderAll()
     {
+        if (!ReferenceEquals(_renderedConversation, _conv))
+        {
+            _renderedConversation = _conv;
+            _past.Clear();
+            _generatedViews.Clear();
+            _activityExpanded.Clear();
+            _stageExpanded.Clear();
+            _toolStarted.Clear();
+            _toolElapsed.Clear();
+            _dirty.Clear();
+            _deferredAll = false;
+            _selectionWait?.Stop();
+            foreach (var text in _log.GetVisualDescendants().OfType<SelectableTextBlock>()) text.SelectionEnd = text.SelectionStart;
+            foreach (var box in _log.GetVisualDescendants().OfType<TextBox>()) box.SelectionEnd = box.SelectionStart;
+        }
         RenderChrome();
         if (SelectionActive()) { _deferredAll = true; DeferRender(); return; }
         _views.Clear();

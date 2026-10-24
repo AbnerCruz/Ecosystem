@@ -19,6 +19,8 @@ Pedido do proprietário de 24/10/2026, UC-63/UC-81. Implementação C# Avalonia 
 | Intervenções | Perguntas e propostas editadas preservadas em memória ao minimizar/alternar apresentações; controles respondem somente à aprovação que os originou |
 | Acessibilidade | Alvos primários de 48 dp, texto/status com organização independente, animação respeita movimento reduzido, ações com rótulos |
 
+Caches de transcript, imagens, expansão e tempos pertencem à conversa apresentada e são liberados ao trocar de conversa; teste com WeakReference verifica a coleta da mensagem anterior.
+
 A renderização de fórmulas/notas mantém seu caminho de edição anterior. Texto selecionável de conversa é opt-in no MarkdownReader; não se transforma um toque em fórmula em seleção de parágrafo. Menus Copiar/Recortar/Colar/Selecionar tudo usam as operações do controle Avalonia. Nenhuma chave é copiada para o vault e campos de senha não recebem menu adicional.
 
 ## Referências pesquisadas
