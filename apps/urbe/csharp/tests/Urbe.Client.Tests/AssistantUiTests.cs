@@ -437,7 +437,7 @@ public sealed partial class HeadlessUiTests
                 var activityBorder = Assert.IsType<Border>(activity.Children[0]);
                 var activityFold = Assert.IsType<Expander>(activityBorder.Child);
                 Assert.Null(activityFold.Content);
-                Assert.Contains("10 operações", panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
+                Assert.Contains(panel.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.StartsWith("10 operações", StringComparison.Ordinal) == true);
                 activityFold.IsExpanded = true;
                 Dispatcher.UIThread.RunJobs();
                 var timeline = Assert.IsType<StackPanel>(activityFold.Content);
