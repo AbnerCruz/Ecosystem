@@ -142,7 +142,9 @@ function journal(v, n) {
 export function validate(input) {
   if (!input || input.format !== "atlasforge.world")
     fail("formato desconhecido");
-  if (input.version !== 3)
+  if (!Number.isInteger(input.version) || input.version > 3)
+    fail("versão desconhecida; o arquivo original foi preservado");
+  if (input.version < 3)
     fail("projeto antigo incompatível com Atlas Forge 0.6; crie um mundo novo");
   const d = input.definition;
   if (!d || d.algorithm !== ALGORITHM)
