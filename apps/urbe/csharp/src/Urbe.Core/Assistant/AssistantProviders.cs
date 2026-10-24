@@ -661,7 +661,16 @@ public sealed class AssistantProviders
             var nativeBody = new JsonObject
             {
                 ["contents"] = new JsonArray(new JsonObject { ["parts"] = new JsonArray(new JsonObject { ["text"] = prompt }) }),
-                ["generationConfig"] = new JsonObject { ["responseModalities"] = new JsonArray("TEXT", "IMAGE") }
+                ["generationConfig"] = new JsonObject
+                {
+                    ["responseModalities"] = new JsonArray("TEXT", "IMAGE"),
+                    ["imageConfig"] = new JsonObject { ["aspectRatio"] = size switch
+                    {
+                        "1536x1024" => "3:2",
+                        "1024x1536" => "2:3",
+                        _ => "1:1"
+                    } }
+                }
             };
             using var response = await RequestAsync(p, nativeUrl, () => Post(nativeUrl, nativeBody,
                 [("Content-Type", "application/json"), ("x-goog-api-key", p.ApiKey)]), cancel);
@@ -670,7 +679,7 @@ public sealed class AssistantProviders
             catch (JsonException) { throw new AiProviderException("O Gemini devolveu uma resposta inválida."); }
             var parts = data?["candidates"]?[0]?["content"]?["parts"] as JsonArray ?? [];
             var b64Native = parts.OfType<JsonObject>().Select(part => part["inlineData"]?["data"] ?? part["inline_data"]?["data"])
-                .OfType<JsonValue>().Select(v => v.TryGetValue<string>(out var value) ? value : "").FirstOrDefault(v => v.Length > 0);
+                .OfType<JsonValue>().Select(v => v.TryGetValue<string>(out var value) ? value : "").LastOrDefault(v => v.Length > 0);
             if (string.IsNullOrEmpty(b64Native)) throw new AiProviderException("O Gemini não devolveu uma imagem. Confira o modelo e o acesso à geração de imagens.");
             byte[] image;
             try { image = Convert.FromBase64String(b64Native); }
