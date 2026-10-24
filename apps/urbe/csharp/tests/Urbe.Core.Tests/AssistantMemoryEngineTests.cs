@@ -92,6 +92,23 @@ public sealed class AssistantMemoryEngineTests
     }
 
     [Fact]
+    public void GreetingDoesNotDumpUnrelatedArchivedKnowledge()
+    {
+        var cfg = new AiConfig();
+        for (var i = 0; i < 1000; i++)
+            cfg.MemoryRecords.Add(new AiMemoryRecord
+            {
+                Id = "unrelated" + i, Vault = "Vault", Scope = "vault",
+                Text = "História da cosmologia " + i, Kind = "fact"
+            });
+        AssistantMemoryEngine.Remember(cfg, "Prefiro português", "Vault", kind: "preference");
+        var context = AssistantMemoryEngine.ForPromptAdaptive(cfg, "Vault", "escritor",
+            "Oi", 128000);
+        Assert.Single(context);
+        Assert.Contains("Prefiro português", context[0]);
+    }
+
+    [Fact]
     public void ExpandedSearchDoesNotHideMatchingEvidenceAtOldSixtyResultCap()
     {
         var cfg = new AiConfig();
