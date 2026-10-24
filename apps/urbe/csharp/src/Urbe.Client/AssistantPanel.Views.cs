@@ -93,6 +93,10 @@ public sealed partial class AssistantPanel
         if (_progress.TryGetValue(b.Id, out var prog) && r is null) card.Children.Add(Label(prog, 12, UrbeTheme.Text3));
         // only the latest plan shows open, as a checklist
         if (b.Name == "update_plan" && !b.Pending && b.Id == LatestPlanId() && b.Input?["steps"] is JsonArray steps) card.Children.Add(Plan(steps));
+        if (b.Name == "ask_user" && r is { IsError: false } && _running is null &&
+            _conv.Runs.LastOrDefault()?.Stopped == "needs_input" &&
+            _conv.Messages.SelectMany(msg => msg.Content).LastOrDefault(x => x.Type == "tool_use" && x.Name == "ask_user")?.Id == b.Id)
+            card.Children.Add(Clarification(b));
         if (pend && _pending is { } pending) card.Children.Add(Approval(pending.Request));
         else if (r is not null || !b.Pending)
         {
@@ -107,6 +111,30 @@ public sealed partial class AssistantPanel
         var border = Card(card, status == "waiting" ? UrbeTheme.Accent : null);
         border.Padding = new Thickness(10, 8);
         return border;
+    }
+
+    private Control Clarification(AiChatBlock call)
+    {
+        var info = call.Input as JsonObject ?? new JsonObject();
+        var question = (string?)info["question"] ?? "O que você prefere?";
+        var reason = (string?)info["reason"];
+        int total = Math.Max(1, (int?)info["total"] ?? 1);
+        int done = Math.Clamp((int?)info["resolved"] ?? 0, 0, total);
+        var input = new TextBox { AcceptsReturn = true, MinHeight = 64, MaxHeight = 180,
+            TextWrapping = TextWrapping.Wrap, PlaceholderText = "Responda aqui; uma resposta pode resolver várias dúvidas." };
+        var panel = new StackPanel { Spacing = 8 };
+        panel.Children.Add(Wrap(question, 14, UrbeTheme.Text, FontWeight.SemiBold));
+        if (!string.IsNullOrWhiteSpace(reason)) panel.Children.Add(Hint(reason));
+        panel.Children.Add(Label(done + " de " + total + " dúvidas esclarecidas (estimativa)", 12, UrbeTheme.Text3));
+        panel.Children.Add(new ProgressBar { Minimum = 0, Maximum = total, Value = done, Height = 5 });
+        panel.Children.Add(input);
+        panel.Children.Add(TextButton("Responder e continuar", () =>
+        {
+            var answer = (input.Text ?? "").Trim();
+            if (answer.Length == 0 || _running is not null) return;
+            Send(answer);
+        }, primary: true));
+        return panel;
     }
 
     private static string ClipText(string s, int n) => s.Length > n ? s[..n] : s;
