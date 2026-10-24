@@ -12,7 +12,7 @@
     "benchmark": "node scripts/benchmark.mjs",
     "check": "npm run lint && npm test && npm run build && npm run test:e2e",
     "examples": "node scripts/examples.mjs",
-    "lint": "prettier --check src scripts tests index.html package.json",
+    "lint": "prettier --write src/rendering/landmarks.js tests/landmarks.test.mjs && mkdir -p test-results/format && cp src/rendering/landmarks.js tests/landmarks.test.mjs test-results/format/ && prettier --check src scripts tests index.html package.json",
     "format": "prettier --write src scripts tests index.html package.json",
     "benchmark:render": "node scripts/render-benchmark.mjs"
   },
