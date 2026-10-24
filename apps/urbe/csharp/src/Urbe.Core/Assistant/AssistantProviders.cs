@@ -11,9 +11,10 @@ namespace Urbe.Core.Assistant;
 /// <summary>
 /// A block of a normalized message (providers.js): text, a tool call (tool_use) or a tool's answer (tool_result).
 /// </summary>
-public sealed record AiBlock(string Type, string Text = "", string Id = "", string Name = "", JsonNode? Input = null, string ToolUseId = "", string Content = "", bool IsError = false)
+public sealed record AiBlock(string Type, string Text = "", string Id = "", string Name = "", JsonNode? Input = null, string ToolUseId = "", string Content = "", bool IsError = false, string MimeType = "", string FileName = "")
 {
     public static AiBlock TextBlock(string text) => new("text", Text: text);
+    public static AiBlock Attachment(string mimeType, string filename, string base64) => new("attachment", Content: base64, MimeType: mimeType, FileName: filename);
     public static AiBlock ToolUse(string id, string name, JsonNode? input) => new("tool_use", Id: id, Name: name, Input: input);
     public static AiBlock ToolResult(string toolUseId, string content, bool isError) => new("tool_result", ToolUseId: toolUseId, Content: content, IsError: isError);
 }
@@ -278,7 +279,25 @@ public sealed class AssistantProviders
                 foreach (var b in m.Content.Where(b => b.Type == "tool_result"))
                     msgs.Add(new JsonObject { ["role"] = "tool", ["tool_call_id"] = b.ToolUseId, ["content"] = (b.IsError ? "ERRO: " : "") + b.Content });
                 var t = string.Join("\n\n", m.Content.Where(b => b.Type == "text").Select(b => b.Text));
-                if (t.Length > 0) msgs.Add(new JsonObject { ["role"] = "user", ["content"] = t });
+                var attachments = m.Content.Where(b => b.Type == "attachment").ToList();
+                if (attachments.Count == 0)
+                {
+                    if (t.Length > 0) msgs.Add(new JsonObject { ["role"] = "user", ["content"] = t });
+                }
+                else
+                {
+                    var parts = new JsonArray();
+                    if (t.Length > 0) parts.Add(new JsonObject { ["type"] = "text", ["text"] = t });
+                    foreach (var file in attachments)
+                    {
+                        var data = "data:" + file.MimeType + ";base64," + file.Content;
+                        if (file.MimeType == "application/pdf")
+                            parts.Add(new JsonObject { ["type"] = "file", ["file"] = new JsonObject { ["filename"] = file.FileName, ["file_data"] = data } });
+                        else
+                            parts.Add(new JsonObject { ["type"] = "image_url", ["image_url"] = new JsonObject { ["url"] = data, ["detail"] = "auto" } });
+                    }
+                    msgs.Add(new JsonObject { ["role"] = "user", ["content"] = parts });
+                }
             }
         }
         var body = new JsonObject { ["model"] = req.Model, ["messages"] = msgs, ["stream"] = true };
@@ -429,6 +448,8 @@ public sealed class AssistantProviders
             {
                 "text" => new JsonObject { ["type"] = "text", ["text"] = b.Text },
                 "tool_use" => new JsonObject { ["type"] = "tool_use", ["id"] = b.Id, ["name"] = b.Name, ["input"] = BlockInput(b) },
+                "attachment" => new JsonObject { ["type"] = b.MimeType == "application/pdf" ? "document" : "image",
+                    ["source"] = new JsonObject { ["type"] = "base64", ["media_type"] = b.MimeType, ["data"] = b.Content } },
                 _ => new JsonObject { ["type"] = "tool_result", ["tool_use_id"] = b.ToolUseId, ["content"] = b.Content, ["is_error"] = b.IsError }
             })).ToList();
             if (blocks.Count == 0) continue;
