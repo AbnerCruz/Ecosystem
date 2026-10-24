@@ -654,17 +654,21 @@ public sealed partial class AssistantPanel : Border
         using var knowledge = new KnowledgeIndex(documents);
         var agent = AssistantAgent.AgentById(conv.AgentId, _cfg.CustomAgents);
         var agentName = AgentNames.CallName(agent, _cfg);
+        // Explicit network grant per agent, independent of vault-read permissions.
+        using var web = _cfg.Web.Allowed(agent.Id)
+            ? new AssistantWebSession(_cfg.Web, cts.Token, existingSources: conv.WebSources) : null;
         PlatformAssistantActivity.RequestNotificationPermission?.Invoke();
         PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(AssistantActivityKind.Running, agentName, conv.Id));
         try
         {
             var r = await AssistantAgent.RunAsync(new AiAgentRun
             {
-                Host = new Host(this, documents, knowledge, agent.Id, p), Provider = p, Model = ModelId(), Messages = conv.Messages,
+                Host = new Host(this, documents, knowledge, agent.Id, p, web), Provider = p, Model = ModelId(), Messages = conv.Messages,
                 // UC-81: the agent introduces itself by its call name and may take a new one the person agrees to
                 Agent = _cfg.AgentWithInstructions(AgentNames.Named(agent, _cfg)), Naming = AgentNames.Naming(agent, _cfg), Guidance = AssistantAgent.UrbeGuidance, Policy = conv.Policy, Cancel = cts.Token, MarkAiText = true, ReviewWrittenArtifacts = true,
                 ContextTokens = meta?.Context ?? 128000, Instructions = WithUserAgents(_cfg.Instructions, documents, ModelId()), Memory = MemoryList(), VaultName = _app.VaultName,
-                Stream = Providers.StreamAsync, Approve = ApproveAsync, OnUpdate = OnUpdate, Tools = ToolsFor(p)
+                Stream = Providers.StreamAsync, Approve = ApproveAsync, OnUpdate = OnUpdate,
+                Tools = web is null ? ToolsFor(p) : [.. ToolsFor(p), .. AssistantWebTools.All]
             });
             run.Changes = r.Changes;
             run.Stopped = r.Stopped;
@@ -691,6 +695,7 @@ public sealed partial class AssistantPanel : Border
             conv.Runs.Add(run);
             if (conv.Runs.Count > 20) conv.Runs.RemoveRange(0, conv.Runs.Count - 20);
             if (ReferenceEquals(conv, _conv)) { _views.Clear(); RenderAll(); }
+            if (web is not null) conv.WebSources = web.Sources.ToList();
             if (conv.Messages.Count > 0) _store.SaveConversation(conv);
             var kind = run.Stopped switch
             {
@@ -773,9 +778,10 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The tools' host: reads from the vault's documents, writes through the app, memory and links through the panel.</summary>
-    private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge, string agentId, AiProviderConfig provider) : IAssistantHost, IAssistantNames, IAssistantImages
+    private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge, string agentId, AiProviderConfig provider, AssistantWebSession? web) : IAssistantHost, IAssistantNames, IAssistantImages
     {
         public IAssistantImages? Images => this;
+        public AssistantWebSession? Web => web;
         private AiProviderConfig? ImageProvider => AssistantProviders.PickImageProvider(provider, panel._cfg.Providers,
             panel._cfg.ImageProviderId, panel._cfg.ImageModel);
         public bool CanDraw => ImageProvider is not null;
