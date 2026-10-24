@@ -173,80 +173,109 @@ public sealed class GraphDocument
         CheckGeometry(x, y, width, height);
         var node = new GraphNode("node_" + Guid.NewGuid().ToString("N"), kind, CleanLabel(label, ""), target,
             x, y, width, height, referenceId);
-        if (_nodes.Count >= 10000) throw new InvalidOperationException("Limite de 10.000 elementos por grafo.");
-        if (recordHistory) Remember();
-        _nodes.Add(node);
+        if (recordHistory) RecordNodes(
+            new Dictionary<string, GraphNode?> { [node.Id] = null },
+            new Dictionary<string, GraphNode?> { [node.Id] = node });
+        PutNode(node);
         return node;
     }
 
     public GraphEdge Connect(string sourceId, string targetId, string? label = null, string? relation = null,
         bool directed = false, bool recordHistory = true)
     {
-        if (sourceId == targetId || !_nodes.Any(n => n.Id == sourceId) || !_nodes.Any(n => n.Id == targetId))
+        if (sourceId == targetId || IndexOfNode(sourceId) < 0 || IndexOfNode(targetId) < 0)
             throw new ArgumentException("Selecione dois elementos distintos que pertencem ao grafo.");
-        if (_edges.Count >= 30000) throw new InvalidOperationException("Limite de 30.000 conexões por grafo.");
         var edge = new GraphEdge("edge_" + Guid.NewGuid().ToString("N"), sourceId, targetId,
             CleanLabel(label, ""), CleanLabel(relation, ""), directed);
-        if (recordHistory) Remember();
+        if (recordHistory) Record(
+            () => _edges.RemoveAll(e => e.Id == edge.Id),
+            () => PutEdge(edge));
         _edges.Add(edge);
         return edge;
     }
 
     public bool MoveNode(string id, double x, double y, bool recordHistory = true)
     {
-        if (!double.IsFinite(x) || !double.IsFinite(y) || Math.Abs(x) > 1e7 || Math.Abs(y) > 1e7)
+        if (!double.IsFinite(x) || !double.IsFinite(y))
             throw new ArgumentOutOfRangeException(nameof(x));
-        var at = _nodes.FindIndex(n => n.Id == id);
+        var at = IndexOfNode(id);
         if (at < 0) return false;
-        var before = _nodes[at];
-        if (before.X == x && before.Y == y) return false;
-        if (recordHistory) Remember();
-        _nodes[at] = before with { X = x, Y = y };
-        if (before.Kind == GraphNodeKind.Group)
-            for (var i = 0; i < _nodes.Count; i++)
-                if (_nodes[i].ParentId == id)
-                    _nodes[i] = _nodes[i] with { X = _nodes[i].X + (x - before.X), Y = _nodes[i].Y + (y - before.Y) };
+        var original = _nodes[at];
+        if (original.X == x && original.Y == y) return false;
+        var affected = original.Kind == GraphNodeKind.Group
+            ? _nodes.Where(n => n.Id == id || n.ParentId == id).ToArray()
+            : [original];
+        var before = affected.ToDictionary(n => n.Id, n => (GraphNode?)n, StringComparer.Ordinal);
+        if (_dragActive && !recordHistory)
+            foreach (var node in affected) _dragBefore.TryAdd(node.Id, node);
+        var dx = x - original.X;
+        var dy = y - original.Y;
+        foreach (var node in affected)
+        {
+            var replacement = node.Id == id ? node with { X = x, Y = y }
+                : node with { X = node.X + dx, Y = node.Y + dy };
+            PutNode(replacement);
+        }
+        if (recordHistory)
+        {
+            EndDrag();
+            var after = affected.ToDictionary(n => n.Id, n => (GraphNode?)Node(n.Id), StringComparer.Ordinal);
+            RecordNodes(before, after);
+        }
         return true;
     }
 
     public bool RenameNode(string id, string? text)
     {
-        var at = _nodes.FindIndex(n => n.Id == id);
+        var at = IndexOfNode(id);
         if (at < 0) return false;
         var next = CleanLabel(text, "");
-        if (_nodes[at].Label == next) return false;
-        Remember();
-        _nodes[at] = _nodes[at] with { Label = next };
+        var old = _nodes[at];
+        if (old.Label == next) return false;
+        var updated = old with { Label = next };
+        RecordNodes(
+            new Dictionary<string, GraphNode?> { [id] = old },
+            new Dictionary<string, GraphNode?> { [id] = updated });
+        PutNode(updated);
         return true;
     }
 
     public bool RemoveNode(string id)
     {
-        if (!_nodes.Any(n => n.Id == id)) return false;
-        Remember();
-        _nodes.RemoveAll(n => n.Id == id);
-        for (var i = 0; i < _nodes.Count; i++)
-            if (_nodes[i].ParentId == id) _nodes[i] = _nodes[i] with { ParentId = null };
-        _edges.RemoveAll(e => e.SourceId == id || e.TargetId == id);
+        var node = Node(id);
+        if (node is null) return false;
+        var affected = _nodes.Where(n => n.Id == id || n.ParentId == id).ToArray();
+        var before = affected.ToDictionary(n => n.Id, n => (GraphNode?)n, StringComparer.Ordinal);
+        var after = affected.ToDictionary(n => n.Id,
+            n => n.Id == id ? null : (GraphNode?)(n with { ParentId = null }), StringComparer.Ordinal);
+        var edges = _edges.Where(e => e.SourceId == id || e.TargetId == id).ToArray();
+        RecordNodes(before, after, edges);
+        ApplyNodes(after);
+        foreach (var edge in edges) _edges.Remove(edge);
         return true;
     }
 
     public bool RemoveEdge(string id)
     {
-        if (!_edges.Any(e => e.Id == id)) return false;
-        Remember();
-        _edges.RemoveAll(e => e.Id == id);
+        var edge = _edges.FirstOrDefault(e => e.Id == id);
+        if (edge is null) return false;
+        Record(() => PutEdge(edge), () => _edges.RemoveAll(e => e.Id == id));
+        _edges.Remove(edge);
         return true;
     }
 
     public bool ResizeNode(string id, double width, double height)
     {
-        var at = _nodes.FindIndex(n => n.Id == id);
+        var at = IndexOfNode(id);
         if (at < 0) return false;
-        CheckGeometry(_nodes[at].X, _nodes[at].Y, width, height);
-        if (_nodes[at].Width == width && _nodes[at].Height == height) return false;
-        Remember();
-        _nodes[at] = _nodes[at] with { Width = width, Height = height };
+        var old = _nodes[at];
+        CheckGeometry(old.X, old.Y, width, height);
+        if (old.Width == width && old.Height == height) return false;
+        var updated = old with { Width = width, Height = height };
+        RecordNodes(
+            new Dictionary<string, GraphNode?> { [id] = old },
+            new Dictionary<string, GraphNode?> { [id] = updated });
+        PutNode(updated);
         return true;
     }
 
