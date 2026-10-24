@@ -25,8 +25,15 @@ test("Ground props are deterministic, sparse, and independent of redraw or zoom"
   const points = nearbyNature(world, surface, bounds, 0.8);
   assert.ok(points.length > 0 && points.length < 1801);
   assert.deepEqual(points, nearbyNature(world, surface, bounds, 0.1));
-  assert.deepEqual(points, nearbyNature(...Object.values(scene()), bounds, 0.8));
-  assert.deepEqual(world, before, "Decorative objects never mutate project data");
+  assert.deepEqual(
+    points,
+    nearbyNature(...Object.values(scene()), bounds, 0.8),
+  );
+  assert.deepEqual(
+    world,
+    before,
+    "Decorative objects never mutate project data",
+  );
   assert.equal(nearbyNature(world, surface, bounds, 2.5).length, 0);
 });
 
