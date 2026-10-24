@@ -51,6 +51,19 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal(4, all.OfType<Border>().Count(b => b.Classes.Contains("urbe-embed")));
                 var pg = all.OfType<TextBlock>().First(t => t.Text?.StartsWith("PÁGINA:", StringComparison.Ordinal) == true);
                 Assert.True(pg.Text == "PÁGINA:<h1>Olá página</h1>" && pg.Height == 420, pg.Text + " / " + pg.Height);
+                // The embedded HTML must not cover the file's own source sheet on Android.
+                await view.FilePreview.OpenAsync("pagina.html");
+                Assert.False(pg.IsVisible);
+                ClickButtonWithText(view.FilePreview, "Fonte");
+                for (int i = 0; i < 30 && view.FilePreview.Shown != "text"; i++)
+                {
+                    await Task.Delay(10);
+                    Dispatcher.UIThread.RunJobs();
+                }
+                Assert.Equal("<h1>Olá página</h1>", view.FilePreview.ShownText);
+                Assert.False(pg.IsVisible);
+                view.FilePreview.Close();
+                Assert.True(pg.IsVisible);
                 var texts = all.OfType<TextBlock>().Select(t => t.Text ?? string.Concat(t.Inlines?.OfType<Run>().Select(r => r.Text) ?? [])).ToList();
                 Assert.Contains(texts, t => t.Contains("Texto da nota", StringComparison.Ordinal));
                 Assert.Contains(texts, t => t.StartsWith("linha um", StringComparison.Ordinal));
