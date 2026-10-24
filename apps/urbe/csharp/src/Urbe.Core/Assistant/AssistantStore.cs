@@ -84,6 +84,7 @@ public sealed class AiConversation
     public List<AiChatMessage> Messages { get; set; } = [];
     public List<AiRunRecord> Runs { get; set; } = [];
     public AiUsage Usage { get; set; } = new(0, 0, null);
+    public List<AiWebSource> WebSources { get; set; } = [];
 }
 
 /// <summary>The models a provider listed, and when.</summary>
@@ -117,6 +118,8 @@ public sealed class AiConfig
     /// <summary>UC-81: the call names the person gave the agents on this device, by agent id.</summary>
     public Dictionary<string, string> AgentNames { get; set; } = new(StringComparer.Ordinal);
     public int MaxSteps { get; set; } = 30;
+    /// <summary>One private configuration authority for network consent, credentials and budgets.</summary>
+    public AiWebConfig Web { get; set; } = new();
     public Dictionary<string, AiModelCache> ModelCache { get; set; } = new(StringComparer.Ordinal);
 
     public AiModelChoice ModelFor(AiConversation conversation)
@@ -229,9 +232,18 @@ public sealed class AssistantStore(IAssistantStorage storage)
             instructionBlocks[k] = new JsonArray(v.Select(b => (JsonNode)new JsonObject { ["title"] = b.Title, ["content"] = b.Content }).ToArray());
         var cache = new JsonObject();
         foreach (var (k, v) in c.ModelCache) cache[k] = new JsonObject { ["at"] = v.At, ["list"] = new JsonArray(v.List.Select(m => (JsonNode)ModelToJson(m)).ToArray()) };
+        var webAgents = new JsonObject();
+        foreach (var (id, allowed) in c.Web.AgentAccess.OrderBy(x => x.Key, StringComparer.Ordinal)) webAgents[id] = allowed;
+        var web = new JsonObject
+        {
+            ["enabled"] = c.Web.Enabled, ["provider"] = c.Web.Provider, ["apiKey"] = c.Web.ApiKey,
+            ["maxSearchCalls"] = c.Web.MaxSearchCalls, ["maxFetchCalls"] = c.Web.MaxFetchCalls,
+            ["timeoutSeconds"] = c.Web.TimeoutSeconds, ["maxDownloadBytes"] = c.Web.MaxDownloadBytes,
+            ["agentAccess"] = webAgents
+        };
         return new JsonObject
         {
-            ["version"] = c.Version, ["providers"] = new JsonArray(c.Providers.Select(p => (JsonNode)ProviderToJson(p)).ToArray()), ["providerId"] = c.ProviderId,
+            ["web"] = web, ["version"] = c.Version, ["providers"] = new JsonArray(c.Providers.Select(p => (JsonNode)ProviderToJson(p)).ToArray()), ["providerId"] = c.ProviderId,
             ["model"] = c.Model, ["imageProviderId"] = c.ImageProviderId, ["imageModel"] = c.ImageModel,
             ["agentModels"] = agentModels, ["agentInstructionBlocks"] = instructionBlocks,
             ["policy"] = c.Policy, ["agentId"] = c.AgentId, ["instructions"] = c.Instructions, ["memory"] = memory,
@@ -252,6 +264,18 @@ public sealed class AssistantStore(IAssistantStorage storage)
             CustomAgents = (o["customAgents"] as JsonArray ?? []).OfType<JsonObject>().Select(AgentFromJson).ToList(),
             MaxSteps = o["maxSteps"] is null ? 30 : (int)Num(o["maxSteps"])
         };
+        if (o["web"] is JsonObject w)
+        {
+            c.Web.Enabled = (bool?)w["enabled"] ?? false;
+            c.Web.Provider = Str(w["provider"], "brave");
+            c.Web.ApiKey = Str(w["apiKey"]);
+            c.Web.MaxSearchCalls = (int)Math.Clamp(w["maxSearchCalls"] is null ? 12 : Num(w["maxSearchCalls"]), 1, 100);
+            c.Web.MaxFetchCalls = (int)Math.Clamp(w["maxFetchCalls"] is null ? 20 : Num(w["maxFetchCalls"]), 1, 100);
+            c.Web.TimeoutSeconds = (int)Math.Clamp(w["timeoutSeconds"] is null ? 18 : Num(w["timeoutSeconds"]), 3, 60);
+            c.Web.MaxDownloadBytes = (int)Math.Clamp(w["maxDownloadBytes"] is null ? 1_000_000 : Num(w["maxDownloadBytes"]), 10_000, 5_000_000);
+            if (w["agentAccess"] is JsonObject grants)
+                foreach (var (id, grant) in grants) c.Web.AgentAccess[id] = (bool?)grant ?? false;
+        }
         if (o["agentModels"] is JsonObject models)
             foreach (var (id, value) in models)
                 if (value is JsonObject choice && Str(choice["providerId"]).Length > 0 && Str(choice["model"]).Length > 0)
@@ -288,7 +312,12 @@ public sealed class AssistantStore(IAssistantStorage storage)
                 return (JsonNode)o;
             }).ToArray())
         }).ToArray()),
-        ["usage"] = AssistantAgent.UsageJson(c.Usage)
+        ["usage"] = AssistantAgent.UsageJson(c.Usage),
+        ["webSources"] = new JsonArray(c.WebSources.Select(s => (JsonNode)new JsonObject
+        {
+            ["id"] = s.Id, ["title"] = s.Title, ["originalUrl"] = s.OriginalUrl, ["finalUrl"] = s.FinalUrl,
+            ["domain"] = s.Domain, ["published"] = s.Published, ["accessed"] = s.Accessed, ["status"] = s.Status
+        }).ToArray())
     };
 
     public static AiConversation ConversationFromJson(JsonObject o) => new()
@@ -302,7 +331,10 @@ public sealed class AssistantStore(IAssistantStorage storage)
             Reverted = (bool?)r["reverted"] ?? false,
             Changes = (r["changes"] as JsonArray ?? []).OfType<JsonObject>().Select(x => new AiChange(Str(x["id"]), SnapFromJson(x["before"]), SnapFromJson(x["after"]), (bool?)x["trashed"] ?? false)).ToList()
         }).ToList(),
-        Usage = o["usage"] is JsonObject u ? new AiUsage(Num(u["input"]), Num(u["output"]), u["cost"] is null ? null : LegacyCustomize.JsToNumber(u["cost"])) : new AiUsage(0, 0, null)
+        Usage = o["usage"] is JsonObject u ? new AiUsage(Num(u["input"]), Num(u["output"]), u["cost"] is null ? null : LegacyCustomize.JsToNumber(u["cost"])) : new AiUsage(0, 0, null),
+        WebSources = (o["webSources"] as JsonArray ?? []).OfType<JsonObject>()
+            .Select(s => new AiWebSource(Str(s["id"]), Str(s["title"]), Str(s["originalUrl"]), Str(s["finalUrl"]),
+                Str(s["domain"]), s["published"] is null ? null : Str(s["published"]), Str(s["accessed"]), Str(s["status"]))).ToList()
     };
 }
 
