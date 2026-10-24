@@ -14,7 +14,7 @@
   "branch": "feat/atlas-forge-execution-plan-and-landmask",
   "base_commit": "d7fa2177054cb46e6110e18a124c0febd70921ec",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/717",
   "files_changed": [
     "apps/atlas-forge/README.md",
     "apps/atlas-forge/ROADMAP.md",
@@ -57,8 +57,8 @@
     {
       "check": "npm run check",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Rodada final em test-results/ecosystem-check-final.log. Testes científicos e regressão offline ecológica já passaram separadamente; tentativa anterior detectou teste de pincel dependente da posição após mudança de layout, corrigido para testar cada pincel e seu undo independentemente."
+      "result": "passed",
+      "evidence": "npm run check completo passou: 33 testes, 14 regressões principais, terreno multiescala, zoom contínuo em 26 passos e fluxo ecológico offline. Log test-results/ecosystem-check-final.log."
     },
     {
       "check": "Cenários científicos e benchmarks",
@@ -69,8 +69,8 @@
     {
       "check": "dotnet run tests/consistency/Check.cs",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Verificação final após handoff."
+      "result": "passed",
+      "evidence": "Todos os 22 checks passaram, após reconciliação com origin/main, em test-results/ecosystem-consistency.log."
     },
     {
       "check": "Android físico e revisão de experiência",
