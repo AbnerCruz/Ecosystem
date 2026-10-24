@@ -54,4 +54,4 @@ Decisões de 13/10/2026 (DEC-0045):
 - **composições passam a ser páginas**, sob o editor de páginas;
 - modelos de nota e componentes reutilizáveis são **um conceito só**.
 
-A ideia de "Urbe como sistema operacional" (cada pasta como um ambiente de trabalho) é **exploração**, a ser provada pelo uso.
+**Grafos como artefatos visuais (UC-88, ADR-0040, 24/10/2026).** Além da escrita linear, o Urbe incorpora um editor espacial livre: cartões de texto, arquivos e pastas do vault, relações autorais e `![[grafo]]` navegável. Projeções automáticas da hierarquia e vínculos e grafos observáveis de agentes são etapas posteriores. A ferramenta não substitui a Constelação (UC-72) nem reintroduz a simulação congelada; ver [GRAPHS.md](GRAPHS.md).\n\nA ideia de "Urbe como sistema operacional" (cada pasta como um ambiente de trabalho) é **exploração**, a ser provada pelo uso.

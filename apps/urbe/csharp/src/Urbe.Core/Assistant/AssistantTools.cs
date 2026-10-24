@@ -91,6 +91,8 @@ public interface IAssistantHost
     IAssistantImages? Images => null;
     /// <summary>Explicitly authorized network gateway; null keeps every local feature offline.</summary>
     AssistantWebSession? Web => null;
+    /// <summary>Explicitly read-only view of authored graph documents in this vault.</summary>
+    IAssistantGraphs? Graphs => null;
 }
 
 /// <summary>A tool the agents use (tools.js def): name, description, JSON Schema, access, label, preview and run.</summary>
