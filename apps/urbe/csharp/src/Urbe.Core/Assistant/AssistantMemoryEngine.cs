@@ -81,23 +81,29 @@ public static class AssistantMemoryEngine
     public static void MigrateLegacy(AiConfig cfg, long? timestamp = null)
     {
         if (cfg.Memory.Count == 0) return;
-        var old = cfg.Memory.SelectMany(kv => kv.Value.Select(fact => (scope: kv.Key, fact))).ToArray();
-        foreach (var (scope, fact) in old)
+        var prepared = new List<AiMemoryRecord>();
+        var seen = new HashSet<string>(cfg.MemoryRecords.Where(m => m.State == "active")
+            .Select(m => m.Scope + "\u001f" + m.Vault + "\u001f" + Normalize(m.Text.Trim())),
+            StringComparer.Ordinal);
+        foreach (var (key, facts) in cfg.Memory)
+        foreach (var fact in facts)
         {
+            // Preserve historical text exactly: old installations never had a 1600-char limit.
             if (string.IsNullOrWhiteSpace(fact)) continue;
-            if (cfg.MemoryRecords.Any(m => m.State == "active" &&
-                m.Scope == (scope == "*" ? "global" : "vault") &&
-                (scope == "*" || m.Vault == scope) && Normalize(m.Text.Trim()) == Normalize(fact.Trim()))) continue;
-            if (cfg.MemoryRecords.Count >= MaxRecords) throw new InvalidOperationException("O limite local de memórias foi alcançado.");
-            cfg.MemoryRecords.Add(new AiMemoryRecord
+            var scope = key == "*" ? "global" : "vault";
+            var vault = key == "*" ? "" : key;
+            if (!seen.Add(scope + "\u001f" + vault + "\u001f" + Normalize(fact.Trim()))) continue;
+            prepared.Add(new AiMemoryRecord
             {
-                Id = Guid.NewGuid().ToString("N"), Kind = "fact",
-                Scope = scope == "*" ? "global" : "vault", Vault = scope == "*" ? "" : scope,
-                Text = fact.Trim()[..Math.Min(fact.Trim().Length, MaxText)],
-                Origin = "legacy", SourceReference = "config.memory", Confidence = 100,
-                CreatedAt = timestamp ?? Now(), UpdatedAt = timestamp ?? Now()
+                Id = Guid.NewGuid().ToString("N"), Kind = "fact", Scope = scope, Vault = vault,
+                Text = fact, Origin = "legacy", SourceReference = "config.memory",
+                Confidence = 100, CreatedAt = timestamp ?? Now(), UpdatedAt = timestamp ?? Now()
             });
         }
+        // Transactional in-memory migration: either all old memories are copied or none are.
+        if (cfg.MemoryRecords.Count + prepared.Count > MaxRecords)
+            throw new InvalidOperationException("O limite local impede a migração integral. Nenhuma memória antiga foi descartada.");
+        cfg.MemoryRecords.AddRange(prepared);
         cfg.Memory.Clear();
     }
 
@@ -181,6 +187,9 @@ public static class AssistantMemoryEngine
         var matches = new List<AiMemoryMatch>(all.Count);
         foreach (var m in all)
         {
+            // Old user configurations may contain secrets that predate input validation.
+            // Keep them editable locally, but never send them to a model as recalled context.
+            if (PotentialSecret.IsMatch(m.Text)) continue;
             var text = Normalize(m.Text);
             var meta = Normalize(m.Kind + " " + string.Join(" ", m.RelatedPaths));
             var score = 0d;
@@ -214,7 +223,7 @@ public static class AssistantMemoryEngine
         var results = Search(cfg, vault, agentId, query, 20).ToList();
         // Preferences and pinned decisions should not disappear solely because the question is phrased differently.
         foreach (var item in Visible(cfg, vault, agentId)
-                     .Where(m => m.Pinned || m.Kind == "preference")
+                     .Where(m => (m.Pinned || m.Kind == "preference") && !PotentialSecret.IsMatch(m.Text))
                      .OrderByDescending(m => m.UpdatedAt))
             if (!results.Any(x => x.Memory.Id == item.Id))
                 results.Add(new AiMemoryMatch(item, 0));
