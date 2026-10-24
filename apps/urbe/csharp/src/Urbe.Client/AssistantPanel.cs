@@ -186,7 +186,7 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, pages/ai-tools.js, customize/ai-tools.js, then the vault plugins).</summary>
-    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan"), AssistantAdaptivePlanTools.Update, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, AgentNames.Tool, AssistantImageTools.Tool, AssistantQuestionTools.Ask];
+    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan"), AssistantAdaptivePlanTools.Update, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, .. AssistantMemoryTools.All, AgentNames.Tool, AssistantImageTools.Tool, AssistantQuestionTools.Ask];
 
     /// <summary>UC-63: the image tool is always visible to the chat agent, independently of its provider.</summary>
     public static IReadOnlyList<AiTool> ToolsFor(AiProviderConfig provider) =>
@@ -197,7 +197,7 @@ public sealed partial class AssistantPanel : Border
     /// every request and the device reads the request itself, so the others (links, tags, plans, memory, folders…) cost more
     /// waiting than they give; the bigger models in the cloud keep all of them.
     /// </summary>
-    private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note"];
+    private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note", "recall_memory", "learn_memory"];
 
     private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name) ?? (name == AssistantAgent.Delegate.Name ? AssistantAgent.Delegate : null);
 
@@ -263,10 +263,18 @@ public sealed partial class AssistantPanel : Border
     private string ModelId() => _cfg.ModelFor(_conv).Model;
     private void SaveConfig() => _store.SetConfig(_cfg);
 
-    private List<string> MemoryList()
+    private List<string> MemoryList(string? query, string agentId) =>
+        AssistantMemoryEngine.ForPrompt(_cfg, VaultKey, agentId, query).ToList();
+
+    /// <summary>Memory writes must be read back; storage errors must not masquerade as success.</summary>
+    private void SaveMemoryConfig()
     {
-        var v = VaultKey;
-        return [.. _cfg.Memory.GetValueOrDefault("*") ?? [], .. _cfg.Memory.GetValueOrDefault(v) ?? []];
+        SaveConfig();
+        var saved = _store.GetConfig();
+        if (saved.MemoryRecords.Count != _cfg.MemoryRecords.Count ||
+            !_cfg.MemoryRecords.All(m => saved.MemoryRecords.Any(x => x.Id == m.Id &&
+                x.State == m.State && x.Text == m.Text)))
+            throw new AiToolException("Não foi possível confirmar a gravação da memória no dispositivo.");
     }
 
     private string VaultKey => _app.VaultName.Length > 0 ? _app.VaultName : "Urbe";
@@ -280,11 +288,32 @@ public sealed partial class AssistantPanel : Border
         return null;
     }
 
-    private void Remember(string fact)
+    private void Remember(string fact) => StoreMemory(fact, "fact", "vault", "", _conv.AgentId);
+
+    private AiMemoryRecord StoreMemory(string fact, string kind, string scope, string sourcePath, string agentId)
     {
-        if (!_cfg.Memory.TryGetValue(VaultKey, out var list)) _cfg.Memory[VaultKey] = list = [];
-        list.Add(fact);
-        SaveConfig();
+        var m = AssistantMemoryEngine.Remember(_cfg, fact, VaultKey, agentId, kind, scope,
+            "agent", sourcePath.Length > 0 ? "note:" + sourcePath : "conversation:" + _conv.Id,
+            sourcePath.Length > 0 ? [sourcePath] : []);
+        SaveMemoryConfig();
+        return m;
+    }
+
+    private bool ForgetMemory(string id, string agentId)
+    {
+        if (!AssistantMemoryEngine.Visible(_cfg, VaultKey, agentId).Any(m => m.Id == id)) return false;
+        if (!AssistantMemoryEngine.Forget(_cfg, id)) return false;
+        SaveMemoryConfig();
+        return true;
+    }
+
+    private bool SupersedeMemory(string oldId, string newId, string agentId)
+    {
+        var visible = AssistantMemoryEngine.Visible(_cfg, VaultKey, agentId);
+        if (!visible.Any(m => m.Id == oldId) || !visible.Any(m => m.Id == newId)) return false;
+        if (!AssistantMemoryEngine.Supersede(_cfg, oldId, newId)) return false;
+        SaveMemoryConfig();
+        return true;
     }
 
     private AiModelInfo? ModelMeta()
@@ -653,6 +682,8 @@ public sealed partial class AssistantPanel : Border
         RenderAll();
         using var knowledge = new KnowledgeIndex(documents);
         var agent = AssistantAgent.AgentById(conv.AgentId, _cfg.CustomAgents);
+        var userRequest = conv.Messages.LastOrDefault(m => m.Role == "user" && m.Meta?.ToolResults != true)?
+            .Content.FirstOrDefault(b => b.Type == "text" && !b.Hidden)?.Text;
         var agentName = AgentNames.CallName(agent, _cfg);
         PlatformAssistantActivity.RequestNotificationPermission?.Invoke();
         PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(AssistantActivityKind.Running, agentName, conv.Id));
@@ -663,13 +694,30 @@ public sealed partial class AssistantPanel : Border
                 Host = new Host(this, documents, knowledge, agent.Id, p), Provider = p, Model = ModelId(), Messages = conv.Messages,
                 // UC-81: the agent introduces itself by its call name and may take a new one the person agrees to
                 Agent = _cfg.AgentWithInstructions(AgentNames.Named(agent, _cfg)), Naming = AgentNames.Naming(agent, _cfg), Guidance = AssistantAgent.UrbeGuidance, Policy = conv.Policy, Cancel = cts.Token, MarkAiText = true, ReviewWrittenArtifacts = true,
-                ContextTokens = meta?.Context ?? 128000, Instructions = WithUserAgents(_cfg.Instructions, documents, ModelId()), Memory = MemoryList(), VaultName = _app.VaultName,
+                ContextTokens = meta?.Context ?? 128000, Instructions = WithUserAgents(_cfg.Instructions, documents, ModelId()), Memory = MemoryList(userRequest, agent.Id), VaultName = _app.VaultName,
                 Stream = Providers.StreamAsync, Approve = ApproveAsync, OnUpdate = OnUpdate, Tools = ToolsFor(p)
             });
             run.Changes = r.Changes;
             run.Stopped = r.Stopped;
             run.Error = r.Error;
             conv.Usage = new AiUsage(conv.Usage.Input + r.Usage.Input, conv.Usage.Output + r.Usage.Output, r.Usage.Cost is null ? conv.Usage.Cost : (conv.Usage.Cost ?? 0) + r.Usage.Cost);
+            if (run.Stopped == "end" && run.Error is null)
+            {
+                var learned = false;
+                if (AssistantMemoryEngine.ExplicitRememberRequest(userRequest) is { } explicitFact)
+                {
+                    AssistantMemoryEngine.Remember(_cfg, explicitFact, VaultKey, agent.Id,
+                        "fact", "vault", "user", "conversation:" + conv.Id);
+                    learned = true;
+                }
+                if (_cfg.AutoCaptureEpisodes && run.Changes.Count > 0)
+                {
+                    AssistantMemoryEngine.ObserveFinishedRun(_cfg, VaultKey, agent.Id, run.Id,
+                        run.Changes.Select(c => (c.After ?? c.Before)?.Path ?? "").ToArray(), userRequest);
+                    learned = true;
+                }
+                if (learned) SaveMemoryConfig();
+            }
         }
         catch (Exception e)
         {
@@ -797,6 +845,14 @@ public sealed partial class AssistantPanel : Border
         public Task CreateFolderAsync(string path) => panel._app.CreateFolderAsync(path);
         public void OpenNote(string path) => panel._app.OpenReference(path);
         public void Remember(string fact) => panel.Remember(fact);
+        public IReadOnlyList<AiMemoryMatch> SearchMemory(string query, int limit) =>
+            AssistantMemoryEngine.Search(panel._cfg, panel.VaultKey, agentId, query, limit);
+        public AiMemoryRecord StoreMemory(string fact, string kind, string scope, string sourcePath) =>
+            panel.StoreMemory(fact, kind, scope, sourcePath, agentId);
+        public IReadOnlyList<(AiMemoryRecord Left, AiMemoryRecord Right)> MemoryConflicts() =>
+            AssistantMemoryEngine.PotentialConflicts(panel._cfg, panel.VaultKey, agentId);
+        public bool ForgetMemory(string id) => panel.ForgetMemory(id, agentId);
+        public bool SupersedeMemory(string oldId, string newId) => panel.SupersedeMemory(oldId, newId, agentId);
         public void SetPlan(IReadOnlyList<AiPlanStep> steps) { }
         public IAssistantAppearance? Appearance => panel._app.Appearance;
         public IAssistantPlugins? Plugins => panel._app.Plugins;
