@@ -45,22 +45,59 @@ public sealed class AssistantMemoryEngineTests
     }
 
     [Fact]
-    public void LegacyMigrationPreservesLongTextsAndDoesNotPartiallyMutateOnCapacityFailure()
+    public void LegacyMigrationPreservesLongTextsAndDoesNotImposeMemoryCountQuota()
     {
         var cfg = new AiConfig();
-        var longFact = new string('x', AssistantMemoryEngine.MaxText + 500);
+        var longFact = new string('x', 3500);
         cfg.Memory["Vault"] = [longFact];
         AssistantMemoryEngine.MigrateLegacy(cfg, timestamp: 42);
         Assert.Equal(longFact, Assert.Single(cfg.MemoryRecords).Text);
         Assert.Empty(cfg.Memory);
 
-        var full = new AiConfig();
-        for (var i = 0; i < AssistantMemoryEngine.MaxRecords; i++)
-            full.MemoryRecords.Add(new AiMemoryRecord { Id = i.ToString(), Text = "Memória " + i });
-        full.Memory["Vault"] = ["Esta memória não pode desaparecer"];
-        Assert.Throws<InvalidOperationException>(() => AssistantMemoryEngine.MigrateLegacy(full));
-        Assert.Single(full.Memory["Vault"]);
-        Assert.Equal(AssistantMemoryEngine.MaxRecords, full.MemoryRecords.Count);
+        // An existing installation with many memories must never be required to delete facts.
+        for (var i = 0; i < 5005; i++)
+            cfg.MemoryRecords.Add(new AiMemoryRecord { Id = i.ToString(), Text = "Memória " + i });
+        cfg.Memory["Vault"] = ["Esta memória deve sobreviver"];
+        AssistantMemoryEngine.MigrateLegacy(cfg);
+        Assert.Empty(cfg.Memory);
+        Assert.Equal(5007, cfg.MemoryRecords.Count);
+        Assert.Contains(cfg.MemoryRecords, x => x.Text == "Esta memória deve sobreviver");
+    }
+
+    [Fact]
+    public void AdaptiveRecallExpandsWithModelWindowAndRelevantEvidence()
+    {
+        var cfg = new AiConfig();
+        for (var i = 0; i < 80; i++)
+            cfg.MemoryRecords.Add(new AiMemoryRecord
+            {
+                Id = "memory" + i, Scope = "vault", Vault = "Livros",
+                Kind = "fact", State = "active", Text = "Romance: detalhe documental " +
+                    i + " da cronologia do protagonista e da investigação.",
+                Origin = "user"
+            });
+        var small = AssistantMemoryEngine.ForPromptAdaptive(cfg, "Livros", "pesquisador",
+            "romance cronologia", 4096, systemChars: 2000, conversationChars: 1200);
+        var large = AssistantMemoryEngine.ForPromptAdaptive(cfg, "Livros", "pesquisador",
+            "romance cronologia", 128000, systemChars: 2000, conversationChars: 1200);
+        Assert.NotEmpty(small);
+        Assert.True(large.Count > small.Count);
+        Assert.Equal(80, large.Count);
+        Assert.True(small.Sum(x => x.Length) <= 4096 * 3);
+    }
+
+    [Fact]
+    public void ExpandedSearchDoesNotHideMatchingEvidenceAtOldSixtyResultCap()
+    {
+        var cfg = new AiConfig();
+        for (var i = 0; i < 120; i++)
+            cfg.MemoryRecords.Add(new AiMemoryRecord
+            {
+                Id = "m" + i, Scope = "vault", Vault = "Projeto", State = "active",
+                Text = "Autoria e pesquisa " + i
+            });
+        Assert.Equal(120, AssistantMemoryEngine.Search(cfg, "Projeto", "geral",
+            "pesquisa", int.MaxValue).Count);
     }
 
     private sealed class FailingStorage : IAssistantStorage
