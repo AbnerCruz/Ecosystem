@@ -398,7 +398,11 @@ public sealed partial class AssistantPanel : Border
     /// <summary>The device picker can select files outside the vault; no file is copied to the vault.</summary>
     private async Task AttachDeviceFileAsync()
     {
-        if (_running is not null) return;
+        if (_running is not null || _pendingAttachments.Count >= 4)
+        {
+            if (_pendingAttachments.Count >= 4) _app.Notify("Limite de quatro anexos por mensagem.");
+            return;
+        }
         var picker = TopLevel.GetTopLevel(this)?.StorageProvider;
         if (picker is null) { _app.Notify("O seletor de arquivos não está disponível."); return; }
         try
@@ -594,7 +598,11 @@ public sealed partial class AssistantPanel : Border
             DockPanel.SetDock(remove, Dock.Right);
             item.Children.Add(remove);
             var details = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
-            details.Children.Add(Label(name.Length > 64 ? name[..61] + "…" : name, 12, UrbeTheme.Text, FontWeight.SemiBold));
+            var fileName = Label(name, 12, UrbeTheme.Text, FontWeight.SemiBold);
+            fileName.TextTrimming = TextTrimming.CharacterEllipsis;
+            fileName.TextWrapping = TextWrapping.NoWrap;
+            fileName.MaxWidth = Math.Max(160, Math.Min(300, Bounds.Width > 0 ? Bounds.Width - 162 : 220));
+            details.Children.Add(fileName);
             details.Children.Add(Label(kind, 11, UrbeTheme.Text3));
             var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 9, Children =
             {
@@ -817,6 +825,7 @@ public sealed partial class AssistantPanel : Border
         _usage.Text = u.Input + u.Output > 0 ? FmtTokens(u.Input + u.Output) + (cost is > 0 ? " · US$ " + cost.Value.ToString(cost < .01 ? "0.0000" : "0.00", System.Globalization.CultureInfo.InvariantCulture) : "") : "";
         _usage.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
         bool running = _running is not null;
+        _attach.IsEnabled = !running;
         _send.Content = UrbeTheme.Icon(running ? UrbeTheme.Icons.Close : UrbeTheme.Icons.ArrowUp, 20, "#ffffff", 2.2);
         _send.Background = UrbeTheme.Brush(running ? "#c0504d" : UrbeTheme.Accent);
         Avalonia.Automation.AutomationProperties.SetName(_send, running ? "Parar" : "Enviar");
