@@ -575,7 +575,7 @@ public sealed class AssistantProviders
     /// </summary>
     public static string? ImageModel(string preset) => preset switch
     {
-        "openai" => "gpt-image-1",
+        "openai" => "gpt-image-2.5-sunburst",
         "gemini" => "gemini-nano-banana-2.1",
         "openrouter" => "bytedance-seed/seedream-4.5",
         "custom" => "",
