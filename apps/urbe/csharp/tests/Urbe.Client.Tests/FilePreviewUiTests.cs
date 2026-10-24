@@ -54,7 +54,7 @@ public sealed partial class HeadlessUiTests
 
                 await preview.OpenAsync("livro.pdf");
                 Assert.Equal("none", preview.Shown);
-                Assert.Contains(preview.GetLogicalDescendants().OfType<Button>(), b => b.Content as string == "Abrir" && b.IsVisible);
+                Assert.Contains(preview.GetLogicalDescendants().OfType<Button>(), b => b.Content as string == "Abrir em outro app" && b.IsVisible);
 
                 await preview.OpenAsync("sumiu.png");
                 Assert.Contains(preview.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Arquivo não encontrado");

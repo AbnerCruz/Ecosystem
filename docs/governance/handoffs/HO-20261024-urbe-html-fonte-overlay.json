@@ -1,0 +1,84 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-html-fonte-overlay",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T07:48:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-html-source",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "fix/urbe-html-source-preview-overlay-20261024",
+  "base_commit": "d04af6caae9dd361aad5509c7e0bf6ed2c431f3b",
+  "commit": "da1f78ecfa57a2ff12dc33ec499f921ae8b1b9f9",
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Embeds.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EmbedUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FilePreviewUiTests.cs",
+    "docs/governance/handoffs/HO-20261024-urbe-html-fonte-overlay.json"
+  ],
+  "work_completed": [
+    "Reproduzida por gravação do proprietário: HTML incorporado (![[…]]) no editor Visual permanece desenhado sobre a aba Fonte do preview de arquivo, ocultando partes do código-fonte.",
+    "Os viewers incorporados passam a ser ocultados enquanto o preview de arquivo fica aberto e restaurados ao fechar; o handler é removido quando o componente deixa a árvore visual.",
+    "Na troca do modo Página → Fonte, NativeControlHost anterior fica invisível antes de a árvore Avalonia substituí-lo.",
+    "A ação que abre o Android externamente agora é explicitamente rotulada 'Abrir em outro app'; a aba Fonte continua somente leitura e não grava dados.",
+    "Adicionada cobertura headless para alternância de fonte quando existe HTML incorporado na nota e para a rotulagem da ação externa."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test apps/urbe/csharp/tests/Urbe.Client.Tests",
+      "result": "pending",
+      "evidence": "Ambiente da sessão sem SDK dotnet; testes adicionados, não executados."
+    },
+    {
+      "kind": "human",
+      "check": "Android: abrir nota ![[arquivo.html]], tocar no título, alternar Página/Fonte e fechar; validar sem WebView sobreposta.",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.Embeds.cs"
+    }
+  ],
+  "known_issues": [
+    "A aba Fonte do FilePreview é apenas visualização, não editor de HTML; escrita requer tarefa distinta.",
+    "O usuário precisa de APK nova para validar correção de sobreposição nativa. PR ainda não mesclada ou publicada."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Revisar PR, executar gates de CI dotnet, integrar segundo protocolo do repo e testar em moto g32 Android 13.",
+    "Somente após DEVICE, preparar beta via fluxo de release do Urbe."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Correção em WebView Android requer DEVICE; status pendente."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Branch, mudanças, teste e limitação registrados no handoff."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-html-embed-overlay",
+      "status": "product-specific",
+      "rationale": "O gerenciamento é específico do embed do Urbe; sem extração compartilhada até segundo consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Correção visual local sem mudança de dados, contratos ou API."
+  }
+}

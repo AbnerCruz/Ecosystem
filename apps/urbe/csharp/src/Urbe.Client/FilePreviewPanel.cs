@@ -29,7 +29,7 @@ public sealed class FilePreviewPanel : Grid
     private readonly TextBlock _meta = new() { FontSize = 13, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0) };
     private readonly ComboBox _choose = new() { HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 10, 0, 0), IsVisible = false };
     private readonly ContentControl _body = new() { Margin = new Thickness(0, 14, 0, 0) };
-    private readonly Button _open = Action("Abrir", primary: true);
+    private readonly Button _open = Action("Abrir em outro app", primary: true);
     private readonly StackPanel _htmlMode = new() { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(0, 10, 0, 0), IsVisible = false };
     private bool _htmlSource;
     private IReadOnlyList<(string Name, string? Path)> _files = [];
@@ -200,6 +200,9 @@ public sealed class FilePreviewPanel : Grid
             if (_htmlMode.Children[i] is Button chip) Mark(chip, (i == 1) == _htmlSource);
         Shown = "none";
         ShownText = null;
+        // A previous native WebView can outlive a content swap for a frame on Android
+        // and cover the Avalonia source viewer. Hide it before detaching it.
+        if (_body.Content is NativeControlHost oldNativeViewer) oldNativeViewer.IsVisible = false;
         _body.Content = Empty("Carregando do dispositivo…");
         // audio and video are played from the vault by the platform: only their size is read here
         bool media = kind is VaultFileKinds.Audio or VaultFileKinds.Video;

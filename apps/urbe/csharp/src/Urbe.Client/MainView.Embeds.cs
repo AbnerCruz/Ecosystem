@@ -190,6 +190,9 @@ public sealed partial class MainView
                 {
                     // a web view or a player has no size of its own: a page and a PDF get a window, media what it needs
                     viewer.Height = kind switch { VaultFileKinds.Audio => 96, VaultFileKinds.Video => 230, _ => EmbedPageHeight };
+                    // Android NativeControlHost views render above Avalonia overlays. Suspend an embedded
+                    // HTML/media viewer while the file preview sheet is on top of the editor.
+                    SuspendEmbedUnderFilePreview(viewer);
                     holder.Child = viewer;
                     return;
                 }
@@ -221,6 +224,28 @@ public sealed partial class MainView
             info.Text = meta;
             info.IsVisible = true;
         }
+    }
+
+    /// <summary>
+    /// A WebView inside an embedded file otherwise draws *over* the Fonte sheet on Android,
+    /// leaving the source partly hidden by the very page it is meant to inspect.
+    /// Subscribe only while the card belongs to the visual tree to avoid retaining old notes.
+    /// </summary>
+    private void SuspendEmbedUnderFilePreview(Control viewer)
+    {
+        void Update(object? _, AvaloniaPropertyChangedEventArgs changed)
+        {
+            if (changed.Property == IsVisibleProperty)
+                viewer.IsVisible = !FilePreview.IsVisible;
+        }
+
+        viewer.AttachedToVisualTree += (_, _) =>
+        {
+            FilePreview.PropertyChanged += Update;
+            viewer.IsVisible = !FilePreview.IsVisible;
+        };
+        viewer.DetachedFromVisualTree += (_, _) => FilePreview.PropertyChanged -= Update;
+        viewer.IsVisible = !FilePreview.IsVisible;
     }
 
     private static bool LooksLikeText(byte[] bytes)
