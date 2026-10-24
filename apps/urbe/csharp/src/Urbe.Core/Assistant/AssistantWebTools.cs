@@ -7,6 +7,17 @@ public static class AssistantWebTools
 {
     private static string Text(JsonObject input, string key) =>
         input[key] is JsonValue value && value.TryGetValue<string>(out var s) ? s.Trim() : "";
+    /// <summary>Refuse common credential material and exact long vault excerpts in outbound queries/URLs.</summary>
+    private static void GuardOutbound(string value, IAssistantHost host)
+    {
+        if (System.Text.RegularExpressions.Regex.IsMatch(value,
+                @"(?i)(?:sk-[a-z0-9_-]{16,}|bearer\\s+[a-z0-9._-]{12,}|(?:api[_-]?key|authorization|password|token)=|content://|file://|/data/user/0/|/storage/emulated/)"))
+            throw new AiToolException("Envio externo bloqueado: possível segredo, credencial ou caminho privado.");
+        if (value.Length >= 70 && host.Documents.List().Any(doc =>
+                doc.Content.Contains(value, StringComparison.OrdinalIgnoreCase)))
+            throw new AiToolException("A consulta parece copiar texto privado do vault. Reformule em termos públicos ou peça autorização específica.");
+    }
+
     private static int Number(JsonObject input, string key, int fallback) =>
         input[key] is JsonValue value && value.TryGetValue<int>(out var i) ? i : fallback;
 
@@ -23,6 +34,7 @@ public static class AssistantWebTools
             Run = async (input, host) =>
             {
                 var web = host.Web ?? throw new AiToolException("Internet não autorizada para este agente.");
+                GuardOutbound(Text(input, "query"), host);
                 var output = await web.SearchAsync(Text(input, "query"), Text(input, "language"), Text(input, "country"),
                     Text(input, "freshness"), Text(input, "domain"), Number(input, "count", 8), Number(input, "page", 0));
                 return new AiToolOutput(output);
@@ -39,6 +51,7 @@ public static class AssistantWebTools
             Run = async (input, host) =>
             {
                 var web = host.Web ?? throw new AiToolException("Internet não autorizada para este agente.");
+                GuardOutbound(Uri.UnescapeDataString(Text(input, "url")), host);
                 return new AiToolOutput(await web.FetchAsync(Text(input, "url"), Number(input, "start_line", 1), Number(input, "max_lines", 100)));
             }
         }
