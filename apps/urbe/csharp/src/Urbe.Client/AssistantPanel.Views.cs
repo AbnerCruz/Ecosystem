@@ -805,7 +805,7 @@ public sealed partial class AssistantPanel
         string? loadError = null;
         // Quotes cached per picker session; concurrent requests for the same model are coalesced.
         var priceLoads = new Dictionary<string, Task<AiImageQuote?>>(StringComparer.Ordinal);
-        using var priceLimit = new SemaphoreSlim(4);
+        var priceLimit = new SemaphoreSlim(4); // retained by asynchronous card updates after the picker opens
         var currentPaint = 0;
         async Task<AiImageQuote?> Quote(AiProviderConfig provider, string id)
         {
