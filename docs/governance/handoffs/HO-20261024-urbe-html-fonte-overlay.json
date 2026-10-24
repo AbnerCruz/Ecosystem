@@ -72,7 +72,7 @@
   ],
   "reuse_assessment": [
     {
-      "subject": "oclusão de viewer no editor Visual",
+      "subject": "urbe-html-embed-overlay",
       "status": "product-specific",
       "rationale": "O gerenciamento é específico do embed do Urbe; sem extração compartilhada até segundo consumidor."
     }
