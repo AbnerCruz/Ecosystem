@@ -89,8 +89,8 @@ public sealed partial class MainView
         try
         {
             if (_vault is null) { holder.Child = Message("Abra o vault para visualizar o grafo."); return; }
-            var file = await _vault.ReadFileAsync(path, 2L * 1024 * 1024);
-            if (file?.Bytes is not { } bytes) throw new InvalidDataException("Grafo não encontrado ou maior que 2 MB.");
+            var file = await _vault.ReadFileAsync(path, long.MaxValue);
+            if (file?.Bytes is not { } bytes) throw new InvalidDataException("Grafo não encontrado ou ilegível.");
             var document = GraphDocument.Parse(System.Text.Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF'));
             var view = new GraphCanvasView { Height = 300 };
             view.Show(document, readOnly: true);
