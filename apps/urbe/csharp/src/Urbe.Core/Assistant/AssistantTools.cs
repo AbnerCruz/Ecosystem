@@ -74,6 +74,12 @@ public interface IAssistantHost
     Task CreateFolderAsync(string path);
     void OpenNote(string path);
     void Remember(string fact);
+    IReadOnlyList<AiMemoryMatch> SearchMemory(string query, int limit) => [];
+    AiMemoryRecord StoreMemory(string fact, string kind, string scope, string sourcePath) =>
+        throw new AiToolException("Memória estruturada indisponível neste host.");
+    IReadOnlyList<(AiMemoryRecord Left, AiMemoryRecord Right)> MemoryConflicts() => [];
+    bool SupersedeMemory(string oldId, string newId) => false;
+    bool ForgetMemory(string id) => false;
     void SetPlan(IReadOnlyList<AiPlanStep> steps);
     /// <summary>The Personalização the appearance tools change, when the app has one.</summary>
     IAssistantAppearance? Appearance => null;
