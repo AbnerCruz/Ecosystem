@@ -198,6 +198,7 @@ public sealed class GraphDocument
     {
         if (!double.IsFinite(x) || !double.IsFinite(y))
             throw new ArgumentOutOfRangeException(nameof(x));
+        if (recordHistory) EndDrag();
         var at = IndexOfNode(id);
         if (at < 0) return false;
         var original = _nodes[at];
@@ -218,7 +219,6 @@ public sealed class GraphDocument
         }
         if (recordHistory)
         {
-            EndDrag();
             var after = affected.ToDictionary(n => n.Id, n => (GraphNode?)Node(n.Id), StringComparer.Ordinal);
             RecordNodes(before, after);
         }
