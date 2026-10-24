@@ -186,7 +186,7 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, pages/ai-tools.js, customize/ai-tools.js, then the vault plugins).</summary>
-    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, AgentNames.Tool, AssistantImageTools.Tool, AssistantQuestionTools.Ask];
+    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan"), AssistantAdaptivePlanTools.Update, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, AgentNames.Tool, AssistantImageTools.Tool, AssistantQuestionTools.Ask];
 
     /// <summary>UC-63: the image tool is always visible to the chat agent, independently of its provider.</summary>
     public static IReadOnlyList<AiTool> ToolsFor(AiProviderConfig provider) =>
@@ -662,7 +662,7 @@ public sealed partial class AssistantPanel : Border
             {
                 Host = new Host(this, documents, knowledge, agent.Id, p), Provider = p, Model = ModelId(), Messages = conv.Messages,
                 // UC-81: the agent introduces itself by its call name and may take a new one the person agrees to
-                Agent = _cfg.AgentWithInstructions(AgentNames.Named(agent, _cfg)), Naming = AgentNames.Naming(agent, _cfg), Guidance = AssistantAgent.UrbeGuidance, Policy = conv.Policy, Cancel = cts.Token, MarkAiText = true,
+                Agent = _cfg.AgentWithInstructions(AgentNames.Named(agent, _cfg)), Naming = AgentNames.Naming(agent, _cfg), Guidance = AssistantAgent.UrbeGuidance, Policy = conv.Policy, Cancel = cts.Token, MarkAiText = true, ReviewWrittenArtifacts = true,
                 ContextTokens = meta?.Context ?? 128000, Instructions = WithUserAgents(_cfg.Instructions, documents, ModelId()), Memory = MemoryList(), VaultName = _app.VaultName,
                 Stream = Providers.StreamAsync, Approve = ApproveAsync, OnUpdate = OnUpdate, Tools = ToolsFor(p)
             });
