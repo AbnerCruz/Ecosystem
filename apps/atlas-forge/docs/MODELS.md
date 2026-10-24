@@ -38,7 +38,7 @@ Biomas são classes discretas de temperatura, chuva e altitude. Não modelam sol
 
 ## Processamento e limites
 
-Pipeline: relevo → clima → hidrologia → biomas. Recálculo atual é global, executado em Worker. Cancelamento termina o Worker, invalida job ID e conserva o último estado completo; não há commit parcial. Raster por camada é cache derivado. O globo reaproveita lookup da projeção inversa (latitude/longitude relativas à câmera), aplica rotação por deslocamento longitudinal no viewport visível em até 2× DPR; a textura não é limitada a 640×640 nem cresce com a área invisível do planeta ampliado. A grade física só muda por criação/refinamento explícito. Curvas de nível usam interseções lineares em dois triângulos por célula; subdividir para desenhar não acrescenta informação física. LOD, tiles, cache multirresolução e recálculo regional não existem ainda. Até 30 comandos por direção, 12 marcos completos e 24 MiB por projeto; esses limites evitam retenção sem limite, não substituem benchmark mobile.
+Pipeline: relevo → clima → hidrologia → biomas. Recálculo atual é global, executado em Worker. Cancelamento termina o Worker, invalida job ID e conserva o último estado completo; não há commit parcial. Raster por camada é cache derivado. O globo reaproveita lookup da projeção inversa (latitude/longitude relativas à câmera), aplica rotação por deslocamento longitudinal no viewport visível em até 2× DPR; a textura não é limitada a 640×640 nem cresce com a área invisível do planeta ampliado. A grade física só muda por criação/refinamento explícito. Curvas de nível usam interseções lineares em dois triângulos por célula; subdividir para desenhar não acrescenta informação física. LOD visual e cache multirresolução são descritos em TERRAIN.md; recálculo regional de solvers ainda não existe. Até 30 comandos por direção, 12 marcos completos e 24 MiB por projeto; esses limites evitam retenção sem limite, não substituem benchmark mobile.
 
 ## Resolução e autoria
 
@@ -54,4 +54,20 @@ Campos por latitude, sem variação longitudinal neste modelo ideal. Testes em 7
 
 ## Terreno métrico — A (AF-017)
 
-Ver [TERRAIN.md](TERRAIN.md). O detalhe local usa um campo contínuo e versionado, ancorado nas altitudes regionais, com amostras sob demanda ≤1 m N–S no nível mais fino. A resolução do chão não muda a resolução dos solvers globais. Grama é cobertura procedural; biologia trófica e efeitos de raízes/pastoreio continuam futuros.
+Ver [TERRAIN.md](TERRAIN.md). O detalhe local usa um campo contínuo e versionado, ancorado nas altitudes regionais, com amostras sob demanda ≤1 m N–S no nível mais fino. A resolução do chão não muda a resolução dos solvers globais. Grama no chão é cobertura procedural. A biosfera agregada abaixo afeta erosão regional; não determina cada lâmina de grama.
+
+## Biosfera `resources-trophic-1` — B, parâmetros heurísticos
+
+Grade de até 36×18 regiões esféricas; densidades kg/m², áreas reais em m². Não são agentes individuais nem previsão de populações terrestres. Massa individual é metadado de espécie; a dinâmica usa biomassa. Clima/relevo amostrados no centro de cada região determinam adequação 0–1 conforme habitat terrestre/aquático, intervalo térmico e chuva mínima.
+
+Em cada ano: decomposição de detritos a taxa 0,2/ano libera N; produtores disputam o estoque mineral proporcionalmente às demandas `produtividade × adequação × B/(0,1+B)/(1+B/3)`. Todos têm composição fixa 0,02 kg N/kg de biomassa. Entrada de carbono fotossintético e saída por respiração são contabilizadas, mas não há atmosfera química acoplada nem balanço de energia.
+
+Consumidores requisitam alimento proporcionalmente à biomassa disponível de cada presa; demandas simultâneas compartilham a oferta, sem estoque negativo. Fração assimilada vira biomassa; restante e mortalidade viram detritos. Mortalidade efetiva = taxa configurada + `0,6 × (1−adequação)` por ano. Ausência de alimento não cria crescimento; populações decaem. Decompositores podem consumir `detritus`. Presets incluem gramíneas, árvores, cervos, bovinos, leões, algas, peixes e fungos. Bovinos manejados começam com estoque zero.
+
+Dispersão usa vizinhos adequados e distâncias esféricas: fração máxima anual 0,2, limitada por velocidade/distância e dividida pelos destinos. Transferências são ponderadas pelas áreas para conservar massa. Não há migração entre escalas, comportamento, evolução genética, incêndio ou doenças. O usuário introduz explicitamente espécies novas; isso é um aporte externo de biomassa/N.
+
+## Erosão e eras — B, coeficientes heurísticos
+
+A cada 100 anos (ou resto final), profundidade erodida em metros = mínimo de 2% da queda para o destino e `anos × 0,002 × chuva/1000 × declive × (1−0,85×cobertura)`. Cobertura = biomassa de produtores terrestres / 2, limitada a 0–1. Volume removido é depositado no vizinho jusante, dividido pela área do destino; limite de deposição mantém teto de 12.000 m. Células com override são fixas e não trocam sedimentos. Clima, drenagem e habitats são recalculados depois do transporte.
+
+Era avança de 1 a 10.000 anos em passos ecológicos anuais, mantendo a relação causal com o estado anterior. Balanços de N e matéria orgânica, conservação de volume, redução de erosão pela vegetação e restauração de marcos têm cenários sintéticos. Não é tectônica: não há placas móveis, soerguimento, estratigrafia, ciclo das rochas ou mudança do nível do mar. Relatórios mostram resíduos numéricos; não são calibração científica. Plantas afetam relevo pela erosão regional, sem atualização física de solo a cada metro.

@@ -1,3 +1,4 @@
+import { ecologyPanel } from "./ecology-panel.js";
 import {
   definition,
   stats,
@@ -153,6 +154,7 @@ function refresh() {
     timeline.append(option);
   }
   timeline.value = world.timeline.active ?? "";
+  ecology.refresh();
   renderEntities();
   inspectEntity();
   if (location) inspectLocation(location);
@@ -224,6 +226,7 @@ function deriveDraft(draft, done) {
 }
 function inspectLocation(p) {
   location = p;
+  ecology.inspect();
   renderer.location = p;
   renderer.render();
   const i = index(p.lat, p.lon, world.definition.grid),
@@ -363,7 +366,7 @@ for (const [i, [key, name]] of Object.entries(LAYERS).entries()) {
   b.className = "layer" + (key === "atlas" ? " active" : "");
   b.dataset.layer = key;
   b.setAttribute("aria-pressed", key === "atlas");
-  b.innerHTML = `<span class="swatch" style="--swatch:${swatches[i]}"></span><span></span><span class="layer-indicator">◉</span>`;
+  b.innerHTML = `<span class="swatch" style="--swatch:${swatches[i % swatches.length]}"></span><span></span><span class="layer-indicator">◉</span>`;
   b.children[1].textContent = name;
   b.onclick = () => {
     renderer.layer = key;
@@ -379,8 +382,13 @@ for (const [i, [key, name]] of Object.entries(LAYERS).entries()) {
         return s;
       }),
     );
-    $("legend-bar").style.background =
-      key === "insolation"
+    $("legend-bar").style.background = [
+      "vegetation",
+      "biomass",
+      "nutrients",
+    ].includes(key)
+      ? "linear-gradient(to right,#bca473,#1c6e48)"
+      : key === "insolation"
         ? "linear-gradient(to right,#182742,#5f7393,#e1bc5e,#d16431)"
         : key === "temperature"
           ? "linear-gradient(to right,#6a86b3,#b2c8c1,#dbc478,#bf583d)"
@@ -425,6 +433,36 @@ $("clear-edits").onclick = () => {
   draft.state.overrides = {};
   draft.journal = { undo: [], redo: [] };
   run("generate", draft, draft.definition, {});
+};
+$("draw-world").onclick = () => {
+  if (busy) return;
+  if (
+    world &&
+    !confirm(
+      "Criar outro mundo oceânico? Salve o projeto atual antes de continuar.",
+    )
+  )
+    return;
+  const def = definition(
+    $("seed").value,
+    {
+      ocean: Number($("ocean").value),
+      radius: Number($("radius").value) * 1000,
+      tilt: Number($("tilt").value),
+      baseTemp: Number($("base-temp").value),
+    },
+    Number($("resolution").value),
+  );
+  run("ocean", null, def, {}, () => {
+    selected = null;
+    location = null;
+    renderer.location = null;
+    renderer.zoom = 1;
+    renderer.pan = { x: 0, y: 0 };
+    renderer.rotation = 0;
+    world.state.name = $("world-name").value.trim() || "Mundo desenhado";
+    setTool("land");
+  });
 };
 $("generation-form").onsubmit = (e) => {
   e.preventDefault();
@@ -496,7 +534,9 @@ function setTool(value) {
     b.classList.toggle("active", active);
     b.setAttribute("aria-pressed", String(active));
   });
-  $("brush-options").hidden = !["raise", "lower"].includes(value);
+  $("brush-options").hidden = !["raise", "lower", "land", "sea"].includes(
+    value,
+  );
   $("map").style.cursor =
     value === "inspect" ? "grab" : value === "place" ? "crosshair" : "cell";
 }
@@ -556,6 +596,7 @@ function paint(p, pressure) {
     p.lon,
     Number($("brush-size").value),
     delta,
+    ["land", "sea"].includes(tool) ? tool : "relative",
   );
   for (const c of changes) {
     const first = drag.changes.get(c.i);
@@ -567,7 +608,10 @@ function paint(p, pressure) {
 }
 $("map").onpointerdown = (e) => {
   if (busy || !world || e.button !== 0 || drag) return;
-  if (renderer.metresPerPixel() < 1500 && ["raise", "lower"].includes(tool)) {
+  if (
+    renderer.metresPerPixel() < 1500 &&
+    ["raise", "lower", "land", "sea"].includes(tool)
+  ) {
     status(
       "Este pincel altera a grade regional. Afaste para editar relevo regional; edição métrica do solo ainda não está disponível.",
     );
@@ -582,7 +626,9 @@ $("map").onpointerdown = (e) => {
     last: p,
     moved: false,
     changes: new Map(),
-    draft: tool === "raise" || tool === "lower" ? structuredClone(world) : null,
+    draft: ["raise", "lower", "land", "sea"].includes(tool)
+      ? structuredClone(world)
+      : null,
   };
   if (drag.draft && geo) paint(geo, e.pressure);
 };
@@ -912,4 +958,19 @@ async function init() {
     "Oficina vazia · abra um projeto ou escolha os parâmetros e gere o seu mundo.",
   );
 }
+const ecology = ecologyPanel({
+  getWorld: () => world,
+  getDerived: () => derived,
+  getLocation: () => location,
+  commit: (draft) => {
+    if (busy) return;
+    serialize(draft);
+    world = draft;
+    refresh();
+  },
+  advance: (years) => {
+    if (world && !busy) run("era", world, undefined, { years });
+  },
+  error,
+});
 init();

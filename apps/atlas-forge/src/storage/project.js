@@ -1,3 +1,4 @@
+import { validateSpecies, validateEcosystem } from "./ecosystem.js";
 import { ALGORITHM, createWorld, definition } from "../core/world.js";
 import { clamp, wrap } from "../geometry/sphere.js";
 export const MAX_BYTES = 24 * 1024 * 1024;
@@ -83,13 +84,6 @@ function entity(v, position) {
   return e;
 }
 function state(v, n) {
-  if (
-    v?.species !== undefined &&
-    (!Array.isArray(v.species) || v.species.length)
-  )
-    fail(
-      "catálogo de espécies ainda não suportado; dados não serão descartados",
-    );
   if (!v || !Array.isArray(v.entities) || v.entities.length > 2000)
     fail("estado/entidades");
   const overrides = {};
@@ -105,12 +99,14 @@ function state(v, n) {
   const elevation = heights(v.elevation, n);
   for (const [i, value] of Object.entries(overrides))
     if (elevation[i] !== value) fail("máscara difere do relevo canônico");
+  const species = validateSpecies(v.species ?? []);
   return {
     name: text(v.name ?? "Mundo sem nome", 180, "nome do mundo"),
     elevation,
     overrides,
     entities,
-    species: [],
+    species,
+    ecosystem: validateEcosystem(v.ecosystem, species),
   };
 }
 function journal(v, n) {
@@ -147,8 +143,13 @@ export function validate(input) {
   if (!input || input.format !== "atlasforge.world")
     fail("formato desconhecido");
   if (input.version === 1) return migrateV1(input);
-  if (input.version !== 2)
+  if (![2, 3].includes(input.version))
     fail("versão desconhecida; o arquivo original foi preservado");
+  if (
+    input.version === 2 &&
+    (input.state?.species?.length || input.state?.ecosystem)
+  )
+    fail("dados ecológicos sem versão compatível; original preservado");
   const d = input.definition;
   if (!d || d.algorithm !== ALGORITHM) fail("versão de algoritmo desconhecida");
   const w = d.grid?.width,

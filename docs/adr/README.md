@@ -60,3 +60,4 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0034](0034-urbe-sem-simulacao-visual.md) | Urbe nativo sem a simulação visual: o Explorer como base e o registro das notas | Aceito (DEC-0051) |
 
 | [0035](0035-atlas-forge-incorporacao-gradual.md) | Atlas Forge: implementação isolada e incorporação gradual | Aceito (DEC-0054, ADD-0031) |
+| [0036](0036-atlas-forge-biosfera-versionada.md) | Atlas Forge: biosfera persistente e sucessores temporais | Proposto |

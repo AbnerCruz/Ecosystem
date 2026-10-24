@@ -1,3 +1,4 @@
+import { seedEcosystem } from "../core/ecosystem.js";
 import { coord, vector, area, clamp } from "../geometry/sphere.js";
 import { noise } from "./random.js";
 import { createWorld } from "../core/world.js";
@@ -51,5 +52,21 @@ export function generate(def, overrides = {}, progress = () => {}) {
   );
   const world = createWorld(def, elevation);
   world.state.overrides = { ...overrides };
-  return { world, derived: derive(world, progress) };
+  const derived = derive(world, progress);
+  seedEcosystem(world, derived);
+  return { world, derived };
+}
+
+/** Authored ocean canvas: background constraints prevent seeded regeneration from inserting continents. */
+export function oceanCanvas(def, progress = () => {}) {
+  const world = createWorld(
+    def,
+    Array(def.grid.width * def.grid.height).fill(-800),
+  );
+  world.state.overrides = Object.fromEntries(
+    world.state.elevation.map((h, i) => [i, h]),
+  );
+  const derived = derive(world, progress);
+  seedEcosystem(world, derived);
+  return { world, derived };
 }

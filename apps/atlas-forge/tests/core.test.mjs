@@ -188,13 +188,13 @@ test("Checkpoint branch preserves old states, configuration and undo history", (
   assert.equal(b.journal.undo.length, 1);
   assert.equal(parseProject(serialize(world)).timeline.checkpoints.length, 3);
 });
-test("Version 2 roundtrip, future/malformed/inconsistent inputs rejected without mutating original", () => {
+test("Version 3 roundtrip, future/malformed/inconsistent inputs rejected without mutating original", () => {
   const { world } = generate(definition("persist", {}, 24));
   record(world, brush(world, 0, 0, 16, 500));
   const src = serialize(world);
   assert.equal(serialize(parseProject(src)), src);
   for (const mutation of [
-    (x) => (x.version = 3),
+    (x) => (x.version = 4),
     (x) => (x.state.elevation[0] = null),
     (x) => (x.state.overrides["99999"] = 5),
     (x) => (x.definition.planet.radius = -1),
@@ -212,7 +212,7 @@ test("Synthetic Alpha v1 fixture migrates heights, seed, notes and eras", async 
       await readFile("fixtures/alpha-v1.synthetic.json", "utf8"),
     ),
     world = parseProject(JSON.stringify(v));
-  assert.equal(world.version, 2);
+  assert.equal(world.version, 3);
   assert.equal(world.definition.seed, v.seed);
   assert.equal(world.definition.planet.radius, 6371000);
   assert.equal(world.state.entities[0].note.markdown, v.entities[0].md);

@@ -111,6 +111,9 @@
             <p class="micro">
               Intervenções e lugares são preservados ao gerar.
             </p>
+            <button id="draw-world" type="button" class="full edit-action">
+              Novo oceano para desenhar continentes
+            </button>
             <button
               id="refine-terrain"
               type="button"
@@ -130,7 +133,7 @@
         </details>
         <details open>
           <summary>
-            02 <span>Camadas do atlas</span><span class="count">09</span>
+            02 <span>Camadas do atlas</span><span class="count">12</span>
           </summary>
           <div
             id="layers"
@@ -238,7 +241,19 @@
         <div class="tool-dock" role="group" aria-label="Ferramentas">
           <button class="active" data-tool="inspect" title="Inspecionar (V)">
             <span>⌖</span> Explorar</button
-          ><button data-tool="raise" title="Elevar relevo (B)">
+          ><button
+            data-tool="land"
+            title="Desenhar terra: altura mínima do pincel"
+          >
+            Terra
+          </button>
+          <button
+            data-tool="sea"
+            title="Desenhar mar: profundidade mínima do pincel"
+          >
+            Mar
+          </button>
+          <button data-tool="raise" title="Elevar relevo (B)">
             <span>△</span> Elevar</button
           ><button data-tool="lower"><span>▽</span> Escavar</button
           ><button data-tool="place"><span>⚑</span> Lugar</button

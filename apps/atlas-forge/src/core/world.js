@@ -23,7 +23,7 @@ export function definition(seed = "AURORA-42", params = {}, width = 180) {
 export function createWorld(def, elevation) {
   return {
     format: "atlasforge.world",
-    version: 2,
+    version: 3,
     definition: def,
     state: {
       name: "Aurora",
@@ -31,6 +31,7 @@ export function createWorld(def, elevation) {
       entities: [],
       overrides: {},
       species: [],
+      ecosystem: null,
     },
     journal: { undo: [], redo: [] },
     timeline: { active: null, checkpoints: [] },
@@ -58,7 +59,20 @@ export function stats(world, derived) {
     max,
   };
 }
-export function brush(world, lat, lon, radiusDegrees, delta) {
+export function brush(
+  world,
+  lat,
+  lon,
+  radiusDegrees,
+  delta,
+  mode = "relative",
+) {
+  if (
+    !["relative", "land", "sea"].includes(mode) ||
+    !Number.isFinite(delta) ||
+    !(radiusDegrees > 0)
+  )
+    throw new Error("Pincel inválido.");
   const { grid, planet } = world.definition,
     changes = [],
     r = ((radiusDegrees * Math.PI) / 180) * planet.radius;
@@ -66,7 +80,13 @@ export function brush(world, lat, lon, radiusDegrees, delta) {
     const d = distance({ lat, lon }, coord(i, grid), planet.radius);
     if (d > r) continue;
     const before = world.state.elevation[i],
-      after = clamp(before + delta * (1 - d / r), -12000, 12000);
+      after =
+        mode === "land"
+          ? Math.max(before, clamp(Math.abs(delta), 1, 12000))
+          : mode === "sea"
+            ? Math.min(before, -clamp(Math.abs(delta), 1, 12000))
+            : clamp(before + delta * (1 - d / r), -12000, 12000);
+    if (after === before && world.state.overrides[i] === after) continue;
     changes.push({ i, before, after, prior: world.state.overrides[i] ?? null });
     world.state.elevation[i] = after;
     world.state.overrides[i] = after;

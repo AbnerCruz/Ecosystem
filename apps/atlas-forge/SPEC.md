@@ -28,7 +28,7 @@ O runtime usa HTML/CSS/JS modular e Canvas, sem dependências de produção. Dep
 
 Estado atual: AF-016/017 acrescentam insolação sazonal e terreno procedural local; ver [TERRAIN.md](docs/TERRAIN.md).
 
-Não são requisitos concluídos deste corte: solver tectônico, clima validado, lagos dinâmicos, erosão, espécies/populações, geologia temporal, mapas arbitrariamente profundos, polígonos/multisseleção, tiles físicos/refinamento de solvers, edição métrica persistente, recálculo regional, PNG/SVG/GeoJSON, sincronização de arquivo/vault, ZIP com hashes globais, capability pública ou dois Hosts reais.
+Não são requisitos concluídos deste corte: solver tectônico, clima validado, lagos dinâmicos, erosão física fina, populações individuais, geologia tectônica temporal, mapas arbitrariamente profundos, polígonos/multisseleção, tiles físicos/refinamento de solvers, edição métrica persistente, recálculo regional, PNG/SVG/GeoJSON, sincronização de arquivo/vault, ZIP com hashes globais, capability pública ou dois Hosts reais.
 
 ## Correção de qualidade AF-005/015 — Issue #660
 
@@ -47,3 +47,7 @@ O terreno local é um campo procedural contínuo em metros, derivado da seed, da
 ## Correção AF-018 — Issue #687
 
 O proprietário rejeitou a troca de visualização entre zoom distante e próximo. Requisito: uma única superfície visual em todas as escalas naturais, com continuidade de altura, cobertura, posição e carregamento. Removido o limiar global/local do renderer; pais/filhos usam o mesmo campo e paleta. Atalhos são coordenadas de câmera, nunca modos. Teste específico percorre ida/volta por eventos wheel, sem depender dos atalhos. Esta correção não declara completos edição métrica, tectônica, ecologia ou eras.
+
+## AF-020 — autoria e ciclo causal (Issue #699)
+
+O pedido direto do proprietário prioriza produto funcional. 0.5 acrescenta oceano inicial explícito, pincéis Terra/Mar, catálogo editável, introdução em habitats, estoques tróficos/N, dispersão, erosão influenciada por vegetação e eras em Worker. Fluxo atravessa UI, v3 migrável, marcos e publicação offline. Testes: `ecosystem.test.mjs` e `ecosystem-browser.mjs`. A simulação é regional e simplificada, conforme MODELS; não declara a missão completa. Lugares continuam opcionais, notas são cópias locais independentes de outros aplicativos e zoom natural contínuo é preservado.

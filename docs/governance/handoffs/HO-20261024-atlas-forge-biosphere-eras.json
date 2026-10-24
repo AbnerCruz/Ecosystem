@@ -1,0 +1,174 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-atlas-forge-biosphere-eras",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T05:02:11.805005Z",
+  "agent": {
+    "id": "codex-atlas-forge",
+    "kind": "ai-agent"
+  },
+  "task_id": "AF-020",
+  "component": "atlas-forge",
+  "state": "review",
+  "branch": "feat/atlas-forge-execution-plan-and-landmask",
+  "base_commit": "d7fa2177054cb46e6110e18a124c0febd70921ec",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/717",
+  "files_changed": [
+    "apps/atlas-forge/README.md",
+    "apps/atlas-forge/ROADMAP.md",
+    "apps/atlas-forge/SPEC.md",
+    "apps/atlas-forge/docs/FORMAT.md",
+    "apps/atlas-forge/docs/MODELS.md",
+    "apps/atlas-forge/index.html",
+    "apps/atlas-forge/package-lock.json",
+    "apps/atlas-forge/package.json",
+    "apps/atlas-forge/src/app/editor.js",
+    "apps/atlas-forge/src/app/worker.js",
+    "apps/atlas-forge/src/core/world.js",
+    "apps/atlas-forge/src/generation/pipeline.js",
+    "apps/atlas-forge/src/publishing/export.js",
+    "apps/atlas-forge/src/publishing/viewer.js",
+    "apps/atlas-forge/src/rendering/map.js",
+    "apps/atlas-forge/src/storage/project.js",
+    "apps/atlas-forge/tests/core.test.mjs",
+    "docs/adr/README.md",
+    "apps/atlas-forge/src/app/ecology-panel.js",
+    "apps/atlas-forge/src/core/ecosystem.js",
+    "apps/atlas-forge/src/geometry/ecology.js",
+    "apps/atlas-forge/src/solvers/ecosystem.js",
+    "apps/atlas-forge/src/solvers/eras.js",
+    "apps/atlas-forge/src/storage/ecosystem.js",
+    "apps/atlas-forge/tests/ecosystem-browser.mjs",
+    "apps/atlas-forge/tests/ecosystem.test.mjs",
+    "docs/adr/0036-atlas-forge-biosfera-versionada.md",
+    "docs/governance/handoffs/HO-20261024-atlas-forge-biosphere-eras.json"
+  ],
+  "work_completed": [
+    "Issue #699: oceano explícito, pincéis Terra/Mar idempotentes com máscaras, undo e regeneração preservada.",
+    "Catálogo de oito espécies básicas, edição e espécies próprias, dieta por referências, introdução explícita e consultas regionais.",
+    "Estoques limitantes de biomassa/detritos/N, competição trófica, mortalidade e dispersão conservativa; erosão regional reduzida pela vegetação.",
+    "Eras causais de até 10 mil anos em Worker cancelável, marco anterior completo e balanços de recursos/sedimentos.",
+    "Formato v3 e migração v2 aditiva; validação de referências/modelos/IDs; HTML publicado inclui consultas e camadas ecológicas sem solvers.",
+    "Preservados independência do Urbe, notas por cópia, lugares opcionais e zoom contínuo integrado no PR #698."
+  ],
+  "verification": [
+    {
+      "check": "npm run check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "npm run check completo passou: 33 testes, 14 regressões principais, terreno multiescala, zoom contínuo em 26 passos e fluxo ecológico offline. Log test-results/ecosystem-check-final.log."
+    },
+    {
+      "check": "Cenários científicos e benchmarks",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "8 cenários em ecosystem-scenarios.log; era de 1.000 anos na grade 720×360 em 4.008 ms, 9,50 MiB com marco, no container. Benchmarks de geração e renderer em ecosystem-benchmark.log e ecosystem-render.log; não é DEVICE."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os 22 checks passaram, após reconciliação com origin/main, em test-results/ecosystem-consistency.log."
+    },
+    {
+      "check": "Android físico e revisão de experiência",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/atlas-forge/README.md",
+      "evidence": "Chromium móvel não substitui validação em aparelho."
+    }
+  ],
+  "known_issues": [
+    "Ecologia agregada em até 36×18 regiões; não são indivíduos nem biologia em cada tile de grama.",
+    "Erosão e balanços são simplificados; tectônica, química geral, clima dinâmico, magia configurável e geradores urbanos completos continuam pendentes.",
+    "Edição continua regional; campo métrico é procedural. Oceano desenhado começa com habitats aquáticos; plantas terrestres podem ser introduzidas explicitamente após desenhar continentes.",
+    "Limites existentes de 24 MiB/12 marcos podem recusar uma nova era sem substituir o estado anterior."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Revisão e integração governada do PR crítico; sem merge manual ou label de autorização pelo agente.",
+    "Ampliar tectônica/clima/edição métrica e geradores locais conforme requisitos, sem declarar a missão completa."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "docs/adr/0035-atlas-forge-incorporacao-gradual.md",
+    "docs/governance/addenda/ADD-0031-atlas-forge-no-ecosystem.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/atlas-forge/AGENTS.md",
+    "apps/atlas-forge/SPEC.md",
+    "apps/atlas-forge/ROADMAP.md",
+    "apps/atlas-forge/docs/MODELS.md",
+    "apps/atlas-forge/docs/FORMAT.md",
+    "apps/atlas-forge/docs/TERRAIN.md",
+    "docs/proposals/atlas-forge/MISSION.md",
+    "docs/proposals/atlas-forge/PROMPT_EXECUCAO.md",
+    "docs/adr/0036-atlas-forge-biosfera-versionada.md",
+    "docs/governance/communication.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Estoques e relevo têm autoridade única persistida; caches são derivados."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Sem dependência entre Products."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Editor e viewer offline."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue, branch e handoff próprios."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Requisito persistido em SPEC/FORMAT/MODELS."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes de migração e revisão consultadas diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "ADR-0036 proposto; formato versionado e crítico declarado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem validação DEVICE alegada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Evidências e limitações explícitas."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Modelos locais sem extração especulativa."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "procedural-world-ecology",
+      "status": "product-specific",
+      "rationale": "Modelo e persistência específicos do Atlas; sem segundo consumidor ou capability global."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data"
+    ],
+    "reason": "Formato v3, migração aditiva v2 e novos snapshots temporais; revisão governada de compatibilidade. ADR-0036 proposto, sem aprovação inventada."
+  },
+  "cost": null
+}
