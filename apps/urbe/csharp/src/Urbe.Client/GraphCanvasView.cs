@@ -30,7 +30,6 @@ public sealed class GraphCanvasView : Control
     public GraphNode? SelectedNode => _selected is null ? null : _document?.Node(_selected);
     public event Action? Changed;
     public event Action? SelectionChanged;
-    public event Action<string>? ReferenceRequested;
 
     public GraphCanvasView()
     {
@@ -117,7 +116,8 @@ public sealed class GraphCanvasView : Control
         base.OnPointerMoved(e);
         if (_press is null || _document is null) return;
         var at = e.GetPosition(this);
-        if (!_moved && (at - _press.Value).Length < 7) return;
+        var displacement = at - _press.Value;
+        if (!_moved && Math.Sqrt(displacement.X * displacement.X + displacement.Y * displacement.Y) < 7) return;
         _moved = true;
         if (_pressedNode is { } id && !ReadOnly)
         {
