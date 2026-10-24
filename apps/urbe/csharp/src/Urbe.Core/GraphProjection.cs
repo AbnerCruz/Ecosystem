@@ -58,9 +58,8 @@ public static class GraphProjection
         items.AddRange(dirs.Select(p => (p, GraphNodeKind.Folder, (string?)null)));
         items.AddRange(docs.Select(d => (d.Path, GraphNodeKind.Note, (string?)d.Id)));
         items.AddRange(files.Select(p => (p, GraphNodeKind.File, (string?)null)));
-        // Prevent quadratic memory use on huge vaults and make the scope restriction explicit.
-        if (items.Count > 6000)
-            throw new InvalidDataException("Escopo grande demais para um só canvas. Escolha uma pasta menor.");
+        // The renderer culls offscreen objects. Do not reject a vault based on an arbitrary
+        // item count: users may select narrower scopes for convenience, never as a requirement.
         items.Sort((a, b) =>
         {
             var byPath = StringComparer.OrdinalIgnoreCase.Compare(a.Path, b.Path);
