@@ -32,14 +32,14 @@ public sealed partial class HeadlessUiTests
                 Dispatcher.UIThread.RunJobs();
                 window.UpdateLayout();
                 var texts = panel.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
-                Assert.Contains("Aliases", texts);
-                Assert.Contains("Tags", texts);
+                Assert.Contains("aliases", texts);
+                Assert.Contains("tags", texts);
                 Assert.Contains("#ideia", texts);
                 Assert.Contains("P1", texts);
                 Snapshot(window, "native-properties-form.png");
 
                 // a new alias, typed and confirmed with Enter, goes to the note's text (Visual)
-                var input = panel.GetVisualDescendants().OfType<TextBox>().First(t => t.PlaceholderText == "outro nome da nota");
+                var input = panel.GetVisualDescendants().OfType<TextBox>().First(t => t.PlaceholderText == "adicionar");   // the aliases row comes first
                 input.Focus();
                 input.Text = "Plano de ação";
                 window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
@@ -71,7 +71,7 @@ public sealed partial class HeadlessUiTests
                 Assert.True(editor.Editor.IsReadOnly);
                 Snapshot(window, "native-reading-mode.png");
                 Assert.All(panel.GetVisualDescendants().OfType<TextBox>(), t => Assert.True(t.IsReadOnly));
-                Assert.DoesNotContain(panel.GetVisualDescendants().OfType<TextBox>(), t => t.PlaceholderText == "outro nome da nota" || t.PlaceholderText == "nova tag");
+                Assert.DoesNotContain(panel.GetVisualDescendants().OfType<TextBox>(), t => t.PlaceholderText == "adicionar");
                 Assert.DoesNotContain(panel.GetVisualDescendants().OfType<Button>(), b => Avalonia.Automation.AutomationProperties.GetName(b)?.StartsWith("Remover", StringComparison.Ordinal) == true);
                 editor.SetMode(EditorMode.Visual);
                 Dispatcher.UIThread.RunJobs();

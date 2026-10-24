@@ -18,10 +18,10 @@ public sealed class PropertiesPanel : Border
     private static readonly string[] Suggested = ["autor", "status", "data", "url", "prioridade", "concluído", "cssclasses"];
     private bool _expanded;
 
-    private readonly StackPanel _body = new() { Spacing = 14 };
+    private readonly StackPanel _body = new() { Spacing = 2 };
     private readonly ScrollViewer _scroll;
     private readonly TextBlock _summary = new();
-    private readonly TextBlock _chevron = new() { Text = "›", FontSize = 20 };
+    private readonly TextBlock _chevron = new() { Text = "›", FontSize = 18 };
     private string _front = "";
     private bool _readOnly;
 
@@ -38,44 +38,42 @@ public sealed class PropertiesPanel : Border
 
     public PropertiesPanel()
     {
-        Margin = new Thickness(12, 6, 12, 8);
-        CornerRadius = new CornerRadius(14);
-        BorderThickness = new Thickness(1);
-        BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2, .8);
-        Background = UrbeTheme.Brush(UrbeTheme.Accent, .035);
-        ClipToBounds = true;
-        var head = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,Auto"), MinHeight = 44, Background = Brushes.Transparent, Margin = new Thickness(12, 0, 8, 0) };
-        var glyph = UrbeTheme.Icon(UrbeTheme.Icons.List, 17, UrbeTheme.Accent, 1.7);
-        glyph.VerticalAlignment = VerticalAlignment.Center;
-        glyph.Margin = new Thickness(0, 0, 9, 0);
-        var title = new TextBlock { Text = "Propriedades", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center };
+        Margin = new Thickness(14, 4, 14, 6);
+        BorderThickness = new Thickness(0, 0, 0, 1);
+        BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2, .6);
+        var head = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,*"), MinHeight = 40, Background = Brushes.Transparent };
+        _chevron.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
+        _chevron.VerticalAlignment = VerticalAlignment.Center;
+        _chevron.RenderTransformOrigin = RelativePoint.Center;
+        _chevron.Margin = new Thickness(0, -2, 8, 0);
+        _chevron.Width = 12;
+        var title = new TextBlock
+        {
+            Text = "PROPRIEDADES", FontSize = 11, FontWeight = FontWeight.SemiBold, LetterSpacing = .9,
+            Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center
+        };
         Grid.SetColumn(title, 1);
         _summary.FontSize = 12;
         _summary.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
         _summary.VerticalAlignment = VerticalAlignment.Center;
         _summary.TextTrimming = TextTrimming.CharacterEllipsis;
         _summary.MaxLines = 1;
-        _summary.Margin = new Thickness(8, 0, 4, 0);
+        _summary.Margin = new Thickness(12, 0, 0, 0);
         Grid.SetColumn(_summary, 2);
-        _chevron.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
-        _chevron.VerticalAlignment = VerticalAlignment.Center;
-        _chevron.RenderTransformOrigin = RelativePoint.Center;
-        Grid.SetColumn(_chevron, 3);
-        head.Children.Add(glyph);
+        head.Children.Add(_chevron);
         head.Children.Add(title);
         head.Children.Add(_summary);
-        head.Children.Add(_chevron);
         head.Cursor = new Cursor(StandardCursorType.Hand);
         head.Tapped += (_, e) => { e.Handled = true; Toggle(!_expanded); };
         Avalonia.Automation.AutomationProperties.SetName(head, "Propriedades da nota");
         _scroll = new ScrollViewer
         {
-            Content = new Border { Padding = new Thickness(14, 4, 14, 14), Child = _body },
+            Content = new Border { Padding = new Thickness(0, 2, 0, 12), Child = _body },
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
             MaxHeight = 520, IsVisible = false
         };
-        Child = new StackPanel { Children = { head, new Border { Height = 1, Background = UrbeTheme.Brush(UrbeTheme.Line2, .6), IsVisible = false, Name = "rule" }, _scroll } };
+        Child = new StackPanel { Children = { head, _scroll } };
         Toggle(_expanded);
     }
 
@@ -98,7 +96,6 @@ public sealed class PropertiesPanel : Border
     {
         _expanded = open;
         _scroll.IsVisible = open;
-        if (Child is StackPanel { Children: [_, Border rule, ..] }) rule.IsVisible = open;
         _chevron.RenderTransform = open ? new RotateTransform(90) : null;
         if (open) Rebuild();
     }
@@ -133,8 +130,8 @@ public sealed class PropertiesPanel : Border
         _summary.Text = parts.Count > 0 ? string.Join(" · ", parts) : (_readOnly ? "nenhuma" : "adicionar");
         if (!_scroll.IsVisible) return;
         _body.Children.Clear();
-        _body.Children.Add(ListRow("Aliases", "aliases", props.Aliases, "outro nome da nota", false));
-        _body.Children.Add(ListRow("Tags", "tags", props.Tags, "nova tag", true));
+        _body.Children.Add(ListRow("aliases", "aliases", props.Aliases, "adicionar", false));
+        _body.Children.Add(ListRow("tags", "tags", props.Tags, "adicionar", true));
         foreach (var p in props.Items)
         {
             if (p.Key.Length == 0 || p.Key.Equals("aliases", StringComparison.OrdinalIgnoreCase) || p.Key.Equals("tags", StringComparison.OrdinalIgnoreCase)) continue;
@@ -167,71 +164,85 @@ public sealed class PropertiesPanel : Border
 
     // ------------------------------------------------------------------ rows
 
-    private static TextBlock Label(string text) => new()
+    private static string Glyph(string key, PropertyKind kind) => key.ToLowerInvariant() switch
     {
-        Text = text, FontSize = 11.5, FontWeight = FontWeight.SemiBold, LetterSpacing = .3,
-        Foreground = UrbeTheme.Brush(UrbeTheme.Text3), Margin = new Thickness(2, 0, 0, 5)
+        "aliases" => "@", "tags" => "#", "cssclasses" => "≡",
+        _ => kind switch { PropertyKind.Number => "1", PropertyKind.Date => "◷", PropertyKind.Check => "✓", PropertyKind.List => "≡", PropertyKind.Raw => "{}", _ => "Aa" }
     };
 
+    /// <summary>One line of the form: a glyph and the name on the left, the value on the right, and a quiet × to take the property away.</summary>
+    private Control Line(string glyph, string name, Control value, Action? remove)
+    {
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("112,*,Auto"), MinHeight = 38, Margin = new Thickness(0, 1) };
+        var key = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 9, 8, 0) };
+        key.Children.Add(new TextBlock { Text = glyph, Width = 18, FontSize = 12, TextAlignment = TextAlignment.Center, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), FontWeight = FontWeight.SemiBold });
+        key.Children.Add(new TextBlock { Text = name, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 80 });
+        grid.Children.Add(key);
+        Grid.SetColumn(value, 1);
+        value.VerticalAlignment = VerticalAlignment.Center;
+        grid.Children.Add(value);
+        if (remove is not null && !_readOnly)
+        {
+            var x = new Button
+            {
+                Content = new TextBlock { Text = "×", FontSize = 16, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) }, Padding = new Thickness(10, 0), MinHeight = 38, MinWidth = 0,
+                Background = Brushes.Transparent, BorderThickness = new Thickness(0)
+            };
+            Avalonia.Automation.AutomationProperties.SetName(x, "Remover " + name);
+            ToolTip.SetTip(x, "Remover a propriedade");
+            x.Click += (_, _) => remove();
+            Grid.SetColumn(x, 2);
+            grid.Children.Add(x);
+        }
+        return grid;
+    }
+
+    /// <summary>A field with no box of its own: it shows a soft background when touched.</summary>
     private TextBox Input(string value, string hint)
     {
+        var soft = UrbeTheme.Brush(UrbeTheme.Surface2, .9);
         var box = new TextBox
         {
-            Text = value, PlaceholderText = hint, AcceptsReturn = false, MinHeight = 40, Padding = new Thickness(12, 9),
-            CornerRadius = new CornerRadius(10), FontSize = 14, FontFamily = UrbeTheme.UiFont,
-            Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text),
-            BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), CaretBrush = UrbeTheme.Brush(UrbeTheme.Accent),
+            Text = value, PlaceholderText = hint, AcceptsReturn = false, MinHeight = 36, Padding = new Thickness(10, 8),
+            CornerRadius = new CornerRadius(8), FontSize = 14, FontFamily = UrbeTheme.UiFont, BorderThickness = new Thickness(0),
+            Background = Brushes.Transparent, Foreground = UrbeTheme.Brush(UrbeTheme.Text), CaretBrush = UrbeTheme.Brush(UrbeTheme.Accent),
             IsReadOnly = _readOnly
         };
-        box.Resources["TextControlBackgroundFocused"] = UrbeTheme.Brush(UrbeTheme.Bg);
-        box.Resources["TextControlBorderBrushFocused"] = UrbeTheme.Brush(UrbeTheme.Accent);
+        foreach (var name in new[] { "TextControlBackground", "TextControlBorderBrush", "TextControlBorderBrushPointerOver", "TextControlBorderBrushFocused" })
+            box.Resources[name] = Brushes.Transparent;
+        box.Resources["TextControlBackgroundPointerOver"] = soft;
+        box.Resources["TextControlBackgroundFocused"] = soft;
         return box;
     }
 
     private Control Row(NoteProperty p)
     {
-        var head = new DockPanel { LastChildFill = true };
-        var label = Label(p.Key);
-        if (!_readOnly)
-        {
-            var remove = new Button
-            {
-                Content = new TextBlock { Text = "×", FontSize = 16, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) }, Padding = new Thickness(8, 0), MinHeight = 0, MinWidth = 0,
-                Background = Brushes.Transparent, BorderThickness = new Thickness(0), Margin = new Thickness(0, -6, 0, 0), HorizontalAlignment = HorizontalAlignment.Right
-            };
-            Avalonia.Automation.AutomationProperties.SetName(remove, "Remover " + p.Key);
-            ToolTip.SetTip(remove, "Remover a propriedade");
-            remove.Click += (_, _) => Apply(n => n.Remove(p.Key), rebuild: true);
-            DockPanel.SetDock(remove, Dock.Right);
-            head.Children.Add(remove);
-        }
-        head.Children.Add(label);
-        var holder = new StackPanel { Children = { head } };
+        Control value;
         switch (p.Kind)
         {
             case PropertyKind.List:
-                return ListRow(p.Key, p.Key, p.Items, "novo item", false);
+                return ListRow(p.Key, p.Key, p.Items, "adicionar", false, () => Apply(n => n.Remove(p.Key), rebuild: true));
             case PropertyKind.Check:
             {
-                var on = new CheckBox { Content = p.Value == "true" ? "Sim" : "Não", IsChecked = p.Value == "true", IsEnabled = !_readOnly, MinHeight = 36 };
+                var on = new CheckBox { Content = p.Value == "true" ? "Sim" : "Não", IsChecked = p.Value == "true", IsEnabled = !_readOnly, MinHeight = 36, Margin = new Thickness(6, 0, 0, 0) };
                 on.IsCheckedChanged += (_, _) =>
                 {
                     on.Content = on.IsChecked == true ? "Sim" : "Não";
                     Apply(n => n.Set(p.Key, PropertyKind.Check, on.IsChecked == true ? "true" : "false"), rebuild: false);
                 };
-                holder.Children.Add(on);
+                value = on;
                 break;
             }
             case PropertyKind.Raw:
-                holder.Children.Add(new TextBlock
+                value = new TextBlock
                 {
-                    Text = "Propriedade avançada: edite na Fonte.", FontSize = 12.5, FontStyle = FontStyle.Italic, TextWrapping = TextWrapping.Wrap,
-                    Foreground = UrbeTheme.Brush(UrbeTheme.Text3), Margin = new Thickness(2, 0)
-                });
+                    Text = "avançada: edite na Fonte", FontSize = 12.5, FontStyle = FontStyle.Italic, TextWrapping = TextWrapping.Wrap,
+                    Foreground = UrbeTheme.Brush(UrbeTheme.Text3), Margin = new Thickness(10, 0)
+                };
                 break;
             default:
             {
-                var box = Input(p.Value, p.Kind switch { PropertyKind.Date => "AAAA-MM-DD", PropertyKind.Number => "0", _ => "valor" });
+                var box = Input(p.Value, p.Kind switch { PropertyKind.Date => "AAAA-MM-DD", PropertyKind.Number => "0", _ => "vazio" });
                 void Commit()
                 {
                     var typed = (box.Text ?? "").Trim();
@@ -251,35 +262,35 @@ public sealed class PropertiesPanel : Border
                     DockPanel.SetDock(today, Dock.Right);
                     line.Children.Add(today);
                     line.Children.Add(box);
-                    holder.Children.Add(line);
+                    value = line;
                 }
-                else holder.Children.Add(box);
+                else value = box;
                 break;
             }
         }
-        return holder;
+        return Line(Glyph(p.Key, p.Kind), p.Key, value, () => Apply(n => n.Remove(p.Key), rebuild: true));
     }
 
     private static Button MiniButton(string text) => new()
     {
-        Content = new TextBlock { Text = text, FontSize = 12.5, Foreground = UrbeTheme.Brush(UrbeTheme.Accent) },
-        Padding = new Thickness(12, 8), Margin = new Thickness(8, 0, 0, 0), CornerRadius = new CornerRadius(10),
-        Background = UrbeTheme.Brush(UrbeTheme.Accent, .12), BorderThickness = new Thickness(0), VerticalAlignment = VerticalAlignment.Stretch
+        Content = new TextBlock { Text = text, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Accent) },
+        Padding = new Thickness(10, 6), Margin = new Thickness(6, 0, 0, 0), CornerRadius = new CornerRadius(8), MinHeight = 0,
+        Background = UrbeTheme.Brush(UrbeTheme.Accent, .1), BorderThickness = new Thickness(0), VerticalAlignment = VerticalAlignment.Center
     };
 
-    private Control ListRow(string label, string key, IReadOnlyList<string> items, string hint, bool tags)
+    private Control ListRow(string name, string key, IReadOnlyList<string> items, string hint, bool tags, Action? remove = null)
     {
-        var chips = new WrapPanel { Orientation = Orientation.Horizontal };
+        var chips = new WrapPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         void Save(IEnumerable<string> next) => Apply(n => n.SetList(key, next), rebuild: true);
         foreach (var item in items)
         {
-            var text = new TextBlock { Text = (tags ? "#" : "") + item, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center };
+            var text = new TextBlock { Text = (tags ? "#" : "") + item, FontSize = 13, Foreground = UrbeTheme.Brush(tags ? UrbeTheme.Accent : UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center };
             var line = new StackPanel { Orientation = Orientation.Horizontal, Children = { text } };
             if (!_readOnly)
             {
                 var x = new Button
                 {
-                    Content = new TextBlock { Text = "×", FontSize = 14, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) }, Padding = new Thickness(6, 0, 0, 0), MinHeight = 0, MinWidth = 0,
+                    Content = new TextBlock { Text = "×", FontSize = 14, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) }, Padding = new Thickness(7, 0, 0, 0), MinHeight = 0, MinWidth = 0,
                     Background = Brushes.Transparent, BorderThickness = new Thickness(0), VerticalAlignment = VerticalAlignment.Center
                 };
                 Avalonia.Automation.AutomationProperties.SetName(x, "Remover " + item);
@@ -289,18 +300,20 @@ public sealed class PropertiesPanel : Border
             }
             chips.Children.Add(new Border
             {
-                Child = line, Padding = new Thickness(11, 5, 8, 5), Margin = new Thickness(0, 0, 6, 6), CornerRadius = new CornerRadius(999),
-                Background = UrbeTheme.Brush(UrbeTheme.Accent, tags ? .16 : .08), BorderThickness = new Thickness(1), BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent, .3)
+                Child = line, Padding = new Thickness(10, 4, _readOnly ? 10 : 6, 4), Margin = new Thickness(0, 3, 6, 3), CornerRadius = new CornerRadius(999),
+                Background = tags ? UrbeTheme.Brush(UrbeTheme.Accent, .14) : UrbeTheme.Brush(UrbeTheme.Surface2)
             });
         }
-        var holder = new StackPanel { Children = { Label(label), chips } };
+        var holder = new StackPanel { Children = { chips } };
         if (_readOnly)
         {
-            if (items.Count == 0) holder.Children.Add(new TextBlock { Text = "—", Foreground = UrbeTheme.Brush(UrbeTheme.Text3), Margin = new Thickness(2, 0) });
-            return holder;
+            if (items.Count == 0) chips.Children.Add(new TextBlock { Text = "—", Foreground = UrbeTheme.Brush(UrbeTheme.Text3), Margin = new Thickness(10, 0), VerticalAlignment = VerticalAlignment.Center });
+            return Line(Glyph(key, PropertyKind.List), name, holder, null);
         }
         var input = Input("", hint);
-        input.Margin = new Thickness(0, 2, 0, 0);
+        input.MinWidth = 96;
+        input.Width = items.Count == 0 ? 200 : 120;
+        input.Margin = new Thickness(0, 1, 0, 1);
         void Add(string typed)
         {
             foreach (var piece in typed.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
@@ -313,21 +326,21 @@ public sealed class PropertiesPanel : Border
         }
         input.KeyDown += (_, e) => { if (e.Key == Key.Enter && (input.Text ?? "").Trim().Length > 0) { e.Handled = true; Add(input.Text!); } };
         input.LostFocus += (_, _) => { if ((input.Text ?? "").Trim().Length > 0) Add(input.Text!); };
-        holder.Children.Add(input);
+        chips.Children.Add(input);
         if (tags && TagSource is not null)
         {
-            var offered = new WrapPanel { Margin = new Thickness(0, 8, 0, 0) };
+            var offered = new WrapPanel { Margin = new Thickness(0, 2, 0, 0) };
             holder.Children.Add(offered);
             void Suggest()
             {
                 offered.Children.Clear();
                 var typed = NoteProperties.NormalizeTag(input.Text ?? "");
-                foreach (var tag in TagSource().Where(t => !items.Contains(t, StringComparer.OrdinalIgnoreCase) && (typed.Length == 0 || t.Contains(typed, StringComparison.OrdinalIgnoreCase))).Take(8))
+                foreach (var tag in TagSource().Where(t => !items.Contains(t, StringComparer.OrdinalIgnoreCase) && (typed.Length == 0 || t.Contains(typed, StringComparison.OrdinalIgnoreCase))).Take(6))
                 {
                     var chip = new Button
                     {
-                        Content = new TextBlock { Text = "#" + tag, FontSize = 12.5, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) }, Padding = new Thickness(10, 5), Margin = new Thickness(0, 0, 6, 6),
-                        CornerRadius = new CornerRadius(999), Background = UrbeTheme.Brush(UrbeTheme.Surface2), BorderThickness = new Thickness(0), MinHeight = 0
+                        Content = new TextBlock { Text = "+ #" + tag, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) }, Padding = new Thickness(9, 4), Margin = new Thickness(0, 0, 6, 4),
+                        CornerRadius = new CornerRadius(999), Background = Brushes.Transparent, BorderThickness = new Thickness(1), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), MinHeight = 0
                     };
                     var captured = tag;
                     Avalonia.Automation.AutomationProperties.SetName(chip, "Usar a tag " + tag);
@@ -338,7 +351,7 @@ public sealed class PropertiesPanel : Border
             input.TextChanged += (_, _) => Suggest();
             Suggest();
         }
-        return holder;
+        return Line(Glyph(key, PropertyKind.List), name, holder, remove);
     }
 
     // ------------------------------------------------------------------ a new property
@@ -347,9 +360,9 @@ public sealed class PropertiesPanel : Border
     {
         var add = new Button
         {
-            Content = new TextBlock { Text = "+  Adicionar propriedade", FontSize = 13.5, Foreground = UrbeTheme.Brush(UrbeTheme.Accent), FontWeight = FontWeight.SemiBold },
-            Padding = new Thickness(14, 10), CornerRadius = new CornerRadius(10), HorizontalAlignment = HorizontalAlignment.Left,
-            Background = UrbeTheme.Brush(UrbeTheme.Accent, .1), BorderThickness = new Thickness(0)
+            Content = new TextBlock { Text = "+  Propriedade", FontSize = 13.5, Foreground = UrbeTheme.Brush(UrbeTheme.Accent) },
+            Padding = new Thickness(10, 9), Margin = new Thickness(0, 4, 0, 0), CornerRadius = new CornerRadius(8), HorizontalAlignment = HorizontalAlignment.Left,
+            Background = Brushes.Transparent, BorderThickness = new Thickness(0), MinHeight = 0
         };
         Avalonia.Automation.AutomationProperties.SetName(add, "Adicionar propriedade");
         add.Click += async (_, _) => await AddPropertyAsync();
