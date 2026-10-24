@@ -504,7 +504,7 @@ public sealed partial class AssistantPanel
         {
             var quoted = await Providers.GetImageQuoteAsync(provider, model);
             target.Text = quoted?.Rate ?? "Preço não informado pelo provedor; verifique antes de gerar.";
-            if (quoted is not null) ToolTip.SetTip(target, quoted.Explanation + "\\nFonte: " + quoted.SourceUrl);
+            if (quoted is not null) ToolTip.SetTip(target, quoted.Explanation + "\nFonte: " + quoted.SourceUrl);
         }
         catch { target.Text = "Preço indisponível nesta consulta. Verifique a tabela do provedor."; }
     }
@@ -882,7 +882,7 @@ public sealed partial class AssistantPanel
                 if (painting != currentPaint) return;
                 target.Text = quoted?.Rate ?? "Preço não informado · consulte o provedor";
                 target.Foreground = UrbeTheme.Brush(quoted is null ? UrbeTheme.Text3 : UrbeTheme.Accent);
-                if (quoted is not null) ToolTip.SetTip(target, quoted.Explanation + "\\nFonte: " + quoted.SourceUrl);
+                if (quoted is not null) ToolTip.SetTip(target, quoted.Explanation + "\nFonte: " + quoted.SourceUrl);
                 else ToolTip.SetTip(target, "O catálogo não fornece um preço verificável para este modelo. Não significa que seja gratuito.");
             }
             catch
