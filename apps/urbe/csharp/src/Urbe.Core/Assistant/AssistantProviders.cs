@@ -612,7 +612,7 @@ public sealed class AssistantProviders
         var p = Resolve(cfg);
         if (p.Kind != "openai") throw new AiProviderException("Este provedor não tem API de imagens compatível.");
         if (p.Preset == "gemini")
-            return new[] { "gemini-nano-banana-2.1", "gemini-3-pro-image", "gemini-3.1-flash-lite-image", "gemini-2.5-flash-image" }
+            return new[] { "gemini-nano-banana-2.1", "gemini-3.1-flash-lite-image", "gemini-3.1-flash-image", "gemini-3-pro-image", "gemini-2.5-flash-image" }
                 .Select(m => new AiModelInfo(m, m, null, null, null)).ToList();
         if (p.Preset == "openrouter")
         {
@@ -628,6 +628,24 @@ public sealed class AssistantProviders
                                   m.Id.Contains("imagen", StringComparison.OrdinalIgnoreCase) ||
                                   m.Id.Contains("flux", StringComparison.OrdinalIgnoreCase) ||
                                   m.Id.Contains("seedream", StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    /// <summary>
+    /// Resolves image-specific billing units without guessing from chat token prices.
+    /// OpenRouter exposes exact provider endpoint quotes separately from its image model catalog.
+    /// </summary>
+    public async Task<AiImageQuote?> GetImageQuoteAsync(AiProviderConfig cfg, string model, CancellationToken cancel = default)
+    {
+        var p = Resolve(cfg);
+        var published = AssistantImagePricing.Published(p.Preset, model);
+        if (published is not null) return published;
+        if (p.Preset != "openrouter" || !AssistantImagePricing.ValidOpenRouterSlug(model)) return null;
+        var url = Join(p.BaseUrl, "/images/models/" + model + "/endpoints");
+        using var res = await RequestAsync(p, url, () => Get(url, OpenAiHeaders(p)), cancel);
+        JsonNode? json;
+        try { json = JsonNode.Parse(await res.Content.ReadAsStringAsync(cancel)); }
+        catch (JsonException) { return null; }
+        return AssistantImagePricing.FromOpenRouterEndpoints(json, model);
     }
 
     /// <summary>The file extension of a picture's bytes (PNG, JPEG or WebP), or null when they are not one.</summary>
