@@ -148,6 +148,18 @@ public sealed partial class HeadlessUiTests
                 again.Open();
                 Assert.Equal(panel.Conversation.Id, again.Conversation.Id);
                 Assert.Equal("Troque a primeira tarefa", again.Conversation.Title);
+
+                // Settings are distinct destinations, not an overwhelming scroll of unrelated fields.
+                panel.ShowSettings();
+                Assert.Equal("Configurações", panel.ViewTitle);
+                Assert.Contains("Provedores de modelo", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
+                ClickNamed(panel, "Configurações: Agentes");
+                Assert.Contains("Agentes personalizados", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
+                Assert.DoesNotContain("Provedores de modelo", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
+                ClickNamed(panel, "Configurações: Contexto");
+                Assert.Contains("Memória", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
+                ClickNamed(panel, "Configurações: Execução");
+                Assert.Contains("Autonomia e proteção", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 return true;
             }
             finally
