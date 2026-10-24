@@ -30,7 +30,12 @@ public sealed partial class MainView
             panel.LinkRequested += () => _ = ConnectGraphNodesAsync();
             panel.DeleteRequested += () => _ = RemoveGraphNodeAsync();
             panel.OpenRequested += () => _ = OpenGraphReferenceAsync();
-            panel.Canvas.Changed += () => { _graphDirty = true; _ = SaveGraphAsync(); };
+            panel.ShapeRequested += () => _ = AddGraphShapeAsync();
+            panel.GroupRequested += () => _ = GroupGraphNodesAsync();
+            panel.ResizeRequested += () => _ = ResizeGraphNodeAsync();
+            panel.UndoRequested += () => _ = GraphUndoAsync(redo: false);
+            panel.RedoRequested += () => _ = GraphUndoAsync(redo: true);
+            panel.Canvas.Changed += () => { _graphDirty = true; panel.Refresh(); _ = SaveGraphAsync(); };
             _graphBoard = panel;
             _stage.Children.Add(panel);
             return panel;
@@ -96,9 +101,9 @@ public sealed partial class MainView
         if (GraphOpen && !await SaveGraphAsync()) return;
         try
         {
-            var read = await _vault.ReadFileAsync(path, 2L * 1024 * 1024);
+            var read = await _vault.ReadFileAsync(path, 32L * 1024 * 1024);
             if (read?.Bytes is not { } bytes)
-                throw new InvalidDataException("Grafo ausente ou maior que 2 MB.");
+                throw new InvalidDataException("Grafo ausente ou maior que 32 MB.");
             var graph = GraphDocument.Parse(Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF'));
             _openGraph = graph;
             _openGraphPath = path;
@@ -168,6 +173,7 @@ public sealed partial class MainView
         var item = _openGraph.AddText(label, at.X - 95, at.Y - 42);
         GraphsPanel.Canvas.Select(item.Id);
         _graphDirty = true;
+        GraphsPanel.Refresh();
         await SaveGraphAsync();
     }
 
@@ -194,6 +200,7 @@ public sealed partial class MainView
         var node = _openGraph.AddReference(selected.Kind, selected.Path, at.X - 95, at.Y - 42, referenceId);
         GraphsPanel.Canvas.Select(node.Id);
         _graphDirty = true;
+        GraphsPanel.Refresh();
         await SaveGraphAsync();
     }
 
@@ -206,6 +213,7 @@ public sealed partial class MainView
         _openGraph.RenameNode(node.Id, value);
         GraphsPanel.Canvas.Refresh();
         _graphDirty = true;
+        GraphsPanel.Refresh();
         await SaveGraphAsync();
     }
 
@@ -225,6 +233,7 @@ public sealed partial class MainView
         _openGraph.Connect(source.Id, options[index].Id, label, relation: "", directed: kind == 1);
         GraphsPanel.Canvas.Refresh();
         _graphDirty = true;
+        GraphsPanel.Refresh();
         await SaveGraphAsync();
     }
 
@@ -238,7 +247,87 @@ public sealed partial class MainView
         _openGraph.RemoveNode(node.Id);
         GraphsPanel.Canvas.Select(null);
         _graphDirty = true;
+        GraphsPanel.Refresh();
         await SaveGraphAsync();
+    }
+
+    private async Task GraphUndoAsync(bool redo)
+    {
+        if (_openGraph is null) return;
+        var changed = redo ? _openGraph.Redo() : _openGraph.Undo();
+        if (!changed) return;
+        GraphsPanel.Canvas.Select(null);
+        GraphsPanel.Refresh();
+        _graphDirty = true;
+        await SaveGraphAsync();
+    }
+
+    private async Task AddGraphShapeAsync()
+    {
+        if (_openGraph is null) return;
+        var label = await Dialogs.PromptAsync(new PromptOptions("Nova forma", Label: "Rótulo",
+            Placeholder: "Ex.: Evento, condição, etapa", Required: false, Confirm: "Adicionar forma"));
+        if (label is null) return;
+        var at = GraphsPanel.Canvas.WorldCenter;
+        var node = _openGraph.AddNode(GraphNodeKind.Shape, label, null, at.X - 95, at.Y - 42);
+        GraphsPanel.Canvas.Select(node.Id);
+        GraphsPanel.Refresh();
+        _graphDirty = true;
+        await SaveGraphAsync();
+    }
+
+    private async Task GroupGraphNodesAsync()
+    {
+        if (_openGraph is null || GraphsPanel.Canvas.SelectedIds.Count < 2) return;
+        var label = await Dialogs.PromptAsync(new PromptOptions("Agrupar elementos", Label: "Nome do grupo",
+            Value: "Novo grupo", Confirm: "Agrupar"));
+        if (label is null) return;
+        try
+        {
+            var group = _openGraph.GroupNodes(GraphsPanel.Canvas.SelectedIds, label);
+            GraphsPanel.Canvas.MultipleSelection = false;
+            GraphsPanel.Canvas.Select(group.Id);
+            GraphsPanel.Refresh();
+            _graphDirty = true;
+            await SaveGraphAsync();
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidDataException)
+        { await Dialogs.AlertAsync("Não foi possível agrupar", ex.Message); }
+    }
+
+    private async Task ResizeGraphNodeAsync()
+    {
+        if (_openGraph is null || GraphsPanel.Canvas.SelectedNode is not { } node) return;
+        var input = await Dialogs.PromptAsync(new PromptOptions("Redimensionar", Label: "Largura × altura",
+            Value: ((int)node.Width).ToString(System.Globalization.CultureInfo.InvariantCulture) + " x " +
+                   ((int)node.Height).ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Hint: "Use px do canvas, por exemplo: 240 x 120", Confirm: "Aplicar",
+            Validate: v => ParseSize(v) is null ? "Informe dois números positivos separados por x." : null));
+        if (input is null) return;
+        var dimension = ParseSize(input);
+        if (dimension is null) return;
+        try
+        {
+            if (_openGraph.ResizeNode(node.Id, dimension.Value.Width, dimension.Value.Height))
+            {
+                _graphDirty = true;
+                GraphsPanel.Refresh();
+                await SaveGraphAsync();
+            }
+        }
+        catch (InvalidDataException ex) { await Dialogs.AlertAsync("Tamanho inválido", ex.Message); }
+    }
+
+    private static (double Width, double Height)? ParseSize(string value)
+    {
+        var pieces = value.Replace("×", "x", StringComparison.Ordinal).Split('x');
+        if (pieces.Length != 2 || !double.TryParse(pieces[0].Trim(), System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var width) ||
+            !double.TryParse(pieces[1].Trim(), System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var height))
+            return null;
+        return double.IsFinite(width) && double.IsFinite(height) && width >= 32 && width <= 10000 &&
+            height >= 24 && height <= 10000 ? (width, height) : null;
     }
 
     private async Task OpenGraphReferenceAsync()
