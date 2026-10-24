@@ -195,7 +195,8 @@ public sealed class AssistantWebResearchTests
     {
         public AssistantWebSession? Web => web;
         public DocumentStore Documents { get; } = new();
-        public KnowledgeIndex Knowledge => new(Documents);
+        public KnowledgeIndex Knowledge { get; }
+        public Host() => Knowledge = new KnowledgeIndex(Documents);
         public int ReadChars => 5000;
         public (string? Path, string? Selection) EditorContext() => (null, null);
         public Task<UrbeDocument> CreateNoteAsync(string path, string content) => throw new NotSupportedException();
