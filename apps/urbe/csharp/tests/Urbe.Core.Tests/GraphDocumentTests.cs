@@ -61,8 +61,12 @@ public sealed class GraphDocumentTests
         var b = graph.AddText("B");
         var edge = graph.Connect(a.Id, b.Id);
         var raw = graph.Serialize();
-        Assert.Throws<InvalidDataException>(() => GraphDocument.Parse(raw.Replace(b.Id, "not-a-node")));
-        Assert.Throws<InvalidDataException>(() => GraphDocument.Parse(raw.Replace(edge.Id, a.Id).Replace(b.Id, a.Id)));
+        var broken = System.Text.Json.Nodes.JsonNode.Parse(raw)!;
+        broken["edges"]![0]!["targetId"] = "not-a-node";
+        Assert.Throws<InvalidDataException>(() => GraphDocument.Parse(broken.ToJsonString()));
+        var duplicate = System.Text.Json.Nodes.JsonNode.Parse(raw)!;
+        duplicate["nodes"]![1]!["id"] = a.Id;
+        Assert.Throws<InvalidDataException>(() => GraphDocument.Parse(duplicate.ToJsonString()));
     }
 
     [Fact]
