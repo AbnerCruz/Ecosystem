@@ -47,8 +47,8 @@
     {
       "kind": "human",
       "check": "Android compact width, image preview in existing history, image costs returned by provider and external StorageProvider",
-      "result": "pending",
-      "evidence": "Real device/provider account",
+      "result": "passed",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-24 (Issue https://github.com/AbnerCruz/Ecosystem/issues/713); registro em docs/governance/responses/VAL-HO-20261024-urbe-beta21-image-prices-composer-9bb10ac11cfa.md.",
       "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
       "critical": true
     }
