@@ -24,6 +24,57 @@ public sealed class GraphDocument
 
     private readonly List<GraphNode> _nodes = [];
     private readonly List<GraphEdge> _edges = [];
+    private readonly List<GraphStroke> _strokes = [];
+    private readonly List<string> _undo = [];
+    private readonly List<string> _redo = [];
+    private const int MaxUndoSteps = 80;
+
+    public IReadOnlyList<GraphStroke> Strokes => _strokes.AsReadOnly();
+    public bool CanUndo => _undo.Count > 0;
+    public bool CanRedo => _redo.Count > 0;
+
+    private void Remember()
+    {
+        if (_undo.Count == MaxUndoSteps) _undo.RemoveAt(0);
+        _undo.Add(Serialize());
+        _redo.Clear();
+    }
+
+    public bool Undo()
+    {
+        if (_undo.Count == 0) return false;
+        _redo.Add(Serialize());
+        var previous = Parse(_undo[^1]);
+        _undo.RemoveAt(_undo.Count - 1);
+        Restore(previous);
+        return true;
+    }
+
+    public bool Redo()
+    {
+        if (_redo.Count == 0) return false;
+        _undo.Add(Serialize());
+        var next = Parse(_redo[^1]);
+        _redo.RemoveAt(_redo.Count - 1);
+        Restore(next);
+        return true;
+    }
+
+    private void Restore(GraphDocument other)
+    {
+        Id = other.Id;
+        Title = other.Title;
+        _nodes.Clear();
+        _nodes.AddRange(other.Nodes);
+        _edges.Clear();
+        _edges.AddRange(other.Edges);
+        _strokes.Clear();
+        _strokes.AddRange(other.Strokes);
+    }
+
+    /// <summary>Begin one drag gesture: all move events form one undo step.</summary>
+    public void BeginDrag() => Remember();
+
 
     public string Id { get; private set; } = "graph_" + Guid.NewGuid().ToString("N");
     public string Title { get; private set; } = "Novo grafo";
@@ -57,6 +108,7 @@ public sealed class GraphDocument
         var node = new GraphNode("node_" + Guid.NewGuid().ToString("N"), kind, CleanLabel(label, ""), target,
             x, y, width, height, referenceId);
         if (_nodes.Count >= 10000) throw new InvalidOperationException("Limite de 10.000 elementos por grafo.");
+        Remember();
         _nodes.Add(node);
         return node;
     }
@@ -69,17 +121,25 @@ public sealed class GraphDocument
         if (_edges.Count >= 30000) throw new InvalidOperationException("Limite de 30.000 conexões por grafo.");
         var edge = new GraphEdge("edge_" + Guid.NewGuid().ToString("N"), sourceId, targetId,
             CleanLabel(label, ""), CleanLabel(relation, ""), directed);
+        Remember();
         _edges.Add(edge);
         return edge;
     }
 
-    public bool MoveNode(string id, double x, double y)
+    public bool MoveNode(string id, double x, double y, bool recordHistory = true)
     {
         if (!double.IsFinite(x) || !double.IsFinite(y) || Math.Abs(x) > 1e7 || Math.Abs(y) > 1e7)
             throw new ArgumentOutOfRangeException(nameof(x));
         var at = _nodes.FindIndex(n => n.Id == id);
         if (at < 0) return false;
-        _nodes[at] = _nodes[at] with { X = x, Y = y };
+        var before = _nodes[at];
+        if (before.X == x && before.Y == y) return false;
+        if (recordHistory) Remember();
+        _nodes[at] = before with { X = x, Y = y };
+        if (before.Kind == GraphNodeKind.Group)
+            for (var i = 0; i < _nodes.Count; i++)
+                if (_nodes[i].ParentId == id)
+                    _nodes[i] = _nodes[i] with { X = _nodes[i].X + (x - before.X), Y = _nodes[i].Y + (y - before.Y) };
         return true;
     }
 
@@ -87,24 +147,87 @@ public sealed class GraphDocument
     {
         var at = _nodes.FindIndex(n => n.Id == id);
         if (at < 0) return false;
-        _nodes[at] = _nodes[at] with { Label = CleanLabel(text, "") };
+        var next = CleanLabel(text, "");
+        if (_nodes[at].Label == next) return false;
+        Remember();
+        _nodes[at] = _nodes[at] with { Label = next };
         return true;
     }
 
     public bool RemoveNode(string id)
     {
-        if (_nodes.RemoveAll(n => n.Id == id) == 0) return false;
+        if (!_nodes.Any(n => n.Id == id)) return false;
+        Remember();
+        _nodes.RemoveAll(n => n.Id == id);
+        for (var i = 0; i < _nodes.Count; i++)
+            if (_nodes[i].ParentId == id) _nodes[i] = _nodes[i] with { ParentId = null };
         _edges.RemoveAll(e => e.SourceId == id || e.TargetId == id);
         return true;
     }
 
-    public bool RemoveEdge(string id) => _edges.RemoveAll(e => e.Id == id) > 0;
+    public bool RemoveEdge(string id)
+    {
+        if (!_edges.Any(e => e.Id == id)) return false;
+        Remember();
+        _edges.RemoveAll(e => e.Id == id);
+        return true;
+    }
+
+    public bool ResizeNode(string id, double width, double height)
+    {
+        var at = _nodes.FindIndex(n => n.Id == id);
+        if (at < 0) return false;
+        CheckGeometry(_nodes[at].X, _nodes[at].Y, width, height);
+        if (_nodes[at].Width == width && _nodes[at].Height == height) return false;
+        Remember();
+        _nodes[at] = _nodes[at] with { Width = width, Height = height };
+        return true;
+    }
+
+    public GraphNode GroupNodes(IEnumerable<string> ids, string? label = null)
+    {
+        var selected = ids.Distinct(StringComparer.Ordinal).Select(Node).ToArray();
+        if (selected.Length < 2 || selected.Any(n => n is null || n.Kind == GraphNodeKind.Group || n.ParentId is not null))
+            throw new ArgumentException("Selecione pelo menos dois elementos livres, sem grupos aninhados.");
+        var items = selected.Select(n => n!).ToArray();
+        var x = items.Min(n => n.X) - 20;
+        var y = items.Min(n => n.Y) - 38;
+        var width = items.Max(n => n.X + n.Width) - x + 20;
+        var height = items.Max(n => n.Y + n.Height) - y + 20;
+        CheckGeometry(x, y, width, height);
+        var group = AddNode(GraphNodeKind.Group, label ?? "Grupo", null, x, y, width, height);
+        for (var i = 0; i < _nodes.Count; i++)
+            if (items.Any(n => n.Id == _nodes[i].Id))
+                _nodes[i] = _nodes[i] with { ParentId = group.Id };
+        return group;
+    }
+
+    public GraphStroke AddStroke(IEnumerable<GraphPoint> points, double width = 2.2)
+    {
+        var list = points.ToArray();
+        if (list.Length < 2 || list.Length > 2500 || _strokes.Count >= 2000 ||
+            !double.IsFinite(width) || width < 0.5 || width > 20 ||
+            list.Any(p => !double.IsFinite(p.X) || !double.IsFinite(p.Y) || Math.Abs(p.X) > 1e7 || Math.Abs(p.Y) > 1e7))
+            throw new InvalidDataException("Traço inválido, longo demais ou fora do canvas.");
+        var stroke = new GraphStroke("stroke_" + Guid.NewGuid().ToString("N"), list, width);
+        Remember();
+        _strokes.Add(stroke);
+        return stroke;
+    }
+
+    public bool RemoveStroke(string id)
+    {
+        if (!_strokes.Any(s => s.Id == id)) return false;
+        Remember();
+        _strokes.RemoveAll(s => s.Id == id);
+        return true;
+    }
     public GraphNode? Node(string id) => _nodes.FirstOrDefault(n => n.Id == id);
 
     public string Serialize() => JsonSerializer.Serialize(new Persisted
     {
         Type = TypeName, Version = CurrentVersion, Id = Id, Title = Title,
-        Nodes = _nodes, Edges = _edges
+        Nodes = _nodes, Edges = _edges, Strokes = _strokes
     }, Json) + "\n";
 
     /// <summary>
@@ -128,10 +251,26 @@ public sealed class GraphDocument
             if (n is null || string.IsNullOrWhiteSpace(n.Id) || !ids.Add(n.Id) ||
                 !Enum.IsDefined(n.Kind) || n.Label is null) throw new InvalidDataException("Nó inválido ou duplicado.");
             CheckGeometry(n.X, n.Y, n.Width, n.Height);
+            if (n.ParentId == n.Id) throw new InvalidDataException("Um grupo não pode ser pai de si próprio.");
             if (n.Target is not null) ValidateTarget(n.Target);
             if (n.Kind is GraphNodeKind.Note or GraphNodeKind.File or GraphNodeKind.Folder && n.Target is null)
                 throw new InvalidDataException("Referência sem destino.");
         }
+        foreach (var node in data.Nodes)
+            if (node.ParentId is { } parent && (!ids.Contains(parent) ||
+                data.Nodes.All(n => n.Id != parent || n.Kind != GraphNodeKind.Group) ||
+                node.Kind == GraphNodeKind.Group))
+                throw new InvalidDataException("Grupo inválido ou não encontrado.");
+        var strokes = data.Strokes ?? [];
+        if (strokes.Count > 2000) throw new InvalidDataException("Muitos traços.");
+        var strokeIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var stroke in strokes)
+            if (stroke is null || string.IsNullOrWhiteSpace(stroke.Id) || !strokeIds.Add(stroke.Id) ||
+                !double.IsFinite(stroke.Width) || stroke.Width < .5 || stroke.Width > 20 ||
+                stroke.Points is null || stroke.Points.Length < 2 || stroke.Points.Length > 2500 ||
+                stroke.Points.Any(p => !double.IsFinite(p.X) || !double.IsFinite(p.Y) ||
+                    Math.Abs(p.X) > 1e7 || Math.Abs(p.Y) > 1e7))
+                throw new InvalidDataException("Traço inválido.");
         var edgeIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var e in data.Edges)
             if (e is null || string.IsNullOrWhiteSpace(e.Id) || !edgeIds.Add(e.Id) ||
@@ -141,6 +280,7 @@ public sealed class GraphDocument
         var graph = new GraphDocument { Id = data.Id, Title = data.Title };
         graph._nodes.AddRange(data.Nodes);
         graph._edges.AddRange(data.Edges);
+        graph._strokes.AddRange(strokes);
         return graph;
     }
 
@@ -172,13 +312,17 @@ public sealed class GraphDocument
         public string Title { get; set; } = "";
         public List<GraphNode>? Nodes { get; set; }
         public List<GraphEdge>? Edges { get; set; }
+        public List<GraphStroke>? Strokes { get; set; }
     }
 }
 
 public enum GraphNodeKind { Text, Note, File, Folder, Group, Shape }
 
 public sealed record GraphNode(string Id, GraphNodeKind Kind, string Label, string? Target,
-    double X, double Y, double Width, double Height, string? ReferenceId = null);
+    double X, double Y, double Width, double Height, string? ReferenceId = null, string? ParentId = null);
 
 /// <summary>Relation is optional semantic metadata; an ordinary drawn line asserts no factual relationship.</summary>
 public sealed record GraphEdge(string Id, string SourceId, string TargetId, string Label, string Relation, bool Directed);
+
+public sealed record GraphPoint(double X, double Y);
+public sealed record GraphStroke(string Id, GraphPoint[] Points, double Width);
