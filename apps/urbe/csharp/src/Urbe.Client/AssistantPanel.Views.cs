@@ -223,12 +223,17 @@ public sealed partial class AssistantPanel
 
     private static Control Plan(JsonArray steps)
     {
-        var list = new StackPanel { Spacing = 3, Margin = new Thickness(2, 2, 0, 2) };
+        var list = new StackPanel { Spacing = 6, Margin = new Thickness(2, 2, 0, 2) };
         foreach (var x in steps)
         {
             var s = (string?)x?["status"] ?? "pending";
             var mark = s switch { "done" => "✓", "in_progress" => "◐", _ => "○" };
-            list.Children.Add(Row(Label(mark, 13, s == "done" ? UrbeTheme.Accent : UrbeTheme.Text3), Wrap((string?)x?["step"] ?? "", 13, s == "done" ? UrbeTheme.Text3 : UrbeTheme.Text)));
+            var description = new StackPanel { Spacing = 2 };
+            description.Children.Add(Wrap((string?)x?["step"] ?? "", 13, s == "done" ? UrbeTheme.Text3 : UrbeTheme.Text));
+            if ((string?)x?["details"] is { Length: > 0 } details) description.Children.Add(Wrap(details, 12, UrbeTheme.Text2));
+            if ((string?)x?["acceptance"] is { Length: > 0 } acceptance)
+                description.Children.Add(Wrap("Concluído quando: " + acceptance, 11, UrbeTheme.Text3));
+            list.Children.Add(Row(Label(mark, 13, s == "done" ? UrbeTheme.Accent : UrbeTheme.Text3), description));
         }
         return list;
     }
