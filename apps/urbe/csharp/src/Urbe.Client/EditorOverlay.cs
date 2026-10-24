@@ -76,6 +76,9 @@ public sealed class EditorOverlay : Grid
     public bool StartInVisual { get; set; } = true;
     /// <summary>The notes of the open vault (for [[ suggestions and wikilink targets).</summary>
     public Func<IEnumerable<CityNote>>? Notes { get; set; }
+
+    /// <summary>The card of a <c>![[destino]]</c> line in the Visual mode (set by the app, which knows the vault).</summary>
+    public Func<string, Control?>? EmbedFor { get => _visual.EmbedFor; set => _visual.EmbedFor = value; }
     /// <summary>UD.prompt / UD.choose of the host.</summary>
     public UrbeDialogs? Dialogs { get; set; }
     public VisualSurface Surface => _visual;

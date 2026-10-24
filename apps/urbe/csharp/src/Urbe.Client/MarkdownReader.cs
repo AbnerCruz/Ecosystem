@@ -50,6 +50,36 @@ public sealed class MarkdownReader
     public Action<int>? AgentAsked { get; set; }
     private int _agents;
 
+    /// <summary>
+    /// A paragraph that is only <c>![[destino]]</c> (one or more) is drawn as this card (a note, an image or a file shown
+    /// in place); null leaves the plain link. The card is built at once and fills itself when its content is read.
+    /// </summary>
+    public Func<string, Control?>? EmbedFor { get; set; }
+
+    /// <summary>The targets of a paragraph made only of <c>![[…]]</c>, or null when it has anything else.</summary>
+    private static List<string>? EmbedTargets(RichNode p)
+    {
+        var found = new List<string>();
+        bool bang = false;
+        foreach (var c in p.Children)
+        {
+            if (c.Tag == RichNode.TextTag)
+            {
+                var t = c.Text.Trim();
+                if (t.Length == 0) continue;
+                if (t != "!" || bang) return null;
+                bang = true;
+            }
+            else if (c.Tag == "span" && c.HasClass("wikilink") && bang && c.Attr("data-note-name") is { Length: > 0 } name)
+            {
+                found.Add(name);
+                bang = false;
+            }
+            else return null;
+        }
+        return found.Count > 0 && !bang ? found : null;
+    }
+
     private int _listLine;
 
     public Control Build(IReadOnlyList<RichNode> nodes)
@@ -127,6 +157,13 @@ public sealed class MarkdownReader
             case "h4": case "h5": case "h6": return Heading(n, 1, FontWeight.Bold, new Thickness(0, 1.33 * Size, 0, 1.33 * Size));
             case "p" when n.HasClass(NoteMarks.TagClass): return Tagged(n);
             case "p" when n.HasClass(NoteMarks.AgentClass): return AgentLine(n);
+            case "p" when EmbedFor is not null && EmbedTargets(n) is { } targets:
+            {
+                var cards = new StackPanel { Margin = new Thickness(0, .5 * Size), Spacing = .5 * Size };
+                foreach (var target in targets)
+                    cards.Children.Add(EmbedFor(target) ?? Text(n.Children, Size));
+                return cards;
+            }
             case "p": { var t = Text(n.Children, Size); t.Margin = new Thickness(0, .6 * Size); return t; }
             case "hr": return new Border { Height = 1, Background = UrbeTheme.Brush(UrbeTheme.Line2), Margin = new Thickness(0, 2 * Size) };
             case "ul": case "ol": return List(n);
@@ -233,6 +270,8 @@ public sealed class MarkdownReader
     {
         public List<(int Start, int Length, string Name)> Wiki { get; } = [];
         public List<(int Start, int Length, string Url)> Links { get; } = [];
+        public List<(int Start, int Length, int Index)> Comments { get; } = [];
+        public Action<int>? CommentsTapped { get; set; }
         protected override Type StyleKeyOverride => typeof(TextBlock);
     }
 
@@ -295,21 +334,16 @@ public sealed class MarkdownReader
             }
             case "span" when n.HasClass(NoteMarks.NotesClass):
             {
-                // palavra{"comentário"} (UC-49): a small 💬 raised over the end of the word; a tap opens the comments
+                // palavra{"comentário"} (UC-49): a small 💬 raised over the end of the word; a tap opens the comments.
+                // A run in the text (found by the tap's position, like a wikilink), not a control inside it: a control in
+                // wrapped text was clipped, cutting the words around it, and crashed the app once (24/10/2026)
                 var notes = System.Text.Json.JsonSerializer.Deserialize<string[]>(n.Attr("data-comments")) ?? [];
                 int index = _notes++;
-                var mark = new Button
-                {
-                    Content = new TextBlock { Text = notes.Length > 1 ? "💬" + notes.Length : "💬", FontSize = Size * .62, Foreground = UrbeTheme.Brush(UrbeTheme.Accent) },
-                    Padding = new Thickness(1, 0), MinWidth = 0, MinHeight = 0, Margin = new Thickness(0, 0, 0, Size * .55),
-                    Background = Brushes.Transparent, BorderThickness = new Thickness(0), Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand)
-                };
-                ToolTip.SetTip(mark, string.Join("\n", notes));
-                Avalonia.Automation.AutomationProperties.SetName(mark, notes.Length == 1 ? "1 comentário" : notes.Length + " comentários");
-                mark.Click += (_, e) => { e.Handled = true; CommentsTapped?.Invoke(index); };
-                mark.Tapped += (_, e) => e.Handled = true;   // the block does not become an edit box under the 💬
-                into.Add(new InlineUIContainer(mark) { BaselineAlignment = BaselineAlignment.Top });
-                length += 1;
+                var label = notes.Length > 1 ? "\u00a0💬" + notes.Length : "\u00a0💬";
+                into.Add(new Run(label) { FontSize = Size * .7, Foreground = UrbeTheme.Brush(UrbeTheme.Accent), BaselineAlignment = BaselineAlignment.Superscript });
+                host.Comments.Add((length, label.Length, index));
+                host.CommentsTapped = CommentsTapped;
+                length += label.Length;
                 return;
             }
             case "span" when n.HasClass(NoteMarks.AiClass):
@@ -358,12 +392,22 @@ public sealed class MarkdownReader
 
     private static string Plain(RichNode n) => n.Tag == RichNode.TextTag ? n.Text : string.Concat(n.Children.Select(Plain));
 
+    /// <summary>A tap on the n-th 💬 mark of a drawn text (tests): what the finger does at that place.</summary>
+    public static bool TapCommentMark(TextBlock text, int n)
+    {
+        if (text is not RichText tb || n < 0 || n >= tb.Comments.Count) return false;
+        tb.CommentsTapped?.Invoke(tb.Comments[n].Index);
+        return true;
+    }
+
     private void OnTextTapped(object? sender, TappedEventArgs e)
     {
-        if (sender is not RichText tb || (tb.Wiki.Count == 0 && tb.Links.Count == 0)) return;
+        if (sender is not RichText tb || (tb.Wiki.Count == 0 && tb.Links.Count == 0 && tb.Comments.Count == 0)) return;
         if (!TouchIntent.IsIntended(tb)) { e.Handled = true; return; }   // a scroll over a link does not follow it
         var hit = tb.TextLayout.HitTestPoint(e.GetPosition(tb));
         var pos = hit.TextPosition;
+        foreach (var (s, l, index) in tb.Comments)
+            if (pos >= s && pos < s + l) { e.Handled = true; tb.CommentsTapped?.Invoke(index); return; }
         foreach (var (s, l, name) in tb.Wiki)
             if (pos >= s && pos < s + l) { e.Handled = true; WikiLinkTapped?.Invoke(name); return; }
         foreach (var (s, l, url) in tb.Links)
