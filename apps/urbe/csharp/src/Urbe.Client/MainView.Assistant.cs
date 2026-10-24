@@ -20,6 +20,7 @@ public sealed partial class MainView : IAssistantApp
     // A small, always-available launcher; no extra AI service or duplicate conversation.
     private readonly Button _assistantLauncher = new();
     private readonly Border _assistantMini = new() { IsVisible = false };
+    private string? _assistantMiniRenderedKey;
 
     public Button AssistantLauncher => _assistantLauncher;
     public Border AssistantMini => _assistantMini;
@@ -70,9 +71,15 @@ public sealed partial class MainView : IAssistantApp
         _assistantLauncher.IsVisible = panel is not { IsVisible: true };
         if (!showing)
         {
+            _assistantMiniRenderedKey = null;
             _assistantMini.Child = null;
             return;
         }
+
+        // Leave live editors/buttons mounted while a tool streams more tokens. Don't erase user input.
+        var key = panel!.CompactRenderKey;
+        if (_assistantMiniRenderedKey == key && _assistantMini.Child is not null) return;
+        _assistantMiniRenderedKey = key;
 
         // Keep the editor alive under this non-modal, bounded surface. Never move keyboard focus.
         _assistantMini.Child = new ScrollViewer
