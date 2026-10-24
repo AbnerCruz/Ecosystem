@@ -271,19 +271,25 @@ public static class AssistantMemoryEngine
             Math.Max(0, conversationChars);
         if (free <= 0) return [];
         var matches = Search(cfg, vault, agentId, query, int.MaxValue);
-        if (matches.Count == 0) return PackPrompt(cfg, vault, agentId, matches,
-            (int)Math.Min(int.MaxValue, free));
+        // When the question itself has no matching subject, only durable preferences
+        // and explicitly pinned memories may enter the first context pass.
+        IReadOnlyList<AiMemoryMatch> candidates = matches.Count > 0 ? matches :
+            Visible(cfg, vault, agentId)
+                .Where(m => (m.Kind == "preference" || m.Pinned) &&
+                    !PotentialSecret.IsMatch(m.Text))
+                .Select(m => new AiMemoryMatch(m, 0)).ToArray();
+        if (candidates.Count == 0) return [];
 
         // Soft initial budget: sqrt(N), not N. For 10,000 matches the automatic recall
         // selects representatives; the agent requests subsequent pages only as required.
         // Deeper requests may consume more, but cannot exceed the selected model's space.
-        var avg = matches.Average(x => Math.Min(x.Memory.Text.Length + 100, 20000));
+        var avg = candidates.Average(x => Math.Min(x.Memory.Text.Length + 100, 20000));
         var complexity = 1d + Math.Log2(1 + Tokens(query).Length);
         if (Regex.IsMatch(Normalize(query), @"\b(todos|todas|completo|completa|detalhado|profundo|exaustivo|historia|historico)\b"))
             complexity *= 2;
-        var desired = Math.Ceiling(avg * Math.Sqrt(matches.Count) * complexity);
+        var desired = Math.Ceiling(avg * Math.Sqrt(candidates.Count) * complexity);
         var allowed = (int)Math.Min(int.MaxValue, Math.Min(free, Math.Max(avg, desired)));
-        return PackPrompt(cfg, vault, agentId, matches, allowed);
+        return PackPrompt(cfg, vault, agentId, candidates, allowed);
     }
 
     public static string? ExplicitRememberRequest(string? userMessage)
