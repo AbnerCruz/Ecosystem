@@ -20,7 +20,7 @@
     "docs/governance/handoffs/HO-20261024-urbe-beta-22.json"
   ],
   "work_completed": [
-    "Beta 2.0.0-beta.22 (código 2000022), pedida pelo proprietário (24/10/2026: \"Dps de fazer eu quero a release\"). Leva o que entrou depois da beta.21: ![[destino]] mostrado no editor Visual (nota, imagem, página .html renderizada, PDF, áudio, vídeo, código-fonte), partes do destino (#Título, #^id, #código, #L10-25) e o 💬 dos comentários que não corta mais o texto (PR #705)."
+    "Beta 2.0.0-beta.22 (código 2000022), pedida pelo proprietário (24/10/2026: \"Dps de fazer eu quero a release\"). Leva o que entrou depois da beta.21: ![[destino]] mostrado no editor Visual (nota, imagem, página .html renderizada, PDF, áudio, vídeo, código-fonte), partes do destino (#Título, #^id, #código, #L10-25) e o \uD83D\uDCAC dos comentários que não corta mais o texto (PR #705)."
   ],
   "verification": [
     {
@@ -32,9 +32,10 @@
     {
       "kind": "human",
       "check": "Baixar a beta.22 e testar ![[…]] e os comentários no aparelho",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
-      "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.22"
+      "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.22",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-24 (Issue https://github.com/AbnerCruz/Ecosystem/issues/715); registro em docs/governance/responses/VAL-HO-20261024-urbe-beta-22-1be33e80741b.md."
     }
   ],
   "known_issues": [],
