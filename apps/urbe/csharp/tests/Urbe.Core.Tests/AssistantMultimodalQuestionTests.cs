@@ -1,0 +1,116 @@
+using System.Text.Json.Nodes;
+using Urbe.Core;
+using Urbe.Core.Assistant;
+
+namespace Urbe.Core.Tests;
+
+/// <summary>UC-63: user-selected attachments and single-question clarification; no network/real credentials.</summary>
+public sealed class AssistantMultimodalQuestionTests
+{
+    [Fact]
+    public void ImageAndPdfAttachmentsRoundTripAndUseProviderSpecificWireFormats()
+    {
+        var png = Convert.ToBase64String(new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a });
+        var pdf = Convert.ToBase64String("%PDF-1.7"u8.ToArray());
+        var message = new AiChatMessage
+        {
+            Role = "user",
+            Content =
+            [
+                AiChatBlock.TextBlock("Analise estas referências"),
+                new AiChatBlock { Type = "attachment", FileName = "referência.png", MimeType = "image/png", Content = png },
+                new AiChatBlock { Type = "attachment", FileName = "aula.pdf", MimeType = "application/pdf", Content = pdf }
+            ]
+        };
+        var restored = AiChatMessage.FromJson(message.ToJson());
+        Assert.Equal(message.ToJson().ToJsonString(), restored.ToJson().ToJsonString());
+        var blocks = restored.Content.Select(b => b.Type == "attachment"
+            ? AiBlock.Attachment(b.MimeType, b.FileName, b.Content) : AiBlock.TextBlock(b.Text ?? "")).ToList();
+        var req = new AiRequest("vision-model", [new AiMessage("user", blocks)]);
+        var openai = AssistantProviders.OpenAiWire(req, AssistantProviders.Resolve(new AiProviderConfig("p", "openai")));
+        var content = openai["messages"]?[0]?["content"] as JsonArray;
+        Assert.NotNull(content);
+        Assert.Equal("image_url", (string?)content[1]?["type"]);
+        Assert.Equal("data:image/png;base64," + png, (string?)content[1]?["image_url"]?["url"]);
+        Assert.Equal("file", (string?)content[2]?["type"]);
+        Assert.Equal("aula.pdf", (string?)content[2]?["file"]?["filename"]);
+        Assert.Equal("data:application/pdf;base64," + pdf, (string?)content[2]?["file"]?["file_data"]);
+        var anthropic = AssistantProviders.AnthropicWire(req);
+        var a = anthropic["messages"]?[0]?["content"] as JsonArray;
+        Assert.NotNull(a);
+        Assert.Equal("image", (string?)a[1]?["type"]);
+        Assert.Equal("document", (string?)a[2]?["type"]);
+        Assert.Equal("base64", (string?)a[2]?["source"]?["type"]);
+    }
+
+    [Fact]
+    public void OldAttachmentIsNotResentToTheModelAfterUserMovesOn()
+    {
+        var old = new AiChatMessage { Role = "user", Content =
+        [
+            AiChatBlock.TextBlock("Veja a imagem."),
+            new AiChatBlock { Type = "attachment", FileName = "mapa.png", MimeType = "image/png", Content = new string('a', 10000) }
+        ] };
+        var now = new AiChatMessage { Role = "user", Content = [AiChatBlock.TextBlock("Obrigado, próximo assunto.")] };
+        var settled = AssistantAgent.SettlePast([old, now]);
+        Assert.DoesNotContain(settled[0].Content, b => b.Type == "attachment");
+        Assert.Contains(settled[0].Content, b => b.Text?.Contains("mapa.png") == true);
+        Assert.Contains(old.Content, b => b.Type == "attachment"); // stored original unchanged
+    }
+
+    private sealed class Host : IAssistantHost
+    {
+        public DocumentStore Documents { get; } = new();
+        public KnowledgeIndex Knowledge { get; }
+        public Host() => Knowledge = new KnowledgeIndex(Documents);
+        public int ReadChars => 4000;
+        public (string? Path, string? Selection) EditorContext() => (null, null);
+        public Task<UrbeDocument> CreateNoteAsync(string path, string content) => throw new NotSupportedException();
+        public Task<UrbeDocument> SaveNoteAsync(UrbeDocument doc, string content) => throw new NotSupportedException();
+        public Task<UrbeDocument> RenameNoteAsync(UrbeDocument doc, string path) => throw new NotSupportedException();
+        public Task TrashNoteAsync(UrbeDocument doc) => throw new NotSupportedException();
+        public Task CreateFolderAsync(string path) => throw new NotSupportedException();
+        public void OpenNote(string path) { }
+        public void Remember(string fact) { }
+        public void SetPlan(IReadOnlyList<AiPlanStep> steps) { }
+    }
+
+    [Fact]
+    public async Task AskUserToolYieldsAndWaitsWithoutRepeatingQuestionsOrWritingFiles()
+    {
+        var tool = AssistantQuestionTools.Ask;
+        Assert.Equal("ui", tool.Access);
+        var input = new JsonObject
+        {
+            ["question"] = "Qual estilo de citação devo usar?",
+            ["resolved"] = 2,
+            ["total"] = 3,
+            ["reason"] = "A escolha afeta a formatação."
+        };
+        var host = new Host();
+        var streamed = 0;
+        var messages = new List<AiChatMessage>
+        {
+            new() { Role = "user", Content = [AiChatBlock.TextBlock("Prepare minha monografia.")] }
+        };
+        var result = await AssistantAgent.RunAsync(new AiAgentRun
+        {
+            Agent = AssistantAgent.AgentById("geral"), Host = host, Policy = "ask",
+            Provider = new AiProviderConfig("p", "openai"), Model = "model-with-tools",
+            Messages = messages, Tools = [tool], MaxSteps = 5,
+            Stream = (_, req, _, _) =>
+            {
+                streamed++;
+                if (streamed > 1) throw new InvalidOperationException("O agente deveria ter aguardado a resposta do usuário");
+                return Task.FromResult(new AiResult([AiBlock.ToolUse("call_1", "ask_user", input)], "", "tool_use",
+                    new AiUsage(15, 8, null), "model-with-tools"));
+            }
+        });
+        Assert.Equal(1, streamed);
+        Assert.Equal("needs_input", result.Stopped);
+        Assert.Null(result.Error);
+        Assert.Equal("ask_user", messages.SelectMany(m => m.Content).Single(b => b.Type == "tool_use").Name);
+        Assert.Contains(messages.SelectMany(m => m.Content), b => b.Type == "tool_result" && !b.IsError);
+        Assert.Empty(result.Changes);
+    }
+}
