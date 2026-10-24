@@ -1,0 +1,96 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-assistant-ux-timeline",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T10:02:08Z",
+  "agent": {
+    "id": "chatgpt-urbe-ux",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-63",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-assistant-ux-timeline-settings-beta25-20261024",
+  "base_commit": "ff2f4f2f627fb4437cdce9c20d5ba435ed602a2b",
+  "commit": "599b4e5bb6d073218205420043d879fbeeeeb571",
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261024-urbe-assistant-ux-timeline.json"
+  ],
+  "work_completed": [
+    "Atividade resumida e expansível por pedido: operações consolidadas em indicador visual com estado e progresso indeterminado respeitando movimento reduzido.",
+    "Segundo nível expansível mostra cada operação, entrada JSON completa e resultado completo. Transcrições permanecem em mensagens persistidas e o output de imagens aparece diretamente no chat.",
+    "Perguntas e aprovações em espera ficam visíveis sem exigir expansão do histórico. Históricos antigos permanecem preguiçosamente carregados.",
+    "Configurações do assistente organizadas por Modelos, Agentes, Contexto e Execução, preservando ações de configuração individuais e informação crítica.",
+    "Testes headless estendidos para abrir grupo da última conversa e cada operação, além de navegar pelas áreas de configuração.",
+    "Roadmap incrementado com aceite; solicitação de beta25 registrada sem assumir release já publicada."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe.Client.Tests headless + Android CI",
+      "result": "pending",
+      "evidence": "Aguardar GitHub Actions após criação da PR."
+    },
+    {
+      "kind": "human",
+      "check": "Urbe beta Android: tela pequena, streaming longo, perguntas, aprovações e navegação nos painéis",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs"
+    }
+  ],
+  "known_issues": [
+    "Novo visual não remove limite do motor em main; a correção de execução adaptativa permanece na PR #726, ainda não integrada.",
+    "Não há APK de beta25 verificado nesta etapa; release depende de integração governada, CI e workflow oficial.",
+    "Expandir resultados muito longos pode consumir memória; conteúdo carrega apenas sob toque e o histórico recolhido é leve."
+  ],
+  "blockers": [
+    "PR deve passar CI e ser integrada antes de publicar beta25.",
+    "Validação visual no aparelho Android segue pendente."
+  ],
+  "next_actions": [
+    "Revisar CI, corrigir falhas e integrar UI quando aprovada.",
+    "Após integração autorizada, disparar build oficial beta25 e verificar asset APK e hash.",
+    "Validar em telefone Android com solicitações longas e painel de configurações."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Modificação exclusiva da interface Avalonia; nenhum novo runtime criado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e dispositivo não declarados como aprovados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem extração prematura de componente compartilhado."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-assistant-activity-ui",
+      "status": "product-specific",
+      "rationale": "Componente exclusivamente visual e interno ao Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Mudança interna do cliente Avalonia, sem alterar storage, credenciais, permissions, assinatura ou API."
+  }
+}
