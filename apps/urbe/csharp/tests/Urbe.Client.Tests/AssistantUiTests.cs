@@ -59,7 +59,7 @@ public sealed partial class HeadlessUiTests
                 var model = new ScriptedModel();
 
                 // the rail's Assistente opens the panel: "Conecte um modelo"
-                ClickButtonWithText(view, "Assistente");
+                view.AssistantLauncher.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 var panel = view.Assistant;
                 panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
                 Assert.True(panel.IsVisible);
@@ -192,7 +192,7 @@ public sealed partial class HeadlessUiTests
             {
                 await view.OpenVaultAsync();
                 await Settle(window, view);
-                ClickButtonWithText(view, "Assistente");
+                view.AssistantLauncher.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 var panel = view.Assistant;
                 var model = new ScriptedModel();
                 panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
@@ -244,7 +244,7 @@ public sealed partial class HeadlessUiTests
             {
                 await view.OpenVaultAsync();
                 await Settle(window, view);
-                ClickButtonWithText(view, "Assistente");
+                view.AssistantLauncher.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 var panel = view.Assistant;
                 var model = new ScriptedModel();
                 panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
@@ -324,7 +324,7 @@ public sealed partial class HeadlessUiTests
             {
                 await view.OpenVaultAsync();
                 await Settle(window, view);
-                ClickButtonWithText(view, "Assistente");
+                view.AssistantLauncher.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 var panel = view.Assistant;
                 var model = new ScriptedModel();
                 panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
@@ -405,7 +405,7 @@ public sealed partial class HeadlessUiTests
             {
                 await view.OpenVaultAsync();
                 await Settle(window, view);
-                ClickButtonWithText(view, "Assistente");
+                view.AssistantLauncher.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 var panel = view.Assistant;
                 var model = new ScriptedModel();
                 panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
