@@ -23,8 +23,8 @@ public static class AssistantQuestionTools
         {
             var question = ((string?)i["question"] ?? "").Trim();
             if (question.Length == 0 || question.Length > 700) throw new AiToolException("Faça uma pergunta curta e específica.");
-            int resolved = Math.Clamp((int?)i["resolved"] ?? 0, 0, 100);
-            int total = Math.Clamp((int?)i["total"] ?? 1, 1, 100);
+            int resolved = Math.Clamp((int)LegacyCustomize.JsToNumber(i["resolved"]), 0, 100);
+            int total = Math.Clamp((int)LegacyCustomize.JsToNumber(i["total"]), 1, 100);
             if (resolved > total) resolved = total;
             return Task.FromResult(new AiToolOutput("Pergunta exibida ao usuário. " + resolved + "/" + total +
                 " dúvidas resolvidas. Aguarde a resposta antes de continuar a execução."));
