@@ -59,6 +59,14 @@
 
 **Limitações deste incremento:** sem renderização JavaScript, sem parsing de PDF público pelo novo gateway; APIs com login/autenticação fora de escopo; validação Brave real depende de credencial disponível. Testes com transporte HTTP/DNS determinístico, CI Android/Windows/Core e validação no aparelho exigida (NN-017). ADR-0038 proposto; controles de rede e publicação dependem de integração governada.
 
+## Correção regressiva para beta.26 — UC-63, 24/10/2026
+
+**Causa comprovada da beta.25 incompleta:** a PR #732 criou `AssistantPanel.Activity.cs` e integrou o chat em atividades expansíveis; a integração posterior da PR #734 (memória) removeu esse arquivo e substituiu `ActivityTimeline` por `activities.Select(View)`, restaurando o despejo de cartões por operação. O APK oficial beta.25 foi compilado do commit `eb53068da459195740097058958170ea71a062a3`, com a regressão já presente. A suite headless original do #732 também foi revertida nessa PR, deixando de cobrir a funcionalidade prometida.
+
+**Correção:** restaurar o arquivo original + o ponto de chamada na `main` preservando o novo motor de memória `AssistantMemoryEngine`, as permissões de web_search/web_fetch e a navegação das configurações de modelos/agentes/contexto/pesquisa/execução. Reinstalar teste do resumo compacto + inspeção de etapas e referências às configurações de memórias e web. Criar versão nova `2.0.0-beta.26` — não substituir beta.25 (tags imutáveis). Testar C#, Android, Windows, E2E, consistência e publicar exclusivamente pelo workflow oficial.
+
+**Segurança / uso:** pesquisa web permanece desativada até consentimento explícito, seleção de agente e configuração da chave do provedor Brave. Custo externo depende do contrato da API. O teste físico Android permanece pendente mesmo com CI verde.
+
 ## Redesenho visual do Assistente — UC-63/UC-81 (24/10/2026, PR #732)
 
 O chat passa a mostrar uma atividade compacta por pedido, com estado real, progresso discreto, expansão por etapa e acesso integral a parâmetros e resultados. Aprovações, perguntas, respostas e imagens continuam visíveis fora das etapas recolhidas. Configurações em Modelos, Agentes, Contexto, Pesquisa e Execução; manter o controle de rede separado da PR #733, execução adaptativa da #726 e o uso offline. Testes headless/CI não substituem validação física Android (NN-017).

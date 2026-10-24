@@ -984,7 +984,7 @@ public sealed partial class AssistantPanel : Border
             var activities = steps.Where(m => m != answer).ToList();
             if (activities.Count > 0 || (i >= current && _running is not null))
             {
-                if (i >= current) desired.AddRange(activities.Select(View));
+                if (i >= current) desired.Add(ActivityTimeline(msgs[i], activities));
                 else
                 {
                     if (!_past.TryGetValue(msgs[i], out var group)) _past[msgs[i]] = group = PastSteps(activities);
