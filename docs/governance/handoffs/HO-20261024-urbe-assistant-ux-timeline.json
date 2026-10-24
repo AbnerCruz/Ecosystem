@@ -1,0 +1,97 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-assistant-ux-timeline",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T10:02:08Z",
+  "agent": {
+    "id": "chatgpt-urbe-ux",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-63",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-assistant-ux-timeline-settings-beta25-20261024",
+  "base_commit": "6af05b64a6225ef10ad530be56cdb650cd715c56",
+  "commit": "16e6527410b82e96064779b896a6fe47330b151f",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/732",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261024-urbe-assistant-ux-timeline.json"
+  ],
+  "work_completed": [
+    "Atividade resumida e expansível por pedido: operações consolidadas em indicador visual com estado e progresso indeterminado respeitando movimento reduzido.",
+    "Segundo nível expansível mostra cada operação, entrada JSON completa e resultado completo. Transcrições permanecem em mensagens persistidas e o output de imagens aparece diretamente no chat.",
+    "Perguntas e aprovações em espera ficam visíveis sem exigir expansão do histórico. Históricos antigos permanecem preguiçosamente carregados.",
+    "Configurações do assistente organizadas por Modelos, Agentes, Contexto e Execução, preservando ações de configuração individuais e informação crítica.",
+    "Testes headless estendidos para abrir grupo da última conversa e cada operação, além de navegar pelas áreas de configuração.",
+    "Roadmap incrementado com aceite; solicitação de beta25 registrada sem assumir release já publicada.",
+    "Conciliação semântica com main incluindo execução adaptativa PR #726 e controles independentes de pesquisa web PR #733; navegação recebeu aba Pesquisa e o limite legado foi removido da tela."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe.Client.Tests headless + Android CI",
+      "result": "pending",
+      "evidence": "Aguardar GitHub Actions após criação da PR."
+    },
+    {
+      "kind": "human",
+      "check": "Urbe beta Android: tela pequena, streaming longo, perguntas, aprovações e navegação nos painéis",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs"
+    }
+  ],
+  "known_issues": [
+    "Não há APK de beta25 verificado nesta etapa; release depende de integração governada, CI e workflow oficial.",
+    "Expandir resultados muito longos pode consumir memória; conteúdo carrega apenas sob toque e o histórico recolhido é leve."
+  ],
+  "blockers": [
+    "PR deve passar CI e ser integrada antes de publicar beta25.",
+    "Validação visual no aparelho Android segue pendente."
+  ],
+  "next_actions": [
+    "Executar CI da árvore reconciliada com main e corrigir falhas antes de integrar.",
+    "Submeter ao integrador com a label integrar já existente, sem contornar gates.",
+    "Validar no dispositivo Android a interface e as atividades.",
+    "Validar em telefone Android com solicitações longas e painel de configurações."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Modificação exclusiva da interface Avalonia; nenhum novo runtime criado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e dispositivo não declarados como aprovados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem extração prematura de componente compartilhado."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-assistant-activity-ui",
+      "status": "product-specific",
+      "rationale": "Componente exclusivamente visual e interno ao Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Mudança interna do cliente Avalonia, sem alterar storage, credenciais, permissions, assinatura ou API."
+  }
+}

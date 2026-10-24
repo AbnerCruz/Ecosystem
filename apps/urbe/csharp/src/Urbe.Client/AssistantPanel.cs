@@ -119,7 +119,9 @@ public sealed partial class AssistantPanel : Border
         Chip(_policyChip, 12);
         _policyChip.Margin = new Thickness(6, 0, 0, 0);
         _policyChip.Click += (_, _) => _ = PickPolicyAsync();
-        var bar = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(12, 0, 12, 6), Children = { _modelChip, _policyChip, _usage } };
+        // Reflow provider, approval and usage controls on smaller phones.
+        var bar = new WrapPanel { Orientation = Orientation.Horizontal,
+            Margin = new Thickness(12, 0, 12, 8), Children = { _modelChip, _policyChip, _usage } };
 
         _scroll = new ScrollViewer { HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = _log };
 
@@ -199,7 +201,9 @@ public sealed partial class AssistantPanel : Border
     /// </summary>
     private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note"];
 
-    private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name) ?? (name == AssistantAgent.Delegate.Name ? AssistantAgent.Delegate : null);
+    private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name)
+        ?? AssistantWebTools.All.FirstOrDefault(t => t.Name == name)
+        ?? (name == AssistantAgent.Delegate.Name ? AssistantAgent.Delegate : null);
 
     /// <summary>The HTTP layer (tests replace the handler).</summary>
     public AssistantProviders Providers { get; set; } = new();
@@ -888,8 +892,8 @@ public sealed partial class AssistantPanel : Border
 
     /// <summary>
     /// The log, light however long the conversation (observation of 22/10/2026: after 11 requests it froze the app).
-    /// The current request shows every step; an earlier one shows what was asked, its steps folded in one line (built
-    /// when opened) and its answer. Only what changed is replaced: a streamed word rebuilds its own message, not the log.
+    /// A compact activity summarizes tool work per request; tap to inspect every step and full results.
+    /// Final answers, approvals, questions and generated images remain first-class visible content.
     /// </summary>
     private void RenderLog()
     {
@@ -903,17 +907,23 @@ public sealed partial class AssistantPanel : Border
         {
             // the results the loop sends back show in their cards, not as messages
             if (msgs[i].Role == "user" && msgs[i].Meta?.ToolResults == true) continue;
-            if (i >= current || !IsRequest(msgs[i])) { desired.Add(View(msgs[i])); continue; }
+            if (!IsRequest(msgs[i])) { desired.Add(View(msgs[i])); continue; }
             desired.Add(View(msgs[i]));
             int end = i + 1;
-            while (end < current && !IsRequest(msgs[end])) end++;
+            while (end < msgs.Count && !IsRequest(msgs[end])) end++;
             var steps = msgs.GetRange(i + 1, end - i - 1).Where(m => m.Role == "assistant").ToList();
-            var answer = steps.LastOrDefault() is { } last && last.Content.Any(b => b.Type == "text" && !string.IsNullOrWhiteSpace(b.Text)) && !last.Content.Any(b => b.Type == "tool_use") ? last : null;
-            var folded = steps.Where(m => m != answer).ToList();
-            if (folded.Count > 0)
+            var answer = steps.LastOrDefault() is { } last && last.Meta?.Draft != true &&
+                last.Content.Any(b => b.Type == "text" && !string.IsNullOrWhiteSpace(b.Text)) &&
+                !last.Content.Any(b => b.Type == "tool_use") ? last : null;
+            var activities = steps.Where(m => m != answer).ToList();
+            if (activities.Count > 0 || (i >= current && _running is not null))
             {
-                if (!_past.TryGetValue(msgs[i], out var group)) _past[msgs[i]] = group = PastSteps(folded);
-                desired.Add(group);
+                if (i >= current) desired.Add(ActivityTimeline(msgs[i], activities));
+                else
+                {
+                    if (!_past.TryGetValue(msgs[i], out var group)) _past[msgs[i]] = group = PastSteps(activities);
+                    desired.Add(group);
+                }
             }
             if (answer is not null) desired.Add(View(answer));
             i = end - 1;
