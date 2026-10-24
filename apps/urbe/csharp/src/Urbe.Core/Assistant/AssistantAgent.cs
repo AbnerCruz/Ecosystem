@@ -540,7 +540,7 @@ public static class AssistantAgent
         // Optional ceiling for test harnesses and legacy callers; no cap in normal sessions.
         // Explicit cancel, repeated tool failures, and provider errors remain the safeguards.
         int? maxSteps = o.MaxSteps is > 0 ? o.MaxSteps : null;
-        bool runAllow = false, nudged = false, partialNudged = false, qualityReviewed = false;
+        bool runAllow = false, nudged = false, partialNudged = false, qualityReviewed = false, sourceReviewed = false;
         var failed = new Dictionary<string, string>();
         int repeats = 0;
         var partial = new List<(string Path, AiPartial Partial)>();
@@ -631,6 +631,29 @@ public static class AssistantAgent
                     };
                     messages.Add(nudge);
                     emit(new AiAgentEvent("message", nudge));
+                    continue;
+                }
+                // After external research, a factual answer must carry real, clickable provenance.
+                // One reminder only: do not trap the user in compulsory additional calls.
+                if (o.Host.Web is { } web && web.Sources.Count > 0 && web.SearchCalls + web.FetchCalls > 0 &&
+                    !sourceReviewed && said && !cancel.IsCancellationRequested &&
+                    !res.Content.Any(b => b.Type == "text" && System.Text.RegularExpressions.Regex.IsMatch(b.Text, @"https?://[^)\\s]+", System.Text.RegularExpressions.RegexOptions.IgnoreCase)))
+                {
+                    sourceReviewed = true;
+                    live.Meta ??= new AiChatMeta();
+                    live.Meta.Draft = true;
+                    emit(new AiAgentEvent("final", live, Usage: result.Usage));
+                    var verified = web.Sources.Where(s => s.Status == "página acessada")
+                        .Select(s => "- " + s.Title + " " + s.FinalUrl).ToList();
+                    messages.Add(new AiChatMessage
+                    {
+                        Id = uid("m"), Role = "user", Meta = new AiChatMeta { ToolResults = true },
+                        Content = [AiChatBlock.TextBlock("[Checagem de fontes externas] A resposta contém pesquisa web, mas nenhuma URL clicável. " +
+                            "Use fontes realmente lidas e cite cada afirmação pertinente com [Título](URL real). " +
+                            "Se só houver snippets ou a leitura tiver falhado, assuma que a informação NÃO foi verificada e não invente referência. " +
+                            "Páginas lidas nesta execução: " + (verified.Count > 0 ? string.Join("; ", verified) : "nenhuma") + ".")]
+                    });
+                    emit(new AiAgentEvent("message", messages[^1]));
                     continue;
                 }
                 // A written artifact is not finished just because the model stopped calling tools.
