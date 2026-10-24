@@ -1,0 +1,120 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-ai-background-planning",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T09:28:40Z",
+  "agent": {
+    "id": "chatgpt-urbe-ai-workflow",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-63",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-ai-background-adaptive-planning-20261024",
+  "base_commit": null,
+  "commit": "09bfbe7ea49365339a0c800a1d5cd1853cd38ae3",
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantQuestionTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PlatformAssistantActivity.cs",
+    "apps/urbe/csharp/src/Urbe.Android/MainActivity.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AssistantRunService.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantMultimodalQuestionTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0037-urbe-assistente-execucao-continuada.md",
+    "docs/governance/handoffs/HO-20261024-urbe-ai-background-planning.json"
+  ],
+  "work_completed": [
+    "Localizados limites arbitrários de passos do agente (30), subagente (12), atualização de plano (20), estimativa de perguntas (100) e configuração exposta no Assistente.",
+    "Alterado o run comum para não impor teto de passos; subagente herda execução sem teto; planos e estimativa de progresso não são cortados artificialmente.",
+    "Prompts reforçados com pesquisa do vault, qualidade da ficha de personagem, planejamento evolutivo, ideias paralelas relacionadas, atualização de notas conectadas e revisão do resultado gravado.",
+    "Quando há mudança de nota, o runtime induz uma etapa de revisão antes de permitir a resposta conclusiva.",
+    "Bridge plataforma-UI e foreground service Android specialUse com canais de execução e atenção, notificações de aprovação, pergunta, conclusão e erro e intent para abrir o Assistente.",
+    "Testes automatizados acrescentados para 27 etapas de plano, 37 turnos do agente, mais de 100 dúvidas e guia de qualidade; execução real pendente.",
+    "ADR-0037 proposto e ROADMAP atualizado com requisitos, riscos e gates incompletos."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "GitHub Actions urbe-checks (build/test Android/desktop/core) + consistency",
+      "result": "pending",
+      "evidence": "PR deve executar CI após abertura; SDK dotnet não disponível na sessão."
+    },
+    {
+      "kind": "human",
+      "check": "Android 13: agent run, app minimized, lock screen, notification question/approval/completion, reopen chat",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/src/Urbe.Android/AssistantRunService.cs"
+    },
+    {
+      "kind": "human",
+      "check": "Qualidade end-to-end de ficha de personagem sem contexto, desenvolvimento de ideia paralela e consistência entre notas",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs"
+    }
+  ],
+  "known_issues": [
+    "O serviço mantém o processo durante execução iniciada pelo usuário, mas não salva o ponto exato do run: force-stop, morte do processo e reinício não são recuperáveis nesta fatia.",
+    "O Android pode negar o start do serviço dependendo de restrições de foreground; verificação DEVICE é essencial.",
+    "A mudança estrutural especialUse precisa revisão de permissão e de eventual política Play Store.",
+    "A ausência de teto de rodadas aumenta risco de tempo/custo elevado; cancelamento e proteções contra chamadas falhas continuam, mas falta telemetria de orçamento voluntário.",
+    "As notificações exibem estado e abrem o app, sem aprovar operações diretamente fora da interface."
+  ],
+  "blockers": [
+    "Device Android e CI não verificados ainda.",
+    "Continuação idempotente depois de morte de processo exige journal/recovery em fatia própria."
+  ],
+  "next_actions": [
+    "Executar CI, corrigir erros de compilação/testes, revisão ADR-0037 e integração governada.",
+    "Testar notificações e continuidade minimizado/bloqueado no aparelho.",
+    "Implementar checkpoint seguro e resumption idempotente após término inesperado do processo.",
+    "Fazer teste com modelo real para ficha e ideias relacionadas, ajustando avaliação qualitativa com evidência."
+  ],
+  "decisions_required": [
+    "Aprovação do ADR-0037 e política de foreground service especial para eventual distribuição Play Store."
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O runner permanece em AssistantPanel/Urbe.Core; Android Service só sustenta processo e notifica."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "ADR-0037 proposto para revisar novo foreground service especial."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação DEVICE ainda pendente; sem declaração de beta concluída."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem duplicar runtime ou extrair abstração compartilhada antes de segundo consumidor."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-assistant-background-run",
+      "status": "product-specific",
+      "rationale": "Bridge de status estritamente do assistente Urbe, ainda sem outro consumidor; não cria novo runtime compartilhado."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Novo foreground service Android e permissão especial; ADR-0037 depende de revisão, CI e DEVICE."
+  }
+}
