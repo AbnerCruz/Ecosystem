@@ -50,9 +50,10 @@
     {
       "kind": "human",
       "check": "Configurar Brave Search real e pesquisar/visitar 3 páginas no Android físico",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
-      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Web.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Web.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-24 (Issue https://github.com/AbnerCruz/Ecosystem/issues/736); registro em docs/governance/responses/VAL-HO-20261024-urbe-web-research-742c0f32fc04.md."
     }
   ],
   "known_issues": [
