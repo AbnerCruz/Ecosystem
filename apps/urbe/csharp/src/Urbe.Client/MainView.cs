@@ -46,6 +46,7 @@ public sealed partial class MainView : Grid
         Explorer = new NotesExplorer { State = ExplorerState };
         Editor = new EditorOverlay { IsVisible = false, Dialogs = Dialogs, Notes = () => _contents.Select(n => new CityNote(n.Key, n.Value)) };
         Editor.EmbedFor = BuildEmbed;
+        Editor.Properties.TagSource = () => _store is null ? [] : _store.List().SelectMany(d => d.Tags).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
         Editor.PropertiesFor = path => _library?.PropertiesText(path, Now);
         // v23Atualizar: v23Dock.hidden = editor (the rail of a wide window stays)
         Editor.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) _dock.IsVisible = !Editor.IsVisible && !(Bounds.Width >= WideBreakpoint); };
@@ -677,6 +678,8 @@ public sealed partial class MainView : Grid
         if (Dialogs.IsOpen || ActionSheet.IsOpen || editor.Current is not { } note) return Task.CompletedTask;
         return SheetMenuAsync(NoteLibrary.FullNoteName(note.Path),
         [
+            new DialogItem(editor.ReadOnly ? "Modo edição" : "Modo leitura", editor.ReadOnly ? UrbeTheme.Icons.Pencil : UrbeTheme.Icons.Book,
+                editor.ReadOnly ? "Volta a escrever na nota." : "Só ler: nada é alterado sem querer.", Run: () => { editor.ReadOnly = !editor.ReadOnly; return Task.CompletedTask; }),
             new DialogItem("Renomear", UrbeTheme.Icons.Pencil, Run: () => RenameNoteAsync(note.Path)),
             new DialogItem("Mover para outra pasta", UrbeTheme.Icons.Folder, Run: async () =>
             {

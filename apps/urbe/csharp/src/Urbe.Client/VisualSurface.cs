@@ -82,6 +82,30 @@ public sealed class VisualSurface : StackPanel
     /// <summary>The whole note, Markdown (LF), after every edit.</summary>
     public string Text => _text;
     public bool IsEditing => _box is not null;
+
+    private bool _readOnly;
+
+    /// <summary>Only reading (24/10/2026): no block turns into an edit box, nothing is toggled or written; links, comments to read and cards still work.</summary>
+    public bool ReadOnly
+    {
+        get => _readOnly;
+        set
+        {
+            if (_readOnly == value) return;
+            _readOnly = value;
+            if (value) FinishEdit();
+            Rebuild();
+        }
+    }
+
+    private bool _hideFrontmatter;
+
+    /// <summary>The frontmatter block is not drawn (the properties form shows it); the text keeps it.</summary>
+    public bool HideFrontmatter
+    {
+        get => _hideFrontmatter;
+        set { if (_hideFrontmatter == value) return; _hideFrontmatter = value; Rebuild(); }
+    }
     public event Action<string>? TextEdited;
     public event Action<string>? WikiLinkTapped;
 
@@ -207,6 +231,7 @@ public sealed class VisualSurface : StackPanel
         var suggested = _suggestion is null;
         foreach (var block in _blocks)
         {
+            if (_hideFrontmatter && block.Kind == "frontmatter") continue;
             if (_box is not null && !editorAdded && block.Start >= _editStart)
             {
                 editorAdded = true;
@@ -346,6 +371,7 @@ public sealed class VisualSurface : StackPanel
 
     private void ToggleTask(MarkdownBlock block, int line, bool on)
     {
+        if (_readOnly) { Rebuild(); return; }
         var lines = _text[block.Start..block.End].Split('\n');
         if (line < 0 || line >= lines.Length) return;
         var l = lines[line];
@@ -359,6 +385,7 @@ public sealed class VisualSurface : StackPanel
 
     private void AppendBlock()
     {
+        if (_readOnly) return;
         if (_suggestion is not null) return;
         FinishEdit();
         var sep = _text.Length == 0 || _text.EndsWith("\n\n", StringComparison.Ordinal) ? "" : _text.EndsWith('\n') ? "\n" : "\n\n";
@@ -376,6 +403,7 @@ public sealed class VisualSurface : StackPanel
     /// </summary>
     public void TapBlock(int blockStart, Control holder, Visual? hit, Point at, bool select)
     {
+        if (_readOnly) return;
         if (_suggestion is not null) return;   // an agent's suggestion waits for its answer first (UC-80)
         var scroll = Scroll;
         _anchorY = scroll is null ? null : EditorScrolling.TopIn(holder, scroll);
@@ -797,6 +825,7 @@ public sealed class VisualSurface : StackPanel
 
     private void AskAgent(int blockStart, int index)
     {
+        if (_readOnly) return;
         var before = _text.Length;
         var editingStart = _editStart;
         FinishEdit();
@@ -823,7 +852,7 @@ public sealed class VisualSurface : StackPanel
         _prompting = true;
         try { added = await ask(groups[index].Comments); }
         finally { _prompting = false; }
-        if (string.IsNullOrWhiteSpace(added)) return;
+        if (_readOnly || string.IsNullOrWhiteSpace(added)) return;
         var g = groups[index];
         var source = NoteMarks.AddComment(_text[block.Start..block.End], g, added);
         _text = _text[..block.Start] + source + _text[block.End..];
@@ -833,6 +862,7 @@ public sealed class VisualSurface : StackPanel
 
     private async Task EditFormulaAsync(int blockStart, int index)
     {
+        if (_readOnly) return;
         if (AskFormula is not { } ask) return;
         var before = _text.Length;
         var editingStart = _editStart;
