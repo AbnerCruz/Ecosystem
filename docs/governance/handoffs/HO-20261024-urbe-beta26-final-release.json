@@ -35,10 +35,10 @@
     {
       "kind": "human",
       "check": "Validar Urbe beta.26 no Android e conferir painel expansível, pesquisa e memória",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "https://github.com/AbnerCruz/Ecosystem/releases",
-      "evidence": "Não há validação física por esse agente."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-24 (Issue https://github.com/AbnerCruz/Ecosystem/issues/751); registro em docs/governance/responses/VAL-HO-20261024-urbe-beta26-final-release-795323c531d0.md."
     }
   ],
   "known_issues": [
