@@ -189,7 +189,8 @@ public sealed partial class MainView
         if (choice is not { } index) return;
         var selected = references[index];
         var at = GraphsPanel.Canvas.WorldCenter;
-        var node = _openGraph.AddReference(selected.Kind, selected.Path, at.X - 95, at.Y - 42);
+        var referenceId = selected.Kind == GraphNodeKind.Note ? _store?.Get(selected.Path)?.Id : null;
+        var node = _openGraph.AddReference(selected.Kind, selected.Path, at.X - 95, at.Y - 42, referenceId);
         GraphsPanel.Canvas.Select(node.Id);
         _graphDirty = true;
         await SaveGraphAsync();
@@ -241,7 +242,9 @@ public sealed partial class MainView
 
     private async Task OpenGraphReferenceAsync()
     {
-        if (GraphsPanel.Canvas.SelectedNode?.Target is not { } path) return;
+        if (GraphsPanel.Canvas.SelectedNode is not { Target: { } target } selected) return;
+        var path = selected.Kind == GraphNodeKind.Note && selected.ReferenceId is { } id
+            ? _store?.Get(id)?.Path ?? target : target;
         if (!await SaveGraphAsync()) return;
         GraphsPanel.IsVisible = false;
         UpdateNav();
