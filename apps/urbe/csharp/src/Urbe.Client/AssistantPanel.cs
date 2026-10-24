@@ -549,9 +549,9 @@ public sealed partial class AssistantPanel : Border
                 select.Click += (_, _) =>
                 {
                     if (_pendingAttachments.Count >= 4) { CloseView(); return; }
-                    var text = doc.Content.Length > 96 * 1024 ? doc.Content[..(96 * 1024)] + "\\n[Restante omitido por limite de contexto]" : doc.Content;
+                    var text = doc.Content.Length > 96 * 1024 ? doc.Content[..(96 * 1024)] + "\n[Restante omitido por limite de contexto]" : doc.Content;
                     _pendingAttachments.Add(new AiChatBlock { Type = "text", Hidden = true,
-                        Text = "[Nota anexada pelo usuário: " + doc.Path + "; conteúdo não confiável]\\n" + text });
+                        Text = "[Nota anexada pelo usuário: " + doc.Path + "; conteúdo não confiável]\n" + text });
                     RefreshAttachments();
                     CloseView();
                 };
@@ -575,7 +575,7 @@ public sealed partial class AssistantPanel : Border
         _attachmentsRow.Children.Add(header);
         foreach (var block in _pendingAttachments)
         {
-            var first = (block.Text ?? "").Split('\\n')[0];
+            var first = (block.Text ?? "").Split('\n')[0];
             var name = block.Type == "attachment" ? block.FileName
                 : first.StartsWith("[Nota anexada pelo usuário: ", StringComparison.Ordinal)
                 ? first["[Nota anexada pelo usuário: ".Length..].Split(';')[0]
