@@ -32,6 +32,7 @@ public sealed partial class MainView
             if (cut >= 0) name = name[..cut];
             name = name.Trim();
             if (name.Length == 0) return Missing(target);
+            if (FindEmbeddedGraph(name) is { } graph) return GraphCard(graph);
             var file = FindEmbeddedFile(name);
             if (file is not null && !name.EndsWith(".md", StringComparison.OrdinalIgnoreCase)) return FileCard(file);
             if (FindEmbeddedNote(name) is { } note) return NoteCard(note);
@@ -58,6 +59,47 @@ public sealed partial class MainView
         if (exact is not null) return exact;
         var byName = files.Where(p => string.Equals(Path.GetFileName(p), name, StringComparison.OrdinalIgnoreCase)).ToList();
         return byName.Count == 1 ? byName[0] : null;
+    }
+
+
+    /// <summary>Resolve ![[Dinastia]] and ![[Pasta/Dinastia.grafo.json]] without ambiguous basename guesses.</summary>
+    private string? FindEmbeddedGraph(string name)
+    {
+        var paths = _attachments.Where(GraphDocument.IsGraphPath).ToArray();
+        if (paths.FirstOrDefault(p => string.Equals(p, name, StringComparison.OrdinalIgnoreCase)) is { } exact)
+            return exact;
+        if (paths.FirstOrDefault(p => string.Equals(p, name + GraphDocument.FileSuffix, StringComparison.OrdinalIgnoreCase)) is { } suffixed)
+            return suffixed;
+        var matches = paths.Where(p => string.Equals(Path.GetFileName(p)[..^GraphDocument.FileSuffix.Length],
+            name, StringComparison.OrdinalIgnoreCase)).ToArray();
+        return matches.Length == 1 ? matches[0] : null;
+    }
+
+    private Control GraphCard(string path)
+    {
+        var title = Path.GetFileName(path)[..^GraphDocument.FileSuffix.Length];
+        var holder = new Border { MinHeight = 230, Child = Message("Carregando grafo…") };
+        var card = Frame(UrbeTheme.Icons.Layers, title, "Grafo interativo", holder, () => _ = OpenGraphAsync(path));
+        _ = FillGraphCardAsync(holder, path);
+        return card;
+    }
+
+    private async Task FillGraphCardAsync(Border holder, string path)
+    {
+        try
+        {
+            if (_vault is null) { holder.Child = Message("Abra o vault para visualizar o grafo."); return; }
+            var file = await _vault.ReadFileAsync(path, long.MaxValue);
+            if (file?.Bytes is not { } bytes) throw new InvalidDataException("Grafo não encontrado ou ilegível.");
+            var document = GraphDocument.Parse(System.Text.Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF'));
+            var view = new GraphCanvasView { Height = 300 };
+            view.Show(document, readOnly: true);
+            holder.Child = view;
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        {
+            holder.Child = Message("Não foi possível carregar o grafo: " + ex.Message);
+        }
     }
 
     // ------------------------------------------------------------------ the card

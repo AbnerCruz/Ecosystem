@@ -64,3 +64,5 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0037](0037-urbe-assistente-execucao-continuada.md) | Urbe: execução continuada, perguntas adaptativas e qualidade de artefatos | Proposto |
 | [0038](0038-urbe-pesquisa-web-segura.md) | Urbe: pesquisa pública autorizada, fontes e proteção de rede | Proposto |
 | [0039](0039-urbe-memoria-contextual-local.md) | Memória contextual local e aprendizado dos agentes do Urbe | Proposto |
+
+| [0040](0040-urbe-grafos-autorais.md) | Grafos autorais como artefatos do Urbe | Proposto |

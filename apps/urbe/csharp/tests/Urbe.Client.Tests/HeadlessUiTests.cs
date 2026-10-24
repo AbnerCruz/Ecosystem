@@ -114,8 +114,8 @@ public sealed partial class HeadlessUiTests : IDisposable
             Assert.False(view.Explorer.IsVisible);
             Assert.True(view.Workspace.ShowsSidebarButton);
             var dock = view.GetVisualDescendants().OfType<TextBlock>()
-                .Where(t => t.Text is "Notas" or "Assistente" or "Cidade" && t.IsEffectivelyVisible && t.FindAncestorOfType<WorkspaceView>() is null).Select(t => t.Text).ToList();
-            Assert.Equal(["Notas"], dock);
+                .Where(t => t.Text is "Notas" or "Grafos" or "Assistente" or "Cidade" && t.IsEffectivelyVisible && t.FindAncestorOfType<WorkspaceView>() is null).Select(t => t.Text).ToList();
+            Assert.Equal(["Notas", "Grafos"], dock);
             Assert.True(view.AssistantLauncher.IsEffectivelyVisible);
             Assert.Equal("Notas", view.ActiveDestination);
             ClickNamed(view.Workspace, "Pastas");

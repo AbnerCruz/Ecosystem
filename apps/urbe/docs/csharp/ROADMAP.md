@@ -347,3 +347,11 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 - [~] **Contexto `&Agente&:` sem sequestro do editor**: uma única conversa/executor; pop-up nativo não modal de estado, aprovação com diff e opção de edição/rejeição, pergunta, resultado/erro. A configuração de provedor/modelo ausente ainda pode abrir o painel completo. A sugestão inline existente não é substituída.
 - **Provas pendentes**: suite de UI headless e consistency do CI; inspeção visual, foco/IME, sobreposição e desempenho em Android físico; revisão de acessibilidade e estados de aprovação/pergunta; validação de continuidade e atualização antes de qualquer release. Não marcar como concluído por existir PR ou build.
 - **Fronteira:** sem alteração de modelo de dados, segredos, tokens, runtime, rede, segurança das ferramentas ou outros Products; nenhum APK/release nesta fatia antes de integração governada e validação.
+
+## UC-88 — Grafos autorais e exploração visual (direção do proprietário, 24/10/2026)
+
+- [~] **UC-88.1 — Primeira fatia em PR:** `*.grafo.json` (domínio local, identidade estável de nós/arestas, referências a arquivos, notas e pastas), destino **Grafos**, criação/edição em canvas Avalonia, escrita verificada e `![[grafo]]` navegável. Branch `feat/urbe-grafos-livres-20261024`, especificação [GRAPHS.md](GRAPHS.md), ADR-0040. **Não marcar como concluído** antes de CI, testes UI e DEVICE.
+- [~] **UC-88.2 — Autoria avançada:** caneta, borracha, forma elíptica, grupos, seleção múltipla, undo/redo e resize em PR; ainda faltam drag direto do Explorer, formas vetoriais completas, layouts, virtualização e DEVICE.
+- [~] **UC-88.3 — Projeções automáticas:** snapshot editável da hierarquia (arquivos, notas, pastas, escopo) e wikilinks resolvidos; ainda faltam projeção viva, filtros/layouts especializados e referências quebradas.
+- [~] **UC-88.4 — Grafos operacionais:** list_graphs e read_graph read-only, com paginação e proveniência; ainda faltam edição por agente com diff/aprovação/reversão, plano observável e memória contextual da UC-87.
+- **Gates obrigatórios:** `dotnet test`, `dotnet run tests/consistency/Check.cs`, Android físico (pinch, teclado, transclusão, salvamento e recuperação), review da alteração persistida, integrador governado. **Sem release automática.**

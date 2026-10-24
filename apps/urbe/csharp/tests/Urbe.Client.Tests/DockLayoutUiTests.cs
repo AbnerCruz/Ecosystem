@@ -10,7 +10,7 @@ namespace Urbe.Client.Tests;
 public sealed partial class HeadlessUiTests
 {
     [Fact]
-    public async Task Dock_NotesAndFloatingAssistantAreAccessibleOnPhone() =>
+    public async Task Dock_NotesAndGraphsWithFloatingAssistantAreAccessibleOnPhone() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
         {
             var view = new MainView();
@@ -21,9 +21,13 @@ public sealed partial class HeadlessUiTests
                 await Pump(200);
                 var notes = view.GetLogicalDescendants().OfType<Button>()
                     .First(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Notas" &&
-                        b.IsEffectivelyVisible && b.Bounds.Width >= 398);
+                        b.IsEffectivelyVisible && b.Bounds.Width >= 198);
                 Assert.True(notes.IsEffectivelyVisible);
-                Assert.InRange(notes.Bounds.Width, 398, 402);
+                Assert.InRange(notes.Bounds.Width, 198, 202);
+                var graphs = view.GetLogicalDescendants().OfType<Button>()
+                    .First(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Grafos" &&
+                        b.IsEffectivelyVisible && b.Bounds.Width >= 198);
+                Assert.InRange(graphs.Bounds.Width, 198, 202);
                 var launcher = view.AssistantLauncher;
                 Assert.True(launcher.IsEffectivelyVisible);
                 Assert.Equal(UrbeTokens.MinTouch, launcher.Bounds.Width);

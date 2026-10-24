@@ -37,6 +37,7 @@ public interface IAssistantApp
     IAssistantAppearance? Appearance => null;
     /// <summary>The vault's plugins (write_plugin turns them on).</summary>
     IAssistantPlugins? Plugins => null;
+    IAssistantGraphs? Graphs => null;
     /// <summary>UC-80: an agent's change to the note open in the editor, shown there to accept or refuse; false when it cannot be.</summary>
     bool SuggestInNote(string path, LineChange change, string who, Action accept, Action refuse) => false;
     /// <summary>UC-80: the suggestion in the note (if any) leaves the editor.</summary>
@@ -188,7 +189,7 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, pages/ai-tools.js, customize/ai-tools.js, then the vault plugins).</summary>
-    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan"), AssistantAdaptivePlanTools.Update, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, .. AssistantMemoryTools.All, AgentNames.Tool, AssistantImageTools.Tool, AssistantQuestionTools.Ask];
+    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan"), AssistantAdaptivePlanTools.Update, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, .. AssistantMemoryTools.All, .. AssistantGraphTools.All, AgentNames.Tool, AssistantImageTools.Tool, AssistantQuestionTools.Ask];
 
     /// <summary>UC-63: the image tool is always visible to the chat agent, independently of its provider.</summary>
     public static IReadOnlyList<AiTool> ToolsFor(AiProviderConfig provider) =>
@@ -881,6 +882,7 @@ public sealed partial class AssistantPanel : Border
         public void SetPlan(IReadOnlyList<AiPlanStep> steps) { }
         public IAssistantAppearance? Appearance => panel._app.Appearance;
         public IAssistantPlugins? Plugins => panel._app.Plugins;
+        public IAssistantGraphs? Graphs => panel._app.Graphs;
     }
 
     private sealed class Undo(IAssistantApp app, DocumentStore documents) : IAssistantUndoHost
