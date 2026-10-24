@@ -4,22 +4,26 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace Urbe.Core.Assistant;
 
 /// <summary>One source of truth: config.json in AssistantStore, never notes or URLs.</summary>
 public sealed class AiWebConfig
 {
-    public bool Enabled { get; set; }
-    public string Provider { get; set; } = "brave";
+    // Public research is available by default; only the search terms/visited URLs leave the device.
+    // A user who explicitly disabled research is respected by the persisted flag.
+    public bool Enabled { get; set; } = true;
+    public string Provider { get; set; } = "bing-rss";
     public string ApiKey { get; set; } = "";
     public int MaxSearchCalls { get; set; } = 12;
     public int MaxFetchCalls { get; set; } = 20;
     public int TimeoutSeconds { get; set; } = 18;
     public int MaxDownloadBytes { get; set; } = 1_000_000;
-    /// <summary>Explicit per-agent network grant; built-in agents are not implicitly trusted.</summary>
+    // Retained only for reading old configs; ordinary public research does not depend on agent IDs.
     public Dictionary<string, bool> AgentAccess { get; set; } = new(StringComparer.Ordinal);
-    public bool Allowed(string agentId) => Enabled && AgentAccess.GetValueOrDefault(agentId);
+    public bool Allowed(string agentId) => Enabled;
 }
 
 public sealed record AiWebSource(string Id, string Title, string OriginalUrl, string FinalUrl,
@@ -81,6 +85,86 @@ public sealed class BraveAssistantSearchProvider : IAssistantSearchProvider
 }
 
 /// <summary>
+/// Best-effort keyless search using Bing's public RSS presentation. This is not a contracted API:
+/// it can rate-limit, redirect, or change; never present it as guaranteed or unlimited.
+/// No HTML scraping, JS execution, proxy, key, or separate app server.
+/// </summary>
+public sealed class BingRssSearchProvider : IAssistantSearchProvider
+{
+    public string Id => "bing-rss";
+
+    public async Task<IReadOnlyList<AiWebHit>> SearchAsync(HttpClient client, string credential, string query,
+        string? language, string? country, string? freshness, string? domain, int count, int page, CancellationToken cancel)
+    {
+        if (string.IsNullOrWhiteSpace(query) || query.Length > 600)
+            throw new AiToolException("A pesquisa deve conter entre 1 e 600 caracteres.");
+        if (page != 0)
+            throw new AiToolException("A busca gratuita RSS não oferece paginação. Reformule a consulta para localizar outras fontes.");
+        var terms = query.Trim();
+        if (!string.IsNullOrWhiteSpace(domain))
+        {
+            if (!Regex.IsMatch(domain, @"^[a-zA-Z0-9.-]{1,253}$") || domain.StartsWith('-') ||
+                domain.Contains("..", StringComparison.Ordinal))
+                throw new AiToolException("Filtro de domínio inválido.");
+            terms += " site:" + domain;
+        }
+        // Language/region is an advisory hint only. The RSS endpoint cannot guarantee freshness.
+        var locale = country?.ToUpperInvariant() == "BR" || language?.StartsWith("pt", StringComparison.OrdinalIgnoreCase) == true
+            ? "pt-BR" : "en-US";
+        var url = AssistantWebSession.ValidateUrl("https://www.bing.com/search?q=" +
+            Uri.EscapeDataString(terms) + "&format=rss&mkt=" + locale);
+        for (var redirects = 0; redirects < 4; redirects++)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancel);
+            if ((int)response.StatusCode is 301 or 302 or 303 or 307 or 308)
+            {
+                if (response.Headers.Location is not { } location)
+                    throw new AiToolException("O buscador redirecionou sem informar o destino.");
+                url = AssistantWebSession.ValidateUrl(new Uri(url, location).AbsoluteUri);
+                continue;
+            }
+            if (response.StatusCode == HttpStatusCode.TooManyRequests)
+                throw new AiToolException("A busca gratuita está temporariamente limitada (HTTP 429). Tente novamente depois.");
+            if (!response.IsSuccessStatusCode)
+                throw new AiToolException("A busca gratuita não está disponível (HTTP " + (int)response.StatusCode +
+                    "). Nenhuma fonte foi inventada.");
+            var bytes = await AssistantWebSession.ReadLimitedAsync(response.Content, 800_000, cancel);
+            XDocument xml;
+            try
+            {
+                using var stream = new MemoryStream(bytes);
+                using var reader = XmlReader.Create(stream, new XmlReaderSettings
+                {
+                    DtdProcessing = DtdProcessing.Prohibit,
+                    XmlResolver = null,
+                    MaxCharactersInDocument = 800_000
+                });
+                xml = XDocument.Load(reader);
+                if (xml.Root?.Name.LocalName != "rss")
+                    throw new XmlException("Resposta não é RSS.");
+            }
+            catch (XmlException)
+            {
+                throw new AiToolException("A busca gratuita não retornou RSS válido; pode estar indisponível ou bloqueada.");
+            }
+            var hits = xml.Descendants("item").Take(Math.Clamp(count, 1, 10))
+                .Select(item => new AiWebHit(
+                    (string?)item.Element("title") ?? "",
+                    (string?)item.Element("link") ?? "",
+                    (string?)item.Element("description") ?? "",
+                    (string?)item.Element("pubDate")))
+                .Where(hit => !string.IsNullOrWhiteSpace(hit.Title) &&
+                    Uri.TryCreate(hit.Url, UriKind.Absolute, out var target) &&
+                    target.Scheme is "http" or "https")
+                .ToList();
+            return hits;
+        }
+        throw new AiToolException("O buscador excedeu os redirecionamentos permitidos.");
+    }
+}
+
+/// <summary>
 /// The request-scoped public internet gateway: separate user grant, DNS-pinned sockets,
 /// no cookies/proxy/local network, manual redirect checks, byte/time/query budgets.
 /// Source list is evidence, not a license for the model to invent claims.
@@ -108,7 +192,7 @@ public sealed class AssistantWebSession : IDisposable
         _config = config;
         if (existingSources is not null) _sources.AddRange(existingSources);
         _cancel = cancel;
-        _search = search ?? new BraveAssistantSearchProvider();
+        _search = search ?? (config.Provider == "brave" ? new BraveAssistantSearchProvider() : new BingRssSearchProvider());
         _resolve = resolver ?? ((host, ct) => Dns.GetHostAddressesAsync(host, ct));
         _http = handler is null ? new HttpClient(CreatePublicHandler(_resolve), true) : new HttpClient(handler, false);
         _ownsClient = true;
@@ -194,15 +278,16 @@ public sealed class AssistantWebSession : IDisposable
         _cancel.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(query)) throw new AiToolException("Informe os termos da pesquisa.");
         if (_searchCalls >= Math.Clamp(_config.MaxSearchCalls, 1, 100))
-            throw new AiToolException("Limite de pesquisas desta execução atingido. Ajuste o limite na configuração antes de uma nova tarefa.");
+            throw new AiToolException("Proteção de uso: número máximo de pesquisas nesta execução. Inicie outra tarefa se precisar continuar.");
         if (_config.Provider != _search.Id) throw new AiToolException("Provedor de busca não suportado: " + _config.Provider);
-        await ValidateDns(ValidateUrl("https://api.search.brave.com/res/v1/web/search"));
+        await ValidateDns(ValidateUrl(_search.Id == "brave"
+            ? "https://api.search.brave.com/res/v1/web/search" : "https://www.bing.com/search?format=rss"));
         _searchCalls++;
         IReadOnlyList<AiWebHit> hits;
         try { hits = await _search.SearchAsync(_http, _config.ApiKey, query, language, country, freshness, domain, count, page, _cancel); }
         catch (OperationCanceledException) when (_cancel.IsCancellationRequested) { throw; }
         catch (TaskCanceledException) { throw new AiToolException("A busca excedeu o tempo limite."); }
-        catch (HttpRequestException) { throw new AiToolException("Falha de rede na API de pesquisa."); }
+        catch (HttpRequestException) { throw new AiToolException("Falha de rede na pesquisa pública. Não foi possível verificar fontes."); }
         var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var lines = new List<string>();
         foreach (var hit in hits)
@@ -276,7 +361,7 @@ public sealed class AssistantWebSession : IDisposable
 
     private void RequireEnabled()
     {
-        if (!_config.Enabled) throw new AiToolException("Pesquisa externa desativada. Habilite em Configurações → Pesquisa.");
+        if (!_config.Enabled) throw new AiToolException("Pesquisa na internet desativada nas preferências de privacidade.");
     }
 
     private AiWebSource Register(string title, string original, string final, string? published, string status)
