@@ -66,7 +66,8 @@ public sealed class EditorFindBar : Border
         _toSource();
         IsVisible = true;
         _cursor = 0;
-        Avalonia.Threading.Dispatcher.UIThread.Post(() => { Query.Focus(); Query.SelectAll(); }, Avalonia.Threading.DispatcherPriority.Loaded);
+        if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid()))
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => { if (IsVisible) { Query.Focus(); Query.SelectAll(); } }, Avalonia.Threading.DispatcherPriority.Loaded);
         Update();
     }
 
@@ -87,7 +88,7 @@ public sealed class EditorFindBar : Border
         if (hits.Count == 0) return;
         var hit = hits[_cursor % hits.Count];
         var editor = _editor();
-        editor.Focus();
+        if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) editor.Focus();
         editor.SelectionStart = hit.Index;
         editor.SelectionEnd = hit.Index + hit.Length;
         _cursor = (_cursor + 1) % hits.Count;

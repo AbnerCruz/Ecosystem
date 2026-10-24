@@ -224,7 +224,7 @@ public sealed class VisualSurface : StackPanel
                 Background = Brushes.Transparent, MinHeight = 44,
                 Child = new TextBlock { Text = "Comece a escrever…", Foreground = UrbeTheme.Brush(UrbeTheme.Text3), FontSize = TextSize, FontFamily = UrbeTheme.EditorFont }
             };
-            empty.Tapped += (_, e) => { e.Handled = true; if (TouchIntent.IsIntended(empty)) AppendBlock(); };
+            empty.Tapped += (_, e) => { e.Handled = true; if (TouchIntent.IsIntended(empty)) AppendBlock(fromTouch: true); };
             Children.Add(empty);
         }
         var editorAdded = false;
@@ -251,7 +251,7 @@ public sealed class VisualSurface : StackPanel
         if (!suggested) Children.Add(SuggestionCard(_suggestion!));
         if (_box is not null && !editorAdded) Children.Add(EditorFor());
         var tail = new Border { Background = Brushes.Transparent, MinHeight = 160 };
-        tail.Tapped += (_, e) => { e.Handled = true; if (TouchIntent.IsIntended(tail)) AppendBlock(); };
+        tail.Tapped += (_, e) => { e.Handled = true; if (TouchIntent.IsIntended(tail)) AppendBlock(fromTouch: true); };
         Children.Add(tail);
     }
 
@@ -383,9 +383,10 @@ public sealed class VisualSurface : StackPanel
         Rebuild();
     }
 
-    private void AppendBlock()
+    private void AppendBlock(bool fromTouch = false)
     {
         if (_readOnly) return;
+        if (fromTouch) _tapAt = new Point(0, 0); // the empty note was tapped directly
         if (_suggestion is not null) return;
         FinishEdit();
         var sep = _text.Length == 0 || _text.EndsWith("\n\n", StringComparison.Ordinal) ? "" : _text.EndsWith('\n') ? "\n" : "\n\n";
@@ -593,7 +594,8 @@ public sealed class VisualSurface : StackPanel
 
     private void Place(TextBox box, Point? tap, int? caret, bool select)
     {
-        box.Focus();
+        var directTouch = tap is not null;
+        if (KeyboardFocusPolicy.FocusEditableOnTouch(OperatingSystem.IsAndroid(), directTouch)) box.Focus();
         var len = box.Text?.Length ?? 0;
         var at = caret is { } c ? Math.Clamp(c, 0, len) : CaretFromTap(box, tap) ?? len;
         box.SelectionStart = box.SelectionEnd = box.CaretIndex = at;
@@ -604,7 +606,7 @@ public sealed class VisualSurface : StackPanel
             Ui.PlatformHaptics.Hold();
         }
         // a box focused by the app does not always bring up the phone's keyboard: ask for it (UC-48)
-        PlatformInput.ShowKeyboard?.Invoke();
+        if (directTouch) PlatformInput.ShowKeyboard?.Invoke();
     }
 
     private bool _keepPending, _keepTyping;
@@ -904,13 +906,13 @@ public sealed class VisualSurface : StackPanel
         _prompting = true;
         try { r = await ask(text[a..b].Trim(), block); }
         finally { _prompting = false; }
-        if (r is null || r.Remove || r.Tex.Length == 0 || _box is null) { _box?.Focus(); return; }
+        if (r is null || r.Remove || r.Tex.Length == 0 || _box is null) { if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) _box?.Focus(); return; }
         if (!r.Block)
         {
             var raw = "$" + r.Tex + "$";
             var insert = a > 0 && !System.Text.RegularExpressions.Regex.IsMatch(text[a - 1].ToString(), @"[\s\u200b(\[{]") ? " " + raw : raw;
             Apply(new LegacyEditorTools.TextEdit(text[..a] + insert + text[b..], a + insert.Length, a + insert.Length));
-            _box?.Focus();
+            if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) _box?.Focus();
             return;
         }
         var display = "$$\n" + r.Tex + "\n$$";
@@ -1005,7 +1007,7 @@ public sealed class VisualSurface : StackPanel
         finally { _prompting = false; }
         if (_box is null) return;
         if (r is { } box) Apply(NoteContainers.Wrap(text, a, b, box.Type, box.Title));
-        _box.Focus();
+        if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) _box.Focus();
     }
 
     private async Task LinkAsync(string text, int a, int b)
@@ -1017,7 +1019,7 @@ public sealed class VisualSurface : StackPanel
         finally { _prompting = false; }
         if (url is null || _box is null) return;
         Apply(LegacyVisualEdit.Link(text, a, b, url));
-        _box.Focus();
+        if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) _box.Focus();
     }
 
     private void ChooseSlash(string act)

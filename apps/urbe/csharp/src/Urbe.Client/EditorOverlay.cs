@@ -37,6 +37,7 @@ public sealed class EditorOverlay : Grid
     private readonly WikiSuggestList _wiki = new();
     private readonly ScrollViewer _visualScroll;
     private readonly ScrollViewer _sourceScroll;
+    public event Action<string>? ScrollObserved; // opt-in on-device scroll diagnostic
     private readonly StackPanel _sourceColumn;
     private readonly Border _properties;
 
@@ -235,8 +236,16 @@ public sealed class EditorOverlay : Grid
         _visualScroll = Column(_visualColumn);
         // the header gives the text room while scrolling down and comes back on the way up; a caret in sight stays in
         // sight when the visible area changes (the keyboard opens), one scrolled away from is left alone
-        _visualScroll.ScrollChanged += (_, e) => OnScrolled(_visualScroll, e);
-        _sourceScroll.ScrollChanged += (_, e) => OnScrolled(_sourceScroll, e);
+        _visualScroll.ScrollChanged += (_, e) =>
+        {
+            OnScrolled(_visualScroll, e);
+            ScrollObserved?.Invoke("Visual y=" + Math.Round(_visualScroll.Offset.Y) + " viewport=" + Math.Round(_visualScroll.Viewport.Height));
+        };
+        _sourceScroll.ScrollChanged += (_, e) =>
+        {
+            OnScrolled(_sourceScroll, e);
+            ScrollObserved?.Invoke("Fonte y=" + Math.Round(_sourceScroll.Offset.Y) + " viewport=" + Math.Round(_sourceScroll.Viewport.Height));
+        };
         _visualScroll.SizeChanged += (_, e) => { if (e.HeightChanged && !HeaderMoving) _visual.KeepCaretAfterResize(e.PreviousSize.Height); };
         _sourceScroll.SizeChanged += (_, e) =>
         {
@@ -339,7 +348,7 @@ public sealed class EditorOverlay : Grid
         }
         pos = Math.Min(pos, text.Length);
         Editor.SelectionStart = Editor.SelectionEnd = Editor.CaretIndex = pos;
-        if (Mode == EditorMode.Fonte) Editor.Focus();
+        if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid()) && Mode == EditorMode.Fonte) Editor.Focus();
     }
 
     /// <summary>"Localizar e substituir" (ui.find.open, Ctrl+F).</summary>
@@ -422,6 +431,7 @@ public sealed class EditorOverlay : Grid
                 return;
             }
         }
+        if (Editor.IsFocused || _visual.IsKeyboardFocusWithin) FinishWriting();
         // the Explorer is back at once; the note finishes saving behind it
         Leaving?.Invoke();
         IsVisible = false;
@@ -498,13 +508,13 @@ public sealed class EditorOverlay : Grid
         IsVisible = true;
         if (pendingFrom is not null) ScheduleAutosave();
         // Focus after the overlay is laid out; on Android this brings up the soft keyboard (Fonte; Visual edits on tap).
-        if (Mode == EditorMode.Fonte) Dispatcher.UIThread.Post(FocusSource, DispatcherPriority.Loaded);
+        if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid()) && Mode == EditorMode.Fonte) Dispatcher.UIThread.Post(FocusSource, DispatcherPriority.Loaded);
     }
 
     /// <summary>The Fonte text gets the focus and the phone's keyboard comes up (a focus set by the app does not always bring it).</summary>
     private void FocusSource()
     {
-        if (!IsVisible || Mode != EditorMode.Fonte) return;
+        if (!IsVisible || Mode != EditorMode.Fonte || !KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) return;
         Editor.Focus();
         PlatformInput.ShowKeyboard?.Invoke();
     }
@@ -775,7 +785,13 @@ public sealed class EditorOverlay : Grid
 
     private void ShowMode(EditorMode mode)
     {
+        var wasEditing = Editor.IsFocused || _visual.IsKeyboardFocusWithin;
         if (Mode == EditorMode.Visual && mode != EditorMode.Visual) _visual.FinishEdit();   // serialise what was edited
+        if (OperatingSystem.IsAndroid() && IsVisible && Mode != mode && wasEditing)
+        {
+            Focusable = true;
+            Focus(); // noneditable overlay: closes the old IME without selecting the new field
+        }
         Mode = mode;
         PlaceProperties();
         ShowActiveTools(new HashSet<string>());
@@ -793,7 +809,7 @@ public sealed class EditorOverlay : Grid
             Style(_sourceButton, !visual);
         }
         UpdateChrome();
-        if (!visual && IsVisible) Dispatcher.UIThread.Post(FocusSource, DispatcherPriority.Loaded);
+        if (!visual && IsVisible && KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) Dispatcher.UIThread.Post(FocusSource, DispatcherPriority.Loaded);
         // the text switching modes fades in briefly (≤ 150 ms): it is the same note, seen another way
         if (IsVisible && !UrbeTokens.Motion.Reduced) UrbeMotion.Enter(visual ? _visualScroll : _sourceScroll, 0, 0, UrbeTokens.Motion.Fast);
     }
@@ -1385,7 +1401,7 @@ public sealed class EditorOverlay : Grid
         Editor.SelectionStart = edit.SelectionStart;
         Editor.SelectionEnd = edit.SelectionEnd;
         Editor.CaretIndex = edit.SelectionEnd;
-        Editor.Focus();
+        if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) Editor.Focus();
     }
 
     private async Task RunToolAsync(LegacyEditorTools.ToolbarButton tool)
@@ -1470,7 +1486,7 @@ public sealed class EditorOverlay : Grid
         if (Mode == EditorMode.Visual) { _visual.Toolbar("box"); return; }
         var text = Editor.Text ?? "";
         var (a, b) = VisualSurface.Range(Editor);
-        if (await AskBoxAsync() is not { } box) { Editor.Focus(); return; }
+        if (await AskBoxAsync() is not { } box) { if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) Editor.Focus(); return; }
         if (NoteContainers.Wrap(Editor.Text ?? text, a, b, box.Type, box.Title) is { } edit) ApplyEdit(edit);
     }
 
