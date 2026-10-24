@@ -694,8 +694,8 @@ public sealed partial class AssistantPanel : Border
             }
             conv.Runs.Add(run);
             if (conv.Runs.Count > 20) conv.Runs.RemoveRange(0, conv.Runs.Count - 20);
-            if (ReferenceEquals(conv, _conv)) { _views.Clear(); RenderAll(); }
             if (web is not null) conv.WebSources = web.Sources.ToList();
+            if (ReferenceEquals(conv, _conv)) { _views.Clear(); RenderAll(); }
             if (conv.Messages.Count > 0) _store.SaveConversation(conv);
             var kind = run.Stopped switch
             {
