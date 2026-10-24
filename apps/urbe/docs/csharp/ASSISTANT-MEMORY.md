@@ -42,7 +42,7 @@ Configurações → Memória → Gerenciar memórias: busca, escopos/fontes, adi
 
 ## Estratégia de validação (M8)
 
-Testes AssistanteMemoryEngineTests: isolamento, persistência, migração, relevância, orçamento de contexto, tempo, supersessão, operações entre escopos, segredo, episódios, grafo, contradições e varredura de 1100 entradas. Benchmark de volume é diagnóstico, não gate de milissegundos flutuante em CI.
+Testes AssistantMemoryEngineTests: isolamento, persistência, migração, relevância, orçamento de contexto, tempo, supersessão, operações entre escopos, segredo, episódios, grafo, contradições e varredura de 1100 entradas. Benchmark de volume é diagnóstico, não gate de milissegundos flutuante em CI.
 
 Pendências que NÃO estão concluídas pela implementação base:
 
@@ -54,4 +54,4 @@ Pendências que NÃO estão concluídas pela implementação base:
 
 ## Compatibilidade futura
 
-Urbe é consumidor e prioridade absoluta. O código fica em Urbe.Core e não depende de ecosystem-ai. Contratos compartilhados só com segundo consumidor real, Extraction Review e ADR-0033. Nenhuma alteração agora no Agent Runtime, Hub ou outros Products.
+Urbe é consumidor e prioridade absoluta. O código fica em Urbe.Core e não depende de outro produto. Contratos compartilhados só com segundo consumidor real, Extraction Review e ADR-0033. Nenhuma alteração agora no Agent Runtime, sistema central ou outros Products.
