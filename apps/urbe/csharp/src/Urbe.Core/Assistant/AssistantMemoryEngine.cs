@@ -250,6 +250,7 @@ public static class AssistantMemoryEngine
         string runId, IReadOnlyList<string> paths, string? request, long? timestamp = null)
     {
         var names = paths.Where(p => !string.IsNullOrWhiteSpace(p))
+            .Select(p => p.Length > 100 ? p[..100] + "…" : p)
             .Distinct(StringComparer.Ordinal).Take(8).ToArray();
         if (names.Length == 0 || string.IsNullOrWhiteSpace(runId)) return null;
         // If the user's request contains credentials, do not retain it even as an excerpt.
@@ -312,7 +313,8 @@ public static class AssistantMemoryEngine
     public static IReadOnlyList<(AiMemoryRecord Left, AiMemoryRecord Right)> PotentialConflicts(
         AiConfig cfg, string vault, string agentId)
     {
-        var records = Visible(cfg, vault, agentId).Where(m => m.Kind is "fact" or "decision" or "preference").ToArray();
+        var records = Visible(cfg, vault, agentId).Where(m => m.Kind is "fact" or "decision" or "preference")
+            .OrderByDescending(m => m.UpdatedAt).Take(240).ToArray();
         var candidates = new List<(AiMemoryRecord, AiMemoryRecord)>();
         for (var i = 0; i < records.Length; i++)
         for (var j = i + 1; j < records.Length; j++)
