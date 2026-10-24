@@ -39,9 +39,10 @@
     {
       "kind": "human",
       "check": "Android: abrir nota ![[arquivo.html]], tocar no título, alternar Página/Fonte e fechar; validar sem WebView sobreposta.",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
-      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.Embeds.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.Embeds.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-24 (Issue https://github.com/AbnerCruz/Ecosystem/issues/731); registro em docs/governance/responses/VAL-HO-20261024-urbe-html-fonte-overlay-0538776d0cd7.md."
     }
   ],
   "known_issues": [
