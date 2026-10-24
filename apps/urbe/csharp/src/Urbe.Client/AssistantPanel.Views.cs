@@ -766,12 +766,15 @@ public sealed partial class AssistantPanel
         {
             var rename = TextButton("Renomear", () => _ = RenameAgentAsync(a));
             var configure = TextButton("Configurar", () => EditAgentProfile(a));
-            var row = new DockPanel();
-            var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { rename, configure } };
-            DockPanel.SetDock(actions, Dock.Right);
-            row.Children.Add(actions);
             var call = AgentNames.CallName(a, c);
-            row.Children.Add(new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { Label(call, 14, UrbeTheme.Text, FontWeight.SemiBold), Hint(call == a.Name ? "Nome padrão" : a.Name) } });
+            var choice = c.AgentModels.GetValueOrDefault(a.Id);
+            var effective = choice ?? new AiModelChoice(_conv.ProviderId ?? c.ProviderId ?? "", _conv.Model.Length > 0 ? _conv.Model : c.Model);
+            var row = new StackPanel { Spacing = 4, Margin = new Thickness(0, 4, 0, 8) };
+            row.Children.Add(Wrap(call, 14, UrbeTheme.Text, FontWeight.SemiBold));
+            if (call != a.Name) row.Children.Add(Hint(a.Name));
+            row.Children.Add(Wrap(choice?.Model ?? "Modelo herdado do Assistente", 12, UrbeTheme.Text2));
+            row.Children.Add(Wrap(ModelPriceFor(effective), 12, UrbeTheme.Text2));
+            row.Children.Add(new WrapPanel { Children = { rename, configure } });
             names.Children.Add(row);
         }
         body.Children.Add(Section("Nomes dos agentes", Hint("Como cada agente se chama. Numa conversa, chame-o por um nome novo (“Jarvis, …”) e ele pergunta se deve passar a se chamar assim."), names));
@@ -1342,7 +1345,7 @@ public sealed partial class AssistantPanel
         }
         body.Children.Add(Section("Modelo de conversa", Hint("Opcional: se não escolher, este agente continua usando o modelo padrão."),
             Wrap(choice, 13, UrbeTheme.Text, FontWeight.SemiBold),
-            Wrap(ModelPriceFor(selected), 12, UrbeTheme.Text2),
+            Wrap(ModelPriceFor(selected ?? new AiModelChoice(_conv.ProviderId ?? _cfg.ProviderId ?? "", _conv.Model.Length > 0 ? _conv.Model : _cfg.Model)), 12, UrbeTheme.Text2),
             TextButton("Selecionar provedor e modelo", () => { SaveBlocks(); _ = PickConfiguredModelAsync(agent.Id); })));
         body.Children.Add(Section("Instruções por blocos", Hint("Você pode criar vários blocos. Todos são usados em conjunto com as instruções gerais, mantendo as permissões do agente."),
             blocksPanel, TextButton("+ Adicionar bloco", () => AddBlock(new AiInstructionBlock("", "")))));

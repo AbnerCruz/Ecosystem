@@ -136,6 +136,7 @@ public sealed partial class AssistantPanel : Border
         var bar = new WrapPanel { Orientation = Orientation.Horizontal,
             Margin = new Thickness(12, 0, 12, 8), Children = { _modelChip, _policyChip, _usageButton } };
 
+        _log.DetachedFromVisualTree += (_, _) => _selectionWait?.Stop();
         _scroll = new ScrollViewer { HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = _log };
 
         _input = new TextBox
@@ -251,7 +252,12 @@ public sealed partial class AssistantPanel : Border
         if (!OperatingSystem.IsAndroid()) Dispatcher.UIThread.Post(() => _input.Focus(), DispatcherPriority.Background);
     }
 
-    public void Close() { CloseView(); IsVisible = false; }
+    public void Close()
+    {
+        CloseView(); IsVisible = false;
+        _selectionWait?.Stop();
+        foreach (var text in _log.GetVisualDescendants().OfType<SelectableTextBlock>()) text.SelectionEnd = text.SelectionStart;
+    }
 
     private void Load()
     {
@@ -1174,7 +1180,7 @@ public sealed partial class AssistantPanel : Border
         new() { Text = text, FontSize = size, Foreground = UrbeTheme.Brush(color), FontWeight = weight ?? FontWeight.Normal, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
 
     private static TextBlock Wrap(string text, double size, string color, FontWeight? weight = null) =>
-        new SelectableTextBlock { Text = text, FontSize = size, Foreground = UrbeTheme.Brush(color), FontWeight = weight ?? FontWeight.Normal, TextWrapping = TextWrapping.Wrap };
+        new() { Text = text, FontSize = size, Foreground = UrbeTheme.Brush(color), FontWeight = weight ?? FontWeight.Normal, TextWrapping = TextWrapping.Wrap };
 
     private static StackPanel Row(params Control[] items)
     {

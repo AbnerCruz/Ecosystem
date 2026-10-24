@@ -14,7 +14,7 @@
   "branch": "feat/urbe-assistant-experience-20261024",
   "base_commit": "45f6f7c0a7b4170bdaf3d537b77fb62c01cd38d8",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/755",
   "files_changed": [
     "apps/urbe/AGENTSCHAT.md",
     "apps/urbe/csharp/PATCHNOTES-beta.28.md",
@@ -55,14 +55,20 @@
     {
       "kind": "automated",
       "check": "UI, clipboard, rascunhos, snapshots e regressões",
-      "result": "pending",
-      "evidence": "Suíte headless em execução; registrar resultado final no PR. Capturas native-assistant-experience-phone/activity/desktop.png."
+      "result": "passed",
+      "evidence": "236 testes UI passaram localmente. Teste adicional da mesma suíte cobre toque real no disclosure, busca de S25 e tarifa pequena no seletor. Capturas Skia mobile/desktop inspecionadas; regressão de fórmula corrigida e retestada."
     },
     {
       "kind": "automated",
-      "check": "consistency e CI integrado",
+      "check": "consistency e checks legados locais",
+      "result": "passed",
+      "evidence": "22 checks de consistency e npm run check: 66/66 arquivos de teste legados passaram."
+    },
+    {
+      "kind": "automated",
+      "check": "CI no estado combinado e distribuição oficial",
       "result": "pending",
-      "evidence": "22 checks locais passaram antes do handoff; repetir com documentação final e conferir CI do PR."
+      "evidence": "PR #755: primeira revisão passou em urbe-checks, incluindo Core/UI/E2E/builds Android e Windows; conferir o último head e o integrador antes da publicação."
     },
     {
       "kind": "human",

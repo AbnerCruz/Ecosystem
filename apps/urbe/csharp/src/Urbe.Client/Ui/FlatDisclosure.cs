@@ -17,7 +17,7 @@ public static class FlatDisclosure
             Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
         fold.Template = new FuncControlTemplate<Expander>((owner, _) =>
         {
-            var label = new ContentControl { HorizontalContentAlignment = HorizontalAlignment.Stretch };
+            var label = new ContentControl { HorizontalContentAlignment = HorizontalAlignment.Stretch, IsHitTestVisible = false };
             label.Bind(ContentControl.ContentProperty, new Binding(nameof(Expander.Header)) { Source = owner });
             var arrow = new TextBlock { Text = owner.IsExpanded ? "⌃" : "⌄", FontSize = 18,
                 Foreground = UrbeTheme.Brush(UrbeTheme.Text2), VerticalAlignment = VerticalAlignment.Center,

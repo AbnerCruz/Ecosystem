@@ -1,5 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
@@ -63,6 +65,10 @@ public sealed partial class HeadlessUiTests
             panel.Config.Providers.Add(new AiProviderConfig("test", "openrouter"));
             panel.Config.ProviderId = "test";
             panel.Config.Model = "test/model";
+            panel.Config.ModelCache["test"] = new AiModelCache(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                [new AiModelInfo("test/model", "Modelo com tarifa", 128000, (.0001, .0002), true)]);
+            panel.Conversation.Usage = new AiUsage(8_400_000, 0, null);
+            panel.Conversation.Runs.Add(new AiRunRecord { Stopped = "end" });
             panel.Conversation.Messages.Add(new AiChatMessage { Id = "request", Role = "user", Content = [AiChatBlock.TextBlock("Analise meu projeto e mostre o resultado.")] });
             for (int i = 0; i < 77; i++)
             {
@@ -75,13 +81,18 @@ public sealed partial class HeadlessUiTests
             panel.Conversation.Messages.Add(new AiChatMessage { Id = "answer", Role = "assistant", Content =
                 [AiChatBlock.TextBlock("**Resultado:** sua nota está disponível. [S1]\n\n```csharp\n  var exemplo = 42;\n```\n\nTexto selecionável, com acentos e 😀.")] });
             panel.Conversation.WebSources.Add(new AiWebSource("S1", "Documentação", "https://example.org/a", "https://example.org/a", "example.org", null, "2026-10-24", "página acessada"));
+            for (int i = 2; i <= 25; i++) panel.Conversation.WebSources.Add(new AiWebSource("S" + i,
+                "Fonte exclusiva " + i, "https://example.org/" + i, "https://example.org/" + i, "example.org", null, "2026-10-24", "resultado de busca"));
             panel.RenderAll();
             await Settle(window, view);
             var activity = panel.Log.GetLogicalDescendants().OfType<Expander>().First();
             Assert.Null(activity.Content);
             Snapshot(window, "native-assistant-experience-phone.png");
-            activity.IsExpanded = true;
+            var point = activity.TranslatePoint(new Point(48, 20), window)!.Value;
+            window.MouseDown(point, MouseButton.Left);
+            window.MouseUp(point, MouseButton.Left);
             await Settle(window, view);
+            Assert.True(activity.IsExpanded);
             var stage = ((Panel)activity.Content!).Children.OfType<Border>().First().Child as Expander;
             Assert.NotNull(stage);
             Assert.Null(stage.Content);
@@ -107,6 +118,16 @@ public sealed partial class HeadlessUiTests
             window.Width = 1280;
             await Settle(window, view);
             Snapshot(window, "native-assistant-experience-desktop.png");
+            ClickButtonWithText(panel, "Fontes · 25 encontradas · 1 consultadas");
+            Assert.Equal("Fontes da pesquisa", panel.ViewTitle);
+            var search = panel.GetLogicalDescendants().OfType<TextBox>().Single(t => t.PlaceholderText?.StartsWith("Buscar título") == true);
+            search.Text = "Fonte exclusiva 25";
+            Dispatcher.UIThread.RunJobs();
+            Assert.Contains(panel.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "S25 · Fonte exclusiva 25");
+            Assert.DoesNotContain(panel.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "S24 · Fonte exclusiva 24");
+            await panel.PickModelAsync();
+            Assert.Contains(panel.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text?.Contains("US$ 0.0001 entrada · US$ 0.0002 saída / 1M tokens") == true);
+            Snapshot(window, "native-assistant-experience-model-prices.png");
             return true;
         }
         finally { window.Close(); UrbeApp.AssistantFolder = before; }
