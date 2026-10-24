@@ -2,11 +2,15 @@
 
 ## Status
 
-**Proposto para integração governada.** Direção explicitamente autorizada pelo proprietário em 24/10/2026, depois de descrever um editor livre de grafos no vault, `![[grafo]]` navegável, hierarquia/escopo e usos de IA, e responder "Pode fazer". O desenho detalhado ainda requer CI e validação no Android.
+Proposto. Integração governada pendente. Direção explicitamente autorizada pelo proprietário em 24/10/2026, depois de descrever um editor livre de grafos no vault, `![[grafo]]` navegável, hierarquia/escopo e usos de IA, e responder "Pode fazer". O desenho detalhado ainda requer CI e validação no Android.
 
 ## Contexto
 
 UC-71 (Conexões) e UC-72 (Constelação), segundo DEC-0052/ADD-0029, já representam links de Markdown de forma automática e calma. Não permitem autoria de um grafo arbitrário. A identidade central do Urbe é produzir artefatos concretos locais, sem a simulação visual congelada por DEC-0051. O usuário quer uma nova superfície de edição com nós e arestas livres, arquivos/pastas como referências e composição bidirecional com Markdown.
+
+## Problema
+
+As projeções existentes permitem navegar pelos vínculos automáticos, mas não permitem que o usuário componha grafos persistentes, referências de arquivos e pastas, relações livres e diagramas incorporáveis ao Markdown. É necessário adicionar autoria espacial sem criar concorrência com a organização física do vault nem transformar deduções da IA em fatos.
 
 ## Opções
 
@@ -15,7 +19,7 @@ UC-71 (Conexões) e UC-72 (Constelação), segundo DEC-0052/ADD-0029, já repres
 3. Criar um formato de grafo autoral independente, com canvas nativo e referências ao vault; conservar UC-71/72 como projeções automáticas.
 4. Adotar WebView e um editor web de terceiros.
 
-## Decisão proposta
+## Decisão
 
 Opção 3, dentro do cliente C# Avalonia; nenhum WebView novo nem alteração da simulação. Arquivo textual versionado `*.grafo.json` no vault, dono exclusivamente da composição manual: IDs, tipos, posições, rótulos e arestas. Arquivos Markdown e pastas continuam autoridades dos seus conteúdos e organização. `![[grafo]]` embute uma visualização navegável, com editor próprio como destino.
 
@@ -23,7 +27,7 @@ As referências são por caminho relativo, com ID adicional da NoteLibrary para 
 
 A persistência inicial reutiliza os writers verificados de arquivos texto existentes, sem criar um banco compartilhado, sem novo servidor, sem migrar o formato Markdown e sem escrever nos mapas congelados. Leitores recusam versão futura ou arquivo corrompido; a origem permanece intacta.
 
-## Consequências e riscos
+## Consequências
 
 - Novo formato de dados do usuário exige validação rigorosa de versão, export/import, backup e edição concorrente; até os gates serem satisfeitos a implementação permanece em PR.
 - Escopo pessoal/visual e hierarquia real são diferentes; projeção futura do vault será reconstruível, não segunda autoridade.
@@ -31,6 +35,12 @@ A persistência inicial reutiliza os writers verificados de arquivos texto exist
 - Gestos, zoom e performance devem ser testados em Android físico, inclusive quando o canvas está incorporado ao editor. Teste em desktop/headless não cumpre NN-017.
 - O uso de `*.grafo.json` evita ampliar agora as extensões permitidas nos dois adapters nativos. Reavaliar formato/interop com JSON Canvas com migração explícita.
 - Nenhuma extração para `platform/` sem segundo consumidor (NN-022). Nenhuma integração manual à main ou release sem gates.
+
+## Alternativas rejeitadas
+
+- **Opção 1:** confundiria o grafo derivado com a autoria do usuário e colocaria a identidade calma UC-72 em risco.
+- **Opção 2:** trataria posições e linhas desenhadas como operações de filesystem, com risco de mover/alterar arquivos involuntariamente.
+- **Opção 4:** contrariaria a UI C# nativa sem WebView e criaria dependência de outro runtime e gestos móveis difíceis de controlar.
 
 ## Referências
 
