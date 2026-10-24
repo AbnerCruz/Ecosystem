@@ -22,6 +22,17 @@ const unit = (v) => {
 export function plateModel(seed, count = 24) {
   const rng = random(seed, "kinematic-plates-v1");
   const phase = rng() * 2 * Math.PI;
+  // Broad cratons are coherent across multiple kinematic plates. Their
+  // margins are a continuous buoyancy field, not Voronoi continent polygons.
+  const cratonRng = random(seed, "continental-provinces-v1");
+  const cratonPhase = cratonRng() * Math.PI * 2;
+  const cratons = Array.from({ length: 6 }, (_, i) => {
+    const z = -1 + (2 * (i + 0.5 + (cratonRng() - 0.5) * 0.32)) / 6;
+    const phi = i * GOLDEN_ANGLE + cratonPhase + (cratonRng() - 0.5) * 0.65;
+    const r = Math.sqrt(Math.max(0, 1 - z * z));
+    const reach = 0.62 + cratonRng() * 0.43;
+    return { center: [r * Math.cos(phi), z, r * Math.sin(phi)], reach: Math.cos(reach) };
+  });
   const plates = [];
   for (let i = 0; i < count; i++) {
     const z = -1 + (2 * (i + 0.5 + (rng() - 0.5) * 0.42)) / count;
@@ -39,7 +50,7 @@ export function plateModel(seed, count = 24) {
       continental: rng() < 0.48 ? 1 : 0,
     });
   }
-  return { version: PLATE_MODEL, plates };
+  return { version: PLATE_MODEL, plates, cratons };
 }
 
 /**
@@ -65,9 +76,11 @@ export function plateElevation(model, p, foldedNoise = 0) {
     }
   }
   if (!neighbor) return foldedNoise * 700;
+  // Angular distance difference linearized in cos-space, avoiding two
+  // acos calls per terrain cell on memory-limited Android devices.
+  const midpoint = Math.max(-0.99, Math.min(0.99, (first + second) / 2));
   const angularGap =
-    Math.acos(Math.max(-1, Math.min(1, second))) -
-    Math.acos(Math.max(-1, Math.min(1, first)));
+    (first - second) / Math.max(0.18, Math.sqrt(1 - midpoint * midpoint));
   const boundary = Math.exp(-angularGap / 0.115);
   const offset = neighbor.center.map((v, i) => v - nearest.center[i]);
   const tangent = unit(offset.map((v, i) => v - dot(offset, p) * p[i]));
@@ -76,19 +89,27 @@ export function plateElevation(model, p, foldedNoise = 0) {
   const closing = dot(a.map((v, i) => v - b[i]), tangent);
   const convergent = Math.max(0, closing / 0.035);
   const divergent = Math.max(0, -closing / 0.035);
-  // Blend crust types across a finite plate-boundary belt, no Voronoi cliffs.
-  const buoyancy =
-    (nearest.continental * 2450 - 1550) * (1 - boundary * 0.5) +
-    (neighbor.continental * 2450 - 1550) * boundary * 0.5;
+  // Interplate continent cores are spatially continuous; folded relief
+  // roughens their shelves, coasts and interior drainage divides.
+  let province = -1;
+  for (const core of model.cratons) {
+    const strength = (dot(p, core.center) - core.reach) / (1 - core.reach);
+    province = Math.max(province, strength);
+  }
+  const crust = Math.max(
+    0,
+    Math.min(1, 0.48 + province * 1.9 + foldedNoise * 0.055),
+  );
+  const buoyancy = -2450 + 4050 * crust;
   const continentalPair = nearest.continental + neighbor.continental;
   const fold = 0.8 + 0.2 * Math.sin(foldedNoise * 1.7);
   const compression =
     boundary *
     Math.min(1.8, convergent) *
-    (continentalPair ? 3600 : 1900) *
+    (continentalPair ? 2800 + 1600 * crust : 1400) *
     fold;
   const rift =
-    boundary * Math.min(1.5, divergent) * (nearest.continental ? -1200 : 850);
-  const rolling = foldedNoise * (nearest.continental ? 1150 : 540);
+    boundary * Math.min(1.5, divergent) * (crust > 0.3 ? -1250 : 900);
+  const rolling = foldedNoise * (620 + crust * 700);
   return buoyancy + compression + rift + rolling;
 }
