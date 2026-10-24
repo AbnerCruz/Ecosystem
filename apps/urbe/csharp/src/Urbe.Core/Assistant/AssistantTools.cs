@@ -16,7 +16,7 @@ public sealed record AiChange(string Id, AiNoteSnap? Before, AiNoteSnap? After, 
 public sealed record AiPartial(string Path, int Next, int Total);
 
 /// <summary>A step of the agent's plan.</summary>
-public sealed record AiPlanStep(string Step, string Status);
+public sealed record AiPlanStep(string Step, string Status, string? Details = null, string? Acceptance = null);
 
 /// <summary>What a tool returns: the text for the model and what it changed or read.</summary>
 public sealed record AiToolOutput(string Content, IReadOnlyList<AiChange>? Changes = null, IReadOnlyList<(string Path, AiPartial? Partial)>? Reads = null);
@@ -629,8 +629,8 @@ public static partial class AssistantTools
         new()
         {
             Name = "update_plan", Access = "plan",
-            Description = "Plano vivo, com extensão e detalhe proporcionais à tarefa. Investigue objetivos, decisões, restrições, riscos, dependências e critérios de aceite; decomponha entregas complexas em passos verificáveis com validação e revisão, sem passos decorativos. Replaneje ao descobrir novas informações e envie a lista inteira nas atualizações.",
-            Parameters = Schema("""{"type":"object","properties":{"steps":{"type":"array","items":{"type":"object","properties":{"step":{"type":"string"},"status":{"type":"string","enum":["pending","in_progress","done"]}},"required":["step","status"]}}},"required":["steps"],"additionalProperties":false}"""),
+            Description = "Plano vivo com número livre de etapas e detalhamento proporcional. Cada passo pode incluir details (método e dependências) e acceptance (critério verificável). Investigue objetivos, lacunas, decisões, riscos e informações relacionadas; decomponha entregas complexas, validações e revisões sem burocracia vazia. Replaneje conforme evidências e envie a lista inteira.",
+            Parameters = Schema("""{"type":"object","properties":{"steps":{"type":"array","items":{"type":"object","properties":{"step":{"type":"string"},"details":{"type":"string","description":"Escopo e método desta etapa"},"acceptance":{"type":"string","description":"Evidência objetiva que comprova a conclusão"},"status":{"type":"string","enum":["pending","in_progress","done"]}},"required":["step","status"]}}},"required":["steps"],"additionalProperties":false}"""),
             Label = i =>
             {
                 var st = (i["steps"] as JsonArray ?? []).ToList();
@@ -644,7 +644,9 @@ public static partial class AssistantTools
                     {
                         var step = LegacyCustomize.JsTrim(Str(x, "step"));
                         var status = Str(x, "status");
-                        return new AiPlanStep(step.Length > 200 ? step[..200] : step, status is "pending" or "in_progress" or "done" ? status : "pending");
+                        return new AiPlanStep(step.Length > 200 ? step[..200] : step, status is "pending" or "in_progress" or "done" ? status : "pending",
+                            Str(x, "details").Trim() is { Length: > 0 } details ? details : null,
+                            Str(x, "acceptance").Trim() is { Length: > 0 } acceptance ? acceptance : null);
                     }).ToList();
                 if (st.Count == 0) throw new AiToolException("Envie ao menos um passo.");
                 host.SetPlan(st);
