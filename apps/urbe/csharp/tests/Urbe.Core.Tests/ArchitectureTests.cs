@@ -57,16 +57,17 @@ public sealed class ArchitectureTests
     [Theory]
     [InlineData("Urbe.Core", "")]
     [InlineData("Urbe.Client", "Urbe.Core")]
-    [InlineData("Urbe.Desktop", "Urbe.Client")]
-    [InlineData("Urbe.Android", "Urbe.Client")]
+    [InlineData("Urbe.LocalAi", "Urbe.Core")]
+    [InlineData("Urbe.Desktop", "Urbe.Client,Urbe.LocalAi")]
+    [InlineData("Urbe.Android", "Urbe.Client,Urbe.LocalAi")]
     public void ReferencesRespectApprovedBoundaries(string name, string dependency)
     {
         var directory = Path.Combine(Root, "src", name);
         var project = XDocument.Load(Path.Combine(directory, name + ".csproj"));
         var references = project.Descendants("ProjectReference").Select(reference =>
             Path.GetFullPath(Path.Combine(directory, reference.Attribute("Include")!.Value.Replace('\\', Path.DirectorySeparatorChar)))).ToArray();
-        var expected = dependency.Length == 0 ? [] : new[] { Path.Combine(Root, "src", dependency, dependency + ".csproj") };
-        Assert.Equal(expected, references);
+        var expected = dependency.Length == 0 ? [] : dependency.Split(',').Select(d => Path.Combine(Root, "src", d, d + ".csproj")).ToArray();
+        Assert.Equal(expected.Order(), references.Order());
         Assert.All(references, reference => Assert.True(File.Exists(reference)));
     }
 

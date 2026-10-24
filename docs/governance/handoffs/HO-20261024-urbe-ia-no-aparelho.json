@@ -1,0 +1,110 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-ia-no-aparelho",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T05:30:45Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-86",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "764c8215",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/Gemma4Chat.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/LocalAi.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantProviders.cs",
+    "apps/urbe/csharp/src/Urbe.LocalAi/",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Device.cs",
+    "apps/urbe/csharp/src/Urbe.Desktop/",
+    "apps/urbe/csharp/src/Urbe.Android/",
+    "apps/urbe/csharp/tests/",
+    "docs/governance/addenda/ADD-0032-urbe-ia-no-aparelho.md",
+    "docs/governance/decisions.json",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261024-urbe-ia-no-aparelho.json"
+  ],
+  "work_completed": [
+    "Urbe Beta 2.0 — 2.0.0-beta.24 (versionCode 2000024): IA no aparelho (texto offline) com Gemma 4 por llama.cpp, no Android e no Windows, a pedido do proprietário (ADD-0032/DEC-0056). Modelo baixado sob demanda (retomável, SHA-256), fora do vault; tela em Assistente → Configurações; subconjunto de ferramentas de notas; reaproveitamento do cache do contexto entre passos do agente. Imagens offline NÃO entregues."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Suítes Core (750) e Client (224), inclusive Gemma4ChatTests contra o template oficial, ModelStoreTests, LocalProviderTests e a tela IA no aparelho; build do Urbe.Desktop",
+      "result": "passed",
+      "evidence": "dotnet test local sem falhas."
+    },
+    {
+      "kind": "automated",
+      "check": "Inferência real com Gemma 4 E2B em CPU x64: resposta em português, chamada de ferramenta nativa, laço do agente com reaproveitamento do cache",
+      "result": "passed",
+      "evidence": "Executado em projeto de console descartável durante a tarefa."
+    },
+    {
+      "kind": "automated",
+      "check": "CI do PR: build da head Android com LLamaSharp.Backend.Cpu.Android",
+      "result": "pending",
+      "evidence": "Não há workload Android nesta máquina; o job csharp-client-native valida."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: baixar o modelo, usar a IA no aparelho sem internet (modo avião) e conferir desempenho e memória; beta.24 por cima da beta.23 sem perder notas",
+      "result": "pending",
+      "critical": true,
+      "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.24"
+    }
+  ],
+  "known_issues": [
+    "O caminho nativo do llama.cpp no Android não foi testado em aparelho.",
+    "Imagens offline não foram entregues (sem motor pronto para Android).",
+    "A primeira resposta após carregar o modelo é lenta em CPU de celular; downloads de 3,3 ou 5,2 GB."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Depois da integração, conferir a release e mandar os links do APK e do Windows.",
+    "Imagens offline (UC-86, restante)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "MANIFEST.md",
+    "docs/governance/addenda/ADD-0032-urbe-ia-no-aparelho.md",
+    "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/distribution/direct-releases.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Urbe.LocalAi só é referenciado pelas heads do Urbe; teste de arquitetura atualizado."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Rede só ao tocar em Baixar; modelo fora do vault; SHA-256 verificado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Android nativo declarado sem validação em aparelho; validação humana pendente e crítica."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "product-specific; sem extração."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "local-text-runtime",
+      "status": "possible-candidate",
+      "rationale": "Outros Products podem querer IA offline; sem segundo consumidor, continua local (ADR-0033)."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Publica release do canal beta e altera csproj de heads."
+  }
+}

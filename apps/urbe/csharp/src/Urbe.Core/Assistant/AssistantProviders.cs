@@ -67,6 +67,8 @@ public sealed class AssistantProviders
         ["anthropic"] = new("anthropic", "Anthropic", "https://api.anthropic.com/v1", true, false, "sk-ant-…", "https://console.anthropic.com/settings/keys", ["claude-opus-5-5", "claude-sonnet-5", "claude-haiku-4-5-20251001"]),
         ["openai"] = new("openai", "OpenAI", "https://api.openai.com/v1", true, true, "sk-…", "https://platform.openai.com/api-keys"),
         ["gemini"] = new("openai", "Google Gemini", "https://generativelanguage.googleapis.com/v1beta/openai", true, false, "AIza…", "https://aistudio.google.com/apikey"),
+        // 24/10/2026: the model that lives on the device and answers without the internet (ILocalTextRuntime, set by the head)
+        ["device"] = new("local", "IA no aparelho", "local://aparelho", false, false, "não precisa"),
         ["ollama"] = new("openai", "Ollama (local)", "http://localhost:11434/v1", false, false, "não precisa"),
         ["custom"] = new("openai", "Compatível com OpenAI", "", false, false, "se o servidor exigir")
     };
@@ -563,8 +565,18 @@ public sealed class AssistantProviders
         {
             "openai" => OpenAiStreamAsync(p, req, onEvent, cancel),
             "anthropic" => AnthropicStreamAsync(p, req, onEvent, cancel),
+            "local" => LocalStreamAsync(req, onEvent, cancel),
             _ => throw new AiProviderException("Tipo de provedor desconhecido: " + p.Kind)
         };
+    }
+
+    /// <summary>The on-device model: the one named by the request, or the one chosen for this device.</summary>
+    private static Task<AiResult> LocalStreamAsync(AiRequest req, Action<AiStreamEvent> onEvent, CancellationToken cancel)
+    {
+        var runtime = LocalAi.Text ?? throw new AiProviderException("A IA no aparelho não está disponível neste aparelho.");
+        var model = runtime.Models.FirstOrDefault(m => m.Id == req.Model) ?? runtime.Recommended;
+        if (!runtime.IsInstalled(model)) throw new AiProviderException("A IA no aparelho ainda não foi baixada. Baixe-a em Assistente → Configurações → IA no aparelho.");
+        return runtime.ChatAsync(model, req, onEvent, cancel);
     }
 
     // ---------------------------------------------------------------- images (UC-63)
@@ -735,6 +747,7 @@ public sealed class AssistantProviders
         {
             "openai" => OpenAiModelsAsync(p, cancel),
             "anthropic" => AnthropicModelsAsync(p, cancel),
+            "local" => Task.FromResult((LocalAi.Text?.Models ?? []).Where(m => LocalAi.Text!.IsInstalled(m)).Select(m => new AiModelInfo(m.Id, m.Name, m.Context, null, m.Tools)).ToList()),
             _ => throw new AiProviderException("Tipo de provedor desconhecido: " + p.Kind)
         };
     }

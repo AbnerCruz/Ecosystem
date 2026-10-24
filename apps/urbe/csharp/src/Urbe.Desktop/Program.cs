@@ -29,6 +29,9 @@ public static class Program
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(file) { UseShellExecute = true });
             return Task.CompletedTask;
         };
+        // the AI that answers without the internet: its model lives in the app's own data, never in the vault
+        Urbe.Core.Assistant.LocalAi.Text = new Urbe.LocalAi.LlamaTextRuntime(
+            Path.Combine(Path.GetDirectoryName(selection)!, "local-ai"), GC.GetGCMemoryInfo().TotalAvailableMemoryBytes);
         UrbeApp.DesktopWindowReady = DesktopQuickNote.Install;
         if (OperatingSystem.IsWindows())
         {
