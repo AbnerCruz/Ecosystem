@@ -19,7 +19,7 @@ public static class AssistantWebTools
     }
 
     private static int Number(JsonObject input, string key, int fallback) =>
-        input[key] is JsonValue value && value.TryGetValue<int>(out var i) ? i : fallback;
+        input[key] is null ? fallback : (int)LegacyCustomize.JsToNumber(input[key]);
 
     public static IReadOnlyList<AiTool> All { get; } =
     [
