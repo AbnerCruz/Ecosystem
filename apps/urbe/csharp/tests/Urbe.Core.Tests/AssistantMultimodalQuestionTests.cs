@@ -121,7 +121,7 @@ public sealed class AssistantMultimodalQuestionTests
         var steps = new JsonArray(Enumerable.Range(1, 27)
             .Select(i => (JsonNode)new JsonObject { ["step"] = "Revisar detalhe " + i, ["status"] = i == 1 ? "in_progress" : "pending" })
             .ToArray());
-        var tool = Assert.Single(AssistantTools.All.Where(t => t.Name == "update_plan"));
+        var tool = Assert.Single(AssistantTools.All, t => t.Name == "update_plan");
         var input = new JsonObject { ["steps"] = steps };
         Assert.Empty(AssistantTools.Validate(tool, input));
         await tool.Run(input, host);
