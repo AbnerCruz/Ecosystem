@@ -113,8 +113,8 @@ public sealed partial class AssistantPanel
             card.Children.Add(Lazy(Label("Detalhes", 12, UrbeTheme.Text3), () =>
             {
                 var more = new StackPanel { Spacing = 6 };
-                if (!b.Pending) more.Children.Add(Pre(ClipText(LegacyCustomize.Stringify(b.Input ?? new JsonObject(), 2), 3000), false));
-                if (r is not null) more.Children.Add(Pre(ClipText(r.Content, 20000) + (r.Content.Length > 20000 ? "\n…" : ""), r.IsError));
+                if (!b.Pending) more.Children.Add(Pre(LegacyCustomize.Stringify(b.Input ?? new JsonObject(), 2), false));
+                if (r is not null) more.Children.Add(Pre(r.Content, r.IsError));
                 return more;
             }));
         }
@@ -395,6 +395,31 @@ public sealed partial class AssistantPanel
             foreach (var f in files.Take(8)) list.Children.Add(LinkButton(f, () => OpenRef(f)));
             tail.Children.Add(Card(new StackPanel { Spacing = 4, Children = { head, list } }));
         }
+        if (_conv.WebSources.Count > 0)
+        {
+            var sources = _conv.WebSources.ToArray();
+            var read = sources.Count(s => s.Status == "página acessada");
+            var summary = Row(UrbeTheme.Icon(UrbeTheme.Icons.Search, 14, UrbeTheme.Text2),
+                Label("Fontes públicas · " + sources.Length + " (" + read + " páginas lidas)", 12, UrbeTheme.Text2, FontWeight.SemiBold));
+            tail.Children.Add(Card(Lazy(summary, () =>
+            {
+                var list = new StackPanel { Spacing = 8 };
+                foreach (var source in sources)
+                {
+                    // Exact source URLs are persisted, clickable via the existing MarkdownReader link launcher.
+                    var safeTitle = source.Title.Replace("[", "").Replace("]", "").Replace("\n", " ").Trim();
+                    var url = source.FinalUrl;
+                    try { AssistantWebSession.ValidateUrl(url); }
+                    catch (AiToolException) { continue; }
+                    list.Children.Add(Markdown("[" + source.Id + "] [" + (safeTitle.Length > 120 ? safeTitle[..120] : safeTitle) +
+                        "](" + url + ")"));
+                    list.Children.Add(Hint(source.Domain + " · " +
+                        (source.Status == "página acessada" ? "Página consultada" : "Somente resultado de busca") +
+                        " · " + (source.Published ?? "data desconhecida") + " · acesso " + source.Accessed));
+                }
+                return list;
+            })));
+        }
         return tail.Children.Count > 0 ? tail : null;
     }
 
@@ -586,12 +611,54 @@ public sealed partial class AssistantPanel
     }
 
 
-    /// <summary>showSettings(): providers (test, edit, remove, add), instructions, memory, own agents and the step limit.</summary>
+    // Separate destinations keep the full feature set without an endless configuration screen.
+    private string _settingsCategory = "models";
+
+    /// <summary>Settings grouped by mental model, with every existing control preserved.</summary>
     public void ShowSettings(string? addPreset = null)
     {
+        if (addPreset is not null) _settingsCategory = "models";
         var c = _cfg;
         var v = VaultKey;
-        var body = OpenView("Configurações do Assistente");
+        var body = OpenView("Configurações");
+        body.Children.Add(Wrap("Personalize como seus agentes trabalham", 15, UrbeTheme.Text2));
+        var choices = new (string Id, string Title, string Description)[]
+        {
+            ("models", "Modelos", "Provedores e imagens"),
+            ("agents", "Agentes", "Identidade e perfis"),
+            ("web", "Pesquisa", "Internet e fontes"),
+            ("context", "Contexto", "Instruções e memória"),
+            ("execution", "Execução", "Autonomia e segurança")
+        };
+        var navigation = new WrapPanel { Orientation = Orientation.Horizontal, ItemWidth = 150,
+            ItemHeight = 66 };
+        foreach (var choice in choices)
+        {
+            var selected = choice.Id == _settingsCategory;
+            var item = new Button
+            {
+                Width = 146, MinHeight = 60, Padding = new Thickness(11, 8),
+                CornerRadius = new CornerRadius(12), HorizontalContentAlignment = HorizontalAlignment.Left,
+                BorderThickness = new Thickness(1),
+                BorderBrush = UrbeTheme.Brush(selected ? UrbeTheme.Accent : UrbeTheme.Line2),
+                Background = UrbeTheme.Brush(selected ? UrbeTheme.Accent : UrbeTheme.Surface, selected ? .13 : 1),
+                Content = new StackPanel { Spacing = 2, Children =
+                {
+                    Label(choice.Title, 13, selected ? UrbeTheme.Accent : UrbeTheme.Text, FontWeight.SemiBold),
+                    Wrap(choice.Description, 11, UrbeTheme.Text3)
+                } }
+            };
+            Avalonia.Automation.AutomationProperties.SetName(item, "Configurações: " + choice.Title);
+            item.Click += (_, _) => { _settingsCategory = choice.Id; ShowSettings(); };
+            navigation.Children.Add(item);
+        }
+        body.Children.Add(navigation);
+        body.Children.Add(new Border { Height = 1, Background = UrbeTheme.Brush(UrbeTheme.Line2),
+            Margin = new Thickness(0, 4, 0, 2) });
+
+        if (_settingsCategory == "models")
+        {
+        body.Children.Add(Section("Conexões e provedores", Hint("Gerencie credenciais, modelos e testes de conexão em um só lugar.")));
         var provs = new StackPanel { Spacing = 8 };
         if (c.Providers.Count == 0) provs.Children.Add(Hint("Nenhum provedor ainda."));
         foreach (var p in c.Providers)
@@ -642,6 +709,11 @@ public sealed partial class AssistantPanel
             else _ = PriceInSettingsAsync(imageProvider, id, imagePrice);
         }
 
+        }
+
+        if (_settingsCategory == "context")
+        {
+        body.Children.Add(Section("Preferências de contexto", Hint("Estas informações orientam as respostas; você mantém o controle sobre o que é lembrado.")));
         var instr = new TextBox { Text = c.Instructions, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 90, PlaceholderText = "Ex.: escreva em português do Brasil, frases curtas; use a pasta Diário para registros do dia." };
         instr.LostFocus += (_, _) => { c.Instructions = instr.Text ?? ""; SaveConfig(); };
         instr.TextChanged += (_, _) => c.Instructions = instr.Text ?? "";
@@ -652,6 +724,11 @@ public sealed partial class AssistantPanel
             Hint(nmem + " lembranças locais · recuperação por relevância · histórico e fontes."),
             TextButton("Gerenciar memórias", ShowMemoryManager)));
 
+        }
+
+        if (_settingsCategory == "agents")
+        {
+        body.Children.Add(Section("Equipe de agentes", Hint("Modelos, nomes, instruções individuais e capacidades de cada agente.")));
         // UC-81: each agent's call name, on this device (the chip, the prompt and &Nome&: in a note use it)
         var names = new StackPanel { Spacing = 6 };
         foreach (var a in AgentNames.All(c))
@@ -692,8 +769,25 @@ public sealed partial class AssistantPanel
         }
         body.Children.Add(Section("Agentes personalizados", custom, TextButton("+ Novo agente", () => EditAgent(null))));
 
-        body.Children.Add(Section("Profundidade da investigação",
-            Hint("O agente define quantas perguntas e etapas são necessárias a partir do objetivo, das respostas e das evidências. Você continua controlando aprovações e pode interromper a execução a qualquer momento.")));
+        }
+
+        if (_settingsCategory == "execution")
+        {
+            body.Children.Add(Section("Autonomia e proteção",
+                Hint("O modo de aprovação de alterações pode ser trocado também na conversa."),
+                TextButton("Alterar permissões da conversa", () => _ = PickPolicyAsync())));
+            body.Children.Add(Section("Profundidade da investigação",
+                Hint("O agente define quantas perguntas e etapas são necessárias a partir do objetivo, das respostas e das evidências. Você continua controlando aprovações e pode interromper a execução a qualquer momento.")));
+            body.Children.Add(Section("Transparência",
+                Hint("Atividades ficam agrupadas no chat; entradas, saídas, decisões e aprovações podem ser examinadas por etapa.")));
+        }
+        if (_settingsCategory == "web")
+        {
+            body.Children.Add(Section("Pesquisa na internet",
+                Hint(_cfg.Web.Enabled ? "Rede habilitada · " + _cfg.Web.Provider : "Rede desabilitada · autorização explícita necessária"),
+                TextButton("Configurar pesquisa web", ShowWebSettings),
+                Hint("Permissões independentes do vault, configuráveis para cada agente.")));
+        }
         if (addPreset is not null) EditProvider(null, addPreset);
     }
 

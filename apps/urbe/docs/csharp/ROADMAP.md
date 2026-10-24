@@ -49,6 +49,20 @@
 
 **Aceite não atendido ainda:** confirmar compilação/testes da PR, validar Foreground Service e notificações no dispositivo com app minimizado/tela bloqueada, testar concessão/negação de notificações, reconciliação em caso de morte do processo e integridade de alterações. Fazer prova end-to-end da ficha de personagem conectada a outras notas, incluindo rodada de perguntas, planejamento, entrega revisada e ideias paralelas. ADR-0037 é proposto, não aprovação automática nem release.
 
+## Pesquisa web e investigação pública — UC-63, missão do proprietário (24/10/2026)
+
+**Direção autorizada:** `web_search` e `web_fetch` no mesmo runtime da IA nativa. O Assistente pode pesquisar na internet pública e usar o conhecimento externo junto às notas do vault, desde que haja autorização de rede persistida e individual para cada agente. Pesquisar externamente **não** decorre da permissão de leitura local. O Pesquisador delegado só obtém acesso quando seu próprio grant também existe.
+
+**Arquitetura:** `AssistantWebSession` isolada por execução com Brave Search API como primeiro mecanismo pluggable; leitura HTML/texto por HTTP(S), validação de URL e DNS, pinagem de IP público, limitação de redirecionamentos, download, tempo, chamadas e cancelamento; extração de texto sem JavaScript. Armazenar custo como desconhecido se a API não fornecer cobrança. Salvar metadados `AiWebSource` junto às conversas e preservar URLs reais nas fontes clicáveis de notas/páginas. Usar `AssistantTools`, `AssistantPageTools` e editor existentes para criar artefatos, não inventar formato proprietário.
+
+**Pesquisa profunda:** planejar, buscar múltiplas perspectivas, ler páginas antes de fundamentar afirmações, refinar buscas, detectar divergências e datas e compor citações clicáveis. Consultas simples requerem poucas chamadas. Resultados de buscador não equivalem a confirmação. Conteúdo externo é não confiável e não pode operar sobre o vault ou credenciais.
+
+**Limitações deste incremento:** sem renderização JavaScript, sem parsing de PDF público pelo novo gateway; APIs com login/autenticação fora de escopo; validação Brave real depende de credencial disponível. Testes com transporte HTTP/DNS determinístico, CI Android/Windows/Core e validação no aparelho exigida (NN-017). ADR-0038 proposto; controles de rede e publicação dependem de integração governada.
+
+## Redesenho visual do Assistente — UC-63/UC-81 (24/10/2026, PR #732)
+
+O chat passa a mostrar uma atividade compacta por pedido, com estado real, progresso discreto, expansão por etapa e acesso integral a parâmetros e resultados. Aprovações, perguntas, respostas e imagens continuam visíveis fora das etapas recolhidas. Configurações em Modelos, Agentes, Contexto, Pesquisa e Execução; manter o controle de rede separado da PR #733, execução adaptativa da #726 e o uso offline. Testes headless/CI não substituem validação física Android (NN-017).
+
 ## Personalização do Assistente — extensão de UC-63/UC-81 (proprietário, 23/10/2026)
 
 **Novo escopo autorizado pelo proprietário:** configurar modelo e provedor **independentes para geração de imagens** no próprio painel do Assistente (o modelo da conversa não troca); permitir **modelo/provedor de texto por agente**, inclusive para os agentes prontos, herdando o modelo normal da conversa quando não houver configuração; criar e editar **blocos titulados de instruções por agente** na interface.

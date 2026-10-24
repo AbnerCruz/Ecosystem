@@ -89,6 +89,8 @@ public interface IAssistantHost
     IAssistantNames? Names => null;
     /// <summary>UC-63: drawing pictures with the run's provider and keeping them in the vault, when the app can.</summary>
     IAssistantImages? Images => null;
+    /// <summary>Explicitly authorized network gateway; null keeps every local feature offline.</summary>
+    AssistantWebSession? Web => null;
 }
 
 /// <summary>A tool the agents use (tools.js def): name, description, JSON Schema, access, label, preview and run.</summary>
