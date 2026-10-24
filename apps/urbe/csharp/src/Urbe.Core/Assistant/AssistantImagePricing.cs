@@ -65,5 +65,5 @@ public static class AssistantImagePricing
         return null;
     }
 
-    public static bool ValidOpenRouterSlug(string model) => Regex.IsMatch(model, @"^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.:-]+$");
+    public static bool ValidOpenRouterSlug(string model) => Regex.IsMatch(model, @"^[a-zA-Z0-9][a-zA-Z0-9_.-]*/[a-zA-Z0-9][a-zA-Z0-9_.:-]*$");
 }
