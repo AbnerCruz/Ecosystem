@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261024-urbe-beta21-image-prices-composer",
   "category": "HANDOFF",
-  "timestamp": "2026-10-24T03:45:00Z",
+  "timestamp": "2026-10-24T02:55:00Z",
   "agent": {
     "id": "chatgpt-gpt6",
     "kind": "ai-agent"
@@ -48,7 +48,9 @@
       "kind": "human",
       "check": "Android compact width, image preview in existing history, image costs returned by provider and external StorageProvider",
       "result": "pending",
-      "evidence": "Real device/provider account"
+      "evidence": "Real device/provider account",
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+      "critical": true
     }
   ],
   "known_issues": [
