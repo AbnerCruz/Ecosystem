@@ -1,21 +1,16 @@
 using Avalonia;
-using Avalonia.Automation;
 using Avalonia.Controls;
-using Avalonia.VisualTree;
 using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using Urbe.Client;
 
 namespace Urbe.Client.Tests;
 
-/// <summary>
-/// UC-81 contextual assistant: the phone keeps one navigation destination, and
-/// the assistant is a persistent, accessible, quiet launcher over the workspace.
-/// </summary>
+/// <summary>UC-81 contextual assistant: the phone keeps its Notes destination and an independent 48dp AI launcher.</summary>
 public sealed partial class HeadlessUiTests
 {
     [Fact]
-    public async Task Dock_NotesCenteredWithAssistantFloatingInsteadOfSecondTab() =>
+    public async Task Dock_NotesAndFloatingAssistantAreAccessibleOnPhone() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
         {
             var view = new MainView();
@@ -24,25 +19,29 @@ public sealed partial class HeadlessUiTests
             try
             {
                 await Pump(200);
-                var text = view.GetLogicalDescendants().OfType<TextBlock>()
-                    .First(t => t.Text == "Notas" && t.IsEffectivelyVisible &&
-                        t.FindLogicalAncestorOfType<Button>() is { } b && b.Parent is not null && Grid.GetColumn(b) == 0);
-                var button = text.FindLogicalAncestorOfType<Button>()!;
-                Assert.InRange(button.Bounds.Width, 398, 402);
-                var centre = text.TranslatePoint(new Point(text.Bounds.Width / 2, 0), view)!.Value.X;
-                Assert.InRange(centre, 197, 203);
-
-                var floating = view.AssistantLauncher;
-                Assert.True(floating.IsEffectivelyVisible);
-                Assert.Equal("Abrir Assistente", AutomationProperties.GetName(floating));
-                Assert.Equal(UrbeTokens.MinTouch, floating.Width);
-                Assert.Equal(UrbeTokens.MinTouch, floating.Height);
+                var notes = view.GetLogicalDescendants().OfType<Button>()
+                    .Single(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Notas");
+                Assert.True(notes.IsEffectivelyVisible);
+                Assert.InRange(notes.Bounds.Width, 398, 402);
+                var launcher = view.AssistantLauncher;
+                Assert.True(launcher.IsEffectivelyVisible);
+                Assert.Equal(UrbeTokens.MinTouch, launcher.Bounds.Width);
+                Assert.Equal(UrbeTokens.MinTouch, launcher.Bounds.Height);
+                Assert.Equal("Abrir Assistente", Avalonia.Automation.AutomationProperties.GetName(launcher));
+                var center = launcher.TranslatePoint(
+                    new Point(launcher.Bounds.Width / 2, launcher.Bounds.Height / 2), view);
+                Assert.NotNull(center);
+                Assert.InRange(center.Value.X, 340, 390);
+                Assert.True(center.Value.Y > 100);
                 Assert.False(view.AssistantMini.IsVisible);
-                floating.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Assert.DoesNotContain(view.GetLogicalDescendants().OfType<Button>(),
+                    b => Avalonia.Automation.AutomationProperties.GetName(b) == "Assistente" && b.IsEffectivelyVisible);
+
+                launcher.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 Assert.True(view.Assistant.IsVisible);
-                Assert.False(floating.IsVisible);
+                Assert.False(launcher.IsVisible);
                 view.Assistant.Close();
-                Assert.True(floating.IsVisible);
+                Assert.True(launcher.IsVisible);
                 return true;
             }
             finally { window.Close(); }
