@@ -1,0 +1,136 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-assistant-experience",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T23:05:00Z",
+  "agent": {
+    "id": "codex-urbe-assistant-experience",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-63",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-assistant-experience-20261024",
+  "base_commit": "45f6f7c0a7b4170bdaf3d537b77fb62c01cd38d8",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/AGENTSCHAT.md",
+    "apps/urbe/csharp/PATCHNOTES-beta.28.md",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Costs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Sources.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/TouchTextScroll.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/CodeBlockView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/FlatDisclosure.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/TextActions.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/ZoomImageView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantContextualUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantExperienceUiTests.cs",
+    "apps/urbe/docs/csharp/ASSISTANT-EXPERIENCE.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261024-urbe-assistant-experience.json"
+  ],
+  "work_completed": [
+    "Issue #754: implementação do pedido integral do proprietário com atividade plana e estados coerentes, seleção e clipboard, código copiável, preços em seletores e consumo por chamada, fontes pesquisáveis/evidências/citações, imagens proporcionais/exportação/zoom e rascunhos de intervenção preservados.",
+    "Regressão de toque em fórmulas detectada e corrigida: seleção de conversa é opt-in, sem substituir o caminho de edição de notas.",
+    "Versão canônica 2.0.0-beta.28 / 2000028, mantendo assinatura, pacote e workflow oficial.",
+    "Pesquisa e requisitos em apps/urbe/docs/csharp/ASSISTANT-EXPERIENCE.md; sem extração transversal, alteração de formato ou nova dependência."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Core C#",
+      "result": "passed",
+      "evidence": "815 testes Core passaram localmente, dotnet tests/Urbe.Core.Tests/bin/Release/net10.0/Urbe.Core.Tests.dll -parallelMode none."
+    },
+    {
+      "kind": "automated",
+      "check": "UI, clipboard, rascunhos, snapshots e regressões",
+      "result": "pending",
+      "evidence": "Suíte headless em execução; registrar resultado final no PR. Capturas native-assistant-experience-phone/activity/desktop.png."
+    },
+    {
+      "kind": "automated",
+      "check": "consistency e CI integrado",
+      "result": "pending",
+      "evidence": "22 checks locais passaram antes do handoff; repetir com documentação final e conferir CI do PR."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: IME, alças de seleção, pinch, retomada, atualização",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+      "evidence": "Não foi realizado teste no aparelho do proprietário. Headless não é DEVICE."
+    }
+  ],
+  "known_issues": [
+    "Preços ausentes no catálogo são explicitamente desconhecidos, não gratuitos; recibos de imagens não são fornecidos pelo contrato atual.",
+    "Orientação de busca específica não garante relevância ou veracidade de todo resultado; trechos consultados não significam leitura integral.",
+    "Compartilhamento de arquivos ocorre pela exportação existente; não foi introduzido um serviço Android de compartilhamento."
+  ],
+  "blockers": [
+    "CI e integração governada antes do pipeline oficial de beta.28.",
+    "Verificar assets oficiais reais antes de devolver links de download."
+  ],
+  "next_actions": [
+    "Concluir testes e revisão visual.",
+    "Integrar pelo integrador confiável e gerar beta.28 pelo workflow existente.",
+    "Conferir APK assinado, ZIP Windows, checksums e tag urbe-csharp-v2.0.0-beta.28.",
+    "Proprietário validar o comportamento no Android físico."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/UX.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Tarifas derivadas do catálogo existente, versão única no csproj, conversa/executor únicos."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #754, branch, handoff, testes e release rastreáveis."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente, sem confundir teste Skia com aparelho físico."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Implementação permanece local ao Urbe; sem extração ou dependência entre Products."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "assistant-experience-native-controls",
+      "status": "product-specific",
+      "rationale": "UX e apresentação locais sobre os dados existentes do Urbe. Não existe segundo consumidor que justifique extração."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Incremento da versão canônica no csproj Android para a nova release expressamente solicitada; manter classificação e integração governadas."
+  }
+}

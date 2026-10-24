@@ -53,6 +53,7 @@ public static class TouchTextScroll
             stopped = fling?.IsEnabled == true || TouchIntent.Of(scroll)?.Intent.IsMoving(Environment.TickCount64) == true;
             StopFling();
             box = (e.Source as Visual)?.GetSelfAndVisualAncestors().OfType<TextBox>().FirstOrDefault();
+            if (box is not null && box.SelectionStart != box.SelectionEnd) { box = null; return; }
             if (box is null || !box.GetVisualAncestors().Contains(scroll)) { box = null; return; }
             finger = e.Pointer;
             start = last = e.GetPosition(scroll);
@@ -71,8 +72,10 @@ public static class TouchTextScroll
             {
                 hold!.Stop();
                 if (dragging || finger is null) return;
+                var heldFinger = finger;
                 SelectWordAt(heldBox, heldAt);
                 Ui.PlatformHaptics.Hold();
+                heldFinger.Capture(null);
                 finger = null;   // the hold ends the gesture: lifting the finger keeps the selection
             };
             hold.Start();

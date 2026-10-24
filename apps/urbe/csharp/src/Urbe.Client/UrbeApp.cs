@@ -34,6 +34,7 @@ public sealed class UrbeApp : Application
     {
         RequestedThemeVariant = ThemeVariant.Dark;
         Styles.Add(new FluentTheme());
+        Ui.TextActions.Install();
     }
 
     public override void OnFrameworkInitializationCompleted()

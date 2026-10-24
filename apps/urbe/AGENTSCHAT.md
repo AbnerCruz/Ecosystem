@@ -631,3 +631,10 @@
 - Feito: aproximações removidas. `LegacyCity` (Core) porta bairros/lotes/casas/ruas das definições finais do app.js; `tools/legacy-city-oracle.mjs` grava a cidade da 1.8.4 real (Chromium, sorteio fixado) e o C# a reproduz exatamente. Terreno do Core corrigido (float × double) e conferido contra o terrain.js em 262144 células/300×300 tiles; `LegacyChunkFarPixels` portado. Desenho do cliente portado de drawGround/drawRegions/drawRoads/drawTrees/drawBuildings, rótulos e painel ARQUIVO.
 - Regra para quem continuar: **não aproximar**. Cada comportamento vem do código da 1.8.4 (última redefinição no app.js) e ganha oráculo JS quando possível.
 - Próximos passos: vida do mundo (life.js), mapa/minimapa, busca, pasta real e mapa.json.
+
+### 2026-10-24 — Codex — UC-63/UC-81 / issue #754
+- Estado: implementação e verificação da experiência integrada do Assistente, base main 45f6f7c0, branch feat/urbe-assistant-experience-20261024.
+- Feito: atividade plana/lazy; texto selecionável e clipboard; blocos copiáveis; custos em seletores e painel por chamada; fontes pesquisáveis/citações/evidências; imagem proporcional, exportação e zoom; rascunhos de intervenção preservados. Critérios completos em docs/csharp/ASSISTANT-EXPERIENCE.md.
+- Decisão: pedido explícito do proprietário para implementar o redesenho pesquisado e entregar nova release. Mesmo Core, permissões, dados, canal e certificado; sem extração ou nova dependência.
+- Pendências: CI de PR/estado combinado e assets oficiais da beta.28; DEVICE (IME, alças, pinch e atualização) continua pendente, não certificado por captura Skia.
+- Próximos passos: corrigir qualquer regressão da suíte, integrar pelo mecanismo governado e verificar a release oficial.

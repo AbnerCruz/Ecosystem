@@ -358,3 +358,9 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 - [~] **UC-88.3 — Projeções automáticas:** snapshot editável da hierarquia (arquivos, notas, pastas, escopo) e wikilinks resolvidos; ainda faltam projeção viva, filtros/layouts especializados e referências quebradas.
 - [~] **UC-88.4 — Grafos operacionais:** list_graphs e read_graph read-only, com paginação e proveniência; ainda faltam edição por agente com diff/aprovação/reversão, plano observável e memória contextual da UC-87.
 - **Gates obrigatórios:** `dotnet test`, `dotnet run tests/consistency/Check.cs`, Android físico (pinch, teclado, transclusão, salvamento e recuperação), review da alteração persistida, integrador governado. **Sem release automática.**
+
+## UC-63/UC-81 — Experiência integrada do Assistente (24/10/2026)
+
+- [~] Pedido integral do proprietário: transcript com hierarquia plana e estados coerentes; respostas selecionáveis; código copiável de qualquer linguagem; menus de clipboard; custos explícitos em seletores de agentes/chat/imagens e painel por chamada; fontes com busca, filtros e evidências; imagens proporcionais, exportação e zoom; rascunhos de pergunta/aprovação preservados. Critérios em [ASSISTANT-EXPERIENCE.md](ASSISTANT-EXPERIENCE.md). Branch `feat/urbe-assistant-experience-20261024`.
+- **Provas:** testes Core/UI, captura mobile e desktop, consistency e CI do integrador; DEVICE (IME/alças/pinch/retomada/atualização) permanece pendente. Não marcar [x] antes de aceite no aparelho.
+- **Release solicitada:** próxima beta pelo pipeline canônico, mantendo certificado, pacote e canais. A existência dos assets oficiais deve ser verificada antes de fornecer link.

@@ -37,20 +37,27 @@ public sealed partial class AssistantPanel
             : calls.Any(x => ResultFor(x.Block.Id) is { IsError: true }) ? "Atividade concluída com alertas"
             : calls.Count > 0 ? "Trabalho realizado" : "Análise concluída";
 
+        if (!running && !needsApproval && !needsAnswer && calls.LastOrDefault(x => x.Block.Name == "update_plan").Block?.Input?["steps"] is JsonArray remaining &&
+            remaining.Any(x => (string?)x?["status"] != "done"))
+            headline = "Execução encerrada · plano com pendências";
         var header = new StackPanel { Spacing = 5 };
-        var line = new DockPanel();
-        var leading = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 9,
-            VerticalAlignment = VerticalAlignment.Center };
-        leading.Children.Add(UrbeTheme.Icon(UrbeTheme.Icons.Assistant, 16,
-            running ? UrbeTheme.Accent : UrbeTheme.Text2));
-        leading.Children.Add(Label(headline, 13, UrbeTheme.Text, FontWeight.SemiBold));
-        line.Children.Add(leading);
+        var line = new Grid { ColumnDefinitions = new ColumnDefinitions("24,*") };
+        var icon = UrbeTheme.Icon(UrbeTheme.Icons.Assistant, 16, running ? UrbeTheme.Accent : UrbeTheme.Text2);
+        var heading = Wrap(headline, 13, UrbeTheme.Text, FontWeight.SemiBold);
+        Grid.SetColumn(heading, 1);
+        line.Children.Add(icon);
+        line.Children.Add(heading);
         header.Children.Add(line);
 
+        var failures = calls.Count(x => ResultFor(x.Block.Id) is { IsError: true });
+        var reads = calls.Count(x => x.Block.Name is "read_note" or "read_notes" or "web_fetch" && ResultFor(x.Block.Id) is { IsError: false });
+        var writes = calls.Count(x => ToolByName(x.Block.Name)?.Access == "write" && ResultFor(x.Block.Id) is { IsError: false });
+        var outcomes = (reads > 0 ? " · " + reads + " leituras" : "") + (writes > 0 ? " · " + writes + " alterações" : "") +
+            (failures > 0 ? " · " + failures + " alertas" : "");
         var detail = calls.Count == 0 ? (running ? "Preparando as próximas etapas" : "Processamento concluído")
             : calls.Count == 1 ? "1 operação · tocar para ver os detalhes"
             : calls.Count + " operações · tocar para explorar as etapas";
-        header.Children.Add(Wrap(detail, 11, UrbeTheme.Text3));
+        header.Children.Add(Wrap(calls.Count > 0 ? calls.Count + " operações" + outcomes + " · Ver atividade" : detail, 11, UrbeTheme.Text2));
         if (running && !UrbeTokens.Motion.Reduced)
             header.Children.Add(new ProgressBar
             {
@@ -68,8 +75,8 @@ public sealed partial class AssistantPanel
             foreach (var message in messages)
             {
                 if (message.Meta?.Reasoning is { Length: > 0 } thought)
-                    list.Children.Add(Lazy(Label("Raciocínio fornecido pelo modelo", 12, UrbeTheme.Text2),
-                        () => Wrap(thought, 12, UrbeTheme.Text2)));
+                    list.Children.Add(Lazy(Label("Resumo de raciocínio do modelo", 12, UrbeTheme.Text2),
+                        () => Markdown(thought)));
                 foreach (var block in message.Content)
                 {
                     if (block.Type == "tool_use") list.Children.Add(ActivityStage(block, message));
@@ -104,12 +111,6 @@ public sealed partial class AssistantPanel
         if (needsApproval && _pending is { } action) root.Children.Add(Approval(action.Request));
         if (needsAnswer && lastQuestion is not null) root.Children.Add(Clarification(lastQuestion));
 
-        // A generated picture is a user-facing result, not merely a log attachment.
-        foreach (var path in calls.Where(x => x.Block.Name == "generate_image")
-            .Select(x => ResultFor(x.Block.Id) is { IsError: false } result
-                ? AssistantImageTools.SavedImagePath(result.Content) : null)
-            .OfType<string>().Distinct(StringComparer.Ordinal))
-            root.Children.Add(GeneratedImagePreview(path));
         return root;
     }
 
@@ -128,28 +129,27 @@ public sealed partial class AssistantPanel
         _ => "Executando uma etapa"
     };
 
-    private Control ActivityStage(AiChatBlock block, AiChatMessage message)
+    private Control ActivityStage(AiChatBlock block, AiChatMessage message, bool current = true)
     {
         var result = ResultFor(block.Id);
         var tool = ToolByName(block.Name);
         var title = tool is not null && !block.Pending ? SafeLabel(tool, block.Input)
             : block.Pending ? "Preparando " + block.Name : block.Name;
         var pending = _pending?.Request.Call.Id == block.Id && block.Id.Length > 0;
-        var status = result is { IsError: true } ? "Falhou"
-            : result?.Status == "rejected" ? "Recusada"
+        var status = result?.Status == "rejected" ? "Recusada"
+            : result is { IsError: true } ? "Falhou"
             : result is not null ? "Concluída"
-            : pending ? "Aguardando aprovação"
+            : pending && current ? "Aguardando aprovação"
             : message.Meta?.Streaming == true ? "Preparando"
-            : _running is not null ? "Em andamento" : "Interrompida";
-        var header = new DockPanel { MinHeight = 34 };
-        var state = Label(status, 11, result is { IsError: true } ? "#c0504d" : UrbeTheme.Text3);
-        DockPanel.SetDock(state, Dock.Right);
-        header.Children.Add(state);
-        var label = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 7,
-            VerticalAlignment = VerticalAlignment.Center };
-        label.Children.Add(UrbeTheme.Icon(AccessIcon.GetValueOrDefault(tool?.Access ?? "", UrbeTheme.Icons.Layers),
-            15, UrbeTheme.Text2));
+            : current && _running is not null ? "Em andamento" : "Interrompida";
+        if (block.Name == "update_plan" && result is { IsError: false }) status = "Registrado";
+        if (_toolElapsed.TryGetValue(block.Id, out var elapsed)) status += " · " + (elapsed / 1000.0).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " s";
+        var header = new Grid { ColumnDefinitions = new ColumnDefinitions("24,*"), MinHeight = 48 };
+        var label = new StackPanel { Spacing = 3, VerticalAlignment = VerticalAlignment.Center };
         label.Children.Add(Wrap(title, 12, UrbeTheme.Text));
+        label.Children.Add(Label(status, 11, result is { IsError: true } ? UrbeTheme.Danger : UrbeTheme.Text2));
+        Grid.SetColumn(label, 1);
+        header.Children.Add(UrbeTheme.Icon(AccessIcon.GetValueOrDefault(tool?.Access ?? "", UrbeTheme.Icons.Layers), 15, UrbeTheme.Text2));
         header.Children.Add(label);
         var expander = Lazy(header, () =>
         {
@@ -180,7 +180,7 @@ public sealed partial class AssistantPanel
         Avalonia.Automation.AutomationProperties.SetName(expander, "Etapa: " + title + ". " + status + ". Expandir detalhes");
         return new Border
         {
-            Child = expander, CornerRadius = new CornerRadius(0), Padding = new Thickness(8, 6),
+            Child = expander, CornerRadius = new CornerRadius(0), Padding = new Thickness(0, 4),
             Background = Brushes.Transparent, BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2, .45),
             BorderThickness = new Thickness(0, 0, 0, 1)
         };

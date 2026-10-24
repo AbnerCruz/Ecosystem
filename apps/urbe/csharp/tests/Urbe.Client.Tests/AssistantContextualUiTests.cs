@@ -102,6 +102,14 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal("approval", panel.CompactStatus);
                 Assert.Contains(view.AssistantMini.GetLogicalDescendants().OfType<TextBlock>(),
                     t => t.Text?.Contains("Aprovar alteração", StringComparison.Ordinal) == true);
+                // Editing on the compact surface must survive opening the full conversation.
+                ClickButtonWithText(view.AssistantMini, "Editar");
+                var draft = view.AssistantMini.GetLogicalDescendants().OfType<TextBox>().Single(t => Avalonia.Automation.AutomationProperties.GetName(t) == "Texto proposto");
+                draft.Text = "# Uma proposta editada à mão";
+                panel.Open();
+                Dispatcher.UIThread.RunJobs();
+                Assert.Contains(panel.GetLogicalDescendants().OfType<TextBox>(), t => t.Text == "# Uma proposta editada à mão");
+                panel.Close();
                 panel.Answer(AiApproval.Reject());
                 await panel.CurrentRun!;
                 for (var i = 0; i < 8; i++) Dispatcher.UIThread.RunJobs();
@@ -112,4 +120,38 @@ public sealed partial class HeadlessUiTests
             }
             finally { window.Close(); }
         }, CancellationToken.None));
+    [Fact]
+    public async Task NoteAgent_QuestionDraftSurvivesMinimizeAndOpeningConversation() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var view = new MainView();
+            var window = new Window { Width = 400, Height = 860, Content = view };
+            window.Show();
+            try
+            {
+                await view.LoadAsync([new CityNote("Comece.md", "# Comece")]);
+                var panel = view.Assistant;
+                panel.Open();
+                panel.Providers = new AssistantProviders(new ScriptedModel(), (_, _) => Task.CompletedTask);
+                panel.Config.Providers.Add(new AiProviderConfig("test", "openrouter"));
+                panel.Config.ProviderId = "test";
+                panel.Config.Model = "org/modelo-b";
+                panel.Conversation.Messages.Add(new AiChatMessage { Id = "qrequest", Role = "user", Content = [AiChatBlock.TextBlock("Prepare o documento.")] });
+                panel.Conversation.Messages.Add(new AiChatMessage { Id = "question", Role = "assistant", Content = [new AiChatBlock
+                    { Type = "tool_use", Id = "question-call", Name = "ask_user", Input = new System.Text.Json.Nodes.JsonObject
+                    { ["question"] = "Qual é o público?", ["resolved"] = 0, ["total"] = 1 } }] });
+                panel.Conversation.Messages.Add(new AiChatMessage { Role = "user", Meta = new AiChatMeta { ToolResults = true }, Content = [new AiChatBlock
+                    { Type = "tool_result", ToolUseId = "question-call", Content = "Pergunta exibida." }] });
+                panel.Conversation.Runs.Add(new AiRunRecord { Stopped = "needs_input" });
+                panel.RenderAll();
+                var input = panel.GetLogicalDescendants().OfType<TextBox>().Single(t => t.PlaceholderText?.StartsWith("Responda aqui") == true);
+                input.Text = "Leitores iniciantes, mas com interesse em";
+                panel.Close();
+                panel.Open();
+                Assert.Contains(panel.GetLogicalDescendants().OfType<TextBox>(), t => t.Text == "Leitores iniciantes, mas com interesse em");
+                return true;
+            }
+            finally { window.Close(); }
+        }, CancellationToken.None));
+
 }
