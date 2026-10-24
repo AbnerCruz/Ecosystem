@@ -1162,10 +1162,14 @@ public sealed partial class AssistantPanel : Border
         return b;
     }
 
+    // Flat section rhythm, not a tower of nested outlined cards. Explicit warning/selection still has an accent.
     private static Border Card(Control child, string? border = null, string? background = null) => new()
     {
-        Child = child, Padding = new Thickness(12, 10), CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1),
-        BorderBrush = UrbeTheme.Brush(border ?? UrbeTheme.Line2), Background = UrbeTheme.Brush(background ?? UrbeTheme.Surface)
+        Child = child, Padding = new Thickness(12, 12),
+        CornerRadius = new CornerRadius(border is null && background is null ? 0 : 10),
+        BorderThickness = border is null && background is null ? new Thickness(0, 0, 0, 1) : new Thickness(2, 0, 0, 0),
+        BorderBrush = UrbeTheme.Brush(border ?? UrbeTheme.Line2, border is null ? .65 : 1),
+        Background = background is null ? Brushes.Transparent : UrbeTheme.Brush(background)
     };
 
     private Control Markdown(string text) =>
