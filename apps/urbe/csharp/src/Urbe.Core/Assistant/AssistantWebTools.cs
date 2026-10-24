@@ -26,7 +26,7 @@ public static class AssistantWebTools
         new()
         {
             Name = "web_search", Access = "network",
-            Description = "Pesquisa a internet pública através do provedor configurado, com múltiplas fontes, filtros e paginação. Os trechos do buscador NÃO são confirmação; use web_fetch para validar fatos antes de citá-los. Refine as perguntas quando houver lacunas e cruze resultados independentes. Não inclua conteúdo privado do vault, chaves ou identificadores sensíveis nas consultas.",
+            Description = "Pesquisa a internet pública automaticamente, sem chave no modo gratuito; filtros e paginação podem ser limitados pelo buscador. Os trechos do buscador NÃO são confirmação; use web_fetch para validar fatos antes de citá-los. Refine as perguntas quando houver lacunas e cruze resultados independentes. Não inclua conteúdo privado do vault, chaves ou identificadores sensíveis nas consultas.",
             Parameters = (JsonObject)JsonNode.Parse("""
             {"type":"object","properties":{"query":{"type":"string","description":"Palavras ou pergunta para a busca pública, sem dados privados do vault"},"language":{"type":"string","description":"Idioma de resultados (ex.: pt)"},"country":{"type":"string","description":"País ISO de duas letras (ex.: BR)"},"freshness":{"type":"string","description":"Brave: pd, pw, pm, py ou intervalo YYYY-MM-DDtoYYYY-MM-DD"},"domain":{"type":"string","description":"Filtrar domínio, sem protocolo"},"count":{"type":"integer","minimum":1,"maximum":20},"page":{"type":"integer","minimum":0,"maximum":9}},"required":["query"],"additionalProperties":false}
             """)!,

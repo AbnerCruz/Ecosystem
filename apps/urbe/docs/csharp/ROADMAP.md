@@ -51,6 +51,9 @@
 
 ## Pesquisa web e investigação pública — UC-63, missão do proprietário (24/10/2026)
 
+**Nova direção (24/10, prevalece sobre instruções anteriores desta seção):** buscar na internet é ferramenta normal e disponível a todos os agentes. O usuário não precisa escolher motor, configurar chave de busca nem conceder grants por agente. Modo padrão público sem chave via RSS do Bing (melhor esforço, limite/bloqueios possíveis), leitura das fontes pelo gateway seguro atual e citações reais. Configuração avançada Brave permanece opcional; preferências globais de privacidade continuam permitindo desativar tudo. Uma escolha anterior de offline persistida NÃO é convertida silenciosamente em acesso à rede. Ainda há custo do modelo de IA quando o provedor cobra tokens. Esta revisão de política de rede é **crítica**, exige aprovação arquitetural e não autoriza publicação antes do CI e da validação no aparelho.
+
+
 **Direção autorizada:** `web_search` e `web_fetch` no mesmo runtime da IA nativa. O Assistente pode pesquisar na internet pública e usar o conhecimento externo junto às notas do vault, desde que haja autorização de rede persistida e individual para cada agente. Pesquisar externamente **não** decorre da permissão de leitura local. O Pesquisador delegado só obtém acesso quando seu próprio grant também existe.
 
 **Arquitetura:** `AssistantWebSession` isolada por execução com Brave Search API como primeiro mecanismo pluggable; leitura HTML/texto por HTTP(S), validação de URL e DNS, pinagem de IP público, limitação de redirecionamentos, download, tempo, chamadas e cancelamento; extração de texto sem JavaScript. Armazenar custo como desconhecido se a API não fornecer cobrança. Salvar metadados `AiWebSource` junto às conversas e preservar URLs reais nas fontes clicáveis de notas/páginas. Usar `AssistantTools`, `AssistantPageTools` e editor existentes para criar artefatos, não inventar formato proprietário.
@@ -65,7 +68,7 @@
 
 **Correção:** restaurar o arquivo original + o ponto de chamada na `main` preservando o novo motor de memória `AssistantMemoryEngine`, as permissões de web_search/web_fetch e a navegação das configurações de modelos/agentes/contexto/pesquisa/execução. Reinstalar teste do resumo compacto + inspeção de etapas e referências às configurações de memórias e web. Criar versão nova `2.0.0-beta.26` — não substituir beta.25 (tags imutáveis). Testar C#, Android, Windows, E2E, consistência e publicar exclusivamente pelo workflow oficial.
 
-**Segurança / uso:** pesquisa web permanece desativada até consentimento explícito, seleção de agente e configuração da chave do provedor Brave. Custo externo depende do contrato da API. O teste físico Android permanece pendente mesmo com CI verde.
+**Segurança / uso (substituído pela direção acima):** acesso público sem chave por padrão em instalações novas; o opt-out anterior deve ser respeitado. Nenhum envio automático de conteúdo privado do vault, sem acesso a rede local, com limite de chamadas/bytes, cancelamento e confirmação para ações destrutivas. Brave segue alternativo. O teste físico Android permanece pendente mesmo com CI verde.
 
 ## Redesenho visual do Assistente — UC-63/UC-81 (24/10/2026, PR #732)
 

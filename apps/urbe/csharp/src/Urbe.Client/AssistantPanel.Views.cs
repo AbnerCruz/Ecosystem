@@ -791,9 +791,9 @@ public sealed partial class AssistantPanel
         if (_settingsCategory == "web")
         {
             body.Children.Add(Section("Pesquisa na internet",
-                Hint(_cfg.Web.Enabled ? "Rede habilitada · " + _cfg.Web.Provider : "Rede desabilitada · autorização explícita necessária"),
-                TextButton("Configurar pesquisa web", ShowWebSettings),
-                Hint("Permissões independentes do vault, configuráveis para cada agente.")));
+                Hint(_cfg.Web.Enabled ? "Disponível para todos os agentes · " + (_cfg.Web.Provider == "brave" ? "Brave (opcional)" : "sem chave") : "Desativada pela preferência de privacidade"),
+                TextButton("Privacidade e pesquisa", ShowWebSettings),
+                Hint("Peça para pesquisar no chat. Sem configurar provedor nem permissão individual.")));
         }
         if (addPreset is not null) EditProvider(null, addPreset);
     }

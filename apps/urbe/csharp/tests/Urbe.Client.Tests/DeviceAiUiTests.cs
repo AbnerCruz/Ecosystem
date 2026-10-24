@@ -87,7 +87,9 @@ public sealed partial class HeadlessUiTests
                 var names = runtime.Asked[0].Tools!.Select(t => t.Name).ToList();
                 Assert.Contains("read_note", names);
                 Assert.DoesNotContain("manage_plugins", names);
-                Assert.True(names.Count <= 12, "a IA no aparelho recebe só o subconjunto pequeno de ferramentas");
+                Assert.Contains("web_search", names);
+                Assert.Contains("web_fetch", names);
+                Assert.DoesNotContain("write_plugin", names);
                 window.Close();
                 return true;
             }

@@ -1,0 +1,120 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-web-zero-config",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T18:33:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-web-zero-config",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-63",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-web-zero-config-20261024",
+  "base_commit": "e961173253073090457f96e10a1146dee3bba959",
+  "commit": "82a8ee7173848bea9250d96b26fc7bc57ccbe640",
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantWebResearch.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantWebTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Web.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantWebResearchTests.cs",
+    "docs/adr/0038-urbe-pesquisa-web-segura.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261024-urbe-web-zero-config.json"
+  ],
+  "work_completed": [
+    "Analisado gateway atual: pesquisa dependia de Brave API e grants por agente. Registrada nova direção em Issue #749.",
+    "Introduzido provedor gratuito/keyless best-effort via RSS público do Bing, sem scraping HTML, com proteção XML DTD/XXE, limite de resultados, resposta explicitamente não garantida e sem dados inventados.",
+    "Preservado gateway público de fetch existente (SSRF, validação DNS/IP público, redirecionamentos, limites de download, sem cookies/proxy, conteúdo não confiável).",
+    "Ativado para qualquer agente quando pesquisa está habilitada globalmente; removida UI de chaves e grants do fluxo padrão. API Brave migrou para opções avançadas opcionais.",
+    "Novas configurações habilitam busca pública por padrão. Opt-out histórico explicitamente persistido permanece desligado; provider Brave sem chave do legado é migrado para gratuito.",
+    "Testes determinísticos de RSS, opt-out, segurança XML e compatibilidade; CI pendente.",
+    "ADR-0038 proposta revisada; roadmap atualizado. Mudança de rede declarada crítica; não publicar antes de autorização."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe C# unit, client, Android, Windows, e2e and consistency",
+      "result": "pending",
+      "evidence": "Draft PR e GitHub Actions a executar."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico, busca em PT-BR, HTML/RSS com falhas, opt-out, fontes clicáveis e custos de modelo",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Web.cs",
+      "evidence": "Não validado nesta sessão."
+    }
+  ],
+  "known_issues": [
+    "RSS público do Bing não é API contratada: pode bloquear bots, retornar poucos resultados, alterar formato, não suporta paginação garantida, pode não respeitar frescor/idioma. Sem validação HTTP real neste ambiente.",
+    "Instalações antigas com enabled=false mantêm opt-out; exigem reabilitação uma vez em preferências. Não distinguir previamente opt-out explícito de default desligado da versão antiga sem invadir preferência de privacidade.",
+    "Custos do modelo de IA são independentes da consulta ao feed público. Suporte PDF e JavaScript externo continuam fora do gateway.",
+    "Segurança contra exfiltração indireta de conteúdo do vault exige avaliação adicional e teste físico; guardas de segredo não são prova de proteção perfeita.",
+    "Outra PR altera AssistantPanel e UI contextual; reconciliar sem retirar alterações de nenhuma."
+  ],
+  "blockers": [
+    "CI não executado/conferido ainda.",
+    "Gate crítico da mudança de política de rede e compatibilidade com governança pendentes.",
+    "Validação real Android pendente.",
+    "Decisão formal DEC-0057 pendente; mudança de política de rede não pode ser integrada automaticamente."
+  ],
+  "next_actions": [
+    "Executar CI e resolver falhas reais.",
+    "Revisar threat model de opt-in automático de busca pública e conformidade de uso do RSS.",
+    "Autorizar e integrar com gate crítico, depois produzir release por fluxo oficial.",
+    "Validar 3 buscas públicas reais no Android com links, leitura e opção de desativar.",
+    "Resolver decisão pendente DEC-0057 mediante avaliação de privacidade e segurança."
+  ],
+  "decisions_required": [
+    "DEC-0057"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "ecosystem.json",
+    "docs/adr/0038-urbe-pesquisa-web-segura.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Mantém somente AssistantStore como fonte canônica de config."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Registra fonte e ações no mesmo loop de agente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Mudança crítica registrada em ADR proposta e Issue #749."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não afirma testes físicos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma extração para Ecosystem Agent Runtime sem segundo consumidor."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-public-web-search",
+      "status": "product-specific",
+      "rationale": "Único consumidor comprovado Urbe, sem camada duplicada."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Alteração explícita de política de acesso à rede e de permissão por agente, mesmo sem credenciais ou escrita fora do vault."
+  }
+}

@@ -287,9 +287,14 @@ public sealed class AssistantStore(IAssistantStorage storage)
         };
         if (o["web"] is JsonObject w)
         {
-            c.Web.Enabled = (bool?)w["enabled"] ?? false;
-            c.Web.Provider = Str(w["provider"], "brave");
+            // Preserve an explicit old offline preference instead of silently restoring network access.
+            c.Web.Enabled = (bool?)w["enabled"] ?? true;
+            c.Web.Provider = Str(w["provider"], "bing-rss");
             c.Web.ApiKey = Str(w["apiKey"]);
+            // Old builds wrote Brave as the default even without a key. Migrate that unusable
+            // search setting to keyless search; users with an actual Brave credential keep it.
+            if (c.Web.Provider == "brave" && string.IsNullOrWhiteSpace(c.Web.ApiKey))
+                c.Web.Provider = "bing-rss";
             c.Web.MaxSearchCalls = (int)Math.Clamp(w["maxSearchCalls"] is null ? 12 : Num(w["maxSearchCalls"]), 1, 100);
             c.Web.MaxFetchCalls = (int)Math.Clamp(w["maxFetchCalls"] is null ? 20 : Num(w["maxFetchCalls"]), 1, 100);
             c.Web.TimeoutSeconds = (int)Math.Clamp(w["timeoutSeconds"] is null ? 18 : Num(w["timeoutSeconds"]), 3, 60);
