@@ -43,9 +43,8 @@ public sealed record AiMemoryMatch(AiMemoryRecord Memory, double Score);
 /// </summary>
 public static class AssistantMemoryEngine
 {
-    public const int MaxRecords = 5000;
-    public const int MaxText = 1600;
-    public const int ContextCharacters = 3400;
+    // Stored knowledge is not bounded by a fixed memory-count or record-size quota.
+    // Model context is budgeted separately from durable storage.
 
     private static readonly HashSet<string> Kinds = new(StringComparer.Ordinal)
     {
@@ -100,9 +99,7 @@ public static class AssistantMemoryEngine
                 Confidence = 100, CreatedAt = timestamp ?? Now(), UpdatedAt = timestamp ?? Now()
             });
         }
-        // Transactional in-memory migration: either all old memories are copied or none are.
-        if (cfg.MemoryRecords.Count + prepared.Count > MaxRecords)
-            throw new InvalidOperationException("O limite local impede a migração integral. Nenhuma memória antiga foi descartada.");
+        // No arbitrary 5000-record quota: old facts are migrated without loss.
         cfg.MemoryRecords.AddRange(prepared);
         cfg.Memory.Clear();
     }
@@ -116,7 +113,7 @@ public static class AssistantMemoryEngine
         if (!Kinds.Contains(kind)) throw new ArgumentException("Tipo de memória inválido.", nameof(kind));
         if (!Scopes.Contains(scope)) throw new ArgumentException("Escopo de memória inválido.", nameof(scope));
         var text = fact.Trim();
-        if (text.Length == 0 || text.Length > MaxText) throw new ArgumentException("Memória vazia ou excessivamente longa.", nameof(fact));
+        if (text.Length == 0) throw new ArgumentException("Memória vazia.", nameof(fact));
         if (PotentialSecret.IsMatch(text)) throw new ArgumentException("Credenciais e segredos não podem ser memorizados.", nameof(fact));
         if (scope != "global" && string.IsNullOrWhiteSpace(vault)) throw new ArgumentException("Vault obrigatório.", nameof(vault));
         if (scope == "agent" && string.IsNullOrWhiteSpace(agentId)) throw new ArgumentException("Agente obrigatório.", nameof(agentId));
@@ -141,7 +138,6 @@ public static class AssistantMemoryEngine
                     existing.RelatedPaths.Add(path);
             return existing;
         }
-        if (cfg.MemoryRecords.Count >= MaxRecords) throw new InvalidOperationException("Limite de memórias atingido; arquive ou exclua registros antes de continuar.");
         var record = new AiMemoryRecord
         {
             Id = Guid.NewGuid().ToString("N"), Text = text,
@@ -204,6 +200,10 @@ public static class AssistantMemoryEngine
                 else if (meta.Contains(term, StringComparison.Ordinal)) score += 1.5;
             }
             if (terms.Length == 0 && q.Length == 0) score = 1;
+            // Short greetings have no useful query tokens. Recency alone must not
+            // make every unrelated record relevant to a greeting or acknowledgment.
+            if (terms.Length == 0 && q.Length > 0 && score <= 0 &&
+                !m.Pinned && m.Kind != "preference") continue;
             if (terms.Length > 0 && score <= 0 && !m.Pinned) continue;
             if (m.Pinned) score += 5;
             if (m.Kind is "preference" or "decision" && score > 0) score += 1.5;
@@ -216,16 +216,23 @@ public static class AssistantMemoryEngine
         }
         return matches.OrderByDescending(x => x.Score)
             .ThenByDescending(x => x.Memory.UpdatedAt).ThenBy(x => x.Memory.Id, StringComparer.Ordinal)
-            .Take(Math.Clamp(limit, 1, 60)).ToList();
+            .Take(Math.Max(1, limit)).ToList();
     }
 
-    /// <summary>Small, cited context instead of re-sending the entire memory archive on every step.</summary>
+    /// <summary>
+    /// Compatibility entry point for a caller-supplied budget. The budget is context transport,
+    /// not a limit on knowledge; all memories remain locally persisted.
+    /// </summary>
     public static IReadOnlyList<string> ForPrompt(AiConfig cfg, string vault, string agentId,
-        string? query, int maxChars = ContextCharacters)
+        string? query, int maxChars = 3400) =>
+        PackPrompt(cfg, vault, agentId, Search(cfg, vault, agentId, query, int.MaxValue), maxChars);
+
+    private static IReadOnlyList<string> PackPrompt(AiConfig cfg, string vault, string agentId,
+        IReadOnlyList<AiMemoryMatch> matches, int maxChars)
     {
-        maxChars = Math.Clamp(maxChars, 200, 10000);
-        var results = Search(cfg, vault, agentId, query, 20).ToList();
-        // Preferences and pinned decisions should not disappear solely because the question is phrased differently.
+        maxChars = Math.Max(0, maxChars);
+        var results = matches.ToList();
+        // Stable preferences and pinned decisions remain useful even without exact query terms.
         foreach (var item in Visible(cfg, vault, agentId)
                      .Where(m => (m.Pinned || m.Kind == "preference") && !PotentialSecret.IsMatch(m.Text))
                      .OrderByDescending(m => m.UpdatedAt))
@@ -233,18 +240,61 @@ public static class AssistantMemoryEngine
                 results.Add(new AiMemoryMatch(item, 0));
         var output = new List<string>();
         var used = 0;
-        foreach (var match in results.Take(25))
+        var seenText = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var match in results)
         {
             var m = match.Memory;
+            var normalized = Normalize(m.Text.Trim());
+            // A duplicate global/vault/agent fact costs tokens only once in the system context.
+            if (seenText.Contains(normalized)) continue;
             var source = m.SourceReference.Length > 0 ? m.SourceReference : m.Origin;
-            var s = "[" + m.Kind + "; " + m.Scope + "; fonte: " + source + "; id: " + m.Id + "] " +
+            var formatted = "[" + m.Kind + "; " + m.Scope + "; fonte: " + source + "; id: " + m.Id + "] " +
                 m.Text.Replace('\n', ' ').Replace('\r', ' ');
-            if (used + s.Length > maxChars) continue;
-            output.Add(s);
-            used += s.Length;
-            if (output.Count >= 12) break;
+            if (formatted.Length > maxChars - used) continue;
+            output.Add(formatted);
+            used += formatted.Length;
+            seenText.Add(normalized);
         }
         return output;
+    }
+
+    /// <summary>
+    /// Adaptive first-pass recall. Cheap lexical ranking identifies relevant material; diminishing
+    /// returns allocate proportionally less prompt space as memory grows. The model can retrieve
+    /// all remaining evidence, without a fixed cap, through paginated recall_memory calls.
+    /// </summary>
+    public static IReadOnlyList<string> ForPromptAdaptive(AiConfig cfg, string vault, string agentId,
+        string? query, long contextTokens, int systemChars = 0, int conversationChars = 0,
+        int reservedOutputTokens = 8192)
+    {
+        // Conservative multilingual token approximation; the provider remains authoritative.
+        long window = Math.Max(0, contextTokens) * 3L;
+        long output = Math.Min(Math.Max(1, reservedOutputTokens), Math.Max(1, contextTokens / 4L)) * 3L;
+        long overhead = Math.Max(4096, contextTokens / 12L * 3L);
+        long free = window - output - overhead - Math.Max(0, systemChars) -
+            Math.Max(0, conversationChars);
+        if (free <= 0) return [];
+        var matches = string.IsNullOrWhiteSpace(query) ? Array.Empty<AiMemoryMatch>() :
+            Search(cfg, vault, agentId, query, int.MaxValue);
+        // When the question itself has no matching subject, only durable preferences
+        // and explicitly pinned memories may enter the first context pass.
+        IReadOnlyList<AiMemoryMatch> candidates = matches.Count > 0 ? matches :
+            Visible(cfg, vault, agentId)
+                .Where(m => (m.Kind == "preference" || m.Pinned) &&
+                    !PotentialSecret.IsMatch(m.Text))
+                .Select(m => new AiMemoryMatch(m, 0)).ToArray();
+        if (candidates.Count == 0) return [];
+
+        // Soft initial budget: sqrt(N), not N. For 10,000 matches the automatic recall
+        // selects representatives; the agent requests subsequent pages only as required.
+        // Deeper requests may consume more, but cannot exceed the selected model's space.
+        var avg = candidates.Average(x => Math.Min(x.Memory.Text.Length + 100, 20000));
+        var complexity = 1d + Math.Log2(1 + Tokens(query).Length);
+        if (Regex.IsMatch(Normalize(query), @"\b(todos|todas|completo|completa|detalhado|profundo|exaustivo|historia|historico)\b"))
+            complexity *= 2;
+        var desired = Math.Ceiling(avg * Math.Sqrt(candidates.Count) * complexity);
+        var allowed = (int)Math.Min(int.MaxValue, Math.Min(free, Math.Max(avg, desired)));
+        return PackPrompt(cfg, vault, agentId, candidates, allowed);
     }
 
     public static string? ExplicitRememberRequest(string? userMessage)
@@ -252,7 +302,7 @@ public static class AssistantMemoryEngine
         var m = RememberCommand.Match(userMessage ?? "");
         if (!m.Success) return null;
         var fact = m.Groups[1].Value.Trim();
-        return fact.Length is > 0 and <= MaxText && !PotentialSecret.IsMatch(fact) ? fact : null;
+        return fact.Length > 0 && !PotentialSecret.IsMatch(fact) ? fact : null;
     }
 
     /// <summary>
@@ -298,8 +348,7 @@ public static class AssistantMemoryEngine
 
     public static bool Edit(AiConfig cfg, string id, string text, long? at = null)
     {
-        if (string.IsNullOrWhiteSpace(text) || text.Trim().Length > MaxText ||
-            PotentialSecret.IsMatch(text)) throw new ArgumentException("Texto inválido ou contém credenciais.", nameof(text));
+        if (string.IsNullOrWhiteSpace(text) || PotentialSecret.IsMatch(text)) throw new ArgumentException("Texto inválido ou contém credenciais.", nameof(text));
         var m = ResolveForEdit(cfg, id);
         if (m is null) return false;
         m.Text = text.Trim();

@@ -825,6 +825,7 @@ public sealed partial class AssistantPanel
         body.Children.Add(search);
         var list = new StackPanel { Spacing = 8 };
         body.Children.Add(list);
+        var visibleRows = 80; // Only the UI page size; all memories remain searchable.
         void Refresh()
         {
             list.Children.Clear();
@@ -840,12 +841,13 @@ public sealed partial class AssistantPanel
                 })
                 : Array.Empty<AiMemoryRecord>());
             var term = AssistantMemoryEngine.Normalize(search.Text?.Trim());
-            var filtered = entries.Concat(older).Where(m => term.Length == 0 ||
+            var matching = entries.Concat(older).Where(m => term.Length == 0 ||
                 AssistantMemoryEngine.Normalize(m.Text + " " + m.Kind + " " +
                     m.SourceReference + " " + string.Join(" ", m.RelatedPaths)).Contains(term, StringComparison.Ordinal))
-                .Take(120).ToArray();
+                .ToArray();
+            var filtered = matching.Take(visibleRows).ToArray();
             state.Text = c.MemoryRecords.Count + c.Memory.Values.Sum(a => a.Count) +
-                " lembranças locais · " + filtered.Length + " exibidas (máx. 120).";
+                " lembranças locais · " + filtered.Length + " de " + matching.Length + " exibidas.";
             if (filtered.Length == 0) list.Children.Add(Hint("Sem resultados. Você pode adicionar uma lembrança ou usar “lembre que…” no chat."));
             foreach (var m in filtered)
             {
@@ -877,8 +879,15 @@ public sealed partial class AssistantPanel
                 label.Children.Add(buttons);
                 list.Children.Add(Card(label));
             }
+            if (matching.Length > filtered.Length)
+                list.Children.Add(TextButton("Carregar mais " +
+                    Math.Min(80, matching.Length - filtered.Length) + " lembranças", () =>
+                {
+                    visibleRows += 80;
+                    Refresh();
+                }));
         }
-        search.TextChanged += (_, _) => Refresh();
+        search.TextChanged += (_, _) => { visibleRows = 80; Refresh(); };
         Refresh();
     }
 
@@ -896,8 +905,7 @@ public sealed partial class AssistantPanel
         ]);
         if (scopePick is null) return;
         var text = await _app.Dialogs.PromptAsync(new PromptOptions("Nova lembrança",
-            "Conhecimento verificável ou preferência", Placeholder: "O que deve ser lembrado?",
-            Validate: s => s.Length > AssistantMemoryEngine.MaxText ? "Texto muito longo." : null));
+            "Conhecimento verificável ou preferência", Placeholder: "O que deve ser lembrado?"));
         if (text is null) return;
         var scope = scopePick.Value switch { 1 => "agent", 2 => "global", _ => "vault" };
         try
@@ -915,7 +923,7 @@ public sealed partial class AssistantPanel
         var m = AssistantMemoryEngine.ResolveForEdit(_cfg, id);
         if (m is null) { ShowMemoryManager(); return; }
         var changed = await _app.Dialogs.PromptAsync(new PromptOptions("Editar lembrança", "Texto",
-            Value: m.Text, Validate: s => s.Length > AssistantMemoryEngine.MaxText ? "Texto muito longo." : null));
+            Value: m.Text));
         if (changed is null) return;
         if (string.IsNullOrWhiteSpace(changed)) return;
         try

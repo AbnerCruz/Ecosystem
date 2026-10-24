@@ -1,3 +1,9 @@
+### 2026-10-24 — ChatGPT — UC-87.1 tokens e memória adaptativa
+- Progresso: remover cotas artificiais de registros e texto, recuperar progressivamente memórias por orçamento e janela do modelo; UI paginada nativa; testes de escala e diferentes janelas.
+- Base: main após PR #734, com aprovação de todos os 787 testes Core e 229 Client no ciclo anterior.
+- Sem mudanças em documentos Markdown do vault e sem gasto oculto de tokens; recuperação lexical ainda não equivale a embeddings.
+- Gate: CI e PR novos necessários; release nativa exige integração via integrador oficial, bump de versão assinado e fluxo de publicação. O aparelho físico ainda não foi validado.
+
 ### 2026-10-24 — ChatGPT — UC-87 memória de agentes (M1–M8)
 - Estado: implementação na branch feat/urbe-memory-engine-m1-m8-20261024, aguardando CI e gate crítico.
 - Feito: motor de memórias tipadas, recuperação contextual, isolamento de escopos, proveniência, link com KnowledgeIndex, episódios sem copiar notas, histórico temporal, ferramentas, UI nativa e testes. Documentação de limitações em apps/urbe/docs/csharp/ASSISTANT-MEMORY.md.

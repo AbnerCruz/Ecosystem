@@ -1,0 +1,104 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-memory-adaptive-context",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T12:40:00Z",
+  "agent": {
+    "id": "chatgpt-gpt6",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-87.1",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-uc87-adaptive-memory-cost-20261024",
+  "base_commit": "455d1e5262f177fec873b29059d3dab551c325a7",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/737",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantMemoryEngine.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantMemoryTools.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantMemoryEngineTests.cs",
+    "apps/urbe/docs/csharp/ASSISTANT-MEMORY.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261024-urbe-memory-adaptive-context.json"
+  ],
+  "work_completed": [
+    "Remove cotas fixas de registros e texto; a memória durável permanece no storage já aprovado.",
+    "Recuperação inicial adapta caracteres à capacidade de contexto do modelo, orçamento para resposta e diálogo recente; não invoca provider nem consome tokens extras.",
+    "Ferramenta recall_memory pagina por offset e max_chars expansível, preserva referências e escopo.",
+    "Interface de memórias carrega páginas incrementais sem ocultar entradas antigas.",
+    "Testes de migração acima de 5000 registros, janela pequena/grande e busca extensa."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "urbe-checks",
+      "result": "pending",
+      "evidence": "GitHub workflow #40094550236; os jobs estão em andamento no head original e devem ser reexecutados no head final."
+    },
+    {
+      "kind": "automated",
+      "check": "consistency",
+      "result": "pending",
+      "evidence": "GitHub Actions PR #737; handoff apresentado após observação do integrador."
+    },
+    {
+      "kind": "human",
+      "check": "Urbe Android físico, custo de tokens em sessões longas",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+      "evidence": "Nenhum teste físico alegado."
+    }
+  ],
+  "known_issues": [
+    "Persistência ainda serializa config.json inteiro por operação; custo em históricos muito grandes pede armazenamento segmentado numa evolução independente.",
+    "Recuperação por semântica de embeddings e benchmarking público de longo prazo não implementados.",
+    "Estimativa caracteres/token é conservadora e não substitui contagem real do provider.",
+    "Sem validação Android físico."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Concluir os testes de CI do head final.",
+    "Integrar via integrador automático do Ecosystem quando a PR passar.",
+    "Executar release beta via workflow aprovado, sem inventar tag/APK.",
+    "Provar em Android físico e benchmark de longa duração."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/adr/0039-urbe-memoria-contextual-local.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Sem nova autoridade de memória; storage continua AssistantStore no cliente nativo."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Memórias legadas preservadas; sem perda por cota de quantidade."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e testes humanos rastreados separadamente."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem serviço compartilhado, novos custos de provider ou modificação de outros produtos."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Mudança interna em ranking, orçamento de contexto, UX paginada e testes; não modifica formato de config, credenciais, distribuição ou workflow."
+  }
+}
