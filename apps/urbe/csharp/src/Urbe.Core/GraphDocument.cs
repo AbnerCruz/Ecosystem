@@ -63,7 +63,10 @@ public sealed class GraphDocument
         var at = IndexOfNode(id);
         if (at < 0) return;
         _nodes.RemoveAt(at);
-        ReindexNodes();
+        _nodeIndex.Remove(id);
+        // Reindex only the shifted suffix. Removing the last-added node during undo
+        // is O(1), instead of forcing a scan of the entire graph.
+        for (var i = at; i < _nodes.Count; i++) _nodeIndex[_nodes[i].Id] = i;
     }
 
     private void PutEdge(GraphEdge edge)
