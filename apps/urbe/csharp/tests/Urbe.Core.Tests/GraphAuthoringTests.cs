@@ -83,11 +83,40 @@ public sealed class GraphAuthoringTests
     }
 
     [Fact]
-    public void StructureProjectionRefusesExcessiveCanvasWithoutSilentlyHidingFiles()
+    public void StructureProjectionDoesNotDiscardFilesAboveAnInventedQuota()
     {
         var docs = Array.Empty<UrbeDocument>();
         var files = Enumerable.Range(0, 6001).Select(n => $"Arquivo_{n}.png");
-        Assert.Throws<InvalidDataException>(() =>
-            GraphProjection.FromVault(docs, files, [], _ => []));
+        var graph = GraphProjection.FromVault(docs, files, [], _ => []);
+        Assert.Equal(6001, graph.Nodes.Count);
+        Assert.Contains(graph.Nodes, n => n.Target == "Arquivo_6000.png");
+    }
+
+    [Fact]
+    public void HistoryHasNoArtificialEightyEditCeiling()
+    {
+        var graph = GraphDocument.Create("Histórico");
+        var n = graph.AddText("Posição original");
+        for (var i = 1; i <= 125; i++) graph.MoveNode(n.Id, i, 0);
+        for (var i = 0; i < 125; i++) Assert.True(graph.Undo());
+        Assert.Equal(0, graph.Node(n.Id)!.X);
+        for (var i = 0; i < 125; i++) Assert.True(graph.Redo());
+        Assert.Equal(125, graph.Node(n.Id)!.X);
+    }
+
+    [Fact]
+    public void ManyNodesAndConnectionsCanBeSavedAndOpenedWithoutNumberQuotas()
+    {
+        var graph = GraphDocument.Create("Grande");
+        var first = graph.AddText("Inicial");
+        for (var i = 0; i < 10500; i++)
+        {
+            var node = graph.AddText("Item " + i, i * 4, i);
+            if (i < 10) graph.Connect(first.Id, node.Id);
+        }
+        Assert.Equal(10501, graph.Nodes.Count);
+        var restored = GraphDocument.Parse(graph.Serialize());
+        Assert.Equal(graph.Nodes.Count, restored.Nodes.Count);
+        Assert.NotNull(restored.Node(first.Id));
     }
 }
