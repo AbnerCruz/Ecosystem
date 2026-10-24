@@ -94,9 +94,9 @@ public sealed partial class AssistantPanel
         var root = new StackPanel { Spacing = 9 };
         root.Children.Add(new Border
         {
-            CornerRadius = new CornerRadius(14), Padding = new Thickness(11, 8),
-            Background = UrbeTheme.Brush(UrbeTheme.Surface, .7),
-            BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(0), Padding = new Thickness(12, 8, 0, 8),
+            Background = Brushes.Transparent,
+            BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent, .46), BorderThickness = new Thickness(2, 0, 0, 0),
             Child = fold
         });
 
