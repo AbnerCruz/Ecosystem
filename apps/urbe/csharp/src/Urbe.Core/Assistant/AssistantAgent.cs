@@ -502,6 +502,12 @@ public static class AssistantAgent
         public Task CreateFolderAsync(string path) => inner.CreateFolderAsync(path);
         public void OpenNote(string path) => inner.OpenNote(path);
         public void Remember(string fact) => inner.Remember(fact);
+        public IReadOnlyList<AiMemoryMatch> SearchMemory(string query, int limit) => inner.SearchMemory(query, limit);
+        public AiMemoryRecord StoreMemory(string fact, string kind, string scope, string sourcePath) =>
+            inner.StoreMemory(fact, kind, scope, sourcePath);
+        public IReadOnlyList<(AiMemoryRecord Left, AiMemoryRecord Right)> MemoryConflicts() => inner.MemoryConflicts();
+        public bool SupersedeMemory(string oldId, string newId) => inner.SupersedeMemory(oldId, newId);
+        public bool ForgetMemory(string id) => inner.ForgetMemory(id);
         public void SetPlan(IReadOnlyList<AiPlanStep> steps) => setPlan(steps);
         public IAssistantAppearance? Appearance => inner.Appearance;
         public IAssistantPlugins? Plugins => inner.Plugins;
