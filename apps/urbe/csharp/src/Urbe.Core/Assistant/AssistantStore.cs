@@ -162,6 +162,18 @@ public sealed class AssistantStore(IAssistantStorage storage)
 
     public void SetConfig(AiConfig c) => storage.Write(ConfigFile, ConfigToJson(c).ToJsonString());
 
+    /// <summary>
+    /// Required for changes to persistent AI memory. The folder adapter historically swallows IO
+    /// failures: fail closed unless the saved bytes can be read back verbatim.
+    /// </summary>
+    public void SetConfigVerified(AiConfig c)
+    {
+        var payload = ConfigToJson(c).ToJsonString();
+        storage.Write(ConfigFile, payload);
+        if (!string.Equals(storage.Read(ConfigFile), payload, StringComparison.Ordinal))
+            throw new IOException("Não foi possível confirmar a gravação da configuração do assistente.");
+    }
+
     /// <summary>The conversations, the most recent first.</summary>
     public List<AiConversation> ListConversations() =>
         storage.List().Where(n => n.StartsWith(Prefix, StringComparison.Ordinal) && n.EndsWith(".json", StringComparison.Ordinal))
