@@ -70,7 +70,7 @@ export function plateElevation(model, p, foldedNoise = 0) {
     Math.acos(Math.max(-1, Math.min(1, first)));
   const boundary = Math.exp(-angularGap / 0.115);
   const offset = neighbor.center.map((v, i) => v - nearest.center[i]);
-  const tangent = unit(offset.map((v, i) => v - dot(offset, p) * p));
+  const tangent = unit(offset.map((v, i) => v - dot(offset, p) * p[i]));
   const a = cross(nearest.angularVelocity, p);
   const b = cross(neighbor.angularVelocity, p);
   const closing = dot(a.map((v, i) => v - b[i]), tangent);
