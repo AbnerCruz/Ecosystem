@@ -62,6 +62,87 @@ public sealed class AssistantWebResearchTests
     }
 
     [Fact]
+    public async Task KeylessSearchReturnsBingRssResultsWithoutCredentialsOrSetup()
+    {
+        var handler = new Handler(request =>
+        {
+            Assert.Equal("www.bing.com", request.RequestUri!.Host);
+            Assert.Contains("format=rss", request.RequestUri.Query);
+            Assert.False(request.Headers.Contains("X-Subscription-Token"));
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""
+                <?xml version="1.0" encoding="utf-8"?>
+                <rss version="2.0"><channel>
+                  <item><title>Relatório A</title><link>https://example.org/report</link>
+                    <description>Resultado&amp;texto</description></item>
+                  <item><title>Relatório B</title><link>https://example.net/study</link>
+                    <description>Outra fonte</description></item>
+                </channel></rss>
+                """, Encoding.UTF8, "application/rss+xml")
+            };
+        });
+        var config = new AiWebConfig();
+        Assert.True(config.Enabled);
+        Assert.Equal("bing-rss", config.Provider);
+        Assert.True(config.Allowed("agente-personalizado-sem-config"));
+        using var web = new AssistantWebSession(config, handler: handler, resolver: PublicDns);
+        var results = await web.SearchAsync("baterias de estado sólido", "pt", "BR");
+        Assert.Contains("[S1] Relatório A", results);
+        Assert.Contains("[S2] Relatório B", results);
+        Assert.Contains("Resultado&texto", results);
+        Assert.Equal(2, web.Sources.Count);
+        Assert.Single(handler.Requested);
+        Assert.Contains("mkt=pt-BR", handler.Requested.Single().Query);
+        await Assert.ThrowsAsync<AiToolException>(() => web.SearchAsync("pagina dois", page: 1));
+        Assert.Single(handler.Requested);
+    }
+
+    [Fact]
+    public async Task KeylessSearchNeverTreatsBlockedHtmlOrExternalEntitiesAsValidResults()
+    {
+        var blocked = new Handler(_ => Html("<html>Bloqueio anti-bot</html>"));
+        using var web = new AssistantWebSession(new AiWebConfig(), handler: blocked, resolver: PublicDns);
+        var error = await Assert.ThrowsAsync<AiToolException>(() => web.SearchAsync("teste"));
+        Assert.Contains("RSS", error.Message);
+        Assert.Empty(web.Sources);
+
+        var dtd = new Handler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("""
+            <!DOCTYPE rss [ <!ENTITY private SYSTEM "file:///etc/passwd"> ]>
+            <rss version="2.0"><channel><item><title>&private;</title>
+            <link>https://example.org/</link></item></channel></rss>
+            """, Encoding.UTF8, "application/rss+xml")
+        });
+        using var protectedWeb = new AssistantWebSession(new AiWebConfig(), handler: dtd, resolver: PublicDns);
+        await Assert.ThrowsAsync<AiToolException>(() => protectedWeb.SearchAsync("teste"));
+        Assert.Empty(protectedWeb.Sources);
+    }
+
+    [Fact]
+    public void LegacyPreferencesPreserveExplicitOfflineModeAndMigrateUnconfiguredBrave()
+    {
+        var old = new JsonObject
+        {
+            ["web"] = new JsonObject
+            {
+                ["enabled"] = false,
+                ["provider"] = "brave",
+                ["apiKey"] = "",
+                ["agentAccess"] = new JsonObject { ["pesquisador"] = false }
+            }
+        };
+        var config = AssistantStore.ConfigFromJson(old);
+        Assert.False(config.Web.Enabled);
+        Assert.False(config.Web.Allowed("geral"));
+        Assert.Equal("bing-rss", config.Web.Provider);
+        config.Web.Enabled = true;
+        Assert.True(config.Web.Allowed("qualquer-agente"));
+        Assert.Equal("bing-rss", AssistantStore.ConfigFromJson(AssistantStore.ConfigToJson(config)).Web.Provider);
+    }
+
+    [Fact]
     public async Task FetchReadsSemanticHtmlRemovesScriptsAndKeepsOriginalFinalDateAndInjectionAsUntrustedData()
     {
         var handler = new Handler(request => Html("""
@@ -174,14 +255,15 @@ public sealed class AssistantWebResearchTests
     [Fact]
     public void SettingsAndSourcesSurvivePrivateStorageRoundTripWithoutDefaultInternetConsent()
     {
-        Assert.False(AssistantStore.ConfigFromJson(new JsonObject()).Web.Enabled);
+        Assert.True(AssistantStore.ConfigFromJson(new JsonObject()).Web.Enabled);
+        Assert.Equal("bing-rss", AssistantStore.ConfigFromJson(new JsonObject()).Web.Provider);
         var cfg = new AiConfig { Web = Config(searches: 15, reads: 18) };
         var json = AssistantStore.ConfigToJson(cfg);
         Assert.DoesNotContain("web", cfg.Instructions);
         var restored = AssistantStore.ConfigFromJson(json);
         Assert.True(restored.Web.Enabled);
         Assert.True(restored.Web.Allowed("pesquisador"));
-        Assert.False(restored.Web.Allowed("outro"));
+        Assert.True(restored.Web.Allowed("outro")); // public web access no longer requires per-agent grants
         Assert.Equal(15, restored.Web.MaxSearchCalls);
         Assert.Equal("test-search-key", restored.Web.ApiKey);
         var conv = new AiConversation { Id = "abc", WebSources =
