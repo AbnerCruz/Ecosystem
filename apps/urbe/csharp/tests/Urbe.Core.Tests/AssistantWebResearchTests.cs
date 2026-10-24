@@ -191,12 +191,16 @@ public sealed class AssistantWebResearchTests
         Assert.Equal("https://example.org/new", Assert.Single(loaded.WebSources).FinalUrl);
     }
 
-    private sealed class Host(AssistantWebSession web) : IAssistantHost
+    private sealed class Host : IAssistantHost
     {
-        public AssistantWebSession? Web => web;
+        public Host(AssistantWebSession web)
+        {
+            Web = web;
+            Knowledge = new KnowledgeIndex(Documents);
+        }
+        public AssistantWebSession? Web { get; }
         public DocumentStore Documents { get; } = new();
         public KnowledgeIndex Knowledge { get; }
-        public Host() => Knowledge = new KnowledgeIndex(Documents);
         public int ReadChars => 5000;
         public (string? Path, string? Selection) EditorContext() => (null, null);
         public Task<UrbeDocument> CreateNoteAsync(string path, string content) => throw new NotSupportedException();
