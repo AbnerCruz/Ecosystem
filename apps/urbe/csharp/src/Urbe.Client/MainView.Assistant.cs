@@ -92,7 +92,7 @@ public sealed partial class MainView : IAssistantApp
         {
             if (!GraphDocument.IsGraphPath(path) || !ListPaths().Contains(path, StringComparer.OrdinalIgnoreCase)
                 || view._vault is not { } vault) return null;
-            var file = await vault.ReadFileAsync(path, 32L * 1024 * 1024);
+            var file = await vault.ReadFileAsync(path, long.MaxValue);
             return file?.Bytes is { } bytes ? System.Text.Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF') : null;
         }
     }
