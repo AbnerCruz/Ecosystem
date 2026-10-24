@@ -72,9 +72,7 @@
     "Validar Brave com credencial real e pesquisas concretas; validar no Android real.",
     "Adicionar PDF público e leitura especializada de SPAs em fatias posteriores, após avaliação de segurança."
   ],
-  "decisions_required": [
-    "Revisão do ADR-0038 quanto à fronteira de rede e proteção de dados, se classificado como crítico."
-  ],
+  "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",
     "AGENTS.md",
