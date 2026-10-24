@@ -78,6 +78,48 @@ public static class GraphProjection
             byPath[item.Path] = node;
             if (item.Id is not null) byNoteId[item.Id] = node;
         }
+        // Tidy hierarchy: leaves take unique rows; folder parents sit at their children's
+        // vertical midpoint. This avoids long crossing lines produced by a flat list layout.
+        var children = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in items)
+        {
+            var cut = item.Path.LastIndexOf('/');
+            var parent = cut < 0 ? "" : item.Path[..cut];
+            if (!byPath.ContainsKey(parent)) parent = "";
+            if (!children.TryGetValue(parent, out var siblings))
+            {
+                siblings = [];
+                children[parent] = siblings;
+            }
+            siblings.Add(item.Path);
+        }
+        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        int leaf = 0;
+        double Place(string path, int depth)
+        {
+            if (!visited.Add(path)) throw new InvalidDataException("Hierarquia com ciclo.");
+            var child = children.GetValueOrDefault(path);
+            double y;
+            if (child is { Count: > 0 })
+            {
+                double first = 0, last = 0;
+                for (var index = 0; index < child.Count; index++)
+                {
+                    var childY = Place(child[index], depth + 1);
+                    if (index == 0) first = childY;
+                    last = childY;
+                }
+                y = (first + last) / 2;
+            }
+            else y = (leaf++) * 116;
+            graph.MoveNode(byPath[path].Id, depth * 266, y, recordHistory: false);
+            return y;
+        }
+        foreach (var path in children.GetValueOrDefault("") ?? [])
+            Place(path, 0);
+        foreach (var item in items)
+            if (!visited.Contains(item.Path)) Place(item.Path, 0);
+
         foreach (var item in items)
         {
             var end = item.Path.LastIndexOf('/');
