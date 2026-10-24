@@ -581,12 +581,53 @@ public sealed partial class AssistantPanel
     }
 
 
-    /// <summary>showSettings(): providers (test, edit, remove, add), instructions, memory, own agents and the step limit.</summary>
+    // Separate destinations keep the full feature set without an endless configuration screen.
+    private string _settingsCategory = "models";
+
+    /// <summary>Settings grouped by mental model, with every existing control preserved.</summary>
     public void ShowSettings(string? addPreset = null)
     {
+        if (addPreset is not null) _settingsCategory = "models";
         var c = _cfg;
         var v = VaultKey;
-        var body = OpenView("Configurações do Assistente");
+        var body = OpenView("Configurações");
+        body.Children.Add(Wrap("Personalize como seus agentes trabalham", 15, UrbeTheme.Text2));
+        var choices = new (string Id, string Title, string Description)[]
+        {
+            ("models", "Modelos", "Provedores e imagens"),
+            ("agents", "Agentes", "Identidade e perfis"),
+            ("context", "Contexto", "Instruções e memória"),
+            ("execution", "Execução", "Autonomia e segurança")
+        };
+        var navigation = new WrapPanel { Orientation = Orientation.Horizontal, ItemWidth = 150,
+            ItemHeight = 66 };
+        foreach (var choice in choices)
+        {
+            var selected = choice.Id == _settingsCategory;
+            var item = new Button
+            {
+                Width = 146, MinHeight = 60, Padding = new Thickness(11, 8),
+                CornerRadius = new CornerRadius(12), HorizontalContentAlignment = HorizontalAlignment.Left,
+                BorderThickness = new Thickness(1),
+                BorderBrush = UrbeTheme.Brush(selected ? UrbeTheme.Accent : UrbeTheme.Line2),
+                Background = UrbeTheme.Brush(selected ? UrbeTheme.Accent : UrbeTheme.Surface, selected ? .13 : 1),
+                Content = new StackPanel { Spacing = 2, Children =
+                {
+                    Label(choice.Title, 13, selected ? UrbeTheme.Accent : UrbeTheme.Text, FontWeight.SemiBold),
+                    Wrap(choice.Description, 11, UrbeTheme.Text3)
+                } }
+            };
+            Avalonia.Automation.AutomationProperties.SetName(item, "Configurações: " + choice.Title);
+            item.Click += (_, _) => { _settingsCategory = choice.Id; ShowSettings(); };
+            navigation.Children.Add(item);
+        }
+        body.Children.Add(navigation);
+        body.Children.Add(new Border { Height = 1, Background = UrbeTheme.Brush(UrbeTheme.Line2),
+            Margin = new Thickness(0, 4, 0, 2) });
+
+        if (_settingsCategory == "models")
+        {
+        body.Children.Add(Section("Conexões e provedores", Hint("Gerencie credenciais, modelos e testes de conexão em um só lugar.")));
         var provs = new StackPanel { Spacing = 8 };
         if (c.Providers.Count == 0) provs.Children.Add(Hint("Nenhum provedor ainda."));
         foreach (var p in c.Providers)
@@ -637,6 +678,11 @@ public sealed partial class AssistantPanel
             else _ = PriceInSettingsAsync(imageProvider, id, imagePrice);
         }
 
+        }
+
+        if (_settingsCategory == "context")
+        {
+        body.Children.Add(Section("Preferências de contexto", Hint("Estas informações orientam as respostas; você mantém o controle sobre o que é lembrado.")));
         var instr = new TextBox { Text = c.Instructions, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 90, PlaceholderText = "Ex.: escreva em português do Brasil, frases curtas; use a pasta Diário para registros do dia." };
         instr.LostFocus += (_, _) => { c.Instructions = instr.Text ?? ""; SaveConfig(); };
         instr.TextChanged += (_, _) => c.Instructions = instr.Text ?? "";
@@ -657,6 +703,11 @@ public sealed partial class AssistantPanel
         }
         body.Children.Add(Section("Memória", Hint("Fatos que você pediu para o Assistente lembrar. Valem para este vault (" + v + ") e, os marcados como gerais, para todos."), mem));
 
+        }
+
+        if (_settingsCategory == "agents")
+        {
+        body.Children.Add(Section("Equipe de agentes", Hint("Modelos, nomes, instruções individuais e capacidades de cada agente.")));
         // UC-81: each agent's call name, on this device (the chip, the prompt and &Nome&: in a note use it)
         var names = new StackPanel { Spacing = 6 };
         foreach (var a in AgentNames.All(c))
@@ -697,6 +748,12 @@ public sealed partial class AssistantPanel
         }
         body.Children.Add(Section("Agentes personalizados", custom, TextButton("+ Novo agente", () => EditAgent(null))));
 
+        }
+
+        if (_settingsCategory == "execution")
+        {
+        body.Children.Add(Section("Autonomia e proteção", Hint("O modo de aprovação de alterações pode ser trocado também na conversa."),
+            TextButton("Alterar permissões da conversa", () => _ = PickPolicyAsync())));
         var steps = new TextBox { Text = c.MaxSteps.ToString(CultureInfo.InvariantCulture), Width = 100, HorizontalAlignment = HorizontalAlignment.Left };
         steps.LostFocus += (_, _) =>
         {
@@ -704,7 +761,10 @@ public sealed partial class AssistantPanel
             steps.Text = c.MaxSteps.ToString(CultureInfo.InvariantCulture);
             SaveConfig();
         };
-        body.Children.Add(Section("Limite de passos por resposta", steps, Hint("Cada leitura, busca ou edição é um passo.")));
+        body.Children.Add(Section("Limite de etapas da versão atual", steps,
+            Hint("Proteção legada desta versão. Cada leitura, busca ou edição consome uma etapa. É diferente do número de itens visuais no plano.")));
+        body.Children.Add(Section("Transparência", Hint("As operações do agente ficam agrupadas na conversa, mas entradas, saídas, decisões e aprovações podem ser inspecionadas individualmente.")));
+        }
         if (addPreset is not null) EditProvider(null, addPreset);
     }
 
