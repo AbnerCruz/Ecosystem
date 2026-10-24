@@ -82,7 +82,12 @@ public sealed class AssistantMemoryEngineTests
             "romance cronologia", 128000, systemChars: 2000, conversationChars: 1200);
         Assert.NotEmpty(small);
         Assert.True(large.Count > small.Count);
-        Assert.Equal(80, large.Count);
+        Assert.True(large.Count <= 80);
+        // Cost grows sublinearly with memory volume rather than pasting all records.
+        Assert.True(large.Count < 80);
+        // Nothing is lost: the full relevant set remains recoverable when explicitly requested.
+        Assert.Equal(80, AssistantMemoryEngine.Search(cfg, "Livros", "pesquisador",
+            "romance cronologia", int.MaxValue).Count);
         Assert.True(small.Sum(x => x.Length) <= 4096 * 3);
     }
 
