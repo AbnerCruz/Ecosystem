@@ -53,10 +53,54 @@ public sealed partial class MainView
             .OrderBy(p => p, StringComparer.CurrentCultureIgnoreCase).ToArray();
         var entries = paths.Select(p => new DialogItem(p[..^GraphDocument.FileSuffix.Length], UrbeTheme.Icons.Layers)).ToList();
         entries.Insert(0, new DialogItem("+ Novo grafo", UrbeTheme.Icons.Plus, "Criar um canvas livre no vault"));
+        entries.Insert(1, new DialogItem("Gerar estrutura do vault", UrbeTheme.Icons.Folder,
+            "Pastas, arquivos, notas e links resolvidos"));
         var choice = await Dialogs.ChooseAsync("Grafos", entries);
         if (choice is not { } selected) return;
         if (selected == 0) await CreateGraphAsync();
-        else await OpenGraphAsync(paths[selected - 1]);
+        else if (selected == 1) await CreateGraphStructureAsync();
+        else await OpenGraphAsync(paths[selected - 2]);
+    }
+
+    /// <summary>Creates an editable snapshot of the actual vault hierarchy and resolved wiki-links.</summary>
+    public async Task CreateGraphStructureAsync(string? scope = null)
+    {
+        if (_vault is not { IsConnected: true } || _store is null || !VaultWritable)
+        {
+            await Dialogs.AlertAsync("Estrutura do vault", "Abra um vault com escrita para criar a projeção.");
+            return;
+        }
+        scope ??= Explorer.CurrentFolder;
+        GraphDocument graph;
+        try
+        {
+            using var index = new KnowledgeIndex(_store);
+            var linked = _store.List().ToDictionary(d => d.Id,
+                d => (IEnumerable<string>)index.Links(d.Id).Select(other => other.Id).ToArray(), StringComparer.Ordinal);
+            graph = GraphProjection.FromVault(_store.List(), _attachments, NoteFolders(),
+                id => linked.GetValueOrDefault(id) ?? [], scope);
+        }
+        catch (Exception ex) when (ex is InvalidDataException or InvalidOperationException)
+        {
+            await Dialogs.AlertAsync("Não foi possível gerar o grafo", ex.Message);
+            return;
+        }
+        var prefix = (scope.Length > 0 ? scope.TrimEnd('/') + "/" : "");
+        var baseName = scope.Length > 0 ? "Estrutura de " + Path.GetFileName(scope) : "Estrutura do vault";
+        var name = ArtifactModel.SafeName(baseName);
+        var path = prefix + name + GraphDocument.FileSuffix;
+        for (var i = 2; _attachments.Contains(path) || _contents.ContainsKey(path); i++)
+            path = prefix + name + "-" + i + GraphDocument.FileSuffix;
+        try { await _vault.CreateTextFileAsync(path, graph.Serialize()); }
+        catch (Exception ex)
+        {
+            await Dialogs.AlertAsync("Não foi possível salvar a estrutura", ex.Message);
+            return;
+        }
+        _attachments.Add(path);
+        RefreshNotes();
+        await OpenGraphAsync(path);
+        ShowLifeNotice("Estrutura gerada a partir dos arquivos atuais. O canvas é uma cópia editável, não move pastas.");
     }
 
     /// <summary>Creates a standalone graph file. Never changes any existing note or the derived Constelação.</summary>
