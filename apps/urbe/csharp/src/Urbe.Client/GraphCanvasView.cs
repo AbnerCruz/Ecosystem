@@ -136,11 +136,6 @@ public sealed class GraphCanvasView : Control
         _press = null;
         e.Pointer.Capture(null);
         if (_moved && _pressedNode is not null && !ReadOnly) Changed?.Invoke();
-        else if (!_moved && _pressedNode is not null && _selected == _pressedNode &&
-            e.GetCurrentPoint(this).Properties.PointerUpdateKind == PointerUpdateKind.LeftButtonReleased)
-        {
-            // Single taps only select; opening a reference is an explicit toolbar action.
-        }
         _pressedNode = null;
     }
 
@@ -157,7 +152,7 @@ public sealed class GraphCanvasView : Control
     {
         if (!_fitted) Fit();
         var surface = new Rect(Bounds.Size);
-        ctx.FillRectangle(UrbeTheme.Brush(UrbeTheme.Bg), surface);
+        ctx.DrawRectangle(UrbeTheme.Brush(UrbeTheme.Bg), null, surface);
         var grid = 36 * _zoom;
         if (grid >= 13 && grid <= 200)
         {
