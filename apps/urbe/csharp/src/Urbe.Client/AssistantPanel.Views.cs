@@ -25,6 +25,10 @@ public sealed partial class AssistantPanel
             var stack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Right, MaxWidth = 520, Spacing = 4 };
             if (m.Meta?.Context is { Length: > 0 } ctx)
                 stack.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, HorizontalAlignment = HorizontalAlignment.Right, Children = { UrbeTheme.Icon(UrbeTheme.Icons.File, 12, UrbeTheme.Text3), Label(ctx, 11, UrbeTheme.Text3) } });
+            var files = m.Content.Where(b => b.Type == "attachment").Select(b => b.FileName)
+                .Concat(m.Content.Where(b => b.Hidden && b.Type == "text" && b.Text?.StartsWith("[Arquivo anexado pelo usuário:", StringComparison.Ordinal) == true)
+                    .Select(b => b.Text!.Split('\n')[0].Trim('[', ']'))).ToList();
+            if (files.Count > 0) stack.Children.Add(Wrap("Anexos: " + string.Join(", ", files), 11, UrbeTheme.Text2));
             var bubble = new SelectableTextBlock { Text = text, FontSize = 15, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text) };
             stack.Children.Add(new Border { Child = bubble, Padding = new Thickness(12, 9), CornerRadius = new CornerRadius(16, 16, 4, 16), Background = UrbeTheme.Brush(UrbeTheme.Accent, .16) });
             return stack;
@@ -93,6 +97,10 @@ public sealed partial class AssistantPanel
         if (_progress.TryGetValue(b.Id, out var prog) && r is null) card.Children.Add(Label(prog, 12, UrbeTheme.Text3));
         // only the latest plan shows open, as a checklist
         if (b.Name == "update_plan" && !b.Pending && b.Id == LatestPlanId() && b.Input?["steps"] is JsonArray steps) card.Children.Add(Plan(steps));
+        if (b.Name == "ask_user" && r is { IsError: false } && _running is null &&
+            _conv.Runs.LastOrDefault()?.Stopped == "needs_input" &&
+            _conv.Messages.SelectMany(msg => msg.Content).LastOrDefault(x => x.Type == "tool_use" && x.Name == "ask_user")?.Id == b.Id)
+            card.Children.Add(Clarification(b));
         if (pend && _pending is { } pending) card.Children.Add(Approval(pending.Request));
         else if (r is not null || !b.Pending)
         {
@@ -107,6 +115,30 @@ public sealed partial class AssistantPanel
         var border = Card(card, status == "waiting" ? UrbeTheme.Accent : null);
         border.Padding = new Thickness(10, 8);
         return border;
+    }
+
+    private Control Clarification(AiChatBlock call)
+    {
+        var info = call.Input as JsonObject ?? new JsonObject();
+        var question = (string?)info["question"] ?? "O que você prefere?";
+        var reason = (string?)info["reason"];
+        int total = Math.Max(1, (int)LegacyCustomize.JsToNumber(info["total"]));
+        int done = Math.Clamp((int)LegacyCustomize.JsToNumber(info["resolved"]), 0, total);
+        var input = new TextBox { AcceptsReturn = true, MinHeight = 64, MaxHeight = 180,
+            TextWrapping = TextWrapping.Wrap, PlaceholderText = "Responda aqui; uma resposta pode resolver várias dúvidas." };
+        var panel = new StackPanel { Spacing = 8 };
+        panel.Children.Add(Wrap(question, 14, UrbeTheme.Text, FontWeight.SemiBold));
+        if (!string.IsNullOrWhiteSpace(reason)) panel.Children.Add(Hint(reason));
+        panel.Children.Add(Label(done + " de " + total + " dúvidas esclarecidas (estimativa)", 12, UrbeTheme.Text3));
+        panel.Children.Add(new ProgressBar { Minimum = 0, Maximum = total, Value = done, Height = 5 });
+        panel.Children.Add(input);
+        panel.Children.Add(TextButton("Responder e continuar", () =>
+        {
+            var answer = (input.Text ?? "").Trim();
+            if (answer.Length == 0 || _running is not null) return;
+            Send(answer);
+        }, primary: true));
+        return panel;
     }
 
     private static string ClipText(string s, int n) => s.Length > n ? s[..n] : s;
