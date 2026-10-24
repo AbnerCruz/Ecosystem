@@ -11,13 +11,7 @@ const U32 = 4294967296;
 const random = (a, b, salt, seed) => hash32(a, b, salt, seed) / U32;
 
 export function nearbyNature(world, surface, bounds, mpp) {
-  if (
-    !world ||
-    !surface ||
-    !Number.isFinite(mpp) ||
-    mpp <= 0 ||
-    mpp > 1.8
-  )
+  if (!world || !surface || !Number.isFinite(mpp) || mpp <= 0 || mpp > 1.8)
     return [];
   const radius = surface.radius;
   const rows = Math.max(1, Math.round((Math.PI * radius) / CELL_METRES));
@@ -66,8 +60,7 @@ export function nearbyNature(world, surface, bounds, mpp) {
               : 0.015;
       const stones = material === 4 ? 0.7 : material === 3 ? 0.25 : 0.1;
       let kind;
-      if ((material === 1 || material === 2) && roll < forest)
-        kind = "tree";
+      if ((material === 1 || material === 2) && roll < forest) kind = "tree";
       else if (roll < forest + shrubs) kind = "shrub";
       else if (roll < forest + shrubs + stones) kind = "stone";
       else continue;
@@ -86,8 +79,7 @@ export function nearbyNature(world, surface, bounds, mpp) {
 
 export function drawNature(renderer, ctx) {
   const mpp = renderer.metresPerPixel();
-  if (renderer.layer !== "atlas" || !renderer.showNature || mpp > 1.8)
-    return;
+  if (renderer.layer !== "atlas" || !renderer.showNature || mpp > 1.8) return;
   const surface = renderer.surface?.context;
   if (!surface) return;
   const marks = nearbyNature(
