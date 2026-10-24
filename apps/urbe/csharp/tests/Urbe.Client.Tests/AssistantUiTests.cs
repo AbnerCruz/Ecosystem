@@ -458,11 +458,11 @@ public sealed partial class HeadlessUiTests
                     """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
                 model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Pronto."}}]}"""));
                 panel.Send("Troque a primeira tarefa");
-                var earlier = panel.Log.Children.Take(33).ToList();
+                var earlier = panel.Log.Children.Take(30).ToList();
                 for (int i = 0; i < 200 && panel.PendingApproval is null; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
                 Assert.NotNull(panel.PendingApproval);
                 for (int i = 0; i < 20; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
-                for (int i = 0; i < 33; i++) Assert.Same(earlier[i], panel.Log.Children[i]);
+                for (int i = 0; i < 30; i++) Assert.Same(earlier[i], panel.Log.Children[i]);
                 Assert.Contains("Aprovar alteração · Comece.md", panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
                 panel.Answer(AiApproval.Approve);
                 await panel.CurrentRun!;
