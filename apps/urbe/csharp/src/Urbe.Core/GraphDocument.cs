@@ -38,24 +38,24 @@ public sealed class GraphDocument
     public GraphNode AddText(string? text, double x = 0, double y = 0) =>
         AddNode(GraphNodeKind.Text, text ?? "", null, x, y);
 
-    public GraphNode AddReference(GraphNodeKind kind, string vaultPath, double x = 0, double y = 0)
+    public GraphNode AddReference(GraphNodeKind kind, string vaultPath, double x = 0, double y = 0, string? referenceId = null)
     {
         if (kind is not (GraphNodeKind.Note or GraphNodeKind.File or GraphNodeKind.Folder))
             throw new ArgumentOutOfRangeException(nameof(kind), "A referência deve apontar para uma nota, arquivo ou pasta.");
         ValidateTarget(vaultPath);
         var label = Path.GetFileName(vaultPath.TrimEnd('/'));
-        return AddNode(kind, label, vaultPath, x, y);
+        return AddNode(kind, label, vaultPath, x, y, referenceId: referenceId);
     }
 
     public GraphNode AddNode(GraphNodeKind kind, string? label, string? target, double x, double y,
-        double width = 190, double height = 84)
+        double width = 190, double height = 84, string? referenceId = null)
     {
         if (target is not null) ValidateTarget(target);
         if (kind is GraphNodeKind.Note or GraphNodeKind.File or GraphNodeKind.Folder && target is null)
             throw new ArgumentException("Um nó de referência exige um alvo.");
         CheckGeometry(x, y, width, height);
         var node = new GraphNode("node_" + Guid.NewGuid().ToString("N"), kind, CleanLabel(label, ""), target,
-            x, y, width, height);
+            x, y, width, height, referenceId);
         if (_nodes.Count >= 10000) throw new InvalidOperationException("Limite de 10.000 elementos por grafo.");
         _nodes.Add(node);
         return node;
@@ -178,7 +178,7 @@ public sealed class GraphDocument
 public enum GraphNodeKind { Text, Note, File, Folder, Group, Shape }
 
 public sealed record GraphNode(string Id, GraphNodeKind Kind, string Label, string? Target,
-    double X, double Y, double Width, double Height);
+    double X, double Y, double Width, double Height, string? ReferenceId = null);
 
 /// <summary>Relation is optional semantic metadata; an ordinary drawn line asserts no factual relationship.</summary>
 public sealed record GraphEdge(string Id, string SourceId, string TargetId, string Label, string Relation, bool Directed);
