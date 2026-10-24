@@ -12,7 +12,7 @@
   "component": "urbe",
   "state": "review",
   "branch": "feat/urbe-ai-background-adaptive-planning-20261024",
-  "base_commit": null,
+  "base_commit": "398444525a4143d9908cec3f985ceac2ceacccf3",
   "commit": "09bfbe7ea49365339a0c800a1d5cd1853cd38ae3",
   "pr": null,
   "files_changed": [
@@ -72,14 +72,13 @@
     "Continuação idempotente depois de morte de processo exige journal/recovery em fatia própria."
   ],
   "next_actions": [
+    "Submeter ADR-0037 para decisão formal do proprietário; nenhuma aprovação arquitetural foi presumida.",
     "Executar CI, corrigir erros de compilação/testes, revisão ADR-0037 e integração governada.",
     "Testar notificações e continuidade minimizado/bloqueado no aparelho.",
     "Implementar checkpoint seguro e resumption idempotente após término inesperado do processo.",
     "Fazer teste com modelo real para ficha e ideias relacionadas, ajustando avaliação qualitativa com evidência."
   ],
-  "decisions_required": [
-    "Aprovação do ADR-0037 e política de foreground service especial para eventual distribuição Play Store."
-  ],
+  "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",
     "AGENTS.md",
