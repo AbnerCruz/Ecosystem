@@ -33,6 +33,18 @@ public static class AssistantImageTools
 
     private static string Str(JsonObject i, string k) => i[k] is { } v ? LegacyCustomize.JsToString(v).Trim() : "";
 
+    /// <summary>Recognize only the successful image-tool result (also from older beta.20 conversations).</summary>
+    public static string? SavedImagePath(string? result)
+    {
+        if (string.IsNullOrEmpty(result) || !result.StartsWith("Imagem guardada em ", StringComparison.Ordinal)) return null;
+        var match = Regex.Match(result, @"^Imagem guardada em (.+?\.(?:png|jpg|jpeg|webp))(?=\.(?:\s|$)|\s+e colocada|$)",
+            RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+        if (!match.Success) return null;
+        var path = match.Groups[1].Value;
+        return path.Contains("..", StringComparison.Ordinal) || path.StartsWith("/", StringComparison.Ordinal) ||
+               path.Contains('\\') ? null : path;
+    }
+
     /// <summary>
     /// Where the picture goes: the path asked (its extension replaced by the picture's), else Imagens/ and a name
     /// from the description; a name taken gets " 2", " 3"…

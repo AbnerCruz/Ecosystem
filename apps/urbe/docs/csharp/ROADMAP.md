@@ -58,6 +58,12 @@ Fonte de requisitos: inventário de uso "Versão Beta Final.md", itens de Assist
 - **Não provado fisicamente:** seletor de arquivos SAF e interpretação multimodal em contas/provedores reais; custos, modelos e APIs variam por provedor. Testes simulados e CI não substituem essas verificações.
 - **Publicação:** a beta.20 é entregue por workflow nativo versionado e publicação condicionada a CI, assinatura e autorização de integração crítica, sem sobrescrever beta.19.
 
+## Ajustes de apresentação e transparência — beta.21 (feedback do proprietário, 24/10/2026)
+
+- **Preço de geração de imagens:** o seletor deve mostrar o custo com unidade e origem para cada modelo. O OpenRouter fornece preços em `GET /images/models/{autor}/{slug}/endpoints`; não usar `pricing.prompt` de modelo de chat como se fosse preço por imagem. Carregamento assíncrono limitado e cache de consulta; taxa por imagem, megapixel e token são valores diferentes e não devem ser misturados. Referências fixas verificadas pela documentação oficial para `gpt-image-1` e modelos Gemini identificados; modelo/preço não informado explicitamente sinalizado, nunca tratado como grátis.
+- **Compositor profissional:** um único botão de anexos de 44 px ao lado da entrada abre um menu com origem + contexto de suporte. Anexos selecionados aparecem em cartões compactos, com tipo, nome, remoção individual e limpar todos. Vault completo pesquisável (não apenas 300 notas); acessibilidade e áreas de toque Android; preservar os limites, armazenamento local e envio explícito que já existiam.
+- **Critério de aceite:** CI portátil, Android, Windows e teste de interface; validar com provedor real a cobrança efetiva e a densidade de controles em tela pequena. A API de preços é dado consultado, não garantia de cobrança futura.
+
 ## Mandato universal de continuidade — TODOS os agentes (proprietário, 10/10/2026)
 
 A diretriz de DEC-0043/ADD-0020/ADR-0032 e a ordem de desenvolvimento abaixo **vinculam todo agente do Urbe**, em qualquer plataforma/agente/sessão. Antes de qualquer implementação, leia `AGENTS.md` (raiz §1.2), `apps/urbe/AGENTS.md` §9 e §11 e `PRODUCT-DIRECTION.md`; verifique `main`, PRs e CI. A referência de arte/experiência/funcionalidades é exclusivamente **1.8.4-beta**, e o alvo é **Avalonia nativo + Urbe.Core**, Android primeiro e depois Windows. Não continuar nenhuma UI Blazor, Web/PWA, mapa estático, produto de notas genérico ou redesign.
