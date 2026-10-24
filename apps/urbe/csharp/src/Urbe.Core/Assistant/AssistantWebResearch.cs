@@ -102,9 +102,11 @@ public sealed class AssistantWebSession : IDisposable
 
     public AssistantWebSession(AiWebConfig config, CancellationToken cancel = default,
         HttpMessageHandler? handler = null, IAssistantSearchProvider? search = null,
-        Func<string, CancellationToken, Task<IPAddress[]>>? resolver = null)
+        Func<string, CancellationToken, Task<IPAddress[]>>? resolver = null,
+        IEnumerable<AiWebSource>? existingSources = null)
     {
         _config = config;
+        if (existingSources is not null) _sources.AddRange(existingSources);
         _cancel = cancel;
         _search = search ?? new BraveAssistantSearchProvider();
         _resolve = resolver ?? ((host, ct) => Dns.GetHostAddressesAsync(host, ct));
