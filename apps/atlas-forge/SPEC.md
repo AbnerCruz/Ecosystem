@@ -30,6 +30,10 @@ Estado atual: AF-016/017 acrescentam insolação sazonal e terreno procedural lo
 
 Não são requisitos concluídos deste corte: solver tectônico, clima validado, lagos dinâmicos, erosão física fina, populações individuais, geologia tectônica temporal, mapas arbitrariamente profundos, polígonos/multisseleção, tiles físicos/refinamento de solvers, edição métrica persistente, recálculo regional, PNG/SVG/GeoJSON, sincronização de arquivo/vault, ZIP com hashes globais, capability pública ou dois Hosts reais.
 
+## AF-022 — geodinâmica versionada e cartografia de pixels
+
+O proprietário rejeitou massas de terra formadas apenas por ruído, transições de biomas muito discretas, imagens borradas e lag no zoom. Novos mundos adotam algoritmo `spherical-tectonic-2`, com placas esféricas semeadas, velocidades angulares, compressão/rifte simplificados, quantil oceânico ponderado por área e clima com advecção métrica e chuva orográfica. `spherical-causal-1` segue legível e regenerável sem trocar seu algoritmo ou alterar arquivos existentes. A classificação por temperatura e demanda hídrica produz campos de biomas; terreno local usa mosaico e rampas quantizadas, renderer nearest-neighbor sem bilinear no plano e globo, sprites procedurais de 16×16 e cache de quadro estável. Testes sintéticos verificam continuidade/seed/oceano/chuva/roundtrip; E2E offline e benchmark permanecem gates. Não apresentar esta aproximação como tectônica dinâmica real ou validação científica, nem como 60 FPS Android sem DEVICE.
+
 ## Correção de qualidade AF-005/015 — Issue #660
 
 Solicitação do proprietário em 2026-10-22: zoom insuficiente, detalhes ilegíveis e elementos preenchidos sem pedido. Prioridade deste incremento: controle do autor e inspeção cartográfica. Primeira abertura oferece criar/abrir; restauração local mantém o conteúdo existente, inclusive exemplos que já tenham sido salvos, sem apagá-los silenciosamente. **Inspecionar** nunca cria conteúdo. Gerar terreno, lugar e esquema de interior são ações separadas.
