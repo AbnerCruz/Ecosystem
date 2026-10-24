@@ -45,21 +45,34 @@ public sealed class AssistantImageToolsTests
     }
 
     [Fact]
-    public async Task GeminiAsksForBase64AndProvidersThatDoNotDrawSaySo()
+    public async Task GeminiUsesItsNativeGenerateContentEndpointAndModernModel()
     {
-        var http = new Answer(200, Drawn(Png));
+        var geminiReply = new JsonObject
+        {
+            ["candidates"] = new JsonArray(new JsonObject
+            {
+                ["content"] = new JsonObject { ["parts"] = new JsonArray(new JsonObject
+                {
+                    ["inlineData"] = new JsonObject { ["mimeType"] = "image/png", ["data"] = Convert.ToBase64String(Png) }
+                }) }
+            })
+        }.ToJsonString();
+        var http = new Answer(200, geminiReply);
         var providers = new AssistantProviders(http);
         var gemini = new AiProviderConfig("g", "gemini", ApiKey: "AIza-test");
         Assert.True(AssistantProviders.DrawsImages(gemini));
-        await providers.GenerateImageAsync(gemini, "um farol", cancel: Ct);
-        Assert.Equal("gemini-2.5-flash-image", (string?)http.Seen[0].Body["model"]);
-        Assert.Equal("b64_json", (string?)http.Seen[0].Body["response_format"]);
+        Assert.Equal(Png, await providers.GenerateImageAsync(gemini, "um farol", cancel: Ct));
+        var (url, body, auth) = Assert.Single(http.Seen);
+        Assert.Equal("https://generativelanguage.googleapis.com/v1beta/models/gemini-nano-banana-2.1:generateContent", url);
+        Assert.Null(auth); // a chave usa o header x-goog-api-key, nunca aparece no URL
+        Assert.Equal("um farol", (string?)body["contents"]?[0]?["parts"]?[0]?["text"]);
+        Assert.Equal("IMAGE", (string?)body["generationConfig"]?["responseModalities"]?[1]);
 
         var anthropic = new AiProviderConfig("a", "anthropic", ApiKey: "sk-ant");
         Assert.False(AssistantProviders.DrawsImages(anthropic));
         Assert.True(AssistantProviders.DrawsImages(new AiProviderConfig("o", "openrouter", ApiKey: "k")));
         await Assert.ThrowsAsync<AiProviderException>(() => providers.GenerateImageAsync(anthropic, "x", cancel: Ct));
-        await Assert.ThrowsAsync<AiProviderException>(() => providers.GenerateImageAsync(new AiProviderConfig("p", "openai"), "x", cancel: Ct));   // no key
+        await Assert.ThrowsAsync<AiProviderException>(() => providers.GenerateImageAsync(new AiProviderConfig("p", "openai"), "x", cancel: Ct));
         Assert.Single(http.Seen);
     }
 

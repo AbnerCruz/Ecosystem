@@ -259,6 +259,10 @@ public static partial class AppDocs
 
         O texto escrito pelo Assistente ganha no fim uma marca pequena com o nome do modelo, como `{ia:"modelo"}`, que aparece em verde no editor.
 
+        **Enviar arquivos ao chat:** acima da caixa de mensagem, toque em **+ Nota do vault** para incluir uma nota salva sem duplicá-la, ou **+ Arquivo do dispositivo** para selecionar arquivos externos. Texto UTF-8 entra como contexto; imagens PNG/JPEG/WebP e PDFs vão como anexos multimodais ao modelo da conversa. São até quatro anexos, com limites de tamanho por formato; análise de imagens e PDFs exige um modelo e uma API que aceitem esses arquivos. O Urbe não copia os anexos para o vault. Não envie arquivos confidenciais sem querer enviá-los ao provedor da conversa.
+
+        **Perguntas e planejamento:** em tarefas complexas, o agente registra as etapas pelo plano e, se uma decisão importante estiver faltando, abre um cartão com uma pergunta por vez. Responda no cartão para continuar. A contagem de dúvidas resolvidas é uma estimativa declarada pelo agente, não uma porcentagem medida de compreensão.
+
         No chat, peça **"gere uma imagem"** sem trocar o modelo da conversa. Em **Configurações do Assistente → Geração de imagens**, selecione o provedor salvo e o modelo de imagem: OpenRouter lista modelos pela API específica de imagens; OpenAI e Gemini também podem ser escolhidos, e é possível informar o ID manual de um modelo compatível. **Automático** mantém a escolha anterior. O Assistente pede aprovação, guarda o arquivo na pasta **Imagens** sem sobrescrever arquivos e, se você quiser, coloca `![[Imagens/…]]` na nota. Sem uma chave válida, ele informa o que falta; não substitui a imagem por uma página.
 
         ## Ajustar

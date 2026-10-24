@@ -48,6 +48,16 @@
 - Modelo do agente é resolvido em tempo de execução, sem modificar o modelo padrão existente ou a conversa armazenada; blocos se somam ao papel do agente sem mudar suas permissões.
 - **Aceite pendente:** testes de configuração antiga, persistência e isolamento; CI combinado, revisão crítica de armazenamento de configuração e validação no Android, incluindo uso real de uma API de imagem. Não marcar o incremento concluído antes dessas evidências.
 
+## Auditoria da IA para a próxima beta — observações em "Versão Beta Final.md" (proprietário, 23/10/2026)
+
+Fonte de requisitos: inventário de uso "Versão Beta Final.md", itens de Assistente e agentes (§ Assistente), autoria/revisão e instruções em AGENTS.md. O inventário é relato de propostas, não evidência de implementação. Análise feita contra Urbe C# na main de 23/10/2026.
+
+- **Já presentes antes deste incremento:** planejamento `update_plan` e lista de passos; execução/aceite editável do diff sugerido; autoria `{ia:"modelo"}` nas notas; convocação `&Nome&:`/resposta e aprovação no editor; nomes configuráveis e reconhecimento conversacional; instruções gerais, por modelo via `Personalização/AGENTS.md` e blocos por agente; modelos de texto individuais com herança; geração de imagens com escolha de provedor/modelo. Manter os testes e o comportamento.
+- **Adicionados neste incremento UC-63:** `ask_user`, uma pergunta por vez em cartão com progresso estimado pelo agente, suspendendo a execução até uma resposta e atualizando as dúvidas no próximo turno; arquivos externos e notas locais anexados à conversa com limites por tipo; imagens e PDFs enviados por formatos multimodais de OpenAI-compatible/Anthropic; imagens anteriores não reenviadas em toda interação; correção da geração Gemini para `generateContent` nativo e modelo atual.
+- **Não concluído como plataforma compartilhada:** transformação de toda a IA do Urbe em API atualizável e distribuível a todos os Apps. Esta iniciativa está sob ADR-0033/ADD-0027 e requer demonstração de segundo consumidor e contrato de equivalência; não criar um runtime paralelo nem alegar propagação automática.
+- **Não provado fisicamente:** seletor de arquivos SAF e interpretação multimodal em contas/provedores reais; custos, modelos e APIs variam por provedor. Testes simulados e CI não substituem essas verificações.
+- **Publicação:** a beta.20 é entregue por workflow nativo versionado e publicação condicionada a CI, assinatura e autorização de integração crítica, sem sobrescrever beta.19.
+
 ## Mandato universal de continuidade — TODOS os agentes (proprietário, 10/10/2026)
 
 A diretriz de DEC-0043/ADD-0020/ADR-0032 e a ordem de desenvolvimento abaixo **vinculam todo agente do Urbe**, em qualquer plataforma/agente/sessão. Antes de qualquer implementação, leia `AGENTS.md` (raiz §1.2), `apps/urbe/AGENTS.md` §9 e §11 e `PRODUCT-DIRECTION.md`; verifique `main`, PRs e CI. A referência de arte/experiência/funcionalidades é exclusivamente **1.8.4-beta**, e o alvo é **Avalonia nativo + Urbe.Core**, Android primeiro e depois Windows. Não continuar nenhuma UI Blazor, Web/PWA, mapa estático, produto de notas genérico ou redesign.
