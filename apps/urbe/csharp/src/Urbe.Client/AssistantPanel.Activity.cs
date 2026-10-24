@@ -180,8 +180,9 @@ public sealed partial class AssistantPanel
         Avalonia.Automation.AutomationProperties.SetName(expander, "Etapa: " + title + ". " + status + ". Expandir detalhes");
         return new Border
         {
-            Child = expander, CornerRadius = new CornerRadius(9), Padding = new Thickness(8, 3),
-            Background = UrbeTheme.Brush(UrbeTheme.Bg, .6)
+            Child = expander, CornerRadius = new CornerRadius(0), Padding = new Thickness(8, 6),
+            Background = Brushes.Transparent, BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2, .45),
+            BorderThickness = new Thickness(0, 0, 0, 1)
         };
     }
 }
