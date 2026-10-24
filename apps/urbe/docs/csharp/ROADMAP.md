@@ -39,6 +39,15 @@
   - editar, gravar e reabrir sem perder nada;
   - conferir que os arquivos da cidade continuam no vault.
 
+## Personalização do Assistente — extensão de UC-63/UC-81 (proprietário, 23/10/2026)
+
+**Novo escopo autorizado pelo proprietário:** configurar modelo e provedor **independentes para geração de imagens** no próprio painel do Assistente (o modelo da conversa não troca); permitir **modelo/provedor de texto por agente**, inclusive para os agentes prontos, herdando o modelo normal da conversa quando não houver configuração; criar e editar **blocos titulados de instruções por agente** na interface.
+
+- A configuração atual (`config.json`, armazenamento privado do Assistente) continua sendo a autoridade. Novos campos opcionais `imageProviderId`, `imageModel`, `agentModels` e `agentInstructionBlocks` são retrocompatíveis com configurações anteriores; não duplicar chaves, modelos ou instruções em outro arquivo.
+- A escolha de provedor/modelo de imagem usa a API específica de imagens quando disponível (OpenRouter `/images/models`), mantém uma opção manual para servidores compatíveis, e a aprovação `generate_image` continua `write`; falha de modelo/credencial deve ser explícita.
+- Modelo do agente é resolvido em tempo de execução, sem modificar o modelo padrão existente ou a conversa armazenada; blocos se somam ao papel do agente sem mudar suas permissões.
+- **Aceite pendente:** testes de configuração antiga, persistência e isolamento; CI combinado, revisão crítica de armazenamento de configuração e validação no Android, incluindo uso real de uma API de imagem. Não marcar o incremento concluído antes dessas evidências.
+
 ## Mandato universal de continuidade — TODOS os agentes (proprietário, 10/10/2026)
 
 A diretriz de DEC-0043/ADD-0020/ADR-0032 e a ordem de desenvolvimento abaixo **vinculam todo agente do Urbe**, em qualquer plataforma/agente/sessão. Antes de qualquer implementação, leia `AGENTS.md` (raiz §1.2), `apps/urbe/AGENTS.md` §9 e §11 e `PRODUCT-DIRECTION.md`; verifique `main`, PRs e CI. A referência de arte/experiência/funcionalidades é exclusivamente **1.8.4-beta**, e o alvo é **Avalonia nativo + Urbe.Core**, Android primeiro e depois Windows. Não continuar nenhuma UI Blazor, Web/PWA, mapa estático, produto de notas genérico ou redesign.

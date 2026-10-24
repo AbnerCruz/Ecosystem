@@ -217,9 +217,9 @@ public sealed partial class AssistantPanel : Border
     // ---------------------------------------------------------------- configuration
 
     private AiProviderConfig? Provider() =>
-        _cfg.Providers.FirstOrDefault(p => p.Id == (_conv.ProviderId ?? _cfg.ProviderId)) ?? _cfg.Providers.FirstOrDefault();
+        _cfg.Providers.FirstOrDefault(p => p.Id == _cfg.ModelFor(_conv).ProviderId) ?? _cfg.Providers.FirstOrDefault();
 
-    private string ModelId() => _conv.Model.Length > 0 ? _conv.Model : _cfg.Model;
+    private string ModelId() => _cfg.ModelFor(_conv).Model;
     private void SaveConfig() => _store.SetConfig(_cfg);
 
     private List<string> MemoryList()
@@ -386,8 +386,8 @@ public sealed partial class AssistantPanel : Border
             {
                 Host = new Host(this, documents, knowledge, agent.Id, p), Provider = p, Model = ModelId(), Messages = conv.Messages,
                 // UC-81: the agent introduces itself by its call name and may take a new one the person agrees to
-                Agent = AgentNames.Named(agent, _cfg), Naming = AgentNames.Naming(agent, _cfg), Guidance = AssistantAgent.UrbeGuidance, Policy = conv.Policy, Cancel = cts.Token, MarkAiText = true,
-                MaxSteps = _cfg.MaxSteps, ContextTokens = meta?.Context ?? 128000, Instructions = WithUserAgents(_cfg.Instructions, documents), Memory = MemoryList(), VaultName = _app.VaultName,
+                Agent = _cfg.AgentWithInstructions(AgentNames.Named(agent, _cfg)), Naming = AgentNames.Naming(agent, _cfg), Guidance = AssistantAgent.UrbeGuidance, Policy = conv.Policy, Cancel = cts.Token, MarkAiText = true,
+                MaxSteps = _cfg.MaxSteps, ContextTokens = meta?.Context ?? 128000, Instructions = WithUserAgents(_cfg.Instructions, documents, ModelId()), Memory = MemoryList(), VaultName = _app.VaultName,
                 Stream = Providers.StreamAsync, Approve = ApproveAsync, OnUpdate = OnUpdate, Tools = ToolsFor(p)
             });
             run.Changes = r.Changes;
@@ -485,10 +485,12 @@ public sealed partial class AssistantPanel : Border
     private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge, string agentId, AiProviderConfig provider) : IAssistantHost, IAssistantNames, IAssistantImages
     {
         public IAssistantImages? Images => this;
-        private AiProviderConfig? ImageProvider => AssistantProviders.PickImageProvider(provider, panel._cfg.Providers);
+        private AiProviderConfig? ImageProvider => AssistantProviders.PickImageProvider(provider, panel._cfg.Providers,
+            panel._cfg.ImageProviderId, panel._cfg.ImageModel);
         public bool CanDraw => ImageProvider is not null;
         public Task<byte[]> DrawAsync(string prompt, string size, CancellationToken cancel) =>
-            panel.Providers.GenerateImageAsync(ImageProvider ?? throw new AiProviderException("Configure um provedor de imagens."), prompt, null, size, cancel);
+            panel.Providers.GenerateImageAsync(ImageProvider ?? throw new AiProviderException("Configure um provedor de imagens."),
+                prompt, string.IsNullOrWhiteSpace(panel._cfg.ImageProviderId) ? null : panel._cfg.ImageModel, size, cancel);
         public Task SaveAsync(string path, byte[] bytes) => panel._app.CreateBinaryFileAsync(path, bytes);
         public bool Exists(string path) => panel._app.FileExists(path);
         public IAssistantNames? Names => this;
@@ -736,9 +738,9 @@ public sealed partial class AssistantPanel : Border
 
     /// <summary>UC-50: the person's Personalização/AGENTS.md (the general part and the part for this model) after the
     /// Assistente's own instructions, read again at every conversation.</summary>
-    private string? WithUserAgents(string? instructions, DocumentStore documents)
+    private string? WithUserAgents(string? instructions, DocumentStore documents, string model)
     {
-        var own = UserAgentsFile.For(documents.Get(UserAgentsFile.Path)?.Content, ModelId());
+        var own = UserAgentsFile.For(documents.Get(UserAgentsFile.Path)?.Content, model);
         if (own.Length == 0) return instructions;
         var block = "Instruções do usuário (" + UserAgentsFile.Path + "):\n" + own;
         return string.IsNullOrWhiteSpace(instructions) ? block : instructions + "\n\n" + block;
