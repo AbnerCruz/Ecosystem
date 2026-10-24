@@ -1,3 +1,4 @@
+import { vegetation } from "../geometry/ecology.js";
 import { SurfaceTiles } from "./surface.js";
 import { sampleSurface, MATERIALS, SURFACE_MODEL } from "./surface-field.js";
 import {
@@ -11,6 +12,9 @@ import {
 } from "../geometry/sphere.js";
 export const LAYERS = {
   atlas: "Atlas natural",
+  vegetation: "Cobertura vegetal",
+  biomass: "Biomassa viva",
+  nutrients: "Nitrogênio mineral",
   elevation: "Altitude",
   temperature: "Temperatura",
   rain: "Precipitação",
@@ -50,6 +54,9 @@ function gradient(value, stops) {
   return stops.at(-1)[1];
 }
 export const LEGENDS = {
+  vegetation: ["0%", "50%", "100% · regional"],
+  biomass: ["0", "2", "4+ kg/m² · regional"],
+  nutrients: ["0", "0,05", "0,1+ kg N/m² · regional"],
   atlas: ["Oceano", "Planície", "Montanha"],
   elevation: ["−6.000 m", "0 m", "+6.000 m"],
   temperature: ["−30 °C", "10 °C", "45 °C"],
@@ -61,6 +68,22 @@ export const LEGENDS = {
   insolation: ["0", "500", "1.000 W/m² · topo da atmosfera"],
 };
 export function color(i, world, d, layer, season = "annual") {
+  if (["vegetation", "biomass", "nutrients"].includes(layer)) {
+    const eco = world.state.ecosystem;
+    if (!eco) return [70, 70, 70];
+    const p = coord(i, world.definition.grid),
+      j = index(p.lat, p.lon, eco.grid);
+    const value =
+      layer === "vegetation"
+        ? vegetation(world, j)
+        : layer === "nutrients"
+          ? eco.nutrients[j] * 10
+          : world.state.species.reduce(
+              (sum, s) => sum + eco.biomass[s.id][j],
+              0,
+            ) / 4;
+    return mix([188, 164, 115], [28, 110, 72], value);
+  }
   const e = world.state.elevation[i];
   let c;
   if (layer === "temperature")

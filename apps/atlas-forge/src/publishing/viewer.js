@@ -13,6 +13,25 @@ if (data.surfaceModel !== SURFACE_MODEL)
   );
 renderer.setWorld(data, data.derived);
 $("title").textContent = data.name;
+const eco = data.state.ecosystem;
+$("eco-summary").textContent = eco
+  ? `Ano ${eco.year} · ${data.state.species.length} espécies · ecologia regional ${eco.grid.width} × ${eco.grid.height}`
+  : "";
+function inspectEcology(p) {
+  if (!eco) return;
+  const i = index(p.lat, p.lon, eco.grid);
+  const box = $("eco-region");
+  box.replaceChildren();
+  const title = document.createElement("p");
+  title.textContent = `Nitrogênio mineral: ${eco.nutrients[i].toFixed(4)} kg N/m² · detritos: ${eco.detritus[i].toFixed(4)} kg/m²`;
+  box.append(title);
+  for (const s of data.state.species) {
+    const row = document.createElement("p");
+    row.textContent = `${s.name}: ${eco.biomass[s.id][i].toFixed(6)} kg/m²`;
+    box.append(row);
+  }
+}
+
 for (const [key, name] of Object.entries(LAYERS)) {
   const o = document.createElement("option");
   o.value = key;
@@ -102,6 +121,7 @@ $("map").onpointerup = (e) => {
     else {
       const p = renderer.geographic(x, y);
       if (p) {
+        inspectEcology(p);
         const i = index(p.lat, p.lon, data.definition.grid);
         $("coords").textContent =
           `${p.lat.toFixed(2)}°, ${p.lon.toFixed(2)}° · ${Math.round(data.state.elevation[i])} m · ${data.derived.temperature[i].toFixed(1)} °C · ${Math.round(data.derived.rain[i])} mm/ano · ${data.derived[SOLAR_FIELDS[renderer.season]][Math.floor(i / data.definition.grid.width)].toFixed(1)} W/m² (topo da atmosfera)`;

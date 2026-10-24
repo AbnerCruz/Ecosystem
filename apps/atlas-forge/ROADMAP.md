@@ -12,11 +12,11 @@ Fonte do escopo completo: [MISSION.md](../../docs/proposals/atlas-forge/MISSION.
 | AF-006 | M2 | Placas persistentes e velocidade angular; convergência/divergência testáveis | Não implementado; não rebatizar ruído como tectônica |
 | AF-007 | M3 | Lago com armazenamento, evaporação, transbordamento e drenagem em flats | Hoje sumidouros fechados; sem inundação dinâmica |
 | AF-008 | M3 | Clima sazonal por insolação, transporte métrico e calibração | Clima atual é A; insolação é utilitário testado ainda não acoplado |
-| AF-009 | M2/M3 | Erosão/transporte/deposição com balanços e overrides | Não implementado |
-| AF-010 | M4 | Catálogo/traços, produtor–herbívoro–predador e capacidade de suporte | Central à missão; primeiro cenário: herbívoro sem alimento declina |
-| AF-011 | M5 | Eras causais com escalas de tempo e diffs | Marcos atuais são snapshots, não simulação temporal |
-| AF-012 | M6 | Geradores de cidade/caverna/dungeon, hierarquia e edição vetorial | Hoje grafo de nove salas, persistente e conectado |
-| AF-013 | M7 | Arquivo de projeto grande, hashes por campo, assets e adapter autorizado | JSON limitado a 24 MiB; sem escrever arquivos internos de outro aplicativo |
+| AF-009 | M2/M3 | Erosão/transporte/deposição com balanços e overrides | AF-020: transporte regional conservativo, cobertura vegetal e overrides fixos; erosão física fina pendente |
+| AF-010 | M4 | Catálogo/traços, produtor–herbívoro–predador e capacidade de suporte | AF-020: catálogo, dieta, estoques limitantes, dispersão e cenário de fome; ecologia fina pendente |
+| AF-011 | M5 | Eras causais com escalas de tempo e diffs | AF-020: sucessores de até 10 mil anos com balanços e marcos; tectônica temporal pendente |
+| AF-012 | M7 | Geradores de cidade/caverna/dungeon, hierarquia e edição vetorial | Hoje grafo de nove salas, persistente e conectado |
+| AF-013 | M8 | Arquivo de projeto grande, hashes por campo, assets e adapter autorizado | JSON limitado a 24 MiB; sem escrever arquivos internos de outro aplicativo |
 | AF-015 | M1 | Autoria explícita: abertura vazia, sem exemplos inseridos, inspeção local sem geração | Issue #660: implementação e regressões; revisão no [PR #661](https://github.com/AbnerCruz/Ecosystem/pull/661) |
 | AF-016 | M3 | Entrada solar sazonal, W/m² e balanço global do modelo circular | Issue #664; não acopla automaticamente o clima heurístico |
 | AF-017 | M1 | Planeta → terreno → chão: campo contínuo, tiles ≤1 m, cache e viewer | Issue #664; edição métrica persistente e acoplamento físico fino pendentes |
@@ -24,3 +24,5 @@ Fonte do escopo completo: [MISSION.md](../../docs/proposals/atlas-forge/MISSION.
 | AF-014 | M8 | Dois consumidores reais, Extraction Review e capability se justificada | Sem extração antecipada; Runtime central nunca obrigatório |
 
 Cada avanço deve atravessar modelo → UI → persistência → teste → publicação quando aplicável. Não declarar todos os gates por ter controles visuais. O pedido atual prioriza AF-017 (Issue #664): chegar ao chão, além da grade planetária. Depois: edição local versionada/desenho de restrições, AF-007/008 e os demais processos causais; AF-010 depende de recursos e habitats mensuráveis.
+
+AF-020 ([Issue #699](https://github.com/AbnerCruz/Ecosystem/issues/699)): ciclo causal descrito na SPEC, parcial de M2/M4/M5, sem declarar marcos completos. Prioridade atual é o pedido direto do proprietário; nenhum documento substitui a funcionalidade pedida.
