@@ -34,7 +34,7 @@ public sealed class AssistantRunService : Service
     {
         _latest = activity;
         var context = Android.App.Application.Context;
-        if (activity.Kind is AssistantActivityKind.Completed or AssistantActivityKind.Failed or AssistantActivityKind.Cancelled)
+        if (activity.Kind is AssistantActivityKind.Completed or AssistantActivityKind.Failed or AssistantActivityKind.Cancelled or AssistantActivityKind.QuestionNeeded)
         {
             if (!MainActivity.IsVisibleToUser && activity.Kind != AssistantActivityKind.Cancelled)
                 Notify(context, activity);
@@ -57,7 +57,7 @@ public sealed class AssistantRunService : Service
             // Never misrepresent background continuity: the in-app task can keep running
             // while visible, but the OS may suspend it when the app is backgrounded.
         }
-        if (!MainActivity.IsVisibleToUser && activity.Kind is AssistantActivityKind.ApprovalNeeded or AssistantActivityKind.QuestionNeeded)
+        if (!MainActivity.IsVisibleToUser && activity.Kind == AssistantActivityKind.ApprovalNeeded)
             Notify(context, activity);
     }
 
