@@ -629,8 +629,8 @@ public static partial class AssistantTools
         new()
         {
             Name = "update_plan", Access = "plan",
-            Description = "Mostra ao usuário o seu plano como uma lista de passos com status. Use em tarefas com 3 ou mais passos: crie o plano no começo e atualize a cada passo concluído (envie a lista inteira).",
-            Parameters = Schema("""{"type":"object","properties":{"steps":{"type":"array","maxItems":20,"items":{"type":"object","properties":{"step":{"type":"string"},"status":{"type":"string","enum":["pending","in_progress","done"]}},"required":["step","status"]}}},"required":["steps"],"additionalProperties":false}"""),
+            Description = "Plano vivo, com extensão e detalhe proporcionais à tarefa. Investigue objetivos, decisões, restrições, riscos, dependências e critérios de aceite; decomponha entregas complexas em passos verificáveis com validação e revisão, sem passos decorativos. Replaneje ao descobrir novas informações e envie a lista inteira nas atualizações.",
+            Parameters = Schema("""{"type":"object","properties":{"steps":{"type":"array","items":{"type":"object","properties":{"step":{"type":"string"},"status":{"type":"string","enum":["pending","in_progress","done"]}},"required":["step","status"]}}},"required":["steps"],"additionalProperties":false}"""),
             Label = i =>
             {
                 var st = (i["steps"] as JsonArray ?? []).ToList();
@@ -639,7 +639,7 @@ public static partial class AssistantTools
             },
             Run = (i, host) =>
             {
-                var st = (i["steps"] as JsonArray ?? []).OfType<JsonObject>().Where(x => LegacyCustomize.JsTrim(Str(x, "step")).Length > 0).Take(20)
+                var st = (i["steps"] as JsonArray ?? []).OfType<JsonObject>().Where(x => LegacyCustomize.JsTrim(Str(x, "step")).Length > 0)
                     .Select(x =>
                     {
                         var step = LegacyCustomize.JsTrim(Str(x, "step"));
