@@ -98,6 +98,7 @@ public sealed class AssistantWebSession : IDisposable
     public IReadOnlyList<AiWebSource> Sources => _sources.AsReadOnly();
     public int SearchCalls => _searchCalls;
     public int FetchCalls => _fetchCalls;
+    public bool CanDelegateTo(string agentId) => _config.Allowed(agentId);
 
     public AssistantWebSession(AiWebConfig config, CancellationToken cancel = default,
         HttpMessageHandler? handler = null, IAssistantSearchProvider? search = null,
