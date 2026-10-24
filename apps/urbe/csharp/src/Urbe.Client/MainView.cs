@@ -131,6 +131,7 @@ public sealed partial class MainView : Grid
         _stage.Children.Add(FilePreview);
         _stage.Children.Add(_notice);
         _stage.Children.Add(_pluginPanels);   // the plugins' panels, over the Explorer and the editor (ADD-0021)
+        InstallAssistantLauncher();          // contextual AI lives over the editor, not in a second destination
         Customize = new CustomizePanel(Customization, Dialogs);
         Customize.OpenFileRequested += path => Editor.Open(new CityNote(path, _contents.GetValueOrDefault(path, "")));
         Customize.NativePlugins = NativePlugins;
@@ -1509,8 +1510,9 @@ public sealed partial class MainView : Grid
 
     // ---------------- navigation (rail / dock) ----------------
 
+    // Assistente is opened from its quiet floating launcher; the dock no longer has an AI tab.
     private static readonly (string Icon, string Label)[] Destinations =
-        [(UrbeTheme.Icons.Notes, "Notas"), (UrbeTheme.Icons.Assistant, "Assistente")];
+        [(UrbeTheme.Icons.Notes, "Notas")];
 
     private void BuildRail()
     {
