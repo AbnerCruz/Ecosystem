@@ -199,6 +199,8 @@ public sealed class AiAgentRun
     /// <summary>How the Urbe wants things made (<see cref="UrbeGuidance"/>); null leaves the prompt as the 1.8.4's.</summary>
     public string? Guidance { get; init; }
     public int? MaxSteps { get; init; }
+    /// <summary>Urbe-only quality audit after saved changes. Legacy/oracle callers keep original turn semantics.</summary>
+    public bool ReviewWrittenArtifacts { get; init; }
     public int? MaxTokens { get; init; }
     public double? Temperature { get; init; }
     public bool IsSubagent { get; init; }
@@ -631,7 +633,7 @@ public static class AssistantAgent
                 // A written artifact is not finished just because the model stopped calling tools.
                 // Ask it once to reopen its actual saved files and audit substance, consistency,
                 // related-note updates and unanswered requirements before finalizing the work.
-                if (result.Changes.Count > 0 && !qualityReviewed && !cancel.IsCancellationRequested)
+                if (o.ReviewWrittenArtifacts && result.Changes.Count > 0 && !qualityReviewed && !cancel.IsCancellationRequested)
                 {
                     qualityReviewed = true;
                     live.Meta ??= new AiChatMeta();
