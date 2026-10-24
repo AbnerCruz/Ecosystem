@@ -72,7 +72,8 @@ public sealed class AssistantMultimodalQuestionTests
         public Task CreateFolderAsync(string path) => throw new NotSupportedException();
         public void OpenNote(string path) { }
         public void Remember(string fact) { }
-        public void SetPlan(IReadOnlyList<AiPlanStep> steps) { }
+        public IReadOnlyList<AiPlanStep> LastPlan { get; private set; } = [];
+        public void SetPlan(IReadOnlyList<AiPlanStep> steps) => LastPlan = steps;
     }
 
     [Fact]
@@ -113,4 +114,66 @@ public sealed class AssistantMultimodalQuestionTests
         Assert.Contains(messages.SelectMany(m => m.Content), b => b.Type == "tool_result" && !b.IsError);
         Assert.Empty(result.Changes);
     }
+    [Fact]
+    public async Task PlanningAcceptsDetailedPlansBeyondTwentySteps()
+    {
+        var host = new Host();
+        var steps = new JsonArray(Enumerable.Range(1, 27)
+            .Select(i => (JsonNode)new JsonObject { ["step"] = "Revisar detalhe " + i, ["status"] = i == 1 ? "in_progress" : "pending" })
+            .ToArray());
+        var tool = Assert.Single(AssistantTools.All.Where(t => t.Name == "update_plan"));
+        var input = new JsonObject { ["steps"] = steps };
+        Assert.Empty(AssistantTools.Validate(tool, input));
+        await tool.Run(input, host);
+        Assert.Equal(27, host.LastPlan.Count);
+        Assert.Equal("Revisar detalhe 27", host.LastPlan[^1].Step);
+    }
+
+    [Fact]
+    public async Task QuestionsHaveNoArtificialHundredItemProgressMaximum()
+    {
+        var host = new Host();
+        var input = new JsonObject { ["question"] = "Qual atributo é determinante?", ["resolved"] = 135, ["total"] = 180 };
+        Assert.Empty(AssistantTools.Validate(AssistantQuestionTools.Ask, input));
+        var result = await AssistantQuestionTools.Ask.Run(input, host);
+        Assert.Contains("135/180", result.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task LongAgentRunDoesNotStopAtThirtyModelTurns()
+    {
+        var host = new Host();
+        var messages = new List<AiChatMessage> { new() { Role = "user", Content = [AiChatBlock.TextBlock("Investigue em profundidade.")] } };
+        int requested = 0;
+        var result = await AssistantAgent.RunAsync(new AiAgentRun
+        {
+            Agent = AssistantAgent.AgentById("geral"), Host = host, Policy = "readonly",
+            Provider = new AiProviderConfig("p", "openai"), Model = "m",
+            Messages = messages, Tools = [AssistantTools.All.Single(x => x.Name == "update_plan")],
+            Stream = (_, _, _, _) =>
+            {
+                requested++;
+                var usage = new AiUsage(1, 1, null);
+                if (requested > 36)
+                    return Task.FromResult(new AiResult([AiBlock.TextBlock("Investigação concluída.")], "", "end_turn", usage, "m"));
+                var input = new JsonObject { ["steps"] = new JsonArray(new JsonObject { ["step"] = "Inspecionar " + requested, ["status"] = "in_progress" }) };
+                return Task.FromResult(new AiResult([AiBlock.ToolUse("c" + requested, "update_plan", input)], "", "tool_use", usage, "m"));
+            }
+        });
+        Assert.Equal("end", result.Stopped);
+        Assert.Equal(37, requested);
+        Assert.Equal(37, result.Steps);
+    }
+
+    [Fact]
+    public void QualityGuidanceCoversCreativeArtifactsAndRelatedNotes()
+    {
+        var guidance = AssistantAgent.UrbeGuidance;
+        Assert.Contains("ficha de personagem", guidance, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Ideias paralelas", guidance, StringComparison.Ordinal);
+        Assert.Contains("notas conectadas", guidance, StringComparison.Ordinal);
+        Assert.Contains("cânone", guidance, StringComparison.Ordinal);
+        Assert.Contains("reabra", guidance, StringComparison.Ordinal);
+    }
+
 }
