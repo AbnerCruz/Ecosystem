@@ -238,7 +238,11 @@ public static class AssistantAgent
         "- Descoberta antes da execução: para pedidos significativos, construa entendimento explícito sobre problema, objetivo real, público, contexto, restrições, insumos, prioridades, decisões irreversíveis, padrões de qualidade e critérios de aceitação. Inspecione primeiro o que o vault permite descobrir, inclusive conteúdos e referências relevantes. Não invente respostas que pertencem ao usuário.\\n" +
         "- Faça perguntas com ask_user UMA POR VEZ, cada uma com razão específica e impacto material na solução. Explore alternativas e trade-offs quando necessários; aproveite cada resposta para eliminar outras dúvidas, descobrir dependências e reformular hipóteses. Não fixe número de perguntas: projetos complexos exigem investigação profunda, tarefas claras e simples podem seguir sem perguntas. Não volte a perguntar o que já foi respondido.\\n" +
         "- O planejamento nasce da investigação e a investigação melhora com o planejamento: trace entregáveis, decisões, dependências, riscos, verificações e critérios de pronto. Registre com update_plan etapas específicas, mensuráveis e suficientes; detalhe fases e subtrabalhos conforme necessário, sem teto artificial nem enchimento burocrático. Atualize o plano com evidências reais a cada marco e mude a estrutura quando surgirem descobertas.\\n" +
-        "- Antes de trabalho dispendioso ou irreversível, confirme decisões não dedutíveis e peça as aprovações da ferramenta. Não faça um interrogatório por curiosidades: agrupe dúvidas relacionadas no raciocínio, faça só a próxima pergunta que altera a melhor ação, e execute prontamente quando houver entendimento suficiente.";
+        "- Antes de trabalho dispendioso ou irreversível, confirme decisões não dedutíveis e peça as aprovações da ferramenta. Não faça um interrogatório por curiosidades: agrupe dúvidas relacionadas no raciocínio, faça só a próxima pergunta que altera a melhor ação, e execute prontamente quando houver entendimento suficiente.\\n" +
+        "- Produção de artefatos: não preencha um documento com campos genéricos por falta de conhecimento. Primeiro pesquise no vault e nos links pertinentes, identifique informações confirmadas, lacunas e possibilidades criativas. Escolha a estrutura e o formato apropriados ao uso final, escreva prosa específica e interessante e trabalhe seção por seção; apresente alternativas para decisões criativas importantes. Não invente fatos como se fossem estabelecidos: diferencie cânone, hipótese, proposta e campo pendente. A qualidade do resultado importa mais que a rapidez da primeira versão.\\n" +
+        "- Exemplo de ficha de personagem: descubra gênero, cenário, função narrativa ou mecânica, sistema/regras, profundidade desejada e referências já existentes; planeje identidade, aparência, história, personalidade, objetivos, relações, habilidades, limitações, conflitos e ganchos apenas conforme sejam relevantes. Se o usuário quiser criar conteúdo, proponha escolhas e elabore boas descrições, não apenas rótulos vazios. Quando houver dados relacionados em outras notas, confira-as e atualize-as coerentemente usando ferramentas de edição e aprovações normais.\\n" +
+        "- Ideias paralelas do usuário são material valioso. Se a conversa revelar uma ideia fortemente relacionada à tarefa, investigue sua conexão, procure uma nota existente e incorpore ou crie uma nota própria quando isso realmente melhorar a organização. Estabeleça links [[...]] bidirecionais quando apropriado e preserve autoria, contexto e decisões; não ignore informação pertinente nem crie dezenas de notas inúteis. Se a ideia exigir uma escolha substantiva ou aumentar muito o escopo, pergunte antes.\\n" +
+        "- Garantia de qualidade: após escrever ou alterar artefatos, reabra o que foi gravado, confronte com requisitos, consistência entre notas, completude, clareza e acabamento; refine problemas concretos antes de entregar. Nunca anuncie como pronto um documento que ainda é apenas um esqueleto sem dizer exatamente o que falta.";
 
     public static AiAgentDef AgentById(string? id, IEnumerable<AiAgentDef>? custom = null) =>
         Agents.Concat(custom ?? []).FirstOrDefault(a => a.Id == id) ?? Agents[0];
@@ -531,7 +535,7 @@ public static class AssistantAgent
         // Optional ceiling for test harnesses and legacy callers; no cap in normal sessions.
         // Explicit cancel, repeated tool failures, and provider errors remain the safeguards.
         int? maxSteps = o.MaxSteps is > 0 ? o.MaxSteps : null;
-        bool runAllow = false, nudged = false, partialNudged = false;
+        bool runAllow = false, nudged = false, partialNudged = false, qualityReviewed = false;
         var failed = new Dictionary<string, string>();
         int repeats = 0;
         var partial = new List<(string Path, AiPartial Partial)>();
@@ -622,6 +626,29 @@ public static class AssistantAgent
                     };
                     messages.Add(nudge);
                     emit(new AiAgentEvent("message", nudge));
+                    continue;
+                }
+                // A written artifact is not finished just because the model stopped calling tools.
+                // Ask it once to reopen its actual saved files and audit substance, consistency,
+                // related-note updates and unanswered requirements before finalizing the work.
+                if (result.Changes.Count > 0 && !qualityReviewed && !cancel.IsCancellationRequested)
+                {
+                    qualityReviewed = true;
+                    live.Meta ??= new AiChatMeta();
+                    live.Meta.Draft = true;
+                    emit(new AiAgentEvent("final", live, Usage: result.Usage));
+                    var files = result.Changes.Select(change => (change.After ?? change.Before)?.Path)
+                        .Where(path => !string.IsNullOrWhiteSpace(path))
+                        .Distinct(StringComparer.Ordinal)
+                        .ToList();
+                    messages.Add(new AiChatMessage
+                    {
+                        Id = uid("m"), Role = "user", Meta = new AiChatMeta { ToolResults = true },
+                        Content = [AiChatBlock.TextBlock("[Revisão obrigatória do trabalho] Você alterou arquivos reais: " +
+                            string.Join(", ", files) +
+                            ". Antes de declarar conclusão, use as ferramentas para reler os arquivos salvos, comparar com o pedido e rever estrutura, profundidade, consistência, informação relacionada, notas conectadas e eventuais trechos genéricos. Corrija problemas detectados quando autorizado. Não invente fatos que o usuário não estabeleceu. Depois responda com o resultado verificado e pendências reais.")]
+                    });
+                    emit(new AiAgentEvent("message", messages[^1]));
                     continue;
                 }
                 break;
