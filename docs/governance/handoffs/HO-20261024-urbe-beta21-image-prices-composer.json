@@ -1,0 +1,116 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-beta21-image-prices-composer",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T03:45:00Z",
+  "agent": {
+    "id": "chatgpt-gpt6",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-63",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-professional-ai-composer-pricing",
+  "base_commit": "383cf0384c3ea78de5b0a1e5d3758bcac4000eae",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantImagePricing.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantProviders.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantImageTools.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantImagePricingTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantImageToolsTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "docs/governance/handoffs/HO-20261024-urbe-beta21-image-prices-composer.json"
+  ],
+  "work_completed": [
+    "Auditoria da beta.20: modelo de imagem não exibiu custos e controles de anexo apareciam como botões textuais permanentes; seletor de notas limitava a primeiras 300.",
+    "Novo compositor nativo: botão + compacto ao lado do texto, menu de fontes em cartões, seleção de notas via pesquisa em vault inteiro e bandeja de anexos com nomes truncados, tipo, remoção individual e limpar tudo; limites anteriores mantidos.",
+    "Imagem gerada salva no vault exibida como prévia diretamente no cartão generate_image no chat, com botão Abrir que aciona visualizador nativo. Leituras limitadas a 8 MiB, bitmap reduzido na UI; reconhecimento retrocompatível de respostas antigas beta.20, mesmo com passos posteriores recolhidos.",
+    "Preço de modelos de imagem visível no seletor e configurações com unidade (por imagem, megapixel, 1M tokens) e fonte. OpenRouter lê endpoints reais; catálogo preços faltantes sinaliza explicitamente indisponibilidade, jamais como gratuito; requisições concorrentes limitadas.",
+    "Corrigida escolha OpenAI padrão: gpt-image-1 desativado em 23/10/2026, agora gpt-image-2.5-sunburst. Tarifas exibidas de saída image tokens com explicação de não equivalência a preço por imagem; Gemini 1K e OpenRouter seguem preços pela documentação oficial.",
+    "Testes por unidade e endpoint mockado, extração segura de caminhos de imagens geradas e compatibilidade com histórico antigo; tutorial/roadmap atualizado; versão native 2.0.0-beta.21/2000021 preparada."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe Core/Client, Android, Windows, E2E and Foundation consistency on PR and combined main",
+      "result": "pending",
+      "evidence": "GitHub Actions PR, integrator"
+    },
+    {
+      "kind": "human",
+      "check": "Android compact width, image preview in existing history, image costs returned by provider and external StorageProvider",
+      "result": "pending",
+      "evidence": "Real device/provider account"
+    }
+  ],
+  "known_issues": [
+    "Preços de OpenRouter são menores valores observados por unidade e dependem de rota, resolução e entrada; cota cobrada somente na atividade real do provedor, e dados de referência podem ficar desatualizados.",
+    "Modelo de saída em tokens não produz preço exato por imagem sem medição de tokens; um custo desconhecido é sinalizado como indisponível.",
+    "Imagem só é pré-visualizada ao existir no vault ativo; arquivos removidos ou movidos mostram fallback. Imagem não é duplicada nem incorporada base64 no histórico."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar e corrigir regressões no CI do PR.",
+    "Aguardar autorização de proprietário via label integrar para mudança crítica classificada distribution.",
+    "Após merge e release oficial, verificar APK e Windows ZIP beta.21.",
+    "Validar gesto/tamanho de tela e geração de imagem em dispositivo real."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Vault permanece autoridade dos binários; chat só referencia caminho e gera prévia sob demanda."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Nenhum formato de arquivo de conversa foi alterado; reconhecimento de resultados antigos preservado."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Prévia aparece em cartão do resultado da ferramenta, sem desabilitar aprovação."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Versão beta.21 preparada para publicação somente pelo workflow após integração."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Visualização somente leitura; sem upload novo ou mudança de permissões."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Verificação de aparelho e provedor em aberto."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "image-price-units-and-chat-preview",
+      "status": "possible-candidate",
+      "rationale": "Modelo de custo por imagem e visualização poderiam ser reutilizados no Ecosystem AI, mas não foram promovidos nem criaram outro runtime."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Bump da versão beta Android e gatilho de publicação no csproj; proprietário pediu produto profissional, integração sujeita ao integrador."
+  }
+}
