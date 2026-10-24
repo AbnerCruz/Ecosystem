@@ -27,6 +27,7 @@
     "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
     "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/KeyboardFocusPolicyTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/TouchDebugUiTests.cs",
     "apps/urbe/csharp/PATCHNOTES-beta.25.md",
     "docs/governance/handoffs/HO-20261024-urbe-teclado-android.json"
   ],
@@ -35,20 +36,23 @@
     "Correção de foco programático ao entrar em telas/diálogos, com política Android toque em editável; desktop mantém os atalhos de teclado.",
     "Instrumentação de foco, InputPane/IME, viewport, rolagem interna e toques em Configurações → Diagnóstico de teclado e toques, log copiável desligado por padrão; sem registrar texto de campos.",
     "Beta Android incrementada de 2.0.0-beta.24 para 2.0.0-beta.25 (versionCode 2000025), patchnotes em português.",
-    "Não alterado adjustResize Android nem algoritmo de scroll por caret que já é condicional; monitoramento diagnóstico ajudará a confirmar saltos residuais em dispositivo."
+    "Não alterado adjustResize Android nem algoritmo de scroll por caret que já é condicional; monitoramento diagnóstico ajudará a confirmar saltos residuais em dispositivo.",
+    "Teste TouchDebugUiTests atualizado para interface do novo diagnóstico, com logs extras sem supor uma única linha."
   ],
   "verification": [
     {
       "kind": "automated",
       "check": "Teste unitário KeyboardFocusPolicyTests (desktop/Android; foco só após toque em editável)",
-      "result": "pending",
-      "evidence": "Adicionado ao projeto; verificação CI em https://github.com/AbnerCruz/Ecosystem/actions/runs/40073369380"
+      "result": "passed",
+      "evidence": "CI da branch em https://github.com/AbnerCruz/Ecosystem/actions/runs/40073892236: Urbe.Client.Tests (incluindo KeyboardFocusPolicyTests) aprovado.",
+      "tested_commit": "6b0ab9ccd0d29453aad43eb5d677c451ededfb08"
     },
     {
       "kind": "automated",
       "check": "Build Urbe.Portable.slnx, Urbe.Core.Tests e Urbe.Client.Tests; empacotamento Avalonia Android e Windows; E2E legado de regressão",
-      "result": "pending",
-      "evidence": "Não há SDK .NET/Android no executor desta sessão; jobs urbe-checks em andamento no GitHub."
+      "result": "passed",
+      "evidence": "CI https://github.com/AbnerCruz/Ecosystem/actions/runs/40073892236: .NET Core+Client, build Android+Windows, checks e E2E verde; teste em IME real continua humano e pendente.",
+      "tested_commit": "6b0ab9ccd0d29453aad43eb5d677c451ededfb08"
     },
     {
       "kind": "human",
