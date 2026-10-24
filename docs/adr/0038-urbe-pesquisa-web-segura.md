@@ -20,7 +20,9 @@ Pesquisar, abrir fontes e produzir artefatos referenciados com custo e seguranç
 4. Incluir um browser completo/WebView com execução JavaScript: rejeitada para a primeira fatia (superfície de ataque e custos desproporcionais).
 5. Extrair o gateway para plataforma comum sem segundo consumidor comprovado: rejeitada por NN-022.
 
-## Decisão (revisão proposta em 24/10)
+## Decisão
+
+*Revisão proposta em 24/10/2026, aguardando decisão DEC-0057 e gates críticos.*
 
 **Direção nova do proprietário substitui a primeira decisão de UX**: acesso a pesquisa pública sem cadastro de API, sem seleção obrigatória de provedor e sem permissões por agente. `AiWebConfig.Enabled` passa a `true` em instalações novas, há um único opt-out global de privacidade; um opt-out anteriormente persistido continua respeitado. Consultas públicas enviam apenas termos de busca e visitas enviam a URL solicitada. Nunca inferir autorização para transmitir nota, anexos, segredos ou arquivos privados. `AgentAccess` antigo é aceito ao ler configs mas não controla a pesquisa pública; leitura local e rede continuam capacidades de ferramenta distintas.
 
