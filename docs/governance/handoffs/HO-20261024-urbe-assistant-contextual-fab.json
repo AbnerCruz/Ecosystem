@@ -45,9 +45,10 @@
     {
       "kind": "human",
       "check": "Android físico 412×900: IME/foco, pop-up, aprovação/pergunta, posição/rolagem, acesso à conversa",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
-      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-24 (Issue https://github.com/AbnerCruz/Ecosystem/issues/752); registro em docs/governance/responses/VAL-HO-20261024-urbe-assistant-contextual-fab-524a731a71e6.md."
     }
   ],
   "known_issues": [
