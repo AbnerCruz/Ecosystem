@@ -410,8 +410,8 @@ public sealed partial class HeadlessUiTests
                     msgs.Add(new AiChatMessage { Id = "f" + r, Role = "assistant", Content = [AiChatBlock.TextBlock("Resposta " + r + ".")] });
                 }
                 panel.RenderAll();
-                // each earlier request: what was asked, its steps in one folded line, the answer; the last one, every step
-                Assert.Equal(10 * 3 + 12, panel.Log.Children.Count);
+                // Every request has a compact activity summary, including the latest conversation turn.
+                Assert.Equal(11 * 3, panel.Log.Children.Count);
                 var folded = panel.Log.Children.OfType<Expander>().ToList();
                 Assert.Equal(10, folded.Count);
                 Assert.All(folded, x => Assert.Null(x.Content));   // built only when opened
@@ -419,6 +419,23 @@ public sealed partial class HeadlessUiTests
                 folded[0].IsExpanded = true;
                 Dispatcher.UIThread.RunJobs();
                 Assert.Equal(10, ((Panel)folded[0].Content!).Children.Count);
+
+                // Latest request: one collapsed activity instead of ten full tool cards.
+                var activity = Assert.IsType<StackPanel>(panel.Log.Children[31]);
+                var activityBorder = Assert.IsType<Border>(activity.Children[0]);
+                var activityFold = Assert.IsType<Expander>(activityBorder.Child);
+                Assert.Null(activityFold.Content);
+                Assert.Contains("10 operações", panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
+                activityFold.IsExpanded = true;
+                Dispatcher.UIThread.RunJobs();
+                var timeline = Assert.IsType<StackPanel>(activityFold.Content);
+                Assert.Equal(10, timeline.Children.Count);
+                var firstStage = Assert.IsType<Expander>(Assert.IsType<Border>(timeline.Children[0]).Child);
+                Assert.Null(firstStage.Content);
+                firstStage.IsExpanded = true;
+                Dispatcher.UIThread.RunJobs();
+                Assert.Contains("Resultado devolvido ao agente",
+                    panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
 
                 // a new request: while it streams and waits for approval, the earlier ones are not rebuilt
                 model.Chats.Enqueue(Sse(
