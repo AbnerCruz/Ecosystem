@@ -169,7 +169,9 @@ public sealed class AssistantMultimodalQuestionTests
     public void QualityGuidanceCoversCreativeArtifactsAndRelatedNotes()
     {
         var guidance = AssistantAgent.UrbeGuidance;
-        Assert.Contains("ficha de personagem", guidance, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("cada tipo de artefato", guidance, StringComparison.Ordinal);
+        Assert.Contains("sem aplicar formulários, modelos ou seções predefinidos", guidance, StringComparison.Ordinal);
+        Assert.DoesNotContain("Exemplo de ficha de personagem", guidance, StringComparison.Ordinal);
         Assert.Contains("Ideias paralelas", guidance, StringComparison.Ordinal);
         Assert.Contains("notas conectadas", guidance, StringComparison.Ordinal);
         Assert.Contains("cânone", guidance, StringComparison.Ordinal);
@@ -187,7 +189,7 @@ public sealed class AssistantMultimodalQuestionTests
             Name = "write_artifact", Access = "write", Description = "Test file writer",
             Parameters = schema, Label = _ => "Write",
             Run = (_, _) => Task.FromResult(new AiToolOutput("Saved",
-                Changes: [new AiChange("character", null, new AiNoteSnap("Personagens/Alma.md", "# Alma"))]))
+                Changes: [new AiChange("character", null, new AiNoteSnap("Projetos/Documento.md", "# Documento"))]))
         };
         var read = new AiTool
         {
@@ -198,7 +200,7 @@ public sealed class AssistantMultimodalQuestionTests
         var turns = 0;
         var messages = new List<AiChatMessage>
         {
-            new() { Role = "user", Content = [AiChatBlock.TextBlock("Crie e revise a ficha de Alma.")] }
+            new() { Role = "user", Content = [AiChatBlock.TextBlock("Crie e revise um documento detalhado.")] }
         };
         var result = await AssistantAgent.RunAsync(new AiAgentRun
         {
