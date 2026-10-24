@@ -200,6 +200,10 @@ public static class AssistantMemoryEngine
                 else if (meta.Contains(term, StringComparison.Ordinal)) score += 1.5;
             }
             if (terms.Length == 0 && q.Length == 0) score = 1;
+            // Short greetings have no useful query tokens. Recency alone must not
+            // make every unrelated record relevant to a greeting or acknowledgment.
+            if (terms.Length == 0 && q.Length > 0 && score <= 0 &&
+                !m.Pinned && m.Kind != "preference") continue;
             if (terms.Length > 0 && score <= 0 && !m.Pinned) continue;
             if (m.Pinned) score += 5;
             if (m.Kind is "preference" or "decision" && score > 0) score += 1.5;
@@ -270,7 +274,8 @@ public static class AssistantMemoryEngine
         long free = window - output - overhead - Math.Max(0, systemChars) -
             Math.Max(0, conversationChars);
         if (free <= 0) return [];
-        var matches = Search(cfg, vault, agentId, query, int.MaxValue);
+        var matches = string.IsNullOrWhiteSpace(query) ? Array.Empty<AiMemoryMatch>() :
+            Search(cfg, vault, agentId, query, int.MaxValue);
         // When the question itself has no matching subject, only durable preferences
         // and explicitly pinned memories may enter the first context pass.
         IReadOnlyList<AiMemoryMatch> candidates = matches.Count > 0 ? matches :
