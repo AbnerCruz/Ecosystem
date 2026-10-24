@@ -231,6 +231,7 @@ public sealed partial class AssistantPanel : Border
     public void Open()
     {
         Load();
+        CompactActive = false;
         IsVisible = true;
         RenderAll();
         if (!OperatingSystem.IsAndroid()) Dispatcher.UIThread.Post(() => _input.Focus(), DispatcherPriority.Background);
@@ -371,7 +372,7 @@ public sealed partial class AssistantPanel : Border
         if (_cfg.Providers.Count == 0 || ModelId().Length == 0) Open();
         var who = AgentNames.CallName(agent, _cfg);
         _inNote = (_conv, notePath, who);
-        if (!IsVisible) _app.Notify(who + " está trabalhando no pedido…");
+        if (!IsVisible) ActivateCompact();
         var line = "&" + call.Agent + "&: " + call.Request;
         Send(call.Request, (notePath, "[Pedido feito dentro da nota " + notePath + ", nesta linha:\n" + line +
             "\nLeia a nota inteira (read_note) como contexto. Se o pedido for uma mudança no texto, faça-a na própria nota com edit_note, trocando essa linha pelo resultado; se for uma pergunta, responda aqui.]"));
@@ -752,7 +753,8 @@ public sealed partial class AssistantPanel : Border
                 _inNote = null;
                 _app.EndSuggestion();
                 if (run.Changes.Count > 0) _app.Notify(asked.Who + " alterou a nota.", "Desfazer", () => CurrentUndo = UndoRunAsync(conv, run, confirmed: true));
-                else if (!IsVisible && conv.Messages.LastOrDefault(m => m.Role == "assistant") is { } last && last.Content.Any(b => b.Type == "text" && !string.IsNullOrWhiteSpace(b.Text))) { _conv = conv; Open(); }
+                // The contextual surface displays the answer without stealing focus from the editor.
+                // Opening the full conversation is always an explicit user action.
             }
             conv.Runs.Add(run);
             if (conv.Runs.Count > 20) conv.Runs.RemoveRange(0, conv.Runs.Count - 20);
@@ -794,13 +796,14 @@ public sealed partial class AssistantPanel : Border
             }));
             return answer.Task;
         }
-        if (_inNote is not null && !IsVisible) Open();
+        if (_inNote is not null && !IsVisible && !CompactActive) Open();
         cancel.Register(() => Dispatcher.UIThread.Post(() =>
         {
             if (_pending is { } p && ReferenceEquals(p.Request, req)) { _pending = null; answer.TrySetResult(AiApproval.Reject()); }
         }));
         if (MessageOf(req.Call.Id) is { } m) Schedule(m);
-        if (!IsVisible) _app.Notify("O Assistente está esperando sua aprovação.");
+        NotifyCompactChanged();
+        if (!IsVisible && !CompactActive) _app.Notify("O Assistente está esperando sua aprovação.");
         return answer.Task;
     }
 
@@ -816,6 +819,7 @@ public sealed partial class AssistantPanel : Border
             PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(AssistantActivityKind.Running, AgentNames.CallName(chosen, _cfg), _conv.Id));
         }
         if (MessageOf(p.Request.Call.Id) is { } m) Schedule(m);
+        NotifyCompactChanged();
     }
 
     private AiChatMessage? MessageOf(string toolId) =>
@@ -901,6 +905,7 @@ public sealed partial class AssistantPanel : Border
             _dirty.Clear();
             RenderLog();
             RenderChrome();
+            NotifyCompactChanged();
             if (near) ScrollEnd();
         }, DispatcherPriority.Background);
     }
@@ -914,6 +919,7 @@ public sealed partial class AssistantPanel : Border
         _views.Clear();
         _past.Clear();
         RenderLog();
+        NotifyCompactChanged();
         ScrollEnd();
     }
 
