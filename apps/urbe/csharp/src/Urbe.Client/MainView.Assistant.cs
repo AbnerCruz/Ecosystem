@@ -127,6 +127,18 @@ public sealed partial class MainView : IAssistantApp
         RefreshNotes();
     }
 
+    async Task<byte[]?> IAssistantApp.ReadGeneratedImageAsync(string path)
+    {
+        if (!_attachments.Contains(path) || _vault is not { IsConnected: true } vault) return null;
+        // Bound decoded bytes per chat image; the full-resolution file remains in the vault.
+        return await vault.ReadFileAsync(path, 8 * 1024 * 1024);
+    }
+
+    async Task IAssistantApp.OpenGeneratedImageAsync(string path)
+    {
+        if (_attachments.Contains(path)) await ShowFileAsync(path);
+    }
+
     bool IAssistantApp.FileExists(string path) =>
         _contents.Keys.Any(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase)) ||
         _attachments.Any(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
