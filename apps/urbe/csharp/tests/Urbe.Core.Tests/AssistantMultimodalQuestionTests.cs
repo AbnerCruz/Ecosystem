@@ -121,7 +121,7 @@ public sealed class AssistantMultimodalQuestionTests
         var steps = new JsonArray(Enumerable.Range(1, 27)
             .Select(i => (JsonNode)new JsonObject { ["step"] = "Revisar detalhe " + i, ["status"] = i == 1 ? "in_progress" : "pending" })
             .ToArray());
-        var tool = Assert.Single(AssistantTools.All, t => t.Name == "update_plan");
+        var tool = AssistantAdaptivePlanTools.Update;
         var input = new JsonObject { ["steps"] = steps };
         Assert.Empty(AssistantTools.Validate(tool, input));
         await tool.Run(input, host);
@@ -149,7 +149,7 @@ public sealed class AssistantMultimodalQuestionTests
         {
             Agent = AssistantAgent.AgentById("geral"), Host = host, Policy = "readonly",
             Provider = new AiProviderConfig("p", "openai"), Model = "m",
-            Messages = messages, Tools = [AssistantTools.All.Single(x => x.Name == "update_plan")],
+            Messages = messages, Tools = [AssistantAdaptivePlanTools.Update],
             Stream = (_, _, _, _) =>
             {
                 requested++;
@@ -173,7 +173,7 @@ public sealed class AssistantMultimodalQuestionTests
         Assert.Contains("sem aplicar formulários, modelos ou seções predefinidos", guidance, StringComparison.Ordinal);
         Assert.DoesNotContain("ficha de personagem", guidance, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Ideias paralelas", guidance, StringComparison.Ordinal);
-        Assert.Contains("notas conectadas", guidance, StringComparison.Ordinal);
+        Assert.Contains("notas existentes", guidance, StringComparison.Ordinal);
         Assert.Contains("cânone", guidance, StringComparison.Ordinal);
         Assert.Contains("reabra", guidance, StringComparison.Ordinal);
     }
@@ -206,7 +206,7 @@ public sealed class AssistantMultimodalQuestionTests
         {
             Host = host, Policy = "auto", Agent = AssistantAgent.AgentById("geral"),
             Provider = new AiProviderConfig("p", "openai"), Model = "m",
-            Messages = messages, Tools = [write, read],
+            Messages = messages, Tools = [write, read], ReviewWrittenArtifacts = true,
             Stream = (_, _, _, _) =>
             {
                 turns++;
