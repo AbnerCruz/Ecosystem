@@ -80,6 +80,23 @@ public sealed partial class MainView : IAssistantApp
 
     IAssistantPlugins? IAssistantApp.Plugins => new PluginsAdapter(Customization);
 
+    IAssistantGraphs? IAssistantApp.Graphs => _vault is { IsConnected: true } ? new GraphsAdapter(this) : null;
+
+    private sealed class GraphsAdapter(MainView view) : IAssistantGraphs
+    {
+        public IReadOnlyList<string> ListPaths() =>
+            view._attachments.Where(GraphDocument.IsGraphPath)
+                .OrderBy(p => p, StringComparer.OrdinalIgnoreCase).ToArray();
+
+        public async Task<string?> ReadAsync(string path)
+        {
+            if (!GraphDocument.IsGraphPath(path) || !ListPaths().Contains(path, StringComparer.OrdinalIgnoreCase)
+                || view._vault is not { } vault) return null;
+            var file = await vault.ReadFileAsync(path, 32L * 1024 * 1024);
+            return file?.Bytes is { } bytes ? System.Text.Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF') : null;
+        }
+    }
+
     /// <summary>The vault's plugins for write_plugin: listed as Personalização lists them; turned on for their exact text.</summary>
     private sealed class PluginsAdapter(Customization c) : IAssistantPlugins
     {
