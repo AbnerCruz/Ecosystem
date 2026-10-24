@@ -173,7 +173,7 @@ public sealed class AssistantMultimodalQuestionTests
         Assert.Contains("sem aplicar formulários, modelos ou seções predefinidos", guidance, StringComparison.Ordinal);
         Assert.DoesNotContain("ficha de personagem", guidance, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Ideias paralelas", guidance, StringComparison.Ordinal);
-        Assert.Contains("notas existentes", guidance, StringComparison.Ordinal);
+        Assert.Contains("nota existente", guidance, StringComparison.Ordinal);
         Assert.Contains("cânone", guidance, StringComparison.Ordinal);
         Assert.Contains("reabra", guidance, StringComparison.Ordinal);
     }
