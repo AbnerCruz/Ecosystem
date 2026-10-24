@@ -100,7 +100,9 @@ public sealed class GraphCanvasView : Control
     {
         if (!double.IsFinite(factor) || factor <= 0) return;
         var before = ToWorld(at);
-        _zoom = Math.Clamp(_zoom * factor, .15, 4);
+        var next = _zoom * factor;
+        if (!double.IsFinite(next) || next <= 0) return;
+        _zoom = next;
         var after = ToWorld(at);
         _origin += before - after;
         InvalidateVisual();
@@ -234,7 +236,7 @@ public sealed class GraphCanvasView : Control
         var drawnPen = new Pen(UrbeTheme.Brush(UrbeTheme.Text2), 2);
         foreach (var stroke in _document.Strokes)
         {
-            var pen = new Pen(UrbeTheme.Brush(UrbeTheme.Text2), Math.Clamp(stroke.Width * _zoom, 1, 14));
+            var pen = new Pen(UrbeTheme.Brush(UrbeTheme.Text2), Math.Max(double.Epsilon, stroke.Width * _zoom));
             for (int i = 1; i < stroke.Points.Length; i++)
                 ctx.DrawLine(pen, ToScreen(stroke.Points[i - 1].X, stroke.Points[i - 1].Y),
                     ToScreen(stroke.Points[i].X, stroke.Points[i].Y));
