@@ -12,6 +12,9 @@ test("Geodynamic plates have reproducible spherical centres, tangential rotation
   assert.deepEqual(a, b);
   assert.notDeepEqual(a, plateModel("DIFFERENT"));
   assert.equal(a.plates.length, 24);
+  assert.equal(a.cratons.length, 6);
+  assert.ok(a.cratons.every((c) => Number.isFinite(c.reach)));
+  assert.notDeepEqual(a.cratons, plateModel("OTHER").cratons);
   for (const plate of a.plates) {
     assert.ok(Math.abs(Math.hypot(...plate.center) - 1) < 1e-12);
     const cross = plate.center.reduce((s, v, i) => s + v * plate.angularVelocity[i], 0);
