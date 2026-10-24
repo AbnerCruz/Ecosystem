@@ -31,7 +31,7 @@ Em **Biosfera e eras**, configure espécies e alimentos, salve e introduza a esp
 
 ## Geografia e cartografia 0.6 — AF-022
 
-**Ao criar um mundo novo**, `spherical-tectonic-2` combina centros de placas em esfera, velocidades angulares, compressão em limites convergentes, riftes em zonas de extensão, flutuação da crosta e ruído de relevo. O nível do mar é escolhido por área na esfera. A distribuição de placas e o relevo são reprodutíveis pela seed; ainda é um modelo tectônico heurístico, **não** simulação geológica profunda validada ou dinâmica de milhões de anos. Projetos com `spherical-causal-1` conservam o algoritmo antigo.
+**Ao criar um mundo novo**, `spherical-tectonic-2` combina centros de placas em esfera, velocidades angulares, compressão em limites convergentes, riftes em zonas de extensão, flutuação da crosta e ruído de relevo. O nível do mar é escolhido por área na esfera. A distribuição de placas e o relevo são reprodutíveis pela seed; ainda é um modelo tectônico heurístico, **não** simulação geológica profunda validada ou dinâmica de milhões de anos. A geração anterior foi descontinuada: projetos de modelos antigos são recusados explicitamente, sem conversão ou exclusão automática do arquivo original.
 
 O clima novo usa transporte zonal métrico de umidade e precipitação orográfica simplificada, latitude, altitude, influência marítima e demanda térmica. Biomas incorporam a relação água/temperatura, com mosaicos climáticos locais que evitam faixas perfeitamente retangulares. Mesmo assim, não há circulação 3D da atmosfera, solos físicos ou dinâmica climática temporal validada.
 
