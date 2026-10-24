@@ -1028,6 +1028,12 @@ public sealed partial class AssistantPanel : Border
         if (kids.Count > desired.Count) kids.RemoveRange(desired.Count, kids.Count - desired.Count);
     }
 
+    /// <summary>Current run activity: preserve the existing lazy summary, with fully readable tool cards.</summary>
+    private Control ActivityTimeline(AiChatMessage request, IReadOnlyList<AiChatMessage> steps)
+    {
+        return PastSteps(steps);
+    }
+
     /// <summary>The steps of an earlier request in one folded line; the cards are built when it opens.</summary>
     private Control PastSteps(IReadOnlyList<AiChatMessage> steps)
     {
