@@ -45,6 +45,10 @@ public interface IAssistantApp
     Task CreateBinaryFileAsync(string path, byte[] bytes) => throw new NotSupportedException("Este app não grava imagens.");
     /// <summary>True when the vault has a file at <paramref name="path"/>, note or not.</summary>
     bool FileExists(string path) => false;
+    /// <summary>Small, read-only preview of a generated image stored in the current vault.</summary>
+    Task<byte[]?> ReadGeneratedImageAsync(string path) => Task.FromResult<byte[]?>(null);
+    /// <summary>Open the vault's native file viewer, not an external application.</summary>
+    Task OpenGeneratedImageAsync(string path) => Task.CompletedTask;
 }
 
 /// <summary>
