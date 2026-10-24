@@ -119,7 +119,9 @@ public sealed partial class AssistantPanel : Border
         Chip(_policyChip, 12);
         _policyChip.Margin = new Thickness(6, 0, 0, 0);
         _policyChip.Click += (_, _) => _ = PickPolicyAsync();
-        var bar = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(12, 0, 12, 6), Children = { _modelChip, _policyChip, _usage } };
+        // Wrap compact status chips instead of clipping model, permissions or usage on narrow phones.
+        var bar = new WrapPanel { Orientation = Orientation.Horizontal,
+            Margin = new Thickness(12, 0, 12, 8), Children = { _modelChip, _policyChip, _usage } };
 
         _scroll = new ScrollViewer { HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = _log };
 
@@ -889,7 +891,7 @@ public sealed partial class AssistantPanel : Border
                 last.Content.Any(b => b.Type == "text" && !string.IsNullOrWhiteSpace(b.Text)) &&
                 !last.Content.Any(b => b.Type == "tool_use") ? last : null;
             var activities = steps.Where(m => m != answer).ToList();
-            if (activities.Count > 0)
+            if (activities.Count > 0 || (i >= current && _running is not null))
             {
                 if (i >= current) desired.Add(ActivityTimeline(msgs[i], activities));
                 else
