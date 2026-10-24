@@ -59,6 +59,10 @@
 
 **Limitações deste incremento:** sem renderização JavaScript, sem parsing de PDF público pelo novo gateway; APIs com login/autenticação fora de escopo; validação Brave real depende de credencial disponível. Testes com transporte HTTP/DNS determinístico, CI Android/Windows/Core e validação no aparelho exigida (NN-017). ADR-0038 proposto; controles de rede e publicação dependem de integração governada.
 
+## Redesenho visual do Assistente — UC-63/UC-81 (24/10/2026, PR #732)
+
+O chat passa a mostrar uma atividade compacta por pedido, com estado real, progresso discreto, expansão por etapa e acesso integral a parâmetros e resultados. Aprovações, perguntas, respostas e imagens continuam visíveis fora das etapas recolhidas. Configurações em Modelos, Agentes, Contexto, Pesquisa e Execução; manter o controle de rede separado da PR #733, execução adaptativa da #726 e o uso offline. Testes headless/CI não substituem validação física Android (NN-017).
+
 ## Personalização do Assistente — extensão de UC-63/UC-81 (proprietário, 23/10/2026)
 
 **Novo escopo autorizado pelo proprietário:** configurar modelo e provedor **independentes para geração de imagens** no próprio painel do Assistente (o modelo da conversa não troca); permitir **modelo/provedor de texto por agente**, inclusive para os agentes prontos, herdando o modelo normal da conversa quando não houver configuração; criar e editar **blocos titulados de instruções por agente** na interface.
