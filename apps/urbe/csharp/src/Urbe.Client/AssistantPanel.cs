@@ -653,6 +653,9 @@ public sealed partial class AssistantPanel : Border
         RenderAll();
         using var knowledge = new KnowledgeIndex(documents);
         var agent = AssistantAgent.AgentById(conv.AgentId, _cfg.CustomAgents);
+        var agentName = AgentNames.CallName(agent, _cfg);
+        PlatformAssistantActivity.RequestNotificationPermission?.Invoke();
+        PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(AssistantActivityKind.Running, agentName, conv.Id));
         try
         {
             var r = await AssistantAgent.RunAsync(new AiAgentRun
@@ -689,6 +692,14 @@ public sealed partial class AssistantPanel : Border
             if (conv.Runs.Count > 20) conv.Runs.RemoveRange(0, conv.Runs.Count - 20);
             if (ReferenceEquals(conv, _conv)) { _views.Clear(); RenderAll(); }
             if (conv.Messages.Count > 0) _store.SaveConversation(conv);
+            var kind = run.Stopped switch
+            {
+                "needs_input" => AssistantActivityKind.QuestionNeeded,
+                "aborted" => AssistantActivityKind.Cancelled,
+                "error" => AssistantActivityKind.Failed,
+                _ => AssistantActivityKind.Completed
+            };
+            PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(kind, agentName, conv.Id));
         }
     }
 
@@ -703,6 +714,8 @@ public sealed partial class AssistantPanel : Border
     {
         var answer = new TaskCompletionSource<AiApproval>(TaskCreationOptions.RunContinuationsAsynchronously);
         _pending = (req, answer);
+        var chosen = AssistantAgent.AgentById(_conv.AgentId, _cfg.CustomAgents);
+        PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(AssistantActivityKind.ApprovalNeeded, AgentNames.CallName(chosen, _cfg), _conv.Id));
         // UC-80: a change to the note the request came from is shown in the note itself, to accept or refuse there
         if (_inNote is { } asked && req.Preview is { Before: { } before, After: { } after } preview && preview.Path == asked.Path &&
             LineChange.Of(before, after) is { } change &&
@@ -730,6 +743,11 @@ public sealed partial class AssistantPanel : Border
         if (_pending is not { } p) return;
         _pending = null;
         p.Answer.TrySetResult(answer);
+        if (_running is not null)
+        {
+            var chosen = AssistantAgent.AgentById(_conv.AgentId, _cfg.CustomAgents);
+            PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(AssistantActivityKind.Running, AgentNames.CallName(chosen, _cfg), _conv.Id));
+        }
         if (MessageOf(p.Request.Call.Id) is { } m) Schedule(m);
     }
 
