@@ -14,7 +14,7 @@
   "branch": "release/urbe-beta26-post-integrator-dispatch-20261024",
   "base_commit": "753e7f978306222c7869b0f214090a5759acc927",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/741",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
     "docs/governance/handoffs/HO-20261024-urbe-beta26-final-release.json"
