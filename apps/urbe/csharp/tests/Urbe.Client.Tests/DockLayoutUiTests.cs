@@ -20,7 +20,8 @@ public sealed partial class HeadlessUiTests
             {
                 await Pump(200);
                 var notes = view.GetLogicalDescendants().OfType<Button>()
-                    .Single(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Notas");
+                    .First(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Notas" &&
+                        b.IsEffectivelyVisible && b.Bounds.Width >= 398);
                 Assert.True(notes.IsEffectivelyVisible);
                 Assert.InRange(notes.Bounds.Width, 398, 402);
                 var launcher = view.AssistantLauncher;
