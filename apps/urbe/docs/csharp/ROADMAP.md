@@ -343,7 +343,7 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 ## UC-88 — Grafos autorais e exploração visual (direção do proprietário, 24/10/2026)
 
 - [~] **UC-88.1 — Primeira fatia em PR:** `*.grafo.json` (domínio local, identidade estável de nós/arestas, referências a arquivos, notas e pastas), destino **Grafos**, criação/edição em canvas Avalonia, escrita verificada e `![[grafo]]` navegável. Branch `feat/urbe-grafos-livres-20261024`, especificação [GRAPHS.md](GRAPHS.md), ADR-0040. **Não marcar como concluído** antes de CI, testes UI e DEVICE.
-- [ ] **UC-88.2 — Autoria avançada:** desenho livre, formas, grupos, seleção múltipla, arrastar diretamente do Explorer, undo/redo, resize, layouts, busca e otimizações para vaults grandes.
-- [ ] **UC-88.3 — Projeções automáticas:** pertencimento a pastas, escopo, vínculos por wikilink e backlinks, filtros, navegação mista. UC-71/72 continuam visões separadas.
-- [ ] **UC-88.4 — Grafos operacionais:** contratos de ferramentas com permissões, edição por agente com diff/aprovação, visualização de planejamento e memória contextual da UC-87, proveniência sem converter inferência em fato.
+- [~] **UC-88.2 — Autoria avançada:** caneta, borracha, forma elíptica, grupos, seleção múltipla, undo/redo e resize em PR; ainda faltam drag direto do Explorer, formas vetoriais completas, layouts, virtualização e DEVICE.
+- [~] **UC-88.3 — Projeções automáticas:** snapshot editável da hierarquia (arquivos, notas, pastas, escopo) e wikilinks resolvidos; ainda faltam projeção viva, filtros/layouts especializados e referências quebradas.
+- [~] **UC-88.4 — Grafos operacionais:** list_graphs e read_graph read-only, com paginação e proveniência; ainda faltam edição por agente com diff/aprovação/reversão, plano observável e memória contextual da UC-87.
 - **Gates obrigatórios:** `dotnet test`, `dotnet run tests/consistency/Check.cs`, Android físico (pinch, teclado, transclusão, salvamento e recuperação), review da alteração persistida, integrador governado. **Sem release automática.**
