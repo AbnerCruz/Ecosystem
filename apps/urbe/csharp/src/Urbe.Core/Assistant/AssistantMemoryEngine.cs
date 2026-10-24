@@ -122,6 +122,10 @@ public static class AssistantMemoryEngine
         if (scope == "agent" && string.IsNullOrWhiteSpace(agentId)) throw new ArgumentException("Agente obrigatório.", nameof(agentId));
         MigrateLegacy(cfg, timestamp);
         var normalized = Normalize(text);
+        // A model claiming to have learned something is not equivalent to verified evidence.
+        // Human-entered facts retain their specified confidence; agent observations are capped.
+        var effectiveConfidence = verified || origin is "user" or "legacy" ? Math.Clamp(confidence, 0, 100)
+            : Math.Min(Math.Clamp(confidence, 0, 100), origin == "run" ? 50 : 60);
         var effectiveVault = scope == "global" ? "" : vault;
         var effectiveAgent = scope == "agent" ? agentId : "";
         var existing = cfg.MemoryRecords.FirstOrDefault(m => m.State == "active" &&
@@ -130,7 +134,7 @@ public static class AssistantMemoryEngine
         if (existing is not null)
         {
             existing.UpdatedAt = timestamp ?? Now();
-            existing.Confidence = Math.Max(existing.Confidence, Math.Clamp(confidence, 0, 100));
+            existing.Confidence = Math.Max(existing.Confidence, effectiveConfidence);
             existing.Verified |= verified;
             foreach (var path in paths ?? [])
                 if (path.Length > 0 && !existing.RelatedPaths.Contains(path, StringComparer.Ordinal))
@@ -143,7 +147,7 @@ public static class AssistantMemoryEngine
             Id = Guid.NewGuid().ToString("N"), Text = text,
             Kind = kind, Scope = scope, Vault = effectiveVault, AgentId = effectiveAgent,
             Origin = origin, SourceReference = source.Length > 200 ? source[..200] : source,
-            Confidence = Math.Clamp(confidence, 0, 100), Verified = verified,
+            Confidence = effectiveConfidence, Verified = verified,
             CreatedAt = timestamp ?? Now(), UpdatedAt = timestamp ?? Now(),
             RelatedPaths = (paths ?? []).Where(p => !string.IsNullOrWhiteSpace(p)).Distinct(StringComparer.Ordinal).Take(16).ToList()
         };
