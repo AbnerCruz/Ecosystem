@@ -13,8 +13,8 @@
   "state": "review",
   "branch": "feat/urbe-assistant-ux-timeline-settings-beta25-20261024",
   "base_commit": "6af05b64a6225ef10ad530be56cdb650cd715c56",
-  "commit": "599b4e5bb6d073218205420043d879fbeeeeb571",
-  "pr": 732,
+  "commit": "16e6527410b82e96064779b896a6fe47330b151f",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/732",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
