@@ -62,16 +62,18 @@
   "blockers": [
     "CI não executado/conferido ainda.",
     "Gate crítico da mudança de política de rede e compatibilidade com governança pendentes.",
-    "Validação real Android pendente."
+    "Validação real Android pendente.",
+    "Decisão formal DEC-0057 pendente; mudança de política de rede não pode ser integrada automaticamente."
   ],
   "next_actions": [
     "Executar CI e resolver falhas reais.",
     "Revisar threat model de opt-in automático de busca pública e conformidade de uso do RSS.",
     "Autorizar e integrar com gate crítico, depois produzir release por fluxo oficial.",
-    "Validar 3 buscas públicas reais no Android com links, leitura e opção de desativar."
+    "Validar 3 buscas públicas reais no Android com links, leitura e opção de desativar.",
+    "Resolver decisão pendente DEC-0057 mediante avaliação de privacidade e segurança."
   ],
   "decisions_required": [
-    "Aprovação arquitetural da revisão proposta da ADR-0038 para disponibilizar pesquisa pública sem grants individuais e sem chave padrão."
+    "DEC-0057"
   ],
   "normative_sources": [
     "MANIFEST.md",
