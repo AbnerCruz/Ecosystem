@@ -498,6 +498,17 @@ public sealed partial class AssistantPanel
     }
 
     private static TextBlock Hint(string text) => Wrap(text, 12, UrbeTheme.Text3);
+    private async Task PriceInSettingsAsync(AiProviderConfig provider, string model, TextBlock target)
+    {
+        try
+        {
+            var quoted = await Providers.GetImageQuoteAsync(provider, model);
+            target.Text = quoted?.Rate ?? "Preço não informado pelo provedor; verifique antes de gerar.";
+            if (quoted is not null) ToolTip.SetTip(target, quoted.Explanation + "\\nFonte: " + quoted.SourceUrl);
+        }
+        catch { target.Text = "Preço indisponível nesta consulta. Verifique a tabela do provedor."; }
+    }
+
 
     /// <summary>showSettings(): providers (test, edit, remove, add), instructions, memory, own agents and the step limit.</summary>
     public void ShowSettings(string? addPreset = null)
@@ -542,10 +553,18 @@ public sealed partial class AssistantPanel
         var imageProvider = c.Providers.FirstOrDefault(p => p.Id == c.ImageProviderId);
         var imageChoice = imageProvider is null ? "Automático (provedor de imagens disponível)"
             : (imageProvider.Name ?? imageProvider.Id) + " · " + (c.ImageModel.Length > 0 ? c.ImageModel : AssistantProviders.ImageModel(imageProvider.Preset) ?? "Escolher modelo");
+        var imagePrice = Hint(imageProvider is null ? "O custo depende do provedor que for escolhido automaticamente." : "Consultando preço do modelo…");
         body.Children.Add(Section("Geração de imagens",
-            Hint("Independente do modelo de conversa. Selecione um provedor salvo e um modelo de imagem; use Automático para manter o comportamento anterior."),
+            Hint("Modelo visual independente do chat. Preços em US$, segundo a unidade de cobrança do provedor."),
             Label(imageChoice, 13, UrbeTheme.Text, FontWeight.SemiBold),
-            TextButton("Selecionar provedor e modelo de imagem", () => _ = PickConfiguredModelAsync(null))));
+            imagePrice,
+            TextButton("Ver modelos e preços", () => _ = PickConfiguredModelAsync(null))));
+        if (imageProvider is not null)
+        {
+            var id = c.ImageModel.Length > 0 ? c.ImageModel : AssistantProviders.ImageModel(imageProvider.Preset) ?? "";
+            if (id.Length == 0) imagePrice.Text = "Selecione o ID do modelo para consultar o preço.";
+            else _ = PriceInSettingsAsync(imageProvider, id, imagePrice);
+        }
 
         var instr = new TextBox { Text = c.Instructions, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 90, PlaceholderText = "Ex.: escreva em português do Brasil, frases curtas; use a pasta Diário para registros do dia." };
         instr.LostFocus += (_, _) => { c.Instructions = instr.Text ?? ""; SaveConfig(); };
@@ -769,7 +788,7 @@ public sealed partial class AssistantPanel
         var selected = providers.FirstOrDefault(p => p.Id == choice.ProviderId) ?? providers[0];
         var body = OpenView(image ? "Modelo de imagem" : "Modelo de " + AgentNames.CallName(agent!, _cfg), Back);
         body.Children.Add(Hint(image
-            ? "O modelo de imagem funciona em separado do chat. A lista é exclusiva de imagens; você também pode informar um ID compatível."
+            ? "O modelo de imagem não altera o chat. Preços em US$ com unidade de cobrança e fonte; valores variáveis não são estimados como zero."
             : "Este modelo será usado somente pelo agente escolhido. Sem seleção, ele herda o modelo do Assistente."));
         var auto = TextButton(image ? "Usar escolha automática" : "Herdar modelo do Assistente", () =>
         {
@@ -784,6 +803,27 @@ public sealed partial class AssistantPanel
         var list = new StackPanel { Spacing = 7 };
         IReadOnlyList<AiModelInfo> models = [];
         string? loadError = null;
+        // Quotes cached per picker session; concurrent requests for the same model are coalesced.
+        var priceLoads = new Dictionary<string, Task<AiImageQuote?>>(StringComparer.Ordinal);
+        using var priceLimit = new SemaphoreSlim(4);
+        var currentPaint = 0;
+        async Task<AiImageQuote?> Quote(AiProviderConfig provider, string id)
+        {
+            var published = AssistantImagePricing.Published(provider.Preset, id);
+            if (published is not null) return published;
+            var key = provider.Id + ":" + id;
+            if (!priceLoads.TryGetValue(key, out var pending))
+            {
+                async Task<AiImageQuote?> Fetch()
+                {
+                    await priceLimit.WaitAsync();
+                    try { return await Providers.GetImageQuoteAsync(provider, id); }
+                    finally { priceLimit.Release(); }
+                }
+                priceLoads[key] = pending = Fetch();
+            }
+            return await pending;
+        }
         void Choose(string id)
         {
             if (string.IsNullOrWhiteSpace(id)) return;
@@ -806,24 +846,53 @@ public sealed partial class AssistantPanel
             if (loadError is not null) list.Children.Add(Wrap(loadError, 12, "#c0504d"));
             var query = (search.Text ?? "").Trim();
             var filtered = models.Where(m => query.Length == 0 || (m.Id + " " + m.Name).Contains(query, StringComparison.OrdinalIgnoreCase))
-                .Take(150).ToList();
+                .Take(image ? 24 : 150).ToList();
+            var painting = ++currentPaint;
+            var providerSnapshot = selected;
+            if (image && filtered.Count == 24)
+                list.Children.Add(Hint("Exibindo 24 modelos. Use a busca para filtrar o catálogo completo."));
             if (filtered.Count == 0) list.Children.Add(Hint(image ? "Nenhum modelo de imagem encontrado. Informe o ID manualmente." : "Nenhum modelo encontrado."));
             foreach (var m in filtered)
             {
                 string id = m.Id;
                 var chosen = choice.ProviderId == selected.Id && choice.Model == id;
+                var priceLine = Label(image ? "Consultando preço…" : "", 12, UrbeTheme.Text2);
                 var button = new Button
                 {
                     HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left,
-                    Padding = new Thickness(12, 8), CornerRadius = new CornerRadius(12),
+                    MinHeight = 68, Padding = new Thickness(12, 10), CornerRadius = new CornerRadius(12),
                     Background = UrbeTheme.Brush(chosen ? UrbeTheme.Accent : UrbeTheme.Surface, chosen ? .14 : 1),
-                    BorderThickness = new Thickness(0),
-                    Content = new StackPanel { Spacing = 2, Children = { Label(m.Name, 14, UrbeTheme.Text, FontWeight.SemiBold), Wrap(id, 12, UrbeTheme.Text3) } }
+                    BorderBrush = UrbeTheme.Brush(chosen ? UrbeTheme.Accent : UrbeTheme.Line2),
+                    BorderThickness = new Thickness(1),
+                    Content = new StackPanel { Spacing = 3, Children = { Label(m.Name, 14, UrbeTheme.Text, FontWeight.SemiBold), Wrap(id, 11, UrbeTheme.Text3), priceLine } }
                 };
                 button.Click += (_, _) => Choose(id);
                 list.Children.Add(button);
+                if (image)
+                {
+                    _ = UpdatePrice(id, priceLine, painting, providerSnapshot);
+                }
             }
         }
+        async Task UpdatePrice(string id, TextBlock target, int painting, AiProviderConfig provider)
+        {
+            try
+            {
+                var quoted = await Quote(provider, id);
+                if (painting != currentPaint) return;
+                target.Text = quoted?.Rate ?? "Preço não informado · consulte o provedor";
+                target.Foreground = UrbeTheme.Brush(quoted is null ? UrbeTheme.Text3 : UrbeTheme.Accent);
+                if (quoted is not null) ToolTip.SetTip(target, quoted.Explanation + "\\nFonte: " + quoted.SourceUrl);
+                else ToolTip.SetTip(target, "O catálogo não fornece um preço verificável para este modelo. Não significa que seja gratuito.");
+            }
+            catch
+            {
+                if (painting != currentPaint) return;
+                target.Text = "Preço indisponível · consulte o provedor";
+                target.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
+            }
+        }
+
         async Task Load()
         {
             list.Children.Clear();
