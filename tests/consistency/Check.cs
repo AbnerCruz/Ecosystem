@@ -1140,6 +1140,23 @@ static class Checks
         if (!(Fn("guard_authorization").Contains("--integration-authorization") && Fn("guard_authorization").Contains("issues/${PR}/events")))
             c.R.Fail(id, $"{script}: guard_authorization precisa conferir o autor do evento da label (--integration-authorization)");
 
+        // GITHUB_TOKEN merges suppress on:push. The signed native beta needs a
+        // selective, trusted dispatch from the authorized, tested merge itself.
+        const string mobileRelease = ".github/workflows/urbe-csharp-mobile-release.yml";
+        if (File.Exists(c.P(mobileRelease)))
+        {
+            var mobile = File.ReadAllText(c.P(mobileRelease));
+            var native = Fn("dispatch_urbe_csharp_release");
+            if (!mobile.Contains("workflow_dispatch:") ||
+                !native.Contains("git diff --quiet \"$MAIN\" \"$COMBINED\"") ||
+                !native.Contains("URBE_CSHARP_RELEASE_PATHS") ||
+                !native.Contains("gh workflow run urbe-csharp-mobile-release.yml") ||
+                !sh.Contains("'apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj'") ||
+                !sh.Contains("'.github/workflows/urbe-csharp-mobile-release.yml'") ||
+                !land.Success || !land.Groups[1].Value.Contains("if ! dispatch_urbe_csharp_release"))
+                c.R.Fail(id, "Release Urbe nativo: exige diff seletivo csproj/workflow e dispatch confiável após merge aprovado (GITHUB_TOKEN não ativa on:push).");
+        }
+
         var called = Regex.Matches(text, @"uses:\s*\./\.github/workflows/([A-Za-z0-9_.-]+\.yml)").Select(m => m.Groups[1].Value).ToHashSet();
         var required = new List<(string Who, string File)> { ("ecosystem", "consistency.yml") };
         var wfDir = c.P(".github/workflows");
@@ -2948,6 +2965,9 @@ static class SelfTest
             r => Replace(r, ".github/integrator/integrate.sh", "git push -q origin \"${COMBINED}:refs/heads/${DEFAULT_BRANCH:-main}\"", "git push -q --force origin \"${COMBINED}:refs/heads/${DEFAULT_BRANCH:-main}\"")),
         new("integrador força a main (+refspec)", "CHK-INTEGRATION",
             r => Replace(r, ".github/integrator/integrate.sh", "git push -q origin \"${COMBINED}:refs/heads/${DEFAULT_BRANCH:-main}\"", "git push -q origin \"+${COMBINED}:refs/heads/${DEFAULT_BRANCH:-main}\"")),
+        new("Urbe nativo sem dispatch após merge de versão", "CHK-INTEGRATION",
+            r => Replace(r, ".github/integrator/integrate.sh",
+                "if ! dispatch_urbe_csharp_release; then", "if false; then")),
         new("texto do PR interpolado em script do integrador", "CHK-INTEGRATION",
             r => Replace(r, ".github/workflows/integrate.yml", "        run: bash .github/integrator/integrate.sh prepare\n", "        run: echo \"${{ github.event.pull_request.title }}\" && bash .github/integrator/integrate.sh prepare\n")),
         new("escopo de refatoração sem evidência antes/depois", "CHK-INTEGRATION",

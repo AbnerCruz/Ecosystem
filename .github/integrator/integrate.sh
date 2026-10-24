@@ -148,8 +148,30 @@ dispatch_hub_release() {
   esac
 }
 
-# P4-10: GITHUB_TOKEN pushes do not trigger Product publication. Only Lunet auto-releases;
-# Urbe release remains an explicitly approved tag, independent of integration (REQ-006/066).
+# GITHUB_TOKEN merges never trigger downstream on:push workflows.
+# The *native* Urbe 2.0 beta channel is versioned by its canonical Android csproj.
+# Once a critical release change was owner-authorized and tested, dispatch the exact
+# existing signed native release workflow; the legacy urbe-v* tag channel stays separate.
+URBE_CSHARP_RELEASE_PATHS=(
+  'apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj'
+  '.github/workflows/urbe-csharp-mobile-release.yml'
+)
+
+dispatch_urbe_csharp_release() {
+  local result=0
+  # Compare the immutable authorized base and the exact combined commit that was pushed.
+  # A change to notes, assistant code, or any other product never auto-publishes an APK.
+  git diff --quiet "$MAIN" "$COMBINED" -- "${URBE_CSHARP_RELEASE_PATHS[@]}" || result=$?
+  case "$result" in
+    0) return 0 ;;
+    1) gh workflow run urbe-csharp-mobile-release.yml --repo "$repo" --ref "${DEFAULT_BRANCH:-main}" ;;
+    *) echo "Não foi possível determinar se a versão do Urbe nativo foi modificada." >&2; return 1 ;;
+  esac
+}
+
+# P4-10: GITHUB_TOKEN pushes do not trigger Product publication. The legacy
+# urbe-v* release remains tag-gated (REQ-006/066). Lunet and native Urbe
+# use their own *approved* versioned release workflows.
 LUNET_RELEASE_PATHS=(
   'apps/lunet2d/**'
   'platform/text-inspection/**'
@@ -242,6 +264,12 @@ land() {
     publication_result=1
     echo "::error::Código integrado, mas dispatch de lunet2d-release falhou."
     echo "**Publicação do Lunet pendente:** execute lunet2d-release na main e confira a release." >> "$body"
+    comment "$PR" "$body"
+  fi
+  if ! dispatch_urbe_csharp_release; then
+    publication_result=1
+    echo "::error::Urbe nativo integrado, mas falhou o dispatch da release beta assinada."
+    echo "**Publicação nativa do Urbe pendente:** falhou o dispatch de urbe-csharp-mobile-release; execute o workflow oficial na main e verifique a tag antes de declarar release." >> "$body"
     comment "$PR" "$body"
   fi
   redispatch  # a main mudou: os outros PRs precisam ser reavaliados contra ela, mesmo se publicação falhar
