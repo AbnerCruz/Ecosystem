@@ -273,12 +273,8 @@ public sealed partial class AssistantPanel : Border
     /// <summary>Memory writes must be read back; storage errors must not masquerade as success.</summary>
     private void SaveMemoryConfig()
     {
-        SaveConfig();
-        var saved = _store.GetConfig();
-        if (saved.MemoryRecords.Count != _cfg.MemoryRecords.Count ||
-            !_cfg.MemoryRecords.All(m => saved.MemoryRecords.Any(x => x.Id == m.Id &&
-                x.State == m.State && x.Text == m.Text)))
-            throw new AiToolException("Não foi possível confirmar a gravação da memória no dispositivo.");
+        try { _store.SetConfigVerified(_cfg); }
+        catch (IOException e) { throw new AiToolException("A memória não pôde ser salva: " + e.Message); }
     }
 
     private string VaultKey => _app.VaultName.Length > 0 ? _app.VaultName : "Urbe";
