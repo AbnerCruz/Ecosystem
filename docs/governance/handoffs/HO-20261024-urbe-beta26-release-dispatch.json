@@ -1,0 +1,98 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-beta26-release-dispatch",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T14:36:40Z",
+  "agent": {
+    "id": "chatgpt-urbe-native-release-fix",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-27",
+  "component": "urbe",
+  "state": "review",
+  "branch": "fix/urbe-native-release-integrator-dispatch-20261024",
+  "base_commit": "35294387a9af2467a991b5b9cb5765136e1d899a",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/integrator/integrate.sh",
+    "tests/consistency/Check.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "docs/distribution/direct-releases.md",
+    "docs/governance/handoffs/HO-20261024-urbe-beta26-release-dispatch.json"
+  ],
+  "work_completed": [
+    "Confirmado que a versão beta.26 está integrada na main após PR #738 e ainda não existe como release pública.",
+    "Causa da ausência do APK: pushes efetuados pelo integrador com GITHUB_TOKEN não acionam on:push de outro workflow, embora a distribuição nativa canônica previsse publicação por mudança de versão.",
+    "Adicionado dispatch_urbe_csharp_release ao integrador confiável, após push exato autorizado, apenas para mudanças no Android.csproj canônico ou workflow de publicação; nenhum disparo por notas/demais Products.",
+    "Mantidos workflow de release oficial, testes, keystore beta fixo, certificado, checksums, versão 2000026, tag imutável e distribuição Windows.",
+    "Incluído CHK-INTEGRATION específico e self-test negativo de perda do dispatch, além da documentação de distribuição.",
+    "Arquivo canônico Urbe.Android.csproj registrado como mudança seletiva para que a integração desta PR acione a beta.26 via integrador."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "consistency + urbe-checks na PR de recuperação beta.26",
+      "result": "pending",
+      "evidence": "CI de pull request e estado combinado aguardando GitHub Actions."
+    },
+    {
+      "kind": "human",
+      "check": "Validar APK beta.26 e interface compacta de atividades no Android físico",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
+      "evidence": "Não afirmar validação física ou sucesso do release antes de confirmar assets e usuário instalar."
+    }
+  ],
+  "known_issues": [
+    "A publicação ainda depende da integração desta PR governada e da conclusão do workflow oficial.",
+    "A UI de pesquisa web requer chave Brave e grants por agente; não confundir com falha de versão.",
+    "A autenticação de release utiliza o workflow oficial existente; nenhuma tag/APK é produzida diretamente aqui."
+  ],
+  "blockers": [
+    "CI e integração control-plane crítica.",
+    "Workflow oficial precisa compilar, assinar e anexar Android/Windows; verificar release tag depois."
+  ],
+  "next_actions": [
+    "Executar os gates do repositório e corrigir falhas.",
+    "Integrar pela política ADR-0015 após autorização do proprietário, sem merge manual.",
+    "Confirmar workflow urbe-csharp-mobile-release.yml, release urbe-csharp-v2.0.0-beta.26, APK assinado e ZIP Windows.",
+    "Usuário testar no Android a timeline, configurações e pesquisa externa."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/distribution/direct-releases.md",
+    "docs/governance/integration-policy.json",
+    ".github/workflows/urbe-csharp-mobile-release.yml"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "PR, integrador, handoff e release deixam rastros distintos."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Control-plane permanece crítico e requer autorização com label real."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Android físico continua pendente, não substituído por CI."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "versioned-native-urbe-beta-dispatch",
+      "status": "product-specific",
+      "rationale": "Emite o único workflow de distribuição nativa do Urbe após alteração de versão oficialmente aprovada."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Altera controlador de integração, verificador confiável e gatilho de publicação oficial do Urbe."
+  }
+}
