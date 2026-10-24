@@ -1,5 +1,5 @@
 import { validateSpecies, validateEcosystem } from "./ecosystem.js";
-import { ALGORITHM, createWorld, definition } from "../core/world.js";
+import { ALGORITHM, LEGACY_ALGORITHM, createWorld, definition } from "../core/world.js";
 import { clamp, wrap } from "../geometry/sphere.js";
 export const MAX_BYTES = 24 * 1024 * 1024;
 function fail(message) {
@@ -151,7 +151,8 @@ export function validate(input) {
   )
     fail("dados ecológicos sem versão compatível; original preservado");
   const d = input.definition;
-  if (!d || d.algorithm !== ALGORITHM) fail("versão de algoritmo desconhecida");
+  if (!d || ![ALGORITHM, LEGACY_ALGORITHM].includes(d.algorithm))
+    fail("versão de algoritmo desconhecida");
   const w = d.grid?.width,
     h = d.grid?.height;
   if (!Number.isInteger(w) || w < 12 || w > 1440 || w % 2 || h !== w / 2)
@@ -177,6 +178,7 @@ export function validate(input) {
     },
     w,
   );
+  def.algorithm = d.algorithm;
   const out = createWorld(def, []);
   out.state = state(input.state, w * h);
   out.journal = journal(input.journal, w * h);
