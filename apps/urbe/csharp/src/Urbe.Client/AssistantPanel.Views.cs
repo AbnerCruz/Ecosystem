@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Urbe.Core;
 using Urbe.Core.Assistant;
@@ -95,6 +96,11 @@ public sealed partial class AssistantPanel
         head.Children.Add(lbl);
         var card = new StackPanel { Spacing = 6, Children = { head } };
         if (_progress.TryGetValue(b.Id, out var prog) && r is null) card.Children.Add(Label(prog, 12, UrbeTheme.Text3));
+        // Image output is shown in the conversation itself, not just as an expandable tool log.
+        // The file remains authoritative in the vault. Older beta.20 results are supported too.
+        if (b.Name == "generate_image" && r is { IsError: false } &&
+            AssistantImageTools.SavedImagePath(r.Content) is { } generatedPath)
+            card.Children.Add(GeneratedImagePreview(generatedPath));
         // only the latest plan shows open, as a checklist
         if (b.Name == "update_plan" && !b.Pending && b.Id == LatestPlanId() && b.Input?["steps"] is JsonArray steps) card.Children.Add(Plan(steps));
         if (b.Name == "ask_user" && r is { IsError: false } && _running is null &&
@@ -115,6 +121,66 @@ public sealed partial class AssistantPanel
         var border = Card(card, status == "waiting" ? UrbeTheme.Accent : null);
         border.Padding = new Thickness(10, 8);
         return border;
+    }
+
+    /// <summary>Load the saved vault image (not a temporary provider URL) as an inline, tappable result.</summary>
+    private Control GeneratedImagePreview(string path)
+    {
+        var frame = new StackPanel { Spacing = 8 };
+        var visual = new Border
+        {
+            MinHeight = 150, MaxHeight = 325, CornerRadius = new CornerRadius(12),
+            BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1),
+            Background = UrbeTheme.Brush(UrbeTheme.Surface2),
+            Child = Label("Carregando imagem do vault…", 12, UrbeTheme.Text3)
+        };
+        frame.Children.Add(visual);
+        var info = new StackPanel { Spacing = 2, Children =
+        {
+            Label("Imagem gerada", 13, UrbeTheme.Text, FontWeight.SemiBold),
+            Wrap(path, 11, UrbeTheme.Text3)
+        } };
+        var open = TextButton("Abrir", () =>
+        {
+            // Native file preview is on the main stage, underneath the assistant overlay.
+            Close();
+            _ = _app.OpenGeneratedImageAsync(path);
+        });
+        Avalonia.Automation.AutomationProperties.SetName(open, "Abrir imagem gerada " + path);
+        var actions = new DockPanel();
+        DockPanel.SetDock(open, Dock.Right);
+        actions.Children.Add(open);
+        actions.Children.Add(info);
+        frame.Children.Add(actions);
+
+        async Task Load()
+        {
+            try
+            {
+                var bytes = await _app.ReadGeneratedImageAsync(path);
+                if (bytes is null || bytes.Length == 0 ||
+                    AssistantProviders.ImageExtension(bytes) is null)
+                {
+                    visual.Child = Wrap("A imagem está no vault, mas a prévia não está disponível.", 12, UrbeTheme.Text3);
+                    return;
+                }
+                using var input = new MemoryStream(bytes);
+                var bitmap = Bitmap.DecodeToWidth(input, 580);
+                var picture = new Avalonia.Controls.Image
+                {
+                    Source = bitmap, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly,
+                    MaxHeight = 320, MaxWidth = 392, HorizontalAlignment = HorizontalAlignment.Center
+                };
+                picture.DetachedFromVisualTree += (_, _) => bitmap.Dispose();
+                visual.Child = picture;
+            }
+            catch (Exception)
+            {
+                visual.Child = Wrap("Não foi possível exibir a prévia. Use Abrir para ver a imagem no vault.", 12, UrbeTheme.Text3);
+            }
+        }
+        _ = Load();
+        return frame;
     }
 
     private Control Clarification(AiChatBlock call)
