@@ -2,7 +2,6 @@ import { seedEcosystem } from "../core/ecosystem.js";
 import { coord, vector, area, clamp } from "../geometry/sphere.js";
 import { noise } from "./random.js";
 import { plateModel, plateElevation } from "./geodynamics.js";
-import { ALGORITHM } from "../core/world.js";
 import { createWorld } from "../core/world.js";
 import { climate, biomes } from "../solvers/climate.js";
 import { radiation } from "../solvers/radiation.js";
@@ -13,14 +12,14 @@ export function derive(world, progress = () => {}) {
   progress("Insolação sazonal", 0.45);
   const solar = radiation(grid, planet);
   progress("Clima e umidade", 0.55);
-  const c = climate(e, grid, planet, world.definition.algorithm);
+  const c = climate(e, grid, planet);
   progress("Drenagem e bacias", 0.8);
   const h = hydrology(e, c.rain, grid, planet);
   return {
     ...c,
     ...h,
     ...solar,
-    biome: biomes(e, c.temperature, c.rain, world.definition.algorithm),
+    biome: biomes(e, c.temperature, c.rain),
     source: "state.elevation",
     algorithm: world.definition.algorithm,
   };
@@ -30,13 +29,13 @@ export function generate(def, overrides = {}, progress = () => {}) {
     n = grid.width * grid.height,
     f = noise(def.seed),
     raw = new Float64Array(n),
-    plates = def.algorithm === ALGORITHM ? plateModel(def.seed) : null;
+    plates = plateModel(def.seed);
   progress("Superfície esférica", 0.1);
   for (let i = 0; i < n; i++) {
     const p = coord(i, grid);
     const v = vector(p.lat, p.lon);
     const folded = f(v);
-    raw[i] = plates ? plateElevation(plates, v, folded) : folded;
+    raw[i] = plateElevation(plates, v, folded);
   }
   const sorted = Array.from(raw, (value, i) => ({
     value,
@@ -53,7 +52,7 @@ export function generate(def, overrides = {}, progress = () => {}) {
   }
   const elevation = Array.from(
     raw,
-    (v, i) => overrides[i] ?? clamp((v - sea) * (plates ? 1 : 1800), -12000, 12000),
+    (v, i) => overrides[i] ?? clamp(v - sea, -12000, 12000),
   );
   const world = createWorld(def, elevation);
   world.state.overrides = { ...overrides };
