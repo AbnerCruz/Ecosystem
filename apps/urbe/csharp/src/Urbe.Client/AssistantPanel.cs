@@ -927,12 +927,21 @@ public sealed partial class AssistantPanel : Border
     {
         int tools = steps.Sum(m => m.Content.Count(b => b.Type == "tool_use"));
         var header = Row(UrbeTheme.Icon(UrbeTheme.Icons.Layers, 14, UrbeTheme.Text3), Label(tools == 0 ? "Raciocínio" : tools == 1 ? "1 passo" : tools + " passos", 12, UrbeTheme.Text3));
-        return Lazy(header, () =>
+        var history = new StackPanel { Spacing = 8 };
+        // A finished image remains visible in the chat even after further turns;
+        // the complete tool transcript can still be expanded independently.
+        var paths = steps.SelectMany(m => m.Content).Where(b => b.Type == "tool_use" && b.Name == "generate_image")
+            .Select(b => _results.TryGetValue(b.Id, out var result) && !result.IsError
+                ? AssistantImageTools.SavedImagePath(result.Content) : null)
+            .OfType<string>().Distinct(StringComparer.Ordinal).ToList();
+        foreach (var path in paths) history.Children.Add(GeneratedImagePreview(path));
+        history.Children.Add(Lazy(header, () =>
         {
             var list = new StackPanel { Spacing = 8 };
             foreach (var m in steps) list.Children.Add(MessageView(m));
             return list;
-        });
+        }));
+        return history;
     }
 
     /// <summary>An expander whose content is built the first time it opens: folded, it costs one line.</summary>
