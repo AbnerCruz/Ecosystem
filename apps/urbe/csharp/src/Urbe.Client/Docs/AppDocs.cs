@@ -259,11 +259,13 @@ public static partial class AppDocs
 
         O texto escrito pelo Assistente ganha no fim uma marca pequena com o nome do modelo, como `{ia:"modelo"}`, que aparece em verde no editor.
 
-        **Enviar arquivos ao chat:** acima da caixa de mensagem, toque em **+ Nota do vault** para incluir uma nota salva sem duplicá-la, ou **+ Arquivo do dispositivo** para selecionar arquivos externos. Texto UTF-8 entra como contexto; imagens PNG/JPEG/WebP e PDFs vão como anexos multimodais ao modelo da conversa. São até quatro anexos, com limites de tamanho por formato; análise de imagens e PDFs exige um modelo e uma API que aceitem esses arquivos. O Urbe não copia os anexos para o vault. Não envie arquivos confidenciais sem querer enviá-los ao provedor da conversa.
+        **Enviar arquivos ao chat:** toque no único botão **+** ao lado da caixa de mensagem e escolha **Arquivo do dispositivo** ou **Nota do vault**. A busca de notas percorre o vault inteiro, sem limite artificial das primeiras 300 notas. Antes do envio, os anexos aparecem na bandeja compacta de contexto; cada cartão pode ser removido, e **Limpar** remove todos. Texto UTF-8 entra como contexto; imagens PNG/JPEG/WebP e PDFs vão como anexos multimodais. Até quatro anexos por mensagem, com limites por tipo. O Urbe não copia os anexos para o vault. Imagens e PDFs exigem um modelo multimodal compatível; só selecione arquivos que deseja enviar ao provedor de IA.
 
         **Perguntas e planejamento:** em tarefas complexas, o agente registra as etapas pelo plano e, se uma decisão importante estiver faltando, abre um cartão com uma pergunta por vez. Responda no cartão para continuar. A contagem de dúvidas resolvidas é uma estimativa declarada pelo agente, não uma porcentagem medida de compreensão.
 
         No chat, peça **"gere uma imagem"** sem trocar o modelo da conversa. Em **Configurações do Assistente → Geração de imagens**, selecione o provedor salvo e o modelo de imagem: OpenRouter lista modelos pela API específica de imagens; OpenAI e Gemini também podem ser escolhidos, e é possível informar o ID manual de um modelo compatível. **Automático** mantém a escolha anterior. O Assistente pede aprovação, guarda o arquivo na pasta **Imagens** sem sobrescrever arquivos e, se você quiser, coloca `![[Imagens/…]]` na nota. Sem uma chave válida, ele informa o que falta; não substitui a imagem por uma página.
+
+        **Preços de imagens:** a lista de modelos mostra valores em dólares **por imagem, por megapixel ou por 1 milhão de tokens**, com fonte consultável. Para OpenRouter, a consulta utiliza o endpoint de preços do modelo escolhido; para modelos específicos OpenAI e Gemini, são exibidas referências públicas com data de verificação. Preço ausente aparece como **não informado**, nunca como gratuito. Os valores são referências ou mínimos, não previsão exata de cobrança: entrada, qualidade, resolução e rota podem alterar a fatura.
 
         ## Ajustar
 
