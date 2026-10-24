@@ -9,12 +9,12 @@ public static class AssistantQuestionTools
     public static AiTool Ask { get; } = new()
     {
         Name = "ask_user", Access = "ui",
-        Description = "Pausa a execução e mostra UMA pergunta relevante por vez no chat, com progresso de dúvidas resolvidas. Use somente quando uma informação material faltar. Após a resposta, reavalie quais dúvidas continuam relevantes; uma resposta pode resolver várias, e novas dúvidas podem surgir. Nunca repita perguntas já respondidas. Envie apenas uma chamada ask_user por resposta.",
+        Description = "Investigação de requisitos: faça UMA pergunta concreta e decisiva por vez sempre que uma resposta alterar objetivos, público, escopo, restrições, alternativas, prioridades, aceitação ou riscos. Avalie contexto já dado antes de perguntar, busque no vault o que puder, e faça perguntas na profundidade que a tarefa realmente exige, sem mínimos nem máximos predeterminados. Após a resposta revise dúvidas pendentes e plano, retire as resolvidas e inclua novas descobertas. Não repita perguntas respondidas nem incomode por decisões irrelevantes. Envie apenas uma chamada ask_user por resposta.",
         Parameters = (JsonObject)JsonNode.Parse("""
         {"type":"object","properties":{
           "question":{"type":"string","description":"Pergunta específica, uma por vez"},
-          "resolved":{"type":"integer","minimum":0,"maximum":100},
-          "total":{"type":"integer","minimum":1,"maximum":100},
+          "resolved":{"type":"integer","minimum":0},
+          "total":{"type":"integer","minimum":1},
           "reason":{"type":"string","description":"Por que a resposta altera o plano"}
         },"required":["question","resolved","total"],"additionalProperties":false}
         """)!,
@@ -23,8 +23,8 @@ public static class AssistantQuestionTools
         {
             var question = ((string?)i["question"] ?? "").Trim();
             if (question.Length == 0 || question.Length > 700) throw new AiToolException("Faça uma pergunta curta e específica.");
-            int resolved = Math.Clamp((int)LegacyCustomize.JsToNumber(i["resolved"]), 0, 100);
-            int total = Math.Clamp((int)LegacyCustomize.JsToNumber(i["total"]), 1, 100);
+            int resolved = Math.Max(0, (int)LegacyCustomize.JsToNumber(i["resolved"]));
+            int total = Math.Max(1, (int)LegacyCustomize.JsToNumber(i["total"]));
             if (resolved > total) resolved = total;
             return Task.FromResult(new AiToolOutput("Pergunta exibida ao usuário. " + resolved + "/" + total +
                 " dúvidas resolvidas. Aguarde a resposta antes de continuar a execução."));

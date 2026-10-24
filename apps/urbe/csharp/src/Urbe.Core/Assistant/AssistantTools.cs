@@ -16,7 +16,7 @@ public sealed record AiChange(string Id, AiNoteSnap? Before, AiNoteSnap? After, 
 public sealed record AiPartial(string Path, int Next, int Total);
 
 /// <summary>A step of the agent's plan.</summary>
-public sealed record AiPlanStep(string Step, string Status);
+public sealed record AiPlanStep(string Step, string Status, string? Details = null, string? Acceptance = null);
 
 /// <summary>What a tool returns: the text for the model and what it changed or read.</summary>
 public sealed record AiToolOutput(string Content, IReadOnlyList<AiChange>? Changes = null, IReadOnlyList<(string Path, AiPartial? Partial)>? Reads = null);

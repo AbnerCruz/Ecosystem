@@ -199,6 +199,8 @@ public sealed class AiAgentRun
     /// <summary>How the Urbe wants things made (<see cref="UrbeGuidance"/>); null leaves the prompt as the 1.8.4's.</summary>
     public string? Guidance { get; init; }
     public int? MaxSteps { get; init; }
+    /// <summary>Urbe-only quality audit after saved changes. Legacy/oracle callers keep original turn semantics.</summary>
+    public bool ReviewWrittenArtifacts { get; init; }
     public int? MaxTokens { get; init; }
     public double? Temperature { get; init; }
     public bool IsSubagent { get; init; }
@@ -235,7 +237,14 @@ public static class AssistantAgent
     public const string UrbeGuidance =
         "- Quando o pedido for uma apostila, um livro, um caderno, um e-book, um manual ou outro material longo para ler ou imprimir, faça uma página no formato livro, sem precisar que o usuário peça: chame page_schema e use write_page com o modelo book (ou book-folder, para transformar uma pasta de notas em livro), em vez de escrever uma nota longa. Use os blocos note/notes para puxar o conteúdo das notas e abra a página com open_note no fim.\n" +
         "- Para gerar, desenhar ou ilustrar uma IMAGEM, use generate_image, não write_page. O modelo do chat não muda: a ferramenta usa um provedor visual já configurado. Sem credencial disponível ou diante de falha, explique o problema e nunca diga que a imagem foi criada.\\n" +
-        "- Antes de executar trabalho amplo, identifique lacunas e riscos. Se faltar algo que mude materialmente o resultado, use ask_user para UMA pergunta por vez e pause; não suponha. Após cada resposta reavalie as dúvidas, elimine as resolvidas (inclusive múltiplas pela mesma resposta), e acrescente só dúvidas realmente novas. Quando houver clareza suficiente, resuma entendimento e plano e execute, sem perguntas repetidas.";
+        "- Descoberta antes da execução: para pedidos significativos, construa entendimento explícito sobre problema, objetivo real, público, contexto, restrições, insumos, prioridades, decisões irreversíveis, padrões de qualidade e critérios de aceitação. Inspecione primeiro o que o vault permite descobrir, inclusive conteúdos e referências relevantes. Não invente respostas que pertencem ao usuário.\\n" +
+        "- Faça perguntas com ask_user UMA POR VEZ, cada uma com razão específica e impacto material na solução. Explore alternativas e trade-offs quando necessários; aproveite cada resposta para eliminar outras dúvidas, descobrir dependências e reformular hipóteses. Não fixe número de perguntas: projetos complexos exigem investigação profunda, tarefas claras e simples podem seguir sem perguntas. Não volte a perguntar o que já foi respondido.\\n" +
+        "- O planejamento nasce da investigação e a investigação melhora com o planejamento: trace entregáveis, decisões, dependências, riscos, verificações e critérios de pronto. Registre com update_plan etapas específicas, mensuráveis e suficientes; detalhe fases e subtrabalhos conforme necessário, sem teto artificial nem enchimento burocrático. Atualize o plano com evidências reais a cada marco e mude a estrutura quando surgirem descobertas.\\n" +
+        "- Antes de trabalho dispendioso ou irreversível, confirme decisões não dedutíveis e peça as aprovações da ferramenta. Não faça um interrogatório por curiosidades: agrupe dúvidas relacionadas no raciocínio, faça só a próxima pergunta que altera a melhor ação, e execute prontamente quando houver entendimento suficiente.\\n" +
+        "- Produção de artefatos: não preencha um documento com campos genéricos por falta de conhecimento. Primeiro pesquise no vault e nos links pertinentes, identifique informações confirmadas, lacunas e possibilidades criativas. Escolha a estrutura e o formato apropriados ao uso final, escreva prosa específica e interessante e trabalhe seção por seção; apresente alternativas para decisões criativas importantes. Não invente fatos como se fossem estabelecidos: diferencie cânone, hipótese, proposta e campo pendente. A qualidade do resultado importa mais que a rapidez da primeira versão.\\n" +
+        "- Decida como produzir cada tipo de artefato com base na finalidade e no contexto, sem aplicar formulários, modelos ou seções predefinidos a pedidos diferentes. Antes de escrever, descubra a função do material, o público, a estrutura mais útil e a profundidade necessária; compare alternativas relevantes, desenvolva conteúdo substantivo e específico e só use campos em branco quando o usuário pedir ou quando for impossível avançar sem aquela informação. Verifique documentos relacionados antes de criar, modificar ou vincular conteúdo.\\n" +
+        "- Ideias paralelas do usuário são material valioso. Se a conversa revelar uma ideia fortemente relacionada à tarefa, investigue sua conexão, procure uma nota existente e incorpore ou crie uma nota própria quando isso realmente melhorar a organização. Estabeleça links [[...]] bidirecionais quando apropriado e preserve autoria, contexto e decisões; não ignore informação pertinente nem crie dezenas de notas inúteis. Se a ideia exigir uma escolha substantiva ou aumentar muito o escopo, pergunte antes.\\n" +
+        "- Garantia de qualidade: após escrever ou alterar artefatos, reabra o que foi gravado, confronte com requisitos, consistência entre notas, completude, clareza e acabamento; refine problemas concretos antes de entregar. Nunca anuncie como pronto um documento que ainda é apenas um esqueleto sem dizer exatamente o que falta.";
 
     public static AiAgentDef AgentById(string? id, IEnumerable<AiAgentDef>? custom = null) =>
         Agents.Concat(custom ?? []).FirstOrDefault(a => a.Id == id) ?? Agents[0];
@@ -525,14 +534,16 @@ public static class AssistantAgent
         foreach (var t in tools) byName[t.Name] = t;
         var system = SystemPrompt(agent, policy, o.VaultName, o.Host.Documents.List().Count, o.Host.EditorContext().Path, o.Instructions, o.Memory, o.Now ?? DateTime.Now, o.Naming, o.Guidance);
         int budget = (int)Math.Max(20000, Math.Min(WorkingChars, Math.Floor(contextTokens * 3.2 * 0.7)));
-        int maxSteps = o.MaxSteps is null or 0 ? 30 : o.MaxSteps.Value;
-        bool runAllow = false, nudged = false, partialNudged = false;
+        // Optional ceiling for test harnesses and legacy callers; no cap in normal sessions.
+        // Explicit cancel, repeated tool failures, and provider errors remain the safeguards.
+        int? maxSteps = o.MaxSteps is > 0 ? o.MaxSteps : null;
+        bool runAllow = false, nudged = false, partialNudged = false, qualityReviewed = false;
         var failed = new Dictionary<string, string>();
         int repeats = 0;
         var partial = new List<(string Path, AiPartial Partial)>();
         var gate = new object();
 
-        for (int step = 0; step < maxSteps; step++)
+        for (int step = 0; maxSteps is null || step < maxSteps.Value; step++)
         {
             if (cancel.IsCancellationRequested) { result.Stopped = "aborted"; break; }
             result.Steps++;
@@ -619,6 +630,29 @@ public static class AssistantAgent
                     emit(new AiAgentEvent("message", nudge));
                     continue;
                 }
+                // A written artifact is not finished just because the model stopped calling tools.
+                // Ask it once to reopen its actual saved files and audit substance, consistency,
+                // related-note updates and unanswered requirements before finalizing the work.
+                if (o.ReviewWrittenArtifacts && result.Changes.Count > 0 && !qualityReviewed && !cancel.IsCancellationRequested)
+                {
+                    qualityReviewed = true;
+                    live.Meta ??= new AiChatMeta();
+                    live.Meta.Draft = true;
+                    emit(new AiAgentEvent("final", live, Usage: result.Usage));
+                    var files = result.Changes.Select(change => (change.After ?? change.Before)?.Path)
+                        .Where(path => !string.IsNullOrWhiteSpace(path))
+                        .Distinct(StringComparer.Ordinal)
+                        .ToList();
+                    messages.Add(new AiChatMessage
+                    {
+                        Id = uid("m"), Role = "user", Meta = new AiChatMeta { ToolResults = true },
+                        Content = [AiChatBlock.TextBlock("[Revisão obrigatória do trabalho] Você alterou arquivos reais: " +
+                            string.Join(", ", files) +
+                            ". Antes de declarar conclusão, use as ferramentas para reler os arquivos salvos, comparar com o pedido e rever estrutura, profundidade, consistência, informação relacionada, notas conectadas e eventuais trechos genéricos. Corrija problemas detectados quando autorizado. Não invente fatos que o usuário não estabeleceu. Depois responda com o resultado verificado e pendências reais.")]
+                    });
+                    emit(new AiAgentEvent("message", messages[^1]));
+                    continue;
+                }
                 break;
             }
 
@@ -649,7 +683,7 @@ public static class AssistantAgent
             }
             if (cancel.IsCancellationRequested) { result.Stopped = "aborted"; break; }
             if (repeats >= 3) { result.Stopped = "loop"; break; }
-            if (step == maxSteps - 1) result.Stopped = "max_steps";
+            if (maxSteps is { } limit && step == limit - 1) result.Stopped = "max_steps";
 
             void Finish(AiChatBlock call, Out output)
             {
@@ -748,7 +782,7 @@ public static class AssistantAgent
             int steps = 0;
             var r = await RunAsync(new AiAgentRun
             {
-                Agent = AgentById("pesquisador"), Policy = "readonly", Messages = sub, IsSubagent = true, MaxSteps = 12, Approve = null,
+                Agent = AgentById("pesquisador"), Policy = "readonly", Messages = sub, IsSubagent = true, Approve = null,
                 Host = o.Host, Provider = o.Provider, Model = o.Model, Stream = o.Stream, Cancel = cancel, Tools = o.Tools, VaultName = o.VaultName,
                 ContextTokens = o.ContextTokens, Instructions = o.Instructions, Memory = o.Memory, MaxTokens = o.MaxTokens, Temperature = o.Temperature, Now = o.Now, Uid = o.Uid,
                 OnUpdate = e =>

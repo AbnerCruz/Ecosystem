@@ -223,12 +223,17 @@ public sealed partial class AssistantPanel
 
     private static Control Plan(JsonArray steps)
     {
-        var list = new StackPanel { Spacing = 3, Margin = new Thickness(2, 2, 0, 2) };
+        var list = new StackPanel { Spacing = 6, Margin = new Thickness(2, 2, 0, 2) };
         foreach (var x in steps)
         {
             var s = (string?)x?["status"] ?? "pending";
             var mark = s switch { "done" => "✓", "in_progress" => "◐", _ => "○" };
-            list.Children.Add(Row(Label(mark, 13, s == "done" ? UrbeTheme.Accent : UrbeTheme.Text3), Wrap((string?)x?["step"] ?? "", 13, s == "done" ? UrbeTheme.Text3 : UrbeTheme.Text)));
+            var description = new StackPanel { Spacing = 2 };
+            description.Children.Add(Wrap((string?)x?["step"] ?? "", 13, s == "done" ? UrbeTheme.Text3 : UrbeTheme.Text));
+            if ((string?)x?["details"] is { Length: > 0 } details) description.Children.Add(Wrap(details, 12, UrbeTheme.Text2));
+            if ((string?)x?["acceptance"] is { Length: > 0 } acceptance)
+                description.Children.Add(Wrap("Concluído quando: " + acceptance, 11, UrbeTheme.Text3));
+            list.Children.Add(Row(Label(mark, 13, s == "done" ? UrbeTheme.Accent : UrbeTheme.Text3), description));
         }
         return list;
     }
@@ -370,7 +375,7 @@ public sealed partial class AssistantPanel
         }
         if (r.Error is { Length: > 0 }) tail.Children.Add(Note(r.Error, "Tentar de novo", () => CurrentRun = StartAsync(), error: true));
         else if (r.Stopped == "aborted") tail.Children.Add(Note("Interrompido.", "Continuar", () => Send("Continue de onde parou.")));
-        else if (r.Stopped == "max_steps") tail.Children.Add(Note("Parei no limite de " + _cfg.MaxSteps + " passos.", "Continuar", () => Send("Continue de onde parou.")));
+        else if (r.Stopped == "max_steps") tail.Children.Add(Note("Este trabalho foi interrompido por um limite de execução legado.", "Continuar", () => Send("Continue de onde parou.")));
         else if (r.Stopped == "loop") tail.Children.Add(Note("Parei: o agente repetia uma ação que falhava.", "Continuar", () => Send("Continue de onde parou.")));
         else if (r.Stopped == "max_tokens") tail.Children.Add(Note("A resposta foi cortada pelo limite do modelo.", "Continuar", () => Send("Continue de onde parou.")));
         if (r.Changes.Count > 0)
@@ -697,14 +702,8 @@ public sealed partial class AssistantPanel
         }
         body.Children.Add(Section("Agentes personalizados", custom, TextButton("+ Novo agente", () => EditAgent(null))));
 
-        var steps = new TextBox { Text = c.MaxSteps.ToString(CultureInfo.InvariantCulture), Width = 100, HorizontalAlignment = HorizontalAlignment.Left };
-        steps.LostFocus += (_, _) =>
-        {
-            c.MaxSteps = int.TryParse(steps.Text, out var n) && n > 0 ? Math.Clamp(n, 3, 100) : 30;
-            steps.Text = c.MaxSteps.ToString(CultureInfo.InvariantCulture);
-            SaveConfig();
-        };
-        body.Children.Add(Section("Limite de passos por resposta", steps, Hint("Cada leitura, busca ou edição é um passo.")));
+        body.Children.Add(Section("Profundidade da investigação",
+            Hint("O agente define quantas perguntas e etapas são necessárias a partir do objetivo, das respostas e das evidências. Você continua controlando aprovações e pode interromper a execução a qualquer momento.")));
         if (addPreset is not null) EditProvider(null, addPreset);
     }
 
