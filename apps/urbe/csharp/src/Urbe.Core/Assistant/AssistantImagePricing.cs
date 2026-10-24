@@ -12,7 +12,7 @@ public static class AssistantImagePricing
 {
     private static string Usd(double price) => "US$ " + price.ToString(price < .1 ? "0.####" : "0.###", CultureInfo.GetCultureInfo("pt-BR"));
     private const string GooglePrice = "https://ai.google.dev/gemini-api/docs/pricing";
-    private const string OpenAiPrice = "https://openai.com/index/image-generation-api/";
+    private const string OpenAiPrice = "https://developers.openai.com/api/docs/pricing";
 
     /// <summary>Official published reference prices, only where the chosen model and requested output match.</summary>
     public static AiImageQuote? Published(string preset, string model) => preset switch
@@ -25,8 +25,10 @@ public static class AssistantImagePricing
             new(Usd(.067) + "/imagem · 1K", "Referência Google (out/2026). Tokens de entrada e outras modalidades são cobrados à parte.", GooglePrice),
         "gemini" when model == "gemini-3-pro-image" =>
             new(Usd(.134) + "/imagem · 1K/2K", "Referência Google (out/2026). Tokens de entrada e outras modalidades são cobrados à parte.", GooglePrice),
-        "openai" when model == "gpt-image-1" =>
-            new("≈ US$ 0,02–0,19/imagem", "Referência OpenAI: 1K quadrada; varia por qualidade (baixa/média/alta). Texto de entrada adicional.", OpenAiPrice),
+        "openai" when model is "gpt-image-2.5-sunburst" or "gpt-image-2.5-flare" =>
+            new("US$ 30/1M tokens de imagem gerada",
+                "Tabela oficial OpenAI (out/2026): saída US$ 30/1M tokens; entrada de imagem US$ 8/1M e entrada de texto US$ 5/1M. Custo por imagem depende do tamanho, qualidade e tokens medidos.",
+                "https://developers.openai.com/api/docs/pricing"),
         _ => null
     };
 
