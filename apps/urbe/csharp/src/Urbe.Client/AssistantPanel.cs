@@ -450,7 +450,7 @@ public sealed partial class AssistantPanel : Border
     private void RefreshAttachments()
     {
         _attachmentsRow.Children.Clear();
-        var actions = new WrapPanel { Spacing = 6 };
+        var actions = new WrapPanel { ItemSpacing = 6, LineSpacing = 4 };
         actions.Children.Add(TextButton("+ Arquivo do dispositivo", () => _ = AttachDeviceFileAsync()));
         actions.Children.Add(TextButton("+ Nota do vault", () => _ = AttachVaultNoteAsync()));
         _attachmentsRow.Children.Add(actions);
