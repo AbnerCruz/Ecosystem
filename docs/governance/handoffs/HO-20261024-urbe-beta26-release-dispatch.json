@@ -14,7 +14,7 @@
   "branch": "fix/urbe-native-release-integrator-dispatch-20261024",
   "base_commit": "35294387a9af2467a991b5b9cb5765136e1d899a",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/739",
   "files_changed": [
     ".github/integrator/integrate.sh",
     "tests/consistency/Check.cs",
