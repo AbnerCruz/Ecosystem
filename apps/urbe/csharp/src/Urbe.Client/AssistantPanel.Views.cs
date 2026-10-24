@@ -819,8 +819,18 @@ public sealed partial class AssistantPanel
 
     private async Task EditMemoryAsync(string id)
     {
+        string? previous = null;
+        if (id.StartsWith("legacy:", StringComparison.Ordinal))
+        {
+            var parts = id.Split(':', 3);
+            if (parts.Length == 3 && int.TryParse(parts[2], out var index) &&
+                _cfg.Memory.TryGetValue(parts[1], out var values) && index >= 0 && index < values.Count)
+                previous = values[index];
+        }
         AssistantMemoryEngine.MigrateLegacy(_cfg);
-        var m = _cfg.MemoryRecords.FirstOrDefault(e => e.Id == id);
+        var m = previous is not null
+            ? _cfg.MemoryRecords.FirstOrDefault(e => e.Origin == "legacy" && e.Text == previous)
+            : _cfg.MemoryRecords.FirstOrDefault(e => e.Id == id);
         if (m is null) { ShowMemoryManager(); return; }
         var changed = await _app.Dialogs.PromptAsync(new PromptOptions("Editar lembrança", "Texto",
             Value: m.Text, Validate: s => s.Length > AssistantMemoryEngine.MaxText ? "Texto muito longo." : null));
@@ -845,16 +855,14 @@ public sealed partial class AssistantPanel
                 "Esquecer", danger: true)) return;
         try
         {
-            AssistantMemoryEngine.MigrateLegacy(_cfg);
-            // Legacy ids point to the old config; migration generates fresh IDs, so resolve by prior text.
             if (id.StartsWith("legacy:", StringComparison.Ordinal))
             {
                 var parts = id.Split(':', 3);
                 if (parts.Length == 3 && int.TryParse(parts[2], out var at) &&
                     _cfg.Memory.TryGetValue(parts[1], out var values) && at >= 0 && at < values.Count)
                     values.RemoveAt(at);
-                else
-                    _app.Notify("A memória antiga foi migrada; pesquise a lembrança e tente novamente.");
+                else throw new InvalidOperationException("Lembrança antiga não localizada.");
+                AssistantMemoryEngine.MigrateLegacy(_cfg);
             }
             else AssistantMemoryEngine.Forget(_cfg, id);
             SaveMemoryConfig();
