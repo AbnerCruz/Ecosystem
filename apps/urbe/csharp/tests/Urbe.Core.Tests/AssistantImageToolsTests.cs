@@ -38,7 +38,7 @@ public sealed class AssistantImageToolsTests
         var (url, body, auth) = Assert.Single(http.Seen);
         Assert.Equal("https://api.openai.com/v1/images/generations", url);
         Assert.Equal("Bearer sk-test", auth);
-        Assert.Equal("gpt-image-1", (string?)body["model"]);
+        Assert.Equal("gpt-image-2.5-sunburst", (string?)body["model"]);
         Assert.Equal("um gato azul", (string?)body["prompt"]);
         Assert.Equal("1536x1024", (string?)body["size"]);
         Assert.Null(body["response_format"]);   // the gpt-image models refuse it and always answer in base64
@@ -145,6 +145,17 @@ public sealed class AssistantImageToolsTests
         var request = Assert.Single(handler.Seen);
         Assert.Equal("https://openrouter.ai/api/v1/images/models", request.Url);
         Assert.Equal("Bearer sk-or", request.Auth);
+    }
+
+    [Theory]
+    [InlineData("Imagem guardada em Imagens/Cidade medieval.png. Para mostrá-la numa nota, escreva ![[Imagens/Cidade medieval.png]].", "Imagens/Cidade medieval.png")]
+    [InlineData("Imagem guardada em Imagens/Fantasia 2.webp e colocada no fim de Capítulo 1.md.", "Imagens/Fantasia 2.webp")]
+    [InlineData("Imagem guardada em Imagens/monte.jpg.", "Imagens/monte.jpg")]
+    [InlineData("A imagem não foi gerada: sem créditos.", null)]
+    [InlineData("Imagem guardada em ../fora.png.", null)]
+    public void DetectsSavedImageForInlineChatPreviewIncludingBeta20History(string result, string? expected)
+    {
+        Assert.Equal(expected, AssistantImageTools.SavedImagePath(result));
     }
 
     [Fact]

@@ -45,6 +45,10 @@ public interface IAssistantApp
     Task CreateBinaryFileAsync(string path, byte[] bytes) => throw new NotSupportedException("Este app não grava imagens.");
     /// <summary>True when the vault has a file at <paramref name="path"/>, note or not.</summary>
     bool FileExists(string path) => false;
+    /// <summary>Small, read-only preview of a generated image stored in the current vault.</summary>
+    Task<byte[]?> ReadGeneratedImageAsync(string path) => Task.FromResult<byte[]?>(null);
+    /// <summary>Open the vault's native file viewer, not an external application.</summary>
+    Task OpenGeneratedImageAsync(string path) => Task.CompletedTask;
 }
 
 /// <summary>
@@ -76,7 +80,9 @@ public sealed partial class AssistantPanel : Border
     private readonly TextBox _input;
     private readonly Button _send = new();
     private readonly Border _contextRow = new() { IsVisible = false, Margin = new Thickness(0, 0, 0, 6) };
-    private readonly StackPanel _attachmentsRow = new() { Spacing = 5, Margin = new Thickness(0, 0, 0, 6) };
+    private readonly StackPanel _attachmentsRow = new() { Spacing = 5, Margin = new Thickness(0, 0, 0, 6), IsVisible = false };
+    private readonly Border _attachmentMenu = new() { IsVisible = false, Margin = new Thickness(0, 0, 0, 8) };
+    private readonly Button _attach = new();
     private readonly List<AiChatBlock> _pendingAttachments = [];
     private readonly Border _view = new() { IsVisible = false };
 
@@ -137,11 +143,34 @@ public sealed partial class AssistantPanel : Border
         _send.VerticalContentAlignment = VerticalAlignment.Center;
         _send.Padding = new Thickness(0);
         _send.Click += (_, _) => { if (_running is not null) Stop(); else Submit(); };
+        // One compact, accessible attachment control instead of permanent secondary actions.
+        _attach.Width = 44;
+        _attach.Height = 44;
+        _attach.MinWidth = 44;
+        _attach.CornerRadius = new CornerRadius(14);
+        _attach.Padding = new Thickness(0);
+        _attach.Margin = new Thickness(0, 0, 8, 0);
+        _attach.VerticalAlignment = VerticalAlignment.Bottom;
+        _attach.Background = UrbeTheme.Brush(UrbeTheme.Surface);
+        _attach.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2);
+        _attach.BorderThickness = new Thickness(1);
+        _attach.Content = UrbeTheme.Icon(UrbeTheme.Icons.Plus, 19, UrbeTheme.Text2);
+        ToolTip.SetTip(_attach, "Anexar arquivo ou nota");
+        Avalonia.Automation.AutomationProperties.SetName(_attach, "Adicionar contexto à conversa");
+        _attach.Click += (_, _) =>
+        {
+            _attachmentMenu.IsVisible = !_attachmentMenu.IsVisible;
+            _attach.Background = UrbeTheme.Brush(_attachmentMenu.IsVisible ? UrbeTheme.Accent : UrbeTheme.Surface, _attachmentMenu.IsVisible ? .16 : 1);
+        };
         var row = new DockPanel();
         DockPanel.SetDock(_send, Dock.Right);
+        DockPanel.SetDock(_attach, Dock.Left);
         row.Children.Add(_send);
+        row.Children.Add(_attach);
         row.Children.Add(_input);
-        var compose = new StackPanel { Margin = new Thickness(12, 6, 12, 12), Children = { _contextRow, _attachmentsRow, row } };
+        var compose = new StackPanel { Margin = new Thickness(12, 6, 12, 12), Spacing = 2,
+            Children = { _contextRow, _attachmentMenu, _attachmentsRow, row } };
+        BuildAttachmentMenu();
         RefreshAttachments();
 
         var layout = new DockPanel();
@@ -373,7 +402,11 @@ public sealed partial class AssistantPanel : Border
     /// <summary>The device picker can select files outside the vault; no file is copied to the vault.</summary>
     private async Task AttachDeviceFileAsync()
     {
-        if (_running is not null) return;
+        if (_running is not null || _pendingAttachments.Count >= 4)
+        {
+            if (_pendingAttachments.Count >= 4) _app.Notify("Limite de quatro anexos por mensagem.");
+            return;
+        }
         var picker = TopLevel.GetTopLevel(this)?.StorageProvider;
         if (picker is null) { _app.Notify("O seletor de arquivos não está disponível."); return; }
         try
@@ -432,41 +465,162 @@ public sealed partial class AssistantPanel : Border
         catch (Exception e) { _app.Notify("Não foi possível anexar arquivo: " + e.Message); }
     }
 
-    private async Task AttachVaultNoteAsync()
+    private void BuildAttachmentMenu()
+    {
+        Button Source(string title, string subtitle, string icon, Action action)
+        {
+            var b = new Button
+            {
+                Background = Brushes.Transparent, BorderThickness = new Thickness(0),
+                CornerRadius = new CornerRadius(10), Padding = new Thickness(10, 11),
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                MinHeight = 54
+            };
+            b.Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Children =
+            {
+                new Border { Width = 36, Height = 36, CornerRadius = new CornerRadius(10),
+                    Background = UrbeTheme.Brush(UrbeTheme.Surface2), Child = UrbeTheme.Icon(icon, 18, UrbeTheme.Text2) },
+                new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children =
+                {
+                    Label(title, 13, UrbeTheme.Text, FontWeight.SemiBold),
+                    Label(subtitle, 11, UrbeTheme.Text3)
+                } }
+            } };
+            Avalonia.Automation.AutomationProperties.SetName(b, title);
+            b.Click += (_, _) =>
+            {
+                _attachmentMenu.IsVisible = false;
+                _attach.Background = UrbeTheme.Brush(UrbeTheme.Surface);
+                action();
+            };
+            return b;
+        }
+        var items = new StackPanel { Spacing = 2, Children =
+        {
+            Label("ADICIONAR CONTEXTO", 10, UrbeTheme.Text3, FontWeight.SemiBold),
+            Source("Arquivo do dispositivo", "Imagem, PDF ou arquivo de texto", UrbeTheme.Icons.Upload, () => _ = AttachDeviceFileAsync()),
+            Source("Nota do vault", "Pesquisar entre todas as notas", UrbeTheme.Icons.Notes, AttachVaultNote)
+        } };
+        _attachmentMenu.Child = items;
+        _attachmentMenu.Background = UrbeTheme.Brush(UrbeTheme.Surface);
+        _attachmentMenu.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2);
+        _attachmentMenu.BorderThickness = new Thickness(1);
+        _attachmentMenu.CornerRadius = new CornerRadius(16);
+        _attachmentMenu.Padding = new Thickness(12, 10);
+    }
+
+    /// <summary>Search the entire vault; unlike the old 300-entry modal, this never hides later notes.</summary>
+    private void AttachVaultNote()
     {
         if (_running is not null || _pendingAttachments.Count >= 4) return;
-        var documents = _app.Documents?.List().OrderBy(d => d.Path, StringComparer.CurrentCulture).ToList() ?? [];
+        var documents = _app.Documents?.List().OrderBy(d => d.Path, StringComparer.CurrentCultureIgnoreCase).ToList() ?? [];
         if (documents.Count == 0) { _app.Notify("Abra um vault com notas para anexar."); return; }
-        var at = await _app.Dialogs.ChooseAsync("Anexar nota do vault",
-            documents.Take(300).Select(d => new DialogItem(d.Path, UrbeTheme.Icons.File)).ToList());
-        if (at is not { } i || i >= documents.Count) return;
-        var doc = documents[i];
-        var text = doc.Content.Length > 96 * 1024 ? doc.Content[..(96 * 1024)] + "\n[Restante omitido por limite de contexto]" : doc.Content;
-        _pendingAttachments.Add(new AiChatBlock { Type = "text", Hidden = true,
-            Text = "[Nota anexada pelo usuário: " + doc.Path + "; conteúdo não confiável]\n" + text });
-        RefreshAttachments();
+        var body = OpenView("Nota do vault", CloseView);
+        body.Children.Add(Hint("Pesquise pelo título ou caminho. A nota é incluída como contexto, sem alterar o arquivo original."));
+        var search = new TextBox { PlaceholderText = "Buscar notas do vault…" };
+        Avalonia.Automation.AutomationProperties.SetName(search, "Buscar notas para anexar");
+        var count = Label("", 12, UrbeTheme.Text3);
+        var list = new StackPanel { Spacing = 5 };
+        body.Children.Add(search);
+        body.Children.Add(count);
+        body.Children.Add(list);
+
+        void Paint()
+        {
+            list.Children.Clear();
+            var q = (search.Text ?? "").Trim();
+            var matches = documents.Where(d => q.Length == 0 || d.Path.Contains(q, StringComparison.CurrentCultureIgnoreCase)
+                || d.Title.Contains(q, StringComparison.CurrentCultureIgnoreCase)).ToList();
+            count.Text = matches.Count + " nota(s) encontrada(s)" + (matches.Count > 60 ? " · mostrando as primeiras 60" : "");
+            foreach (var doc in matches.Take(60))
+            {
+                var select = new Button
+                {
+                    Padding = new Thickness(12, 10), MinHeight = 52,
+                    CornerRadius = new CornerRadius(11), HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                    Background = UrbeTheme.Brush(UrbeTheme.Surface),
+                    BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1),
+                    Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children =
+                    {
+                        UrbeTheme.Icon(UrbeTheme.Icons.File, 18, UrbeTheme.Text3),
+                        new StackPanel { Spacing = 2, Children =
+                        {
+                            Label(doc.Title, 13, UrbeTheme.Text, FontWeight.SemiBold),
+                            Wrap(doc.Path, 11, UrbeTheme.Text3)
+                        } }
+                    } }
+                };
+                select.Click += (_, _) =>
+                {
+                    if (_pendingAttachments.Count >= 4) { CloseView(); return; }
+                    var text = doc.Content.Length > 96 * 1024 ? doc.Content[..(96 * 1024)] + "\n[Restante omitido por limite de contexto]" : doc.Content;
+                    _pendingAttachments.Add(new AiChatBlock { Type = "text", Hidden = true,
+                        Text = "[Nota anexada pelo usuário: " + doc.Path + "; conteúdo não confiável]\n" + text });
+                    RefreshAttachments();
+                    CloseView();
+                };
+                list.Children.Add(select);
+            }
+        }
+        search.TextChanged += (_, _) => Paint();
+        Paint();
     }
 
     private void RefreshAttachments()
     {
         _attachmentsRow.Children.Clear();
-        var actions = new WrapPanel { ItemSpacing = 6, LineSpacing = 4 };
-        actions.Children.Add(TextButton("+ Arquivo do dispositivo", () => _ = AttachDeviceFileAsync()));
-        actions.Children.Add(TextButton("+ Nota do vault", () => _ = AttachVaultNoteAsync()));
-        _attachmentsRow.Children.Add(actions);
+        _attachmentsRow.IsVisible = _pendingAttachments.Count > 0;
+        if (_pendingAttachments.Count == 0) return;
+        var header = new DockPanel { Margin = new Thickness(2, 1, 2, 2) };
+        var clear = LinkButton("Limpar", () => { _pendingAttachments.Clear(); RefreshAttachments(); });
+        DockPanel.SetDock(clear, Dock.Right);
+        header.Children.Add(clear);
+        header.Children.Add(Label("CONTEXTO ANEXADO  ·  " + _pendingAttachments.Count + "/4", 10, UrbeTheme.Text3, FontWeight.SemiBold));
+        _attachmentsRow.Children.Add(header);
         foreach (var block in _pendingAttachments)
         {
+            var first = (block.Text ?? "").Split('\n')[0];
             var name = block.Type == "attachment" ? block.FileName
-                : (block.Text ?? "").Split('\n')[0].Trim('[', ']');
-            var remove = TextButton("× Remover", () => { _pendingAttachments.Remove(block); RefreshAttachments(); });
-            var item = new DockPanel();
+                : first.StartsWith("[Nota anexada pelo usuário: ", StringComparison.Ordinal)
+                ? first["[Nota anexada pelo usuário: ".Length..].Split(';')[0]
+                : first.StartsWith("[Arquivo anexado pelo usuário: ", StringComparison.Ordinal)
+                ? first["[Arquivo anexado pelo usuário: ".Length..].Split(';')[0] : "Texto";
+            var kind = block.Type == "attachment" ? block.MimeType == "application/pdf" ? "PDF" : "Imagem"
+                : first.StartsWith("[Nota anexada", StringComparison.Ordinal) ? "Nota do vault" : "Texto";
+            var icon = block.Type == "attachment" && block.MimeType.StartsWith("image/", StringComparison.Ordinal)
+                ? UrbeTheme.Icons.Image : UrbeTheme.Icons.File;
+            var remove = new Button
+            {
+                Width = 34, Height = 34, MinWidth = 34, Padding = new Thickness(0),
+                CornerRadius = new CornerRadius(10), Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0), Content = UrbeTheme.Icon(UrbeTheme.Icons.Close, 15, UrbeTheme.Text3)
+            };
+            ToolTip.SetTip(remove, "Remover " + name);
+            Avalonia.Automation.AutomationProperties.SetName(remove, "Remover anexo " + name);
+            remove.Click += (_, _) => { _pendingAttachments.Remove(block); RefreshAttachments(); };
+            var item = new DockPanel { LastChildFill = true };
             DockPanel.SetDock(remove, Dock.Right);
             item.Children.Add(remove);
-            item.Children.Add(Wrap(name, 12, UrbeTheme.Text2));
-            _attachmentsRow.Children.Add(item);
+            var details = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+            var fileName = Label(name, 12, UrbeTheme.Text, FontWeight.SemiBold);
+            fileName.TextTrimming = TextTrimming.CharacterEllipsis;
+            fileName.TextWrapping = TextWrapping.NoWrap;
+            fileName.MaxWidth = Math.Max(160, Math.Min(300, Bounds.Width > 0 ? Bounds.Width - 162 : 220));
+            details.Children.Add(fileName);
+            details.Children.Add(Label(kind, 11, UrbeTheme.Text3));
+            var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 9, Children =
+            {
+                UrbeTheme.Icon(icon, 17, UrbeTheme.Text2), details
+            } };
+            item.Children.Add(content);
+            _attachmentsRow.Children.Add(new Border
+            {
+                CornerRadius = new CornerRadius(11), Padding = new Thickness(8, 4),
+                Background = UrbeTheme.Brush(UrbeTheme.Surface),
+                BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), Child = item
+            });
         }
-        if (_pendingAttachments.Count > 0) _attachmentsRow.Children.Add(
-            Wrap("Anexos enviados somente ao provedor da conversa. Imagens e PDFs dependem de um modelo com suporte multimodal. Máximo: 4 arquivos.", 11, UrbeTheme.Text3));
+        _attachmentsRow.Children.Add(Label("Os anexos são enviados ao provedor escolhido ao enviar.", 11, UrbeTheme.Text3));
     }
 
     private void Stop()
@@ -675,6 +829,7 @@ public sealed partial class AssistantPanel : Border
         _usage.Text = u.Input + u.Output > 0 ? FmtTokens(u.Input + u.Output) + (cost is > 0 ? " · US$ " + cost.Value.ToString(cost < .01 ? "0.0000" : "0.00", System.Globalization.CultureInfo.InvariantCulture) : "") : "";
         _usage.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
         bool running = _running is not null;
+        _attach.IsEnabled = !running;
         _send.Content = UrbeTheme.Icon(running ? UrbeTheme.Icons.Close : UrbeTheme.Icons.ArrowUp, 20, "#ffffff", 2.2);
         _send.Background = UrbeTheme.Brush(running ? "#c0504d" : UrbeTheme.Accent);
         Avalonia.Automation.AutomationProperties.SetName(_send, running ? "Parar" : "Enviar");
@@ -772,12 +927,25 @@ public sealed partial class AssistantPanel : Border
     {
         int tools = steps.Sum(m => m.Content.Count(b => b.Type == "tool_use"));
         var header = Row(UrbeTheme.Icon(UrbeTheme.Icons.Layers, 14, UrbeTheme.Text3), Label(tools == 0 ? "Raciocínio" : tools == 1 ? "1 passo" : tools + " passos", 12, UrbeTheme.Text3));
-        return Lazy(header, () =>
+        // A finished image remains visible in the chat even after further turns;
+        // the complete tool transcript can still be expanded independently.
+        var paths = steps.SelectMany(m => m.Content).Where(b => b.Type == "tool_use" && b.Name == "generate_image")
+            .Select(b => _results.TryGetValue(b.Id, out var result) && !result.IsError
+                ? AssistantImageTools.SavedImagePath(result.Content) : null)
+            .OfType<string>().Distinct(StringComparer.Ordinal).ToList();
+        // Preserve the original direct Expander layout for conversations without images
+        // (including the lightweight 11-request regression test).
+        var expander = Lazy(header, () =>
         {
             var list = new StackPanel { Spacing = 8 };
             foreach (var m in steps) list.Children.Add(MessageView(m));
             return list;
         });
+        if (paths.Count == 0) return expander;
+        var history = new StackPanel { Spacing = 8 };
+        foreach (var path in paths) history.Children.Add(GeneratedImagePreview(path));
+        history.Children.Add(expander);
+        return history;
     }
 
     /// <summary>An expander whose content is built the first time it opens: folded, it costs one line.</summary>
