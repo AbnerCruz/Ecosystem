@@ -20,7 +20,7 @@ Construir memória sem copiar notas, expor segredos, confundir fatos com conject
 3. Evoluir o AssistantStore local e as ferramentas do Urbe, com mecanismos adicionais atrás de contratos locais e limites explícitos; propor adaptadores especializados somente quando houver ganho verificável.
 4. Transferir imediatamente memória para o Agent Runtime do Ecosystem.
 
-## Decisão proposta
+## Decisão
 
 Opção 3. Memórias estruturadas e versionadas na configuração privada já existente, mantendo leitura do legado e migrando no primeiro write estruturado. O Urbe.Core detém o domínio, o AssistantPanel expõe interface nativa e o vault permanece dono do conteúdo documental. Leitura contextual sob orçamento de tokens; separação de escopos global/vault/agent, referências de fonte, confiança/validade/estado, relações com KnowledgeIndex. Nenhum uso de IA em background obrigatório nem gasto de API sem ação humana.
 
