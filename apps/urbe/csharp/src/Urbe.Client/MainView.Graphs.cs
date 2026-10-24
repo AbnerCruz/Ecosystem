@@ -39,6 +39,21 @@ public sealed partial class MainView
 
     public bool GraphOpen => _graphBoard?.IsVisible == true;
 
+    /// <summary>The Grafos destination lists authored graph documents, never replaces the vault's hierarchy.</summary>
+    public async Task ShowGraphsHomeAsync()
+    {
+        if (GraphOpen) return;
+        if (Dialogs.IsOpen || StillReading()) return;
+        var paths = _attachments.Where(GraphDocument.IsGraphPath)
+            .OrderBy(p => p, StringComparer.CurrentCultureIgnoreCase).ToArray();
+        var entries = paths.Select(p => new DialogItem(p[..^GraphDocument.FileSuffix.Length], UrbeTheme.Icons.Layers)).ToList();
+        entries.Insert(0, new DialogItem("+ Novo grafo", UrbeTheme.Icons.Plus, "Criar um canvas livre no vault"));
+        var choice = await Dialogs.ChooseAsync("Grafos", entries);
+        if (choice is not { } selected) return;
+        if (selected == 0) await CreateGraphAsync();
+        else await OpenGraphAsync(paths[selected - 1]);
+    }
+
     /// <summary>Creates a standalone graph file. Never changes any existing note or the derived Constelação.</summary>
     public async Task CreateGraphAsync(string? typedName = null, string? folder = null)
     {
@@ -90,6 +105,7 @@ public sealed partial class MainView
             _graphDirty = false;
             GraphsPanel.Show(graph);
             GraphsPanel.IsVisible = true;
+            UpdateNav();
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or UnauthorizedAccessException or System.Text.Json.JsonException)
         {
@@ -136,6 +152,7 @@ public sealed partial class MainView
     {
         if (!await SaveGraphAsync()) return;
         if (_graphBoard is not null) _graphBoard.IsVisible = false;
+        UpdateNav();
         _openGraph = null;
         _openGraphPath = null;
     }
@@ -157,7 +174,7 @@ public sealed partial class MainView
     {
         if (_openGraph is null) return;
         var references = _contents.Keys.Select(p => (Path:p, Kind:GraphNodeKind.Note))
-            .Concat(_attachments.Where(p => !p.StartsWith('.', StringComparison.Ordinal))
+            .Concat(_attachments.Where(p => !p.StartsWith(".", StringComparison.Ordinal))
                 .Select(p => (Path:p, Kind:GraphNodeKind.File)))
             .Concat(NoteFolders().Where(p => p.Length > 0).Select(p => (Path:p, Kind:GraphNodeKind.Folder)))
             .DistinctBy(x => (x.Path, x.Kind))
@@ -227,6 +244,7 @@ public sealed partial class MainView
         if (GraphsPanel.Canvas.SelectedNode?.Target is not { } path) return;
         if (!await SaveGraphAsync()) return;
         GraphsPanel.IsVisible = false;
+        UpdateNav();
         if (_contents.ContainsKey(path)) OpenNoteByPath(path);
         else if (_attachments.Contains(path)) await ShowFileAsync(path);
         else if (GraphsPanel.Canvas.SelectedNode?.Kind == GraphNodeKind.Folder) Workspace.Open(path);
