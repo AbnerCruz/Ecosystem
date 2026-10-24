@@ -351,7 +351,7 @@ public static class HtmlMainText
             return text;
         }, Options);
         for (int level = 6; level >= 1; level--)
-            s = Regex.Replace(s, "<h" + level + @"\\b[^>]*>(.*?)</h" + level + @"\\s*>", m =>
+            s = Regex.Replace(s, "<h" + level + @"\b[^>]*>(.*?)</h" + level + @"\s*>", m =>
                 "\n\n" + new string('#', level) + " " + Regex.Replace(m.Groups[1].Value, "<[^>]+>", "", Options).Trim() + "\n", Options);
         s = Regex.Replace(s, "<li\\b[^>]*>", "\n- ", Options);
         s = Regex.Replace(s, "</(p|li|ul|ol|section|div|tr|blockquote)\\s*>", "\n", Options);
@@ -360,8 +360,8 @@ public static class HtmlMainText
         s = Regex.Replace(s, "<[^>]*>", " ", Options);
         s = WebUtility.HtmlDecode(s).Replace("\r", "");
         s = Regex.Replace(s, @"[ \\t]+", " ");
-        s = Regex.Replace(s, @"\\n[ \\t]+", "\n");
-        s = Regex.Replace(s, @"\\n{3,}", "\n\n");
+        s = Regex.Replace(s, @"\n[ \\t]+", "\n");
+        s = Regex.Replace(s, @"\n{3,}", "\n\n");
         return s.Trim();
     }
 }
