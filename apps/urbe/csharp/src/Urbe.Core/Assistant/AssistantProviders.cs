@@ -674,10 +674,10 @@ public sealed class AssistantProviders
             };
             using var response = await RequestAsync(p, nativeUrl, () => Post(nativeUrl, nativeBody,
                 [("Content-Type", "application/json"), ("x-goog-api-key", p.ApiKey)]), cancel);
-            JsonNode? data;
-            try { data = JsonNode.Parse(await response.Content.ReadAsStringAsync(cancel)); }
+            JsonNode? nativeResponse;
+            try { nativeResponse = JsonNode.Parse(await response.Content.ReadAsStringAsync(cancel)); }
             catch (JsonException) { throw new AiProviderException("O Gemini devolveu uma resposta inválida."); }
-            var parts = data?["candidates"]?[0]?["content"]?["parts"] as JsonArray ?? [];
+            var parts = nativeResponse?["candidates"]?[0]?["content"]?["parts"] as JsonArray ?? [];
             var b64Native = parts.OfType<JsonObject>().Select(part => part["inlineData"]?["data"] ?? part["inline_data"]?["data"])
                 .OfType<JsonValue>().Select(v => v.TryGetValue<string>(out var value) ? value : "").LastOrDefault(v => v.Length > 0);
             if (string.IsNullOrEmpty(b64Native)) throw new AiProviderException("O Gemini não devolveu uma imagem. Confira o modelo e o acesso à geração de imagens.");
