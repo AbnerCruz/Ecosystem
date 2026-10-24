@@ -40,7 +40,7 @@ public sealed class GraphAuthoringTests
         var text = graph.AddText("Observação", 240, 0);
         var group = graph.GroupNodes([note.Id, text.Id], "Núcleo");
         Assert.Equal(group.Id, graph.Node(note.Id)!.ParentId);
-        graph.MoveNode(group.Id, 40, 20);
+        graph.MoveNode(group.Id, group.X + 40, group.Y + 20);
         Assert.Equal(40, graph.Node(note.Id)!.X);
         Assert.Equal(280, graph.Node(text.Id)!.X);
         Assert.True(graph.RemoveNode(group.Id));
