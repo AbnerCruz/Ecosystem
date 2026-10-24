@@ -395,6 +395,31 @@ public sealed partial class AssistantPanel
             foreach (var f in files.Take(8)) list.Children.Add(LinkButton(f, () => OpenRef(f)));
             tail.Children.Add(Card(new StackPanel { Spacing = 4, Children = { head, list } }));
         }
+        if (_conv.WebSources.Count > 0)
+        {
+            var sources = _conv.WebSources.ToArray();
+            var read = sources.Count(s => s.Status == "página acessada");
+            var summary = Row(UrbeTheme.Icon(UrbeTheme.Icons.Search, 14, UrbeTheme.Text2),
+                Label("Fontes públicas · " + sources.Length + " (" + read + " páginas lidas)", 12, UrbeTheme.Text2, FontWeight.SemiBold));
+            tail.Children.Add(Card(Lazy(summary, () =>
+            {
+                var list = new StackPanel { Spacing = 8 };
+                foreach (var source in sources)
+                {
+                    // Exact source URLs are persisted, clickable via the existing MarkdownReader link launcher.
+                    var safeTitle = source.Title.Replace("[", "").Replace("]", "").Replace("\n", " ").Trim();
+                    var url = source.FinalUrl;
+                    try { AssistantWebSession.ValidateUrl(url); }
+                    catch (AiToolException) { continue; }
+                    list.Children.Add(Markdown("[" + source.Id + "] [" + (safeTitle.Length > 120 ? safeTitle[..120] : safeTitle) +
+                        "](" + url + ")"));
+                    list.Children.Add(Hint(source.Domain + " · " +
+                        (source.Status == "página acessada" ? "Página consultada" : "Somente resultado de busca") +
+                        " · " + (source.Published ?? "data desconhecida") + " · acesso " + source.Accessed));
+                }
+                return list;
+            })));
+        }
         return tail.Children.Count > 0 ? tail : null;
     }
 
@@ -592,6 +617,9 @@ public sealed partial class AssistantPanel
         var c = _cfg;
         var v = VaultKey;
         var body = OpenView("Configurações do Assistente");
+        body.Children.Add(Section("Pesquisa na internet",
+            Hint(_cfg.Web.Enabled ? "Rede habilitada · " + _cfg.Web.Provider : "Rede desabilitada · acesso externo exige autorização"),
+            TextButton("Configurar pesquisa web", ShowWebSettings)));
         var provs = new StackPanel { Spacing = 8 };
         if (c.Providers.Count == 0) provs.Children.Add(Hint("Nenhum provedor ainda."));
         foreach (var p in c.Providers)

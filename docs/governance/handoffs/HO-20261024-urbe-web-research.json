@@ -1,0 +1,119 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-web-research",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T10:58:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-web-research",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-63",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-web-research-20261024",
+  "base_commit": "bf4bdb8a38db07daf9b098b882c60dfa0637def5",
+  "commit": "ae350b19911be63baa1b3733f7607ea3582523a8",
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantWebResearch.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantWebTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Web.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantWebResearchTests.cs",
+    "apps/urbe/docs/csharp/RESEARCH-WEB-AUDIT-2026-10-24.md",
+    "docs/adr/0038-urbe-pesquisa-web-segura.md",
+    "docs/adr/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261024-urbe-web-research.json"
+  ],
+  "work_completed": [
+    "Lidos MANIFEST, AGENTS, ecosystem.json, ADRs e roadmap; auditadas implementações integrais do assistente e fluxos de providers/storage/UI e PRs correntes; diagnóstico em RESEARCH-WEB-AUDIT-2026-10-24.md.",
+    "Implementados web_search pelo endpoint oficial JSON Brave e web_fetch público HTTP/HTTPS com extração textual, metadados, URL final, leitura por linhas e proteção SSRF/DNS/redirect com pinagem de IP.",
+    "Sessão de web com cancelamento, quotas configuráveis, sem cookies/proxy/scripts, conteúdo externo rotulado como não confiável; fontes guardadas nas conversas e apresentadas em Markdown clicável.",
+    "Configuração da rede e chave no mesmo config.json privado, desligada por padrão e com grants explícitos por agente. Subagente Pesquisador só recebe rede com consentimento próprio.",
+    "Orientação geral dos agentes para investigações com múltiplas fontes, leitura real, evidência, citações e produção com ferramentas de notas/páginas existentes.",
+    "Testes HTTP/DNS simulados para pesquisa, HTML, redirecionamentos, SSRF, erros, quotas, cancelamento, persistência e uso do motor existente.",
+    "ADR-0038 proposto e roadmap atualizado."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "CI urbe-checks Core/Client/Android/Windows/E2E",
+      "result": "pending",
+      "evidence": "PR/CI a executar após abrir PR."
+    },
+    {
+      "kind": "human",
+      "check": "Configurar Brave Search real e pesquisar/visitar 3 páginas no Android físico",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Web.cs"
+    }
+  ],
+  "known_issues": [
+    "Sem chave Brave real disponível neste ambiente; validação de cobrança/cota real depende do proprietário.",
+    "Leitor PDF público e páginas JS-rendered não implementados nesta fatia; web_fetch informa a limitação.",
+    "Extração HTML conservadora; não é browser completo e falhará em conteúdo que exige JS.",
+    "A política de conteúdo privado bloqueia padrões comuns e cópia literal extensa, mas não há solução perfeita para exfiltração indireta por prompt injection; reavaliar threat model de rede antes de novos tipos de ferramenta.",
+    "A PR #732 de atividade minimalista do chat pode conflitar com alterações em AssistantPanel.Views; reconciliar com estado mais novo de main, sem substituí-la."
+  ],
+  "blockers": [
+    "CI, gates integrador e validação DEVICE pendentes."
+  ],
+  "next_actions": [
+    "Executar CI e corrigir warnings/errors de compilação, testes e verificador.",
+    "Reconciliar a UI com PR #732 quando integrada.",
+    "Submeter ADR-0038 para revisão e autorização do integrador se classificado crítico.",
+    "Validar Brave com credencial real e pesquisas concretas; validar no Android real.",
+    "Adicionar PDF público e leitura especializada de SPAs em fatias posteriores, após avaliação de segurança."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "ecosystem.json",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/adr/0037-urbe-assistente-execucao-continuada.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Config do provider e segredo vivem só em AiConfig.Web; fontes persistidas na conversa."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Todas as operações continuam como AiTool e eventos já existentes; fonte e acesso rastreáveis."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "ADR-0038 proposto, revisão explícita antes de mudanças críticas."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma aprovação Android físico alegada."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem extração/shared prematura nem segundo runtime."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-public-web-research",
+      "status": "product-specific",
+      "rationale": "Primeiro consumidor confirmado é o Assistente Urbe, por isso implementação interna com contrato de provedor, sem promoção para plataforma."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Novo boundary de rede com potencial exfiltração de dados privados e credenciais; precisa revisão de segurança e ADR."
+  }
+}
