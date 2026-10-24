@@ -1,6 +1,6 @@
 # Atlas Forge
 
-Oficina local de mundos esféricos de alta fantasia do Ecosystem. Aplicação independente **Alpha 0.5.0**, com editor HTML/Canvas e visualizador offline. A fonte canônica do aplicativo é este diretório; a versão é `package.json`.
+Oficina local de mundos esféricos de alta fantasia do Ecosystem. Aplicação independente **Alpha 0.6.0**, com editor HTML/Canvas e visualizador offline. A fonte canônica do aplicativo é este diretório; a versão é `package.json`.
 
 ## Executar
 
@@ -29,13 +29,21 @@ Use **Terra/Mar** para desenhar limites ou **Novo oceano para desenhar continent
 
 Em **Biosfera e eras**, configure espécies e alimentos, salve e introduza a espécie numa região selecionada ou em todos os habitats adequados. As camadas Cobertura vegetal, Biomassa e Nitrogênio mostram os estoques regionais. Simule 100, 1.000 ou 10.000 anos; Cancelar preserva o estado anterior. O seletor de marcos recupera o estado completo antes de cada era. O HTML publicado permite consultar ano e estoques ao clicar no mapa.
 
+## Geografia e cartografia 0.6 — AF-022
+
+**Ao criar um mundo novo**, `spherical-tectonic-2` combina centros de placas em esfera, velocidades angulares, compressão em limites convergentes, riftes em zonas de extensão, flutuação da crosta e ruído de relevo. O nível do mar é escolhido por área na esfera. A distribuição de placas e o relevo são reprodutíveis pela seed; ainda é um modelo tectônico heurístico, **não** simulação geológica profunda validada ou dinâmica de milhões de anos. Projetos com `spherical-causal-1` conservam o algoritmo antigo.
+
+O clima novo usa transporte zonal métrico de umidade e precipitação orográfica simplificada, latitude, altitude, influência marítima e demanda térmica. Biomas incorporam a relação água/temperatura, com mosaicos climáticos locais que evitam faixas perfeitamente retangulares. Mesmo assim, não há circulação 3D da atmosfera, solos físicos ou dinâmica climática temporal validada.
+
+O mapa emprega **amostragem nearest-neighbor, sem blur**, rampas discretas de quatro cores por material, sombras de pixels e sprites naturais procedurais de 16×16 ampliados sem filtro. O globo reutiliza quadros estabilizados para reduzir redesenhos. Alterar zoom não regenera o continente. Estes desenhos são estilo pixel art 16-bit; não são sprites industriais feitos à mão. Inspecione alterações reais em testes/screenshot do seu Android antes de avaliar performance final.
+
 ## Natureza local e escala humana — AF-021
 
 No mapa natural, a menos de 1,8 m/pixel, **Árvores e pedras** exibe símbolos de copas, arbustos e rochas. Os pontos são derivados determinísticamente da seed, das coordenadas físicas, do material do terreno e da cobertura vegetal regional; não são instâncias persistidas nem indivíduos da ecologia. A camada pode ser desligada para reduzir trabalho de desenho.
 
 **Escala humana** abre um quadro proporcional em zoom próximo, com altura humana convencional de 1,7 m e planta de casa de 10 × 8 m quando cabem no quadro. A referência é uma comparação gráfica, sem sugerir que a altura humana é uma pegada no mapa. O mapa já oferece régua em metros e altitude no inspetor. As coordenadas não alteram snapshots ou exportação JSON.
 
-A simulação física regional continua a mesma: materiais locais não representam depósitos minerais reais, e não há tectônica, química geral, meteorologia dinâmica ou organismos individuais. Validação de toque/percepção em Android físico ainda é necessária.
+Materiais locais ainda não representam depósitos minerais reais; as placas são aproximação cinemática estática, não tectônica temporal ou minerais físicos. Química geral, meteorologia dinâmica e organismos individuais continuam pendentes. Validação de toque/percepção em Android físico ainda é necessária.
 
 ## Verificar
 
@@ -47,12 +55,12 @@ npm run benchmark
 npm run benchmark:render
 ```
 
-`check` executa formatação, 33 testes de domínio, compatibilidade, câmera, terreno e build, build e 14 cenários de regressão mais os fluxos multiescala e de zoom contínuo em Chromium, incluindo editor/viewer por `file://` com rede desativada. Evidências: [entrega inicial](../../docs/proposals/atlas-forge/docs/VERIFICATION.md); os caminhos de código anteriores no relatório são históricos. Android físico continua pendente.
+`check` executa formatação, testes de domínio, compatibilidade, câmera, terreno e build, build e 14 cenários de regressão mais os fluxos multiescala e de zoom contínuo em Chromium, incluindo editor/viewer por `file://` com rede desativada. Evidências: [entrega inicial](../../docs/proposals/atlas-forge/docs/VERIFICATION.md); os caminhos de código anteriores no relatório são históricos. Android físico continua pendente.
 
 ## Documentação e limites
 
 [Tutorial](docs/GUIDE.md), [terreno multiescala](docs/TERRAIN.md), [modelos e equações](docs/MODELS.md), [formato persistido](docs/FORMAT.md), [SPEC](SPEC.md), [roadmap](ROADMAP.md), [arquitetura e incorporação](../../docs/architecture/atlas-forge.md).
 
-O relevo/clima/biomas são heurísticos; drenagem é descida esférica com runoff fixo e bacias fechadas, sem lagos dinâmicos. Eras agora simulam recursos, populações e erosão regional; marcos continuam snapshots de retorno. Tectônica, atmosfera dinâmica, química geral, magia configurável, civilizações e geradores urbanos completos continuam pendentes. A fixture de importação v1 é sintética; compatibilidade geral exige corpus real.
+O relevo/clima/biomas são heurísticos; drenagem é descida esférica com runoff fixo e bacias fechadas, sem lagos dinâmicos. Eras agora simulam recursos, populações e erosão regional; marcos continuam snapshots de retorno. Tectônica temporal/persistente, atmosfera dinâmica, química geral, magia configurável, civilizações e geradores urbanos completos continuam pendentes. A fixture de importação v1 é sintética; compatibilidade geral exige corpus real.
 
 O [mandato original](../../docs/proposals/atlas-forge/MISSION.md) e a [auditoria inicial](../../docs/proposals/atlas-forge/docs/AUDIT.md) permanecem como proveniência. A incorporação foi aprovada na DEC-0054/ADR-0035; aprovação arquitetural, integração Git e validação em aparelho são evidências diferentes. Nenhuma capability pública ou extração compartilhada é criada. O CI disponibiliza artefatos de revisão; não há release de produção declarada.
