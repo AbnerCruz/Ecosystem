@@ -33,11 +33,11 @@ Arquivo UTF-8 `*.grafo.json` dentro do vault, com `type: "urbe.graph"`, `version
 
 **Fatia 1 — nesta branch:** formato/domínio C#, criação de grafo dentro do vault, destino de navegação, canvas Avalonia básico (pan/zoom/arrastar), inclusão de texto/notas/arquivos/pastas, conexão simples/direcionada, edição e remoção de cartões, escrita verificada e transclusão navegável no editor visual. Testes unitários de serialização, referência, versão futura e integridade. **Sem evidência ainda de build local, CI ou DEVICE.**
 
-**Fatia 2 — a realizar:** ferramentas de desenho e formas geométricas completas, grupos, resize, seleção múltipla, arrastar do Explorer/Área de trabalho, undo/redo, pesquisa incremental para vaults grandes, layout automático, acessibilidade e ações contextuais; testes headless de UI e validação física de toque, teclado e zoom.
+**Fatia 2 — parcial na branch:** caneta/borracha, traços persistentes, forma elíptica, grupos, resize, seleção múltipla e histórico undo/redo. **Pendentes:** formas vetoriais completas, arrastar do Explorer direto ao canvas, busca virtualizada, layout automático, acessibilidade e validação Android.
 
-**Fatia 3 — a realizar:** grafos automáticos de hierarquia/links/escopo; distinção visual de relações; visualização local/filtros/diferentes layouts; referências quebradas explícitas. Respeitar UC-71/72 como visões distintas, sem substituí-las silenciosamente.
+**Fatia 3 — parcial:** GraphProjection.FromVault cria um snapshot editável de hierarquia, arquivos, notas e wikilinks resolvidos, por pasta. Não move arquivos. **Pendentes:** projeção viva, filtros avançados, múltiplos layouts e referências quebradas explícitas; UC-71/72 permanecem separados.
 
-**Fatia 4 — a realizar:** ações de IA sobre grafos com grants explícitos, diffs e aprovações, planejamento observável, proveniência, memórias derivadas do AssistantStore e consistência com UC-87. Não gravar grafo em nome do usuário sem permissão nem criar outro runtime.
+**Fatia 4 — leitura inicial:** agentes recebem list_graphs e read_graph (read-only, paginadas, com IDs e proveniência). **Pendentes:** edição por IA com diff/reversão/aprovação, planejamento observável, relações com memória UC-87. Sem grants de escrita automática nem runtime novo.
 
 **Gates:** testes Core e Client, `dotnet run tests/consistency/Check.cs`, CI e inspeção no Android (NN-017). Não anunciar release ou funcionalidade completa antes destes gates.
 
