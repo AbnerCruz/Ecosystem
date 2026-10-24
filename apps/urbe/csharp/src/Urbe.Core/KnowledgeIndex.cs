@@ -62,6 +62,11 @@ public sealed partial class KnowledgeIndex : IDisposable
             aliases[Normalize(document.Path)] = document.Id;
         }
 
+        // the aliases of the properties (aliases: [a, b]): a link written with one reaches the note, after titles and paths
+        foreach (var document in all.Where(document => ArtifactModel.Linkable(document.Path) && document.Content.StartsWith("---", StringComparison.Ordinal)))
+            foreach (var alias in NoteProperties.AliasesOf(document.Content))
+                aliases.TryAdd(Normalize(alias), document.Id);
+
         foreach (var document in all)
         {
             foreach (var tag in document.Tags)

@@ -77,7 +77,8 @@ public sealed partial class HeadlessUiTests
             try
             {
                 var scroll = VisualScroll(editor);
-                EditorScrolling.SetOffsetY(scroll, 900);
+                // the properties form above the text (folded: one line) moves the text down; the same part of the note as before is looked at
+                EditorScrolling.SetOffsetY(scroll, 900 + editor.Properties.Bounds.Height + editor.Properties.Margin.Top + editor.Properties.Margin.Bottom);
                 await Pump(window);
                 // a block in the middle of the screen
                 int index = editor.Surface.BlockStarts.Select((s, i) => (s, i))

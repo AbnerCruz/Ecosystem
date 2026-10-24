@@ -74,6 +74,10 @@ public static partial class AppDocs
 
         Na primeira vez, a **Configuração inicial** leva pela pasta, pelo tema e pelo Assistente; ela pode ser refeita em **Configurações → Configuração inicial**.
 
+        As **Propriedades** da nota (o bloco `---` do começo) têm um formulário no alto da nota, em Visual e em Fonte: toque em **Propriedades** para abrir. **Aliases** são outros nomes da nota: um link `[[apelido]]` leva a ela, aparece nas conexões e funciona em `![[apelido]]`. **Tags** aceitam as do vault com um toque. Texto, número, data, sim/não e listas têm campo próprio, e **Adicionar propriedade** cria outras. O que o formulário não entende fica como estava.
+
+        O **modo leitura** (o botão **Edição/Leitura** no rodapé do editor, ou **Mais ações → Modo leitura**) vale para Visual e Fonte: nada é alterado sem querer, a barra de formatação some e as propriedades só são mostradas. Links, comentários e cartões continuam funcionando.
+
         Para atualizar: **Configurações → Verificar atualização** procura uma versão mais nova do Urbe (só quando você pede). O arquivo abre no navegador: no Android, instale por cima do Urbe atual; no Windows, extraia o .zip por cima da pasta do Urbe. Suas notas ficam onde estão.
 
         Use a **busca** no alto do índice deste tutorial para achar qualquer assunto, e **Anterior / Próximo** para ler em sequência.

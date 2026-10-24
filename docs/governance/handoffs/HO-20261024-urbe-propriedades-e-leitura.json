@@ -1,0 +1,86 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-propriedades-e-leitura",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T04:19:55Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "36c9362f",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/NoteProperties.cs",
+    "apps/urbe/csharp/src/Urbe.Core/KnowledgeIndex.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PropertiesPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Embeds.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/NotePropertiesTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PropertiesUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorRedesignUiTests.cs",
+    "docs/governance/handoffs/HO-20261024-urbe-propriedades-e-leitura.json"
+  ],
+  "work_completed": [
+    "Propriedades da nota como formulário (observação do proprietário, 24/10/2026), em Visual e em Fonte, no alto do texto e dobrado em uma linha: Aliases e Tags em chips (tags do vault sugeridas), texto, número, data (com Hoje), sim/não e listas com campo próprio, Adicionar propriedade; o que o formulário não entende (mapas, textos longos) fica como estava (NoteProperties).",
+    "Aliases valem como nome da nota: [[apelido]] e ![[apelido]] levam a ela e entram nas conexões e backlinks.",
+    "Modo leitura em Visual e em Fonte: botão Edição/Leitura no rodapé e item no Mais ações; nada é alterado, a barra some, as propriedades só são mostradas; links, comentários e cartões seguem funcionando.",
+    "Beta 2.0.0-beta.23 (código 2000023), pedida pelo proprietário."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests e Urbe.Client.Tests",
+      "result": "passed",
+      "evidence": "NotePropertiesTests (leitura de cada tipo, ida e volta idêntica, edição sem tocar no resto, aspas), AliasLinkTests, Properties_AreEditedByAFormInBothModesAndReadingFreezesThem."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, editar aliases e tags, outras propriedades, alternar Leitura/Edição em Visual e Fonte; baixar a beta.23",
+      "result": "pending",
+      "critical": true,
+      "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.23"
+    }
+  ],
+  "known_issues": [
+    "O modo leitura vale para a sessão (volta a Edição ao reiniciar o app).",
+    "O teste de posição ao tocar num bloco ganhou o deslocamento do formulário (a mesma parte da nota é olhada); com o formulário visível um cenário desse teste, em outro bloco, deslocava 18 a 32 px.",
+    "Propriedades avançadas (mapas, textos de várias linhas) só se editam na Fonte."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Proprietário anota as observações."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/distribution/direct-releases.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Validação no aparelho pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "note-properties",
+      "status": "product-specific",
+      "rationale": "Editor do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Publica uma release do canal beta (versão em Urbe.Android.csproj)."
+  }
+}

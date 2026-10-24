@@ -45,7 +45,9 @@ public sealed partial class MainView
         if (_contents.ContainsKey(name)) return name;
         if (_contents.ContainsKey(name + ".md")) return name + ".md";
         var byName = _contents.Keys.Where(p => string.Equals(Path.GetFileNameWithoutExtension(p), name, StringComparison.OrdinalIgnoreCase)).ToList();
-        return byName.Count == 1 ? byName[0] : null;
+        if (byName.Count == 1) return byName[0];
+        var byAlias = _contents.Where(c => c.Key.EndsWith(".md", StringComparison.OrdinalIgnoreCase) && NoteProperties.AliasesOf(c.Value).Any(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase))).Select(c => c.Key).ToList();
+        return byAlias.Count == 1 ? byAlias[0] : null;
     }
 
     private string? FindEmbeddedFile(string name)
