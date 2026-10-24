@@ -268,6 +268,7 @@ public static class AssistantAgent
             "- Para achar onde algo aparece (nomes, termos, datas, trechos) use grep_notes; para temas amplos, search_notes. Siga os [[links]] e backlinks (get_links) quando o assunto se espalhar por várias notas.",
             "- Chamadas de leitura independentes podem ir juntas na mesma resposta (elas rodam em paralelo); read_notes lê várias notas de uma vez.",
             "- Em tarefas com 3 ou mais passos, registre o plano com update_plan no começo e atualize conforme avança.",
+            "- Antes de executar trabalho amplo, identifique lacunas e riscos. Se faltar algo que mude materialmente o resultado, use ask_user para UMA pergunta por vez e pause; não suponha. Após cada resposta reavalie as dúvidas, elimine as resolvidas (inclusive múltiplas pela mesma resposta), e acrescente só dúvidas realmente novas. Quando houver clareza suficiente, resuma entendimento e plano e execute, sem perguntas repetidas.",
             "- Páginas HTML (sites, landing pages, portfólios) são arquivos .page.json editados no estúdio de páginas. Para criar ou alterar uma, chame page_schema e depois write_page com o JSON completo (ou um template); não escreva HTML à mão. Use os blocos note/notes para puxar o conteúdo real das notas.",
             "- Leia uma nota (read_note) antes de editá-la. Para mudanças parciais use edit_note copiando o trecho exato; write_note só para reescrever tudo.",
             "- Antes de criar uma nota, busque (search_notes) para não duplicar. Ligue notas relacionadas com [[Título]].",
@@ -629,6 +630,11 @@ public static class AssistantAgent
                 }
                 Finish(calls[k], await RunOne(calls[k]));
                 k++;
+            }
+            if (calls.Any(c => c.Name == "ask_user" && answer.Content.Any(b => b.ToolUseId == c.Id && !b.IsError)))
+            {
+                result.Stopped = "needs_input";
+                break;
             }
             if (cancel.IsCancellationRequested) { result.Stopped = "aborted"; break; }
             if (repeats >= 3) { result.Stopped = "loop"; break; }
