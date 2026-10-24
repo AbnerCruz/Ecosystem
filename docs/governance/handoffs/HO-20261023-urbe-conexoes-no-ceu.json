@@ -38,9 +38,10 @@
     {
       "kind": "human",
       "check": "No aparelho, abrir Conexões de uma nota e tocar na estrela para ver a nota no céu",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/urbe/csharp/src/Urbe.Client/ConnectionsPanel.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Client/ConnectionsPanel.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-24 (Issue https://github.com/AbnerCruz/Ecosystem/issues/712); registro em docs/governance/responses/VAL-HO-20261023-urbe-conexoes-no-ceu-d72e584a1102.md."
     }
   ],
   "known_issues": [],
