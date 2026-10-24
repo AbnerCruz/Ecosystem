@@ -55,10 +55,10 @@
     {
       "kind": "human",
       "check": "Urbe nativo Android, memórias editadas, persistência e isolamento",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
-      "evidence": "Nenhuma validação física alegada."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-24 (Issue https://github.com/AbnerCruz/Ecosystem/issues/740); registro em docs/governance/responses/VAL-HO-20261024-urbe-memory-engine-e92488f0be28.md."
     }
   ],
   "known_issues": [
