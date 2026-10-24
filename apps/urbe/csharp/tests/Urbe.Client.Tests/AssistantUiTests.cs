@@ -269,6 +269,11 @@ public sealed partial class HeadlessUiTests
                 for (int i = 0; i < 200 && panel.CurrentRun is null; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
                 if (panel.CurrentRun is { } run) await run;
                 for (int i = 0; i < 20; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
+                // UC-81: note invocation completes in a contextual sheet, not an unsolicited full chat.
+                Assert.False(panel.IsVisible);
+                Assert.True(view.AssistantMini.IsVisible);
+                Assert.Equal("result", panel.CompactStatus);
+                ClickButtonWithText(view.AssistantMini, "Abrir conversa");
                 Assert.True(panel.IsVisible);
                 Assert.Equal(("Na nota Herói", "escritor"), (panel.Conversation.Title, panel.Conversation.AgentId));
                 var sent = Assert.Single(model.Sent);
