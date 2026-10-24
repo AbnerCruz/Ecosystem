@@ -769,8 +769,7 @@ public sealed partial class AssistantPanel
                 buttons.Children.Add(edit);
                 var pin = TextButton(m.Pinned ? "Desafixar" : "Fixar", () =>
                 {
-                    AssistantMemoryEngine.MigrateLegacy(_cfg);
-                    var current = _cfg.MemoryRecords.FirstOrDefault(e => e.Id == m.Id);
+                    var current = AssistantMemoryEngine.ResolveForEdit(_cfg, m.Id);
                     if (current is not null)
                     {
                         current.Pinned = !current.Pinned;
@@ -819,18 +818,7 @@ public sealed partial class AssistantPanel
 
     private async Task EditMemoryAsync(string id)
     {
-        string? previous = null;
-        if (id.StartsWith("legacy:", StringComparison.Ordinal))
-        {
-            var parts = id.Split(':', 3);
-            if (parts.Length == 3 && int.TryParse(parts[2], out var index) &&
-                _cfg.Memory.TryGetValue(parts[1], out var values) && index >= 0 && index < values.Count)
-                previous = values[index];
-        }
-        AssistantMemoryEngine.MigrateLegacy(_cfg);
-        var m = previous is not null
-            ? _cfg.MemoryRecords.FirstOrDefault(e => e.Origin == "legacy" && e.Text == previous)
-            : _cfg.MemoryRecords.FirstOrDefault(e => e.Id == id);
+        var m = AssistantMemoryEngine.ResolveForEdit(_cfg, id);
         if (m is null) { ShowMemoryManager(); return; }
         var changed = await _app.Dialogs.PromptAsync(new PromptOptions("Editar lembrança", "Texto",
             Value: m.Text, Validate: s => s.Length > AssistantMemoryEngine.MaxText ? "Texto muito longo." : null));
@@ -838,10 +826,7 @@ public sealed partial class AssistantPanel
         if (string.IsNullOrWhiteSpace(changed)) return;
         try
         {
-            m.Text = changed.Trim();
-            m.UpdatedAt = AssistantMemoryEngine.Now();
-            m.Origin = "user";
-            m.Verified = true;
+            if (!AssistantMemoryEngine.Edit(_cfg, m.Id, changed)) return;
             SaveMemoryConfig();
             ShowMemoryManager();
         }
