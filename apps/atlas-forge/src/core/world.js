@@ -1,5 +1,4 @@
 import { area, clamp, coord, distance } from "../geometry/sphere.js";
-export const LEGACY_ALGORITHM = "spherical-causal-1";
 export const ALGORITHM = "spherical-tectonic-2";
 export const DEFAULTS = {
   radius: 6371000,
