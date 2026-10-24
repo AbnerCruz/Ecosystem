@@ -42,7 +42,7 @@ public sealed partial class HeadlessUiTests
                     await Task.Delay(10);
                     Dispatcher.UIThread.RunJobs();
                 }
-                var line = Assert.Single(view.TouchDebug.Lines.Where(l => l.StartsWith("✓ Button “" + (tip.Length > 24 ? tip[..24] : tip) + "”", StringComparison.Ordinal)));
+                var line = Assert.Single(view.TouchDebug.Lines, l => l.StartsWith("✓ Button “" + (tip.Length > 24 ? tip[..24] : tip) + "”", StringComparison.Ordinal));
                 Assert.StartsWith("✓ Button “" + (tip.Length > 24 ? tip[..24] : tip) + "”", line);
                 for (int i = 0; i < 5 && view.Dialogs.IsOpen; i++) window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
                 Dispatcher.UIThread.RunJobs();
