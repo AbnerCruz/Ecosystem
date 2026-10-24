@@ -1,0 +1,113 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-memory-engine",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T12:00:00Z",
+  "agent": {
+    "id": "chatgpt-gpt6",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-87",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-memory-engine-m1-m8-20261024",
+  "base_commit": "bf4bdb8a38db07daf9b098b882c60dfa0637def5",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/734",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantMemoryEngine.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantMemoryTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantMemoryEngineTests.cs",
+    "apps/urbe/docs/csharp/ASSISTANT-MEMORY.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0039-urbe-memoria-contextual-local.md",
+    "docs/adr/README.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261024-urbe-memory-engine.json"
+  ],
+  "work_completed": [
+    "Novo motor local tipado e versionado com isolamento vault/agente/global, validade temporal, confiança, proveniência, relações e busca lexical.",
+    "Explicitação de capturas e episódios com notas vinculadas sem copiar corpos; procedimentos aprendidos por ferramenta com proveniência.",
+    "Novas ferramentas read/memory/destructive e consentimento preexistente para exclusão/supersessão; prevenção simples de credenciais.",
+    "Gerenciamento visual nativo em Avalonia com busca, adição/edição, fixação, exclusão, conflito e controle de episódios.",
+    "Cobertura unitária de isolamento, migração, retrieval, temporais, fontes, gráficos, conflitos e volume.",
+    "Descrição explícita das lacunas para pesquisa vetorial, benchmarks externos e aparelho; sem fabricar evidência."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "consistency",
+      "result": "pending",
+      "evidence": "Run GitHub Actions do head PR #734; primeiras falhas de referência/índice ADR corrigidas."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet build Urbe.Portable.slnx + tests",
+      "result": "pending",
+      "evidence": "Sem dotnet no ambiente de edição; execução aguardando CI Urbe."
+    },
+    {
+      "kind": "human",
+      "check": "Urbe nativo Android, memórias editadas, persistência e isolamento",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+      "evidence": "Nenhuma validação física alegada."
+    }
+  ],
+  "known_issues": [
+    "Pesquisa contextual atual é lexical e metadados, não embeddings semânticos reais.",
+    "Reflexão ainda é detecção heurística de conflitos; sem benchmark externo ou agente reflexivo validado.",
+    "Escopo de vault ainda usa VaultName, sujeito a colisões entre vaults de mesmo nome.",
+    "A escrita privada em config.json segue o mecanismo existente, sem proteção criptográfica de chaves.",
+    "CI do cliente e APK real ainda não comprovados."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar consistência e C#; corrigir falhas do CI da PR #734.",
+    "Testar no Android antes de liberar release.",
+    "Obter autorização crítica para formato persistido antes da integração.",
+    "Executar etapas complementares de embeddings/avaliador após critérios documentados."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/adr/0039-urbe-memoria-contextual-local.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Memória estruturada persiste apenas no AssistantStore config.json privado, junto da configuração existente."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Memory antiga migra por procedimento lazy para records em escrita, com teste roundtrip."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI, Android e modelo real explicitamente pendentes."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Urbe local, sem criar serviço compartilhado ou extrair componentes para outro Product."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data"
+    ],
+    "reason": "Mudança no formato persistido da configuração do assistente e migração de memórias; não integrar sem CI e autorização."
+  }
+}

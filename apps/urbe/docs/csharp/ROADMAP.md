@@ -322,3 +322,10 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 
 **Gate G-C5 (crítico, proprietário):** paridade **de funcionalidades** provada e validada por humano, com escrita de arquivos reais e estado C# atual íntegros; **não exige retrocompatibilidade/migração de estado histórico** (DEC-0042); autoriza o corte.
 *Estado do gate:* **não iniciado**
+
+
+## UC-87 — Memória contextual e aprendizado do Assistente (ordem do proprietário, 24/10/2026)
+
+- [~] **M1–M8 no Urbe primeiro.** Memória tipada (fatos/preferências/decisões/episódios/procedimentos/objetivos), escopos global/vault/agente, proveniência e identidade estável, recuperação relevante e limitada por orçamento, observação de execuções concluídas sem copiar documentos, relações com KnowledgeIndex, histórico temporal de substituições, candidatos de contradição, ferramentas de aprendizado/revisão/esquecimento, painel nativo e testes offline/performance. **Em implementação/revisão:** branch feat/urbe-memory-engine-m1-m8-20261024; especificação em ASSISTANT-MEMORY.md. Não marcar [x] até compilação, CI integrado e aceite Android.
+- **Pendências deliberadamente não certificadas como concluídas:** embeddings de recuperação semântica reais, reflexão com modelo/verificação independente, benchmark externo LongMemEval/FrontierMemory, identidade estável multi-vault e validação de desempenho/segurança em aparelho físico. Não declarar uma memória de laboratório como estado-da-arte real sem provas.
+- **Fronteira:** propriedade de dados no Urbe.Core/AssistantStore e conhecimento documental no vault. Nenhum outro produto recebe implementação nova; extração futura segue ADR-0033. Persistência/credenciais é área crítica; integração pelo integrador e autorização do proprietário conforme política.

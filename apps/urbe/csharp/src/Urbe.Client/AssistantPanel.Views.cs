@@ -719,20 +719,10 @@ public sealed partial class AssistantPanel
         instr.TextChanged += (_, _) => c.Instructions = instr.Text ?? "";
         body.Children.Add(Section("Instruções para todos os agentes", instr));
 
-        var mem = new StackPanel { Spacing = 6 };
-        var facts = (c.Memory.GetValueOrDefault(v) ?? []).Select((f, i) => (f, k: v, i)).Concat((c.Memory.GetValueOrDefault("*") ?? []).Select((f, i) => (f, k: "*", i))).ToList();
-        if (facts.Count == 0) mem.Children.Add(Hint("Vazia. Diga “lembre que…” numa conversa."));
-        foreach (var (f, k, i) in facts)
-        {
-            var forget = IconButton(UrbeTheme.Icons.Close, "Esquecer");
-            forget.Click += (_, _) => { if (c.Memory.TryGetValue(k, out var l) && i < l.Count) l.RemoveAt(i); SaveConfig(); ShowSettings(); };
-            var row = new DockPanel();
-            DockPanel.SetDock(forget, Dock.Right);
-            row.Children.Add(forget);
-            row.Children.Add(Wrap(f + (k == "*" ? "  (geral)" : ""), 13, UrbeTheme.Text));
-            mem.Children.Add(row);
-        }
-        body.Children.Add(Section("Memória", Hint("Fatos que você pediu para o Assistente lembrar. Valem para este vault (" + v + ") e, os marcados como gerais, para todos."), mem));
+        var nmem = c.MemoryRecords.Count + c.Memory.Values.Sum(items => items.Count);
+        body.Children.Add(Section("Memória",
+            Hint(nmem + " lembranças locais · recuperação por relevância · histórico e fontes."),
+            TextButton("Gerenciar memórias", ShowMemoryManager)));
 
         }
 
@@ -799,6 +789,165 @@ public sealed partial class AssistantPanel
                 Hint("Permissões independentes do vault, configuráveis para cada agente.")));
         }
         if (addPreset is not null) EditProvider(null, addPreset);
+    }
+
+
+    /// <summary>Separate memory workspace: no giant list in provider settings or implicit keyboard focus.</summary>
+    private void ShowMemoryManager()
+    {
+        var c = _cfg;
+        var body = OpenView("Memória", () => ShowSettings());
+        var head = new StackPanel { Spacing = 6 };
+        var state = Hint("As notas continuam sendo a fonte de verdade. Lembranças não são instruções provenientes de arquivos.");
+        head.Children.Add(state);
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        actions.Children.Add(TextButton("+ Lembrança", () => _ = AddMemoryByHandAsync()));
+        actions.Children.Add(TextButton("Conflitos", () =>
+        {
+            var conflicts = AssistantMemoryEngine.PotentialConflicts(_cfg, VaultKey, _conv.AgentId);
+            _ = _app.Dialogs.AlertAsync("Possíveis conflitos",
+                conflicts.Count == 0 ? "Nenhum candidato encontrado. A detecção é heurística." :
+                string.Join("\n\n", conflicts.Take(8).Select(p =>
+                    p.Left.Text + "\n↔\n" + p.Right.Text)) +
+                "\n\nSão candidatos, não uma decisão automática sobre a verdade.");
+        }));
+        head.Children.Add(actions);
+        head.Children.Add(TextButton(c.AutoCaptureEpisodes ?
+            "Registro de tarefas: ligado (desativar)" : "Registro de tarefas: desligado (ativar)", () =>
+        {
+            c.AutoCaptureEpisodes = !c.AutoCaptureEpisodes;
+            SaveConfig();
+            ShowMemoryManager();
+        }));
+        body.Children.Add(head);
+        var search = new TextBox { PlaceholderText = "Pesquisar fatos, decisões, procedimentos ou fontes…",
+            MinHeight = 44 };
+        body.Children.Add(search);
+        var list = new StackPanel { Spacing = 8 };
+        body.Children.Add(list);
+        void Refresh()
+        {
+            list.Children.Clear();
+            // Includes the owner's other agents and archived records. Never share these across hosts.
+            var entries = c.MemoryRecords.Where(m => m.Scope == "global" || m.Vault == VaultKey)
+                .OrderByDescending(m => m.UpdatedAt).ToArray();
+            var older = c.Memory.SelectMany(pair => (pair.Key == "*" || pair.Key == VaultKey)
+                ? pair.Value.Select((text, i) => new AiMemoryRecord
+                {
+                    Id = "legacy:" + pair.Key + ":" + i, Text = text, Kind = "fact",
+                    Scope = pair.Key == "*" ? "global" : "vault", Vault = pair.Key == "*" ? "" : pair.Key,
+                    Origin = "legacy"
+                })
+                : Array.Empty<AiMemoryRecord>());
+            var term = AssistantMemoryEngine.Normalize(search.Text?.Trim());
+            var filtered = entries.Concat(older).Where(m => term.Length == 0 ||
+                AssistantMemoryEngine.Normalize(m.Text + " " + m.Kind + " " +
+                    m.SourceReference + " " + string.Join(" ", m.RelatedPaths)).Contains(term, StringComparison.Ordinal))
+                .Take(120).ToArray();
+            state.Text = c.MemoryRecords.Count + c.Memory.Values.Sum(a => a.Count) +
+                " lembranças locais · " + filtered.Length + " exibidas (máx. 120).";
+            if (filtered.Length == 0) list.Children.Add(Hint("Sem resultados. Você pode adicionar uma lembrança ou usar “lembre que…” no chat."));
+            foreach (var m in filtered)
+            {
+                var info = m.Kind + " · " + (m.Scope == "agent" ? "agente " + m.AgentId :
+                    m.Scope == "global" ? "geral" : "vault") +
+                    " · " + (m.State == "active" ? "ativa" : m.State);
+                var label = new StackPanel { Spacing = 4 };
+                label.Children.Add(Label(info, 11, UrbeTheme.Text3));
+                label.Children.Add(Wrap(m.Text, 13, UrbeTheme.Text));
+                if (m.SourceReference.Length > 0 || m.RelatedPaths.Count > 0)
+                    label.Children.Add(Hint("Origem: " + m.Origin + (m.SourceReference.Length > 0 ? " · " + m.SourceReference : "") +
+                        (m.RelatedPaths.Count > 0 ? "\nNotas: " + string.Join(", ", m.RelatedPaths.Take(4)) : "")));
+                var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5 };
+                var edit = TextButton("Editar", () => _ = EditMemoryAsync(m.Id));
+                buttons.Children.Add(edit);
+                var pin = TextButton(m.Pinned ? "Desafixar" : "Fixar", () =>
+                {
+                    var current = AssistantMemoryEngine.ResolveForEdit(_cfg, m.Id);
+                    if (current is not null)
+                    {
+                        current.Pinned = !current.Pinned;
+                        try { SaveMemoryConfig(); ShowMemoryManager(); }
+                        catch (Exception ex) { _app.Notify(ex.Message); }
+                    }
+                    else ShowMemoryManager();
+                });
+                buttons.Children.Add(pin);
+                buttons.Children.Add(TextButton("Esquecer", () => _ = DeleteMemoryAsync(m.Id)));
+                label.Children.Add(buttons);
+                list.Children.Add(Card(label));
+            }
+        }
+        search.TextChanged += (_, _) => Refresh();
+        Refresh();
+    }
+
+    private async Task AddMemoryByHandAsync()
+    {
+        var kinds = new[] { "fact", "preference", "decision", "goal", "procedure", "observation" };
+        var names = new[] { "Fato", "Preferência", "Decisão", "Objetivo", "Procedimento", "Observação" };
+        var pick = await _app.Dialogs.ChooseAsync("Tipo de lembrança", names.Select(n => new DialogItem(n)).ToArray());
+        if (pick is null) return;
+        var scopePick = await _app.Dialogs.ChooseAsync("Quem pode utilizar esta memória?",
+        [
+            new DialogItem("Este vault · todos os agentes"),
+            new DialogItem("Somente este agente neste vault"),
+            new DialogItem("Geral · todos os vaults")
+        ]);
+        if (scopePick is null) return;
+        var text = await _app.Dialogs.PromptAsync(new PromptOptions("Nova lembrança",
+            "Conhecimento verificável ou preferência", Placeholder: "O que deve ser lembrado?",
+            Validate: s => s.Length > AssistantMemoryEngine.MaxText ? "Texto muito longo." : null));
+        if (text is null) return;
+        var scope = scopePick.Value switch { 1 => "agent", 2 => "global", _ => "vault" };
+        try
+        {
+            AssistantMemoryEngine.Remember(_cfg, text, VaultKey, _conv.AgentId, kinds[pick.Value],
+                scope, "user", "manual", verified: true);
+            SaveMemoryConfig();
+            ShowMemoryManager();
+        }
+        catch (Exception ex) { await _app.Dialogs.AlertAsync("Não foi possível memorizar", ex.Message); }
+    }
+
+    private async Task EditMemoryAsync(string id)
+    {
+        var m = AssistantMemoryEngine.ResolveForEdit(_cfg, id);
+        if (m is null) { ShowMemoryManager(); return; }
+        var changed = await _app.Dialogs.PromptAsync(new PromptOptions("Editar lembrança", "Texto",
+            Value: m.Text, Validate: s => s.Length > AssistantMemoryEngine.MaxText ? "Texto muito longo." : null));
+        if (changed is null) return;
+        if (string.IsNullOrWhiteSpace(changed)) return;
+        try
+        {
+            if (!AssistantMemoryEngine.Edit(_cfg, m.Id, changed)) return;
+            SaveMemoryConfig();
+            ShowMemoryManager();
+        }
+        catch (Exception ex) { await _app.Dialogs.AlertAsync("Erro na edição", ex.Message); }
+    }
+
+    private async Task DeleteMemoryAsync(string id)
+    {
+        if (!await _app.Dialogs.ConfirmAsync("Esquecer esta lembrança?",
+                "Ela será removida da memória local. As notas do vault não serão alteradas.",
+                "Esquecer", danger: true)) return;
+        try
+        {
+            if (id.StartsWith("legacy:", StringComparison.Ordinal))
+            {
+                var parts = id.Split(':', 3);
+                if (parts.Length == 3 && int.TryParse(parts[2], out var at) &&
+                    _cfg.Memory.TryGetValue(parts[1], out var values) && at >= 0 && at < values.Count)
+                    values.RemoveAt(at);
+                else throw new InvalidOperationException("Lembrança antiga não localizada.");
+                AssistantMemoryEngine.MigrateLegacy(_cfg);
+            }
+            else AssistantMemoryEngine.Forget(_cfg, id);
+            SaveMemoryConfig();
+            ShowMemoryManager();
+        }
+        catch (Exception ex) { await _app.Dialogs.AlertAsync("Erro ao esquecer", ex.Message); }
     }
 
     private async Task AddProviderAsync()
