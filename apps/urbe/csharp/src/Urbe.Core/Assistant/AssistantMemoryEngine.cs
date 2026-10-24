@@ -263,6 +263,39 @@ public static class AssistantMemoryEngine
             "run", "run:" + runId, names, 50, false, timestamp);
     }
 
+    /// <summary>Resolve an old UI memory identity before migrating, then use canonical IDs.</summary>
+    public static AiMemoryRecord? ResolveForEdit(AiConfig cfg, string id)
+    {
+        if (!id.StartsWith("legacy:", StringComparison.Ordinal))
+        {
+            MigrateLegacy(cfg);
+            return cfg.MemoryRecords.FirstOrDefault(m => m.Id == id);
+        }
+        var parts = id.Split(':', 3);
+        if (parts.Length != 3 || !int.TryParse(parts[2], out var index) ||
+            !cfg.Memory.TryGetValue(parts[1], out var values) || index < 0 || index >= values.Count)
+            return null;
+        var content = values[index];
+        var scope = parts[1] == "*" ? "global" : "vault";
+        var vault = parts[1] == "*" ? "" : parts[1];
+        MigrateLegacy(cfg);
+        return cfg.MemoryRecords.FirstOrDefault(m => m.Origin == "legacy" &&
+            m.Scope == scope && m.Vault == vault && m.Text == content);
+    }
+
+    public static bool Edit(AiConfig cfg, string id, string text, long? at = null)
+    {
+        if (string.IsNullOrWhiteSpace(text) || text.Trim().Length > MaxText ||
+            PotentialSecret.IsMatch(text)) throw new ArgumentException("Texto inválido ou contém credenciais.", nameof(text));
+        var m = ResolveForEdit(cfg, id);
+        if (m is null) return false;
+        m.Text = text.Trim();
+        m.UpdatedAt = at ?? Now();
+        m.Origin = "user";
+        m.Verified = true;
+        return true;
+    }
+
     public static bool Forget(AiConfig cfg, string id)
     {
         MigrateLegacy(cfg);
