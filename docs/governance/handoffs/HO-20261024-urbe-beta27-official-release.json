@@ -1,0 +1,100 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-beta27-official-release",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T19:58:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-beta27-release",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-27",
+  "component": "urbe",
+  "state": "review",
+  "branch": "release/urbe-beta27-grafos-web-20261024",
+  "base_commit": "b2d3c1e291300ecb17956c5ac708e19e1447ed70",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/753",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/PATCHNOTES-beta.27.md",
+    "docs/governance/handoffs/HO-20261024-urbe-beta27-official-release.json"
+  ],
+  "work_completed": [
+    "PRs #747 (FAB contextual), #748 (Grafos) e #750 (pesquisa web sem chave) integradas à main antes do corte.",
+    "UrbeBetaVersion 2.0.0-beta.27, versionCode 2000027, preservada identidade e certificado Android.",
+    "Patch notes com escopo da versão e riscos da busca web.",
+    "Integrador confiável deve disparar urbe-csharp-mobile-release.yml por diff no csproj, sem publicação manual."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe C# + E2E + foundation consistency no estado combinado",
+      "result": "pending",
+      "evidence": "Verificar CI de PR #753."
+    },
+    {
+      "kind": "human",
+      "check": "Atualização beta.26 para beta.27, gestos Grafos, FAB e busca web no Android físico",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+      "evidence": "Ainda não validado no Android físico."
+    }
+  ],
+  "known_issues": [
+    "Beta.27 só existe quando tag e assets oficiais reais tiverem sido publicados.",
+    "Bing RSS público é best effort, sem contrato ou disponibilidade garantida.",
+    "DEC-0057 segue pendente e este corte não registra decisão inexistente."
+  ],
+  "blockers": [
+    "CI e integração da PR #753; autorização proprietária caso classificada crítica.",
+    "Execução bem-sucedida de assinatura APK, ZIP Windows e checksums do workflow oficial."
+  ],
+  "next_actions": [
+    "Concluir testes; autorização crítica do proprietário por evento rastreável quando exigida.",
+    "Integrador confiável integra e dispara o workflow oficial da release.",
+    "Conferir tag urbe-csharp-v2.0.0-beta.27, APK, ZIP Windows, certificados e SHA256SUMS.",
+    "Validar instalação e funcionalidades no Android físico."
+  ],
+  "decisions_required": [
+    "DEC-0057"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/governance/integration-policy.json",
+    "docs/adr/0015-integrador-automatico.md",
+    ".github/workflows/urbe-csharp-mobile-release.yml",
+    ".github/integrator/integrate.sh"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Csproj como fonte canônica da versão."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Sem desvio de gate crítico; DEC-0057 não é falsamente decidida."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI não é teste humano Android."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Rastreio de PR, CI e release."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-csharp-beta27-native-release",
+      "status": "product-specific",
+      "rationale": "Corte do Urbe nativo para Android e Windows."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Csproj canônico determina versão/identidade do APK publicado; gate governado obrigatório."
+  }
+}
