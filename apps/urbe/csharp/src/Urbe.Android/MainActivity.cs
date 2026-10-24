@@ -78,6 +78,9 @@ public sealed class MainActivity : AvaloniaMainActivity
 {
     private const int OpenVaultTreeRequest = 8416;
     private const int SpeechRequest = 8417;
+    private const int AiNotificationPermissionRequest = 8418;
+    private bool _openAssistantRequested;
+    public static bool IsVisibleToUser { get; private set; }
     /// <summary>The intent extra the home-screen widget sets to start a quick voice note (UC-56).</summary>
     public const string VoiceExtra = "urbe.voice";
     private TaskCompletionSource<AndroidUri?>? _folderPicker;
@@ -88,6 +91,8 @@ public sealed class MainActivity : AvaloniaMainActivity
     {
         Current = this;
         base.OnCreate(savedInstanceState);
+        PlatformAssistantActivity.Publish = AssistantRunService.Publish;
+        PlatformAssistantActivity.RequestNotificationPermission = RequestAiNotificationPermission;
         // the editor asks for the keyboard when a block becomes an edit box: Android does not always open it by itself (UC-48)
         PlatformInput.ShowKeyboard = () => Window?.DecorView is { } root && GetSystemService(InputMethodService) is Android.Views.InputMethods.InputMethodManager ime
             ? ShowKeyboard(root, ime) : false;
@@ -101,6 +106,7 @@ public sealed class MainActivity : AvaloniaMainActivity
         // "Remover animações" (animator duration scale 0) turns the interface's motion off (P6, P12)
         UrbeTokens.Motion.Reduced = Android.Provider.Settings.Global.GetFloat(ContentResolver, Android.Provider.Settings.Global.AnimatorDurationScale, 1f) == 0f;
         HandleVoiceIntent(Intent);
+        HandleAssistantIntent(Intent);
     }
 
     private static FeedbackConstants Haptic(Urbe.Client.Ui.HapticKind kind) => kind switch
@@ -115,6 +121,33 @@ public sealed class MainActivity : AvaloniaMainActivity
     {
         base.OnNewIntent(intent);
         HandleVoiceIntent(intent);
+        HandleAssistantIntent(intent);
+    }
+
+    private void HandleAssistantIntent(Intent? intent)
+    {
+        if (intent?.Action != "app.urbe.ai.OPEN") return;
+        _openAssistantRequested = true;
+        intent.SetAction(null);
+        if (IsVisibleToUser) ShowRequestedAssistant();
+    }
+
+    private void ShowRequestedAssistant()
+    {
+        if (!_openAssistantRequested) return;
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            if (UrbeApp.ActiveView is not { } view) return;
+            _openAssistantRequested = false;
+            view.Assistant.Open();
+        }, Avalonia.Threading.DispatcherPriority.Background);
+    }
+
+    private void RequestAiNotificationPermission()
+    {
+        if (!OperatingSystem.IsAndroidVersionAtLeast(33) ||
+            CheckSelfPermission("android.permission.POST_NOTIFICATIONS") == Permission.Granted) return;
+        RequestPermissions(["android.permission.POST_NOTIFICATIONS"], AiNotificationPermissionRequest);
     }
 
     /// <summary>
@@ -155,15 +188,27 @@ public sealed class MainActivity : AvaloniaMainActivity
     }
 
     /// <summary>workspace.js flushPending on visibilitychange hidden: write a pending map now.</summary>
+    protected override void OnResume()
+    {
+        base.OnResume();
+        IsVisibleToUser = true;
+        ShowRequestedAssistant();
+    }
+
     protected override void OnPause()
     {
+        IsVisibleToUser = false;
         UrbeApp.FlushPendingOnBackground();
         base.OnPause();
     }
 
     protected override void OnDestroy()
     {
-        if (ReferenceEquals(Current, this)) Current = null;
+        if (ReferenceEquals(Current, this))
+        {
+            Current = null;
+            IsVisibleToUser = false;
+        }
         _speech?.TrySetResult(null);
         _speech = null;
         base.OnDestroy();
