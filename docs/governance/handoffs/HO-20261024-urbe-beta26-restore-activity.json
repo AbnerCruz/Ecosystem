@@ -14,7 +14,7 @@
   "branch": "fix/urbe-beta26-restore-assistant-timeline-20261024",
   "base_commit": "eb53068da459195740097058958170ea71a062a3",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/738",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
