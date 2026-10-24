@@ -25,56 +25,122 @@ public sealed class GraphDocument
     private readonly List<GraphNode> _nodes = [];
     private readonly List<GraphEdge> _edges = [];
     private readonly List<GraphStroke> _strokes = [];
-    private readonly List<string> _undo = [];
-    private readonly List<string> _redo = [];
-    private const int MaxUndoSteps = 80;
+    // Delta-based history: an edit stores only the entities it touched, never a full JSON
+    // copy of the canvas. No fixed action quota: memory grows with actual edits.
+    private sealed record Edit(Action Undo, Action Redo);
+    private readonly Stack<Edit> _undo = new();
+    private readonly Stack<Edit> _redo = new();
+    private readonly Dictionary<string, int> _nodeIndex = new(StringComparer.Ordinal);
+    private bool _dragActive;
+    private readonly Dictionary<string, GraphNode> _dragBefore = new(StringComparer.Ordinal);
 
     public IReadOnlyList<GraphStroke> Strokes => _strokes.AsReadOnly();
-    public bool CanUndo => _undo.Count > 0;
+    public bool CanUndo => _undo.Count > 0 || _dragActive && _dragBefore.Count > 0;
     public bool CanRedo => _redo.Count > 0;
 
-    private void Remember()
+    private void Record(Action undo, Action redo)
     {
-        if (_undo.Count == MaxUndoSteps) _undo.RemoveAt(0);
-        _undo.Add(Serialize());
+        _undo.Push(new Edit(undo, redo));
         _redo.Clear();
+    }
+
+    private int IndexOfNode(string id) => _nodeIndex.TryGetValue(id, out var index) ? index : -1;
+    private void ReindexNodes()
+    {
+        _nodeIndex.Clear();
+        for (var i = 0; i < _nodes.Count; i++) _nodeIndex[_nodes[i].Id] = i;
+    }
+
+    private void PutNode(GraphNode node)
+    {
+        var at = IndexOfNode(node.Id);
+        if (at >= 0) _nodes[at] = node;
+        else { _nodeIndex[node.Id] = _nodes.Count; _nodes.Add(node); }
+    }
+
+    private void DeleteNode(string id)
+    {
+        var at = IndexOfNode(id);
+        if (at < 0) return;
+        _nodes.RemoveAt(at);
+        ReindexNodes();
+    }
+
+    private void PutEdge(GraphEdge edge)
+    {
+        var at = _edges.FindIndex(e => e.Id == edge.Id);
+        if (at >= 0) _edges[at] = edge;
+        else _edges.Add(edge);
+    }
+
+    private void PutStroke(GraphStroke stroke)
+    {
+        var at = _strokes.FindIndex(s => s.Id == stroke.Id);
+        if (at >= 0) _strokes[at] = stroke;
+        else _strokes.Add(stroke);
+    }
+
+    private void ApplyNodes(IReadOnlyDictionary<string, GraphNode?> change)
+    {
+        // Two passes ensure parent groups are restored before children.
+        foreach (var pair in change.Where(p => p.Value is null)) DeleteNode(pair.Key);
+        foreach (var pair in change.Where(p => p.Value is not null)) PutNode(pair.Value!);
+    }
+
+    private void RecordNodes(
+        IReadOnlyDictionary<string, GraphNode?> before,
+        IReadOnlyDictionary<string, GraphNode?> after,
+        IReadOnlyList<GraphEdge>? removedEdges = null)
+    {
+        Record(
+            () =>
+            {
+                ApplyNodes(before);
+                if (removedEdges is not null) foreach (var edge in removedEdges) PutEdge(edge);
+            },
+            () =>
+            {
+                ApplyNodes(after);
+                if (removedEdges is not null)
+                    foreach (var edge in removedEdges) _edges.RemoveAll(e => e.Id == edge.Id);
+            });
     }
 
     public bool Undo()
     {
-        if (_undo.Count == 0) return false;
-        _redo.Add(Serialize());
-        var previous = Parse(_undo[^1]);
-        _undo.RemoveAt(_undo.Count - 1);
-        Restore(previous);
+        EndDrag();
+        if (!_undo.TryPop(out var edit)) return false;
+        edit.Undo();
+        _redo.Push(edit);
         return true;
     }
 
     public bool Redo()
     {
-        if (_redo.Count == 0) return false;
-        _undo.Add(Serialize());
-        var next = Parse(_redo[^1]);
-        _redo.RemoveAt(_redo.Count - 1);
-        Restore(next);
+        EndDrag();
+        if (!_redo.TryPop(out var edit)) return false;
+        edit.Redo();
+        _undo.Push(edit);
         return true;
     }
 
-    private void Restore(GraphDocument other)
+    /// <summary>Collects only the moving node (and children of its group) for a single undo step.</summary>
+    public void BeginDrag()
     {
-        Id = other.Id;
-        Title = other.Title;
-        _nodes.Clear();
-        _nodes.AddRange(other.Nodes);
-        _edges.Clear();
-        _edges.AddRange(other.Edges);
-        _strokes.Clear();
-        _strokes.AddRange(other.Strokes);
+        EndDrag();
+        _dragActive = true;
     }
 
-    /// <summary>Begin one drag gesture: all move events form one undo step.</summary>
-    public void BeginDrag() => Remember();
-
+    public void EndDrag()
+    {
+        if (!_dragActive) return;
+        _dragActive = false;
+        if (_dragBefore.Count == 0) return;
+        var before = _dragBefore.ToDictionary(x => x.Key, x => (GraphNode?)x.Value, StringComparer.Ordinal);
+        _dragBefore.Clear();
+        var after = before.Keys.ToDictionary(id => id, id => (GraphNode?)Node(id), StringComparer.Ordinal);
+        if (before.Keys.Any(id => !Equals(before[id], after[id]))) RecordNodes(before, after);
+    }
 
     public string Id { get; private set; } = "graph_" + Guid.NewGuid().ToString("N");
     public string Title { get; private set; } = "Novo grafo";
