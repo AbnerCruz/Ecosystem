@@ -864,8 +864,9 @@ public sealed partial class AssistantPanel : Border
 
     /// <summary>
     /// The log, light however long the conversation (observation of 22/10/2026: after 11 requests it froze the app).
-    /// The current request shows every step; an earlier one shows what was asked, its steps folded in one line (built
-    /// when opened) and its answer. Only what changed is replaced: a streamed word rebuilds its own message, not the log.
+    /// Each request presents one activity summary rather than flooding the chat with raw tool cards.
+    /// Expanding reveals every operation and its full source/result. Earlier runs stay lazily folded.
+    /// The final answer, permission prompts, and generated images remain first-class content.
     /// </summary>
     private void RenderLog()
     {
@@ -879,17 +880,23 @@ public sealed partial class AssistantPanel : Border
         {
             // the results the loop sends back show in their cards, not as messages
             if (msgs[i].Role == "user" && msgs[i].Meta?.ToolResults == true) continue;
-            if (i >= current || !IsRequest(msgs[i])) { desired.Add(View(msgs[i])); continue; }
+            if (!IsRequest(msgs[i])) { desired.Add(View(msgs[i])); continue; }
             desired.Add(View(msgs[i]));
             int end = i + 1;
-            while (end < current && !IsRequest(msgs[end])) end++;
+            while (end < msgs.Count && !IsRequest(msgs[end])) end++;
             var steps = msgs.GetRange(i + 1, end - i - 1).Where(m => m.Role == "assistant").ToList();
-            var answer = steps.LastOrDefault() is { } last && last.Content.Any(b => b.Type == "text" && !string.IsNullOrWhiteSpace(b.Text)) && !last.Content.Any(b => b.Type == "tool_use") ? last : null;
-            var folded = steps.Where(m => m != answer).ToList();
-            if (folded.Count > 0)
+            var answer = steps.LastOrDefault() is { } last && last.Meta?.Draft != true &&
+                last.Content.Any(b => b.Type == "text" && !string.IsNullOrWhiteSpace(b.Text)) &&
+                !last.Content.Any(b => b.Type == "tool_use") ? last : null;
+            var activities = steps.Where(m => m != answer).ToList();
+            if (activities.Count > 0)
             {
-                if (!_past.TryGetValue(msgs[i], out var group)) _past[msgs[i]] = group = PastSteps(folded);
-                desired.Add(group);
+                if (i >= current) desired.Add(ActivityTimeline(msgs[i], activities));
+                else
+                {
+                    if (!_past.TryGetValue(msgs[i], out var group)) _past[msgs[i]] = group = PastSteps(activities);
+                    desired.Add(group);
+                }
             }
             if (answer is not null) desired.Add(View(answer));
             i = end - 1;
