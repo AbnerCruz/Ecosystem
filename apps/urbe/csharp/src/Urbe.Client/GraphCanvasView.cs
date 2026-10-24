@@ -160,8 +160,8 @@ public sealed class GraphCanvasView : Control
         if (_drawing is not null)
         {
             var p = ToWorld(at);
-            if (_drawing.Count < 2500 && (_drawing.Count == 0 ||
-                Math.Sqrt(Math.Pow(p.X - _drawing[^1].X, 2) + Math.Pow(p.Y - _drawing[^1].Y, 2)) >= 3 / _zoom))
+            if (_drawing.Count == 0 ||
+                Math.Sqrt(Math.Pow(p.X - _drawing[^1].X, 2) + Math.Pow(p.Y - _drawing[^1].Y, 2)) >= 3 / _zoom)
                 _drawing.Add(new GraphPoint(p.X, p.Y));
             _last = at;
             InvalidateVisual();
@@ -199,7 +199,11 @@ public sealed class GraphCanvasView : Control
             }
             InvalidateVisual();
         }
-        else if (_moved && _pressedNode is not null && !ReadOnly && !MultipleSelection) Changed?.Invoke();
+        else if (_moved && _pressedNode is not null && !ReadOnly && !MultipleSelection)
+        {
+            _document?.EndDrag();
+            Changed?.Invoke();
+        }
         _pressedNode = null;
     }
 
