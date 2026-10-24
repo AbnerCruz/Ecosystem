@@ -290,34 +290,40 @@ public sealed class GraphDocument
         var width = items.Max(n => n.X + n.Width) - x + 20;
         var height = items.Max(n => n.Y + n.Height) - y + 20;
         CheckGeometry(x, y, width, height);
-        var group = AddNode(GraphNodeKind.Group, label ?? "Grupo", null, x, y, width, height);
-        for (var i = 0; i < _nodes.Count; i++)
-            if (items.Any(n => n.Id == _nodes[i].Id))
-                _nodes[i] = _nodes[i] with { ParentId = group.Id };
+        var group = AddNode(GraphNodeKind.Group, label ?? "Grupo", null, x, y, width, height,
+            recordHistory: false);
+        var before = items.ToDictionary(n => n.Id, n => (GraphNode?)n, StringComparer.Ordinal);
+        before.Add(group.Id, null);
+        var after = items.ToDictionary(n => n.Id,
+            n => (GraphNode?)(n with { ParentId = group.Id }), StringComparer.Ordinal);
+        after.Add(group.Id, group);
+        foreach (var node in items) PutNode(node with { ParentId = group.Id });
+        RecordNodes(before, after);
         return group;
     }
 
     public GraphStroke AddStroke(IEnumerable<GraphPoint> points, double width = 2.2)
     {
         var list = points.ToArray();
-        if (list.Length < 2 || list.Length > 2500 || _strokes.Count >= 2000 ||
-            !double.IsFinite(width) || width < 0.5 || width > 20 ||
-            list.Any(p => !double.IsFinite(p.X) || !double.IsFinite(p.Y) || Math.Abs(p.X) > 1e7 || Math.Abs(p.Y) > 1e7))
-            throw new InvalidDataException("Traço inválido, longo demais ou fora do canvas.");
+        if (list.Length < 2 || !double.IsFinite(width) || width <= 0 ||
+            list.Any(p => !double.IsFinite(p.X) || !double.IsFinite(p.Y)))
+            throw new InvalidDataException("Traço precisa de coordenadas finitas e espessura positiva.");
         var stroke = new GraphStroke("stroke_" + Guid.NewGuid().ToString("N"), list, width);
-        Remember();
+        Record(() => _strokes.RemoveAll(s => s.Id == stroke.Id), () => PutStroke(stroke));
         _strokes.Add(stroke);
         return stroke;
     }
 
     public bool RemoveStroke(string id)
     {
-        if (!_strokes.Any(s => s.Id == id)) return false;
-        Remember();
-        _strokes.RemoveAll(s => s.Id == id);
+        var stroke = _strokes.FirstOrDefault(s => s.Id == id);
+        if (stroke is null) return false;
+        Record(() => PutStroke(stroke), () => _strokes.RemoveAll(s => s.Id == id));
+        _strokes.Remove(stroke);
         return true;
     }
-    public GraphNode? Node(string id) => _nodes.FirstOrDefault(n => n.Id == id);
+
+    public GraphNode? Node(string id) => IndexOfNode(id) is var at && at >= 0 ? _nodes[at] : null;
 
     public string Serialize() => JsonSerializer.Serialize(new Persisted
     {
@@ -338,8 +344,8 @@ public sealed class GraphDocument
         if (data.Version > CurrentVersion)
             throw new NotSupportedException("Este grafo foi criado por uma versão mais recente do Urbe.");
         if (string.IsNullOrWhiteSpace(data.Id) || string.IsNullOrWhiteSpace(data.Title) ||
-            data.Nodes is null || data.Edges is null || data.Nodes.Count > 10000 || data.Edges.Count > 30000)
-            throw new InvalidDataException("Estrutura de grafo incompleta ou excessiva.");
+            data.Nodes is null || data.Edges is null)
+            throw new InvalidDataException("Estrutura de grafo incompleta.");
         var ids = new HashSet<string>(StringComparer.Ordinal);
         foreach (var n in data.Nodes)
         {
@@ -357,14 +363,12 @@ public sealed class GraphDocument
                 node.Kind == GraphNodeKind.Group))
                 throw new InvalidDataException("Grupo inválido ou não encontrado.");
         var strokes = data.Strokes ?? [];
-        if (strokes.Count > 2000) throw new InvalidDataException("Muitos traços.");
         var strokeIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var stroke in strokes)
             if (stroke is null || string.IsNullOrWhiteSpace(stroke.Id) || !strokeIds.Add(stroke.Id) ||
-                !double.IsFinite(stroke.Width) || stroke.Width < .5 || stroke.Width > 20 ||
-                stroke.Points is null || stroke.Points.Length < 2 || stroke.Points.Length > 2500 ||
-                stroke.Points.Any(p => !double.IsFinite(p.X) || !double.IsFinite(p.Y) ||
-                    Math.Abs(p.X) > 1e7 || Math.Abs(p.Y) > 1e7))
+                !double.IsFinite(stroke.Width) || stroke.Width <= 0 ||
+                stroke.Points is null || stroke.Points.Length < 2 ||
+                stroke.Points.Any(p => !double.IsFinite(p.X) || !double.IsFinite(p.Y)))
                 throw new InvalidDataException("Traço inválido.");
         var edgeIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var e in data.Edges)
@@ -376,19 +380,20 @@ public sealed class GraphDocument
         graph._nodes.AddRange(data.Nodes);
         graph._edges.AddRange(data.Edges);
         graph._strokes.AddRange(strokes);
+        graph.ReindexNodes();
         return graph;
     }
 
     private static string CleanLabel(string? value, string fallback)
     {
         var text = (value ?? "").Trim();
-        return text.Length == 0 ? fallback : text.Length > 4000 ? text[..4000] : text;
+        return text.Length == 0 ? fallback : text;
     }
 
     private static void CheckGeometry(double x, double y, double width, double height)
     {
         if (!double.IsFinite(x) || !double.IsFinite(y) || !double.IsFinite(width) || !double.IsFinite(height) ||
-            Math.Abs(x) > 1e7 || Math.Abs(y) > 1e7 || width < 32 || width > 10000 || height < 24 || height > 10000)
+            width <= 0 || height <= 0)
             throw new InvalidDataException("Geometria de nó inválida.");
     }
 
