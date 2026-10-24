@@ -1,0 +1,90 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-beta25-release",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T11:54:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-beta25-release",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-27",
+  "component": "urbe",
+  "state": "review",
+  "branch": "release/urbe-beta25-after-726-732-733-20261024",
+  "base_commit": "45f159c901d3a1636ac4623d0ca7f358bc65b2b5",
+  "commit": "5631c218464a0053248b6cef3438153e53c4cff8",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/735",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "docs/governance/handoffs/HO-20261024-urbe-beta25-release.json"
+  ],
+  "work_completed": [
+    "Corte da versão canônica beta.25 (2000025) solicitado pelo proprietário depois da integração na main das PRs #726, #732 e #733.",
+    "Confirmado que a última release assinada disponível é beta.24 e que a tag beta.25 não existe.",
+    "Disparo exclusivamente pelo workflow oficial em push à main de Urbe.Android.csproj, sem criação manual de tags, APKS ou troca do certificado.",
+    "PR #735 aberta para integração governada com label integrar."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "CI de consistência e Urbe do PR #735",
+      "result": "pending",
+      "evidence": "Verificar checks e integração do PR #735 antes de release."
+    },
+    {
+      "kind": "human",
+      "check": "Instalar APK beta.25 no Android e validar interface moderna, pesquisa web, aprovações e notas",
+      "result": "pending",
+      "critical": false,
+      "object": "https://github.com/AbnerCruz/Ecosystem/pull/735",
+      "evidence": "Teste físico não executado; usuário fará validação na instalação."
+    }
+  ],
+  "known_issues": [
+    "A publicação ainda não ocorreu; dependente do integrador e do workflow oficial após o merge.",
+    "Testes com Brave real requerem credencial configurada pelo usuário e ambiente de rede."
+  ],
+  "blockers": [
+    "Gates oficiais do PR e publicação da beta.25."
+  ],
+  "next_actions": [
+    "Integrar PR #735 pela label integrar após aprovação dos checks e conforme governança.",
+    "Aguardar publicação oficial e verificar tag, APK assinado, SHA256, ZIP Windows e commit de origem.",
+    "Usuário instalará e validará fisicamente no Android."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/distribution/direct-releases.md",
+    ".github/workflows/urbe-csharp-mobile-release.yml",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "PR #735 e commit rastreiam o corte e handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Teste físico Android permanece explicitamente pendente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Versão e distribuição dependem de CI e integrador oficial; nenhum atalho."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-beta-native-release",
+      "status": "product-specific",
+      "rationale": "A release pertence ao canal Android/Windows nativo do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Publicação de novo APK beta assinada por certificado público estável; requer integração governada."
+  }
+}
