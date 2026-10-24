@@ -525,14 +525,16 @@ public static class AssistantAgent
         foreach (var t in tools) byName[t.Name] = t;
         var system = SystemPrompt(agent, policy, o.VaultName, o.Host.Documents.List().Count, o.Host.EditorContext().Path, o.Instructions, o.Memory, o.Now ?? DateTime.Now, o.Naming, o.Guidance);
         int budget = (int)Math.Max(20000, Math.Min(WorkingChars, Math.Floor(contextTokens * 3.2 * 0.7)));
-        int maxSteps = o.MaxSteps is null or 0 ? 30 : o.MaxSteps.Value;
+        // Optional ceiling for test harnesses and legacy callers; no cap in normal sessions.
+        // Explicit cancel, repeated tool failures, and provider errors remain the safeguards.
+        int? maxSteps = o.MaxSteps is > 0 ? o.MaxSteps : null;
         bool runAllow = false, nudged = false, partialNudged = false;
         var failed = new Dictionary<string, string>();
         int repeats = 0;
         var partial = new List<(string Path, AiPartial Partial)>();
         var gate = new object();
 
-        for (int step = 0; step < maxSteps; step++)
+        for (int step = 0; maxSteps is null || step < maxSteps.Value; step++)
         {
             if (cancel.IsCancellationRequested) { result.Stopped = "aborted"; break; }
             result.Steps++;
@@ -649,7 +651,7 @@ public static class AssistantAgent
             }
             if (cancel.IsCancellationRequested) { result.Stopped = "aborted"; break; }
             if (repeats >= 3) { result.Stopped = "loop"; break; }
-            if (step == maxSteps - 1) result.Stopped = "max_steps";
+            if (maxSteps is { } limit && step == limit - 1) result.Stopped = "max_steps";
 
             void Finish(AiChatBlock call, Out output)
             {
@@ -748,7 +750,7 @@ public static class AssistantAgent
             int steps = 0;
             var r = await RunAsync(new AiAgentRun
             {
-                Agent = AgentById("pesquisador"), Policy = "readonly", Messages = sub, IsSubagent = true, MaxSteps = 12, Approve = null,
+                Agent = AgentById("pesquisador"), Policy = "readonly", Messages = sub, IsSubagent = true, Approve = null,
                 Host = o.Host, Provider = o.Provider, Model = o.Model, Stream = o.Stream, Cancel = cancel, Tools = o.Tools, VaultName = o.VaultName,
                 ContextTokens = o.ContextTokens, Instructions = o.Instructions, Memory = o.Memory, MaxTokens = o.MaxTokens, Temperature = o.Temperature, Now = o.Now, Uid = o.Uid,
                 OnUpdate = e =>
