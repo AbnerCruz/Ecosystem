@@ -14,6 +14,7 @@ namespace Urbe.Client;
 public sealed partial class AssistantPanel
 {
     private readonly Dictionary<string, bool> _activityExpanded = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, bool> _stageExpanded = new(StringComparer.Ordinal);
 
     private Control ActivityTimeline(AiChatMessage request, IReadOnlyList<AiChatMessage> messages)
     {
@@ -61,14 +62,26 @@ public sealed partial class AssistantPanel
         var fold = Lazy(header, () =>
         {
             var list = new StackPanel { Spacing = 5, Margin = new Thickness(0, 8, 0, 2) };
-            foreach (var (block, message) in calls)
-                list.Children.Add(ActivityStage(block, message));
-            if (calls.Count == 0)
-                foreach (var message in messages)
-                    if (message.Meta?.Reasoning is { Length: > 0 } thought)
-                        list.Children.Add(Wrap(thought, 12, UrbeTheme.Text2));
-            if (calls.Count == 0 && list.Children.Count == 0)
-                list.Children.Add(Hint("Nenhuma ferramenta utilizada."));
+            // Preserve the *entire* chronology, including model reasoning and intermediate drafts.
+            // Every part is loaded only when the person requests that part of the history.
+            foreach (var message in messages)
+            {
+                if (message.Meta?.Reasoning is { Length: > 0 } thought)
+                    list.Children.Add(Lazy(Label("Raciocínio fornecido pelo modelo", 12, UrbeTheme.Text2),
+                        () => Wrap(thought, 12, UrbeTheme.Text2)));
+                foreach (var block in message.Content)
+                {
+                    if (block.Type == "tool_use") list.Children.Add(ActivityStage(block, message));
+                    else if (block.Type == "text" && !block.Hidden && !string.IsNullOrEmpty(block.Text))
+                    {
+                        var draft = block.Text;
+                        list.Children.Add(Lazy(Label(message.Meta?.Draft == true ? "Rascunho intermediário" : "Observação do agente", 12, UrbeTheme.Text2),
+                            () => Markdown(draft)));
+                    }
+                }
+            }
+            if (list.Children.Count == 0)
+                list.Children.Add(Hint("O modelo ainda não registrou operações."));
             return list;
         });
         fold.IsExpanded = _activityExpanded.GetValueOrDefault(request.Id);
@@ -156,6 +169,11 @@ public sealed partial class AssistantPanel
             if (details.Children.Count == 0) details.Children.Add(Hint("Esta etapa ainda está sendo preparada."));
             return details;
         });
+        expander.IsExpanded = _stageExpanded.GetValueOrDefault(block.Id);
+        expander.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == Expander.IsExpandedProperty) _stageExpanded[block.Id] = expander.IsExpanded;
+        };
         Avalonia.Automation.AutomationProperties.SetName(expander, "Etapa: " + title + ". " + status + ". Expandir detalhes");
         return new Border
         {
