@@ -2041,6 +2041,39 @@
       "decidedAt": "2026-10-24",
       "record": "docs/governance/addenda/ADD-0032-urbe-ia-no-aparelho.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0057",
+      "status": "pending",
+      "component": "urbe",
+      "blocking": true,
+      "title": "Urbe: pesquisa web pública sem chave nem grants por agente",
+      "context": "O proprietário quer pesquisa de internet imediata pelo Assistente, sem configurar provedores, chaves ou autorizações por agente. O PR #750 torna um feed RSS público a opção padrão; isso também altera a política de acesso de rede e amplia a superfície de privacidade/SSRF. A fonte pública não oferece API contratada nem garantias de continuidade.",
+      "question": "Aprovar que instalações novas habilitem consulta web pública por padrão, preservando opt-out histórico e gateway seguro, com o feed RSS best-effort e fallback avançado opcional, após validação técnica e de privacidade?",
+      "alternatives": [
+        {
+          "option": "A — Aprovar o padrão sem chave com acesso público e opt-out global",
+          "consequences": "Entrega simplicidade solicitada; buscas enviam termos a terceiros, hosts e fontes precisam de verificação; requer testes Android e revisão de privacidade antes da release."
+        },
+        {
+          "option": "B — Manter rede desativada por padrão até autorização global",
+          "consequences": "Preserva opt-in explícito e reduz tráfego involuntário, mas não atende à experiência sem configuração exigida pelo proprietário."
+        },
+        {
+          "option": "C — Exigir outro mecanismo público contratualmente sustentável antes de ativar o padrão",
+          "consequences": "Evita dependência não contratada do RSS, com possível custo e atraso."
+        }
+      ],
+      "consequences": "Enquanto pendente, PR #750 e qualquer release que habilite rede automaticamente permanecem bloqueados para integração; somente documentação, CI e revisão podem avançar.",
+      "manifestCompatibility": "NN-001 e NN-016 mantêm credenciais e permissão separadas do vault; NN-011 e NN-021 exigem gate de decisão explícita; NN-017 exige validação Android; NN-020 exige tratamento de fontes não confiáveis.",
+      "recommendation": "Revisar threat model e disponibilidade antes da alternativa A; o pedido de UX não autoriza automaticamente transmissão involuntária de dados privados.",
+      "related": [
+        "docs/adr/0038-urbe-pesquisa-web-segura.md",
+        "apps/urbe/docs/csharp/ROADMAP.md",
+        "https://github.com/AbnerCruz/Ecosystem/pull/750"
+      ],
+      "raisedBy": "chatgpt-pr-triage",
+      "raisedAt": "2026-10-24"
     }
   ]
 }
