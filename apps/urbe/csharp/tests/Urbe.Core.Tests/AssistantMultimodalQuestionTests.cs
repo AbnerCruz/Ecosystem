@@ -176,4 +176,54 @@ public sealed class AssistantMultimodalQuestionTests
         Assert.Contains("reabra", guidance, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task WrittenArtifactTriggersReadbackAndQualityReviewBeforeCompletion()
+    {
+        var host = new Host();
+        int reads = 0;
+        var schema = (JsonObject)JsonNode.Parse("""{"type":"object","properties":{},"additionalProperties":false}""")!;
+        var write = new AiTool
+        {
+            Name = "write_artifact", Access = "write", Description = "Test file writer",
+            Parameters = schema, Label = _ => "Write",
+            Run = (_, _) => Task.FromResult(new AiToolOutput("Saved",
+                Changes: [new AiChange("character", null, new AiNoteSnap("Personagens/Alma.md", "# Alma"))]))
+        };
+        var read = new AiTool
+        {
+            Name = "audit_artifact", Access = "read", Description = "Test file readback",
+            Parameters = schema, Label = _ => "Read",
+            Run = (_, _) => { reads++; return Task.FromResult(new AiToolOutput("# Alma — verificado")); }
+        };
+        var turns = 0;
+        var messages = new List<AiChatMessage>
+        {
+            new() { Role = "user", Content = [AiChatBlock.TextBlock("Crie e revise a ficha de Alma.")] }
+        };
+        var result = await AssistantAgent.RunAsync(new AiAgentRun
+        {
+            Host = host, Policy = "auto", Agent = AssistantAgent.AgentById("geral"),
+            Provider = new AiProviderConfig("p", "openai"), Model = "m",
+            Messages = messages, Tools = [write, read],
+            Stream = (_, _, _, _) =>
+            {
+                turns++;
+                var result = turns switch
+                {
+                    1 => new AiResult([AiBlock.ToolUse("w", "write_artifact", new JsonObject())], "", "tool_use", new AiUsage(1, 1, null), "m"),
+                    2 => new AiResult([AiBlock.TextBlock("Pronto.")], "", "end_turn", new AiUsage(1, 1, null), "m"),
+                    3 => new AiResult([AiBlock.ToolUse("r", "audit_artifact", new JsonObject())], "", "tool_use", new AiUsage(1, 1, null), "m"),
+                    _ => new AiResult([AiBlock.TextBlock("Revisado.")], "", "end_turn", new AiUsage(1, 1, null), "m")
+                };
+                return Task.FromResult(result);
+            }
+        });
+        Assert.Equal("end", result.Stopped);
+        Assert.Equal(4, turns);
+        Assert.Equal(1, reads);
+        Assert.Contains(messages.SelectMany(m => m.Content), block =>
+            block.Text?.Contains("Revisão obrigatória do trabalho", StringComparison.Ordinal) == true);
+        Assert.Equal("Revisado.", messages.Last(m => m.Role == "assistant").Content.First(b => b.Type == "text").Text);
+    }
+
 }
