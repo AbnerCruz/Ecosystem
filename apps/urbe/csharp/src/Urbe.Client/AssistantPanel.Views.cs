@@ -15,6 +15,8 @@ namespace Urbe.Client;
 /// <summary>The Assistente's messages, tool cards, approval with diff, run footer, empty states and overlaid views (ui.js).</summary>
 public sealed partial class AssistantPanel
 {
+    private readonly Dictionary<string, string> _questionDrafts = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _approvalDrafts = new(StringComparer.Ordinal);
     // ---------------------------------------------------------------- messages
 
     private Control MessageView(AiChatMessage m)
@@ -37,7 +39,7 @@ public sealed partial class AssistantPanel
         var view = new StackPanel { Spacing = 8 };
         var meta = m.Meta;
         if (meta?.Reasoning is { Length: > 0 } reasoning)
-            view.Children.Add(Lazy(Label(meta.Streaming == true && m.Content.Count == 0 ? "Pensando…" : "Raciocínio", 12, UrbeTheme.Text3), () => Wrap(reasoning, 12, UrbeTheme.Text3)));
+            view.Children.Add(Lazy(Label(meta.Streaming == true && m.Content.Count == 0 ? "Pensando…" : "Resumo de raciocínio do modelo", 12, UrbeTheme.Text3), () => Wrap(reasoning, 12, UrbeTheme.Text3)));
         foreach (var b in m.Content)
         {
             if (b.Type == "text")
@@ -54,6 +56,28 @@ public sealed partial class AssistantPanel
             view.Children.Add(Label("•••", 18, UrbeTheme.Text3));
         // UC-80: an answer to a request made in a note can be kept there, as a quote under the line that asked it
         var answer = string.Join("\n\n", m.Content.Where(b => b.Type == "text" && !string.IsNullOrWhiteSpace(b.Text)).Select(b => b.Text!.Trim()));
+        if (answer.Length > 0 && meta?.Draft != true)
+        {
+            var actions = new WrapPanel();
+            var copy = LinkButton("Copiar", () => { });
+            copy.Click += async (_, _) =>
+            {
+                var copied = await Ui.TextActions.CopyAsync(this, string.Join("\n\n", m.Content.Where(b => b.Type == "text" && !b.Hidden).Select(b => b.Text)));
+                _app.Notify(copied ? "Texto copiado." : "Não foi possível copiar o texto.");
+            };
+            actions.Children.Add(copy);
+            actions.Children.Add(LinkButton("Selecionar texto", () =>
+            {
+                var body = OpenView("Selecionar texto");
+                var text = new TextBox { Text = string.Join("\n\n", m.Content.Where(b => b.Type == "text" && !b.Hidden).Select(b => b.Text)),
+                    IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 200 };
+                Ui.TextActions.Attach(text);
+                body.Children.Add(text);
+                body.Children.Add(LinkButton("Selecionar tudo", () => { text.Focus(); text.SelectAll(); TouchTextScroll.ShowSelectionHandles(text); }));
+                body.Children.Add(Hint("Texto original em Markdown. Selecione qualquer trecho para copiar."));
+            }));
+            view.Children.Add(actions);
+        }
         if (meta?.Streaming != true && meta?.Draft != true && answer.Length > 0 && AskedInNote() is { } asked)
         {
             Button? pin = null;
@@ -129,9 +153,9 @@ public sealed partial class AssistantPanel
         var frame = new StackPanel { Spacing = 8 };
         var visual = new Border
         {
-            MinHeight = 150, MaxHeight = 325, CornerRadius = new CornerRadius(12),
-            BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1),
-            Background = UrbeTheme.Brush(UrbeTheme.Surface2),
+            MinHeight = 80, MaxHeight = 420, HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(12),
+            BorderThickness = new Thickness(0),
+            Background = Brushes.Transparent,
             Child = Label("Carregando imagem do vault…", 12, UrbeTheme.Text3)
         };
         frame.Children.Add(visual);
@@ -147,14 +171,23 @@ public sealed partial class AssistantPanel
             _ = _app.OpenGeneratedImageAsync(path);
         });
         Avalonia.Automation.AutomationProperties.SetName(open, "Abrir imagem gerada " + path);
-        var actions = new DockPanel();
-        DockPanel.SetDock(open, Dock.Right);
-        actions.Children.Add(open);
+        var actions = new StackPanel { Spacing = 4 };
         actions.Children.Add(info);
+        var buttons = new WrapPanel { Children = { open,
+            LinkButton("Exportar", () => _ = _app.ExportGeneratedImageAsync(path)),
+            LinkButton("Copiar caminho", () => _ = CopyImagePath(path)) } };
+        actions.Children.Add(buttons);
         frame.Children.Add(actions);
 
+        bool loaded = false;
+        async Task CopyImagePath(string value)
+        {
+            _app.Notify(await Ui.TextActions.CopyAsync(this, value) ? "Caminho copiado." : "Não foi possível copiar.");
+        }
         async Task Load()
         {
+            if (loaded) return;
+            loaded = true;
             try
             {
                 var bytes = await _app.ReadGeneratedImageAsync(path);
@@ -169,9 +202,9 @@ public sealed partial class AssistantPanel
                 var picture = new Avalonia.Controls.Image
                 {
                     Source = bitmap, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly,
-                    MaxHeight = 320, MaxWidth = 392, HorizontalAlignment = HorizontalAlignment.Center
+                    MaxHeight = 420, MaxWidth = 640, HorizontalAlignment = HorizontalAlignment.Left
                 };
-                picture.DetachedFromVisualTree += (_, _) => bitmap.Dispose();
+                picture.DetachedFromVisualTree += (_, _) => { bitmap.Dispose(); loaded = false; };
                 visual.Child = picture;
             }
             catch (Exception)
@@ -179,7 +212,7 @@ public sealed partial class AssistantPanel
                 visual.Child = Wrap("Não foi possível exibir a prévia. Use Abrir para ver a imagem no vault.", 12, UrbeTheme.Text3);
             }
         }
-        _ = Load();
+        visual.EffectiveViewportChanged += (_, e) => { if (e.EffectiveViewport.Width > 0 && e.EffectiveViewport.Height > 0) _ = Load(); };
         return frame;
     }
 
@@ -190,8 +223,10 @@ public sealed partial class AssistantPanel
         var reason = (string?)info["reason"];
         int total = Math.Max(1, (int)LegacyCustomize.JsToNumber(info["total"]));
         int done = Math.Clamp((int)LegacyCustomize.JsToNumber(info["resolved"]), 0, total);
-        var input = new TextBox { AcceptsReturn = true, MinHeight = 64, MaxHeight = 180,
+        var input = new TextBox { Text = _questionDrafts.GetValueOrDefault(call.Id, ""), AcceptsReturn = true, MinHeight = 64, MaxHeight = 180,
             TextWrapping = TextWrapping.Wrap, PlaceholderText = "Responda aqui; uma resposta pode resolver várias dúvidas." };
+        Ui.TextActions.Attach(input);
+        input.PropertyChanged += (_, e) => { if (e.Property == TextBox.TextProperty) _questionDrafts[call.Id] = input.Text ?? ""; };
         var panel = new StackPanel { Spacing = 8 };
         panel.Children.Add(Wrap(question, 14, UrbeTheme.Text, FontWeight.SemiBold));
         if (!string.IsNullOrWhiteSpace(reason)) panel.Children.Add(Hint(reason));
@@ -202,6 +237,7 @@ public sealed partial class AssistantPanel
         {
             var answer = (input.Text ?? "").Trim();
             if (answer.Length == 0 || _running is not null) return;
+            _questionDrafts.Remove(call.Id);
             Send(answer);
         }, primary: true));
         return panel;
@@ -215,10 +251,9 @@ public sealed partial class AssistantPanel
         catch (Exception) { return t.Name; }
     }
 
-    private static Control Pre(string text, bool error) => new Border
+    private static Control Pre(string text, bool error) => new Ui.CodeBlockView(text, error ? "Erro" : "Texto", 11.5)
     {
-        Padding = new Thickness(8, 6), CornerRadius = new CornerRadius(8), Background = UrbeTheme.Brush(error ? "#c0504d" : UrbeTheme.Bg, error ? .12 : 1),
-        Child = new SelectableTextBlock { Text = text, FontFamily = UrbeTheme.MonoFont, FontSize = 11.5, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) }
+        Background = UrbeTheme.Brush(error ? UrbeTheme.Danger : UrbeTheme.Surface, error ? .12 : 1)
     };
 
     private static Control Plan(JsonArray steps)
@@ -242,6 +277,7 @@ public sealed partial class AssistantPanel
 
     private Control Approval(AiApprovalRequest p)
     {
+        void Respond(AiApproval answer) { if (_pending?.Request.Call.Id == p.Call.Id) Answer(answer); }
         var pv = p.Preview;
         bool danger = p.Access == "destructive", plugin = p.Access == "plugin";
         var box = new StackPanel { Spacing = 8 };
@@ -256,12 +292,12 @@ public sealed partial class AssistantPanel
         {
             var edit = TextButton("Editar", () => { });
             edit.Margin = new Thickness(0, 0, 8, 0);
-            edit.Click += (_, _) =>
+            void BeginEdit(bool focus)
             {
                 if (editor is not null) return;
                 editor = new TextBox
                 {
-                    Text = pv!.After, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 120, MaxHeight = 360,
+                    Text = _approvalDrafts.GetValueOrDefault(p.Call.Id, pv!.After ?? ""), AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 120, MaxHeight = 360,
                     FontFamily = UrbeTheme.MonoFont, FontSize = 13, Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text),
                     CaretBrush = UrbeTheme.Brush(UrbeTheme.Accent)
                 };
@@ -270,22 +306,27 @@ public sealed partial class AssistantPanel
                 if (diff is not null) box.Children.Remove(diff);
                 box.Children.Insert(Math.Max(0, at), editor);
                 edit.IsVisible = false;
-                editor.Focus();
-            };
+                Ui.TextActions.Attach(editor);
+                editor.PropertyChanged += (_, e) => { if (e.Property == TextBox.TextProperty) _approvalDrafts[p.Call.Id] = editor.Text ?? ""; };
+                _approvalDrafts[p.Call.Id] = editor.Text ?? "";
+                if (focus) editor.Focus();
+            }
+            edit.Click += (_, _) => BeginEdit(true);
             actions.Children.Add(edit);
+            if (_approvalDrafts.ContainsKey(p.Call.Id)) BeginEdit(false);
         }
-        var reject = TextButton("Recusar", () => Answer(AiApproval.Reject()));
+        var reject = TextButton("Recusar", () => Respond(AiApproval.Reject()));
         reject.Margin = new Thickness(0, 0, 8, 0);
         actions.Children.Add(reject);
         if (!danger && !plugin)
         {
-            var all = TextButton("Aprovar todas", () => Answer(AiApproval.ApproveAll));
+            var all = TextButton("Aprovar todas", () => Respond(editor is not null ? new AiApproval("approve_all", EditedText: editor.Text ?? "") : AiApproval.ApproveAll));
             ToolTip.SetTip(all, "Aprovar esta e as próximas alterações desta resposta");
             all.Margin = new Thickness(0, 0, 8, 0);
             actions.Children.Add(all);
         }
         actions.Children.Add(TextButton(danger ? "Excluir" : plugin ? "Ligar plugin" : "Aprovar",
-            () => Answer(editor is not null && editor.Text != pv?.After ? AiApproval.ApproveEdited(editor.Text ?? "") : AiApproval.Approve), primary: !danger, danger: danger));
+            () => Respond(editor is not null && editor.Text != pv?.After ? AiApproval.ApproveEdited(editor.Text ?? "") : AiApproval.Approve), primary: !danger, danger: danger));
         box.Children.Add(actions);
         // The surrounding timeline or contextual sheet is already a surface; don't draw another container.
         return new Border { Child = box, Padding = new Thickness(0, 8), Background = Brushes.Transparent };
@@ -398,28 +439,8 @@ public sealed partial class AssistantPanel
         }
         if (_conv.WebSources.Count > 0)
         {
-            var sources = _conv.WebSources.ToArray();
-            var read = sources.Count(s => s.Status == "página acessada");
-            var summary = Row(UrbeTheme.Icon(UrbeTheme.Icons.Search, 14, UrbeTheme.Text2),
-                Label("Fontes públicas · " + sources.Length + " (" + read + " páginas lidas)", 12, UrbeTheme.Text2, FontWeight.SemiBold));
-            tail.Children.Add(Card(Lazy(summary, () =>
-            {
-                var list = new StackPanel { Spacing = 8 };
-                foreach (var source in sources)
-                {
-                    // Exact source URLs are persisted, clickable via the existing MarkdownReader link launcher.
-                    var safeTitle = source.Title.Replace("[", "").Replace("]", "").Replace("\n", " ").Trim();
-                    var url = source.FinalUrl;
-                    try { AssistantWebSession.ValidateUrl(url); }
-                    catch (AiToolException) { continue; }
-                    list.Children.Add(Markdown("[" + source.Id + "] [" + (safeTitle.Length > 120 ? safeTitle[..120] : safeTitle) +
-                        "](" + url + ")"));
-                    list.Children.Add(Hint(source.Domain + " · " +
-                        (source.Status == "página acessada" ? "Página consultada" : "Somente resultado de busca") +
-                        " · " + (source.Published ?? "data desconhecida") + " · acesso " + source.Accessed));
-                }
-                return list;
-            })));
+            var read = _conv.WebSources.Count(s => s.Status == "página acessada");
+            tail.Children.Add(LinkButton("Fontes · " + _conv.WebSources.Count + " encontradas · " + read + " consultadas", ShowSources));
         }
         return tail.Children.Count > 0 ? tail : null;
     }
@@ -700,7 +721,10 @@ public sealed partial class AssistantPanel
         var add = TextButton("+ Adicionar provedor", () => _ = AddProviderAsync());
         body.Children.Add(Section("Provedores de modelo", Hint("As chaves ficam salvas só neste aparelho e vão direto para o provedor."), provs, add));
 
-        var imageProvider = c.Providers.FirstOrDefault(p => p.Id == c.ImageProviderId);
+        body.Children.Add(Section("Modelo de conversa", Wrap(ModelId(), 13, UrbeTheme.Text),
+            Wrap(ModelPriceFor(null), 12, UrbeTheme.Text2), TextButton("Selecionar modelo e preço", () => _ = PickModelAsync())));
+        var imageProvider = AssistantProviders.PickImageProvider(Provider() ?? c.Providers.FirstOrDefault() ?? new AiProviderConfig("", "custom"),
+            c.Providers, c.ImageProviderId, c.ImageModel);
         var imageChoice = imageProvider is null ? "Automático (provedor de imagens disponível)"
             : (imageProvider.Name ?? imageProvider.Id) + " · " + (c.ImageModel.Length > 0 ? c.ImageModel : AssistantProviders.ImageModel(imageProvider.Preset) ?? "Escolher modelo");
         var imagePrice = Hint(imageProvider is null ? "O custo depende do provedor que for escolhido automaticamente." : "Consultando preço do modelo…");
@@ -742,12 +766,15 @@ public sealed partial class AssistantPanel
         {
             var rename = TextButton("Renomear", () => _ = RenameAgentAsync(a));
             var configure = TextButton("Configurar", () => EditAgentProfile(a));
-            var row = new DockPanel();
-            var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { rename, configure } };
-            DockPanel.SetDock(actions, Dock.Right);
-            row.Children.Add(actions);
             var call = AgentNames.CallName(a, c);
-            row.Children.Add(new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { Label(call, 14, UrbeTheme.Text, FontWeight.SemiBold), Hint(call == a.Name ? "Nome padrão" : a.Name) } });
+            var choice = c.AgentModels.GetValueOrDefault(a.Id);
+            var effective = choice ?? new AiModelChoice(_conv.ProviderId ?? c.ProviderId ?? "", _conv.Model.Length > 0 ? _conv.Model : c.Model);
+            var row = new StackPanel { Spacing = 4, Margin = new Thickness(0, 4, 0, 8) };
+            row.Children.Add(Wrap(call, 14, UrbeTheme.Text, FontWeight.SemiBold));
+            if (call != a.Name) row.Children.Add(Hint(a.Name));
+            row.Children.Add(Wrap(choice?.Model ?? "Modelo herdado do Assistente", 12, UrbeTheme.Text2));
+            row.Children.Add(Wrap(ModelPriceFor(effective), 12, UrbeTheme.Text2));
+            row.Children.Add(new WrapPanel { Children = { rename, configure } });
             names.Children.Add(row);
         }
         body.Children.Add(Section("Nomes dos agentes", Hint("Como cada agente se chama. Numa conversa, chame-o por um nome novo (“Jarvis, …”) e ele pergunta se deve passar a se chamar assim."), names));
@@ -1168,6 +1195,13 @@ public sealed partial class AssistantPanel
         body.Children.Add(tabs);
         body.Children.Add(search);
         body.Children.Add(manualRow);
+        var manualPrice = Hint("ID manual: preço indisponível até identificação no catálogo.");
+        manual.TextChanged += (_, _) => manualPrice.Text = image ? "Preço indisponível · consultado ao concluir o ID" : ModelPrice(models.FirstOrDefault(m => m.Id == (manual.Text ?? "").Trim()));
+        manual.LostFocus += (_, _) =>
+        {
+            if (image && !string.IsNullOrWhiteSpace(manual.Text)) _ = UpdatePrice(manual.Text.Trim(), manualPrice, currentPaint, selected);
+        };
+        body.Children.Add(manualPrice);
         body.Children.Add(list);
         void Paint()
         {
@@ -1185,14 +1219,14 @@ public sealed partial class AssistantPanel
             {
                 string id = m.Id;
                 var chosen = choice.ProviderId == selected.Id && choice.Model == id;
-                var priceLine = Label(image ? "Consultando preço…" : "", 12, UrbeTheme.Text2);
+                var priceLine = Wrap(image ? "Consultando preço…" : ModelPrice(m), 12, UrbeTheme.Text2);
                 var button = new Button
                 {
                     HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left,
                     MinHeight = 68, Padding = new Thickness(12, 10), CornerRadius = new CornerRadius(12),
                     Background = UrbeTheme.Brush(chosen ? UrbeTheme.Accent : UrbeTheme.Surface, chosen ? .14 : 1),
                     BorderBrush = UrbeTheme.Brush(chosen ? UrbeTheme.Accent : UrbeTheme.Line2),
-                    BorderThickness = new Thickness(1),
+                    BorderThickness = new Thickness(0, 0, 0, 1),
                     Content = new StackPanel { Spacing = 3, Children = { Label(m.Name, 14, UrbeTheme.Text, FontWeight.SemiBold), Wrap(id, 11, UrbeTheme.Text3), priceLine } }
                 };
                 button.Click += (_, _) => Choose(id);
@@ -1222,28 +1256,37 @@ public sealed partial class AssistantPanel
             }
         }
 
+        int loadGeneration = 0;
         async Task Load()
         {
+            int generation = ++loadGeneration;
+            models = [];
+            ++currentPaint; // invalidate in-flight quote labels from the previous provider
+            var provider = selected;
             list.Children.Clear();
             list.Children.Add(Hint("Carregando modelos…"));
             loadError = null;
             try
             {
-                if (image) models = await Providers.ListImageModelsAsync(selected);
-                else if (_cfg.ModelCache.TryGetValue(selected.Id, out var cached) && Now() - cached.At < 6 * 3600_000) models = cached.List;
+                IReadOnlyList<AiModelInfo> loaded;
+                if (image) loaded = await Providers.ListImageModelsAsync(provider);
+                else if (_cfg.ModelCache.TryGetValue(provider.Id, out var cached) && Now() - cached.At < 6 * 3600_000) loaded = cached.List;
                 else
                 {
-                    models = await Providers.ListModelsAsync(selected);
-                    _cfg.ModelCache[selected.Id] = new AiModelCache(Now(), models);
+                    loaded = await Providers.ListModelsAsync(provider);
+                    _cfg.ModelCache[provider.Id] = new AiModelCache(Now(), loaded);
                     SaveConfig();
                 }
+                if (generation != loadGeneration) return;
+                models = loaded;
             }
             catch (Exception e)
             {
+                if (generation != loadGeneration) return;
                 models = [];
                 loadError = e.Message + " Você ainda pode informar um ID manualmente.";
             }
-            if (image && models.Count == 0 && AssistantProviders.ImageModel(selected.Preset) is { Length: > 0 } defaultModel)
+            if (image && models.Count == 0 && AssistantProviders.ImageModel(provider.Preset) is { Length: > 0 } defaultModel)
                 models = [new AiModelInfo(defaultModel, defaultModel + " (padrão)", null, null, null)];
             Paint();
         }
@@ -1301,7 +1344,8 @@ public sealed partial class AssistantPanel
             SaveConfig();
         }
         body.Children.Add(Section("Modelo de conversa", Hint("Opcional: se não escolher, este agente continua usando o modelo padrão."),
-            Label(choice, 13, UrbeTheme.Text, FontWeight.SemiBold),
+            Wrap(choice, 13, UrbeTheme.Text, FontWeight.SemiBold),
+            Wrap(ModelPriceFor(selected ?? new AiModelChoice(_conv.ProviderId ?? _cfg.ProviderId ?? "", _conv.Model.Length > 0 ? _conv.Model : _cfg.Model)), 12, UrbeTheme.Text2),
             TextButton("Selecionar provedor e modelo", () => { SaveBlocks(); _ = PickConfiguredModelAsync(agent.Id); })));
         body.Children.Add(Section("Instruções por blocos", Hint("Você pode criar vários blocos. Todos são usados em conjunto com as instruções gerais, mantendo as permissões do agente."),
             blocksPanel, TextButton("+ Adicionar bloco", () => AddBlock(new AiInstructionBlock("", "")))));
@@ -1321,6 +1365,7 @@ public sealed partial class AssistantPanel
         var tabs = new WrapPanel();
         var search = new TextBox { PlaceholderText = "Buscar modelo (ex.: claude, gpt, gemini)" };
         var list = new StackPanel { Spacing = 6 };
+        IReadOnlyList<AiModelInfo> models = [];
         var manual = new TextBox { PlaceholderText = "Ou digite o ID do modelo" };
         var use = TextButton("Usar", () => { var id = (manual.Text ?? "").Trim(); if (id.Length > 0) Choose(id); });
         var manualRow = new DockPanel();
@@ -1331,8 +1376,10 @@ public sealed partial class AssistantPanel
         body.Children.Add(tabs);
         body.Children.Add(search);
         body.Children.Add(manualRow);
+        var manualPrice = Hint("ID manual: preço indisponível até identificação no catálogo.");
+        manual.TextChanged += (_, _) => manualPrice.Text = ModelPrice(models.FirstOrDefault(m => m.Id == (manual.Text ?? "").Trim()));
+        body.Children.Add(manualPrice);
         body.Children.Add(list);
-        IReadOnlyList<AiModelInfo> models = [];
 
         void Tabs()
         {
@@ -1362,7 +1409,7 @@ public sealed partial class AssistantPanel
             foreach (var m in hits)
             {
                 var detail = m.Id + (m.Context is { } c ? " · " + Math.Round(c / 1000.0) + "k contexto" : "") +
-                             (m.Price is { } pr ? " · US$ " + pr.Input.ToString("0.00", CultureInfo.InvariantCulture) + "/" + pr.Output.ToString("0.00", CultureInfo.InvariantCulture) + " por 1M" : "") +
+                             " · " + ModelPrice(m) +
                              (m.Tools == false ? " · sem ferramentas" : "");
                 bool on = m.Id == ModelId() && prov.Id == Provider()?.Id;
                 var b = new Button
@@ -1377,28 +1424,35 @@ public sealed partial class AssistantPanel
             }
         }
 
+        int loadGeneration = 0;
         async Task Load()
         {
+            int generation = ++loadGeneration;
+            models = [];
+            var provider = prov;
             list.Children.Clear();
             list.Children.Add(Hint("Carregando modelos…"));
-            if (_cfg.ModelCache.TryGetValue(prov.Id, out var cache) && Now() - cache.At < 6 * 3600_000) models = cache.List;
-            else
+            try
             {
-                try
+                IReadOnlyList<AiModelInfo> loaded;
+                if (_cfg.ModelCache.TryGetValue(provider.Id, out var cache) && Now() - cache.At < 6 * 3600_000) loaded = cache.List;
+                else
                 {
-                    models = await Providers.ListModelsAsync(prov);
-                    _cfg.ModelCache[prov.Id] = new AiModelCache(Now(), models);
+                    loaded = await Providers.ListModelsAsync(provider);
+                    _cfg.ModelCache[provider.Id] = new AiModelCache(Now(), loaded);
                     SaveConfig();
                 }
-                catch (Exception e)
-                {
-                    list.Children.Clear();
-                    list.Children.Add(Wrap(e.Message, 13, "#c0504d"));
-                    models = [];
-                    return;
-                }
+                if (generation != loadGeneration) return;
+                models = loaded;
+                Paint();
             }
-            Paint();
+            catch (Exception e)
+            {
+                if (generation != loadGeneration) return;
+                models = [];
+                list.Children.Clear();
+                list.Children.Add(Wrap(e.Message, 13, UrbeTheme.Danger));
+            }
         }
 
         void Choose(string id)

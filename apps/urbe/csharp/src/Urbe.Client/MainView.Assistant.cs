@@ -71,6 +71,9 @@ public sealed partial class MainView : IAssistantApp
         bool showing = panel is { CompactActive: true, IsVisible: false };
         _assistantMini.IsVisible = showing;
         _assistantLauncher.IsVisible = panel is not { IsVisible: true };
+        var attention = panel?.PendingApproval is not null || panel?.Conversation.Runs.LastOrDefault()?.Stopped == "needs_input";
+        _assistantLauncher.BorderBrush = UrbeTheme.Brush(attention ? UrbeTheme.Accent : UrbeTheme.Line2);
+        Avalonia.Automation.AutomationProperties.SetName(_assistantLauncher, attention ? "Assistente: aguardando sua resposta" : "Abrir Assistente");
         if (!showing)
         {
             _assistantMiniRenderedKey = null;
@@ -91,8 +94,7 @@ public sealed partial class MainView : IAssistantApp
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Content = panel!.CompactContent()
         };
-        bool attention = panel.CompactStatus is "approval" or "question";
-        _assistantLauncher.BorderBrush = UrbeTheme.Brush(attention ? UrbeTheme.Accent : UrbeTheme.Line2);
+
     }
 
     /// <summary>The Assistente panel, made the first time it opens (over the Explorer and the editor, under the dialogs).</summary>
@@ -245,6 +247,34 @@ public sealed partial class MainView : IAssistantApp
     async Task IAssistantApp.OpenGeneratedImageAsync(string path)
     {
         if (_attachments.Contains(path)) await ShowFileAsync(path);
+    }
+
+    Task IAssistantApp.ExportGeneratedImageAsync(string path) => DownloadFileAsync(path);
+
+    async Task IAssistantApp.ExportGeneratedImagesAsync(IReadOnlyList<string> paths)
+    {
+        if (_vault is null) return;
+        try
+        {
+            using var memory = new MemoryStream();
+            using (var zip = new System.IO.Compression.ZipArchive(memory, System.IO.Compression.ZipArchiveMode.Create, true))
+            {
+                long total = 0;
+                foreach (var path in paths.Distinct(StringComparer.Ordinal))
+                {
+                    var read = await _vault.ReadFileAsync(path, 32L * 1024 * 1024);
+                    if (read?.Bytes is not { } bytes) throw new IOException("Não foi possível ler " + path + ". Exporte individualmente.");
+                    total += bytes.Length;
+                    if (total > 128L * 1024 * 1024) throw new IOException("Conjunto grande demais para exportar de uma vez neste aparelho. Exporte as imagens individualmente.");
+                    var entry = zip.CreateEntry(path.Replace('\\', '/'), System.IO.Compression.CompressionLevel.NoCompression);
+                    await using var stream = entry.Open();
+                    await stream.WriteAsync(bytes);
+                }
+            }
+            if (await (SaveFileCopy ?? SaveAnyFileAsync)("Urbe-imagens.zip", memory.ToArray()) == true)
+                ShowLifeNotice("Imagens exportadas.", Ui.ToastKind.Success);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException) { await Dialogs.AlertAsync("Exportar imagens", ex.Message); }
     }
 
     bool IAssistantApp.FileExists(string path) =>

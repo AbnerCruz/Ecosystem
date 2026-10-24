@@ -299,7 +299,7 @@ public sealed class FilePreviewPanel : Grid
         try
         {
             var bitmap = new Bitmap(new MemoryStream(bytes));
-            return new Avalonia.Controls.Image { Source = bitmap, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, MaxHeight = 560 };
+            return new Ui.ZoomImageView(bitmap);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or NotSupportedException or IOException) { return null; }
     }

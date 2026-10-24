@@ -20,6 +20,8 @@ namespace Urbe.Client;
 public sealed class MarkdownReader
 {
     /// <summary>The body size (--ui-editor-size, Personalização → Fonte das notas → Tamanho).</summary>
+    public bool Selectable { get; init; }
+
     public double Size { get; init; } = UrbeTheme.EditorSize;
     /// <summary>The line height factor (--ui-editor-line).</summary>
     public double LineFactor { get; init; } = 1.7;
@@ -79,6 +81,8 @@ public sealed class MarkdownReader
         }
         return found.Count > 0 && !bang ? found : null;
     }
+
+    public Func<string, string?>? CitationFor { get; init; }
 
     private int _listLine;
 
@@ -254,7 +258,15 @@ public sealed class MarkdownReader
     /// <summary>The class of the text blocks that carry the note's text (a tap maps their characters back to the source).</summary>
     public const string TextClass = "md-text";
 
-    private Control Para(string text) => new TextBlock { Classes = { TextClass }, Text = text, FontSize = Size, LineHeight = Size * LineFactor, FontFamily = Family ?? UrbeTheme.EditorFont, Foreground = Ink(UrbeTheme.Text), Margin = new Thickness(0, .6 * Size), TextWrapping = TextWrapping.Wrap };
+    private Control Para(string text)
+    {
+        TextBlock block = Selectable ? new SelectableTextBlock() : new TextBlock();
+        block.Classes.Add(TextClass);
+        block.Text = text; block.FontSize = Size; block.LineHeight = Size * LineFactor;
+        block.FontFamily = Family ?? UrbeTheme.EditorFont; block.Foreground = Ink(UrbeTheme.Text);
+        block.Margin = new Thickness(0, .6 * Size); block.TextWrapping = TextWrapping.Wrap;
+        return block;
+    }
 
     private Control Heading(RichNode n, double em, FontWeight weight, Thickness margin)
     {
@@ -266,26 +278,26 @@ public sealed class MarkdownReader
 
     // ------------------------------------------------------------------ inline content
 
-    private sealed class RichText : TextBlock
+    private sealed class RichState
     {
         public List<(int Start, int Length, string Name)> Wiki { get; } = [];
         public List<(int Start, int Length, string Url)> Links { get; } = [];
         public List<(int Start, int Length, int Index)> Comments { get; } = [];
         public Action<int>? CommentsTapped { get; set; }
-        protected override Type StyleKeyOverride => typeof(TextBlock);
     }
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<TextBlock, RichState> Rich = new();
+    private static RichState State(TextBlock host) => Rich.GetOrCreateValue(host);
 
     private TextBlock Text(IReadOnlyList<RichNode> children, double size, string color = UrbeTheme.Text, FontWeight weight = FontWeight.Normal, FontFamily? family = null)
     {
-        var tb = new RichText
-        {
-            FontSize = size, Foreground = Ink(color, weight), FontWeight = weight, TextWrapping = TextWrapping.Wrap,
-            LineHeight = size * LineFactor,
-            FontFamily = family ?? Family ?? UrbeTheme.EditorFont
-        };
+        TextBlock tb = Selectable ? new SelectableTextBlock() : new TextBlock();
+        tb.FontSize = size; tb.Foreground = Ink(color, weight); tb.FontWeight = weight;
+        tb.TextWrapping = TextWrapping.Wrap; tb.LineHeight = size * LineFactor;
+        tb.FontFamily = family ?? Family ?? UrbeTheme.EditorFont;
         tb.Classes.Add(TextClass);
         var length = 0;
         foreach (var c in children) Inline(tb, c, tb.Inlines!, ref length, new Style { Color = color });
+        if (tb is SelectableTextBlock selectable) Ui.TextActions.Attach(selectable);
         tb.Tapped += OnTextTapped;
         return tb;
     }
@@ -296,11 +308,24 @@ public sealed class MarkdownReader
             new(bold ?? Bold, italic ?? Italic, strike ?? Strike, code ?? Code, link ?? Link, color ?? Color);
     }
 
-    private void Inline(RichText host, RichNode n, InlineCollection into, ref int length, Style st)
+    private void Inline(TextBlock host, RichNode n, InlineCollection into, ref int length, Style st)
     {
         switch (n.Tag)
         {
-            case RichNode.TextTag: AddRun(host, into, n.Text, st, ref length); return;
+            case RichNode.TextTag:
+                if (CitationFor is null || st.Code || st.Link) { AddRun(host, into, n.Text, st, ref length); return; }
+                int at = 0;
+                foreach (System.Text.RegularExpressions.Match match in System.Text.RegularExpressions.Regex.Matches(n.Text, @"\[(S\d+)\]"))
+                {
+                    AddRun(host, into, n.Text[at..match.Index], st, ref length);
+                    var start = length;
+                    var url = CitationFor(match.Groups[1].Value);
+                    AddRun(host, into, match.Value, url is null ? st : st.With(link: true, color: UrbeTheme.Accent), ref length);
+                    if (url is not null) State(host).Links.Add((start, length - start, url));
+                    at = match.Index + match.Length;
+                }
+                AddRun(host, into, n.Text[at..], st, ref length);
+                return;
             case "br": into.Add(new LineBreak()); length += 1; return;
             case "strong": case "b": st = st.With(bold: true); break;
             case "em": case "i": st = st.With(italic: true); break;
@@ -318,7 +343,7 @@ public sealed class MarkdownReader
                 if (st.Bold) run.FontWeight = FontWeight.Bold;
                 if (st.Italic) run.FontStyle = FontStyle.Italic;
                 into.Add(run); length += inner.Length;
-                host.Wiki.Add((start, inner.Length, n.Attr("data-note-name")));
+                State(host).Wiki.Add((start, inner.Length, n.Attr("data-note-name")));
                 return;
             }
             case "span" when n.HasClass(NoteMarks.CommentClass):
@@ -341,8 +366,8 @@ public sealed class MarkdownReader
                 int index = _notes++;
                 var label = notes.Length > 1 ? "\u00a0💬" + notes.Length : "\u00a0💬";
                 into.Add(new Run(label) { FontSize = Size * .7, Foreground = UrbeTheme.Brush(UrbeTheme.Accent), BaselineAlignment = BaselineAlignment.Superscript });
-                host.Comments.Add((length, label.Length, index));
-                host.CommentsTapped = CommentsTapped;
+                State(host).Comments.Add((length, label.Length, index));
+                State(host).CommentsTapped = CommentsTapped;
                 length += label.Length;
                 return;
             }
@@ -365,13 +390,13 @@ public sealed class MarkdownReader
         {
             var start = length;
             foreach (var c in n.Children) Inline(host, c, into, ref length, st);
-            host.Links.Add((start, length - start, n.Attr("href")));
+            State(host).Links.Add((start, length - start, n.Attr("href")));
             return;
         }
         foreach (var c in n.Children) Inline(host, c, into, ref length, st);
     }
 
-    private void AddRun(RichText host, InlineCollection into, string text, Style st, ref int length)
+    private void AddRun(TextBlock host, InlineCollection into, string text, Style st, ref int length)
     {
         if (text.Length == 0) return;
         // only bold/italic marks set the run's weight and style: plain text keeps the block's (a heading is 750/700/650)
@@ -395,22 +420,23 @@ public sealed class MarkdownReader
     /// <summary>A tap on the n-th 💬 mark of a drawn text (tests): what the finger does at that place.</summary>
     public static bool TapCommentMark(TextBlock text, int n)
     {
-        if (text is not RichText tb || n < 0 || n >= tb.Comments.Count) return false;
-        tb.CommentsTapped?.Invoke(tb.Comments[n].Index);
+        if (!Rich.TryGetValue(text, out var state) || n < 0 || n >= state.Comments.Count) return false;
+        state.CommentsTapped?.Invoke(state.Comments[n].Index);
         return true;
     }
 
     private void OnTextTapped(object? sender, TappedEventArgs e)
     {
-        if (sender is not RichText tb || (tb.Wiki.Count == 0 && tb.Links.Count == 0 && tb.Comments.Count == 0)) return;
+        if (sender is SelectableTextBlock selected && selected.SelectionStart != selected.SelectionEnd) return;
+        if (sender is not TextBlock tb || !Rich.TryGetValue(tb, out var state) || (state.Wiki.Count == 0 && state.Links.Count == 0 && state.Comments.Count == 0)) return;
         if (!TouchIntent.IsIntended(tb)) { e.Handled = true; return; }   // a scroll over a link does not follow it
         var hit = tb.TextLayout.HitTestPoint(e.GetPosition(tb));
         var pos = hit.TextPosition;
-        foreach (var (s, l, index) in tb.Comments)
-            if (pos >= s && pos < s + l) { e.Handled = true; tb.CommentsTapped?.Invoke(index); return; }
-        foreach (var (s, l, name) in tb.Wiki)
+        foreach (var (s, l, index) in State(tb).Comments)
+            if (pos >= s && pos < s + l) { e.Handled = true; State(tb).CommentsTapped?.Invoke(index); return; }
+        foreach (var (s, l, name) in State(tb).Wiki)
             if (pos >= s && pos < s + l) { e.Handled = true; WikiLinkTapped?.Invoke(name); return; }
-        foreach (var (s, l, url) in tb.Links)
+        foreach (var (s, l, url) in State(tb).Links)
             if (pos >= s && pos < s + l && Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" or "mailto")
             {
                 e.Handled = true;
@@ -473,25 +499,9 @@ public sealed class MarkdownReader
     private Control Pre(RichNode pre)
     {
         var code = string.Concat(pre.Children.Select(Plain));
-        var inner = new StackPanel();
-        inner.Children.Add(new TextBlock
+        return new Ui.CodeBlockView(code, pre.Attr("data-lang"), Size * .88)
         {
-            Classes = { TextClass }, Text = code, FontFamily = UrbeTheme.MonoFont, FontSize = Size * .88, Foreground = UrbeTheme.Brush(UrbeTheme.Text),
-            TextWrapping = TextWrapping.NoWrap
-        });
-        var lang = pre.Attr("data-lang");
-        var grid = new Grid();
-        grid.Children.Add(new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, Content = inner });
-        if (lang.Length > 0)
-            grid.Children.Add(new TextBlock
-            {
-                Text = lang.ToUpperInvariant(), FontSize = 11, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text3),
-                HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, -8, -6, 0), IsHitTestVisible = false
-            });
-        return new Border
-        {
-            Margin = new Thickness(0, Size), Padding = new Thickness(16, 14), CornerRadius = new CornerRadius(12),
-            Background = UrbeTheme.Brush(UrbeTheme.Surface), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line), BorderThickness = new Thickness(1), Child = grid
+            Margin = new Thickness(0, Size)
         };
     }
 
