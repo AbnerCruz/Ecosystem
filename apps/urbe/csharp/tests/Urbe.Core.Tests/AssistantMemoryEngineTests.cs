@@ -45,6 +45,55 @@ public sealed class AssistantMemoryEngineTests
     }
 
     [Fact]
+    public void LegacyMigrationPreservesLongTextsAndDoesNotPartiallyMutateOnCapacityFailure()
+    {
+        var cfg = new AiConfig();
+        var longFact = new string('x', AssistantMemoryEngine.MaxText + 500);
+        cfg.Memory["Vault"] = [longFact];
+        AssistantMemoryEngine.MigrateLegacy(cfg, timestamp: 42);
+        Assert.Equal(longFact, Assert.Single(cfg.MemoryRecords).Text);
+        Assert.Empty(cfg.Memory);
+
+        var full = new AiConfig();
+        for (var i = 0; i < AssistantMemoryEngine.MaxRecords; i++)
+            full.MemoryRecords.Add(new AiMemoryRecord { Id = i.ToString(), Text = "Memória " + i });
+        full.Memory["Vault"] = ["Esta memória não pode desaparecer"];
+        Assert.Throws<InvalidOperationException>(() => AssistantMemoryEngine.MigrateLegacy(full));
+        Assert.Single(full.Memory["Vault"]);
+        Assert.Equal(AssistantMemoryEngine.MaxRecords, full.MemoryRecords.Count);
+    }
+
+    private sealed class FailingStorage : IAssistantStorage
+    {
+        public string? Read(string name) => null;
+        public void Write(string name, string text) { }
+        public void Delete(string name) { }
+        public IEnumerable<string> List() => [];
+    }
+
+    [Fact]
+    public void VerifiedWriteRejectsSilentlyDroppedConfiguration()
+    {
+        var store = new AssistantStore(new FailingStorage());
+        var cfg = new AiConfig();
+        AssistantMemoryEngine.Remember(cfg, "Nunca perder memórias", "Vault");
+        Assert.Throws<IOException>(() => store.SetConfigVerified(cfg));
+    }
+
+    [Fact]
+    public void LegacySecretsRemainLocallyEditableButNeverEnterModelContext()
+    {
+        var cfg = new AiConfig();
+        cfg.Memory["Vault"] = ["senha: antigoSegredo123", "Minha preferência é fonte serifada"];
+        var retrieved = AssistantMemoryEngine.Search(cfg, "Vault", "geral", "senha", 6);
+        Assert.Empty(retrieved);
+        var contextual = AssistantMemoryEngine.ForPrompt(cfg, "Vault", "geral", "minha preferência");
+        Assert.DoesNotContain(contextual, item => item.Contains("antigoSegredo123"));
+        AssistantMemoryEngine.MigrateLegacy(cfg);
+        Assert.Contains(cfg.MemoryRecords, item => item.Text.Contains("antigoSegredo123"));
+    }
+
+    [Fact]
     public void RepeatedFactsAreDeduplicatedWithoutChangingIdentity()
     {
         var cfg = new AiConfig();
