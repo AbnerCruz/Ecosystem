@@ -148,13 +148,14 @@ public sealed partial class MainView
         return !_graphDirty;
     }
 
-    private async Task CloseGraphAsync()
+    private async Task<bool> CloseGraphAsync()
     {
-        if (!await SaveGraphAsync()) return;
+        if (!await SaveGraphAsync()) return false;
         if (_graphBoard is not null) _graphBoard.IsVisible = false;
-        UpdateNav();
         _openGraph = null;
         _openGraphPath = null;
+        UpdateNav();
+        return true;
     }
 
     private async Task AddGraphTextAsync()
