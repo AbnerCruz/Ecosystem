@@ -54,9 +54,10 @@
     {
       "kind": "human",
       "check": "Android físico: baixar o modelo, usar a IA no aparelho sem internet (modo avião) e conferir desempenho e memória; beta.24 por cima da beta.23 sem perder notas",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
-      "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.24"
+      "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.24",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-24 (Issue https://github.com/AbnerCruz/Ecosystem/issues/724); registro em docs/governance/responses/VAL-HO-20261024-urbe-ia-no-aparelho-a35a074bffa7.md."
     }
   ],
   "known_issues": [
