@@ -50,7 +50,7 @@ public sealed class AssistantImagePricingTests
         """);
         var providers = new AssistantProviders(http);
         var cfg = new AiProviderConfig("or", "openrouter", ApiKey: "key");
-        var result = await providers.GetImageQuoteAsync(cfg, "bytedance-seed/seedream-4.5");
+        var result = await providers.GetImageQuoteAsync(cfg, "bytedance-seed/seedream-4.5", TestContext.Current.CancellationToken);
         Assert.NotNull(result);
         Assert.Contains("0,04", result.Rate);
         Assert.Contains("/imagem", result.Rate);
@@ -87,7 +87,7 @@ public sealed class AssistantImagePricingTests
     {
         var http = new Endpoint("{}");
         var p = new AssistantProviders(http);
-        var result = await p.GetImageQuoteAsync(new AiProviderConfig("c", "custom", BaseUrl: "https://example.com/v1"), "some-model");
+        var result = await p.GetImageQuoteAsync(new AiProviderConfig("c", "custom", BaseUrl: "https://example.com/v1"), "some-model", TestContext.Current.CancellationToken);
         Assert.Null(result);
         Assert.Empty(http.Requested);
         Assert.False(AssistantImagePricing.ValidOpenRouterSlug("../evil"));
