@@ -1,0 +1,100 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-beta26-restore-activity",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T14:15:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-beta26-timeline",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-63",
+  "component": "urbe",
+  "state": "review",
+  "branch": "fix/urbe-beta26-restore-assistant-timeline-20261024",
+  "base_commit": "eb53068da459195740097058958170ea71a062a3",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261024-urbe-beta26-restore-activity.json"
+  ],
+  "work_completed": [
+    "Verificado release oficial beta.25 em commit eb53068da459195740097058958170ea71a062a3, com assinatura/publicação oficial, mas sem a linha de atividade prometida.",
+    "Causa raiz localizada no merge #734: exclusão de AssistantPanel.Activity.cs e troca da chamada ActivityTimeline por 10 cartões individuais; a regressão dos testes do #732 também foi removida.",
+    "Restaurado componente de atividade do commit validado 45f159c9 e chamada existente, sem alterar motor de memória, pesquisa web, provedores ou dados do vault.",
+    "Restaurado teste de 11 solicitações, 10 operações, etapas expansíveis e checagem dos controles de memória e pesquisa web.",
+    "Atualizada versão canônica para beta.26 com versionCode 2000026 para publicar nova release pelo workflow oficial depois de CI e integração governada.",
+    "Registrado em roadmap o incidente, sua causa e a regra de não substituir beta anterior."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe CI - testes do Core/Client + Android/Windows/E2E + consistency",
+      "result": "pending",
+      "evidence": "GitHub Actions após abertura de PR."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: painel compacto por solicitação, estados de execução, detalhes, aprovações, fontes e memória",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
+      "evidence": "Cabe ao proprietário validar no telefone; CI não equivale a teste físico."
+    }
+  ],
+  "known_issues": [
+    "Pesquisa externa exige chave Brave e consentimento por agente, permanecendo desativada por padrão conforme ADR-0038.",
+    "A beta.25 existe e é imutável, portanto não deve ser reusada ou substituída.",
+    "Teste com credencial Brave real e aparelho Android físico ainda não demonstrado."
+  ],
+  "blockers": [
+    "CI da PR e gates do integrador antes da release beta26.",
+    "Publicação oficial e confirmação de assets somente após merge."
+  ],
+  "next_actions": [
+    "Confirmar CI e reconciliar eventuais falhas, sem alterar checks para ocultar regressão.",
+    "Integrar PR pelo integrador automático, mediante label integrar e autorização do proprietário se for necessário.",
+    "Deixar workflow urbe-csharp-mobile-release.yml publicar APK beta26 e zip Windows, confirmar assets e SHA256.",
+    "Instalar e validar no Android real; registrar evidências e regressões."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/adr/0038-urbe-pesquisa-web-segura.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    ".github/workflows/urbe-csharp-mobile-release.yml"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "PR, commit e handoff rastreiam correção e release."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Teste Android real permanece pendente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Workflow de distribuição só após CI e integração governados."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-assistant-activity-ux",
+      "status": "product-specific",
+      "rationale": "Correção específica da interface nativa do Urbe; não criar segundo motor."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Inclui novo corte de versão beta Android assinada, com impacto na distribuição."
+  }
+}
