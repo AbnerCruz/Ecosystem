@@ -23,6 +23,10 @@
     <!-- Corte autorizado da beta.25: builds nativos passam pelo workflow oficial
          urbe-csharp-mobile-release.yml; inclui agent runtime #726, UX #732
          e pesquisa pública #733 já integrados na main. Não publicar APK manual. -->
+    <!-- Beta.26 includes the restored Assistant activity timeline (#738).
+         After owner-authorized integration, the trusted integrator explicitly
+         dispatches urbe-csharp-mobile-release: GITHUB_TOKEN push cannot trigger
+         a second on:push workflow. Do not change the signed beta certificate. -->
     <UrbeBetaVersion>2.0.0-beta.26</UrbeBetaVersion>
     <UrbeBetaVersionCode>2000026</UrbeBetaVersionCode>
   </PropertyGroup>
