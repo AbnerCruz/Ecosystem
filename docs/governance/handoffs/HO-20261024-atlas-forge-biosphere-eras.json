@@ -75,10 +75,10 @@
     {
       "check": "Android físico e revisão de experiência",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/atlas-forge/README.md",
-      "evidence": "Chromium móvel não substitui validação em aparelho."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-24 (Issue https://github.com/AbnerCruz/Ecosystem/issues/723); registro em docs/governance/responses/VAL-HO-20261024-atlas-forge-biosphere-eras-9d8a7f8e951a.md."
     }
   ],
   "known_issues": [
