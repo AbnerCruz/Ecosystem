@@ -160,6 +160,20 @@ public sealed class AssistantMemoryEngineTests
     }
 
     [Fact]
+    public void AutonomousAgentClaimsDoNotBecomeVerifiedHighConfidenceFacts()
+    {
+        var cfg = new AiConfig();
+        var uncertain = AssistantMemoryEngine.Remember(cfg, "A personagem talvez tenha três irmãos",
+            "Vault", "pesquisador", origin: "agent");
+        Assert.False(uncertain.Verified);
+        Assert.Equal(60, uncertain.Confidence);
+        var human = AssistantMemoryEngine.Remember(cfg, "A personagem tem três irmãos",
+            "Vault", "pesquisador", origin: "user", verified: true);
+        Assert.Equal(100, human.Confidence);
+        Assert.True(human.Verified);
+    }
+
+    [Fact]
     public void EpisodesCaptureEditedPathsButNotBodiesOrFalseVerification()
     {
         var cfg = new AiConfig();
