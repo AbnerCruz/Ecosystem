@@ -58,6 +58,14 @@ Fonte de requisitos: inventário de uso "Versão Beta Final.md", itens de Assist
 - **Não provado fisicamente:** seletor de arquivos SAF e interpretação multimodal em contas/provedores reais; custos, modelos e APIs variam por provedor. Testes simulados e CI não substituem essas verificações.
 - **Publicação:** a beta.20 é entregue por workflow nativo versionado e publicação condicionada a CI, assinatura e autorização de integração crítica, sem sobrescrever beta.19.
 
+## Redesenho nativo do Assistente — atividade progressiva e configurações minimalistas (24/10/2026)
+
+**Requisito do proprietário, escopo visual de UC-63/UC-81:** o chat não deve despejar dezenas de cartões de ferramentas enquanto o agente trabalha. Substituí-los por uma atividade compacta por pedido, com estado descritivo e animação leve enquanto executa, expansão para a sequência completa das operações e expansão de cada operação para parâmetros e resultado reais. Não suprimir raciocínio já fornecido pelo provedor, indicadores de erro, progresso, plano, aprovações, perguntas ou imagens geradas. Ações que exigem usuário permanecem visíveis mesmo com o histórico recolhido. Suportar acessibilidade, movimento reduzido, telas pequenas e histórico grande.
+
+**Configurações:** navegação por área de Modelos, Agentes, Contexto e Execução, mantendo provedores e chaves, modelos de imagem e preços, nomes e instruções por agente, agentes próprios, memória, instruções gerais, política de aprovação e limite legado da main. Não alterar a semântica funcional do motor por causa de um redesenho de interface; remoção do limite é tratada separadamente pela PR #726.
+
+**Entrega:** testes headless do agrupamento histórico e da inspeção até entradas/saídas das ferramentas, ações de aprovação fora do grupo e navegação entre seções. CI Android e teste físico no celular obrigatórios para validar a interface. Beta.25 solicitada via workflow nativo depois de integração autorizada; não anunciar publicação só porque o arquivo de versão foi alterado.
+
 ## Ajustes de apresentação e transparência — beta.21 (feedback do proprietário, 24/10/2026)
 
 - **Preço de geração de imagens:** o seletor deve mostrar o custo com unidade e origem para cada modelo. O OpenRouter fornece preços em `GET /images/models/{autor}/{slug}/endpoints`; não usar `pricing.prompt` de modelo de chat como se fosse preço por imagem. Carregamento assíncrono limitado e cache de consulta; taxa por imagem, megapixel e token são valores diferentes e não devem ser misturados. Referências fixas verificadas pela documentação oficial para `gpt-image-1` e modelos Gemini identificados; modelo/preço não informado explicitamente sinalizado, nunca tratado como grátis.
