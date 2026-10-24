@@ -10,7 +10,13 @@ const MAX_MARKS = 1800;
 const U32 = 4294967296;
 const random = (a, b, salt, seed) => hash32(a, b, salt, seed) / U32;
 
-export function nearbyNature(world, surface, bounds, mpp, spacing = CELL_METRES) {
+export function nearbyNature(
+  world,
+  surface,
+  bounds,
+  mpp,
+  spacing = CELL_METRES,
+) {
   if (!world || !surface || !Number.isFinite(mpp) || mpp <= 0 || mpp > 1.8)
     return [];
   const fine = spacing < CELL_METRES;
@@ -66,8 +72,7 @@ export function nearbyNature(world, surface, bounds, mpp, spacing = CELL_METRES)
         const canopy = material === 2 ? 0.18 * cover : 0.02 * cover;
         const undergrowth = material === 2 ? 0.65 * cover : 0.45 * cover;
         const pebbles = material === 4 ? 0.6 : material === 3 ? 0.3 : 0.12;
-        if ((material === 1 || material === 2) && roll < canopy)
-          kind = "tree";
+        if ((material === 1 || material === 2) && roll < canopy) kind = "tree";
         else if (roll < canopy + undergrowth) kind = "shrub";
         else if (roll < canopy + undergrowth + pebbles) kind = "stone";
         else continue;
@@ -81,7 +86,17 @@ export function nearbyNature(world, surface, bounds, mpp, spacing = CELL_METRES)
         kind,
         // Stable, measurable symbol footprint; not a botanically validated size.
         diameterMetres:
-          (kind === "tree" ? (fine ? 3.4 : 5) : kind === "shrub" ? (fine ? 1.2 : 1.8) : (fine ? 1.3 : 2.5)) *
+          (kind === "tree"
+            ? fine
+              ? 3.4
+              : 5
+            : kind === "shrub"
+              ? fine
+                ? 1.2
+                : 1.8
+              : fine
+                ? 1.3
+                : 2.5) *
           (0.75 + random(y, x, 14, surface.seed) * 0.7),
       });
     }
