@@ -29,6 +29,16 @@ Arquivo UTF-8 `*.grafo.json` dentro do vault, com `type: "urbe.graph"`, `version
 - Gravar por `IUrbeVaultStorage.SaveExistingTextFileAsync`: verificação no disco, detecção de conflito e política atual de recuperação. Não gravar `.urbe/mapa.json` nem `.urbe/mundo.json`.
 - Não transformar `*.grafo.json` em nota Markdown na NoteLibrary. É um artefato textual independente, listado no Explorer e incluído em backups/exportações existentes.
 
+## Escalabilidade sem cotas inventadas
+
+A criação de nós, conexões, traços, pontos de desenho, tamanho de rótulos e histórico de desfazer/refazer **não tem teto numérico fixo**. A primeira implementação havia imposto cotas de 80 ações, 10.000 nós, 30.000 arestas, 2.000 traços, 2.500 pontos, leitura de arquivos em 2/32 MB e 6.000 elementos de projeção. Essas cotas foram removidas por decisão do proprietário em 24/10/2026.
+
+- Histórico armazena deltas de elementos alterados, não cópias completas do documento por ação. É volátil por sessão nesta versão; persistência de histórico requer journal transacional próprio.
+- O canvas já descarta objetos fora do viewport na etapa de desenho de nós. A próxima etapa de desempenho é viewport com índice espacial para arestas/traços, carregamento incremental e processamento em background quando os dados exigirem.
+- A leitura consulta apenas o arquivo de grafo solicitado, mas o formato JSON da primeira versão ainda é interpretado em memória; limitação **física** de RAM/armazenamento, não cota deliberada. Nenhuma garantia de capacidade infinita.
+- Paginação das ferramentas de IA controla apenas o conteúdo devolvido por chamada (tokens), **não** a quantidade de nós persistidos ou consultáveis.
+- Invariantes de segurança persistem: JSON válido, geometria finita e positiva, caminhos restritos ao vault, compatibilidade de versão e escrita verificada.
+
 ## Implementação incremental e verificação
 
 **Fatia 1 — nesta branch:** formato/domínio C#, criação de grafo dentro do vault, destino de navegação, canvas Avalonia básico (pan/zoom/arrastar), inclusão de texto/notas/arquivos/pastas, conexão simples/direcionada, edição e remoção de cartões, escrita verificada e transclusão navegável no editor visual. Testes unitários de serialização, referência, versão futura e integridade. **Sem evidência ainda de build local, CI ou DEVICE.**
