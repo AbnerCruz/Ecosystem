@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Urbe.Core;
 using Urbe.Core.Assistant;
 
 namespace Urbe.Client;
