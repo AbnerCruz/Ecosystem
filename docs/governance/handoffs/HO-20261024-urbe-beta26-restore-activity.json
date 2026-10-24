@@ -41,10 +41,10 @@
     {
       "kind": "human",
       "check": "Android físico: painel compacto por solicitação, estados de execução, detalhes, aprovações, fontes e memória",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
-      "evidence": "Cabe ao proprietário validar no telefone; CI não equivale a teste físico."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-24 (Issue https://github.com/AbnerCruz/Ecosystem/issues/743); registro em docs/governance/responses/VAL-HO-20261024-urbe-beta26-restore-activity-b42cbcc5cc60.md."
     }
   ],
   "known_issues": [
