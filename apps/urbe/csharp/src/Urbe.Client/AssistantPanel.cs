@@ -199,7 +199,7 @@ public sealed partial class AssistantPanel : Border
     /// every request and the device reads the request itself, so the others (links, tags, plans, memory, folders…) cost more
     /// waiting than they give; the bigger models in the cloud keep all of them.
     /// </summary>
-    private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note", "recall_memory", "learn_memory"];
+    private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note", "recall_memory"];
 
     private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name)
         ?? AssistantWebTools.All.FirstOrDefault(t => t.Name == name)
@@ -978,7 +978,7 @@ public sealed partial class AssistantPanel : Border
             var activities = steps.Where(m => m != answer).ToList();
             if (activities.Count > 0 || (i >= current && _running is not null))
             {
-                if (i >= current) desired.Add(ActivityTimeline(msgs[i], activities));
+                if (i >= current) desired.AddRange(activities.Select(View));
                 else
                 {
                     if (!_past.TryGetValue(msgs[i], out var group)) _past[msgs[i]] = group = PastSteps(activities);
@@ -1022,12 +1022,6 @@ public sealed partial class AssistantPanel : Border
             return;
         }
         if (kids.Count > desired.Count) kids.RemoveRange(desired.Count, kids.Count - desired.Count);
-    }
-
-    /// <summary>Current run activity: preserve the existing lazy summary, with fully readable tool cards.</summary>
-    private Control ActivityTimeline(AiChatMessage request, IReadOnlyList<AiChatMessage> steps)
-    {
-        return PastSteps(steps);
     }
 
     /// <summary>The steps of an earlier request in one folded line; the cards are built when it opens.</summary>
