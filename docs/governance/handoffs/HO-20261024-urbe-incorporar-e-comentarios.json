@@ -1,0 +1,78 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-incorporar-e-comentarios",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T03:22:49Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "383cf038",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Embeds.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EmbedUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/VisualEditCrashUiTests.cs",
+    "docs/governance/handoffs/HO-20261024-urbe-incorporar-e-comentarios.json"
+  ],
+  "work_completed": [
+    "Observação do proprietário (24/10/2026, beta.18/19): ![[destino]] no editor Visual não mostrava nada. Agora um parágrafo só de ![[…]] vira um cartão que mostra, no lugar, a nota (texto renderizado), a imagem ou o arquivo de texto; outros arquivos viram cartão com tipo e tamanho. O cartão toma o tamanho do conteúdo e só rola (altura máxima 340) em caso extremo; tocar no título abre o destino; destino inexistente avisa.",
+    "Comentários palavra{\"…\"}: o 💬 deixou de ser um botão dentro do texto (cortava as palavras ao redor e derrubou o app uma vez) e passou a ser um trecho do próprio texto, tocável pela posição; a janela de comentários não rola de lado, então o texto quebra em vez de ser cortado."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (221) e Urbe.Core.Tests (704)",
+      "result": "passed",
+      "evidence": "Editor_ShowsEmbeddedNotesImagesAndFilesInPlace (3 cartões + ausente + comentário sem controle no texto); VisualEdit_WordCommentsShowAMarkThatListsAndAddsComments ajustado ao 💬 em texto."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, ![[nota]], ![[imagem.jpg]], ![[arquivo]] no Visual; comentários em palavra e lista",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/MainView.Embeds.cs"
+    }
+  ],
+  "known_issues": [
+    "O ![[…]] no meio de um texto continua sendo o link simples; só o parágrafo isolado vira cartão.",
+    "Sem aumento de versão neste PR: uma nova beta é um PR crítico à parte."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Nova beta com esta correção, a pedido do proprietário."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Aparelho pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "embed-card",
+      "status": "product-specific",
+      "rationale": "Editor do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Correção de interface do editor; nada de vault, csproj ou workflow."
+  }
+}

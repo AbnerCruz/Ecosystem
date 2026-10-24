@@ -93,14 +93,15 @@ public sealed partial class HeadlessUiTests
                 IReadOnlyList<string>? shown = null;
                 surface.AskComment = list => { shown = list; return Task.FromResult<string?>("segundo \"x\""); };
                 await Pump(60);
-                var mark = surface.GetLogicalDescendants().OfType<Button>().Single(b => Avalonia.Automation.AutomationProperties.GetName(b) == "1 comentário");
-                Assert.Contains(surface.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "💬");
-                mark.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                // the mark is a run of the text (never a control in it, which clipped the words around it)
+                var line = surface.GetLogicalDescendants().OfType<TextBlock>().Single(t => t.Inlines!.OfType<Avalonia.Controls.Documents.Run>().Any(r => r.Text?.Contains("💬") == true));
+                Assert.Empty(line.Inlines!.OfType<Avalonia.Controls.Documents.InlineUIContainer>());
+                Assert.True(MarkdownReader.TapCommentMark(line, 0));
                 await Pump(60);
                 Assert.Equal(["primeiro"], shown);
                 Assert.Equal("Uma palavra{\"primeiro\"}{\"segundo \\\"x\\\"\"} aqui.\n", surface.Text);
                 Assert.Empty(surface.GetLogicalDescendants().OfType<TextBox>());   // the block stays rendered
-                Assert.Contains(surface.GetLogicalDescendants().OfType<Button>(), b => Avalonia.Automation.AutomationProperties.GetName(b) == "2 comentários");
+                Assert.Contains(surface.GetLogicalDescendants().OfType<TextBlock>(), t => t.Inlines!.OfType<Avalonia.Controls.Documents.Run>().Any(r => r.Text?.Contains("💬2") == true));
                 return true;
             }
             finally { window.Close(); }

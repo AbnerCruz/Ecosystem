@@ -85,6 +85,9 @@ public sealed class VisualSurface : StackPanel
     public event Action<string>? TextEdited;
     public event Action<string>? WikiLinkTapped;
 
+    /// <summary>A card for a <c>![[destino]]</c> line (a note, an image, a file shown in place), or null for the plain link.</summary>
+    public Func<string, Control?>? EmbedFor { get; set; }
+
     /// <summary>The bubble's "Fixar em painel": the selected text of the block (DEC-0045, UC-39).</summary>
     public event Action<string>? PinRequested;
 
@@ -306,6 +309,7 @@ public sealed class VisualSurface : StackPanel
         {
             Size = TextSize, LineFactor = LineFactor,
             WikiLinkTapped = name => WikiLinkTapped?.Invoke(name),
+            EmbedFor = EmbedFor,
             // a task inside a container: the tap edits the block (its list lines are not the block's lines)
             TaskToggled = container ? null : (line, on) => ToggleTask(block, line, on),
             MathTapped = index => _ = EditFormulaAsync(block.Start, index),

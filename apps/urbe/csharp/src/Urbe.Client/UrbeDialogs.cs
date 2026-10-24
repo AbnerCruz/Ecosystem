@@ -204,7 +204,9 @@ public sealed class UrbeDialogs : Grid
                 BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1),
                 Child = new SelectableTextBlock { Text = c, TextWrapping = TextWrapping.Wrap, FontFamily = UrbeTheme.UiFont, FontSize = 15, Foreground = UrbeTheme.Brush(UrbeTheme.Text) }
             });
-        var scroll = new ScrollViewer { Content = list, MaxHeight = 280, Margin = new Thickness(0, 12, 0, 0), IsVisible = comments.Count > 0 };
+        // no sideways scroll: with it the text gets unbounded width, never wraps and is cut at the edge
+        var scroll = new ScrollViewer { Content = list, MaxHeight = 280, Margin = new Thickness(0, 12, 0, 0), IsVisible = comments.Count > 0,
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
         var input = new TextBox
         {
             PlaceholderText = "Escreva um comentário", MinHeight = 50, Padding = new Thickness(14, 12), CornerRadius = new CornerRadius(12),
