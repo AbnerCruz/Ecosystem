@@ -15,7 +15,7 @@ namespace Urbe.AndroidHost;
 /// the agent, credentials or vault ownership into another runtime.
 /// </summary>
 [Service(Exported = false, ForegroundServiceType = ForegroundService.TypeSpecialUse)]
-[MetaData(Name = "android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE",
+[MetaData("android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE",
     Value = "User-initiated local AI agent execution and review of vault artifacts while the Urbe UI is backgrounded")]
 public sealed class AssistantRunService : Service
 {
