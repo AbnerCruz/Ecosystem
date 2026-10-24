@@ -29,7 +29,7 @@ public sealed class AssistantGraphToolsTests
         public void SetPlan(IReadOnlyList<AiPlanStep> steps) { }
     }
 
-    private static AiTool Tool(string name) => Assert.Single(AssistantGraphTools.All.Where(t => t.Name == name));
+    private static AiTool Tool(string name) => Assert.Single(AssistantGraphTools.All, t => t.Name == name);
 
     [Fact]
     public async Task AgentsReadAuthorDefinedConnectionsWithStableReferences()
