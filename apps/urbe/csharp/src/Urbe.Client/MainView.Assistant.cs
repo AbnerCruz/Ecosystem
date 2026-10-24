@@ -28,6 +28,7 @@ public sealed partial class MainView : IAssistantApp
     /// <summary>Called once after the editor and plugin surfaces have been added to the stage.</summary>
     private void InstallAssistantLauncher()
     {
+        _assistantLauncher.ZIndex = 20; // Keep accessible when the Notes drawer is open.
         _assistantLauncher.Width = UrbeTokens.MinTouch;
         _assistantLauncher.Height = UrbeTokens.MinTouch;
         _assistantLauncher.MinWidth = UrbeTokens.MinTouch;
@@ -56,6 +57,7 @@ public sealed partial class MainView : IAssistantApp
         _assistantMini.Padding = new Thickness(UrbeTokens.Space.M);
         _assistantMini.Margin = new Thickness(12, 0, 12, 76);
         _assistantMini.MaxWidth = 440;
+        _assistantMini.ZIndex = 19; // Explorer drawer uses ZIndex=1; contextual UI must be above it.
         _assistantMini.HorizontalAlignment = HorizontalAlignment.Right;
         _assistantMini.VerticalAlignment = VerticalAlignment.Bottom;
         Avalonia.Automation.AutomationProperties.SetName(_assistantMini, "Assistente contextual");
@@ -99,7 +101,7 @@ public sealed partial class MainView : IAssistantApp
     private AssistantPanel MakeAssistant()
     {
         IAssistantStorage storage = UrbeApp.AssistantFolder is { } folder ? new FolderAssistantStorage(folder) : new MemoryAssistantStorage();
-        var panel = new AssistantPanel(this, storage);
+        var panel = new AssistantPanel(this, storage) { ZIndex = 30 };
         _stage.Children.Add(panel);   // over the Explorer, the editor, the previews and the plugins' panels; the dialogs stay above
         PlaceAssistant(panel, Bounds.Width);
         panel.PropertyChanged += (_, e) =>
