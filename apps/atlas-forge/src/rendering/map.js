@@ -315,6 +315,7 @@ export class MapRenderer {
   render() {
     this.resize();
     const ctx = this.canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
     ctx.setTransform(this.ratio, 0, 0, this.ratio, 0, 0);
     ctx.clearRect(0, 0, this.w, this.h);
     if (!this.world || !this.derived) return;
@@ -350,7 +351,7 @@ export class MapRenderer {
     if (this.detailActive) {
       this.surface.render(this, ctx);
     } else if (this.projection === "flat") {
-      ctx.imageSmoothingEnabled = (this.scale * 2) / grid.width < 2;
+      ctx.imageSmoothingEnabled = false;
       const span = this.scale * 2;
       const first = Math.floor(-this.left / span);
       const last = Math.ceil((this.w - this.left) / span);
