@@ -1,0 +1,91 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-beta26-final-release",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T14:37:20Z",
+  "agent": {
+    "id": "chatgpt-urbe-native-beta26-release",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-27",
+  "component": "urbe",
+  "state": "review",
+  "branch": "release/urbe-beta26-post-integrator-dispatch-20261024",
+  "base_commit": "753e7f978306222c7869b0f214090a5759acc927",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "docs/governance/handoffs/HO-20261024-urbe-beta26-final-release.json"
+  ],
+  "work_completed": [
+    "Solicitação do proprietário de publicar o Urbe Beta 2.0 com interface de atividades restaurada PR #738 (já em main).",
+    "PR #739 estabelece dispatch seletivo do workflow de publicação pelo integrador confiável, devido à supressão de on:push em pushes GITHUB_TOKEN.",
+    "Esta PR de corte aguarda a integração de #739. Ela toca apenas um comentário no csproj canônico mantendo UrbeBetaVersion 2.0.0-beta.26, versionCode 2000026, identidade e assinatura.",
+    "Após merge desta PR com o controlador atualizado, o workflow oficial compilará Android, verificará certificado e checksum, publicará tag imutável e anexará Windows."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "consistency e urbe-checks na PR e estado combinado",
+      "result": "pending",
+      "evidence": "Verificar workflows após PR estar pronta para revisão."
+    },
+    {
+      "kind": "human",
+      "check": "Validar Urbe beta.26 no Android e conferir painel expansível, pesquisa e memória",
+      "result": "pending",
+      "critical": false,
+      "object": "https://github.com/AbnerCruz/Ecosystem/releases",
+      "evidence": "Não há validação física por esse agente."
+    }
+  ],
+  "known_issues": [
+    "Não integrar esta PR enquanto o trusted integrator da main não contiver o dispatch de #739.",
+    "A release beta.26 não existe até o workflow oficial publicar APK real."
+  ],
+  "blockers": [
+    "PR #739 integrada na main; tests e aprovação crítica por label real.",
+    "Workflow oficial bem-sucedido e assets verificáveis."
+  ],
+  "next_actions": [
+    "Aguardar a confirmação de merge da PR #739 e reavaliar o corte nesta PR.",
+    "Pelo integrador autorizado, publicar beta.26 sem criar tag manual.",
+    "Validar tag, APK Android, ZIP Windows e SHA256 da release.",
+    "Usuário instalar no Android e validar UI e pesquisa web com chave Brave própria."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/distribution/direct-releases.md",
+    ".github/workflows/urbe-csharp-mobile-release.yml"
+  ],
+  "invariants": [
+    {
+      "id": "NN-011",
+      "evidence": "Não contorna a autorização do integrador, nem altera assinatura ou identidade."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Teste Android físico ainda pendente."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Rastreabilidade de PR de corte, SHA, workflow e release."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-beta26-official-native-release",
+      "status": "product-specific",
+      "rationale": "O corte só executa o canal nativo Android/Windows Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Dispara publicação oficial de APK Android beta.26 e pacote Windows."
+  }
+}
