@@ -215,13 +215,20 @@ public static class AssistantMemoryEngine
             .Take(Math.Max(1, limit)).ToList();
     }
 
-    /// <summary>Small, cited context instead of re-sending the entire memory archive on every step.</summary>
+    /// <summary>
+    /// Compatibility entry point for a caller-supplied budget. The budget is context transport,
+    /// not a limit on knowledge; all memories remain locally persisted.
+    /// </summary>
     public static IReadOnlyList<string> ForPrompt(AiConfig cfg, string vault, string agentId,
-        string? query, int maxChars = 3400)
+        string? query, int maxChars = 3400) =>
+        PackPrompt(cfg, vault, agentId, Search(cfg, vault, agentId, query, int.MaxValue), maxChars);
+
+    private static IReadOnlyList<string> PackPrompt(AiConfig cfg, string vault, string agentId,
+        IReadOnlyList<AiMemoryMatch> matches, int maxChars)
     {
         maxChars = Math.Max(0, maxChars);
-        var results = Search(cfg, vault, agentId, query, int.MaxValue).ToList();
-        // Preferences and pinned decisions should not disappear solely because the question is phrased differently.
+        var results = matches.ToList();
+        // Stable preferences and pinned decisions remain useful even without exact query terms.
         foreach (var item in Visible(cfg, vault, agentId)
                      .Where(m => (m.Pinned || m.Kind == "preference") && !PotentialSecret.IsMatch(m.Text))
                      .OrderByDescending(m => m.UpdatedAt))
@@ -229,41 +236,54 @@ public static class AssistantMemoryEngine
                 results.Add(new AiMemoryMatch(item, 0));
         var output = new List<string>();
         var used = 0;
+        var seenText = new HashSet<string>(StringComparer.Ordinal);
         foreach (var match in results)
         {
             var m = match.Memory;
+            var normalized = Normalize(m.Text.Trim());
+            // A duplicate global/vault/agent fact costs tokens only once in the system context.
+            if (seenText.Contains(normalized)) continue;
             var source = m.SourceReference.Length > 0 ? m.SourceReference : m.Origin;
-            var s = "[" + m.Kind + "; " + m.Scope + "; fonte: " + source + "; id: " + m.Id + "] " +
+            var formatted = "[" + m.Kind + "; " + m.Scope + "; fonte: " + source + "; id: " + m.Id + "] " +
                 m.Text.Replace('\n', ' ').Replace('\r', ' ');
-            if (used + s.Length > maxChars) continue;
-            output.Add(s);
-            used += s.Length;
+            if (formatted.Length > maxChars - used) continue;
+            output.Add(formatted);
+            used += formatted.Length;
+            seenText.Add(normalized);
         }
         return output;
     }
 
     /// <summary>
-    /// Adaptive, token-aware initial recall. Memory stays unlimited on disk; only prompt material
-    /// is bounded by the model's actual context window, output reserve and current task.
-    /// Detailed retrieval is always available on demand via recall_memory.
-    /// No model calls, no paid summarization and no model-specific tokenizer dependency.
+    /// Adaptive first-pass recall. Cheap lexical ranking identifies relevant material; diminishing
+    /// returns allocate proportionally less prompt space as memory grows. The model can retrieve
+    /// all remaining evidence, without a fixed cap, through paginated recall_memory calls.
     /// </summary>
     public static IReadOnlyList<string> ForPromptAdaptive(AiConfig cfg, string vault, string agentId,
         string? query, long contextTokens, int systemChars = 0, int conversationChars = 0,
         int reservedOutputTokens = 8192)
     {
-        // Conservative UTF-8 multilingual approximation. Actual provider tokenization still
-        // determines the authoritative limit; leave space for tool schemas and message framing.
+        // Conservative multilingual token approximation; the provider remains authoritative.
         long window = Math.Max(0, contextTokens) * 3L;
         long output = Math.Min(Math.Max(1, reservedOutputTokens), Math.Max(1, contextTokens / 4L)) * 3L;
         long overhead = Math.Max(4096, contextTokens / 12L * 3L);
         long free = window - output - overhead - Math.Max(0, systemChars) -
             Math.Max(0, conversationChars);
         if (free <= 0) return [];
-        // Spend less when there is little relevant knowledge, but permit progressive, long
-        // context recall when many records actually match. No fixed record-count quota.
-        var budget = (int)Math.Min(int.MaxValue, free);
-        return ForPrompt(cfg, vault, agentId, query, budget);
+        var matches = Search(cfg, vault, agentId, query, int.MaxValue);
+        if (matches.Count == 0) return PackPrompt(cfg, vault, agentId, matches,
+            (int)Math.Min(int.MaxValue, free));
+
+        // Soft initial budget: sqrt(N), not N. For 10,000 matches the automatic recall
+        // selects representatives; the agent requests subsequent pages only as required.
+        // Deeper requests may consume more, but cannot exceed the selected model's space.
+        var avg = matches.Average(x => Math.Min(x.Memory.Text.Length + 100, 20000));
+        var complexity = 1d + Math.Log2(1 + Tokens(query).Length);
+        if (Regex.IsMatch(Normalize(query), @"\b(todos|todas|completo|completa|detalhado|profundo|exaustivo|historia|historico)\b"))
+            complexity *= 2;
+        var desired = Math.Ceiling(avg * Math.Sqrt(matches.Count) * complexity);
+        var allowed = (int)Math.Min(int.MaxValue, Math.Min(free, Math.Max(avg, desired)));
+        return PackPrompt(cfg, vault, agentId, matches, allowed);
     }
 
     public static string? ExplicitRememberRequest(string? userMessage)
