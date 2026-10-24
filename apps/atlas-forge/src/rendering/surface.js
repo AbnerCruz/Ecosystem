@@ -314,7 +314,11 @@ export class SurfaceTiles {
     const { canvas, off, im, u, v } = this.projection,
       n = 2 ** z;
     const frameKey = [this.epoch, this.cacheRevision, camera, renderer.rotation, z, renderer.layer, this.levelBlend].join(":");
-    if (this.projection.frameFinal && this.projection.frameKey === frameKey) {
+    if (
+      this.projection.frameFinal &&
+      this.projection.frameKey === frameKey &&
+      z < maxSurfaceLevel(this.context.radius)
+    ) {
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(canvas, 0, 0, renderer.w, renderer.h);
       return;
