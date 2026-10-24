@@ -26,11 +26,24 @@ public sealed partial class AssistantPanel
         {
             if (!CompactActive) return "closed";
             if (_pending is not null) return "approval";
-            if (_running is not null) return "thinking";
+            if (_running is not null || _inNote is not null && _conv.Runs.Count == 0) return "thinking";
             if (_conv.Runs.LastOrDefault()?.Stopped == "needs_input") return "question";
             if (_conv.Runs.LastOrDefault()?.Stopped == "error") return "error";
             if (_conv.Runs.LastOrDefault()?.Stopped == "aborted") return "cancelled";
             return "result";
+        }
+    }
+
+    /// <summary>A stable key prevents rebuilding live approval editors and wiping partially typed responses.</summary>
+    public string CompactRenderKey
+    {
+        get
+        {
+            var tool = _conv.Messages.AsEnumerable().Reverse()
+                .SelectMany(m => m.Content.Where(b => b.Type == "tool_use"))
+                .FirstOrDefault();
+            return CompactStatus + ":" + (_pending?.Request.Call.Id ?? "") + ":" +
+                (tool?.Id ?? "") + ":" + _conv.Runs.Count + ":" + _conv.Messages.Count;
         }
     }
 
