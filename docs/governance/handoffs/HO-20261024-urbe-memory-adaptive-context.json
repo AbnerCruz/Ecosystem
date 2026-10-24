@@ -49,10 +49,10 @@
     {
       "kind": "human",
       "check": "Urbe Android físico, custo de tokens em sessões longas",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
-      "evidence": "Nenhum teste físico alegado."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-24 (Issue https://github.com/AbnerCruz/Ecosystem/issues/742); registro em docs/governance/responses/VAL-HO-20261024-urbe-memory-adaptive-context-6e7e7c4d3678.md."
     }
   ],
   "known_issues": [
