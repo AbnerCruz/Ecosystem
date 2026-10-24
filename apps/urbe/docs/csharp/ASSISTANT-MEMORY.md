@@ -14,7 +14,7 @@ Fonte de verdade: dados dos documentos continuam no vault; as lembranças da IA 
 
 ## Busca e contexto (M2)
 
-AssistantMemoryEngine.Search ranqueia frase, palavras, caminhos, preferências, fixação e recência. É busca lexical OFFLINE; não alegar equivalência com embeddings semânticos vetoriais. Contexto: no máximo 12 lembranças, orçamento de caracteres, origem e ID. Respostas devem verificar a fonte original quando importante.
+AssistantMemoryEngine.Search ranqueia frase, palavras, caminhos, preferências, fixação e recência. É busca lexical OFFLINE; não alegar equivalência com embeddings semânticos vetoriais. ForPromptAdaptive considera a janela real informada pelo modelo, uma reserva para resposta, o custo do sistema e o histórico recente. Não há cota fixa de 12 memórias no contexto. O contexto efetivo continua finito, mas leituras adicionais podem ser recuperadas por recall_memory com paginação por offset e max_chars. Respostas devem verificar a fonte original quando importante.
 
 Pesquisa vetorial futura exige provider/modelo de embeddings opcional, consentimento, indexação incremental, custo monitorado, deleção e medição de ganho de relevância; não forçar downloads de modelos ao Android.
 
@@ -29,14 +29,14 @@ Pesquisa vetorial futura exige provider/modelo de embeddings opcional, consentim
 
 ## Interface nativa (M7)
 
-Configurações → Memória → Gerenciar memórias: busca, escopos/fontes, adição manual por tipo, edição, fixação, exclusão confirmada, conflitos e chave de registro de episódios. Sem WebView; não foca teclado automaticamente. Renderização limitada a 120 cartões.
+Configurações → Memória → Gerenciar memórias: busca, escopos/fontes, adição manual por tipo, edição, fixação, exclusão confirmada, conflitos e chave de registro de episódios. Sem WebView; não foca teclado automaticamente. Renderização incremental em páginas, sem ocultar registros após o primeiro lote.
 
 ## Segurança, limites e eficiência
 
 - Gravação de memória relê AssistantStore para verificar persistência; FolderAssistantStorage ainda engole erros de IO em outras operações, questão geral preexistente.
 - Texto rejeita padrões óbvios de credenciais. Isso não substitui um cofre de segredos.
 - Lembranças são dados, não instruções. Ferramentas destrutivas continuam exigindo autorização.
-- Limite de 5000 registros; 1600 caracteres cada; 3400 caracteres no contexto padrão e até 12 memórias. Sem claims de performance absoluta no celular.
+- Sem limite artificial de 5000 registros ou 1600 caracteres por lembrança; armazenamento é limitado pelos recursos reais do dispositivo. A consulta inicial usa orçamento adaptado à janela do modelo e às mensagens, e a ferramenta recall_memory pagina os resultados pelo orçamento solicitado. Sem claims de performance absoluta no celular. O config.json atual ainda serializa todos os registros a cada escrita, podendo custar mais com históricos muito grandes; particionamento transacional é uma melhoria posterior de persistência, não fingir que já existe.
 - Sem loop de manutenção que chame modelo em background, sem embeddings silenciosos nem gasto extra de tokens por ociosidade.
 - Excluir a lembrança não apaga arquivos do vault nem backups já existentes.
 
