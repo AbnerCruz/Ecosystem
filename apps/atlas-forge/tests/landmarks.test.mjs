@@ -35,6 +35,10 @@ test("Ground props are deterministic, sparse, and independent of redraw or zoom"
     "Decorative objects never mutate project data",
   );
   assert.equal(nearbyNature(world, surface, bounds, 2.5).length, 0);
+  const undergrowth = nearbyNature(world, surface, bounds, 0.03, 6);
+  assert.ok(undergrowth.length > 0 && undergrowth.length <= 1800);
+  assert.deepEqual(undergrowth, nearbyNature(world, surface, bounds, 0.03, 6));
+  assert.equal(nearbyNature(world, surface, bounds, 0.8, 6).length, 0);
 });
 
 test("Ocean generates no land symbols, dry land has rock and shrubs", () => {
