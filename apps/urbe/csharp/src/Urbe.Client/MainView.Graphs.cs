@@ -145,9 +145,9 @@ public sealed partial class MainView
         if (GraphOpen && !await SaveGraphAsync()) return;
         try
         {
-            var read = await _vault.ReadFileAsync(path, 32L * 1024 * 1024);
+            var read = await _vault.ReadFileAsync(path, long.MaxValue);
             if (read?.Bytes is not { } bytes)
-                throw new InvalidDataException("Grafo ausente ou maior que 32 MB.");
+                throw new InvalidDataException("Arquivo de grafo não encontrado ou ilegível.");
             var graph = GraphDocument.Parse(Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF'));
             _openGraph = graph;
             _openGraphPath = path;
@@ -370,8 +370,8 @@ public sealed partial class MainView
             !double.TryParse(pieces[1].Trim(), System.Globalization.NumberStyles.Float,
                 System.Globalization.CultureInfo.InvariantCulture, out var height))
             return null;
-        return double.IsFinite(width) && double.IsFinite(height) && width >= 32 && width <= 10000 &&
-            height >= 24 && height <= 10000 ? (width, height) : null;
+        return double.IsFinite(width) && double.IsFinite(height) && width > 0 &&
+            height > 0 ? (width, height) : null;
     }
 
     private async Task OpenGraphReferenceAsync()
