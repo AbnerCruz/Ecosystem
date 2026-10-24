@@ -113,8 +113,8 @@ public sealed partial class AssistantPanel
             card.Children.Add(Lazy(Label("Detalhes", 12, UrbeTheme.Text3), () =>
             {
                 var more = new StackPanel { Spacing = 6 };
-                if (!b.Pending) more.Children.Add(Pre(ClipText(LegacyCustomize.Stringify(b.Input ?? new JsonObject(), 2), 3000), false));
-                if (r is not null) more.Children.Add(Pre(ClipText(r.Content, 20000) + (r.Content.Length > 20000 ? "\n…" : ""), r.IsError));
+                if (!b.Pending) more.Children.Add(Pre(LegacyCustomize.Stringify(b.Input ?? new JsonObject(), 2), false));
+                if (r is not null) more.Children.Add(Pre(r.Content, r.IsError));
                 return more;
             }));
         }
