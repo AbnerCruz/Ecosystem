@@ -1,0 +1,89 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-paginas-fatias-2-4",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T10:33:35Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-62",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "3b2654e2",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Area.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Studio.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PageStudioView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Edit.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Render.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Vault.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageStudio.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PageStudioUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageEditInPlaceTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageStructureTemplateTests.cs",
+    "apps/urbe/docs/csharp/PAGES-PLAN.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261023-urbe-paginas-fatias-2-4.json"
+  ],
+  "work_completed": [
+    "UC-62 fatia 2: Criar página daqui (pasta → capa + Notas da pasta; nota → a nota), no ⋯ da pasta, no cartão de nota e no Mais ações do editor.",
+    "UC-62 fatia 3: Salvar como modelo com os textos ou só a estrutura (PageStudio.StructureOnly); o lugar dos modelos continua Páginas/Modelos (1.8.4).",
+    "UC-62 fatia 4: textos de uma linha sem Markdown de todas as seções escritos no lugar na prévia (PageEditMarks, só com UrbeMarks; mensagem 'field' no estúdio, só sobre texto ainda simples).",
+    "Correção: AddVaultQueries não usa mais JsonArray.Add<string> (exige reflexão)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (689) e Urbe.Client.Tests (218)",
+      "result": "passed",
+      "evidence": "PageStructureTemplateTests, PageEditInPlaceTests (6), Studio_CreatesAPageFromAFolderAndFromANote."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, criar uma página a partir de uma pasta, escrever o título no lugar na prévia e salvar um modelo só com a estrutura",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Edit.cs"
+    }
+  ],
+  "known_issues": [
+    "A imagem tocada na prévia ainda não abre a escolha de imagem (abre o painel Editar da seção)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Itens restantes do ROADMAP C#: UC-71 foco ao tocar, UC-60 limites de desempenho na suíte, UC-20 tema, UC-55, UC-56/66 Windows."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A página guarda só a consulta; a lista vem das notas a cada render."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "O motor da 1.8.4 continua a base; oráculos intactos (as novidades só com UrbeMarks)."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "page-vault-queries",
+      "status": "product-specific",
+      "rationale": "Páginas do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Feature autorizada pela DEC-0055; motor de páginas atrás de UrbeMarks; nada de vault ou workflow."
+  }
+}

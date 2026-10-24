@@ -16,6 +16,9 @@ public sealed class AiChatBlock
     public JsonNode? Input { get; set; }
     public string ToolUseId { get; set; } = "";
     public string Content { get; set; } = "";
+    /// <summary>Selected files are local to this private conversation; never copied into the vault.</summary>
+    public string MimeType { get; set; } = "";
+    public string FileName { get; set; } = "";
     public bool IsError { get; set; }
     public bool Pending { get; set; }
     public string? Partial { get; set; }
@@ -30,6 +33,7 @@ public sealed class AiChatBlock
     {
         "text" => TextBlock(b.Text),
         "tool_use" => new() { Type = "tool_use", Id = b.Id, Name = b.Name, Input = b.Input },
+        "attachment" => new() { Type = "attachment", Content = b.Content, MimeType = b.MimeType, FileName = b.FileName },
         _ => new() { Type = "tool_result", ToolUseId = b.ToolUseId, Content = b.Content, IsError = b.IsError }
     };
 
@@ -41,6 +45,9 @@ public sealed class AiChatBlock
             case "text":
                 o["text"] = Text;
                 if (Hidden) o["_hidden"] = true;
+                break;
+            case "attachment":
+                o["mime"] = MimeType; o["name"] = FileName; o["data"] = Content;
                 break;
             case "tool_use":
                 o["id"] = Id; o["name"] = Name; o["input"] = Input?.DeepClone();
@@ -63,6 +70,8 @@ public sealed class AiChatBlock
         {
             "text" => new() { Type = "text", Text = n["text"] is JsonValue t && t.TryGetValue<string>(out var s) ? s : null, Hidden = n["_hidden"] is JsonValue h && Urbe.Core.Pages.PageEngine.Truthy(h) },
             "tool_use" => new() { Type = "tool_use", Id = (string?)n["id"] ?? "", Name = (string?)n["name"] ?? "", Input = n["input"]?.DeepClone(), Pending = n["_pending"] is JsonValue p && Urbe.Core.Pages.PageEngine.Truthy(p), Partial = (string?)n["_partial"] },
+            "attachment" => new() { Type = "attachment", MimeType = (string?)n["mime"] ?? "",
+                FileName = (string?)n["name"] ?? "", Content = (string?)n["data"] ?? "" },
             _ => new()
             {
                 Type = type, ToolUseId = (string?)n["tool_use_id"] ?? "", Content = n["content"] is null ? "" : LegacyCustomize.JsToString(n["content"]),
@@ -224,7 +233,9 @@ public static class AssistantAgent
     /// app asks of every agent beyond the 1.8.4's prompt.
     /// </summary>
     public const string UrbeGuidance =
-        "- Quando o pedido for uma apostila, um livro, um caderno, um e-book, um manual ou outro material longo para ler ou imprimir, faça uma página no formato livro, sem precisar que o usuário peça: chame page_schema e use write_page com o modelo book (ou book-folder, para transformar uma pasta de notas em livro), em vez de escrever uma nota longa. Use os blocos note/notes para puxar o conteúdo das notas e abra a página com open_note no fim.";
+        "- Quando o pedido for uma apostila, um livro, um caderno, um e-book, um manual ou outro material longo para ler ou imprimir, faça uma página no formato livro, sem precisar que o usuário peça: chame page_schema e use write_page com o modelo book (ou book-folder, para transformar uma pasta de notas em livro), em vez de escrever uma nota longa. Use os blocos note/notes para puxar o conteúdo das notas e abra a página com open_note no fim.\n" +
+        "- Para gerar, desenhar ou ilustrar uma IMAGEM, use generate_image, não write_page. O modelo do chat não muda: a ferramenta usa um provedor visual já configurado. Sem credencial disponível ou diante de falha, explique o problema e nunca diga que a imagem foi criada.\\n" +
+        "- Antes de executar trabalho amplo, identifique lacunas e riscos. Se faltar algo que mude materialmente o resultado, use ask_user para UMA pergunta por vez e pause; não suponha. Após cada resposta reavalie as dúvidas, elimine as resolvidas (inclusive múltiplas pela mesma resposta), e acrescente só dúvidas realmente novas. Quando houver clareza suficiente, resuma entendimento e plano e execute, sem perguntas repetidas.";
 
     public static AiAgentDef AgentById(string? id, IEnumerable<AiAgentDef>? custom = null) =>
         Agents.Concat(custom ?? []).FirstOrDefault(a => a.Id == id) ?? Agents[0];
@@ -388,7 +399,7 @@ public static class AssistantAgent
         int current = messages.Count;
         for (int i = messages.Count - 1; i >= 0; i--)
             if (messages[i].Role == "user" && messages[i].Meta?.ToolResults != true && messages[i].Content.Any(b => b.Type == "text" && !b.Hidden && !string.IsNullOrEmpty(b.Text))) { current = i; break; }
-        return messages.Select((m, i) => i < current && m.Content.Any(IsLong) ? Settled(m) : m).ToList();
+        return messages.Select((m, i) => i < current && (m.Content.Any(IsLong) || m.Content.Any(b => b.Type == "attachment")) ? Settled(m) : m).ToList();
     }
 
     private static int Length(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) ? s.Length : n is null ? 0 : n.ToJsonString().Length;
@@ -403,7 +414,8 @@ public static class AssistantAgent
     private static AiChatMessage Settled(AiChatMessage m) => new()
     {
         Id = m.Id, Role = m.Role, Meta = m.Meta,
-        Content = m.Content.Select(b => !IsLong(b) ? b : b.Type == "tool_result"
+        Content = m.Content.Select(b => b.Type == "attachment" ? AiChatBlock.TextBlock("[Anexo anterior: " + b.FileName + "; não reenviar conteúdo binário.]")
+            : !IsLong(b) ? b : b.Type == "tool_result"
             ? new AiChatBlock { Type = "tool_result", ToolUseId = b.ToolUseId, IsError = b.IsError, Content = b.Content[..400] + "\n…[resultado de um pedido anterior, encurtado; use as ferramentas para ver o estado atual]" }
             : new AiChatBlock { Type = "tool_use", Id = b.Id, Name = b.Name, Input = SettledInput((JsonObject)b.Input!) }).ToList()
     };
@@ -421,6 +433,7 @@ public static class AssistantAgent
     {
         "text" => AiBlock.TextBlock(b.Text ?? ""),
         "tool_use" => AiBlock.ToolUse(b.Id, b.Name, b.Input),
+        "attachment" => AiBlock.Attachment(b.MimeType, b.FileName, b.Content),
         _ => AiBlock.ToolResult(b.ToolUseId, b.Content, b.IsError)
     };
 
@@ -628,6 +641,11 @@ public static class AssistantAgent
                 }
                 Finish(calls[k], await RunOne(calls[k]));
                 k++;
+            }
+            if (calls.Any(c => c.Name == "ask_user" && answer.Content.Any(b => b.ToolUseId == c.Id && !b.IsError)))
+            {
+                result.Stopped = "needs_input";
+                break;
             }
             if (cancel.IsCancellationRequested) { result.Stopped = "aborted"; break; }
             if (repeats >= 3) { result.Stopped = "loop"; break; }

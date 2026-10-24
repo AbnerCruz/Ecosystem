@@ -67,7 +67,7 @@ public sealed partial class HeadlessUiTests
                 Assert.DoesNotContain(view.Library.Folders, f => f.StartsWith("Área", StringComparison.Ordinal));
                 Assert.DoesNotContain(view.Documents!.List(), d => d.Path.StartsWith("Área/", StringComparison.Ordinal));
                 Assert.Null(view.Documents!.Get("Área/Ideias.md"));
-                var trash = File.ReadAllText(Path.Combine(vault, ".urbe", "trash.v2.json"));
+                var trash = await ReadWhenWritten(Path.Combine(vault, ".urbe", "trash.v2.json"));
                 Assert.Contains("Área/Antigas/Velha.md", trash);
                 Assert.Contains("Área/Ideias.md", trash);
                 Assert.Empty(view.Explorer.SelectedPaths);
@@ -147,7 +147,10 @@ public sealed partial class HeadlessUiTests
                 Assert.True(view.Explorer.HoldFolder("Arquivo"));
                 view.Explorer.GetLogicalDescendants().OfType<Button>().Single(b => ToolTip.GetTip(b) as string == "Mover para a lixeira")
                     .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
-                for (int i = 0; i < 40 && !view.Dialogs.IsOpen; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                // under the whole suite's load the confirmation can take a while to open: wait for it, then for its button
+                for (int i = 0; i < 500 && !(view.Dialogs.IsOpen && view.Dialogs.GetLogicalDescendants().OfType<Button>().Any(b => b.Content as string == "Excluir" || b.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == "Excluir"))); i++)
+                { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.True(view.Dialogs.IsOpen);
                 var watch = System.Diagnostics.Stopwatch.StartNew();
                 ClickButtonWithText(view.Dialogs, "Excluir");
                 for (int i = 0; i < 3000 && Directory.Exists(Path.Combine(vault, "Arquivo")); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
@@ -158,7 +161,7 @@ public sealed partial class HeadlessUiTests
                 var trash = File.ReadAllText(Path.Combine(vault, ".urbe", "trash.v2.json"));
                 for (int i = 0; i < n; i++) Assert.Contains($"Arquivo/Nota {i:000}.md", trash);
                 // the last text of every note removed is in the history, written once the batch ended
-                var history = File.ReadAllText(Path.Combine(vault, ".urbe", "history.v2.json"));
+                var history = await ReadWhenWritten(Path.Combine(vault, ".urbe", "history.v2.json"), h => h.Contains($"Texto {n - 1}.", StringComparison.Ordinal));
                 Assert.Contains("Texto 0.", history);
                 Assert.Contains($"Texto {n - 1}.", history);
                 Assert.DoesNotContain(view.Explorer.VisibleNotePaths, p => p.StartsWith("Arquivo/", StringComparison.Ordinal));

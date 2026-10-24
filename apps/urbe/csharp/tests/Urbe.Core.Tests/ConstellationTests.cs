@@ -60,4 +60,31 @@ public sealed class ConstellationTests
         Assert.False(Constellation.IsConstellation("{ não é json"));
         Assert.True(Constellation.IsConstellation(json));
     }
+
+    [Fact]
+    public void FiveThousandNotesGetTheirSkyQuicklyAndApart()
+    {
+        // UC-72: a big vault — every star placed once, fast; no two stars on top of each other; reopening moves none
+        var notes = Enumerable.Range(0, 5000).Select(i => ("id" + i, "Projeto " + (i % 40) + "/Pasta " + (i % 7) + "/Nota " + i + ".md")).ToList();
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        var sky = new Constellation();
+        Assert.True(sky.Update(notes));
+        var json = sky.Serialize();
+        var again = Constellation.Parse(json, out var future);
+        Assert.False(again.Update(notes));
+        watch.Stop();
+        Assert.False(future);
+        Assert.Equal(5000, again.Stars.Count);
+        Assert.True(watch.ElapsedMilliseconds < 2000, watch.ElapsedMilliseconds + " ms");
+        var grid = again.Stars.GroupBy(st => ((long)Math.Floor(st.X / Constellation.Step), (long)Math.Floor(st.Y / Constellation.Step))).ToDictionary(g => g.Key, g => g.ToList());
+        foreach (var star in again.Stars)
+        {
+            var (cx, cy) = ((long)Math.Floor(star.X / Constellation.Step), (long)Math.Floor(star.Y / Constellation.Step));
+            for (long dx = -1; dx <= 1; dx++)
+                for (long dy = -1; dy <= 1; dy++)
+                    if (grid.TryGetValue((cx + dx, cy + dy), out var near))
+                        foreach (var o in near)
+                            if (o.Id != star.Id) Assert.True(Math.Sqrt((o.X - star.X) * (o.X - star.X) + (o.Y - star.Y) * (o.Y - star.Y)) >= Constellation.MinGap - .02, "estrelas coladas: " + star.Id + " e " + o.Id);
+        }
+    }
 }

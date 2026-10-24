@@ -1,0 +1,68 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-beta-22",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T03:44:11Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-27",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "7de4087b",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "docs/governance/handoffs/HO-20261024-urbe-beta-22.json"
+  ],
+  "work_completed": [
+    "Beta 2.0.0-beta.22 (código 2000022), pedida pelo proprietário (24/10/2026: \"Dps de fazer eu quero a release\"). Leva o que entrou depois da beta.21: ![[destino]] mostrado no editor Visual (nota, imagem, página .html renderizada, PDF, áudio, vídeo, código-fonte), partes do destino (#Título, #^id, #código, #L10-25) e o \uD83D\uDCAC dos comentários que não corta mais o texto (PR #705)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "CI do PR #705 (cliente 222 e núcleo 730 testes) já integrado na main",
+      "result": "passed",
+      "evidence": "Este PR só muda a versão."
+    },
+    {
+      "kind": "human",
+      "check": "Baixar a beta.22 e testar ![[…]] e os comentários no aparelho",
+      "result": "passed",
+      "critical": true,
+      "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.22",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-24 (Issue https://github.com/AbnerCruz/Ecosystem/issues/715); registro em docs/governance/responses/VAL-HO-20261024-urbe-beta-22-1be33e80741b.md."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Proprietário anota as observações."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/distribution/direct-releases.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Validação no aparelho pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "release-beta",
+      "status": "product-specific",
+      "rationale": "Release do canal beta do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Publica uma release do canal beta (versão em Urbe.Android.csproj)."
+  }
+}

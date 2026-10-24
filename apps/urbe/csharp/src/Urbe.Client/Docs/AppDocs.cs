@@ -74,6 +74,12 @@ public static partial class AppDocs
 
         Na primeira vez, a **Configuração inicial** leva pela pasta, pelo tema e pelo Assistente; ela pode ser refeita em **Configurações → Configuração inicial**.
 
+        As **Propriedades** da nota (o bloco `---` do começo) têm um formulário no alto da nota, em Visual e em Fonte: toque em **Propriedades** para abrir. **Aliases** são outros nomes da nota: um link `[[apelido]]` leva a ela, aparece nas conexões e funciona em `![[apelido]]`. **Tags** aceitam as do vault com um toque. Texto, número, data, sim/não e listas têm campo próprio, e **Adicionar propriedade** cria outras. O que o formulário não entende fica como estava.
+
+        O **modo leitura** (o botão **Edição/Leitura** no rodapé do editor, ou **Mais ações → Modo leitura**) vale para Visual e Fonte: nada é alterado sem querer, a barra de formatação some e as propriedades só são mostradas. Links, comentários e cartões continuam funcionando.
+
+        Para atualizar: **Configurações → Verificar atualização** procura uma versão mais nova do Urbe (só quando você pede). O arquivo abre no navegador: no Android, instale por cima do Urbe atual; no Windows, extraia o .zip por cima da pasta do Urbe. Suas notas ficam onde estão.
+
         Use a **busca** no alto do índice deste tutorial para achar qualquer assunto, e **Anterior / Próximo** para ler em sequência.
         """;
 
@@ -96,7 +102,7 @@ public static partial class AppDocs
         - **Nova nota**, na pasta selecionada.
         - **A partir de um modelo**, quando há notas em `Modelos` (veja [[Modelos]]).
         - **Nova pasta**, na pasta selecionada.
-        - **Nota rápida**, por voz, quando disponível. No Android também há o widget **Urbe: nota rápida** na tela inicial, que grava sem abrir o app. As notas rápidas ficam em **Notas rápidas**, uma nota por mês com um título para cada dia.
+        - **Nota rápida**, por voz, quando disponível. No Android também há o widget **Urbe: nota rápida** na tela inicial, que grava sem abrir o app. No Windows, **Ctrl+Alt+N** (de qualquer programa) ou o ícone do Urbe na bandeja abrem a caixa da nota rápida: escreva, ou aperte **Win+H** para o ditado do Windows escrever o que você fala. As notas rápidas ficam em **Notas rápidas**, uma nota por mês com um título para cada dia.
 
         ## Selecionar e mover
 
@@ -216,6 +222,9 @@ public static partial class AppDocs
         - A página é feita de **blocos**: toque em **Adicionar bloco**, arraste para reordenar e use o menu de cada bloco para **Mover para cima / baixo**, **Duplicar**, **Salvar como bloco reutilizável**, **Trocar tipo de bloco** ou **Remover**.
         - Em **＋ → Modelos** há modelos prontos; aplicar um pode **substituir a página**, **adicionar as seções ao fim** ou trocar **só o visual**.
         - O estúdio salva sozinho e mostra **Salvo**.
+        - **Criar página daqui**, no ⋯ de uma pasta, de um cartão de nota ou no **Mais ações** do editor: de uma pasta, uma capa e as notas dela; de uma nota, a própria nota.
+        - Na prévia, títulos, rótulos e itens de uma linha se escrevem **no lugar**: toque, escreva e saia (Enter também termina). Tocar numa imagem abre a escolha de imagem. Textos com Markdown continuam no painel **Editar**.
+        - O bloco **Notas** lista notas do seu vault e acompanha as mudanças: de uma **pasta** (com ou sem as subpastas), de uma **tag**, as **escolhidas**, as **recentes**, as que **ligam a uma nota**, as **ligadas por uma nota** ou as de uma **busca**.
 
         ## Prévia e comentários
 
@@ -230,7 +239,7 @@ public static partial class AppDocs
         - **Salvar HTML no vault**, ao lado da página
         - **Copiar HTML**
 
-        No menu do estúdio também estão **Salvar como modelo**, **Duplicar página** e **Editar JSON**. O arquivo da página é um `.page.json` na sua pasta.
+        No menu do estúdio também estão **Salvar como modelo** (com os textos ou só a estrutura), **Duplicar página** e **Editar JSON**. O arquivo da página é um `.page.json` na sua pasta.
         """;
 
     private const string Assistente = """
@@ -254,11 +263,21 @@ public static partial class AppDocs
 
         O texto escrito pelo Assistente ganha no fim uma marca pequena com o nome do modelo, como `{ia:"modelo"}`, que aparece em verde no editor.
 
-        Com **OpenAI** ou **Google Gemini** (ou um servidor compatível que gere imagens), o Assistente também **gera imagens**: peça "faça um retrato da Lia em aquarela e ponha na nota dela". Ele mostra o pedido para você aprovar, guarda a imagem na pasta **Imagens** (sem nunca gravar por cima de um arquivo) e, se você quiser, coloca `![[Imagens/…]]` na nota.
+        **Enviar arquivos ao chat:** toque no único botão **+** ao lado da caixa de mensagem e escolha **Arquivo do dispositivo** ou **Nota do vault**. A busca de notas percorre o vault inteiro, sem limite artificial das primeiras 300 notas. Antes do envio, os anexos aparecem na bandeja compacta de contexto; cada cartão pode ser removido, e **Limpar** remove todos. Texto UTF-8 entra como contexto; imagens PNG/JPEG/WebP e PDFs vão como anexos multimodais. Até quatro anexos por mensagem, com limites por tipo. O Urbe não copia os anexos para o vault. Imagens e PDFs exigem um modelo multimodal compatível; só selecione arquivos que deseja enviar ao provedor de IA.
+
+        **Perguntas e planejamento:** em tarefas complexas, o agente registra as etapas pelo plano e, se uma decisão importante estiver faltando, abre um cartão com uma pergunta por vez. Responda no cartão para continuar. A contagem de dúvidas resolvidas é uma estimativa declarada pelo agente, não uma porcentagem medida de compreensão.
+
+        No chat, peça **"gere uma imagem"** sem trocar o modelo da conversa. Em **Configurações do Assistente → Geração de imagens**, selecione o provedor salvo e o modelo de imagem: OpenRouter lista modelos pela API específica de imagens; OpenAI e Gemini também podem ser escolhidos, e é possível informar o ID manual de um modelo compatível. **Automático** mantém a escolha anterior. O Assistente pede aprovação, guarda o arquivo na pasta **Imagens** sem sobrescrever arquivos e, se você quiser, coloca `![[Imagens/…]]` na nota. Sem uma chave válida, ele informa o que falta; não substitui a imagem por uma página.
+
+        **Preços de imagens:** a lista de modelos mostra valores em dólares **por imagem, por megapixel ou por 1 milhão de tokens**, com fonte consultável. Para OpenRouter, a consulta utiliza o endpoint de preços do modelo escolhido; para modelos específicos OpenAI e Gemini, são exibidas referências públicas com data de verificação. Preço ausente aparece como **não informado**, nunca como gratuito. Os valores são referências ou mínimos, não previsão exata de cobrança: entrada, qualidade, resolução e rota podem alterar a fatura.
+
+        **Prévia de imagem no chat:** quando `generate_image` termina, a imagem salva no vault aparece diretamente no cartão da conversa, com o botão **Abrir** para a visualização nativa em tamanho maior. Não é uma nova cópia nem uma URL externa. Nas conversas anteriores, imagens concluídas continuam à vista mesmo com os passos do agente recolhidos.
 
         ## Ajustar
 
         - **Instruções para todos os agentes**, **Memória** (fatos para lembrar), **Agentes personalizados** e **Limite de passos por resposta**.
+        - **Modelo por agente:** em Configurações → Nomes dos agentes → **Configurar**, você pode selecionar um provedor/modelo de conversa específico para qualquer agente (inclusive os prontos). Sem escolha, o agente herda o modelo normal do Assistente. Trocar de agente passa a trocar também o modelo efetivo, sem mudar o padrão salvo.
+        - **Instruções por blocos:** no mesmo painel, adicione quantos blocos titulados precisar (ex.: Tom, Fontes, Procedimento), edite e remova. Esses blocos se somam às instruções gerais e às instruções existentes do agente, sem ampliar as permissões. Os ajustes são guardados só na configuração local do Assistente.
         - **Nomes dos agentes**: cada agente pode ter um nome seu, como Jarvis. Numa conversa, chame-o por um nome novo ("Jarvis, resuma esta nota") e ele pergunta se deve passar a se chamar assim. O nome fica só neste aparelho.
         - **Pedir dentro da nota**: escreva numa linha `&Jarvis&: dê uma sugestão de nome` (ou `&&:` para o agente padrão). A linha vira um cartão com **Pedir a Jarvis** (ou Ctrl+Enter nela); só ao tocar o pedido vai, numa conversa própria "Na nota …", com a nota como contexto. Uma mudança na nota aparece no lugar da linha, como sugestão, com **Aceitar** e **Recusar**; uma resposta em palavras abre o Assistente, com **Pôr na nota** para guardá-la como citação logo abaixo da linha. Essas linhas não aparecem nas páginas.
         - **Personalização/AGENTS.md** na sua pasta: instruções suas, lidas a cada conversa. Separe por modelo:

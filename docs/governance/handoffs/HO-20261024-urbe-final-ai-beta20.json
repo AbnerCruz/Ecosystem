@@ -1,0 +1,126 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-final-ai-beta20",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T02:22:00Z",
+  "agent": {
+    "id": "chatgpt-gpt6",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-63",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-uc63-finalize-ai",
+  "base_commit": "25cf06fe50b4ab4dc871acd8573dc6241dfa42cc",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantProviders.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantQuestionTools.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantMultimodalQuestionTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantImageToolsTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261024-urbe-final-ai-beta20.json"
+  ],
+  "work_completed": [
+    "Auditados contra o inventário Versão Beta Final.md: planejar update_plan, chamar agente inline, nomes, aprovação de alterações editável, marca IA, modelo por agente, instruções em blocos e AGENTS.md já implementados; sem retrabalho.",
+    "Adicionado ask_user como ferramenta de interface para uma pergunta por vez: o modelo fornece dúvida, motivo e estimativa resolvidas/total. O agente pausa e o cartão permite resposta que retorna ao histórico e retoma a execução em novo turno.",
+    "Adicionada seleção explícita de nota do vault ou arquivos externos no chat, texto UTF-8 como contexto e imagens/PDF como anexos multimodais para OpenAI-compatible e Anthropic, com validação de formato, limite de tamanho e contagem, sem copiar para o vault.",
+    "Arquivos multimodais serializados na conversa privada; imagens anteriores ficam fora do contexto enviado novamente para reduzir custos/tamanho.",
+    "Corrigida API Gemini para geração nativa generateContent e default gemini-nano-banana-2.1; mantidos OpenRouter /images e OpenAI /images/generations.",
+    "Versão do canal beta nativo elevada de 2.0.0-beta.19/2000019 para 2.0.0-beta.20/2000020 para publicar Android e Windows pelo workflow versionado após integração.",
+    "Tutorial e roadmap atualizados com status dos pedidos e limites: unificação da IA ainda regida por ADR-0033/ADD-0027, sem promover novo runtime."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe Core+Client C# build/tests, Android/Windows native release preview, E2E + consistency",
+      "result": "pending",
+      "evidence": "GitHub Actions PR / integrador combinado"
+    },
+    {
+      "kind": "human",
+      "check": "SAF Android, multimodal real para provedor configurado, perguntas adaptáveis e atualização in-place beta.19 → beta.20",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+      "evidence": "Requer testes com aparelho e credenciais do proprietário."
+    }
+  ],
+  "known_issues": [
+    "Nem todo backend OpenAI-compatible suporta anexos PDF; a API de terceiros retorna erro claro caso incompatível. Anthropic suporta imagens e documento PDF em modelos compatíveis.",
+    "Indicador de compreensão é autodeclarado pelo modelo, não medição objetiva; ferramentas exigem agent com tool-calling.",
+    "Distribuição da IA para os demais apps depende do gate de unificação (ADR-0033), portanto não é declarada pronta.",
+    "Novos binários base64 são guardados no arquivo de conversa privado do aparelho e não no vault. Os históricos podem crescer; limite de 4 anexos e contexto antigo sem reenvio."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Corrigir falhas que aparecerem no CI do PR.",
+    "Aguardar autorização de integração crítica via procedimento da governança (não adicionar integrar como agente).",
+    "Após integração em main e workflow de release, confirmar asset APK beta.20 e Windows ZIP nos releases.",
+    "Validar Android real, transições e contas de modelos com suporte a PDF/imagem."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O estado de conversa permanece uma única autoridade AssistantStore e o conteúdo de anexo não é copiado ao vault."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Os tipos JSON de anexos são opcionais, casos legados permanecem text/tool_use/tool_result e oráculos não mudam."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Pergunta e progresso ficam no log de ferramentas e aguardam resposta explícita do usuário."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Releases somente pelo workflow canônico e bump do csproj, sem tag manual ou publicação forçada."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Anexo exige escolha do usuário; generate_image mantém aprovação existente. Nenhuma chave em arquivo de trabalho/vault."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes físicos/requisições reais pendentes."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Unificação Ecosystem AI continua por ADR-0033, sem segundo runtime."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "multimodal-agent-input",
+      "status": "possible-candidate",
+      "rationale": "Contrato multimodal potencialmente reutilizável em AgentRuntime.Core após teste com consumidor real; não promovido neste PR."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data",
+      "release"
+    ],
+    "reason": "Conversas privadas ganham mídia serializada; versão, identidade de atualização e gatilho de publicação beta alterados. Proprietário solicitou explicitamente nova beta, mas integração crítica segue o gate."
+  }
+}

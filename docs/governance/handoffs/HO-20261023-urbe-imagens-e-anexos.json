@@ -54,9 +54,10 @@
     {
       "kind": "human",
       "check": "No aparelho, pedir uma imagem ao Assistente com OpenAI ou Gemini e importar uma pasta com fotos",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-23 (Issue https://github.com/AbnerCruz/Ecosystem/issues/692); registro em docs/governance/responses/VAL-HO-20261023-urbe-imagens-e-anexos-b3ba7b006d59.md."
     }
   ],
   "known_issues": [

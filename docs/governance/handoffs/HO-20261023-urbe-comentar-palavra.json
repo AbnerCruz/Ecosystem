@@ -10,7 +10,7 @@
   },
   "task_id": "UC-49",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "ccr-2e1b58fa-7mhpmx",
   "base_commit": "e01e7e09",
   "commit": null,
@@ -22,7 +22,7 @@
     "docs/governance/handoffs/HO-20261023-urbe-comentar-palavra.json"
   ],
   "work_completed": [
-    "UC-49: \uD83D\uDCAC Comentar a palavra no balão da seleção do modo Visual grava {\"…\"} depois da palavra selecionada ou do cursor, sem precisar de um \uD83D\uDCAC existente."
+    "UC-49: 💬 Comentar a palavra no balão da seleção do modo Visual grava {\"…\"} depois da palavra selecionada ou do cursor, sem precisar de um 💬 existente."
   ],
   "verification": [
     {
@@ -33,7 +33,7 @@
     },
     {
       "kind": "human",
-      "check": "No aparelho, selecionar uma palavra, tocar \uD83D\uDCAC Comentar a palavra e ver o \uD83D\uDCAC sobre ela",
+      "check": "No aparelho, selecionar uma palavra, tocar 💬 Comentar a palavra e ver o 💬 sobre ela",
       "result": "passed",
       "critical": false,
       "object": "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",

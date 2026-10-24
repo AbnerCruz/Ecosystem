@@ -45,6 +45,8 @@ public sealed partial class MainView : Grid
 
         Explorer = new NotesExplorer { State = ExplorerState };
         Editor = new EditorOverlay { IsVisible = false, Dialogs = Dialogs, Notes = () => _contents.Select(n => new CityNote(n.Key, n.Value)) };
+        Editor.EmbedFor = BuildEmbed;
+        Editor.Properties.TagSource = () => _store is null ? [] : _store.List().SelectMany(d => d.Tags).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
         Editor.PropertiesFor = path => _library?.PropertiesText(path, Now);
         // v23Atualizar: v23Dock.hidden = editor (the rail of a wide window stays)
         Editor.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) _dock.IsVisible = !Editor.IsVisible && !(Bounds.Width >= WideBreakpoint); };
@@ -61,6 +63,12 @@ public sealed partial class MainView : Grid
             await going;
         };
         // UC-71: a point or a row of Conexões opens its note, and the graph follows it (it joins the trail, like a backlink)
+        Editor.Connections.SkyRequested += () =>
+        {
+            if (StillReading() || Editor.Current is not { } open || _store?.Get(open.Path) is not { } doc) return;
+            Editor.Connections.IsVisible = false;
+            _ = ShowConstellationAsync(doc.Id);
+        };
         Editor.Connections.NoteChosen += async path =>
         {
             var going = Editor.NavigateAsync(new CityNote(path, _contents.GetValueOrDefault(path, "")));
@@ -539,6 +547,7 @@ public sealed partial class MainView : Grid
         items.Add(new("Assistente", UrbeTheme.Icons.Assistant, "Agentes que pesquisam, escrevem e organizam o vault", Run: () => { ToggleAssistant(); return Task.CompletedTask; }));
         items.Add(new("Páginas", UrbeTheme.Icons.Page, "Sites e páginas HTML do vault", Run: () => { ShowPages(); return Task.CompletedTask; }));
         items.Add(new("Diagnóstico de toques", UrbeTheme.Icons.Select, TouchDebugOn ? "Ligado — toque para desligar" : "Para descobrir botões que não respondem", Run: ToggleTouchDebugAsync));
+        if (UpdateItem() is { } update) items.Add(update);
         if (CrashLog.Read().Length > 0)
             items.Add(new("Relatório de erros", UrbeTheme.Icons.List, "Erros que o Urbe registrou neste aparelho", Run: ShowErrorReportAsync));
         return Dialogs.MenuAsync("Configurações", items);
@@ -669,6 +678,8 @@ public sealed partial class MainView : Grid
         if (Dialogs.IsOpen || ActionSheet.IsOpen || editor.Current is not { } note) return Task.CompletedTask;
         return SheetMenuAsync(NoteLibrary.FullNoteName(note.Path),
         [
+            new DialogItem(editor.ReadOnly ? "Modo edição" : "Modo leitura", editor.ReadOnly ? UrbeTheme.Icons.Pencil : UrbeTheme.Icons.Book,
+                editor.ReadOnly ? "Volta a escrever na nota." : "Só ler: nada é alterado sem querer.", Run: () => { editor.ReadOnly = !editor.ReadOnly; return Task.CompletedTask; }),
             new DialogItem("Renomear", UrbeTheme.Icons.Pencil, Run: () => RenameNoteAsync(note.Path)),
             new DialogItem("Mover para outra pasta", UrbeTheme.Icons.Folder, Run: async () =>
             {
@@ -679,6 +690,7 @@ public sealed partial class MainView : Grid
             new DialogItem("Versões anteriores", UrbeTheme.Icons.Restore, Run: ShowVersionsAsync),
             new DialogItem("Conexões", UrbeTheme.Icons.Connections, "As notas que ela cita e as que a citam.", Run: () => { ShowEditorConnections(); return Task.CompletedTask; }),
             new DialogItem("Estrutura e backlinks", UrbeTheme.Icons.List, Run: () => { ShowEditorContext(); return Task.CompletedTask; }),
+            new DialogItem("Criar página daqui", UrbeTheme.Icons.Layers, "Uma página com esta nota.", Run: async () => { if (!editor.HasChanges || await editor.SaveAsync()) await CreatePageFromAsync(notePath: note.Path); }),
             // DEC-0045, UC-39: the selection (or the whole note) stays at the top while writing
             new DialogItem("Fixar em painel", UrbeTheme.Icons.Pin, "A seleção, ou a nota inteira, fica no topo enquanto você escreve.",
                 Run: () => { editor.PinSelectionOrNote(); return Task.CompletedTask; }),
@@ -942,6 +954,7 @@ public sealed partial class MainView : Grid
             new("Renomear", UrbeTheme.Icons.Pencil, "Muda o nome da pasta no vault.",
                 Run: () => inExplorer && Explorer.BeginRename(NotesExplorer.FolderPrefix + folder) ? Task.CompletedTask : RenameFolderAsync(folder)),
             new("Mover para", UrbeTheme.Icons.Move, "A pasta e tudo o que há nela.", Run: () => MoveFolderAsync(folder)),
+            new("Criar página daqui", UrbeTheme.Icons.Layers, "Uma página com as notas desta pasta, que acompanha as mudanças.", Run: () => CreatePageFromAsync(folder: folder)),
             new("Mover para a lixeira", UrbeTheme.Icons.Trash, "A pasta e as notas dela.", Run: () => SelectionActionAsync("delete", [NotesExplorer.FolderPrefix + folder])),
             .. AreaMenuItems(folder)
         ]);
@@ -1110,7 +1123,7 @@ public sealed partial class MainView : Grid
             new DialogItem("Buscar notas e comandos", UrbeTheme.Icons.SearchUi, "No texto das notas, e tudo o que o Urbe faz", Run: () => { Search.OpenQuickOpen(); return Task.CompletedTask; }),
             new DialogItem("Recentes", UrbeTheme.Icons.Clock, Run: () => { ShowCollection("recent"); return Task.CompletedTask; }),
             new DialogItem("Favoritos", UrbeTheme.Icons.Star, Run: () => { ShowCollection("favorites"); return Task.CompletedTask; }),
-            new DialogItem("Constelação", UrbeTheme.Icons.Star, "As notas como um céu à noite", Run: ShowConstellationAsync),
+            new DialogItem("Constelação", UrbeTheme.Icons.Star, "As notas como um céu à noite", Run: () => ShowConstellationAsync()),
             new DialogItem("Importar arquivos", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync(Explorer.CurrentFolder)),
             new DialogItem("Exportar tudo (.zip)", UrbeTheme.Icons.Download, "Cópia de segurança de todas as notas", Run: () => ExportAsync()),
             new DialogItem("Lixeira", UrbeTheme.Icons.Trash, Detail: (n > 0 ? n.ToString(System.Globalization.CultureInfo.InvariantCulture) : "Nenhum") + " item(ns)",

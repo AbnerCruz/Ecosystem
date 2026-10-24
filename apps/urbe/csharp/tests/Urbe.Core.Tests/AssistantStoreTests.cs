@@ -16,6 +16,10 @@ public sealed class AssistantStoreTests
         cfg.Providers.Add(new AiProviderConfig("or", "openrouter", "OpenRouter", "sk-or-1", ""));
         cfg.Memory["Cofre"] = ["Mora em Recife"];
         cfg.CustomAgents.Add(new AiAgentDef("a_1", "Revisor", "sparkle", "Revisa", "write", false, "Revise."));
+        cfg.ImageProviderId = "or";
+        cfg.ImageModel = "bytedance-seed/seedream-4.5";
+        cfg.AgentModels["a_1"] = new AiModelChoice("or", "openai/gpt-5");
+        cfg.AgentInstructionBlocks["a_1"] = [new AiInstructionBlock("Tom", "Seja conciso."), new AiInstructionBlock("Fontes", "Cite as notas.")];
         cfg.ModelCache["or"] = new AiModelCache(5, [new AiModelInfo("a/b", "B", 8000, (1, 2), true)]);
         store.SetConfig(cfg);
         var back = store.GetConfig();
@@ -32,6 +36,48 @@ public sealed class AssistantStoreTests
         Assert.True(got.Messages[0].Content[1].Hidden);
         store.DeleteConversation("c_1");
         Assert.Null(store.GetConversation("c_1"));
+    }
+
+    [Fact]
+    public void AgentModelsOverrideTheChatOnlyWhenExplicitlyConfiguredAndProviderStillExists()
+    {
+        var config = new AiConfig { ProviderId = "base", Model = "default-model" };
+        config.Providers.Add(new AiProviderConfig("base", "openrouter", ApiKey: "sk-base"));
+        config.Providers.Add(new AiProviderConfig("special", "anthropic", ApiKey: "sk-ant"));
+        var chat = new AiConversation { AgentId = "geral", ProviderId = "base", Model = "chat-model" };
+        Assert.Equal(new AiModelChoice("base", "chat-model"), config.ModelFor(chat));
+        config.AgentModels["geral"] = new AiModelChoice("special", "claude-5");
+        Assert.Equal(new AiModelChoice("special", "claude-5"), config.ModelFor(chat));
+        chat.AgentId = "escritor";
+        Assert.Equal(new AiModelChoice("base", "chat-model"), config.ModelFor(chat));
+        config.AgentModels["escritor"] = new AiModelChoice("missing", "missing-model");
+        Assert.Equal(new AiModelChoice("base", "chat-model"), config.ModelFor(chat));
+        chat.Model = "";
+        Assert.Equal(new AiModelChoice("base", "default-model"), config.ModelFor(chat));
+    }
+
+    [Fact]
+    public void ExistingConfigurationCanBeReadAndAgentBlocksExtendRatherThanReplaceTheRole()
+    {
+        var oldConfig = System.Text.Json.Nodes.JsonNode.Parse(
+            """{"providers":[{"id":"p","preset":"openai","apiKey":"existing-key"}],"providerId":"p","model":"gpt-old","customAgents":[{"id":"writer","name":"Writer","prompt":"Original.","tools":"write"}]}"""
+        )!.AsObject();
+        var config = AssistantStore.ConfigFromJson(oldConfig);
+        Assert.Null(config.ImageProviderId);
+        Assert.Empty(config.AgentModels);
+        Assert.Empty(config.AgentInstructionBlocks);
+        Assert.Equal("gpt-old", config.ModelFor(new AiConversation { AgentId = "writer" }).Model);
+        config.AgentInstructionBlocks["writer"] =
+        [
+            new AiInstructionBlock("Tom", "Seja conciso."),
+            new AiInstructionBlock("Processo", "Confira as fontes.")
+        ];
+        var agent = config.AgentWithInstructions(Assert.Single(config.CustomAgents));
+        Assert.Contains("Original.", agent.Prompt);
+        Assert.Contains("### Tom\nSeja conciso.", agent.Prompt);
+        Assert.Contains("### Processo\nConfira as fontes.", agent.Prompt);
+        Assert.Equal("write", agent.Tools);
+        Assert.Equal("Original.", Assert.Single(config.CustomAgents).Prompt); // original never mutated
     }
 
     private sealed class UndoHost : IAssistantUndoHost

@@ -17,7 +17,8 @@ public sealed class AssistantImageToolsTests
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            Seen.Add((request.RequestUri!.ToString(), (JsonObject)JsonNode.Parse(await request.Content!.ReadAsStringAsync(cancellationToken))!,
+            Seen.Add((request.RequestUri!.ToString(),
+                request.Content is null ? new JsonObject() : (JsonObject)JsonNode.Parse(await request.Content.ReadAsStringAsync(cancellationToken))!,
                 request.Headers.Authorization?.ToString()));
             return new HttpResponseMessage((HttpStatusCode)status) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
         }
@@ -37,29 +38,73 @@ public sealed class AssistantImageToolsTests
         var (url, body, auth) = Assert.Single(http.Seen);
         Assert.Equal("https://api.openai.com/v1/images/generations", url);
         Assert.Equal("Bearer sk-test", auth);
-        Assert.Equal("gpt-image-1", (string?)body["model"]);
+        Assert.Equal("gpt-image-2.5-sunburst", (string?)body["model"]);
         Assert.Equal("um gato azul", (string?)body["prompt"]);
         Assert.Equal("1536x1024", (string?)body["size"]);
         Assert.Null(body["response_format"]);   // the gpt-image models refuse it and always answer in base64
     }
 
     [Fact]
-    public async Task GeminiAsksForBase64AndProvidersThatDoNotDrawSaySo()
+    public async Task GeminiUsesItsNativeGenerateContentEndpointAndModernModel()
     {
-        var http = new Answer(200, Drawn(Png));
+        var geminiReply = new JsonObject
+        {
+            ["candidates"] = new JsonArray(new JsonObject
+            {
+                ["content"] = new JsonObject { ["parts"] = new JsonArray(new JsonObject
+                {
+                    ["inlineData"] = new JsonObject { ["mimeType"] = "image/png", ["data"] = Convert.ToBase64String(Png) }
+                }) }
+            })
+        }.ToJsonString();
+        var http = new Answer(200, geminiReply);
         var providers = new AssistantProviders(http);
         var gemini = new AiProviderConfig("g", "gemini", ApiKey: "AIza-test");
         Assert.True(AssistantProviders.DrawsImages(gemini));
-        await providers.GenerateImageAsync(gemini, "um farol", cancel: Ct);
-        Assert.Equal("imagen-3.0-generate-002", (string?)http.Seen[0].Body["model"]);
-        Assert.Equal("b64_json", (string?)http.Seen[0].Body["response_format"]);
+        Assert.Equal(Png, await providers.GenerateImageAsync(gemini, "um farol", cancel: Ct));
+        var (url, body, auth) = Assert.Single(http.Seen);
+        Assert.Equal("https://generativelanguage.googleapis.com/v1beta/models/gemini-nano-banana-2.1:generateContent", url);
+        Assert.Null(auth); // a chave usa o header x-goog-api-key, nunca aparece no URL
+        Assert.Equal("um farol", (string?)body["contents"]?[0]?["parts"]?[0]?["text"]);
+        Assert.Equal("IMAGE", (string?)body["generationConfig"]?["responseModalities"]?[1]);
 
         var anthropic = new AiProviderConfig("a", "anthropic", ApiKey: "sk-ant");
         Assert.False(AssistantProviders.DrawsImages(anthropic));
-        Assert.False(AssistantProviders.DrawsImages(new AiProviderConfig("o", "openrouter", ApiKey: "k")));
+        Assert.True(AssistantProviders.DrawsImages(new AiProviderConfig("o", "openrouter", ApiKey: "k")));
         await Assert.ThrowsAsync<AiProviderException>(() => providers.GenerateImageAsync(anthropic, "x", cancel: Ct));
-        await Assert.ThrowsAsync<AiProviderException>(() => providers.GenerateImageAsync(new AiProviderConfig("p", "openai"), "x", cancel: Ct));   // no key
+        await Assert.ThrowsAsync<AiProviderException>(() => providers.GenerateImageAsync(new AiProviderConfig("p", "openai"), "x", cancel: Ct));
         Assert.Single(http.Seen);
+    }
+
+    [Fact]
+    public async Task OpenRouterDrawsWithoutChangingTheChatModel()
+    {
+        var http = new Answer(200, Drawn(Png));
+        var providers = new AssistantProviders(http);
+        var chat = new AiProviderConfig("claude", "anthropic", ApiKey: "sk-ant");
+        var visual = new AiProviderConfig("router", "openrouter", ApiKey: "sk-or");
+        Assert.Equal(visual, AssistantProviders.PickImageProvider(chat, [chat, visual]));
+        Assert.Equal(visual, AssistantProviders.PickImageProvider(visual, [chat, visual]));
+        var bytes = await providers.GenerateImageAsync(visual, "retrato", size: "1024x1536", cancel: Ct);
+        Assert.Equal(Png, bytes);
+        var (url, body, auth) = Assert.Single(http.Seen);
+        Assert.Equal("https://openrouter.ai/api/v1/images", url);
+        Assert.Equal("Bearer sk-or", auth);
+        Assert.Equal("bytedance-seed/seedream-4.5", (string?)body["model"]);
+        Assert.Equal("2:3", (string?)body["aspect_ratio"]);
+        Assert.Null(body["size"]);
+        Assert.Null(body["response_format"]);
+    }
+
+    [Fact]
+    public void SelectsAnotherConfiguredImageProviderButNeverAnUnconfiguredOne()
+    {
+        var chat = new AiProviderConfig("claude", "anthropic", ApiKey: "sk-ant");
+        var noKey = new AiProviderConfig("openai-no-key", "openai");
+        var visual = new AiProviderConfig("gemini", "gemini", ApiKey: "gemini-key");
+        Assert.Null(AssistantProviders.PickImageProvider(chat, [chat, noKey]));
+        Assert.Equal(visual, AssistantProviders.PickImageProvider(chat, [chat, noKey, visual]));
+        Assert.False(AssistantProviders.DrawsImages(new AiProviderConfig("custom", "custom", BaseUrl: "https://example.com/v1")));
     }
 
     [Fact]
@@ -69,6 +114,59 @@ public sealed class AssistantImageToolsTests
         await Assert.ThrowsAsync<AiProviderException>(() => providers.GenerateImageAsync(new AiProviderConfig("p", "openai", ApiKey: "k"), "x", cancel: Ct));
         providers = new AssistantProviders(new Answer(200, """{"data":[{"url":"https://exemplo/img.png"}]}"""));
         await Assert.ThrowsAsync<AiProviderException>(() => providers.GenerateImageAsync(new AiProviderConfig("p", "openai", ApiKey: "k"), "x", cancel: Ct));
+    }
+
+    [Fact]
+    public async Task ExplicitImageProviderAndImageModelOverrideAutomaticFallback()
+    {
+        var chat = new AiProviderConfig("text", "anthropic", ApiKey: "sk-ant");
+        var router = new AiProviderConfig("router", "openrouter", ApiKey: "sk-or");
+        var openai = new AiProviderConfig("openai", "openai", ApiKey: "sk-ai");
+        Assert.Equal(openai, AssistantProviders.PickImageProvider(chat, [chat, router, openai], "openai", "gpt-image-2.5-flare"));
+        Assert.Null(AssistantProviders.PickImageProvider(chat, [chat, router, openai], "missing", "any"));
+        Assert.Null(AssistantProviders.PickImageProvider(chat, [chat, new AiProviderConfig("empty", "openai")], "empty", "gpt-image-2.5-flare"));
+
+        var custom = new AiProviderConfig("custom", "custom", BaseUrl: "https://my-server.example/v1");
+        Assert.Null(AssistantProviders.PickImageProvider(chat, [custom], "custom"));
+        Assert.Equal(custom, AssistantProviders.PickImageProvider(chat, [custom], "custom", "flux-latest"));
+        var handler = new Answer(200, Drawn(Png));
+        await new AssistantProviders(handler).GenerateImageAsync(custom, "um castelo", model: "flux-latest", cancel: Ct);
+        Assert.Equal("flux-latest", (string?)Assert.Single(handler.Seen).Body["model"]);
+    }
+
+    [Fact]
+    public async Task OpenRouterUsesTheDedicatedImageModelCatalog()
+    {
+        var handler = new Answer(200, """{"data":[{"id":"bytedance-seed/seedream-4.5","name":"Seedream 4.5"},{"id":"other/image-gen","name":"Other Image"}]}""");
+        var catalog = await new AssistantProviders(handler).ListImageModelsAsync(
+            new AiProviderConfig("or", "openrouter", ApiKey: "sk-or"), Ct);
+        Assert.Equal(2, catalog.Count);
+        Assert.Equal("other/image-gen", catalog[1].Id);
+        var request = Assert.Single(handler.Seen);
+        Assert.Equal("https://openrouter.ai/api/v1/images/models", request.Url);
+        Assert.Equal("Bearer sk-or", request.Auth);
+    }
+
+    [Theory]
+    [InlineData("Imagem guardada em Imagens/Cidade medieval.png. Para mostrá-la numa nota, escreva ![[Imagens/Cidade medieval.png]].", "Imagens/Cidade medieval.png")]
+    [InlineData("Imagem guardada em Imagens/Fantasia 2.webp e colocada no fim de Capítulo 1.md.", "Imagens/Fantasia 2.webp")]
+    [InlineData("Imagem guardada em Imagens/monte.jpg.", "Imagens/monte.jpg")]
+    [InlineData("A imagem não foi gerada: sem créditos.", null)]
+    [InlineData("Imagem guardada em ../fora.png.", null)]
+    public void DetectsSavedImageForInlineChatPreviewIncludingBeta20History(string result, string? expected)
+    {
+        Assert.Equal(expected, AssistantImageTools.SavedImagePath(result));
+    }
+
+    [Fact]
+    public void ImageModelDoesNotAffectTheChatModelChoice()
+    {
+        var cfg = new AiConfig { ProviderId = "text", Model = "anthropic/claude-sonnet" };
+        cfg.Providers.Add(new AiProviderConfig("text", "openrouter", ApiKey: "sk-or"));
+        cfg.ImageProviderId = "text";
+        cfg.ImageModel = "bytedance-seed/seedream-4.5";
+        Assert.Equal(new AiModelChoice("text", "anthropic/claude-sonnet"), cfg.ModelFor(new AiConversation { ProviderId = "text" }));
+        Assert.Equal("bytedance-seed/seedream-4.5", cfg.ImageModel);
     }
 
     [Fact]

@@ -19,7 +19,10 @@ public sealed class Constellation
 
     /// <summary>The distance between two neighbouring stars of a region.</summary>
     public const double Step = 26;
-    /// <summary>The distance between the centres of two regions.</summary>
+    /// <summary>The least distance between two stars (a seat closer than this to another star is skipped).</summary>
+    public const double MinGap = Step * .6;
+
+        /// <summary>The distance between the centres of two regions.</summary>
     public const double RegionStep = 300;
 
     private static readonly double Golden = Math.PI * (3 - Math.Sqrt(5));
@@ -50,6 +53,26 @@ public sealed class Constellation
         var ids = list.Select(n => n.Id).ToHashSet(StringComparer.Ordinal);
         bool changed = false;
         foreach (var gone in _stars.Keys.Where(id => !ids.Contains(id)).ToList()) { _stars.Remove(gone); changed = true; }
+        // where the stars are, by cells of Step: a new star never lands on top of one already in the sky (big vaults make
+        // the regions overlap); the stars already placed never move
+        var taken = new Dictionary<(long, long), List<(double X, double Y)>>();
+        static (long, long) Cell(double x, double y) => ((long)Math.Floor(x / Step), (long)Math.Floor(y / Step));
+        void Take(double x, double y)
+        {
+            var c = Cell(x, y);
+            if (!taken.TryGetValue(c, out var list)) taken[c] = list = [];
+            list.Add((x, y));
+        }
+        bool Free(double x, double y)
+        {
+            var (cx, cy) = Cell(x, y);
+            for (long dx = -1; dx <= 1; dx++)
+                for (long dy = -1; dy <= 1; dy++)
+                    if (taken.TryGetValue((cx + dx, cy + dy), out var list) && list.Any(p => (p.X - x) * (p.X - x) + (p.Y - y) * (p.Y - y) < MinGap * MinGap))
+                        return false;
+            return true;
+        }
+        foreach (var p in _stars.Values) Take(p.X, p.Y);
         // new notes in a stable order: by project, then path
         foreach (var n in list.Where(n => !_stars.ContainsKey(n.Id)).OrderBy(n => ProjectOf(n.Path), StringComparer.Ordinal).ThenBy(n => n.Path, StringComparer.Ordinal))
         {
@@ -62,9 +85,18 @@ public sealed class Constellation
                 region = (Math.Round(Math.Cos(k * Golden) * r, 2), Math.Round(Math.Sin(k * Golden) * r, 2), 0);
             }
             int seat = region.Seats;
-            double d = Step * Math.Sqrt(seat + .5);
-            _stars[n.Id] = (Math.Round(region.X + Math.Cos(seat * Golden) * d, 2), Math.Round(region.Y + Math.Sin(seat * Golden) * d, 2));
-            _regions[project] = (region.X, region.Y, seat + 1);
+            double x, y;
+            do
+            {
+                double d = Step * Math.Sqrt(seat + .5);
+                x = Math.Round(region.X + Math.Cos(seat * Golden) * d, 2);
+                y = Math.Round(region.Y + Math.Sin(seat * Golden) * d, 2);
+                seat++;
+            }
+            while (!Free(x, y));
+            _stars[n.Id] = (x, y);
+            Take(x, y);
+            _regions[project] = (region.X, region.Y, seat);
             changed = true;
         }
         return changed;

@@ -39,6 +39,9 @@ public sealed class EditorOverlay : Grid
     private readonly ScrollViewer _sourceScroll;
     private readonly StackPanel _sourceColumn;
     private readonly Border _properties;
+
+    /// <summary>The properties form (aliases, tags and the rest of the frontmatter), above the text in both modes.</summary>
+    public PropertiesPanel Properties { get; } = new();
     private readonly TextBlock _propertiesText = new();
 
     /// <summary>propertiesFor(b) of the open note, as renderProps writes it ("---\ntítulo: …\n---"), or null when the
@@ -76,6 +79,9 @@ public sealed class EditorOverlay : Grid
     public bool StartInVisual { get; set; } = true;
     /// <summary>The notes of the open vault (for [[ suggestions and wikilink targets).</summary>
     public Func<IEnumerable<CityNote>>? Notes { get; set; }
+
+    /// <summary>The card of a <c>![[destino]]</c> line in the Visual mode (set by the app, which knows the vault).</summary>
+    public Func<string, Control?>? EmbedFor { get => _visual.EmbedFor; set => _visual.EmbedFor = value; }
     /// <summary>UD.prompt / UD.choose of the host.</summary>
     public UrbeDialogs? Dialogs { get; set; }
     public VisualSurface Surface => _visual;
@@ -224,7 +230,9 @@ public sealed class EditorOverlay : Grid
         // the text column fills the width up to the column size (the textarea is width:100%)
         _sourceColumn = new StackPanel { Children = { _properties, Editor, _wiki }, HorizontalAlignment = HorizontalAlignment.Stretch };
         _sourceScroll = Column(_sourceColumn);
-        _visualScroll = Column(_visual);
+        // the properties form is the first thing of the text in either mode, and scrolls away with it
+        _visualColumn = new StackPanel { Children = { _visual }, HorizontalAlignment = HorizontalAlignment.Stretch };
+        _visualScroll = Column(_visualColumn);
         // the header gives the text room while scrolling down and comes back on the way up; a caret in sight stays in
         // sight when the visible area changes (the keyboard opens), one scrolled away from is left alone
         _visualScroll.ScrollChanged += (_, e) => OnScrolled(_visualScroll, e);
@@ -255,7 +263,11 @@ public sealed class EditorOverlay : Grid
         bodyHost.Children.Add(Pinned);
         SetRow(body, 2);
         bodyHost.Children.Add(body);
-        bodyHost.SizeChanged += (_, e) => Pinned.MaxHeight = Math.Max(120, e.NewSize.Height * .4);
+        bodyHost.SizeChanged += (_, e) => { Pinned.MaxHeight = Math.Max(120, e.NewSize.Height * .4); Properties.LimitHeight(e.NewSize.Height); };
+        // the form reads and writes the note's text: in Visual the block being written is finished first
+        Properties.TextSource = () => { if (Mode == EditorMode.Visual) { _visual.FinishEdit(); return _visual.Text; } return Editor.Text ?? ""; };
+        Properties.Changed += ApplyPropertyText;
+        _visual.HideFrontmatter = true;
         AddRow(bodyHost, 3);
         AddRow(_footer = Footer(), 4);
         // saving errors and short notices: a discreet toast over the text, never a dialog (UX.md P3)
@@ -290,6 +302,7 @@ public sealed class EditorOverlay : Grid
     /// </summary>
     public async Task StartFormulaAsync(bool block)
     {
+        if (_readOnly) return;
         if (_note is null) return;
         if (Mode == EditorMode.Visual)
         {
@@ -682,6 +695,15 @@ public sealed class EditorOverlay : Grid
     private bool IsMarkdown => _note is not null && CanVisual(_note.Path);
 
     private bool _hasProperties;
+    private readonly StackPanel _visualColumn;
+
+    /// <summary>The form goes above the text of the mode on the screen.</summary>
+    private void PlaceProperties()
+    {
+        var into = Mode == EditorMode.Visual ? _visualColumn : _sourceColumn;
+        if (Properties.Parent is Panel parent && parent != into) parent.Children.Remove(Properties);
+        if (Properties.Parent is null) into.Children.Insert(0, Properties);
+    }
 
     /// <summary>renderProps(b) on loadFile; the box is a div, so its line breaks collapse into spaces. Asked again once
     /// the vault's notes are known (a note restored at the opening).</summary>
@@ -691,6 +713,59 @@ public sealed class EditorOverlay : Grid
         _propertiesText.Text = props is null ? "" : System.Text.RegularExpressions.Regex.Replace(props, @"\s+", " ");
         _hasProperties = props is not null;
         UpdateProperties();
+        Properties.Dialogs = Dialogs;
+        Properties.IsVisible = IsMarkdown;
+        if (IsMarkdown) Properties.Sync(Editor.Text ?? "", force: true);
+    }
+
+    /// <summary>The form changed the properties: the text becomes the new one (saved like any edit) and Visual redraws.</summary>
+    private void ApplyPropertyText(string text)
+    {
+        if (ReadOnly || _note is null) return;
+        Editor.Text = text;
+        if (Mode == EditorMode.Visual) _visual.SetText(text);
+    }
+
+    private bool _readOnly;
+
+    /// <summary>Reading only, in Fonte and in Visual (24/10/2026): the text cannot be changed, the formatting bar goes away and the properties are shown, not edited. Stays while notes change.</summary>
+    public bool ReadOnly
+    {
+        get => _readOnly;
+        set
+        {
+            if (_readOnly == value) return;
+            _visual.FinishEdit();
+            _readOnly = value;
+            Editor.IsReadOnly = value;
+            _visual.ReadOnly = value;
+            Properties.ReadOnly = value;
+            _toolbarHost.IsVisible = !value;
+            UpdateReadChip();
+            ReadOnlyChanged?.Invoke(value);
+        }
+    }
+
+    /// <summary>The reading/editing switch changed.</summary>
+    public event Action<bool>? ReadOnlyChanged;
+
+    private readonly Button _readChip = new();
+
+    private void UpdateReadChip()
+    {
+        var text = _readOnly ? "Leitura" : "Edição";
+        _readChip.Content = new StackPanel
+        {
+            Orientation = Orientation.Horizontal, Spacing = 5,
+            Children =
+            {
+                UrbeTheme.Icon(_readOnly ? UrbeTheme.Icons.Book : UrbeTheme.Icons.Pencil, 13, _readOnly ? UrbeTheme.Accent : C.TextTertiary, 1.8),
+                new TextBlock { Text = text, FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Foreground = UrbeTheme.Brush(_readOnly ? UrbeTheme.Accent : C.TextTertiary) }
+            }
+        };
+        _readChip.Background = _readOnly ? UrbeTheme.Brush(UrbeTheme.Accent, .14) : Brushes.Transparent;
+        AutomationProperties.SetName(_readChip, _readOnly ? "Modo leitura: tocar para editar" : "Modo edição: tocar para ler");
+        ToolTip.SetTip(_readChip, _readOnly ? "Modo leitura — tocar para editar" : "Modo edição — tocar para só ler");
     }
 
     /// <summary>#editorScroll.previewMode #propertiesBox{display:none}.</summary>
@@ -702,6 +777,7 @@ public sealed class EditorOverlay : Grid
     {
         if (Mode == EditorMode.Visual && mode != EditorMode.Visual) _visual.FinishEdit();   // serialise what was edited
         Mode = mode;
+        PlaceProperties();
         ShowActiveTools(new HashSet<string>());
         UpdateActiveTools();
         UpdateProperties();
@@ -1099,7 +1175,18 @@ public sealed class EditorOverlay : Grid
         _status.Foreground = UrbeTheme.Brush(C.TextTertiary);
         _status.VerticalAlignment = VerticalAlignment.Center;
         AutomationProperties.SetName(_status, "Estatísticas da nota");
-        return new Border { Height = 28, Padding = new Thickness(UrbeTokens.Space.M, 0), Child = _status };
+        _readChip.Padding = new Thickness(10, 1);
+        _readChip.MinHeight = 0;
+        _readChip.CornerRadius = new CornerRadius(999);
+        _readChip.BorderThickness = new Thickness(0);
+        _readChip.VerticalAlignment = VerticalAlignment.Center;
+        _readChip.Click += (_, _) => ReadOnly = !ReadOnly;
+        UpdateReadChip();
+        var line = new DockPanel { LastChildFill = true };
+        DockPanel.SetDock(_readChip, Dock.Right);
+        line.Children.Add(_readChip);
+        line.Children.Add(_status);
+        return new Border { Height = 28, Padding = new Thickness(UrbeTokens.Space.M, 0, UrbeTokens.Space.S, 0), Child = line };
     }
 
     /// <summary>The calm reading mode (UX.md P3, P11): on a phone, Visual with no block being written shows only the text.</summary>
@@ -1131,6 +1218,7 @@ public sealed class EditorOverlay : Grid
         if (_opening) return;
         if (_note is not null && !string.Equals(Editor.Text, _note.Content, StringComparison.Ordinal)) _edited = true;
         UpdateStatus(changed: true);
+        if (IsMarkdown && Properties.IsVisible) Properties.Sync(Editor.Text ?? "");
         if (!_fromVisual && Mode == EditorMode.Fonte) { UpdateWiki(); UpdateActiveTools(); }
         ScheduleAutosave();
     }
@@ -1410,6 +1498,13 @@ public sealed class EditorOverlay : Grid
         var exact = all.FirstOrDefault(n => string.Equals(n.Path, name, StringComparison.Ordinal) || string.Equals(n.Path, name + ".md", StringComparison.Ordinal));
         var matches = all.Where(n => string.Equals(n.Name, name, StringComparison.OrdinalIgnoreCase)).ToList();
         var target = exact ?? (matches.Count == 1 ? matches[0] : null);
+        // an alias of the properties (aliases: […]) names the note too
+        if (target is null && matches.Count == 0)
+        {
+            var byAlias = all.Where(n => NoteProperties.AliasesOf(n.Content).Any(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase))).ToList();
+            if (byAlias.Count == 1) target = byAlias[0];
+            else if (byAlias.Count > 1) { Notify("Alias ambíguo: mais de uma nota usa “" + name + "”."); return; }
+        }
         if (target is not null) { await NavigateAsync(target); return; }
         if (matches.Count > 1) { Notify("Link ambíguo: use o caminho da nota."); return; }
         // The 1.8.4 only said the note did not exist (owner, DEC-0045): offer to create it, next to this one.

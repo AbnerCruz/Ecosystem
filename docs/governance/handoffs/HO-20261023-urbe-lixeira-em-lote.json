@@ -45,9 +45,10 @@
     {
       "kind": "human",
       "check": "No aparelho, excluir uma pasta grande e restaurar uma nota dela pela Lixeira",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs"
+      "object": "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-23 (Issue https://github.com/AbnerCruz/Ecosystem/issues/694); registro em docs/governance/responses/VAL-HO-20261023-urbe-lixeira-em-lote-8b6843129000.md."
     }
   ],
   "known_issues": [

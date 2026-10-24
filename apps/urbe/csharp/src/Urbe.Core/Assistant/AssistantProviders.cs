@@ -11,9 +11,10 @@ namespace Urbe.Core.Assistant;
 /// <summary>
 /// A block of a normalized message (providers.js): text, a tool call (tool_use) or a tool's answer (tool_result).
 /// </summary>
-public sealed record AiBlock(string Type, string Text = "", string Id = "", string Name = "", JsonNode? Input = null, string ToolUseId = "", string Content = "", bool IsError = false)
+public sealed record AiBlock(string Type, string Text = "", string Id = "", string Name = "", JsonNode? Input = null, string ToolUseId = "", string Content = "", bool IsError = false, string MimeType = "", string FileName = "")
 {
     public static AiBlock TextBlock(string text) => new("text", Text: text);
+    public static AiBlock Attachment(string mimeType, string filename, string base64) => new("attachment", Content: base64, MimeType: mimeType, FileName: filename);
     public static AiBlock ToolUse(string id, string name, JsonNode? input) => new("tool_use", Id: id, Name: name, Input: input);
     public static AiBlock ToolResult(string toolUseId, string content, bool isError) => new("tool_result", ToolUseId: toolUseId, Content: content, IsError: isError);
 }
@@ -278,7 +279,25 @@ public sealed class AssistantProviders
                 foreach (var b in m.Content.Where(b => b.Type == "tool_result"))
                     msgs.Add(new JsonObject { ["role"] = "tool", ["tool_call_id"] = b.ToolUseId, ["content"] = (b.IsError ? "ERRO: " : "") + b.Content });
                 var t = string.Join("\n\n", m.Content.Where(b => b.Type == "text").Select(b => b.Text));
-                if (t.Length > 0) msgs.Add(new JsonObject { ["role"] = "user", ["content"] = t });
+                var attachments = m.Content.Where(b => b.Type == "attachment").ToList();
+                if (attachments.Count == 0)
+                {
+                    if (t.Length > 0) msgs.Add(new JsonObject { ["role"] = "user", ["content"] = t });
+                }
+                else
+                {
+                    var parts = new JsonArray();
+                    if (t.Length > 0) parts.Add(new JsonObject { ["type"] = "text", ["text"] = t });
+                    foreach (var file in attachments)
+                    {
+                        var data = "data:" + file.MimeType + ";base64," + file.Content;
+                        if (file.MimeType == "application/pdf")
+                            parts.Add(new JsonObject { ["type"] = "file", ["file"] = new JsonObject { ["filename"] = file.FileName, ["file_data"] = data } });
+                        else
+                            parts.Add(new JsonObject { ["type"] = "image_url", ["image_url"] = new JsonObject { ["url"] = data, ["detail"] = "auto" } });
+                    }
+                    msgs.Add(new JsonObject { ["role"] = "user", ["content"] = parts });
+                }
             }
         }
         var body = new JsonObject { ["model"] = req.Model, ["messages"] = msgs, ["stream"] = true };
@@ -429,6 +448,8 @@ public sealed class AssistantProviders
             {
                 "text" => new JsonObject { ["type"] = "text", ["text"] = b.Text },
                 "tool_use" => new JsonObject { ["type"] = "tool_use", ["id"] = b.Id, ["name"] = b.Name, ["input"] = BlockInput(b) },
+                "attachment" => new JsonObject { ["type"] = b.MimeType == "application/pdf" ? "document" : "image",
+                    ["source"] = new JsonObject { ["type"] = "base64", ["media_type"] = b.MimeType, ["data"] = b.Content } },
                 _ => new JsonObject { ["type"] = "tool_result", ["tool_use_id"] = b.ToolUseId, ["content"] = b.Content, ["is_error"] = b.IsError }
             })).ToList();
             if (blocks.Count == 0) continue;
@@ -549,13 +570,14 @@ public sealed class AssistantProviders
     // ---------------------------------------------------------------- images (UC-63)
 
     /// <summary>
-    /// The image model of a preset that draws pictures through the OpenAI images API (images/generations): OpenAI and
-    /// Google Gemini (its OpenAI-compatible endpoint); a compatible server says its own. Null: the preset draws none.
+    /// Image models for the existing configured providers: OpenRouter's /images API, and the OpenAI-compatible
+    /// /images/generations endpoints for OpenAI and Gemini. Custom providers need an explicitly chosen image model.
     /// </summary>
     public static string? ImageModel(string preset) => preset switch
     {
-        "openai" => "gpt-image-1",
-        "gemini" => "imagen-3.0-generate-002",
+        "openai" => "gpt-image-2.5-sunburst",
+        "gemini" => "gemini-nano-banana-2.1",
+        "openrouter" => "bytedance-seed/seedream-4.5",
         "custom" => "",
         _ => null
     };
@@ -564,7 +586,66 @@ public sealed class AssistantProviders
     public static bool DrawsImages(AiProviderConfig cfg)
     {
         var p = Resolve(cfg);
-        return p.Kind == "openai" && ImageModel(p.Preset) is not null;
+        return p.Kind == "openai" && !string.IsNullOrWhiteSpace(ImageModel(p.Preset));
+    }
+
+    /// <summary>Explicit provider selection wins. Auto mode preserves the existing provider fallback.</summary>
+    public static AiProviderConfig? PickImageProvider(AiProviderConfig chat, IEnumerable<AiProviderConfig> configured,
+        string? selectedProviderId = null, string? selectedModel = null)
+    {
+        static bool Credentials(AiProviderConfig p) =>
+            !Presets.TryGetValue(p.Preset, out var pre) || !pre.NeedsKey || !string.IsNullOrWhiteSpace(p.ApiKey);
+        static bool Supports(AiProviderConfig p, string? model) =>
+            Resolve(p).Kind == "openai" && (DrawsImages(p) || (p.Preset == "custom" && !string.IsNullOrWhiteSpace(model)));
+
+        if (!string.IsNullOrWhiteSpace(selectedProviderId))
+        {
+            var chosen = configured.FirstOrDefault(p => p.Id == selectedProviderId);
+            return chosen is not null && Credentials(chosen) && Supports(chosen, selectedModel) ? chosen : null;
+        }
+        return Credentials(chat) && Supports(chat, null) ? chat : configured.FirstOrDefault(p => Credentials(p) && Supports(p, null));
+    }
+
+    /// <summary>Only show image-capable models: OpenRouter exposes a dedicated image catalog.</summary>
+    public async Task<List<AiModelInfo>> ListImageModelsAsync(AiProviderConfig cfg, CancellationToken cancel = default)
+    {
+        var p = Resolve(cfg);
+        if (p.Kind != "openai") throw new AiProviderException("Este provedor não tem API de imagens compatível.");
+        if (p.Preset == "gemini")
+            return new[] { "gemini-nano-banana-2.1", "gemini-3.1-flash-lite-image", "gemini-3.1-flash-image", "gemini-3-pro-image", "gemini-2.5-flash-image" }
+                .Select(m => new AiModelInfo(m, m, null, null, null)).ToList();
+        if (p.Preset == "openrouter")
+        {
+            var url = Join(p.BaseUrl, "/images/models");
+            using var res = await RequestAsync(p, url, () => Get(url, OpenAiHeaders(p)), cancel);
+            var json = JsonNode.Parse(await res.Content.ReadAsStringAsync(cancel)) as JsonObject;
+            return (json?["data"] as JsonArray ?? []).OfType<JsonObject>()
+                .Select(m => new AiModelInfo((string?)m["id"] ?? "", (string?)m["name"] ?? (string?)m["id"] ?? "", null, null, null))
+                .Where(m => m.Id.Length > 0).ToList();
+        }
+        var catalog = await OpenAiModelsAsync(p, cancel);
+        return catalog.Where(m => m.Id.Contains("image", StringComparison.OrdinalIgnoreCase) ||
+                                  m.Id.Contains("imagen", StringComparison.OrdinalIgnoreCase) ||
+                                  m.Id.Contains("flux", StringComparison.OrdinalIgnoreCase) ||
+                                  m.Id.Contains("seedream", StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    /// <summary>
+    /// Resolves image-specific billing units without guessing from chat token prices.
+    /// OpenRouter exposes exact provider endpoint quotes separately from its image model catalog.
+    /// </summary>
+    public async Task<AiImageQuote?> GetImageQuoteAsync(AiProviderConfig cfg, string model, CancellationToken cancel = default)
+    {
+        var p = Resolve(cfg);
+        var published = AssistantImagePricing.Published(p.Preset, model);
+        if (published is not null) return published;
+        if (p.Preset != "openrouter" || !AssistantImagePricing.ValidOpenRouterSlug(model)) return null;
+        var url = Join(p.BaseUrl, "/images/models/" + model + "/endpoints");
+        using var res = await RequestAsync(p, url, () => Get(url, OpenAiHeaders(p)), cancel);
+        JsonNode? json;
+        try { json = JsonNode.Parse(await res.Content.ReadAsStringAsync(cancel)); }
+        catch (JsonException) { return null; }
+        return AssistantImagePricing.FromOpenRouterEndpoints(json, model);
     }
 
     /// <summary>The file extension of a picture's bytes (PNG, JPEG or WebP), or null when they are not one.</summary>
@@ -582,16 +663,57 @@ public sealed class AssistantProviders
     {
         var p = Resolve(cfg);
         if (p.Kind != "openai" || ImageModel(p.Preset) is not { } preset)
-            throw new AiProviderException(p.Name + " não gera imagens. Use OpenAI, Google Gemini ou um servidor compatível que gere.");
+            throw new AiProviderException(p.Name + " não gera imagens pela API configurada. Escolha um provedor de imagens compatível.");
         if (p.BaseUrl.Length == 0) throw new AiProviderException("Informe o endereço (URL base) do provedor " + p.Name + ".");
         if (Presets.TryGetValue(p.Preset, out var pre) && pre.NeedsKey && p.ApiKey.Length == 0) throw new AiProviderException("Configure a chave de " + p.Name + " nas configurações do Assistente.");
         var m = string.IsNullOrWhiteSpace(model) ? preset : model.Trim();
         if (m.Length == 0) throw new AiProviderException("Informe o modelo de imagem do servidor.");
         if (string.IsNullOrWhiteSpace(prompt)) throw new AiProviderException("Descreva a imagem.");
-        var body = new JsonObject { ["model"] = m, ["prompt"] = prompt, ["n"] = 1, ["size"] = size };
-        // the gpt-image models always answer in base64 and refuse the field; the others need it, or they send a link
-        if (!m.StartsWith("gpt-image", StringComparison.Ordinal)) body["response_format"] = "b64_json";
-        var url = Join(p.BaseUrl, "/images/generations");
+        if (p.Preset == "gemini")
+        {
+            // Gemini native generateContent API, not the OpenAI-compatible images/generations endpoint.
+            // The key stays in the x-goog-api-key header and never appears in URL, output or logs.
+            if (!System.Text.RegularExpressions.Regex.IsMatch(m, @"^[a-zA-Z0-9_.-]{1,100}$"))
+                throw new AiProviderException("ID de modelo Gemini inválido.");
+            var nativeUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + m + ":generateContent";
+            var nativeBody = new JsonObject
+            {
+                ["contents"] = new JsonArray(new JsonObject { ["parts"] = new JsonArray(new JsonObject { ["text"] = prompt }) }),
+                ["generationConfig"] = new JsonObject
+                {
+                    ["responseModalities"] = new JsonArray("TEXT", "IMAGE"),
+                    ["imageConfig"] = new JsonObject { ["aspectRatio"] = size switch
+                    {
+                        "1536x1024" => "3:2",
+                        "1024x1536" => "2:3",
+                        _ => "1:1"
+                    } }
+                }
+            };
+            using var response = await RequestAsync(p, nativeUrl, () => Post(nativeUrl, nativeBody,
+                [("Content-Type", "application/json"), ("x-goog-api-key", p.ApiKey)]), cancel);
+            JsonNode? nativeResponse;
+            try { nativeResponse = JsonNode.Parse(await response.Content.ReadAsStringAsync(cancel)); }
+            catch (JsonException) { throw new AiProviderException("O Gemini devolveu uma resposta inválida."); }
+            var parts = nativeResponse?["candidates"]?[0]?["content"]?["parts"] as JsonArray ?? [];
+            var b64Native = parts.OfType<JsonObject>().Select(part => part["inlineData"]?["data"] ?? part["inline_data"]?["data"])
+                .OfType<JsonValue>().Select(v => v.TryGetValue<string>(out var value) ? value : "").LastOrDefault(v => v.Length > 0);
+            if (string.IsNullOrEmpty(b64Native)) throw new AiProviderException("O Gemini não devolveu uma imagem. Confira o modelo e o acesso à geração de imagens.");
+            byte[] image;
+            try { image = Convert.FromBase64String(b64Native); }
+            catch (FormatException) { throw new AiProviderException("O Gemini devolveu dados de imagem ilegíveis."); }
+            if (ImageExtension(image) is null) throw new AiProviderException("O Gemini devolveu um arquivo que não é uma imagem.");
+            return image;
+        }
+        bool openRouter = p.Preset == "openrouter";
+        // OpenRouter uses aspect_ratio, while OpenAI-compatible images/generations uses size.
+        var body = openRouter
+            ? new JsonObject { ["model"] = m, ["prompt"] = prompt, ["aspect_ratio"] = size switch
+                { "1536x1024" => "3:2", "1024x1536" => "2:3", _ => "1:1" } }
+            : new JsonObject { ["model"] = m, ["prompt"] = prompt, ["n"] = 1, ["size"] = size };
+        // GPT Image models answer as base64 and refuse response_format.
+        if (!openRouter && !m.StartsWith("gpt-image", StringComparison.Ordinal)) body["response_format"] = "b64_json";
+        var url = Join(p.BaseUrl, openRouter ? "/images" : "/images/generations");
         using var res = await RequestAsync(p, url, () => Post(url, body, OpenAiHeaders(p)), cancel);
         JsonNode? j;
         try { j = JsonNode.Parse(await res.Content.ReadAsStringAsync(cancel)); }

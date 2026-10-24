@@ -1,0 +1,77 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261023-urbe-paginas-imagem-no-lugar",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-23T11:09:09Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-62",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "3b2654e2",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Edit.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageStudio.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PageStudioView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageEditInPlaceTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PageStudioUiTests.cs",
+    "apps/urbe/docs/csharp/PAGES-PLAN.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261023-urbe-paginas-imagem-no-lugar.json"
+  ],
+  "work_completed": [
+    "UC-62 fatia 4 completa (DEC-0055): uma imagem de campo de imagem das seções, tocada na prévia, abre a escolha de imagem daquele campo; só na prévia com UrbeMarks; a exportação e os oráculos não mudam.",
+    "PageStudio.FieldType confere o tipo do campo antes de aceitar a mensagem da prévia."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (694) e Urbe.Client.Tests (219)",
+      "result": "passed",
+      "evidence": "AnImageOfTheSectionsCarriesItsFieldForTheImageChoice; Studio_CreatesAPageFromAFolderAndFromANote (imagem escolhida pela mensagem; caminho de texto recusado)."
+    },
+    {
+      "kind": "human",
+      "check": "No aparelho, tocar numa imagem da prévia do estúdio e escolher outra",
+      "result": "passed",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Core/Pages/PageEngine.Edit.cs",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-24 (Issue https://github.com/AbnerCruz/Ecosystem/issues/709); registro em docs/governance/responses/VAL-HO-20261023-urbe-paginas-imagem-no-lugar-00148b80a015.md."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Itens finais do ROADMAP C# (UC-22, 24, 26–32)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/docs/csharp/PAGES-PLAN.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Aparelho pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "page-image-in-place",
+      "status": "product-specific",
+      "rationale": "Estúdio de páginas do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Feature autorizada pela DEC-0055; motor atrás de UrbeMarks; nada de vault, csproj ou workflow."
+  }
+}

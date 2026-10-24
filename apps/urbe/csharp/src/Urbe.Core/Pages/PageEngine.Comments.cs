@@ -226,7 +226,13 @@ public sealed partial class PageEngine
     /// page and <c>{ia:"modelo"}</c> shows as "· IA: modelo"; in the studio preview (<c>preview</c>) each word comment
     /// shows as a 💬 that opens it (UC-49); <c>:::tipo título</c> … <c>:::</c> containers are boxes (UC-44). Off (the default, and the oracles) renders the texts as the 1.8.4 does.
     /// </summary>
-    public bool UrbeMarks { get; set; }
+    public bool UrbeMarks
+    {
+        get => _urbeMarks;
+        set { _urbeMarks = value; if (value) AddVaultQueries(); }
+    }
+
+    private bool _urbeMarks;
 }
 
 /// <summary>
