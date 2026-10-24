@@ -39,6 +39,16 @@
   - editar, gravar e reabrir sem perder nada;
   - conferir que os arquivos da cidade continuam no vault.
 
+## Assistente: segundo plano, descoberta e qualidade (proprietário, 24/10/2026)
+
+**Escopo autorizado; proposta arquitetural no ADR-0037 (ainda sem gate de Android/device).** O Assistente deve continuar a tarefa ao minimizar o Urbe sem depender da Activity, com notificações distintas quando estiver executando, precisar de aprovação, aguardar resposta e concluir ou falhar. A implementação nativa inicial usa Foreground Service de uso especial declarado no Android, sem mover chaves, ferramentas ou estado de vault para outro runtime. O sistema não garante recuperação após force-stop, processo morto ou reinício: salvar checkpoint/journal e retomar de maneira idempotente, inclusive no meio de ferramenta/aprovação, é um **incremento obrigatório ainda aberto** para atender a expectativa completa de durabilidade.
+
+**Investigação e planejamento, sem fórmulas fixas:** a execução comum não impõe teto de chamadas de ferramentas/turnos; o plano não é truncado em 20 etapas e ask_user não tem contador máximo fictício. O agente deve avaliar contexto, identificar o que pode inferir do vault e o que precisa perguntar ao usuário; usar uma pergunta substantiva por vez e replanejar em ciclos. Não existe mínimo obrigatório de perguntas ou etapas. Preservar aprovações, cancelamento e proteção contra erros repetidos; instrumentar custo/duração e considerar controles voluntários de orçamento sem limites ocultos.
+
+**Qualidade e relações entre documentos:** antes de gerar fichas, livros e demais artefatos, pesquisar, definir estrutura e critérios de aceite adequados ao propósito. Para ficha de personagem sem dados prévios, investigar cenário, sistema, papel, tom e particularidades, criando textos originais de qualidade, não um template vazio. Distinguir informações estabelecidas e propostas criativas. Ao surgir uma ideia paralela relacionada, buscar notas existentes, investigar relações e atualizar/criar notas pertinentes com links, **respeitando autorização de escrita**. Depois de gravar, reler o conteúdo e conferir qualidade, consistência e pendências antes de afirmar conclusão.
+
+**Aceite não atendido ainda:** confirmar compilação/testes da PR, validar Foreground Service e notificações no dispositivo com app minimizado/tela bloqueada, testar concessão/negação de notificações, reconciliação em caso de morte do processo e integridade de alterações. Fazer prova end-to-end da ficha de personagem conectada a outras notas, incluindo rodada de perguntas, planejamento, entrega revisada e ideias paralelas. ADR-0037 é proposto, não aprovação automática nem release.
+
 ## Personalização do Assistente — extensão de UC-63/UC-81 (proprietário, 23/10/2026)
 
 **Novo escopo autorizado pelo proprietário:** configurar modelo e provedor **independentes para geração de imagens** no próprio painel do Assistente (o modelo da conversa não troca); permitir **modelo/provedor de texto por agente**, inclusive para os agentes prontos, herdando o modelo normal da conversa quando não houver configuração; criar e editar **blocos titulados de instruções por agente** na interface.
