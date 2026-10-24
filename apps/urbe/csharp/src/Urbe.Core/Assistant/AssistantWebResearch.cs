@@ -359,8 +359,8 @@ public static class HtmlMainText
         s = Regex.Replace(s, "</(td|th)\\s*>", " | ", Options);
         s = Regex.Replace(s, "<[^>]*>", " ", Options);
         s = WebUtility.HtmlDecode(s).Replace("\r", "");
-        s = Regex.Replace(s, @"[ \\t]+", " ");
-        s = Regex.Replace(s, @"\n[ \\t]+", "\n");
+        s = Regex.Replace(s, @"[ \t]+", " ");
+        s = Regex.Replace(s, @"\n[ \t]+", "\n");
         s = Regex.Replace(s, @"\n{3,}", "\n\n");
         return s.Trim();
     }
