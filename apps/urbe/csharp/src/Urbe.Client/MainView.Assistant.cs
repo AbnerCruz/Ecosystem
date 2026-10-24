@@ -131,7 +131,8 @@ public sealed partial class MainView : IAssistantApp
     {
         if (!_attachments.Contains(path) || _vault is not { IsConnected: true } vault) return null;
         // Bound decoded bytes per chat image; the full-resolution file remains in the vault.
-        return await vault.ReadFileAsync(path, 8 * 1024 * 1024);
+        var file = await vault.ReadFileAsync(path, 8 * 1024 * 1024);
+        return file?.Bytes;
     }
 
     async Task IAssistantApp.OpenGeneratedImageAsync(string path)
