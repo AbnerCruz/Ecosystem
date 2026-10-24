@@ -792,8 +792,9 @@ public sealed partial class AssistantPanel : Border
         {
             cancel.Register(() => Dispatcher.UIThread.Post(() =>
             {
-                if (_pending is { } p && ReferenceEquals(p.Request, req)) { _pending = null; _app.EndSuggestion(); answer.TrySetResult(AiApproval.Reject()); }
+                if (_pending is { } p && ReferenceEquals(p.Request, req)) { _pending = null; _app.EndSuggestion(); answer.TrySetResult(AiApproval.Reject()); NotifyCompactChanged(); }
             }));
+            NotifyCompactChanged();
             return answer.Task;
         }
         if (_inNote is not null && !IsVisible && !CompactActive) Open();
