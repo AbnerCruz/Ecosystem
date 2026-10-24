@@ -38,7 +38,7 @@ public sealed class AssistantImageToolsTests
         var (url, body, auth) = Assert.Single(http.Seen);
         Assert.Equal("https://api.openai.com/v1/images/generations", url);
         Assert.Equal("Bearer sk-test", auth);
-        Assert.Equal("gpt-image-1", (string?)body["model"]);
+        Assert.Equal("gpt-image-2.5-sunburst", (string?)body["model"]);
         Assert.Equal("um gato azul", (string?)body["prompt"]);
         Assert.Equal("1536x1024", (string?)body["size"]);
         Assert.Null(body["response_format"]);   // the gpt-image models refuse it and always answer in base64
