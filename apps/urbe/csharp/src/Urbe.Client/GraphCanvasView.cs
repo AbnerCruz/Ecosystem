@@ -302,6 +302,7 @@ public sealed class GraphBoardPanel : Grid
     public GraphCanvasView Canvas { get; } = new();
     private readonly TextBlock _title = new() { FontSize = 15, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center };
     private readonly Button _edit, _link, _delete, _open;
+    private readonly Button _undo, _redo, _group, _resize, _select, _draw, _erase;
     public event Action? BackRequested;
     public event Action? SaveRequested;
     public event Action? AddTextRequested;
@@ -310,6 +311,11 @@ public sealed class GraphBoardPanel : Grid
     public event Action? LinkRequested;
     public event Action? DeleteRequested;
     public event Action? OpenRequested;
+    public event Action? UndoRequested;
+    public event Action? RedoRequested;
+    public event Action? ShapeRequested;
+    public event Action? GroupRequested;
+    public event Action? ResizeRequested;
 
     private static Button Action(string label) => new()
     {
@@ -339,7 +345,31 @@ public sealed class GraphBoardPanel : Grid
         _link = Action("Conectar"); _link.Click += (_, _) => LinkRequested?.Invoke();
         _delete = Action("Remover"); _delete.Click += (_, _) => DeleteRequested?.Invoke();
         _open = Action("Abrir"); _open.Click += (_, _) => OpenRequested?.Invoke();
-        foreach (var item in new[] { addText, addVault, _edit, _link, _delete, _open }) strip.Children.Add(item);
+        var shape = Action("+ Forma"); shape.Click += (_, _) => ShapeRequested?.Invoke();
+        _select = Action("Selecionar vários"); _select.Click += (_, _) =>
+        {
+            Canvas.MultipleSelection = !Canvas.MultipleSelection;
+            Canvas.Tool = GraphCanvasTool.Select;
+            Refresh();
+        };
+        _draw = Action("Caneta"); _draw.Click += (_, _) =>
+        {
+            Canvas.Tool = Canvas.Tool == GraphCanvasTool.Draw ? GraphCanvasTool.Select : GraphCanvasTool.Draw;
+            Canvas.MultipleSelection = false;
+            Refresh();
+        };
+        _erase = Action("Borracha"); _erase.Click += (_, _) =>
+        {
+            Canvas.Tool = Canvas.Tool == GraphCanvasTool.Erase ? GraphCanvasTool.Select : GraphCanvasTool.Erase;
+            Canvas.MultipleSelection = false;
+            Refresh();
+        };
+        _group = Action("Agrupar"); _group.Click += (_, _) => GroupRequested?.Invoke();
+        _resize = Action("Tamanho"); _resize.Click += (_, _) => ResizeRequested?.Invoke();
+        _undo = Action("↶ Desfazer"); _undo.Click += (_, _) => UndoRequested?.Invoke();
+        _redo = Action("↷ Refazer"); _redo.Click += (_, _) => RedoRequested?.Invoke();
+        foreach (var item in new[] { addText, addVault, shape, _select, _draw, _erase, _group, _resize,
+            _edit, _link, _delete, _open, _undo, _redo }) strip.Children.Add(item);
         top.Children.Add(new ScrollViewer
         {
             Content = strip,
@@ -360,11 +390,24 @@ public sealed class GraphBoardPanel : Grid
         UpdateButtons();
     }
 
+    public void Refresh()
+    {
+        UpdateButtons();
+        Canvas.Refresh();
+    }
+
     private void UpdateButtons()
     {
         var selected = Canvas.SelectedNode;
         _edit.IsEnabled = _delete.IsEnabled = selected is not null;
         _open.IsEnabled = selected?.Target is not null;
         _link.IsEnabled = selected is not null && Canvas.Document?.Nodes.Count > 1;
+        _group.IsEnabled = Canvas.SelectedIds.Count >= 2;
+        _resize.IsEnabled = selected is not null;
+        _undo.IsEnabled = Canvas.Document?.CanUndo == true;
+        _redo.IsEnabled = Canvas.Document?.CanRedo == true;
+        _select.Content = Canvas.MultipleSelection ? "✓ Seleção múltipla" : "Selecionar vários";
+        _draw.Content = Canvas.Tool == GraphCanvasTool.Draw ? "✓ Caneta" : "Caneta";
+        _erase.Content = Canvas.Tool == GraphCanvasTool.Erase ? "✓ Borracha" : "Borracha";
     }
 }
