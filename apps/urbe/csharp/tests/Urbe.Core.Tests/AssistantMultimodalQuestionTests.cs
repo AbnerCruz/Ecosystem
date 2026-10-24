@@ -171,7 +171,7 @@ public sealed class AssistantMultimodalQuestionTests
         var guidance = AssistantAgent.UrbeGuidance;
         Assert.Contains("cada tipo de artefato", guidance, StringComparison.Ordinal);
         Assert.Contains("sem aplicar formulários, modelos ou seções predefinidos", guidance, StringComparison.Ordinal);
-        Assert.DoesNotContain("Exemplo de ficha de personagem", guidance, StringComparison.Ordinal);
+        Assert.DoesNotContain("ficha de personagem", guidance, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Ideias paralelas", guidance, StringComparison.Ordinal);
         Assert.Contains("notas conectadas", guidance, StringComparison.Ordinal);
         Assert.Contains("cânone", guidance, StringComparison.Ordinal);
