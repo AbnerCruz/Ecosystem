@@ -19,6 +19,8 @@ public sealed partial class MainView
     private const double EmbedMaxHeight = 340;
     private const long EmbedImageMax = 16L * 1024 * 1024, EmbedTextMax = 256L * 1024;
     private const int EmbedTextLines = 14;
+    private const long EmbedPageMax = 32L * 1024 * 1024;
+    private const double EmbedPageHeight = 420;
 
     /// <summary>The card of <c>![[</c><paramref name="target"/><c>]]</c>: never null, never throws (a missing target says so).</summary>
     internal Control BuildEmbed(string target)
@@ -48,9 +50,11 @@ public sealed partial class MainView
 
     private string? FindEmbeddedFile(string name)
     {
-        var exact = _attachments.FirstOrDefault(p => string.Equals(p, name, StringComparison.OrdinalIgnoreCase));
+        // the vault's other files; text files that are not notes (.html, .txt, .csv…) live with the notes' texts
+        var files = _attachments.Concat(_contents.Keys.Where(p => !p.EndsWith(".md", StringComparison.OrdinalIgnoreCase))).ToList();
+        var exact = files.FirstOrDefault(p => string.Equals(p, name, StringComparison.OrdinalIgnoreCase));
         if (exact is not null) return exact;
-        var byName = _attachments.Where(p => string.Equals(Path.GetFileName(p), name, StringComparison.OrdinalIgnoreCase)).ToList();
+        var byName = files.Where(p => string.Equals(Path.GetFileName(p), name, StringComparison.OrdinalIgnoreCase)).ToList();
         return byName.Count == 1 ? byName[0] : null;
     }
 
@@ -155,8 +159,12 @@ public sealed partial class MainView
         {
             if (_vault is null) { holder.Child = Message("Abra a pasta do vault para ver o arquivo."); return; }
             bool image = kind == VaultFileKinds.Image && !path.EndsWith(".svg", StringComparison.OrdinalIgnoreCase);
-            bool media = kind is VaultFileKinds.Audio or VaultFileKinds.Video or VaultFileKinds.Pdf or VaultFileKinds.Zip or VaultFileKinds.Html;
-            var read = await _vault.ReadFileAsync(path, image ? EmbedImageMax : media ? 0 : EmbedTextMax);
+            // audio and video are played from the vault by the platform (only their size is read); a page or a PDF is read
+            // whole and drawn by the platform's viewer, the same one of the file preview
+            bool played = kind is VaultFileKinds.Audio or VaultFileKinds.Video;
+            bool viewed = played || kind is VaultFileKinds.Pdf or VaultFileKinds.Html;
+            bool media = viewed || kind == VaultFileKinds.Zip;
+            var read = await _vault.ReadFileAsync(path, image ? EmbedImageMax : played ? 0 : viewed ? EmbedPageMax : EmbedTextMax);
             if (read is null) { holder.Child = Message("Arquivo não encontrado na pasta do vault."); return; }
             SetMeta(card, VaultFileKinds.Label(kind) + " · " + VaultFileKinds.FormatBytes(read.Size));
             if (image && read.Bytes is { Length: > 0 } bytes)
@@ -168,6 +176,22 @@ public sealed partial class MainView
                     Source = bitmap, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly,
                     MaxHeight = EmbedMaxHeight + 80, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(8)
                 };
+                return;
+            }
+            if (viewed)
+            {
+                var name = Path.GetFileName(path);
+                Control? viewer = null;
+                try { viewer = await ContentViewers.CreateAsync(new ContentRequest(_vault, path, name, kind, read.Bytes)); }
+                catch (Exception ex) when (ex is IOException or InvalidOperationException or NotSupportedException or UnauthorizedAccessException) { viewer = null; }
+                if (viewer is not null)
+                {
+                    // a web view or a player has no size of its own: a page and a PDF get a window, media what it needs
+                    viewer.Height = kind switch { VaultFileKinds.Audio => 96, VaultFileKinds.Video => 230, _ => EmbedPageHeight };
+                    holder.Child = viewer;
+                    return;
+                }
+                holder.Child = Message("Este aparelho não mostra " + VaultFileKinds.Label(kind).ToLowerInvariant() + " aqui. Toque no título para abrir.");
                 return;
             }
             if (!media && !image && read.Bytes is { } raw && LooksLikeText(raw))

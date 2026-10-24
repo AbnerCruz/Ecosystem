@@ -28,7 +28,8 @@
   ],
   "work_completed": [
     "Observação do proprietário (24/10/2026, beta.18/19): ![[destino]] no editor Visual não mostrava nada. Agora um parágrafo só de ![[…]] vira um cartão que mostra, no lugar, a nota (texto renderizado), a imagem ou o arquivo de texto; outros arquivos viram cartão com tipo e tamanho. O cartão toma o tamanho do conteúdo e só rola (altura máxima 340) em caso extremo; tocar no título abre o destino; destino inexistente avisa.",
-    "Comentários palavra{\"…\"}: o 💬 deixou de ser um botão dentro do texto (cortava as palavras ao redor e derrubou o app uma vez) e passou a ser um trecho do próprio texto, tocável pela posição; a janela de comentários não rola de lado, então o texto quebra em vez de ser cortado."
+    "Comentários palavra{\"…\"}: o 💬 deixou de ser um botão dentro do texto (cortava as palavras ao redor e derrubou o app uma vez) e passou a ser um trecho do próprio texto, tocável pela posição; a janela de comentários não rola de lado, então o texto quebra em vez de ser cortado.",
+    "![[arquivo.html]] mostra a página renderizada (o mesmo visualizador da prévia de arquivos, em janela de 420 px); PDF, áudio e vídeo também usam o visualizador da plataforma. Arquivos de texto que não são notas (.html, .txt, .csv) agora são achados como arquivos."
   ],
   "verification": [
     {
@@ -47,7 +48,8 @@
   ],
   "known_issues": [
     "O ![[…]] no meio de um texto continua sendo o link simples; só o parágrafo isolado vira cartão.",
-    "Sem aumento de versão neste PR: uma nova beta é um PR crítico à parte."
+    "Sem aumento de versão neste PR: uma nova beta é um PR crítico à parte.",
+    "A página, o PDF e os players dependem do visualizador da plataforma (web view no celular); no desktop sem visualizador o cartão avisa e o título abre o arquivo."
   ],
   "blockers": [],
   "next_actions": [
