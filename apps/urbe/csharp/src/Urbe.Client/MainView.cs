@@ -546,7 +546,7 @@ public sealed partial class MainView : Grid
             items.Add(new("Pasta no dispositivo", UrbeTheme.Icons.Storage, "Onde os arquivos ficam salvos", Run: () => OpenVaultAsync()));
         items.Add(new("Assistente", UrbeTheme.Icons.Assistant, "Agentes que pesquisam, escrevem e organizam o vault", Run: () => { ToggleAssistant(); return Task.CompletedTask; }));
         items.Add(new("Páginas", UrbeTheme.Icons.Page, "Sites e páginas HTML do vault", Run: () => { ShowPages(); return Task.CompletedTask; }));
-        items.Add(new("Diagnóstico de toques", UrbeTheme.Icons.Select, TouchDebugOn ? "Ligado — toque para desligar" : "Para descobrir botões que não respondem", Run: ToggleTouchDebugAsync));
+        items.Add(new("Diagnóstico de teclado e toques", UrbeTheme.Icons.Select, TouchDebugOn ? "Ligado — toque para desligar" : "Registrar foco, rolagem, IME e toques; desligado por padrão", Run: ToggleTouchDebugAsync));
         if (UpdateItem() is { } update) items.Add(update);
         if (CrashLog.Read().Length > 0)
             items.Add(new("Relatório de erros", UrbeTheme.Icons.List, "Erros que o Urbe registrou neste aparelho", Run: ShowErrorReportAsync));
@@ -1452,6 +1452,12 @@ public sealed partial class MainView : Grid
 
     private void OnInputPane(object? sender, Avalonia.Controls.Platform.InputPaneStateEventArgs e)
     {
+        if (_touchDebug?.IsVisible == true)
+        {
+            var rect = _inputPane?.OccludedRect;
+            _touchDebug.RecordExternal("IME " + e.NewState + " · janela=" + Math.Round(_keyboardTop?.ClientSize.Height ?? 0) +
+                " · topo=" + Math.Round(rect?.Top ?? 0) + " · coberto=" + Math.Round(rect?.Height ?? 0));
+        }
         if (e.NewState == Avalonia.Controls.Platform.InputPaneState.Open)
         {
             _keyboardClosed.Stop();
@@ -1493,7 +1499,12 @@ public sealed partial class MainView : Grid
         // the keyboard's place now, not the one announced when it started to open (the window may have changed since)
         var top = _keyboardOpen && _inputPane is { } pane && pane.OccludedRect.Height > 0 ? pane.OccludedRect.Top : double.NaN;
         var covered = height <= 0 ? 0 : KeyboardCover(height, top, windowShrinks: _insets is { DisplaysEdgeToEdge: false });
-        if (Math.Abs(Margin.Bottom - covered) > .5) Margin = new Thickness(0, 0, 0, covered);
+        if (Math.Abs(Margin.Bottom - covered) > .5)
+        {
+            if (_touchDebug?.IsVisible == true) _touchDebug.RecordExternal("viewport: janela=" + Math.Round(height) +
+                " · topoTeclado=" + (double.IsNaN(top) ? "—" : Math.Round(top).ToString()) + " · margemInferior=" + Math.Round(covered));
+            Margin = new Thickness(0, 0, 0, covered);
+        }
     }
 
     // ---------------- navigation (rail / dock) ----------------

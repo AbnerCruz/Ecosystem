@@ -89,7 +89,7 @@ public abstract class SearchPanel : Grid
         IsVisible = true;
         Render("");
         Layout(Bounds.Width, Bounds.Height);
-        Dispatcher.UIThread.Post(() => Input.Focus(), DispatcherPriority.Loaded);
+        if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) Dispatcher.UIThread.Post(() => { if (IsVisible) Input.Focus(); }, DispatcherPriority.Loaded);
     }
 
     public void Close()

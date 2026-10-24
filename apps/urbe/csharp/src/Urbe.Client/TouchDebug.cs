@@ -19,7 +19,7 @@ namespace Urbe.Client;
 /// </summary>
 public sealed class TouchDebug : Grid
 {
-    private const int MaxLog = 60;
+    private const int MaxLog = 240;
     private sealed class Touch
     {
         public DateTime T0;
@@ -41,6 +41,8 @@ public sealed class TouchDebug : Grid
     private readonly TextBlock _flash = new() { FontSize = 12, Foreground = new SolidColorBrush(Color.Parse("#7fdca6")), VerticalAlignment = VerticalAlignment.Center };
     private readonly Control _host;
     private Touch? _cur;
+    private long _lastScrollAt;
+    private string _lastScroll = "";
 
     public TouchDebug(Control host)
     {
@@ -61,7 +63,7 @@ public sealed class TouchDebug : Grid
         foreach (var b in new[] { off, min, copy }) { DockPanel.SetDock(b, Dock.Right); b.Margin = new Thickness(6, 0, 0, 0); head.Children.Add(b); }
         DockPanel.SetDock(_flash, Dock.Right);
         head.Children.Add(_flash);
-        head.Children.Add(new TextBlock { Text = "Diagnóstico de toques", FontSize = 12.5, FontWeight = FontWeight.SemiBold, Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center });
+        head.Children.Add(new TextBlock { Text = "Toques · foco · teclado", FontSize = 12.5, FontWeight = FontWeight.SemiBold, Foreground = Brushes.White, VerticalAlignment = VerticalAlignment.Center });
         _panel.Child = new StackPanel { Children = { head, new Border { Height = 1, Background = new SolidColorBrush(Color.Parse("#2a2c33")) }, _lines } };
         _panel.Background = new SolidColorBrush(Color.Parse("#F00C0D10"));
         _panel.BorderBrush = new SolidColorBrush(Color.Parse("#3a3d46"));
@@ -78,6 +80,33 @@ public sealed class TouchDebug : Grid
         host.AddHandler(PointerReleasedEvent, Released, RoutingStrategies.Tunnel, handledEventsToo: true);
         host.AddHandler(PointerCaptureLostEvent, CaptureLost, RoutingStrategies.Bubble | RoutingStrategies.Direct, handledEventsToo: true);
         host.AddHandler(Button.ClickEvent, Clicked, RoutingStrategies.Bubble, handledEventsToo: true);
+        host.AddHandler(InputElement.GotFocusEvent, (_, e) =>
+        {
+            if (!IsVisible || OnPanel(e.Source)) return;
+            RecordExternal("focusin " + Describe(e.Source) + (_cur is null ? " · sem toque recente" : " · após toque"));
+        }, RoutingStrategies.Bubble, handledEventsToo: true);
+        host.AddHandler(InputElement.LostFocusEvent, (_, e) =>
+        {
+            if (IsVisible && !OnPanel(e.Source)) RecordExternal("focusout " + Describe(e.Source));
+        }, RoutingStrategies.Bubble, handledEventsToo: true);
+    }
+
+    public void RecordExternal(string line)
+    {
+        if (!IsVisible) return;
+        _log.Add((DateTime.Now.ToString("HH:mm:ss.fff"), line, true, default, ""));
+        if (_log.Count > MaxLog) _log.RemoveAt(0);
+        Render();
+    }
+
+    public void RecordScroll(string line)
+    {
+        if (!IsVisible) return;
+        var now = Environment.TickCount64;
+        if (line == _lastScroll || now - _lastScrollAt < 140) return;
+        _lastScroll = line;
+        _lastScrollAt = now;
+        RecordExternal("scroll " + line);
     }
 
     /// <summary>The × of the panel.</summary>
@@ -177,7 +206,7 @@ public sealed class TouchDebug : Grid
     private void Render()
     {
         _lines.Children.Clear();
-        var last = _log.TakeLast(6).Reverse().ToList();
+        var last = _log.TakeLast(8).Reverse().ToList();
         if (last.Count == 0) _lines.Children.Add(Line("Toque nos botões que não funcionam.", "#e8e8ee"));
         foreach (var l in last) _lines.Children.Add(Line(l.Line, l.Ok ? "#9fe0b9" : "#ff8e98"));
     }
@@ -193,11 +222,11 @@ public sealed class TouchDebug : Grid
         var top = TopLevel.GetTopLevel(_host);
         var size = top?.ClientSize ?? _host.Bounds.Size;
         return string.Join("\n",
-            "Relatório de toques — Urbe " + Version,
+            "Relatório de teclado, foco, rolagem e toques — Urbe " + Version,
             "Aparelho: " + RuntimeInformation.OSDescription + " · " + RuntimeInformation.ProcessArchitecture,
             "Tela: " + Math.Round(size.Width) + "×" + Math.Round(size.Height) + " @" + (top?.RenderScaling ?? 1).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "x",
             "",
-            _log.Count > 0 ? string.Join("\n", _log.Select(l => l.Time + "  " + l.Line + "  @" + Math.Round(l.At.X) + "," + Math.Round(l.At.Y) + (l.Line.Contains(l.Target, StringComparison.Ordinal) ? "" : "  [alvo: " + l.Target + "]")))
+            _log.Count > 0 ? string.Join("\n", _log.Select(l => l.Time + "  " + l.Line + (l.Target.Length > 0 ? " @" + Math.Round(l.At.X) + "," + Math.Round(l.At.Y) + (l.Line.Contains(l.Target, StringComparison.Ordinal) ? "" : "  [alvo: " + l.Target + "]") : "")))
                 : "(nenhum toque registrado)");
     }
 

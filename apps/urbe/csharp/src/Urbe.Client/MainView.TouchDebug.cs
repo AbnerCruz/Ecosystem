@@ -13,6 +13,7 @@ public sealed partial class MainView
     {
         var t = new TouchDebug(this) { Version = "nativo " + (typeof(MainView).Assembly.GetName().Version?.ToString(3) ?? "") };
         t.TurnedOff += () => SetTouchDebug(false);
+        Editor.ScrollObserved += t.RecordScroll;
         SetRowSpan(t, 2);
         SetColumnSpan(t, 2);
         Children.Add(t);
@@ -37,7 +38,7 @@ public sealed partial class MainView
         SetTouchDebug(on);
         if (on)
             await Dialogs.AlertAsync("Diagnóstico ligado",
-                "Agora toque nos botões que não funcionam. Cada toque deixa um ponto: verde = o botão recebeu o toque; vermelho = não recebeu.\n\nDepois toque em “Copiar relatório” no quadro do topo e cole na conversa. Para desligar, use o × do quadro.");
+                "Toque, digite, abra e feche o teclado. O painel registra foco, janela, IME, rolagem e toques.\n\nUse “Copiar relatório” e cole o texto na conversa. Para desligar, toque no ×.");
     }
 
     /// <summary>On at start when it was on (localStorage.getItem(KEY) === '1').</summary>

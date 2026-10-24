@@ -94,7 +94,11 @@ public sealed class UrbeDialogs : Grid
             // the scrim fades in and the card rises into place (UX.md P6); the dialog is usable at once
             Ui.UrbeMotion.Enter(this, 0, 0, UrbeTokens.Motion.Fast);
             Ui.UrbeMotion.Enter(_card, 0, Bounds.Width < Wide ? 32 : 8);
-            Dispatcher.UIThread.Post(() => (focus ?? (Control)this).Focus(), DispatcherPriority.Loaded);
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (!IsVisible) return;
+                (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid()) ? focus ?? (Control)this : this).Focus();
+            }, DispatcherPriority.Loaded);
             await finished.Task;
         }
         async Task After(Task previous)
@@ -154,7 +158,7 @@ public sealed class UrbeDialogs : Grid
         input.Resources["TextControlBackgroundPointerOver"] = UrbeTheme.Brush(UrbeTheme.Bg);
         input.Resources["TextControlBorderBrushFocused"] = UrbeTheme.Brush(UrbeTheme.Accent);
         var error = new TextBlock { IsVisible = false, Foreground = UrbeTheme.Brush(UrbeTheme.Danger), FontFamily = UrbeTheme.UiFont, FontSize = 13, FontWeight = FontWeight.Medium, Margin = new Thickness(2, 6, 2, 0), TextWrapping = TextWrapping.Wrap };
-        void ShowError(string t) { error.Text = t; error.IsVisible = true; input.BorderBrush = UrbeTheme.Brush(UrbeTheme.Danger); input.Focus(); }
+        void ShowError(string t) { error.Text = t; error.IsVisible = true; input.BorderBrush = UrbeTheme.Brush(UrbeTheme.Danger); if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) input.Focus(); }
         input.TextChanged += (_, _) => { error.IsVisible = false; input.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2); };
         void Submit()
         {

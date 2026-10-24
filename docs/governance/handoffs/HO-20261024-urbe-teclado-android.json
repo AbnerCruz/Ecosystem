@@ -1,0 +1,110 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261024-urbe-teclado-android",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-24T07:15:50Z",
+  "agent": {
+    "id": "chatgpt-gpt6-urbe-native",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-48",
+  "component": "urbe",
+  "state": "review",
+  "branch": "fix/urbe-native-android-keyboard-beta25",
+  "base_commit": "105f01bdbb3b3e56db0ebfb714cb1b27b9b5e571",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/721",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/KeyboardFocusPolicy.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/QuickOpen.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorFindBar.cs",
+    "apps/urbe/csharp/src/Urbe.Client/TouchDebug.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.TouchDebug.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/KeyboardFocusPolicyTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/TouchDebugUiTests.cs",
+    "apps/urbe/csharp/PATCHNOTES-beta.25.md",
+    "docs/governance/handoffs/HO-20261024-urbe-teclado-android.json"
+  ],
+  "work_completed": [
+    "Diagnóstico no código nativo C# (não no JS legada): EditorOverlay.FocusSource e ShowMode focam Fonte ao abrir e trocar modo; UrbeDialogs.Open, QuickOpen.Open e EditorFindBar.Open focam campo sem toque; VisualSurface.Place solicita IME após iniciar um bloco sem diferenciar toque de comando.",
+    "Correção de foco programático ao entrar em telas/diálogos, com política Android toque em editável; desktop mantém os atalhos de teclado.",
+    "Instrumentação de foco, InputPane/IME, viewport, rolagem interna e toques em Configurações → Diagnóstico de teclado e toques, log copiável desligado por padrão; sem registrar texto de campos.",
+    "Beta Android incrementada de 2.0.0-beta.24 para 2.0.0-beta.25 (versionCode 2000025), patchnotes em português.",
+    "Não alterado adjustResize Android nem algoritmo de scroll por caret que já é condicional; monitoramento diagnóstico ajudará a confirmar saltos residuais em dispositivo.",
+    "Teste TouchDebugUiTests atualizado para interface do novo diagnóstico, com logs extras sem supor uma única linha."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Teste unitário KeyboardFocusPolicyTests (desktop/Android; foco só após toque em editável)",
+      "result": "passed",
+      "evidence": "CI da branch em https://github.com/AbnerCruz/Ecosystem/actions/runs/40073892236: Urbe.Client.Tests (incluindo KeyboardFocusPolicyTests) aprovado.",
+      "tested_commit": "6b0ab9ccd0d29453aad43eb5d677c451ededfb08"
+    },
+    {
+      "kind": "automated",
+      "check": "Build Urbe.Portable.slnx, Urbe.Core.Tests e Urbe.Client.Tests; empacotamento Avalonia Android e Windows; E2E legado de regressão",
+      "result": "passed",
+      "evidence": "CI https://github.com/AbnerCruz/Ecosystem/actions/runs/40073892236: .NET Core+Client, build Android+Windows, checks e E2E verde; teste em IME real continua humano e pendente.",
+      "tested_commit": "6b0ab9ccd0d29453aad43eb5d677c451ededfb08"
+    },
+    {
+      "kind": "human",
+      "check": "Instalar Urbe 2.0.0-beta.25 no Android, abrir notas em Visual e Fonte, wiki-link, IA, localizar, campos, concluir/fechar teclado e trocar de tela; confirmar ausência de teclado espontâneo e saltos; copiar log se persistir",
+      "result": "pending",
+      "critical": true,
+      "object": "https://github.com/AbnerCruz/Ecosystem/pull/721"
+    }
+  ],
+  "known_issues": [
+    "Sem emulação de IME físico Android neste executor; Playwright não testa controles Avalonia nativos.",
+    "Não é possível interceptar globalmente Focus() com HTMLElement.prototype.focus em C#; o painel captura eventos de foco nativos e sua proximidade do toque, mas nem sempre a origem exata do método.",
+    "O ajuste da margem inferior de MainView.FitKeyboard foi preservado, pois uma troca sem teste real pode piorar o comportamento edge-to-edge."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Aguardar checks do estado combinado e publicação do APK beta.25 no canal urbe-csharp-v2.0.0-beta.25 após integração.",
+    "Proprietário validar o teclado real do Android, incluindo Gboard, e enviar o relatório de diagnóstico em caso de regressão."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261024-urbe-ia-no-aparelho.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/distribution/direct-releases.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Handoff registrado em docs/governance/handoffs/ com PR, estado e verificação."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação do Android físico explicitamente pendente e marcada como crítica."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Mudança permanece no cliente Urbe; nenhuma infraestrutura extraída sem consumidor."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "keyboard-focus-policy",
+      "status": "product-specific",
+      "rationale": "Correção do cliente nativo Urbe; não há outro consumidor real da UI Avalonia."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Altera foco/editor Android e incrementa a versão do canal beta distribuído."
+  }
+}
