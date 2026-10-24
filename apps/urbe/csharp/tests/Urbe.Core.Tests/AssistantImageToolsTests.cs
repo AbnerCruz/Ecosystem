@@ -147,6 +147,17 @@ public sealed class AssistantImageToolsTests
         Assert.Equal("Bearer sk-or", request.Auth);
     }
 
+    [Theory]
+    [InlineData("Imagem guardada em Imagens/Cidade medieval.png. Para mostrá-la numa nota, escreva ![[Imagens/Cidade medieval.png]].", "Imagens/Cidade medieval.png")]
+    [InlineData("Imagem guardada em Imagens/Fantasia 2.webp e colocada no fim de Capítulo 1.md.", "Imagens/Fantasia 2.webp")]
+    [InlineData("Imagem guardada em Imagens/monte.jpg.", "Imagens/monte.jpg")]
+    [InlineData("A imagem não foi gerada: sem créditos.", null)]
+    [InlineData("Imagem guardada em ../fora.png.", null)]
+    public void DetectsSavedImageForInlineChatPreviewIncludingBeta20History(string result, string? expected)
+    {
+        Assert.Equal(expected, AssistantImageTools.SavedImagePath(result));
+    }
+
     [Fact]
     public void ImageModelDoesNotAffectTheChatModelChoice()
     {
