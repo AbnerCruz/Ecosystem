@@ -136,8 +136,8 @@ public sealed partial class AssistantPanel : Border
             // Enter sends on a keyboard (desktop); on touch Enter is a new line, as in the original (coarse pointer)
             if (e.Key == Key.Enter && !e.KeyModifiers.HasFlag(KeyModifiers.Shift) && !OperatingSystem.IsAndroid()) { e.Handled = true; Submit(); }
         };
-        _send.Width = 44;
-        _send.Height = 44;
+        _send.Width = UrbeTokens.MinTouch;
+        _send.Height = UrbeTokens.MinTouch;
         _send.CornerRadius = new CornerRadius(22);
         _send.Margin = new Thickness(8, 0, 0, 0);
         _send.VerticalAlignment = VerticalAlignment.Bottom;
@@ -146,23 +146,23 @@ public sealed partial class AssistantPanel : Border
         _send.Padding = new Thickness(0);
         _send.Click += (_, _) => { if (_running is not null) Stop(); else Submit(); };
         // One compact, accessible attachment control instead of permanent secondary actions.
-        _attach.Width = 44;
-        _attach.Height = 44;
-        _attach.MinWidth = 44;
+        _attach.Width = UrbeTokens.MinTouch;
+        _attach.Height = UrbeTokens.MinTouch;
+        _attach.MinWidth = UrbeTokens.MinTouch;
         _attach.CornerRadius = new CornerRadius(14);
         _attach.Padding = new Thickness(0);
         _attach.Margin = new Thickness(0, 0, 8, 0);
         _attach.VerticalAlignment = VerticalAlignment.Bottom;
-        _attach.Background = UrbeTheme.Brush(UrbeTheme.Surface);
-        _attach.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2);
-        _attach.BorderThickness = new Thickness(1);
+        _attach.Background = Brushes.Transparent;
+        _attach.BorderBrush = Brushes.Transparent;
+        _attach.BorderThickness = new Thickness(0);
         _attach.Content = UrbeTheme.Icon(UrbeTheme.Icons.Plus, 19, UrbeTheme.Text2);
         ToolTip.SetTip(_attach, "Anexar arquivo ou nota");
         Avalonia.Automation.AutomationProperties.SetName(_attach, "Adicionar contexto à conversa");
         _attach.Click += (_, _) =>
         {
             _attachmentMenu.IsVisible = !_attachmentMenu.IsVisible;
-            _attach.Background = UrbeTheme.Brush(_attachmentMenu.IsVisible ? UrbeTheme.Accent : UrbeTheme.Surface, _attachmentMenu.IsVisible ? .16 : 1);
+            _attach.Background = _attachmentMenu.IsVisible ? UrbeTheme.Brush(UrbeTheme.Accent, .12) : Brushes.Transparent;
         };
         var row = new DockPanel();
         DockPanel.SetDock(_send, Dock.Right);
@@ -1108,11 +1108,12 @@ public sealed partial class AssistantPanel : Border
 
     private static void Chip(Button b, double size)
     {
-        b.Padding = new Thickness(10, 5);
-        b.CornerRadius = new CornerRadius(14);
-        b.Background = UrbeTheme.Brush(UrbeTheme.Surface);
-        b.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2);
-        b.BorderThickness = new Thickness(1);
+        b.Padding = new Thickness(10, 8);
+        b.MinHeight = UrbeTokens.MinTouch;
+        b.CornerRadius = new CornerRadius(8);
+        b.Background = Brushes.Transparent;
+        b.BorderBrush = Brushes.Transparent;
+        b.BorderThickness = new Thickness(0);
         b.FontSize = size;
         b.VerticalAlignment = VerticalAlignment.Center;
     }
