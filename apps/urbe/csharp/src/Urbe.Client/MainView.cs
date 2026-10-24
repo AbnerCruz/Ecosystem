@@ -938,7 +938,7 @@ public sealed partial class MainView : Grid
     }
 
     /// <summary>A file of the Explorer that is not a note (DEC-0045, UC-38): its preview (abrirEntradaTree → openFilePreview).</summary>
-    private Task ShowFileAsync(string path) => Dialogs.IsOpen ? Task.CompletedTask : FilePreview.OpenAsync(path);
+    private Task ShowFileAsync(string path) => Dialogs.IsOpen ? Task.CompletedTask : GraphDocument.IsGraphPath(path) ? OpenGraphAsync(path) : FilePreview.OpenAsync(path);
 
     /// <summary>
     /// The "⋯" of a folder in the Explorer (the 1.8.4 showed no options when a folder was selected, DEC-0045, UC-38):
@@ -969,7 +969,8 @@ public sealed partial class MainView : Grid
         var items = new List<DialogItem>
         {
             new("Nova nota", UrbeTheme.Icons.File, NotesWhere(folder), Run: () => CreateNoteInNotesAsync()),
-            new("Nova pasta", UrbeTheme.Icons.Folder, NotesWhere(folder), Run: () => CreateFolderAsync(folder))
+            new("Nova pasta", UrbeTheme.Icons.Folder, NotesWhere(folder), Run: () => CreateFolderAsync(folder)),
+            new("Novo grafo", UrbeTheme.Icons.Layers, "Canvas livre no vault", Run: () => CreateGraphAsync(folder: folder))
         };
         // UC-44: notes in Modelos/ are templates; with any, a note can start from one
         if (NoteTemplateEngine.Templates(_contents.Keys).Count > 0)
@@ -1124,6 +1125,7 @@ public sealed partial class MainView : Grid
             new DialogItem("Recentes", UrbeTheme.Icons.Clock, Run: () => { ShowCollection("recent"); return Task.CompletedTask; }),
             new DialogItem("Favoritos", UrbeTheme.Icons.Star, Run: () => { ShowCollection("favorites"); return Task.CompletedTask; }),
             new DialogItem("Constelação", UrbeTheme.Icons.Star, "As notas como um céu à noite", Run: () => ShowConstellationAsync()),
+            new DialogItem("Grafos", UrbeTheme.Icons.Layers, "Criar e navegar em grafos livres", Run: () => ShowGraphsHomeAsync()),
             new DialogItem("Importar arquivos", UrbeTheme.Icons.Upload, "Notas, pastas ou .zip do aparelho", Run: () => ImportAsync(Explorer.CurrentFolder)),
             new DialogItem("Exportar tudo (.zip)", UrbeTheme.Icons.Download, "Cópia de segurança de todas as notas", Run: () => ExportAsync()),
             new DialogItem("Lixeira", UrbeTheme.Icons.Trash, Detail: (n > 0 ? n.ToString(System.Globalization.CultureInfo.InvariantCulture) : "Nenhum") + " item(ns)",
@@ -1510,7 +1512,7 @@ public sealed partial class MainView : Grid
     // ---------------- navigation (rail / dock) ----------------
 
     private static readonly (string Icon, string Label)[] Destinations =
-        [(UrbeTheme.Icons.Notes, "Notas"), (UrbeTheme.Icons.Assistant, "Assistente")];
+        [(UrbeTheme.Icons.Notes, "Notas"), (UrbeTheme.Icons.Layers, "Grafos"), (UrbeTheme.Icons.Assistant, "Assistente")];
 
     private void BuildRail()
     {
@@ -1542,7 +1544,7 @@ public sealed partial class MainView : Grid
     private readonly List<(string Label, string Icon, Border Ico, TextBlock Text)> _nav = [];
 
     /// <summary>The destination shown as active (.ativo) in the rail and the dock: Assistente while it is open, else Notas.</summary>
-    public string ActiveDestination => AssistantOpen ? "Assistente" : "Notas";
+    public string ActiveDestination => GraphOpen ? "Grafos" : AssistantOpen ? "Assistente" : "Notas";
 
     private void UpdateNav()
     {
@@ -1592,6 +1594,11 @@ public sealed partial class MainView : Grid
         {
             ToolTip.SetTip(button, "Notas e pastas do vault");
             button.Click += (_, _) => { if (AssistantOpen) ToggleAssistant(); ShowWorkspace(); };
+        }
+        else if (label == "Grafos")
+        {
+            ToolTip.SetTip(button, "Grafos: criação e navegação visual");
+            button.Click += (_, _) => _ = ShowGraphsHomeAsync();
         }
         else
         {
