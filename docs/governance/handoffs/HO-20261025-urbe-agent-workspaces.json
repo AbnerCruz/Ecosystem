@@ -14,7 +14,7 @@
   "branch": "feat/urbe-agent-workspaces",
   "base_commit": "831a52a8fef23cf376e5b44bf964f376f1cac120",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/757",
   "files_changed": [
     "apps/urbe/AGENTSCHAT.md",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Device.cs",
@@ -75,6 +75,12 @@
       "critical": false,
       "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
       "evidence": "Não executado em aparelho; teste de runtime local usa fake, sem download ou inferência de pesos reais."
+    },
+    {
+      "kind": "automated",
+      "check": "CI completo do PR",
+      "result": "pending",
+      "evidence": "PR #757 aberto; acompanhar workflows urbe-checks e consistency. Resultado local não substitui execução do CI."
     }
   ],
   "known_issues": [
