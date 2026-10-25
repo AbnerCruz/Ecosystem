@@ -81,6 +81,9 @@ public sealed class AiConversation
     public string Model { get; set; } = "";
     public string Policy { get; set; } = "readonly";
     public string Vault { get; set; } = "";
+    /// <summary>Delegation provenance: only the origin chat may address this specialist dialogue.</summary>
+    public string? OriginConversationId { get; set; }
+    public string? OriginAgentId { get; set; }
     public List<AiChatMessage> Messages { get; set; } = [];
     public List<AiRunRecord> Runs { get; set; } = [];
     public AiUsage Usage { get; set; } = new(0, 0, null);
@@ -102,6 +105,12 @@ public sealed class AiConfig
     public int Version { get; set; } = 1;
     public int AgentWorkspaceVersion { get; set; }
     public Dictionary<string, string> AgentPolicies { get; set; } = new(StringComparer.Ordinal);
+    /// <summary>Explicit capability scope per agent. Missing values preserve the agent's legacy Tools ceiling.</summary>
+    public Dictionary<string, string> AgentToolScopes { get; set; } = new(StringComparer.Ordinal);
+    /// <summary>Only an explicit setting allows unprompted agent-to-agent consultation.</summary>
+    public Dictionary<string, bool> AgentDelegationAuto { get; set; } = new(StringComparer.Ordinal);
+    public string ToolScopeFor(AiAgentDef agent) => AgentToolScopes.GetValueOrDefault(agent.Id) is "read" or "write" or "all"
+        ? AgentToolScopes[agent.Id] : agent.Tools;
     public Dictionary<string, AiModelChoice> AgentImages { get; set; } = new(StringComparer.Ordinal);
     public string PolicyFor(string agentId) => AgentPolicies.GetValueOrDefault(agentId) is "ask" or "auto" ? AgentPolicies[agentId] : "readonly";
     public List<AiProviderConfig> Providers { get; set; } = [];
@@ -142,6 +151,7 @@ public sealed class AiConfig
 
     public AiAgentDef AgentWithInstructions(AiAgentDef agent)
     {
+        agent = agent with { Tools = ToolScopeFor(agent) };
         if (!AgentInstructionBlocks.TryGetValue(agent.Id, out var blocks)) return agent;
         var additional = string.Join("\n\n", blocks.Where(b => !string.IsNullOrWhiteSpace(b.Content))
             .Select(b => "### " + (string.IsNullOrWhiteSpace(b.Title) ? "Instrução" : b.Title.Trim()) + "\n" + b.Content.Trim()));
@@ -249,6 +259,22 @@ public sealed class AssistantStore(IAssistantStorage storage)
 
     public void DeleteConversation(string id) => storage.Delete(FileOf(id));
 
+    /// <summary>Delete all readable conversations owned by one agent across every vault, verifying each deletion.
+    /// A silent filesystem failure leaves agent settings intact so the user can retry.</summary>
+    public int DeleteAgentConversationsVerified(string agentId)
+    {
+        if (string.IsNullOrWhiteSpace(agentId)) throw new ArgumentException("Agent ID is required.", nameof(agentId));
+        var owned = ListConversations().Where(c => c.AgentId == agentId).ToList();
+        foreach (var conversation in owned)
+        {
+            var file = FileOf(conversation.Id);
+            storage.Delete(file);
+            if (storage.Read(file) is not null || storage.List().Contains(file, StringComparer.Ordinal))
+                throw new IOException("Não foi possível excluir o histórico do agente: " + conversation.Id);
+        }
+        return owned.Count;
+    }
+
     private static string FileOf(string id) => Prefix + string.Concat(id.Select(ch => char.IsLetterOrDigit(ch) || ch is '_' or '-' ? ch : '_')) + ".json";
 
     private AiConversation? Load(string name)
@@ -297,6 +323,10 @@ public sealed class AssistantStore(IAssistantStorage storage)
     {
         var policies = new JsonObject();
         foreach (var (id, policy) in c.AgentPolicies) policies[id] = policy;
+        var toolScopes = new JsonObject();
+        foreach (var (id, scope) in c.AgentToolScopes.OrderBy(p => p.Key, StringComparer.Ordinal)) toolScopes[id] = scope;
+        var delegation = new JsonObject();
+        foreach (var (id, allowed) in c.AgentDelegationAuto.OrderBy(p => p.Key, StringComparer.Ordinal)) delegation[id] = allowed;
         var images = new JsonObject();
         foreach (var (id, image) in c.AgentImages) images[id] = new JsonObject { ["providerId"] = image.ProviderId, ["model"] = image.Model };
         var memory = new JsonObject();
@@ -322,7 +352,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
         };
         return new JsonObject
         {
-            ["agentWorkspaceVersion"] = c.AgentWorkspaceVersion, ["agentPolicies"] = policies, ["agentImages"] = images,
+            ["agentWorkspaceVersion"] = c.AgentWorkspaceVersion, ["agentPolicies"] = policies, ["agentToolScopes"] = toolScopes, ["agentDelegationAuto"] = delegation, ["agentImages"] = images,
             ["web"] = web, ["version"] = c.Version, ["providers"] = new JsonArray(c.Providers.Select(p => (JsonNode)ProviderToJson(p)).ToArray()), ["providerId"] = c.ProviderId,
             ["model"] = c.Model, ["imageProviderId"] = c.ImageProviderId, ["imageModel"] = c.ImageModel,
             ["agentModels"] = agentModels, ["agentInstructionBlocks"] = instructionBlocks,
@@ -353,6 +383,11 @@ public sealed class AssistantStore(IAssistantStorage storage)
         };
         if (o["agentPolicies"] is JsonObject policies)
             foreach (var (id, policy) in policies) c.AgentPolicies[id] = Str(policy, "readonly");
+        if (o["agentDelegationAuto"] is JsonObject delegation)
+            foreach (var (id, allowed) in delegation) c.AgentDelegationAuto[id] = (bool?)allowed ?? false;
+        if (o["agentToolScopes"] is JsonObject scopes)
+            foreach (var (id, scope) in scopes)
+                if (Str(scope) is "read" or "write" or "all") c.AgentToolScopes[id] = Str(scope);
         if (o["agentImages"] is JsonObject images)
             foreach (var (id, value) in images)
                 if (value is JsonObject image) c.AgentImages[id] = new AiModelChoice(Str(image["providerId"]), Str(image["model"]));
@@ -398,6 +433,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
     {
         ["id"] = c.Id, ["title"] = c.Title, ["created"] = c.Created, ["updated"] = c.Updated, ["agentId"] = c.AgentId, ["providerId"] = c.ProviderId,
         ["model"] = c.Model, ["policy"] = c.Policy, ["vault"] = c.Vault,
+        ["originConversationId"] = c.OriginConversationId, ["originAgentId"] = c.OriginAgentId,
         ["messages"] = new JsonArray(c.Messages.Select(m => (JsonNode)m.ToJson()).ToArray()),
         ["runs"] = new JsonArray(c.Runs.Select(r => (JsonNode)new JsonObject
         {
@@ -421,6 +457,8 @@ public sealed class AssistantStore(IAssistantStorage storage)
     {
         Id = Str(o["id"]), Title = Str(o["title"]), Created = Num(o["created"]), Updated = Num(o["updated"]), AgentId = Str(o["agentId"], "geral"),
         ProviderId = o["providerId"] is JsonValue pv && pv.TryGetValue<string>(out var ps) ? ps : null, Model = Str(o["model"]), Policy = Str(o["policy"], "ask"), Vault = Str(o["vault"]),
+        OriginConversationId = o["originConversationId"] is null ? null : Str(o["originConversationId"]),
+        OriginAgentId = o["originAgentId"] is null ? null : Str(o["originAgentId"]),
         Messages = (o["messages"] as JsonArray ?? []).OfType<JsonObject>().Select(m => AiChatMessage.FromJson(m)).ToList(),
         Runs = (o["runs"] as JsonArray ?? []).OfType<JsonObject>().Select(r => new AiRunRecord
         {

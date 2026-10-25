@@ -368,3 +368,20 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 ### UC-81 — espaços por agente (pedido de 25/10/2026)
 
 - [~] Issue #756: seleção abre o chat próprio e histórico filtrado; modelos/permissões/imagens individuais; novos agentes somente leitura; presets como templates e somente Assistente por padrão; modelo device real em instalação nova e sem imagem automática. Migração e compatibilidade em ADR-0041. Branch `feat/urbe-agent-workspaces`; testes/integração/DEVICE registrados no handoff, sem declarar gate humano fechado.
+
+## UC-89 — Conversas simultâneas, colaboração entre agentes e correção de permissões (25/10/2026)
+
+- [ ] Corrigir permissões na **execução real**, expondo escopo de ferramentas e política de aprovação no mesmo seletor; ausência de concessão continua somente leitura (NN-016). Exclusões e plugins sempre requerem aprovação.
+- [ ] Simplificar Configurações → Agentes, eliminar categorias informativas redundantes e manter modelos, instruções, memória, pesquisa e acesso em lugares previsíveis.
+- [ ] Abrir conversa nova ao selecionar agente ou reiniciar o app; histórico anterior continua acessível apenas por seleção explícita.
+- [ ] Excluir agente personalizado e seus históricos de todos os vaults depois de confirmação destrutiva; verificar exclusões, preservar os dados dos demais agentes e do vault.
+- [ ] Permitir múltiplas conversas simultâneas, com cancelamento/aprovações vinculados à própria conversa e navegação entre trabalhos ativos.
+- [ ] `consult_agent`: listar perfis públicos, enviar tarefa explícita para outro agente configurado, executar numa conversa isolada com seu próprio provedor/modelo/memória/permissões e retornar o resultado; sem histórico ou memória compartilhados. Suporta perguntas posteriores ao mesmo especialista com proveniência persistida e acesso validado. Pedir autorização por padrão e bloquear escalada silenciosa de privilégios. Sem especialistas adequados, recomendar criar um.
+- [ ] Mostrar operação de consulta e estados reais na linha de atividade, com detalhes sob demanda e auditoria acessível.
+- [ ] CI Core/UI, consistência, Android/Windows e validação em aparelho físico; só após gates, nova release imutável depois da beta.29.
+
+**Rastreio:** [Issue #760](https://github.com/AbnerCruz/Ecosystem/issues/760). Alteração limitada ao Urbe C# nativo; reaproveita o executor e o armazenamento existentes; sem terceiro runtime. A direção de isolamento e apresentação progressiva é informada por:
+[Anthropic multiagent](https://platform.claude.com/docs/en/managed-agents/multiagent-orchestration),
+[OpenAI handoffs](https://openai.github.io/openai-agents-python/handoffs/) e
+[Claude sessões paralelas](https://academy.claude.com/courses/ai-native-sdlc-playbook/parallel-sessions-and-subagents).
+Nenhuma fonte é copiada como dependência. Os itens só poderão ser marcados com evidência real (NN-017/018).

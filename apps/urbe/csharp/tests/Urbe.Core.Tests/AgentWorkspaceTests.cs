@@ -105,6 +105,87 @@ public sealed class AgentWorkspaceTests
         Assert.Equal("Brief", back.AgentInstructionBlocks["one"][0].Content);
     }
 
+    [Fact]
+    public void PermissionScopeActuallyReachesRuntimeAndPersists()
+    {
+        var store = new AssistantStore(new MemoryAssistantStorage());
+        var config = store.InitializeAgentWorkspaces(null);
+        var agent = new AiAgentDef("writer", "Writer", "edit", "", "read", false, "Write notes");
+        Assert.False(AssistantAgent.AllowTool(config.AgentWithInstructions(agent), config.PolicyFor(agent.Id), "write"));
+        config.AgentToolScopes[agent.Id] = "write";
+        config.AgentPolicies[agent.Id] = "ask";
+        store.SetConfigVerified(config);
+        var loaded = store.GetConfig();
+        var effective = loaded.AgentWithInstructions(agent);
+        Assert.Equal("write", effective.Tools);
+        Assert.True(AssistantAgent.AllowTool(effective, loaded.PolicyFor(agent.Id), "write"));
+        Assert.False(AssistantAgent.AllowTool(effective, loaded.PolicyFor(agent.Id), "destructive"));
+        Assert.True(AssistantAgent.NeedsApproval("write", loaded.PolicyFor(agent.Id), false));
+        loaded.AgentPolicies[agent.Id] = "auto";
+        Assert.False(AssistantAgent.NeedsApproval("write", loaded.PolicyFor(agent.Id), false));
+        loaded.AgentToolScopes[agent.Id] = "all";
+        Assert.True(AssistantAgent.AllowTool(loaded.AgentWithInstructions(agent), loaded.PolicyFor(agent.Id), "destructive"));
+        Assert.True(AssistantAgent.NeedsApproval("destructive", "auto", false));
+        Assert.True(AssistantAgent.NeedsApproval("plugin", "auto", false));
+        loaded.AgentPolicies[agent.Id] = "readonly";
+        Assert.False(AssistantAgent.AllowTool(loaded.AgentWithInstructions(agent), loaded.PolicyFor(agent.Id), "write"));
+    }
+
+    [Fact]
+    public void RemovingAgentHistoryDeletesOnlyOwnedConversationsInEveryVault()
+    {
+        var store = new AssistantStore(new MemoryAssistantStorage());
+        store.SaveConversation(new AiConversation { Id = "one-a", AgentId = "one", Vault = "A" }, 1);
+        store.SaveConversation(new AiConversation { Id = "one-b", AgentId = "one", Vault = "B" }, 2);
+        store.SaveConversation(new AiConversation { Id = "two-a", AgentId = "two", Vault = "A" }, 3);
+        Assert.Equal(2, store.DeleteAgentConversationsVerified("one"));
+        Assert.Null(store.GetConversation("one-a"));
+        Assert.Null(store.GetConversation("one-b"));
+        Assert.NotNull(store.GetConversation("two-a"));
+        Assert.Equal(0, store.DeleteAgentConversationsVerified("one"));
+    }
+
+    private sealed class FailedDeleteStorage : IAssistantStorage
+    {
+        public readonly MemoryAssistantStorage Inner = new();
+        public string? Read(string name) => Inner.Read(name);
+        public void Write(string name, string text) => Inner.Write(name, text);
+        public void Delete(string name) { } // filesystem wrapper swallowed a failure
+        public IEnumerable<string> List() => Inner.List();
+    }
+
+    [Fact]
+    public void HistoryDeletionFailsClosedOnSilentDiskError()
+    {
+        var storage = new FailedDeleteStorage();
+        var store = new AssistantStore(storage);
+        store.SaveConversation(new AiConversation { Id = "protected", AgentId = "one", Vault = "A" }, 1);
+        Assert.Throws<IOException>(() => store.DeleteAgentConversationsVerified("one"));
+        Assert.NotNull(store.GetConversation("protected"));
+    }
+
+    [Fact]
+    public void DelegationProvenanceSurvivesStorageRoundTripWithoutSharingMessages()
+    {
+        var store = new AssistantStore(new MemoryAssistantStorage());
+        var parent = new AiConversation { Id = "parent", AgentId = "writer", Vault = "V" };
+        store.SaveConversation(parent);
+        var specialist = new AiConversation
+        {
+            Id = "child", AgentId = "artist", OriginConversationId = parent.Id,
+            OriginAgentId = parent.AgentId, Vault = "V",
+            Messages = [new AiChatMessage { Role = "user", Content = [AiChatBlock.TextBlock("Gere um desenho")] }]
+        };
+        store.SaveConversation(specialist);
+        var read = Assert.IsType<AiConversation>(store.GetConversation("child"));
+        Assert.Equal("parent", read.OriginConversationId);
+        Assert.Equal("writer", read.OriginAgentId);
+        Assert.Equal("artist", read.AgentId);
+        Assert.Single(read.Messages);
+        Assert.Empty(store.GetConversation("parent")!.Messages);
+        Assert.Null(store.GetConversation("parent")!.OriginConversationId);
+    }
+
     [Theory]
     [InlineData("{broken")]
     [InlineData("{\"version\":99}")]

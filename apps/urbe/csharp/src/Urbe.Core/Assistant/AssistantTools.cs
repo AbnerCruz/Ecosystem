@@ -93,6 +93,17 @@ public interface IAssistantHost
     AssistantWebSession? Web => null;
     /// <summary>Explicitly read-only view of authored graph documents in this vault.</summary>
     IAssistantGraphs? Graphs => null;
+    /// <summary>Agent-to-agent requests transmit only the explicit task, never another chat or memory.</summary>
+    IAssistantDelegation? Delegation => null;
+}
+
+/// <summary>A configured public agent profile, without private memory or chat contents.</summary>
+public sealed record AiDelegateTarget(string Id, string Name, string Description, bool CanGenerateImages);
+
+public interface IAssistantDelegation
+{
+    IReadOnlyList<AiDelegateTarget> Targets { get; }
+    Task<string> ConsultAsync(string agentId, string task, string? conversationId = null);
 }
 
 /// <summary>A tool the agents use (tools.js def): name, description, JSON Schema, access, label, preview and run.</summary>

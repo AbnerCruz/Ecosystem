@@ -60,7 +60,7 @@ public static class AssistantMemoryTools
         new()
         {
             Name = "learn_memory", Access = "memory",
-            Description = "Registra um fato, preferência, decisão, objetivo ou PROCEDIMENTO aprendido. Registre procedimentos apenas com evidência de que funcionaram. Evite segredos, conjecturas e conteúdo extenso de notas. Escopo vault ou agent.",
+            Description = "Registra um fato, preferência, decisão, objetivo ou PROCEDIMENTO aprendido. Registre procedimentos apenas com evidência de que funcionaram. Evite segredos, conjecturas e conteúdo extenso de notas. Escopo agent é privado e padrão; vault é compartilhado entre agentes do mesmo vault e só deve ser escolhido a pedido do usuário.",
             Parameters = Schema("""{"type":"object","properties":{"fact":{"type":"string"},"kind":{"type":"string","enum":["fact","preference","decision","goal","procedure","observation"]},"scope":{"type":"string","enum":["vault","agent"]},"source_note":{"type":"string"}},"required":["fact","kind"],"additionalProperties":false}"""),
             Label = i => "Aprender " + Get(i, "kind", "fact") + ": " + Get(i, "fact")[..Math.Min(50, Get(i, "fact").Length)],
             Run = (i, host) =>
@@ -68,7 +68,7 @@ public static class AssistantMemoryTools
                 var path = Get(i, "source_note");
                 if (path.Length > 0 && host.Documents.Get(path) is null)
                     throw new AiToolException("A fonte citada não existe no vault.");
-                var memory = host.StoreMemory(Get(i, "fact"), Get(i, "kind"), Get(i, "scope", "vault"), path);
+                var memory = host.StoreMemory(Get(i, "fact"), Get(i, "kind"), Get(i, "scope", "agent"), path);
                 return Task.FromResult(new AiToolOutput("Memória salva com ID " + memory.Id + ". Fonte: " +
                     (path.Length > 0 ? path : "conversa") + "."));
             }

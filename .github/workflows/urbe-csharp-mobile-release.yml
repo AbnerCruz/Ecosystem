@@ -181,6 +181,8 @@ jobs:
           - Explorer, editor Visual e Fonte, fórmulas, comentários e tags; estúdio de páginas; HTML, PDF, áudio e vídeo;
           - Conexões de cada nota num desenho calmo (Mais ações → Conexões);
           - Assistente (IA) com o provedor que você conectar; plugins nativos (Relógio);
+          - UC-89: agentes com permissões unificadas, multichat, histórico isolado e delegação segura entre especialistas;
+          - UX da IA: configurações simplificadas, conversas novas ao abrir agentes e atividade de ferramentas auditável;
           - backup, exportação e restauração; lixeira e versões anteriores das notas.
 
           No Windows: baixe o Urbe-CSharp-$VERSION-Windows-x64.zip, extraia e abra o Urbe.exe (não precisa instalar nada).

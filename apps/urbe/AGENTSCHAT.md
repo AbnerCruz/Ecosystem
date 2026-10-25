@@ -644,3 +644,10 @@
 - Feito: espaços e histórico por agente/vault; configurações individuais e readonly; templates; modelo local real em instalação nova, sem imagem automática; setas de etapas removidas sem perder auditoria lazy.
 - Dados: ADR-0041 e DATA-CATALOG; backup privado verificado/idempotente, nenhuma conversa reatribuída; AgentId antigo mantido com aviso sobre participação mista histórica.
 - Próximos passos: testes Core/UI, consistency, revisão do diff e PR crítico pelo integrador; Android físico continua pendente.
+
+### 2026-10-25 — ChatGPT — UC-89/Issue #760
+- Estado: implementação em verificação na branch `fix/urbe-agent-permissions-session-delete-20261025`.
+- Escopo: corrigir permissões efetivas, reformular Configurações → Agentes, iniciar conversas novas, excluir agente+histórico com confirmação, multichat concorrente e consulta segura entre agentes.
+- Decisão de implementação: usar `AssistantStore`, `AssistantAgent` e UI Avalonia existentes; sem novo runtime, sem acesso transversal a memória/chat. Delegação opt-in/autônoma condicionada à proteção de privilégios.
+- Verificação: testes adicionados; CI ainda não executado; Android físico pendente; release não declarada.
+- Próximo passo: PR para CI e revisão governada, corrigir falhas apontadas, validação em aparelho e nova release oficial depois da beta.29.

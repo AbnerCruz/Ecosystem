@@ -516,6 +516,7 @@ public static class AssistantAgent
         public IAssistantNames? Names => inner.Names;
         public IAssistantImages? Images => inner.Images;
         public AssistantWebSession? Web => inner.Web;
+        public IAssistantDelegation? Delegation => inner.Delegation;
     }
 
     private sealed record Out(string Content, bool IsError = false, string? Status = null, IReadOnlyList<AiChange>? Changes = null, IReadOnlyList<(string Path, AiPartial? Partial)>? Reads = null);

@@ -34,6 +34,8 @@ public sealed partial class AssistantPanel
             : needsAnswer ? "Aguardando sua resposta"
             : running && last is not null ? ActivityVerb(last.Name)
             : running ? "Analisando o pedido"
+            : _conv.Runs.LastOrDefault()?.Stopped == "aborted" ? "Execução interrompida"
+            : _conv.Runs.LastOrDefault()?.Stopped == "error" ? "Execução com erro"
             : calls.Any(x => ResultFor(x.Block.Id) is { IsError: true }) ? "Atividade concluída com alertas"
             : calls.Count > 0 ? "Trabalho realizado" : "Análise concluída";
 
@@ -57,7 +59,7 @@ public sealed partial class AssistantPanel
         var detail = calls.Count == 0 ? (running ? "Preparando as próximas etapas" : "Processamento concluído")
             : calls.Count == 1 ? "1 operação · tocar para ver os detalhes"
             : calls.Count + " operações · tocar para explorar as etapas";
-        header.Children.Add(Wrap(calls.Count > 0 ? calls.Count + " operações" + outcomes + " · Ver atividade" : detail, 11, UrbeTheme.Text2));
+        header.Children.Add(Wrap(calls.Count > 0 ? calls.Count + (calls.Count == 1 ? " operação" : " operações") + outcomes + " · Detalhes" : detail, 11, UrbeTheme.Text2));
         if (running && !UrbeTokens.Motion.Reduced)
             header.Children.Add(new ProgressBar
             {
@@ -101,9 +103,10 @@ public sealed partial class AssistantPanel
         var root = new StackPanel { Spacing = 9 };
         root.Children.Add(new Border
         {
-            CornerRadius = new CornerRadius(0), Padding = new Thickness(12, 8, 0, 8),
+            CornerRadius = new CornerRadius(0),
+            Padding = new Thickness(6, 7, 2, 7),
             Background = Brushes.Transparent,
-            BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent, .46), BorderThickness = new Thickness(2, 0, 0, 0),
+            BorderThickness = new Thickness(0),
             Child = fold
         });
 
@@ -124,6 +127,7 @@ public sealed partial class AssistantPanel
         "generate_image" => "Criando uma imagem",
         "write_page" or "page_schema" => "Preparando uma página",
         "delegate_research" => "Pesquisando com outro agente",
+        "consult_agent" => "Consultando especialista",
         "web_search" => "Pesquisando na internet",
         "web_fetch" => "Analisando fontes públicas",
         _ => "Executando uma etapa"

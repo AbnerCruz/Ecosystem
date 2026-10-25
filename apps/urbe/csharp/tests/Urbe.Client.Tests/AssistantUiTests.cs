@@ -149,23 +149,25 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains("sk-or-teste", File.ReadAllText(Path.Combine(UrbeApp.AssistantFolder!, "config.json")));
                 Assert.DoesNotContain(Directory.GetFiles(vault, "*", SearchOption.AllDirectories), f => File.ReadAllText(f).Contains("sk-or-teste"));
 
-                // a new panel (next launch) finds the recent conversation of this vault again
+                // The next launch starts fresh; the original conversation stays in explicit history.
                 var again = new AssistantPanel(view, new FolderAssistantStorage(UrbeApp.AssistantFolder!));
                 again.Open();
-                Assert.Equal(panel.Conversation.Id, again.Conversation.Id);
-                Assert.Equal("Troque a primeira tarefa", again.Conversation.Title);
+                Assert.NotEqual(panel.Conversation.Id, again.Conversation.Id);
+                Assert.Empty(again.Conversation.Messages);
+                Assert.Equal("Troque a primeira tarefa", new AssistantStore(
+                    new FolderAssistantStorage(UrbeApp.AssistantFolder!)).GetConversation(panel.Conversation.Id)!.Title);
                 // Regression: preserve the full settings layout and the new memory and network tabs.
                 panel.ShowSettings();
                 Assert.Equal("Configurações", panel.ViewTitle);
                 Assert.Contains("Provedores de modelo", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 ClickNamed(panel, "Configurações: Agentes");
-                Assert.Contains("Agentes personalizados", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
+                Assert.Contains("+ Novo agente", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 ClickNamed(panel, "Configurações: Contexto");
                 Assert.Contains("Gerenciar memórias", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 ClickNamed(panel, "Configurações: Pesquisa");
                 Assert.Contains("Privacidade e pesquisa", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
-                ClickNamed(panel, "Configurações: Execução");
-                Assert.Contains("Profundidade da investigação", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
+                ClickNamed(panel, "Configurações: Agentes");
+                Assert.Contains("+ Novo agente", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 return true;
             }
             finally
@@ -443,7 +445,7 @@ public sealed partial class HeadlessUiTests
                 var folded = panel.Log.Children.OfType<Expander>().ToList();
                 Assert.Equal(10, folded.Count);
                 Assert.All(folded, x => Assert.Null(x.Content));   // built only when opened
-                Assert.Contains("10 passos", panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
+                Assert.Contains("Trabalho realizado · 10 operações", panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
                 folded[0].IsExpanded = true;
                 Dispatcher.UIThread.RunJobs();
                 Assert.Equal(10, ((Panel)folded[0].Content!).Children.Count);
