@@ -57,10 +57,10 @@
     {
       "kind": "human",
       "check": "Android físico: IME, alternância de agentes ativos, aprovação, geração de imagem delegada, instalação/atualização",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
-      "evidence": "Não houve execução no aparelho; nenhuma release nova declarada."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-25 (Issue https://github.com/AbnerCruz/Ecosystem/issues/769); registro em docs/governance/responses/VAL-HO-20261025-urbe-agent-multichat-uc89-5d58c9f7432a.md."
     }
   ],
   "known_issues": [
