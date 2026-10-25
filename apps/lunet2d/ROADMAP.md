@@ -24,6 +24,7 @@ A conexão UI do Tile Studio pertence à entrega F5; não bloqueia seu próprio 
 Não ampliar instrumentação de áudio enquanto esses fluxos estiverem ausentes.
 
 - [~] **LUNET-440 — Sprite e animação utilizáveis (Issue #775):** tela Android com desenho, frames, playback, persistência fonte e exportação de spritesheet. Primeiro incremento; não equivale aos Studios completos.
+- [~] **LUNET-442 — Sprite Studio ferramentas de desenho (Issue #779):** linha, retângulo, preenchimento, espelhamento vertical, cor ARGB, grade e zoom/pan por toque; build/DEVICE pendentes. Sem declarar layers, seleção e estados concluídos.
 - [ ] APK do **jogo**: antecipar o experimento de F9 e sua integração visível; o APK do IDE e exportar ZIP não satisfazem esse item. Fallback GitHub somente com execução e artefato reais.
 - [ ] Em seguida: Assets/Tile/Audio/UI Studios e demais editores de F5, com melhoria contínua da navegação. Física, áudio, A* e todo o restante do roadmap permanecem requisitos.
 
@@ -238,7 +239,7 @@ Integração transversal autorizada pelo Ecosystem (não altera o gate de Framew
 Gate: a maior parte dos assets/dados necessários pode ser produzida dentro do Lunet, com fonte inspecionável e editável fora do Studio (§13). As ferramentas usam o `Lunet.Editor.SDK` (criado na Fase 6 ou antes, ver ADR).
 
 - [ ] Painel Assets no workspace: lista os arquivos de `Content/` com prévia e uso (movido da Fase 3).
-- [ ] Sprite Studio: pixel art, layers, frames, timeline, onion skin, paletas, lápis, borracha, balde, conta-gotas, linhas, formas, seleção, laço, transformar, flip, rotate, simetria, grade, zoom, spritesheet, preview de animação, importar/exportar PNG, transparência, toque e stylus.
+- [ ] Sprite Studio: pixel art, layers, frames, timeline, onion skin, paletas, lápis, borracha, balde, conta-gotas, linhas, formas, seleção, laço, transformar, flip, rotate, simetria, grade, zoom, spritesheet, preview de animação, importar/exportar PNG, transparência, toque e stylus. LUNET-440 integrado parcialmente; LUNET-442/#779 adiciona linha, retângulos, flip vertical, cor ARGB, zoom/pan e grade, ainda sem layers, seleção/laço, rotação, simetria, timeline com eventos ou validação em DEVICE.
 - [ ] Tile Studio: tilesets, edição de mapas, layers, camada de colisão, propriedades, autotiling, brushes, preview.
 - [ ] Animation Studio: clips, timeline, frames, eventos, playback, animação de sprites, estados.
 - [ ] Atlas Studio: criação de atlas, packing, preview, metadata; inclui o pipeline de conteúdo com cache de assets processados em disco e invalidação (movido da Fase 2: só faz sentido com uma etapa de processamento real).
