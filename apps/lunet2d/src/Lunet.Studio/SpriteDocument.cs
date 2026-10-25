@@ -63,6 +63,33 @@ public sealed class SpriteDocument
             if (p < pixels.Length - Width) Visit(p + Width);
         }
     }
+    /// <summary>Desenha o contorno ou preenche um retângulo entre dois pixels, com recorte seguro na imagem.</summary>
+    public void Rectangle(int frame, int x0, int y0, int x1, int y1, uint color, bool filled = false)
+    {
+        int left = Math.Clamp(Math.Min(x0, x1), 0, Width);
+        int right = Math.Clamp(Math.Max(x0, x1), -1, Width - 1);
+        int top = Math.Clamp(Math.Min(y0, y1), 0, Height);
+        int bottom = Math.Clamp(Math.Max(y0, y1), -1, Height - 1);
+        if (left > right || top > bottom) return;
+        var pixels = Frames[frame];
+        for (int y = top; y <= bottom; y++)
+        for (int x = left; x <= right; x++)
+            if (filled || x == left || x == right || y == top || y == bottom)
+                pixels[y * Width + x] = color;
+    }
+
+    /// <summary>Espelha um frame verticalmente, preservando os demais frames.</summary>
+    public void FlipVertical(int frame)
+    {
+        var pixels = Frames[frame];
+        for (int y = 0; y < Height / 2; y++)
+        for (int x = 0; x < Width; x++)
+        {
+            int top = y * Width + x, bottom = (Height - y - 1) * Width + x;
+            (pixels[top], pixels[bottom]) = (pixels[bottom], pixels[top]);
+        }
+    }
+
     public void FlipHorizontal(int frame)
     {
         var pixels = Frames[frame];
