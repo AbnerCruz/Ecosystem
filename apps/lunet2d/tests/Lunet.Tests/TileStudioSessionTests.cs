@@ -54,7 +54,7 @@ public sealed class TileStudioSessionTests
     {
         var edit = new TileStudioSession(TileMap.Create("Textures/a.png", 2, 2, 8, 8), 1);
         edit.BeginStroke();
-        Assert.False(edit.Paint(0, 0) is false); // tile 1 changes empty cell
+        Assert.True(edit.Paint(0, 0));
         Assert.True(edit.EndStroke());
         edit.BeginStroke();
         Assert.False(edit.Paint(0, 0));
