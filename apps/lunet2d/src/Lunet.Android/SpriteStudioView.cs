@@ -1,3 +1,4 @@
+using Android.App;
 using Android.Content;
 using Android.Graphics;
 using Android.Views;
@@ -19,7 +20,9 @@ internal sealed class SpriteStudioView : LinearLayout
     private int _frame;
     private uint _color = 0xff8b5cf6;
     private string _tool = "Lápis";
-    private bool _playing, _onion;
+    private int _zoom = 1;
+    private float _panX, _panY;
+    private bool _playing, _onion, _grid = true;
     private readonly Action _tick;
     private readonly Button _play;
 
@@ -33,7 +36,13 @@ internal sealed class SpriteStudioView : LinearLayout
         _canvas = new PixelCanvas(context, this);
         _timeline = new LinearLayout(context) { Orientation = Orientation.Horizontal };
         Row(("← Código", close), ("Salvar", Save), ("Exportar PNG", () => { Stop(); Save(); export(_document); }));
-        Row(("Lápis", () => Tool("Lápis")), ("Borracha", () => Tool("Borracha")), ("Balde", () => Tool("Balde")), ("Conta-gotas", () => Tool("Conta-gotas")));
+        Row(("Lápis", () => Tool("Lápis")), ("Borracha", () => Tool("Borracha")), ("Balde", () => Tool("Balde")),
+            ("Conta-gotas", () => Tool("Conta-gotas")), ("Linha", () => Tool("Linha")),
+            ("Retângulo", () => Tool("Retângulo")), ("Ret. cheio", () => Tool("Retângulo cheio")));
+        Row(("Zoom +", () => Zoom(+1)), ("Zoom −", () => Zoom(-1)),
+            ("Centralizar", () => { _panX = _panY = 0; _zoom = 1; Refresh(); }),
+            ("Mover tela", () => Tool("Mover")), ("Cor ARGB", ChooseColor),
+            ("Grade", () => { _grid = !_grid; Refresh(); }));
         var colors = new LinearLayout(context) { Orientation = Orientation.Horizontal };
         foreach (uint color in new uint[] { 0xff171923, 0xffffffff, 0xff8b5cf6, 0xff38bdf8, 0xff34d399, 0xfffacc15, 0xfffb923c, 0xfff472b6, 0xffef4444 })
         {
@@ -52,7 +61,8 @@ internal sealed class SpriteStudioView : LinearLayout
         _play = (Button)playback.GetChildAt(0)!;
         Row(("↶ Desfazer", () => { Stop(); _document = _history.Undo(_document); AfterEdit(); }),
             ("↷ Refazer", () => { Stop(); _document = _history.Redo(_document); AfterEdit(); }),
-            ("Espelhar", () => Change(() => _document.FlipHorizontal(_frame))));
+            ("Espelhar H", () => Change(() => _document.FlipHorizontal(_frame))),
+            ("Espelhar V", () => Change(() => _document.FlipVertical(_frame))));
         _tick = () => { if (!_playing) return; _frame = (_frame + 1) % _document.Frames.Count; _canvas.Invalidate(); PostDelayed(_tick!, 1000 / _document.Fps); };
         Refresh();
     }
@@ -68,6 +78,28 @@ internal sealed class SpriteStudioView : LinearLayout
         var scroll = new HorizontalScrollView(Context); scroll.AddView(row); AddView(scroll); return row;
     }
     private void Tool(string value) { Stop(); _tool = value; Refresh(); }
+    private void Zoom(int direction)
+    {
+        Stop();
+        _zoom = Math.Clamp(_zoom + direction, 1, 8);
+        if (_zoom == 1) _panX = _panY = 0;
+        Refresh();
+    }
+    private void ChooseColor()
+    {
+        var entry = new EditText(Context) { Text = $"#{_color:X8}", Hint = "#AARRGGBB" };
+        entry.SetSingleLine(true);
+        new AlertDialog.Builder(Context)!.SetTitle("Cor personalizada · ARGB hexadecimal")!.SetView(entry)!
+            .SetNegativeButton("Cancelar", (_, _) => { })!
+            .SetPositiveButton("Aplicar", (_, _) =>
+            {
+                string hex = (entry.Text ?? "").Trim().TrimStart('#');
+                if (hex.Length != 8 || !uint.TryParse(hex, System.Globalization.NumberStyles.HexNumber,
+                    System.Globalization.CultureInfo.InvariantCulture, out uint selected))
+                { _status.Text = "Cor inválida: use 8 dígitos (ex.: #FFFF0000)."; return; }
+                _color = selected; Tool("Lápis");
+            })!.Show();
+    }
     private void Stop() { _playing = false; if (_tick is not null) RemoveCallbacks(_tick); if (_play is not null) _play.Text = "▶ Play"; }
     private void TogglePlay() { if (_playing) { Stop(); return; } _playing = true; _play.Text = "■ Parar"; Post(_tick); }
     private void Change(Action mutation) { Stop(); _history.Checkpoint(_document); mutation(); AfterEdit(); }
@@ -80,7 +112,7 @@ internal sealed class SpriteStudioView : LinearLayout
     }
     private void Refresh()
     {
-        _canvas.Invalidate(); _status.Text = $"Frame {_frame + 1}/{_document.Frames.Count} · {_document.Fps} FPS · {_tool}";
+        _canvas.Invalidate(); _status.Text = $"Frame {_frame + 1}/{_document.Frames.Count} · {_document.Fps} FPS · {_tool} · zoom {_zoom}×";
         _timeline.RemoveAllViews();
         for (int i = 0; i < _document.Frames.Count; i++)
         {
