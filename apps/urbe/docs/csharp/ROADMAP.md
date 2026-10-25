@@ -376,7 +376,7 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 - [ ] Abrir conversa nova ao selecionar agente ou reiniciar o app; histórico anterior continua acessível apenas por seleção explícita.
 - [ ] Excluir agente personalizado e seus históricos de todos os vaults depois de confirmação destrutiva; verificar exclusões, preservar os dados dos demais agentes e do vault.
 - [ ] Permitir múltiplas conversas simultâneas, com cancelamento/aprovações vinculados à própria conversa e navegação entre trabalhos ativos.
-- [ ] `consult_agent`: listar perfis públicos, enviar tarefa explícita para outro agente configurado, executar numa conversa isolada com seu próprio provedor/modelo/memória/permissões e retornar o resultado; sem histórico ou memória compartilhados. Pedir autorização por padrão e bloquear escalada silenciosa de privilégios. Sem especialistas adequados, recomendar criar um.
+- [ ] `consult_agent`: listar perfis públicos, enviar tarefa explícita para outro agente configurado, executar numa conversa isolada com seu próprio provedor/modelo/memória/permissões e retornar o resultado; sem histórico ou memória compartilhados. Suporta perguntas posteriores ao mesmo especialista com proveniência persistida e acesso validado. Pedir autorização por padrão e bloquear escalada silenciosa de privilégios. Sem especialistas adequados, recomendar criar um.
 - [ ] Mostrar operação de consulta e estados reais na linha de atividade, com detalhes sob demanda e auditoria acessível.
 - [ ] CI Core/UI, consistência, Android/Windows e validação em aparelho físico; só após gates, nova release imutável depois da beta.29.
 
