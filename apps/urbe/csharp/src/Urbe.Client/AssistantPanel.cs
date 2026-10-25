@@ -741,6 +741,8 @@ public sealed partial class AssistantPanel : Border
         var userRequest = conv.Messages.LastOrDefault(m => m.Role == "user" && m.Meta?.ToolResults != true)?
             .Content.FirstOrDefault(b => b.Type == "text" && !b.Hidden)?.Text;
         var agentName = AgentNames.CallName(agent, _cfg);
+        var availableTools = web is null ? ToolsFor(p).ToList()
+            : ToolsFor(p).Concat(AssistantWebTools.All).ToList();
         // Explicit network grant per agent, independent of vault-read permissions.
         using var web = _cfg.Web.Allowed(agent.Id)
             ? new AssistantWebSession(_cfg.Web, cts.Token, existingSources: conv.WebSources) : null;
@@ -761,9 +763,7 @@ public sealed partial class AssistantPanel : Border
                 VaultName = _app.VaultName,
                 Stream = Providers.StreamAsync, Approve = (req, token) => ApproveAsync(conv, req, token),
                 OnUpdate = e => OnUpdateFor(conv, e),
-                Tools = target is not null
-                    ? (web is null ? ToolsFor(p) : [.. ToolsFor(p), .. AssistantWebTools.All]).Where(t => t.Name != "consult_agent").ToList()
-                    : web is null ? ToolsFor(p) : [.. ToolsFor(p), .. AssistantWebTools.All]
+                Tools = target is null ? availableTools : availableTools.Where(t => t.Name != "consult_agent").ToList()
             });
             run.Changes = r.Changes;
             run.Stopped = r.Stopped;
