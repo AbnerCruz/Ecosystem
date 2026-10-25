@@ -27,7 +27,6 @@ public static class AssistantDelegateTools
             }
             var task = ((string?)i["task"] ?? "").Trim();
             if (task.Length == 0) throw new AiToolException("Explique a tarefa que deseja enviar ao especialista.");
-            if (task.Length > 12000) throw new AiToolException("Resuma o pedido ao especialista em até 12.000 caracteres; não envie a conversa inteira.");
             return new AiToolOutput(await gateway.ConsultAsync(agentId, task));
         }
     };
