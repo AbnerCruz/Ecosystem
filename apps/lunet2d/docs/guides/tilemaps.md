@@ -36,7 +36,7 @@ var loaded = TileMap.Parse(json); // mesmo contrato aceito pelo jogo
 
 Nomes de camada são únicos, não vazios e sensíveis a maiúsculas. O mapa exige de 1 a 32 camadas e no máximo 1.048.576 células; tiles negativos são recusados. Remover um layer ou substituir seu maior ID atualiza o limite de tileset necessário no desenho. Edições alocam cópias, adequadas à autoria fora do frame quente; as consultas do runtime permanecem sem alocação.
 
-**Escopo:** é uma ponte de dados funcional, não o editor gráfico da Fase 5. Importação/exportação JSON entre uma futura ferramenta e o runtime está especificada e testada; a UI Tile Studio, sua persistência e a validação em Android continuam pendentes.
+**Escopo histórico da ponte F4:** era apenas uma ponte de dados. O primeiro editor gráfico Android de Fase 5 é descrito em [tile-studio.md](tile-studio.md). Importação/exportação JSON entre uma futura ferramenta e o runtime está especificada e testada; a UI Tile Studio, sua persistência e a validação em Android continuam pendentes.
 
 ## Contrato v1 e exportação sem perda
 
