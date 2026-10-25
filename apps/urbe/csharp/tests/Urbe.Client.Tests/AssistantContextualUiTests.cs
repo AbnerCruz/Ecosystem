@@ -111,7 +111,7 @@ public sealed partial class HeadlessUiTests
                 var draft = view.AssistantMini.GetLogicalDescendants().OfType<TextBox>().Single(t => Avalonia.Automation.AutomationProperties.GetName(t) == "Texto proposto");
                 draft.Text = "# Uma proposta editada à mão";
                 panel.Open();
-                ClickNamed(panel, "Voltar"); // Close the agent chooser; do not create a new chat.
+                if (panel.ViewTitle is not null) ClickNamed(panel, "Voltar"); // Compact reopen may already show the chat.
                 Dispatcher.UIThread.RunJobs();
                 Assert.Contains(panel.GetLogicalDescendants().OfType<TextBox>(), t => t.Text == "# Uma proposta editada à mão");
                 panel.Close();
