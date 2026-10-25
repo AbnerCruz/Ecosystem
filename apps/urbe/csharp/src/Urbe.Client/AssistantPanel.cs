@@ -744,8 +744,9 @@ public sealed partial class AssistantPanel : Border
         // Explicit network grant per agent, independent of vault-read permissions.
         using var web = _cfg.Web.Allowed(agent.Id)
             ? new AssistantWebSession(_cfg.Web, cts.Token, existingSources: conv.WebSources) : null;
-        var availableTools = web is null ? ToolsFor(p).ToList()
-            : ToolsFor(p).Concat(AssistantWebTools.All).ToList();
+        // Provider was explicitly checked before the async run; the analyzer can lose the refinement after awaits.
+        var availableTools = web is null ? ToolsFor(p!).ToList()
+            : ToolsFor(p!).Concat(AssistantWebTools.All).ToList();
         PlatformAssistantActivity.RequestNotificationPermission?.Invoke();
         PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(AssistantActivityKind.Running, agentName, conv.Id));
         try
