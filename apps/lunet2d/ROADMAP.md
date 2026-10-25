@@ -25,7 +25,7 @@ Não ampliar instrumentação de áudio enquanto esses fluxos estiverem ausentes
 
 - [~] **LUNET-440 — Sprite e animação utilizáveis (Issue #775):** tela Android com desenho, frames, playback, persistência fonte e exportação de spritesheet. Primeiro incremento; não equivale aos Studios completos.
 - [ ] APK do **jogo**: antecipar o experimento de F9 e sua integração visível; o APK do IDE e exportar ZIP não satisfazem esse item. Fallback GitHub somente com execução e artefato reais.
-- [ ] Em seguida: Assets/Tile/Audio/UI Studios e demais editores de F5, com melhoria contínua da navegação. Física, áudio, A* e todo o restante do roadmap permanecem requisitos.
+- [~] **LUNET-441 — Primeiro Tile Studio (Issue #777):** editor Android por toque, tileset PNG, camadas, colisão, desfazer/refazer e JSON v1 conectado ao runtime; CI/DEVICE pendentes. Autotiling, propriedades, brushes avançados e zoom continuam F5.\n- [ ] Em seguida: Assets/Tile/Audio/UI Studios e demais editores de F5, com melhoria contínua da navegação. Física, áudio, A* e todo o restante do roadmap permanecem requisitos.
 
 ## Estado atual
 
@@ -239,7 +239,7 @@ Gate: a maior parte dos assets/dados necessários pode ser produzida dentro do L
 
 - [ ] Painel Assets no workspace: lista os arquivos de `Content/` com prévia e uso (movido da Fase 3).
 - [ ] Sprite Studio: pixel art, layers, frames, timeline, onion skin, paletas, lápis, borracha, balde, conta-gotas, linhas, formas, seleção, laço, transformar, flip, rotate, simetria, grade, zoom, spritesheet, preview de animação, importar/exportar PNG, transparência, toque e stylus.
-- [ ] Tile Studio: tilesets, edição de mapas, layers, camada de colisão, propriedades, autotiling, brushes, preview.
+- [ ] Tile Studio: tilesets, edição de mapas, layers, camada de colisão, propriedades, autotiling, brushes, preview. **LUNET-441 / #777 em revisão:** edição por toque, escolha visual de tileset, pintura/borracha, camadas, visibilidade/colisão e desfazer/refazer usando TileMap JSON v1; ainda faltam zoom/pan, brushes múltiplos, autotiling, propriedades, preview do jogo e validação Android.
 - [ ] Animation Studio: clips, timeline, frames, eventos, playback, animação de sprites, estados.
 - [ ] Atlas Studio: criação de atlas, packing, preview, metadata; inclui o pipeline de conteúdo com cache de assets processados em disco e invalidação (movido da Fase 2: só faz sentido com uma etapa de processamento real).
 - [ ] UI Studio: layouts, âncoras, margens, tamanhos, nine-slice, fontes, temas/skins, preview.

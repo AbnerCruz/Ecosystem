@@ -1,0 +1,110 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261025-lunet-tile-studio",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-25T20:37:22.571Z",
+  "agent": {
+    "id": "chatgpt-lunet-tile-studio",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-441",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-tile-studio-20261025",
+  "base_commit": "e06c97aa37d3cd9ef2be478c508fbbadfb8d0911",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Studio/Lunet.Studio.csproj",
+    "apps/lunet2d/src/Lunet.Studio/TileStudioSession.cs",
+    "apps/lunet2d/src/Lunet.Android/TileStudioView.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Studio.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TileStudioSessionTests.cs",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/docs/guides/tile-studio.md",
+    "apps/lunet2d/docs/guides/tilemaps.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261025-lunet-tile-studio.json"
+  ],
+  "work_completed": [
+    "Editor Android inicial com tileset PNG, pintura/borracha, camadas, colisão, visibilidade, undo/redo e arquivo JSON v1 no mesmo projeto.",
+    "Integração na barra Arte do workspace existente, sem reescrever runtime, física, A* ou áudio.",
+    "Testes portáteis do histórico de gestos, colisão e roundtrip; guia de teste e roadmap atualizados."
+  ],
+  "verification": [
+    {
+      "check": "Compilação .NET, testes e consistency em GitHub Actions",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Sem SDK dotnet no ambiente atual; pipeline de PR ainda será acionado."
+    },
+    {
+      "check": "Tile Studio em Android físico",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/tile-studio.md",
+      "critical": false,
+      "evidence": "Roteiro fornecido; não inferir de CI."
+    }
+  ],
+  "known_issues": [
+    "LUNET-441 é incremento parcial: sem zoom/pan, brushes avançados, autotiling, preview A*/física e propriedades arbitrárias.",
+    "APK do jogo ausente; pipeline existente gera apenas APK da IDE.",
+    "Validação do compilador e dispositivo Android pendentes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Conferir CI .NET e compilação Android do PR; corrigir erros antes de integração.",
+    "Validar editor e regressão Sprite Studio em aparelho.",
+    "Prosseguir experimento de build APK do jogo, em prioridade elevada."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/docs/adr/0007-framework-ide-studio-code-first.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "TileMap JSON v1 existente permanece única fonte de verdade para editor e runtime."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Sem dependência entre produtos; Studio consome framework do Lunet."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Tarefa #777 e ROADMAP persistem direção de produto."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente explicitamente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Não marcado concluído; CI ainda em verificação."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Não foi extraído módulo de plataforma; reutilização da API TileMap existente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "tile-studio",
+      "status": "product-specific",
+      "rationale": "Ferramenta especializada do Lunet, sem segundo consumidor real; reutiliza TileMap do runtime existente."
+    }
+  ],
+  "commit": null,
+  "pr": null
+}
