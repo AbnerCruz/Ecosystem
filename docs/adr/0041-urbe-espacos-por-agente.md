@@ -28,9 +28,8 @@ Opção 3, conforme o pedido explícito atual. Sem nova infraestrutura.
 
 Identidade e instruções permanecem em AiAgentDef/CustomAgents; modelos e blocos
 continuam em AgentModels/AgentInstructionBlocks. Acrescentar AgentPolicies e
-AgentImages por ID estável em config.json, com agentWorkspaceVersion=1. Conversas
-mantêm AgentId e seus arquivos atuais; filtro usa AgentId e Vault. Trocar de
-agente nunca reatribui uma conversa. Configuração individual é autoridade da
+AgentImages por ID estável em config.json, com agentWorkspaceVersion=1. A correção do seletor de capacidades acrescenta `agentToolScopes:{id:"read"|"write"|"all"}` como campo opcional aditivo: `AiConfig.ToolScopeFor` determina o teto efetivo das ferramentas que o executor oferece; `AgentPolicies` decide se o escopo permite gravação e quando solicitar aprovação. As duas escolhas são feitas atomicamente pelo mesmo diálogo de permissões. Ausência de um escopo explícito mantém o `AiAgentDef.Tools` legado (sem concessões implícitas). Conversas
+mantêm AgentId e seus arquivos atuais; filtro usa AgentId e Vault. Selecionar um agente abre uma conversa **nova**, sem reatribuir uma conversa antiga. O usuário pode retomar uma conversa anterior explicitamente pelo histórico filtrado daquele agente e vault. A abertura do app também não retoma automaticamente o último chat. Configuração individual é autoridade da
 política de execução, nunca o campo Policy de um chat antigo. Sem configuração
 individual explícita: readonly. Não inferir concessão de escrita a partir de
 política global ou histórica. AllowTool/NeedsApproval continuam fiscalizando
@@ -72,8 +71,7 @@ conversas não precisam ser restauradas porque não foram migradas.
 Core testa defaults, separação por agente/vault, idempotência, backup, versão
 futura, falha de escrita e round-trip de modelos/permissões/imagens/instruções.
 UI testa seleção, retomada e reinicialização com persistência real. Os testes
-anteriores de escrita devem configurar permissões explicitamente. Sem novas
-dependências e sem alteração do vault, providers HTTP ou regras de aprovação.
+anteriores de escrita devem configurar permissões explicitamente. A exclusão voluntária de um agente personalizado requer confirmação destrutiva e remove as conversas legíveis cujo `AgentId` corresponde, em todos os vaults, verificando cada remoção. Falha de exclusão preserva a configuração do agente e não pode ser relatada como sucesso. A remoção só depois limpa modelos, imagens, instruções, nomes e políticas individuais; não apaga notas nem outro agente. Sem novas dependências e sem alteração do vault, providers HTTP ou regras de aprovação.
 NN-001/009/010/011/016/017/018/019/022; ADR-0032/0033/0039.
 
 ## Alternativas rejeitadas
