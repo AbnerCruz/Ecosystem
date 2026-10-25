@@ -8,7 +8,13 @@ public static class PreviewProfilerReport
     /// <summary>Formata uma captura para o painel ao vivo, workspace e exportação, independentemente do idioma do aparelho.</summary>
     public static string Format(PreviewFrameSnapshot frame, DateTimeOffset capturedAt, bool paused,
         long managedHeapBytes, long textureBytes, long peakTextureBytes, int liveTextures,
-        int gc0, int gc1, int gc2)
+        int gc0, int gc1, int gc2) => Format(frame, capturedAt, paused, managedHeapBytes, textureBytes,
+            peakTextureBytes, liveTextures, gc0, gc1, gc2, null);
+
+    /// <summary>Inclui somente o contador nativo das saídas de música PCM efetivamente medidas na sessão.</summary>
+    public static string Format(PreviewFrameSnapshot frame, DateTimeOffset capturedAt, bool paused,
+        long managedHeapBytes, long textureBytes, long peakTextureBytes, int liveTextures,
+        int gc0, int gc1, int gc2, long? musicUnderruns)
     {
         if (frame.Samples == 0) return "PROFILER  |  coletando...";
         return FormattableString.Invariant($"PROFILER  |  {frame.Samples} quadros{(paused ? "  [PAUSADO]" : "")}\n") +
@@ -23,6 +29,8 @@ public static class PreviewProfilerReport
             FormattableString.Invariant($"Heap .NET: {managedHeapBytes / 1048576.0:F1} MiB\n") +
             FormattableString.Invariant($"GPU texturas RGBA8 (estim.): {textureBytes / 1048576.0:F2} MiB, {liveTextures} vivas\nPico texturas: {peakTextureBytes / 1048576.0:F2} MiB\n") +
             FormattableString.Invariant($"GC (0/1/2): {gc0}/{gc1}/{gc2}\nFrames > 33 ms: {frame.SlowFrames}/{frame.Samples}\n") +
-            "GPU total/tempo e audio underruns: não medidos";
+            (musicUnderruns is null ? "GPU total/tempo e audio underruns: não medidos" :
+                FormattableString.Invariant($"Audio underruns (música WAV PCM, sessão): {musicUnderruns}\n") +
+                "GPU total/tempo, efeitos SoundPool e música comprimida: não medidos");
     }
 }

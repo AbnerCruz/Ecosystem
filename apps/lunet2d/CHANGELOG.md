@@ -2,6 +2,10 @@
 
 ## 0.0.1 — em desenvolvimento
 
+### Added
+
+- LUNET-438: música WAV PCM mono/estéreo 8/16 bits em streaming no AudioTrack Android, mantendo loop, volume, fades e pausa/retomada do mixer existente. Profiler/relatório mostram o contador nativo de underruns apenas das faixas medidas; efeitos SoundPool e formatos comprimidos permanecem explicitamente não medidos. Sem novo formato de projeto ou API do jogo.
+
 ### Fixed
 
 - LUNET-432 (em revisão): toques capturados não provocam clique fantasma em botões nem inércia antiga após mudar o layout; Bounds iguais não interrompem gestos, e sliders continuam seguindo o dedo como na API anterior.

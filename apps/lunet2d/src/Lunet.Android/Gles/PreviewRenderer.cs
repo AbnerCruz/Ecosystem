@@ -47,6 +47,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
 
     /// <summary>Janela de medições opcional, lida pela UI sem tocar no estado do Game.</summary>
     public PreviewFrameSnapshot Performance => _performance.Snapshot();
+    public long? MusicUnderruns => (_audio as AndroidAudioBackend)?.MusicUnderruns;
     public bool ProfilerIsPaused => _paused || _appPaused;
     // Leituras atômicas da GL thread; não usar para inferir VRAM total.
     public long EstimatedTextureBytes => _backend?.EstimatedTextureBytes ?? 0;

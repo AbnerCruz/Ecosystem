@@ -157,7 +157,7 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
                 _lastProfilerReport = PreviewProfilerReport.Format(frame, DateTimeOffset.Now, _renderer.ProfilerIsPaused,
                     GC.GetTotalMemory(false), _renderer.EstimatedTextureBytes, _renderer.PeakTextureBytes,
                     _renderer.LiveTextureCount, GC.CollectionCount(0) - _gc0,
-                    GC.CollectionCount(1) - _gc1, GC.CollectionCount(2) - _gc2);
+                    GC.CollectionCount(1) - _gc1, GC.CollectionCount(2) - _gc2, _renderer.MusicUnderruns);
         }
         return _lastProfilerReport;
     }

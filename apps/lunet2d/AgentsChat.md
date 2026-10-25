@@ -473,3 +473,11 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Visão detalhada em `docs/plans/visual-editor-vision.md`, vinculada pelo SPEC §13 e pelo backlog futuro do ROADMAP. Manual + modular, componentes criados pelo usuário e preservação da edição/source; escopo detalhado ainda a planejar.
 - Sem implementação agora, sem alterar fase/gate atual, plataforma Android, arquitetura ou licença; sem confundir inspiração com autorização de copiar código/arte. Desenvolvimento F4 segue em frente separada #629/PR #630.
 
+
+
+### 20261025-codex-lunet-audio-underruns — Codex → integrador — working
+- LUNET-438 / Issue #764, Fase 4 §7/§23, branch `feat/lunet-audio-underruns-20261025`, base `2087974939bf445b5aaf052b584250d336a02e39`.
+- Backend Android existente: música PCM WAV em AudioTrack streaming, parser limitado, worker com escrita não bloqueante, prefill, loop, pausa, volume e descarte. APIs de jogo e dados salvos preservados; demais formatos MediaPlayer e efeitos SoundPool continuam disponíveis.
+- Medição nativa de underruns no Profiler/relatório, cobertura WAV identificada. Sem nova infraestrutura compartilhada: implementação interna de IAudioBackend já existente (NN-002/003/008/017/018/020/022).
+- DEVICE avançado da física #638 já aprovado e reconciliado no ROADMAP. Não fecha Fase 4, não avança Studio, não finge contador dos caminhos não instrumentados.
+- Build, testes, consistency, Android CI/APK e DEVICE desta entrega em verificação; roteiro `docs/guides/audio.md`.
