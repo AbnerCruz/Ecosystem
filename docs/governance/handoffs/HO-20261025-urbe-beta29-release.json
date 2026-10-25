@@ -1,0 +1,94 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261025-urbe-beta29-release",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-25T09:30:36Z",
+  "agent": {
+    "id": "codex-urbe-beta29-release",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-27",
+  "component": "urbe",
+  "state": "review",
+  "branch": "release/urbe-beta29-current-main-20261025",
+  "base_commit": "b58eeb235916a9b99320318e12e2614cfc5ad9d7",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/758",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "docs/governance/handoffs/HO-20261025-urbe-beta29-release.json"
+  ],
+  "work_completed": [
+    "Corte solicitado pelo proprietário para publicar a main atual: beta.29, versionCode 2000029.",
+    "Inclui a PR #757 já integrada (espaços de chat, histórico e configurações por agente).",
+    "Preserva identidade app.urbe.csharp, certificado beta, dados e tags publicadas. Publicação somente pelo workflow oficial após o integrador."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os 22 checks passaram; snapshot ROADMAP × Issues ausente, conforme aviso do checker."
+    },
+    {
+      "check": "dotnet build tests/Urbe.Core.Tests/Urbe.Core.Tests.csproj -c Release -m:1; dotnet tests/Urbe.Core.Tests/bin/Release/net10.0/Urbe.Core.Tests.dll -parallelMode none (cwd apps/urbe/csharp)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Build Release sem warnings/erros; execução direta xUnit: 824 testes, 0 falhas, 0 ignorados, 68.124 s. dotnet test --project não completou neste host; execução direta após build serial foi bem-sucedida."
+    },
+    {
+      "check": "Instalar beta.29 por cima da beta anterior e conferir históricos/configurações por agente",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.29"
+    },
+    {
+      "check": "Verificação XML e diff do csproj",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Somente UrbeBetaVersion e UrbeBetaVersionCode alterados; versão monotônica e app.urbe.csharp preservado."
+    }
+  ],
+  "known_issues": [
+    "A release só existe após conclusão do workflow oficial; validação física não executada."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verificar CI do PR e estado combinado pelo integrador.",
+    "Autorização crítica pelo proprietário conforme política vigente; publicar pelo workflow oficial.",
+    "Conferir APK Android, ZIP Windows e checksums na release."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0025-urbe-beta-2-0-nativa.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/governance/integration-policy.json",
+    "docs/distribution/direct-releases.md",
+    ".github/workflows/urbe-csharp-mobile-release.yml"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Versão publicada somente no csproj canônico."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Corte rastreável por branch, PR e handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE explicitamente pendente."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Somente versão do Urbe alterada."
+    }
+  ]
+}
