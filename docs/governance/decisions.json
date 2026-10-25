@@ -2044,7 +2044,7 @@
     },
     {
       "id": "DEC-0057",
-      "status": "pending",
+      "status": "decided",
       "component": "urbe",
       "blocking": true,
       "title": "Urbe: pesquisa web pública sem chave nem grants por agente",
@@ -2073,7 +2073,11 @@
         "https://github.com/AbnerCruz/Ecosystem/pull/750"
       ],
       "raisedBy": "chatgpt-pr-triage",
-      "raisedAt": "2026-10-24"
+      "raisedAt": "2026-10-24",
+      "decision": "Alternativa A — A — Aprovar o padrão sem chave com acesso público e opt-out global (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/766).",
+      "decidedAt": "2026-10-25",
+      "record": "docs/governance/responses/DEC-0057.md",
+      "consequencesApplied": false
     }
   ]
 }
