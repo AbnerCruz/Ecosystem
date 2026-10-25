@@ -82,7 +82,29 @@ do modelo local no dispositivo. Não se declara release nem gate humano aprovado
 - `apps/urbe/docs/csharp/ASSISTANT-EXPERIENCE.md`
 - `apps/urbe/docs/csharp/ROADMAP.md`
 - `apps/urbe/docs/csharp/acceptance/AGENT-WORKSPACES-2026-10-25.md`
-- `apps/urbe/docs/v2/discovery/DATA-CATALOG.md`
+- `apps/urbe/docs/csharp/DATA-CATALOG.md`
 - `docs/adr/0041-urbe-espacos-por-agente.md`
 - `docs/adr/README.md`
 - `docs/governance/handoffs/HO-20261025-urbe-agent-workspaces.json`
+
+## Correção do CI do PR #757
+
+Causa observada no commit 27cc78fc: a seção nativa acrescentada ao catálogo
+histórico `docs/v2/discovery/DATA-CATALOG.md` mudou seu hash congelado. Isso
+derrubou `csharp-parity` e a projeção de `vault-contract`, inclusive no E2E.
+O arquivo histórico foi restaurado byte a byte da main, e o conteúdo nativo
+passou a `docs/csharp/DATA-CATALOG.md`. Não se altera o manifesto do oráculo
+nem qualquer teste ou hash para aceitar a mudança indevida.
+
+Executados após a correção: `node tools/csharp-parity.mjs check`,
+`node tools/vault-contract.mjs check`, `node tests/csharp-parity.mjs` e
+`node tests/csharp-vault-contract.mjs`: passaram. `git diff --check` e comparação
+de bytes com o catálogo histórico da main passaram. Checks completos e E2E
+foram iniciados novamente. Uma primeira tentativa local de E2E parou por falta
+do executável Chromium; dependências e navegador estão sendo preparados para
+repetição real, sem declarar essa tentativa aprovada.
+
+O CI do commit 27cc78fc aprovou o job `csharp-portable`, incluindo as suítes
+completas Core/Client, e os builds nativos Android e Windows. Isso não equivale
+a DEVICE ou a release. Logs: run 40176854415, jobs 121119527851, 121119527856 e
+121119527870.

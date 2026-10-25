@@ -35,9 +35,9 @@
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AgentWorkspaceTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantStoreTests.cs",
     "apps/urbe/docs/csharp/ASSISTANT-EXPERIENCE.md",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md",
     "apps/urbe/docs/csharp/ROADMAP.md",
     "apps/urbe/docs/csharp/acceptance/AGENT-WORKSPACES-2026-10-25.md",
-    "apps/urbe/docs/v2/discovery/DATA-CATALOG.md",
     "docs/adr/0041-urbe-espacos-por-agente.md",
     "docs/adr/README.md",
     "docs/governance/handoffs/HO-20261025-urbe-agent-workspaces.json"
@@ -47,7 +47,8 @@
     "Permissões/imagens individuais em configuração; readonly sem grant explícito; controles AllowTool/NeedsApproval intactos.",
     "Templates sem ativação automática; perfis utilizados/configurados preservados. Modelo device recomendado real para instalação nova ou Assistente legado sem escolha explícita, sem imagem automática.",
     "Backup exato antes de migração idempotente e gravação verificada; arquivos de conversas não são migrados; configuração ilegível/futura bloqueia alterações.",
-    "Etapas sem setas, mantendo detalhes lazy; ajustes dos testes antigos às permissões explícitas e nova entrada pela lista de agentes."
+    "Etapas sem setas, mantendo detalhes lazy; ajustes dos testes antigos às permissões explícitas e nova entrada pela lista de agentes.",
+    "Correção do CI: catálogo histórico do oráculo restaurado byte a byte; documentação de migração movida para docs/csharp/DATA-CATALOG.md, sem mudar testes/hashes congelados."
   ],
   "verification": [
     {
@@ -80,7 +81,19 @@
       "kind": "automated",
       "check": "CI completo do PR",
       "result": "pending",
-      "evidence": "PR #757 aberto; acompanhar workflows urbe-checks e consistency. Resultado local não substitui execução do CI."
+      "evidence": "PR #757: commit 27cc78fc falhou nos checks/E2E por alteração indevida do catálogo congelado. Catálogo restaurado; documentação nativa separada. Aguardar nova execução do CI no commit corretivo."
+    },
+    {
+      "kind": "automated",
+      "check": "CI C# no commit 27cc78fc",
+      "result": "passed",
+      "evidence": "Run 40176854415: csharp-portable com testes completos Core/Client e builds Android/Windows concluídos com sucesso; jobs 121119527851, 121119527856 e 121119527870."
+    },
+    {
+      "kind": "automated",
+      "check": "Paridade congelada e contrato do vault após correção",
+      "result": "passed",
+      "evidence": "node tools/csharp-parity.mjs check; node tools/vault-contract.mjs check; node tests/csharp-parity.mjs; node tests/csharp-vault-contract.mjs passaram. Catálogo histórico idêntico aos bytes da main; sem alteração de oráculo ou testes."
     }
   ],
   "known_issues": [
@@ -111,7 +124,7 @@
     "docs/governance/definition-of-done.md",
     "docs/adr/0039-urbe-memoria-contextual-local.md",
     "docs/adr/0041-urbe-espacos-por-agente.md",
-    "apps/urbe/docs/v2/discovery/DATA-CATALOG.md",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md",
     "docs/governance/communication.md"
   ],
   "invariants": [

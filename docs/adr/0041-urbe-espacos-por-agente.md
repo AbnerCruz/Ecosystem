@@ -84,4 +84,6 @@ ou novo runtime não demonstram necessidade neste incremento.
 
 ## Referências
 
-Issue #756; UC-81; MANIFEST; ADR-0032/0033/0039; DATA-CATALOG.
+Issue #756; UC-81; MANIFEST; ADR-0032/0033/0039;
+[catálogo nativo de dados](../../apps/urbe/docs/csharp/DATA-CATALOG.md).
+O catálogo histórico em docs/v2/discovery permanece congelado pelo oráculo UC-2.

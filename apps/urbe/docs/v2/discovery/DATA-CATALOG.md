@@ -167,14 +167,3 @@ O comportamento RM-F1-18 de ignorar `.urbe/` e permitir continuar após hash div
 | `.urbe/backup/import-<uuid>/` (`.urbe/backup/import-`) | transação de importação | `manifest.json` `{version:2,kind:'urbe-import-backup',journal:{…}}`; `files/<path>` preserva bytes, inclusive `.urbe/`, sem mapear nomes | Backup verificado antes da mutação. Restauração v2 delega à transação binária; v1 existente continua legível. Versão desconhecida não restaura. Backups existentes não são substituídos nem removidos pela importação. | Testes de IO, processo fechado e reabertura |
 
 Política adicional à §9: nenhum arquivo de usuário muda de formato. Estes dois artefatos aditivos são exclusivos da transação. Um cliente antigo não deve abrir um vault durante uma transação interrompida: recuperar no cliente que iniciou antes de transferir. Credenciais de IA nunca são incluídas; estado de export não é aplicado automaticamente.
-
-## Urbe C# — espaços por agente (25/10/2026, ADR-0041)
-
-Configuração privada atual `AssistantStore/config.json`: campos aditivos
-`agentWorkspaceVersion:1`, `agentPolicies:{id:policy}`, `agentImages:{id:{providerId,model}}`.
-Mesmo ownership Core, fora do vault. Preserva `AgentModels`, instruções, credenciais,
-memórias e escolhas legadas. Backup dos bytes originais verificado em
-`config-before-agent-workspaces.json`; gravação lida de volta; ilegível/versão
-futura/falha de backup bloqueiam migração. Marcador torna repetição idempotente.
-`conversa-*.json` não é migrado nem reatribuído: AgentId/Vault filtram o histórico.
-Fixtures/testes: `AgentWorkspaceTests` e `AgentWorkspaceUiTests`.
