@@ -878,6 +878,7 @@ public sealed partial class AssistantPanel : Border
                     AgentNames.CallName(source ?? AssistantAgent.Agents[0], _cfg)
             };
         }
+        int lastExchangeStart = child.Messages.Count;
         child.Messages.Add(new AiChatMessage
         {
             Id = AssistantAgent.NewId("m"), Role = "user", Content = [AiChatBlock.TextBlock(task)]
@@ -894,7 +895,7 @@ public sealed partial class AssistantPanel : Border
                 AgentNames.CallName(target, _cfg) + " para continuar.");
         var last = child.Messages.LastOrDefault(m => m.Role == "assistant" && m.Content.Any(b => b.Type == "text" && !string.IsNullOrWhiteSpace(b.Text)));
         var summary = last is null ? "" : string.Join("\n", last.Content.Where(b => b.Type == "text").Select(b => b.Text));
-        var generated = child.Messages.SelectMany(m => m.Content)
+        var generated = child.Messages.Skip(lastExchangeStart).SelectMany(m => m.Content)
             .Where(b => b.Type == "tool_result" && !b.IsError)
             .Select(b => AssistantImageTools.SavedImagePath(b.Content))
             .OfType<string>().Distinct(StringComparer.Ordinal).ToList();
