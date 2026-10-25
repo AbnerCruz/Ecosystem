@@ -80,6 +80,74 @@ public sealed partial class HeadlessUiTests
     }, CancellationToken.None));
 
     [Fact]
+    public async Task Delegation_FollowUpReturnsToSameSpecialistThread() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var folder = Path.Combine(Path.GetTempPath(), "urbe-delegation-followup-" + Guid.NewGuid().ToString("N"));
+            var before = UrbeApp.AssistantFolder;
+            UrbeApp.AssistantFolder = folder;
+            var view = new MainView();
+            var window = new Window { Width = 412, Height = 900, Content = view };
+            window.Show();
+            try
+            {
+                await view.LoadAsync(TutorialNotes.Load());
+                var panel = view.Assistant;
+                panel.Open();
+                panel.Config.Providers.Add(new AiProviderConfig("p", "openrouter", ApiKey: "test"));
+                panel.Config.ProviderId = "p";
+                panel.Config.Model = "test-model";
+                panel.Config.CustomAgents.Add(new("one", "Um", "sparkle", "", "read", false, ""));
+                panel.Config.CustomAgents.Add(new("two", "Dois", "sparkle", "", "read", false, ""));
+                panel.Config.AgentDelegationAuto["one"] = true;
+                var model = new ScriptedModel();
+                panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
+                model.Chats.Enqueue(Sse(
+                    """{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"consult-first","function":{"name":"consult_agent","arguments":"{\"agent_id\":\"two\",\"task\":\"Qual a cor de Marte?\"}"}}]}}]}""",
+                    """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
+                model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Marte é avermelhado."}}]}""",
+                    """{"choices":[{"delta":{},"finish_reason":"stop"}]}"""));
+                model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Recebi a consulta."}}]}""",
+                    """{"choices":[{"delta":{},"finish_reason":"stop"}]}"""));
+                panel.SelectAgent("one");
+                panel.Send("Pergunte ao especialista a cor de Marte");
+                await panel.CurrentRun!;
+                var store = new AssistantStore(new FolderAssistantStorage(folder));
+                var child = Assert.Single(store.ConversationsFor("two", panel.Conversation.Vault));
+                Assert.Equal(panel.Conversation.Id, child.OriginConversationId);
+                Assert.Equal("one", child.OriginAgentId);
+                var call = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    choices = new[] { new { delta = new { tool_calls = new[]
+                    {
+                        new { index = 0, id = "consult-followup", function = new
+                        {
+                            name = "consult_agent",
+                            arguments = System.Text.Json.JsonSerializer.Serialize(new
+                            {
+                                agent_id = "two", task = "E qual o motivo?", conversation_id = child.Id
+                            })
+                        }}
+                    } } } }
+                });
+                model.Chats.Enqueue(Sse(call, """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
+                model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Por causa de minerais de ferro oxidados."}}]}""",
+                    """{"choices":[{"delta":{},"finish_reason":"stop"}]}"""));
+                model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"O especialista explicou."}}]}""",
+                    """{"choices":[{"delta":{},"finish_reason":"stop"}]}"""));
+                panel.Send("Peça uma explicação ao mesmo especialista");
+                await panel.CurrentRun!;
+                var followup = Assert.Single(store.ConversationsFor("two", panel.Conversation.Vault));
+                Assert.Equal(child.Id, followup.Id);
+                Assert.Equal(2, followup.Messages.Count(m => m.Role == "user" && m.Meta?.ToolResults != true));
+                Assert.Contains(followup.Messages.SelectMany(m => m.Content), b => b.Text == "E qual o motivo?");
+                Assert.Equal("end", panel.Conversation.Runs.Last().Stopped);
+                return true;
+            }
+            finally { window.Close(); UrbeApp.AssistantFolder = before; try { Directory.Delete(folder, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
+    [Fact]
     public async Task Delegation_UsesSpecialistsOwnConversationWithoutSharingSourceHistory() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
         {
