@@ -763,8 +763,7 @@ public sealed partial class AssistantPanel
             ("models", "Modelos", "Provedores e imagens"),
             ("agents", "Agentes", "Identidade e perfis"),
             ("web", "Pesquisa", "Internet e fontes"),
-            ("context", "Contexto", "Instruções e memória"),
-            ("execution", "Execução", "Autonomia e segurança")
+            ("context", "Contexto", "Instruções e memória")
         };
         // Flat navigation: no grid of outlined mini-cards. Categories are ALWAYS visible and can wrap on phones.
         var navigation = new WrapPanel { Orientation = Orientation.Horizontal, ItemHeight = UrbeTokens.MinTouch };
@@ -795,7 +794,6 @@ public sealed partial class AssistantPanel
 
         if (_settingsCategory == "models")
         {
-        body.Children.Add(Section("Conexões e provedores", Hint("Gerencie credenciais, modelos e testes de conexão em um só lugar.")));
         var provs = new StackPanel { Spacing = 8 };
         if (c.Providers.Count == 0) provs.Children.Add(Hint("Nenhum provedor ainda."));
         foreach (var p in c.Providers)
@@ -831,7 +829,7 @@ public sealed partial class AssistantPanel
         var add = TextButton("+ Adicionar provedor", () => _ = AddProviderAsync());
         body.Children.Add(Section("Provedores de modelo", Hint("As chaves ficam salvas só neste aparelho e vão direto para o provedor."), provs, add));
 
-        body.Children.Add(Section("Modelo de conversa", Wrap(ModelId(), 13, UrbeTheme.Text),
+        body.Children.Add(Section("Modelo padrão", Wrap(ModelId(), 13, UrbeTheme.Text),
             Wrap(ModelPriceFor(null), 12, UrbeTheme.Text2), TextButton("Selecionar modelo e preço", () => _ = PickModelAsync())));
         body.Children.Add(Section("Geração de imagens", Hint("Escolha o modelo de imagem nas configurações de cada agente. Sem seleção, nenhuma imagem é gerada.")));
 
@@ -885,15 +883,6 @@ public sealed partial class AssistantPanel
             body.Children.Add(TextButton("+ Novo agente", () => EditAgent(null)));
         }
 
-        if (_settingsCategory == "execution")
-        {
-            body.Children.Add(Section("Autonomia e proteção",
-                Hint("Permissões são configuradas individualmente em Agentes → Configurar. Novos agentes começam em somente leitura.")));
-            body.Children.Add(Section("Profundidade da investigação",
-                Hint("O agente define quantas perguntas e etapas são necessárias a partir do objetivo, das respostas e das evidências. Você continua controlando aprovações e pode interromper a execução a qualquer momento.")));
-            body.Children.Add(Section("Transparência",
-                Hint("Atividades ficam agrupadas no chat; entradas, saídas, decisões e aprovações podem ser examinadas por etapa.")));
-        }
         if (_settingsCategory == "web")
         {
             body.Children.Add(Section("Pesquisa na internet",
