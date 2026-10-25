@@ -265,7 +265,7 @@ public sealed partial class AssistantPanel : Border
         catch (IOException e) { _app.Notify(e.Message); return; }
         _loaded = true;
         if (!AgentNames.All(_cfg).Any(a => a.Id == _cfg.AgentId)) _cfg.AgentId = "geral";
-        _conv = _store.ConversationsFor(_cfg.AgentId, _app.VaultName).FirstOrDefault() ?? NewConversation();
+        _conv = NewConversation(); // Opening the assistant never silently resumes history; choose it explicitly.
     }
 
     // UC-80: the request asked from a note: its conversation, the note and the agent's name
