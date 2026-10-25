@@ -1,5 +1,7 @@
 # Changelog
 
+- Pré-beta / LUNET-442 (#779): Sprite Studio ampliado com linha, retângulo contornado/preenchido, flip vertical, zoom e deslocamento, grade opcional e cor ARGB personalizada. Preserva o JSON v1 e frames existentes; CI/DEVICE pendentes.
+
 - Pré-beta: primeiro Sprite/Animation Studio nativo (LUNET-440), desenho por toque, frames, playback, JSON editável e spritesheet PNG. Prioridade de execução revista por ordem do proprietário: editores/UI/build antes de refinamentos adicionais de áudio.
 
 ## 0.0.1 — em desenvolvimento
