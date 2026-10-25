@@ -79,7 +79,7 @@ public sealed class AiConversation
     public string AgentId { get; set; } = "geral";
     public string? ProviderId { get; set; }
     public string Model { get; set; } = "";
-    public string Policy { get; set; } = "ask";
+    public string Policy { get; set; } = "readonly";
     public string Vault { get; set; } = "";
     public List<AiChatMessage> Messages { get; set; } = [];
     public List<AiRunRecord> Runs { get; set; } = [];
@@ -100,6 +100,10 @@ public sealed record AiInstructionBlock(string Title, string Content);
 public sealed class AiConfig
 {
     public int Version { get; set; } = 1;
+    public int AgentWorkspaceVersion { get; set; }
+    public Dictionary<string, string> AgentPolicies { get; set; } = new(StringComparer.Ordinal);
+    public Dictionary<string, AiModelChoice> AgentImages { get; set; } = new(StringComparer.Ordinal);
+    public string PolicyFor(string agentId) => AgentPolicies.GetValueOrDefault(agentId) is "ask" or "auto" ? AgentPolicies[agentId] : "readonly";
     public List<AiProviderConfig> Providers { get; set; } = [];
     public string? ProviderId { get; set; }
     public string Model { get; set; } = "";
@@ -109,7 +113,7 @@ public sealed class AiConfig
     /// <summary>Agent-specific overrides; no entry means inherit the conversation/default model.</summary>
     public Dictionary<string, AiModelChoice> AgentModels { get; set; } = new(StringComparer.Ordinal);
     public Dictionary<string, List<AiInstructionBlock>> AgentInstructionBlocks { get; set; } = new(StringComparer.Ordinal);
-    public string Policy { get; set; } = "ask";
+    public string Policy { get; set; } = "readonly";
     public string AgentId { get; set; } = "geral";
     public string Instructions { get; set; } = "";
     /// <summary>Facts to remember, by vault name ('*' for every vault).</summary>
@@ -128,8 +132,10 @@ public sealed class AiConfig
     public AiModelChoice ModelFor(AiConversation conversation)
     {
         if (AgentModels.TryGetValue(conversation.AgentId, out var chosen) &&
-            !string.IsNullOrWhiteSpace(chosen.Model) && Providers.Any(p => p.Id == chosen.ProviderId))
+            !string.IsNullOrWhiteSpace(chosen.Model))
             return chosen;
+        if (AgentWorkspaceVersion == 1 && conversation.AgentId != "geral" && conversation.Model.Length == 0 &&
+            AgentModels.TryGetValue("geral", out var assistant)) return assistant;
         var id = conversation.ProviderId ?? ProviderId ?? Providers.FirstOrDefault()?.Id ?? "";
         return new AiModelChoice(id, conversation.Model.Length > 0 ? conversation.Model : Model);
     }
@@ -159,6 +165,57 @@ public sealed class AssistantStore(IAssistantStorage storage)
         try { return ConfigFromJson(JsonNode.Parse(text) as JsonObject ?? []); }
         catch (JsonException) { return new AiConfig(); }
     }
+
+    /// <summary>Initialize agent workspaces once. Never rewrites conversations or infers write grants.</summary>
+    public AiConfig InitializeAgentWorkspaces(ILocalTextRuntime? runtime)
+    {
+        var original = storage.Read(ConfigFile);
+        if (original is not null)
+        {
+            try
+            {
+                var parsed = JsonNode.Parse(original) as JsonObject ?? throw new JsonException();
+                if (Num(parsed["version"]) > 1 || Num(parsed["agentWorkspaceVersion"]) > 1)
+                    throw new IOException("Configuração de IA de uma versão mais nova; nenhum dado foi alterado.");
+            }
+            catch (JsonException e) { throw new IOException("Configuração de IA ilegível; nenhum dado foi alterado.", e); }
+        }
+        var config = GetConfig();
+        if (config.AgentWorkspaceVersion == 1) return config;
+        var conversations = ListConversations();
+        var retained = conversations.Select(c => c.AgentId)
+            .Concat(config.AgentNames.Keys).Concat(config.AgentModels.Keys).Concat(config.AgentInstructionBlocks.Keys)
+            .Concat(config.CustomAgents.Select(a => a.Id)).ToHashSet(StringComparer.Ordinal);
+        if (original is not null && config.AgentId != "geral") retained.Add(config.AgentId);
+        foreach (var id in retained.Where(id => id != "geral"))
+        {
+            if (config.CustomAgents.Any(a => a.Id == id)) continue;
+            var template = AssistantAgent.Agents.FirstOrDefault(a => a.Id == id);
+            config.CustomAgents.Add(template ?? new AiAgentDef(id, "Agente preservado " + id, "sparkle", "", "read", false, ""));
+        }
+        // Global choices remain intact on upgrades; only a truly new installation gets the local default.
+        if (original is null && runtime is not null)
+        {
+            var provider = new AiProviderConfig("device", "device", "IA no aparelho", "", "");
+            config.Providers.Add(provider);
+            config.AgentModels["geral"] = new AiModelChoice(provider.Id, runtime.Recommended.Id);
+        }
+        if (original is not null && !string.IsNullOrWhiteSpace(config.ImageProviderId) && config.ImageModel.Length > 0)
+            foreach (var id in retained.Append("geral"))
+                config.AgentImages[id] = new AiModelChoice(config.ImageProviderId, config.ImageModel);
+        if (original is not null)
+        {
+            const string backup = "config-before-agent-workspaces.json";
+            if (storage.Read(backup) is null) storage.Write(backup, original);
+            if (storage.Read(backup) != original) throw new IOException("Não foi possível preservar a configuração anterior.");
+        }
+        config.AgentWorkspaceVersion = 1;
+        SetConfigVerified(config);
+        return config;
+    }
+
+    public List<AiConversation> ConversationsFor(string agentId, string vault) =>
+        ListConversations().Where(c => c.AgentId == agentId && c.Vault == vault).ToList();
 
     public void SetConfig(AiConfig c) => storage.Write(ConfigFile, ConfigToJson(c).ToJsonString());
 
@@ -235,6 +292,10 @@ public sealed class AssistantStore(IAssistantStorage storage)
 
     public static JsonObject ConfigToJson(AiConfig c)
     {
+        var policies = new JsonObject();
+        foreach (var (id, policy) in c.AgentPolicies) policies[id] = policy;
+        var images = new JsonObject();
+        foreach (var (id, image) in c.AgentImages) images[id] = new JsonObject { ["providerId"] = image.ProviderId, ["model"] = image.Model };
         var memory = new JsonObject();
         foreach (var (k, v) in c.Memory) memory[k] = new JsonArray(v.Select(x => (JsonNode)JsonValue.Create(x)).ToArray());
         var names = new JsonObject();
@@ -258,6 +319,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
         };
         return new JsonObject
         {
+            ["agentWorkspaceVersion"] = c.AgentWorkspaceVersion, ["agentPolicies"] = policies, ["agentImages"] = images,
             ["web"] = web, ["version"] = c.Version, ["providers"] = new JsonArray(c.Providers.Select(p => (JsonNode)ProviderToJson(p)).ToArray()), ["providerId"] = c.ProviderId,
             ["model"] = c.Model, ["imageProviderId"] = c.ImageProviderId, ["imageModel"] = c.ImageModel,
             ["agentModels"] = agentModels, ["agentInstructionBlocks"] = instructionBlocks,
@@ -273,6 +335,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
     {
         var c = new AiConfig
         {
+            AgentWorkspaceVersion = (int)Num(o["agentWorkspaceVersion"]),
             Version = o["version"] is null ? 1 : (int)Num(o["version"]),
             Providers = (o["providers"] as JsonArray ?? []).OfType<JsonObject>().Select(ProviderFromJson).ToList(),
             ProviderId = o["providerId"] is JsonValue pid && pid.TryGetValue<string>(out var ps) ? ps : null,
@@ -285,6 +348,11 @@ public sealed class AssistantStore(IAssistantStorage storage)
             MemoryRecords = o["memoryRecords"] is JsonArray records
                 ? JsonSerializer.Deserialize<List<AiMemoryRecord>>(records.ToJsonString(), new JsonSerializerOptions(JsonSerializerDefaults.Web)) ?? [] : []
         };
+        if (o["agentPolicies"] is JsonObject policies)
+            foreach (var (id, policy) in policies) c.AgentPolicies[id] = Str(policy, "readonly");
+        if (o["agentImages"] is JsonObject images)
+            foreach (var (id, value) in images)
+                if (value is JsonObject image) c.AgentImages[id] = new AiModelChoice(Str(image["providerId"]), Str(image["model"]));
         if (o["web"] is JsonObject w)
         {
             // Preserve an explicit old offline preference instead of silently restoring network access.

@@ -638,3 +638,9 @@
 - Decisão: pedido explícito do proprietário para implementar o redesenho pesquisado e entregar nova release. Mesmo Core, permissões, dados, canal e certificado; sem extração ou nova dependência.
 - Pendências: CI de PR/estado combinado e assets oficiais da beta.28; DEVICE (IME, alças, pinch e atualização) continua pendente, não certificado por captura Skia.
 - Próximos passos: corrigir qualquer regressão da suíte, integrar pelo mecanismo governado e verificar a release oficial.
+
+### 2026-10-25 — Codex — UC-81 / issue #756
+- Estado: verifying, branch feat/urbe-agent-workspaces, base 831a52a8.
+- Feito: espaços e histórico por agente/vault; configurações individuais e readonly; templates; modelo local real em instalação nova, sem imagem automática; setas de etapas removidas sem perder auditoria lazy.
+- Dados: ADR-0041 e DATA-CATALOG; backup privado verificado/idempotente, nenhuma conversa reatribuída; AgentId antigo mantido com aviso sobre participação mista histórica.
+- Próximos passos: testes Core/UI, consistency, revisão do diff e PR crítico pelo integrador; Android físico continua pendente.

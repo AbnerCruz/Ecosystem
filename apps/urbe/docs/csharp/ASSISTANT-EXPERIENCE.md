@@ -42,3 +42,14 @@ Relatos de comunidade são evidência de casos concretos, não prevalência esta
 Regressões automatizadas cobrem conteúdo exato de clipboard (acentos, Unicode, tabs e linhas vazias), código sem linguagem, preços pequenos/desconhecidos, 77 operações com detalhes lazy, preservação de seleção ao atualizar, perguntas e propostas editadas ao reabrir, e o editor de fórmulas. Capturas Skia em 412×900 e desktop amplo ficam nos artifacts do CI.
 
 Android físico continua necessário: IME, alças de seleção, menus do sistema, pinch, fontes ampliadas, retomada e atualização por cima. Não declarar desempenho de aparelho medido com base em captura headless. A pesquisa usa o serviço existente; orientação de consultas mais específicas não garante relevância nem veracidade de resultados ou imagens. O painel identifica trechos consultados, sem afirmar leitura integral. Não há recibo financeiro de imagens/cache quando o provedor não o fornece. O ZIP usa limite operacional de memória e orienta exportação individual em conjuntos grandes, sem truncar silenciosamente arquivos.
+
+## Espaços individuais (pedido do proprietário de 25/10/2026)
+
+Entrada pela lista de agentes, somente nome; seleção abre a última conversa do
+agente no vault. Histórico separado; escolha de agente nunca muda o dono do chat.
+Instruções não aparecem no seletor. Permissões apenas em Configurações → Agentes →
+Configurar, readonly se ausentes; aprovações de operações continuam no fluxo.
+Templates não são agentes novos ativos; os agentes já utilizados são preservados.
+Etapas mantêm expansão lazy por cabeçalho, sem seta. Modelo de texto e imagem
+pertencem ao agente; sem imagem escolhida não há geração automática. IA no aparelho
+requer download verificado dos pesos. Migração: ADR-0041 e DATA-CATALOG.

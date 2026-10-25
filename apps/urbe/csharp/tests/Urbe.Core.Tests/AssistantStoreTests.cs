@@ -11,7 +11,7 @@ public sealed class AssistantStoreTests
     {
         var storage = new MemoryAssistantStorage();
         var store = new AssistantStore(storage);
-        Assert.Equal(("ask", "geral", 30, 0), (store.GetConfig().Policy, store.GetConfig().AgentId, store.GetConfig().MaxSteps, store.GetConfig().Providers.Count));
+        Assert.Equal(("readonly", "geral", 30, 0), (store.GetConfig().Policy, store.GetConfig().AgentId, store.GetConfig().MaxSteps, store.GetConfig().Providers.Count));
         var cfg = new AiConfig { ProviderId = "or", Model = "a/b", Policy = "auto", Instructions = "Breve.", MaxSteps = 12 };
         cfg.Providers.Add(new AiProviderConfig("or", "openrouter", "OpenRouter", "sk-or-1", ""));
         cfg.Memory["Cofre"] = ["Mora em Recife"];
@@ -51,7 +51,8 @@ public sealed class AssistantStoreTests
         chat.AgentId = "escritor";
         Assert.Equal(new AiModelChoice("base", "chat-model"), config.ModelFor(chat));
         config.AgentModels["escritor"] = new AiModelChoice("missing", "missing-model");
-        Assert.Equal(new AiModelChoice("base", "chat-model"), config.ModelFor(chat));
+        Assert.Equal(new AiModelChoice("missing", "missing-model"), config.ModelFor(chat));
+        config.AgentModels.Remove("escritor");
         chat.Model = "";
         Assert.Equal(new AiModelChoice("base", "default-model"), config.ModelFor(chat));
     }
