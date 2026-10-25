@@ -38,7 +38,7 @@ verificada do `AssistantStore`:
   especialista com escrita. O executor destinatário usa sua política própria.
 
 Os arquivos `conversa-*.json` preservam o formato: cada consulta delegada
-cria um novo arquivo com `AgentId` do especialista, sem transplantar mensagens
+cria um novo arquivo com `AgentId` do especialista e dois campos opcionais de proveniência: `originConversationId` e `originAgentId`. O par é validado antes de continuar uma consulta usando `conversation_id`; sem correspondência exata não há acesso ao diálogo. As mensagens do solicitante não são transplantadas
 da origem. Conversas ativas permanecem na memória até concluir; seu registro
 é gravado no armazenamento privado existente. Não há acesso direto de
 agentes a arquivos de históricos ou memórias dos demais.
