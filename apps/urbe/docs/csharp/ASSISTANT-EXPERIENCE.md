@@ -45,10 +45,14 @@ Android físico continua necessário: IME, alças de seleção, menus do sistema
 
 ## Espaços individuais (pedido do proprietário de 25/10/2026)
 
-Entrada pela lista de agentes, somente nome; seleção abre a última conversa do
-agente no vault. Histórico separado; escolha de agente nunca muda o dono do chat.
-Instruções não aparecem no seletor. Permissões apenas em Configurações → Agentes →
-Configurar, readonly se ausentes; aprovações de operações continuam no fluxo.
+Entrada pela lista de agentes, somente nome; seleção abre uma conversa **nova**
+do agente. O histórico permanece separado e pode ser retomado **explicitamente**;
+a troca de agente nunca altera a identidade de uma conversa anterior.
+Instruções não aparecem no seletor. Permissões reunidas em Configurações → Agentes → Configurar, com escopo real
+de ferramentas (leitura / escrita / completo) e política de aprovação salvos
+juntos. Sem permissão explícita prevalece somente leitura; exclusões e plugins
+continuam exigindo aprovação. Excluir um agente requer confirmação e remove
+seus históricos de todos os vaults, sem excluir conteúdo do vault.
 Templates não são agentes novos ativos; os agentes já utilizados são preservados.
 Etapas mantêm expansão lazy por cabeçalho, sem seta. Modelo de texto e imagem
 pertencem ao agente; sem imagem escolhida não há geração automática. IA no aparelho
