@@ -72,10 +72,10 @@
     {
       "kind": "human",
       "check": "Android físico, atualização e modelo local real",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
-      "evidence": "Não executado em aparelho; teste de runtime local usa fake, sem download ou inferência de pesos reais."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-25 (Issue https://github.com/AbnerCruz/Ecosystem/issues/771); registro em docs/governance/responses/VAL-HO-20261025-urbe-agent-workspaces-26ec08eb14c0.md."
     },
     {
       "kind": "automated",
