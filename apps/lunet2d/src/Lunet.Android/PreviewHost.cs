@@ -169,6 +169,7 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
     {
         _profilerHandler.RemoveCallbacksAndMessages(null);
         _renderer.SetAppPaused(true);
+        _glView.QueueEvent(_renderer.PauseForBackground);
         _glView.OnPause();
         StopSensors();
     }

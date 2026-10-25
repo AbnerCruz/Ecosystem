@@ -8,6 +8,8 @@
 
 ### Fixed
 
+- LUNET-438: pausa do mixer enfileirada na thread GL antes de suspender o Preview, sem depender de um próximo quadro para interromper o áudio em segundo plano.
+
 - LUNET-432 (em revisão): toques capturados não provocam clique fantasma em botões nem inércia antiga após mudar o layout; Bounds iguais não interrompem gestos, e sliders continuam seguindo o dedo como na API anterior.
 
 - LUNET-426 (em revisão): corrigir CRLF, Unicode fora do BMP e validação de layout/escala na fonte bitmap embutida; medida e desenho coerentes, sem enviar coordenadas infinitas ao OpenGL.

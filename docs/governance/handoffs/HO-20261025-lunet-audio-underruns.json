@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261025-lunet-audio-underruns",
   "category": "HANDOFF",
-  "timestamp": "2026-10-25T19:20:39.576146+00:00",
+  "timestamp": "2026-10-25T19:22:05.487581+00:00",
   "agent": {
     "id": "codex-lunet-audio",
     "kind": "ai-agent"
@@ -36,7 +36,8 @@
     "Música WAV PCM mono/estéreo 8/16 bits em streaming por AudioTrack dentro do IAudioBackend existente, demais codecs no MediaPlayer e efeitos no SoundPool.",
     "Leitor RIFF limitado com chunks/padding/frames e validação de truncamento; worker com prefill, escritas parciais não bloqueantes, loop, volume, pausa/retomada, cancelamento e descarte.",
     "Contador nativo AudioTrack.UnderrunCount no overlay, relatório workspace e exportação; total PCM da sessão, ausência de dados distinta de zero e cobertura restrita explicitada.",
-    "Erros do worker enviados ao Console nos Previews rápido/isolado; documentação/roteiro e reconciliação da aprovação de física avançada #638 já registrada."
+    "Erros do worker enviados ao Console nos Previews rápido/isolado; documentação/roteiro e reconciliação da aprovação de física avançada #638 já registrada.",
+    "Pausa do mixer enfileirada na thread GL antes de GLSurfaceView.OnPause, evitando depender de um Draw futuro para silenciar o áudio em segundo plano; DEVICE continua pendente."
   ],
   "verification": [
     {
@@ -66,7 +67,8 @@
     {
       "check": "CI Android e APK assinado",
       "kind": "automated",
-      "result": "pending"
+      "result": "pending",
+      "evidence": "Primeira revisão: run 40225383707 falhou por CS0234 de Android.Media dentro de Lunet.Android; corrigido com global::Android.Media. CI da revisão final pendente."
     },
     {
       "check": "DEVICE: música PCM e relatório nos dois Previews",
@@ -81,12 +83,6 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "dotnet run tests/consistency/Check.cs -- --self-test: todos os checks provaram detectar suas violações."
-    },
-    {
-      "check": "CI APK primeira revisão",
-      "kind": "automated",
-      "result": "failed",
-      "evidence": "Run 40225383707, job 121265737398: CS0234 em referência Android.Media dentro de Lunet.Android.Audio. Corrigido com global::Android.Media; revalidar CI final."
     }
   ],
   "known_issues": [

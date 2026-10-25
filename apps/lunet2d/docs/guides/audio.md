@@ -30,6 +30,9 @@ aplicação desde a criação da saída. Zero significa que essa saída foi medi
 não registrou ocorrências; antes de uma faixa PCM mensurável o valor é indisponível.
 A soma preserva faixas PCM já encerradas/trocadas na mesma sessão do backend.
 Restart/novo Run criam uma sessão nova. Abrir/fechar Perf não zera a sessão de áudio.
+Uma falha na leitura do contador torna a métrica indisponível na sessão e aparece
+no Console; não é convertida em zero. A pausa do mixer é enfileirada na thread
+GL antes de suspender o renderer, sem depender de outro Draw.
 O relatório permanece disponível no workspace e na exportação existentes.
 **Não mede** efeitos SoundPool, música no MediaPlayer, latência, falhas de hardware
 nem todo o mixer do Android. A lacuna de cobertura integral do Profiler segue aberta.
