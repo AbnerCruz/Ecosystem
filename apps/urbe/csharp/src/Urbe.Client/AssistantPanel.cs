@@ -1004,7 +1004,7 @@ public sealed partial class AssistantPanel : Border
         public Task TrashNoteAsync(UrbeDocument doc) => panel._app.TrashNoteAsync(doc);
         public Task CreateFolderAsync(string path) => panel._app.CreateFolderAsync(path);
         public void OpenNote(string path) => panel._app.OpenReference(path);
-        public void Remember(string fact) { panel.StoreMemory(fact, "fact", "vault", "", agentId); }
+        public void Remember(string fact) { panel.StoreMemory(fact, "fact", "agent", "", agentId); }
         public IReadOnlyList<AiMemoryMatch> SearchMemory(string query, int limit) =>
             AssistantMemoryEngine.Search(panel._cfg, panel.VaultKey, agentId, query, limit);
         public AiMemoryRecord StoreMemory(string fact, string kind, string scope, string sourcePath) =>
