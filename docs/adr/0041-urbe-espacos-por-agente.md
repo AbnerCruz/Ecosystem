@@ -96,7 +96,7 @@ existentes exigem seleção explícita.
 
 Delegação entre agentes é operação do executor existente, não um segundo runtime.
 `IAssistantDelegation` só expõe perfis públicos e o método de consulta. O
-transporte leva texto de tarefa explícito, não históricos ou memória. Cada
+transporte leva texto de tarefa explícito, não históricos ou memória. Consultas adicionais ao mesmo especialista usam um ID de conversa guardado, exigindo comprovação de origem por `originConversationId` e `originAgentId` mais correspondência de agente e vault. O identificador não concede acesso a diálogos de outras origens. Cada
 especialista é executado com configuração própria; a criação do chat é isolada,
 com retorno do resultado ao solicitante. A ferramenta `consult_agent` não é
 oferecida dentro da própria consulta, impedindo cadeia recursiva automática.
