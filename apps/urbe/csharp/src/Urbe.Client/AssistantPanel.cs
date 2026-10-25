@@ -741,11 +741,11 @@ public sealed partial class AssistantPanel : Border
         var userRequest = conv.Messages.LastOrDefault(m => m.Role == "user" && m.Meta?.ToolResults != true)?
             .Content.FirstOrDefault(b => b.Type == "text" && !b.Hidden)?.Text;
         var agentName = AgentNames.CallName(agent, _cfg);
-        var availableTools = web is null ? ToolsFor(p).ToList()
-            : ToolsFor(p).Concat(AssistantWebTools.All).ToList();
         // Explicit network grant per agent, independent of vault-read permissions.
         using var web = _cfg.Web.Allowed(agent.Id)
             ? new AssistantWebSession(_cfg.Web, cts.Token, existingSources: conv.WebSources) : null;
+        var availableTools = web is null ? ToolsFor(p).ToList()
+            : ToolsFor(p).Concat(AssistantWebTools.All).ToList();
         PlatformAssistantActivity.RequestNotificationPermission?.Invoke();
         PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(AssistantActivityKind.Running, agentName, conv.Id));
         try
