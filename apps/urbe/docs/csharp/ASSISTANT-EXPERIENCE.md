@@ -57,3 +57,40 @@ Templates não são agentes novos ativos; os agentes já utilizados são preserv
 Etapas mantêm expansão lazy por cabeçalho, sem seta. Modelo de texto e imagem
 pertencem ao agente; sem imagem escolhida não há geração automática. IA no aparelho
 requer download verificado dos pesos. Migração: ADR-0041 e DATA-CATALOG.
+
+## UC-89 — Multichat e colaboração segura (25/10/2026)
+
+O chat apresentado deixa de ser a única execução ativa: cada conversa possui seu próprio
+token de cancelamento, pendência de aprovação e tarefa. Trocar de agente, criar outra
+conversa ou retomar um histórico ativo não cancela as demais. A lista de agentes
+apresenta as execuções ativas, inclusive as que aguardam intervenção. Aprovação
+sempre se aplica à execução identificada que a originou.
+
+`consult_agent` consulta apenas perfis públicos de agentes configurados (ID, nome,
+descrição, capacidade de imagem). Encaminha exclusivamente a tarefa explícita e cria
+um novo chat pertencente ao especialista. Mensagens e memória de origem **não**
+entram na entrada do especialista; sua própria configuração de modelo, permissões
+e memórias é usada no executor. O resultado textual volta como resultado da
+ferramenta, com ID do chat especializado e eventuais referências a arquivos gerados.
+O executor secundário não dispõe de `consult_agent`, evitando delegação recursiva
+não supervisionada.
+
+O consentimento é obrigatório por padrão, com opção de consulta automática por
+agente. Mesmo com essa opção, um agente somente leitura **não** pode convocar
+autonomamente um especialista com escrita habilitada: exige autorização do usuário.
+Exclusão de arquivo e execução de plugin continuam pedindo aprovação no agente
+destinatário; não são transferidas pelo pedido do solicitante.
+
+Interface: quatro categorias efetivas — Modelos, Agentes, Pesquisa, Contexto —
+sem aba vazia de Execução. Ações de permissão ficam no perfil do agente.
+Detalhes de ferramentas, argumentos, resultados e status permanecem auditáveis
+na atividade recolhível; o status 'Consultando especialista' distingue delegação
+de pesquisa normal.
+
+Referências de design e comportamento: [Anthropic Multiagent](https://platform.claude.com/docs/en/managed-agents/multiagent-orchestration),
+[OpenAI Agents Orchestration](https://developers.openai.com/api/docs/guides/agents/orchestration) e
+[Claude Code Parallel Sessions](https://academy.claude.com/courses/ai-native-sdlc-playbook/parallel-sessions-and-subagents).
+Padrões conceituais adaptados ao Avalonia/C#, sem dependências novas.
+
+**Verificação pendente:** integração CI e DEVICE; não interpretar implementação
+ou capturas headless como entrega instalada no Android.
