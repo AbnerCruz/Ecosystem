@@ -806,7 +806,7 @@ public sealed partial class AssistantPanel : Border
             _activeConversations.Remove(conv.Id);
             _activeTasks.Remove(conv.Id);
             _pendingRuns.Remove(conv.Id);
-            if (ReferenceEquals(conv, _conv)) { _running = null; _pending = null; CurrentRun = null; }
+            if (ReferenceEquals(conv, _conv)) { _running = null; _pending = null; }
             if (_inNote is { } asked && ReferenceEquals(asked.Conv, conv))
             {
                 // UC-80: a change was made in the note (or refused there); an answer in words opens the panel to be read
@@ -892,7 +892,7 @@ public sealed partial class AssistantPanel : Border
             if (e.Type == "tool" && _toolStarted.TryGetValue(timed.Id, out var began)) _toolElapsed[timed.Id] = Math.Max(0, Environment.TickCount64 - began);
         }
         if (e.Type == "tool_progress" && e.Call is not null && e.Text is not null) _progress[e.Call.Id] = e.Text;
-        if (!ReferenceEquals(conversation, _conv)) { NotifyCompactChanged(); return; }
+        if (!ReferenceEquals(conversation, _conv)) return;
         if (e.Call is not null) { if (MessageOf(e.Call.Id) is { } m) Schedule(m); return; }
         if (e.Message is not null) Schedule(e.Message);
     }
@@ -999,7 +999,7 @@ public sealed partial class AssistantPanel : Border
         public Task TrashNoteAsync(UrbeDocument doc) => panel._app.TrashNoteAsync(doc);
         public Task CreateFolderAsync(string path) => panel._app.CreateFolderAsync(path);
         public void OpenNote(string path) => panel._app.OpenReference(path);
-        public void Remember(string fact) => panel.StoreMemory(fact, "fact", "vault", "", agentId);
+        public void Remember(string fact) { panel.StoreMemory(fact, "fact", "vault", "", agentId); }
         public IReadOnlyList<AiMemoryMatch> SearchMemory(string query, int limit) =>
             AssistantMemoryEngine.Search(panel._cfg, panel.VaultKey, agentId, query, limit);
         public AiMemoryRecord StoreMemory(string fact, string kind, string scope, string sourcePath) =>
