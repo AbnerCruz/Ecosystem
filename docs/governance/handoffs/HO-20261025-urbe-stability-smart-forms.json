@@ -90,10 +90,10 @@
     {
       "kind": "human",
       "check": "Android físico: crash relatado, segundo envio, formulários, teclado/rolagem/reinício e atualização",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
-      "evidence": "Sem aparelho físico conectado. O caminho de crash reproduzido no código não confirma causa única do incidente sem stack trace/logcat."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-25 (Issue https://github.com/AbnerCruz/Ecosystem/issues/770); registro em docs/governance/responses/VAL-HO-20261025-urbe-stability-smart-forms-0d13f3842fa5.md."
     }
   ],
   "known_issues": [
