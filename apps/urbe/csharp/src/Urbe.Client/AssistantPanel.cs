@@ -877,11 +877,15 @@ public sealed partial class AssistantPanel : Border
         var last = child.Messages.LastOrDefault(m => m.Role == "assistant" && m.Content.Any(b => b.Type == "text" && !string.IsNullOrWhiteSpace(b.Text)));
         var summary = last is null ? "" : string.Join("\n", last.Content.Where(b => b.Type == "text").Select(b => b.Text));
         var generated = child.Messages.SelectMany(m => m.Content)
-            .Where(b => b.Type == "tool_result" && !b.IsError && b.Content.Contains(".png", StringComparison.OrdinalIgnoreCase))
-            .Select(b => b.Content).Take(3).ToList();
-        return "Resposta de " + AgentNames.CallName(target, _cfg) + " (conversa separada " + child.Id + "):\n" +
+            .Where(b => b.Type == "tool_result" && !b.IsError)
+            .Select(b => AssistantImageTools.SavedImagePath(b.Content))
+            .OfType<string>().Distinct(StringComparer.Ordinal).ToList();
+        // A successful delegated image is first-class in the caller's chat, not a hidden tool string.
+        // The leading marker is the existing stable image-result contract.
+        return (generated.Count > 0 ? "Imagem guardada em " + generated[0] + ".\n" : "") +
+            "Resposta de " + AgentNames.CallName(target, _cfg) + " (conversa separada " + child.Id + "):\n" +
             (summary.Length > 0 ? summary : "A consulta terminou sem uma resposta textual.") +
-            (generated.Count > 0 ? "\nArquivos mencionados pelo especialista:\n" + string.Join("\n", generated) : "");
+            (generated.Count > 0 ? "\nArquivos gerados pelo especialista:\n" + string.Join("\n", generated) : "");
     }
 
     private void OnUpdateFor(AiConversation conversation, AiAgentEvent e)
@@ -1189,7 +1193,7 @@ public sealed partial class AssistantPanel : Border
                     desired.Add(group);
                 }
             }
-            var generatedPaths = steps.SelectMany(m => m.Content).Where(b => b.Type == "tool_use" && b.Name == "generate_image")
+            var generatedPaths = steps.SelectMany(m => m.Content).Where(b => b.Type == "tool_use" && b.Name is "generate_image" or "consult_agent")
                 .Select(b => ResultFor(b.Id) is { IsError: false } result ? AssistantImageTools.SavedImagePath(result.Content) : null)
                 .OfType<string>().Distinct(StringComparer.Ordinal).ToList();
             if (generatedPaths.Count > 1)
