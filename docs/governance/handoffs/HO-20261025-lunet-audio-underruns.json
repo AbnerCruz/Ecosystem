@@ -73,10 +73,10 @@
     {
       "check": "DEVICE: música PCM e relatório nos dois Previews",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/audio.md",
       "critical": false,
-      "evidence": "Roteiro 1–6: loop/volume/fades/pausa/segundo plano/Stop/isolado/relatório e regressão MediaPlayer. Nenhum aceite inferido."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-25 (Issue https://github.com/AbnerCruz/Ecosystem/issues/773); registro em docs/governance/responses/VAL-HO-20261025-lunet-audio-underruns-e1e97c3a4a58.md."
     },
     {
       "check": "Self-test global",
