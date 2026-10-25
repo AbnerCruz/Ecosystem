@@ -60,6 +60,28 @@ public sealed class AgentWorkspaceTests
     }
 
     [Fact]
+    public void AnUnconfiguredLegacyAssistantGetsTheLocalDefaultWithoutReplacingExplicitChoices()
+    {
+        var storage = new MemoryAssistantStorage();
+        var original = "{\"version\":1,\"instructions\":\"Keep these\",\"providers\":[{\"id\":\"device\",\"preset\":\"openai\"}]}";
+        storage.Write("config.json", original);
+        var config = new AssistantStore(storage).InitializeAgentWorkspaces(new Runtime());
+        Assert.Equal("Keep these", config.Instructions);
+        Assert.Equal("openai", config.Providers.First(p => p.Id == "device").Preset);
+        var choice = config.AgentModels["geral"];
+        Assert.Equal("device", config.Providers.First(p => p.Id == choice.ProviderId).Preset);
+        Assert.NotEqual("device", choice.ProviderId); // no collision with an existing provider identity
+        Assert.Equal("real-runtime-id", choice.Model);
+        Assert.Equal(original, storage.Read("config-before-agent-workspaces.json"));
+
+        var other = new MemoryAssistantStorage();
+        other.Write("config.json", "{\"version\":1,\"model\":\"chosen-before\"}");
+        var kept = new AssistantStore(other).InitializeAgentWorkspaces(new Runtime());
+        Assert.Equal("chosen-before", kept.Model);
+        Assert.False(kept.AgentModels.ContainsKey("geral"));
+    }
+
+    [Fact]
     public void AgentSettingsRoundTripIndependentlyAndMissingProviderDoesNotSubstitute()
     {
         var storage = new MemoryAssistantStorage();

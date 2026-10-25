@@ -45,7 +45,7 @@
   "work_completed": [
     "Issue #756: seleção com nomes, espaços de chat e histórico por AgentId/Vault; troca nunca reatribui conversa.",
     "Permissões/imagens individuais em configuração; readonly sem grant explícito; controles AllowTool/NeedsApproval intactos.",
-    "Templates sem ativação automática; perfis utilizados/configurados preservados. Modelo device recomendado real só para instalação nova, sem imagem automática.",
+    "Templates sem ativação automática; perfis utilizados/configurados preservados. Modelo device recomendado real para instalação nova ou Assistente legado sem escolha explícita, sem imagem automática.",
     "Backup exato antes de migração idempotente e gravação verificada; arquivos de conversas não são migrados; configuração ilegível/futura bloqueia alterações.",
     "Etapas sem setas, mantendo detalhes lazy; ajustes dos testes antigos às permissões explícitas e nova entrada pela lista de agentes."
   ],
@@ -54,13 +54,13 @@
       "kind": "automated",
       "check": "Core relevante",
       "result": "passed",
-      "evidence": "Build sem warnings/erros; dotnet tests/Urbe.Core.Tests/bin/Debug/net10.0/Urbe.Core.Tests.dll -parallelMode none -class Urbe.Core.Tests.Assistant* -class Urbe.Core.Tests.Agent* -class Urbe.Core.Tests.LocalProviderTests -reporter verbose: 219 testes passaram, 0 falhas, 4.951s."
+      "evidence": "Build sem warnings/erros; dotnet tests/Urbe.Core.Tests/bin/Debug/net10.0/Urbe.Core.Tests.dll -parallelMode none -class Urbe.Core.Tests.Assistant* -class Urbe.Core.Tests.Agent* -class Urbe.Core.Tests.LocalProviderTests -reporter verbose: 220 testes passaram, 0 falhas, 5.283s."
     },
     {
       "kind": "automated",
       "check": "UI relevante final e capturas",
       "result": "passed",
-      "evidence": "Build UI sem warnings/erros. Comando completo em apps/urbe/docs/csharp/acceptance/AGENT-WORKSPACES-2026-10-25.md: 19 testes relevantes passaram, zero falhas, 20.454s. Capturas mobile da lista de agentes e atividade sem setas inspecionadas."
+      "evidence": "Build UI sem warnings/erros. Comando completo em apps/urbe/docs/csharp/acceptance/AGENT-WORKSPACES-2026-10-25.md: 19 testes relevantes passaram, zero falhas, 26.915s. Capturas mobile da lista de agentes e atividade sem setas inspecionadas."
     },
     {
       "kind": "automated",

@@ -42,7 +42,7 @@ histórico, nome ou configuração individual são preservados como agentes
 existentes: não são novos padrões automáticos. IDs desconhecidos referenciados
 por históricos ficam acessíveis como agentes preservados somente leitura.
 
-Em instalação nova, usar o ID de modelo recomendado pelo ILocalTextRuntime
+Em instalação nova, ou com Assistente legado ainda sem escolha explícita de modelo, usar o ID de modelo recomendado pelo ILocalTextRuntime
 fornecido pelo head (catálogo real Urbe.LocalAi.LocalModelCatalog: Gemma 4 E2B/E4B),
 via provedor device. Não baixar pesos automaticamente: uso offline depende de
 instalação verificada e suporte do dispositivo. Sem runtime não inventar modelo.

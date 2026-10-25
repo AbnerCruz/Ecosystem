@@ -8,6 +8,7 @@ Branch: `feat/urbe-agent-workspaces`. ADR-0041 registra produto, dados e falhas.
 - Lista de agentes com nomes; trocar abre o chat correspondente. Histórico filtrado por AgentId e Vault, continuidade sem prazo artificial de seis horas.
 - Modelos de texto, imagem, instruções e permissões individuais. Permissões somente nas configurações; ausentes ou inválidas viram readonly. Exclusões/plugins continuam sujeitos às aprovações existentes.
 - Somente Assistente em instalação nova. Demais perfis são templates de criação com ID novo. Preservam-se identidades já referenciadas por históricos e personalizações.
+- Assistente legado sem escolha explícita de modelo também recebe o padrão local; escolhas anteriores, inclusive modelos de conversas antigas e IDs de provedores coincidentes, são preservadas.
 - Provedor `device` / IA no aparelho, usando `ILocalTextRuntime.Recommended.Id`; catálogo real Gemma 4 E2B/E4B. Não baixa nem executa pesos automaticamente. Nenhum modelo de imagem em configuração nova.
 - Migração aditiva em config.json, backup dos bytes originais verificado e gravação lida de volta. Ilegível/versão futura/falha de backup impedem alterações. Repetição idempotente. Conversas não são regravadas pela migração.
 - Históricos legados mantêm o AgentId final gravado. O chat antigo podia mudar de agente: não há evidência por mensagem para repartir conteúdo. A interface explica essa limitação.
@@ -26,8 +27,8 @@ dotnet build tests/Urbe.Client.Tests/Urbe.Client.Tests.csproj -m:1 -v minimal
 URBE_SNAPSHOT_DIR=/tmp/urbe-agent-snapshots dotnet tests/Urbe.Client.Tests/bin/Debug/net10.0/Urbe.Client.Tests.dll -parallelMode none -method '*AgentWorkspaces*' -method '*Assistant*' -method '*NoteAgent*' -method '*CodeBlocks*' -method '*ModelPrice*' -reporter verbose
 ```
 
-Builds: zero warnings, zero erros. Core: **219 passaram**, zero falhas, 4.951s.
-UI: **19 passaram**, zero falhas, 20.454s. Oito casos novos Core e um novo UI;
+Builds: zero warnings, zero erros. Core: **220 passaram**, zero falhas, 5.283s.
+UI: **19 passaram**, zero falhas, 26.915s. Nove casos novos Core e um novo UI;
 incluem falha de backup/gravação com retry, versão futura, migração, defaults,
 round-trip de configuração, histórico por agente/vault, seleção e reinicialização.
 Regressões cobrem aprovações, desfazer, plugins, comandos em notas, modelo local
@@ -57,3 +58,31 @@ ficam separados. Não houve build de APK/Windows, instalação, atualização re
 inferência com pesos locais ou teste com provedor real. DEVICE ainda necessário:
 IME/toque, retomada do app, migração de instalação existente e consumo de memória
 do modelo local no dispositivo. Não se declara release nem gate humano aprovado.
+
+## Arquivos alterados
+
+- `apps/urbe/AGENTSCHAT.md`
+- `apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Device.cs`
+- `apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs`
+- `apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs`
+- `apps/urbe/csharp/src/Urbe.Client/Ui/FlatDisclosure.cs`
+- `apps/urbe/csharp/src/Urbe.Core/Assistant/AgentNames.cs`
+- `apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs`
+- `apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs`
+- `apps/urbe/csharp/tests/Urbe.Client.Tests/AgentWorkspaceUiTests.cs`
+- `apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantCompactUiTests.cs`
+- `apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantContextualUiTests.cs`
+- `apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantExperienceUiTests.cs`
+- `apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantPluginUiTests.cs`
+- `apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs`
+- `apps/urbe/csharp/tests/Urbe.Client.Tests/DeviceAiUiTests.cs`
+- `apps/urbe/csharp/tests/Urbe.Core.Tests/AgentNamesTests.cs`
+- `apps/urbe/csharp/tests/Urbe.Core.Tests/AgentWorkspaceTests.cs`
+- `apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantStoreTests.cs`
+- `apps/urbe/docs/csharp/ASSISTANT-EXPERIENCE.md`
+- `apps/urbe/docs/csharp/ROADMAP.md`
+- `apps/urbe/docs/csharp/acceptance/AGENT-WORKSPACES-2026-10-25.md`
+- `apps/urbe/docs/v2/discovery/DATA-CATALOG.md`
+- `docs/adr/0041-urbe-espacos-por-agente.md`
+- `docs/adr/README.md`
+- `docs/governance/handoffs/HO-20261025-urbe-agent-workspaces.json`

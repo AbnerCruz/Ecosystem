@@ -193,11 +193,14 @@ public sealed class AssistantStore(IAssistantStorage storage)
             var template = AssistantAgent.Agents.FirstOrDefault(a => a.Id == id);
             config.CustomAgents.Add(template ?? new AiAgentDef(id, "Agente preservado " + id, "sparkle", "", "read", false, ""));
         }
-        // Global choices remain intact on upgrades; only a truly new installation gets the local default.
-        if (original is null && runtime is not null)
+        // Preserve explicit choices, including the model in an older conversation. An unconfigured
+        // Assistant gets the local default even when another preference already created config.json.
+        if (runtime is not null && !config.AgentModels.ContainsKey("geral") && config.Model.Length == 0 &&
+            !conversations.Any(c => c.AgentId == "geral" && c.Model.Length > 0))
         {
-            var provider = new AiProviderConfig("device", "device", "IA no aparelho", "", "");
-            config.Providers.Add(provider);
+            var provider = config.Providers.FirstOrDefault(p => p.Preset == "device") ??
+                new AiProviderConfig(config.Providers.Any(p => p.Id == "device") ? AssistantAgent.NewId("p") : "device", "device", "IA no aparelho", "", "");
+            if (!config.Providers.Any(p => p.Id == provider.Id)) config.Providers.Add(provider);
             config.AgentModels["geral"] = new AiModelChoice(provider.Id, runtime.Recommended.Id);
         }
         if (original is not null && !string.IsNullOrWhiteSpace(config.ImageProviderId) && config.ImageModel.Length > 0)
