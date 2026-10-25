@@ -579,7 +579,6 @@ public sealed partial class AssistantPanel
 
     private async Task PickPolicyAsync(AiAgentDef agent)
     {
-        if (_running is not null) return;
         var modes = new (string Scope, string Policy, string Title, string Icon, string Detail)[]
         {
             ("read", "readonly", "Somente leitura", UrbeTheme.Icons.Search, "Consulta notas sem modificar arquivos"),
@@ -590,7 +589,7 @@ public sealed partial class AssistantPanel
         };
         var picked = await _app.Dialogs.ChooseAsync("Permissões de " + AgentNames.CallName(agent, _cfg),
             modes.Select(m => new DialogItem(m.Title, m.Icon, m.Detail)).ToArray());
-        if (picked is not { } index || _running is not null || index < 0 || index >= modes.Length) return;
+        if (picked is not { } index || index < 0 || index >= modes.Length) return;
         _cfg.AgentToolScopes[agent.Id] = modes[index].Scope;
         _cfg.AgentPolicies[agent.Id] = modes[index].Policy;
         SaveConfig();
@@ -1396,7 +1395,7 @@ public sealed partial class AssistantPanel
     private void EditAgentProfile(AiAgentDef agent)
     {
         var body = OpenView("Configurar " + AgentNames.CallName(agent, _cfg), () => ShowSettings());
-        body.Children.Add(Section("Acesso e colaboração", Hint(PermissionSummary(agent)),
+        body.Children.Add(Section("Acesso e colaboração", Hint(PermissionSummary(agent) + " · alterações valem nas próximas execuções"),
             TextButton("Alterar permissões", () => _ = PickPolicyAsync(agent)),
             Hint(_cfg.AgentDelegationAuto.GetValueOrDefault(agent.Id)
                 ? "Consultar outros agentes: automaticamente quando seguro"
