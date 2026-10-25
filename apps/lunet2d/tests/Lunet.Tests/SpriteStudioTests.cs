@@ -34,4 +34,35 @@ public class SpriteStudioTests
     [InlineData("{\"Frames\":[]}")]
     [InlineData("{\"Frames\":[null]}")]
     public void UnsupportedSourceIsRejectedWithoutRewriting(string json) => Assert.Throws<InvalidDataException>(() => SpriteDocument.Parse(json));
+    [Fact]
+    public void RectangleOutlineAndFilledRespectBoundsAndTransparency()
+    {
+        var doc = SpriteDocument.Create(8);
+        doc.Rectangle(0, 1, 1, 5, 4, 0xffff00ff);
+        Assert.Equal(14, doc.Frames[0].Count(p => p == 0xffff00ff));
+        Assert.Equal(0u, doc.Frames[0][2 * 8 + 3]);
+        doc.Rectangle(0, 2, 2, 4, 3, 0x8000ff11, filled: true);
+        Assert.Equal(6, doc.Frames[0].Count(p => p == 0x8000ff11));
+        doc.Rectangle(0, -100, -100, -1, -1, 0xffffffff, filled: true);
+        doc.Rectangle(0, 20, 20, 40, 40, 0xffffffff);
+        Assert.DoesNotContain(0xffffffffu, doc.Frames[0]);
+        Assert.Equal(doc.ToJson(), SpriteDocument.Parse(doc.ToJson()).ToJson());
+    }
+
+    [Fact]
+    public void VerticalFlipDoesNotCorruptOtherFramesOrTransparency()
+    {
+        var doc = SpriteDocument.Create(3);
+        doc.Frames[0][0] = 0x80ff0022;
+        doc.Frames[0][8] = 0xffaabbcc;
+        doc.AddFrame(0);
+        doc.FlipVertical(0);
+        Assert.Equal(0x80ff0022u, doc.Frames[0][6]);
+        Assert.Equal(0xffaabbccu, doc.Frames[0][2]);
+        Assert.Equal(0x80ff0022u, doc.Frames[1][0]);
+        Assert.Equal(0xffaabbccu, doc.Frames[1][8]);
+        doc.FlipVertical(0);
+        Assert.Equal(doc.Frames[1], doc.Frames[0]);
+    }
+
 }
