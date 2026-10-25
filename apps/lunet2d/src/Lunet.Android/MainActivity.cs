@@ -1156,7 +1156,7 @@ public sealed partial class MainActivity : Activity
 
     protected override void OnPause()
     {
-        _spriteStudio?.Save();
+        _spriteStudio?.Suspend();
         SaveCurrent();
         _preview?.Pause();
         base.OnPause();

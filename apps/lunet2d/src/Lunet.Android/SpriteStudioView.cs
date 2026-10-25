@@ -72,6 +72,7 @@ internal sealed class SpriteStudioView : LinearLayout
     private void TogglePlay() { if (_playing) { Stop(); return; } _playing = true; _play.Text = "■ Parar"; Post(_tick); }
     private void Change(Action mutation) { Stop(); _history.Checkpoint(_document); mutation(); AfterEdit(); }
     private void AfterEdit() { _frame = Math.Min(_frame, _document.Frames.Count - 1); Refresh(); Save(); }
+    public void Suspend() { Stop(); Save(); }
     public void Save()
     {
         try { _save(_document); _status.Text = $"Salvo · {_document.Width}×{_document.Height} · {_document.Fps} FPS · {_tool}"; }
