@@ -164,6 +164,28 @@ public sealed class AgentWorkspaceTests
         Assert.NotNull(store.GetConversation("protected"));
     }
 
+    [Fact]
+    public void DelegationProvenanceSurvivesStorageRoundTripWithoutSharingMessages()
+    {
+        var store = new AssistantStore(new MemoryAssistantStorage());
+        var parent = new AiConversation { Id = "parent", AgentId = "writer", Vault = "V" };
+        store.SaveConversation(parent);
+        var specialist = new AiConversation
+        {
+            Id = "child", AgentId = "artist", OriginConversationId = parent.Id,
+            OriginAgentId = parent.AgentId, Vault = "V",
+            Messages = [new AiChatMessage { Role = "user", Content = [AiChatBlock.TextBlock("Gere um desenho")] }]
+        };
+        store.SaveConversation(specialist);
+        var read = Assert.IsType<AiConversation>(store.GetConversation("child"));
+        Assert.Equal("parent", read.OriginConversationId);
+        Assert.Equal("writer", read.OriginAgentId);
+        Assert.Equal("artist", read.AgentId);
+        Assert.Single(read.Messages);
+        Assert.Empty(store.GetConversation("parent")!.Messages);
+        Assert.Null(store.GetConversation("parent")!.OriginConversationId);
+    }
+
     [Theory]
     [InlineData("{broken")]
     [InlineData("{\"version\":99}")]
