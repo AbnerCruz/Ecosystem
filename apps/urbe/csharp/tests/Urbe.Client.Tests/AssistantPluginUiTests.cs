@@ -36,7 +36,9 @@ public sealed partial class HeadlessUiTests
                 var model = new ScriptedModel();
                 var panel = view.Assistant;
                 panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
-                panel.Open();   // loads the configuration of this device first
+                panel.Open();
+                panel.SelectAgent("geral");
+                panel.Config.AgentPolicies["geral"] = "ask";
                 panel.Config.Providers.Add(new AiProviderConfig("or", "openrouter", "OpenRouter", "sk-or-teste", ""));
                 panel.Config.ProviderId = "or";
                 panel.Config.Model = "org/modelo-b";

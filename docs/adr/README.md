@@ -66,3 +66,5 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0039](0039-urbe-memoria-contextual-local.md) | Memória contextual local e aprendizado dos agentes do Urbe | Proposto |
 
 | [0040](0040-urbe-grafos-autorais.md) | Grafos autorais como artefatos do Urbe | Proposto |
+
+| [0041](0041-urbe-espacos-por-agente.md) | Urbe: espaços e configuração individual por agente | Proposto |

@@ -11,7 +11,7 @@ namespace Urbe.Client.Ui;
 /// <summary>A single touchable line, with no Fluent nested surfaces. Content remains lazy and mounted.</summary>
 public static class FlatDisclosure
 {
-    public static Expander Create(Control header)
+    public static Expander Create(Control header, bool showArrow = true)
     {
         var fold = new Expander { Header = header, HorizontalAlignment = HorizontalAlignment.Stretch,
             Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
@@ -22,10 +22,10 @@ public static class FlatDisclosure
             var arrow = new TextBlock { Text = owner.IsExpanded ? "⌃" : "⌄", FontSize = 18,
                 Foreground = UrbeTheme.Brush(UrbeTheme.Text2), VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(8, 0, 0, 0), IsHitTestVisible = false };
-            var line = new Grid { ColumnDefinitions = new ColumnDefinitions("*,24") };
+            var line = new Grid { ColumnDefinitions = new ColumnDefinitions(showArrow ? "*,24" : "*") };
             Grid.SetColumn(arrow, 1);
             line.Children.Add(label);
-            line.Children.Add(arrow);
+            if (showArrow) line.Children.Add(arrow);
             var toggle = new ToggleButton { Content = line, MinHeight = UrbeTokens.MinTouch,
                 Padding = new Thickness(0, 4), HorizontalContentAlignment = HorizontalAlignment.Stretch,
                 Background = Brushes.Transparent, BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(0) };

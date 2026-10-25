@@ -131,8 +131,7 @@ public sealed partial class AssistantPanel
         var cfg = _cfg.Providers.FirstOrDefault(p => p.Preset == "device") ?? new AiProviderConfig("device", "device", "IA no aparelho", "", "");
         if (!_cfg.Providers.Any(p => p.Id == cfg.Id)) _cfg.Providers.Add(cfg);
         _cfg.ModelCache[cfg.Id] = new AiModelCache(Now(), await Providers.ListModelsAsync(cfg));
-        _cfg.ProviderId = cfg.Id;
-        _cfg.Model = model.Id;
+        _cfg.AgentModels[_conv.AgentId] = new AiModelChoice(cfg.Id, model.Id);
         _conv.ProviderId = cfg.Id;
         _conv.Model = model.Id;
         SaveConfig();

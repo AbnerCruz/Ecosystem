@@ -14,8 +14,8 @@ public static class AgentNames
 {
     public const int MaxLength = 24;
 
-    /// <summary>Every agent: the built-in ones, then the person's own.</summary>
-    public static IReadOnlyList<AiAgentDef> All(AiConfig config) => [.. AssistantAgent.Agents, .. config.CustomAgents];
+    /// <summary>Active agents only: Assistant and explicitly created or preserved identities. Other built-ins are templates.</summary>
+    public static IReadOnlyList<AiAgentDef> All(AiConfig config) => [AssistantAgent.Agents[0], .. config.CustomAgents.Where(a => a.Id != "geral")];
 
     /// <summary>The agent's call name: the one given on this device, else its own name.</summary>
     public static string CallName(AiAgentDef agent, AiConfig config) =>

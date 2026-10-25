@@ -364,3 +364,7 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 - [~] Pedido integral do proprietário: transcript com hierarquia plana e estados coerentes; respostas selecionáveis; código copiável de qualquer linguagem; menus de clipboard; custos explícitos em seletores de agentes/chat/imagens e painel por chamada; fontes com busca, filtros e evidências; imagens proporcionais, exportação e zoom; rascunhos de pergunta/aprovação preservados. Critérios em [ASSISTANT-EXPERIENCE.md](ASSISTANT-EXPERIENCE.md). Branch `feat/urbe-assistant-experience-20261024`.
 - **Provas:** testes Core/UI, captura mobile e desktop, consistency e CI do integrador; DEVICE (IME/alças/pinch/retomada/atualização) permanece pendente. Não marcar [x] antes de aceite no aparelho.
 - **Release solicitada:** próxima beta pelo pipeline canônico, mantendo certificado, pacote e canais. A existência dos assets oficiais deve ser verificada antes de fornecer link.
+
+### UC-81 — espaços por agente (pedido de 25/10/2026)
+
+- [~] Issue #756: seleção abre o chat próprio e histórico filtrado; modelos/permissões/imagens individuais; novos agentes somente leitura; presets como templates e somente Assistente por padrão; modelo device real em instalação nova e sem imagem automática. Migração e compatibilidade em ADR-0041. Branch `feat/urbe-agent-workspaces`; testes/integração/DEVICE registrados no handoff, sem declarar gate humano fechado.

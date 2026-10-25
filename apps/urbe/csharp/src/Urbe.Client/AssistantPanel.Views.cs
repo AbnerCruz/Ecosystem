@@ -47,7 +47,7 @@ public sealed partial class AssistantPanel
                 var md = Markdown(b.Text ?? "");
                 // an answer given before finishing the reading: folded, the revised one comes next
                 view.Children.Add(meta?.Draft == true
-                    ? new Expander { Header = Label("Resposta preliminar (substituída pela revisada abaixo)", 12, UrbeTheme.Text3), Content = md, HorizontalAlignment = HorizontalAlignment.Stretch }
+                    ? Lazy(Label("Resposta preliminar (substituída pela revisada abaixo)", 12, UrbeTheme.Text3), () => md)
                     : md);
             }
             else if (b.Type == "tool_use") view.Children.Add(ToolCard(b, m));
@@ -495,9 +495,7 @@ public sealed partial class AssistantPanel
         var title = Wrap(a.Name, 20, UrbeTheme.Text, FontWeight.Bold);
         title.TextAlignment = TextAlignment.Center;
         box.Children.Add(title);
-        var desc = Wrap(a.Description, 14, UrbeTheme.Text2);
-        desc.TextAlignment = TextAlignment.Center;
-        box.Children.Add(desc);
+
         foreach (var s in sug.Take(5))
         {
             var b = new Button
@@ -514,34 +512,64 @@ public sealed partial class AssistantPanel
 
     // ---------------------------------------------------------------- pickers
 
-    private async Task PickAgentAsync()
+    private Task PickAgentAsync()
+    {
+        ShowAgents();
+        return Task.CompletedTask;
+    }
+
+    public void ShowAgents()
     {
         if (_running is not null) return;
-        var list = AssistantAgent.Agents.Concat(_cfg.CustomAgents).ToList();
-        var i = await _app.Dialogs.ChooseAsync("Agente", list.Select(a => new DialogItem(AgentNames.CallName(a, _cfg) + (a.Id == _conv.AgentId ? "  ✓" : ""), UrbeTheme.Icons.Assistant,
-            a.Description.Length > 0 ? a.Description : a.Tools == "read" ? "Só leitura" : "Personalizado")).ToList());
-        if (i is not { } k) return;
-        _conv.AgentId = list[k].Id;
-        _cfg.AgentId = list[k].Id;
+        var body = OpenView("Agentes");
+        foreach (var agent in AgentNames.All(_cfg))
+        {
+            var item = new Button
+            {
+                MinHeight = UrbeTokens.MinTouch, HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Left, Padding = new Thickness(12, 10),
+                CornerRadius = new CornerRadius(0), Background = Brushes.Transparent,
+                BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2, .55), BorderThickness = new Thickness(0, 0, 0, 1),
+                Content = Label(AgentNames.CallName(agent, _cfg), 15, UrbeTheme.Text, FontWeight.SemiBold)
+            };
+            Avalonia.Automation.AutomationProperties.SetName(item, AgentNames.CallName(agent, _cfg));
+            item.Click += (_, _) => SelectAgent(agent.Id);
+            body.Children.Add(item);
+        }
+        body.Children.Add(TextButton("+ Novo agente", () => EditAgent(null)));
+    }
+
+    public void SelectAgent(string agentId)
+    {
+        if (_running is not null || !AgentNames.All(_cfg).Any(a => a.Id == agentId)) return;
+        Persist();
+        _agentDrafts[_conv.AgentId] = (_input.Text ?? "", _pendingAttachments.ToList());
+        var draft = _agentDrafts.GetValueOrDefault(agentId);
+        _input.Text = draft.Text ?? "";
+        _pendingAttachments.Clear();
+        if (draft.Attachments is not null) _pendingAttachments.AddRange(draft.Attachments);
+        RefreshAttachments();
+        _cfg.AgentId = agentId;
+        _conv = _store.ConversationsFor(agentId, _app.VaultName).FirstOrDefault() ?? NewConversation();
         SaveConfig();
+        CloseView();
         RenderAll();
     }
 
-    private async Task PickPolicyAsync()
+    private async Task PickPolicyAsync(AiAgentDef agent)
     {
         if (_running is not null) return;
-        string[] values = ["ask", "auto", "readonly"];
-        var i = await _app.Dialogs.ChooseAsync("Permissões nesta conversa",
+        string[] values = ["readonly", "ask", "auto"];
+        var i = await _app.Dialogs.ChooseAsync("Permissões de " + AgentNames.CallName(agent, _cfg),
         [
-            new DialogItem("Pede aprovação" + (_conv.Policy == "ask" ? "  ✓" : ""), UrbeTheme.Icons.Check, "Lê à vontade; mostra cada alteração antes de aplicar"),
-            new DialogItem("Edita sozinho" + (_conv.Policy == "auto" ? "  ✓" : ""), UrbeTheme.Icons.Edit, "Aplica alterações direto (dá para desfazer). Exclusões ainda pedem aprovação"),
-            new DialogItem("Só leitura" + (_conv.Policy == "readonly" ? "  ✓" : ""), UrbeTheme.Icons.Search, "Nunca altera notas")
+            new DialogItem("Só leitura", UrbeTheme.Icons.Search, "Nunca altera notas"),
+            new DialogItem("Pede aprovação", UrbeTheme.Icons.Check, "Mostra cada alteração antes de aplicar"),
+            new DialogItem("Edita sozinho", UrbeTheme.Icons.Edit, "Exclusões e plugins continuam exigindo aprovação")
         ]);
-        if (i is not { } k) return;
-        _conv.Policy = values[k];
-        _cfg.Policy = values[k];
+        if (i is not { } k || _running is not null) return;
+        _cfg.AgentPolicies[agent.Id] = values[k];
         SaveConfig();
-        RenderChrome();
+        EditAgentProfile(agent);
     }
 
     // ---------------------------------------------------------------- overlaid views
@@ -573,8 +601,9 @@ public sealed partial class AssistantPanel
 
     private void ShowHistory()
     {
-        var list = _store.ListConversations();
+        var list = _store.ConversationsFor(_conv.AgentId, _app.VaultName);
         var body = OpenView("Conversas");
+        body.Children.Add(Hint("Histórico deste agente. Conversas antigas mantêm o agente registrado na última gravação; podem conter participações anteriores de outros agentes."));
         if (list.Count == 0) { body.Children.Add(Wrap("Nenhuma conversa ainda.", 14, UrbeTheme.Text3)); return; }
         foreach (var c in list)
         {
@@ -648,7 +677,8 @@ public sealed partial class AssistantPanel
         var c = _cfg;
         var v = VaultKey;
         var body = OpenView("Configurações");
-        body.Children.Add(Wrap("Personalize como seus agentes trabalham", 15, UrbeTheme.Text2));
+        body.Children.Add(Wrap("O Assistente padrão usa um modelo básico. Configure agentes com modelos melhores conforme suas necessidades. A IA no aparelho requer download prévio do modelo e suporte neste dispositivo.", 14, UrbeTheme.Text2));
+        if (HasDeviceAi) body.Children.Add(TextButton("IA no aparelho", ShowDevice));
         var choices = new (string Id, string Title, string Description)[]
         {
             ("models", "Modelos", "Provedores e imagens"),
@@ -710,7 +740,8 @@ public sealed partial class AssistantPanel
                 c.ModelCache.Remove(p.Id);
                 if (c.ProviderId == p.Id) { c.ProviderId = c.Providers.FirstOrDefault()?.Id; c.Model = ""; }
                 if (c.ImageProviderId == p.Id) { c.ImageProviderId = null; c.ImageModel = ""; }
-                foreach (var id in c.AgentModels.Where(x => x.Value.ProviderId == p.Id).Select(x => x.Key).ToList()) c.AgentModels.Remove(id);
+                // Keep agent model references: missing providers must not silently select a different service.
+
                 SaveConfig();
                 ShowSettings();
                 RenderChrome();
@@ -723,22 +754,7 @@ public sealed partial class AssistantPanel
 
         body.Children.Add(Section("Modelo de conversa", Wrap(ModelId(), 13, UrbeTheme.Text),
             Wrap(ModelPriceFor(null), 12, UrbeTheme.Text2), TextButton("Selecionar modelo e preço", () => _ = PickModelAsync())));
-        var imageProvider = AssistantProviders.PickImageProvider(Provider() ?? c.Providers.FirstOrDefault() ?? new AiProviderConfig("", "custom"),
-            c.Providers, c.ImageProviderId, c.ImageModel);
-        var imageChoice = imageProvider is null ? "Automático (provedor de imagens disponível)"
-            : (imageProvider.Name ?? imageProvider.Id) + " · " + (c.ImageModel.Length > 0 ? c.ImageModel : AssistantProviders.ImageModel(imageProvider.Preset) ?? "Escolher modelo");
-        var imagePrice = Hint(imageProvider is null ? "O custo depende do provedor que for escolhido automaticamente." : "Consultando preço do modelo…");
-        body.Children.Add(Section("Geração de imagens",
-            Hint("Modelo visual independente do chat. Preços em US$, segundo a unidade de cobrança do provedor."),
-            Label(imageChoice, 13, UrbeTheme.Text, FontWeight.SemiBold),
-            imagePrice,
-            TextButton("Ver modelos e preços", () => _ = PickConfiguredModelAsync(null))));
-        if (imageProvider is not null)
-        {
-            var id = c.ImageModel.Length > 0 ? c.ImageModel : AssistantProviders.ImageModel(imageProvider.Preset) ?? "";
-            if (id.Length == 0) imagePrice.Text = "Selecione o ID do modelo para consultar o preço.";
-            else _ = PriceInSettingsAsync(imageProvider, id, imagePrice);
-        }
+        body.Children.Add(Section("Geração de imagens", Hint("Escolha o modelo de imagem nas configurações de cada agente. Sem seleção, nenhuma imagem é gerada.")));
 
         }
 
@@ -768,7 +784,7 @@ public sealed partial class AssistantPanel
             var configure = TextButton("Configurar", () => EditAgentProfile(a));
             var call = AgentNames.CallName(a, c);
             var choice = c.AgentModels.GetValueOrDefault(a.Id);
-            var effective = choice ?? new AiModelChoice(_conv.ProviderId ?? c.ProviderId ?? "", _conv.Model.Length > 0 ? _conv.Model : c.Model);
+            var effective = c.ModelFor(new AiConversation { AgentId = a.Id });
             var row = new StackPanel { Spacing = 4, Margin = new Thickness(0, 4, 0, 8) };
             row.Children.Add(Wrap(call, 14, UrbeTheme.Text, FontWeight.SemiBold));
             if (call != a.Name) row.Children.Add(Hint(a.Name));
@@ -787,11 +803,16 @@ public sealed partial class AssistantPanel
             actions.Children.Add(TextButton("Editar", () => EditAgent(a)));
             actions.Children.Add(TextButton("Modelo e blocos", () => EditAgentProfile(a)));
             var rm = IconButton(UrbeTheme.Icons.Trash, "Remover");
-            rm.Click += (_, _) =>
+            rm.Click += async (_, _) =>
             {
+                if (_store.ListConversations().Any(chat => chat.AgentId == a.Id))
+                { await _app.Dialogs.AlertAsync("Agente com histórico", "As conversas foram preservadas. Exclua explicitamente as conversas antes de remover o agente."); return; }
                 c.CustomAgents.RemoveAll(x => x.Id == a.Id);
                 c.AgentModels.Remove(a.Id);
                 c.AgentInstructionBlocks.Remove(a.Id);
+                c.AgentPolicies.Remove(a.Id);
+                c.AgentImages.Remove(a.Id);
+                if (_cfg.AgentId == a.Id) SelectAgent("geral");
                 SaveConfig(); ShowSettings();
             };
             actions.Children.Add(rm);
@@ -808,8 +829,7 @@ public sealed partial class AssistantPanel
         if (_settingsCategory == "execution")
         {
             body.Children.Add(Section("Autonomia e proteção",
-                Hint("O modo de aprovação de alterações pode ser trocado também na conversa."),
-                TextButton("Alterar permissões da conversa", () => _ = PickPolicyAsync())));
+                Hint("Permissões são configuradas individualmente em Agentes → Configurar. Novos agentes começam em somente leitura.")));
             body.Children.Add(Section("Profundidade da investigação",
                 Hint("O agente define quantas perguntas e etapas são necessárias a partir do objetivo, das respostas e das evidências. Você continua controlando aprovações e pode interromper a execução a qualquer momento.")));
             body.Children.Add(Section("Transparência",
@@ -1102,7 +1122,20 @@ public sealed partial class AssistantPanel
         var name = new TextBox { Text = a?.Name ?? "", PlaceholderText = "Ex.: Revisor acadêmico" };
         var prompt = new TextBox { Text = a?.Prompt ?? "", AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 140, PlaceholderText = "Como este agente deve pensar e trabalhar." };
         string[] values = ["all", "write", "read"];
-        var tools = new ComboBox { ItemsSource = new[] { "Tudo (inclusive excluir, com aprovação)", "Ler e escrever, sem excluir", "Só ler" }, SelectedIndex = Math.Max(0, Array.IndexOf(values, a?.Tools ?? "all")) };
+        var tools = new ComboBox { ItemsSource = new[] { "Tudo (inclusive excluir, com aprovação)", "Ler e escrever, sem excluir", "Só ler" }, SelectedIndex = Math.Max(0, Array.IndexOf(values, a?.Tools ?? "read")) };
+        if (isNew)
+        {
+            var templates = new ComboBox { ItemsSource = new[] { "Em branco" }.Concat(AssistantAgent.Agents.Skip(1).Select(t => t.Name)).ToList(), SelectedIndex = 0 };
+            templates.SelectionChanged += (_, _) =>
+            {
+                if (templates.SelectedIndex <= 0) { prompt.Text = ""; tools.SelectedIndex = 2; return; }
+                var template = AssistantAgent.Agents[templates.SelectedIndex];
+                name.Text = template.Name;
+                prompt.Text = template.Prompt;
+                tools.SelectedIndex = Math.Max(0, Array.IndexOf(values, template.Tools));
+            };
+            body.Children.Add(Section("Modelo de agente", templates));
+        }
         body.Children.Add(Section("Nome", name));
         body.Children.Add(Section("Instruções", prompt));
         body.Children.Add(Section("O que pode fazer", tools));
@@ -1110,6 +1143,7 @@ public sealed partial class AssistantPanel
         {
             var n = (name.Text ?? "").Trim();
             if (n.Length == 0) return;
+            if (AgentNames.Problem(n, a?.Id ?? "", _cfg) is { } problem) { _app.Notify(problem); return; }
             var p = (prompt.Text ?? "").Trim();
             var t = values[Math.Max(0, tools.SelectedIndex)];
             var made = new AiAgentDef(a?.Id ?? AssistantAgent.NewId("a"), n, t == "read" ? "search" : "sparkle", p.Length > 80 ? p[..80] : p, t, t == "all", p);
@@ -1125,18 +1159,19 @@ public sealed partial class AssistantPanel
 
 
     /// <summary>Provider/model picker for images and for any agent. Never changes the conversation's model.</summary>
-    private async Task PickConfiguredModelAsync(string? agentId)
+    private async Task PickConfiguredModelAsync(string? agentId, string? imageAgentId = null)
     {
         if (_cfg.Providers.Count == 0) { ShowSettings("openrouter"); return; }
         bool image = agentId is null;
         var agent = image ? null : AssistantAgent.AgentById(agentId, _cfg.CustomAgents);
         void Back()
         {
-            if (agent is null) ShowSettings();
+            if (imageAgentId is not null) EditAgentProfile(AssistantAgent.AgentById(imageAgentId, _cfg.CustomAgents));
+            else if (agent is null) ShowSettings();
             else EditAgentProfile(agent);
         }
         var choice = image
-            ? new AiModelChoice(_cfg.ImageProviderId ?? "", _cfg.ImageModel)
+            ? _cfg.AgentImages.GetValueOrDefault(imageAgentId ?? _conv.AgentId) ?? new AiModelChoice("", "")
             : _cfg.AgentModels.GetValueOrDefault(agentId!) ?? new AiModelChoice("", "");
         var providers = _cfg.Providers.Where(p => !image || AssistantProviders.Resolve(p).Kind == "openai" &&
             p.Preset is "openrouter" or "openai" or "gemini" or "custom").ToList();
@@ -1146,9 +1181,15 @@ public sealed partial class AssistantPanel
         body.Children.Add(Hint(image
             ? "O modelo de imagem não altera o chat. Preços em US$ com unidade de cobrança e fonte; valores variáveis não são estimados como zero."
             : "Este modelo será usado somente pelo agente escolhido. Sem seleção, ele herda o modelo do Assistente."));
-        var auto = TextButton(image ? "Usar escolha automática" : "Herdar modelo do Assistente", () =>
+        var auto = TextButton(image ? "Sem modelo de imagem" : agentId == "geral" ? "Usar modelo básico do aparelho" : "Herdar modelo do Assistente", () =>
         {
-            if (image) { _cfg.ImageProviderId = null; _cfg.ImageModel = ""; }
+            if (image) _cfg.AgentImages.Remove(imageAgentId ?? _conv.AgentId);
+            else if (agentId == "geral" && LocalAi.Text is { } runtime)
+            {
+                var device = _cfg.Providers.FirstOrDefault(p => p.Preset == "device") ?? new AiProviderConfig("device", "device", "IA no aparelho", "", "");
+                if (!_cfg.Providers.Any(p => p.Id == device.Id)) _cfg.Providers.Add(device);
+                _cfg.AgentModels[agentId] = new AiModelChoice(device.Id, runtime.Recommended.Id);
+            }
             else _cfg.AgentModels.Remove(agentId!);
             SaveConfig(); Back(); RenderAll();
         });
@@ -1183,7 +1224,7 @@ public sealed partial class AssistantPanel
         void Choose(string id)
         {
             if (string.IsNullOrWhiteSpace(id)) return;
-            if (image) { _cfg.ImageProviderId = selected.Id; _cfg.ImageModel = id.Trim(); }
+            if (image) _cfg.AgentImages[imageAgentId ?? _conv.AgentId] = new AiModelChoice(selected.Id, id.Trim());
             else _cfg.AgentModels[agentId!] = new AiModelChoice(selected.Id, id.Trim());
             SaveConfig(); Back(); RenderAll();
         }
@@ -1310,7 +1351,17 @@ public sealed partial class AssistantPanel
     private void EditAgentProfile(AiAgentDef agent)
     {
         var body = OpenView("Configurar " + AgentNames.CallName(agent, _cfg), () => ShowSettings());
-        body.Children.Add(Hint(agent.Description.Length > 0 ? agent.Description : "Agente personalizado."));
+        body.Children.Add(Section("Permissões", Hint(_cfg.PolicyFor(agent.Id) switch { "auto" => "Edita sozinho", "ask" => "Pede aprovação", _ => "Somente leitura" }),
+            TextButton("Configurar permissões", () => _ = PickPolicyAsync(agent))));
+        var image = _cfg.AgentImages.GetValueOrDefault(agent.Id);
+        body.Children.Add(Section("Modelo de imagem", Hint(image?.Model ?? "Nenhum"),
+            TextButton("Selecionar modelo de imagem", () => _ = PickConfiguredModelAsync(null, agent.Id))));
+        if (image is not null && _cfg.Providers.FirstOrDefault(p => p.Id == image.ProviderId) is { } imageProvider)
+        {
+            var price = Hint("Consultando preço do modelo…");
+            body.Children.Add(price);
+            _ = PriceInSettingsAsync(imageProvider, image.Model, price);
+        }
         var selected = _cfg.AgentModels.GetValueOrDefault(agent.Id);
         var provider = selected is null ? null : _cfg.Providers.FirstOrDefault(p => p.Id == selected.ProviderId);
         var choice = provider is null ? "Padrão do Assistente (herdado)" : (provider.Name ?? provider.Id) + " · " + selected!.Model;
@@ -1345,7 +1396,7 @@ public sealed partial class AssistantPanel
         }
         body.Children.Add(Section("Modelo de conversa", Hint("Opcional: se não escolher, este agente continua usando o modelo padrão."),
             Wrap(choice, 13, UrbeTheme.Text, FontWeight.SemiBold),
-            Wrap(ModelPriceFor(selected ?? new AiModelChoice(_conv.ProviderId ?? _cfg.ProviderId ?? "", _conv.Model.Length > 0 ? _conv.Model : _cfg.Model)), 12, UrbeTheme.Text2),
+            Wrap(ModelPriceFor(selected ?? _cfg.ModelFor(new AiConversation { AgentId = agent.Id })), 12, UrbeTheme.Text2),
             TextButton("Selecionar provedor e modelo", () => { SaveBlocks(); _ = PickConfiguredModelAsync(agent.Id); })));
         body.Children.Add(Section("Instruções por blocos", Hint("Você pode criar vários blocos. Todos são usados em conjunto com as instruções gerais, mantendo as permissões do agente."),
             blocksPanel, TextButton("+ Adicionar bloco", () => AddBlock(new AiInstructionBlock("", "")))));
@@ -1361,7 +1412,7 @@ public sealed partial class AssistantPanel
         if (_cfg.Providers.Count == 0) { ShowSettings("openrouter"); return; }
         var prov = Provider()!;
         var body = OpenView("Modelo");
-        body.Children.Add(Hint("Modelo padrão desta conversa; cada agente pode ter um modelo próprio em Configurações → Nomes dos agentes → Configurar."));
+        body.Children.Add(Hint("Modelo deste agente. Você também pode configurá-lo em Configurações → Agentes."));
         var tabs = new WrapPanel();
         var search = new TextBox { PlaceholderText = "Buscar modelo (ex.: claude, gpt, gemini)" };
         var list = new StackPanel { Spacing = 6 };
@@ -1457,8 +1508,7 @@ public sealed partial class AssistantPanel
 
         void Choose(string id)
         {
-            _cfg.ProviderId = prov.Id;
-            _cfg.Model = id;
+            _cfg.AgentModels[_conv.AgentId] = new AiModelChoice(prov.Id, id);
             _conv.ProviderId = prov.Id;
             _conv.Model = id;
             SaveConfig();

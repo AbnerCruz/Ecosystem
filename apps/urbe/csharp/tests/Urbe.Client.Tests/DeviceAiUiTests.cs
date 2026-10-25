@@ -60,7 +60,9 @@ public sealed partial class HeadlessUiTests
                 view.AssistantLauncher.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 var panel = view.Assistant;
                 var texts = () => panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text ?? "").ToList();
-                // the offline AI comes first, before the providers that need a key
+                Assert.Equal("Agentes", panel.ViewTitle);
+                panel.ShowSettings();
+                // The local model is already selected; installation remains explicit.
                 Assert.Contains("IA no aparelho", texts());
                 ClickButtonWithText(panel, "IA no aparelho");
                 Assert.Equal("IA no aparelho", panel.ViewTitle);
@@ -77,8 +79,8 @@ public sealed partial class HeadlessUiTests
                 for (int i = 0; i < 100 && !runtime.IsInstalled(FakeLocalAi.Small); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
                 for (int i = 0; i < 100 && !panel.Config.Providers.Any(p => p.Preset == "device"); i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
                 var provider = Assert.Single(panel.Config.Providers, p => p.Preset == "device");
-                Assert.Equal(provider.Id, panel.Config.ProviderId);
-                Assert.Equal("pequena", panel.Config.Model);
+                Assert.Equal(provider.Id, panel.Config.AgentModels["geral"].ProviderId);
+                Assert.Equal("pequena", panel.Config.AgentModels["geral"].Model);
 
                 // it answers: the request goes to the device, not to the internet
                 panel.Send("Oi");

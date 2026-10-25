@@ -33,9 +33,11 @@ public sealed partial class HeadlessUiTests
                 var panel = view.Assistant;
                 // Load the persisted configuration once; subsequent note invocations leave the full UI closed.
                 panel.Open();
+                panel.SelectAgent("geral");
                 panel.Close();
                 var model = new ScriptedModel();
                 panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
+                panel.Config.AgentPolicies["geral"] = "ask";
                 panel.Config.Providers.Add(new AiProviderConfig("openrouter", "openrouter", ApiKey: "sk-test"));
                 panel.Config.Model = "org/modelo-b";
                 model.Chats.Enqueue(Sse(

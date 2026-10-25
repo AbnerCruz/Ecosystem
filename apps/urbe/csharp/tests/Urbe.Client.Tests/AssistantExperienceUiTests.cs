@@ -62,6 +62,8 @@ public sealed partial class HeadlessUiTests
             await view.LoadAsync(TutorialNotes.Load());
             var panel = view.Assistant;
             panel.Open();
+            panel.SelectAgent("geral");
+            panel.Config.AgentPolicies["geral"] = "ask";
             panel.Config.Providers.Add(new AiProviderConfig("test", "openrouter"));
             panel.Config.ProviderId = "test";
             panel.Config.Model = "test/model";
@@ -93,6 +95,7 @@ public sealed partial class HeadlessUiTests
             window.MouseUp(point, MouseButton.Left);
             await Settle(window, view);
             Assert.True(activity.IsExpanded);
+            Assert.DoesNotContain(activity.GetVisualDescendants().OfType<TextBlock>(), t => t.Text is "⌃" or "⌄");
             var stage = ((Panel)activity.Content!).Children.OfType<Border>().First().Child as Expander;
             Assert.NotNull(stage);
             Assert.Null(stage.Content);
@@ -135,7 +138,8 @@ public sealed partial class HeadlessUiTests
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
     private static WeakReference<AiChatMessage> SeedOldAssistantHistory(AssistantPanel panel)
     {
-        panel.Config.Providers.Add(new AiProviderConfig("test", "openrouter"));
+        panel.Config.AgentPolicies["geral"] = "ask";
+                panel.Config.Providers.Add(new AiProviderConfig("test", "openrouter"));
         panel.Config.ProviderId = "test";
         panel.Config.Model = "test/model";
         var request = new AiChatMessage { Id = "retained-request", Role = "user", Content = [AiChatBlock.TextBlock("Primeiro pedido")] };
@@ -162,6 +166,7 @@ public sealed partial class HeadlessUiTests
             await view.LoadAsync(TutorialNotes.Load());
             var panel = view.Assistant;
             panel.Open();
+            panel.SelectAgent("geral");
             var previous = SeedOldAssistantHistory(panel);
             ClickNamed(panel, "Nova conversa");
             await Settle(window, view);

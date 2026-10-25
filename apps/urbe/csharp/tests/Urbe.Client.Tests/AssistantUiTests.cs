@@ -61,9 +61,12 @@ public sealed partial class HeadlessUiTests
                 // the rail's Assistente opens the panel: "Conecte um modelo"
                 view.AssistantLauncher.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 var panel = view.Assistant;
+                panel.Config.AgentPolicies["geral"] = "ask";
                 panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
                 Assert.True(panel.IsVisible);
                 Assert.Equal(440, panel.Width);   // wide: a panel beside the city
+                Assert.Equal("Agentes", panel.ViewTitle);
+                panel.SelectAgent("geral");
                 Assert.Contains("Conecte um modelo", panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
 
                 // OpenRouter: the key, then the models list and the model
@@ -194,6 +197,7 @@ public sealed partial class HeadlessUiTests
                 await Settle(window, view);
                 view.AssistantLauncher.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 var panel = view.Assistant;
+                panel.Config.AgentPolicies["geral"] = "ask";
                 var model = new ScriptedModel();
                 panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
                 panel.Config.Providers.Add(new AiProviderConfig("openrouter", "openrouter", ApiKey: "sk-teste"));
@@ -246,10 +250,12 @@ public sealed partial class HeadlessUiTests
                 await Settle(window, view);
                 view.AssistantLauncher.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 var panel = view.Assistant;
+                panel.Config.AgentPolicies["geral"] = "ask";
                 var model = new ScriptedModel();
                 panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
                 panel.Config.Providers.Add(new AiProviderConfig("openrouter", "openrouter", ApiKey: "sk-teste"));
                 panel.Config.Model = "org/modelo-b";
+                panel.Config.CustomAgents.Add(AssistantAgent.Agents.First(a => a.Id == "escritor"));
                 Assert.Null(panel.RenameAgent("escritor", "Jarvis"));
                 panel.Close();
 
@@ -331,6 +337,7 @@ public sealed partial class HeadlessUiTests
                 await Settle(window, view);
                 view.AssistantLauncher.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 var panel = view.Assistant;
+                panel.Config.AgentPolicies["geral"] = "ask";
                 var model = new ScriptedModel();
                 panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
                 panel.Config.Providers.Add(new AiProviderConfig("openrouter", "openrouter", ApiKey: "sk-teste"));
@@ -412,6 +419,7 @@ public sealed partial class HeadlessUiTests
                 await Settle(window, view);
                 view.AssistantLauncher.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 var panel = view.Assistant;
+                panel.Config.AgentPolicies["geral"] = "ask";
                 var model = new ScriptedModel();
                 panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
                 panel.Config.Providers.Add(new AiProviderConfig("openrouter", "openrouter", ApiKey: "sk-teste"));

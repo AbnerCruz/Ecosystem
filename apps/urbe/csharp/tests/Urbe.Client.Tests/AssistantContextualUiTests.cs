@@ -25,8 +25,10 @@ public sealed partial class HeadlessUiTests
                 view.OpenNoteByPath("Comece.md");
                 var panel = view.Assistant;
                 panel.Open();
+                panel.SelectAgent("geral");
                 var model = new ScriptedModel();
                 panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
+                panel.Config.AgentPolicies["geral"] = "ask";
                 panel.Config.Providers.Add(new AiProviderConfig("openrouter", "openrouter", ApiKey: "sk-teste"));
                 panel.Config.ProviderId = "openrouter";
                 panel.Config.Model = "org/modelo-b";
@@ -76,8 +78,10 @@ public sealed partial class HeadlessUiTests
                 view.OpenNoteByPath("Comece.md");
                 var panel = view.Assistant;
                 panel.Open();
+                panel.SelectAgent("geral");
                 var model = new ScriptedModel();
                 panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
+                panel.Config.AgentPolicies["geral"] = "ask";
                 panel.Config.Providers.Add(new AiProviderConfig("openrouter", "openrouter", ApiKey: "sk-teste"));
                 panel.Config.ProviderId = "openrouter";
                 panel.Config.Model = "org/modelo-b";
@@ -107,6 +111,7 @@ public sealed partial class HeadlessUiTests
                 var draft = view.AssistantMini.GetLogicalDescendants().OfType<TextBox>().Single(t => Avalonia.Automation.AutomationProperties.GetName(t) == "Texto proposto");
                 draft.Text = "# Uma proposta editada à mão";
                 panel.Open();
+                panel.SelectAgent("geral");
                 Dispatcher.UIThread.RunJobs();
                 Assert.Contains(panel.GetLogicalDescendants().OfType<TextBox>(), t => t.Text == "# Uma proposta editada à mão");
                 panel.Close();
@@ -132,7 +137,9 @@ public sealed partial class HeadlessUiTests
                 await view.LoadAsync([new CityNote("Comece.md", "# Comece")]);
                 var panel = view.Assistant;
                 panel.Open();
+                panel.SelectAgent("geral");
                 panel.Providers = new AssistantProviders(new ScriptedModel(), (_, _) => Task.CompletedTask);
+                panel.Config.AgentPolicies["geral"] = "ask";
                 panel.Config.Providers.Add(new AiProviderConfig("test", "openrouter"));
                 panel.Config.ProviderId = "test";
                 panel.Config.Model = "org/modelo-b";
@@ -148,6 +155,7 @@ public sealed partial class HeadlessUiTests
                 input.Text = "Leitores iniciantes, mas com interesse em";
                 panel.Close();
                 panel.Open();
+                panel.SelectAgent("geral");
                 Assert.Contains(panel.GetLogicalDescendants().OfType<TextBox>(), t => t.Text == "Leitores iniciantes, mas com interesse em");
                 return true;
             }

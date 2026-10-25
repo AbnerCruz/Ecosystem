@@ -7,7 +7,7 @@ namespace Urbe.Core.Tests;
 /// <summary>UC-81: the agents' call names, on this device.</summary>
 public sealed class AgentNamesTests
 {
-    private static AiConfig Config() => new() { CustomAgents = [new AiAgentDef("a1", "Revisor", "sparkle", "", "write", false, "Revise.")] };
+    private static AiConfig Config() => new() { CustomAgents = [.. AssistantAgent.Agents.Skip(1), new AiAgentDef("a1", "Revisor", "sparkle", "", "write", false, "Revise.")] };
 
     [Fact]
     public void ANameIsGivenFoundByAnyCaseAndAccentAndKeptOnlyOnTheDevice()
