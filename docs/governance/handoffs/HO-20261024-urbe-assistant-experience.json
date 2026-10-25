@@ -74,10 +74,10 @@
     {
       "kind": "human",
       "check": "Android físico: IME, alças de seleção, pinch, retomada, atualização",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
-      "evidence": "Não foi realizado teste no aparelho do proprietário. Headless não é DEVICE."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-25 (Issue https://github.com/AbnerCruz/Ecosystem/issues/772); registro em docs/governance/responses/VAL-HO-20261024-urbe-assistant-experience-68db0e71f0b8.md."
     }
   ],
   "known_issues": [
