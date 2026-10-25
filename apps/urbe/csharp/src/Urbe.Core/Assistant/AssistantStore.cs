@@ -81,6 +81,9 @@ public sealed class AiConversation
     public string Model { get; set; } = "";
     public string Policy { get; set; } = "readonly";
     public string Vault { get; set; } = "";
+    /// <summary>Delegation provenance: only the origin chat may address this specialist dialogue.</summary>
+    public string? OriginConversationId { get; set; }
+    public string? OriginAgentId { get; set; }
     public List<AiChatMessage> Messages { get; set; } = [];
     public List<AiRunRecord> Runs { get; set; } = [];
     public AiUsage Usage { get; set; } = new(0, 0, null);
@@ -430,6 +433,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
     {
         ["id"] = c.Id, ["title"] = c.Title, ["created"] = c.Created, ["updated"] = c.Updated, ["agentId"] = c.AgentId, ["providerId"] = c.ProviderId,
         ["model"] = c.Model, ["policy"] = c.Policy, ["vault"] = c.Vault,
+        ["originConversationId"] = c.OriginConversationId, ["originAgentId"] = c.OriginAgentId,
         ["messages"] = new JsonArray(c.Messages.Select(m => (JsonNode)m.ToJson()).ToArray()),
         ["runs"] = new JsonArray(c.Runs.Select(r => (JsonNode)new JsonObject
         {
@@ -453,6 +457,8 @@ public sealed class AssistantStore(IAssistantStorage storage)
     {
         Id = Str(o["id"]), Title = Str(o["title"]), Created = Num(o["created"]), Updated = Num(o["updated"]), AgentId = Str(o["agentId"], "geral"),
         ProviderId = o["providerId"] is JsonValue pv && pv.TryGetValue<string>(out var ps) ? ps : null, Model = Str(o["model"]), Policy = Str(o["policy"], "ask"), Vault = Str(o["vault"]),
+        OriginConversationId = o["originConversationId"] is null ? null : Str(o["originConversationId"]),
+        OriginAgentId = o["originAgentId"] is null ? null : Str(o["originAgentId"]),
         Messages = (o["messages"] as JsonArray ?? []).OfType<JsonObject>().Select(m => AiChatMessage.FromJson(m)).ToList(),
         Runs = (o["runs"] as JsonArray ?? []).OfType<JsonObject>().Select(r => new AiRunRecord
         {
