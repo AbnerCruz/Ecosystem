@@ -490,3 +490,9 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - LUNET-440 / Issue #775: primeiro Sprite/Animation Studio Android. Boundary Lunet.Studio nasce com ferramenta real conforme ADR 0007; Framework/Compiler/Runtime independentes. Nenhuma infraestrutura de plataforma nova.
 - Fonte .sprite.json no mesmo projeto; export PNG; desenho, frames, playback, undo/redo, onion skin. Faltam layers, seleção, zoom/pan, eventos e estados: não é fechamento F5.
 - APK de jogo continua ausente; é prioridade seguinte, não confundir com APK do IDE ou ZIP. Validação nativa e DEVICE pendentes.
+
+
+### 20261025-chatgpt-lunet-sprite-tools — ChatGPT → integrador — review
+- Pedido do proprietário: ter editor de sprites utilizável junto ao Tile Studio; LUNET-442 / Issue #779, branch `feat/lunet-sprite-tools-20261025`, base `e06c97aa37d3cd9ef2be478c508fbbadfb8d0911`.
+- Ampliação do Sprite Studio já integrado: linha e retângulo com prévia por toque, retângulo preenchido, flip vertical, zoom/pan, grade opcional e cor ARGB personalizada; usa documento JSON v1 original, sem migração nem novos formatos.
+- Testes de retângulos, limites, transparência, flip vertical e isolamento de frames; CI Android/DEVICE pendentes. Camadas e seleção completas continuam backlog F5, sem declaração de produto finalizado.
