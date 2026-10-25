@@ -60,10 +60,10 @@
     {
       "kind": "human",
       "check": "Abrir e editar grafo em Android fisico, incluindo teclado, salvamento, zoom, gestos e ![[grafo]]",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/urbe/csharp/src/Urbe.Client/GraphCanvasView.cs",
       "critical": true,
-      "evidence": "Sem teste DEVICE; NN-017."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-25 (Issue https://github.com/AbnerCruz/Ecosystem/issues/768); registro em docs/governance/responses/VAL-HO-20261024-urbe-grafos-livres-9687d8eb463e.md."
     }
   ],
   "known_issues": [
