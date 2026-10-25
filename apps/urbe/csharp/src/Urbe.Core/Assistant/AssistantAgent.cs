@@ -166,6 +166,7 @@ public sealed record AiAgentEvent(string Type, AiChatMessage? Message = null, Ai
 public sealed class AiAgentResult
 {
     public List<AiChange> Changes { get; } = [];
+    public AiExecutionMetrics Efficiency { get; } = new();
     public AiUsage Usage { get; set; } = new(0, 0, null);
     public int Steps { get; set; }
     /// <summary>'end' | 'aborted' | 'error' | 'max_tokens' | 'max_steps' | 'loop'.</summary>
@@ -201,6 +202,7 @@ public sealed class AiAgentRun
     public int? MaxSteps { get; init; }
     /// <summary>Urbe-only quality audit after saved changes. Legacy/oracle callers keep original turn semantics.</summary>
     public bool ReviewWrittenArtifacts { get; init; }
+    public bool OptimizeToolUse { get; init; }
     public int? MaxTokens { get; init; }
     public double? Temperature { get; init; }
     public bool IsSubagent { get; init; }
@@ -276,7 +278,7 @@ public static class AssistantAgent
     /// <summary>toLocaleDateString('pt-BR', {weekday:'long', year:'numeric', month:'long', day:'numeric'}).</summary>
     public static string LongDate(DateTime d) => Weekdays[(int)d.DayOfWeek] + ", " + d.Day + " de " + Months[d.Month - 1] + " de " + d.Year;
 
-    public static string SystemPrompt(AiAgentDef a, string policy, string? vaultName, int noteCount, string? openNote, string? instructions, IReadOnlyList<string>? memory, DateTime now, string? naming = null, string? guidance = null)
+    public static string SystemPrompt(AiAgentDef a, string policy, string? vaultName, int noteCount, string? openNote, string? instructions, IReadOnlyList<string>? memory, DateTime now, string? naming = null, string? guidance = null, bool efficient = false)
     {
         var lines = new List<string>
         {
@@ -285,11 +287,14 @@ public static class AssistantAgent
             "",
             "## Como trabalhar",
             "- Use as ferramentas para ver o vault real. Nunca invente conteúdo, títulos ou caminhos de notas.",
-            "- Seja minucioso: leia as notas relevantes por inteiro antes de responder. Se um resultado disser LEITURA PARCIAL, continue lendo (start_line) antes de concluir.",
+            efficient ? "- Leia as fontes necessárias ao objetivo. Para uma mudança localizada, consulte o trecho pertinente; não percorra o vault inteiro por ritual. Continue uma leitura truncada quando a parte faltante for necessária. Reutilize evidências enquanto a versão não mudar."
+                : "- Seja minucioso: leia as notas relevantes por inteiro antes de responder. Se um resultado disser LEITURA PARCIAL, continue lendo (start_line) antes de concluir.",
             "- Para achar onde algo aparece (nomes, termos, datas, trechos) use grep_notes; para temas amplos, search_notes. Siga os [[links]] e backlinks (get_links) quando o assunto se espalhar por várias notas.",
             "- Chamadas de leitura independentes podem ir juntas na mesma resposta (elas rodam em paralelo); read_notes lê várias notas de uma vez.",
-            "- Em tarefas com 3 ou mais passos, registre o plano com update_plan no começo e atualize conforme avança.",
-            "- Páginas HTML (sites, landing pages, portfólios) são arquivos .page.json editados no estúdio de páginas. Para criar ou alterar uma, chame page_schema e depois write_page com o JSON completo (ou um template); não escreva HTML à mão. Use os blocos note/notes para puxar o conteúdo real das notas.",
+            efficient ? "- Use update_plan quando houver dependências ou decisões que precisem ser acompanhadas. Atualize somente quando houver progresso ou mudança real; não reenvie o mesmo plano."
+                : "- Em tarefas com 3 ou mais passos, registre o plano com update_plan no começo e atualize conforme avança.",
+            efficient ? "- Páginas são arquivos .page.json no estúdio. Consulte page_schema se ainda não tiver o contrato; reutilize-o depois. Use write_page, templates e blocos note/notes, preservando o conteúdo real das notas."
+                : "- Páginas HTML (sites, landing pages, portfólios) são arquivos .page.json editados no estúdio de páginas. Para criar ou alterar uma, chame page_schema e depois write_page com o JSON completo (ou um template); não escreva HTML à mão. Use os blocos note/notes para puxar o conteúdo real das notas.",
             "- Leia uma nota (read_note) antes de editá-la. Para mudanças parciais use edit_note copiando o trecho exato; write_note só para reescrever tudo.",
             "- Antes de criar uma nota, busque (search_notes) para não duplicar. Ligue notas relacionadas com [[Título]].",
             "- Faça o trabalho com as ferramentas em vez de só descrever o que faria. Pergunte antes apenas se o pedido for ambíguo ou arriscado.",
@@ -332,7 +337,7 @@ public static class AssistantAgent
         : new() { Type = "tool_result", ToolUseId = b.ToolUseId, Content = b.Content, IsError = b.IsError };
 
     /// <summary>prepare(): every call followed by its result, no orphan results, one message per role in a row, and old results then old turns dropped to fit the budget.</summary>
-    public static List<AiMessage> Prepare(IEnumerable<AiChatMessage> messages, int budgetChars)
+    public static List<AiMessage> Prepare(IEnumerable<AiChatMessage> messages, int budgetChars, bool reuseEvidence = false, AiExecutionMetrics? metrics = null)
     {
         var o = new List<Msg>();
         foreach (var m in messages)
@@ -368,13 +373,13 @@ public static class AssistantAgent
         for (int i = 1; i < o.Count; i++)
             if (o[i].Role == o[i - 1].Role) { o[i - 1].Content = [.. o[i - 1].Content, .. o[i].Content]; o.RemoveAt(i); i--; }
         // 1) shorten old tool results
-        if (Size(o) > budgetChars)
+        if (WorkingSize() > budgetChars)
             for (int i = 0; i < o.Count - 4; i++)
                 foreach (var b in o[i].Content)
                     if (b.Type == "tool_result" && b.Content.Length > 1200) b.Content = b.Content[..400] + "\n…[resultado antigo encurtado para caber no contexto]";
         // 2) drop whole old turns, starting again at a user message with text
         bool dropped = false;
-        while (Size(o) > budgetChars && o.Count > 2)
+        while (WorkingSize() > budgetChars && o.Count > 2)
         {
             int cut = -1;
             for (int i = 1; i < o.Count - 1; i++)
@@ -385,7 +390,27 @@ public static class AssistantAgent
         }
         if (dropped && o.Count > 0) o[0].Content.Insert(0, AiChatBlock.TextBlock("[Mensagens antigas desta conversa foram omitidas para caber no contexto.]"));
         while (o.Count > 0 && o[0].Role != "user") o.RemoveAt(0);
-        return o.Select(m => new AiMessage(m.Role, m.Content.Select(ToBlock).ToList())).ToList();
+        var projection = Project();
+        if (reuseEvidence && metrics is not null) metrics.ContextCharsSaved += Math.Max(0, Size(o) - Size(projection));
+        return projection.Select(m => new AiMessage(m.Role, m.Content.Select(ToBlock).ToList())).ToList();
+
+        int WorkingSize() => Size(Project());
+        List<Msg> Project()
+        {
+            if (!reuseEvidence) return o;
+            var names = o.SelectMany(m => m.Content).Where(b => b.Type == "tool_use")
+                .GroupBy(b => b.Id).ToDictionary(g => g.Key, g => g.Last().Name);
+            var seen = new Dictionary<string, string>(StringComparer.Ordinal);
+            return o.Select(message => new Msg(message.Role, message.Content.Select(block =>
+            {
+                bool safe = names.TryGetValue(block.ToolUseId, out var name) && name is "page_schema" or "read_note" or "read_notes" or "list_notes" or "search_notes" or "grep_notes" or "get_links" or "get_tags" or "search_tags";
+                if (block.Type != "tool_result" || block.IsError || !safe || block.Content.Length < 256) return block;
+                if (seen.TryGetValue(block.Content, out var origin)) return new AiChatBlock { Type = "tool_result", ToolUseId = block.ToolUseId,
+                    Content = "Resultado idêntico ao da chamada " + origin + ", preservado integralmente acima. Nenhuma informação nova; use a evidência já recebida." };
+                seen[block.Content] = block.ToolUseId;
+                return block;
+            }).ToList())).ToList();
+        }
     }
 
     // ---------------------------------------------------------------- past requests, settled
@@ -543,7 +568,7 @@ public static class AssistantAgent
         var schemas = tools.Select(t => t.Schema).ToList();
         var byName = new Dictionary<string, AiTool>();
         foreach (var t in tools) byName[t.Name] = t;
-        var system = SystemPrompt(agent, policy, o.VaultName, o.Host.Documents.List().Count, o.Host.EditorContext().Path, o.Instructions, o.Memory, o.Now ?? DateTime.Now, o.Naming, o.Guidance);
+        var system = SystemPrompt(agent, policy, o.VaultName, o.Host.Documents.List().Count, o.Host.EditorContext().Path, o.Instructions, o.Memory, o.Now ?? DateTime.Now, o.Naming, o.Guidance, o.OptimizeToolUse);
         int budget = (int)Math.Max(20000, Math.Min(WorkingChars, Math.Floor(contextTokens * 3.2 * 0.7)));
         // Optional ceiling for test harnesses and legacy callers; no cap in normal sessions.
         // Explicit cancel, repeated tool failures, and provider errors remain the safeguards.
@@ -553,6 +578,8 @@ public static class AssistantAgent
         int repeats = 0;
         var partial = new List<(string Path, AiPartial Partial)>();
         var gate = new object();
+        var readCache = new Dictionary<string, TaskCompletionSource<Out>>(StringComparer.Ordinal);
+        var cycles = new HashSet<string>(StringComparer.Ordinal);
 
         for (int step = 0; maxSteps is null || step < maxSteps.Value; step++)
         {
@@ -566,7 +593,9 @@ public static class AssistantAgent
             AiResult res;
             try
             {
-                var req = new AiRequest(o.Model, Prepare(SettlePast(messages.Take(messages.Count - 1).ToList()), budget), system, schemas, o.MaxTokens is null or 0 ? 8192 : o.MaxTokens, o.Temperature);
+                var working = SettlePast(messages.Take(messages.Count - 1).ToList());
+                var prepared = Prepare(working, budget, o.OptimizeToolUse, result.Efficiency);
+                var req = new AiRequest(o.Model, prepared, system, schemas, o.MaxTokens is null or 0 ? 8192 : o.MaxTokens, o.Temperature);
                 res = await o.Stream(o.Provider, req, e =>
                 {
                     switch (e.Type)
@@ -723,6 +752,12 @@ public static class AssistantAgent
                 result.Stopped = "needs_input";
                 break;
             }
+            if (o.OptimizeToolUse)
+            {
+                var state = string.Join("|", calls.Select(c => AssistantExecutionEfficiency.Signature(c.Name, c.Input, host.Documents.Revision)));
+                bool noNewWork = answer.Content.All(b => b.Status is "reused" or "noop");
+                if (!cycles.Add(state) && noNewWork) { result.Stopped = "no_progress"; break; }
+            }
             if (cancel.IsCancellationRequested) { result.Stopped = "aborted"; break; }
             if (repeats >= 3) { result.Stopped = "loop"; break; }
             if (maxSteps is { } limit && step == limit - 1) result.Stopped = "max_steps";
@@ -757,15 +792,39 @@ public static class AssistantAgent
             byName.TryGetValue(call.Name, out var tool);
             if (cancel.IsCancellationRequested) return new Out("Interrompido pelo usuário.", true, "aborted");
             // the same call that already failed is not run again: the model is told to change strategy
-            var sig = call.Name + " " + LegacyCustomize.Stringify(call.Input ?? new JsonObject());
+            var sig = o.OptimizeToolUse ? AssistantExecutionEfficiency.Signature(call.Name, call.Input, host.Documents.Revision)
+                : call.Name + " " + LegacyCustomize.Stringify(call.Input ?? new JsonObject());
+            TaskCompletionSource<Out>? owner = null, existing = null;
+            if (o.OptimizeToolUse && AssistantExecutionEfficiency.Cacheable(tool))
+            {
+                lock (gate)
+                {
+                    if (!readCache.TryGetValue(sig, out existing)) readCache[sig] = owner = new(TaskCreationOptions.RunContinuationsAsynchronously);
+                }
+                if (existing is not null)
+                {
+                    var cached = await existing.Task;
+                    if (!cached.IsError)
+                    {
+                        lock (gate) result.Efficiency.ReusedReads++;
+                        emit(new AiAgentEvent("tool_status", Call: call, Status: "reused"));
+                        return cached with { Status = "reused" };
+                    }
+                    return cached;
+                }
+            }
             string? before;
             lock (gate) failed.TryGetValue(sig, out before);
             if (before is not null)
             {
                 lock (gate) repeats++;
+                owner?.TrySetResult(new Out(before, true));
                 return new Out("Esta chamada idêntica já falhou: " + before + " Não repita. Corrija os argumentos (use search_notes, grep_notes ou list_notes para achar o caminho exato) ou explique o problema ao usuário.", true);
             }
-            var output = await Execute(call, tool);
+            Out output;
+            try { output = await Execute(call, tool); }
+            catch (Exception error) { owner?.TrySetResult(new Out(error.Message, true)); throw; }
+            owner?.TrySetResult(output);
             if (output.IsError && output.Status is not "aborted" and not "rejected") lock (gate) failed[sig] = Slice(output.Content, 300);
             return output;
         }
@@ -778,12 +837,31 @@ public static class AssistantAgent
             var input = (JsonObject)call.Input!;
             emit(new AiAgentEvent("tool_status", Call: call, Status: "running"));
             if (tool == Delegate) return await DelegateAsync(call, input);
-            if (o.MarkAiText) AssistantTools.Watermark(tool, input, o.Model);
             AiPreview? preview = null;
+            bool noteWrite = tool.Name is "edit_note" or "write_note" or "append_to_note" or "write_page";
+            if (o.OptimizeToolUse && noteWrite && tool.Preview is not null)
+            {
+                try
+                {
+                    var intended = tool.Preview(input, host);
+                    if (intended.Before is not null && intended.After == intended.Before)
+                    {
+                        result.Efficiency.NoOpWrites++;
+                        return new Out("Sem alteração em " + intended.Path + ": o conteúdo proposto já é exatamente o atual. Nenhuma gravação, aprovação ou revisão adicional foi necessária.", Status: "noop");
+                    }
+                }
+                catch (Exception error) { return new Out(error.Message, true); }
+            }
+            if (o.MarkAiText) AssistantTools.Watermark(tool, input, o.Model);
             if (tool.Preview is not null)
             {
                 try { preview = tool.Preview(input, host); }
                 catch (Exception e) { return new Out(e.Message, true); }
+                if (o.OptimizeToolUse && noteWrite && preview.Before is not null && preview.After == preview.Before)
+                {
+                    result.Efficiency.NoOpWrites++;
+                    return new Out("Sem alteração em " + preview.Path + ": conteúdo e marca de autoria já conferem; nenhuma gravação foi feita.", Status: "noop");
+                }
             }
             if (NeedsApproval(tool.Access, policy, runAllow))
             {
@@ -798,6 +876,11 @@ public static class AssistantAgent
                 }
                 emit(new AiAgentEvent("tool_status", Call: call, Status: "running"));
                 // the person changed the proposed text before approving: that text is what is written (UC-51)
+                if (o.OptimizeToolUse && noteWrite && ans.EditedText is { } unchanged && unchanged == preview?.Before)
+                {
+                    result.Efficiency.NoOpWrites++;
+                    return new Out("O texto aprovado já é o atual; nenhuma gravação foi necessária.", Status: "noop");
+                }
                 if (ans.EditedText is { } edited && AssistantTools.EditedRun(tool, input, preview, edited) is { } own)
                 {
                     try
@@ -825,7 +908,7 @@ public static class AssistantAgent
             var r = await RunAsync(new AiAgentRun
             {
                 Agent = AgentById("pesquisador"), Policy = "readonly", Messages = sub, IsSubagent = true, Approve = null,
-                Host = o.Host, Provider = o.Provider, Model = o.Model, Stream = o.Stream, Cancel = cancel,
+                Host = o.Host, Provider = o.Provider, Model = o.Model, Stream = o.Stream, Cancel = cancel, OptimizeToolUse = o.OptimizeToolUse,
                 Tools = o.Host.Web?.CanDelegateTo("pesquisador") == true ? o.Tools : o.Tools?.Where(t => t.Access != "network").ToList(), VaultName = o.VaultName,
                 ContextTokens = o.ContextTokens, Instructions = o.Instructions, Memory = o.Memory, MaxTokens = o.MaxTokens, Temperature = o.Temperature, Now = o.Now, Uid = o.Uid,
                 OnUpdate = e =>

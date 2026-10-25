@@ -658,3 +658,8 @@
 - Implementação: fila por conversa; formulários Core/renderer Avalonia/request_form; rascunhos verificados, retomada explícita, templates declarativos/reutilizáveis, condicionais/soma/grupos repetíveis, hash de origem e política normal de escrita. Mesmo executor e armazenamento; nenhuma dependência nova.
 - Verificação inicial: build portátil Release verde, 832 testes Core e quatro cenários UI focados verdes antes das últimas extensões; regressão final e CI registrados no handoff. DEVICE continua pendente.
 - Limites: editor visual geral, associação a comandos/plugins, anexos/grafos ficam identificados no roadmap; não prometer release ou DEVICE por existir código/PR.
+
+### 2026-10-25 — Codex — UC-90.1 / PR #763
+- Eficiência na fonte: leituras por revisão, intervalo exato, no-op antes de aprovação/escrita/revisão e evidência repetida referenciada somente com original presente no contexto. Histórico bruto preservado.
+- Validação final local: build Release sem avisos/erros, 841 Core e 246 UI aprovados. CI inicial Android/Windows verde; atualização final e release beta.31 pendentes.
+- Versão beta.31 preparada; integração crítica continua pelo integrador, sem simular autorização do proprietário.

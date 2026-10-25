@@ -399,3 +399,9 @@ Issue #762; branch `fix/urbe-crash-smart-forms`; contrato e critérios em [ASSIS
 - [~] Condicionais declarativas, soma, listas e grupos repetíveis, sem execução de código gerado.
 - [ ] Evolução posterior: editor visual geral de definições, associação a comandos/plugins, anexos e referências a grafos; especificar contratos antes de implementar.
 - [ ] Regressão automatizada, CI integrado e validação Android de toque/IME/rolagem/reinício/desempenho. Não marcar concluído antes das provas.
+
+### UC-90.1 — Eficiência na fonte e nova release (adendo do proprietário)
+
+- [ ] Evitar no-op antes de watermark/aprovação/disco/revisão; leituras idênticas/in-flight reutilizadas por versão; max_lines exato; evidências idênticas referenciadas somente com origem presente; ciclos sem progresso observáveis, sem cotas arbitrárias.
+- [ ] Registrar medições de trabalho redundante evitado e preservar transcript original. Testes determinísticos e regressão completos antes de CI.
+- [ ] Publicar beta.31 pelo pipeline oficial depois da integração governada, mantendo pacote/certificado e verificando APK/ZIP/checksums reais. Android físico permanece pendente até teste do proprietário.

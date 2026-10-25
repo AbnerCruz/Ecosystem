@@ -66,6 +66,7 @@ public sealed class AiRunRecord
     public List<AiChange> Changes { get; set; } = [];
     public string? Stopped { get; set; }
     public string? Error { get; set; }
+    public AiExecutionMetrics Efficiency { get; set; } = new();
     public bool Reverted { get; set; }
 }
 
@@ -449,6 +450,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
         ["runs"] = new JsonArray(c.Runs.Select(r => (JsonNode)new JsonObject
         {
             ["id"] = r.Id, ["started"] = r.Started, ["stopped"] = r.Stopped, ["error"] = r.Error, ["reverted"] = r.Reverted,
+            ["efficiency"] = JsonSerializer.SerializeToNode(r.Efficiency, FormDefinition.Json),
             ["changes"] = new JsonArray(r.Changes.Select(x =>
             {
                 var o = new JsonObject { ["id"] = x.Id, ["before"] = SnapToJson(x.Before), ["after"] = SnapToJson(x.After) };
@@ -477,6 +479,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
         {
             Id = Str(r["id"]), Started = Num(r["started"]), Stopped = r["stopped"] is null ? null : Str(r["stopped"]), Error = r["error"] is null ? null : Str(r["error"]),
             Reverted = (bool?)r["reverted"] ?? false,
+            Efficiency = r["efficiency"]?.Deserialize<AiExecutionMetrics>(FormDefinition.Json) ?? new(),
             Changes = (r["changes"] as JsonArray ?? []).OfType<JsonObject>().Select(x => new AiChange(Str(x["id"]), SnapFromJson(x["before"]), SnapFromJson(x["after"]), (bool?)x["trashed"] ?? false)).ToList()
         }).ToList(),
         Usage = o["usage"] is JsonObject u ? new AiUsage(Num(u["input"]), Num(u["output"]), u["cost"] is null ? null : LegacyCustomize.JsToNumber(u["cost"])) : new AiUsage(0, 0, null),

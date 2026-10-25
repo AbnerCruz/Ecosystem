@@ -35,6 +35,7 @@ public sealed partial class AssistantPanel
             : needsAnswer ? "Aguardando sua resposta"
             : running && last is not null ? ActivityVerb(last.Name)
             : running ? "Analisando o pedido"
+            : _conv.Runs.LastOrDefault()?.Stopped == "no_progress" ? "Ciclo sem progresso interrompido"
             : _conv.Runs.LastOrDefault()?.Stopped == "aborted" ? "Execução interrompida"
             : _conv.Runs.LastOrDefault()?.Stopped == "error" ? "Execução com erro"
             : calls.Any(x => ResultFor(x.Block.Id) is { IsError: true }) ? "Atividade concluída com alertas"
@@ -141,7 +142,7 @@ public sealed partial class AssistantPanel
         var title = tool is not null && !block.Pending ? SafeLabel(tool, block.Input)
             : block.Pending ? "Preparando " + block.Name : block.Name;
         var pending = _pending?.Request.Call.Id == block.Id && block.Id.Length > 0;
-        var status = result?.Status == "rejected" ? "Recusada"
+        var status = result?.Status == "reused" ? "Leitura reutilizada · mesma versão" : result?.Status == "noop" ? "Sem alteração · gravação dispensada" : result?.Status == "rejected" ? "Recusada"
             : result is { IsError: true } ? "Falhou"
             : result is not null ? "Concluída"
             : pending && current ? "Aguardando aprovação"

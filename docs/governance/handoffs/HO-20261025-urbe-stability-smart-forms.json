@@ -14,7 +14,7 @@
   "branch": "fix/urbe-crash-smart-forms",
   "base_commit": "c984b20c0d00219529423860bb00d2a58e2b77ee",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/763",
   "files_changed": [
     "apps/urbe/AGENTSCHAT.md",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
@@ -53,7 +53,8 @@
     "Ferramenta request_form reutiliza o executor existente, persiste antes de ceder em needs_input e responde ao agente/conversa originais por envio/cancelamento explícito. Chamadas posteriores da mesma resposta não executam antes das respostas.",
     "Templates antigos geram formulário completo; metadados opcionais definem tipos e padrões. Usuário pode salvar o formulário como template reutilizável. Rascunhos de template privados persistem até criação verificada da nota; cancelamento não cria nota.",
     "Identidade e hash da origem são validados no envio e antes de escrita do turno, com versões atualizadas apenas pelas gravações bem-sucedidas do próprio turno. Escrita mantém as ferramentas, permissões, prévias e aprovações existentes.",
-    "Documentados ADR-0042, ASSISTANT-FORMS, dados aditivos e roadmap UC-90. Captura headless mobile inspecionada."
+    "Documentados ADR-0042, ASSISTANT-FORMS, dados aditivos e roadmap UC-90. Captura headless mobile inspecionada.",
+    "Executor nativo reutiliza leituras por revisão, respeita intervalos, evita escrita/aprovação/revisão paga sem alteração e projeta evidências duplicadas sem alterar o histórico. Métricas em caracteres, sem alegação de economia medida de tokens. Beta.31 preparada no pipeline oficial."
   ],
   "verification": [
     {
@@ -66,7 +67,7 @@
       "kind": "automated",
       "check": "Core completo",
       "result": "passed",
-      "evidence": "835 testes Core passaram. Inclui formulário, draft verificado, validação, condições, grupos repetíveis e bloqueio de escrita após request_form."
+      "evidence": "841 testes Core passaram, incluindo seis regressões de eficiência: no-op, leituras concorrentes, invalidação por revisão, ciclo sem progresso, intervalo exato e referências de evidência."
     },
     {
       "kind": "automated",
@@ -84,7 +85,7 @@
       "kind": "automated",
       "check": "CI do PR e builds Android/Windows",
       "result": "pending",
-      "evidence": "Abrir PR pronto para revisão; build portátil local não equivale a build Android/Windows."
+      "evidence": "CI inicial da614c78 verde, incluindo Android/Windows (run 40201513731). Mudanças finais de eficiência e beta.31 requerem novo CI."
     },
     {
       "kind": "human",
@@ -103,8 +104,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Conferir CI do PR e builds Android/Windows; corrigir falhas antes da integração.",
-    "Integração crítica pelo integrador conforme política vigente; validar APK em Android físico."
+    "Publicar atualização do PR #763 e verificar CI final.",
+    "Aguardar autorização do proprietário para integração crítica pelo integrador e conferir publicação oficial beta.31; Android físico pendente."
   ],
   "decisions_required": [],
   "normative_sources": [

@@ -28,6 +28,7 @@ public sealed partial class AssistantPanel
             if (_pending is not null) return "approval";
             if (_running is not null || _inNote is not null && _conv.Runs.Count == 0) return "thinking";
             if (_conv.Runs.LastOrDefault()?.Stopped == "needs_input") return "question";
+            if (_conv.Runs.LastOrDefault()?.Stopped == "no_progress") return "paused";
             if (_conv.Runs.LastOrDefault()?.Stopped == "error") return "error";
             if (_conv.Runs.LastOrDefault()?.Stopped == "aborted") return "cancelled";
             return "result";
@@ -84,6 +85,7 @@ public sealed partial class AssistantPanel
             "thinking" => "Analisando a nota",
             "error" => "Não foi possível concluir",
             "cancelled" => "Execução interrompida",
+            "paused" => "Pausado: operações sem progresso",
             _ => "Trabalho concluído"
         };
 
