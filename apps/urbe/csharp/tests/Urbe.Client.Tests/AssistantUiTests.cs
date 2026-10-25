@@ -445,7 +445,7 @@ public sealed partial class HeadlessUiTests
                 var folded = panel.Log.Children.OfType<Expander>().ToList();
                 Assert.Equal(10, folded.Count);
                 Assert.All(folded, x => Assert.Null(x.Content));   // built only when opened
-                Assert.Contains("10 passos", panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
+                Assert.Contains("Trabalho realizado · 10 operações", panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
                 folded[0].IsExpanded = true;
                 Dispatcher.UIThread.RunJobs();
                 Assert.Equal(10, ((Panel)folded[0].Content!).Children.Count);
