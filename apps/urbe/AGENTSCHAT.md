@@ -651,3 +651,10 @@
 - Decisão de implementação: usar `AssistantStore`, `AssistantAgent` e UI Avalonia existentes; sem novo runtime, sem acesso transversal a memória/chat. Delegação opt-in/autônoma condicionada à proteção de privilégios.
 - Verificação: testes adicionados; CI ainda não executado; Android físico pendente; release não declarada.
 - Próximo passo: PR para CI e revisão governada, corrigir falhas apontadas, validação em aparelho e nova release oficial depois da beta.29.
+
+### 2026-10-25 — Codex — UC-90 / Issue #762
+- Escopo: crash dos agentes, segundo envio e formulários nativos conforme solicitação atual; base c984b20c, branch fix/urbe-crash-smart-forms.
+- Fato: reproduzida InvalidOperationException por status booleano em ActivityTimeline; teste antes falhou, depois da conversão defensiva passou. Sem stack trace do aparelho não presumir a causa única do incidente.
+- Implementação: fila por conversa; formulários Core/renderer Avalonia/request_form; rascunhos verificados, retomada explícita, templates declarativos/reutilizáveis, condicionais/soma/grupos repetíveis, hash de origem e política normal de escrita. Mesmo executor e armazenamento; nenhuma dependência nova.
+- Verificação inicial: build portátil Release verde, 832 testes Core e quatro cenários UI focados verdes antes das últimas extensões; regressão final e CI registrados no handoff. DEVICE continua pendente.
+- Limites: editor visual geral, associação a comandos/plugins, anexos/grafos ficam identificados no roadmap; não prometer release ou DEVICE por existir código/PR.

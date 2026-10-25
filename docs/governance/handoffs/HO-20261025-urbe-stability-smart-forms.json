@@ -1,0 +1,176 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261025-urbe-stability-smart-forms",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-25T14:15:16.907635Z",
+  "agent": {
+    "id": "codex-urbe-stability-forms",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-90",
+  "component": "urbe",
+  "state": "review",
+  "branch": "fix/urbe-crash-smart-forms",
+  "base_commit": "c984b20c0d00219529423860bb00d2a58e2b77ee",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/AGENTSCHAT.md",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Compact.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Sources.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/NoteTemplateEngine.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteTemplatesUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantMultimodalQuestionTests.cs",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/README.md",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Forms.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/FormRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.Forms.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantFormTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/FormDraftStore.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Forms.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantCrashFormsUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/FormsTests.cs",
+    "apps/urbe/docs/csharp/ASSISTANT-FORMS.md",
+    "docs/adr/0042-urbe-formularios-nativos.md",
+    "docs/governance/handoffs/HO-20261025-urbe-stability-smart-forms.json"
+  ],
+  "work_completed": [
+    "Reproduzida InvalidOperationException por plano com status booleano; renderização passa a aceitar dados malformados sem crash. Histórico bruto permanece acessível; resultados extensos são paginados com cópia integral.",
+    "Segundo envio preservado em fila por conversa, com persistência verificada, execução em ordem, prevenção de execuções simultâneas na mesma conversa e retomada explícita após falha/cancelamento.",
+    "Contratos locais FormDefinition/FormField/FormSession, validação, condições, soma, grupos repetíveis e renderizador Avalonia; sem HTML/JavaScript ou nova dependência.",
+    "Ferramenta request_form reutiliza o executor existente, persiste antes de ceder em needs_input e responde ao agente/conversa originais por envio/cancelamento explícito. Chamadas posteriores da mesma resposta não executam antes das respostas.",
+    "Templates antigos geram formulário completo; metadados opcionais definem tipos e padrões. Usuário pode salvar o formulário como template reutilizável. Rascunhos de template privados persistem até criação verificada da nota; cancelamento não cria nota.",
+    "Identidade e hash da origem são validados no envio e antes de escrita do turno, com versões atualizadas apenas pelas gravações bem-sucedidas do próprio turno. Escrita mantém as ferramentas, permissões, prévias e aprovações existentes.",
+    "Documentados ADR-0042, ASSISTANT-FORMS, dados aditivos e roadmap UC-90. Captura headless mobile inspecionada."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Build portátil Release .NET 10",
+      "result": "passed",
+      "evidence": "dotnet build Urbe.Portable.slnx -c Release -m:1 --no-restore; 0 erros e 0 avisos."
+    },
+    {
+      "kind": "automated",
+      "check": "Core completo",
+      "result": "passed",
+      "evidence": "835 testes Core passaram. Inclui formulário, draft verificado, validação, condições, grupos repetíveis e bloqueio de escrita após request_form."
+    },
+    {
+      "kind": "automated",
+      "check": "UI headless completa e regressões finais",
+      "result": "passed",
+      "evidence": "246 testes UI headless passaram sobre o código final, incluindo três variantes de plano malformado, segundo envio real, formulário/draft/hash da origem, templates e delegação entre agentes. Captura native-assistant-form-phone.png inspecionada."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistência do Ecosystem",
+      "result": "passed",
+      "evidence": "22 checks passaram incluindo este handoff. ROADMAP × Issues não verificado localmente por ausência de snapshot; CI fornece esse gate."
+    },
+    {
+      "kind": "automated",
+      "check": "CI do PR e builds Android/Windows",
+      "result": "pending",
+      "evidence": "Abrir PR pronto para revisão; build portátil local não equivale a build Android/Windows."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: crash relatado, segundo envio, formulários, teclado/rolagem/reinício e atualização",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+      "evidence": "Sem aparelho físico conectado. O caminho de crash reproduzido no código não confirma causa única do incidente sem stack trace/logcat."
+    }
+  ],
+  "known_issues": [
+    "Não houve validação física Android, chamada paga a provider real ou publicação de release.",
+    "Editor visual geral de definições, associação arbitrária a comandos/plugins, anexos e referências a grafos permanecem extensões identificadas no roadmap; reutilização atual via templates Markdown e ferramenta dos agentes.",
+    "Campos são mantidos montados e opções múltiplas usam ListBox; layout/desempenho de formulários muito extensos exigem validação no dispositivo. Persistência verificada por edição serializa o arquivo privado da conversa.",
+    "Processo morto não mantém IA executando: solicitações persistidas são reabertas pelo histórico e retomadas por envio explícito. Não é replay automático de efeitos interrompidos."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Conferir CI do PR e builds Android/Windows; corrigir falhas antes da integração.",
+    "Integração crítica pelo integrador conforme política vigente; validar APK em Android físico."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/UX.md",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/adr/0034-urbe-sem-simulacao-visual.md",
+    "docs/adr/0041-urbe-espacos-por-agente.md",
+    "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+    "docs/governance/addenda/ADD-0028-urbe-sem-simulacao-visual.md",
+    "docs/architecture/audits/ai-unification-2026-10-16.md",
+    "docs/architecture/local-first.md",
+    "docs/governance/communication.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Formulários de chat no arquivo da conversa; templates em Markdown; rascunhos de template em arquivo privado com ownership distinto."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #762, branch, handoff e testes rastreáveis."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Escopo atual registrado em UC-90/ASSISTANT-FORMS e ADR-0042."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Resposta de formulário não concede escrita nem memória e não muda credenciais ou grants."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE explicitamente pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Build/testes/CI distinguidos de integração e release."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "IDs estáveis de sessão, agente, conversa, chamada e mensagem de envio."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Permanece em Urbe.Core/Client; sem extração ou terceiro runtime."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Estado aditivo de formulários/fila em conversas privadas e contrato de interação do executor; integração governada conforme política."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "native-agent-forms",
+      "status": "possible-candidate",
+      "rationale": "Interação declarativa potencialmente reutilizável, mas sem segundo consumidor real; implementação local no Urbe."
+    }
+  ]
+}

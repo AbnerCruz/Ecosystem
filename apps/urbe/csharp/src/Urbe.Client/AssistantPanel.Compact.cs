@@ -98,6 +98,11 @@ public sealed partial class AssistantPanel
             // Same diff, 'Edit', Approve / Reject / Approve All. No second permission path.
             body.Children.Add(Approval(pending.Request));
         }
+        else if (status == "question" && _conv.Forms.Any(f => f.State == "pending"))
+        {
+            body.Children.Add(Wrap("Preencha o formulário para o agente continuar. Seus valores ficam salvos ao sair.", 13, UrbeTheme.Text2));
+            body.Children.Add(TextButton("Preencher formulário", Open));
+        }
         else if (status == "question" && calls.LastOrDefault(b => b.Name == "ask_user") is { } question)
         {
             body.Children.Add(Clarification(question));

@@ -517,6 +517,7 @@ public static class AssistantAgent
         public IAssistantImages? Images => inner.Images;
         public AssistantWebSession? Web => inner.Web;
         public IAssistantDelegation? Delegation => inner.Delegation;
+        public IAssistantForms? Forms => inner.Forms;
     }
 
     private sealed record Out(string Content, bool IsError = false, string? Status = null, IReadOnlyList<AiChange>? Changes = null, IReadOnlyList<(string Path, AiPartial? Partial)>? Reads = null);
@@ -706,10 +707,18 @@ public static class AssistantAgent
                     k = j;
                     continue;
                 }
-                Finish(calls[k], await RunOne(calls[k]));
+                var output = await RunOne(calls[k]);
+                Finish(calls[k], output);
+                bool waitingForUser = calls[k].Name is "ask_user" or "request_form" && !output.IsError;
                 k++;
+                if (waitingForUser)
+                {
+                    // Never perform a later write from the same model response before the person answers.
+                    while (k < calls.Count) Finish(calls[k++], new Out("Não executada: aguardando respostas do usuário. Solicite novamente após recebê-las.", true, "deferred"));
+                    break;
+                }
             }
-            if (calls.Any(c => c.Name == "ask_user" && answer.Content.Any(b => b.ToolUseId == c.Id && !b.IsError)))
+            if (calls.Any(c => c.Name is "ask_user" or "request_form" && answer.Content.Any(b => b.ToolUseId == c.Id && !b.IsError)))
             {
                 result.Stopped = "needs_input";
                 break;

@@ -126,7 +126,7 @@ public sealed partial class AssistantPanel
             AssistantImageTools.SavedImagePath(r.Content) is { } generatedPath)
             card.Children.Add(GeneratedImagePreview(generatedPath));
         // only the latest plan shows open, as a checklist
-        if (b.Name == "update_plan" && !b.Pending && b.Id == LatestPlanId() && b.Input?["steps"] is JsonArray steps) card.Children.Add(Plan(steps));
+        if (b.Name == "update_plan" && !b.Pending && b.Id == LatestPlanId() && (b.Input as JsonObject)?["steps"] is JsonArray steps) card.Children.Add(Plan(steps));
         if (b.Name == "ask_user" && r is { IsError: false } && _running is null &&
             _conv.Runs.LastOrDefault()?.Stopped == "needs_input" &&
             _conv.Messages.SelectMany(msg => msg.Content).LastOrDefault(x => x.Type == "tool_use" && x.Name == "ask_user")?.Id == b.Id)
@@ -251,22 +251,47 @@ public sealed partial class AssistantPanel
         catch (Exception) { return t.Name; }
     }
 
-    private static Control Pre(string text, bool error) => new Ui.CodeBlockView(text, error ? "Erro" : "Texto", 11.5)
+    private static string? JsonText(JsonNode? node) => node is JsonValue value && value.TryGetValue<string>(out var text) ? text : null;
+
+    private static Control Pre(string text, bool error)
     {
-        Background = UrbeTheme.Brush(error ? UrbeTheme.Danger : UrbeTheme.Surface, error ? .12 : 1)
-    };
+        // Tool results may contain entire documents or a single enormous line. Keep every byte
+        // available, but give Skia only a bounded page to shape when expanding on a phone.
+        const int pageSize = 12000;
+        if (text.Length <= pageSize) return new Ui.CodeBlockView(text, error ? "Erro" : "Texto", 11.5);
+        var root = new StackPanel { Spacing = 8 };
+        var body = new ContentControl();
+        var count = Hint("");
+        int page = 0;
+        void Paint()
+        {
+            int start = page * pageSize;
+            body.Content = new Ui.CodeBlockView(text.Substring(start, Math.Min(pageSize, text.Length - start)), error ? "Erro" : "Texto", 11.5);
+            count.Text = "Página " + (page + 1) + " de " + ((text.Length + pageSize - 1) / pageSize) + " · conteúdo integral preservado";
+        }
+        var copy = TextButton("Copiar resultado completo", () => { });
+        copy.Click += async (_, _) => { copy.Content = await Ui.TextActions.CopyAsync(copy, text) ? "Copiado" : "Falha ao copiar"; };
+        root.Children.Add(count);
+        root.Children.Add(new WrapPanel { Children = {
+            TextButton("Anterior", () => { if (page > 0) { page--; Paint(); } }),
+            TextButton("Próxima", () => { if ((page + 1) * pageSize < text.Length) { page++; Paint(); } }), copy } });
+        root.Children.Add(body);
+        Paint();
+        return root;
+    }
 
     private static Control Plan(JsonArray steps)
     {
         var list = new StackPanel { Spacing = 6, Margin = new Thickness(2, 2, 0, 2) };
-        foreach (var x in steps)
+        foreach (var item in steps)
         {
-            var s = (string?)x?["status"] ?? "pending";
+            if (item is not JsonObject x) { list.Children.Add(Hint("Etapa inválida recebida do modelo. Consulte os parâmetros abaixo.")); continue; }
+            var s = JsonText(x["status"]) ?? "pending";
             var mark = s switch { "done" => "✓", "in_progress" => "◐", _ => "○" };
             var description = new StackPanel { Spacing = 2 };
-            description.Children.Add(Wrap((string?)x?["step"] ?? "", 13, s == "done" ? UrbeTheme.Text3 : UrbeTheme.Text));
-            if ((string?)x?["details"] is { Length: > 0 } details) description.Children.Add(Wrap(details, 12, UrbeTheme.Text2));
-            if ((string?)x?["acceptance"] is { Length: > 0 } acceptance)
+            description.Children.Add(Wrap(JsonText(x["step"]) ?? "Etapa sem descrição", 13, s == "done" ? UrbeTheme.Text3 : UrbeTheme.Text));
+            if (JsonText(x["details"]) is { Length: > 0 } details) description.Children.Add(Wrap(details, 12, UrbeTheme.Text2));
+            if (JsonText(x["acceptance"]) is { Length: > 0 } acceptance)
                 description.Children.Add(Wrap("Concluído quando: " + acceptance, 11, UrbeTheme.Text3));
             list.Children.Add(Row(Label(mark, 13, s == "done" ? UrbeTheme.Accent : UrbeTheme.Text3), description));
         }

@@ -68,3 +68,5 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0040](0040-urbe-grafos-autorais.md) | Grafos autorais como artefatos do Urbe | Proposto |
 
 | [0041](0041-urbe-espacos-por-agente.md) | Urbe: espaços e configuração individual por agente | Proposto |
+
+| [0042](0042-urbe-formularios-nativos.md) | Formulários nativos e retomada explícita no Urbe | Proposto |

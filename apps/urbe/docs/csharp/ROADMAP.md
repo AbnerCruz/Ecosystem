@@ -385,3 +385,17 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 [OpenAI handoffs](https://openai.github.io/openai-agents-python/handoffs/) e
 [Claude sessões paralelas](https://academy.claude.com/courses/ai-native-sdlc-playbook/parallel-sessions-and-subagents).
 Nenhuma fonte é copiada como dependência. Os itens só poderão ser marcados com evidência real (NN-017/018).
+
+## UC-90 — Estabilidade dos agentes e formulários inteligentes (25/10/2026)
+
+Issue #762; branch `fix/urbe-crash-smart-forms`; contrato e critérios em [ASSISTANT-FORMS.md](ASSISTANT-FORMS.md), ADR-0042.
+
+- [~] Corrigir caminho reproduzido de crash por tipos inválidos em planos e proteger expansão de resultados grandes sem perder o conteúdo integral.
+- [~] Corrigir segundo envio: fila durável por conversa, execução em ordem, anexos preservados, retomada explícita após erro/cancelamento.
+- [~] Contratos, validação e sessões persistentes de formulários; campos nativos e valores iniciais; isolamento por agente/conversa/chamada; cancelamento sem escrita nem memória implícitas.
+- [~] Templates legados em formulário completo, metadados opcionais e formulários reutilizáveis salvos como templates; rascunhos vinculados à versão do modelo.
+- [~] `request_form` no executor existente, pausa durável em needs_input e continuação por resposta estruturada; bloquear chamadas posteriores enquanto aguarda respostas.
+- [~] Formulários contextuais de notas com detecção de versão divergente no envio e na escrita; operações continuam pelas permissões/prévias/aprovações atuais.
+- [~] Condicionais declarativas, soma, listas e grupos repetíveis, sem execução de código gerado.
+- [ ] Evolução posterior: editor visual geral de definições, associação a comandos/plugins, anexos e referências a grafos; especificar contratos antes de implementar.
+- [ ] Regressão automatizada, CI integrado e validação Android de toque/IME/rolagem/reinício/desempenho. Não marcar concluído antes das provas.

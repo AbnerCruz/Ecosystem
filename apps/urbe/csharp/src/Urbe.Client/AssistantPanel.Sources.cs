@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -49,10 +50,10 @@ public sealed partial class AssistantPanel
             }
             if (hits.Count > limit) list.Children.Add(LinkButton("Mostrar mais 20", () => { limit += 20; Paint(); }));
             if (filter.SelectedIndex is 0 or 3)
-                foreach (var call in failed.Where(c => ((string?)c.Input?["url"] ?? "").Contains(query, StringComparison.OrdinalIgnoreCase)).Take(limit))
+                foreach (var call in failed.Where(c => (JsonText((c.Input as JsonObject)?["url"]) ?? "").Contains(query, StringComparison.OrdinalIgnoreCase)).Take(limit))
                 {
                     var row = new StackPanel { Spacing = 4 };
-                    row.Children.Add(Wrap((string?)call.Input?["url"] ?? "Fonte não identificada", 12, UrbeTheme.Text));
+                    row.Children.Add(Wrap(JsonText((call.Input as JsonObject)?["url"]) ?? "Fonte não identificada", 12, UrbeTheme.Text));
                     row.Children.Add(Wrap("Leitura falhou · " + ResultFor(call.Id)!.Content, 12, UrbeTheme.Danger));
                     list.Children.Add(Card(row));
                 }

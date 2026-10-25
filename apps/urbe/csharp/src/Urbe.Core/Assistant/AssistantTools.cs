@@ -95,6 +95,7 @@ public interface IAssistantHost
     IAssistantGraphs? Graphs => null;
     /// <summary>Agent-to-agent requests transmit only the explicit task, never another chat or memory.</summary>
     IAssistantDelegation? Delegation => null;
+    IAssistantForms? Forms => null;
 }
 
 /// <summary>A configured public agent profile, without private memory or chat contents.</summary>
