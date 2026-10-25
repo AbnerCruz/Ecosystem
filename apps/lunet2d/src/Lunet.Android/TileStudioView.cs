@@ -165,7 +165,7 @@ internal sealed class TileStudioView : LinearLayout
         _lastX = _lastY = -1;
     }
 
-    private void Paint(int x, int y)
+    private void PaintCell(int x, int y)
     {
         if (!_drawing || (x == _lastX && y == _lastY)) return;
         _lastX = x;
@@ -241,7 +241,7 @@ internal sealed class TileStudioView : LinearLayout
             }
             if (e.ActionMasked == MotionEventActions.Down) owner.BeginGesture();
             if (e.ActionMasked is MotionEventActions.Down or MotionEventActions.Move)
-                owner.Paint((int)Math.Floor((e.GetX() - _left) / _cell), (int)Math.Floor((e.GetY() - _top) / _cell));
+                owner.PaintCell((int)Math.Floor((e.GetX() - _left) / _cell), (int)Math.Floor((e.GetY() - _top) / _cell));
             return true;
         }
 
