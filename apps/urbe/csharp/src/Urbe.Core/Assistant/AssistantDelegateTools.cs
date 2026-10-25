@@ -9,8 +9,8 @@ public static class AssistantDelegateTools
     {
         Name = "consult_agent",
         Access = "ui",
-        Description = "Consulte um dos outros agentes que o usuário configurou. Primeiro use sem agent_id para conhecer especialistas e capacidades públicas. Encaminhe somente a tarefa explícita necessária; você NÃO vê conversas, memórias nem instruções privadas dos outros agentes. O Urbe solicitará autorização se necessário, abrirá uma conversa separada para o especialista e trará a resposta. Se não houver agente adequado, recomende que o usuário crie um. Não use para delegar sua própria tarefa sem necessidade.",
-        Parameters = (JsonObject)JsonNode.Parse("""{"type":"object","properties":{"agent_id":{"type":"string","description":"ID público do especialista. Deixe vazio para listar agentes configurados."},"task":{"type":"string","description":"Pergunta ou trabalho específico que você quer enviar ao especialista, sem copiar o histórico privado da conversa."}},"additionalProperties":false}""")!,
+        Description = "Consulte um dos outros agentes que o usuário configurou. Primeiro use sem agent_id para conhecer especialistas e capacidades públicas. Encaminhe somente a tarefa explícita necessária; você NÃO vê conversas, memórias nem instruções privadas dos outros agentes. O Urbe solicitará autorização se necessário, abrirá uma conversa separada para o especialista e trará a resposta. Para continuar a conversa com ESSE MESMO especialista, informe conversation_id devolvido pela consulta anterior, sem tentar acessar conversas alheias. Se não houver agente adequado, recomende que o usuário crie um. Não use para delegar sua própria tarefa sem necessidade.",
+        Parameters = (JsonObject)JsonNode.Parse("""{"type":"object","properties":{"agent_id":{"type":"string","description":"ID público do especialista. Deixe vazio para listar agentes configurados."},"task":{"type":"string","description":"Pergunta ou trabalho específico que você quer enviar ao especialista, sem copiar o histórico privado da conversa."},"conversation_id":{"type":"string","description":"Opcional: ID devolvido por uma consulta anterior DESTA conversa para continuar o diálogo com o mesmo especialista."}},"additionalProperties":false}""")!,
         Label = i => string.IsNullOrWhiteSpace((string?)i["agent_id"]) ? "Procurando agentes disponíveis" : "Consultando agente " + ((string?)i["agent_id"] ?? ""),
         Run = async (i, host) =>
         {
@@ -27,7 +27,7 @@ public static class AssistantDelegateTools
             }
             var task = ((string?)i["task"] ?? "").Trim();
             if (task.Length == 0) throw new AiToolException("Explique a tarefa que deseja enviar ao especialista.");
-            return new AiToolOutput(await gateway.ConsultAsync(agentId, task));
+            return new AiToolOutput(await gateway.ConsultAsync(agentId, task, ((string?)i["conversation_id"] ?? "").Trim()));
         }
     };
 }
