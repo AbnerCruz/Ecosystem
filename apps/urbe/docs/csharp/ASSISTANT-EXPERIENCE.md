@@ -70,7 +70,9 @@ sempre se aplica à execução identificada que a originou.
 descrição, capacidade de imagem). Encaminha exclusivamente a tarefa explícita e cria
 um novo chat pertencente ao especialista. Mensagens e memória de origem **não**
 entram na entrada do especialista; sua própria configuração de modelo, permissões
-e memórias é usada no executor. O resultado textual volta como resultado da
+e memórias é usada no executor. O especialista pode receber perguntas de acompanhamento usando o `conversation_id` devolvido pela consulta anterior. Esse ID é verificado contra o agente solicitante, a conversa original, o vault e o destino; jamais é aceito como acesso genérico ao histórico. Assim, a troca entre dois agentes pode continuar por vários turnos, embora cada troca seja uma ferramenta explicitamente solicitada e autorizada pela política.
+
+O resultado textual volta como resultado da
 ferramenta, com ID do chat especializado e eventuais referências a arquivos gerados.
 O executor secundário não dispõe de `consult_agent`, evitando delegação recursiva
 não supervisionada.
