@@ -25,3 +25,20 @@ conteúdo dos vaults não são afetados. JSON de conversa ilegível não pode te
 sua propriedade inferida e não é apagado por suposição.
 
 Fixtures/testes: `AgentWorkspaceTests` e `AgentWorkspaceUiTests`.
+
+## UC-89 — escopo de ferramentas e delegação (25/10/2026)
+
+`config.json` acrescenta dois campos opcionais, com as mesmas regras de escrita
+verificada do `AssistantStore`:
+- `agentToolScopes:{agentId:"read"|"write"|"all"}`: teto efetivo dos
+  comandos; se ausente, vale o `AiAgentDef.Tools` original (sem grant novo).
+- `agentDelegationAuto:{agentId:boolean}`: autorização para solicitar
+  especialistas sem confirmação inicial; ausente equivale a `false`.
+  Nem `true` permite que origem somente leitura dispare automaticamente
+  especialista com escrita. O executor destinatário usa sua política própria.
+
+Os arquivos `conversa-*.json` preservam o formato: cada consulta delegada
+cria um novo arquivo com `AgentId` do especialista, sem transplantar mensagens
+da origem. Conversas ativas permanecem na memória até concluir; seu registro
+é gravado no armazenamento privado existente. Não há acesso direto de
+agentes a arquivos de históricos ou memórias dos demais.
