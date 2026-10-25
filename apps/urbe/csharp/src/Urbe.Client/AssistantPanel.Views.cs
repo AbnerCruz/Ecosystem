@@ -597,6 +597,21 @@ public sealed partial class AssistantPanel
         EditAgentProfile(agent);
     }
 
+    private async Task PickDelegationAsync(AiAgentDef agent)
+    {
+        if (_activeConversations.Values.Any(c => c.AgentId == agent.Id))
+        { await _app.Dialogs.AlertAsync("Agente trabalhando", "Termine a execução antes de modificar sua permissão de delegação."); return; }
+        var i = await _app.Dialogs.ChooseAsync("Colaboração de " + AgentNames.CallName(agent, _cfg),
+        [
+            new DialogItem("Sempre pedir autorização", UrbeTheme.Icons.Check, "Confirme cada consulta; o especialista mantém seu próprio modelo e suas permissões."),
+            new DialogItem("Consultar automaticamente", UrbeTheme.Icons.Edit, "Dispensa confirmação apenas quando não elevar o acesso a escrita; cada agente conserva suas proteções.")
+        ]);
+        if (i is not 0 and not 1) return;
+        _cfg.AgentDelegationAuto[agent.Id] = i == 1;
+        SaveConfig();
+        EditAgentProfile(agent);
+    }
+
     private async Task DeleteAgentAsync(AiAgentDef agent)
     {
         if (agent.Id == "geral" || !_cfg.CustomAgents.Any(a => a.Id == agent.Id)) return;
@@ -614,6 +629,7 @@ public sealed partial class AssistantPanel
             _cfg.AgentImages.Remove(agent.Id);
             _cfg.AgentPolicies.Remove(agent.Id);
             _cfg.AgentToolScopes.Remove(agent.Id);
+            _cfg.AgentDelegationAuto.Remove(agent.Id);
             _cfg.AgentInstructionBlocks.Remove(agent.Id);
             _cfg.AgentNames.Remove(agent.Id);
             _agentDrafts.Remove(agent.Id);
@@ -1391,8 +1407,12 @@ public sealed partial class AssistantPanel
     private void EditAgentProfile(AiAgentDef agent)
     {
         var body = OpenView("Configurar " + AgentNames.CallName(agent, _cfg), () => ShowSettings());
-        body.Children.Add(Section("Permissões", Hint(PermissionSummary(agent)),
-            TextButton("Configurar permissões", () => _ = PickPolicyAsync(agent))));
+        body.Children.Add(Section("Acesso e colaboração", Hint(PermissionSummary(agent)),
+            TextButton("Alterar permissões", () => _ = PickPolicyAsync(agent)),
+            Hint(_cfg.AgentDelegationAuto.GetValueOrDefault(agent.Id)
+                ? "Consultar outros agentes: automaticamente quando seguro"
+                : "Consultar outros agentes: pede sua aprovação"),
+            TextButton("Definir autorização de consultas", () => _ = PickDelegationAsync(agent))));
         var image = _cfg.AgentImages.GetValueOrDefault(agent.Id);
         body.Children.Add(Section("Modelo de imagem", Hint(image?.Model ?? "Nenhum"),
             TextButton("Selecionar modelo de imagem", () => _ = PickConfiguredModelAsync(null, agent.Id))));
