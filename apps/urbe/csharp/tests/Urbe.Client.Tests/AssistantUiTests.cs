@@ -166,8 +166,8 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains("Gerenciar memórias", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 ClickNamed(panel, "Configurações: Pesquisa");
                 Assert.Contains("Privacidade e pesquisa", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
-                ClickNamed(panel, "Configurações: Execução");
-                Assert.Contains("Profundidade da investigação", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
+                ClickNamed(panel, "Configurações: Agentes");
+                Assert.Contains("+ Novo agente", panel.GetLogicalDescendants().OfType<TextBlock>().Select(x => x.Text));
                 return true;
             }
             finally
