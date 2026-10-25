@@ -9,6 +9,7 @@
     <PackageReference Include="xunit.v3" Version="*" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Lunet.Studio\Lunet.Studio.csproj" />
     <ProjectReference Include="..\..\src\Lunet.Core\Lunet.Core.csproj" />
     <ProjectReference Include="..\..\src\Lunet.Git\Lunet.Git.csproj" />
     <ProjectReference Include="..\..\src\Lunet.Editor\Lunet.Editor.csproj" />

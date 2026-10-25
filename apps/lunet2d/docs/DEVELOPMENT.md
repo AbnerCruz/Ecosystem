@@ -2,6 +2,9 @@
 
 Esta rotina vale para todo trabalho no Lunet2D, feito por pessoa ou por agente. O objetivo é nunca perder a direção: o planejamento é o [`docs/SPEC.md`](SPEC.md), o estado é o [`ROADMAP.md`](../ROADMAP.md).
 
+> Ordem vigente de 25/10/2026: a seção de prioridade do ROADMAP autoriza executar
+> Studios e build junto das pendências F4, sem declarar fases ou DEVICE concluídos.
+
 ## 1. Antes de começar qualquer trabalho (sempre)
 
 0. Ler `AGENTS.md` e `AgentsChat.md`; conferir alterações locais, branches e PRs abertos antes de assumir trabalho.

@@ -1,0 +1,116 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261025-lunet-studio",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-25T19:22:05.487581+00:00",
+  "agent": {
+    "id": "codex-lunet-studio",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-440",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "feat/lunet-usable-studios",
+  "base_commit": "c6b9a70f7ea6f889a1c5ac4a4357d632ac108eea",
+  "files_changed": [
+    "apps/lunet2d/docs/guides/sprite-studio.md",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Studio.cs",
+    "apps/lunet2d/src/Lunet.Android/SpriteStudioView.cs",
+    "apps/lunet2d/src/Lunet.Studio/Lunet.Studio.csproj",
+    "apps/lunet2d/src/Lunet.Studio/SpriteDocument.cs",
+    "apps/lunet2d/src/Lunet.Studio/SpriteHistory.cs",
+    "apps/lunet2d/tests/Lunet.Tests/SpriteStudioTests.cs",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/tests/Lunet.Tests/Lunet.Tests.csproj",
+    "docs/governance/handoffs/HO-20261025-lunet-studio.json"
+  ],
+  "work_completed": [
+    "Repriorização explícita persistida no ROADMAP; preservado trabalho de áudio anterior em branch separada.",
+    "Primeiro editor Sprite/Animation nativo, fonte JSON, PNG, frames, desenho e playback."
+  ],
+  "verification": [
+    {
+      "check": "Build portátil",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "SDK 10.0.402; 0 warnings/errors."
+    },
+    {
+      "check": "Suíte portátil e consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "695/695 testes e 22/22 consistency."
+    },
+    {
+      "check": "CI Android e regressão",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Execução em andamento."
+    },
+    {
+      "check": "Sprite Studio no aparelho",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/sprite-studio.md",
+      "critical": false,
+      "evidence": "Roteiro disponível; não inferido de testes."
+    }
+  ],
+  "known_issues": [
+    "Build APK do jogo e demais Studios ainda ausentes.",
+    "Sprite Studio parcial: sem layers/seleção/zoom/eventos/estados."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Conferir CI Android e integração governada.",
+    "Priorizar fluxo de build APK do jogo; sem voltar ao refinamento de áudio."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json",
+    "docs/architecture/local-first.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "Ordem do proprietário de 25/10 persistida no ROADMAP antes da implementação."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente separado dos testes."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Studio local ao Product, conforme ADR 0007; sem extração compartilhada."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "sprite-studio",
+      "status": "product-specific",
+      "rationale": "Ferramenta de produção do Lunet, sem segundo consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "critical"
+  },
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/776"
+}
