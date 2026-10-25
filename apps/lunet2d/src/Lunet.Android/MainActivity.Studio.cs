@@ -172,8 +172,10 @@ public sealed partial class MainActivity
             if (options.OutWidth is < 1 or > 2048 || options.OutHeight is < 1 or > 2048 ||
                 options.OutWidth % map.TileWidth != 0 || options.OutHeight % map.TileHeight != 0)
                 throw new InvalidDataException("PNG ausente ou incompatível com o mapa (máximo 2048 × 2048).");
+            if (map.Width > 64 || map.Height > 64) throw new InvalidDataException("Esta versão do editor abre mapas de até 64 × 64 células. O jogo continua suportando mapas maiores.");
             bitmap = BitmapFactory.DecodeFile(absolute) ?? throw new InvalidDataException("Não foi possível ler o PNG.");
             int maxTiles = (bitmap.Width / map.TileWidth) * (bitmap.Height / map.TileHeight);
+            if (maxTiles > 1024) throw new InvalidDataException("Paleta grande demais para esta versão (máximo 1024 tiles).");
             var edit = new TileStudioSession(map, maxTiles);
             var dialog = new Dialog(this, global::Android.Resource.Style.ThemeMaterialNoActionBar);
             bool saved = false;
