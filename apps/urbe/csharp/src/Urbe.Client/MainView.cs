@@ -5,6 +5,7 @@ using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Urbe.Core;
+using Urbe.Core.Assistant;
 
 namespace Urbe.Client;
 
@@ -999,21 +1000,39 @@ public sealed partial class MainView : Grid
             templatePath = templates[i];
         }
         if (!_contents.TryGetValue(templatePath, out var template)) return;
+        folder ??= Explorer.CurrentFolder;
+        FormDraftStore? completedDrafts = null;
+        string? completedKey = null, completedPath = null;
         await CreateNoteInNotesAsync(typedName, folder, async name =>
         {
-            // the template's other {{campo}}: one question each, in order; Cancelar creates nothing
             var values = new Dictionary<string, string>(StringComparer.Ordinal);
-            var fields = NoteTemplateEngine.InputFields(template);
-            for (int i = 0; i < fields.Count; i++)
+            if (NoteTemplateEngine.InputFields(template).Count > 0 || template.Contains("<!-- urbe-form ", StringComparison.Ordinal))
             {
-                var value = await Dialogs.PromptAsync(new PromptOptions(NoteTemplateEngine.NameOf(templatePath), Label: fields[i],
-                    Hint: fields.Count > 1 ? "Campo " + (i + 1) + " de " + fields.Count + " do modelo." : "Campo do modelo.",
-                    Confirm: i == fields.Count - 1 ? "Criar nota" : "Continuar", Required: false));
-                if (value is null) return null;
-                values[fields[i]] = value;
+                try
+                {
+                    var definition = FormDefinition.FromTemplate(NoteTemplateEngine.NameOf(templatePath), template);
+                    IAssistantStorage storage = UrbeApp.AssistantFolder is { } formFolder ? new FolderAssistantStorage(formFolder) : new MemoryAssistantStorage();
+                    var drafts = new FormDraftStore(storage);
+                    var key = FormDraftStore.Key(_vault?.VaultName ?? "", templatePath, name);
+                    var session = drafts.LoadOrCreate(key, definition, template);
+                    var answers = await Dialogs.FormAsync(session, () => drafts.Save(key, session),
+                        _store?.List().Where(d => ArtifactModel.IsNote(d.Path)).Select(d => d.Path).ToArray(), _library?.Folders);
+                    if (answers is null) { drafts.Delete(key); return null; }
+                    foreach (var entry in session.TemplateValues()) values[entry.Key] = entry.Value;
+                    completedDrafts = drafts;
+                    completedKey = key;
+                    completedPath = (folder.Length > 0 ? folder + "/" : "") + name + (ArtifactModel.IsText(name) ? "" : ".md");
+                }
+                catch (Exception error) when (error is ArgumentException or IOException or System.Text.Json.JsonException)
+                { await Dialogs.AlertAsync("Formulário do modelo", error.Message); return null; }
             }
             return NoteTemplateEngine.Fill(template, ArtifactModel.IsText(name) ? System.IO.Path.GetFileNameWithoutExtension(name) : name, DateTime.Now, values);
         });
+        if (completedDrafts is not null && completedKey is not null && completedPath is not null && _contents.ContainsKey(completedPath))
+        {
+            try { completedDrafts.Delete(completedKey); }
+            catch (IOException error) { ShowLifeNotice("A nota foi criada, mas o rascunho não pôde ser removido: " + error.Message); }
+        }
     }
 
     /// <summary>mobile-ui.js where(folder).</summary>

@@ -96,8 +96,9 @@ public static partial class NoteTemplateEngine
     /// without a value stays as written. Values are inserted literally and never read again as placeholders.
     /// </summary>
     public static string Fill(string? markdown, string title, DateTime date, IReadOnlyDictionary<string, string>? values) =>
-        FieldRegex().Replace(markdown ?? string.Empty, match => match.Groups[1].Value switch
+        FieldRegex().Replace(WithoutFormMetadata(markdown ?? string.Empty), match => match.Groups[1].Value switch
         {
+            var name when markdown?.Contains("<!-- urbe-form ", StringComparison.Ordinal) == true && values is not null && values.TryGetValue(name, out var explicitValue) => explicitValue,
             "titulo" or "título" => title,
             "data" => date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
             var name when values is not null && values.TryGetValue(name, out var v) => v ?? string.Empty,
@@ -107,7 +108,20 @@ public static partial class NoteTemplateEngine
     /// <summary>The fields the person is asked for when a note is made from the template: every distinct placeholder but
     /// {{titulo}}/{{título}} and {{data}}, in order of first appearance, at most <see cref="MaxFields"/>.</summary>
     public static IReadOnlyList<string> InputFields(string? markdown) =>
-        Fields(markdown).Where(f => f is not ("titulo" or "título" or "data")).Take(MaxFields).ToArray();
+        Fields(WithoutFormMetadata(markdown ?? string.Empty)).Where(f => f is not ("titulo" or "título" or "data")).Take(MaxFields).ToArray();
+
+    public static string WithoutFormMetadata(string markdown)
+    {
+        const string marker = "<!-- urbe-form ";
+        int start = markdown.IndexOf(marker, StringComparison.Ordinal);
+        if (start < 0) return markdown;
+        int end = markdown.IndexOf("-->", start, StringComparison.Ordinal);
+        if (end < 0) return markdown;
+        end += 3;
+        if (end < markdown.Length && markdown[end] == '\r') end++;
+        if (end < markdown.Length && markdown[end] == '\n') end++;
+        return markdown.Remove(start, end - start);
+    }
 
     [GeneratedRegex(
         @"\{\{([\p{L}_][\p{L}\p{N}_-]{0,63})\}\}",

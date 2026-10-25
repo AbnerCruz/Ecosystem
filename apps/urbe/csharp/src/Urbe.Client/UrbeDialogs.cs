@@ -19,7 +19,7 @@ public sealed record PromptOptions(string Title, string? Label = null, string Va
 /// phone and a centred card from 720 px, Escape/backdrop cancel and Enter confirms. Visual from
 /// theme.css .udlg / #explorerActionSheet (they share it).
 /// </summary>
-public sealed class UrbeDialogs : Grid
+public sealed partial class UrbeDialogs : Grid
 {
     private const double Wide = 720;
     private Task _queue = Task.CompletedTask;

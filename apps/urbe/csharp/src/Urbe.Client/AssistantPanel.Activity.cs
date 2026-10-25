@@ -30,17 +30,19 @@ public sealed partial class AssistantPanel
             _conv.Runs.LastOrDefault()?.Stopped == "needs_input" &&
             ResultFor(lastQuestion.Id) is { IsError: false };
         var last = calls.LastOrDefault().Block;
-        var headline = needsApproval ? "Aguardando sua aprovação"
+        bool needsForm = !running && _conv.Forms.Any(f => f.State == "pending" && f.ConversationId == _conv.Id);
+        var headline = needsForm ? "Aguardando o formulário" : needsApproval ? "Aguardando sua aprovação"
             : needsAnswer ? "Aguardando sua resposta"
             : running && last is not null ? ActivityVerb(last.Name)
             : running ? "Analisando o pedido"
+            : _conv.Runs.LastOrDefault()?.Stopped == "no_progress" ? "Ciclo sem progresso interrompido"
             : _conv.Runs.LastOrDefault()?.Stopped == "aborted" ? "Execução interrompida"
             : _conv.Runs.LastOrDefault()?.Stopped == "error" ? "Execução com erro"
             : calls.Any(x => ResultFor(x.Block.Id) is { IsError: true }) ? "Atividade concluída com alertas"
             : calls.Count > 0 ? "Trabalho realizado" : "Análise concluída";
 
-        if (!running && !needsApproval && !needsAnswer && calls.LastOrDefault(x => x.Block.Name == "update_plan").Block?.Input?["steps"] is JsonArray remaining &&
-            remaining.Any(x => (string?)x?["status"] != "done"))
+        if (!running && !needsApproval && !needsAnswer && !needsForm && (calls.LastOrDefault(x => x.Block.Name == "update_plan").Block?.Input as JsonObject)?["steps"] is JsonArray remaining &&
+            remaining.Any(x => x is not JsonObject step || JsonText(step["status"]) != "done"))
             headline = "Execução encerrada · plano com pendências";
         var header = new StackPanel { Spacing = 5 };
         var line = new Grid { ColumnDefinitions = new ColumnDefinitions("24,*") };
@@ -140,7 +142,7 @@ public sealed partial class AssistantPanel
         var title = tool is not null && !block.Pending ? SafeLabel(tool, block.Input)
             : block.Pending ? "Preparando " + block.Name : block.Name;
         var pending = _pending?.Request.Call.Id == block.Id && block.Id.Length > 0;
-        var status = result?.Status == "rejected" ? "Recusada"
+        var status = result?.Status == "reused" ? "Leitura reutilizada · mesma versão" : result?.Status == "noop" ? "Sem alteração · gravação dispensada" : result?.Status == "rejected" ? "Recusada"
             : result is { IsError: true } ? "Falhou"
             : result is not null ? "Concluída"
             : pending && current ? "Aguardando aprovação"
@@ -159,9 +161,9 @@ public sealed partial class AssistantPanel
         {
             var details = new StackPanel { Spacing = 8, Margin = new Thickness(4, 4, 4, 8) };
             if (_progress.TryGetValue(block.Id, out var progress)) details.Children.Add(Wrap(progress, 12, UrbeTheme.Text2));
-            if (block.Name == "update_plan" && block.Input?["steps"] is JsonArray steps && block.Id == LatestPlanId())
+            if (block.Name == "update_plan" && (block.Input as JsonObject)?["steps"] is JsonArray steps && block.Id == LatestPlanId())
                 details.Children.Add(Plan(steps));
-            if (block.Name == "ask_user" && block.Input?["question"] is JsonValue question)
+            if (block.Name == "ask_user" && (block.Input as JsonObject)?["question"] is JsonValue question)
                 details.Children.Add(Wrap(LegacyCustomize.JsToString(question), 13, UrbeTheme.Text));
             if (block.Input is not null && !block.Pending)
             {

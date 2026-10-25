@@ -15,6 +15,7 @@ namespace Urbe.Client;
 /// </summary>
 public sealed partial class MainView : IAssistantApp
 {
+    IReadOnlyCollection<string> IAssistantApp.VaultFolders => _library?.Folders ?? [];
     private AssistantPanel? _assistant;
 
     // A small, always-available launcher; no extra AI service or duplicate conversation.

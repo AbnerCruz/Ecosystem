@@ -228,4 +228,26 @@ public sealed class AssistantMultimodalQuestionTests
         Assert.Equal("Revisado.", messages.Last(m => m.Role == "assistant").Content.First(b => b.Type == "text").Text);
     }
 
+    [Fact]
+    public async Task FormRequestDefersLaterWritesInTheSameModelResponse()
+    {
+        int writes = 0;
+        var form = new AiTool { Name = "request_form", Access = "ui", Description = "form", Parameters = new(), Label = _ => "Form",
+            Run = (_, _) => Task.FromResult(new AiToolOutput("Formulário salvo")) };
+        var write = new AiTool { Name = "write_artifact", Access = "write", Description = "write", Parameters = new(), Label = _ => "Write",
+            Run = (_, _) => { writes++; return Task.FromResult(new AiToolOutput("Gravado")); } };
+        var messages = new List<AiChatMessage> { new() { Role = "user", Content = [AiChatBlock.TextBlock("Preencha antes de criar")] } };
+        var result = await AssistantAgent.RunAsync(new AiAgentRun
+        {
+            Agent = AssistantAgent.AgentById("geral") with { Tools = "all" }, Host = new Host(), Policy = "auto",
+            Provider = new AiProviderConfig("p", "openai"), Model = "test", Messages = messages, Tools = [form, write],
+            Stream = (_, _, _, _) => Task.FromResult(new AiResult([AiBlock.ToolUse("form", "request_form", new JsonObject()), AiBlock.ToolUse("write", "write_artifact", new JsonObject())], "", "tool_use", new AiUsage(1, 1, null), "test"))
+        });
+        Assert.Equal(0, writes);
+        Assert.Equal("needs_input", result.Stopped);
+        var outputs = messages.SelectMany(m => m.Content).Where(b => b.Type == "tool_result").ToList();
+        Assert.Equal(2, outputs.Count);
+        Assert.Equal("deferred", outputs.Single(b => b.ToolUseId == "write").Status);
+    }
+
 }

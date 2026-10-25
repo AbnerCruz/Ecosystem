@@ -28,6 +28,7 @@ public sealed partial class AssistantPanel
             if (_pending is not null) return "approval";
             if (_running is not null || _inNote is not null && _conv.Runs.Count == 0) return "thinking";
             if (_conv.Runs.LastOrDefault()?.Stopped == "needs_input") return "question";
+            if (_conv.Runs.LastOrDefault()?.Stopped == "no_progress") return "paused";
             if (_conv.Runs.LastOrDefault()?.Stopped == "error") return "error";
             if (_conv.Runs.LastOrDefault()?.Stopped == "aborted") return "cancelled";
             return "result";
@@ -84,6 +85,7 @@ public sealed partial class AssistantPanel
             "thinking" => "Analisando a nota",
             "error" => "Não foi possível concluir",
             "cancelled" => "Execução interrompida",
+            "paused" => "Pausado: operações sem progresso",
             _ => "Trabalho concluído"
         };
 
@@ -97,6 +99,11 @@ public sealed partial class AssistantPanel
         {
             // Same diff, 'Edit', Approve / Reject / Approve All. No second permission path.
             body.Children.Add(Approval(pending.Request));
+        }
+        else if (status == "question" && _conv.Forms.Any(f => f.State == "pending"))
+        {
+            body.Children.Add(Wrap("Preencha o formulário para o agente continuar. Seus valores ficam salvos ao sair.", 13, UrbeTheme.Text2));
+            body.Children.Add(TextButton("Preencher formulário", Open));
         }
         else if (status == "question" && calls.LastOrDefault(b => b.Name == "ask_user") is { } question)
         {

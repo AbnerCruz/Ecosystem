@@ -95,6 +95,7 @@ public interface IAssistantHost
     IAssistantGraphs? Graphs => null;
     /// <summary>Agent-to-agent requests transmit only the explicit task, never another chat or memory.</summary>
     IAssistantDelegation? Delegation => null;
+    IAssistantForms? Forms => null;
 }
 
 /// <summary>A configured public agent profile, without private memory or chat contents.</summary>
@@ -220,14 +221,15 @@ public static partial class AssistantTools
     private static int ReadBudget(IAssistantHost host) => Math.Max(8000, host.ReadChars > 0 ? host.ReadChars : 24000);
 
     /// <summary>readSlice(d, start, maxLines, budget): the note with line numbers, whole when it fits.</summary>
-    public static (string Text, AiPartial? Partial) ReadSlice(UrbeDocument d, int? start, int? maxLines, int budget)
+    public static (string Text, AiPartial? Partial) ReadSlice(UrbeDocument d, int? start, int? maxLines, int budget, bool exactRange = false)
     {
         var lines = d.Content.Split('\n');
         int total = lines.Length;
         int s = Math.Min(Math.Max(1, start is > 0 ? start.Value : 1), total);
         int rest = string.Join("\n", lines.Skip(s - 1)).Length;
+        int requestedEnd = exactRange && maxLines is > 0 ? (int)Math.Min(total, (long)s - 1 + maxLines.Value) : total;
         int e = s - 1, used = 0;
-        while (e < total && (used + lines[e].Length + 8 <= budget || e == s - 1)) { used += lines[e].Length + 8; e++; }
+        while (e < requestedEnd && (used + lines[e].Length + 8 <= budget || e == s - 1)) { used += lines[e].Length + 8; e++; }
         if (rest > budget && maxLines is > 0) e = Math.Min(e, s - 1 + maxLines.Value);
         int w = e.ToString(CultureInfo.InvariantCulture).Length;
         var output = new List<string>();
@@ -235,9 +237,9 @@ public static partial class AssistantTools
         var head = "# " + d.Path + " (" + total + " linhas" + (d.Tags.Count > 0 ? " · tags: " + string.Join(" ", d.Tags.Select(t => "#" + t)) : "") + ")" +
                    (s > 1 || e < total ? " — linhas " + s + "–" + e : " — completa");
         var body = d.Content.Length > 0 ? string.Join("\n", output) : "(nota vazia)";
-        AiPartial? partial = e < total ? new AiPartial(d.Path, e + 1, total) : null;
+        AiPartial? partial = e < requestedEnd ? new AiPartial(d.Path, e + 1, requestedEnd) : null;
         if (partial is not null)
-            body += "\n\n⚠ LEITURA PARCIAL: faltam as linhas " + (e + 1) + "–" + total + ". Antes de responder sobre esta nota, chame read_note com path=\"" + d.Path + "\" e start_line=" + (e + 1) + ".";
+            body += "\n\n⚠ LEITURA PARCIAL: faltam as linhas " + (e + 1) + "–" + requestedEnd + ". Antes de responder sobre esta nota, chame read_note com path=\"" + d.Path + "\" e start_line=" + (e + 1) + ".";
         return (head + "\n" + body, partial);
     }
 

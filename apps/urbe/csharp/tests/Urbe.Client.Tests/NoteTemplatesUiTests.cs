@@ -61,7 +61,7 @@ public sealed partial class HeadlessUiTests
             // Cancelar on a field creates nothing
             _ = view.CreateNoteFromTemplateAsync("Modelos/Ficha de personagem.md", "Saruman");
             await Settled();
-            ClickButtonWithText(view.Dialogs, "Cancelar");
+            ClickButtonWithText(view.Dialogs, "Cancelar formulário");
             await Settled();
             Assert.False(File.Exists(Path.Combine(vault, "Saruman.md")));
             window.Close();

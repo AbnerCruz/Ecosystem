@@ -66,6 +66,7 @@ public sealed class AiRunRecord
     public List<AiChange> Changes { get; set; } = [];
     public string? Stopped { get; set; }
     public string? Error { get; set; }
+    public AiExecutionMetrics Efficiency { get; set; } = new();
     public bool Reverted { get; set; }
 }
 
@@ -88,6 +89,8 @@ public sealed class AiConversation
     public List<AiRunRecord> Runs { get; set; } = [];
     public AiUsage Usage { get; set; } = new(0, 0, null);
     public List<AiWebSource> WebSources { get; set; } = [];
+    public List<FormSession> Forms { get; set; } = [];
+    public List<AiChatMessage> QueuedMessages { get; set; } = [];
 }
 
 /// <summary>The models a provider listed, and when.</summary>
@@ -255,6 +258,13 @@ public sealed class AssistantStore(IAssistantStorage storage)
     {
         c.Updated = now ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         storage.Write(FileOf(c.Id), ConversationToJson(c).ToJsonString());
+    }
+
+    public void SaveConversationVerified(AiConversation c)
+    {
+        var text = ConversationToJson(c).ToJsonString();
+        storage.Write(FileOf(c.Id), text);
+        if (storage.Read(FileOf(c.Id)) != text) throw new IOException("Não foi possível salvar o formulário/conversa.");
     }
 
     public void DeleteConversation(string id) => storage.Delete(FileOf(id));
@@ -434,10 +444,13 @@ public sealed class AssistantStore(IAssistantStorage storage)
         ["id"] = c.Id, ["title"] = c.Title, ["created"] = c.Created, ["updated"] = c.Updated, ["agentId"] = c.AgentId, ["providerId"] = c.ProviderId,
         ["model"] = c.Model, ["policy"] = c.Policy, ["vault"] = c.Vault,
         ["originConversationId"] = c.OriginConversationId, ["originAgentId"] = c.OriginAgentId,
+        ["forms"] = JsonSerializer.SerializeToNode(c.Forms, FormDefinition.Json),
+        ["queuedMessages"] = new JsonArray(c.QueuedMessages.Select(m => (JsonNode)m.ToJson()).ToArray()),
         ["messages"] = new JsonArray(c.Messages.Select(m => (JsonNode)m.ToJson()).ToArray()),
         ["runs"] = new JsonArray(c.Runs.Select(r => (JsonNode)new JsonObject
         {
             ["id"] = r.Id, ["started"] = r.Started, ["stopped"] = r.Stopped, ["error"] = r.Error, ["reverted"] = r.Reverted,
+            ["efficiency"] = JsonSerializer.SerializeToNode(r.Efficiency, FormDefinition.Json),
             ["changes"] = new JsonArray(r.Changes.Select(x =>
             {
                 var o = new JsonObject { ["id"] = x.Id, ["before"] = SnapToJson(x.Before), ["after"] = SnapToJson(x.After) };
@@ -459,11 +472,14 @@ public sealed class AssistantStore(IAssistantStorage storage)
         ProviderId = o["providerId"] is JsonValue pv && pv.TryGetValue<string>(out var ps) ? ps : null, Model = Str(o["model"]), Policy = Str(o["policy"], "ask"), Vault = Str(o["vault"]),
         OriginConversationId = o["originConversationId"] is null ? null : Str(o["originConversationId"]),
         OriginAgentId = o["originAgentId"] is null ? null : Str(o["originAgentId"]),
+        Forms = o["forms"]?.Deserialize<List<FormSession>>(FormDefinition.Json) ?? [],
+        QueuedMessages = (o["queuedMessages"] as JsonArray ?? []).OfType<JsonObject>().Select(AiChatMessage.FromJson).ToList(),
         Messages = (o["messages"] as JsonArray ?? []).OfType<JsonObject>().Select(m => AiChatMessage.FromJson(m)).ToList(),
         Runs = (o["runs"] as JsonArray ?? []).OfType<JsonObject>().Select(r => new AiRunRecord
         {
             Id = Str(r["id"]), Started = Num(r["started"]), Stopped = r["stopped"] is null ? null : Str(r["stopped"]), Error = r["error"] is null ? null : Str(r["error"]),
             Reverted = (bool?)r["reverted"] ?? false,
+            Efficiency = r["efficiency"]?.Deserialize<AiExecutionMetrics>(FormDefinition.Json) ?? new(),
             Changes = (r["changes"] as JsonArray ?? []).OfType<JsonObject>().Select(x => new AiChange(Str(x["id"]), SnapFromJson(x["before"]), SnapFromJson(x["after"]), (bool?)x["trashed"] ?? false)).ToList()
         }).ToList(),
         Usage = o["usage"] is JsonObject u ? new AiUsage(Num(u["input"]), Num(u["output"]), u["cost"] is null ? null : LegacyCustomize.JsToNumber(u["cost"])) : new AiUsage(0, 0, null),

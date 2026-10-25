@@ -42,3 +42,11 @@ cria um novo arquivo com `AgentId` do especialista e dois campos opcionais de pr
 da origem. Conversas ativas permanecem na memória até concluir; seu registro
 é gravado no armazenamento privado existente. Não há acesso direto de
 agentes a arquivos de históricos ou memórias dos demais.
+
+## UC-90 — formulários e fila de mensagens (ADR-0042)
+
+`conversa-*.json` acrescenta arrays opcionais `forms` e `queuedMessages`, vazios quando ausentes. Cada formulário usa versão 1 de `definition`, IDs estáveis de sessão/conversa/agente/chamada, submission_message_id, estado pending/submitted/cancelled, valores JSON tipados e source_hash opcional. Dados continuam privados no AssistantStore, fora do vault. Rascunhos de templates usam `form-template-HASH.json`, mesma definição/sessão, chave por vault/path/título e hash do conteúdo do template. Não existe migração de notas/configuração nem reatribuição de conversas. Gravação é verificada por releitura; falha não é anunciada como sucesso. Formatos futuros de rascunho são recusados sem sobrescrever. Fixtures/testes: FormsTests e AssistantCrashFormsUiTests.
+
+Formulários reutilizáveis são notas Markdown de `Modelos/`, com comentário opcional `<!-- urbe-form JSON -->`. Sem comentário, os modelos antigos continuam com seu inventário de placeholders e campos de texto. O comentário é omitido da nota criada. Condições e cálculos são dados declarativos, não scripts. A fila contém mensagens no formato atual de AiChatMessage; só entram no transcript do modelo quando chega sua vez.
+
+Cada registro de execução pode incluir `efficiency:{reused_reads,no_op_writes,context_chars_saved}`. Ausente equivale a zero; não migra conteúdo nem altera tokens/custos informados pelo provedor. Cache de leituras é transitório por execução/versão do DocumentStore, sem novo arquivo ou autoridade persistida. Status `reused`, `noop` e parada `no_progress` tornam a otimização observável no histórico.
