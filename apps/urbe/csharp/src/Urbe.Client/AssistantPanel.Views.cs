@@ -550,26 +550,77 @@ public sealed partial class AssistantPanel
         if (draft.Attachments is not null) _pendingAttachments.AddRange(draft.Attachments);
         RefreshAttachments();
         _cfg.AgentId = agentId;
-        _conv = _store.ConversationsFor(agentId, _app.VaultName).FirstOrDefault() ?? NewConversation();
+        _conv = NewConversation(); // Opening an agent starts a fresh chat; old conversations remain in its history.
+        _views.Clear();
         SaveConfig();
         CloseView();
         RenderAll();
     }
 
+    private string PermissionSummary(AiAgentDef agent)
+    {
+        var scope = _cfg.ToolScopeFor(agent);
+        var policy = _cfg.PolicyFor(agent.Id);
+        if (policy == "readonly" || scope == "read") return "Somente leitura";
+        var capacity = scope == "all" ? "Acesso completo" : "Leitura e escrita";
+        return capacity + (policy == "auto" ? " · alterações automáticas" : " · pede aprovação");
+    }
+
     private async Task PickPolicyAsync(AiAgentDef agent)
     {
         if (_running is not null) return;
-        string[] values = ["readonly", "ask", "auto"];
-        var i = await _app.Dialogs.ChooseAsync("Permissões de " + AgentNames.CallName(agent, _cfg),
-        [
-            new DialogItem("Só leitura", UrbeTheme.Icons.Search, "Nunca altera notas"),
-            new DialogItem("Pede aprovação", UrbeTheme.Icons.Check, "Mostra cada alteração antes de aplicar"),
-            new DialogItem("Edita sozinho", UrbeTheme.Icons.Edit, "Exclusões e plugins continuam exigindo aprovação")
-        ]);
-        if (i is not { } k || _running is not null) return;
-        _cfg.AgentPolicies[agent.Id] = values[k];
+        var modes = new (string Scope, string Policy, string Title, string Icon, string Detail)[]
+        {
+            ("read", "readonly", "Somente leitura", UrbeTheme.Icons.Search, "Consulta notas sem modificar arquivos"),
+            ("write", "ask", "Editar com aprovação", UrbeTheme.Icons.Check, "Lê e escreve; você confirma cada alteração"),
+            ("write", "auto", "Editar automaticamente", UrbeTheme.Icons.Edit, "Lê e escreve sem pedir aprovação por edição"),
+            ("all", "ask", "Acesso completo com aprovação", UrbeTheme.Icons.Check, "Inclui ações destrutivas e plugins; exige confirmação"),
+            ("all", "auto", "Acesso completo com autonomia", UrbeTheme.Icons.Edit, "Edições automáticas; exclusões e plugins sempre pedem confirmação")
+        };
+        var picked = await _app.Dialogs.ChooseAsync("Permissões de " + AgentNames.CallName(agent, _cfg),
+            modes.Select(m => new DialogItem(m.Title, m.Icon, m.Detail)).ToArray());
+        if (picked is not { } index || _running is not null || index < 0 || index >= modes.Length) return;
+        _cfg.AgentToolScopes[agent.Id] = modes[index].Scope;
+        _cfg.AgentPolicies[agent.Id] = modes[index].Policy;
         SaveConfig();
         EditAgentProfile(agent);
+    }
+
+    private async Task DeleteAgentAsync(AiAgentDef agent)
+    {
+        if (_running is not null || agent.Id == "geral" || !_cfg.CustomAgents.Any(a => a.Id == agent.Id)) return;
+        var count = _store.ListConversations().Count(c => c.AgentId == agent.Id);
+        if (!await _app.Dialogs.ConfirmAsync("Excluir " + AgentNames.CallName(agent, _cfg) + "?",
+            "O agente e suas " + count + " conversa(s) em todos os vaults serão excluídos permanentemente. Esta ação não pode ser desfeita.",
+            "Excluir agente e histórico", danger: true)) return;
+        try
+        {
+            _store.DeleteAgentConversationsVerified(agent.Id);
+            _cfg.CustomAgents.RemoveAll(a => a.Id == agent.Id);
+            _cfg.AgentModels.Remove(agent.Id);
+            _cfg.AgentImages.Remove(agent.Id);
+            _cfg.AgentPolicies.Remove(agent.Id);
+            _cfg.AgentToolScopes.Remove(agent.Id);
+            _cfg.AgentInstructionBlocks.Remove(agent.Id);
+            _cfg.AgentNames.Remove(agent.Id);
+            _agentDrafts.Remove(agent.Id);
+            if (_cfg.AgentId == agent.Id)
+            {
+                _cfg.AgentId = "geral";
+                _conv = NewConversation();
+                _views.Clear();
+            }
+            SaveConfig();
+            ShowSettings();
+            RenderChrome();
+            _app.Notify("Agente e " + count + " conversa(s) excluídos.");
+        }
+        catch (IOException e)
+        {
+            _cfg = _store.GetConfig(); // Do not present a successful removal when disk verification failed.
+            await _app.Dialogs.AlertAsync("Exclusão incompleta", e.Message);
+            ShowSettings();
+        }
     }
 
     // ---------------------------------------------------------------- overlaid views
@@ -775,55 +826,35 @@ public sealed partial class AssistantPanel
 
         if (_settingsCategory == "agents")
         {
-        body.Children.Add(Section("Equipe de agentes", Hint("Modelos, nomes, instruções individuais e capacidades de cada agente.")));
-        // UC-81: each agent's call name, on this device (the chip, the prompt and &Nome&: in a note use it)
-        var names = new StackPanel { Spacing = 6 };
-        foreach (var a in AgentNames.All(c))
-        {
-            var rename = TextButton("Renomear", () => _ = RenameAgentAsync(a));
-            var configure = TextButton("Configurar", () => EditAgentProfile(a));
-            var call = AgentNames.CallName(a, c);
-            var choice = c.AgentModels.GetValueOrDefault(a.Id);
-            var effective = c.ModelFor(new AiConversation { AgentId = a.Id });
-            var row = new StackPanel { Spacing = 4, Margin = new Thickness(0, 4, 0, 8) };
-            row.Children.Add(Wrap(call, 14, UrbeTheme.Text, FontWeight.SemiBold));
-            if (call != a.Name) row.Children.Add(Hint(a.Name));
-            row.Children.Add(Wrap(choice?.Model ?? "Modelo herdado do Assistente", 12, UrbeTheme.Text2));
-            row.Children.Add(Wrap(ModelPriceFor(effective), 12, UrbeTheme.Text2));
-            row.Children.Add(new WrapPanel { Children = { rename, configure } });
-            names.Children.Add(row);
-        }
-        body.Children.Add(Section("Nomes dos agentes", Hint("Como cada agente se chama. Numa conversa, chame-o por um nome novo (“Jarvis, …”) e ele pergunta se deve passar a se chamar assim."), names));
-
-        var custom = new StackPanel { Spacing = 8 };
-        if (c.CustomAgents.Count == 0) custom.Children.Add(Hint("Crie agentes com instruções próprias, ex.: “Revisor acadêmico”."));
-        foreach (var a in c.CustomAgents)
-        {
-            var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-            actions.Children.Add(TextButton("Editar", () => EditAgent(a)));
-            actions.Children.Add(TextButton("Modelo e blocos", () => EditAgentProfile(a)));
-            var rm = IconButton(UrbeTheme.Icons.Trash, "Remover");
-            rm.Click += async (_, _) =>
+            body.Children.Add(Hint("Cada agente tem seu próprio modelo, histórico, instruções e acesso às ferramentas. Ao abrir um agente, começa uma conversa nova."));
+            var agents = new StackPanel { Spacing = 4 };
+            foreach (var a in AgentNames.All(c))
             {
-                if (_store.ListConversations().Any(chat => chat.AgentId == a.Id))
-                { await _app.Dialogs.AlertAsync("Agente com histórico", "As conversas foram preservadas. Exclua explicitamente as conversas antes de remover o agente."); return; }
-                c.CustomAgents.RemoveAll(x => x.Id == a.Id);
-                c.AgentModels.Remove(a.Id);
-                c.AgentInstructionBlocks.Remove(a.Id);
-                c.AgentPolicies.Remove(a.Id);
-                c.AgentImages.Remove(a.Id);
-                if (_cfg.AgentId == a.Id) SelectAgent("geral");
-                SaveConfig(); ShowSettings();
-            };
-            actions.Children.Add(rm);
-            custom.Children.Add(Card(new StackPanel
-            {
-                Spacing = 6,
-                Children = { Label(a.Name, 14, UrbeTheme.Text, FontWeight.SemiBold), Hint(a.Tools switch { "all" => "Tudo", "write" => "Lê e escreve (sem excluir)", _ => "Só leitura" }), actions }
-            }));
-        }
-        body.Children.Add(Section("Agentes personalizados", custom, TextButton("+ Novo agente", () => EditAgent(null))));
-
+                var line = new StackPanel { Spacing = 4, Margin = new Thickness(0, 6, 0, 10) };
+                line.Children.Add(Wrap(AgentNames.CallName(a, c), 15, UrbeTheme.Text, FontWeight.SemiBold));
+                var model = c.AgentModels.GetValueOrDefault(a.Id);
+                line.Children.Add(Wrap((model?.Model ?? "Modelo padrão") + " · " + PermissionSummary(a), 12, UrbeTheme.Text2));
+                var actions = new WrapPanel { Orientation = Orientation.Horizontal };
+                actions.Children.Add(TextButton("Configurar", () => EditAgentProfile(a)));
+                actions.Children.Add(TextButton("Renomear", () => _ = RenameAgentAsync(a)));
+                if (a.Id != "geral")
+                {
+                    actions.Children.Add(TextButton("Editar instruções", () => EditAgent(a)));
+                    var rm = IconButton(UrbeTheme.Icons.Trash, "Excluir agente e histórico");
+                    Avalonia.Automation.AutomationProperties.SetName(rm, "Excluir " + AgentNames.CallName(a, c));
+                    rm.Click += async (_, _) => await DeleteAgentAsync(a);
+                    actions.Children.Add(rm);
+                }
+                line.Children.Add(actions);
+                agents.Children.Add(new Border
+                {
+                    Child = line, Background = Brushes.Transparent,
+                    BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2, .55),
+                    BorderThickness = new Thickness(0, 0, 0, 1)
+                });
+            }
+            body.Children.Add(agents);
+            body.Children.Add(TextButton("+ Novo agente", () => EditAgent(null)));
         }
 
         if (_settingsCategory == "execution")
@@ -1121,31 +1152,28 @@ public sealed partial class AssistantPanel
         var body = OpenView(isNew ? "Novo agente" : a!.Name, () => ShowSettings());
         var name = new TextBox { Text = a?.Name ?? "", PlaceholderText = "Ex.: Revisor acadêmico" };
         var prompt = new TextBox { Text = a?.Prompt ?? "", AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 140, PlaceholderText = "Como este agente deve pensar e trabalhar." };
-        string[] values = ["all", "write", "read"];
-        var tools = new ComboBox { ItemsSource = new[] { "Tudo (inclusive excluir, com aprovação)", "Ler e escrever, sem excluir", "Só ler" }, SelectedIndex = Math.Max(0, Array.IndexOf(values, a?.Tools ?? "read")) };
         if (isNew)
         {
             var templates = new ComboBox { ItemsSource = new[] { "Em branco" }.Concat(AssistantAgent.Agents.Skip(1).Select(t => t.Name)).ToList(), SelectedIndex = 0 };
             templates.SelectionChanged += (_, _) =>
             {
-                if (templates.SelectedIndex <= 0) { prompt.Text = ""; tools.SelectedIndex = 2; return; }
+                if (templates.SelectedIndex <= 0) { prompt.Text = ""; return; }
                 var template = AssistantAgent.Agents[templates.SelectedIndex];
                 name.Text = template.Name;
                 prompt.Text = template.Prompt;
-                tools.SelectedIndex = Math.Max(0, Array.IndexOf(values, template.Tools));
             };
             body.Children.Add(Section("Modelo de agente", templates));
         }
         body.Children.Add(Section("Nome", name));
         body.Children.Add(Section("Instruções", prompt));
-        body.Children.Add(Section("O que pode fazer", tools));
+        body.Children.Add(Hint("Acesso às ferramentas é configurado em Permissões, junto da autonomia do agente."));
         var save = TextButton("Salvar", () =>
         {
             var n = (name.Text ?? "").Trim();
             if (n.Length == 0) return;
             if (AgentNames.Problem(n, a?.Id ?? "", _cfg) is { } problem) { _app.Notify(problem); return; }
             var p = (prompt.Text ?? "").Trim();
-            var t = values[Math.Max(0, tools.SelectedIndex)];
+            var t = a?.Tools ?? "read";
             var made = new AiAgentDef(a?.Id ?? AssistantAgent.NewId("a"), n, t == "read" ? "search" : "sparkle", p.Length > 80 ? p[..80] : p, t, t == "all", p);
             int at = _cfg.CustomAgents.FindIndex(x => x.Id == made.Id);
             if (at >= 0) _cfg.CustomAgents[at] = made; else _cfg.CustomAgents.Add(made);
@@ -1351,7 +1379,7 @@ public sealed partial class AssistantPanel
     private void EditAgentProfile(AiAgentDef agent)
     {
         var body = OpenView("Configurar " + AgentNames.CallName(agent, _cfg), () => ShowSettings());
-        body.Children.Add(Section("Permissões", Hint(_cfg.PolicyFor(agent.Id) switch { "auto" => "Edita sozinho", "ask" => "Pede aprovação", _ => "Somente leitura" }),
+        body.Children.Add(Section("Permissões", Hint(PermissionSummary(agent)),
             TextButton("Configurar permissões", () => _ = PickPolicyAsync(agent))));
         var image = _cfg.AgentImages.GetValueOrDefault(agent.Id);
         body.Children.Add(Section("Modelo de imagem", Hint(image?.Model ?? "Nenhum"),
