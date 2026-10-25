@@ -327,6 +327,10 @@ public sealed partial class MainActivity : Activity
         bar.AddView(MakeBarButton("↷", () => _editor?.Redo()));
         bar.AddView(MakeBarButton("⋯", ShowMenu));
         root.AddView(bar);
+        var studioButton = new Button(this) { Text = "✦ Sprites e animação", TextSize = 14 };
+        studioButton.SetAllCaps(false);
+        studioButton.Click += (_, _) => ShowSpriteAssets();
+        root.AddView(studioButton);
 
         _status = new TextView(this) { TextSize = 12 };
         _status.SetPadding(Dp(8), 0, Dp(8), 0);
@@ -1152,6 +1156,7 @@ public sealed partial class MainActivity : Activity
 
     protected override void OnPause()
     {
+        _spriteStudio?.Save();
         SaveCurrent();
         _preview?.Pause();
         base.OnPause();

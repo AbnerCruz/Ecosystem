@@ -12,6 +12,21 @@ Fonte de verdade do que existe e do que falta. A especificação completa está 
 
 Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andamento · ⬜ não iniciada.
 
+## Prioridade de execução — ordem do proprietário em 25/10/2026
+
+O proprietário solicitou explicitamente framework, editores, UI e build APK utilizáveis,
+aceitando limitações pré-beta e rejeitando refinamento repetido de recursos já funcionais.
+O escopo das fases permanece integral; a execução deixa de ser uma fila serial entre
+F4, F5 e F9. Esta ordem é a exceção explícita prevista em DEVELOPMENT §1.4.
+Priorizar o fluxo **criar projeto → produzir assets → animar → executar → gerar APK**.
+Pendências de validação continuam abertas, mas não impedem ferramentas independentes.
+A conexão UI do Tile Studio pertence à entrega F5; não bloqueia seu próprio início.
+Não ampliar instrumentação de áudio enquanto esses fluxos estiverem ausentes.
+
+- [~] **LUNET-440 — Sprite e animação utilizáveis (Issue #775):** tela Android com desenho, frames, playback, persistência fonte e exportação de spritesheet. Primeiro incremento; não equivale aos Studios completos.
+- [ ] APK do **jogo**: antecipar o experimento de F9 e sua integração visível; o APK do IDE e exportar ZIP não satisfazem esse item. Fallback GitHub somente com execução e artefato reais.
+- [ ] Em seguida: Assets/Tile/Audio/UI Studios e demais editores de F5, com melhoria contínua da navegação. Física, áudio, A* e todo o restante do roadmap permanecem requisitos.
+
 ## Estado atual
 
 | Fase | Estado |
@@ -21,7 +36,8 @@ Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andame
 | 2 Framework Core | ✅ concluída e aprovada (auditoria em `docs/audits/fase-2.md`) |
 | 3 IDE | ✅ concluída e aprovada (LUNET-303 / Issue #204; auditoria em `docs/audits/fase-3.md`) |
 | 4 Framework Advanced | 🟡 em andamento |
-| 5–15 | ⬜ |
+| 5 Lunet Studio | 🟡 em andamento por ordem explícita do proprietário |
+| 6–15 | ⬜ |
 
 ---
 
@@ -181,7 +197,7 @@ Integração transversal autorizada pelo Ecosystem (não altera o gate de Framew
 - [x] **LUNET-405 — Partículas** (§7, §23): Issue #306; implementação integrada e coberta pela suíte; DEVICE aprovado pelo proprietário nas Issues #449. Evidências por código/testes/guia em `docs/audits/fase-4.md`.
 - [x] **LUNET-415 — Tilemaps em camadas, colisão e A** (§7, §23): Issue #355; implementação integrada e coberta pela suíte; DEVICE aprovado pelo proprietário nas Issues #445. Evidências por código/testes/guia em `docs/audits/fase-4.md`.
 - [x] **LUNET-416 — Camera2D viewport de mundo para tilemap culling** (§7, §23): Issue #363; implementação integrada e coberta pela suíte; DEVICE aprovado pelo proprietário nas Issues #455. Evidências por código/testes/guia em `docs/audits/fase-4.md`.
-- [ ] Tilemaps completos: runtime v1/camadas/colisão/culling/A* aprovados (#445/#455); round-trip `ToJson` e contrato documentado (#495). **Ponte de edição C# v1 integrada:** operações imutáveis de criação/células/camadas/ordem com validação e testes (sem reescrever projetos), compatibilidade aprovada pela Issue #515; isso não comprova uma UI Studio ainda inexistente. Conexão UI efetiva com Tile Studio permanece ausente: o Studio é Fase 5, sem adiamento implícito deste requisito da Fase 4.
+- [ ] Tilemaps completos: runtime v1/camadas/colisão/culling/A* aprovados (#445/#455); round-trip `ToJson` e contrato documentado (#495). **Ponte de edição C# v1 integrada:** operações imutáveis de criação/células/camadas/ordem com validação e testes (sem reescrever projetos), compatibilidade aprovada pela Issue #515; isso não comprova uma UI Studio ainda inexistente. Conexão UI efetiva permanece ausente e é entregue em Fase 5, por repriorização explícita de 25/10; não bloqueia o início do Studio.
 - [x] Fontes personalizadas (bitmap e TrueType): APIs bitmap/TTF integradas, suíte/API/guia e DEVICE aprovados nas Issues #457, #442 e #431; limitações de shaping descritas no guia.
 - [x] **LUNET-430 — Fontes TrueType offline** (§7, §23): Issue #414; implementação integrada e coberta pela suíte; DEVICE aprovado pelo proprietário nas Issues #431. Evidências por código/testes/guia em `docs/audits/fase-4.md`.
 - [x] **LUNET-426 — Correção da fonte bitmap embutida** (§7, §23): Issue #390; implementação integrada e coberta pela suíte; DEVICE aprovado pelo proprietário nas Issues #442. Evidências por código/testes/guia em `docs/audits/fase-4.md`.

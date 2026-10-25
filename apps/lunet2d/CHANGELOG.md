@@ -1,5 +1,7 @@
 # Changelog
 
+- Pré-beta: primeiro Sprite/Animation Studio nativo (LUNET-440), desenho por toque, frames, playback, JSON editável e spritesheet PNG. Prioridade de execução revista por ordem do proprietário: editores/UI/build antes de refinamentos adicionais de áudio.
+
 ## 0.0.1 — em desenvolvimento
 
 ### Added

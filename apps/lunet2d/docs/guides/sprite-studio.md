@@ -1,0 +1,26 @@
+# Sprites e animação — primeira entrega pré-beta
+
+Abra um projeto e toque em **Sprites e animação**, abaixo da barra Run.
+Escolha **Criar sprite / animação** e 16, 32 ou 64 pixels. Desenhe na grade,
+escolha uma cor e alterne lápis, borracha, balde ou conta-gotas.
+Cada gesto é salvo no projeto; se falhar, a tela mostra **Não salvo**.
+Use Duplicar para criar o próximo frame, desenhe a diferença e pressione Play.
+FPS altera a velocidade; Onion skin mostra o frame anterior. Desfazer/refazer
+inclui pixels, frames e FPS. A faixa numerada seleciona o frame.
+
+**Exportar PNG** produz uma spritesheet horizontal em Assets e exibe o trecho
+C# para SpriteSheet/SpriteAnimationClip. Exportações posteriores pedem confirmação
+antes de substituir o PNG. O PNG é usado pelo jogo sem abrir Studio.
+
+Fonte: `Assets/sprite-<id>.sprite.json`, JSON versão 1 com Width/Height (1–128),
+Fps (1–60), Frames (1–64 arrays de pixels ARGB32 sem sinal, linhas da esquerda
+para a direita). JSON é autoridade editável/versionável; PNG é exportação derivada.
+Não modifica Game.cs nem lógica existente. Feche e reabra o Studio para recarregar
+edições externas. Formatos inválidos são rejeitados, nunca migrados silenciosamente.
+
+Teste no aparelho: desenhar → duplicar → editar → Play → exportar; voltar para
+Código, reabrir o sprite, mandar o app para segundo plano e conferir a persistência.
+Confirme transparência e ordem dos frames no PNG pelo jogo.
+
+Limites desta entrega: sem layers, importação PNG, seleção, zoom/pan, eventos ou
+máquina de estados. Esses requisitos continuam na Fase 5. DEVICE ainda pendente.

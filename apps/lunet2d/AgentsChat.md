@@ -483,3 +483,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Build, testes, consistency, Android CI/APK e DEVICE desta entrega em verificação; roteiro `docs/guides/audio.md`.
 
 - Verificação local final: build sem warnings/errors; 688/688 testes, 16 novos casos; 22/22 consistency e self-test global completo aprovados. Primeira CI Android apontou CS0234 na qualificação Android.Media; corrigida com global::Android.Media. Revalidar APK final. PR #765, sem merge manual.
+
+### 20261025-codex-lunet-studio — Codex → integrador — review
+- Ordem explícita do proprietário: entregar ferramentas e build utilizáveis; não continuar refinamento de áudio. Repriorização registrada no ROADMAP, exceção já prevista em DEVELOPMENT §1.4.
+- LUNET-439 preservado no commit local cdbf2e2, branch feat/lunet-f4-audio-coverage-20261025; não incluído nesta entrega.
+- LUNET-440 / Issue #775: primeiro Sprite/Animation Studio Android. Boundary Lunet.Studio nasce com ferramenta real conforme ADR 0007; Framework/Compiler/Runtime independentes. Nenhuma infraestrutura de plataforma nova.
+- Fonte .sprite.json no mesmo projeto; export PNG; desenho, frames, playback, undo/redo, onion skin. Faltam import PNG, layers, seleção, zoom/pan, eventos e estados: não é fechamento F5.
+- APK de jogo continua ausente; é prioridade seguinte, não confundir com APK do IDE ou ZIP. Validação nativa e DEVICE pendentes.
