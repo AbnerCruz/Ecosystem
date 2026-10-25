@@ -488,5 +488,5 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Ordem explícita do proprietário: entregar ferramentas e build utilizáveis; não continuar refinamento de áudio. Repriorização registrada no ROADMAP, exceção já prevista em DEVELOPMENT §1.4.
 - LUNET-439 preservado no commit local cdbf2e2, branch feat/lunet-f4-audio-coverage-20261025; não incluído nesta entrega.
 - LUNET-440 / Issue #775: primeiro Sprite/Animation Studio Android. Boundary Lunet.Studio nasce com ferramenta real conforme ADR 0007; Framework/Compiler/Runtime independentes. Nenhuma infraestrutura de plataforma nova.
-- Fonte .sprite.json no mesmo projeto; export PNG; desenho, frames, playback, undo/redo, onion skin. Faltam import PNG, layers, seleção, zoom/pan, eventos e estados: não é fechamento F5.
+- Fonte .sprite.json no mesmo projeto; export PNG; desenho, frames, playback, undo/redo, onion skin. Faltam layers, seleção, zoom/pan, eventos e estados: não é fechamento F5.
 - APK de jogo continua ausente; é prioridade seguinte, não confundir com APK do IDE ou ZIP. Validação nativa e DEVICE pendentes.

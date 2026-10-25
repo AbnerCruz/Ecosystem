@@ -42,6 +42,12 @@
       "evidence": "SDK 10.0.402; 0 warnings/errors."
     },
     {
+      "check": "Suíte portátil e consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "695/695 testes e 22/22 consistency."
+    },
+    {
       "check": "CI Android e regressão",
       "kind": "automated",
       "result": "pending",
@@ -58,7 +64,7 @@
   ],
   "known_issues": [
     "Build APK do jogo e demais Studios ainda ausentes.",
-    "Sprite Studio parcial: sem layers/importação/seleção/zoom/eventos/estados."
+    "Sprite Studio parcial: sem layers/seleção/zoom/eventos/estados."
   ],
   "blockers": [],
   "next_actions": [
@@ -106,5 +112,5 @@
     "declared": "critical"
   },
   "commit": null,
-  "pr": null
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/776"
 }

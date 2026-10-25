@@ -27,7 +27,7 @@ public sealed class SpriteDocument
     public static SpriteDocument Parse(string json)
     {
         if (json.Length > 16_000_000) throw new InvalidDataException("Sprite excede 16 MB.");
-        var doc = JsonSerializer.Deserialize<SpriteDocument>(json) ?? throw new InvalidDataException("Sprite vazio.");
+        var doc = JsonSerializer.Deserialize<SpriteDocument>(json, new JsonSerializerOptions { UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow }) ?? throw new InvalidDataException("Sprite vazio.");
         doc.Validate(); return doc;
     }
     public void AddFrame(int copyFrom = -1)

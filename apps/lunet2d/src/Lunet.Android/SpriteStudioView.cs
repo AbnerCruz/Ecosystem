@@ -53,7 +53,7 @@ internal sealed class SpriteStudioView : LinearLayout
         Row(("↶ Desfazer", () => { Stop(); _document = _history.Undo(_document); AfterEdit(); }),
             ("↷ Refazer", () => { Stop(); _document = _history.Redo(_document); AfterEdit(); }),
             ("Espelhar", () => Change(() => _document.FlipHorizontal(_frame))));
-        _tick = () => { if (!_playing) return; _frame = (_frame + 1) % _document.Frames.Count; Refresh(); PostDelayed(_tick!, 1000 / _document.Fps); };
+        _tick = () => { if (!_playing) return; _frame = (_frame + 1) % _document.Frames.Count; _canvas.Invalidate(); PostDelayed(_tick!, 1000 / _document.Fps); };
         Refresh();
     }
     private LinearLayout Row(params (string label, Action action)[] actions)

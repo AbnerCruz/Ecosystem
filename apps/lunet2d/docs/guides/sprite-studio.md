@@ -12,6 +12,9 @@ inclui pixels, frames e FPS. A faixa numerada seleciona o frame.
 C# para SpriteSheet/SpriteAnimationClip. Exportações posteriores pedem confirmação
 antes de substituir o PNG. O PNG é usado pelo jogo sem abrir Studio.
 
+**Importar PNG do projeto** abre uma imagem de até 128 × 128 como primeiro frame,
+preservando o arquivo original. Use o Explorer para trazer PNGs externos.
+
 Fonte: `Assets/sprite-<id>.sprite.json`, JSON versão 1 com Width/Height (1–128),
 Fps (1–60), Frames (1–64 arrays de pixels ARGB32 sem sinal, linhas da esquerda
 para a direita). JSON é autoridade editável/versionável; PNG é exportação derivada.
@@ -22,5 +25,5 @@ Teste no aparelho: desenhar → duplicar → editar → Play → exportar; volta
 Código, reabrir o sprite, mandar o app para segundo plano e conferir a persistência.
 Confirme transparência e ordem dos frames no PNG pelo jogo.
 
-Limites desta entrega: sem layers, importação PNG, seleção, zoom/pan, eventos ou
+Limites desta entrega: sem layers, seleção, zoom/pan, eventos ou
 máquina de estados. Esses requisitos continuam na Fase 5. DEVICE ainda pendente.
