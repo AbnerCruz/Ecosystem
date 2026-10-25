@@ -103,7 +103,7 @@ public sealed record AiDelegateTarget(string Id, string Name, string Description
 public interface IAssistantDelegation
 {
     IReadOnlyList<AiDelegateTarget> Targets { get; }
-    Task<string> ConsultAsync(string agentId, string task);
+    Task<string> ConsultAsync(string agentId, string task, string? conversationId = null);
 }
 
 /// <summary>A tool the agents use (tools.js def): name, description, JSON Schema, access, label, preview and run.</summary>
