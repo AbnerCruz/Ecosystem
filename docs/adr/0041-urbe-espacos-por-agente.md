@@ -85,3 +85,27 @@ ou novo runtime não demonstram necessidade neste incremento.
 Issue #756; UC-81; MANIFEST; ADR-0032/0033/0039;
 [catálogo nativo de dados](../../apps/urbe/docs/csharp/DATA-CATALOG.md).
 O catálogo histórico em docs/v2/discovery permanece congelado pelo oráculo UC-2.
+
+## Adendo UC-89 — sessões concorrentes e delegação (25/10/2026)
+
+A execução não fica mais presa à conversa visível: o painel mantém registros em
+memória por ID de conversa, com tokens de cancelamento e aprovações separados.
+A lista de trabalho ativo permite voltar diretamente ao diálogo que está
+aguardando intervenção. Cada nova abertura inicia sessão vazia; históricos
+existentes exigem seleção explícita.
+
+Delegação entre agentes é operação do executor existente, não um segundo runtime.
+`IAssistantDelegation` só expõe perfis públicos e o método de consulta. O
+transporte leva texto de tarefa explícito, não históricos ou memória. Cada
+especialista é executado com configuração própria; a criação do chat é isolada,
+com retorno do resultado ao solicitante. A ferramenta `consult_agent` não é
+oferecida dentro da própria consulta, impedindo cadeia recursiva automática.
+`agentDelegationAuto` é `false` por padrão; delegar a um agente com escrita
+habilitada a partir de um agente somente leitura sempre requer aprovação
+explícita, mesmo que a opção de delegação automática esteja marcada.
+
+A adição desses campos ao mesmo `config.json` é retrocompatível; não requer
+regravação de históricos, alteração de vault, novo contrato público de
+plataforma nem extração para AgentRuntime.Core (NN-020/022).
+Aprovações, UX em Android e efeitos da concorrência precisam ser verificados
+no CI e em aparelho antes de elevar o estado de conclusão.
