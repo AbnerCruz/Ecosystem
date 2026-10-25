@@ -1248,7 +1248,15 @@ public sealed partial class AssistantPanel : Border
     private Control PastSteps(IReadOnlyList<AiChatMessage> steps)
     {
         int tools = steps.Sum(m => m.Content.Count(b => b.Type == "tool_use"));
-        var header = Row(UrbeTheme.Icon(UrbeTheme.Icons.Layers, 14, UrbeTheme.Text3), Label(tools == 0 ? "Raciocínio" : tools == 1 ? "1 passo" : tools + " passos", 12, UrbeTheme.Text3));
+        int failures = steps.SelectMany(m => m.Content).Count(b => b.Type == "tool_use" &&
+            ResultFor(b.Id) is { IsError: true });
+        int pending = steps.SelectMany(m => m.Content).Count(b => b.Type == "tool_use" &&
+            ResultFor(b.Id) is null);
+        string status = tools == 0 ? "Análise" : failures > 0 ? "Concluído com alertas" :
+            pending > 0 ? "Execução interrompida" : "Trabalho realizado";
+        string summary = tools == 0 ? "Resumo" : tools == 1 ? "1 operação" : tools + " operações";
+        var header = Row(UrbeTheme.Icon(UrbeTheme.Icons.Layers, 14, UrbeTheme.Text3),
+            Label(status + " · " + summary, 12, failures > 0 ? UrbeTheme.Danger : UrbeTheme.Text2));
         // A finished image remains visible in the chat even after further turns;
         // the complete tool transcript can still be expanded independently.
         var expander = Lazy(header, () =>
