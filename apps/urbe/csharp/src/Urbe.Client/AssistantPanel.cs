@@ -735,7 +735,7 @@ public sealed partial class AssistantPanel : Border
         _activeConversations[conv.Id] = conv;
         if (ReferenceEquals(conv, _conv)) _running = cts;
         var run = new AiRunRecord { Id = AssistantAgent.NewId("r"), Started = Now() };
-        if (ReferenceEquals(conv, _conv)) RenderAll();
+        if (ReferenceEquals(conv, _conv)) RenderAll(); else RenderChrome();
         using var knowledge = new KnowledgeIndex(documents);
         var agent = AssistantAgent.AgentById(conv.AgentId, _cfg.CustomAgents);
         var userRequest = conv.Messages.LastOrDefault(m => m.Role == "user" && m.Meta?.ToolResults != true)?
@@ -820,7 +820,7 @@ public sealed partial class AssistantPanel : Border
             conv.Runs.Add(run);
             if (conv.Runs.Count > 20) conv.Runs.RemoveRange(0, conv.Runs.Count - 20);
             if (web is not null) conv.WebSources = web.Sources.ToList();
-            if (ReferenceEquals(conv, _conv)) { _views.Clear(); RenderAll(); }
+            if (ReferenceEquals(conv, _conv)) { _views.Clear(); RenderAll(); } else RenderChrome();
             if (conv.Messages.Count > 0) _store.SaveConversation(conv);
             var kind = run.Stopped switch
             {
@@ -1116,7 +1116,7 @@ public sealed partial class AssistantPanel : Border
         var a = AgentNames.Named(AssistantAgent.AgentById(_conv.AgentId, _cfg.CustomAgents), _cfg);
         var p = Provider();
         var agentHead = new Grid { ColumnDefinitions = new ColumnDefinitions("24,*,16") };
-        var agentName = Label(a.Name, 15, UrbeTheme.Text, FontWeight.SemiBold);
+        var agentName = Label(a.Name + (_activeRuns.Count > 0 ? " · " + _activeRuns.Count + " ativos" : ""), 15, UrbeTheme.Text, FontWeight.SemiBold);
         Grid.SetColumn(agentName, 1);
         var chevron = UrbeTheme.Icon(UrbeTheme.Icons.Chevron, 14, UrbeTheme.Text3);
         Grid.SetColumn(chevron, 2);
