@@ -1,0 +1,137 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261025-urbe-agent-multichat-uc89",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-25T11:48:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc89",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-89",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "fix/urbe-agent-permissions-session-delete-20261025",
+  "base_commit": "e1672ac739f0e7383a182518e9a85a111d6bad4a",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDelegateTools.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AgentWorkspaceTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AgentWorkspaceUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
+    "apps/urbe/docs/csharp/ASSISTANT-EXPERIENCE.md",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/adr/0041-urbe-espacos-por-agente.md",
+    "docs/governance/handoffs/HO-20261025-urbe-agent-multichat-uc89.json"
+  ],
+  "work_completed": [
+    "Corrigido o desencontro entre política de aprovação e capacidades expostas ao executor; selector de permissões controla ambos em conjunto, com readonly inicial e confirmação obrigatória para ações destrutivas/plugins.",
+    "Interface de configurações simplificada: perfis e controles individuais, sem aba informativa Execução redundante; modelos e consultas em seus contextos.",
+    "Seleção/abertura de agente cria chat vazio; históricos continuam associados ao AgentId e Vault e podem ser reabertos explicitamente.",
+    "Exclusão de agente personalizado exige confirmação, remove históricos legíveis por AgentId em todos os vaults com verificação após cada remoção e só então limpa o perfil.",
+    "Múltiplas conversas podem permanecer executando com CTS e aprovações vinculados a suas identidades; navegação lista sessões ativas e seus estados.",
+    "Nova consult_agent: catálogo apenas de metadados públicos, tarefa explícita, consentimento por padrão, bloqueio de escalada silenciosa readonly->write, conversa isolada do especialista com modelo e memória próprios, resposta textual e prévia de imagem devolvidas ao solicitante.",
+    "Documentados ADR-0041, dados aditivos, direção UX e critérios de aceite UC-89; adicionados testes Core e UI, incluindo execução paralela e consulta isolada."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "CI GitHub Core/Client/consistency e builds nativos",
+      "result": "pending",
+      "evidence": "Aguardando PR e execução de workflows; nenhum teste local executado porque o ambiente de edição não possui SDK dotnet ou acesso git de rede."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: IME, alternância de agentes ativos, aprovação, geração de imagem delegada, instalação/atualização",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+      "evidence": "Não houve execução no aparelho; nenhuma release nova declarada."
+    }
+  ],
+  "known_issues": [
+    "O histórico legado pode conter conteúdo de mais de um agente devido ao modelo de versões anteriores; nenhuma inferência de autoria foi feita.",
+    "Conversa com JSON irrecuperável não é apagada por heurística na exclusão; preservada para evitar apagar dados sem proprietário verificável.",
+    "Multichat mantém tarefas enquanto o processo da aplicação está vivo; não há execução após Android encerrar o processo nem orquestrador em serviço.",
+    "Escritas concorrentes em uma mesma nota exigem validação de conflitos no DEVICE e testes específicos de revisão; a presente mudança não promete sincronização de edições arbitrárias.",
+    "CI e validação em aparelho permanecem pendentes; não declarar UC-89 concluído nem publicável."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Abrir PR para CI e revisão governada; corrigir falhas apontadas antes de qualquer integração.",
+    "Validar em Android físico a execução paralela, estado de aprovação e isolamento ao reiniciar.",
+    "Depois de integração autorizada e gates aprovados, emitir nova tag beta imutável por workflow oficial; nunca substituir beta.29."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/UX.md",
+    "docs/adr/0041-urbe-espacos-por-agente.md",
+    "docs/governance/communication.md",
+    "docs/governance/addenda/ADD-0026-urbe-experiencia-de-usuario-topo-de-linha.md",
+    "apps/urbe/docs/csharp/ASSISTANT-EXPERIENCE.md",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Configuração com autoridade única em config.json; chats privados por AgentId."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #760, branch e handoff identificados; UI exibe atividades e sessões ativas."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Escopo registrado no ROADMAP e em adendo do ADR-0041."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Padrão deny-by-default; delegações sensíveis pedem autorização; permissões do destino continuam aplicadas."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Verificação humana Android explicitamente pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Sem afirmar CI verde ou release; testes adicionados aguardam execução."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "Mantém IDs estáveis de agentes e conversas; delegação cria novo ID."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Reutiliza executor atual; nenhuma abstração de plataforma adicional criada."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Escopo específico Urbe; extração não demonstrada e não realizada."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Modifica formato aditivo de configuração persistida de IA, alcance e autorização de ferramentas e exclusão de arquivos de conversas; exige integração governada."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "consult-agent-and-multichat",
+      "status": "product-specific",
+      "rationale": "Prova dentro do runtime atual do Urbe; sem segundo consumidor e sem extração para AgentRuntime.Core."
+    }
+  ]
+}
