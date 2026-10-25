@@ -104,6 +104,8 @@ public sealed class AiConfig
     public Dictionary<string, string> AgentPolicies { get; set; } = new(StringComparer.Ordinal);
     /// <summary>Explicit capability scope per agent. Missing values preserve the agent's legacy Tools ceiling.</summary>
     public Dictionary<string, string> AgentToolScopes { get; set; } = new(StringComparer.Ordinal);
+    /// <summary>Only an explicit setting allows unprompted agent-to-agent consultation.</summary>
+    public Dictionary<string, bool> AgentDelegationAuto { get; set; } = new(StringComparer.Ordinal);
     public string ToolScopeFor(AiAgentDef agent) => AgentToolScopes.GetValueOrDefault(agent.Id) is "read" or "write" or "all"
         ? AgentToolScopes[agent.Id] : agent.Tools;
     public Dictionary<string, AiModelChoice> AgentImages { get; set; } = new(StringComparer.Ordinal);
@@ -320,6 +322,8 @@ public sealed class AssistantStore(IAssistantStorage storage)
         foreach (var (id, policy) in c.AgentPolicies) policies[id] = policy;
         var toolScopes = new JsonObject();
         foreach (var (id, scope) in c.AgentToolScopes.OrderBy(p => p.Key, StringComparer.Ordinal)) toolScopes[id] = scope;
+        var delegation = new JsonObject();
+        foreach (var (id, allowed) in c.AgentDelegationAuto.OrderBy(p => p.Key, StringComparer.Ordinal)) delegation[id] = allowed;
         var images = new JsonObject();
         foreach (var (id, image) in c.AgentImages) images[id] = new JsonObject { ["providerId"] = image.ProviderId, ["model"] = image.Model };
         var memory = new JsonObject();
@@ -345,7 +349,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
         };
         return new JsonObject
         {
-            ["agentWorkspaceVersion"] = c.AgentWorkspaceVersion, ["agentPolicies"] = policies, ["agentToolScopes"] = toolScopes, ["agentImages"] = images,
+            ["agentWorkspaceVersion"] = c.AgentWorkspaceVersion, ["agentPolicies"] = policies, ["agentToolScopes"] = toolScopes, ["agentDelegationAuto"] = delegation, ["agentImages"] = images,
             ["web"] = web, ["version"] = c.Version, ["providers"] = new JsonArray(c.Providers.Select(p => (JsonNode)ProviderToJson(p)).ToArray()), ["providerId"] = c.ProviderId,
             ["model"] = c.Model, ["imageProviderId"] = c.ImageProviderId, ["imageModel"] = c.ImageModel,
             ["agentModels"] = agentModels, ["agentInstructionBlocks"] = instructionBlocks,
@@ -376,6 +380,8 @@ public sealed class AssistantStore(IAssistantStorage storage)
         };
         if (o["agentPolicies"] is JsonObject policies)
             foreach (var (id, policy) in policies) c.AgentPolicies[id] = Str(policy, "readonly");
+        if (o["agentDelegationAuto"] is JsonObject delegation)
+            foreach (var (id, allowed) in delegation) c.AgentDelegationAuto[id] = (bool?)allowed ?? false;
         if (o["agentToolScopes"] is JsonObject scopes)
             foreach (var (id, scope) in scopes)
                 if (Str(scope) is "read" or "write" or "all") c.AgentToolScopes[id] = Str(scope);
