@@ -93,4 +93,113 @@ public sealed partial class MainActivity
             new AlertDialog.Builder(this)!.SetTitle("Atualizar spritesheet?")!.SetMessage(png)!.SetPositiveButton("Substituir PNG", (_, _) => Write())!.SetNegativeButton("Cancelar", (_, _) => { })!.Show();
         else Write();
     }
+    private TileStudioView? _tileStudio;
+
+    private void ShowArtTools()
+    {
+        new AlertDialog.Builder(this)!.SetTitle("Ferramentas visuais")!
+            .SetItems(new[] { "Sprites e animação", "Tilemaps" }, (_, e) =>
+            {
+                if (e.Which == 0) ShowSpriteAssets();
+                else ShowTileMaps();
+            })!.SetNegativeButton("Fechar", (_, _) => { })!.Show();
+    }
+
+    private void ShowTileMaps()
+    {
+        if (_project is null) return;
+        SaveCurrent();
+        var paths = _project.ListFiles().Where(p => p.EndsWith(".tilemap.json", StringComparison.OrdinalIgnoreCase)).ToArray();
+        var actions = new[] { "+ Criar tilemap" }.Concat(paths).ToArray();
+        new AlertDialog.Builder(this)!.SetTitle("Tilemaps")!.SetItems(actions, (_, e) =>
+        {
+            if (e.Which == 0) CreateTileMap();
+            else
+            {
+                try
+                {
+                    string path = paths[e.Which - 1];
+                    OpenTileMap(path, Lunet.Graphics.TileMap.Parse(_project.ReadText(path)));
+                }
+                catch (Exception ex) { Toast.MakeText(this, "Não foi possível abrir o mapa: " + ex.Message, ToastLength.Long)?.Show(); }
+            }
+        })!.SetNegativeButton("Cancelar", (_, _) => { })!.Show();
+    }
+
+    private void CreateTileMap()
+    {
+        var project = _project!;
+        var textures = project.ListFiles().Where(p =>
+            p.StartsWith("Content/Textures/", StringComparison.Ordinal) &&
+            p.EndsWith(".png", StringComparison.OrdinalIgnoreCase)).ToArray();
+        if (textures.Length == 0)
+        {
+            new AlertDialog.Builder(this)!.SetTitle("Primeiro importe um tileset PNG")!
+                .SetMessage("Use Explorer / Importar imagem PNG. O tileset deve estar em Content/Textures e ter dimensões múltiplas de 16, 32 ou 64.")!
+                .SetPositiveButton("OK", (_, _) => { })!.Show();
+            return;
+        }
+        new AlertDialog.Builder(this)!.SetTitle("Tileset do mapa")!.SetItems(textures, (_, e) =>
+        {
+            var path = textures[e.Which];
+            new AlertDialog.Builder(this)!.SetTitle("Tamanho dos tiles")!
+                .SetItems(new[] { "16 × 16", "32 × 32", "64 × 64" }, (_, size) =>
+                {
+                    int tile = new[] { 16, 32, 64 }[size.Which];
+                    try
+                    {
+                        string texturePath = path["Content/".Length..];
+                        string mapPath = "Content/Data/map-" + Guid.NewGuid().ToString("N")[..8] + ".tilemap.json";
+                        OpenTileMap(mapPath, Lunet.Graphics.TileMap.Create(texturePath, 16, 16, tile, tile));
+                    }
+                    catch (Exception ex) { Toast.MakeText(this, "Mapa inválido: " + ex.Message, ToastLength.Long)?.Show(); }
+                })!.Show();
+        })!.Show();
+    }
+
+    private void OpenTileMap(string path, Lunet.Graphics.TileMap map)
+    {
+        var project = _project!;
+        Bitmap? bitmap = null;
+        try
+        {
+            string relative = Path.Combine("Content", map.TexturePath.Replace('/', Path.DirectorySeparatorChar));
+            string absolute = Path.GetFullPath(Path.Combine(project.Directory, relative));
+            string contentRoot = Path.GetFullPath(Path.Combine(project.Directory, "Content")) + Path.DirectorySeparatorChar;
+            if (!absolute.StartsWith(contentRoot, StringComparison.Ordinal)) throw new InvalidDataException("Tileset fora de Content.");
+            using var options = new BitmapFactory.Options { InJustDecodeBounds = true };
+            BitmapFactory.DecodeFile(absolute, options)?.Dispose();
+            if (options.OutWidth is < 1 or > 2048 || options.OutHeight is < 1 or > 2048 ||
+                options.OutWidth % map.TileWidth != 0 || options.OutHeight % map.TileHeight != 0)
+                throw new InvalidDataException("PNG ausente ou incompatível com o mapa (máximo 2048 × 2048).");
+            bitmap = BitmapFactory.DecodeFile(absolute) ?? throw new InvalidDataException("Não foi possível ler o PNG.");
+            int maxTiles = (bitmap.Width / map.TileWidth) * (bitmap.Height / map.TileHeight);
+            var edit = new TileStudioSession(map, maxTiles);
+            var dialog = new Dialog(this, global::Android.Resource.Style.ThemeMaterialNoActionBar);
+            bool saved = false;
+            var view = new TileStudioView(this, edit, bitmap,
+                json => { saved = false; project.WriteText(path, json); saved = true; },
+                () =>
+                {
+                    _tileStudio?.Save();
+                    if (!saved) return;
+                    _tileStudio = null;
+                    dialog.Dismiss();
+                    bitmap.Dispose();
+                    RefreshExplorer();
+                });
+            _tileStudio = view;
+            dialog.SetContentView(view);
+            dialog.SetCancelable(false);
+            dialog.Show();
+            dialog.Window?.SetLayout(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
+            view.Save();
+        }
+        catch (Exception ex)
+        {
+            bitmap?.Dispose();
+            Toast.MakeText(this, "Não foi possível abrir Tile Studio: " + ex.Message, ToastLength.Long)?.Show();
+        }
+    }
+
 }
