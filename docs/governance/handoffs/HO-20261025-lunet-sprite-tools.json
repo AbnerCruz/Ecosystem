@@ -1,0 +1,98 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261025-lunet-sprite-tools",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-25T20:48:13.713Z",
+  "agent": {
+    "id": "chatgpt-lunet-sprite-tools",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-442",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-sprite-tools-20261025",
+  "base_commit": "e06c97aa37d3cd9ef2be478c508fbbadfb8d0911",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Studio/SpriteDocument.cs",
+    "apps/lunet2d/src/Lunet.Android/SpriteStudioView.cs",
+    "apps/lunet2d/tests/Lunet.Tests/SpriteStudioTests.cs",
+    "apps/lunet2d/docs/guides/sprite-studio.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261025-lunet-sprite-tools.json"
+  ],
+  "work_completed": [
+    "Sprite Studio existente ganhou linha e formas retangulares, prévia temporária, zoom/pan, cor ARGB e espelho vertical.",
+    "Preservado SpriteDocument JSON v1, dados editáveis do projeto e spritesheet, sem novos contratos, rotinas de áudio ou mudanças do runtime.",
+    "Testes unitários acrescentados para retângulos transparentes, clipping e isolamento dos frames."
+  ],
+  "verification": [
+    {
+      "check": "Testes dotnet e consistency",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "A verificar no CI do PR."
+    },
+    {
+      "check": "Build Android e layout no dispositivo",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/sprite-studio.md",
+      "critical": false,
+      "evidence": "Roteiro no guia; não houve validação física."
+    }
+  ],
+  "known_issues": [
+    "Editor ainda não oferece camadas raster, seleção/laço, rotação, simetria e estados de animação.",
+    "Tile Studio está em PR #778 independente, para integração governada.",
+    "APK de jogo ainda pendente F9."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar CI e compilação APK Android; corrigir erro de código se aparecer.",
+    "Reconciliar integração com PR #778 de Tile Studio sem sobrescrever ROADMAP/CHANGELOG/AgentsChat.",
+    "Pedir DEVICE para desenho/zoom e preservar backlog F5."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/docs/adr/0007-framework-ide-studio-code-first.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "Issue #779 e ROADMAP registram a direção do proprietário."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente e separado dos testes."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Sem alegação de conclusão integral ou build executado."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem novo módulo compartilhado; uso do editor e dados existentes."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "sprite-studio-tools",
+      "status": "product-specific",
+      "rationale": "Mudanças de ferramentas visuais específicas do Lunet sem segundo consumidor da plataforma."
+    }
+  ],
+  "commit": null,
+  "pr": null
+}
