@@ -520,8 +520,18 @@ public sealed partial class AssistantPanel
 
     public void ShowAgents()
     {
-        if (_running is not null) return;
         var body = OpenView("Agentes");
+        if (_activeConversations.Count > 0)
+        {
+            body.Children.Add(Hint("Conversas em andamento — toque para acompanhar ou aprovar."));
+            foreach (var chat in _activeConversations.Values.ToList())
+            {
+                var currentChat = chat;
+                var status = _pendingRuns.ContainsKey(chat.Id) ? " · Aguardando aprovação" : " · Trabalhando";
+                var callName = AgentNames.CallName(AssistantAgent.AgentById(chat.AgentId, _cfg.CustomAgents), _cfg);
+                body.Children.Add(TextButton(callName + status, () => OpenConversation(currentChat)));
+            }
+        }
         foreach (var agent in AgentNames.All(_cfg))
         {
             var item = new Button
@@ -541,7 +551,7 @@ public sealed partial class AssistantPanel
 
     public void SelectAgent(string agentId)
     {
-        if (_running is not null || !AgentNames.All(_cfg).Any(a => a.Id == agentId)) return;
+        if (!AgentNames.All(_cfg).Any(a => a.Id == agentId)) return;
         Persist();
         _agentDrafts[_conv.AgentId] = (_input.Text ?? "", _pendingAttachments.ToList());
         var draft = _agentDrafts.GetValueOrDefault(agentId);
@@ -551,6 +561,7 @@ public sealed partial class AssistantPanel
         RefreshAttachments();
         _cfg.AgentId = agentId;
         _conv = NewConversation(); // Opening an agent starts a fresh chat; old conversations remain in its history.
+        SyncActiveConversation();
         _views.Clear();
         SaveConfig();
         CloseView();
@@ -588,7 +599,9 @@ public sealed partial class AssistantPanel
 
     private async Task DeleteAgentAsync(AiAgentDef agent)
     {
-        if (_running is not null || agent.Id == "geral" || !_cfg.CustomAgents.Any(a => a.Id == agent.Id)) return;
+        if (agent.Id == "geral" || !_cfg.CustomAgents.Any(a => a.Id == agent.Id)) return;
+        if (_activeConversations.Values.Any(c => c.AgentId == agent.Id))
+        { await _app.Dialogs.AlertAsync("Agente trabalhando", "Interrompa as conversas ativas deste agente antes de excluí-lo."); return; }
         var count = _store.ListConversations().Count(c => c.AgentId == agent.Id);
         if (!await _app.Dialogs.ConfirmAsync("Excluir " + AgentNames.CallName(agent, _cfg) + "?",
             "O agente e suas " + count + " conversa(s) em todos os vaults serão excluídos permanentemente. Esta ação não pode ser desfeita.",
@@ -608,6 +621,7 @@ public sealed partial class AssistantPanel
             {
                 _cfg.AgentId = "geral";
                 _conv = NewConversation();
+                SyncActiveConversation();
                 _views.Clear();
             }
             SaveConfig();
@@ -674,17 +688,15 @@ public sealed partial class AssistantPanel
             };
             open.Click += (_, _) =>
             {
-                if (_running is not null) return;
-                _conv = _store.GetConversation(c.Id) ?? c;
-                CloseView();
-                RenderAll();
+                OpenConversation(_activeConversations.GetValueOrDefault(c.Id) ?? _store.GetConversation(c.Id) ?? c);
             };
             var del = IconButton(UrbeTheme.Icons.Trash, "Excluir conversa");
             del.Click += async (_, _) =>
             {
                 if (!await _app.Dialogs.ConfirmAsync("Excluir esta conversa?", null, "Excluir", danger: true)) return;
+                if (_activeRuns.ContainsKey(c.Id)) { await _app.Dialogs.AlertAsync("Conversa em andamento", "Interrompa a execução antes de excluir esta conversa."); return; }
                 _store.DeleteConversation(c.Id);
-                if (_conv.Id == c.Id) _conv = NewConversation();
+                if (_conv.Id == c.Id) { _conv = NewConversation(); SyncActiveConversation(); }
                 ShowHistory();
                 RenderAll();
             };
