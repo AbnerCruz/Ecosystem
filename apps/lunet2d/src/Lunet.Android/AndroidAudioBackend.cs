@@ -17,11 +17,12 @@ internal sealed class AndroidAudioBackend : IAudioBackend
     private readonly object _musicSync = new();
     private readonly Action<string> _reportError;
     private long? _completedUnderruns;
+    private bool _counterUnavailable;
 
     // Session total of measured WAV tracks only, never a fabricated SoundPool metric.
     public long? MusicUnderruns
     {
-        get { lock (_musicSync) return _pcm is null ? _completedUnderruns : (_completedUnderruns ?? 0) + _pcm.UnderrunCount; }
+        get { lock (_musicSync) return _counterUnavailable ? null : _pcm is null ? _completedUnderruns : (_completedUnderruns ?? 0) + _pcm.UnderrunCount; }
     }
     private int _nextMusic = 1;
 
@@ -165,7 +166,9 @@ internal sealed class AndroidAudioBackend : IAudioBackend
             if (_pcm is not null)
             {
                 _pcm.Dispose();
-                _completedUnderruns = (_completedUnderruns ?? 0) + _pcm.UnderrunCount;
+                var count = _pcm.UnderrunCount;
+                if (count is null) _counterUnavailable = true;
+                else _completedUnderruns = (_completedUnderruns ?? 0) + count.Value;
                 _pcm = null;
             }
             if (_player is not null)

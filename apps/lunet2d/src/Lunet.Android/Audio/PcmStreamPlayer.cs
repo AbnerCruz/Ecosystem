@@ -23,7 +23,8 @@ internal sealed class PcmStreamPlayer : IDisposable
     private readonly CancellationTokenSource _cancel = new();
     private readonly Thread _worker;
     private bool _paused, _disposed, _finished, _playing;
-    private int _underruns;
+    private int? _underruns;
+    private bool _counterErrorReported;
 
     public PcmStreamPlayer(PcmWaveStream wave, IPcmAudioOutput output, bool loop, float volume, Action<string> reportError)
     {
@@ -36,7 +37,26 @@ internal sealed class PcmStreamPlayer : IDisposable
         _worker.Start();
     }
 
-    public int UnderrunCount { get { lock (_sync) return _disposed || _finished ? _underruns : _output.UnderrunCount; } }
+    public int? UnderrunCount { get { lock (_sync) return _disposed || _finished ? _underruns : ReadUnderruns(); } }
+
+    private int? ReadUnderruns()
+    {
+        try
+        {
+            int count = _output.UnderrunCount;
+            if (count < 0) throw new IOException("Contador nativo indisponível.");
+            return count;
+        }
+        catch (Exception ex)
+        {
+            if (!_counterErrorReported)
+            {
+                _counterErrorReported = true;
+                _reportError("Underruns PCM não medidos: " + ex.Message);
+            }
+            return null;
+        }
+    }
     public void SetVolume(float volume) { lock (_sync) { if (!_disposed && !_finished) _output.SetVolume(volume); } }
     public void Pause()
     {
@@ -81,7 +101,7 @@ internal sealed class PcmStreamPlayer : IDisposable
                             if (_cancel.IsCancellationRequested) return;
                             // Stop on a streaming AudioTrack drains queued audio. Do not leave
                             // an empty playing track to manufacture an underrun at EOF.
-                            _underruns = _output.UnderrunCount;
+                            _underruns = ReadUnderruns();
                             if (!_playing && primed > 0) _output.Play();
                             _output.Stop();
                             _finished = true;
@@ -114,7 +134,7 @@ internal sealed class PcmStreamPlayer : IDisposable
         {
             lock (_sync)
             {
-                try { _underruns = _output.UnderrunCount; _output.Stop(); }
+                try { _underruns = ReadUnderruns(); _output.Stop(); }
                 catch (Exception cleanup) { ex = new AggregateException(ex, cleanup); }
                 _finished = true;
             }
@@ -132,7 +152,7 @@ internal sealed class PcmStreamPlayer : IDisposable
             _disposed = true;
             try
             {
-                if (!_finished) { _underruns = _output.UnderrunCount; _output.Stop(); }
+                if (!_finished) { _underruns = ReadUnderruns(); _output.Stop(); }
             }
             finally
             {

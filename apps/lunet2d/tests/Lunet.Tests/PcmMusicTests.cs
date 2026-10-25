@@ -119,6 +119,21 @@ public sealed class PcmMusicTests
         Assert.Contains("-6", message); Assert.Equal(1, output.Writes); Assert.True(output.Stopped.IsSet);
     }
 
+    [Fact]
+    public void FailedNativeCounterIsUnavailableRatherThanFakeZeroOrProfilerCrash()
+    {
+        var output = new FakeOutput { Full = true, FailCounter = true };
+        var errors = new List<string>();
+        using var player = new PcmStreamPlayer(PcmWaveStream.TryRead(Wave(new byte[80]))!, output, true, 1, errors.Add);
+        Assert.Null(player.UnderrunCount);
+        Assert.Null(player.UnderrunCount);
+        Assert.Single(errors);
+        Assert.Contains("não medidos", errors[0]);
+        player.Dispose();
+        Assert.Null(player.UnderrunCount);
+        Assert.Single(errors);
+    }
+
     [Theory]
     [InlineData(0)] [InlineData(19)]
     public void ProfilerShowsMeasuredZeroAndNonzeroWithoutClaimingSoundPoolCoverage(long underruns)
@@ -133,10 +148,10 @@ public sealed class PcmMusicTests
     {
         public int BufferBytes => 64;
         public int NativeUnderruns;
-        public int UnderrunCount => NativeUnderruns;
+        public int UnderrunCount => FailCounter ? throw new IOException("Saída indisponível") : NativeUnderruns;
         public int MaxWrite = int.MaxValue;
         public volatile bool Full;
-        public bool FailWrite, Disposed;
+        public bool FailWrite, FailCounter, Disposed;
         public int Plays, Pauses, Writes, FirstPlayBytes;
         public float Volume;
         public List<byte> Bytes { get; } = [];

@@ -11,7 +11,7 @@ internal sealed class AndroidPcmAudioOutput : IPcmAudioOutput
     public AndroidPcmAudioOutput(PcmWaveStream wave)
     {
         var channels = wave.Channels == 1 ? ChannelOut.Mono : ChannelOut.Stereo;
-        var encoding = wave.BitsPerSample == 8 ? Android.Media.Encoding.Pcm8bit : Android.Media.Encoding.Pcm16bit;
+        var encoding = wave.BitsPerSample == 8 ? global::Android.Media.Encoding.Pcm8bit : global::Android.Media.Encoding.Pcm16bit;
         int minimum = AudioTrack.GetMinBufferSize(wave.SampleRate, channels, encoding);
         if (minimum <= 0) throw new NotSupportedException("Formato PCM não suportado pela saída de áudio.");
         // At least 80 ms; ample headroom for a managed worker without a silent underrun workaround.
