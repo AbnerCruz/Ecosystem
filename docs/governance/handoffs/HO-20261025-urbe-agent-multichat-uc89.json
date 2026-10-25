@@ -44,14 +44,15 @@
     "Múltiplas conversas podem permanecer executando com CTS e aprovações vinculados a suas identidades; navegação lista sessões ativas e seus estados.",
     "Nova consult_agent: catálogo apenas de metadados públicos, tarefa explícita, consentimento por padrão, bloqueio de escalada silenciosa readonly->write, conversa isolada do especialista com modelo e memória próprios, resposta textual e prévia de imagem devolvidas ao solicitante.",
     "Documentados ADR-0041, dados aditivos, direção UX e critérios de aceite UC-89; adicionados testes Core e UI, incluindo execução paralela e consulta isolada.",
-    "Corte da versão 2.0.0-beta.30 (versionCode 2000030) preparado no csproj, com notas no workflow oficial. Nenhuma tag criada ou release publicada até aprovação do integrador e CI completo."
+    "Corte da versão 2.0.0-beta.30 (versionCode 2000030) preparado no csproj, com notas no workflow oficial. Nenhuma tag criada ou release publicada até aprovação do integrador e CI completo.",
+    "Consulta consult_agent ampliada para diálogo multietapas: conversation_id referencia somente o especialista anteriormente delegado pela mesma conversa, validado por originConversationId, originAgentId, AgentId e Vault; novo registro preserva autoria; imagens retornadas por consulta não reapresentam imagens de etapas antigas."
   ],
   "verification": [
     {
       "kind": "automated",
       "check": "CI GitHub Core/Client/consistency e builds nativos",
       "result": "pending",
-      "evidence": "Aguardando PR e execução de workflows; nenhum teste local executado porque o ambiente de edição não possui SDK dotnet ou acesso git de rede."
+      "evidence": "Suite automatizada executada nos PRs anteriores: build Android e Windows concluídos; Core/UI passando parcialmente com falhas legadas de navegação corrigidas. Nova execução de CI após suporte multietapa está pendente. Não declarar integração/DEVICE."
     },
     {
       "kind": "human",
@@ -68,7 +69,8 @@
     "Multichat mantém tarefas enquanto o processo da aplicação está vivo; não há execução após Android encerrar o processo nem orquestrador em serviço.",
     "Escritas concorrentes em uma mesma nota exigem validação de conflitos no DEVICE e testes específicos de revisão; a presente mudança não promete sincronização de edições arbitrárias.",
     "CI e validação em aparelho permanecem pendentes; não declarar UC-89 concluído nem publicável.",
-    "Para publicar a beta.30, a integração crítica precisa de autorização formal do proprietário na interface governada do GitHub (label integrar); a criação do PR não constitui autorização."
+    "Para publicar a beta.30, a integração crítica precisa de autorização formal do proprietário na interface governada do GitHub (label integrar); a criação do PR não constitui autorização.",
+    "A conversa entre agentes é troca explícita por turnos, não um canal autônomo de mensagens bidirecionais em background; cada consulta obedece à política de consentimento do originador."
   ],
   "blockers": [],
   "next_actions": [
