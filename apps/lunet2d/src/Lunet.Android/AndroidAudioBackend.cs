@@ -1,9 +1,10 @@
 using Android.Media;
 using Lunet.Audio;
+using Lunet.Android.Audio;
 
 namespace Lunet.Android;
 
-/// <summary>Áudio de efeitos com SoundPool (baixa latência). Músicas longas virão numa etapa posterior.</summary>
+/// <summary>Efeitos SoundPool, música PCM AudioTrack e demais formatos MediaPlayer.</summary>
 internal sealed class AndroidAudioBackend : IAudioBackend
 {
     private readonly SoundPool _pool;
@@ -12,11 +13,23 @@ internal sealed class AndroidAudioBackend : IAudioBackend
     private readonly Dictionary<int, string> _files = [];
     private readonly Dictionary<int, string> _musicFiles = [];
     private MediaPlayer? _player;
+    private PcmStreamPlayer? _pcm;
+    private readonly object _musicSync = new();
+    private readonly Action<string> _reportError;
+    private long? _completedUnderruns;
+    private bool _counterUnavailable;
+
+    // Session total of measured WAV tracks only, never a fabricated SoundPool metric.
+    public long? MusicUnderruns
+    {
+        get { lock (_musicSync) return _counterUnavailable ? null : _pcm is null ? _completedUnderruns : (_completedUnderruns ?? 0) + _pcm.UnderrunCount; }
+    }
     private int _nextMusic = 1;
 
-    public AndroidAudioBackend(string cacheDirectory)
+    public AndroidAudioBackend(string cacheDirectory, Action<string> reportError)
     {
         _cacheDirectory = cacheDirectory;
+        _reportError = reportError;
         Directory.CreateDirectory(cacheDirectory);
         var attributes = new AudioAttributes.Builder()!
             .SetUsage(AudioUsageKind.Game)!
@@ -91,46 +104,83 @@ internal sealed class AndroidAudioBackend : IAudioBackend
 
     public void PlayMusic(int musicId, float volume, bool loop)
     {
-        StopMusic();
-        if (!_musicFiles.TryGetValue(musicId, out var file)) return;
-        var player = new MediaPlayer();
-        try
+        lock (_musicSync)
         {
-            player.SetDataSource(file);
-            player.Looping = loop;
-            player.SetVolume(volume, volume);
-            player.Prepare();
-            player.Start();
+            StopMusic();
+            if (!_musicFiles.TryGetValue(musicId, out var file)) return;
+            var source = File.OpenRead(file);
+            PcmWaveStream? wave;
+            try { wave = PcmWaveStream.TryRead(source); }
+            catch { source.Dispose(); throw; }
+            if (wave is not null)
+            {
+                IPcmAudioOutput? output = null;
+                try
+                {
+                    output = new AndroidPcmAudioOutput(wave);
+                    _pcm = new PcmStreamPlayer(wave, output, loop, volume, _reportError);
+                }
+                catch { output?.Dispose(); wave.Dispose(); throw; }
+                _currentMusic = musicId;
+                return;
+            }
+            source.Dispose();
+            var player = new MediaPlayer();
+            try
+            {
+                player.SetDataSource(file);
+                player.Looping = loop;
+                player.SetVolume(volume, volume);
+                player.Prepare();
+                player.Start();
+            }
+            catch { player.Release(); player.Dispose(); throw; }
+            _player = player;
+            _currentMusic = musicId;
         }
-        catch
-        {
-            player.Release();
-            throw;
-        }
-        _player = player;
-        _currentMusic = musicId;
     }
 
-    public void SetMusicVolume(float volume) => _player?.SetVolume(volume, volume);
+    public void SetMusicVolume(float volume)
+    {
+        lock (_musicSync) { _pcm?.SetVolume(volume); _player?.SetVolume(volume, volume); }
+    }
 
     public void PauseMusic()
     {
-        if (_player is { IsPlaying: true }) _player.Pause();
+        lock (_musicSync)
+        {
+            _pcm?.Pause();
+            if (_player is { IsPlaying: true }) _player.Pause();
+        }
     }
 
-    public void ResumeMusic() => _player?.Start();
+    public void ResumeMusic()
+    {
+        lock (_musicSync) { _pcm?.Resume(); _player?.Start(); }
+    }
 
     public void StopMusic()
     {
-        if (_player is null) return;
-        try { _player.Stop(); }
-        catch (Java.Lang.IllegalStateException)
+        lock (_musicSync)
         {
-            // Já parado ou nunca iniciado: liberar logo abaixo resolve.
+            if (_pcm is not null)
+            {
+                _pcm.Dispose();
+                var count = _pcm.UnderrunCount;
+                if (count is null) _counterUnavailable = true;
+                else _completedUnderruns = (_completedUnderruns ?? 0) + count.Value;
+                _pcm = null;
+            }
+            if (_player is not null)
+            {
+                try { _player.Stop(); }
+                catch (Java.Lang.IllegalStateException) { /* Already ended; release below. */ }
+                _player.Release();
+                _player.Dispose();
+                _player = null;
+            }
+            _currentMusic = 0;
         }
-        _player.Release();
-        _player = null;
-        _currentMusic = 0;
     }
 
     private static (float Left, float Right) Channels(float volume, float pan) =>

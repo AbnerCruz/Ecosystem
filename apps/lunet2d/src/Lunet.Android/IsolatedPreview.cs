@@ -58,7 +58,7 @@ public sealed class IsolatedPreviewActivity : Activity
         }
         var symbolsPath = IsolatedPreviewFiles.Symbols(this);
         var renderer = new PreviewRenderer(File.ReadAllBytes(assemblyPath), File.Exists(symbolsPath) ? File.ReadAllBytes(symbolsPath) : null,
-            new DirectoryContentSource(content), () => new AndroidAudioBackend(audio), new DirectorySaveStore(saves),
+            new DirectoryContentSource(content), () => new AndroidAudioBackend(audio, message => RunOnUiThread(() => Write(LogLevel.Error, message))), new DirectorySaveStore(saves),
             new AndroidHaptics(this), (level, message) => RunOnUiThread(() => Write(level, message)));
         File.WriteAllText(IsolatedPreviewFiles.Marker(this), Process.MyPid().ToString());
         _host = new PreviewHost(this, renderer, () => [], Finish, highRefresh: true);

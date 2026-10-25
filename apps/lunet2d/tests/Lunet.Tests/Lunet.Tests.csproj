@@ -19,5 +19,7 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
+    <Compile Include="../../src/Lunet.Android/Audio/PcmWaveStream.cs" Link="Audio/PcmWaveStream.cs" />
+    <Compile Include="../../src/Lunet.Android/Audio/PcmStreamPlayer.cs" Link="Audio/PcmStreamPlayer.cs" />
   </ItemGroup>
 </Project>

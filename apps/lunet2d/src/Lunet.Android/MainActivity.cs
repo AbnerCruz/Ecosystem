@@ -978,7 +978,8 @@ public sealed partial class MainActivity : Activity
 
         var renderer = new PreviewRenderer(result.Assembly!, result.Symbols,
             new DirectoryContentSource(System.IO.Path.Combine(_project!.Directory, "Content")),
-            () => new AndroidAudioBackend(System.IO.Path.Combine(CacheDir!.AbsolutePath, "audio")),
+            () => new AndroidAudioBackend(System.IO.Path.Combine(CacheDir!.AbsolutePath, "audio"),
+                message => RunOnUiThread(() => AppendConsole(LogLevel.Error, message))),
             new DirectorySaveStore(System.IO.Path.Combine(_project!.Directory, ".lunet", "saves")),
             new AndroidHaptics(this), (level, message) => RunOnUiThread(() => AppendConsole(level, message)));
         _preview = new PreviewHost(this, renderer, () => _project?.ListFiles() ?? [], StopPreview, _settings.HighRefreshRate);

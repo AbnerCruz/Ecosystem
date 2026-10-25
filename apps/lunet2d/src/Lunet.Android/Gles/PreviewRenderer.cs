@@ -47,6 +47,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
 
     /// <summary>Janela de medições opcional, lida pela UI sem tocar no estado do Game.</summary>
     public PreviewFrameSnapshot Performance => _performance.Snapshot();
+    public long? MusicUnderruns => (_audio as AndroidAudioBackend)?.MusicUnderruns;
     public bool ProfilerIsPaused => _paused || _appPaused;
     // Leituras atômicas da GL thread; não usar para inferir VRAM total.
     public long EstimatedTextureBytes => _backend?.EstimatedTextureBytes ?? 0;
@@ -106,6 +107,14 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
 
     /// <summary>App em segundo plano: pausa o jogo (e o áudio) sem mexer no pause escolhido pelo usuário.</summary>
     public void SetAppPaused(bool paused) => _appPaused = paused;
+
+    // Queue before GLSurfaceView.OnPause: no further Draw is guaranteed once GL stops.
+    // Only the GL thread accesses GameHost; do not pause the mixer from the UI thread.
+    public void PauseForBackground()
+    {
+        _appPaused = true;
+        if (_host is { IsPaused: false }) _host.Pause();
+    }
 
     public void SetPaused(bool paused) => _paused = paused;
     public void RequestStep() => _stepRequested = true;

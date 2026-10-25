@@ -17,6 +17,14 @@ Base atual consultada: `fccefa75bce650506eb8acbfee81a35df7fc4d9b`. Os trechos ab
 - Física avançada: novos cenários executáveis no Laboratório (juntas, filtros, sensores e contatos), Issue #629; CI/APK e DEVICE específico ainda devem ser conferidos. O cenário básico e SAT/carga são preservados.
 - Permanecem abertos: contador real de audio underruns; conexão UI com Tile Studio; aceite específico nine-slice; validação avançada da física e gate integral. Nenhuma fase foi adiantada nem requisito transferido silenciosamente.
 
+## Continuação em 25/10/2026 — Issue #764
+
+- O handoff `HO-20261017-lunet-physics-scenarios` já contém aprovação DEVICE do proprietário pela Issue #638, em 22/10. O ROADMAP foi reconciliado; não solicitar de novo o aceite de juntas/filtros/contatos. Isso não fornece números brutos de desempenho nem fecha toda a física/fase.
+- LUNET-438 implementa streaming de música PCM WAV pelo AudioTrack dentro do backend Android existente. Formatos comprimidos continuam no MediaPlayer, efeitos no SoundPool; sem alteração de contratos públicos do jogo, dados ou dependências.
+- O contador nativo mede apenas underruns de música WAV PCM e é identificado como tal no relatório. Não resolve a cobertura ausente dos demais caminhos. A indisponibilidade anterior continua correta quando nenhuma saída mensurável foi criada.
+- Testes/CI/APK da nova entrega e DEVICE específico são registrados em `HO-20261025-lunet-audio-underruns`; roteiro em `docs/guides/audio.md`. Não inferir resultado do Android a partir do teste do worker portátil.
+- Nine-slice específico, conexão UI Tile Studio, cobertura integral de underruns e fechamento formal do gate continuam abertos. Fase 5 não iniciada.
+
 ## 1. Gate (§28)
 
 Jogos 2D substanciais apenas com APIs oficiais. O Laboratório executa 12 módulos sobre o framework público. O guia `gate-framework-advanced` agora fornece um jogo completo reproduzível com mapa/colisão física/sensores/câmera/animação/partículas/UI/áudio, vitória, derrota e reinício; sua execução portátil não equivale à aprovação no aparelho. Gate integral **não aprovado**. Fase 4 permanece em andamento; Fase 5 não iniciada.

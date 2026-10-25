@@ -1,0 +1,151 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261025-lunet-audio-underruns",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-25T19:22:05.487581+00:00",
+  "agent": {
+    "id": "codex-lunet-audio",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-438",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "feat/lunet-audio-underruns-20261025",
+  "base_commit": "2087974939bf445b5aaf052b584250d336a02e39",
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/audits/fase-4.md",
+    "apps/lunet2d/docs/guides/audio.md",
+    "apps/lunet2d/src/Lunet.Android/AndroidAudioBackend.cs",
+    "apps/lunet2d/src/Lunet.Android/Gles/PreviewRenderer.cs",
+    "apps/lunet2d/src/Lunet.Android/IsolatedPreview.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/PreviewHost.cs",
+    "apps/lunet2d/src/Lunet.Runtime/Profiling/PreviewProfilerReport.cs",
+    "apps/lunet2d/tests/Lunet.Tests/Lunet.Tests.csproj",
+    "apps/lunet2d/src/Lunet.Android/Audio/AndroidPcmAudioOutput.cs",
+    "apps/lunet2d/src/Lunet.Android/Audio/PcmStreamPlayer.cs",
+    "apps/lunet2d/src/Lunet.Android/Audio/PcmWaveStream.cs",
+    "apps/lunet2d/tests/Lunet.Tests/PcmMusicTests.cs",
+    "docs/governance/handoffs/HO-20261025-lunet-audio-underruns.json"
+  ],
+  "work_completed": [
+    "Música WAV PCM mono/estéreo 8/16 bits em streaming por AudioTrack dentro do IAudioBackend existente, demais codecs no MediaPlayer e efeitos no SoundPool.",
+    "Leitor RIFF limitado com chunks/padding/frames e validação de truncamento; worker com prefill, escritas parciais não bloqueantes, loop, volume, pausa/retomada, cancelamento e descarte.",
+    "Contador nativo AudioTrack.UnderrunCount no overlay, relatório workspace e exportação; total PCM da sessão, ausência de dados distinta de zero e cobertura restrita explicitada.",
+    "Erros do worker enviados ao Console nos Previews rápido/isolado; documentação/roteiro e reconciliação da aprovação de física avançada #638 já registrada.",
+    "Pausa do mixer enfileirada na thread GL antes de GLSurfaceView.OnPause, evitando depender de um Draw futuro para silenciar o áudio em segundo plano; DEVICE continua pendente."
+  ],
+  "verification": [
+    {
+      "check": "Build portátil .NET 10",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet build tests/Lunet.Tests --no-restore -m:1 -nr:false -p:UseSharedCompilation=false; 0 warnings/errors, SDK 10.0.402."
+    },
+    {
+      "check": "Leitor/worker/relatório PCM",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "16/16 PcmMusicTests: PCM mono/estéreo 8/16, RIFF metadata/padding, truncamento/alinhamento, fallback, escrita parcial/EOF, Pause/Resume/Stop com saída cheia, erro nativo e relatório zero/não zero. Contador nativo indisponível é null, nunca zero fabricado nem crash no Profiler."
+    },
+    {
+      "check": "Suíte completa Lunet",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Runner xUnit v3: 688/688, 0 failures/errors/skips; inclui compilação e execução dos cenários existentes no GameCompiler/GameHost."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22. ROADMAP × Issues não verificado localmente sem snapshot, CI verifica."
+    },
+    {
+      "check": "CI Android e APK assinado",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Primeira revisão: run 40225383707 falhou por CS0234 de Android.Media dentro de Lunet.Android; corrigido com global::Android.Media. CI da revisão final pendente."
+    },
+    {
+      "check": "DEVICE: música PCM e relatório nos dois Previews",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/audio.md",
+      "critical": false,
+      "evidence": "Roteiro 1–6: loop/volume/fades/pausa/segundo plano/Stop/isolado/relatório e regressão MediaPlayer. Nenhum aceite inferido."
+    },
+    {
+      "check": "Self-test global",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs -- --self-test: todos os checks provaram detectar suas violações."
+    }
+  ],
+  "known_issues": [
+    "SoundPool e MediaPlayer continuam sem contador de underruns: cobertura integral do Profiler e Fase 4 não concluídas.",
+    "Nine-slice específico, conexão UI Tile Studio, medições brutas de performance e fechamento formal da fase permanecem abertos."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar CI Android, integração automática e release existente do Product.",
+    "Validar no aparelho pelo guia de áudio; não avançar Fase 5 antes do gate."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json",
+    "docs/architecture/local-first.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Somente Lunet e handoff, sem referência entre Products."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #764, branch, roteiro e handoff observáveis."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Detalhe interno do backend existente; nenhum contrato, ownership, direção, lifecycle, formato ou dependência estrutural alterados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes de worker portáteis separados de Android CI e DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Review, gate aberto, sem promessa de release antes da publicação."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Fica local ao backend Android, sem extração ou SDK especulativo."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-pcm-music-diagnostics",
+      "status": "product-specific",
+      "rationale": "Implementação interna do backend áudio do Preview Lunet sobre IAudioBackend existente, sem consumidor externo real."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  },
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/765"
+}
