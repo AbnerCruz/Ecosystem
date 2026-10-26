@@ -91,6 +91,7 @@ public sealed class MainActivity : AvaloniaMainActivity
     {
         Current = this;
         base.OnCreate(savedInstanceState);
+        OnBackPressedDispatcher.AddCallback(this, new UrbeBackCallback(this));
         PlatformAssistantActivity.Publish = AssistantRunService.Publish;
         PlatformAssistantActivity.RequestNotificationPermission = RequestAiNotificationPermission;
         // the editor asks for the keyboard when a block becomes an edit box: Android does not always open it by itself (UC-48)
@@ -109,11 +110,17 @@ public sealed class MainActivity : AvaloniaMainActivity
         HandleAssistantIntent(Intent);
     }
 
-    /// <summary>Android physical/gesture Back must navigate the Urbe hierarchy before exiting at its root.</summary>
-    public override void OnBackPressed()
+    /// <summary>AndroidX dispatcher handles gesture/physical Back on modern Android without the obsolete override.</summary>
+    private sealed class UrbeBackCallback(MainActivity activity) : AndroidX.Activity.OnBackPressedCallback(true)
     {
-        if (UrbeApp.ActiveView?.HandleSystemBack() == true) return;
-        base.OnBackPressed();
+        public override void HandleOnBackPressed()
+        {
+            if (UrbeApp.ActiveView?.HandleSystemBack() == true) return;
+            // At the root, delegate to the system/default dispatcher without calling ourselves again.
+            Enabled = false;
+            try { activity.OnBackPressedDispatcher.OnBackPressed(); }
+            finally { Enabled = true; }
+        }
     }
 
     private static FeedbackConstants Haptic(Urbe.Client.Ui.HapticKind kind) => kind switch
