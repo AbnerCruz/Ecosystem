@@ -7,6 +7,7 @@ using Lunet.Core;
 using Lunet.Graphics;
 using Lunet.Studio;
 using AndroidColor = Android.Graphics.Color;
+using AndroidMediaPlayer = global::Android.Media.MediaPlayer;
 using Path = System.IO.Path;
 
 namespace Lunet.Android;
@@ -136,7 +137,7 @@ public sealed partial class MainActivity
         root.AddView(new TextView(this) { Text = $"{AssetCategoryName(asset.Kind)}\n{asset.Path}", TextSize = 13 });
 
         Bitmap? bitmap = null;
-        Android.Media.MediaPlayer? player = null;
+        AndroidMediaPlayer? player = null;
         string? preview = asset.PreviewPath;
         if (asset.Kind == ProjectAssetKind.TileMap)
         {
@@ -191,7 +192,7 @@ public sealed partial class MainActivity
                 {
                     player?.Release();
                     player?.Dispose();
-                    player = new Android.Media.MediaPlayer();
+                    player = new AndroidMediaPlayer();
                     player.SetDataSource(SafeAssetFilePath(project, asset.Path));
                     player.Prepared += (_, _) => { if (dialog.IsShowing) player?.Start(); };
                     player.PrepareAsync();
