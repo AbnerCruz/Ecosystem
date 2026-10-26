@@ -502,3 +502,8 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Pedido do proprietário: ter editor de sprites utilizável junto ao Tile Studio; LUNET-442 / Issue #779, branch `feat/lunet-sprite-tools-20261025`, base `e06c97aa37d3cd9ef2be478c508fbbadfb8d0911`.
 - Ampliação do Sprite Studio já integrado: linha e retângulo com prévia por toque, retângulo preenchido, flip vertical, zoom/pan, grade opcional e cor ARGB personalizada; usa documento JSON v1 original, sem migração nem novos formatos.
 - Testes de retângulos, limites, transparência, flip vertical e isolamento de frames; CI Android/DEVICE pendentes. Camadas e seleção completas continuam backlog F5, sem declaração de produto finalizado.
+
+### 20261025-chatgpt-lunet-assets-content — ChatGPT → integrador — review
+- LUNET-443 / Issue #783: correção de resolução de assets entre Sprite Studio e jogo; branch `fix/lunet-project-assets-content-20261025` baseada na main.
+- Causa: Studio exporta sprites em `Assets/`, mas os Previews só liam `Content/`. `ProjectContentSource` preserva `Content/` e adiciona fallback restrito a `Assets/` do mesmo projeto; nome igual prioriza `Content/Assets/`. Nenhum arquivo antigo é movido nem excluído.
+- Preview rápido e isolado atualizados; testes de carregamento de PNG pelo GameHost, fallback, precedência e traversal; guia e roadmap atualizados. CI e DEVICE aguardam validação; APK do jogo continua requisito F9 separado.

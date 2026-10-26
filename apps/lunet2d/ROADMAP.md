@@ -25,6 +25,7 @@ Não ampliar instrumentação de áudio enquanto esses fluxos estiverem ausentes
 
 - [~] **LUNET-440 — Sprite e animação utilizáveis (Issue #775):** tela Android com desenho, frames, playback, persistência fonte e exportação de spritesheet. Primeiro incremento; não equivale aos Studios completos.
 - [~] **LUNET-442 — Sprite Studio ferramentas de desenho (Issue #779):** linha, retângulo, preenchimento, espelhamento vertical, cor ARGB, grade e zoom/pan por toque; CI .NET/Android aprovado, DEVICE pendente. Sem declarar layers, seleção e estados concluídos.
+- [ ] **LUNET-443 — Sprite/assets disponíveis no código (Issue #783, feito, sem validação em aparelho):** Preview rápido e isolado devem aceitar `Content.LoadTexture("Assets/arquivo.png")` para arquivos salvos em `Assets/` pelo Studio, mantendo `Content/` como prioridade, sem migrar arquivos nem abrir caminhos fora do projeto. Testes portáteis e CI obrigatórios; DEVICE pendente.
 - [ ] APK do **jogo**: antecipar o experimento de F9 e sua integração visível; o APK do IDE e exportar ZIP não satisfazem esse item. Fallback GitHub somente com execução e artefato reais.
 - [~] **LUNET-441 — Primeiro Tile Studio (Issue #777):** editor Android por toque, tileset PNG, camadas, colisão, desfazer/refazer e JSON v1 conectado ao runtime; CI/DEVICE pendentes. Autotiling, propriedades, brushes avançados e zoom continuam F5.
 - [ ] Em seguida: Assets/Tile/Audio/UI Studios e demais editores de F5, com melhoria contínua da navegação. Física, áudio, A* e todo o restante do roadmap permanecem requisitos.

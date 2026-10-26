@@ -1,5 +1,7 @@
 # Changelog
 
+- Pré-beta / LUNET-443 (#783): corrigido carregamento de sprites PNG e outros assets do diretório `Assets/` do projeto via `Content.LoadTexture("Assets/arquivo.png")` e APIs existentes; Preview rápido e isolado usam a mesma resolução, preservando `Content/` e projetos legados. Testes e DEVICE pendentes de verificação.
+
 - Pré-beta / LUNET-442 (#779): Sprite Studio ampliado com linha, retângulo contornado/preenchido, flip vertical, zoom e deslocamento, grade opcional e cor ARGB personalizada. Preserva o JSON v1 e frames existentes; CI/DEVICE pendentes.
 
 - Pré-beta / LUNET-441 (#777): Tile Studio Android inicial com paleta visual de PNG, pintura/borracha por toque, camadas, visibilidade e colisão, undo/redo e mapas JSON v1 editáveis no projeto. Sem duplicar o TileMap, alterar o áudio ou prometer APK do jogo; DEVICE pendente.

@@ -110,6 +110,85 @@ public class ContentTests : IDisposable
         Assert.Throws<FileNotFoundException>(() => new ContentManager(new DirectoryContentSource(_root), device).LoadTexture("nope.png"));
     }
 
+
+    [Fact]
+    public void ProjectContentSource_ResolvesRootAssetsAndOriginalContent()
+    {
+        Directory.CreateDirectory(Path.Combine(_root, "Content", "Textures"));
+        Directory.CreateDirectory(Path.Combine(_root, "Assets"));
+        var png = EncodePng(1, 1, 6, [0, 255, 0, 0, 255]);
+        File.WriteAllBytes(Path.Combine(_root, "Assets", "sprite.png"), png);
+        File.WriteAllBytes(Path.Combine(_root, "Content", "Textures", "hero.png"), png);
+        File.WriteAllText(Path.Combine(_root, "Assets", "sprite.sprite.json"), "{\"frames\":1}");
+
+        var source = new ProjectContentSource(_root);
+        Assert.True(source.Exists("Assets/sprite.png"));
+        Assert.True(source.Exists("Assets/sprite.sprite.json"));
+        Assert.True(source.Exists("Textures/hero.png"));
+        Assert.False(source.Exists("sprite.png"));
+        Assert.False(source.Exists("Assets/../../outside.png"));
+        Assert.False(source.Exists("../Assets/sprite.png"));
+        Assert.False(source.Exists("/Assets/sprite.png"));
+        Assert.Throws<FileNotFoundException>(() => source.Open("Assets/../../outside.png"));
+
+        using var content = new ContentManager(source, new GraphicsDevice(new RecordingBackend(), 10, 10));
+        Assert.Equal("{\"frames\":1}", content.ReadText("Assets/sprite.sprite.json"));
+        Assert.Equal(1, content.LoadTexture("Assets/sprite.png").Width);
+        Assert.Equal(1, content.LoadTexture("Textures/hero.png").Width);
+    }
+
+    [Fact]
+    public void ProjectContentSource_PrefersCanonicalContentWhenBothLocationsContainAsset()
+    {
+        Directory.CreateDirectory(Path.Combine(_root, "Content", "Assets"));
+        Directory.CreateDirectory(Path.Combine(_root, "Assets"));
+        File.WriteAllText(Path.Combine(_root, "Content", "Assets", "shared.txt"), "Content");
+        File.WriteAllText(Path.Combine(_root, "Assets", "shared.txt"), "Assets");
+        File.WriteAllText(Path.Combine(_root, "Assets", "legacy.txt"), "Legacy");
+
+        var source = new ProjectContentSource(_root);
+        using var content = new ContentManager(source, new GraphicsDevice(new RecordingBackend(), 10, 10));
+        Assert.Equal("Content", content.ReadText("Assets/shared.txt"));
+        Assert.Equal("Legacy", content.ReadText("Assets/legacy.txt"));
+    }
+
+    [Fact]
+    public void Game_LoadsSpriteStudioExportFromProjectAssetsThroughHost()
+    {
+        Directory.CreateDirectory(Path.Combine(_root, "Assets"));
+        File.WriteAllBytes(Path.Combine(_root, "Assets", "sprite.png"),
+            EncodePng(1, 1, 6, [0, 255, 0, 0, 255]));
+        var result = new GameCompiler(new LoadedAssembliesReferenceProvider(typeof(Game).Assembly)).Compile("sprite_assets_game", [new SourceFile("Game.cs", """
+            using System.Numerics;
+            using Lunet; using Lunet.Graphics;
+            public sealed class SpriteGame : Game
+            {
+                private SpriteBatch _batch = null!;
+                private Texture2D _sprite = null!;
+                protected override void LoadContent()
+                {
+                    _batch = new SpriteBatch(GraphicsDevice);
+                    _sprite = Content.LoadTexture("Assets/sprite.png");
+                }
+                protected override void Draw(GameTime time)
+                {
+                    _batch.Begin();
+                    _batch.Draw(_sprite, Vector2.Zero, Color.White);
+                    _batch.End();
+                }
+            }
+            """)]);
+        Assert.True(result.Success, string.Join("\n", result.Diagnostics));
+        using var loaded = GameLoader.Load(result.Assembly!);
+        var backend = new RecordingBackend();
+        var host = new GameHost(loaded.Game, backend, new ProjectContentSource(_root));
+        Assert.True(host.Start(32, 32), host.Fault?.ToString());
+        host.Tick(0.016);
+        Assert.Single(backend.Batches);
+        host.Stop();
+        Assert.Empty(backend.LiveTextures);
+    }
+
     [Fact]
     public void Game_LoadsTextureFromProjectContentThroughHost()
     {

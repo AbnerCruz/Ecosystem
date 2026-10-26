@@ -10,9 +10,15 @@ Use Duplicar para criar o próximo frame, desenhe a diferença e pressione Play.
 FPS altera a velocidade; Onion skin mostra o frame anterior. Desfazer/refazer
 inclui pixels, frames e FPS. A faixa numerada seleciona o frame.
 
-**Exportar PNG** produz uma spritesheet horizontal em Assets e exibe o trecho
+**Exportar PNG** produz uma spritesheet horizontal em `Assets/` na raiz do projeto e exibe o trecho
 C# para SpriteSheet/SpriteAnimationClip. Exportações posteriores pedem confirmação
-antes de substituir o PNG. O PNG é usado pelo jogo sem abrir Studio.
+antes de substituir o PNG. No Preview normal e isolado, carregue esse arquivo com
+`Content.LoadTexture("Assets/sprite-<id>.png")`, usando o nome real exibido pelo Studio.
+O carregamento continua aceitando arquivos antigos em `Content/` (por exemplo,
+`Content.LoadTexture("Textures/hero.png")`). Se o mesmo caminho `Assets/nome.png`
+existir em `Content/Assets/` e `Assets/`, prevalece o arquivo de `Content/Assets/`.
+Não é preciso mover nem duplicar assets dos projetos existentes. `.sprite.json` é a
+fonte editável do sprite; para desenhar no jogo, exporte o `.png`.
 
 **Importar PNG do projeto** abre uma imagem de até 128 × 128 como primeiro frame,
 preservando o arquivo original. Use o Explorer para trazer PNGs externos.
