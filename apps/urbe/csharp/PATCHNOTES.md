@@ -1,28 +1,28 @@
 # Urbe — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.32  
+**Versão canônica preparada:** 2.0.0-beta.33  
 **Canal:** Urbe 2.0 nativo, Android e Windows  
 **Publicação:** exclusivamente pelo workflow oficial após integração e gates  
 **Identidade Android:** app.urbe.csharp
 
-> Este arquivo acompanha o corte beta.32. Não confirma que a release foi publicada; confira o tag `urbe-csharp-v2.0.0-beta.32` e os assets oficiais. Versões anteriores estão no histórico.
+> Este arquivo descreve a beta.33 preparada. Não é confirmação de publicação: confira se existe a tag `urbe-csharp-v2.0.0-beta.33` com APK Android assinado e ZIP Windows. Histórico em `PATCHNOTES-HISTORY.md`.
 
-## Edição estável
+## Selos de autoria da IA
 
-- Toque, foco e seleção deixam de causar deslocamentos automáticos do viewport da nota.
-- Digitação conserva o caret visível sem forçar a linha para o terço superior; gestos manuais de leitura têm prioridade.
-- **Selecionar nota inteira**, acessível em Mais ações, sem limitar a seleção ao bloco atual.
-- Estatísticas de textos extensos deixam o caminho crítico do teclado; salvamento e conteúdo preservados.
+- As marcas `{ia:"modelo"}` passam a ser protegidas nos modos Visual e Fonte; exclusões, trocas e falsificações são recusadas.
+- A gravação do vault valida a preservação das marcas, inclusive alterações propostas por agentes.
+- Desfazer uma operação da IA continua possível quando restaura a versão exata anteriormente registrada.
 
-## Chat da IA
+## Correção de execução dos agentes
 
-- O Assistente respeita a posição de leitura durante o streaming, com comando **Ir à última mensagem**.
-- Mensagens próprias podem ser copiadas, ter trechos selecionados e ser editadas para reenviar sem reescrever histórico nem iniciar cobrança automaticamente.
+- O agente aprende a não tentar remover ou contornar a marca de autoria do Urbe, mesmo quando solicitado.
+- `edit_note` aceita substituições vazias legítimas sem confundi-las com argumentos ausentes.
+- Uma repetição sem progresso resulta em aviso e chance limitada de correção, sem abandonar imediatamente todas as etapas válidas.
 
 ## Compatibilidade e distribuição
 
-- APK nativo Android e ZIP Windows serão publicados pelo mesmo canal e certificado beta anteriores.
-- Sem mudanças no formato das notas. Conserve backups antes de atualizar; não desinstale para atualizar.
-- Não confundir compilação no CI com teste real do Android ou release pública.
+- Identidade, assinatura beta e arquivos Markdown existentes inalterados; atualização por cima da beta.32.
+- A integridade é garantida nas edições feitas pelo app, não contra alteração direta dos arquivos por aplicações externas.
+- São necessários CI, integração aprovada e validação de instalação/interação Android em aparelho. Faça backup antes de atualizar.
 
-**Detalhes técnicos e testes:** PATCHNOTES-beta.32.md, Issue #805, PR #808.
+**Detalhes técnicos e testes:** `PATCHNOTES-beta.33.md`, Issue #809, PR #810.
