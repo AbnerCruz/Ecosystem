@@ -359,7 +359,7 @@ public static class AssistantMemoryEngine
         {
             var previous = requests[i].Trim();
             if (previous.Length > 12 && !Regex.IsMatch(Normalize(previous),
-                @"^(?:continua|faz|pode seguir|mantem isso|obrigado|ok|beleza)\\s*[.!?]?$"))
+                @"^(?:continua|faz|pode seguir|mantem isso|obrigado|ok|beleza)\s*[.!?]?$"))
                 return previous + " " + last;
         }
         return last;
