@@ -49,6 +49,27 @@ public sealed class EditorInteractionStabilityTests
         }, TestContext.Current.CancellationToken));
 
     [Fact]
+    public async Task EnteringAndLeavingAnUnchangedBlockDoesNotRecreateAllOtherMarkdownViews() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var editor = new EditorOverlay();
+            var window = new Window { Width = 412, Height = 800, Content = editor };
+            window.Show();
+            editor.Open(new CityNote("Notas/Tres.md", "# Título\\n\\nprimeiro\\n\\nsegundo\\n"));
+            window.UpdateLayout();
+            var starts = editor.Surface.BlockStarts;
+            Assert.True(starts.Count >= 3);
+            var first = editor.Surface.BlockView(starts[1])!;
+            var stable = editor.Surface.BlockView(starts[2])!;
+            editor.Surface.TapBlock(starts[1], first, first, new Avalonia.Point(10, 10), select: false);
+            Assert.Same(stable, editor.Surface.BlockView(starts[2]));
+            editor.Surface.FinishEdit();
+            Assert.Same(stable, editor.Surface.BlockView(starts[2]));
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
+    [Fact]
     public async Task LargeNoteTypingKeepsWholeContentAndTracksLocalWork() =>
         Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
         {
