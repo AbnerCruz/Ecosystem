@@ -829,7 +829,15 @@ public static class AssistantAgent
                         Type = "tool_result", ToolUseId = call.Id, Content = Slice(output.Content, resultLimit), IsError = output.IsError,
                         Status = output.Status ?? (output.IsError ? "error" : "done"), Changes = output.Changes?.Count ?? 0
                     };
-                    answer.Content.Add(block);
+                    // Parallel read results arrive out of order. Preserve the model's tool-call order
+                    // in the transcript while still publishing each result as soon as it finishes.
+                    // Otherwise a reused-result reference can point forward to evidence that was
+                    // never transmitted before it (or the wrong tool ID on a different run).
+                    int currentOrder = calls.IndexOf(call);
+                    int insertAt = answer.Content.FindIndex(existing =>
+                        calls.FindIndex(candidate => candidate.Id == existing.ToolUseId) > currentOrder);
+                    if (insertAt < 0) answer.Content.Add(block);
+                    else answer.Content.Insert(insertAt, block);
                     emit(new AiAgentEvent("tool", Call: call, Result: block));
                     if (output.Changes is not null) result.Changes.AddRange(output.Changes);
                     foreach (var r in output.Reads ?? [])
