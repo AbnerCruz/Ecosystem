@@ -429,3 +429,12 @@ Issue [#793](https://github.com/AbnerCruz/Ecosystem/issues/793), ADR-0043 (propo
 - [~] Campos opcionais de uso de cache/custo, telas de consumo com parcial/desconhecido; sem recontar tokens cacheados.
 - [ ] Provar equivalência Core/UI/oráculos no CI integrado; revisar persistência aditiva conforme política de integração; ensaiar Android físico e modelos reais.
 - [ ] Publicação de release somente após autorização/gates existentes. **Fora de escopo:** sono, reflexão automática em segundo plano, etapas artificiais de contexto e chamadas extras pagas de resumo.
+
+## UC-57 / Issue #805 — estabilidade da edição e chat (26/10/2026)
+
+- [~] Entrada Markdown C# responsiva: fonte/caret e foco não comandam rolagem durante navegação manual, não força cursor ao terço superior em cada tecla; cálculos de status de notas longas postergados sem alterar salvamento.
+- [~] Seleção de nota inteira (não só bloco visual) nas ações do editor; preservação de seleção e alças nativas.
+- [~] Assistente: rolagem enquanto o modelo escreve não sequestra o usuário; botão explícito para retornar à última mensagem; copiar, selecionar trecho e editar/reenviar mensagem própria de forma auditável.
+- [ ] CI Core/Client/consistency/Android/Windows/E2E em estado combinado; teste com notas grandes e teclado/IME/seleção no Android físico.
+- [ ] Publicação beta na sequência canônica via release oficial, identidade/certificado preservados e validação do APK; integração crítica somente por gate autorizado.
+- Referências, implementação e critérios em `apps/urbe/docs/csharp/EDITOR-INTERACTION-STABILITY-20261026.md`; PR #808.

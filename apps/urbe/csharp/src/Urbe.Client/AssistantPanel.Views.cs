@@ -33,7 +33,13 @@ public sealed partial class AssistantPanel
                     .Select(b => b.Text!.Split('\n')[0].Trim('[', ']'))).ToList();
             if (files.Count > 0) stack.Children.Add(Wrap("Anexos: " + string.Join(", ", files), 11, UrbeTheme.Text2));
             var bubble = new SelectableTextBlock { Text = text, FontSize = 15, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text) };
+            Ui.TextActions.Attach(bubble); // native range selection, contextual copy and select-all
             stack.Children.Add(new Border { Child = bubble, Padding = new Thickness(12, 9), CornerRadius = new CornerRadius(16, 16, 4, 16), Background = UrbeTheme.Brush(UrbeTheme.Accent, .16) });
+            var actions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right };
+            actions.Children.Add(LinkButton("Copiar", () => _ = CopySentMessageAsync(text)));
+            actions.Children.Add(LinkButton("Selecionar trecho", () => SelectSentMessageText(text)));
+            actions.Children.Add(LinkButton("Editar e reenviar", () => _ = EditSentMessageAsync(m, text)));
+            stack.Children.Add(actions);
             return stack;
         }
         var view = new StackPanel { Spacing = 8 };
@@ -86,6 +92,39 @@ public sealed partial class AssistantPanel
             view.Children.Add(pin);
         }
         return view;
+    }
+
+    private async Task CopySentMessageAsync(string text) =>
+        _app.Notify(await Ui.TextActions.CopyAsync(this, text) ? "Mensagem copiada." : "Não foi possível copiar a mensagem.");
+
+    private void SelectSentMessageText(string original)
+    {
+        var body = OpenView("Selecionar trecho da mensagem");
+        var field = new TextBox
+        {
+            Text = original, IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
+            MinHeight = 180, SelectionBrush = UrbeTheme.Brush(UrbeTheme.Accent, .35)
+        };
+        Ui.TextActions.Attach(field);
+        body.Children.Add(field);
+        body.Children.Add(LinkButton("Selecionar mensagem inteira", () =>
+        {
+            field.Focus(); field.SelectAll(); TouchTextScroll.ShowSelectionHandles(field);
+        }));
+        body.Children.Add(Hint("Toque e selecione um trecho. Copie pelo menu nativo."));
+    }
+
+    private async Task EditSentMessageAsync(AiChatMessage message, string original)
+    {
+        if (!_conv.Messages.Contains(message)) return;
+        if (!string.IsNullOrWhiteSpace(_input.Text) && _input.Text != original &&
+            !await _app.Dialogs.ConfirmAsync("Substituir rascunho?",
+                "Você já estava escrevendo outra mensagem. O rascunho atual será substituído; a mensagem original no histórico não muda.", "Substituir")) return;
+        CloseView();
+        _input.Text = original;
+        _input.CaretIndex = original.Length;
+        _input.Focus();
+        _app.Notify("Edite e envie como novo pedido. A mensagem original permanece no histórico para preservar as respostas anteriores.");
     }
 
     private static readonly Dictionary<string, string> AccessIcon = new()

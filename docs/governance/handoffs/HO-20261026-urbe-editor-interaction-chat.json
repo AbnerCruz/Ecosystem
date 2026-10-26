@@ -1,0 +1,158 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261026-urbe-editor-interaction-chat",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-26T17:00:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-editor-uc57",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-57",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "fix/urbe-editor-input-scroll-chat-ux-20261026",
+  "base_commit": "e7d3bbd64ded22c42f09de402cdbecd301463887",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/808",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/EditorScrolling.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ChatViewportPolicy.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorInteractionStabilityTests.cs",
+    "apps/urbe/docs/csharp/EDITOR-INTERACTION-STABILITY-20261026.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261026-urbe-editor-interaction-chat.json",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES-beta.32.md",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AndroidBackAndPatchnotesUiTests.cs"
+  ],
+  "work_completed": [
+    "UC-57/Issue #805: inspecionadas diretamente as implementações de VisualSurface, EditorOverlay, TouchTextScroll, EditorScrolling, AssistantPanel, MainView.History e os testes existentes da main C#; consultados o código-fonte Avalonia TextBox/ScrollViewer e documentação de rolagem, foco e seleção.",
+    "ScrollViewer no editor e no chat passam a impedir BringIntoViewOnFocusChange no container externo; caret não puxa a nota ao simples toque/seleção, atualização por digitação não força linha ao terço superior.",
+    "O modo Visual preserva a edição nativa de blocos, gestos existentes e proteções de toque, usando política explícita de preferência da navegação manual sobre correção de caret.",
+    "A estatística de nota longa, antes feita a cada tecla, passa a atualizar após breve pausa. Texto canônico, histórico, autosave e feedback de notas pequenas permanecem inalterados.",
+    "Mais ações do editor contém Selecionar nota inteira, distinto de selecionar bloco: transição explícita para Fonte, SelectAll/handles nativos.",
+    "AssistantPanel só acompanha novas mensagens enquanto follow-tail estiver ativo; gesto manual interrompe auto-follow, retorno voluntário ao final ou botão Ir à última mensagem o reativa.",
+    "Mensagens próprias permitem Copiar, Selecionar trecho e Editar e reenviar pelo compositor, com confirmação para substituir rascunho e preservação do histórico anterior.",
+    "Registradas referências Avalonia, análise das causas e critérios Android em EDITOR-INTERACTION-STABILITY-20261026.md e roadmap.",
+    "Corte de distribuição beta.32: versão canônica Android 2.0.0-beta.32 (versionCode 2000032), sem mudar ApplicationId, assinatura ou workflow; PATCHNOTES.md, PATCHNOTES-beta.32.md e histórico compacto atualizados. Publicação depende de integração no main e workflow assinado, não ocorreu na branch.",
+    "Testes Core 867/867 aprovados na execução inicial CI da beta.32; a UI concluiu 252 aprovados e um teste legado recusou o literal beta.31, corrigido para verificar beta.32 preparada com descrição real e sinalização de release não publicada."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe C# portable Core e Client UI",
+      "result": "pending",
+      "evidence": "PR #808: CI em execução. Regressões novas em EditorInteractionStabilityTests e suítes existentes EditorTests/EditorRedesignUiTests/AssistantUiTests precisam de conclusão verde."
+    },
+    {
+      "kind": "automated",
+      "check": "Compilação nativa Android e Windows, E2E e npm check",
+      "result": "pending",
+      "evidence": "Workflow https://github.com/AbnerCruz/Ecosystem/pull/808/checks. Não converter build em aceitação de aparelho."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistência de normas/handoff/schema e estado combinado",
+      "result": "pending",
+      "evidence": "Novo handoff canônico JSON adicionado; integrador deve revalidar com main atual."
+    },
+    {
+      "kind": "human",
+      "check": "Gesto de rolagem, IME/Gboard, seleção em blocos e nota, leitura durante streaming e desempenho no Android físico",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/docs/csharp/EDITOR-INTERACTION-STABILITY-20261026.md",
+      "evidence": "Nenhuma execução física disponível. Testar toque simples, duplo, segurar, selecionar toda a nota e rolar em conversa com geração real."
+    },
+    {
+      "kind": "automated",
+      "check": "Publicação oficial da beta.32 e verificação de APK assinado/Windows ZIP",
+      "result": "pending",
+      "evidence": "Após integração crítica autorizada, workflow urbe-csharp-mobile-release.yml deve publicar tag urbe-csharp-v2.0.0-beta.32 e assets esperados com assinatura verificável. Nenhum tag ou release criado na branch."
+    }
+  ],
+  "known_issues": [
+    "Não foram executadas medições em aparelho físico com IME e modelo real. Benchmark headless é diagnóstico e não prova latência Android.",
+    "Editar mensagem já respondida prepara correção no compositor e novo envio; histórico original e resultados de ferramentas não são reescritos ou regenerados implicitamente. Clareza garantida por aviso.",
+    "Uma release ainda exige número beta inédito, integração na main pelo integrador, pipeline de assinatura, verificação dos assets e aprovação explícita para alteração crítica de distribuição.",
+    "Protocolo de publicação não permite criar APK assinado a partir de branch de desenvolvimento ou substituir tag histórica.",
+    "A asserção de patchnotes com beta.31 ficou obsoleta após o corte da versão canônica beta.32; ajustada sem desabilitar/vermelhar suíte. Confirmação exige nova CI."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Conferir builds e regressões do PR, corrigir falhas até CI verde e revisar semântica de interação.",
+    "Preparar a versão canônica beta e patchnotes somente quando mudanças tiverem validação técnica; não mexer no certificado/canal do Android.",
+    "Solicitar integração crítica do proprietário pelo fluxo do Ecosystem; executar/presenciar a release oficial da main, registrar links para os assets verificados.",
+    "Testar em dispositivo Android após instalação; manter a validação física pendente até ter evidência."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/communication.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/UX.md",
+    "apps/urbe/docs/csharp/EDITOR-INTERACTION-STABILITY-20261026.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Texto .md e conversa persistida continuam nas autoridades atuais; controle de rolagem não cria armazenamento ou editor alternativo."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #805, PR #808, referência de código, testes, handoff canônico e limites explícitos."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "MANIFEST/AGENTS/ADR e API Avalonia consultados diretamente, não por interpretação de documentação velha."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Cópia de mensagem não revela credenciais; edição mantém o contexto anterior imutável e não dispara ferramentas ou modelo automaticamente."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Teste headless não confunde fluidez do Android real com CI; validação humana crítica permanece pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Release e marcação concluído somente após verificações objetivas de integração, assinatura e assets."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Controles nativos existentes e pequena política de viewport substituem ações automáticas conflitantes, sem dependências adicionais."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Regras específicas do Urbe não são extraídas para framework sem segundo consumidor comprovado."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Release Android beta.32 solicitada pelo proprietário: incremento da versão canônica/versionCode sem alterar assinatura ou identidade. O integrador só deve publicar após autorização, CI e validação de artefatos."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "urbe-editor-scroll-policy",
+      "status": "product-specific",
+      "rationale": "Regras de rolagem ligadas ao VisualSurface e AssistantPanel do Urbe; a API Avalonia já fornece os primitivos reutilizáveis sem framework próprio."
+    }
+  ]
+}

@@ -106,6 +106,20 @@ public sealed partial class AssistantPanel : Border
     private readonly TextBlock _usage = new() { FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
     private readonly StackPanel _log = new() { Spacing = 12, Margin = new Thickness(14, 10, 14, 16) };
     private readonly ScrollViewer _scroll;
+    private bool _followChatTail = true;
+    private bool _readerDraggingChat;
+    private bool _readerScrolledChat;
+    private readonly Button _latestMessage = new();
+
+    /// <summary>Exposed for headless UI tests: a reader browsing older messages is never kidnapped by streaming.</summary>
+    public bool FollowingLatestMessage => _followChatTail;
+    public void FollowLatestMessage()
+    {
+        _followChatTail = true;
+        UpdateLatestMessageAction();
+        ScrollEnd();
+    }
+    private void UpdateLatestMessageAction() => _latestMessage.IsVisible = !_followChatTail;
     private readonly TextBox _input;
     private readonly Button _send = new();
     private readonly Button _usageButton = new();
@@ -154,11 +168,52 @@ public sealed partial class AssistantPanel : Border
         _usageButton.Click += (_, _) => ShowUsage();
         Avalonia.Automation.AutomationProperties.SetName(_usageButton, "Ver custos e consumo da conversa");
         var bar = new WrapPanel { Orientation = Orientation.Horizontal,
-            Margin = new Thickness(12, 0, 12, 8), Children = { _modelChip, _usageButton } };
+            Margin = new Thickness(12, 0, 12, 8), Children = { _modelChip, _usageButton, _latestMessage } };
 
         _log.DetachedFromVisualTree += (_, _) => _selectionWait?.Stop();
-        _scroll = new ScrollViewer { HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = _log };
+        _scroll = new ScrollViewer
+        {
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            BringIntoViewOnFocusChange = false,
+            Content = _log
+        };
+        // Reader gestures own the viewport. Only a deliberate return to the bottom resumes follow-tail.
+        _scroll.AddHandler(PointerPressedEvent, (_, _) => { _readerDraggingChat = true; _readerScrolledChat = false; },
+            Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+        _scroll.ScrollChanged += (_, e) =>
+        {
+            if (!_readerDraggingChat || Math.Abs(e.OffsetDelta.Y) < .5) return;
+            _readerScrolledChat = true;
+            _followChatTail = ChatViewportPolicy.FollowingAfterGesture(_followChatTail, true, AtChatEnd());
+            UpdateLatestMessageAction();
+        };
+        _scroll.AddHandler(PointerReleasedEvent, (_, _) =>
+        {
+            if (_readerScrolledChat) _followChatTail = ChatViewportPolicy.FollowingAfterGesture(_followChatTail, true, AtChatEnd());
+            _readerDraggingChat = _readerScrolledChat = false;
+            UpdateLatestMessageAction();
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+        _scroll.AddHandler(PointerCaptureLostEvent, (_, _) => { _readerDraggingChat = _readerScrolledChat = false; },
+            Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+        _scroll.AddHandler(PointerWheelChangedEvent, (_, e) =>
+        {
+            // Upward movement means "I am reading", even 1 px above the last message.
+            _followChatTail = false;
+            UpdateLatestMessageAction();
+            // Only deliberate downward motion reaching the actual bottom resumes following.
+            if (e.Delta.Y < 0) Dispatcher.UIThread.Post(() =>
+            {
+                _followChatTail = ChatViewportPolicy.FollowingAfterGesture(_followChatTail, true, AtChatEnd());
+                UpdateLatestMessageAction();
+            }, DispatcherPriority.Background);
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
 
+        _latestMessage.Content = "Ir à última mensagem ↓";
+        _latestMessage.FontSize = 12;
+        _latestMessage.IsVisible = false;
+        _latestMessage.HorizontalAlignment = HorizontalAlignment.Right;
+        _latestMessage.Click += (_, _) => FollowLatestMessage();
         _input = new TextBox
         {
             AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MaxHeight = 180, MinHeight = 44, FontSize = 15, PlaceholderText = "Peça algo ao Assistente…",
@@ -1137,7 +1192,7 @@ public sealed partial class AssistantPanel : Border
         {
             _renderPosted = false;
             if (SelectionActive()) { DeferRender(); RenderChrome(); NotifyCompactChanged(); return; }
-            bool near = NearEnd();
+            bool near = _followChatTail && NearEnd();
             foreach (var d in _dirty) _views.Remove(d);
             _dirty.Clear();
             RenderLog();
@@ -1162,7 +1217,7 @@ public sealed partial class AssistantPanel : Border
             {
                 if (SelectionActive()) return;
                 _selectionWait.Stop();
-                bool near = NearEnd();
+                bool near = _followChatTail && NearEnd();
                 if (_deferredAll) { _deferredAll = false; _views.Clear(); }
                 foreach (var m in _dirty) _views.Remove(m);
                 _dirty.Clear();
@@ -1173,13 +1228,16 @@ public sealed partial class AssistantPanel : Border
         _selectionWait.Start();
     }
 
-    private bool NearEnd() => _scroll.Extent.Height - _scroll.Offset.Y - _scroll.Viewport.Height < 140;
+    private double ChatEndGap => Math.Max(0, _scroll.Extent.Height - _scroll.Offset.Y - _scroll.Viewport.Height);
+    private bool NearEnd() => ChatEndGap < 140;
+    private bool AtChatEnd() => ChatEndGap < 20;
     private void ScrollEnd()
     {
+        if (!ChatViewportPolicy.MayAutoFollow(_followChatTail, SelectionActive())) return;
         var offset = _scroll.Offset;
         Dispatcher.UIThread.Post(() =>
         {
-            if (!SelectionActive() && _scroll.Offset == offset)
+            if (ChatViewportPolicy.MayAutoFollow(_followChatTail, SelectionActive()) && _scroll.Offset == offset)
                 _scroll.Offset = new Vector(0, Math.Max(0, _scroll.Extent.Height - _scroll.Viewport.Height));
         }, DispatcherPriority.Background);
     }
@@ -1190,6 +1248,8 @@ public sealed partial class AssistantPanel : Border
         if (!ReferenceEquals(_renderedConversation, _conv))
         {
             _renderedConversation = _conv;
+            _followChatTail = true;
+            UpdateLatestMessageAction();
             _past.Clear();
             _generatedViews.Clear();
             _activityExpanded.Clear();

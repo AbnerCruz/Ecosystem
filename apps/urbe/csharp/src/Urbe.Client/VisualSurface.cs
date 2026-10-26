@@ -35,6 +35,11 @@ public sealed class VisualSurface : StackPanel
     private readonly Canvas _bubbleLayer = new() { Height = 0, VerticalAlignment = VerticalAlignment.Top };
     private readonly Border _backdrop = new() { IsHitTestVisible = false };
     private readonly Dictionary<int, Control> _holders = [];
+    private string? _lastRebuiltText;
+
+    // Reuse the unchanged Markdown visuals when switching the active edit box. They still carry
+    // correct source offsets because reuse is allowed only for identical full-document text.
+    // A changed document, theme, read-only state or suggestion invalidates the cache.
 
     public VisualSurface()
     {
@@ -59,6 +64,7 @@ public sealed class VisualSurface : StackPanel
         TextSize = size;
         LineFactor = lineFactor;
         FinishEdit();
+        _lastRebuiltText = null;
         Rebuild();
     }
 
@@ -78,6 +84,8 @@ public sealed class VisualSurface : StackPanel
     public Control Bubble => _bubble;
 
     private ScrollViewer? Scroll => this.FindAncestorOfType<ScrollViewer>();
+    /// <summary>Owned by the host: reader touch/wheel navigation takes precedence over automatic caret movement.</summary>
+    public Func<bool>? UserNavigating { get; set; }
 
     /// <summary>The whole note, Markdown (LF), after every edit.</summary>
     public string Text => _text;
@@ -94,6 +102,7 @@ public sealed class VisualSurface : StackPanel
             if (_readOnly == value) return;
             _readOnly = value;
             if (value) FinishEdit();
+            _lastRebuiltText = null;
             Rebuild();
         }
     }
@@ -104,7 +113,7 @@ public sealed class VisualSurface : StackPanel
     public bool HideFrontmatter
     {
         get => _hideFrontmatter;
-        set { if (_hideFrontmatter == value) return; _hideFrontmatter = value; Rebuild(); }
+        set { if (_hideFrontmatter == value) return; _hideFrontmatter = value; _lastRebuiltText = null; Rebuild(); }
     }
     public event Action<string>? TextEdited;
     public event Action<string>? WikiLinkTapped;
@@ -136,6 +145,7 @@ public sealed class VisualSurface : StackPanel
     public void SetText(string markdown)
     {
         _text = markdown.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+        _lastRebuiltText = null; // Reapply theme/markup when the host explicitly refreshes.
         // the block being edited goes: its buttons must not stay lit (UC-55)
         var was = _box is not null;
         if (was) ActiveToolsChanged?.Invoke(new HashSet<string>());
@@ -214,9 +224,11 @@ public sealed class VisualSurface : StackPanel
 
     private void Rebuild()
     {
+        var unchanged = _lastRebuiltText == _text;
+        var reusable = unchanged ? new Dictionary<int, Control>(_holders) : new Dictionary<int, Control>();
         Children.Clear();
         _holders.Clear();
-        _blocks = WithContainers(MarkdownEngine.SplitBlocks(_text), NoteContainers.Parse(_text));
+        if (!unchanged) _blocks = WithContainers(MarkdownEngine.SplitBlocks(_text), NoteContainers.Parse(_text));
         if (_blocks.Count == 0 && _box is null)
         {
             var empty = new Border
@@ -244,7 +256,7 @@ public sealed class VisualSurface : StackPanel
                 if (!suggested) { suggested = true; Children.Add(SuggestionCard(sg)); }
                 if (block.Start < sg.Change.End) continue;
             }
-            var drawn = Rendered(block);
+            var drawn = reusable.TryGetValue(block.Start, out var old) ? old : Rendered(block);
             _holders[block.Start] = drawn;
             Children.Add(drawn);
         }
@@ -253,6 +265,7 @@ public sealed class VisualSurface : StackPanel
         var tail = new Border { Background = Brushes.Transparent, MinHeight = 160 };
         tail.Tapped += (_, e) => { e.Handled = true; if (TouchIntent.IsIntended(tail)) AppendBlock(fromTouch: true); };
         Children.Add(tail);
+        _lastRebuiltText = _text;
     }
 
     /// <summary>UC-80: an agent's suggestion in the note — the lines it changes, what takes their place, and the answers.</summary>
@@ -268,6 +281,7 @@ public sealed class VisualSurface : StackPanel
     {
         if (_box is not null) FinishEdit();
         _suggestion = suggestion;
+        _lastRebuiltText = null;
         Rebuild();
     }
 
@@ -544,6 +558,7 @@ public sealed class VisualSurface : StackPanel
         foreach (var key in new[] { "TextControlBorderBrush", "TextControlBorderBrushPointerOver", "TextControlBorderBrushFocused" })
             _box.Resources[key] = Brushes.Transparent;
         _box.TextChanged += OnBoxChanged;
+        Ui.TextActions.Attach(_box);
         // a double tap selects the word under the finger, to copy, cut or delete (UC-48; the mouse already does it)
         _box.DoubleTapped += (_, e) =>
         {
@@ -561,7 +576,7 @@ public sealed class VisualSurface : StackPanel
         _box.PropertyChanged += (_, e) =>
         {
             if (e.Property == TextBox.SelectionStartProperty || e.Property == TextBox.SelectionEndProperty || e.Property == TextBox.CaretIndexProperty) UpdateTools();
-            if (e.Property == TextBox.CaretIndexProperty) KeepCaretSoon(typing: false);
+            // Moving the caret with a tap must not move the whole note. Only actual typing can follow it.
         };
         _box.LostFocus += (_, _) => Dispatcher.UIThread.Post(() =>
         {
@@ -622,7 +637,9 @@ public sealed class VisualSurface : StackPanel
             _keepPending = false;
             var t = _keepTyping;
             _keepTyping = false;
-            if (_box is { } box && Scroll is { } scroll) EditorScrolling.KeepCaret(box, scroll, t);
+            if (_box is { } box && Scroll is { } scroll &&
+                EditorScrolling.ShouldKeepCaret(box.IsFocused, UserNavigating?.Invoke() == true))
+                EditorScrolling.KeepCaret(box, scroll, t);
         }, DispatcherPriority.Loaded);
     }
 
