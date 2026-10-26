@@ -978,7 +978,7 @@ public sealed partial class MainActivity : Activity
         }
 
         var renderer = new PreviewRenderer(result.Assembly!, result.Symbols,
-            new DirectoryContentSource(System.IO.Path.Combine(_project!.Directory, "Content")),
+            new ProjectContentSource(_project!.Directory),
             () => new AndroidAudioBackend(System.IO.Path.Combine(CacheDir!.AbsolutePath, "audio"),
                 message => RunOnUiThread(() => AppendConsole(LogLevel.Error, message))),
             new DirectorySaveStore(System.IO.Path.Combine(_project!.Directory, ".lunet", "saves")),

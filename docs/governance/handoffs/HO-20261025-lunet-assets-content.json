@@ -1,0 +1,108 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261025-lunet-assets-content",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-25T21:50:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-assets-content",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-443",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "fix/lunet-project-assets-content-20261025",
+  "base_commit": "b7a17cf5c01490570cb6b10e988c9ee91dccf5bf",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/Content/IContentSource.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/IsolatedPreview.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ContentTests.cs",
+    "apps/lunet2d/docs/guides/sprite-studio.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261025-lunet-assets-content.json",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Studio.cs",
+    "apps/lunet2d/src/Lunet.Android/SpriteStudioView.cs",
+    "apps/lunet2d/tests/Lunet.Tests/SpriteStudioTests.cs"
+  ],
+  "work_completed": [
+    "Corrigida a incompatibilidade: Sprite Studio exporta em Assets/, enquanto o Preview lia apenas Content/.",
+    "ProjectContentSource mantém leitura de Content/ (prioridade) e resolve Assets/ para a pasta da raiz do projeto, sem cópia, migração ou saída do projeto.",
+    "Preview rápido e isolado usam a mesma resolução; casos de teste cobrem jogo real compilado, Content legado, precedência e caminhos inválidos.",
+    "Ao salvar animação JSON, Sprite Studio passa a gerar/atualizar automaticamente spritesheet PNG horizontal em Assets com todos os frames; botão de código mostra SpriteAnimationClip e SpriteAnimator, duração em FPS.",
+    "Teste de round-trip JSON e layout RGBA de múltiplos frames, duração e transparência."
+  ],
+  "verification": [
+    {
+      "check": "Suite Lunet.Tests e consistency",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI do PR a verificar."
+    },
+    {
+      "check": "Android build",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Workflow lunet2d-release a verificar."
+    },
+    {
+      "check": "Sprite Studio exporta PNG e Preview rápido/isolado carregam-no em aparelho",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/sprite-studio.md",
+      "critical": false,
+      "evidence": "Aparelho não testado nesta sessão."
+    }
+  ],
+  "known_issues": [
+    "DEVICE pendente; o Editor de Assets completo continua F5.",
+    "APK do jogo continua F9; corrigido carregamento no Preview da IDE.",
+    "PNG deriva dos pixels do JSON; edição externa direta do JSON precisa de reabertura/salvamento no Studio para atualizar o PNG."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Aguardar checagens e corrigir qualquer falha real no CI.",
+    "Integração governada pela automação; confirmar release APK da IDE após merge.",
+    "Entregar roteiro DEVICE: criar sprite, exportar PNG, carregar via Content.LoadTexture(\"Assets/<arquivo>.png\") em Preview rápido e isolado.",
+    "Validar Android DEVICE com 2-3 frames e FPS alterado, conferindo ambos os arquivos e animação no jogo."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Pasta Content mantém prioridade; Assets é origem alternativa dos arquivos criados pelo Studio sem duplicação persistida."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Implementação restrita ao Lunet2D."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e DEVICE reportados independentemente."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "ProjectContentSource é código do Lunet; não há generalização para outros apps."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-project-asset-resolution",
+      "status": "product-specific",
+      "rationale": "Recurso local ao projeto da IDE Lunet, sem consumidor externo ao produto."
+    }
+  ],
+  "commit": null,
+  "pr": null
+}

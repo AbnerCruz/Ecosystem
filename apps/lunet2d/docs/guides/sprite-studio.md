@@ -10,9 +10,26 @@ Use Duplicar para criar o próximo frame, desenhe a diferença e pressione Play.
 FPS altera a velocidade; Onion skin mostra o frame anterior. Desfazer/refazer
 inclui pixels, frames e FPS. A faixa numerada seleciona o frame.
 
-**Exportar PNG** produz uma spritesheet horizontal em Assets e exibe o trecho
-C# para SpriteSheet/SpriteAnimationClip. Exportações posteriores pedem confirmação
-antes de substituir o PNG. O PNG é usado pelo jogo sem abrir Studio.
+**Salvar** gera dois arquivos sincronizados, sem exportação manual obrigatória:
+`Assets/sprite-<id>.sprite.json` (fonte editável com todos os frames e FPS)
+e `Assets/sprite-<id>.png` (spritesheet horizontal com os frames lado a lado,
+inclusive transparência). Desenhar, apagar, inserir/remover frames, alterar FPS,
+desfazer/refazer ou reabrir e salvar atualiza os arquivos no projeto. O PNG é um
+recurso derivado: não altere apenas ele esperando que o editor atualize o JSON.
+
+O botão **Usar animação** exibe o caminho correto e o exemplo completo de C#
+com `SpriteSheet`, `SpriteAnimationClip` e `SpriteAnimator`. No código do jogo,
+carregue o PNG com `Content.LoadTexture("Assets/sprite-<id>.png")`,
+usando o nome real exibido. A duração de cada frame é `1.0 / FPS` conforme
+o valor no JSON. `animator.Update(time.DeltaSeconds)` avança a animação;
+`SpriteBatch.Draw` com `animator.Source` desenha o frame ativo.
+O JSON não é uma textura e não deve ser passado a `LoadTexture`.
+
+O Preview rápido e o isolado aceitam o PNG na pasta `Assets/` da raiz do
+projeto, sem mover arquivos. Caminhos legados em `Content/` também funcionam,
+como `Content.LoadTexture("Textures/hero.png")`; se a mesma chave existir
+em `Content/Assets/` e `Assets/`, o arquivo em `Content/Assets/` tem
+precedência. O editor não precisa ser aberto durante a execução do jogo.
 
 **Importar PNG do projeto** abre uma imagem de até 128 × 128 como primeiro frame,
 preservando o arquivo original. Use o Explorer para trazer PNGs externos.
@@ -23,7 +40,7 @@ para a direita). JSON é autoridade editável/versionável; PNG é exportação 
 Não modifica Game.cs nem lógica existente. Feche e reabra o Studio para recarregar
 edições externas. Formatos inválidos são rejeitados, nunca migrados silenciosamente.
 
-Teste no aparelho: desenhar → usar linha e retângulo → zoom/pan → selecionar cor ARGB → duplicar → espelhar vertical → Play → exportar; voltar para
+Teste no aparelho: desenhar → usar linha e retângulo → zoom/pan → selecionar cor ARGB → duplicar → espelhar vertical → Play → salvar; conferir JSON e PNG criados sem exportação; voltar para
 Código, reabrir o sprite, mandar o app para segundo plano e conferir a persistência.
 Confirme transparência e ordem dos frames no PNG pelo jogo.
 

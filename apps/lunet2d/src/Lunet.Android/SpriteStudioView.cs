@@ -14,6 +14,7 @@ internal sealed class SpriteStudioView : LinearLayout
     private SpriteDocument _document;
     private readonly SpriteHistory _history = new();
     private readonly Action<SpriteDocument> _save;
+    private bool _lastSaveSucceeded;
     private readonly PixelCanvas _canvas;
     private readonly TextView _status;
     private readonly LinearLayout _timeline;
@@ -35,7 +36,7 @@ internal sealed class SpriteStudioView : LinearLayout
         _status.SetTextColor(AColor.White);
         _canvas = new PixelCanvas(context, this);
         _timeline = new LinearLayout(context) { Orientation = Orientation.Horizontal };
-        Row(("← Código", close), ("Salvar", Save), ("Exportar PNG", () => { Stop(); Save(); export(_document); }));
+        Row(("← Código", close), ("Salvar", Save), ("Usar animação", () => { Stop(); Save(); if (_lastSaveSucceeded) export(_document); }));
         Row(("Lápis", () => Tool("Lápis")), ("Borracha", () => Tool("Borracha")), ("Balde", () => Tool("Balde")),
             ("Conta-gotas", () => Tool("Conta-gotas")), ("Linha", () => Tool("Linha")),
             ("Retângulo", () => Tool("Retângulo")), ("Ret. cheio", () => Tool("Retângulo cheio")));
@@ -107,8 +108,9 @@ internal sealed class SpriteStudioView : LinearLayout
     public void Suspend() { Stop(); Save(); }
     public void Save()
     {
-        try { _save(_document); _status.Text = $"Salvo · {_document.Width}×{_document.Height} · {_document.Fps} FPS · {_tool}"; }
-        catch (Exception ex) { _status.Text = "Não salvo: " + ex.Message; }
+        _lastSaveSucceeded = false;
+        try { _save(_document); _lastSaveSucceeded = true; _status.Text = $"JSON + PNG salvos · {_document.Frames.Count} frames · {_document.Fps} FPS"; }
+        catch (Exception ex) { _status.Text = "Não salvo (JSON/PNG): " + ex.Message; }
     }
     private void Refresh()
     {

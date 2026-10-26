@@ -65,3 +65,52 @@ public sealed class DirectoryContentSource : IContentSource
         return full.StartsWith(_root, StringComparison.Ordinal);
     }
 }
+
+
+/// <summary>
+/// Fonte de conteúdo para o Preview de um projeto Lunet.
+/// Mantém Content/ como origem principal e torna legíveis os arquivos que os
+/// Studios já salvam em Assets/, sem mover/copiar nem alterar o contrato de Game.Content.
+/// </summary>
+/// <remarks>
+/// Os caminhos no código continuam relativos a Content/; somente caminhos com
+/// prefixo Assets/ têm fallback para a pasta Assets/ da raiz do projeto.
+/// Content/Assets/ tem prioridade quando existe o mesmo caminho nas duas pastas.
+/// </remarks>
+internal sealed class ProjectContentSource : IContentSource
+{
+    private const string AssetsPrefix = "Assets/";
+    private readonly DirectoryContentSource _content;
+    private readonly DirectoryContentSource _assets;
+
+    /// <summary>Recebe a raiz do projeto (onde existe lunet.json), não a pasta Content/.</summary>
+    public ProjectContentSource(string projectDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(projectDirectory))
+            throw new ArgumentException("Pasta do projeto inválida.", nameof(projectDirectory));
+        string root = Path.GetFullPath(projectDirectory);
+        _content = new DirectoryContentSource(Path.Combine(root, "Content"));
+        _assets = new DirectoryContentSource(Path.Combine(root, "Assets"));
+    }
+
+    public bool Exists(string path) =>
+        _content.Exists(path) || (TryAssetPath(path, out var relative) && _assets.Exists(relative));
+
+    public Stream Open(string path)
+    {
+        if (_content.Exists(path)) return _content.Open(path);
+        if (TryAssetPath(path, out var relative) && _assets.Exists(relative)) return _assets.Open(relative);
+        throw new FileNotFoundException($"Arquivo de conteúdo não encontrado: {path}");
+    }
+
+    private static bool TryAssetPath(string path, out string relative)
+    {
+        relative = "";
+        if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) ||
+            !path.StartsWith(AssetsPrefix, StringComparison.Ordinal))
+            return false;
+
+        relative = path[AssetsPrefix.Length..];
+        return relative.Length > 0;
+    }
+}

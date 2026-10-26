@@ -1,5 +1,7 @@
 # Changelog
 
+- Pré-beta / LUNET-443 (#783): Sprite Studio passa a gerar e atualizar a spritesheet PNG com todos os frames automaticamente ao salvar o `.sprite.json` (mantendo FPS/frames editáveis); botão de uso exibe SpriteSheet/SpriteAnimationClip/SpriteAnimator. Corrigido carregamento de `Assets/` no Preview rápido/isolado sem afetar `Content/`. DEVICE pendente.
+
 - Pré-beta / LUNET-442 (#779): Sprite Studio ampliado com linha, retângulo contornado/preenchido, flip vertical, zoom e deslocamento, grade opcional e cor ARGB personalizada. Preserva o JSON v1 e frames existentes; CI/DEVICE pendentes.
 
 - Pré-beta / LUNET-441 (#777): Tile Studio Android inicial com paleta visual de PNG, pintura/borracha por toque, camadas, visibilidade e colisão, undo/redo e mapas JSON v1 editáveis no projeto. Sem duplicar o TileMap, alterar o áudio ou prometer APK do jogo; DEVICE pendente.
