@@ -12,7 +12,7 @@ public sealed class AssistantExportTests
         {
             Id = "chat-1", Title = "Diagnóstico", AgentId = "revisor",
             Model = "modelo-x", Usage = new AiUsage(123, 45, 0.02),
-            WebSources = [new AiWebSource { Id = "s1", Title = "Fonte", OriginalUrl = "https://example.org", FinalUrl = "https://example.org" }]
+            WebSources = [new AiWebSource("s1", "Fonte", "https://example.org", "https://example.org", "example.org", null, "2026-10-26", "ok")]
         };
         chat.Messages.Add(new AiChatMessage
         {
