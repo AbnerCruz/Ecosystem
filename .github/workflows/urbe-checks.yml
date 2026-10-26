@@ -86,7 +86,7 @@ jobs:
       - run: dotnet test --project tests/Urbe.Client.Tests -c Release --no-build
         env:
           URBE_SNAPSHOT_DIR: ${{ github.workspace }}/apps/urbe/csharp/artifacts/native-snapshots
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: urbe-native-client-snapshots
@@ -146,7 +146,7 @@ jobs:
           dotnet publish src/Urbe.Desktop/Urbe.Desktop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o artifacts/native-windows
           New-Item -ItemType Directory -Force artifacts/native-preview | Out-Null
           Compress-Archive -Path artifacts/native-windows/* -DestinationPath artifacts/native-preview/Urbe-Nativo-Previa-Windows.zip
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: urbe-native-preview-${{ matrix.target }}
           path: apps/urbe/csharp/artifacts/native-preview

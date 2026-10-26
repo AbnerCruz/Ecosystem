@@ -102,7 +102,7 @@ jobs:
           fi
           (cd release && sha256sum * > "SHA256SUMS-$rid.txt")
           ls -lh release/*
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ecosystem-ai-${{ matrix.runtime }}
           path: apps/ecosystem-ai/release/*
