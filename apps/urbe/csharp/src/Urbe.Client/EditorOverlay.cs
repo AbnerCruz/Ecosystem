@@ -485,6 +485,7 @@ public sealed class EditorOverlay : Grid
     private void Show(CityNote note)
     {
         _opening = true;
+        _statsUpdate.Stop();
         _edited = false;
         _autosave.Stop();
         _saveError = null;
@@ -1264,8 +1265,9 @@ public sealed class EditorOverlay : Grid
     {
         if (_opening) return;
         if (_note is not null && !string.Equals(Editor.Text, _note.Content, StringComparison.Ordinal)) _edited = true;
-        UpdateSaveDot();
-        ScheduleStatsUpdate();
+        // Keep cheap/small note feedback synchronous. Large-note full scans run after a short typing pause.
+        if ((Editor.Text?.Length ?? 0) < 4096) { _statsUpdate.Stop(); UpdateStatus(changed: true); }
+        else { UpdateSaveDot(); ScheduleStatsUpdate(); }
         if (IsMarkdown && Properties.IsVisible) Properties.Sync(Editor.Text ?? "");
         if (!_fromVisual && Mode == EditorMode.Fonte) { UpdateWiki(); UpdateActiveTools(); }
         ScheduleAutosave();
