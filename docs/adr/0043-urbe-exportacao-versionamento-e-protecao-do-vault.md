@@ -8,7 +8,17 @@ Proposto na PR da UC-91, issue #793 (26/10/2026). Implementação inicial em rev
 
 O proprietário exige patchnotes verificáveis, escolha manual de versões, proteção contra perda de dados ao reabrir um vault em outro build, botão Voltar do Android e exportação integral dos registros de execução/memória por agente. A beta atual 2.0.0-beta.31 distribui APK/ZIP nativos. Urbe.Core/AssistantStore já separa a configuração privada dos provedores, memórias e chats do vault físico.
 
-## Decisões
+## Problema
+
+Como escolher versões e exportar histórico e memória sem expor credenciais, perder dados ou permitir sobrescrita incompatível, mantendo o Urbe nativo e o vault como fonte de verdade.
+
+## Opções
+
+1. Instalação/rollback automático e liberação ampla de escrita: rejeitada por risco a dados locais e limitações do Android.
+2. Bloqueio integral de qualquer vault criado em versão diferente: excessivamente restritivo.
+3. Catálogo manual, exportação fiel e compatibilidade declarada por arquivo com cópia/lixeira explícitas: escolhida.
+
+## Decisão
 
 1. A versão instalada é a versão do binário (Android PackageInfo.VersionName / versão do executável desktop); a versão de publicação continua canônica em Urbe.Android.csproj. Não existem versões paralelas editáveis no vault. O app apenas exibe projeções e consulta releases GitHub sob urbe-csharp-v, com assets exatos da plataforma; não instala APK automaticamente nem promete downgrade in-place.
 2. O par PATCHNOTES.md (detalhado da versão publicada) e PATCHNOTES-HISTORY.md (histórico compacto) é mantido na pasta C# do produto e incorporado como recurso da interface. A próxima release deve atualizar o atual e transferir a anterior para o histórico no mesmo change set de version bump. A versão declarada deve corresponder à versão canônica da release; a auditoria do pipeline ainda precisa ser automatizada.
@@ -33,6 +43,14 @@ O proprietário exige patchnotes verificáveis, escolha manual de versões, prot
 ~~~
 
 Sem esse manifesto, a proteção existente por formato de vault, páginas, temas e documentos desconhecidos continua ativa. Nenhum mecanismo adiciona silenciosamente esse manifesto aos vaults antigos: futura automação de geração é uma etapa separada e precisa de versão/compatibilidade dos próprios recursos.
+
+## Consequências
+
+A arquitetura é aditiva: arquivos antigos que não declararem novos requisitos continuam sob os guards existentes. Uma declaração incompatível preserva o arquivo em somente leitura sem paralisar os demais. Exportações podem conter informação privada compartilhada voluntariamente.
+
+## Alternativas rejeitadas
+
+Sem upload obrigatório para servidor, sem gerenciar APKs ou exigir desinstalação automática, sem transformar Markdown em fonte paralela de verdade e sem remover proteção de arquivos futuros ao duplicar o original.
 
 ## Segurança e consequências
 
