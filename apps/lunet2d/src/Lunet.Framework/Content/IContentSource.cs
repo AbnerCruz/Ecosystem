@@ -77,7 +77,7 @@ public sealed class DirectoryContentSource : IContentSource
 /// prefixo Assets/ têm fallback para a pasta Assets/ da raiz do projeto.
 /// Content/Assets/ tem prioridade quando existe o mesmo caminho nas duas pastas.
 /// </remarks>
-public sealed class ProjectContentSource : IContentSource
+internal sealed class ProjectContentSource : IContentSource
 {
     private const string AssetsPrefix = "Assets/";
     private readonly DirectoryContentSource _content;
