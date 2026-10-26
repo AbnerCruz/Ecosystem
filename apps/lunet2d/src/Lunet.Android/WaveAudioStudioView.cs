@@ -187,6 +187,9 @@ internal sealed class WaveAudioStudioView : LinearLayout, IDisposable
         }
     }
 
+    /// <summary>Interrompe reprodução quando o aplicativo perde foco.</summary>
+    public void Suspend() => Stop();
+
     public void Dispose()
     {
         if (_disposed) return;
