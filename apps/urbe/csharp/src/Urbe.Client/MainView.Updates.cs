@@ -49,6 +49,14 @@ public sealed partial class MainView
         return reader.ReadToEnd();
     }
 
+    public static string HistoricPatchnotes()
+    {
+        using var stream = typeof(MainView).Assembly.GetManifestResourceStream("urbe/patchnotes-history.md");
+        if (stream is null) return "O histórico não foi incluído nesta compilação.";
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+
     /// <summary>In Settings, offers installed-version notes or an explicit on-demand remote catalog.</summary>
     public async Task ShowVersionCenterAsync()
     {
@@ -56,12 +64,18 @@ public sealed partial class MainView
         var action = await Dialogs.ChooseAsync("Versões do Urbe",
         [
             new DialogItem("Notas da versão instalada", Detail: "Versão " + (InstalledVersion ?? "desconhecida") + " · disponível offline"),
+            new DialogItem("Histórico compacto (offline)", Detail: "Resumo das versões anteriores"),
             new DialogItem("Todas as versões disponíveis", Detail: "Consultar GitHub, comparar versões e selecionar um download")
         ], "Instalada: " + (InstalledVersion ?? "desconhecida") + ". O Urbe não altera a versão nem o vault automaticamente.");
         if (action is null) return;
         if (action == 0)
         {
             await Dialogs.AlertAsync("Novidades — " + (InstalledVersion ?? "Urbe"), CurrentPatchnotes());
+            return;
+        }
+        if (action == 1)
+        {
+            await Dialogs.AlertAsync("Histórico do Urbe", HistoricPatchnotes());
             return;
         }
 
