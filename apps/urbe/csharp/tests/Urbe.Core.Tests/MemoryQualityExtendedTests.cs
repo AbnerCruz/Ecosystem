@@ -117,14 +117,20 @@ public sealed class MemoryQualityExtendedTests
         var cfg = new AiConfig();
         for(int i=0;i<500;i++) cfg.MemoryRecords.Add(Fact("f"+i, "Documento técnico de arquitetura número " + i));
         var timer = Stopwatch.StartNew();
+        var allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
         Assert.NotEmpty(AssistantMemoryEngine.Search(cfg, "V", "A", "arquitetura", 1000));
-        var initial = timer.ElapsedTicks; timer.Restart();
+        var initial = timer.ElapsedTicks;
+        var firstBytes = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+        timer.Restart(); allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
         for(int i=0;i<12;i++) AssistantMemoryEngine.Search(cfg, "V", "A", "arquitetura", 1000);
-        var repeated = timer.ElapsedTicks; timer.Restart();
+        var repeated = timer.ElapsedTicks;
+        var repeatBytes = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+        timer.Restart(); allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
         Assert.True(AssistantMemoryEngine.Edit(cfg, "f4", "Processamento eficiente", 300));
         Assert.Single(AssistantMemoryEngine.Search(cfg, "V", "A", "eficiente"));
         var update = timer.ElapsedTicks;
-        Console.WriteLine($"MEMORY_LOCAL baseline_initial_ticks={initial} repeat12_ticks={repeated} update_ticks={update} records=500; no token/cost savings claimed");
-        Assert.True(initial>=0 && repeated>=0 && update>=0);
+        var updateBytes = GC.GetAllocatedBytesForCurrentThread() - allocatedBefore;
+        Console.WriteLine($"MEMORY_LOCAL initial_ticks={initial} initial_bytes={firstBytes} repeat12_ticks={repeated} repeat12_bytes={repeatBytes} update_ticks={update} update_bytes={updateBytes} records=500; diagnostic only");
+        Assert.True(initial>=0 && repeated>=0 && update>=0 && firstBytes>=0 && repeatBytes>=0 && updateBytes>=0);
     }
 }
