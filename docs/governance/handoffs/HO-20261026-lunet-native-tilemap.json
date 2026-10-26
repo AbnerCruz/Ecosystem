@@ -1,0 +1,89 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261026-lunet-native-tilemap",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-26T03:46:34Z",
+  "agent": {
+    "id": "chatgpt-lunet-native-tilemap",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-444",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "fix/lunet-tilemap-native-create-20261026",
+  "base_commit": "d81970a51c3b69217c2d7f0e347833aeec484b1f",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Studio.cs",
+    "apps/lunet2d/src/Lunet.Android/SpriteStudioView.cs",
+    "apps/lunet2d/src/Lunet.Android/TileStudioView.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TileStudioSessionTests.cs",
+    "apps/lunet2d/docs/guides/tile-studio.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md"
+  ],
+  "work_completed": [
+    "Tilemap novo criado inteiramente dentro do Lunet, com atlas PNG editável produzido por SpriteStudio e mapa JSON v1",
+    "Tile Studio abre editor de tileset, retorna ao mapa e recarrega PNG",
+    "Regressão portátil para contrato atlas/mapa e serialização"
+  ],
+  "verification": [
+    {
+      "check": "CI Lunet",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "PR #785 a abrir"
+    },
+    {
+      "check": "Device Android: criar mapa, desenhar tileset, executar",
+      "kind": "human",
+      "result": "pending",
+      "evidence": "Aparelho do usuário ainda não testado",
+      "object": "apps/lunet2d/docs/guides/tile-studio.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Tilesets importados que não têm fonte JSON do Lunet não são editáveis neste incremento",
+    "APK do jogo segue item separado F9"
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Corrigir falhas do CI antes de integração",
+    "Validar no Android e avançar experimento APK standalone"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "JSON sprite e tilemap editáveis são autoridades; PNG é projeção derivada"
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e DEVICE independentes"
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Só Lunet.Android; sem novo SDK compartilhado"
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "tile-studio-editor-reuse",
+      "status": "product-specific",
+      "rationale": "SpriteStudioView reaproveitado sem novo componente transversal"
+    }
+  ],
+  "commit": null,
+  "pr": null
+}

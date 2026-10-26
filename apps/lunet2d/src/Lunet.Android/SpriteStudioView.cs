@@ -25,18 +25,22 @@ internal sealed class SpriteStudioView : LinearLayout
     private float _panX, _panY;
     private bool _playing, _onion, _grid = true;
     private readonly Action _tick;
-    private readonly Button _play;
+    private readonly Button? _play;
+    private readonly int _tileSize;
 
     public SpriteStudioView(Context context, SpriteDocument document, Action<SpriteDocument> save,
-        Action<SpriteDocument> export, Action close) : base(context)
+        Action<SpriteDocument> export, Action close, int tilesetTileSize = 0) : base(context)
     {
-        _document = document; _save = save; Orientation = Orientation.Vertical;
+        _document = document; _save = save; _tileSize = tilesetTileSize; Orientation = Orientation.Vertical;
         SetBackgroundColor(AColor.Rgb(17, 20, 29)); SetPadding(12, 12, 12, 12);
         _status = new TextView(context) { TextSize = 14 };
         _status.SetTextColor(AColor.White);
         _canvas = new PixelCanvas(context, this);
         _timeline = new LinearLayout(context) { Orientation = Orientation.Horizontal };
-        Row(("← Código", close), ("Salvar", Save), ("Usar animação", () => { Stop(); Save(); if (_lastSaveSucceeded) export(_document); }));
+        if (_tileSize > 0)
+            Row(("← Mapa", () => { Save(); if (_lastSaveSucceeded) close(); }), ("Salvar", Save));
+        else
+            Row(("← Código", close), ("Salvar", Save), ("Usar animação", () => { Stop(); Save(); if (_lastSaveSucceeded) export(_document); }));
         Row(("Lápis", () => Tool("Lápis")), ("Borracha", () => Tool("Borracha")), ("Balde", () => Tool("Balde")),
             ("Conta-gotas", () => Tool("Conta-gotas")), ("Linha", () => Tool("Linha")),
             ("Retângulo", () => Tool("Retângulo")), ("Ret. cheio", () => Tool("Retângulo cheio")));
@@ -52,14 +56,17 @@ internal sealed class SpriteStudioView : LinearLayout
         }
         AddView(colors); AddView(_status);
         AddView(_canvas, new LayoutParams(ViewGroup.LayoutParams.MatchParent, 0, 1));
-        var timelineScroll = new HorizontalScrollView(context); timelineScroll.AddView(_timeline); AddView(timelineScroll);
-        Row(("+ Frame", () => Change(() => { _document.AddFrame(); _frame = _document.Frames.Count - 1; })),
-            ("Duplicar", () => Change(() => { _document.AddFrame(_frame); _frame = _document.Frames.Count - 1; })),
-            ("Excluir frame", () => Change(() => { _document.RemoveFrame(_frame); _frame = Math.Min(_frame, _document.Frames.Count - 1); })));
-        var playback = Row(("▶ Play", TogglePlay), ("FPS −", () => Change(() => _document.Fps = Math.Max(1, _document.Fps - 1))),
-            ("FPS +", () => Change(() => _document.Fps = Math.Min(60, _document.Fps + 1))),
-            ("Onion skin", () => { _onion = !_onion; Refresh(); }));
-        _play = (Button)playback.GetChildAt(0)!;
+        if (_tileSize == 0)
+        {
+            var timelineScroll = new HorizontalScrollView(context); timelineScroll.AddView(_timeline); AddView(timelineScroll);
+            Row(("+ Frame", () => Change(() => { _document.AddFrame(); _frame = _document.Frames.Count - 1; })),
+                ("Duplicar", () => Change(() => { _document.AddFrame(_frame); _frame = _document.Frames.Count - 1; })),
+                ("Excluir frame", () => Change(() => { _document.RemoveFrame(_frame); _frame = Math.Min(_frame, _document.Frames.Count - 1); })));
+            var playback = Row(("▶ Play", TogglePlay), ("FPS −", () => Change(() => _document.Fps = Math.Max(1, _document.Fps - 1))),
+                ("FPS +", () => Change(() => _document.Fps = Math.Min(60, _document.Fps + 1))),
+                ("Onion skin", () => { _onion = !_onion; Refresh(); }));
+            _play = (Button)playback.GetChildAt(0)!;
+        }
         Row(("↶ Desfazer", () => { Stop(); _document = _history.Undo(_document); AfterEdit(); }),
             ("↷ Refazer", () => { Stop(); _document = _history.Redo(_document); AfterEdit(); }),
             ("Espelhar H", () => Change(() => _document.FlipHorizontal(_frame))),
@@ -155,6 +162,17 @@ internal sealed class SpriteStudioView : LinearLayout
                 _paint.Color = AColor.Argb(45, 255, 255, 255); _paint.StrokeWidth = 1;
                 for (int x = 0; x <= doc.Width; x++) canvas.DrawLine(_left + x * _cell, _top, _left + x * _cell, _top + doc.Height * _cell, _paint);
                 for (int y = 0; y <= doc.Height; y++) canvas.DrawLine(_left, _top + y * _cell, _left + doc.Width * _cell, _top + y * _cell, _paint);
+            }
+            // In tileset mode outline tile cells independently of the pixel grid,
+            // so a 128px atlas remains legible while painting on a phone.
+            if (owner._grid && owner._tileSize > 0)
+            {
+                _paint.Color = AColor.Argb(190, 255, 210, 85);
+                _paint.StrokeWidth = 2;
+                for (int x = 0; x <= doc.Width; x += owner._tileSize)
+                    canvas.DrawLine(_left + x * _cell, _top, _left + x * _cell, _top + doc.Height * _cell, _paint);
+                for (int y = 0; y <= doc.Height; y += owner._tileSize)
+                    canvas.DrawLine(_left, _top + y * _cell, _left + doc.Width * _cell, _top + y * _cell, _paint);
             }
             if (_drawing && owner._tool is "Linha" or "Retângulo" or "Retângulo cheio")
             {

@@ -511,3 +511,8 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 ### 20261025-chatgpt-lunet-animation-assets-followup — ChatGPT → integrador — review
 - Complemento LUNET-443/#783, resposta do proprietário: Sprite Studio produz animações; salvar apenas `.sprite.json` não basta ao jogo. O editor agora regenera automaticamente `Assets/<nome>.png` como spritesheet horizontal de todos os frames a cada gravação da fonte JSON; altera FPS no JSON, não destrói dados editáveis.
 - Botão de exemplo explica uso de `SpriteAnimationClip`/`SpriteAnimator` (atualização por DeltaSeconds e desenho de frame); testes portáteis validam layout de três frames, transparência e FPS após round-trip. Previews usam `ProjectContentSource` do PR; DEVICE pendente. CI/compilação Android após complemento a conferir.
+
+### 20261026-chatgpt-lunet-native-tilemap — ChatGPT → integrador — review
+- LUNET-444/Issue #785. Ordem do proprietário: corrigir primeiro o Tile Studio que exige PNG importado (e o import recusou); depois seguir F9 APK independente do jogo.
+- Criação in-app de `Content/Data/map-*.tilemap.json` e atlas `Content/Textures/tiles-*.sprite.json` + `.png` no mesmo fluxo, sem imports. Editor de pixels reutilizado em modo de tileset (um frame, grade de tile destacada) com retorno ao Tile Studio e recarga do PNG. Nenhum formato de runtime alterado. Implementado em branch `fix/lunet-tilemap-native-create-20261026`.
+- Testes portáteis de formato/atlas e build Android pelo CI; DEVICE pendente. Trabalho APK do jogo deve ocorrer separado, sem confundir com APK da IDE.
