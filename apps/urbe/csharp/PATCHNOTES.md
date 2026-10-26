@@ -19,6 +19,11 @@
 - `edit_note` aceita substituições vazias legítimas sem confundi-las com argumentos ausentes.
 - Uma repetição sem progresso resulta em aviso e chance limitada de correção, sem abandonar imediatamente todas as etapas válidas.
 
+## Funcionalidades preservadas da beta.32
+
+- **Selecionar nota inteira** continua disponível no editor.
+- Cópia e edição de mensagens, com leitura estável durante o streaming, continuam disponíveis.
+
 ## Compatibilidade e distribuição
 
 - Identidade, assinatura beta e arquivos Markdown existentes inalterados; atualização por cima da beta.32.
