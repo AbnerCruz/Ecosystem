@@ -66,9 +66,12 @@ public sealed class WaveAudioDocumentTests
     [Fact]
     public void NoiseSynthIsDeterministicAndDifferentShapesDiffer()
     {
-        var noise1 = WaveAudioDocument.CreateEffect(110, .25, WaveShape.Noise).Render(0, .25);
-        var noise2 = WaveAudioDocument.CreateEffect(110, .25, WaveShape.Noise).Render(0, .25);
-        var square = WaveAudioDocument.CreateEffect(110, .25, WaveShape.Square).Render(0, .25);
+        var noiseSource1 = WaveAudioDocument.CreateEffect(110, .25, WaveShape.Noise);
+        var noiseSource2 = WaveAudioDocument.CreateEffect(110, .25, WaveShape.Noise);
+        var squareSource = WaveAudioDocument.CreateEffect(110, .25, WaveShape.Square);
+        var noise1 = noiseSource1.Render(0, noiseSource1.DurationSeconds);
+        var noise2 = noiseSource2.Render(0, noiseSource2.DurationSeconds);
+        var square = squareSource.Render(0, squareSource.DurationSeconds);
         Assert.Equal(noise1, noise2);
         Assert.NotEqual(noise1, square);
         Assert.Equal(16, BinaryPrimitives.ReadUInt16LittleEndian(noise1.AsSpan(34)));
