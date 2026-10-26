@@ -1132,6 +1132,11 @@ public sealed partial class MainActivity : Activity
             if (resultCode == Result.Ok && data?.Data is AndroidUri picked) CompleteImport(picked);
             return;
         }
+        if (requestCode == ImportAudioRequestCode)
+        {
+            if (resultCode == Result.Ok && data?.Data is AndroidUri audioUri) CompleteAudioImport(audioUri);
+            return;
+        }
         if (requestCode == GameApkExportRequestCode)
         {
             CompleteApkExport(resultCode, data?.Data);
@@ -1167,6 +1172,7 @@ public sealed partial class MainActivity : Activity
     {
         _spriteStudio?.Suspend();
         _tileStudio?.Suspend();
+        _audioStudio?.Suspend();
         SaveCurrent();
         _preview?.Pause();
         base.OnPause();
@@ -1181,6 +1187,7 @@ public sealed partial class MainActivity : Activity
 
     protected override void OnDestroy()
     {
+        _audioStudio?.Dispose();
         DisposeEcosystemConnection();
         DisposePreview();
         base.OnDestroy();
