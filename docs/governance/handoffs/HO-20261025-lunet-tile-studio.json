@@ -42,10 +42,10 @@
     {
       "check": "Tile Studio em Android físico",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/tile-studio.md",
       "critical": false,
-      "evidence": "Roteiro fornecido; não inferir de CI."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-26 (Issue https://github.com/AbnerCruz/Ecosystem/issues/790); registro em docs/governance/responses/VAL-HO-20261025-lunet-tile-studio-21b6c5e49a33.md."
     }
   ],
   "known_issues": [
