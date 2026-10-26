@@ -1,3 +1,4 @@
+using Android.App;
 using Android.Content;
 using Android.Graphics;
 using Android.Views;
@@ -19,7 +20,9 @@ internal sealed class SpriteStudioView : LinearLayout
     private int _frame;
     private uint _color = 0xff8b5cf6;
     private string _tool = "Lápis";
-    private bool _playing, _onion;
+    private int _zoom = 1;
+    private float _panX, _panY;
+    private bool _playing, _onion, _grid = true;
     private readonly Action _tick;
     private readonly Button _play;
 
@@ -33,7 +36,13 @@ internal sealed class SpriteStudioView : LinearLayout
         _canvas = new PixelCanvas(context, this);
         _timeline = new LinearLayout(context) { Orientation = Orientation.Horizontal };
         Row(("← Código", close), ("Salvar", Save), ("Exportar PNG", () => { Stop(); Save(); export(_document); }));
-        Row(("Lápis", () => Tool("Lápis")), ("Borracha", () => Tool("Borracha")), ("Balde", () => Tool("Balde")), ("Conta-gotas", () => Tool("Conta-gotas")));
+        Row(("Lápis", () => Tool("Lápis")), ("Borracha", () => Tool("Borracha")), ("Balde", () => Tool("Balde")),
+            ("Conta-gotas", () => Tool("Conta-gotas")), ("Linha", () => Tool("Linha")),
+            ("Retângulo", () => Tool("Retângulo")), ("Ret. cheio", () => Tool("Retângulo cheio")));
+        Row(("Zoom +", () => Zoom(+1)), ("Zoom −", () => Zoom(-1)),
+            ("Centralizar", () => { _panX = _panY = 0; _zoom = 1; Refresh(); }),
+            ("Mover tela", () => Tool("Mover")), ("Cor ARGB", ChooseColor),
+            ("Grade", () => { _grid = !_grid; Refresh(); }));
         var colors = new LinearLayout(context) { Orientation = Orientation.Horizontal };
         foreach (uint color in new uint[] { 0xff171923, 0xffffffff, 0xff8b5cf6, 0xff38bdf8, 0xff34d399, 0xfffacc15, 0xfffb923c, 0xfff472b6, 0xffef4444 })
         {
@@ -52,7 +61,8 @@ internal sealed class SpriteStudioView : LinearLayout
         _play = (Button)playback.GetChildAt(0)!;
         Row(("↶ Desfazer", () => { Stop(); _document = _history.Undo(_document); AfterEdit(); }),
             ("↷ Refazer", () => { Stop(); _document = _history.Redo(_document); AfterEdit(); }),
-            ("Espelhar", () => Change(() => _document.FlipHorizontal(_frame))));
+            ("Espelhar H", () => Change(() => _document.FlipHorizontal(_frame))),
+            ("Espelhar V", () => Change(() => _document.FlipVertical(_frame))));
         _tick = () => { if (!_playing) return; _frame = (_frame + 1) % _document.Frames.Count; _canvas.Invalidate(); PostDelayed(_tick!, 1000 / _document.Fps); };
         Refresh();
     }
@@ -68,6 +78,28 @@ internal sealed class SpriteStudioView : LinearLayout
         var scroll = new HorizontalScrollView(Context); scroll.AddView(row); AddView(scroll); return row;
     }
     private void Tool(string value) { Stop(); _tool = value; Refresh(); }
+    private void Zoom(int direction)
+    {
+        Stop();
+        _zoom = Math.Clamp(_zoom + direction, 1, 8);
+        if (_zoom == 1) _panX = _panY = 0;
+        Refresh();
+    }
+    private void ChooseColor()
+    {
+        var entry = new EditText(Context) { Text = $"#{_color:X8}", Hint = "#AARRGGBB" };
+        entry.SetSingleLine(true);
+        new AlertDialog.Builder(Context)!.SetTitle("Cor personalizada · ARGB hexadecimal")!.SetView(entry)!
+            .SetNegativeButton("Cancelar", (_, _) => { })!
+            .SetPositiveButton("Aplicar", (_, _) =>
+            {
+                string hex = (entry.Text ?? "").Trim().TrimStart('#');
+                if (hex.Length != 8 || !uint.TryParse(hex, System.Globalization.NumberStyles.HexNumber,
+                    System.Globalization.CultureInfo.InvariantCulture, out uint selected))
+                { _status.Text = "Cor inválida: use 8 dígitos (ex.: #FFFF0000)."; return; }
+                _color = selected; Tool("Lápis");
+            })!.Show();
+    }
     private void Stop() { _playing = false; if (_tick is not null) RemoveCallbacks(_tick); if (_play is not null) _play.Text = "▶ Play"; }
     private void TogglePlay() { if (_playing) { Stop(); return; } _playing = true; _play.Text = "■ Parar"; Post(_tick); }
     private void Change(Action mutation) { Stop(); _history.Checkpoint(_document); mutation(); AfterEdit(); }
@@ -80,7 +112,7 @@ internal sealed class SpriteStudioView : LinearLayout
     }
     private void Refresh()
     {
-        _canvas.Invalidate(); _status.Text = $"Frame {_frame + 1}/{_document.Frames.Count} · {_document.Fps} FPS · {_tool}";
+        _canvas.Invalidate(); _status.Text = $"Frame {_frame + 1}/{_document.Frames.Count} · {_document.Fps} FPS · {_tool} · zoom {_zoom}×";
         _timeline.RemoveAllViews();
         for (int i = 0; i < _document.Frames.Count; i++)
         {
@@ -96,11 +128,15 @@ internal sealed class SpriteStudioView : LinearLayout
         private float _cell, _left, _top;
         private int _lastX, _lastY;
         private bool _drawing;
+        private int _startX, _startY, _previewX, _previewY;
+        private float _touchX, _touchY;
         protected override void OnDraw(Canvas canvas)
         {
             base.OnDraw(canvas); var doc = owner._document;
-            _cell = Math.Min(Width / (float)doc.Width, Height / (float)doc.Height); if (_cell <= 0) return;
-            _left = (Width - doc.Width * _cell) / 2; _top = (Height - doc.Height * _cell) / 2;
+            _cell = Math.Min(Width / (float)doc.Width, Height / (float)doc.Height) * owner._zoom;
+            if (_cell <= 0) return;
+            _left = (Width - doc.Width * _cell) / 2 + owner._panX;
+            _top = (Height - doc.Height * _cell) / 2 + owner._panY;
             for (int y = 0; y < doc.Height; y++) for (int x = 0; x < doc.Width; x++)
             {
                 _paint.Color = ((x / 4 + y / 4) % 2 == 0) ? AColor.Rgb(44, 48, 61) : AColor.Rgb(56, 60, 74);
@@ -112,11 +148,25 @@ internal sealed class SpriteStudioView : LinearLayout
                 }
                 DrawPixel(canvas, x, y, doc.Frames[owner._frame][y * doc.Width + x]);
             }
-            if (_cell >= 8)
+            if (owner._grid && _cell >= 8)
             {
                 _paint.Color = AColor.Argb(45, 255, 255, 255); _paint.StrokeWidth = 1;
                 for (int x = 0; x <= doc.Width; x++) canvas.DrawLine(_left + x * _cell, _top, _left + x * _cell, _top + doc.Height * _cell, _paint);
                 for (int y = 0; y <= doc.Height; y++) canvas.DrawLine(_left, _top + y * _cell, _left + doc.Width * _cell, _top + y * _cell, _paint);
+            }
+            if (_drawing && owner._tool is "Linha" or "Retângulo" or "Retângulo cheio")
+            {
+                _paint.Color = AColor.Rgb(0, 220, 255);
+                _paint.StrokeWidth = 2;
+                float x0 = _left + (_startX + .5f) * _cell, y0 = _top + (_startY + .5f) * _cell;
+                float x1 = _left + (_previewX + .5f) * _cell, y1 = _top + (_previewY + .5f) * _cell;
+                if (owner._tool == "Linha") canvas.DrawLine(x0, y0, x1, y1, _paint);
+                else
+                {
+                    _paint.SetStyle(Paint.Style.Stroke);
+                    canvas.DrawRect(Math.Min(x0, x1), Math.Min(y0, y1), Math.Max(x0, x1), Math.Max(y0, y1), _paint);
+                    _paint.SetStyle(Paint.Style.Fill);
+                }
             }
         }
         private void DrawPixel(Canvas canvas, int x, int y, uint color)
@@ -125,18 +175,70 @@ internal sealed class SpriteStudioView : LinearLayout
         {
             if (e is null || _cell <= 0 || owner._playing) return false;
             var doc = owner._document;
-            int x = (int)Math.Floor((e.GetX() - _left) / _cell), y = (int)Math.Floor((e.GetY() - _top) / _cell);
+            float touchX = e.GetX(), touchY = e.GetY();
+            int x = (int)Math.Floor((touchX - _left) / _cell);
+            int y = (int)Math.Floor((touchY - _top) / _cell);
+            if (owner._tool == "Mover")
+            {
+                if (e.ActionMasked == MotionEventActions.Down) { _touchX = touchX; _touchY = touchY; return true; }
+                if (e.ActionMasked == MotionEventActions.Move)
+                {
+                    owner._panX += touchX - _touchX;
+                    owner._panY += touchY - _touchY;
+                    _touchX = touchX; _touchY = touchY;
+                    Invalidate();
+                }
+                return true;
+            }
             if (e.ActionMasked is MotionEventActions.Up or MotionEventActions.Cancel)
-            { if (_drawing) { _drawing = false; owner.AfterEdit(); } return true; }
-            if ((uint)x >= doc.Width || (uint)y >= doc.Height) return true;
+            {
+                if (_drawing)
+                {
+                    if (e.ActionMasked == MotionEventActions.Up)
+                    {
+                        if (owner._tool == "Linha")
+                            doc.Stroke(owner._frame, _startX, _startY, x, y, owner._color);
+                        else if (owner._tool is "Retângulo" or "Retângulo cheio")
+                            doc.Rectangle(owner._frame, _startX, _startY, x, y, owner._color,
+                                filled: owner._tool == "Retângulo cheio");
+                    }
+                    _drawing = false;
+                    owner.AfterEdit();
+                }
+                return true;
+            }
             if (e.ActionMasked == MotionEventActions.Down)
             {
-                if (owner._tool == "Conta-gotas") { owner._color = doc.Frames[owner._frame][y * doc.Width + x]; owner.Tool("Lápis"); return true; }
-                owner._history.Checkpoint(doc); _lastX = x; _lastY = y; _drawing = true;
-                if (owner._tool == "Balde") { doc.Fill(owner._frame, x, y, owner._color); _drawing = false; owner.AfterEdit(); return true; }
+                if ((uint)x >= (uint)doc.Width || (uint)y >= (uint)doc.Height) return true;
+                if (owner._tool == "Conta-gotas")
+                {
+                    owner._color = doc.Frames[owner._frame][y * doc.Width + x];
+                    owner.Tool("Lápis");
+                    return true;
+                }
+                owner._history.Checkpoint(doc);
+                _lastX = _startX = _previewX = x;
+                _lastY = _startY = _previewY = y;
+                _drawing = true;
+                if (owner._tool == "Balde")
+                {
+                    doc.Fill(owner._frame, x, y, owner._color);
+                    _drawing = false;
+                    owner.AfterEdit();
+                    return true;
+                }
             }
             if (_drawing)
-            { doc.Stroke(owner._frame, _lastX, _lastY, x, y, owner._tool == "Borracha" ? 0 : owner._color); _lastX = x; _lastY = y; Invalidate(); }
+            {
+                _previewX = x; _previewY = y;
+                if (owner._tool is "Lápis" or "Borracha")
+                {
+                    doc.Stroke(owner._frame, _lastX, _lastY, x, y,
+                        owner._tool == "Borracha" ? 0 : owner._color);
+                    _lastX = x; _lastY = y;
+                }
+                Invalidate();
+            }
             return true;
         }
         protected override void Dispose(bool disposing) { if (disposing) _paint.Dispose(); base.Dispose(disposing); }
