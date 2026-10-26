@@ -36,7 +36,7 @@ public sealed class MemoryQualityExtendedTests
         cfg.MemoryRecords.Add(Fact("private", "Outra memória atlas exclusiva", "B"));
         Assert.True(AssistantMemoryEngine.ChangeState(cfg, "old", "superseded", 300));
         var result = AssistantMemoryEngine.Search(cfg, "V", "A", "atlas");
-        Assert.Equal(["new"], result.Select(x => x.Memory.Id).ToArray());
+        Assert.Equal(new[] { "new" }, result.Select(x => x.Memory.Id).ToArray());
         var packed = AssistantMemoryEngine.ForPromptWithin(cfg, "V", "A", "atlas", 900);
         Assert.Contains(packed, t => t.Contains("new"));
         Assert.DoesNotContain(packed, t => t.Contains("private") || t.Contains("old"));
