@@ -109,6 +109,13 @@ public sealed class MainActivity : AvaloniaMainActivity
         HandleAssistantIntent(Intent);
     }
 
+    /// <summary>Android physical/gesture Back must navigate the Urbe hierarchy before exiting at its root.</summary>
+    public override void OnBackPressed()
+    {
+        if (UrbeApp.ActiveView?.HandleSystemBack() == true) return;
+        base.OnBackPressed();
+    }
+
     private static FeedbackConstants Haptic(Urbe.Client.Ui.HapticKind kind) => kind switch
     {
         Urbe.Client.Ui.HapticKind.Hold => FeedbackConstants.LongPress,
