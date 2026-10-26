@@ -30,6 +30,8 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Baked standalone Android host, compiled only when producing the IDE release; never fetched on the phone. -->
+    <AndroidAsset Include="..\..\dist\template\game-runtime.apk" Link="templates\game-runtime.apk" Condition="Exists('$(MSBuildThisFileDirectory)..\..\dist\template\game-runtime.apk')" />
     <AndroidAsset Include="..\..\docs\api\lunet-framework.json" Link="Assets\docs\lunet-framework.json" />
     <AndroidAsset Include="..\..\docs\guides\*.md" Link="Assets\docs\guides\%(Filename)%(Extension)" />
     <AndroidAsset Include="..\..\..\..\docs\contracts\bindings\android-binder-v1.trust.json" Link="Assets\ecosystem\android-binder-v1.trust.json" />
