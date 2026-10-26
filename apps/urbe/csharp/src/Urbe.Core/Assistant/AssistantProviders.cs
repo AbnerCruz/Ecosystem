@@ -38,7 +38,11 @@ public sealed record AiUsage(long Input, long Output, double? Cost,
         static long? Sum(long? x, long? y) => x is null && y is null ? null : (x ?? 0) + (y ?? 0);
         if (a.Input == 0 && a.Output == 0 && a.Cost is null && a.CacheReadInput is null && a.CacheCreationInput is null) return b;
         if (b.Input == 0 && b.Output == 0 && b.Cost is null && b.CacheReadInput is null && b.CacheCreationInput is null) return a;
-        var source = a.Cost is null && b.Cost is null ? "unknown"
+        // Historical records without new categories keep byte-for-byte compatible JSON.
+        var legacy = a.CostSource is null && b.CostSource is null &&
+            a.CacheReadInput is null && b.CacheReadInput is null && a.CacheCreationInput is null && b.CacheCreationInput is null &&
+            a.ReasoningOutput is null && b.ReasoningOutput is null;
+        string? source = legacy ? null : a.Cost is null && b.Cost is null ? "unknown"
             : a.Cost is null || b.Cost is null || a.CostSource == "partial" || b.CostSource == "partial" ? "partial"
             : a.CostSource == "estimated" || b.CostSource == "estimated" ? "estimated" : "reported";
         return new AiUsage(a.Input + b.Input, a.Output + b.Output,
