@@ -418,3 +418,14 @@ Issue [#793](https://github.com/AbnerCruz/Ecosystem/issues/793), ADR-0043 (propo
 - [ ] Integrar revisão e CI Core/UI/consistency/Android/Windows; verificar casos de incompatibilidade sem sobrescrita, seleção de versões antigas e fidelidade da exportação.
 - [ ] Conectar o pipeline de release ao patchnote canônico e exigir sua rotação correta no mesmo commit da próxima alteração de versão; proteção da release imutável.
 - [ ] Validar APK e UX em aparelho real antes de marcar entrega/release. Não afirmar que a beta.31 contém as features desta branch.
+
+## UC-87.2 — Qualidade/eficiência de memória e uso (pedido 26/10/2026, PR #798)
+
+- [~] Reprodução em testes C# reais: falsos positivos por substring, resultado de ferramenta perdido após 400 caracteres, memória longa ignorada, orçamento desconectado, uso de cache não discriminado; fixtures em `MemoryQualityRegressionTests` e `MemoryQualityExtendedTests`.
+- [~] Busca lexical por palavra/frase; query de continuidade com assunto recente; memória longa com referência e trecho; decisões supersedidas/escopos respeitados.
+- [~] Orçamento integrado da requisição e token estimado sobre wire JSON de cada provedor (sem tokenizer exato na camada atual); limita payload ou recusa explicitamente.
+- [~] Evidência preservada nos refinamentos com trechos relevantes e ID da chamada, transcript persistido intocado.
+- [~] Cache transitório fraco com invalidação e medição de tempo/alocação; preservar ranking exceto correção deliberada de substring.
+- [~] Campos opcionais de uso de cache/custo, telas de consumo com parcial/desconhecido; sem recontar tokens cacheados.
+- [ ] Provar equivalência Core/UI/oráculos no CI integrado; revisar persistência aditiva conforme política de integração; ensaiar Android físico e modelos reais.
+- [ ] Publicação de release somente após autorização/gates existentes. **Fora de escopo:** sono, reflexão automática em segundo plano, etapas artificiais de contexto e chamadas extras pagas de resumo.
