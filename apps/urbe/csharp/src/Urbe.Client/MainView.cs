@@ -116,7 +116,8 @@ public sealed partial class MainView : Grid
         Editor.SaveFailed += message => _notice.Show(message, TimeSpan.FromSeconds(8), "Tentar de novo", () => _ = Editor.RetrySavesAsync(), Ui.ToastKind.Warning);
         Editor.AssistantRequested += ToggleAssistant;
         Editor.AgentAsked += call => _ = AskAgentInNoteAsync(call);
-        Editor.Shown += path => NoteOpened?.Invoke(path);   // plugins: "nota:aberta"
+        Editor.Shown += path => { ApplyEditorCompatibility(path); NoteOpened?.Invoke(path); };   // plugins: "nota:aberta"
+        Editor.ReadOnlyChanged += PreventUnsafeEditorToggle;
 
         Explorer.TitleMark = _vaultDot;
         Explorer.HeaderActions.Children.Add(SettingsButton());
