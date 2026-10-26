@@ -3,74 +3,103 @@ using Android.Content;
 using Android.Widget;
 using AndroidUri = Android.Net.Uri;
 using Lunet.Core;
+using Lunet.Compiler;
 
 namespace Lunet.Android;
 
-/// <summary>On-demand, consented GitHub cloud build of the currently edited Lunet project.</summary>
+/// <summary>Compilação de jogos standalone no Android, offline, sem credenciais externas.</summary>
 public sealed partial class MainActivity
 {
     private bool _gameApkBuildBusy;
     private CancellationTokenSource? _gameApkBuildCancel;
 
+    /// <summary>No GitHub, network, login or token: compile C# and package a standalone game APK on-device.</summary>
     private void AskBuildGameApk()
     {
         if (_project is null || _gameApkBuildBusy) return;
         SaveCurrent();
-        var account = _gitAccounts.Load();
-        if (string.IsNullOrWhiteSpace(account.Token))
+        var project = _project;
+        if (!Guid.TryParse(project.Manifest.GameId, out var gameId))
         {
-            new AlertDialog.Builder(this)!.SetTitle("Conta GitHub necessária")!
-                .SetMessage("Configure seu token no painel Git → Conta Git. O build exige permissões para repositórios privados e workflows (repo + workflow no token clássico).")!
-                .SetPositiveButton("Abrir Git", (_, _) => ShowGit())!
-                .SetNegativeButton("Cancelar", (_, _) => { })!.Show();
+            new AlertDialog.Builder(this)!.SetTitle("Projeto inválido")!
+                .SetMessage("GameId inválido em lunet.json.")!.SetPositiveButton("OK", (_, _) => { })!.Show();
             return;
         }
-        var project = _project;
+        if (!OfflineGameApkBuilder.ValidPackage(project.Manifest.PackageId))
+        {
+            new AlertDialog.Builder(this)!.SetTitle("Projeto inválido")!
+                .SetMessage("PackageId inválido em lunet.json. Use o formato com.exemplo.meujogo.")!
+                .SetPositiveButton("OK", (_, _) => { })!.Show();
+            return;
+        }
         new AlertDialog.Builder(this)!.SetTitle("Gerar APK do jogo")!
             .SetMessage($"Jogo: {project.Name}\nIdentificador: {project.Manifest.PackageId}\n\n" +
-                "O Lunet criará ou usará o repositório PRIVADO 'lunet-game-builds' na sua conta GitHub. " +
-                "Seu código e assets serão enviados para lá e compilados pelo GitHub Actions; requer internet e GitHub Actions disponível na conta.\n\n" +
-                "O APK terá assinatura de desenvolvimento; uma nova compilação poderá exigir desinstalar a versão anterior. " +
-                "O projeto local não será modificado. Não é build offline.")!
+                "Compila C# e gera um APK independente neste celular, sem internet, GitHub ou conta. " +
+                "A chave de assinatura do jogo fica protegida pelo Android Keystore.\n\n" +
+                "ATENÇÃO: desinstalar o Lunet pode apagar essa chave; nesse caso, futuras atualizações " +
+                "do jogo exigirão remover o APK antigo. Não use esta assinatura beta para publicar na Play Store.")!
             .SetNegativeButton("Cancelar", (_, _) => { })!
-            .SetPositiveButton("Autorizar e gerar", (_, _) => _ = RunCloudGameBuild(project, account.Token))!.Show();
+            .SetPositiveButton("Gerar APK", (_, _) => _ = RunLocalGameBuild(project, gameId))!.Show();
     }
 
-    private async Task RunCloudGameBuild(LunetProject project, string token)
+    private async Task RunLocalGameBuild(LunetProject project, Guid gameId)
     {
         if (_gameApkBuildBusy) return;
         _gameApkBuildBusy = true;
         _gameApkBuildCancel = new CancellationTokenSource();
         var ct = _gameApkBuildCancel.Token;
-        var progress = new AlertDialog.Builder(this)!.SetTitle("Gerando APK")!
-            .SetMessage("Preparando o projeto…")!
+        var dialog = new AlertDialog.Builder(this)!.SetTitle("Gerando APK no dispositivo")!
+            .SetMessage("Compilando Game.cs…")!
             .SetCancelable(false)!
             .SetNegativeButton("Cancelar", (_, _) => _gameApkBuildCancel?.Cancel())!.Show();
         try
         {
-            if (!Guid.TryParse(project.Manifest.GameId, out var gameId))
-                throw new InvalidDataException("GameId inválido em lunet.json.");
-            using var snapshot = await Task.Run(() =>
-            {
-                var buffer = new MemoryStream();
-                project.ExportZip(buffer);
-                buffer.Position = 0;
-                return buffer;
-            }, ct);
-            using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(3) };
-            var client = new GitHubGameBuildClient(http);
-            var result = await client.BuildAsync(token, project.Manifest.PackageId, project.Name,
-                gameId, snapshot, message => RunOnUiThread(() =>
-                {
-                    if (!IsFinishing && !IsDestroyed) progress.SetMessage(message);
-                }), ct);
+            using var template = Assets!.Open("templates/game-runtime.apk");
+            using var templateBuffer = new MemoryStream();
+            await template.CopyToAsync(templateBuffer, ct);
+            if (templateBuffer.Length < 1024)
+                throw new InvalidDataException("Runtime Android do Lunet ausente no pacote.");
+            byte[] host = templateBuffer.ToArray();
 
+            // Use the same Roslyn compiler and allowed game references as Run/Preview.
+            var sources = project.LoadSources().Select(s => new SourceFile(s.Path, s.Text)).ToList();
+            var result = await Task.Run(() => SharedCompiler.Value.Compile(
+                "LunetGame" + Guid.NewGuid().ToString("N"), sources), ct);
+            if (!result.Success || result.Assembly is null)
+            {
+                _problems = result.Diagnostics;
+                SetPanel(false);
+                throw new InvalidDataException($"Jogo não compila: {result.ErrorCount} erro(s). Abra Problemas para ver as linhas.");
+            }
+            dialog.SetMessage("Empacotando o jogo e seus recursos…");
+            var apk = await Task.Run(() =>
+            {
+                ct.ThrowIfCancellationRequested();
+                var assets = new Dictionary<string, byte[]>(StringComparer.Ordinal)
+                {
+                    ["game/Game.dll"] = result.Assembly
+                };
+                foreach (var relative in project.ListFiles())
+                {
+                    if (!relative.StartsWith("Content/", StringComparison.Ordinal) &&
+                        !relative.StartsWith("Assets/", StringComparison.Ordinal)) continue;
+                    ct.ThrowIfCancellationRequested();
+                    // Project.ListFiles returns project-owned relative paths. Do not include cache or source.
+                    string path = Path.Combine(project.Directory, relative.Replace('/', Path.DirectorySeparatorChar));
+                    assets.Add("game/" + relative, File.ReadAllBytes(path));
+                }
+                var signer = new AndroidGameApkSigner(gameId);
+                return OfflineGameApkBuilder.Build(host, assets,
+                    project.Manifest.PackageId, project.Name, signer);
+            }, ct);
+
+            ct.ThrowIfCancellationRequested();
+            var dest = Path.Combine(CacheDir!.AbsolutePath, "lunet-" + gameId.ToString("N") + ".apk");
+            await File.WriteAllBytesAsync(dest, apk, ct);
             if (IsFinishing || IsDestroyed) return;
-            var path = Path.Combine(CacheDir!.AbsolutePath, "lunet-" + gameId.ToString("N") + ".apk");
-            await File.WriteAllBytesAsync(path, result.Apk, ct);
-            _pendingGameApkPath = path;
+            _pendingGameApkPath = dest;
             _pendingGameApkName = project.Name + ".apk";
-            progress.Dismiss();
+            dialog.Dismiss();
             var intent = new Intent(Intent.ActionCreateDocument);
             intent.AddCategory(Intent.CategoryOpenable);
             intent.SetType("application/vnd.android.package-archive");
@@ -80,17 +109,17 @@ public sealed partial class MainActivity
         catch (OperationCanceledException)
         {
             if (!IsFinishing && !IsDestroyed)
-                Toast.MakeText(this, "Acompanhamento cancelado. Builds já iniciados podem continuar no GitHub.", ToastLength.Long)?.Show();
+                Toast.MakeText(this, "Geração de APK cancelada.", ToastLength.Short)?.Show();
         }
         catch (Exception ex)
         {
             if (!IsFinishing && !IsDestroyed)
-                new AlertDialog.Builder(this)!.SetTitle("Falha ao gerar APK")!
+                new AlertDialog.Builder(this)!.SetTitle("Falha ao gerar APK local")!
                     .SetMessage(ex.Message)!.SetPositiveButton("Fechar", (_, _) => { })!.Show();
         }
         finally
         {
-            progress.Dismiss();
+            dialog.Dismiss();
             _gameApkBuildCancel?.Dispose();
             _gameApkBuildCancel = null;
             _gameApkBuildBusy = false;
