@@ -127,6 +127,7 @@ public sealed partial class MainActivity
         ("Salvar", () => HandleCommand(EditorCommand.Save)),
         ("Formatar documento", () => HandleCommand(EditorCommand.Format)),
         ("Exportar projeto (ZIP)", () => ExportProject()),
+        ("Gerar APK do jogo", AskBuildGameApk),
         ("Importar imagem PNG", ImportImage),
     ]);
 

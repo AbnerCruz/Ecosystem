@@ -4,7 +4,7 @@ namespace Lunet.Core;
 public static class GitHubGameBuildWorkflow
 {
     /// <summary>Official Lunet project APK workflow for a private GitHub repository.</summary>
-    public const string Source = """
+    public static readonly string Source = """
 name: Lunet Game APK
 run-name: Lunet __DOLLAR__{{ inputs.build_id }}
 on:
