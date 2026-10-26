@@ -129,7 +129,7 @@ public sealed partial class AssistantPanel : Border
         var head = new DockPanel { Margin = new Thickness(8, 0, 6, 0), MinHeight = 48 };
         foreach (var (icon, tip, act) in new (string, string, Action)[]
                  {
-                     (UrbeTheme.Icons.Close, "Fechar", Close), (UrbeTheme.Icons.Settings, "Configurações do Assistente", () => ShowSettings()),
+                     (UrbeTheme.Icons.Close, "Fechar", Close), (UrbeTheme.Icons.Download, "Exportar conversa", () => _ = ExportConversationAsync(_conv)), (UrbeTheme.Icons.Settings, "Configurações do Assistente", () => ShowSettings()),
                      (UrbeTheme.Icons.Plus, "Nova conversa", NewConversationClicked), (UrbeTheme.Icons.Clock, "Conversas", ShowHistory)
                  })
         {

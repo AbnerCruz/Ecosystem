@@ -734,6 +734,8 @@ public sealed partial class AssistantPanel
             {
                 OpenConversation(_activeConversations.GetValueOrDefault(c.Id) ?? _store.GetConversation(c.Id) ?? c);
             };
+            var export = IconButton(UrbeTheme.Icons.Download, "Exportar esta conversa");
+            export.Click += (_, _) => _ = ExportConversationAsync(c);
             var del = IconButton(UrbeTheme.Icons.Trash, "Excluir conversa");
             del.Click += async (_, _) =>
             {
@@ -746,7 +748,9 @@ public sealed partial class AssistantPanel
             };
             var row = new DockPanel();
             DockPanel.SetDock(del, Dock.Right);
+            DockPanel.SetDock(export, Dock.Right);
             row.Children.Add(del);
+            row.Children.Add(export);
             row.Children.Add(open);
             body.Children.Add(row);
         }
@@ -932,6 +936,7 @@ public sealed partial class AssistantPanel
         head.Children.Add(state);
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
         actions.Children.Add(TextButton("+ Lembrança", () => _ = AddMemoryByHandAsync()));
+        actions.Children.Add(TextButton("Exportar memória", () => _ = ExportAgentMemoryAsync()));
         actions.Children.Add(TextButton("Conflitos", () =>
         {
             var conflicts = AssistantMemoryEngine.PotentialConflicts(_cfg, VaultKey, _conv.AgentId);

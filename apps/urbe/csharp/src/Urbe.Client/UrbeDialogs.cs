@@ -46,6 +46,9 @@ public sealed partial class UrbeDialogs : Grid
     /// <summary>True while a dialog is open.</summary>
     public bool IsOpen => IsVisible;
 
+    /// <summary>Dismiss the active dialog using its own cancellation path (Android system Back).</summary>
+    public void Cancel() { if (IsOpen) _cancel?.Invoke(); }
+
     protected override void OnSizeChanged(SizeChangedEventArgs e)
     {
         base.OnSizeChanged(e);

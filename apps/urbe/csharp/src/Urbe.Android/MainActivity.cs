@@ -91,6 +91,8 @@ public sealed class MainActivity : AvaloniaMainActivity
     {
         Current = this;
         base.OnCreate(savedInstanceState);
+        // Avalonia owns both physical Back and predictive gestures; consume only when Urbe navigates.
+        BackRequested += (_, e) => { if (UrbeApp.ActiveView?.HandleSystemBack() == true) e.Handled = true; };
         PlatformAssistantActivity.Publish = AssistantRunService.Publish;
         PlatformAssistantActivity.RequestNotificationPermission = RequestAiNotificationPermission;
         // the editor asks for the keyboard when a block becomes an edit box: Android does not always open it by itself (UC-48)

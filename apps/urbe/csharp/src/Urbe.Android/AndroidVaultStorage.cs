@@ -115,7 +115,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         {
             var listing = new List<string>();
             var files = await Task.Run(() => ReadFiles(selected, cancellationToken, listing: listing), cancellationToken);
-            var snapshot = VaultReader.Read(files);
+            var snapshot = VaultReader.Read(files, UrbeApp.InstalledVersion);
             _listing = listing;
             _tree = selected;
             _baseline = Snapshot(files);
@@ -137,7 +137,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 ?? throw new IOException("Pasta Android anteriormente selecionada é inválida.");
             var listing = new List<string>();
             var files = await Task.Run(() => ReadFiles(selected, cancellationToken, listing: listing), cancellationToken);
-            var snapshot = VaultReader.Read(files);
+            var snapshot = VaultReader.Read(files, UrbeApp.InstalledVersion);
             _listing = listing;
             _tree = selected;
             _baseline = Snapshot(files);
@@ -156,7 +156,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
             var files = await Task.Run(() => ReadFiles(tree, cancellationToken, listing: listing), cancellationToken);
             _baseline = Snapshot(files);
             _listing = listing;
-            return VaultReader.Read(files);
+            return VaultReader.Read(files, UrbeApp.InstalledVersion);
         }
         finally { _gate.Release(); }
     }
@@ -501,7 +501,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 throw new FileNotFoundException("O arquivo não existe na pasta.", path);
             var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
             EnsureUnchanged(baseline, files);
-            var snapshot = VaultReader.Read(files);
+            var snapshot = VaultReader.Read(files, UrbeApp.InstalledVersion);
             if (snapshot.IsReadOnly || snapshot.FutureFiles.Contains(path, StringComparer.OrdinalIgnoreCase))
                 throw new InvalidOperationException("Formato futuro de vault ou arquivo protegido: escrita recusada.");
             var existing = snapshot.Documents.SingleOrDefault(d =>

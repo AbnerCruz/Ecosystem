@@ -116,7 +116,8 @@ public sealed partial class MainView : Grid
         Editor.SaveFailed += message => _notice.Show(message, TimeSpan.FromSeconds(8), "Tentar de novo", () => _ = Editor.RetrySavesAsync(), Ui.ToastKind.Warning);
         Editor.AssistantRequested += ToggleAssistant;
         Editor.AgentAsked += call => _ = AskAgentInNoteAsync(call);
-        Editor.Shown += path => NoteOpened?.Invoke(path);   // plugins: "nota:aberta"
+        Editor.Shown += path => { ApplyEditorCompatibility(path); NoteOpened?.Invoke(path); };   // plugins: "nota:aberta"
+        Editor.ReadOnlyChanged += PreventUnsafeEditorToggle;
 
         Explorer.TitleMark = _vaultDot;
         Explorer.HeaderActions.Children.Add(SettingsButton());
@@ -550,6 +551,9 @@ public sealed partial class MainView : Grid
         items.Add(new("Páginas", UrbeTheme.Icons.Page, "Sites e páginas HTML do vault", Run: () => { ShowPages(); return Task.CompletedTask; }));
         items.Add(new("Diagnóstico de teclado e toques", UrbeTheme.Icons.Select, TouchDebugOn ? "Ligado — toque para desligar" : "Registrar foco, rolagem, IME e toques; desligado por padrão", Run: ToggleTouchDebugAsync));
         if (UpdateItem() is { } update) items.Add(update);
+        if (_snapshot is { FutureFiles.Count: > 0 })
+            items.Add(new("Compatibilidade do vault", UrbeTheme.Icons.Storage,
+                "Arquivos protegidos e opções de cópia ou exclusão consciente", Run: ShowVaultCompatibilityAsync));
         if (CrashLog.Read().Length > 0)
             items.Add(new("Relatório de erros", UrbeTheme.Icons.List, "Erros que o Urbe registrou neste aparelho", Run: ShowErrorReportAsync));
         return Dialogs.MenuAsync("Configurações", items);

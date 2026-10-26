@@ -126,7 +126,7 @@ public static class VaultReader
         ".json", ".yaml", ".yml", ".csv"
     };
 
-    public static VaultSnapshot Read(IEnumerable<VaultFile> source)
+    public static VaultSnapshot Read(IEnumerable<VaultFile> source, string? installedVersion = null)
     {
         ArgumentNullException.ThrowIfNull(source);
 
@@ -141,7 +141,10 @@ public static class VaultReader
 
         var future = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var (formatState, vaultVersion) = ReadVaultFormat(files, future);
-        var readOnly = formatState == VaultFormatState.Future;
+        var compatibility = VaultCompatibility.Assess(files, installedVersion);
+        foreach (var path in compatibility.BlockedFiles.Keys) future.Add(path);
+        if (compatibility.ManifestUnsafe) future.Add(VaultCompatibility.Path);
+        var readOnly = formatState == VaultFormatState.Future || compatibility.ManifestUnsafe;
 
         if (readOnly)
         {

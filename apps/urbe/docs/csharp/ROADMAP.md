@@ -405,3 +405,16 @@ Issue #762; branch `fix/urbe-crash-smart-forms`; contrato e critérios em [ASSIS
 - [ ] Evitar no-op antes de watermark/aprovação/disco/revisão; leituras idênticas/in-flight reutilizadas por versão; max_lines exato; evidências idênticas referenciadas somente com origem presente; ciclos sem progresso observáveis, sem cotas arbitrárias.
 - [ ] Registrar medições de trabalho redundante evitado e preservar transcript original. Testes determinísticos e regressão completos antes de CI.
 - [ ] Publicar beta.31 pelo pipeline oficial depois da integração governada, mantendo pacote/certificado e verificando APK/ZIP/checksums reais. Android físico permanece pendente até teste do proprietário.
+
+## UC-91 — Patchnotes, catálogo de versões, Voltar Android e exportação do Assistente (26/10/2026)
+
+Issue [#793](https://github.com/AbnerCruz/Ecosystem/issues/793), ADR-0043 (proposto), branch feat/urbe-uc89-version-navigation-export-20261026.
+
+- [~] PATCHNOTES.md detalhado da beta.31, PATCHNOTES-HISTORY.md compacto; recursos embutidos na interface. Para nova release: mover atual ao histórico, substituir atual por notas verificadas e confirmar consistência com versão do projeto.
+- [~] Configurações → Versões e novidades: exibe instalada e consulta GitHub sob demanda, página a página, filtra somente downloads nativos por plataforma e permite escolher versão manualmente. Sem instalar no lugar do usuário. Downgrade Android requer advertência de possível perda de conversas privadas se desinstalar.
+- [~] Compatibilidade granular: manifesto opcional .urbe/compatibility.json por arquivo, versão mínima de escrita e lista exata de recursos; proteção fail-closed e preservação de arquivos incompatíveis, diagnóstico de incompatibilidade e cópia/lixeira intencionais. **Pendente:** geração do manifesto pelos novos formatos/editores específicos, verificação de importação/backup e UI contra alterações não suportadas em todas as superfícies.
+- [~] Android Back: navegação da pilha de diálogos, assistente, páginas, grafos, editor e raiz. **Pendente:** prova no Android físico para gesto/tecla, IME e retomada.
+- [~] Exportar conversa atual/selecionada e memória individual do agente, leve Markdown e completo JSON; mensagens, ferramentas e métricas **persistidas**, sem credenciais de provedores. **Pendente:** validação de arquivos reais grandes e ciclo de importação por outro aplicativo (import não solicitado).
+- [ ] Integrar revisão e CI Core/UI/consistency/Android/Windows; verificar casos de incompatibilidade sem sobrescrita, seleção de versões antigas e fidelidade da exportação.
+- [ ] Conectar o pipeline de release ao patchnote canônico e exigir sua rotação correta no mesmo commit da próxima alteração de versão; proteção da release imutável.
+- [ ] Validar APK e UX em aparelho real antes de marcar entrega/release. Não afirmar que a beta.31 contém as features desta branch.

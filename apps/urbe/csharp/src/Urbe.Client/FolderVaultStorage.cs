@@ -70,7 +70,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         try
         {
             var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
-            var snapshot = VaultReader.Read(files);
+            var snapshot = VaultReader.Read(files, UrbeApp.InstalledVersion);
             _root = root;
             _baseline = Snapshot(files);
             return snapshot;
@@ -451,7 +451,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 throw new FileNotFoundException("O arquivo não existe na pasta.", path);
             var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
             EnsureUnchanged(baseline, files);
-            var snapshot = VaultReader.Read(files);
+            var snapshot = VaultReader.Read(files, UrbeApp.InstalledVersion);
             if (snapshot.IsReadOnly || snapshot.FutureFiles.Contains(path, StringComparer.OrdinalIgnoreCase))
                 throw new InvalidOperationException("Formato futuro de vault ou arquivo protegido: escrita recusada.");
             var existing = snapshot.Documents.SingleOrDefault(d => string.Equals(d.Path, path, StringComparison.OrdinalIgnoreCase));
