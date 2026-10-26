@@ -1,0 +1,181 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261026-urbe-uc87-2-memory-quality-efficiency",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-26T16:58:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-memory-quality",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-87.2",
+  "component": "urbe",
+  "state": "review",
+  "branch": "fix/urbe-memory-quality-budget-20261026",
+  "base_commit": "24fd3857bb1b8fd4ca82ed7d9e83c786c2f081ac",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/798",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Costs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantContextBudget.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantMemoryEngine.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantProviders.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MemoryQualityExtendedTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MemoryQualityRegressionTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ProviderUsageCacheTests.cs",
+    "apps/urbe/docs/csharp/ASSISTANT-MEMORY-QUALITY-20261026.md",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261026-urbe-uc87-2-memory-quality-efficiency.md",
+    "docs/governance/handoffs/HO-20261026-urbe-uc87-2-memory-quality-efficiency.json"
+  ],
+  "work_completed": [
+    "Investigado AssistantAgent, AssistantMemoryEngine, AssistantStore, AssistantProviders e AssistantPanel na arquitetura C# atual; preservada a decisão do proprietário de não implementar sono, consolidação de memória em segundo plano ou renovação de contexto por etapas.",
+    "Corrigidos falsos positivos de substring na busca lexical (rio não corresponde a inventário) e preservados filtros por agente, vault, estado, validade e confiança; a normalização lexical é cacheada em ConditionalWeakTable por registro e invalidada quando texto, tipo e caminhos relevantes mudam.",
+    "ContinuityQuery usa o pedido substantivo recente para identificar o assunto de pedidos curtos como 'pode seguir', respeitando mudanças explícitas de tema sem chamadas extras de IA.",
+    "Memórias longas antes descartadas passam a transportar trechos com IDs e referências recuperáveis, sem descartar registros persistidos ou desativar busca paginada.",
+    "SettlePast mantém excertos relevantes de evidências anteriores mesmo após o caractere 400, com proveniência de chamada; texto de mensagens e resultados anteriores não é regravado. Instrução anterior pode ser transportada ao contexto quando a janela obriga reduzir histórico e o pedido recente é mera continuação.",
+    "AssistantContextBudget unifica contagem aproximada do payload do provedor, contemplando sistema, ferramentas, argumentos, resultados, memória, anexos e reserva de saída; o orçamento é estimado conservadoramente sobre wire JSON OpenAI/Anthropic, com extensão opcional para contador exato. Não há duas reservas concorrentes de memória e histórico.",
+    "AiUsage passou a preservar leitura/criação de cache e raciocínio quando disponíveis, sem somar categorias que são subsets de input/output; UI diferencia custo informado, estimado, parcial e desconhecido, mantendo compatibilidade com campos ausentes em conversas antigas.",
+    "Novos testes de regressão de contexto, continuidade, refinamento, substituição de decisão, isolamento entre agentes, caches após edição e uso/custo de provedores; documentação de detalhes, dados aditivos e roadmap de UC-87.2."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests e regressões de memória/fornecedores",
+      "result": "passed",
+      "tested_commit": "b48f37fa794091e27d4d11177314be449ee42c0e",
+      "evidence": "866/866 Core passaram no job csharp-portable após reexecução do workflow https://github.com/AbnerCruz/Ecosystem/actions/runs/40340046992. Inclui MemoryQualityRegressionTests, MemoryQualityExtendedTests e ProviderUsageCacheTests."
+    },
+    {
+      "kind": "automated",
+      "check": "Urbe.Client.Tests",
+      "result": "passed",
+      "tested_commit": "b48f37fa794091e27d4d11177314be449ee42c0e",
+      "evidence": "248/248 UI headless na reexecução do job csharp-portable; uma tentativa anterior teve teste intermitente Source_DraggingAFingerScrolls (64 → 64) que passou sem alteração do editor."
+    },
+    {
+      "kind": "automated",
+      "check": "Empacotamento Android e Windows",
+      "result": "passed",
+      "tested_commit": "b48f37fa794091e27d4d11177314be449ee42c0e",
+      "evidence": "Jobs csharp-client-native Android e Windows concluídos com sucesso em https://github.com/AbnerCruz/Ecosystem/actions/runs/40340046992. Não equivale a teste em aparelho."
+    },
+    {
+      "kind": "automated",
+      "check": "E2E e npm run check",
+      "result": "passed",
+      "tested_commit": "b48f37fa794091e27d4d11177314be449ee42c0e",
+      "evidence": "Jobs e2e e checks com conclusão success em https://github.com/AbnerCruz/Ecosystem/actions/runs/40340046992."
+    },
+    {
+      "kind": "automated",
+      "check": "Foundation consistency",
+      "result": "passed",
+      "tested_commit": "b48f37fa794091e27d4d11177314be449ee42c0e",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/40340049963 concluído success para o estado do PR então examinado. A nova versão do handoff JSON deve ser conferida pelo CI no estado combinado com main atual."
+    },
+    {
+      "kind": "automated",
+      "check": "Medição diagnóstica de CPU/alocação no runner",
+      "result": "passed",
+      "tested_commit": "b48f37fa794091e27d4d11177314be449ee42c0e",
+      "evidence": "500 memórias: primeira consulta 31.774.530 ticks/2.661.240 bytes; 12 consultas 73.793.634 ticks/576.768 bytes no total; edição+consulta 1.859.652 ticks/13.584 bytes. Não é ganho medido contra versão anterior nem economia de API."
+    },
+    {
+      "kind": "human",
+      "check": "Comportamento de memória e consumo com provedor real e no Android físico",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+      "evidence": "Sem inferência real/Android físico nesta execução. Validar refinamento longo, contexto pequeno, leitura/cache do provedor, tempo/memória do app, tela de custos, consentimento e dados persistidos."
+    }
+  ],
+  "known_issues": [
+    "Contagem de tokens é estimativa conservadora de bytes do corpo do provedor e não tokenizer exato de todos os modelos; limites multimodais específicos exigem verificação real.",
+    "Não há comparação de qualidade de respostas com modelos reais, fatura verificada nem benchmark comparativo de desempenho no aparelho; não atribuir economia de dinheiro à redução de caracteres ou alocações.",
+    "A interface de custo depende das categorias realmente fornecidas pelo provedor; ausência de preço é desconhecido, não gratuito.",
+    "O primeiro teste UI de gesto do editor falhou num job isolado e passou integralmente no retry; não foi estabelecida causalidade com as mudanças de memória.",
+    "Main avançou desde o SHA base do PR; o integrador deve executar verificação em estado combinado e solicitar reconciliação semântica se encontrar conflitos."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar integrador/checks no estado combinado da main atual após inclusão deste handoff canônico .json; corrigir divergências reais de merge/CI sem alterar decisões normativas.",
+    "Submeter alteração de dados privados aditivos à política crítica de integração do Ecosystem e autorização do proprietário, sem adicionar a label integrar pelo agente.",
+    "Realizar validação humana em modelo real e Android físico antes de declarar qualidade de produção; publicação de release segue gates independentes."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/ASSISTANT-MEMORY.md",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/adr/0039-urbe-memoria-contextual-local.md",
+    "docs/governance/communication.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Autoridade das memórias permanece no AssistantStore; cache em memória é apenas projeção efêmera e não outra fonte persistente."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "PR #798, branch, arquivos, testes, falhas/correções e próximos gates documentados neste handoff JSON estruturado."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Requisitos e escopo UC-87.2 registrados em ROADMAP, catálogo de dados e documentação técnica, não apenas na conversa."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fonte de verdade consultada diretamente; resumo não substitui o manifesto, ADRs nem política de integração."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Campos opcionais de uso documentados em DATA-CATALOG, integrador classificado como crítico quando afeta dados privados; nenhum merge manual."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Isolamento entre vault e agentes mantido, sem expor credenciais em métricas; memórias não substituem permissões ou pedidos atuais."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação real e de aparelho fica pending e não é disfarçada como sucesso pelos testes automatizados."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Sem anunciar release/integração, sem passar por cima dos gates de segurança e de CI."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "IDs e esquema base de memória persistida permanecem estáveis; uso recebe campos opcionais aditivos para compatibilidade."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Não foi criado novo runtime/serviço ou dependência transversal, nem extração entre produtos."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data"
+    ],
+    "reason": "Categorias opcionais novas de uso nas conversas privadas do Assistente e mudança de sua contabilidade. Compatibilidade de leitura de arquivos antigos testada, integração condicionada à política de dados do usuário."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "urbe-memory-retrieval",
+      "status": "product-specific",
+      "rationale": "Otimização incremental do Urbe.Core/AssistantStore; só poderá ser promovida a componente compartilhado depois de segundo consumidor real e revisão de extração, conforme ADR-0033."
+    }
+  ]
+}
