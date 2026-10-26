@@ -441,7 +441,8 @@ public static class AssistantAgent
         int current = messages.Count;
         for (int i = messages.Count - 1; i >= 0; i--)
             if (messages[i].Role == "user" && messages[i].Meta?.ToolResults != true && messages[i].Content.Any(b => b.Type == "text" && !b.Hidden && !string.IsNullOrEmpty(b.Text))) { current = i; break; }
-        return messages.Select((m, i) => i < current && (m.Content.Any(IsLong) || m.Content.Any(b => b.Type == "attachment")) ? Settled(m) : m).ToList();
+        var focus = current < messages.Count ? string.Join(" ", messages[current].Content.Where(b => b.Type == "text" && !b.Hidden).Select(b => b.Text)) : "";
+        return messages.Select((m, i) => i < current && (m.Content.Any(IsLong) || m.Content.Any(b => b.Type == "attachment")) ? Settled(m, focus) : m).ToList();
     }
 
     private static int Length(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) ? s.Length : n is null ? 0 : n.ToJsonString().Length;
@@ -453,14 +454,33 @@ public static class AssistantAgent
         _ => false
     };
 
-    private static AiChatMessage Settled(AiChatMessage m) => new()
+    private static AiChatMessage Settled(AiChatMessage m, string focus) => new()
     {
         Id = m.Id, Role = m.Role, Meta = m.Meta,
         Content = m.Content.Select(b => b.Type == "attachment" ? AiChatBlock.TextBlock("[Anexo anterior: " + b.FileName + "; não reenviar conteúdo binário.]")
             : !IsLong(b) ? b : b.Type == "tool_result"
-            ? new AiChatBlock { Type = "tool_result", ToolUseId = b.ToolUseId, IsError = b.IsError, Content = b.Content[..400] + "\n…[resultado de um pedido anterior, encurtado; use as ferramentas para ver o estado atual]" }
+            ? new AiChatBlock { Type = "tool_result", ToolUseId = b.ToolUseId, IsError = b.IsError, Content = EvidenceExcerpt(b.Content, focus, b.ToolUseId) }
             : new AiChatBlock { Type = "tool_use", Id = b.Id, Name = b.Name, Input = SettledInput((JsonObject)b.Input!) }).ToList()
     };
+
+    /// <summary>Retain a referenced, task-matching excerpt anywhere in a previous result. Transcript stays intact.</summary>
+    public static string EvidenceExcerpt(string content, string focus, string toolId)
+    {
+        var head = content[..Math.Min(180, content.Length)];
+        var candidate = -1;
+        var words = System.Text.RegularExpressions.Regex.Matches(focus ?? "", @"[\\p{L}\\p{N}]{5,}")
+            .Select(m => m.Value).Where(s => s is not ("refine" or "continue" or "remover" or "sem" or "fazer" or "favor"))
+            .OrderByDescending(s => s.Length);
+        foreach (var word in words)
+        {
+            var found = content.IndexOf(word, 400, StringComparison.OrdinalIgnoreCase);
+            if (found >= 0) { candidate = found; break; }
+        }
+        var excerpt = candidate < 0 ? "" : "\\n[trecho relacionado] " + content.Substring(Math.Max(0, candidate - 90),
+            Math.Min(220, content.Length - Math.Max(0, candidate - 90)));
+        return head + excerpt + "\\n…[resultado de pedido anterior, parcial; fonte: ferramenta " + toolId +
+            "; reconsultar a fonte e a versão para recuperar o texto integral]";
+    }
 
     private static JsonObject SettledInput(JsonObject input)
     {
