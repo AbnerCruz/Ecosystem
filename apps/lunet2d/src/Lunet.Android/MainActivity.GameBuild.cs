@@ -32,14 +32,8 @@ public sealed partial class MainActivity
                 .SetPositiveButton("OK", (_, _) => { })!.Show();
             return;
         }
-        new AlertDialog.Builder(this)!.SetTitle("Gerar APK do jogo")!
-            .SetMessage($"Jogo: {project.Name}\nIdentificador: {project.Manifest.PackageId}\n\n" +
-                "Compila C# e gera um APK independente neste celular, sem internet, GitHub ou conta. " +
-                "A chave de assinatura do jogo fica protegida pelo Android Keystore.\n\n" +
-                "ATENÇÃO: desinstalar o Lunet pode apagar essa chave; nesse caso, futuras atualizações " +
-                "do jogo exigirão remover o APK antigo. Não use esta assinatura beta para publicar na Play Store.")!
-            .SetNegativeButton("Cancelar", (_, _) => { })!
-            .SetPositiveButton("Gerar APK", (_, _) => _ = RunLocalGameBuild(project, gameId))!.Show();
+        // Um toque no comando começa o build. Sem confirmação, login, token ou internet.
+        _ = RunLocalGameBuild(project, gameId);
     }
 
     private async Task RunLocalGameBuild(LunetProject project, Guid gameId)
@@ -139,7 +133,7 @@ public sealed partial class MainActivity
                 input.CopyTo(output);
             try { File.Delete(cached); } catch (IOException) { }
             new AlertDialog.Builder(this)!.SetTitle("APK do jogo salvo")!
-                .SetMessage("O APK está no local escolhido. Instale para executar o jogo sem o Lunet. Caso o Android bloqueie a instalação, autorize esta origem nas configurações.")!
+                .SetMessage("O APK está no local escolhido e roda sem o Lunet. O Android poderá pedir autorização para instalar. Assinatura beta: evite desinstalar o Lunet antes de preservar a chave, pois isso pode impedir futuras atualizações deste jogo.")!
                 .SetPositiveButton("Instalar", (_, _) =>
                 {
                     try
