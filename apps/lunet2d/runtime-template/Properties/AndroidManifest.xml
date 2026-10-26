@@ -1,3 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
   <uses-permission android:name="android.permission.VIBRATE" />
+  <!-- Local APK packager preserves prebuilt native libraries in their original aligned ZIP entries;
+       newly inserted game assets are compressed/stored independently. -->
+  <application android:extractNativeLibs="true" />
 </manifest>

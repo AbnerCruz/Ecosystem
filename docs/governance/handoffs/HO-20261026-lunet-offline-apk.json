@@ -1,0 +1,125 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261026-lunet-offline-apk",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-26T17:36:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-offline-apk",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-448",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-offline-apk-20261026",
+  "base_commit": "62e31e41ac5e4881739544f7bdd1f240d74d1b5a",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/804",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Core/OfflineGameApkBuilder.cs",
+    "apps/lunet2d/src/Lunet.Android/AndroidGameApkSigner.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.GameBuild.cs",
+    "apps/lunet2d/runtime-template/Lunet.Game.Android.csproj",
+    "apps/lunet2d/runtime-template/Properties/AndroidManifest.xml",
+    "apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj",
+    ".github/workflows/lunet2d-release.yml",
+    "apps/lunet2d/tools/offline-apk-check/Program.cs",
+    "apps/lunet2d/tools/offline-apk-check/OfflineApkCheck.csproj",
+    "apps/lunet2d/docs/guides/offline-game-apk.md"
+  ],
+  "work_completed": [
+    "Compilador Game.cs e empacotador APK local, offline, sem envio a serviços externos",
+    "Host de jogo Android pré-construído no build da IDE e embutido como recurso local",
+    "Identidade do jogo conforme lunet.json e assinatura v2 com chave do Android Keystore por gameId",
+    "Prova de empacotamento offline, assinatura apksigner e packageId aapt no CI"
+  ],
+  "verification": [
+    {
+      "check": "Testes Lunet",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/40369610254",
+      "tested_commit": "f2f00d0dccf06baef0a973124966ebff3872f0af"
+    },
+    {
+      "check": "Build Android, apksigner e aapt smoke",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/40369610261",
+      "tested_commit": "f2f00d0dccf06baef0a973124966ebff3872f0af"
+    },
+    {
+      "check": "Android físico offline: instalar, executar, atualizar APK",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/offline-game-apk.md",
+      "critical": true
+    }
+  ],
+  "known_issues": [
+    "Assinatura beta Android Keystore perde chave com desinstalação da IDE; publicação exige backup/importação de chave.",
+    "Validação DEVICE de instalação e execução do Bosque Lumi ainda pendente.",
+    "Runtime de jogo é ARM64 e não inclui extensões nativas arbitrárias."
+  ],
+  "blockers": [
+    "Integração altera workflow de release e assinatura e requer revisão crítica do proprietário conforme política."
+  ],
+  "next_actions": [
+    "Review crítico e integração governada após checks verdes.",
+    "Publicar release e testar instalação/execução offline no Android.",
+    "Implementar backup/importação de assinatura antes da distribuição estável."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/docs/adr/0010-cloud-game-apk-fallback.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/communication.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "lunet.json continua sendo fonte canônica do GameId, PackageId e assets."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Somente Lunet; jogos standalone não dependem de Urbe ou Hub."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Nenhuma credencial GitHub; chave de assinatura criada/retida no Android Keystore."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI assina e inspeciona APK; instalação e execução Android real continuam pendentes."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "PR draft e handoff verificando; não declarar done nem lançar APK antes do gate."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Empacotador fica no Lunet.Core por ausência de consumidor secundário real."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-game-apk-packager",
+      "status": "product-specific",
+      "rationale": "Compõe runtime e manifest específicos do Lunet, sem outro Product que o consuma."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Altera fluxo de assinatura e artefato APK do jogo e workflow de release do Lunet."
+  }
+}
