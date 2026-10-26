@@ -99,8 +99,8 @@ public sealed class MemoryQualityExtendedTests
     {
         var actual = new AiUsage(150, 30, .25, CacheReadInput: 75, CacheCreationInput: 25, ReasoningOutput: 7, CostSource: "reported");
         var json = AssistantAgent.UsageJson(actual);
-        Assert.Equal(150, (int)json["input"]!);
-        Assert.Equal(75, (int)json["cacheReadInput"]!);
+        Assert.Equal(150L, (long)json["input"]!);
+        Assert.Equal(75L, (long)json["cacheReadInput"]!);
         Assert.Equal(actual, AiUsage.FromJson(json));
         Assert.Null(AiUsage.FromJson(new JsonObject { ["input"]=2, ["output"]=1 }) .CacheReadInput);
         var mixed = AiUsage.Add(actual, new AiUsage(20, 10, null));
