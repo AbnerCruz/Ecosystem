@@ -523,7 +523,7 @@ public static partial class AssistantTools
         new()
         {
             Name = "edit_note", Access = "write",
-            Description = "Edita um trecho de uma nota: troca old_text (cópia exata, única na nota) por new_text, inclusive texto vazio para exclusão. Preserva o resto. Marcas {ia:\\"modelo\\"} de autoria são protegidas: não as remova ou altere. Prefira esta ferramenta para mudanças parciais.",
+            Description = "Edita um trecho de uma nota: troca old_text (cópia exata, única na nota) por new_text, inclusive texto vazio para exclusão. Preserva o resto. Marcas {ia:\"modelo\"} de autoria são protegidas: não as remova ou altere. Prefira esta ferramenta para mudanças parciais.",
             Parameters = Schema("""{"type":"object","properties":{"path":{"type":"string"},"old_text":{"type":"string"},"new_text":{"type":"string"},"replace_all":{"type":"boolean"}},"required":["path","old_text","new_text"],"additionalProperties":false}"""),
             Label = i => "Editar " + Norm(Str(i, "path")),
             Preview = (i, host) =>
