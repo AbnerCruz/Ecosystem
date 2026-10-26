@@ -468,7 +468,7 @@ public static class AssistantAgent
     {
         var head = content[..Math.Min(180, content.Length)];
         var candidate = -1;
-        var words = System.Text.RegularExpressions.Regex.Matches(focus ?? "", @"[\\p{L}\\p{N}]{5,}")
+        var words = System.Text.RegularExpressions.Regex.Matches(focus ?? "", @"[\p{L}\p{N}]{5,}")
             .Select(m => m.Value).Where(s => s is not ("refine" or "continue" or "remover" or "sem" or "fazer" or "favor"))
             .OrderByDescending(s => s.Length);
         foreach (var word in words)
@@ -476,9 +476,9 @@ public static class AssistantAgent
             var found = content.IndexOf(word, 400, StringComparison.OrdinalIgnoreCase);
             if (found >= 0) { candidate = found; break; }
         }
-        var excerpt = candidate < 0 ? "" : "\\n[trecho relacionado] " + content.Substring(Math.Max(0, candidate - 90),
+        var excerpt = candidate < 0 ? "" : "\n[trecho relacionado] " + content.Substring(Math.Max(0, candidate - 90),
             Math.Min(220, content.Length - Math.Max(0, candidate - 90)));
-        return head + excerpt + "\\n…[resultado de pedido anterior, parcial; fonte: ferramenta " + toolId +
+        return head + excerpt + "\n…[resultado de pedido anterior, parcial; fonte: ferramenta " + toolId +
             "; reconsultar a fonte e a versão para recuperar o texto integral]";
     }
 
