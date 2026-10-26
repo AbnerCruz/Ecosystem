@@ -22,6 +22,21 @@ public sealed class MemoryQualityRegressionTests
         Assert.Contains(selected, t => t.Contains("long-doc") && t.Contains("Projeto/Decisões.md"));
     }
     [Fact]
+    public void ShortContinueKeepsLateTaskConstraintInsteadOfOnlyFirst400Chars()
+    {
+        var original = new string('x', 1100) + "\nRESTRIÇÃO: não remover acessibilidade\n" + new string('y', 1000);
+        var convo = new List<AiChatMessage>
+        {
+            User("Elabore o formulário acessível"),
+            new() { Role="assistant", Content=[new AiChatBlock { Type="tool_use", Id="tool", Name="read_note", Input=new JsonObject { ["path"]="Regras.md" } }] },
+            new() { Role="user", Meta=new AiChatMeta { ToolResults=true }, Content=[new AiChatBlock { Type="tool_result", ToolUseId="tool", Content=original }] },
+            User("mantém isso")
+        };
+        Assert.Contains("não remover acessibilidade", AssistantAgent.SettlePast(convo)[2].Content[0].Content);
+        Assert.Equal(original, convo[2].Content[0].Content);
+    }
+
+    [Fact]
     public void RefinementMustExposeEvidencePastFirst400Characters()
     {
         var original = new string('x', 1000) + "\nRESTRIÇÃO: não remover acessibilidade ao refinar o formulário\n" + new string('y', 1000);
