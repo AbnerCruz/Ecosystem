@@ -42,10 +42,11 @@ public sealed partial class HeadlessUiTests
         }, CancellationToken.None));
 
     [Fact]
-    public void EmbeddedPatchnotesComeFromCanonicalPublishedVersion()
+    public void EmbeddedPatchnotesComeFromCanonicalPreparedVersion()
     {
         var notes = MainView.CurrentPatchnotes();
-        Assert.Contains("2.0.0-beta.31", notes);
-        Assert.Contains("Formulários", notes);
+        Assert.Contains("2.0.0-beta.32", notes);
+        Assert.Contains("Selecionar nota inteira", notes);
+        Assert.Contains("publicação", notes, StringComparison.OrdinalIgnoreCase);
     }
 }
