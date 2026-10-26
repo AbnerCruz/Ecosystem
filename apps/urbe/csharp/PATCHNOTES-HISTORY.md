@@ -2,6 +2,10 @@
 
 A descrição detalhada da versão atualmente publicada pertence exclusivamente a PATCHNOTES.md. Ao preparar a próxima versão, transferir a atual para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada.
 
+## 2.0.0-beta.32 — 26/10/2026
+- Edição/viewport estáveis, seleção da nota inteira e chat com posição de leitura preservada; cópia, seleção e edição de mensagens enviadas. Fonte: PATCHNOTES-beta.32.md.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.32
+
 ## 2.0.0-beta.31 — 25/10/2026
 - Correção de crash e segundo envio do Assistente, formulários nativos, deduplicação segura de leituras/escritas e eficiência do executor. Fonte: PATCHNOTES-beta.31.md.
 - https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.31
