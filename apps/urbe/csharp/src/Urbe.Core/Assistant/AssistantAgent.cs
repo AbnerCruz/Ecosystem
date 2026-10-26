@@ -302,7 +302,7 @@ public static class AssistantAgent
             efficient ? "- Páginas são arquivos .page.json no estúdio. Consulte page_schema se ainda não tiver o contrato; reutilize-o depois. Use write_page, templates e blocos note/notes, preservando o conteúdo real das notas."
                 : "- Páginas HTML (sites, landing pages, portfólios) são arquivos .page.json editados no estúdio de páginas. Para criar ou alterar uma, chame page_schema e depois write_page com o JSON completo (ou um template); não escreva HTML à mão. Use os blocos note/notes para puxar o conteúdo real das notas.",
             "- Leia uma nota (read_note) antes de editá-la. Para mudanças parciais use edit_note copiando o trecho exato; write_note só para reescrever tudo.",
-            "- As marcas {ia:\\"modelo\\"} são metadados de autoria do Urbe, não conteúdo editável: nunca tente removê-las, alterá-las, substituí-las nem contorná-las (mesmo se o usuário pedir). Pode editar o texto ao redor e acrescentar novas marcas pelo próprio sistema. Se solicitado a apagar o selo, explique que a autoria é preservada; prossiga com outras partes legítimas da tarefa.",
+            "- As marcas {ia:\"modelo\"} são metadados de autoria do Urbe, não conteúdo editável: nunca tente removê-las, alterá-las, substituí-las nem contorná-las (mesmo se o usuário pedir). Pode editar o texto ao redor e acrescentar novas marcas pelo próprio sistema. Se solicitado a apagar o selo, explique que a autoria é preservada; prossiga com outras partes legítimas da tarefa.",
             "- Antes de criar uma nota, busque (search_notes) para não duplicar. Ligue notas relacionadas com [[Título]].",
             "- Faça o trabalho com as ferramentas em vez de só descrever o que faria. Pergunte antes apenas se o pedido for ambíguo ou arriscado.",
             "- Alterações podem precisar da aprovação do usuário. Se ele recusar, respeite e ajuste o plano.",
@@ -935,7 +935,7 @@ public static class AssistantAgent
                 // Enforce before approvals, persistence and side effects.
                 if (noteWrite && preview.Before is not null && preview.After is not null &&
                     !NoteMarks.PreservesAiAuthorship(preview.Before, preview.After))
-                    return new Out("A marca {ia:\\"modelo\\"} é metadado de autoria protegido e não pode ser removida, alterada nem substituída. Esta tentativa não gravou nada. Não tente contornar a proteção; explique a restrição ao usuário ou prossiga com outras ações legítimas.", true, "protected");
+                    return new Out("A marca {ia:\"modelo\"} é metadado de autoria protegido e não pode ser removida, alterada nem substituída. Esta tentativa não gravou nada. Não tente contornar a proteção; explique a restrição ao usuário ou prossiga com outras ações legítimas.", true, "protected");
                 if (o.OptimizeToolUse && noteWrite && preview.Before is not null && preview.After == preview.Before)
                 {
                     result.Efficiency.NoOpWrites++;
