@@ -27,8 +27,8 @@ Não ampliar instrumentação de áudio enquanto esses fluxos estiverem ausentes
 - [~] **LUNET-442 — Sprite Studio ferramentas de desenho (Issue #779):** linha, retângulo, preenchimento, espelhamento vertical, cor ARGB, grade e zoom/pan por toque; CI .NET/Android aprovado, DEVICE pendente. Sem declarar layers, seleção e estados concluídos.
 - [ ] **LUNET-443 — Sprite/assets disponíveis no código (Issue #783, feito, sem validação em aparelho):** Preview rápido e isolado devem aceitar `Content.LoadTexture("Assets/arquivo.png")`; salvar a animação no Sprite Studio deve persistir o `.sprite.json` (frames/FPS) e atualizar automaticamente a spritesheet `.png` em `Assets/`, preservando ordem, transparência e uso do SpriteAnimator, mantendo `Content/` prioritário e sem migrar arquivos. Testes portáteis e CI obrigatórios; DEVICE pendente.
 - [ ] **LUNET-444 — Tilemap 100% criado dentro do Lunet (Issue #785, feito, sem validação em aparelho):** criar tilemap sem PNG importado, gerar atlas editável `.sprite.json` + `.png` em `Content/Textures`, abrir edição de pixels via Tile Studio, recarregar textura, preservar contrato TileMap JSON v1. CI/DEVICE pendentes.
-- [ ] **LUNET-445 — F9 prova técnica APK do jogo (Issue #787, prévia CI):** template Android sem IDE com Game.dll e Content/Assets empacotados, compilador GameCode parametrizado por `GameSourceRoot` para jogos reais; compilação ARM64, checagem de assinatura, ID distinto e artifact no workflow `lunet2d-game-apk-smoke`. Ainda faltam DEVICE, APK por projeto do usuário, UI e build offline.
-- [ ] APK do **jogo**: antecipar o experimento de F9 e sua integração visível; o APK do IDE e exportar ZIP não satisfazem esse item. Fallback GitHub somente com execução e artefato reais.
+- [ ] **LUNET-445 — F9 prova técnica APK do jogo (Issue #787, prévia CI):** template Android sem IDE com Game.dll e Content/Assets empacotados, compilador GameCode parametrizado por `GameSourceRoot` para jogos reais; compilação ARM64, checagem de assinatura, ID distinto e artifact no workflow `lunet2d-game-apk-smoke`. Agora inclui UI Arquivo → Gerar APK, snapshot ZIP privado no GitHub, build Actions, download de artifact e exportação/instalação SAF. CI e DEVICE do fluxo completo pendentes; offline, assinatura persistente e AAB ainda faltam.
+- [ ] APK do **jogo**: antecipar o experimento de F9 e sua integração visível; o APK do IDE e exportar ZIP não satisfazem esse item. Fallback GitHub com UI desenvolvido em LUNET-445/#787; validar no aparelho. SDK Android local continua ausente.
 - [~] **LUNET-441 — Primeiro Tile Studio (Issue #777):** editor Android por toque, tileset PNG, camadas, colisão, desfazer/refazer e JSON v1 conectado ao runtime; CI/DEVICE pendentes. Autotiling, propriedades, brushes avançados e zoom continuam F5.
 - [ ] Em seguida: Assets/Tile/Audio/UI Studios e demais editores de F5, com melhoria contínua da navegação. Física, áudio, A* e todo o restante do roadmap permanecem requisitos.
 
@@ -302,11 +302,11 @@ Gate: modelo configurado altera código, compila, detecta erro, corrige e execut
 
 Gate obrigatório: desligar internet, criar projeto, programar, buildar APK, instalar e jogar. Se etapa local for inviável, implementar fallback via GitHub build e **registrar ADR**; não fingir.
 
-- [ ] Experimento inicial de viabilidade: Game.dll + Content + runtime template → APK (AAPT2, alinhamento, assinatura, arm64) — LUNET-445/#787 iniciou prova Android via CI com smoke game separado da IDE; DEVICE, avaliação packager local e decisão ADR ainda pendentes (§32 risco 4).
+- [ ] Experimento inicial de viabilidade: Game.dll + Content + runtime template → APK (AAPT2, alinhamento, assinatura, arm64) — LUNET-445/#787 iniciou prova Android via CI com smoke game separado da IDE; DEVICE e packager local pendentes; ADR 0010 documenta o fallback provisório (§32 risco 4).
 - [ ] `runtime-template/` e `Lunet.Build`.
 - [ ] Empacotamento, recursos, AAPT2, alinhamento (zipalign) e assinatura.
 - [ ] Assinatura de desenvolvimento automática; assinatura de release com chave do usuário (gerar, importar, proteger, verificar, backup, aviso de perda). Nunca usar chave do Lunet nos jogos.
-- [ ] Build & Install e exportar APK; requisitos modernos do Android (API alvo).
+- [ ] Build & Install e exportar APK: fluxo GitHub opt-in pela interface e exportação do APK implementados no PR #788; assinatura de debug efêmera, offline, AAB e validação DEVICE ainda pendentes.
 - [ ] Fluxo de aceitação principal (§29) completo, offline.
 - [ ] Auditoria de fechamento da Fase 9 registrada em `docs/audits/`.
 

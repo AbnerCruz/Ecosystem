@@ -524,3 +524,7 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 
 ### 20261026-chatgpt-lunet-build-source-root — ChatGPT → integrador — review
 - Complemento LUNET-445/#787 ao PR #788: `runtime-template/Lunet.GameCode.csproj` compila C# da pasta `GameSourceRoot` sem incluir Tests/caches, e template Android aceita `GameSourceRoot`, `GameAssembly`, `ApplicationId` e `ApplicationTitle`. O smoke CI usa a rota genérica; ainda não é botão de APK no aparelho.
+
+### 20261026-chatgpt-lunet-build-private-github — ChatGPT → integrador — review
+- Complemento LUNET-445/#787 no PR #788: interface Arquivo → Gerar APK do jogo; consentimento para GitHub; criação de repositório privado, snapshot ZIP, workflow, polling, download do APK e export/instalação via SAF.
+- Fontes: Lunet.Core/GitHubGameBuildClient.cs e GitHubGameBuildWorkflow.cs, MainActivity.GameBuild.cs, testes GitHubGameBuildTests. CI/DEVICE do caminho real pendentes; não afirmar build local offline nem certificado persistente. ADR 0010 registra cloud como fallback provisório.

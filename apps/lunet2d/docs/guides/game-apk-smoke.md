@@ -1,33 +1,34 @@
-# F9 — experimento de APK autônomo do jogo (#787)
+# APK independente do jogo — Lunet LUNET-445 / Issue #787
 
-O APK da IDE `Lunet.Android` não é o APK do jogo. Este experimento cria
-um segundo projeto Android independente, com `Game.dll`, `Content/`,
-`Assets/` e o renderizador real do Lunet, mas **sem editor, Roslyn ou Git**.
+A opção Arquivo → Gerar APK do jogo entrega, por um build online autorizado pelo usuário, um APK independente da IDE. Não confundir com o APK do Lunet Studio.
 
-- Código de jogo de prova: `samples/apk-smoke/Game.cs`. O projeto `runtime-template/Lunet.GameCode.csproj` compila os fontes `.cs` de qualquer pasta de projeto como `CompiledGame.dll` (excluindo Tests/ e caches).
-- Empacotador de teste: `runtime-template/Lunet.Game.Android.csproj`.
-- Conteúdo: `runtime-template/PackagedContentSource.cs`, resolve `Content/`
-  e permite `Content.LoadTexture("Assets/arquivo.png")` por fallback restrito.
-- Host Android independente: `runtime-template/StandaloneGameActivity.cs`.
-- CI: `lunet2d-game-apk-smoke` gera artifact `lunet-standalone-smoke-game` com APK e hash.
+## Como utilizar
 
-## Roteiro de validação
+1. Em Git → Conta Git, configure um token do GitHub com acesso a repositórios privados e workflows. Token clássico: permissões repo e workflow.
+2. Abra o projeto e execute Run para confirmar que o Game.cs compila.
+3. Abra ⋯ → Arquivo → Gerar APK do jogo.
+4. Leia e aceite o aviso: o Lunet envia um snapshot ZIP do jogo (código e assets) ao repositório PRIVADO lunet-game-builds na sua conta GitHub. Um repositório público com esse nome é recusado.
+5. O app cria um workflow na conta GitHub (primeiro uso), envia o snapshot por GameId, solicita build Android, mostra progresso, baixa o APK, abre o seletor de arquivos para exportar e oferece a opção de instalar.
+6. Após instalar, execute o jogo independente do Lunet.
 
-1. Confirmar no CI que compilação C#, build Android ARM64, assinatura
-   de debug e presença de `game/Game.dll` e conteúdo no APK passaram.
-2. Instalar o APK do artifact **sem instalar/abrir a IDE**.
-3. Abrir o jogo: deve aparecer fundo azul e círculo amarelo.
-4. Tocar/arrastar para mover o círculo, voltar, retomar o app.
-5. Conferir que `io.lunet.game.smoke` não substitui `io.lunet.studio`.
+É necessária internet, token GitHub autorizado, GitHub Actions disponível e recursos de build na conta. O usuário controla o repositório. Nenhuma credencial é incluída no jogo ou nos inputs do workflow; o token existente do GitAccountStore fica no armazenamento privado do app (ainda sem proteção via Android Keystore).
 
-## Ainda não entregue
+## Arquitetura
 
-O workflow usa um jogo fixo como prova, mas o compilador e o template aceitam `-p:GameSourceRoot=/caminho/do/projeto`, além de `-p:ApplicationId=io.exemplo.meujogo` no build Android, com ferramentas .NET/Android SDK instaladas. **Ainda não está conectado à UI da IDE.** Não implementa
-ainda o botão "Gerar APK" de um projeto no aparelho, assinatura persistente
-por jogo, empacotamento de ZIP enviado pelo usuário, compilação local offline,
-AAB ou liberação do APK como release. Os passos posteriores dependem da prova
-real do template no CI e DEVICE; não declarar o gate F9 concluído.
+Lunet.GameCode.csproj compila C# do projeto (Game.cs e outros), com exclusão de Tests e pastas de cache. Lunet.Game.Android.csproj empacota Game.dll, Content e Assets e executa o host OpenGL e áudio reais, sem UI da IDE. A implementação do cliente HTTP fica em Lunet.Core; a interface Android é MainActivity.GameBuild.cs. O PackageId é lido do lunet.json, isolado do io.lunet.studio. O fluxo usa a ferramenta oficial do Android no GitHub e gera um APK com assinatura de desenvolvimento.
 
-## Build de projeto por pasta
+## Roteiro DEVICE — pendente
 
-Com .NET 10 e workload Android disponíveis no computador/runner, compile os fontes da pasta do jogo com `dotnet build runtime-template/Lunet.GameCode.csproj -p:GameSourceRoot=/caminho/jogo`. Em seguida compile `runtime-template/Lunet.Game.Android.csproj` com o mesmo GameSourceRoot, `ApplicationId` exclusivo e `AndroidSdkDirectory` quando necessário. A assinatura debug atual é experimental e não substitui chave própria estável de um jogo publicado.
+1. Atualizar a IDE para a release que inclua o PR #788, com backup dos projetos.
+2. Criar Jogo Vazio e confirmar execução com Run.
+3. Configurar token com permissão repo e workflow, autorizar Gerar APK.
+4. Confirmar no GitHub que lunet-game-builds é privado; verificar o workflow e o ZIP do projeto.
+5. Após o build, salvar game.apk, instalar e abrir o jogo sem a IDE. A bola amarela deve seguir o toque.
+6. Criar um sprite/tileset no Lunet, carregar no Game.cs, repetir e conferir os assets.
+7. Testar token inválido, repositório público pré-existente, cancelamento, falta de internet e build que falha. Falhas não devem apagar o projeto local.
+
+## Limitações conhecidas
+
+O build local offline no Android ainda não foi implementado. O GitHub Actions depende da conta e pode ter custos/limites próprios. O ZIP tem limite operacional de 30 MiB no cliente inicial; APKs muito grandes são recusados na memória. A assinatura de desenvolvimento da toolchain não é persistente por jogo: para atualizar o mesmo pacote pode ser necessário desinstalar a versão anterior. Ainda faltam assinatura estável/release, AAB, suporte robusto a projetos grandes e validação real no aparelho; não marcar F9 concluída apenas por CI verde.
+
+O workflow lunet2d-game-apk-smoke gera um APK de demonstração no CI. GitHubGameBuildTests cobre o contrato cliente HTTP com transporte simulado, não substitui o teste completo na conta do usuário.

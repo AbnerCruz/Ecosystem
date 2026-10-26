@@ -29,13 +29,23 @@
     "apps/lunet2d/CHANGELOG.md",
     "apps/lunet2d/AgentsChat.md",
     "docs/governance/handoffs/HO-20261026-lunet-game-apk-smoke.json",
-    "apps/lunet2d/runtime-template/Lunet.GameCode.csproj"
+    "apps/lunet2d/runtime-template/Lunet.GameCode.csproj",
+    "apps/lunet2d/src/Lunet.Core/GitHubGameBuildClient.cs",
+    "apps/lunet2d/src/Lunet.Core/GitHubGameBuildWorkflow.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.GameBuild.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Ide.cs",
+    "apps/lunet2d/src/Lunet.Android/Properties/AndroidManifest.xml",
+    "apps/lunet2d/tests/Lunet.Tests/GitHubGameBuildTests.cs",
+    "apps/lunet2d/docs/adr/0010-cloud-game-apk-fallback.md"
   ],
   "work_completed": [
     "Criação de template Android independente sem IDE, repassando Game.dll empacotado ao runtime real",
     "Fontes Content e Assets empacotadas num APK; validação de path e fallback Assets",
     "Jogo smoke com círculos/touch, workflow dedicado com build signed APK e verificação de assets/arquivo",
-    "Compilador de fontes C# do projeto, parametrizado por GameSourceRoot e exclusões de testes/caches; template parametrizado por identidade de aplicação."
+    "Compilador de fontes C# do projeto, parametrizado por GameSourceRoot e exclusões de testes/caches; template parametrizado por identidade de aplicação.",
+    "Interface cloud com consentimento para repositório privado, upload de jogo, workflow Actions, polling, download do artifact APK e exportação via Android SAF.",
+    "Adicionado teste HTTP simulado de pacote privado/dispatch/download e ADR cloud fallback."
   ],
   "verification": [
     {
@@ -51,19 +61,28 @@
       "object": "apps/lunet2d/docs/guides/game-apk-smoke.md",
       "critical": false,
       "evidence": "Aparelho ainda não testado."
+    },
+    {
+      "check": "DEVICE: GitHub private build, export/install de APK do jogo",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/game-apk-smoke.md",
+      "critical": false,
+      "evidence": "Requer ação do proprietário com conta GitHub no Lunet."
     }
   ],
   "known_issues": [
-    "Não há botão Gerar APK para projeto do usuário, pacote é prova de CI",
     "Assinatura debug do smoke não deve ser usada como chave dos jogos do usuário",
     "Build offline Android e eventual fallback exigem experimento/ADR antes de decisão",
-    "Lunet IDE não entrega GameSourceRoot ao packager automaticamente; build ainda exige host com .NET SDK Android."
+    "Cloud build real com conta do usuário requer validação DEVICE; autenticação GitHub/Actions não é demonstrada pelos testes simulados.",
+    "Assinatura Android debug efêmera, build local offline, AAB e chaves de release continuam pendentes."
   ],
   "blockers": [],
   "next_actions": [
     "Conferir CI de branch combinada e validar artifact",
     "Entregar APK independente para validação DEVICE",
-    "Desenhar pipeline dinâmico de Game.cs + assets do projeto do usuário com assinatura própria, integração na IDE"
+    "Desenhar pipeline dinâmico de Game.cs + assets do projeto do usuário com assinatura própria, integração na IDE",
+    "Validar Arquivo → Gerar APK do jogo num aparelho real com conta GitHub e código/Assets de um projeto."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -73,7 +92,8 @@
     "apps/lunet2d/AGENTS.md",
     "apps/lunet2d/docs/SPEC.md",
     "apps/lunet2d/docs/DEVELOPMENT.md",
-    "apps/lunet2d/ROADMAP.md"
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/adr/0010-cloud-game-apk-fallback.md"
   ],
   "invariants": [
     {
