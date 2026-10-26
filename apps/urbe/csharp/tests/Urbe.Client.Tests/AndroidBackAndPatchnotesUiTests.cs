@@ -45,7 +45,7 @@ public sealed partial class HeadlessUiTests
     public void EmbeddedPatchnotesComeFromCanonicalPreparedVersion()
     {
         var notes = MainView.CurrentPatchnotes();
-        Assert.Contains("2.0.0-beta.32", notes);
+        Assert.Contains("2.0.0-beta.33", notes);
         Assert.Contains("Selecionar nota inteira", notes);
         Assert.Contains("publicação", notes, StringComparison.OrdinalIgnoreCase);
     }
