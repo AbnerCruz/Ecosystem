@@ -91,7 +91,8 @@ public sealed class MainActivity : AvaloniaMainActivity
     {
         Current = this;
         base.OnCreate(savedInstanceState);
-        OnBackPressedDispatcher.AddCallback(this, new UrbeBackCallback(this));
+        // Avalonia owns both physical Back and predictive gestures; consume only when Urbe navigates.
+        BackRequested += (_, e) => { if (UrbeApp.ActiveView?.HandleSystemBack() == true) e.Handled = true; };
         PlatformAssistantActivity.Publish = AssistantRunService.Publish;
         PlatformAssistantActivity.RequestNotificationPermission = RequestAiNotificationPermission;
         // the editor asks for the keyboard when a block becomes an edit box: Android does not always open it by itself (UC-48)
@@ -108,19 +109,6 @@ public sealed class MainActivity : AvaloniaMainActivity
         UrbeTokens.Motion.Reduced = Android.Provider.Settings.Global.GetFloat(ContentResolver, Android.Provider.Settings.Global.AnimatorDurationScale, 1f) == 0f;
         HandleVoiceIntent(Intent);
         HandleAssistantIntent(Intent);
-    }
-
-    /// <summary>AndroidX dispatcher handles gesture/physical Back on modern Android without the obsolete override.</summary>
-    private sealed class UrbeBackCallback(MainActivity activity) : AndroidX.Activity.OnBackPressedCallback(true)
-    {
-        public override void HandleOnBackPressed()
-        {
-            if (UrbeApp.ActiveView?.HandleSystemBack() == true) return;
-            // At the root, delegate to the system/default dispatcher without calling ourselves again.
-            Enabled = false;
-            try { activity.OnBackPressedDispatcher.OnBackPressed(); }
-            finally { Enabled = true; }
-        }
     }
 
     private static FeedbackConstants Haptic(Urbe.Client.Ui.HapticKind kind) => kind switch
