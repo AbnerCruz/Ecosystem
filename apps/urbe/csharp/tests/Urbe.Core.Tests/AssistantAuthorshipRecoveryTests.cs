@@ -41,10 +41,22 @@ public sealed class AssistantAuthorshipRecoveryTests
         new(blocks, "", "end_turn", new(1, 1, null), "test");
 
     [Fact]
-    public void SystemPromptExplainsProtectedAuthorshipAndLimitations()
+    public async Task NativeRuntimeExplainsProtectedAuthorshipWithoutChangingLegacyPrompt()
     {
-        var prompt = AssistantAgent.SystemPrompt(AssistantAgent.AgentById("geral"), "auto",
-            "Urbe", 1, "Nota.md", null, null, new DateTime(2026, 10, 26));
+        var host = new Host();
+        string? prompt = null;
+        await AssistantAgent.RunAsync(new()
+        {
+            Host = host, Agent = AssistantAgent.AgentById("geral"), Policy = "auto",
+            Model = "test", Provider = new("p", "openai"), Messages = Messages(),
+            Tools = [], OptimizeToolUse = true, MarkAiText = true,
+            Stream = (_, request, _, _) =>
+            {
+                prompt = request.System;
+                return Task.FromResult(Answer(AiBlock.TextBlock("Não posso remover a marca.")));
+            }
+        });
+        Assert.NotNull(prompt);
         Assert.Contains("{ia:", prompt);
         Assert.Contains("autoria", prompt, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("não", prompt, StringComparison.OrdinalIgnoreCase);
