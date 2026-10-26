@@ -74,6 +74,63 @@ public static partial class NoteMarks
         return trimmed + " " + AiMark(model) + text[trimmed.Length..];
     }
 
+    /// <summary>
+    /// UC-51: a write may add new automatic authorship marks, but it may never
+    /// remove or rewrite a mark already present in the persisted note.
+    /// Do not silently reinsert deleted marks: that would misattribute text.
+    /// </summary>
+    public static bool PreservesAiAuthorship(string? before, string? after)
+    {
+        var existing = AuthorshipMarks(before);
+        if (existing.Count == 0) return true;
+        var proposed = AuthorshipMarks(after);
+        int matched = 0;
+        foreach (var mark in proposed)
+            if (matched < existing.Count && mark.Value == existing[matched].Value) matched++;
+        return matched == existing.Count;
+    }
+
+    /// <summary>
+    /// A human edit of the Markdown body may change surrounding prose, but not
+    /// create, replace, move or remove the system-owned authorship tokens.
+    /// Compare the changed span, not just mark counts (same-token moves are forbidden).
+    /// </summary>
+    public static bool AllowsUserAuthorshipEdit(string? before, string? after)
+    {
+        before ??= "";
+        after ??= "";
+        if (string.Equals(before, after, StringComparison.Ordinal)) return true;
+        var oldMarks = AuthorshipMarks(before);
+        var newMarks = AuthorshipMarks(after);
+        if (oldMarks.Count != newMarks.Count) return false;
+        for (int i = 0; i < oldMarks.Count; i++)
+            if (oldMarks[i].Value != newMarks[i].Value) return false;
+        if (oldMarks.Count == 0) return true;
+        int prefix = 0;
+        int maxPrefix = Math.Min(before.Length, after.Length);
+        while (prefix < maxPrefix && before[prefix] == after[prefix]) prefix++;
+        int suffix = 0;
+        while (suffix < before.Length - prefix && suffix < after.Length - prefix &&
+               before[before.Length - 1 - suffix] == after[after.Length - 1 - suffix]) suffix++;
+        int changedEnd = before.Length - suffix;
+        // A zero-length interval means insertion: inserting inside a token is also forbidden.
+        return oldMarks.All(m => prefix == changedEnd
+            ? prefix <= m.Index || prefix >= m.Index + m.Length
+            : changedEnd <= m.Index || prefix >= m.Index + m.Length);
+    }
+
+    private static List<(int Index, int Length, string Value)> AuthorshipMarks(string? markdown)
+    {
+        var text = markdown ?? "";
+        var marks = new List<(int, int, string)>();
+        if (!text.Contains("{ia:", StringComparison.Ordinal)) return marks;
+        var code = CodeRegex().Matches(text).Select(m => (m.Index, End: m.Index + m.Length)).ToList();
+        foreach (Match mark in AiMarkRegex().Matches(text))
+            if (!code.Any(c => mark.Index >= c.Index && mark.Index < c.End))
+                marks.Add((mark.Index, mark.Length, mark.Value));
+        return marks;
+    }
+
     /// <summary>A run of word comments in the source: where it is and the comments in it, in order.</summary>
     public sealed record CommentGroup(int Start, int Length, IReadOnlyList<string> Comments);
 
