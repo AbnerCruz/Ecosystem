@@ -167,7 +167,7 @@ public sealed class EditorOverlay : Grid
         Editor.TextChanged += (_, _) => { OnTextChanged(); KeepSourceCaretSoon(typing: true); };
         Editor.PropertyChanged += (_, e) =>
         {
-            if (e.Property == TextBox.CaretIndexProperty) { UpdateWiki(); KeepSourceCaretSoon(typing: false); }
+            if (e.Property == TextBox.CaretIndexProperty) UpdateWiki(); // A click/selection must not scroll the page.
             if (e.Property == TextBox.CaretIndexProperty || e.Property == TextBox.SelectionStartProperty || e.Property == TextBox.SelectionEndProperty)
                 UpdateActiveTools();
         };
@@ -190,6 +190,7 @@ public sealed class EditorOverlay : Grid
         }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         _wiki.Chosen += CommitWiki;
 
+        _visual.UserNavigating = () => UserScrolling;
         _visual.TextEdited += md =>
         {
             _fromVisual = true;
@@ -889,7 +890,8 @@ public sealed class EditorOverlay : Grid
             _sourceKeepPending = false;
             var t = _sourceKeepTyping;
             _sourceKeepTyping = false;
-            if (Mode == EditorMode.Fonte && IsVisible && Editor.IsFocused) EditorScrolling.KeepCaret(Editor, _sourceScroll, t);
+            if (Mode == EditorMode.Fonte && IsVisible && EditorScrolling.ShouldKeepCaret(Editor.IsFocused, UserScrolling))
+                EditorScrolling.KeepCaret(Editor, _sourceScroll, t);
         }, DispatcherPriority.Loaded);
     }
 
@@ -933,7 +935,8 @@ public sealed class EditorOverlay : Grid
             Content = host,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            HorizontalContentAlignment = HorizontalAlignment.Center
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            BringIntoViewOnFocusChange = false // IME/tap focus must not redirect the reader's viewport
         };
         TouchTextScroll.Attach(scroll);
         // a tap or a hold that scrolled the note, or only stopped it, is not for the block under the finger (22/10/2026)
@@ -1112,6 +1115,20 @@ public sealed class EditorOverlay : Grid
     }
 
     /// <summary>Leaves the block being written (Visual) or the text (Fonte): the keyboard goes down, the note reads calm.</summary>
+    /// <summary>Select the whole note, not just the active visual block; also works with Android's selection handles.</summary>
+    public void SelectEntireNote()
+    {
+        if (_note is null) return;
+        if (Mode == EditorMode.Visual) SetMode(EditorMode.Fonte);
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!IsVisible || Mode != EditorMode.Fonte) return;
+            Editor.Focus();
+            Editor.SelectAll();
+            TouchTextScroll.ShowSelectionHandles(Editor);
+        }, DispatcherPriority.Loaded);
+    }
+
     public void FinishWriting()
     {
         _wiki.Hide();
@@ -1228,12 +1245,27 @@ public sealed class EditorOverlay : Grid
     // ------------------------------------------------------------------ text changes, status, autosave
 
     private bool _edited;
+    // Expensive full-note statistics are rendered at rest, never on the keyboard's critical path.
+    private readonly DispatcherTimer _statsUpdate = new() { Interval = TimeSpan.FromMilliseconds(240) };
+    private bool _statsConfigured;
+
+    private void ScheduleStatsUpdate()
+    {
+        if (!_statsConfigured)
+        {
+            _statsConfigured = true;
+            _statsUpdate.Tick += (_, _) => { _statsUpdate.Stop(); if (_note is not null) UpdateStatus(changed: true); };
+        }
+        _statsUpdate.Stop();
+        _statsUpdate.Start();
+    }
 
     private void OnTextChanged()
     {
         if (_opening) return;
         if (_note is not null && !string.Equals(Editor.Text, _note.Content, StringComparison.Ordinal)) _edited = true;
-        UpdateStatus(changed: true);
+        UpdateSaveDot();
+        ScheduleStatsUpdate();
         if (IsMarkdown && Properties.IsVisible) Properties.Sync(Editor.Text ?? "");
         if (!_fromVisual && Mode == EditorMode.Fonte) { UpdateWiki(); UpdateActiveTools(); }
         ScheduleAutosave();
