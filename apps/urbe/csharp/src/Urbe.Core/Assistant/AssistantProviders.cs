@@ -29,7 +29,30 @@ public sealed record AiToolSchema(string Name, string Description, JsonObject Pa
 public sealed record AiRequest(string Model, IReadOnlyList<AiMessage> Messages, string? System = null, IReadOnlyList<AiToolSchema>? Tools = null, int? MaxTokens = null, double? Temperature = null);
 
 /// <summary>Tokens and cost of one answer.</summary>
-public sealed record AiUsage(long Input, long Output, double? Cost);
+public sealed record AiUsage(long Input, long Output, double? Cost,
+    long? CacheReadInput = null, long? CacheCreationInput = null, long? ReasoningOutput = null, string? CostSource = null)
+{
+    /// <summary>Cached input is a SUBSET of billed input; do not sum it again.</summary>
+    public static AiUsage Add(AiUsage a, AiUsage b)
+    {
+        static long? Sum(long? x, long? y) => x is null && y is null ? null : (x ?? 0) + (y ?? 0);
+        var source = a.Cost is null && b.Cost is null ? "unknown"
+            : a.Cost is null || b.Cost is null || a.CostSource == "partial" || b.CostSource == "partial" ? "partial"
+            : a.CostSource == "estimated" || b.CostSource == "estimated" ? "estimated" : "reported";
+        return new AiUsage(a.Input + b.Input, a.Output + b.Output,
+            a.Cost is null && b.Cost is null ? null : (a.Cost ?? 0) + (b.Cost ?? 0),
+            Sum(a.CacheReadInput, b.CacheReadInput), Sum(a.CacheCreationInput, b.CacheCreationInput),
+            Sum(a.ReasoningOutput, b.ReasoningOutput), source);
+    }
+    public static AiUsage FromJson(JsonObject o) => new(
+        (long)LegacyCustomize.JsToNumber(o["input"]), (long)LegacyCustomize.JsToNumber(o["output"]),
+        o["cost"] is null ? null : LegacyCustomize.JsToNumber(o["cost"]),
+        o["cacheReadInput"] is null ? null : (long)LegacyCustomize.JsToNumber(o["cacheReadInput"]),
+        o["cacheCreationInput"] is null ? null : (long)LegacyCustomize.JsToNumber(o["cacheCreationInput"]),
+        o["reasoningOutput"] is null ? null : (long)LegacyCustomize.JsToNumber(o["reasoningOutput"]),
+        (string?)o["costSource"]);
+}
+
 
 /// <summary>{content, reasoning, stopReason ('tool_use' | 'max_tokens' | 'end'), usage, model}.</summary>
 public sealed record AiResult(IReadOnlyList<AiBlock> Content, string Reasoning, string StopReason, AiUsage Usage, string Model);
@@ -337,6 +360,7 @@ public sealed class AssistantProviders
         var calls = new SortedDictionary<int, (string Id, string Name, StringBuilder Args)>();
         string? finish = null;
         long input = 0, output = 0;
+        long? cacheRead = null, cacheCreation = null, reasoningOutput = null;
         double? cost = null;
         var model = req.Model;
         AiProviderException? err = null;
@@ -357,6 +381,12 @@ public sealed class AssistantProviders
             {
                 if (Truthy(u["prompt_tokens"])) input = (long)LegacyCustomize.JsToNumber(u["prompt_tokens"]);
                 if (Truthy(u["completion_tokens"])) output = (long)LegacyCustomize.JsToNumber(u["completion_tokens"]);
+                if (u["prompt_tokens_details"] is JsonObject details && details["cached_tokens"] is { } cached)
+                    cacheRead = (long)LegacyCustomize.JsToNumber(cached);
+                if (u["completion_tokens_details"] is JsonObject completion && completion["reasoning_tokens"] is { } reasoning)
+                    reasoningOutput = (long)LegacyCustomize.JsToNumber(reasoning);
+                if (u["cache_creation_input_tokens"] is { } creation)
+                    cacheCreation = (long)LegacyCustomize.JsToNumber(creation);
                 if (u["cost"] is not null) cost = LegacyCustomize.JsToNumber(u["cost"]);
             }
             if (j["choices"] is not JsonArray { Count: > 0 } choices || choices[0] is not JsonObject ch) return;
@@ -419,7 +449,7 @@ public sealed class AssistantProviders
             output2.Add(AiBlock.ToolUse(c.Id.Length > 0 ? c.Id : "call_" + Base36(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) + "_" + i, c.Name, ParseJsonLoose(c.Args.ToString())));
         }
         var hasTools = output2.Any(b => b.Type == "tool_use");
-        return new AiResult(output2, reasoning.ToString(), hasTools ? "tool_use" : finish == "length" ? "max_tokens" : "end", new AiUsage(input, output, cost), model);
+        return new AiResult(output2, reasoning.ToString(), hasTools ? "tool_use" : finish == "length" ? "max_tokens" : "end", new AiUsage(input, output, cost, cacheRead, cacheCreation, reasoningOutput, cost is null ? "unknown" : "reported"), model);
     }
 
     private async Task<List<AiModelInfo>> OpenAiModelsAsync(Resolved p, CancellationToken cancel)
@@ -482,6 +512,7 @@ public sealed class AssistantProviders
         var blocks = new SortedDictionary<int, (string Type, string Id, string Name, StringBuilder Text)>();
         string? stop = null;
         long input = 0, output = 0;
+        long? cacheRead = null, cacheCreation = null;
         var model = req.Model;
         AiProviderException? err = null;
         var reasoning = new StringBuilder();
@@ -497,7 +528,9 @@ public sealed class AssistantProviders
                 if (Truthy(msg["model"])) model = LegacyCustomize.JsToString(msg["model"]);
                 var u = msg["usage"] as JsonObject ?? new JsonObject();
                 long N(string k) => Truthy(u[k]) ? (long)LegacyCustomize.JsToNumber(u[k]) : 0;
-                input = N("input_tokens") + N("cache_read_input_tokens") + N("cache_creation_input_tokens");
+                cacheRead = u["cache_read_input_tokens"] is null ? null : N("cache_read_input_tokens");
+                cacheCreation = u["cache_creation_input_tokens"] is null ? null : N("cache_creation_input_tokens");
+                input = N("input_tokens") + (cacheRead ?? 0) + (cacheCreation ?? 0); // Anthropic buckets are disjoint.
                 output = N("output_tokens");
             }
             else if (t == "content_block_start")
@@ -533,7 +566,7 @@ public sealed class AssistantProviders
             if (b.Type == "text" && b.Text.Length > 0) content.Add(AiBlock.TextBlock(b.Text.ToString()));
             else if (b.Type == "tool_use") content.Add(AiBlock.ToolUse(b.Id, b.Name, ParseJsonLoose(b.Text.ToString())));
         }
-        return new AiResult(content, reasoning.ToString(), stop == "tool_use" ? "tool_use" : stop == "max_tokens" ? "max_tokens" : "end", new AiUsage(input, output, null), model);
+        return new AiResult(content, reasoning.ToString(), stop == "tool_use" ? "tool_use" : stop == "max_tokens" ? "max_tokens" : "end", new AiUsage(input, output, null, cacheRead, cacheCreation, null, "unknown"), model);
     }
 
     private async Task<List<AiModelInfo>> AnthropicModelsAsync(Resolved p, CancellationToken cancel)
