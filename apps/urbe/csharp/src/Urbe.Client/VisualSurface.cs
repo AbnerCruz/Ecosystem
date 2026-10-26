@@ -78,6 +78,8 @@ public sealed class VisualSurface : StackPanel
     public Control Bubble => _bubble;
 
     private ScrollViewer? Scroll => this.FindAncestorOfType<ScrollViewer>();
+    /// <summary>Owned by the host: reader touch/wheel navigation takes precedence over automatic caret movement.</summary>
+    public Func<bool>? UserNavigating { get; set; }
 
     /// <summary>The whole note, Markdown (LF), after every edit.</summary>
     public string Text => _text;
@@ -544,6 +546,7 @@ public sealed class VisualSurface : StackPanel
         foreach (var key in new[] { "TextControlBorderBrush", "TextControlBorderBrushPointerOver", "TextControlBorderBrushFocused" })
             _box.Resources[key] = Brushes.Transparent;
         _box.TextChanged += OnBoxChanged;
+        Ui.TextActions.Attach(_box);
         // a double tap selects the word under the finger, to copy, cut or delete (UC-48; the mouse already does it)
         _box.DoubleTapped += (_, e) =>
         {
@@ -561,7 +564,7 @@ public sealed class VisualSurface : StackPanel
         _box.PropertyChanged += (_, e) =>
         {
             if (e.Property == TextBox.SelectionStartProperty || e.Property == TextBox.SelectionEndProperty || e.Property == TextBox.CaretIndexProperty) UpdateTools();
-            if (e.Property == TextBox.CaretIndexProperty) KeepCaretSoon(typing: false);
+            // Moving the caret with a tap must not move the whole note. Only actual typing can follow it.
         };
         _box.LostFocus += (_, _) => Dispatcher.UIThread.Post(() =>
         {
@@ -622,7 +625,9 @@ public sealed class VisualSurface : StackPanel
             _keepPending = false;
             var t = _keepTyping;
             _keepTyping = false;
-            if (_box is { } box && Scroll is { } scroll) EditorScrolling.KeepCaret(box, scroll, t);
+            if (_box is { } box && Scroll is { } scroll &&
+                EditorScrolling.ShouldKeepCaret(box.IsFocused, UserNavigating?.Invoke() == true))
+                EditorScrolling.KeepCaret(box, scroll, t);
         }, DispatcherPriority.Loaded);
     }
 
