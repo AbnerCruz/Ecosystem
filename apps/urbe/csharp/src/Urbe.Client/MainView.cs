@@ -692,6 +692,9 @@ public sealed partial class MainView : Grid
                 // UC-54: move from inside the editor (the note stays open at its new path)
                 if (await ChooseFolderAsync() is { } folder) await MoveNotesToAsync([note.Path], folder);
             }),
+            new DialogItem("Selecionar nota inteira", UrbeTheme.Icons.List,
+                "Seleciona todo o Markdown, além do bloco atual. Pode copiar ou formatar a seleção.",
+                Run: () => { editor.SelectEntireNote(); return Task.CompletedTask; }),
             new DialogItem("Mostrar nas notas", UrbeTheme.Icons.Notes, Run: () => { ShowNotesOverEditor(); return Task.CompletedTask; }),
             new DialogItem("Versões anteriores", UrbeTheme.Icons.Restore, Run: ShowVersionsAsync),
             new DialogItem("Conexões", UrbeTheme.Icons.Connections, "As notas que ela cita e as que a citam.", Run: () => { ShowEditorConnections(); return Task.CompletedTask; }),
