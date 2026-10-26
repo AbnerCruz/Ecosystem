@@ -26,7 +26,7 @@ public sealed class ProviderUsageCacheTests
         var sse = "data: " + """{"model":"example","choices":[{"delta":{"content":"ok"},"finish_reason":"stop"}],"usage":{"prompt_tokens":120,"completion_tokens":50,"prompt_tokens_details":{"cached_tokens":80},"completion_tokens_details":{"reasoning_tokens":9},"cost":0.004}}""" + "\n\n" +
             "data: [DONE]\n\n";
         var provider = new AssistantProviders(new Script(sse));
-        var result = await provider.StreamAsync(new AiProviderConfig("p", "openai"), Request());
+        var result = await provider.StreamAsync(new AiProviderConfig("p", "openai"), Request(), cancel: TestContext.Current.CancellationToken);
         Assert.Equal(120, result.Usage.Input);
         Assert.Equal(50, result.Usage.Output);
         Assert.Equal(80, result.Usage.CacheReadInput);
@@ -45,7 +45,7 @@ public sealed class ProviderUsageCacheTests
             "\n\n" + "event: message_delta\ndata: " +
             """{"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":7}}""" + "\n\n";
         var provider = new AssistantProviders(new Script(sse));
-        var result = await provider.StreamAsync(new AiProviderConfig("p", "anthropic"), Request());
+        var result = await provider.StreamAsync(new AiProviderConfig("p", "anthropic"), Request(), cancel: TestContext.Current.CancellationToken);
         Assert.Equal(70, result.Usage.Input);
         Assert.Equal(7, result.Usage.Output);
         Assert.Equal(40, result.Usage.CacheReadInput);
@@ -59,7 +59,7 @@ public sealed class ProviderUsageCacheTests
     {
         var sse = "data: " + """{"model":"example","choices":[{"delta":{"content":"ok"},"finish_reason":"stop"}]}""" + "\n\n" + "data: [DONE]\n\n";
         var provider = new AssistantProviders(new Script(sse));
-        var r = await provider.StreamAsync(new AiProviderConfig("p", "openai"), Request());
+        var r = await provider.StreamAsync(new AiProviderConfig("p", "openai"), Request(), cancel: TestContext.Current.CancellationToken);
         Assert.Null(r.Usage.Cost);
         Assert.Null(r.Usage.CacheReadInput);
         Assert.Null(r.Usage.CacheCreationInput);
