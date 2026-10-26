@@ -87,6 +87,12 @@ public sealed class AssistantStoreTests
         public List<string> Log { get; } = [];
         public Task<bool> RestoreTrashedAsync(string id) { Log.Add("restore " + id); Documents.Upsert(new DocumentInput { Id = id, Path = "Lixo.md", Content = "x" }); return Task.FromResult(true); }
         public Task TrashAsync(UrbeDocument doc) { Log.Add("trash " + doc.Path); Documents.Remove(doc.Id); return Task.CompletedTask; }
+        public string? LastUndoExpectedAfter { get; private set; }
+        public Task WriteBackVerifiedUndoAsync(UrbeDocument current, string path, string before, string expectedAfter)
+        {
+            LastUndoExpectedAfter = expectedAfter;
+            return WriteBackAsync(current, path, before);
+        }
         public Task WriteBackAsync(UrbeDocument current, string path, string content)
         {
             Log.Add("write " + current.Path + " → " + path);
@@ -112,6 +118,7 @@ public sealed class AssistantStoreTests
         var report = await AssistantUndo.RevertAsync(host, changes);
         Assert.Equal(["restore d4", "write Pasta/Movido.md → Movido.md", "trash Novo.md"], host.Log);
         Assert.Equal(3, report.Restored);
+        Assert.Equal("depois", host.LastUndoExpectedAfter);
         Assert.Equal(["Mexido.md"], report.Skipped);
         Assert.Equal("antes", host.Documents.Get("Movido.md")!.Content);
         Assert.Null(host.Documents.Get("Novo.md"));
