@@ -38,8 +38,8 @@
     {
       "check": "Device Android: criar mapa, desenhar tileset, executar",
       "kind": "human",
-      "result": "pending",
-      "evidence": "Aparelho do usuário ainda não testado",
+      "result": "passed",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-26 (Issue https://github.com/AbnerCruz/Ecosystem/issues/789); registro em docs/governance/responses/VAL-HO-20261026-lunet-native-tilemap-ee79cf892fb0.md.",
       "object": "apps/lunet2d/docs/guides/tile-studio.md",
       "critical": false
     }
