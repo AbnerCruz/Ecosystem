@@ -388,7 +388,7 @@ public static class AssistantAgent
         while (WorkingSize() > budgetChars && o.Count > 2)
         {
             int cut = -1;
-            for (int i = 1; i < o.Count - 1; i++)
+            for (int i = 1; i < o.Count; i++)
                 if (o[i].Role == "user" && o[i].Content.Any(b => b.Type == "text")) { cut = i; break; }
             if (cut < 0) break;
             o.RemoveRange(0, cut);
