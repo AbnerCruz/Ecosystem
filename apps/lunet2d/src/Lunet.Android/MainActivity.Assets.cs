@@ -1,7 +1,6 @@
 using Android.App;
 using Android.Content;
 using Android.Graphics;
-using Android.Media;
 using Android.Views;
 using Android.Widget;
 using Lunet.Core;
@@ -137,7 +136,7 @@ public sealed partial class MainActivity
         root.AddView(new TextView(this) { Text = $"{AssetCategoryName(asset.Kind)}\n{asset.Path}", TextSize = 13 });
 
         Bitmap? bitmap = null;
-        MediaPlayer? player = null;
+        Android.Media.MediaPlayer? player = null;
         string? preview = asset.PreviewPath;
         if (asset.Kind == ProjectAssetKind.TileMap)
         {
@@ -192,7 +191,7 @@ public sealed partial class MainActivity
                 {
                     player?.Release();
                     player?.Dispose();
-                    player = new MediaPlayer();
+                    player = new Android.Media.MediaPlayer();
                     player.SetDataSource(SafeAssetFilePath(project, asset.Path));
                     player.Prepared += (_, _) => { if (dialog.IsShowing) player?.Start(); };
                     player.PrepareAsync();
@@ -211,7 +210,7 @@ public sealed partial class MainActivity
         root.AddView(MakeButton("Copiar uso em C#", () =>
         {
             var clipboard = GetSystemService(ClipboardService) as ClipboardManager;
-            clipboard?.SetPrimaryClip(ClipData.NewPlainText("Código Lunet", asset.UsageCode));
+            if (clipboard is not null) clipboard.PrimaryClip = ClipData.NewPlainText("Código Lunet", asset.UsageCode);
             Toast.MakeText(this, "Código copiado", ToastLength.Short)?.Show();
         }));
 
