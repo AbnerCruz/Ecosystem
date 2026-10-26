@@ -523,7 +523,7 @@ public static partial class AssistantTools
         new()
         {
             Name = "edit_note", Access = "write",
-            Description = "Edita um trecho de uma nota: troca old_text (cópia exata, única na nota) por new_text, inclusive texto vazio para exclusão. Preserva o resto. Marcas {ia:\"modelo\"} de autoria são protegidas: não as remova ou altere. Prefira esta ferramenta para mudanças parciais.",
+            Description = "Edita um trecho de uma nota: troca old_text (cópia exata, única na nota) por new_text. Preserva o resto. Prefira esta ferramenta para mudanças parciais.",
             Parameters = Schema("""{"type":"object","properties":{"path":{"type":"string"},"old_text":{"type":"string"},"new_text":{"type":"string"},"replace_all":{"type":"boolean"}},"required":["path","old_text","new_text"],"additionalProperties":false}"""),
             Label = i => "Editar " + Norm(Str(i, "path")),
             Preview = (i, host) =>
@@ -703,7 +703,7 @@ public static partial class AssistantTools
         if (input0 is not JsonObject input) return ["os argumentos precisam ser um objeto JSON"];
         if (input.ContainsKey("__invalid") && input["__invalid"] is not null) return ["JSON dos argumentos inválido ou truncado"];
         foreach (var k in (sch["required"] as JsonArray ?? []).Select(x => (string)x!))
-            if (!input.ContainsKey(k) || input[k] is null) errs.Add("falta \"" + k + "\"");
+            if (input[k] is null || (IsEmpty(input[k]) && !(tool.Name == "edit_note" && k == "new_text"))) errs.Add("falta \"" + k + "\"");
         foreach (var k in input.Select(p => p.Key).ToList())
         {
             if (props[k] is not JsonObject p)
@@ -749,4 +749,5 @@ public static partial class AssistantTools
         return errs;
     }
 
+    private static bool IsEmpty(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var value) && value.Length == 0;
 }
