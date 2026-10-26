@@ -26,7 +26,11 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorInteractionStabilityTests.cs",
     "apps/urbe/docs/csharp/EDITOR-INTERACTION-STABILITY-20261026.md",
     "apps/urbe/docs/csharp/ROADMAP.md",
-    "docs/governance/handoffs/HO-20261026-urbe-editor-interaction-chat.json"
+    "docs/governance/handoffs/HO-20261026-urbe-editor-interaction-chat.json",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES-beta.32.md"
   ],
   "work_completed": [
     "UC-57/Issue #805: inspecionadas diretamente as implementações de VisualSurface, EditorOverlay, TouchTextScroll, EditorScrolling, AssistantPanel, MainView.History e os testes existentes da main C#; consultados o código-fonte Avalonia TextBox/ScrollViewer e documentação de rolagem, foco e seleção.",
@@ -36,7 +40,8 @@
     "Mais ações do editor contém Selecionar nota inteira, distinto de selecionar bloco: transição explícita para Fonte, SelectAll/handles nativos.",
     "AssistantPanel só acompanha novas mensagens enquanto follow-tail estiver ativo; gesto manual interrompe auto-follow, retorno voluntário ao final ou botão Ir à última mensagem o reativa.",
     "Mensagens próprias permitem Copiar, Selecionar trecho e Editar e reenviar pelo compositor, com confirmação para substituir rascunho e preservação do histórico anterior.",
-    "Registradas referências Avalonia, análise das causas e critérios Android em EDITOR-INTERACTION-STABILITY-20261026.md e roadmap."
+    "Registradas referências Avalonia, análise das causas e critérios Android em EDITOR-INTERACTION-STABILITY-20261026.md e roadmap.",
+    "Corte de distribuição beta.32: versão canônica Android 2.0.0-beta.32 (versionCode 2000032), sem mudar ApplicationId, assinatura ou workflow; PATCHNOTES.md, PATCHNOTES-beta.32.md e histórico compacto atualizados. Publicação depende de integração no main e workflow assinado, não ocorreu na branch."
   ],
   "verification": [
     {
@@ -64,6 +69,12 @@
       "critical": true,
       "object": "apps/urbe/docs/csharp/EDITOR-INTERACTION-STABILITY-20261026.md",
       "evidence": "Nenhuma execução física disponível. Testar toque simples, duplo, segurar, selecionar toda a nota e rolar em conversa com geração real."
+    },
+    {
+      "kind": "automated",
+      "check": "Publicação oficial da beta.32 e verificação de APK assinado/Windows ZIP",
+      "result": "pending",
+      "evidence": "Após integração crítica autorizada, workflow urbe-csharp-mobile-release.yml deve publicar tag urbe-csharp-v2.0.0-beta.32 e assets esperados com assinatura verificável. Nenhum tag ou release criado na branch."
     }
   ],
   "known_issues": [
@@ -132,7 +143,7 @@
     "classes": [
       "distribution"
     ],
-    "reason": "O proprietário solicita uma release beta nativa assinada após esta correção. O aumento da versão canônica Urbe.Android e distribuição via workflow oficial devem seguir gates de release."
+    "reason": "Release Android beta.32 solicitada pelo proprietário: incremento da versão canônica/versionCode sem alterar assinatura ou identidade. O integrador só deve publicar após autorização, CI e validação de artefatos."
   },
   "reuse_assessment": [
     {
