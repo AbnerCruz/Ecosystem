@@ -464,7 +464,10 @@ public sealed partial class MainView : Grid
     /// <summary>flushPending: write a pending record now (window closing, app going to the background).</summary>
     public Task FlushPendingAsync() => _notesSave?.FlushAsync() ?? Task.CompletedTask;
 
-    private async Task SaveNoteAsync(CityNote note, string? expectedUndoContent = null)
+    // Keep the one-argument signature for Editor.SaveRequested (Func<CityNote, Task>).
+    private Task SaveNoteAsync(CityNote note) => SaveNoteAsync(note, expectedUndoContent: null);
+
+    private async Task SaveNoteAsync(CityNote note, string? expectedUndoContent)
     {
         if (_vault is null || !_vault.IsConnected || _snapshot is null)
             throw new InvalidOperationException("Selecione uma pasta real para gravar.");
