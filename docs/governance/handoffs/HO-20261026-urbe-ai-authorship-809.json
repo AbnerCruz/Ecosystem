@@ -1,0 +1,153 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261026-urbe-ai-authorship-809",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-26T19:45:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-ai-authorship-809",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-51",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "fix/urbe-809-protected-ai-marks-agent-recovery",
+  "base_commit": "32b3bb1869c59f6fdbba902526fff3ebf6f93d9e",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/810",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/NoteMarks.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantAuthorshipRecoveryTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantEfficiencyTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantStoreTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorAuthorshipProtectionTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AndroidBackAndPatchnotesUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES-beta.33.md",
+    "apps/urbe/docs/csharp/ASSISTANT-AUTHORSHIP-INTEGRITY-20261026.md",
+    "docs/governance/handoffs/HO-20261026-urbe-ai-authorship-809.json"
+  ],
+  "work_completed": [
+    "Issue #809 criada e teste do export beta.32 inspecionado: oito edit_note, duas recusas enganadoras a new_text vazio, no-op e três execuções interrompidas por no_progress.",
+    "Novos testes escritos antes de mudança do runtime (AssistantAuthorshipRecoveryTests), estendidos a bloqueio de edição no Fonte/Visual e recuperação de no-progress.",
+    "Marcas válidas de autoria preservadas no domínio, validação de edição imediata Fonte e Visual, guarda final antes de SaveExistingTextFileAsync.",
+    "SystemPrompt legado preservado; instrução anti-adulteração injetada apenas na sessão nativa adequada. edit_note aceita string vazia legítima e os demais campos vazios continuam inválidos.",
+    "Controle no_progress oferece uma recuperação delimitada, sem retry indefinido.",
+    "CI de UI identificou necessidade de desfazer alterações feitas pela IA. Reversão integral com correspondência exata ao estado posterior recebe exceção restrita; edição normal continua bloqueada.",
+    "Preparada versão canônica beta.33, notas desta versão e histórico da beta.32 publicada, sem alterar app-id ou assinatura."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe C# portable: build e regressões Core",
+      "result": "passed",
+      "evidence": "Workflow urbe-checks: https://github.com/AbnerCruz/Ecosystem/actions/runs/40387954256; Core passou antes da correção de undo e incremento de versão; verificar novamente no head final."
+    },
+    {
+      "kind": "automated",
+      "check": "Urbe Client headless e regressões de desfazer verificado",
+      "result": "pending",
+      "evidence": "A rodada anterior teve 253/255 UI aprovados; duas falhas de desfazer da IA identificadas e código ajustado. Necessária nova rodada CI após alteração."
+    },
+    {
+      "kind": "automated",
+      "check": "Build nativo Android/Windows, npm/E2E, consistency",
+      "result": "pending",
+      "evidence": "Android/Windows e E2E da rodada parcial passaram; validar versão beta.33 e resultado combinado da PR #810 antes de integrar."
+    },
+    {
+      "kind": "human",
+      "check": "Toque, teclado, seleção, colagem, Undo, modo Visual/Fonte, salvar/reabrir e desempenho no Android",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/docs/csharp/ASSISTANT-AUTHORSHIP-INTEGRITY-20261026.md",
+      "evidence": "Ainda sem aparelho físico; não confundir CI headless com DEVICE."
+    },
+    {
+      "kind": "automated",
+      "check": "Release oficial assinada Android beta.33 e ZIP Windows",
+      "result": "pending",
+      "evidence": "Tag urbe-csharp-v2.0.0-beta.33 deve ser criada exclusivamente pelo workflow urbe-csharp-mobile-release da main aprovada, não pela branch."
+    }
+  ],
+  "known_issues": [
+    "Arquivos Markdown editados diretamente fora do Urbe não são resistentes à adulteração; a marca inline não é proveniência assinada digitalmente.",
+    "Uma reversão histórica verificada de alteração da IA pode remover o selo junto com o próprio texto da operação, diferentemente de editar/remover somente o selo.",
+    "O gate DEVICE exige comparação de comportamento Visual/Fonte, inclusive Gboard, cola, seleção, undo e desempenho com notas longas."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar nova CI após o ajuste de undo e correção pontual de eventuais falhas.",
+    "Conferir diff combinado, versão e patchnotes; integração e publicação governadas somente após gates aprovados.",
+    "Executar e comprovar teste Android físico após release; não declarar validação humana antes."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Nota Markdown e AiRunRecord existentes mantidos como fonte de conteúdo e delta auditável; nenhuma tabela duplicada."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Correção pontual C# no produto sem reescrita geral."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #809, PR #810, testes, logs e handoff rastreáveis."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Operações recusadas antes da gravação; restauração somente da transação exata e condicionada à versão da nota."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e validação tátil Android separadas; DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Status verifying e release pendente; não alegar done antes de CI e integração."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Usado NoteMarks e mecanismos existentes de edição/undo sem serviço adicional."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Somente Urbe, sem extrair framework para produtos sem segundo consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Incremento do UrbeBetaVersion/VersionCode para preparar release Android beta.33; integração governada depende dos gates e autorização, não publicar de branch."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "native-mark-integrity-urbe",
+      "status": "product-specific",
+      "rationale": "Regra de autoria vinculada à sintaxe Markdown do Urbe, sem contrato genérico ou segundo consumidor real."
+    }
+  ]
+}
