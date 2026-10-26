@@ -1,5 +1,7 @@
 # Changelog
 
+- Pré-beta / LUNET-445 (#787): runtime-template Android separado da IDE, compilador GameCode com `GameSourceRoot` e prova por workflow GitHub Actions que empacota Game.dll, Content e Assets num APK de jogo distinto; CI de prova e fluxo cloud integrado na IDE (Arquivo → Gerar APK), consentimento explícito, repositório privado próprio, upload ZIP, workflow, monitoramento, download do artifact e exportação/instalação no Android. Assinatura debug temporária; offline e DEVICE ainda pendentes.
+
 - Pré-beta / LUNET-444 (#785): Tile Studio cria mapas e tilesets completos dentro do Lunet sem importação; gera PNG + JSON editável e integra editor de pixels acessível pelo próprio mapa. Suporte inicial de atlas 64/128px, tiles 16/32/64 e tamanhos de mapa 16/32/64. CI e DEVICE pendentes.
 
 - Pré-beta / LUNET-443 (#783): Sprite Studio passa a gerar e atualizar a spritesheet PNG com todos os frames automaticamente ao salvar o `.sprite.json` (mantendo FPS/frames editáveis); botão de uso exibe SpriteSheet/SpriteAnimationClip/SpriteAnimator. Corrigido carregamento de `Assets/` no Preview rápido/isolado sem afetar `Content/`. DEVICE pendente.

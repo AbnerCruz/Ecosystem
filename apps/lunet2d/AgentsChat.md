@@ -516,3 +516,15 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - LUNET-444/Issue #785. Ordem do proprietário: corrigir primeiro o Tile Studio que exige PNG importado (e o import recusou); depois seguir F9 APK independente do jogo.
 - Criação in-app de `Content/Data/map-*.tilemap.json` e atlas `Content/Textures/tiles-*.sprite.json` + `.png` no mesmo fluxo, sem imports. Editor de pixels reutilizado em modo de tileset (um frame, grade de tile destacada) com retorno ao Tile Studio e recarga do PNG. Nenhum formato de runtime alterado. Implementado em branch `fix/lunet-tilemap-native-create-20261026`.
 - Testes portáteis de formato/atlas e build Android pelo CI; DEVICE pendente. Trabalho APK do jogo deve ocorrer separado, sem confundir com APK da IDE.
+
+### 20261026-chatgpt-lunet-standalone-game-apk-smoke — ChatGPT → integrador — review
+- LUNET-445/Issue #787, branch `feat/lunet-standalone-game-apk-smoke-20261026`, incremento F9 autorizado pelo proprietário após LUNET-444.
+- Criado Android runtime-template sem UI/compilador/editor do Lunet, utilizando GlesBackend, PreviewRenderer, áudio e Framework/Runtime oficiais, com Game.dll + Content/Assets embutidos e content source seguro. `samples/apk-smoke/Game.cs` independente da IDE, workflow CI próprio compila e assina debug e inspeciona conteúdo APK.
+- Primeiro CI encontrou namespace gerado conflitando com `Lunet.Game` e acesso interno ao TouchFrameBuffer; corrigido com assembly/root namespace dedicado e InternalsVisibleTo restrito ao novo runtime. O job de smoke Android da correção concluiu `success` (run 40266779167); validação DEVICE, projeto arbitrário, assinatura por jogo e build offline continuam F9 pendentes.
+
+### 20261026-chatgpt-lunet-build-source-root — ChatGPT → integrador — review
+- Complemento LUNET-445/#787 ao PR #788: `runtime-template/Lunet.GameCode.csproj` compila C# da pasta `GameSourceRoot` sem incluir Tests/caches, e template Android aceita `GameSourceRoot`, `GameAssembly`, `ApplicationId` e `ApplicationTitle`. O smoke CI usa a rota genérica; ainda não é botão de APK no aparelho.
+
+### 20261026-chatgpt-lunet-build-private-github — ChatGPT → integrador — review
+- Complemento LUNET-445/#787 no PR #788: interface Arquivo → Gerar APK do jogo; consentimento para GitHub; criação de repositório privado, snapshot ZIP, workflow, polling, download do APK e export/instalação via SAF.
+- Fontes: Lunet.Core/GitHubGameBuildClient.cs e GitHubGameBuildWorkflow.cs, MainActivity.GameBuild.cs, testes GitHubGameBuildTests. CI/DEVICE do caminho real pendentes; não afirmar build local offline nem certificado persistente. ADR 0010 registra cloud como fallback provisório.

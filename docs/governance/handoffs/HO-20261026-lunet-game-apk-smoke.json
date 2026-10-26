@@ -1,0 +1,125 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261026-lunet-game-apk-smoke",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-26T04:01:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-game-apk-smoke",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-445",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-standalone-game-apk-smoke-20261026",
+  "base_commit": "6533a2b1acf1e83c4536ed141193818e5486b151",
+  "files_changed": [
+    "apps/lunet2d/runtime-template/Lunet.Game.Android.csproj",
+    "apps/lunet2d/runtime-template/PackagedContentSource.cs",
+    "apps/lunet2d/runtime-template/StandaloneGameActivity.cs",
+    "apps/lunet2d/runtime-template/Properties/AndroidManifest.xml",
+    "apps/lunet2d/samples/apk-smoke/SmokeGame.csproj",
+    "apps/lunet2d/samples/apk-smoke/Game.cs",
+    "apps/lunet2d/samples/apk-smoke/Content/Data/level.json",
+    "apps/lunet2d/samples/apk-smoke/Assets/readme.txt",
+    ".github/workflows/lunet2d-game-apk-smoke.yml",
+    "apps/lunet2d/docs/guides/game-apk-smoke.md",
+    "apps/lunet2d/src/Lunet.Framework/Lunet.Framework.csproj",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261026-lunet-game-apk-smoke.json",
+    "apps/lunet2d/runtime-template/Lunet.GameCode.csproj",
+    "apps/lunet2d/src/Lunet.Core/GitHubGameBuildClient.cs",
+    "apps/lunet2d/src/Lunet.Core/GitHubGameBuildWorkflow.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.GameBuild.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Ide.cs",
+    "apps/lunet2d/src/Lunet.Android/Properties/AndroidManifest.xml",
+    "apps/lunet2d/tests/Lunet.Tests/GitHubGameBuildTests.cs",
+    "apps/lunet2d/docs/adr/0010-cloud-game-apk-fallback.md"
+  ],
+  "work_completed": [
+    "Criação de template Android independente sem IDE, repassando Game.dll empacotado ao runtime real",
+    "Fontes Content e Assets empacotadas num APK; validação de path e fallback Assets",
+    "Jogo smoke com círculos/touch, workflow dedicado com build signed APK e verificação de assets/arquivo",
+    "Compilador de fontes C# do projeto, parametrizado por GameSourceRoot e exclusões de testes/caches; template parametrizado por identidade de aplicação.",
+    "Interface cloud com consentimento para repositório privado, upload de jogo, workflow Actions, polling, download do artifact APK e exportação via Android SAF.",
+    "Adicionado teste HTTP simulado de pacote privado/dispatch/download e ADR cloud fallback."
+  ],
+  "verification": [
+    {
+      "check": "CI standalone-game-apk smoke",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/40266779167 (head anterior b65260486; rerodar na integração)"
+    },
+    {
+      "check": "Device: instalar APK standalone e tocar jogo",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/game-apk-smoke.md",
+      "critical": false,
+      "evidence": "Aparelho ainda não testado."
+    },
+    {
+      "check": "DEVICE: GitHub private build, export/install de APK do jogo",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/game-apk-smoke.md",
+      "critical": false,
+      "evidence": "Requer ação do proprietário com conta GitHub no Lunet."
+    }
+  ],
+  "known_issues": [
+    "Assinatura debug do smoke não deve ser usada como chave dos jogos do usuário",
+    "Build offline Android e eventual fallback exigem experimento/ADR antes de decisão",
+    "Cloud build real com conta do usuário requer validação DEVICE; autenticação GitHub/Actions não é demonstrada pelos testes simulados.",
+    "Assinatura Android debug efêmera, build local offline, AAB e chaves de release continuam pendentes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Conferir CI de branch combinada e validar artifact",
+    "Entregar APK independente para validação DEVICE",
+    "Desenhar pipeline dinâmico de Game.cs + assets do projeto do usuário com assinatura própria, integração na IDE",
+    "Validar Arquivo → Gerar APK do jogo num aparelho real com conta GitHub e código/Assets de um projeto."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/adr/0010-cloud-game-apk-fallback.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Aplicação de jogo separada da IDE e de outros produtos Ecosystem"
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Artefato do jogo não vira release da IDE"
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI green não substitui DEVICE"
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Fontes runtime do Lunet reutilizadas sem nova plataforma shared"
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "android-game-runtime-template",
+      "status": "product-specific",
+      "rationale": "Host específico do Lunet e games exportados, sem consumidor de outro produto"
+    }
+  ],
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/788"
+}

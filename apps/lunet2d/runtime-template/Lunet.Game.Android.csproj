@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- F9 smoke template. A game APK never embeds the Lunet IDE or its signing key. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Lunet.Standalone</RootNamespace>
+    <AssemblyName>Lunet.Standalone.Android</AssemblyName>
+    <RuntimeIdentifier>android-arm64</RuntimeIdentifier>
+    <SupportedOSPlatformVersion>29</SupportedOSPlatformVersion>
+    <AndroidApplication>true</AndroidApplication>
+    <ApplicationId Condition="'$(ApplicationId)' == ''">io.lunet.game.smoke</ApplicationId>
+    <ApplicationTitle Condition="'$(ApplicationTitle)' == ''">Lunet Standalone Smoke</ApplicationTitle>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <AndroidUseAapt2>true</AndroidUseAapt2>
+    <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+    <PublishTrimmed>false</PublishTrimmed>
+    <AndroidLinkMode>None</AndroidLinkMode>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <GameSourceRoot Condition="'$(GameSourceRoot)' == ''">$(MSBuildThisFileDirectory)../samples/apk-smoke</GameSourceRoot>
+    <GameAssembly Condition="'$(GameAssembly)' == ''">$(MSBuildThisFileDirectory)bin/$(Configuration)/net10.0/CompiledGame.dll</GameAssembly>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../src/Lunet.Framework/Lunet.Framework.csproj" />
+    <ProjectReference Include="../src/Lunet.Runtime/Lunet.Runtime.csproj" />
+    <!-- Reuse the *real* OpenGL and Android audio hosts without bundling the IDE UI. -->
+    <Compile Include="../src/Lunet.Android/Gles/GlesBackend.cs" Link="Gles/GlesBackend.cs" />
+    <Compile Include="../src/Lunet.Android/Gles/PreviewRenderer.cs" Link="Gles/PreviewRenderer.cs" />
+    <Compile Include="../src/Lunet.Android/AndroidAudioBackend.cs" Link="AndroidAudioBackend.cs" />
+    <Compile Include="../src/Lunet.Android/AndroidHaptics.cs" Link="AndroidHaptics.cs" />
+    <Compile Include="../src/Lunet.Android/Audio/*.cs" Link="Audio/%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidAsset Include="$(GameAssembly)" Link="game/Game.dll" />
+    <AndroidAsset Include="$(GameSourceRoot)/Content/**/*" Link="game/Content/%(RecursiveDir)%(Filename)%(Extension)" />
+    <AndroidAsset Include="$(GameSourceRoot)/Assets/**/*" Link="game/Assets/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>
