@@ -87,7 +87,7 @@ public sealed class MemoryQualityExtendedTests
         };
         var tools = new[] { new AiToolSchema("read_note", new string('s',1000), new JsonObject { ["type"]="object" }) };
         var req = AssistantContextBudget.Build(run, "Instruções obrigatórias.", tools, events);
-        Assert.True(AssistantContextBudget.ConservativeTokens(req) + req.MaxTokens!.Value <= 6000);
+        Assert.True(AssistantContextBudget.ConservativeTokens(req, run.Provider) + req.MaxTokens!.Value <= 6000);
         Assert.Contains("Instruções obrigatórias", req.System);
         Assert.NotEmpty(req.Messages);
         Assert.NotEmpty(req.Tools!);
