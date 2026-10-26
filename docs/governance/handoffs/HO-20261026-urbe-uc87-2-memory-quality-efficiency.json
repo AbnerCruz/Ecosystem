@@ -90,10 +90,10 @@
     {
       "kind": "human",
       "check": "Comportamento de memória e consumo com provedor real e no Android físico",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
-      "evidence": "Sem inferência real/Android físico nesta execução. Validar refinamento longo, contexto pequeno, leitura/cache do provedor, tempo/memória do app, tela de custos, consentimento e dados persistidos."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-26 (Issue https://github.com/AbnerCruz/Ecosystem/issues/807); registro em docs/governance/responses/VAL-HO-20261026-urbe-uc87-2-memory-quality-efficiency-fa5a03e0ba03.md."
     },
     {
       "kind": "automated",
