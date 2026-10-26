@@ -146,7 +146,7 @@ public sealed class AssistantEfficiencyTests
     }
 
     [Fact]
-    public async Task ExactRepeatedStateStopsAsNoProgressWithoutAnArbitraryStepCap()
+    public async Task ExactRepeatedStateStopsAfterOneBoundedRecoveryAttempt()
     {
         var host = new Host(); int streams = 0, reads = 0;
         var read = new AiTool { Name = "read_note", Access = "read", Description = "read", Parameters = new() { ["type"] = "object" }, Label = _ => "Read",
@@ -156,7 +156,7 @@ public sealed class AssistantEfficiencyTests
             Host = host, Model = "test", Provider = new("p", "openai"), Policy = "readonly", Messages = Messages(), Tools = [read], OptimizeToolUse = true,
             Stream = (_, _, _, _) => Task.FromResult(Answer(AiBlock.ToolUse("r" + ++streams, "read_note", new JsonObject())))
         });
-        Assert.Equal("no_progress", result.Stopped); Assert.Equal(1, reads); Assert.Equal(2, streams);
+        Assert.Equal("no_progress", result.Stopped); Assert.Equal(1, reads); Assert.Equal(3, streams);
     }
 
     [Fact]
