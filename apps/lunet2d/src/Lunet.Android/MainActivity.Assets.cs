@@ -91,6 +91,8 @@ public sealed partial class MainActivity
                 items.AddView(new TextView(this) { Text = "Exibindo os primeiros 250. Refine a busca para encontrar outros arquivos.", TextSize = 12 });
         }
 
+        var filterButtons = new List<(Button Button, ProjectAssetKind? Value)>();
+
         void Choose(ProjectAssetKind? kind)
         {
             category = kind;
@@ -99,7 +101,6 @@ public sealed partial class MainActivity
             Render();
         }
 
-        var filterButtons = new List<(Button Button, ProjectAssetKind? Value)>();
         void AddCategory(string label, ProjectAssetKind? kind)
         {
             var button = MakeButton(label, () => Choose(kind));
