@@ -342,6 +342,29 @@ public static class AssistantMemoryEngine
         return PackPrompt(cfg, vault, agentId, candidates, allowed);
     }
 
+    /// <summary>Resolve a short follow-up against the nearest substantive user request, without a classifier or LLM call.</summary>
+    public static string ContinuityQuery(IReadOnlyList<AiChatMessage> conversation)
+    {
+        var requests = conversation.Where(m => m.Role == "user" && m.Meta?.ToolResults != true)
+            .Select(m => string.Join(" ", m.Content.Where(b => b.Type == "text" && !b.Hidden).Select(b => b.Text)))
+            .Where(s => !string.IsNullOrWhiteSpace(s)).ToArray();
+        if (requests.Length == 0) return "";
+        var last = requests[^1].Trim();
+        var plain = Normalize(last).Trim(' ', '.', '!', '?');
+        bool followUp = System.Text.RegularExpressions.Regex.IsMatch(plain,
+            @"^(?:continua|continue|prossegue|prossiga|faz|faca|pode seguir|pode continuar|segue|mantem isso|mantenha isso|pode fazer|vai|isso mesmo)(?:\\s+(?:por favor|com isso|assim|ai|agora))?$",
+            RegexOptions.CultureInvariant);
+        if (!followUp) return last;
+        for (int i = requests.Length - 2; i >= 0 && i >= requests.Length - 8; i--)
+        {
+            var previous = requests[i].Trim();
+            if (previous.Length > 12 && !Regex.IsMatch(Normalize(previous),
+                @"^(?:continua|faz|pode seguir|mantem isso|obrigado|ok|beleza)\\s*[.!?]?$"))
+                return previous + " " + last;
+        }
+        return last;
+    }
+
     /// <summary>Explicit transport budget from the final request planner; does not reserve a second window.</summary>
     public static IReadOnlyList<string> ForPromptWithin(AiConfig cfg, string vault, string agentId, string? query, int budgetChars) =>
         PackPrompt(cfg, vault, agentId, Search(cfg, vault, agentId, query, int.MaxValue), budgetChars);
