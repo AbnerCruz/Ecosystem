@@ -95,6 +95,25 @@ public sealed class MemoryQualityExtendedTests
     }
 
     [Fact]
+    public void WindowTrimmingOfShortContinuationPreservesOldUserRestrictionWithSourceId()
+    {
+        var old = User("Crie o documento " + new string('x', 1000) + " RESTRIÇÃO: não remover acessibilidade");
+        old.Id = "u-old";
+        var newTurn = User("continua"); newTurn.Id = "u-new";
+        var messages = new List<AiChatMessage> { old,
+            new() { Role="assistant", Content=[AiChatBlock.TextBlock(new string('y', 13000))] }, newTurn };
+        var run = new AiAgentRun { Messages=messages, Host=null!, Provider=new AiProviderConfig("p","openai"), Model="model",
+            ContextTokens=4500, OptimizeToolUse=true,
+            Stream=(_,_,_,_) => Task.FromResult(new AiResult([], "", "end", new AiUsage(0,0,null), "model")),
+            BuildSystemWithMemory = _ => "Segurança: respeite a solicitação atual." };
+        var req = AssistantContextBudget.Build(run, "Segurança: respeite a solicitação atual.", [], messages);
+        Assert.Contains("u-old", req.System);
+        Assert.Contains("não remover acessibilidade", req.System);
+        Assert.Equal("continua", newTurn.Content[0].Text);
+        Assert.True(AssistantContextBudget.ConservativeTokens(req, run.Provider) + req.MaxTokens!.Value <=4500);
+    }
+
+    [Fact]
     public void UsageCacheBucketsAreNotCountedTwiceAndOldJsonRemainsReadable()
     {
         var actual = new AiUsage(150, 30, .25, CacheReadInput: 75, CacheCreationInput: 25, ReasoningOutput: 7, CostSource: "reported");
