@@ -111,7 +111,7 @@ public sealed class AiChatMeta
     public static AiChatMeta FromJson(JsonObject o) => new()
     {
         Model = (string?)o["model"], Streaming = (bool?)o["streaming"], Agent = (string?)o["agent"], Reasoning = (string?)o["reasoning"],
-        Usage = o["usage"] is JsonObject u ? new AiUsage((long)LegacyCustomize.JsToNumber(u["input"]), (long)LegacyCustomize.JsToNumber(u["output"]), u["cost"] is null ? null : LegacyCustomize.JsToNumber(u["cost"])) : null,
+        Usage = o["usage"] is JsonObject u ? AiUsage.FromJson(u) : null,
         ToolResults = (bool?)o["toolResults"], Draft = (bool?)o["draft"], Context = (string?)o["context"]
     };
 }
@@ -518,10 +518,17 @@ public static class AssistantAgent
         return s.ToString();
     }
 
-    private static AiUsage AddUsage(AiUsage t, AiUsage? u) =>
-        u is null ? t : new AiUsage(t.Input + u.Input, t.Output + u.Output, u.Cost is null ? t.Cost : (t.Cost ?? 0) + u.Cost);
+    private static AiUsage AddUsage(AiUsage t, AiUsage? u) => u is null ? t : AiUsage.Add(t, u);
 
-    public static JsonObject UsageJson(AiUsage u) => new() { ["input"] = u.Input, ["output"] = u.Output, ["cost"] = u.Cost };
+    public static JsonObject UsageJson(AiUsage u)
+    {
+        var json = new JsonObject { ["input"] = u.Input, ["output"] = u.Output, ["cost"] = u.Cost };
+        if (u.CacheReadInput is not null) json["cacheReadInput"] = u.CacheReadInput;
+        if (u.CacheCreationInput is not null) json["cacheCreationInput"] = u.CacheCreationInput;
+        if (u.ReasoningOutput is not null) json["reasoningOutput"] = u.ReasoningOutput;
+        if (u.CostSource is not null) json["costSource"] = u.CostSource;
+        return json;
+    }
 
     // ---------------------------------------------------------------- the delegation tool (subagent)
 
