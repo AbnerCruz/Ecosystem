@@ -170,6 +170,8 @@ public sealed partial class MainActivity
     private void ShowToolsMenu() => ShowActionMenu("Ferramentas",
     [
         ("Documentação", () => HandleCommand(EditorCommand.Documentation)),
+        ("Assets", ShowAssets),
+        ("Sprites e tilemaps", ShowArtTools),
         ("Connections", ShowConnections),
         ("Inspecionar texto (Host local)", InspectEditorWithLocalHost),
         ("Exportar logs (Console e Problemas)", ExportLogs),
