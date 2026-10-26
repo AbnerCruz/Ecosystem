@@ -171,6 +171,7 @@ public sealed partial class MainActivity
     [
         ("Documentação", () => HandleCommand(EditorCommand.Documentation)),
         ("Assets", ShowAssets),
+        ("Audio Studio", ShowAudioStudio),
         ("Sprites e tilemaps", ShowArtTools),
         ("Connections", ShowConnections),
         ("Inspecionar texto (Host local)", InspectEditorWithLocalHost),
