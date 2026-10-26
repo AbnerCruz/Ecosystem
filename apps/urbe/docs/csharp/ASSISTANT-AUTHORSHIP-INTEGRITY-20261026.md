@@ -26,7 +26,7 @@ Testar no Android físico: Fonte, Visual, selecionar tudo, colar, selecionar tre
 
 ## Pesquisa e critérios técnicos
 
-- Avalonia `TextChanging` e `TextBox` permitem cancelar alterações durante a edição; usar uma regra objetiva no domínio sem chamadas de IA adicionais.
+- Na versão Avalonia efetivamente compilada, `TextChangingEventArgs` **não** tem `Cancel`; o evento é síncrono e a implementação restaura o último texto válido com proteção contra reentrância. Não tomar exemplos genéricos da documentação como contrato sem validar em CI.
 - Tool guardrails da OpenAI recomendam validar ações antes de efeitos colaterais, inclusive além de instruções de prompt.
 - O SDK de agentes prevê a devolução de erros de ferramenta para continuidade; não tratar `noop` como sucesso de tarefa nem como motivo automático para abandonar trabalho independente.
 - A análise da Anthropic recomenda controle de iterações e recuperação com evidências do ambiente.
