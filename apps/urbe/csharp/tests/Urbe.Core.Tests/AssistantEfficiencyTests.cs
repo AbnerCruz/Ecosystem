@@ -146,7 +146,7 @@ public sealed class AssistantEfficiencyTests
     }
 
     [Fact]
-    public async Task ExactRepeatedStateStopsAsNoProgressWithoutAnArbitraryStepCap()
+    public async Task ExactRepeatedStateStopsAfterOneBoundedRecoveryAttempt()
     {
         var host = new Host(); int streams = 0, reads = 0;
         var read = new AiTool { Name = "read_note", Access = "read", Description = "read", Parameters = new() { ["type"] = "object" }, Label = _ => "Read",
@@ -156,7 +156,28 @@ public sealed class AssistantEfficiencyTests
             Host = host, Model = "test", Provider = new("p", "openai"), Policy = "readonly", Messages = Messages(), Tools = [read], OptimizeToolUse = true,
             Stream = (_, _, _, _) => Task.FromResult(Answer(AiBlock.ToolUse("r" + ++streams, "read_note", new JsonObject())))
         });
-        Assert.Equal("no_progress", result.Stopped); Assert.Equal(1, reads); Assert.Equal(2, streams);
+        Assert.Equal("no_progress", result.Stopped); Assert.Equal(1, reads); Assert.Equal(3, streams);
+    }
+
+    [Fact]
+    public async Task RepeatedNoOpGetsOneChanceToRecoverAndExplainInsteadOfAborting()
+    {
+        var host = new Host(); int streams = 0;
+        var write = AssistantTools.Get("write_note")!;
+        var result = await AssistantAgent.RunAsync(new()
+        {
+            Host = host, Model = "test", Provider = new("p", "openai"), Policy = "auto",
+            Messages = Messages(), Tools = [write], OptimizeToolUse = true,
+            Stream = (_, _, _, _) => Task.FromResult(++streams switch
+            {
+                1 or 2 => Answer(AiBlock.ToolUse("w" + streams, "write_note",
+                    new JsonObject { ["path"] = "A.md", ["content"] = "Original" })),
+                _ => Answer(AiBlock.TextBlock("Não precisei regravar a nota; tarefa concluída."))
+            })
+        });
+        Assert.Equal("end", result.Stopped);
+        Assert.Equal(3, streams);
+        Assert.Equal(0, host.Writes);
     }
 
     [Fact]

@@ -56,6 +56,8 @@ public sealed class EditorOverlay : Grid
     private CityNote? _note;
     private string _savedContent = string.Empty;
     private bool _saving, _fromVisual, _opening;
+    private string _acceptedSourceText = string.Empty;
+    private bool _restoringProtectedSource;
     // UC-48: the autosave waits for a pause in typing (each save lists, plans and verifies the vault on
     // Android), but never holds an edit longer than AutosaveMaxWait while typing goes on.
     private readonly DispatcherTimer _autosave = new() { Interval = AutosavePause };
@@ -164,6 +166,29 @@ public sealed class EditorOverlay : Grid
         foreach (var key in new[] { "TextControlBorderBrush", "TextControlBorderBrushPointerOver", "TextControlBorderBrushFocused" })
             Editor.Resources[key] = Brushes.Transparent;
         AutomationProperties.SetName(Editor, "Texto da nota");
+        // The source editor must reject changes to system-owned AI attribution before
+        // they render or enter the undo/autosave path. This is separate from the save guard.
+        Editor.TextChanging += (_, e) =>
+        {
+            if (_opening || _note is null || _restoringProtectedSource) return;
+            var proposed = Editor.Text ?? "";
+            if (!NoteMarks.AllowsUserAuthorshipEdit(_acceptedSourceText, proposed))
+            {
+                // TextChangingEventArgs has no Cancel property in the shipped Avalonia.
+                // Restore the last valid snapshot once, without recursive validation.
+                _restoringProtectedSource = true;
+                try
+                {
+                    int caret = Editor.CaretIndex;
+                    Editor.Text = _acceptedSourceText;
+                    Editor.CaretIndex = Math.Clamp(caret, 0, _acceptedSourceText.Length);
+                }
+                finally { _restoringProtectedSource = false; }
+                _toast.Show("A marca de autoria da IA não pode ser editada ou removida.", TimeSpan.FromSeconds(3));
+                return;
+            }
+            _acceptedSourceText = proposed;
+        };
         Editor.TextChanged += (_, _) => { OnTextChanged(); KeepSourceCaretSoon(typing: true); };
         Editor.PropertyChanged += (_, e) =>
         {
@@ -193,6 +218,12 @@ public sealed class EditorOverlay : Grid
         _visual.UserNavigating = () => UserScrolling;
         _visual.TextEdited += md =>
         {
+            if (!NoteMarks.AllowsUserAuthorshipEdit(Editor.Text ?? "", md))
+            {
+                _visual.SetText(Editor.Text ?? "");
+                _toast.Show("A marca de autoria da IA não pode ser editada ou removida.", TimeSpan.FromSeconds(3));
+                return;
+            }
             _fromVisual = true;
             if (!string.Equals(Editor.Text, md, StringComparison.Ordinal)) Editor.Text = md;
             _fromVisual = false;
@@ -493,6 +524,7 @@ public sealed class EditorOverlay : Grid
         var pendingFrom = (string?)null;
         if (_failed.Remove(note.Path, out var failed)) { note = note with { Content = failed.Note.Content }; pendingFrom = failed.Previous; }
         _note = note;
+        _acceptedSourceText = note.Content;
         _savedContent = pendingFrom ?? note.Content;
         ShowHeader(animate: false);
         _title.Text = System.IO.Path.GetFileName(note.Path);

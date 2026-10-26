@@ -703,7 +703,7 @@ public static partial class AssistantTools
         if (input0 is not JsonObject input) return ["os argumentos precisam ser um objeto JSON"];
         if (input.ContainsKey("__invalid") && input["__invalid"] is not null) return ["JSON dos argumentos inválido ou truncado"];
         foreach (var k in (sch["required"] as JsonArray ?? []).Select(x => (string)x!))
-            if (input[k] is null || IsEmpty(input[k])) errs.Add("falta \"" + k + "\"");
+            if (input[k] is null || (IsEmpty(input[k]) && !(tool.Name == "edit_note" && k == "new_text"))) errs.Add("falta \"" + k + "\"");
         foreach (var k in input.Select(p => p.Key).ToList())
         {
             if (props[k] is not JsonObject p)
@@ -749,5 +749,5 @@ public static partial class AssistantTools
         return errs;
     }
 
-    private static bool IsEmpty(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) && s.Length == 0;
+    private static bool IsEmpty(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var value) && value.Length == 0;
 }

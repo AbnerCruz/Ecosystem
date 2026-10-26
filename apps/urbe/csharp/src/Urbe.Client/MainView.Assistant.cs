@@ -384,6 +384,32 @@ public sealed partial class MainView : IAssistantApp
         return true;
     }
 
+    async Task IAssistantApp.WriteBackVerifiedUndoAsync(UrbeDocument current, string path, string before, string expectedAfter)
+    {
+        RequireWritable();
+        // Undo must be the exact inverse of a recorded operation. Refuse a stale
+        // or externally modified note, including a note open with unsaved edits.
+        if (!string.Equals(current.Content, expectedAfter, StringComparison.Ordinal) ||
+            !_contents.TryGetValue(current.Path, out var persisted) ||
+            !string.Equals(persisted, expectedAfter, StringComparison.Ordinal))
+            throw new InvalidOperationException("A nota mudou desde a operação da IA; não é possível desfazer com segurança.");
+        bool editing = Editor.IsVisible && Editor.Current?.Path == current.Path;
+        if (editing && Editor.HasChanges)
+            throw new InvalidOperationException("Salve ou descarte as alterações da nota aberta antes de desfazer.");
+        IAssistantApp app = this;
+        var doc = current;
+        if (!string.Equals(current.Path, path, StringComparison.Ordinal))
+            doc = await app.RenameNoteAsync(current, path);
+        // The narrow exemption allows reverting the exact saved AI operation.
+        // Normal edits cannot pass a prior-version proof.
+        if (!string.Equals(doc.Content, before, StringComparison.Ordinal))
+        {
+            await SaveNoteAsync(new CityNote(doc.Path, before), expectedUndoContent: expectedAfter);
+            if (editing) Editor.Open(new CityNote(doc.Path, before));
+            AfterAssistantWrite(doc.Path);
+        }
+    }
+
     async Task IAssistantApp.WriteBackAsync(UrbeDocument current, string path, string content)
     {
         IAssistantApp app = this;

@@ -464,12 +464,24 @@ public sealed partial class MainView : Grid
     /// <summary>flushPending: write a pending record now (window closing, app going to the background).</summary>
     public Task FlushPendingAsync() => _notesSave?.FlushAsync() ?? Task.CompletedTask;
 
-    private async Task SaveNoteAsync(CityNote note)
+    // Keep the one-argument signature for Editor.SaveRequested (Func<CityNote, Task>).
+    private Task SaveNoteAsync(CityNote note) => SaveNoteAsync(note, expectedUndoContent: null);
+
+    private async Task SaveNoteAsync(CityNote note, string? expectedUndoContent)
     {
         if (_vault is null || !_vault.IsConnected || _snapshot is null)
             throw new InvalidOperationException("Selecione uma pasta real para gravar.");
         if (_snapshot.IsReadOnly)
             throw new InvalidOperationException("Vault em modo somente leitura.");
+        // Last defense for every native write route (editor Fonte/Visual and assistant):
+        // keep already-persisted attribution tokens immutable.
+        if (note.Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) &&
+            _contents.TryGetValue(note.Path, out var previous) &&
+            !NoteMarks.PreservesAiAuthorship(previous, note.Content) &&
+            // A verified inverse of the exact previous AI transaction is permitted.
+            // This cannot authorize a generic replacement or stale restoration.
+            !string.Equals(previous, expectedUndoContent, StringComparison.Ordinal))
+            throw new InvalidOperationException("A marca de autoria da IA é protegida pelo Urbe. A alteração não foi salva; preserve o selo e edite somente o conteúdo.");
         await _vault.SaveExistingTextFileAsync(note.Path, note.Content);
         _contents[note.Path] = note.Content;
         RecordSaved(note.Path, note.Content);
