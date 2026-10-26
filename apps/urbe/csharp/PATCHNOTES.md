@@ -1,42 +1,28 @@
 # Urbe — Notas da versão atual
 
-**Versão publicada:** 2.0.0-beta.31  
+**Versão canônica preparada:** 2.0.0-beta.32  
 **Canal:** Urbe 2.0 nativo, Android e Windows  
-**Publicação:** 25/10/2026  
+**Publicação:** exclusivamente pelo workflow oficial após integração e gates  
 **Identidade Android:** app.urbe.csharp
 
-> Este arquivo descreve a versão publicada. Alterações em desenvolvimento só passam para cá no mesmo commit que atualiza a versão canônica e prepara uma release nova.
+> Este arquivo acompanha o corte beta.32. Não confirma que a release foi publicada; confira o tag `urbe-csharp-v2.0.0-beta.32` e os assets oficiais. Versões anteriores estão no histórico.
 
-## Estabilidade e assistência
+## Edição estável
 
-- Corrigido o crash ao renderizar argumentos e planos malformados da atividade dos agentes.
-- O segundo envio de uma conversa é preservado e processado em ordem, sem perder a mensagem enviada enquanto outra execução está ativa.
-- As etapas da IA permanecem observáveis, incluindo interrupções por ausência de progresso.
+- Toque, foco e seleção deixam de causar deslocamentos automáticos do viewport da nota.
+- Digitação conserva o caret visível sem forçar a linha para o terço superior; gestos manuais de leitura têm prioridade.
+- **Selecionar nota inteira**, acessível em Mais ações, sem limitar a seleção ao bloco atual.
+- Estatísticas de textos extensos deixam o caminho crítico do teclado; salvamento e conteúdo preservados.
 
-## Formulários e templates
+## Chat da IA
 
-- Formulários nativos dentro dos chats e a partir de templates.
-- Rascunhos persistentes, diferentes tipos de campos, validações, condicionais, soma, grupos repetíveis e modelos reutilizáveis.
-- Proteção de notas associadas a formulários quando a versão do documento mudou, respeitando permissões e aprovações.
+- O Assistente respeita a posição de leitura durante o streaming, com comando **Ir à última mensagem**.
+- Mensagens próprias podem ser copiadas, ter trechos selecionados e ser editadas para reenviar sem reescrever histórico nem iniciar cobrança automaticamente.
 
-## Desempenho e ferramentas
+## Compatibilidade e distribuição
 
-- Evita escritas redundantes quando o conteúdo já é idêntico.
-- Reaproveita leituras associadas à versão do arquivo.
-- Lê somente os trechos solicitados, quando aplicável, e evita injetar evidências idênticas novamente.
-- Métricas de eficiência por execução para examinar ciclos sem progresso.
+- APK nativo Android e ZIP Windows serão publicados pelo mesmo canal e certificado beta anteriores.
+- Sem mudanças no formato das notas. Conserve backups antes de atualizar; não desinstale para atualizar.
+- Não confundir compilação no CI com teste real do Android ou release pública.
 
-## Distribuição e dados
-
-- APK Android e ZIP Windows na release urbe-csharp-v2.0.0-beta.31.
-- Mesmo ID de pacote e certificado do canal beta anterior; atualizações preservam o vault quando feitas por cima da instalação compatível.
-- A pasta de notas permanece separada das conversas e configurações privadas do Assistente. Desinstalar o aplicativo pode apagar estes últimos dados.
-- Instalação de versões é manual. Versões antigas podem não reconhecer formatos criados por versões novas.
-
-## Verificação
-
-A release publicada foi verificada no GitHub. Testes de interface física, teclado, ciclo de vida do Android e atualização in-place continuam exigindo validação em aparelho.
-
-**Fonte detalhada:** PATCHNOTES-beta.31.md.
-
-**Próxima release:** as funcionalidades novas em desenvolvimento só entram neste arquivo após seus testes, integração e publicação.
+**Detalhes técnicos e testes:** PATCHNOTES-beta.32.md, Issue #805, PR #808.
