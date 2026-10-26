@@ -215,6 +215,16 @@ public sealed partial class MainActivity
             Toast.MakeText(this, "Código copiado", ToastLength.Short)?.Show();
         }));
 
+        if (asset.Kind == ProjectAssetKind.Audio && asset.Path.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+        {
+            root.AddView(MakeButton("Editar no Audio Studio", () =>
+            {
+                dialog.Dismiss();
+                catalog.Dismiss();
+                OpenWaveAudio(asset.Path);
+            }));
+        }
+
         if (asset.Kind is ProjectAssetKind.Sprite or ProjectAssetKind.TileMap or ProjectAssetKind.Data)
         {
             root.AddView(MakeButton(asset.Kind == ProjectAssetKind.Data ? "Abrir no editor" : "Editar no Studio", () =>
