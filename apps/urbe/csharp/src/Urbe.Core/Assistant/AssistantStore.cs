@@ -482,7 +482,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
             Efficiency = r["efficiency"]?.Deserialize<AiExecutionMetrics>(FormDefinition.Json) ?? new(),
             Changes = (r["changes"] as JsonArray ?? []).OfType<JsonObject>().Select(x => new AiChange(Str(x["id"]), SnapFromJson(x["before"]), SnapFromJson(x["after"]), (bool?)x["trashed"] ?? false)).ToList()
         }).ToList(),
-        Usage = o["usage"] is JsonObject u ? new AiUsage(Num(u["input"]), Num(u["output"]), u["cost"] is null ? null : LegacyCustomize.JsToNumber(u["cost"])) : new AiUsage(0, 0, null),
+        Usage = o["usage"] is JsonObject u ? AiUsage.FromJson(u) : new AiUsage(0, 0, null),
         WebSources = (o["webSources"] as JsonArray ?? []).OfType<JsonObject>()
             .Select(s => new AiWebSource(Str(s["id"]), Str(s["title"]), Str(s["originalUrl"]), Str(s["finalUrl"]),
                 Str(s["domain"]), s["published"] is null ? null : Str(s["published"]), Str(s["accessed"]), Str(s["status"]))).ToList()
