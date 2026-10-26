@@ -47,6 +47,31 @@ jobs:
           dotnet-version: '10.0.x'
       - name: Install Android workload
         run: dotnet workload install android
+      # Only Lunet's development/release pipeline builds the runtime. Users never need an SDK,
+      # GitHub account or network to export their own games from the shipped APK.
+      - name: Build reusable standalone game host
+        run: |
+          dotnet build runtime-template/Lunet.GameCode.csproj -c Release \
+            -p:GameSourceRoot="$PWD/samples/apk-smoke"
+          dotnet build runtime-template/Lunet.Game.Android.csproj -c Release \
+            -p:GameSourceRoot="$PWD/samples/apk-smoke" \
+            -p:ApplicationId=io.lunet.game.smoke \
+            -p:AndroidSdkDirectory="$ANDROID_HOME"
+          template=$(find runtime-template/bin -name '*-Signed.apk' | head -n1)
+          test -n "$template" || { echo "Standalone runtime template missing"; exit 1; }
+          mkdir -p dist/template
+          cp "$template" dist/template/game-runtime.apk
+      - name: Validate offline APK packaging and v2 certificate
+        run: |
+          game=$(find runtime-template/bin -name 'CompiledGame.dll' | head -n1)
+          test -f "$game"
+          dotnet run --project tools/offline-apk-check/OfflineApkCheck.csproj -- \
+            dist/template/game-runtime.apk "$game" dist/template/offline-smoke.apk
+          apksigner=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n1)
+          aapt=$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -n1)
+          test -n "$apksigner" && test -n "$aapt"
+          "$apksigner" verify --verbose --min-sdk-version 29 dist/template/offline-smoke.apk
+          "$aapt" dump badging dist/template/offline-smoke.apk | grep -q "package: name='io.lunet.game.offline.smoketest'"
       - name: Build APK
         run: >
           dotnet build src/Lunet.Android/Lunet.Android.csproj -c Debug
