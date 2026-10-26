@@ -143,13 +143,13 @@ public static class OfflineGameApkBuilder
         int eo = cdOffset + cdSize;
         var digest = ApkDigest(apk.AsSpan(0, cdOffset), apk.AsSpan(cdOffset, cdSize), apk.AsSpan(eo));
         var digestRecord = LengthPrefixed(Concat(U32Bytes(RsaSha256), LengthPrefixed(digest)));
-        var signedData = Concat(LengthPrefixed(LengthPrefixed(digestRecord)),
+        var signedData = Concat(LengthPrefixed(digestRecord),
             LengthPrefixed(LengthPrefixed(signer.CertificateDer)),
             LengthPrefixed(Array.Empty<byte>()));
         var signature = signer.Sign(signedData);
         var signatureRecord = LengthPrefixed(Concat(U32Bytes(RsaSha256), LengthPrefixed(signature)));
         var signerData = Concat(LengthPrefixed(signedData),
-            LengthPrefixed(LengthPrefixed(signatureRecord)),
+            LengthPrefixed(signatureRecord),
             LengthPrefixed(signer.PublicKeyDer));
         var v2Value = LengthPrefixed(LengthPrefixed(signerData));
         using var block = new MemoryStream();
@@ -222,9 +222,8 @@ public static class OfflineGameApkBuilder
         W16(central, 4, 20);
         W16(central, 6, 20);
         W16(central, 8, 0x800);
-        W16(central, 14, 0);
-        W16(central, 16, 0x0021);
-        W32(central, 18, crc);
+        W16(central, 14, 0x0021);
+        W32(central, 16, crc);
         W32(central, 20, (uint)data.Length);
         W32(central, 24, (uint)data.Length);
         W16(central, 28, (ushort)encoded.Length);
@@ -248,14 +247,12 @@ public static class OfflineGameApkBuilder
         var oldName = Encoding.Unicode.GetBytes("io.lunet.game.smoke");
         var newName = Encoding.Unicode.GetBytes(packageId);
         if (newName.Length > 254) throw new ArgumentException("Package ID excede tabela Android.");
-        bool updated = false;
         for (int i = 0; i <= result.Length - 256; i += 2)
         {
             if (!result.AsSpan(i, oldName.Length).SequenceEqual(oldName)) continue;
             if (i < 12 || U16(result, i - 12) != 0x0200) continue;
             result.AsSpan(i, 256).Clear();
             newName.CopyTo(result, i);
-            updated = true;
         }
         // aapt2 can omit package-name section for a package with no resources.
         return result;
@@ -403,7 +400,8 @@ internal static class AndroidStringPoolPatcher
     {
         int n = Read16(a, p); p += 2;
         if ((n & 0x8000) == 0) return n;
-        return ((n & 0x7fff) << 16) | (int)Read16(a, p) | (a[p += 2] == 255 ? 0 : 0);
+        int low = Read16(a, p); p += 2;
+        return ((n & 0x7fff) << 16) | low;
     }
     private static void WriteLength8(Stream s, int len)
     {
