@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -58,6 +59,43 @@ public static class AssistantMemoryEngine
     private static readonly Regex PotentialSecret = new(
         @"(?i)(?:\bsk-[A-Za-z0-9_-]{12,}\b|\b(?:api[_ -]?key|senha|password|token|secret)\s*[:=]\s*\S+)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    // Exactly one memoized projection per live record (no revision history); weak ownership avoids leaks.
+    private sealed class LexicalProjection
+    {
+        public string Text = "", Kind = "";
+        public string[] Paths = [];
+        public string NormalizedText = "", NormalizedMeta = "";
+        public HashSet<string> TextTerms = new(StringComparer.Ordinal), MetaTerms = new(StringComparer.Ordinal);
+    }
+    private static readonly ConditionalWeakTable<AiMemoryRecord, LexicalProjection> Index = new();
+    private static LexicalProjection Projection(AiMemoryRecord m)
+    {
+        var p = Index.GetValue(m, _ => new LexicalProjection());
+        lock (p)
+        {
+            if (p.Text != m.Text || p.Kind != m.Kind || !p.Paths.SequenceEqual(m.RelatedPaths))
+            {
+                p.Text = m.Text; p.Kind = m.Kind; p.Paths = m.RelatedPaths.ToArray();
+                p.NormalizedText = Normalize(m.Text);
+                p.NormalizedMeta = Normalize(m.Kind + " " + string.Join(" ", m.RelatedPaths));
+                p.TextTerms = Tokens(m.Text).ToHashSet(StringComparer.Ordinal);
+                p.MetaTerms = Tokens(m.Kind + " " + string.Join(" ", m.RelatedPaths)).ToHashSet(StringComparer.Ordinal);
+            }
+        }
+        return p;
+    }
+    private static bool Phrase(string haystack, string needle)
+    {
+        if (needle.Length == 0) return false;
+        for (int start = 0; (start = haystack.IndexOf(needle, start, StringComparison.Ordinal)) >= 0; start++)
+        {
+            int end = start + needle.Length;
+            if ((start == 0 || !char.IsLetterOrDigit(haystack[start - 1])) &&
+                (end == haystack.Length || !char.IsLetterOrDigit(haystack[end]))) return true;
+        }
+        return false;
+    }
 
     public static long Now() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
@@ -190,14 +228,13 @@ public static class AssistantMemoryEngine
             // Old user configurations may contain secrets that predate input validation.
             // Keep them editable locally, but never send them to a model as recalled context.
             if (PotentialSecret.IsMatch(m.Text)) continue;
-            var text = Normalize(m.Text);
-            var meta = Normalize(m.Kind + " " + string.Join(" ", m.RelatedPaths));
+            var index = Projection(m);
             var score = 0d;
-            if (q.Length > 2 && text.Contains(q, StringComparison.Ordinal)) score += 14;
+            if (q.Length > 2 && Phrase(index.NormalizedText, q)) score += 14;
             foreach (var term in terms)
             {
-                if (text.Contains(term, StringComparison.Ordinal)) score += 2.5;
-                else if (meta.Contains(term, StringComparison.Ordinal)) score += 1.5;
+                if (index.TextTerms.Contains(term)) score += 2.5;
+                else if (index.MetaTerms.Contains(term)) score += 1.5;
             }
             if (terms.Length == 0 && q.Length == 0) score = 1;
             // Short greetings have no useful query tokens. Recency alone must not
@@ -250,7 +287,15 @@ public static class AssistantMemoryEngine
             var source = m.SourceReference.Length > 0 ? m.SourceReference : m.Origin;
             var formatted = "[" + m.Kind + "; " + m.Scope + "; fonte: " + source + "; id: " + m.Id + "] " +
                 m.Text.Replace('\n', ' ').Replace('\r', ' ');
-            if (formatted.Length > maxChars - used) continue;
+            if (formatted.Length > maxChars - used)
+            {
+                // Retain provenance and the beginning of a large result, never silently drop a relevant decision.
+                var available = maxChars - used;
+                var suffix = " …[parcial; recuperar original com recall_memory, id: " + m.Id + "]";
+                var prefix = "[" + m.Kind + "; fonte: " + source + "; id: " + m.Id + "] ";
+                if (available < prefix.Length + suffix.Length + 16) continue;
+                formatted = prefix + m.Text.Replace('\n', ' ').Replace('\r', ' ')[..Math.Min(m.Text.Length, available - prefix.Length - suffix.Length)] + suffix;
+            }
             output.Add(formatted);
             used += formatted.Length;
             seenText.Add(normalized);
@@ -296,6 +341,10 @@ public static class AssistantMemoryEngine
         var allowed = (int)Math.Min(int.MaxValue, Math.Min(free, Math.Max(avg, desired)));
         return PackPrompt(cfg, vault, agentId, candidates, allowed);
     }
+
+    /// <summary>Explicit transport budget from the final request planner; does not reserve a second window.</summary>
+    public static IReadOnlyList<string> ForPromptWithin(AiConfig cfg, string vault, string agentId, string? query, int budgetChars) =>
+        PackPrompt(cfg, vault, agentId, Search(cfg, vault, agentId, query, int.MaxValue), budgetChars);
 
     public static string? ExplicitRememberRequest(string? userMessage)
     {
