@@ -224,10 +224,11 @@ public sealed class VisualSurface : StackPanel
 
     private void Rebuild()
     {
-        var reusable = _lastRebuiltText == _text ? _holders.ToDictionary() : new Dictionary<int, Control>();
+        var unchanged = _lastRebuiltText == _text;
+        var reusable = unchanged ? _holders.ToDictionary() : new Dictionary<int, Control>();
         Children.Clear();
         _holders.Clear();
-        _blocks = WithContainers(MarkdownEngine.SplitBlocks(_text), NoteContainers.Parse(_text));
+        if (!unchanged) _blocks = WithContainers(MarkdownEngine.SplitBlocks(_text), NoteContainers.Parse(_text));
         if (_blocks.Count == 0 && _box is null)
         {
             var empty = new Border
