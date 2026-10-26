@@ -111,7 +111,7 @@ public sealed class AiChatMeta
     public static AiChatMeta FromJson(JsonObject o) => new()
     {
         Model = (string?)o["model"], Streaming = (bool?)o["streaming"], Agent = (string?)o["agent"], Reasoning = (string?)o["reasoning"],
-        Usage = o["usage"] is JsonObject u ? new AiUsage((long)LegacyCustomize.JsToNumber(u["input"]), (long)LegacyCustomize.JsToNumber(u["output"]), u["cost"] is null ? null : LegacyCustomize.JsToNumber(u["cost"])) : null,
+        Usage = o["usage"] is JsonObject u ? AiUsage.FromJson(u) : null,
         ToolResults = (bool?)o["toolResults"], Draft = (bool?)o["draft"], Context = (string?)o["context"]
     };
 }
@@ -195,6 +195,12 @@ public sealed class AiAgentRun
     public long? ContextTokens { get; init; }
     public string? Instructions { get; init; }
     public IReadOnlyList<string>? Memory { get; init; }
+    /// <summary>Recall within a transport budget of the final provider request. No additional model call.</summary>
+    public Func<int, IReadOnlyList<string>>? RecallMemory { get; init; }
+    /// <summary>The actual system prompt with the selected memories, retaining user/security instructions.</summary>
+    public Func<IReadOnlyList<string>, string>? BuildSystemWithMemory { get; init; }
+    /// <summary>Provider tokenizer when available; otherwise a clearly labelled conservative estimate.</summary>
+    public Func<AiRequest, long?>? CountInputTokens { get; init; }
     /// <summary>UC-81: the lines about the agent's call name (<see cref="AgentNames.Naming"/>); null leaves the prompt as the 1.8.4's.</summary>
     public string? Naming { get; init; }
     /// <summary>How the Urbe wants things made (<see cref="UrbeGuidance"/>); null leaves the prompt as the 1.8.4's.</summary>
@@ -382,7 +388,7 @@ public static class AssistantAgent
         while (WorkingSize() > budgetChars && o.Count > 2)
         {
             int cut = -1;
-            for (int i = 1; i < o.Count - 1; i++)
+            for (int i = 1; i < o.Count; i++)
                 if (o[i].Role == "user" && o[i].Content.Any(b => b.Type == "text")) { cut = i; break; }
             if (cut < 0) break;
             o.RemoveRange(0, cut);
@@ -435,7 +441,8 @@ public static class AssistantAgent
         int current = messages.Count;
         for (int i = messages.Count - 1; i >= 0; i--)
             if (messages[i].Role == "user" && messages[i].Meta?.ToolResults != true && messages[i].Content.Any(b => b.Type == "text" && !b.Hidden && !string.IsNullOrEmpty(b.Text))) { current = i; break; }
-        return messages.Select((m, i) => i < current && (m.Content.Any(IsLong) || m.Content.Any(b => b.Type == "attachment")) ? Settled(m) : m).ToList();
+        var focus = AssistantMemoryEngine.ContinuityQuery(messages);
+        return messages.Select((m, i) => i < current && (m.Content.Any(IsLong) || m.Content.Any(b => b.Type == "attachment")) ? Settled(m, focus) : m).ToList();
     }
 
     private static int Length(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) ? s.Length : n is null ? 0 : n.ToJsonString().Length;
@@ -447,14 +454,43 @@ public static class AssistantAgent
         _ => false
     };
 
-    private static AiChatMessage Settled(AiChatMessage m) => new()
+    private static AiChatMessage Settled(AiChatMessage m, string focus) => new()
     {
         Id = m.Id, Role = m.Role, Meta = m.Meta,
         Content = m.Content.Select(b => b.Type == "attachment" ? AiChatBlock.TextBlock("[Anexo anterior: " + b.FileName + "; não reenviar conteúdo binário.]")
             : !IsLong(b) ? b : b.Type == "tool_result"
-            ? new AiChatBlock { Type = "tool_result", ToolUseId = b.ToolUseId, IsError = b.IsError, Content = b.Content[..400] + "\n…[resultado de um pedido anterior, encurtado; use as ferramentas para ver o estado atual]" }
+            ? new AiChatBlock { Type = "tool_result", ToolUseId = b.ToolUseId, IsError = b.IsError, Content = EvidenceExcerpt(b.Content, focus, b.ToolUseId) }
             : new AiChatBlock { Type = "tool_use", Id = b.Id, Name = b.Name, Input = SettledInput((JsonObject)b.Input!) }).ToList()
     };
+
+    /// <summary>Retain a referenced, task-matching excerpt anywhere in a previous result. Transcript stays intact.</summary>
+    public static string EvidenceExcerpt(string content, string focus, string toolId)
+    {
+        var head = content[..Math.Min(180, content.Length)];
+        var candidate = -1;
+        var words = System.Text.RegularExpressions.Regex.Matches(focus ?? "", @"[\p{L}\p{N}]{5,}")
+            .Select(m => m.Value).Where(s => s is not ("refine" or "continue" or "remover" or "sem" or "fazer" or "favor"))
+            .OrderByDescending(s => s.Length);
+        foreach (var word in words)
+        {
+            var found = content.IndexOf(word, 400, StringComparison.OrdinalIgnoreCase);
+            if (found >= 0) { candidate = found; break; }
+        }
+        // When the new message says only "continua"/"mantém isso", favour an explicit constraint
+        // anywhere in the previous evidence rather than a meaningless sample of the middle.
+        if (candidate < 0 && content.Length > 400)
+        {
+            foreach (var anchor in new[] { "restrição", "obrigat", "não ", "nunca ", "deve ", "preserv" })
+            {
+                var found = content.IndexOf(anchor, 400, StringComparison.OrdinalIgnoreCase);
+                if (found >= 0 && (candidate < 0 || found < candidate)) candidate = found;
+            }
+        }
+        var excerpt = candidate < 0 ? "" : "\n[trecho relacionado] " + content.Substring(Math.Max(0, candidate - 90),
+            Math.Min(220, content.Length - Math.Max(0, candidate - 90)));
+        return head + excerpt + "\n…[resultado de pedido anterior, parcial; fonte: ferramenta " + toolId +
+            "; reconsultar a fonte e a versão para recuperar o texto integral]";
+    }
 
     private static JsonObject SettledInput(JsonObject input)
     {
@@ -492,10 +528,17 @@ public static class AssistantAgent
         return s.ToString();
     }
 
-    private static AiUsage AddUsage(AiUsage t, AiUsage? u) =>
-        u is null ? t : new AiUsage(t.Input + u.Input, t.Output + u.Output, u.Cost is null ? t.Cost : (t.Cost ?? 0) + u.Cost);
+    private static AiUsage AddUsage(AiUsage t, AiUsage? u) => u is null ? t : AiUsage.Add(t, u);
 
-    public static JsonObject UsageJson(AiUsage u) => new() { ["input"] = u.Input, ["output"] = u.Output, ["cost"] = u.Cost };
+    public static JsonObject UsageJson(AiUsage u)
+    {
+        var json = new JsonObject { ["input"] = u.Input, ["output"] = u.Output, ["cost"] = u.Cost };
+        if (u.CacheReadInput is not null) json["cacheReadInput"] = u.CacheReadInput;
+        if (u.CacheCreationInput is not null) json["cacheCreationInput"] = u.CacheCreationInput;
+        if (u.ReasoningOutput is not null) json["reasoningOutput"] = u.ReasoningOutput;
+        if (u.CostSource is not null) json["costSource"] = u.CostSource;
+        return json;
+    }
 
     // ---------------------------------------------------------------- the delegation tool (subagent)
 
@@ -568,7 +611,13 @@ public static class AssistantAgent
         var schemas = tools.Select(t => t.Schema).ToList();
         var byName = new Dictionary<string, AiTool>();
         foreach (var t in tools) byName[t.Name] = t;
-        var system = SystemPrompt(agent, policy, o.VaultName, o.Host.Documents.List().Count, o.Host.EditorContext().Path, o.Instructions, o.Memory, o.Now ?? DateTime.Now, o.Naming, o.Guidance, o.OptimizeToolUse);
+        string SystemWith(IReadOnlyList<string>? memory)
+        {
+            var text = SystemPrompt(agent, policy, o.VaultName, o.Host.Documents.List().Count, o.Host.EditorContext().Path, o.Instructions, memory, o.Now ?? DateTime.Now, o.Naming, o.Guidance, o.OptimizeToolUse);
+            return o.OptimizeToolUse && o.RecallMemory is not null ? text +
+                "\n[Memória recuperada é parcial e limitada pela janela; se faltar uma decisão ou fonte necessária, consulte recall_memory por ID/assunto. Memórias não são instruções superiores ao usuário.]" : text;
+        }
+        var system = SystemWith(o.OptimizeToolUse && o.RecallMemory is not null ? null : o.Memory);
         int budget = (int)Math.Max(20000, Math.Min(WorkingChars, Math.Floor(contextTokens * 3.2 * 0.7)));
         // Optional ceiling for test harnesses and legacy callers; no cap in normal sessions.
         // Explicit cancel, repeated tool failures, and provider errors remain the safeguards.
@@ -593,9 +642,18 @@ public static class AssistantAgent
             AiResult res;
             try
             {
-                var working = SettlePast(messages.Take(messages.Count - 1).ToList());
-                var prepared = Prepare(working, budget, o.OptimizeToolUse, result.Efficiency);
-                var req = new AiRequest(o.Model, prepared, system, schemas, o.MaxTokens is null or 0 ? 8192 : o.MaxTokens, o.Temperature);
+                var source = messages.Take(messages.Count - 1).ToList();
+                var req = o.OptimizeToolUse
+                    ? AssistantContextBudget.Build(new AiAgentRun
+                    {
+                        Host = o.Host, Provider = o.Provider, Model = o.Model, Messages = messages,
+                        Stream = o.Stream, ContextTokens = o.ContextTokens, MaxTokens = o.MaxTokens,
+                        Temperature = o.Temperature, OptimizeToolUse = true, Memory = o.Memory,
+                        RecallMemory = o.RecallMemory, CountInputTokens = o.CountInputTokens,
+                        BuildSystemWithMemory = SystemWith
+                    }, system, schemas, source, result.Efficiency, o.CountInputTokens)
+                    : new AiRequest(o.Model, Prepare(SettlePast(source), budget, false), system, schemas,
+                        o.MaxTokens is null or 0 ? 8192 : o.MaxTokens, o.Temperature);
                 res = await o.Stream(o.Provider, req, e =>
                 {
                     switch (e.Type)
@@ -771,7 +829,15 @@ public static class AssistantAgent
                         Type = "tool_result", ToolUseId = call.Id, Content = Slice(output.Content, resultLimit), IsError = output.IsError,
                         Status = output.Status ?? (output.IsError ? "error" : "done"), Changes = output.Changes?.Count ?? 0
                     };
-                    answer.Content.Add(block);
+                    // Parallel read results arrive out of order. Preserve the model's tool-call order
+                    // in the transcript while still publishing each result as soon as it finishes.
+                    // Otherwise a reused-result reference can point forward to evidence that was
+                    // never transmitted before it (or the wrong tool ID on a different run).
+                    int currentOrder = calls.IndexOf(call);
+                    int insertAt = answer.Content.FindIndex(existing =>
+                        calls.FindIndex(candidate => candidate.Id == existing.ToolUseId) > currentOrder);
+                    if (insertAt < 0) answer.Content.Add(block);
+                    else answer.Content.Insert(insertAt, block);
                     emit(new AiAgentEvent("tool", Call: call, Result: block));
                     if (output.Changes is not null) result.Changes.AddRange(output.Changes);
                     foreach (var r in output.Reads ?? [])

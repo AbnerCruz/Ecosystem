@@ -71,6 +71,56 @@ public sealed class AssistantEfficiencyTests
     }
 
     [Fact]
+    public async Task OutOfOrderParallelReadCompletionsPreserveCanonicalEvidenceReferences()
+    {
+        var ready = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var content = new string('e', 5000);
+        var finished = new List<string>();
+        var read = new AiTool
+        {
+            Name = "read_note", Access = "read", Description = "Read", Label = _ => "Read",
+            Parameters = new() { ["type"] = "object" },
+            Run = async (input, _) =>
+            {
+                var path = (string?)input["path"];
+                if (path == "A.md")
+                {
+                    await ready.Task.WaitAsync(TestContext.Current.CancellationToken);
+                    await Task.Delay(25, TestContext.Current.CancellationToken); // completes after B.md
+                }
+                else ready.TrySetResult(true);
+                lock (finished) finished.Add(path ?? "");
+                return new AiToolOutput(content);
+            }
+        };
+        var history = Messages();
+        AiRequest? captured = null;
+        int steps = 0;
+        await AssistantAgent.RunAsync(new()
+        {
+            Host = new Host(), Policy = "readonly", Provider = new("p", "openai"),
+            Model = "test", Messages = history, Tools = [read], OptimizeToolUse = true,
+            Stream = (_, req, _, _) =>
+            {
+                if (++steps == 1)
+                    return Task.FromResult(Answer(
+                        AiBlock.ToolUse("one", "read_note", new JsonObject { ["path"] = "A.md" }),
+                        AiBlock.ToolUse("two", "read_note", new JsonObject { ["path"] = "B.md" })));
+                captured = req;
+                return Task.FromResult(Answer(AiBlock.TextBlock("Concluído")));
+            }
+        });
+        Assert.Equal(new[] { "B.md", "A.md" }, finished); // assert genuinely reversed completion
+        var original = history.SelectMany(m => m.Content).Where(b => b.Type == "tool_result").ToList();
+        Assert.Equal(new[] { "one", "two" }, original.Select(b => b.ToolUseId));
+        Assert.All(original, b => Assert.Equal(content, b.Content));
+        var sent = captured!.Messages.SelectMany(m => m.Content).Where(b => b.Type == "tool_result").ToList();
+        Assert.Equal(new[] { "one", "two" }, sent.Select(b => b.ToolUseId));
+        Assert.Equal(content, sent[0].Content);
+        Assert.Contains("chamada one", sent[1].Content);
+    }
+
+    [Fact]
     public async Task ChangingTheVaultInvalidatesReadReuse()
     {
         var host = new Host(); int reads = 0, streams = 0;
