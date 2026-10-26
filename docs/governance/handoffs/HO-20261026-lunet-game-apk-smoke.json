@@ -28,12 +28,14 @@
     "apps/lunet2d/ROADMAP.md",
     "apps/lunet2d/CHANGELOG.md",
     "apps/lunet2d/AgentsChat.md",
-    "docs/governance/handoffs/HO-20261026-lunet-game-apk-smoke.json"
+    "docs/governance/handoffs/HO-20261026-lunet-game-apk-smoke.json",
+    "apps/lunet2d/runtime-template/Lunet.GameCode.csproj"
   ],
   "work_completed": [
     "Criação de template Android independente sem IDE, repassando Game.dll empacotado ao runtime real",
     "Fontes Content e Assets empacotadas num APK; validação de path e fallback Assets",
-    "Jogo smoke com círculos/touch, workflow dedicado com build signed APK e verificação de assets/arquivo"
+    "Jogo smoke com círculos/touch, workflow dedicado com build signed APK e verificação de assets/arquivo",
+    "Compilador de fontes C# do projeto, parametrizado por GameSourceRoot e exclusões de testes/caches; template parametrizado por identidade de aplicação."
   ],
   "verification": [
     {
@@ -54,7 +56,8 @@
   "known_issues": [
     "Não há botão Gerar APK para projeto do usuário, pacote é prova de CI",
     "Assinatura debug do smoke não deve ser usada como chave dos jogos do usuário",
-    "Build offline Android e eventual fallback exigem experimento/ADR antes de decisão"
+    "Build offline Android e eventual fallback exigem experimento/ADR antes de decisão",
+    "Lunet IDE não entrega GameSourceRoot ao packager automaticamente; build ainda exige host com .NET SDK Android."
   ],
   "blockers": [],
   "next_actions": [

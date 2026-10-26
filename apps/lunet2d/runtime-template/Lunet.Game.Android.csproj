@@ -8,8 +8,8 @@
     <RuntimeIdentifier>android-arm64</RuntimeIdentifier>
     <SupportedOSPlatformVersion>29</SupportedOSPlatformVersion>
     <AndroidApplication>true</AndroidApplication>
-    <ApplicationId>io.lunet.game.smoke</ApplicationId>
-    <ApplicationTitle>Lunet Standalone Smoke</ApplicationTitle>
+    <ApplicationId Condition="'$(ApplicationId)' == ''">io.lunet.game.smoke</ApplicationId>
+    <ApplicationTitle Condition="'$(ApplicationTitle)' == ''">Lunet Standalone Smoke</ApplicationTitle>
     <AndroidPackageFormat>apk</AndroidPackageFormat>
     <AndroidUseAapt2>true</AndroidUseAapt2>
     <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
@@ -18,7 +18,7 @@
     <AndroidLinkMode>None</AndroidLinkMode>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <GameSourceRoot Condition="'$(GameSourceRoot)' == ''">$(MSBuildThisFileDirectory)../samples/apk-smoke</GameSourceRoot>
-    <GameAssembly Condition="'$(GameAssembly)' == ''">$(GameSourceRoot)/bin/$(Configuration)/net10.0/SmokeGame.dll</GameAssembly>
+    <GameAssembly Condition="'$(GameAssembly)' == ''">$(MSBuildThisFileDirectory)bin/$(Configuration)/net10.0/CompiledGame.dll</GameAssembly>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../src/Lunet.Framework/Lunet.Framework.csproj" />

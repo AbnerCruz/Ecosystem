@@ -1,6 +1,6 @@
 # Changelog
 
-- Pré-beta / LUNET-445 (#787): runtime-template Android separado da IDE, prova por workflow GitHub Actions que empacota Game.dll, Content e Assets num APK de jogo distinto; pacote de prova como artifact, sem indicar build local, botão de exportação ou DEVICE validados.
+- Pré-beta / LUNET-445 (#787): runtime-template Android separado da IDE, compilador GameCode com `GameSourceRoot` e prova por workflow GitHub Actions que empacota Game.dll, Content e Assets num APK de jogo distinto; pacote de prova como artifact, sem indicar build local, botão de exportação ou DEVICE validados.
 
 - Pré-beta / LUNET-444 (#785): Tile Studio cria mapas e tilesets completos dentro do Lunet sem importação; gera PNG + JSON editável e integra editor de pixels acessível pelo próprio mapa. Suporte inicial de atlas 64/128px, tiles 16/32/64 e tamanhos de mapa 16/32/64. CI e DEVICE pendentes.
 

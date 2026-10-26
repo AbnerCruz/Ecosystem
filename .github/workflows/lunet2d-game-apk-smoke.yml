@@ -21,14 +21,17 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - name: Compile standalone game assembly
-        run: dotnet build samples/apk-smoke/SmokeGame.csproj -c Debug
+      - name: Compile game source from project folder
+        run: dotnet build runtime-template/Lunet.GameCode.csproj -c Debug -p:GameSourceRoot="$PWD/samples/apk-smoke"
       - name: Install Android workload
         run: dotnet workload install android
       - name: Package standalone game APK (never the IDE APK)
         run: >
           dotnet build runtime-template/Lunet.Game.Android.csproj -c Debug
           -p:AndroidSdkDirectory="$ANDROID_HOME"
+          -p:GameSourceRoot="$PWD/samples/apk-smoke"
+          -p:ApplicationId="io.lunet.game.smoke"
+          -p:ApplicationTitle="LunetSmoke"
       - name: Check separate package and embedded game files
         run: |
           apk=$(find runtime-template/bin -name '*-Signed.apk' | head -n1)

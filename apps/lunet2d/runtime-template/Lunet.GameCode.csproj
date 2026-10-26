@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Compile ordinary C# sources from a Lunet project's root, never IDE code. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>CompiledGame</AssemblyName>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GameSourceRoot Condition="'$(GameSourceRoot)' == ''">$(MSBuildThisFileDirectory)../samples/apk-smoke</GameSourceRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../src/Lunet.Framework/Lunet.Framework.csproj" />
+    <Compile Include="$(GameSourceRoot)/**/*.cs"
+             Exclude="$(GameSourceRoot)/Tests/**/*.cs;$(GameSourceRoot)/bin/**/*.cs;$(GameSourceRoot)/obj/**/*.cs;$(GameSourceRoot)/.lunet/**/*.cs" />
+  </ItemGroup>
+</Project>

@@ -521,3 +521,6 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - LUNET-445/Issue #787, branch `feat/lunet-standalone-game-apk-smoke-20261026`, incremento F9 autorizado pelo proprietário após LUNET-444.
 - Criado Android runtime-template sem UI/compilador/editor do Lunet, utilizando GlesBackend, PreviewRenderer, áudio e Framework/Runtime oficiais, com Game.dll + Content/Assets embutidos e content source seguro. `samples/apk-smoke/Game.cs` independente da IDE, workflow CI próprio compila e assina debug e inspeciona conteúdo APK.
 - Primeiro CI encontrou namespace gerado conflitando com `Lunet.Game` e acesso interno ao TouchFrameBuffer; corrigido com assembly/root namespace dedicado e InternalsVisibleTo restrito ao novo runtime. O job de smoke Android da correção concluiu `success` (run 40266779167); validação DEVICE, projeto arbitrário, assinatura por jogo e build offline continuam F9 pendentes.
+
+### 20261026-chatgpt-lunet-build-source-root — ChatGPT → integrador — review
+- Complemento LUNET-445/#787 ao PR #788: `runtime-template/Lunet.GameCode.csproj` compila C# da pasta `GameSourceRoot` sem incluir Tests/caches, e template Android aceita `GameSourceRoot`, `GameAssembly`, `ApplicationId` e `ApplicationTitle`. O smoke CI usa a rota genérica; ainda não é botão de APK no aparelho.
