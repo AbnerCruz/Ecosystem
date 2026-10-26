@@ -51,9 +51,10 @@ public static class VaultCompatibility
                     return new Assessment(true, blocked);
                 var path = pathNode.GetString()!;
                 if (path.StartsWith("/", StringComparison.Ordinal) || path.Contains("..", StringComparison.Ordinal) ||
-                    path.Contains('\\') || path.StartsWith(".urbe/", StringComparison.OrdinalIgnoreCase) ||
-                    !files.ContainsKey(path))
+                    path.Contains('\\') || path.StartsWith(".urbe/", StringComparison.OrdinalIgnoreCase))
                     return new Assessment(true, blocked);
+                // A user can explicitly remove the incompatible original; stale entries are harmless.
+                if (!files.ContainsKey(path)) continue;
 
                 if (!entry.TryGetProperty("minWriterVersion", out var minWriter) ||
                     minWriter.ValueKind != JsonValueKind.String || AppUpdate.Parts(minWriter.GetString()) is null)
