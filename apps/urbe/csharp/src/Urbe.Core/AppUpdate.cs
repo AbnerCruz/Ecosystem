@@ -83,12 +83,15 @@ public static class AppUpdate
     /// directRelease(list): of the GitHub releases (JSON), the newest one of the native client that carries the
     /// platform's file (<paramref name="assetFor"/>) downloadable from the Ecosystem's releases; null when none.
     /// </summary>
-    public static AppRelease? Pick(string json, Func<string, string> assetFor)
+    /// <summary>Every published, downloadable release on this response page, sorted by actual version.
+    /// Use pagination at the caller if the user asks for older entries than the first page.
+    /// Drafts, other products, invalid tags and foreign download URLs are rejected.</summary>
+    public static IReadOnlyList<AppRelease> List(string json, Func<string, string> assetFor)
     {
         JsonNode? root;
         try { root = JsonNode.Parse(json); }
-        catch (System.Text.Json.JsonException) { return null; }
-        AppRelease? best = null;
+        catch (System.Text.Json.JsonException) { return []; }
+        var releases = new Dictionary<string, AppRelease>(StringComparer.Ordinal);
         foreach (var rel in (root as JsonArray ?? []).OfType<JsonObject>())
         {
             if (rel["draft"] is JsonValue d && d.TryGetValue<bool>(out var draft) && draft) continue;
@@ -98,12 +101,19 @@ public static class AppUpdate
             if (Parts(version) is null) continue;
             var expected = assetFor(version);
             var asset = (rel["assets"] as JsonArray ?? []).OfType<JsonObject>()
-                .FirstOrDefault(a => Text(a["name"]) == expected && Text(a["browser_download_url"]).StartsWith(Downloads, StringComparison.Ordinal));
+                .FirstOrDefault(a => Text(a["name"]) == expected &&
+                    Text(a["browser_download_url"]).StartsWith(Downloads + tag + "/", StringComparison.Ordinal));
             if (asset is null) continue;
-            if (best is null || Newer(version, best.Version)) best = new AppRelease(version, Text(asset["browser_download_url"]), Text(rel["body"]));
+            releases.TryAdd(version, new AppRelease(version, Text(asset["browser_download_url"]), Text(rel["body"])));
         }
-        return best;
+        var sorted = releases.Values.ToList();
+        sorted.Sort((x, y) => Newer(x.Version, y.Version) ? -1 : Newer(y.Version, x.Version) ? 1 :
+            string.CompareOrdinal(y.Version, x.Version));
+        return sorted;
     }
+
+    public static AppRelease? Pick(string json, Func<string, string> assetFor) =>
+        List(json, assetFor).FirstOrDefault();
 
     private static string Text(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) ? s : "";
 }
