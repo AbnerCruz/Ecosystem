@@ -195,6 +195,12 @@ public sealed class AiAgentRun
     public long? ContextTokens { get; init; }
     public string? Instructions { get; init; }
     public IReadOnlyList<string>? Memory { get; init; }
+    /// <summary>Recall within a transport budget of the final provider request. No additional model call.</summary>
+    public Func<int, IReadOnlyList<string>>? RecallMemory { get; init; }
+    /// <summary>The actual system prompt with the selected memories, retaining user/security instructions.</summary>
+    public Func<IReadOnlyList<string>, string>? BuildSystemWithMemory { get; init; }
+    /// <summary>Provider tokenizer when available; otherwise a clearly labelled conservative estimate.</summary>
+    public Func<AiRequest, long?>? CountInputTokens { get; init; }
     /// <summary>UC-81: the lines about the agent's call name (<see cref="AgentNames.Naming"/>); null leaves the prompt as the 1.8.4's.</summary>
     public string? Naming { get; init; }
     /// <summary>How the Urbe wants things made (<see cref="UrbeGuidance"/>); null leaves the prompt as the 1.8.4's.</summary>
@@ -568,7 +574,8 @@ public static class AssistantAgent
         var schemas = tools.Select(t => t.Schema).ToList();
         var byName = new Dictionary<string, AiTool>();
         foreach (var t in tools) byName[t.Name] = t;
-        var system = SystemPrompt(agent, policy, o.VaultName, o.Host.Documents.List().Count, o.Host.EditorContext().Path, o.Instructions, o.Memory, o.Now ?? DateTime.Now, o.Naming, o.Guidance, o.OptimizeToolUse);
+        string SystemWith(IReadOnlyList<string>? memory) => SystemPrompt(agent, policy, o.VaultName, o.Host.Documents.List().Count, o.Host.EditorContext().Path, o.Instructions, memory, o.Now ?? DateTime.Now, o.Naming, o.Guidance, o.OptimizeToolUse);
+        var system = SystemWith(o.OptimizeToolUse && o.RecallMemory is not null ? null : o.Memory);
         int budget = (int)Math.Max(20000, Math.Min(WorkingChars, Math.Floor(contextTokens * 3.2 * 0.7)));
         // Optional ceiling for test harnesses and legacy callers; no cap in normal sessions.
         // Explicit cancel, repeated tool failures, and provider errors remain the safeguards.
@@ -593,9 +600,18 @@ public static class AssistantAgent
             AiResult res;
             try
             {
-                var working = SettlePast(messages.Take(messages.Count - 1).ToList());
-                var prepared = Prepare(working, budget, o.OptimizeToolUse, result.Efficiency);
-                var req = new AiRequest(o.Model, prepared, system, schemas, o.MaxTokens is null or 0 ? 8192 : o.MaxTokens, o.Temperature);
+                var source = messages.Take(messages.Count - 1).ToList();
+                var req = o.OptimizeToolUse
+                    ? AssistantContextBudget.Build(new AiAgentRun
+                    {
+                        Host = o.Host, Provider = o.Provider, Model = o.Model, Messages = messages,
+                        Stream = o.Stream, ContextTokens = o.ContextTokens, MaxTokens = o.MaxTokens,
+                        Temperature = o.Temperature, OptimizeToolUse = true, Memory = o.Memory,
+                        RecallMemory = o.RecallMemory, CountInputTokens = o.CountInputTokens,
+                        BuildSystemWithMemory = SystemWith
+                    }, system, schemas, source, result.Efficiency, o.CountInputTokens)
+                    : new AiRequest(o.Model, Prepare(SettlePast(source), budget, false), system, schemas,
+                        o.MaxTokens is null or 0 ? 8192 : o.MaxTokens, o.Temperature);
                 res = await o.Stream(o.Provider, req, e =>
                 {
                     switch (e.Type)
