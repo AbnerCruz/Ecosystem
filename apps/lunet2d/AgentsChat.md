@@ -492,6 +492,12 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - APK de jogo continua ausente; é prioridade seguinte, não confundir com APK do IDE ou ZIP. Validação nativa e DEVICE pendentes.
 
 
+### 20261025-chatgpt-lunet-tile-studio — ChatGPT → integrador — review
+- LUNET-441 / Issue #777, branch `feat/lunet-tile-studio-20261025`, base `e06c97aa37d3cd9ef2be478c508fbbadfb8d0911`.
+- Primeiro Tile Studio Android por toque, com seletor visual de tiles em PNG, desenho/borracha, camadas, controle de colisão e visibilidade, ordenação, undo/redo por gesto e persistência atômica em JSON v1 do próprio runtime. Menu Arte compacto também acessa Sprite Studio já integrado.
+- Reutiliza TileMap imutável da F4, não cria outro runtime/formato, não reabre áudio nem altera o fluxo de compilação. APK do **jogo** segue pendente separado; sem declarar Fase 5 concluída.
+- Testes portáteis criados para histórico, serialização e colisão; CI Android e DEVICE pendentes, não executar falsa validação. Guia `docs/guides/tile-studio.md` e ROADMAP documentam limites.
+
 ### 20261025-chatgpt-lunet-sprite-tools — ChatGPT → integrador — review
 - Pedido do proprietário: ter editor de sprites utilizável junto ao Tile Studio; LUNET-442 / Issue #779, branch `feat/lunet-sprite-tools-20261025`, base `e06c97aa37d3cd9ef2be478c508fbbadfb8d0911`.
 - Ampliação do Sprite Studio já integrado: linha e retângulo com prévia por toque, retângulo preenchido, flip vertical, zoom/pan, grade opcional e cor ARGB personalizada; usa documento JSON v1 original, sem migração nem novos formatos.
