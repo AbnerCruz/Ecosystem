@@ -66,6 +66,6 @@ public sealed class EditorAuthorshipProtectionTests
             Assert.Equal(Marked + "\n", editor.Editor.Text);
             window.Close();
             return true;
-        }, TestContext.Current.CancellationToken);
+        }, TestContext.Current.CancellationToken));
 
 }
