@@ -30,7 +30,8 @@
     "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
     "apps/urbe/csharp/PATCHNOTES.md",
     "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
-    "apps/urbe/csharp/PATCHNOTES-beta.32.md"
+    "apps/urbe/csharp/PATCHNOTES-beta.32.md",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AndroidBackAndPatchnotesUiTests.cs"
   ],
   "work_completed": [
     "UC-57/Issue #805: inspecionadas diretamente as implementações de VisualSurface, EditorOverlay, TouchTextScroll, EditorScrolling, AssistantPanel, MainView.History e os testes existentes da main C#; consultados o código-fonte Avalonia TextBox/ScrollViewer e documentação de rolagem, foco e seleção.",
@@ -41,7 +42,8 @@
     "AssistantPanel só acompanha novas mensagens enquanto follow-tail estiver ativo; gesto manual interrompe auto-follow, retorno voluntário ao final ou botão Ir à última mensagem o reativa.",
     "Mensagens próprias permitem Copiar, Selecionar trecho e Editar e reenviar pelo compositor, com confirmação para substituir rascunho e preservação do histórico anterior.",
     "Registradas referências Avalonia, análise das causas e critérios Android em EDITOR-INTERACTION-STABILITY-20261026.md e roadmap.",
-    "Corte de distribuição beta.32: versão canônica Android 2.0.0-beta.32 (versionCode 2000032), sem mudar ApplicationId, assinatura ou workflow; PATCHNOTES.md, PATCHNOTES-beta.32.md e histórico compacto atualizados. Publicação depende de integração no main e workflow assinado, não ocorreu na branch."
+    "Corte de distribuição beta.32: versão canônica Android 2.0.0-beta.32 (versionCode 2000032), sem mudar ApplicationId, assinatura ou workflow; PATCHNOTES.md, PATCHNOTES-beta.32.md e histórico compacto atualizados. Publicação depende de integração no main e workflow assinado, não ocorreu na branch.",
+    "Testes Core 867/867 aprovados na execução inicial CI da beta.32; a UI concluiu 252 aprovados e um teste legado recusou o literal beta.31, corrigido para verificar beta.32 preparada com descrição real e sinalização de release não publicada."
   ],
   "verification": [
     {
@@ -81,7 +83,8 @@
     "Não foram executadas medições em aparelho físico com IME e modelo real. Benchmark headless é diagnóstico e não prova latência Android.",
     "Editar mensagem já respondida prepara correção no compositor e novo envio; histórico original e resultados de ferramentas não são reescritos ou regenerados implicitamente. Clareza garantida por aviso.",
     "Uma release ainda exige número beta inédito, integração na main pelo integrador, pipeline de assinatura, verificação dos assets e aprovação explícita para alteração crítica de distribuição.",
-    "Protocolo de publicação não permite criar APK assinado a partir de branch de desenvolvimento ou substituir tag histórica."
+    "Protocolo de publicação não permite criar APK assinado a partir de branch de desenvolvimento ou substituir tag histórica.",
+    "A asserção de patchnotes com beta.31 ficou obsoleta após o corte da versão canônica beta.32; ajustada sem desabilitar/vermelhar suíte. Confirmação exige nova CI."
   ],
   "blockers": [],
   "next_actions": [
