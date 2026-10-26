@@ -36,6 +36,8 @@ public sealed record AiUsage(long Input, long Output, double? Cost,
     public static AiUsage Add(AiUsage a, AiUsage b)
     {
         static long? Sum(long? x, long? y) => x is null && y is null ? null : (x ?? 0) + (y ?? 0);
+        if (a.Input == 0 && a.Output == 0 && a.Cost is null && a.CacheReadInput is null && a.CacheCreationInput is null) return b;
+        if (b.Input == 0 && b.Output == 0 && b.Cost is null && b.CacheReadInput is null && b.CacheCreationInput is null) return a;
         var source = a.Cost is null && b.Cost is null ? "unknown"
             : a.Cost is null || b.Cost is null || a.CostSource == "partial" || b.CostSource == "partial" ? "partial"
             : a.CostSource == "estimated" || b.CostSource == "estimated" ? "estimated" : "reported";
