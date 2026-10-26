@@ -812,7 +812,7 @@ public sealed partial class AssistantPanel : Border
             run.Efficiency = r.Efficiency;
             run.Stopped = r.Stopped;
             run.Error = r.Error;
-            conv.Usage = new AiUsage(conv.Usage.Input + r.Usage.Input, conv.Usage.Output + r.Usage.Output, r.Usage.Cost is null ? conv.Usage.Cost : (conv.Usage.Cost ?? 0) + r.Usage.Cost);
+            conv.Usage = AiUsage.Add(conv.Usage, r.Usage);
             if (run.Stopped == "end" && run.Error is null)
             {
                 try
