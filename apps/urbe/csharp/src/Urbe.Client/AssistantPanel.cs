@@ -185,24 +185,26 @@ public sealed partial class AssistantPanel : Border
         {
             if (!_readerDraggingChat || Math.Abs(e.OffsetDelta.Y) < .5) return;
             _readerScrolledChat = true;
-            _followChatTail = ChatViewportPolicy.FollowingAfterGesture(_followChatTail, true, NearEnd());
+            _followChatTail = ChatViewportPolicy.FollowingAfterGesture(_followChatTail, true, AtChatEnd());
             UpdateLatestMessageAction();
         };
         _scroll.AddHandler(PointerReleasedEvent, (_, _) =>
         {
-            if (_readerScrolledChat) _followChatTail = ChatViewportPolicy.FollowingAfterGesture(_followChatTail, true, NearEnd());
+            if (_readerScrolledChat) _followChatTail = ChatViewportPolicy.FollowingAfterGesture(_followChatTail, true, AtChatEnd());
             _readerDraggingChat = _readerScrolledChat = false;
             UpdateLatestMessageAction();
         }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
         _scroll.AddHandler(PointerCaptureLostEvent, (_, _) => { _readerDraggingChat = _readerScrolledChat = false; },
             Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
-        _scroll.AddHandler(PointerWheelChangedEvent, (_, _) =>
+        _scroll.AddHandler(PointerWheelChangedEvent, (_, e) =>
         {
+            // Upward movement means "I am reading", even 1 px above the last message.
             _followChatTail = false;
             UpdateLatestMessageAction();
-            Dispatcher.UIThread.Post(() =>
+            // Only deliberate downward motion reaching the actual bottom resumes following.
+            if (e.Delta.Y < 0) Dispatcher.UIThread.Post(() =>
             {
-                _followChatTail = ChatViewportPolicy.FollowingAfterGesture(_followChatTail, true, NearEnd());
+                _followChatTail = ChatViewportPolicy.FollowingAfterGesture(_followChatTail, true, AtChatEnd());
                 UpdateLatestMessageAction();
             }, DispatcherPriority.Background);
         }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
@@ -1226,7 +1228,9 @@ public sealed partial class AssistantPanel : Border
         _selectionWait.Start();
     }
 
-    private bool NearEnd() => _scroll.Extent.Height - _scroll.Offset.Y - _scroll.Viewport.Height < 140;
+    private double ChatEndGap => Math.Max(0, _scroll.Extent.Height - _scroll.Offset.Y - _scroll.Viewport.Height);
+    private bool NearEnd() => ChatEndGap < 140;
+    private bool AtChatEnd() => ChatEndGap < 20;
     private void ScrollEnd()
     {
         if (!ChatViewportPolicy.MayAutoFollow(_followChatTail, SelectionActive())) return;
