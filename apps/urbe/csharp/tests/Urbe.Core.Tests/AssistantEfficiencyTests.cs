@@ -160,6 +160,27 @@ public sealed class AssistantEfficiencyTests
     }
 
     [Fact]
+    public async Task RepeatedNoOpGetsOneChanceToRecoverAndExplainInsteadOfAborting()
+    {
+        var host = new Host(); int streams = 0;
+        var write = AssistantTools.Get("write_note")!;
+        var result = await AssistantAgent.RunAsync(new()
+        {
+            Host = host, Model = "test", Provider = new("p", "openai"), Policy = "auto",
+            Messages = Messages(), Tools = [write], OptimizeToolUse = true,
+            Stream = (_, _, _, _) => Task.FromResult(++streams switch
+            {
+                1 or 2 => Answer(AiBlock.ToolUse("w" + streams, "write_note",
+                    new JsonObject { ["path"] = "A.md", ["content"] = "Original" })),
+                _ => Answer(AiBlock.TextBlock("Não precisei regravar a nota; tarefa concluída."))
+            })
+        });
+        Assert.Equal("end", result.Stopped);
+        Assert.Equal(3, streams);
+        Assert.Equal(0, host.Writes);
+    }
+
+    [Fact]
     public async Task NativeRequestedRangeIsExactAndDoesNotForceReadingTheRestOfTheNote()
     {
         var host = new Host();
