@@ -15,8 +15,11 @@ public static class EditorScrolling
     private static readonly AttachedProperty<long> LastMove =
         AvaloniaProperty.RegisterAttached<ScrollViewer, long>("EditorScrollMove", typeof(EditorScrolling));
 
-    /// <summary>While typing, the caret line is kept above this share of the visible height (the upper two thirds).</summary>
-    public const double BandBottom = 2.0 / 3.0;
+    /// <summary>Only correct actual occlusion; keeping the caret in the top two thirds made every key scroll the note.</summary>
+    public const double BandBottom = 0.94;
+
+    /// <summary>Never let automatic caret correction override a reader's touch/wheel gesture.</summary>
+    public static bool ShouldKeepCaret(bool editorFocused, bool readerNavigating) => editorFocused && !readerNavigating;
 
     /// <summary>Scrolls to <paramref name="y"/> (clamped) and marks the move as the editor's.</summary>
     public static void SetOffsetY(ScrollViewer scroll, double y)
