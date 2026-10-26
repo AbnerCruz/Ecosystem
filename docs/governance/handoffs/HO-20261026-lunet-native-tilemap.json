@@ -39,7 +39,9 @@
       "check": "Device Android: criar mapa, desenhar tileset, executar",
       "kind": "human",
       "result": "pending",
-      "evidence": "Aparelho do usuário ainda não testado"
+      "evidence": "Aparelho do usuário ainda não testado",
+      "object": "apps/lunet2d/docs/guides/tile-studio.md",
+      "critical": false
     }
   ],
   "known_issues": [
