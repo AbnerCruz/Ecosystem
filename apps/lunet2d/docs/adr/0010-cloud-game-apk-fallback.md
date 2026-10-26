@@ -20,4 +20,4 @@ Implementar geração de APK por workflow privado na conta do usuário, opt-in e
 
 ## Compatibilidade
 
-O formato do projeto e as APIs Game/Content/Assets não mudam. A geração de APK cloud é opcional; não envolve o Hub nem o Urbe e não incorpora a IDE no APK do jogo.
+O formato do projeto e as APIs Game/Content/Assets não mudam. A geração de APK cloud é opcional; não envolve outros produtos nem incorpora a IDE no APK do jogo.
