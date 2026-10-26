@@ -1,0 +1,126 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261026-lunet-assets-panel",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-26T13:50:31.282Z",
+  "agent": {
+    "id": "chatgpt-lunet-assets-panel",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-446",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-assets-panel-20261026",
+  "base_commit": "274182eb6c06debe6df1bb060710edeecb565624",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/795",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Core/ProjectAssetCatalog.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Assets.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Ide.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ProjectAssetCatalogTests.cs",
+    "apps/lunet2d/docs/guides/assets-panel.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md"
+  ],
+  "work_completed": [
+    "Painel Assets nativo com busca/categorias em Content/ e Assets/, sem estado persistente paralelo",
+    "Agrupamento de arquivos editáveis .sprite.json com PNG derivado; atalhos aos Studios existentes",
+    "Preview de imagens e tileset, áudio com MediaPlayer, e códigos C# de uso copiáveis",
+    "Testes portáteis para índice e documentação de validação Android"
+  ],
+  "verification": [
+    {
+      "check": "Lunet .NET tests",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "3701bd130ba564cbbca85d0ac4406c98b42e7219",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/40333317984"
+    },
+    {
+      "check": "Lunet Android APK build (PR)",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "3701bd130ba564cbbca85d0ac4406c98b42e7219",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/40333318060"
+    },
+    {
+      "check": "Ecosystem consistency",
+      "kind": "automated",
+      "result": "pending",
+      "tested_commit": "3701bd130ba564cbbca85d0ac4406c98b42e7219",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/40333317747"
+    },
+    {
+      "check": "Validação Android: Assets, filtros, imagem, áudio, Sprite/Tile Studio, persistência",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/assets-panel.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "O Tile Studio existente limita edição a mapas de até 64 × 64, mesmo que o framework execute maiores.",
+    "O preview de tilemap mostra tileset e dimensões, não um render completo do mapa.",
+    "Ainda não há Audio Studio; este incremento apenas reproduz áudios existentes.",
+    "Validação DEVICE do layout/toque/reprodução permanece pendente."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Aguardar consistency e integração governada do PR #795.",
+    "Publicar/verificar release Lunet em main e realizar teste no Android.",
+    "Depois continuar Audio Studio na Fase 5, sem antecipar conclusão."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "ListFiles mantém fonte da verdade; o catálogo é recalculado sem persistir estado paralelo."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Mudanças isoladas em Lunet.Android e Lunet.Core sem dependência de outro Product."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "PR #795, código, teste, documentação e este handoff identificam execução e evidências."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI/compilação automatizados separados de validação humana pendente em Android."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Sem declarar fase concluída ou recurso validado no aparelho antes de integração e DEVICE."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Catálogo permanece local por ausência de segundo consumidor; avaliação registrada."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-asset-catalog",
+      "status": "product-specific",
+      "rationale": "Projeção read-only de LunetProject e ligação com seus Studios; nenhum consumidor independente confirmado."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
