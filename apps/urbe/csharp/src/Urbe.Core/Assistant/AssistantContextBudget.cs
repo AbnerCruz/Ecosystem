@@ -44,7 +44,8 @@ public static class AssistantContextBudget
         if (topic.Length <= latest.Length || !topic.EndsWith(latest, StringComparison.Ordinal)) return "";
         var previous = topic[..^latest.Length].Trim();
         if (previous.Length == 0 || transmitted.Any(m => m.Content.Any(b => b.Type == "text" && b.Text.Contains(previous, StringComparison.Ordinal)))) return "";
-        var reference = requests[^2].Id;
+        var reference = requests.Take(requests.Count - 1).LastOrDefault(m =>
+            string.Join(" ", m.Content.Where(b => b.Type == "text" && !b.Hidden).Select(b => b.Text)).Trim() == previous)?.Id ?? "conversa";
         var sample = previous.Length <= 1300 ? previous : AssistantAgent.EvidenceExcerpt(previous, "restrição obrigatório preserva deve não", reference);
         return "\n[Pedido anterior da MESMA tarefa recuperado do histórico (id: " + reference +
             "). Contexto subordinado à solicitação mais recente; consulte a conversa original se o trecho for parcial:] " + sample;
