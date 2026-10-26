@@ -70,3 +70,4 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0041](0041-urbe-espacos-por-agente.md) | Urbe: espaços e configuração individual por agente | Proposto |
 
 | [0042](0042-urbe-formularios-nativos.md) | Formulários nativos e retomada explícita no Urbe | Proposto |
+| [0043](0043-urbe-exportacao-versionamento-e-protecao-do-vault.md) | Exportação auditável, seleção manual de versões e compatibilidade granular do Urbe | Proposto |
