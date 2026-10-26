@@ -121,10 +121,11 @@ public sealed partial class MainActivity
     private void ShowArtTools()
     {
         new AlertDialog.Builder(this)!.SetTitle("Ferramentas visuais")!
-            .SetItems(new[] { "Sprites e animação", "Tilemaps" }, (_, e) =>
+            .SetItems(new[] { "Sprites e animação", "Tilemaps", "Áudio" }, (_, e) =>
             {
                 if (e.Which == 0) ShowSpriteAssets();
-                else ShowTileMaps();
+                else if (e.Which == 1) ShowTileMaps();
+                else ShowAudioStudio();
             })!.SetNegativeButton("Fechar", (_, _) => { })!.Show();
     }
 

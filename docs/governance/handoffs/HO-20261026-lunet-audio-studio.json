@@ -1,0 +1,125 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261026-lunet-audio-studio",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-26T14:43:42.958Z",
+  "agent": {
+    "id": "chatgpt-lunet-audio-studio",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-447",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-audio-studio-20261026",
+  "base_commit": "bc8e5c15e02dfad624439246136b277395baee38",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/801",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Studio/WaveAudioDocument.cs",
+    "apps/lunet2d/src/Lunet.Android/WaveAudioStudioView.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.AudioStudio.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Ide.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Studio.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Assets.cs",
+    "apps/lunet2d/tests/Lunet.Tests/WaveAudioDocumentTests.cs",
+    "apps/lunet2d/docs/guides/audio-studio.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md"
+  ],
+  "work_completed": [
+    "WAV PCM editável offline no Lunet: parse PCM8/16 mono/stereo, waveform, recorte, ganho e SMPL looping sem perder o original.",
+    "Criação de efeito próprio com quatro formas de onda em Lunet.Studio C# e exportação WAV16.",
+    "UI Android Audio Studio, importação SAF WAV, reprodução/preview, salvamento com nome único, integração Arte/Assets/Ferramentas.",
+    "Testes de parser/render/síntese e documentação de uso/limitações e teste de aparelho."
+  ],
+  "verification": [
+    {
+      "check": "CI Lunet .NET, testes",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/pull/801/checks"
+    },
+    {
+      "check": "Build Android APK",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/pull/801/checks"
+    },
+    {
+      "check": "Ecosystem consistency",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/pull/801/checks"
+    },
+    {
+      "check": "Android device: síntese, edição, playback, loops, arquivos intactos e regressões",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/audio-studio.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Editor suporta WAV PCM 8/16 mono/stereo até 24 MiB; MP3/OGG só playback.",
+    "O player pode ignorar o chunk SMPL em outros hosts; o game framework usa parâmetro próprio de loop.",
+    "Instrumentos multitrack, piano roll e DAW completa estão fora da SPEC §13 deste incremento."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Inspecionar e corrigir checks do PR #801.",
+    "Integrar via mecanismo governado e verificar release Android após CI.",
+    "Solicitar validação real DEVICE da prévia, síntese e exportação, sem marcar Fase 5 concluída."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "WAV de origem é autoridade e exportação cria nova cópia sem índice paralelo; preview apenas cache."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Implementação limitada ao Lunet, sem dependências de Urbe/Hub."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #799, PR #801, testes e este handoff fornecem rastreabilidade."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes/CI automatizados separados de validação humana no Android."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Não há alegação de conclusão sem CI, integração e validação do usuário."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma extração compartilhada; editor específico do produto."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "audio-studio-pcm-editor",
+      "status": "product-specific",
+      "rationale": "Lunet Studio tem consumidor único; não adicionar framework compartilhado ou cópia de runtime."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
