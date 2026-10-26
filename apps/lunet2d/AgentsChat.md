@@ -507,3 +507,7 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - LUNET-443 / Issue #783: correção de resolução de assets entre Sprite Studio e jogo; branch `fix/lunet-project-assets-content-20261025` baseada na main.
 - Causa: Studio exporta sprites em `Assets/`, mas os Previews só liam `Content/`. `ProjectContentSource` preserva `Content/` e adiciona fallback restrito a `Assets/` do mesmo projeto; nome igual prioriza `Content/Assets/`. Nenhum arquivo antigo é movido nem excluído.
 - Preview rápido e isolado atualizados; testes de carregamento de PNG pelo GameHost, fallback, precedência e traversal; guia e roadmap atualizados. CI e DEVICE aguardam validação; APK do jogo continua requisito F9 separado.
+
+### 20261025-chatgpt-lunet-animation-assets-followup — ChatGPT → integrador — review
+- Complemento LUNET-443/#783, resposta do proprietário: Sprite Studio produz animações; salvar apenas `.sprite.json` não basta ao jogo. O editor agora regenera automaticamente `Assets/<nome>.png` como spritesheet horizontal de todos os frames a cada gravação da fonte JSON; altera FPS no JSON, não destrói dados editáveis.
+- Botão de exemplo explica uso de `SpriteAnimationClip`/`SpriteAnimator` (atualização por DeltaSeconds e desenho de frame); testes portáteis validam layout de três frames, transparência e FPS após round-trip. Previews usam `ProjectContentSource` do PR; DEVICE pendente. CI/compilação Android após complemento a conferir.

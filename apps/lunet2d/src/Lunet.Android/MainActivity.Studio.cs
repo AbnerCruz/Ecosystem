@@ -61,38 +61,61 @@ public sealed partial class MainActivity
         var dialog = new Dialog(this, global::Android.Resource.Style.ThemeMaterialNoActionBar);
         bool saved = false;
         var view = new SpriteStudioView(this, document,
-            doc => { saved = false; project.WriteText(path, doc.ToJson()); saved = true; },
-            doc => ExportSprite(path, doc),
+            doc =>
+            {
+                saved = false;
+                // JSON is the editable source; the PNG sheet is a derived asset
+                // that follows every save, including frame and timing edits.
+                project.WriteText(path, doc.ToJson());
+                SaveSpriteSheet(path, doc);
+                saved = true;
+            },
+            doc => ShowSpriteUsage(path, doc),
             () => { _spriteStudio?.Save(); if (!saved) return; dialog.Dismiss(); _spriteStudio = null; RefreshExplorer(); });
         _spriteStudio = view;
         dialog.SetContentView(view); dialog.SetCancelable(false); dialog.Show();
         dialog.Window?.SetLayout(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
         view.Save();
     }
-    private void ExportSprite(string path, SpriteDocument doc)
+
+    private static string SpriteSheetPath(string path) =>
+        "Assets/" + Path.GetFileName(path[..^".sprite.json".Length]) + ".png";
+
+    private void SaveSpriteSheet(string path, SpriteDocument doc)
     {
-        var project = _project!;
-        string png = "Assets/" + Path.GetFileName(path[..^".sprite.json".Length]) + ".png";
-        void Write()
-        {
-            try
-            {
-                int width = doc.Width * doc.Frames.Count; var rgba = doc.SheetRgba(); var pixels = new int[width * doc.Height];
-                for (int i = 0; i < pixels.Length; i++) pixels[i] = unchecked((int)((uint)rgba[i * 4 + 3] << 24 | (uint)rgba[i * 4] << 16 | (uint)rgba[i * 4 + 1] << 8 | rgba[i * 4 + 2]));
-                using var bitmap = Bitmap.CreateBitmap(pixels, width, doc.Height, Bitmap.Config.Argb8888!)!;
-                using var stream = new MemoryStream();
-                if (!bitmap.Compress(Bitmap.CompressFormat.Png!, 100, stream)) throw new IOException("Falha ao gerar PNG.");
-                stream.Position = 0; project.Import("Assets", Path.GetFileName(png), stream);
-                new AlertDialog.Builder(this)!.SetTitle("Spritesheet exportado")!.SetMessage(
-                    $"{png}\n{doc.Frames.Count} frames · {doc.Width}×{doc.Height} · {doc.Fps} FPS\n\nNo jogo:\nvar sheet = new SpriteSheet(Content.LoadTexture(\"{png}\"), {doc.Width}, {doc.Height});\nvar clip = SpriteAnimationClip.FromSheet(sheet, new[] {{ {string.Join(", ", Enumerable.Range(0, doc.Frames.Count))} }}, 1.0 / {doc.Fps});")!
-                    .SetPositiveButton("OK", (_, _) => { })!.Show();
-            }
-            catch (Exception ex) { Toast.MakeText(this, "Não foi possível exportar: " + ex.Message, ToastLength.Long)?.Show(); }
-        }
-        if (project.ListFiles().Contains(png))
-            new AlertDialog.Builder(this)!.SetTitle("Atualizar spritesheet?")!.SetMessage(png)!.SetPositiveButton("Substituir PNG", (_, _) => Write())!.SetNegativeButton("Cancelar", (_, _) => { })!.Show();
-        else Write();
+        string png = SpriteSheetPath(path);
+        int width = checked(doc.Width * doc.Frames.Count);
+        byte[] rgba = doc.SheetRgba();
+        var pixels = new int[checked(width * doc.Height)];
+        for (int i = 0; i < pixels.Length; i++)
+            pixels[i] = unchecked((int)((uint)rgba[i * 4 + 3] << 24 |
+                                        (uint)rgba[i * 4] << 16 |
+                                        (uint)rgba[i * 4 + 1] << 8 | rgba[i * 4 + 2]));
+        using var bitmap = Bitmap.CreateBitmap(pixels, width, doc.Height, Bitmap.Config.Argb8888!)!;
+        using var stream = new MemoryStream();
+        if (!bitmap.Compress(Bitmap.CompressFormat.Png!, 100, stream))
+            throw new IOException("Falha ao gerar spritesheet PNG.");
+        stream.Position = 0;
+        _project!.Import("Assets", Path.GetFileName(png), stream);
     }
+
+    private void ShowSpriteUsage(string path, SpriteDocument doc)
+    {
+        string png = SpriteSheetPath(path);
+        var frames = string.Join(", ", Enumerable.Range(0, doc.Frames.Count));
+        new AlertDialog.Builder(this)!.SetTitle("Animação pronta para o jogo")!.SetMessage(
+            $"{png}\n{doc.Frames.Count} frames · {doc.Width}×{doc.Height} · {doc.Fps} FPS\n" +
+            $"Fonte editável: {path}\n\n" +
+            "No LoadContent:\n" +
+            $"var sheet = new SpriteSheet(Content.LoadTexture(\"{png}\"), {doc.Width}, {doc.Height});\n" +
+            $"var clip = SpriteAnimationClip.FromSheet(sheet, new[] {{ {frames} }}, 1.0 / {doc.Fps});\n" +
+            "var animator = new SpriteAnimator(clip);\n\n" +
+            "No Update:\nanimator.Update(time.DeltaSeconds);\n\n" +
+            "No Draw (dentro de SpriteBatch.Begin/End):\n" +
+            "batch.Draw(animator.Clip.Texture, position, animator.Source, Color.White);")!
+            .SetPositiveButton("OK", (_, _) => { })!.Show();
+    }
+
     private TileStudioView? _tileStudio;
 
     private void ShowArtTools()

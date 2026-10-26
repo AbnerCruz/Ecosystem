@@ -50,6 +50,38 @@ public class SpriteStudioTests
     }
 
     [Fact]
+    public void MultiFrameSpriteSheetPreservesAnimatedFramesTimingAndAlpha()
+    {
+        var animation = SpriteDocument.Create(2);
+        animation.Fps = 12;
+        animation.Frames[0][0] = 0x80ff0000;
+        animation.Frames[0][1] = 0xff00ff00;
+        animation.AddFrame();
+        animation.Frames[1][2] = 0xff112233;
+        animation.AddFrame();
+        animation.Frames[2][3] = 0x400000ff;
+
+        var reopened = SpriteDocument.Parse(animation.ToJson());
+        Assert.Equal(12, reopened.Fps);
+        Assert.Equal(3, reopened.Frames.Count);
+        Assert.Equal(6, reopened.Width * reopened.Frames.Count);
+        Assert.Equal(2, reopened.Height);
+        var bytes = reopened.SheetRgba();
+
+        // Pixel (x, y) in frame N maps to column N*Width + x.
+        void Pixel(int x, int y, byte[] rgba)
+        {
+            var start = (y * reopened.Width * reopened.Frames.Count + x) * 4;
+            Assert.Equal(rgba, bytes.AsSpan(start, 4).ToArray());
+        }
+        Pixel(0, 0, [255, 0, 0, 128]);
+        Pixel(1, 0, [0, 255, 0, 255]);
+        Pixel(2, 0, [0, 0, 0, 0]);
+        Pixel(2, 1, [17, 34, 51, 255]);
+        Pixel(5, 1, [0, 0, 255, 64]);
+    }
+
+    [Fact]
     public void VerticalFlipDoesNotCorruptOtherFramesOrTransparency()
     {
         var doc = SpriteDocument.Create(3);
