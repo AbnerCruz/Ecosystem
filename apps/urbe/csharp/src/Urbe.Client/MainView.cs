@@ -470,6 +470,12 @@ public sealed partial class MainView : Grid
             throw new InvalidOperationException("Selecione uma pasta real para gravar.");
         if (_snapshot.IsReadOnly)
             throw new InvalidOperationException("Vault em modo somente leitura.");
+        // Last defense for every native write route (editor Fonte/Visual and assistant):
+        // keep already-persisted attribution tokens immutable.
+        if (note.Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) &&
+            _contents.TryGetValue(note.Path, out var previous) &&
+            !NoteMarks.PreservesAiAuthorship(previous, note.Content))
+            throw new InvalidOperationException("A marca de autoria da IA é protegida pelo Urbe. A alteração não foi salva; preserve o selo e edite somente o conteúdo.");
         await _vault.SaveExistingTextFileAsync(note.Path, note.Content);
         _contents[note.Path] = note.Content;
         RecordSaved(note.Path, note.Content);
