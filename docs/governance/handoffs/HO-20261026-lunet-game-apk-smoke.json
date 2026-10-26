@@ -65,10 +65,10 @@
     {
       "check": "DEVICE: GitHub private build, export/install de APK do jogo",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/game-apk-smoke.md",
       "critical": false,
-      "evidence": "Requer ação do proprietário com conta GitHub no Lunet."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-26 (Issue https://github.com/AbnerCruz/Ecosystem/issues/796); registro em docs/governance/responses/VAL-HO-20261026-lunet-game-apk-smoke-ac2dcf999f49.md."
     }
   ],
   "known_issues": [
