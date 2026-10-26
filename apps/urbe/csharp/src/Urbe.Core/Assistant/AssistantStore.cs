@@ -498,6 +498,10 @@ public interface IAssistantUndoHost
     Task TrashAsync(UrbeDocument doc);
     /// <summary>The document back at <paramref name="path"/> with <paramref name="content"/> (moved back when the path differs).</summary>
     Task WriteBackAsync(UrbeDocument current, string path, string content);
+    /// <summary>Verified history restoration: host may authorize removing the exact mark it previously added.
+    /// Never use this route for arbitrary agent or user writes.</summary>
+    Task WriteBackVerifiedUndoAsync(UrbeDocument current, string path, string before, string expectedAfter) =>
+        WriteBackAsync(current, path, before);
 }
 
 /// <summary>tools.js revert(): the run's changes undone newest first; notes the user edited afterwards are kept.</summary>
@@ -524,7 +528,11 @@ public static class AssistantUndo
                 if (cur is not null) { await host.TrashAsync(cur); restored++; }
                 continue;
             }
-            if (cur is not null) { await host.WriteBackAsync(cur, c.Before.Path, c.Before.Content); restored++; }
+            if (cur is not null)
+            {
+                await host.WriteBackVerifiedUndoAsync(cur, c.Before.Path, c.Before.Content, c.After?.Content ?? cur.Content);
+                restored++;
+            }
         }
         return new Report(restored, skipped);
     }
