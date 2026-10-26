@@ -50,10 +50,10 @@
     {
       "check": "Sprite Studio exporta PNG e Preview rápido/isolado carregam-no em aparelho",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/sprite-studio.md",
       "critical": false,
-      "evidence": "Aparelho não testado nesta sessão."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-26 (Issue https://github.com/AbnerCruz/Ecosystem/issues/792); registro em docs/governance/responses/VAL-HO-20261025-lunet-assets-content-2d6294a11dd0.md."
     }
   ],
   "known_issues": [
