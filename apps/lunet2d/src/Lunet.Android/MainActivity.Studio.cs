@@ -55,7 +55,7 @@ public sealed partial class MainActivity
             catch (Exception ex) { Toast.MakeText(this, "Não foi possível importar: " + ex.Message, ToastLength.Long)?.Show(); }
         })!.SetNegativeButton("Cancelar", (_, _) => { })!.Show();
     }
-    private void OpenSpriteStudio(string path, SpriteDocument document)
+    private void OpenSpriteStudio(string path, SpriteDocument document, Action? afterClose = null, int tilesetTileSize = 0)
     {
         var project = _project!;
         var dialog = new Dialog(this, global::Android.Resource.Style.ThemeMaterialNoActionBar);
@@ -71,7 +71,7 @@ public sealed partial class MainActivity
                 saved = true;
             },
             doc => ShowSpriteUsage(path, doc),
-            () => { _spriteStudio?.Save(); if (!saved) return; dialog.Dismiss(); _spriteStudio = null; RefreshExplorer(); });
+            () => { _spriteStudio?.Save(); if (!saved) return; dialog.Dismiss(); _spriteStudio = null; RefreshExplorer(); afterClose?.Invoke(); }, tilesetTileSize);
         _spriteStudio = view;
         dialog.SetContentView(view); dialog.SetCancelable(false); dialog.Show();
         dialog.Window?.SetLayout(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
@@ -79,7 +79,7 @@ public sealed partial class MainActivity
     }
 
     private static string SpriteSheetPath(string path) =>
-        "Assets/" + Path.GetFileName(path[..^".sprite.json".Length]) + ".png";
+        path[..^".sprite.json".Length] + ".png";
 
     private void SaveSpriteSheet(string path, SpriteDocument doc)
     {
@@ -96,7 +96,7 @@ public sealed partial class MainActivity
         if (!bitmap.Compress(Bitmap.CompressFormat.Png!, 100, stream))
             throw new IOException("Falha ao gerar spritesheet PNG.");
         stream.Position = 0;
-        _project!.Import("Assets", Path.GetFileName(png), stream);
+        _project!.Import(Path.GetDirectoryName(png)!.Replace('\\', '/'), Path.GetFileName(png), stream);
     }
 
     private void ShowSpriteUsage(string path, SpriteDocument doc)
@@ -151,33 +151,88 @@ public sealed partial class MainActivity
 
     private void CreateTileMap()
     {
+        // An imported PNG is no longer a prerequisite: every new map gets
+        // an editable in-project tileset and the runtime's TileMap JSON v1.
+        new AlertDialog.Builder(this)!.SetTitle("Tamanho do mapa")!
+            .SetItems(new[] { "16 × 16 células", "32 × 32 células", "64 × 64 células" }, (_, mapSize) =>
+            {
+                int cells = new[] { 16, 32, 64 }[mapSize.Which];
+                new AlertDialog.Builder(this)!.SetTitle("Tamanho dos tiles")!
+                    .SetItems(new[] { "16 × 16 pixels", "32 × 32 pixels", "64 × 64 pixels" }, (_, tileSize) =>
+                    {
+                        int tile = new[] { 16, 32, 64 }[tileSize.Which];
+                        CreateEditableTileMap(cells, tile);
+                    })!.Show();
+            })!.Show();
+    }
+
+    private void CreateEditableTileMap(int cells, int tile)
+    {
         var project = _project!;
-        var textures = project.ListFiles().Where(p =>
-            p.StartsWith("Content/Textures/", StringComparison.Ordinal) &&
-            p.EndsWith(".png", StringComparison.OrdinalIgnoreCase)).ToArray();
-        if (textures.Length == 0)
+        var name = "tiles-" + Guid.NewGuid().ToString("N")[..8];
+        string source = "Content/Textures/" + name + ".sprite.json";
+        string png = SpriteSheetPath(source);
+        string mapPath = "Content/Data/map-" + name + ".tilemap.json";
+        try
         {
-            new AlertDialog.Builder(this)!.SetTitle("Primeiro importe um tileset PNG")!
-                .SetMessage("Use Explorer / Importar imagem PNG. O tileset deve estar em Content/Textures e ter dimensões múltiplas de 16, 32 ou 64.")!
+            // The atlas fits the existing native pixel editor (<=128px);
+            // four flat-color placeholders are immediately usable and editable.
+            int atlasSize = Math.Min(128, tile * 4);
+            var atlas = SpriteDocument.Create(atlasSize);
+            int columns = atlasSize / tile;
+            uint[] colors = [0xff438956, 0xffb68b53, 0xff7b8796, 0xff3c8fbd];
+            for (int i = 0; i < colors.Length; i++)
+            {
+                int x = (i % columns) * tile, y = (i / columns) * tile;
+                atlas.Rectangle(0, x, y, x + tile - 1, y + tile - 1, colors[i], filled: true);
+            }
+
+            project.WriteText(source, atlas.ToJson());
+            SaveSpriteSheet(source, atlas);
+            var map = Lunet.Graphics.TileMap.Create("Textures/" + name + ".png", cells, cells, tile, tile);
+            project.WriteText(mapPath, map.ToJson());
+            RefreshExplorer();
+            OpenTileMap(mapPath, map);
+        }
+        catch (Exception ex)
+        {
+            // These paths contain a new random ID and belong exclusively to this operation.
+            // Never delete or rewrite older maps while handling a creation failure.
+            foreach (string path in new[] { mapPath, png, source })
+            {
+                try { if (project.ListFiles().Contains(path)) project.DeleteFile(path); }
+                catch (IOException) { /* preserve original failure */ }
+            }
+            Toast.MakeText(this, "Não foi possível criar o mapa: " + ex.Message, ToastLength.Long)?.Show();
+        }
+    }
+
+    private void EditTileMapTileset(string mapPath, Lunet.Graphics.TileMap map, Action closeMap)
+    {
+        var project = _project!;
+        string png = "Content/" + map.TexturePath;
+        string source = png[..^".png".Length] + ".sprite.json";
+        if (!project.ListFiles().Contains(source))
+        {
+            new AlertDialog.Builder(this)!.SetTitle("Tileset sem fonte editável")!
+                .SetMessage("Este mapa utiliza um PNG importado. Crie um novo tilemap para desenhar o próprio tileset no Lunet.")!
                 .SetPositiveButton("OK", (_, _) => { })!.Show();
             return;
         }
-        new AlertDialog.Builder(this)!.SetTitle("Tileset do mapa")!.SetItems(textures, (_, e) =>
+        try
         {
-            var path = textures[e.Which];
-            new AlertDialog.Builder(this)!.SetTitle("Tamanho dos tiles")!
-                .SetItems(new[] { "16 × 16", "32 × 32", "64 × 64" }, (_, size) =>
-                {
-                    int tile = new[] { 16, 32, 64 }[size.Which];
-                    try
-                    {
-                        string texturePath = path["Content/".Length..];
-                        string mapPath = "Content/Data/map-" + Guid.NewGuid().ToString("N")[..8] + ".tilemap.json";
-                        OpenTileMap(mapPath, Lunet.Graphics.TileMap.Create(texturePath, 16, 16, tile, tile));
-                    }
-                    catch (Exception ex) { Toast.MakeText(this, "Mapa inválido: " + ex.Message, ToastLength.Long)?.Show(); }
-                })!.Show();
-        })!.Show();
+            var document = SpriteDocument.Parse(project.ReadText(source));
+            if (document.Frames.Count != 1 || document.Width % map.TileWidth != 0 || document.Height % map.TileHeight != 0)
+                throw new InvalidDataException("O tileset precisa ter um frame e dimensões múltiplas do tile.");
+            closeMap();
+            OpenSpriteStudio(source, document,
+                () => OpenTileMap(mapPath, Lunet.Graphics.TileMap.Parse(project.ReadText(mapPath))),
+                map.TileWidth);
+        }
+        catch (Exception ex)
+        {
+            Toast.MakeText(this, "Não foi possível editar o tileset: " + ex.Message, ToastLength.Long)?.Show();
+        }
     }
 
     private void OpenTileMap(string path, Lunet.Graphics.TileMap map)
@@ -204,6 +259,13 @@ public sealed partial class MainActivity
             bool saved = false;
             var view = new TileStudioView(this, edit, bitmap,
                 json => { saved = false; project.WriteText(path, json); saved = true; },
+                () => EditTileMapTileset(path, map, () =>
+                {
+                    _tileStudio?.Save();
+                    _tileStudio = null;
+                    dialog.Dismiss();
+                    bitmap.Dispose();
+                }),
                 () =>
                 {
                     _tileStudio?.Save();

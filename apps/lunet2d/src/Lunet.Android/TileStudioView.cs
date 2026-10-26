@@ -14,6 +14,7 @@ internal sealed class TileStudioView : LinearLayout
     private readonly TileStudioSession _edit;
     private readonly Bitmap _tileset;
     private readonly Action<string> _save;
+    private readonly Action _editTileset;
     private readonly TextView _status;
     private readonly MapCanvas _canvas;
     private int _lastTile = 1;
@@ -21,9 +22,9 @@ internal sealed class TileStudioView : LinearLayout
     private bool _changed;
     private int _lastX = -1, _lastY = -1;
 
-    public TileStudioView(Context context, TileStudioSession edit, Bitmap tileset, Action<string> save, Action close) : base(context)
+    public TileStudioView(Context context, TileStudioSession edit, Bitmap tileset, Action<string> save, Action editTileset, Action close) : base(context)
     {
-        _edit = edit; _tileset = tileset; _save = save;
+        _edit = edit; _tileset = tileset; _save = save; _editTileset = editTileset;
         Orientation = Orientation.Vertical;
         SetBackgroundColor(AColor.Rgb(17, 20, 29));
         SetPadding(10, 8, 10, 8);
@@ -32,7 +33,7 @@ internal sealed class TileStudioView : LinearLayout
         _canvas = new MapCanvas(context, this);
 
         Row(("← Código", () => { Suspend(); close(); }), ("Salvar", Save), ("Escolher tile", ShowPalette),
-            ("Borracha", () => { if (_edit.Tile == 0) _edit.Tile = _lastTile; else { _lastTile = _edit.Tile; _edit.Tile = 0; } Refresh(); }));
+            ("Editar tileset", _editTileset), ("Borracha", () => { if (_edit.Tile == 0) _edit.Tile = _lastTile; else { _lastTile = _edit.Tile; _edit.Tile = 0; } Refresh(); }));
         Row(("Camada", PickLayer), ("+ Camada", AddLayer), ("Colisão", () => Edit(() => _edit.ToggleCollision())),
             ("Visível", () => Edit(() => _edit.ToggleVisibility())), ("↑", () => Edit(() => _edit.MoveLayer(-1))),
             ("↓", () => Edit(() => _edit.MoveLayer(1))), ("Renomear", RenameLayer),
