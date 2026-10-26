@@ -441,7 +441,7 @@ public static class AssistantAgent
         int current = messages.Count;
         for (int i = messages.Count - 1; i >= 0; i--)
             if (messages[i].Role == "user" && messages[i].Meta?.ToolResults != true && messages[i].Content.Any(b => b.Type == "text" && !b.Hidden && !string.IsNullOrEmpty(b.Text))) { current = i; break; }
-        var focus = current < messages.Count ? string.Join(" ", messages[current].Content.Where(b => b.Type == "text" && !b.Hidden).Select(b => b.Text)) : "";
+        var focus = AssistantMemoryEngine.ContinuityQuery(messages);
         return messages.Select((m, i) => i < current && (m.Content.Any(IsLong) || m.Content.Any(b => b.Type == "attachment")) ? Settled(m, focus) : m).ToList();
     }
 
@@ -475,6 +475,16 @@ public static class AssistantAgent
         {
             var found = content.IndexOf(word, 400, StringComparison.OrdinalIgnoreCase);
             if (found >= 0) { candidate = found; break; }
+        }
+        // When the new message says only "continua"/"mantém isso", favour an explicit constraint
+        // anywhere in the previous evidence rather than a meaningless sample of the middle.
+        if (candidate < 0 && content.Length > 400)
+        {
+            foreach (var anchor in new[] { "restrição", "obrigat", "não ", "nunca ", "deve ", "preserv" })
+            {
+                var found = content.IndexOf(anchor, 400, StringComparison.OrdinalIgnoreCase);
+                if (found >= 0 && (candidate < 0 || found < candidate)) candidate = found;
+            }
         }
         var excerpt = candidate < 0 ? "" : "\n[trecho relacionado] " + content.Substring(Math.Max(0, candidate - 90),
             Math.Min(220, content.Length - Math.Max(0, candidate - 90)));
