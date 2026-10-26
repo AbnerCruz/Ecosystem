@@ -49,7 +49,7 @@ public sealed partial class AssistantPanel
                 (u.ReasoningOutput is { } thought ? FmtTokens(thought) + " raciocínio (parte da saída)" : "");
             var cost = u.Cost is { } value ? "US$ " + value.ToString("0.000000", CultureInfo.InvariantCulture) +
                 (u.CostSource == "estimated" ? " estimado" : u.CostSource == "partial" ? " parcial" : " informado pelo provedor")
-                : Estimate(u) is { } estimate && (u.CacheReadInput ?? 0) == 0 && (u.CacheCreationInput ?? 0) == 0
+                : model == ModelId() && Estimate(u) is { } estimate && (u.CacheReadInput ?? 0) == 0 && (u.CacheCreationInput ?? 0) == 0
                     ? "US$ " + estimate.ToString("0.000000", CultureInfo.InvariantCulture) + " estimado pela tarifa cadastrada (não cobrado/confirmado)"
                     : "Custo desconhecido (tarifa de cache ou preço não informado)";
             body.Children.Add(Section(model, Wrap(usage, 12, UrbeTheme.Text2),
