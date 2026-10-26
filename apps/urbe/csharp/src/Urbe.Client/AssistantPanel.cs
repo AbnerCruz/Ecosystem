@@ -29,6 +29,9 @@ public interface IAssistantApp
     Task CreateFolderAsync(string path);
     Task<bool> RestoreTrashedAsync(string id);
     Task WriteBackAsync(UrbeDocument current, string path, string content);
+    /// <summary>Only for a version-verified undo of a recorded AI change; not an arbitrary write.</summary>
+    Task WriteBackVerifiedUndoAsync(UrbeDocument current, string path, string before, string expectedAfter) =>
+        WriteBackAsync(current, path, before);
     /// <summary>Opens a note by path or title; false when there is none.</summary>
     bool OpenReference(string reference);
     UrbeDialogs Dialogs { get; }
@@ -1179,6 +1182,8 @@ public sealed partial class AssistantPanel : Border
         public Task<bool> RestoreTrashedAsync(string id) => app.RestoreTrashedAsync(id);
         public Task TrashAsync(UrbeDocument doc) => app.TrashNoteAsync(doc);
         public Task WriteBackAsync(UrbeDocument current, string path, string content) => app.WriteBackAsync(current, path, content);
+        public Task WriteBackVerifiedUndoAsync(UrbeDocument current, string path, string before, string expectedAfter) =>
+            app.WriteBackVerifiedUndoAsync(current, path, before, expectedAfter);
     }
 
     // ---------------------------------------------------------------- rendering
