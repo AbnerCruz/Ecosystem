@@ -32,7 +32,7 @@ public sealed class EditorInteractionStabilityTests
     public async Task VisualBlockHasIndependentSelectionAndExplicitWholeNoteSelection() =>
         Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
         {
-            const string markdown = "# Título\\n\\nPrimeiro bloco\\n\\nSegundo bloco\\n";
+            const string markdown = "# Título\n\nPrimeiro bloco\n\nSegundo bloco\n";
             var editor = new EditorOverlay();
             var window = new Window { Width = 412, Height = 800, Content = editor };
             window.Show();
@@ -55,7 +55,7 @@ public sealed class EditorInteractionStabilityTests
             var editor = new EditorOverlay();
             var window = new Window { Width = 412, Height = 800, Content = editor };
             window.Show();
-            editor.Open(new CityNote("Notas/Tres.md", "# Título\\n\\nprimeiro\\n\\nsegundo\\n"));
+            editor.Open(new CityNote("Notas/Tres.md", "# Título\n\nprimeiro\n\nsegundo\n"));
             window.UpdateLayout();
             var starts = editor.Surface.BlockStarts;
             Assert.True(starts.Count >= 3);
@@ -73,7 +73,7 @@ public sealed class EditorInteractionStabilityTests
     public async Task LargeNoteTypingKeepsWholeContentAndTracksLocalWork() =>
         Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
         {
-            var original = "# Longa\\n\\n" + new string('a', 15000);
+            var original = "# Longa\n\n" + new string('a', 15000);
             var editor = new EditorOverlay();
             var window = new Window { Width = 412, Height = 820, Content = editor };
             window.Show();
