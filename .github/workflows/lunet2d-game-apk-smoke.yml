@@ -1,0 +1,47 @@
+name: lunet2d-game-apk-smoke
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'apps/lunet2d/runtime-template/**'
+      - 'apps/lunet2d/samples/apk-smoke/**'
+      - '.github/workflows/lunet2d-game-apk-smoke.yml'
+
+jobs:
+  standalone-game-apk:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: apps/lunet2d
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Compile standalone game assembly
+        run: dotnet build samples/apk-smoke/SmokeGame.csproj -c Debug
+      - name: Install Android workload
+        run: dotnet workload install android
+      - name: Package standalone game APK (never the IDE APK)
+        run: >
+          dotnet build runtime-template/Lunet.Game.Android.csproj -c Debug
+          -p:AndroidSdkDirectory="$ANDROID_HOME"
+      - name: Check separate package and embedded game files
+        run: |
+          apk=$(find runtime-template/bin -name '*-Signed.apk' | head -n1)
+          test -n "$apk" || { echo "Game APK não gerado"; exit 1; }
+          unzip -l "$apk" | grep -q 'assets/game/Game.dll' || { echo "Game.dll ausente"; exit 1; }
+          unzip -l "$apk" | grep -q 'assets/game/Content/Data/level.json' || { echo "Content ausente"; exit 1; }
+          unzip -l "$apk" | grep -q 'assets/game/Assets/readme.txt' || { echo "Assets ausente"; exit 1; }
+          keytool -printcert -jarfile "$apk" | grep -E 'Owner|SHA256'
+          mkdir -p dist
+          cp "$apk" dist/standalone-smoke-game.apk
+          sha256sum dist/standalone-smoke-game.apk > dist/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v6
+        with:
+          name: lunet-standalone-smoke-game
+          path: apps/lunet2d/dist/*
+          if-no-files-found: error
