@@ -39,8 +39,8 @@ public sealed class AssistantExportTests
         Assert.True((bool)saved["messages"]![0]!["content"]![0]!["_hidden"]!);
         Assert.Equal("Falha ao ler", (string?)saved["messages"]![0]!["content"]![2]!["content"]);
         Assert.Equal("Raciocínio registrado", (string?)saved["messages"]![0]!["meta"]!["reasoning"]);
-        Assert.Equal(2, (int)saved["runs"]![0]!["efficiency"]!["reusedReads"]!);
-        Assert.Equal(1000L, (long)saved["runs"]![0]!["efficiency"]!["contextCharsSaved"]!);
+        Assert.Equal(2, (int)saved["runs"]![0]!["efficiency"]!["reused_reads"]!);
+        Assert.Equal(1000L, (long)saved["runs"]![0]!["efficiency"]!["context_chars_saved"]!);
         Assert.Equal(123L, (long)saved["usage"]!["input"]!);
         Assert.Single(saved["webSources"]!.AsArray());
         Assert.Equal("chat-1", (string?)saved["id"]);
