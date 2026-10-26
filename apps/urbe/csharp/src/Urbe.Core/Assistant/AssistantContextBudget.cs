@@ -33,6 +33,23 @@ public static class AssistantContextBudget
         messages = request.Messages, max_tokens = request.MaxTokens, temperature = request.Temperature
     });
 
+    /// <summary>Preserve the last substantive user instruction if a short continuation lost it to window trimming.</summary>
+    private static string MissingTaskAnchor(IReadOnlyList<AiChatMessage> source, IReadOnlyList<AiMessage> transmitted)
+    {
+        var requests = source.Where(m => m.Role == "user" && m.Meta?.ToolResults != true)
+            .Where(m => m.Content.Any(b => b.Type == "text" && !b.Hidden)).ToList();
+        if (requests.Count < 2) return "";
+        var latest = string.Join(" ", requests[^1].Content.Where(b => b.Type == "text" && !b.Hidden).Select(b => b.Text)).Trim();
+        var topic = AssistantMemoryEngine.ContinuityQuery(source);
+        if (topic.Length <= latest.Length || !topic.EndsWith(latest, StringComparison.Ordinal)) return "";
+        var previous = topic[..^latest.Length].Trim();
+        if (previous.Length == 0 || transmitted.Any(m => m.Content.Any(b => b.Type == "text" && b.Text.Contains(previous, StringComparison.Ordinal)))) return "";
+        var reference = requests[^2].Id;
+        var sample = previous.Length <= 1300 ? previous : AssistantAgent.EvidenceExcerpt(previous, "restrição obrigatório preserva deve não", reference);
+        return "\n[Pedido anterior da MESMA tarefa recuperado do histórico (id: " + reference +
+            "). Contexto subordinado à solicitação mais recente; consulte a conversa original se o trecho for parcial:] " + sample;
+    }
+
     /// <summary>Prepares one bounded request using one joint budget, never a separate memory reservation.</summary>
     public static AiRequest Build(AiAgentRun run, string plainSystem, IReadOnlyList<AiToolSchema> tools,
         IReadOnlyList<AiChatMessage> messages, AiExecutionMetrics? metrics = null,
@@ -66,6 +83,7 @@ public static class AssistantContextBudget
                 memory = run.RecallMemory((int)Math.Min(int.MaxValue, remaining));
             var system = run.BuildSystemWithMemory is not null
                 ? run.BuildSystemWithMemory(memory) : plainSystem;
+            system += MissingTaskAnchor(messages, history);
             var final = new AiRequest(run.Model, history, system, tools, reserved, run.Temperature);
             if (Count(final) <= usable)
             {
