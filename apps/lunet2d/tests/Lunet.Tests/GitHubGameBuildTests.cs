@@ -38,7 +38,7 @@ public sealed class GitHubGameBuildTests
         var client = new GitHubGameBuildClient(http);
         using var project = new MemoryStream(Encoding.UTF8.GetBytes("fake zip"));
         var id = Guid.NewGuid();
-        var result = await client.BuildAsync("test-token", "com.lunet.games.testing", "Meu Jogo", id, project);
+        var result = await client.BuildAsync("test-token", "com.lunet.games.testing", "Meu Jogo", id, project, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal("apk-data", Encoding.UTF8.GetString(result.Apk));
         Assert.Equal("https://github.com/tester/lunet-game-builds/actions/runs/123", result.RunUrl);
         Assert.Contains("projects/" + id.ToString("N") + "/source.zip", handler.ProjectPath);
