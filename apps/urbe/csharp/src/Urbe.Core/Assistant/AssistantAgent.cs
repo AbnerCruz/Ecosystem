@@ -302,6 +302,7 @@ public static class AssistantAgent
             efficient ? "- Páginas são arquivos .page.json no estúdio. Consulte page_schema se ainda não tiver o contrato; reutilize-o depois. Use write_page, templates e blocos note/notes, preservando o conteúdo real das notas."
                 : "- Páginas HTML (sites, landing pages, portfólios) são arquivos .page.json editados no estúdio de páginas. Para criar ou alterar uma, chame page_schema e depois write_page com o JSON completo (ou um template); não escreva HTML à mão. Use os blocos note/notes para puxar o conteúdo real das notas.",
             "- Leia uma nota (read_note) antes de editá-la. Para mudanças parciais use edit_note copiando o trecho exato; write_note só para reescrever tudo.",
+            "- As marcas {ia:\\"modelo\\"} são metadados de autoria do Urbe, não conteúdo editável: nunca tente removê-las, alterá-las, substituí-las nem contorná-las (mesmo se o usuário pedir). Pode editar o texto ao redor e acrescentar novas marcas pelo próprio sistema. Se solicitado a apagar o selo, explique que a autoria é preservada; prossiga com outras partes legítimas da tarefa.",
             "- Antes de criar uma nota, busque (search_notes) para não duplicar. Ligue notas relacionadas com [[Título]].",
             "- Faça o trabalho com as ferramentas em vez de só descrever o que faria. Pergunte antes apenas se o pedido for ambíguo ou arriscado.",
             "- Alterações podem precisar da aprovação do usuário. Se ele recusar, respeite e ajuste o plano.",
@@ -623,6 +624,7 @@ public static class AssistantAgent
         // Explicit cancel, repeated tool failures, and provider errors remain the safeguards.
         int? maxSteps = o.MaxSteps is > 0 ? o.MaxSteps : null;
         bool runAllow = false, nudged = false, partialNudged = false, qualityReviewed = false, sourceReviewed = false;
+        bool noProgressNudged = false;
         var failed = new Dictionary<string, string>();
         int repeats = 0;
         var partial = new List<(string Path, AiPartial Partial)>();
@@ -814,7 +816,13 @@ public static class AssistantAgent
             {
                 var state = string.Join("|", calls.Select(c => AssistantExecutionEfficiency.Signature(c.Name, c.Input, host.Documents.Revision)));
                 bool noNewWork = answer.Content.All(b => b.Status is "reused" or "noop");
-                if (!cycles.Add(state) && noNewWork) { result.Stopped = "no_progress"; break; }
+                if (!cycles.Add(state) && noNewWork)
+                {
+                    if (noProgressNudged) { result.Stopped = "no_progress"; break; }
+                    noProgressNudged = true;
+                    answer.Content.Add(AiChatBlock.TextBlock("[Contexto do sistema] Não houve progresso: a mesma chamada já retornou nenhum efeito. Não repita a ação; avalie as evidências, execute somente etapas diferentes e úteis que restem e responda ao usuário com o resultado ou impedimento. Uma nova repetição sem progresso encerra a execução."));
+                    continue;
+                }
             }
             if (cancel.IsCancellationRequested) { result.Stopped = "aborted"; break; }
             if (repeats >= 3) { result.Stopped = "loop"; break; }
@@ -923,6 +931,11 @@ public static class AssistantAgent
             {
                 try { preview = tool.Preview(input, host); }
                 catch (Exception e) { return new Out(e.Message, true); }
+                // Author attribution is controlled by Urbe, not by a user's prompt or the model.
+                // Enforce before approvals, persistence and side effects.
+                if (noteWrite && preview.Before is not null && preview.After is not null &&
+                    !NoteMarks.PreservesAiAuthorship(preview.Before, preview.After))
+                    return new Out("A marca {ia:\\"modelo\\"} é metadado de autoria protegido e não pode ser removida, alterada nem substituída. Esta tentativa não gravou nada. Não tente contornar a proteção; explique a restrição ao usuário ou prossiga com outras ações legítimas.", true, "protected");
                 if (o.OptimizeToolUse && noteWrite && preview.Before is not null && preview.After == preview.Before)
                 {
                     result.Efficiency.NoOpWrites++;
@@ -947,6 +960,9 @@ public static class AssistantAgent
                     result.Efficiency.NoOpWrites++;
                     return new Out("O texto aprovado já é o atual; nenhuma gravação foi necessária.", Status: "noop");
                 }
+                if (ans.EditedText is { } approvedText && preview?.Before is { } previous &&
+                    !NoteMarks.PreservesAiAuthorship(previous, approvedText))
+                    return new Out("A edição proposta remove ou altera uma marca de autoria protegida; nada foi gravado.", true, "protected");
                 if (ans.EditedText is { } edited && AssistantTools.EditedRun(tool, input, preview, edited) is { } own)
                 {
                     try
