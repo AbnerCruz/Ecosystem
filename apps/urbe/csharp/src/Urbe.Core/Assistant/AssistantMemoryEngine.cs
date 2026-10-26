@@ -352,7 +352,7 @@ public static class AssistantMemoryEngine
         var last = requests[^1].Trim();
         var plain = Normalize(last).Trim(' ', '.', '!', '?');
         bool followUp = System.Text.RegularExpressions.Regex.IsMatch(plain,
-            @"^(?:continua|continue|prossegue|prossiga|faz|faca|pode seguir|pode continuar|segue|mantem isso|mantenha isso|pode fazer|vai|isso mesmo)(?:\\s+(?:por favor|com isso|assim|ai|agora))?$",
+            @"^(?:continua|continue|prossegue|prossiga|faz|faca|pode seguir|pode continuar|segue|mantem isso|mantenha isso|pode fazer|vai|isso mesmo)(?:\s+(?:por favor|com isso|assim|ai|agora))?$",
             RegexOptions.CultureInvariant);
         if (!followUp) return last;
         for (int i = requests.Length - 2; i >= 0 && i >= requests.Length - 8; i--)
