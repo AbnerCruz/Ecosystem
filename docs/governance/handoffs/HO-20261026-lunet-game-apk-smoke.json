@@ -57,10 +57,10 @@
     {
       "check": "Device: instalar APK standalone e tocar jogo",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/game-apk-smoke.md",
       "critical": false,
-      "evidence": "Aparelho ainda não testado."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-26 (Issue https://github.com/AbnerCruz/Ecosystem/issues/797); registro em docs/governance/responses/VAL-HO-20261026-lunet-game-apk-smoke-2a326227cdce.md."
     },
     {
       "check": "DEVICE: GitHub private build, export/install de APK do jogo",
