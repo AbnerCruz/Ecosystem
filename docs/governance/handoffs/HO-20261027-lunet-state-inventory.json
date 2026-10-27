@@ -14,7 +14,7 @@
   "branch": "docs/lunet-449-state-inventory-20261027",
   "base_commit": "4d6565c69163237e619b2ae6ed573e05563d281f",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/832",
   "files_changed": [
     "apps/lunet2d/docs/audits/inventario-estado-2026-10-27.md",
     "apps/lunet2d/ROADMAP.md",
