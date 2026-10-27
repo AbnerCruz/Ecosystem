@@ -1,0 +1,123 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261026-urbe-orphan-ai-undo-redo-815",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-27T00:37:56.869Z",
+  "agent": {
+    "id": "chatgpt-urbe-orphan-undo-redo-815",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-51",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "fix/urbe-orphan-ai-mark-undo-redo-20261026",
+  "base_commit": "3d5a544b2659cb2c94fd882cdbd7b7bce200cdbc",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/816",
+  "files_changed": [
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteMarksTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorAuthorshipProtectionTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/NoteMarks.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
+    "apps/urbe/docs/csharp/AI-ORPHAN-LINE-UNDO-REDO-20261026.md",
+    "docs/governance/handoffs/HO-20261026-urbe-orphan-ai-undo-redo-815.json"
+  ],
+  "work_completed": [
+    "Issue #815 registrada; examinados regras NoteMarks, editor Fonte/Visual, toolbar nativa, guardas de salvamento e testes de proteção de autoria.",
+    "Teste de regressão do selo órfão e da barra redigido antes das alterações de código.",
+    "Normalização de linha cujo único conteúdo remanescente é um selo de autoria, preservando linhas vizinhas e marcas em código.",
+    "Regra de segurança permite excluir integralmente a linha atribuída; ainda bloqueia exclusão isolada, reatribuição ou falsificação de marca.",
+    "Controles visíveis Desfazer/Refazer adicionados à barra Markdown padrão/personalizada e à barra de código; integrados às operações nativas pré-existentes.",
+    "Documentado comportamento, limitações e gate de dispositivo em apps/urbe/docs/csharp/AI-ORPHAN-LINE-UNDO-REDO-20261026.md."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Dotnet Urbe.Core.Tests e Urbe.Client.Tests (urbe-checks)",
+      "result": "pending",
+      "evidence": "PR https://github.com/AbnerCruz/Ecosystem/pull/816 ; CI ainda sem resultado no momento deste handoff.",
+      "object": "apps/urbe/csharp/tests"
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency e validação de integração",
+      "result": "pending",
+      "evidence": "Aguardando workflows oficiais de PR #816; não foi possível executar dotnet no ambiente atual.",
+      "object": "tests/consistency/Check.cs"
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: Fonte/Visual limpar linha, colar, Gboard, desfazer/refazer, salvar/reabrir",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/docs/csharp/AI-ORPHAN-LINE-UNDO-REDO-20261026.md",
+      "evidence": "Requer teste no APK integrado, não comprovado pelo runner headless."
+    }
+  ],
+  "known_issues": [
+    "A marca inline de Markdown não constitui prova criptográfica de autoria contra edição fora do Urbe.",
+    "Após a CI ainda será necessário validar Undo/Redo e teclado físico Android para detectar conflitos de seleção/IME."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Conferir testes e checks da PR #816; corrigir falhas antes da integração.",
+    "Permitir somente a integração automática governada após checks verdes.",
+    "Solicitar teste Android físico e só então classificar DEVICE como validado; release oficial pelo fluxo canônico após gates."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ASSISTANT-AUTHORSHIP-INTEGRITY-20261026.md",
+    "apps/urbe/docs/csharp/EDITOR-INTERACTION-STABILITY-20261026.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Nota em Markdown mantém autoridade única; nenhuma tabela duplicada de origem."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Alteração localizada em C# sem reescrita estrutural."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #815, PR #816, documentação, testes e handoff auditáveis."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Proteção contra adulteração preservada na edição e escrita, com exceção delimitada para remoção integral de linha."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e validação humana de Android classificados separadamente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying; testes pendentes, sem alegação de release ou conclusão."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Reutilizadas operações nativas de undo/redo sem runtime novo."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Solução local no Urbe, sem abstração extraída sem segundo consumidor."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "native-editor-orphan-attribution-and-undo-redo",
+      "status": "product-specific",
+      "rationale": "Sintaxe de autoria e editores específicos do Urbe; extração não reduziria complexidade."
+    }
+  ]
+}
