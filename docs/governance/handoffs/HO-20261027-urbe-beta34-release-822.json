@@ -14,7 +14,7 @@
   "branch": "release/urbe-beta34-attachments-editor-20261027",
   "base_commit": "cf51d25a7474f81f129707c22591c31be17a66a1",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/823",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
     "apps/urbe/csharp/PATCHNOTES-beta.34.md",
