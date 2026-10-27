@@ -254,10 +254,10 @@ public sealed partial class HeadlessUiTests
                 Assert.False(editor.Reading);
                 var bold = Tip("Negrito");
                 Assert.True(Shown(bold));
-                // the most used first, every target 48 dp, the bar is the last thing above the keyboard
+                // Undo/redo lead; frequent formatting follows. Every target stays 48 dp.
                 var bar = bold.GetLogicalAncestors().OfType<StackPanel>().First();
-                var order = bar.Children.OfType<Button>().Select(b => AutomationProperties.GetName(b)).Take(4).ToArray();
-                Assert.Equal(new[] { "Negrito", "Itálico", "Lista", "Tarefa" }, order);
+                var order = bar.Children.OfType<Button>().Select(b => AutomationProperties.GetName(b)).Take(6).ToArray();
+                Assert.Equal(new[] { "Desfazer", "Refazer", "Negrito", "Itálico", "Lista", "Tarefa" }, order);
                 Assert.All(bar.Children.OfType<Button>(), b => Assert.True(b.Bounds.Height >= 48 && b.Bounds.Width >= 48, AutomationProperties.GetName(b)));
                 Assert.InRange(window.Bounds.Height - (TopIn(bold, window) + bold.Bounds.Height), 0, 8);
                 // lit by the text under the caret
