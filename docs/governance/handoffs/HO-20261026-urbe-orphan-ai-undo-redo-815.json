@@ -23,6 +23,8 @@
     "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
     "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
     "apps/urbe/docs/csharp/AI-ORPHAN-LINE-UNDO-REDO-20261026.md",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorRedesignUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/WorkspaceUiTests.cs",
     "docs/governance/handoffs/HO-20261026-urbe-orphan-ai-undo-redo-815.json"
   ],
   "work_completed": [
@@ -31,14 +33,15 @@
     "Normalização de linha cujo único conteúdo remanescente é um selo de autoria, preservando linhas vizinhas e marcas em código.",
     "Regra de segurança permite excluir integralmente a linha atribuída; ainda bloqueia exclusão isolada, reatribuição ou falsificação de marca.",
     "Controles visíveis Desfazer/Refazer adicionados à barra Markdown padrão/personalizada e à barra de código; integrados às operações nativas pré-existentes.",
-    "Documentado comportamento, limitações e gate de dispositivo em apps/urbe/docs/csharp/AI-ORPHAN-LINE-UNDO-REDO-20261026.md."
+    "Documentado comportamento, limitações e gate de dispositivo em apps/urbe/docs/csharp/AI-ORPHAN-LINE-UNDO-REDO-20261026.md.",
+    "A primeira execução headless aprovou 256/258 testes; as duas falhas foram expectativas antigas de ordem/quantidade de botões, atualizadas para incluir controles de desfazer/refazer."
   ],
   "verification": [
     {
       "kind": "automated",
       "check": "Dotnet Urbe.Core.Tests e Urbe.Client.Tests (urbe-checks)",
       "result": "pending",
-      "evidence": "PR https://github.com/AbnerCruz/Ecosystem/pull/816 ; CI ainda sem resultado no momento deste handoff.",
+      "evidence": "Rodada inicial urbe-checks https://github.com/AbnerCruz/Ecosystem/actions/runs/40427643995: Core 882/882 aprovado; Client 256/258, duas asserções antigas sobre barra corrigidas na branch. Nova rodada para o head atualizado pendente.",
       "object": "apps/urbe/csharp/tests"
     },
     {
