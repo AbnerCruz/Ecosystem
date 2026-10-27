@@ -39,6 +39,8 @@ public sealed partial class AssistantPanel
             actions.Children.Add(LinkButton("Copiar", () => _ = CopySentMessageAsync(text)));
             actions.Children.Add(LinkButton("Selecionar trecho", () => SelectSentMessageText(text)));
             actions.Children.Add(LinkButton("Editar e reenviar", () => _ = EditSentMessageAsync(m, text)));
+            foreach (var attachment in AssistantAttachmentExtraction.List(m))
+                actions.Children.Add(LinkButton("Extrair " + attachment.Name, () => _ = ExtractMessageFileAsync(m, attachment.Name)));
             stack.Children.Add(actions);
             return stack;
         }
