@@ -97,7 +97,7 @@ public interface IAssistantHost
     IAssistantDelegation? Delegation => null;
     IAssistantForms? Forms => null;
     /// <summary>Only the current conversation may supply a received user attachment for extraction.</summary>
-    IAssistantAttachmentExtractor? Attachments => null;
+    IAssistantAttachmentExtractor? Attachments => this as IAssistantAttachmentExtractor;
 }
 
 /// <summary>A configured public agent profile, without private memory or chat contents.</summary>
@@ -691,7 +691,8 @@ public static partial class AssistantTools
                 host.Remember(f);
                 return Task.FromResult(new AiToolOutput("Memorizado."));
             }
-        }
+        },
+        AssistantAttachmentExtraction.Tool
     ];
 
     private static string Slice160(string s) => s.Length > 160 ? s[..160] : s;
