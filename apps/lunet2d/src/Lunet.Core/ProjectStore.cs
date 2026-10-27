@@ -27,8 +27,10 @@ public sealed class ProjectStore
         .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
         .ToList();
 
-    public LunetProject Create(string rawName, ProjectTemplate template = ProjectTemplate.Blank)
+    public LunetProject Create(string rawName, ProjectTemplate template = ProjectTemplate.Blank, string orientation = "portrait")
     {
+        if (orientation is not ("portrait" or "landscape"))
+            throw new ProjectException("Orientação do projeto inválida: use portrait ou landscape.");
         var name = ValidateName(rawName);
         var directory = Path.Combine(RootDirectory, name);
         if (Directory.Exists(directory)) throw new ProjectException("Esse projeto já existe.");
@@ -36,7 +38,13 @@ public sealed class ProjectStore
         Directory.CreateDirectory(directory);
         try
         {
-            var manifest = new ProjectManifest { Name = name };
+            var manifest = new ProjectManifest
+            {
+                Name = name,
+                Orientation = orientation,
+                VirtualWidth = orientation == "landscape" ? 640 : 360,
+                VirtualHeight = orientation == "landscape" ? 360 : 640,
+            };
             // Distinct projects must never share an Android package even when names
             // normalize to the same slug (Bosque-Lumi and BosqueLumi).
             manifest.PackageId = PackageIdFor(name, manifest.GameId);
