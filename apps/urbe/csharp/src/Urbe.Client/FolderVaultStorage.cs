@@ -90,10 +90,17 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
     public Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
         WriteTextFileAsync(path, content, create: false, cancellationToken);
 
-    public async Task CreateBinaryFileAsync(string path, byte[] bytes, CancellationToken cancellationToken = default)
+    public Task CreateBinaryFileAsync(string path, byte[] bytes, CancellationToken cancellationToken = default) =>
+        CreateRawFileAsync(path, bytes, imported: false, cancellationToken);
+
+    public Task CreateImportedFileAsync(string path, byte[] bytes, CancellationToken cancellationToken = default) =>
+        CreateRawFileAsync(path, bytes, imported: true, cancellationToken);
+
+    private async Task CreateRawFileAsync(string path, byte[] bytes, bool imported, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(bytes);
-        IUrbeVaultStorage.EnsureWritableBinaryPath(path);
+        if (imported) IUrbeVaultStorage.EnsureWritableImportedPath(path);
+        else IUrbeVaultStorage.EnsureWritableBinaryPath(path);
         if (bytes.LongLength > MaxFileBytes) throw new InvalidDataException("O arquivo passa do limite de 32 MB: " + path);
         await _gate.WaitAsync(cancellationToken);
         try
@@ -115,6 +122,14 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 if (File.Exists(full) || Directory.Exists(full)) throw new IOException("Já existe um arquivo com esse nome: " + path);
                 cancellationToken.ThrowIfCancellationRequested();
                 CreateVerified(full, bytes, path);
+                var observed = Snapshot(ReadFiles(root, cancellationToken));
+                foreach (var pair in _baseline)
+                    if (!observed.TryGetValue(pair.Key, out var current) ||
+                        !current.Bytes.Span.SequenceEqual(pair.Value.Bytes.Span))
+                        throw new IOException("O vault mudou durante a extração: " + pair.Key);
+                if (!observed.TryGetValue(path, out var saved) || !saved.Bytes.Span.SequenceEqual(bytes))
+                    throw new IOException("O arquivo extraído não corresponde ao original.");
+                _baseline = observed;
             }, cancellationToken);
         }
         finally { _gate.Release(); }
