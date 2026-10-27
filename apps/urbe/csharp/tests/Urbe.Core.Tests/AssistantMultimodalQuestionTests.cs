@@ -44,6 +44,30 @@ public sealed class AssistantMultimodalQuestionTests
     }
 
     [Fact]
+    public void ProviderPreparationRetainsSelectedPdfAndImageInsteadOfTurningThemIntoToolResults()
+    {
+        var message = new AiChatMessage
+        {
+            Role = "user",
+            Content =
+            [
+                AiChatBlock.TextBlock("Analise os arquivos"),
+                new AiChatBlock { Type = "attachment", FileName = "imagem.png", MimeType = "image/png", Content = "abcd" },
+                new AiChatBlock { Type = "attachment", FileName = "arquivo.pdf", MimeType = "application/pdf", Content = "abcd" }
+            ]
+        };
+        var prepared = AssistantAgent.Prepare([message], 100_000);
+        var blocks = Assert.Single(prepared).Content;
+        Assert.Equal(["text", "attachment", "attachment"], blocks.Select(b => b.Type).ToArray());
+        var wire = AssistantProviders.OpenAiWire(
+            new AiRequest("vision-model", prepared), AssistantProviders.Resolve(new AiProviderConfig("p", "openai")));
+        var content = wire["messages"]?[0]?["content"] as JsonArray;
+        Assert.NotNull(content);
+        Assert.Equal("image_url", (string?)content[1]?["type"]);
+        Assert.Equal("file", (string?)content[2]?["type"]);
+    }
+
+    [Fact]
     public void OldAttachmentIsNotResentToTheModelAfterUserMovesOn()
     {
         var old = new AiChatMessage { Role = "user", Content =
