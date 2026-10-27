@@ -24,9 +24,19 @@ public sealed partial class MainView : IChatAttachmentVault
         }
         else
         {
-            IUrbeVaultStorage.EnsureWritableBinaryPath(path);
-            await _vault!.CreateBinaryFileAsync(path, bytes!);
-            _attachments.Add(path);
+            IUrbeVaultStorage.EnsureWritableImportedPath(path);
+            // Validate text before writing: a successful import must be visible and editable in the vault.
+            var isText = IUrbeVaultStorage.WritableExtensions.Contains(Path.GetExtension(path));
+            string decoded = "";
+            if (isText && !Urbe.Core.Assistant.AssistantTextAttachments.TryDecode(path, bytes!, out decoded, out var reason))
+                throw new InvalidDataException("Texto anexado inválido: " + reason);
+            await _vault!.CreateImportedFileAsync(path, bytes!);
+            if (isText)
+            {
+                _contents[path] = decoded;
+                _library!.AddNote(path, decoded, Now, "user");
+            }
+            else _attachments.Add(path);
         }
         AfterAssistantWrite(path);
     }
