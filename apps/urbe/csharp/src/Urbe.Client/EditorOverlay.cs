@@ -187,7 +187,19 @@ public sealed class EditorOverlay : Grid
                 _toast.Show("A marca de autoria da IA não pode ser editada ou removida.", TimeSpan.FromSeconds(3));
                 return;
             }
-            _acceptedSourceText = proposed;
+            var normalized = NoteMarks.RemoveOrphanedAiMarks(proposed);
+            if (!string.Equals(proposed, normalized, StringComparison.Ordinal))
+            {
+                _restoringProtectedSource = true;
+                try
+                {
+                    int caret = Editor.CaretIndex;
+                    Editor.Text = normalized;
+                    Editor.CaretIndex = Math.Clamp(caret, 0, normalized.Length);
+                }
+                finally { _restoringProtectedSource = false; }
+            }
+            _acceptedSourceText = normalized;
         };
         Editor.TextChanged += (_, _) => { OnTextChanged(); KeepSourceCaretSoon(typing: true); };
         Editor.PropertyChanged += (_, e) =>
@@ -1074,8 +1086,18 @@ public sealed class EditorOverlay : Grid
     {
         _markdownTools.Children.Clear();
         var tools = LegacyEditorTools.Toolbar.ToDictionary(t => t.Id);
-        foreach (var id in order)
+        // Navigation stays available even when an older editor.json customizes formatting.
+        foreach (var id in new[] { "undo", "redo" }.Concat(order.Where(id => id is not ("undo" or "redo"))))
         {
+            if (id is "undo" or "redo")
+            {
+                var undo = id == "undo";
+                var button = ToolButtonView(UrbeTheme.Icon(undo ? UrbeTheme.Icons.Undo : UrbeTheme.Icons.Redo,
+                    22, C.TextSecondary, 1.8), undo ? "Desfazer — Ctrl+Z" : "Refazer — Ctrl+Y");
+                button.Click += (_, _) => { if (undo) Undo(); else Redo(); };
+                _markdownTools.Children.Add(button);
+                continue;
+            }
             if (id == "|") { _markdownTools.Children.Add(new Border { Width = 1, Height = 24, Margin = new Thickness(UrbeTokens.Space.Xxs, 0), Background = UrbeTheme.Brush(C.BorderStrong), VerticalAlignment = VerticalAlignment.Center }); continue; }
             if (tools.TryGetValue(id, out var tool)) { _markdownTools.Children.Add(ToolButton(tool)); continue; }
             if (id is not ("math" or "box")) continue;
@@ -1103,7 +1125,7 @@ public sealed class EditorOverlay : Grid
     public static IReadOnlyCollection<string> ToolbarIds => [.. ToolbarOrder.Where(x => x != "|")];
 
     public static readonly string[] ToolbarOrder =
-        ["bold", "italic", "list", "task", "|", "h1", "h2", "h3", "quote", "|", "noteLink", "link", "code", "box", "math", "rule"];
+        ["undo", "redo", "|", "bold", "italic", "list", "task", "|", "h1", "h2", "h3", "quote", "|", "noteLink", "link", "code", "box", "math", "rule"];
 
     // #mdToolbar (Markdown, in Fonte and in Visual, where it acts on the block of the caret) or .v21CodeTools (other text files, Fonte)
     private Control Toolbars()
