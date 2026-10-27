@@ -24,6 +24,10 @@ public interface IUrbeVaultStorage
     Task CreateBinaryFileAsync(string path, byte[] bytes, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException("Este armazenamento não grava arquivos que não são texto.");
 
+    /// <summary>Copies an explicitly selected chat file byte-for-byte without overwriting, including text with BOM.</summary>
+    Task CreateImportedFileAsync(string path, byte[] bytes, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este armazenamento não extrai arquivos da conversa.");
+
     /// <summary>Rewrites ONE existing user text file of any editable text type (e.g. tema.json).</summary>
     Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default);
 
@@ -495,6 +499,13 @@ public interface IUrbeVaultStorage
             throw new InvalidOperationException("Caminho interno ou inseguro no vault: " + path);
         if (!BinaryExtensions.Contains(Path.GetExtension(path)))
             throw new NotSupportedException("Tipo de arquivo que o Urbe não grava: " + path);
+    }
+
+    /// <summary>The same path constraints as ordinary text or binary files, but preserving original bytes.</summary>
+    static void EnsureWritableImportedPath(string path)
+    {
+        if (WritableExtensions.Contains(Path.GetExtension(path))) EnsureWritableTextPath(path);
+        else EnsureWritableBinaryPath(path);
     }
 
     static readonly HashSet<string> BinaryExtensions = new(StringComparer.OrdinalIgnoreCase)
