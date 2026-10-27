@@ -1,0 +1,125 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261027-urbe-uc63-attachment-bytes-830",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-27T11:30:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-attachment-fidelity-830",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-63",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "fix/urbe-uc63-byte-exact-extraction-20261027",
+  "base_commit": "c63a46cd3e790797c7ebfd529e2cfb130442988f",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/830",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTextAttachments.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAttachmentExtraction.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.AssistantAttachments.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantAttachmentByteFidelityTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ChatAttachmentByteStorageTests.cs",
+    "apps/urbe/docs/csharp/ASSISTANT-ATTACHMENT-EXTRACTION-20261027.md"
+  ],
+  "work_completed": [
+    "PR #827 já integrada; não duplicar o extrator nem a ferramenta.",
+    "Portados apenas bytes exatos e writer bruto verificado de #825 para pipeline #827.",
+    "Testes-first em commits de92a1a8 e 8f598ae2, antes de qualquer mudança de código.",
+    "Preservação opcional de bytes privados do SAF em blocos ocultos de texto, validação antes da extração.",
+    "Mantidos limites de MIME, tamanho, origem user, nome seguro e sem sobrescrever."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Core/Client tests, urbe-checks C# e Android/Windows, consistency, estado combinado",
+      "result": "pending",
+      "object": "https://github.com/AbnerCruz/Ecosystem/pull/830",
+      "evidence": "Tests-first e workflow iniciados; .NET local indisponível."
+    },
+    {
+      "kind": "human",
+      "check": "DEVICE Android: anexar UTF16 HTML, extrair, abrir, reiniciar e verificar bytes/atualização",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/docs/csharp/ASSISTANT-ATTACHMENT-EXTRACTION-20261027.md",
+      "evidence": "Não executado no aparelho; NN-017."
+    }
+  ],
+  "known_issues": [
+    "Conversas anteriores sem bytes originais só permitem extração em UTF-8.",
+    "Nova serialização privada opcional aumenta o tamanho do histórico; limite de 384 KB por anexo textual.",
+    "Sem device test e sem release até autorização e integração."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Corrigir falhas apontadas no CI combinado.",
+    "Obter autorização do proprietário ao ser classificada crítica.",
+    "Integrar automaticamente; encerrar PR #825 sem merge; integrar PR #829 reconciliada.",
+    "Publicar APK somente com tag/versão inédita e workflow oficial."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    ".github/workflows/urbe-csharp-mobile-release.yml"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Um extrator canônico (#827), uma fronteira de persistência e vault."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "PR #830 e handoff JSON com commits de teste e código."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Classificação explicitamente crítica por storage e serialização."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Uploads somente de mensagem user; dados imutáveis revalidados; ferramentas mantêm Access=write."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e DEVICE reportados separadamente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying até CI, merge, release e validação."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "API e writer já existentes reutilizados; nenhum runtime novo."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Somente produto Urbe, sem abstração shared."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data"
+    ],
+    "reason": "Altera storage Android/Windows e forma privada de serialização de anexos do chat; requer gate de proprietário."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "urbe-chat-attachment-extraction",
+      "status": "product-specific",
+      "rationale": "É um fluxo exclusivo da conversa privada do Urbe e de seu vault SAF."
+    }
+  ]
+}

@@ -170,10 +170,17 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     public Task CreateTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
         WriteTextFileAsync(path, content, create: true, cancellationToken);
 
-    public async Task CreateBinaryFileAsync(string path, byte[] bytes, CancellationToken cancellationToken = default)
+    public Task CreateBinaryFileAsync(string path, byte[] bytes, CancellationToken cancellationToken = default) =>
+        CreateRawFileAsync(path, bytes, imported: false, cancellationToken);
+
+    public Task CreateImportedFileAsync(string path, byte[] bytes, CancellationToken cancellationToken = default) =>
+        CreateRawFileAsync(path, bytes, imported: true, cancellationToken);
+
+    private async Task CreateRawFileAsync(string path, byte[] bytes, bool imported, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(bytes);
-        IUrbeVaultStorage.EnsureWritableBinaryPath(path);
+        if (imported) IUrbeVaultStorage.EnsureWritableImportedPath(path);
+        else IUrbeVaultStorage.EnsureWritableBinaryPath(path);
         if (bytes.LongLength > MaxFileBytes) throw new InvalidDataException("O arquivo passa do limite de 32 MB: " + path);
         await _gate.WaitAsync(cancellationToken);
         try
@@ -197,6 +204,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 // the provider keeps the name asked (never "foto (1).png") and the bytes read back are the ones written
                 if (FindDocument(tree, path) is not { } made || !ReadBytes(made).AsSpan().SequenceEqual(bytes))
                     throw new IOException("O arquivo criado não passou na verificação: " + path);
+                _baseline = Snapshot(ReadFiles(tree, cancellationToken));
             }, cancellationToken);
         }
         finally { _gate.Release(); }

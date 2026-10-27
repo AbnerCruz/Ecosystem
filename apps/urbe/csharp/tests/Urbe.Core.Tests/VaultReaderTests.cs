@@ -9,6 +9,30 @@ public sealed class VaultReaderTests
 {
     private static readonly string Root = FindRoot();
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OpensBomMarkedUtf16HtmlWithoutChangingItsOriginalBytes(bool bigEndian)
+    {
+        var encoding = bigEndian ? Encoding.BigEndianUnicode : Encoding.Unicode;
+        byte[] bytes = encoding.GetPreamble().Concat(encoding.GetBytes("<html>Olá</html>")).ToArray();
+        var snapshot = VaultReader.Read([new VaultFile("Anexos/pagina.html", bytes)]);
+        var document = Assert.Single(snapshot.Documents);
+        Assert.Equal("<html>Olá</html>", document.Text);
+        Assert.Equal(bytes, document.Bytes.ToArray());
+        Assert.Equal(bytes, snapshot.Files["Anexos/pagina.html"].Bytes.ToArray());
+    }
+
+    [Fact]
+    public void OpensUtf8BomWithoutRenderingBomAsDocumentContent()
+    {
+        byte[] bytes = Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes("# Olá")).ToArray();
+        var snapshot = VaultReader.Read([new VaultFile("Notas/nota.md", bytes)]);
+        var document = Assert.Single(snapshot.Documents);
+        Assert.Equal("# Olá", document.Text);
+        Assert.Equal(bytes, document.Bytes.ToArray());
+    }
+
     public static TheoryData<string> FixtureIds => new()
     {
         "futuro-desconhecido",
