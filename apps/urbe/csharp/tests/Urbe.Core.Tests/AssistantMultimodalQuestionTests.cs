@@ -58,6 +58,21 @@ public sealed class AssistantMultimodalQuestionTests
         Assert.Contains(old.Content, b => b.Type == "attachment"); // stored original unchanged
     }
 
+    [Fact]
+    public void TextFileContextIsSentForCurrentRequestButNotRepeatedForever()
+    {
+        var file = AssistantTextAttachments.ToChatBlock("pagina.html", new string('a', 160_000));
+        var old = new AiChatMessage { Role = "user", Content = [AiChatBlock.TextBlock("Estude o HTML."), file] };
+        var currentOnly = AssistantAgent.SettlePast([old]);
+        Assert.Same(file, currentOnly[0].Content[1]);
+
+        var next = new AiChatMessage { Role = "user", Content = [AiChatBlock.TextBlock("Agora vamos mudar de assunto.")] };
+        var settled = AssistantAgent.SettlePast([old, next]);
+        Assert.DoesNotContain(settled[0].Content, b => b.Text?.Length > 1000);
+        Assert.Contains(settled[0].Content, b => b.Text?.Contains("pagina.html", StringComparison.Ordinal) == true);
+        Assert.Equal(file.Text, old.Content[1].Text);
+    }
+
     private sealed class Host : IAssistantHost
     {
         public DocumentStore Documents { get; } = new();
