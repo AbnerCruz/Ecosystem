@@ -553,3 +553,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Preservação: projeto e arquivos do usuário intactos; API de jogo/framework sem alteração; keystore/certificados existentes não trocados. Resultados CI e DEVICE devem ser distinguidos; somente PR CI verde pode integrar e disparar nova release. 
 
 - Complemento no mesmo PR: `lunet2d-game-apk-smoke.yml` passa a usar ID do pacote derivado de `github.run_id` para o artefato de CI assinado com chave debug descartável; previne conflito com artefatos smoke mais antigos. Não altera `GameId`/`PackageId` de projetos reais nem o Keystore de jogos exportados.
+
+### 20261027-chatgpt-lunet-game-identity-orientation — ChatGPT → integrador — verifying
+- Evidência DEVICE positiva v0.0.1-dev.1000406: Bosque Lumi e segundo jogo abriram e foram jogados; problema: precisou desinstalar um antes de instalar o outro; segundo horizontal abriu vertical.
+- Evidência no código: ProjectStore.Create gera PackageId normalizando nome (não-injetivo), ProjectZipImporter conserva GameId+PackageId mesmo se já presentes, StandaloneGameActivity fixa ScreenOrientation.Portrait. A operação Build usa PackageId do manifesto, enquanto orientation era ignorado.
+- Testes adicionados ANTES do código: nomes distintos de mesmo slug, import duplicado de projeto e package ID, estrutura binária AXML portrait/landscape. Depois alterados ProjectStore/ProjectZipImporter/OfflineGameApkBuilder/AndroidManifestOrientationPatcher/MainActivity UI e pipeline install 2 APKs.
+- Preservar identidade de projetos existentes sem colisão e restores importados em biblioteca limpa. Para projeto legado colidente, perguntar antes de gerar novo GameId/PackageId; não perder saves sem consentimento. Orientação explícita em Novo projeto/Arquivo e patch direto em manifesto antes do APK Signature Scheme v2, sem reescrever host/engine.
+- Referências: Android Developers manifest unique package ID, <activity> screenOrientation e compatibility mode. Execução emulada e Android físico distinguidas; release só após CI aprovado.
