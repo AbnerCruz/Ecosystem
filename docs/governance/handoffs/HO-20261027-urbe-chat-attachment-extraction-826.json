@@ -14,7 +14,7 @@
   "branch": "feat/urbe-attachment-extraction-tests-first-20261027",
   "base_commit": "d328511518aee38f4b00dd5b8f1a811c411d3b37",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/827",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAttachmentExtraction.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
