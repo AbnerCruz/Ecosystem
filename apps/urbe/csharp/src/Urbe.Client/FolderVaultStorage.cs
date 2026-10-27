@@ -121,10 +121,18 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 }
                 if (File.Exists(full) || Directory.Exists(full)) throw new IOException("Já existe um arquivo com esse nome: " + path);
                 cancellationToken.ThrowIfCancellationRequested();
+                // The baseline covers editable text only; binary files are verified directly by CreateVerified.
+                // Validate pre-existing tracked files before and after the new write.
+                EnsureUnchanged(_baseline!, ReadFiles(root, cancellationToken));
                 CreateVerified(full, bytes, path);
-                // Update this writer's baseline: otherwise a later note edit sees its own import as an external change.
                 var observed = Snapshot(ReadFiles(root, cancellationToken));
-                if (!observed.TryGetValue(path, out var saved) || !saved.Bytes.Span.SequenceEqual(bytes))
+                if (observed.Any(pair => !_baseline!.TryGetValue(pair.Key, out var previous) &&
+                    !string.Equals(pair.Key, path, StringComparison.OrdinalIgnoreCase)) ||
+                    _baseline!.Any(pair => !observed.TryGetValue(pair.Key, out var current) ||
+                        !current.Bytes.Span.SequenceEqual(pair.Value.Bytes.Span)))
+                    throw new IOException("O vault mudou durante a importação: " + path);
+                if (IsIncluded(path) &&
+                    (!observed.TryGetValue(path, out var saved) || !saved.Bytes.Span.SequenceEqual(bytes)))
                     throw new IOException("O arquivo extraído não corresponde ao original: " + path);
                 _baseline = observed;
             }, cancellationToken);
