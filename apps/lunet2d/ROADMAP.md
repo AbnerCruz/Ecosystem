@@ -387,7 +387,7 @@ Princípios (§2), checados em toda auditoria de fase:
 - [ ] Ferramentas oficiais usam as mesmas APIs dos plugins.
 
 Qualidade (§30):
-- [~] **LUNET-449 — Inventário de estado real (Issue #831):** auditoria documental do código, testes, PRs, handoffs e releases em `docs/audits/inventario-estado-2026-10-27.md`; aguarda CI e integração deste PR. Não fecha gates de produto nem substitui DEVICE.
+- [x] **LUNET-449 — Inventário de estado real (Issue #831):** auditoria de 19 frentes em `docs/audits/inventario-estado-2026-10-27.md`; PR #832 integrado à `main` (merge `db537b1`) após CI do Lunet e consistency verdes. Auditado o estado documental, sem afirmar DEVICE desta tarefa nem fechar gates de F4/F5/F9.
 - [ ] Testes de: unidade, integração, compilador, sistema de projetos, framework, serialização, rede, plugins, build, smoke e ciclo de vida Android.
 - [ ] Sem TODO crítico escondido, mock passado como feature, botão sem comportamento, exceção ignorada, API sem documentação, código morto.
 
