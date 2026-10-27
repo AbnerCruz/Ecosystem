@@ -21,7 +21,7 @@ LongMemEval/LongMemEval-V2, Generative Agents, documentação Mem0, issue concor
 
 - `CaptureUserStatements` com padrão restrito de primeira pessoa, origem `user`, fonte de conversa, escopo agent/vault, limite de comprimento e filtros anti-credenciais; opera **somente em execução terminada com sucesso**, sem chamadas extras de IA.
 - Índice lexical existente estendido por grupos curtos e explícitos de equivalência, peso inferior a match literal; sem alegar semântica geral.
-- `learn_memory` disponível para modelo local, sujeito a política e escopo; `learn_memory` e `remember` classificadas como `memory-write` para evitar escrita oculta com política readonly.
+- `learn_memory` disponível para modelo local, sujeito a política e escopo; `learn_memory` classificada como `memory-write`; a ferramenta legada `remember` fica fora das ferramentas expostas pelo cliente nativo, preservando o contrato da suíte de oráculos preexistente. Escrever memória com política readonly fica bloqueado no cliente nativo.
 - Formato de dados original `memoryRecords` mantido. `SetConfigVerified` conserva verificação de persistência.
 
 ## Testes e gates
