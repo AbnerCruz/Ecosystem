@@ -75,9 +75,36 @@ public static partial class NoteMarks
     }
 
     /// <summary>
-    /// UC-51: a write may add new automatic authorship marks, but it may never
-    /// remove or rewrite a mark already present in the persisted note.
-    /// Do not silently reinsert deleted marks: that would misattribute text.
+    /// Erases only AI stamps stranded on otherwise empty physical lines. Other
+    /// stamps (including those inside code) remain untouched. Keep the line
+    /// breaks so deleting a line's text never joins unrelated paragraphs.
+    /// </summary>
+    public static string RemoveOrphanedAiMarks(string? markdown)
+    {
+        var text = markdown ?? "";
+        if (!text.Contains("{ia:", StringComparison.Ordinal)) return text;
+        var marks = AuthorshipMarks(text);
+        if (marks.Count == 0) return text;
+        var result = new System.Text.StringBuilder(text.Length);
+        int start = 0;
+        while (start < text.Length)
+        {
+            int newline = text.IndexOf('\n', start);
+            int end = newline < 0 ? text.Length : newline;
+            var line = text[start..end];
+            bool hasMark = marks.Any(m => m.Index >= start && m.Index + m.Length <= end);
+            result.Append(hasMark && string.IsNullOrWhiteSpace(AiMarkRegex().Replace(line, ""))
+                ? "" : line);
+            if (newline < 0) break;
+            result.Append('\n');
+            start = newline + 1;
+        }
+        return result.ToString();
+    }
+
+    /// <summary>
+    /// A stamp cannot be deleted while it still attributes content. Clearing
+    /// the entire physical line (not rewriting it) is the sole exception.
     /// </summary>
     public static bool PreservesAiAuthorship(string? before, string? after)
     {
@@ -87,7 +114,7 @@ public static partial class NoteMarks
         int matched = 0;
         foreach (var mark in proposed)
             if (matched < existing.Count && mark.Value == existing[matched].Value) matched++;
-        return matched == existing.Count;
+        return matched == existing.Count || ClearedCompleteAuthoredLines(before ?? "", after ?? "");
     }
 
     /// <summary>
@@ -102,9 +129,9 @@ public static partial class NoteMarks
         if (string.Equals(before, after, StringComparison.Ordinal)) return true;
         var oldMarks = AuthorshipMarks(before);
         var newMarks = AuthorshipMarks(after);
-        if (oldMarks.Count != newMarks.Count) return false;
-        for (int i = 0; i < oldMarks.Count; i++)
-            if (oldMarks[i].Value != newMarks[i].Value) return false;
+        if (oldMarks.Count != newMarks.Count ||
+            oldMarks.Where((m, i) => i < newMarks.Count && m.Value != newMarks[i].Value).Any())
+            return ClearedCompleteAuthoredLines(before, after);
         if (oldMarks.Count == 0) return true;
         int prefix = 0;
         int maxPrefix = Math.Min(before.Length, after.Length);
@@ -117,6 +144,32 @@ public static partial class NoteMarks
         return oldMarks.All(m => prefix == changedEnd
             ? prefix <= m.Index || prefix >= m.Index + m.Length
             : changedEnd <= m.Index || prefix >= m.Index + m.Length);
+    }
+
+    private static bool ClearedCompleteAuthoredLines(string before, string after)
+    {
+        var old = AuthorshipMarks(before);
+        var newer = AuthorshipMarks(after);
+        if (newer.Count >= old.Count) return false;
+        int prefix = 0;
+        while (prefix < Math.Min(before.Length, after.Length) && before[prefix] == after[prefix]) prefix++;
+        int suffix = 0;
+        while (suffix < before.Length - prefix && suffix < after.Length - prefix &&
+               before[before.Length - 1 - suffix] == after[after.Length - 1 - suffix]) suffix++;
+        int oldEnd = before.Length - suffix;
+        int newEnd = after.Length - suffix;
+
+        // There must be no replacement content, and the old diff must span
+        // complete physical lines. Deleting the marker alone is never allowed.
+        if (!string.IsNullOrWhiteSpace(after[prefix..newEnd]) ||
+            (prefix > 0 && before[prefix - 1] != '\n') ||
+            (oldEnd < before.Length && before[oldEnd] != '\n' && (oldEnd == 0 || before[oldEnd - 1] != '\n')))
+            return false;
+        var removed = old.Where(m => m.Index >= prefix && m.Index + m.Length <= oldEnd).ToArray();
+        if (removed.Length == 0) return false;
+        var retained = old.Where(m => m.Index + m.Length <= prefix || m.Index >= oldEnd)
+            .Select(m => m.Value);
+        return retained.SequenceEqual(newer.Select(m => m.Value));
     }
 
     private static List<(int Index, int Length, string Value)> AuthorshipMarks(string? markdown)
