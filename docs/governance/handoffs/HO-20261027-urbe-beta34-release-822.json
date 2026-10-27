@@ -1,0 +1,115 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261027-urbe-beta34-release-822",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-27T04:48:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-beta34-release-822",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-27",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "release/urbe-beta34-attachments-editor-20261027",
+  "base_commit": "cf51d25a7474f81f129707c22591c31be17a66a1",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/823",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/PATCHNOTES-beta.34.md",
+    "docs/governance/handoffs/HO-20261027-urbe-beta34-release-822.json"
+  ],
+  "work_completed": [
+    "Por pedido explícito do proprietário, corte da main para nova release oficial beta.34. Publicação anterior beta.33; sem reutilizar tag/assets nem binários antigos.",
+    "Verificado PR #816 (editor, desfazer/refazer e marca órfã) e PR #819 (anexos texto/HTML e multimodal) integrados na main, PRs fechadas com merged=true.",
+    "Versão canônica UrbeBetaVersion 2.0.0-beta.34 e UrbeBetaVersionCode 2000034; preservados ApplicationId app.urbe.csharp, canal beta e keystore/certificado, com diff isolado no csproj.",
+    "Registradas patch notes para anexos textuais e correções do editor, sem introduzir qualquer frontend WebView.",
+    "Issue de corte: https://github.com/AbnerCruz/Ecosystem/issues/822; seguir integração governada e workflow oficial urbe-csharp-mobile-release.yml."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Confirmar PRs #816 e #819 merged, versão monotônica e tag beta.34 ainda inexistente",
+      "result": "passed",
+      "evidence": "Consultas GitHub PR #816 e #819 merged=true, release pública mais recente Urbe urbe-csharp-v2.0.0-beta.33."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistência, testes Urbe.Core.Tests, Urbe.Client.Tests, E2E e builds nativos no estado combinado para beta.34",
+      "result": "pending",
+      "object": "https://github.com/AbnerCruz/Ecosystem/issues/822",
+      "evidence": "Checagem somente após abertura do PR e execução do integrador; não declarar concluída por antecedência."
+    },
+    {
+      "kind": "automated",
+      "check": "Publicação oficial da tag e assets beta.34, assinatura, checksums Android e ZIP Windows",
+      "result": "pending",
+      "object": "https://github.com/AbnerCruz/Ecosystem/issues/822",
+      "evidence": "workflow_dispatch do urbe-csharp-mobile-release.yml só após integração autorizada."
+    },
+    {
+      "kind": "human",
+      "check": "Instalar beta.34 em Android físico e anexar HTML, TXT, Markdown, PDF e imagem no chat IA",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/PATCHNOTES-beta.34.md",
+      "evidence": "Não executado neste ambiente; CI é apenas uma das evidências."
+    }
+  ],
+  "known_issues": [
+    "Cut da versão Android é mudança de distribuição classificada crítica; integrador respeitará autorização normativa conforme política, não é admissível bypass por merge manual.",
+    "A capacidade de despachar workflow/release depende das permissões de Actions do integrador confiável; este agente conectado não expõe workflow_dispatch."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Abrir PR do incremento da versão e analisar CI nos checks obrigatórios.",
+    "Aguardar classificação/autorização de integração; não forçar commit em main nem pular controles de distribuição.",
+    "No merge, verificar despacho do workflow oficial ou solicitar disparo autorizado; inspecionar tag, APK, ZIP e SHA256SUMS reais.",
+    "Entregar links diretos quando assets verificadamente publicados; executar gate de uso Android separado."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md",
+    "apps/urbe/docs/csharp/INTEGRATION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    ".github/workflows/urbe-csharp-mobile-release.yml"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "CSProj canônico de versionamento; identidade beta estável."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #822, PR e handoff de release auditáveis."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Respeitar autorização crítica e rotinas de segurança/distribuição."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validar Android físico separadamente de CI/testes."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Pendente CI, merge governado e publicação, sem declarar release até assets existirem."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Reutilizado pipeline urbe-csharp-mobile-release.yml; sem outro mecanismo de distribuição."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-beta34-official-release",
+      "status": "product-specific",
+      "rationale": "Pipeline existente urbe-csharp-mobile-release.yml, só avanço de versão canônica sem duplicar mecanismo."
+    }
+  ]
+}
