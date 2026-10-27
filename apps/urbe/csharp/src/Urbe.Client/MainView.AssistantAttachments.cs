@@ -18,9 +18,9 @@ public sealed partial class MainView : IChatAttachmentVault
             IUrbeVaultStorage.EnsureWritableTextPath(path);
             await _vault!.CreateTextFileAsync(path, text);
             _contents[path] = text;
-            if (path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ||
-                path.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase))
-                _library!.AddNote(path, text, Now, "user");
+            // Match the app's existing CreateNoteAsync pipeline: every editable text
+            // document belongs to the library immediately, not only Markdown.
+            _library!.AddNote(path, text, Now, "user");
         }
         else
         {
