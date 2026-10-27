@@ -293,7 +293,7 @@ public sealed partial class AssistantPanel : Border
     /// every request and the device reads the request itself, so the others (links, tags, plans, memory, folders…) cost more
     /// waiting than they give; the bigger models in the cloud keep all of them.
     /// </summary>
-    private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note", "recall_memory", "consult_agent", "request_form"];
+    private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note", "recall_memory", "learn_memory", "consult_agent", "request_form"];
 
     private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name)
         ?? AssistantWebTools.All.FirstOrDefault(t => t.Name == name)
@@ -915,6 +915,9 @@ public sealed partial class AssistantPanel : Border
                             "fact", "vault", "user", "conversation:" + conv.Id);
                         learned = true;
                     }
+                    var captured = AssistantMemoryEngine.CaptureUserStatements(_cfg, VaultKey, agent.Id,
+                        userRequest, "conversation:" + conv.Id);
+                    learned |= captured.Count > 0;
                     if (_cfg.AutoCaptureEpisodes && run.Changes.Count > 0)
                     {
                         AssistantMemoryEngine.ObserveFinishedRun(_cfg, VaultKey, agent.Id, run.Id,
