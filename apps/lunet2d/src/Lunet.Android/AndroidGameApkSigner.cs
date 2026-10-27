@@ -1,3 +1,4 @@
+using Android.Runtime;
 using Android.Security.Keystore;
 using Java.Security;
 using Lunet.Core;
@@ -50,9 +51,27 @@ internal sealed class AndroidGameApkSigner : IGameApkSigner
             ?? throw new InvalidOperationException("Chave de assinatura do jogo perdida.");
         using var signature = Signature.GetInstance("SHA256withRSA")
             ?? throw new InvalidOperationException("Algoritmo SHA256withRSA indisponível.");
-        signature.InitSign((IPrivateKey)key);
+        // GetKey returns a JNI IKey proxy, not necessarily a managed IPrivateKey proxy.
+        // A C# downcast may throw InvalidCastException even for a valid Java private key.
+        // JavaCast checks the Java type and supplies the correctly typed Android binding.
+        var privateKey = key.JavaCast<IPrivateKey>()
+            ?? throw new InvalidOperationException("A chave do jogo não é uma chave privada RSA.");
+        signature.InitSign(privateKey);
         signature.Update(signedData);
-        return signature.Sign()
+        var signatureBytes = signature.Sign()
             ?? throw new InvalidOperationException("Android Keystore não produziu assinatura.");
+
+        // On-device cryptographic smoke test against the stored certificate. A signing
+        // failure must never silently produce a seemingly successful, un-installable APK.
+        using var certificate = keyStore.GetCertificate(_alias)
+            ?? throw new InvalidOperationException("Certificado de assinatura do jogo perdido.");
+        using var verifier = Signature.GetInstance("SHA256withRSA")
+            ?? throw new InvalidOperationException("Verificador RSA indisponível.");
+        verifier.InitVerify(certificate.PublicKey
+            ?? throw new InvalidOperationException("Certificado sem chave pública."));
+        verifier.Update(signedData);
+        if (!verifier.Verify(signatureBytes))
+            throw new InvalidOperationException("A assinatura do jogo não corresponde ao certificado salvo.");
+        return signatureBytes;
     }
 }
