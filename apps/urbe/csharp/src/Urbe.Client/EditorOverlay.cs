@@ -450,8 +450,19 @@ public sealed class EditorOverlay : Grid
     }
 
     /// <summary>editor.undo / editor.redo: of the text being edited (Fonte, or the block in Visual).</summary>
-    public void Undo() { if (Mode == EditorMode.Fonte) Editor.Undo(); else _visual.Undo(); }
-    public void Redo() { if (Mode == EditorMode.Fonte) Editor.Redo(); else _visual.Redo(); }
+    public void Undo()
+    {
+        if (Mode == EditorMode.Fonte) Editor.Undo();
+        else if (_visual.IsEditing) _visual.Undo();
+        else { Editor.Undo(); _visual.SetText(Editor.Text ?? ""); }
+    }
+
+    public void Redo()
+    {
+        if (Mode == EditorMode.Fonte) Editor.Redo();
+        else if (_visual.IsEditing) _visual.Redo();
+        else { Editor.Redo(); _visual.SetText(Editor.Text ?? ""); }
+    }
 
     private void Go(CityNote target)
     {
@@ -1131,6 +1142,17 @@ public sealed class EditorOverlay : Grid
     private Control Toolbars()
     {
         BuildMarkdownTools(ToolbarOrder);
+        // Non-Markdown source files use a separate bar but need the same edit history actions.
+        foreach (var (path, title, run) in new (string, string, Action)[]
+                 {
+                     (UrbeTheme.Icons.Undo, "Desfazer — Ctrl+Z", Undo),
+                     (UrbeTheme.Icons.Redo, "Refazer — Ctrl+Y", Redo)
+                 })
+        {
+            var button = ToolButtonView(UrbeTheme.Icon(path, 22, C.TextSecondary, 1.8), title);
+            button.Click += (_, _) => run();
+            _codeTools.Children.Add(button);
+        }
         foreach (var (label, run) in new (string, Action)[]
                  {
                      ("⇥ Indentar", () => ApplyEdit(LegacyEditorTools.IndentSelection(Editor.Text ?? "", Editor.SelectionStart, Editor.SelectionEnd))),
