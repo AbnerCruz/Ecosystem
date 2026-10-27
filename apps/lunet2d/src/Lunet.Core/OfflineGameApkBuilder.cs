@@ -203,17 +203,31 @@ public static class OfflineGameApkBuilder
         if (encoded.Length > ushort.MaxValue) throw new InvalidDataException("Caminho excessivo.");
         uint crc = Crc32(data);
         int offset = checked((int)output.Position);
-        var local = new byte[30 + encoded.Length];
+
+        // Android 11+ rejects targetSdk >= 30 APKs unless resources.arsc is STORED
+        // and its actual payload begins at a 4-byte ZIP offset. Other stored entries
+        // benefit from the same alignment (mmap). Do not zipalign AFTER APK signing:
+        // it would invalidate the v2 digest.
+        //
+        // Use a well-formed local-only ZIP extra field with an unknown tag; its data
+        // is padding. A minimum four-byte header ensures even 1-3 bytes of padding
+        // remain valid ZIP extra-field structure for strict parsers.
+        int headerLength = checked(30 + encoded.Length);
+        int extraLength = 4 + ((4 - ((offset + headerLength + 4) & 3)) & 3);
+        var local = new byte[headerLength + extraLength];
         W32(local, 0, LocalMagic);
         W16(local, 4, 20);
         W16(local, 6, 0x800); // UTF-8
-        W16(local, 10, 0);
+        W16(local, 10, 0); // STORED, never compress resources.arsc
         W16(local, 12, 0x0021); // DOS date Jan 1 1980
         W32(local, 14, crc);
         W32(local, 18, (uint)data.Length);
         W32(local, 22, (uint)data.Length);
         W16(local, 26, (ushort)encoded.Length);
+        W16(local, 28, (ushort)extraLength);
         encoded.CopyTo(local, 30);
+        W16(local, headerLength, 0xA11E); // local ZIP padding marker
+        W16(local, headerLength + 2, (ushort)(extraLength - 4));
         output.Write(local);
         output.Write(data);
 
