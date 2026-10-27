@@ -85,8 +85,8 @@ jobs:
           echo "Orientações encontradas no AXML (ARM64):"
           "$aapt" dump xmltree dist/template/offline-smoke.apk AndroidManifest.xml | grep -i 'screenOrientation'
           "$aapt" dump xmltree dist/template/offline-landscape.apk AndroidManifest.xml | grep -i 'screenOrientation'
-          "$aapt" dump xmltree dist/template/offline-smoke.apk AndroidManifest.xml | grep -E 'screenOrientation.*\\(type 0x10\\)0x0*1'
-          "$aapt" dump xmltree dist/template/offline-landscape.apk AndroidManifest.xml | grep -E 'screenOrientation.*\\(type 0x10\\)0x0+([^0-9a-fA-F]|$)'
+          "$aapt" dump xmltree dist/template/offline-smoke.apk AndroidManifest.xml | grep -F 'screenOrientation(0x0101001e)=(type 0x10)0x1'
+          "$aapt" dump xmltree dist/template/offline-landscape.apk AndroidManifest.xml | grep -F 'screenOrientation(0x0101001e)=(type 0x10)0x0'
       # The production game template is ARM64, but an x86_64 emulator exercises
       # the SAME offline packager through the Android package manager. A valid
       # signature and resources table alone do not prove installability.
@@ -107,8 +107,8 @@ jobs:
             "$template" "$game" dist/template/offline-landscape-x64.apk \
             io.lunet.game.offline.landscape landscape
           aapt=$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -n1)
-          "$aapt" dump xmltree dist/template/offline-portrait-x64.apk AndroidManifest.xml | grep -E 'screenOrientation.*\\(type 0x10\\)0x0*1'
-          "$aapt" dump xmltree dist/template/offline-landscape-x64.apk AndroidManifest.xml | grep -E 'screenOrientation.*\\(type 0x10\\)0x0+([^0-9a-fA-F]|$)'
+          "$aapt" dump xmltree dist/template/offline-portrait-x64.apk AndroidManifest.xml | grep -F 'screenOrientation(0x0101001e)=(type 0x10)0x1'
+          "$aapt" dump xmltree dist/template/offline-landscape-x64.apk AndroidManifest.xml | grep -F 'screenOrientation(0x0101001e)=(type 0x10)0x0'
       - name: Enable KVM for Android installability smoke
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
