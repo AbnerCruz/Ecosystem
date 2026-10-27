@@ -124,8 +124,8 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 CreateVerified(full, bytes, path);
                 var observed = Snapshot(ReadFiles(root, cancellationToken));
                 foreach (var pair in _baseline)
-                    if (!observed.TryGetValue(pair.Key, out var current) ||
-                        !current.Bytes.Span.SequenceEqual(pair.Value.Bytes.Span))
+                    if (!observed.TryGetValue(pair.Key, out var observedFile) ||
+                        !observedFile.Bytes.Span.SequenceEqual(pair.Value.Bytes.Span))
                         throw new IOException("O vault mudou durante a extração: " + pair.Key);
                 if (!observed.TryGetValue(path, out var saved) || !saved.Bytes.Span.SequenceEqual(bytes))
                     throw new IOException("O arquivo extraído não corresponde ao original.");
