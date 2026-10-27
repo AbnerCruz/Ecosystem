@@ -42,6 +42,22 @@ public static class AssistantAttachmentExtraction
                 if (name is null || !TextExtensions.Contains(Path.GetExtension(name))) continue;
                 var text = source[(divider + TextDivider.Length)..];
                 if (Encoding.UTF8.GetByteCount(text) > AssistantTextAttachments.MaxTextBytes) continue;
+                // New messages carry the original SAF bytes alongside the inert decoded model context.
+                // Never silently fall back to lossy UTF-8 when claimed original bytes are corrupt.
+                if (block.FileName.Length > 0 || block.Content.Length > 0)
+                {
+                    if (block.FileName != name || block.Content.Length == 0 ||
+                        block.Content.Length > (AssistantTextAttachments.MaxTextBytes + 2) / 3 * 4 + 8)
+                        continue;
+                    byte[] original;
+                    try { original = Convert.FromBase64String(block.Content); }
+                    catch (FormatException) { continue; }
+                    if (!AssistantTextAttachments.TryDecode(name, original, out var decoded, out _) ||
+                        !string.Equals(decoded, text, StringComparison.Ordinal)) continue;
+                    files.Add(new ExtractableChatAttachment(name, null, original));
+                    continue;
+                }
+                // Historical chats retained only text; this one must be reconstructed as UTF-8.
                 files.Add(new ExtractableChatAttachment(name, text, null));
             }
             else if (block.Type == "attachment")
