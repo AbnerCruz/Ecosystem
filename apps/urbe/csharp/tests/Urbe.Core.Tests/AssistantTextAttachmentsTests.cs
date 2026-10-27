@@ -65,11 +65,11 @@ public sealed class AssistantTextAttachmentsTests
     {
         byte[] data = Encoding.UTF8.GetBytes("<div>Teste</div>");
         await using var stream = new ChunkedStream(data);
-        var result = await AssistantTextAttachments.ReadBoundedAsync(stream, AssistantTextAttachments.MaxTextBytes);
+        var result = await AssistantTextAttachments.ReadBoundedAsync(stream, AssistantTextAttachments.MaxTextBytes, TestContext.Current.CancellationToken);
         Assert.Equal(data, result);
 
         await using var huge = new ChunkedStream(new byte[AssistantTextAttachments.MaxTextBytes + 1]);
-        Assert.Null(await AssistantTextAttachments.ReadBoundedAsync(huge, AssistantTextAttachments.MaxTextBytes));
+        Assert.Null(await AssistantTextAttachments.ReadBoundedAsync(huge, AssistantTextAttachments.MaxTextBytes, TestContext.Current.CancellationToken));
     }
 
     [Fact]
