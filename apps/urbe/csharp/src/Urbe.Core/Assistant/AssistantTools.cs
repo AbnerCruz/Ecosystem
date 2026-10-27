@@ -691,8 +691,7 @@ public static partial class AssistantTools
                 host.Remember(f);
                 return Task.FromResult(new AiToolOutput("Memorizado."));
             }
-        },
-        AssistantAttachmentExtraction.Tool
+        }
     ];
 
     private static string Slice160(string s) => s.Length > 160 ? s[..160] : s;
