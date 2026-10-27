@@ -17,19 +17,19 @@ public sealed class ChatAttachmentStorageTests
         {
             var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault),
                 Path.Combine(temp, "app", "choice.json"));
-            Assert.NotNull(await storage.PickAsync());
+            Assert.NotNull(await storage.PickAsync(TestContext.Current.CancellationToken));
             var original = Encoding.Unicode.GetPreamble().Concat(Encoding.Unicode.GetBytes(
                 "<html><body>Olá</body></html>")).ToArray();
-            await storage.CreateImportedFileAsync("Anexos/página.html", original);
+            await storage.CreateImportedFileAsync("Anexos/página.html", original, TestContext.Current.CancellationToken);
             Assert.Equal(original, File.ReadAllBytes(Path.Combine(vault, "Anexos", "página.html")));
-            await storage.CreateTextFileAsync("Nova.md", "# Nova");
+            await storage.CreateTextFileAsync("Nova.md", "# Nova", TestContext.Current.CancellationToken);
             Assert.Equal("# Nova", File.ReadAllText(Path.Combine(vault, "Nova.md")));
             Assert.Equal("# Original", File.ReadAllText(Path.Combine(vault, "Existente.md")));
             await Assert.ThrowsAnyAsync<IOException>(() =>
-                storage.CreateImportedFileAsync("Anexos/página.html", "replacement"u8.ToArray()));
+                storage.CreateImportedFileAsync("Anexos/página.html", "replacement"u8.ToArray(), TestContext.Current.CancellationToken));
             Assert.Equal(original, File.ReadAllBytes(Path.Combine(vault, "Anexos", "página.html")));
             await Assert.ThrowsAnyAsync<Exception>(() =>
-                storage.CreateImportedFileAsync(".urbe/config.html", "oops"u8.ToArray()));
+                storage.CreateImportedFileAsync(".urbe/config.html", "oops"u8.ToArray(), TestContext.Current.CancellationToken));
             Assert.False(File.Exists(Path.Combine(vault, ".urbe", "config.html")));
         }
         finally { try { Directory.Delete(temp, true); } catch (IOException) { } }
