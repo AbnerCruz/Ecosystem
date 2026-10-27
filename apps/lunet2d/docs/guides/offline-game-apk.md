@@ -25,3 +25,17 @@ Fontes: https://developer.android.com/about/versions/11/behavior-changes-11 ; ht
 O `lunet-standalone-smoke-game` é um APK de diagnóstico gerado pelo workflow `lunet2d-game-apk-smoke`, **não** o APK de um projeto exportado pela IDE. A assinatura desse artefato é debug e efêmera a cada execução do CI. Historicamente todas as execuções usavam o mesmo `ApplicationId` (`io.lunet.game.smoke`), o que podia causar `INSTALL_FAILED_UPDATE_INCOMPATIBLE` ao instalar uma execução sobre outra já instalada. A partir da correção, cada execução do smoke recebe identificador próprio `io.lunet.game.smoke.run<GitHub run_id>`. Isso evita o conflito sem distribuir a chave de assinatura do Lunet nos jogos e sem requerer desinstalar nada do usuário. Instalações antigas podem ser removidas manualmente, se desejado.
 
 O teste de assinatura/alinhamento de cada artefato é executado também nesse workflow. Para uma atualização persistente do seu **próprio jogo**, mantenha o mesmo projeto (`GameId`/`PackageId`) e preserve o Keystore do Lunet; a identidade exclusiva por execução se aplica somente ao projeto de teste descartável.
+
+## Identidade de vários jogos e orientação (2026-10-27)
+
+Validação no aparelho: dois jogos diferentes foram exportados e executados, mas o segundo só instalava após excluir o primeiro; o jogo horizontal abriu vertical. A inspeção encontrou dois defeitos reais: o ID Android era gerado apenas por normalização do nome (com colisões possíveis) e a Activity standalone tinha `ScreenOrientation.Portrait` fixo, ignorando `orientation` em `lunet.json`.
+
+**Novo projeto:** cada criação recebe um `GameId` próprio e `PackageId` com sufixo derivado do GUID, mesmo quando dois nomes normalizam para o mesmo texto. O formulário Novo projeto permite Vertical (9:16) ou Horizontal (16:9), gravado em `orientation` e dimensões virtuais no mesmo manifesto.
+
+**Importação/restauração:** um ZIP importado em uma biblioteca sem conflito preserva `GameId` e `PackageId`, para permitir atualizar o mesmo jogo. Importar um projeto que colide com outra identidade instalada na biblioteca cria uma cópia independente com IDs próprios e mantém o original intacto. Projetos legados que já estão na biblioteca com ID duplicado recebem aviso e ação explícita **Separar e gerar APK**; nenhum projeto é alterado silenciosamente.
+
+**Orientação do jogo existente:** no editor, Arquivo → Orientação do jogo → Vertical/Horizontal. A escolha persiste em `lunet.json`; o builder altera o atributo numérico `android:screenOrientation` no manifesto binário AXML antes de assinar. O app exportado é iniciado pelo Android na orientação pedida, sem forçar `setRequestedOrientation` durante `onCreate`. Em telas grandes/versões novas, restrições do Android podem ser ignoradas; jogos devem continuar adaptáveis.
+
+**Gates:** testes portáteis de IDs de nomes com colisão, cópias ZIP, restauração e edição AXML tipada; CI gera dois APKs independentes (portrait/landscape), valida com `aapt dump xmltree`, `apksigner`, `zipalign`, instala ambos no mesmo Android 13 emulado sem desinstalar nenhum. Verificação DEVICE: exportar dois projetos diferentes com o Lunet atualizado, instalar ambos, abrir, comprovar orientação; recompilar um e atualizar somente ele mantendo o outro intacto. A confirmação em aparelho físico permanece separada.
+
+Fontes: https://developer.android.com/guide/topics/manifest/manifest-element ; https://developer.android.com/guide/topics/manifest/activity-element ; https://developer.android.com/guide/practices/device-compatibility-mode .
