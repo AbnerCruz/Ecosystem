@@ -119,7 +119,7 @@ public static class AssistantAttachmentExtraction
         Description = "Extrai um arquivo anexado pelo usuário nesta conversa e grava uma cópia real em Anexos/ no vault, sem sobrescrever nada. Use quando o usuário pedir salvar, extrair ou incorporar um arquivo recebido no chat. Não execute HTML ou código.",
         Parameters = new JsonObject { ["type"] = "object", ["properties"] = new JsonObject {
             ["file_name"] = new JsonObject { ["type"] = "string", ["description"] = "Nome exato do anexo presente na conversa." } },
-            ["required"] = new JsonArray("file_name") },
+            ["required"] = new JsonArray(JsonValue.Create("file_name")) },
         Label = i => "Extrair " + ((string?)i["file_name"] ?? "anexo") + " para o vault",
         Preview = (i, _) => new AiPreview(TargetFolder, null, null, "Copia o anexo recebido em um novo arquivo, com nome não conflitante."),
         Run = async (i, host) =>
