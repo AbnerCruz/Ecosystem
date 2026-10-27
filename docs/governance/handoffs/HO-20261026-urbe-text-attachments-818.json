@@ -16,10 +16,10 @@
   "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/819",
   "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantTextAttachmentsTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantMultimodalQuestionTests.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTextAttachments.cs",
-    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
     "apps/urbe/docs/csharp/ASSISTANT-TEXT-ATTACHMENTS-20261026.md",
     "docs/governance/handoffs/HO-20261026-urbe-text-attachments-818.json"
@@ -30,8 +30,9 @@
     "Criados previamente testes de HTML maior que 96 KiB, texto sob extensão desconhecida, Unicode com BOM, binários disfarçados e stream não seekable.",
     "Adicionado AssistantTextAttachments: decoder por conteúdo, UTF-8/UTF-16 BOM, validação de bytes e formatos binários, limite 384 KiB por arquivo, 512 KiB totais de texto por mensagem.",
     "Refatorado AttachmentDeviceFileAsync para leitura SAF com limite, mensagens por arquivo, falha isolada, mantendo multimodal imagem/PDF e contagem de quatro anexos.",
-    "Contextos textuais históricos são compactados para chamadas posteriores, preservando mensagens e conteúdos no histórico local, com regressão de comportamento.",
-    "Registrada documentação de segurança, limites, escopo e requisitos de validação física."
+    "Registrada documentação de segurança, limites, escopo e requisitos de validação física.",
+    "Corrigido AssistantAgent.Clean para preservar blocos imagem/PDF na preparação de mensagens ao provedor: antes eram recategorizados como tool_result e poderiam ser descartados.",
+    "Preservado o texto anexado para follow-ups na mesma conversa; o orçamento da janela de contexto existente compacta mensagens antigas conforme necessário, sem eliminação artificial após um único turno."
   ],
   "verification": [
     {
@@ -39,7 +40,7 @@
       "check": "Urbe.Core.Tests + Urbe.Client.Tests no urbe-checks",
       "result": "pending",
       "object": "apps/urbe/csharp/tests",
-      "evidence": "Execução pendente no PR https://github.com/AbnerCruz/Ecosystem/pull/819; ambiente de chat não inclui SDK dotnet local."
+      "evidence": "Primeiro build portátil (run https://github.com/AbnerCruz/Ecosystem/actions/runs/40431843006) falhou exclusivamente em 2 regras xUnit1051 dos testes novos, corrigidas em b065a709; aguardar nova rodada CI no head atualizado."
     },
     {
       "kind": "automated",
@@ -59,8 +60,8 @@
   ],
   "known_issues": [
     "Codificações textuais legadas sem UTF-8 ou UTF-16 BOM ainda exigem conversão, identificada ao usuário por mensagem explícita.",
-    "O conteúdo total pode ser maior que a janela de contexto do provedor escolhido; os limites evitam alocação descontrolada, mas não prometem que qualquer modelo interprete todo o documento.",
-    "Dispositivo Android e interpretação por provedor real ainda exigem validação separada."
+    "Dispositivo Android e interpretação por provedor real ainda exigem validação separada.",
+    "O orçamento de contexto do modelo pode compactar turnos antigos quando anexos superarem a capacidade do provedor."
   ],
   "blockers": [],
   "next_actions": [
