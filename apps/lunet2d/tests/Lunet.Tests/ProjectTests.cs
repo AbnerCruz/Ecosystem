@@ -36,6 +36,16 @@ public class ProjectTests : IDisposable
         Assert.Equal(first.Manifest.PackageId, store.Open("Bosque-Lumi").Manifest.PackageId);
     }
 
+    [Fact]
+    public void Create_LandscapePersistsOrientationAndDimensionsOnReopen()
+    {
+        var store = new ProjectStore(_root);
+        var game = store.Create("WideGame", ProjectTemplate.Blank, "landscape");
+        Assert.Equal("landscape", game.Manifest.Orientation);
+        Assert.True(game.Manifest.VirtualWidth > game.Manifest.VirtualHeight);
+        Assert.Equal("landscape", store.Open(game.Name).Manifest.Orientation);
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("a b")]
