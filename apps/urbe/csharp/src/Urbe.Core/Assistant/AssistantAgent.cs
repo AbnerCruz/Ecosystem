@@ -339,6 +339,7 @@ public static class AssistantAgent
     }
 
     private static AiChatBlock Clean(AiChatBlock b) => b.Type == "text" ? AiChatBlock.TextBlock(b.Text ?? "")
+        : b.Type == "attachment" ? new() { Type = "attachment", FileName = b.FileName, MimeType = b.MimeType, Content = b.Content }
         : b.Type == "tool_use" ? new() { Type = "tool_use", Id = b.Id, Name = b.Name, Input = b.Input?.DeepClone() ?? new JsonObject() }
         : new() { Type = "tool_result", ToolUseId = b.ToolUseId, Content = b.Content, IsError = b.IsError };
 
