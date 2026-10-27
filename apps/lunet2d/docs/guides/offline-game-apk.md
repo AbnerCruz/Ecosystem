@@ -39,3 +39,12 @@ Validação no aparelho: dois jogos diferentes foram exportados e executados, ma
 **Gates:** testes portáteis de IDs de nomes com colisão, cópias ZIP, restauração e edição AXML tipada; CI gera dois APKs independentes (portrait/landscape), valida com `aapt dump xmltree`, `apksigner`, `zipalign`, instala ambos no mesmo Android 13 emulado sem desinstalar nenhum. Verificação DEVICE: exportar dois projetos diferentes com o Lunet atualizado, instalar ambos, abrir, comprovar orientação; recompilar um e atualizar somente ele mantendo o outro intacto. A confirmação em aparelho físico permanece separada.
 
 Fontes: https://developer.android.com/guide/topics/manifest/manifest-element ; https://developer.android.com/guide/topics/manifest/activity-element ; https://developer.android.com/guide/practices/device-compatibility-mode .
+
+### Causa adicional comprovada no emulador — conflito MonoRuntimeProvider
+
+A tentativa de instalar dois APKs de jogos independentes no mesmo Android 13 retornou exatamente:
+`INSTALL_FAILED_CONFLICTING_PROVIDER: ... io.lunet.game.smoke.mono.MonoRuntimeProvider.__mono_init__ ... already used by io.lunet.game.offline.portrait`.
+
+A identidade do aplicativo (`package`) já era diferente; faltava reescrever a autoridade do `mono.MonoRuntimeProvider`, inserida pelo .NET Android para a inicialização do runtime. O gerador agora modifica também a string `io.lunet.game.smoke.mono.MonoRuntimeProvider.__mono_init__` para `<PackageId>.mono.MonoRuntimeProvider.__mono_init__` no manifesto AXML, antes de assinar. O CI compara as duas autoridades com `aapt dump xmltree` e exige que ambos os APKs instalem lado a lado. Não remover o provider: ele é necessário ao startup .NET.
+
+Referências: https://github.com/dotnet/android/wiki/Blueprint ; https://developer.android.com/guide/topics/manifest/provider-element .
