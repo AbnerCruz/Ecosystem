@@ -35,7 +35,7 @@ public static class OfflineGameApkBuilder
     /// New build overwrites an earlier installation only if Android sees the same signing key.
     /// </summary>
     public static byte[] Build(byte[] template, IReadOnlyDictionary<string, byte[]> gameFiles,
-        string packageId, string title, IGameApkSigner signer)
+        string packageId, string title, IGameApkSigner signer, string orientation = "portrait")
     {
         ArgumentNullException.ThrowIfNull(template);
         ArgumentNullException.ThrowIfNull(gameFiles);
@@ -66,7 +66,7 @@ public static class OfflineGameApkBuilder
         // Decode resources with the stock ZIP reader; only assets of our sealed template are trusted.
         using (var zip = new ZipArchive(new MemoryStream(template, writable: false), ZipArchiveMode.Read))
         {
-            replacement["AndroidManifest.xml"] = PatchManifest(ReadEntry(zip, "AndroidManifest.xml"), packageId, title);
+            replacement["AndroidManifest.xml"] = PatchManifest(ReadEntry(zip, "AndroidManifest.xml"), packageId, title, orientation);
             replacement["resources.arsc"] = PatchResources(ReadEntry(zip, "resources.arsc"), packageId);
         }
 
@@ -246,12 +246,12 @@ public static class OfflineGameApkBuilder
         return central;
     }
 
-    private static byte[] PatchManifest(byte[] bytes, string packageId, string title)
+    private static byte[] PatchManifest(byte[] bytes, string packageId, string title, string orientation)
     {
         var modified = AndroidStringPoolPatcher.Replace(bytes, "io.lunet.game.smoke", packageId);
         // The activity label is a manifest string; the template displays an editable game name.
         modified = AndroidStringPoolPatcher.Replace(modified, "Lunet Game", title, mustFind: false);
-        return modified;
+        return AndroidManifestOrientationPatcher.Patch(modified, orientation);
     }
 
     private static byte[] PatchResources(byte[] bytes, string packageId)
