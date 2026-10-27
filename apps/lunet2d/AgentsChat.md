@@ -551,3 +551,5 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Escopo PR #817: testes de offsets gravados antes do código, writer adiciona padding ZIP local estruturado garantindo 4 bytes, assinatura v2 permanece depois do empacotamento. CI novo confere alinhamento com zipalign **no APK exportado**, além de apksigner e aapt; acrescenta tentativa adb install em emulador Android 13 com host x86_64.
 - Referências oficiais Google Android 11 behavior changes e zipalign, Android framework ParsingPackageUtils, discussão dotnet/android #11433.
 - Preservação: projeto e arquivos do usuário intactos; API de jogo/framework sem alteração; keystore/certificados existentes não trocados. Resultados CI e DEVICE devem ser distinguidos; somente PR CI verde pode integrar e disparar nova release. 
+
+- Complemento no mesmo PR: `lunet2d-game-apk-smoke.yml` passa a usar ID do pacote derivado de `github.run_id` para o artefato de CI assinado com chave debug descartável; previne conflito com artefatos smoke mais antigos. Não altera `GameId`/`PackageId` de projetos reais nem o Keystore de jogos exportados.
