@@ -67,10 +67,10 @@
     {
       "kind": "human",
       "check": "Toque, teclado, seleção, colagem, Undo, modo Visual/Fonte, salvar/reabrir e desempenho no Android",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "apps/urbe/docs/csharp/ASSISTANT-AUTHORSHIP-INTEGRITY-20261026.md",
-      "evidence": "Ainda sem aparelho físico; não confundir CI headless com DEVICE."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-27 (Issue https://github.com/AbnerCruz/Ecosystem/issues/811); registro em docs/governance/responses/VAL-HO-20261026-urbe-ai-authorship-809-33e2f7472038.md."
     },
     {
       "kind": "automated",
