@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-449",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "docs/lunet-449-state-inventory-20261027",
   "base_commit": "4d6565c69163237e619b2ae6ed573e05563d281f",
   "commit": null,
@@ -26,7 +26,8 @@
     "Inventário rastreável de 19 frentes: distinguir integrado com validação, integrado com ressalva, parcial, ausente e falha anteriormente corrigida.",
     "Confronto de source, testes, estado de PRs, handoffs e release APK dev.1000428; prova local em GitHub API, não substitui CI nem aparelho.",
     "ROADMAP reconciliado com PR #795 e DEVICE #800 (Assets), PR #801 e DEVICE #806 (Audio Studio), PRs #804/#814/#817/#824 para APK local, mantendo gates F4, F5 e F9 abertos.",
-    "Nenhuma alteração a C#, SDK, pipeline CI, assinatura, runtime, projetos/saves do usuário ou repositórios legados."
+    "Nenhuma alteração a C#, SDK, pipeline CI, assinatura, runtime, projetos/saves do usuário ou repositórios legados.",
+    "PR #832 integrado à main pelo integrador governado em commit db537b155cfc0a01bb525f3a47527a5c3f436503; auditada execução green Lunet test e Ecosystem consistency."
   ],
   "verification": [
     {
@@ -38,14 +39,16 @@
     {
       "check": "Suíte Lunet.Tests da revisão documental",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "dotnet não disponível neste ambiente; aguardar CI real do PR, sem alegar testes executados."
+      "result": "passed",
+      "evidence": "CI test da branch de auditoria: https://github.com/AbnerCruz/Ecosystem/actions/runs/40514945396/job/122226760973; CI Lunet no candidato integrado: https://github.com/AbnerCruz/Ecosystem/actions/runs/40514941596/job/122226841408",
+      "tested_commit": "74e163e514fca5e4d8865b6343ac39acc9b27d9b"
     },
     {
       "check": "Consistency da revisão documental",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Sem runner dotnet local; integrador precisa rodar tests/consistency/Check.cs no estado combinado."
+      "result": "passed",
+      "evidence": "Consistency/Checks Ecosystem do candidato combinado, incluindo self-test e simulação do integrador: https://github.com/AbnerCruz/Ecosystem/actions/runs/40514941596/job/122226840914",
+      "tested_commit": "74e163e514fca5e4d8865b6343ac39acc9b27d9b"
     }
   ],
   "known_issues": [
@@ -56,9 +59,9 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Revisar CI e integração governada do PR do inventário; corrigir falha real sem forçar merge.",
     "Confrontar status dos itens marcados parcialmente e DEVICE na próxima revisão sem nova abstração.",
-    "Próximo checkbox: testes de jornada completa com início nos testes e smoke já presentes, mais validação pós-#824 no aparelho."
+    "Próximo checkbox: testes de jornada completa com início nos testes e smoke já presentes, mais validação pós-#824 no aparelho.",
+    "Continuar no segundo checkbox do roadmap externo: testes de jornada completa; sem tratar o inventário como novo código de jogo."
   ],
   "decisions_required": [],
   "normative_sources": [
