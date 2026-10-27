@@ -634,7 +634,7 @@ public sealed partial class AssistantPanel : Border
                         _app.Notify(name + ": " + error);
                         continue;
                     }
-                    var context = AssistantTextAttachments.ToChatBlock(name, text);
+                    var context = AssistantTextAttachments.ToChatBlock(name, text, bytes);
                     int used = _pendingAttachments.Where(b => b.Type == "text")
                         .Sum(b => System.Text.Encoding.UTF8.GetByteCount(b.Text ?? ""));
                     int next = System.Text.Encoding.UTF8.GetByteCount(context.Text ?? "");
