@@ -1,0 +1,104 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261027-urbe-uc87-memory-reconciliation-829",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-27T11:38:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-memory-reconciliation-829",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-87.3",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "fix/urbe-uc87-memory-recall-20261027",
+  "base_commit": "d20696c61fee3687f772bac92d0be8b40f8e04a6",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/829",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantMemoryEngine.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantMemoryTools.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantDeviceMemoryToolsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantMemoryContinuityTests.cs",
+    "apps/urbe/docs/csharp/ASSISTANT-MEMORY-CONTINUITY-20261027.md"
+  ],
+  "work_completed": [
+    "Testes de regressão para extração de preferências e ferramentas de memória antes de código.",
+    "Captura conservadora de declarações diretas do usuário com proveniência, deduplicação e busca por sinônimos.",
+    "learn_memory na seleção do modelo local com access memory-write e remoção de ferramenta legada insegura somente no painel nativo.",
+    "Reconciliação semântica de AssistantPanel.cs sobre main com #827 preservando extract_attachment; merge de branch com dois pais f5579920."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "urbe-checks e consistency e CI combinado do integrador",
+      "result": "pending",
+      "object": "https://github.com/AbnerCruz/Ecosystem/pull/829",
+      "evidence": "CI pré-reconciliação aprovado em run 40494967556; reexecução após merge da main pendente."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: memória de preferências, isolamentos e permissão de gravação",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/docs/csharp/ASSISTANT-MEMORY-CONTINUITY-20261027.md",
+      "evidence": "Sem dispositivo físico no executor."
+    }
+  ],
+  "known_issues": [
+    "Captura conservadora de frases não substitui aprendizagem contextual profunda.",
+    "Correção de memória compartilhada com outra tarefa exige verificar estado combinado após PR #830."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI completo na branch reconciliada; integrar via integrador, sem merge manual.",
+    "Depois da PR #830, preparar versão beta inédita e release oficial; validação no Android."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Memória existente AiConfig e extrator atual são fontes canônicas distintas, sem duplicação."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "PR #829, merges e handoff JSON com trilha."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Controle de Access memory-write; modelo local não recebe ferramenta antiga remember."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente distinto de CI."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Não reportar integração/release antes da publicação."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Reutilização da memória e da seleção de ferramentas do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Muda apenas captura conservadora e controle das ferramentas dentro do desenho normativo existente; nenhuma migração de dados, credentials nem contratos públicos."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "urbe-agent-memory-learning",
+      "status": "product-specific",
+      "rationale": "Memória do Urbe Core com comportamento exclusivo de aplicativo; não promover para plataforma."
+    }
+  ]
+}
