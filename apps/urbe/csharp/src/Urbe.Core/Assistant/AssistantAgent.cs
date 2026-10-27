@@ -442,10 +442,13 @@ public static class AssistantAgent
         for (int i = messages.Count - 1; i >= 0; i--)
             if (messages[i].Role == "user" && messages[i].Meta?.ToolResults != true && messages[i].Content.Any(b => b.Type == "text" && !b.Hidden && !string.IsNullOrEmpty(b.Text))) { current = i; break; }
         var focus = AssistantMemoryEngine.ContinuityQuery(messages);
-        return messages.Select((m, i) => i < current && (m.Content.Any(IsLong) || m.Content.Any(b => b.Type == "attachment")) ? Settled(m, focus) : m).ToList();
+        return messages.Select((m, i) => i < current && m.Content.Any(b => IsLong(b) || b.Type == "attachment" || IsTextAttachment(b)) ? Settled(m, focus) : m).ToList();
     }
 
     private static int Length(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) ? s.Length : n is null ? 0 : n.ToJsonString().Length;
+
+    private static bool IsTextAttachment(AiChatBlock b) =>
+        b.Type == "text" && b.Hidden && b.Text?.StartsWith("[Arquivo anexado pelo usuário:", StringComparison.Ordinal) == true;
 
     private static bool IsLong(AiChatBlock b) => b.Type switch
     {
@@ -458,6 +461,9 @@ public static class AssistantAgent
     {
         Id = m.Id, Role = m.Role, Meta = m.Meta,
         Content = m.Content.Select(b => b.Type == "attachment" ? AiChatBlock.TextBlock("[Anexo anterior: " + b.FileName + "; não reenviar conteúdo binário.]")
+            : IsTextAttachment(b)
+            ? new AiChatBlock { Type = "text", Hidden = true,
+                Text = (b.Text ?? "").Split('\\n')[0] + "\\n[Conteúdo do anexo de uma mensagem anterior omitido; reanexe o arquivo se precisar analisá-lo novamente.]" }
             : !IsLong(b) ? b : b.Type == "tool_result"
             ? new AiChatBlock { Type = "tool_result", ToolUseId = b.ToolUseId, IsError = b.IsError, Content = EvidenceExcerpt(b.Content, focus, b.ToolUseId) }
             : new AiChatBlock { Type = "tool_use", Id = b.Id, Name = b.Name, Input = SettledInput((JsonObject)b.Input!) }).ToList()
