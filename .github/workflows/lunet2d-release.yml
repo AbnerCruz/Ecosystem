@@ -82,6 +82,10 @@ jobs:
           "$zipalign" -c -v 4 dist/template/offline-landscape.apk
           "$apksigner" verify --verbose --min-sdk-version 29 dist/template/offline-landscape.apk
           "$aapt" dump badging dist/template/offline-landscape.apk | grep -q "package: name='io.lunet.game.offline.landscape'"
+          "$aapt" dump xmltree dist/template/offline-smoke.apk AndroidManifest.xml |
+            grep -F 'io.lunet.game.offline.smoketest.mono.MonoRuntimeProvider.__mono_init__'
+          "$aapt" dump xmltree dist/template/offline-landscape.apk AndroidManifest.xml |
+            grep -F 'io.lunet.game.offline.landscape.mono.MonoRuntimeProvider.__mono_init__'
           echo "Orientações encontradas no AXML (ARM64):"
           "$aapt" dump xmltree dist/template/offline-smoke.apk AndroidManifest.xml | grep -i 'screenOrientation'
           "$aapt" dump xmltree dist/template/offline-landscape.apk AndroidManifest.xml | grep -i 'screenOrientation'
