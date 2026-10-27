@@ -76,6 +76,35 @@ jobs:
           "$zipalign" -c -v 4 dist/template/offline-smoke.apk
           "$apksigner" verify --verbose --min-sdk-version 29 dist/template/offline-smoke.apk
           "$aapt" dump badging dist/template/offline-smoke.apk | grep -q "package: name='io.lunet.game.offline.smoketest'"
+      # The production game template is ARM64, but an x86_64 emulator exercises
+      # the SAME offline packager through the Android package manager. A valid
+      # signature and resources table alone do not prove installability.
+      - name: Build x86_64 install smoke with the offline game packager
+        run: |
+          dotnet build runtime-template/Lunet.Game.Android.csproj -c Release \
+            -p:RuntimeIdentifier=android-x64 \
+            -p:GameSourceRoot="$PWD/samples/apk-smoke" \
+            -p:ApplicationId=io.lunet.game.smoke \
+            -p:AndroidSdkDirectory="$ANDROID_HOME"
+          template=$(find runtime-template/bin/Release/net10.0-android/android-x64 -name '*-Signed.apk' | head -n1)
+          test -f "$template" || { echo "Missing Android x86_64 standalone template"; exit 1; }
+          game=$(find runtime-template/bin -name 'CompiledGame.dll' | head -n1)
+          dotnet run --project tools/offline-apk-check/OfflineApkCheck.csproj -- \
+            "$template" "$game" dist/template/offline-smoke-x64.apk
+      - name: Enable KVM for Android installability smoke
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install exported game on Android 13 (API 33)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          arch: x86_64
+          target: google_apis
+          script: |
+            adb install -r apps/lunet2d/dist/template/offline-smoke-x64.apk
+            adb shell pm path io.lunet.game.offline.smoketest | grep -q 'package:'
       - name: Build APK
         run: >
           dotnet build src/Lunet.Android/Lunet.Android.csproj -c Debug
