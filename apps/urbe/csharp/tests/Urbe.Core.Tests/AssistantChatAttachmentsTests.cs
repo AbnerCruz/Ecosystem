@@ -20,6 +20,10 @@ public sealed class AssistantChatAttachmentsTests
         Assert.Equal("index.html", attachment.Name);
         Assert.Equal(bytes, attachment.Bytes);
         Assert.Equal("m1:1", attachment.Id);
+        var info = Assert.Single(AssistantChatAttachments.Describe(restored.Messages[0]));
+        Assert.Equal("m1:1", info.Id);
+        Assert.Equal("index.html", info.Name);
+        Assert.True(info.Exact);
     }
 
     [Fact]
@@ -34,6 +38,9 @@ public sealed class AssistantChatAttachmentsTests
         Assert.False(item.Exact);
         Assert.Equal("antigo.html", item.Name);
         Assert.Equal("<h1>Oi</h1>", Encoding.UTF8.GetString(item.Bytes));
+        var info = Assert.Single(AssistantChatAttachments.Describe(conversation.Messages[0]));
+        Assert.False(info.Exact);
+        Assert.Equal("antigo.html", info.Name);
     }
 
     [Fact]
