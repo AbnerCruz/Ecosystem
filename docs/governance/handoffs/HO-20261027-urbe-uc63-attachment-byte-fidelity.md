@@ -1,0 +1,13 @@
+# Handoff — UC-63 | Reconciliação de bytes de anexos
+- Data: 2026-10-27. Componente: Urbe C# nativo Android/Avalonia.
+- Branch: fix/urbe-uc63-byte-exact-extraction-20261027. Base: c63a46cd3e790797c7ebfd529e2cfb130442988f (main com #827).
+- Estado: verifying, não integrado e sem release.
+- Escopo: preservar os bytes textuais originais de novos anexos, com metadados opcionais do chat e reutilização exclusiva do extrator #827.
+- TDD: Core tests de92a1a8, Client tests 8f598ae2, ambos antes dos commits de implementação.
+- Arquivos: AssistantTextAttachments.cs, AssistantAgent.cs, AssistantPanel.cs, AssistantAttachmentExtraction.cs, IUrbeVaultStorage.cs, FolderVaultStorage.cs, AndroidVaultStorage.cs, MainView.AssistantAttachments.cs, testes e doc.
+- Normas consultadas: MANIFEST.md, AGENTS.md, apps/urbe/AGENTS.md, apps/urbe/docs/csharp/ROADMAP.md, docs/governance/integration-policy.json e contrato do integrador.
+- Invariantes: NN-001, NN-005, NN-008, NN-009, NN-016, NN-017, NN-018, NN-020, NN-022. Reuso: product-specific, não extrair para platform.
+- Criticidade declarada: critical por storage Android e metadados privados da conversa. Exige autorização do proprietário após gate verde.
+- Testes: dotnet não instalado localmente; exigir CI urbe-checks, consistency e teste físico no Android antes de declarar validação DEVICE.
+- Riscos: dados antigos não têm bytes originais, fallback UTF-8; não aceitar metadados corrompidos; não sobrescrever; writer e permissões seguem os mesmos.
+- Próximos passos: verificar CI combinado, integrar via integrador, encerrar #825 sem merge, avançar #829 separadamente, criar release da versão inédita somente após integração.
