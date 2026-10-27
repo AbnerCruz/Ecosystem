@@ -67,10 +67,10 @@
     {
       "kind": "human",
       "check": "Gesto de rolagem, IME/Gboard, seleção em blocos e nota, leitura durante streaming e desempenho no Android físico",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "apps/urbe/docs/csharp/EDITOR-INTERACTION-STABILITY-20261026.md",
-      "evidence": "Nenhuma execução física disponível. Testar toque simples, duplo, segurar, selecionar toda a nota e rolar em conversa com geração real."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-27 (Issue https://github.com/AbnerCruz/Ecosystem/issues/813); registro em docs/governance/responses/VAL-HO-20261026-urbe-editor-interaction-chat-829c1da1508d.md."
     },
     {
       "kind": "automated",
