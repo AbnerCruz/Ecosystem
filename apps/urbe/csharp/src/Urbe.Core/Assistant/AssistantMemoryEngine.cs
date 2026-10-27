@@ -234,6 +234,8 @@ public static class AssistantMemoryEngine
     {
         var q = Normalize(query?.Trim());
         var terms = Tokens(query);
+        // Expand once per query, never allocate synonym enumerators for every stored record.
+        var expandedTerms = terms.Select(term => (Term: term, Aliases: AliasesFor(term).ToArray())).ToArray();
         var date = at ?? Now();
         var all = Visible(cfg, vault, agentId, date);
         var matches = new List<AiMemoryMatch>(all.Count);
@@ -245,12 +247,12 @@ public static class AssistantMemoryEngine
             var index = Projection(m);
             var score = 0d;
             if (q.Length > 2 && Phrase(index.NormalizedText, q)) score += 14;
-            foreach (var term in terms)
+            foreach (var (term, aliases) in expandedTerms)
             {
                 if (index.TextTerms.Contains(term)) score += 2.5;
                 else if (index.MetaTerms.Contains(term)) score += 1.5;
-                else if (AliasesFor(term).Any(index.TextTerms.Contains)) score += 1.25;
-                else if (AliasesFor(term).Any(index.MetaTerms.Contains)) score += .75;
+                else if (aliases.Any(index.TextTerms.Contains)) score += 1.25;
+                else if (aliases.Any(index.MetaTerms.Contains)) score += .75;
             }
             if (terms.Length == 0 && q.Length == 0) score = 1;
             // Short greetings have no useful query tokens. Recency alone must not
