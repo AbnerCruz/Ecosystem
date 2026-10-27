@@ -220,6 +220,17 @@ public sealed partial class MainActivity : Activity
             if (byId.TryGetValue(e.CheckedId, out var chosen)) template[0] = chosen;
         };
         form.AddView(group);
+        form.AddView(new TextView(this) { Text = "Orientação do jogo", TextSize = 15 });
+        string orientation = "portrait";
+        var orientationGroup = new RadioGroup(this);
+        var vertical = new RadioButton(this) { Id = View.GenerateViewId(), Text = "Vertical (9:16)" };
+        var horizontal = new RadioButton(this) { Id = View.GenerateViewId(), Text = "Horizontal (16:9)" };
+        orientationGroup.AddView(vertical);
+        orientationGroup.AddView(horizontal);
+        orientationGroup.Check(vertical.Id);
+        orientationGroup.CheckedChange += (_, _) =>
+            orientation = orientationGroup.CheckedRadioButtonId == horizontal.Id ? "landscape" : "portrait";
+        form.AddView(orientationGroup);
         var scroll = new ScrollView(this);
         scroll.AddView(form);
         new AlertDialog.Builder(this)!
@@ -230,7 +241,7 @@ public sealed partial class MainActivity : Activity
             {
                 try
                 {
-                    var project = _store.Create(input.Text ?? "", template[0]);
+                    var project = _store.Create(input.Text ?? "", template[0], orientation);
                     OpenProject(project.Name);
                 }
                 catch (Exception ex) when (ex is ProjectException or IOException)
