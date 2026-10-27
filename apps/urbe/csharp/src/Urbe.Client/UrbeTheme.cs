@@ -207,6 +207,8 @@ public static class UrbeTheme
         public const string Page = "M6.5 3.5h11a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3h-11a3 3 0 0 1-3-3v-11a3 3 0 0 1 3-3z M3.5 9h17 M9 20.5V9";
         public const string Select = "M7 4h10a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3z M8.5 12l2.5 2.5 4.5-5";
         public const string Restore = "M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9 M4.5 4.5V9H9";
+        public const string Undo = "M9 14l-5-5 5-5 M4 9h9a6 6 0 0 1 0 12";
+        public const string Redo = "M15 14l5-5-5-5 M20 9h-9a6 6 0 0 0 0 12";
         public const string Check = "M5 12.5l4.5 4.5L19 7.5";
         public const string ArrowUp = "M12 19V5M5.5 11.5L12 5l6.5 6.5";
         public const string Edit = "M4.5 19.5h4l10-10-4-4-10 10z M13 7l4 4";

@@ -132,4 +132,21 @@ public sealed class NoteMarksTests
         Assert.Equal("# Herói\n\n&Jarvis&: Dê um nome\n\n> Aurora. {ia:\"m\"}\n", NoteMarks.PinAnswer("# Herói\n\n&Jarvis&: Dê um nome", "Jarvis", "Dê um nome", "Aurora.", "m"));
         Assert.Equal("# Herói\n\nSem linha.\n\n> Aurora. {ia:\"m\"}\n", NoteMarks.PinAnswer("# Herói\n\nSem linha.\n", "Jarvis", "Dê um nome", "Aurora.", "m"));
     }
+    [Fact]
+    public void AiAttributionDisappearsOnlyWhenItsEntireLineIsCleared()
+    {
+        const string badge = "{ia:\"modelo\"}";
+        Assert.Equal("Intro\n\nFim\n", NoteMarks.RemoveOrphanedAiMarks("Intro\n  " + badge + " \nFim\n"));
+        Assert.Equal("Conteúdo " + badge + "\n", NoteMarks.RemoveOrphanedAiMarks("Conteúdo " + badge + "\n"));
+        Assert.Equal("```\n" + badge + "\n```\n", NoteMarks.RemoveOrphanedAiMarks("```\n" + badge + "\n```\n"));
+        Assert.Equal("\n", NoteMarks.RemoveOrphanedAiMarks(badge + "\n"));
+        Assert.True(NoteMarks.AllowsUserAuthorshipEdit("Texto " + badge + "\nOutra", "\nOutra"));
+        Assert.True(NoteMarks.PreservesAiAuthorship("Texto " + badge + "\nOutra", "\nOutra"));
+        Assert.False(NoteMarks.AllowsUserAuthorshipEdit("Texto " + badge, "Texto"));
+        Assert.False(NoteMarks.PreservesAiAuthorship("Texto " + badge, "Texto"));
+        Assert.False(NoteMarks.AllowsUserAuthorshipEdit("Texto " + badge + "\nOutra", "Reescrito\nOutra"));
+        Assert.False(NoteMarks.PreservesAiAuthorship("Texto " + badge + "\nOutra", "Reescrito\nOutra"));
+    }
+
+
 }

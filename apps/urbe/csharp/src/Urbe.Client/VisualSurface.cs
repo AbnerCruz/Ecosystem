@@ -25,6 +25,7 @@ public sealed class VisualSurface : StackPanel
     private IReadOnlyList<MarkdownBlock> _blocks = [];
     private int _editStart = -1, _editEnd = -1;      // range of the block being edited, in _text
     private TextBox? _box;
+    private bool _normalizingOrphanMark;
     private bool _prompting;
     private readonly WikiSuggestList _wiki = new();
     private readonly SlashMenu _slash = new();
@@ -690,8 +691,21 @@ public sealed class VisualSurface : StackPanel
 
     private void OnBoxChanged(object? sender, TextChangedEventArgs e)
     {
-        if (_box is null) return;
+        if (_box is null || _normalizingOrphanMark) return;
         var block = _box.Text ?? "";
+        var normalized = NoteMarks.RemoveOrphanedAiMarks(block);
+        if (!string.Equals(block, normalized, StringComparison.Ordinal))
+        {
+            var caret = _box.CaretIndex;
+            _normalizingOrphanMark = true;
+            try
+            {
+                _box.Text = normalized;
+                _box.CaretIndex = Math.Clamp(caret, 0, normalized.Length);
+            }
+            finally { _normalizingOrphanMark = false; }
+            block = normalized;
+        }
         _editStart = Math.Clamp(_editStart, 0, _text.Length);
         _editEnd = Math.Clamp(_editEnd, _editStart, _text.Length);
         _text = _text[.._editStart] + block + _text[_editEnd..];

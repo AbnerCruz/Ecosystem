@@ -704,8 +704,10 @@ public sealed partial class HeadlessUiTests
                 window.Show();
                 await view.OpenVaultAsync();
                 await Settle(window, view);
-                Assert.Equal(3, view.Editor.ToolbarNames.Count);
-                Assert.Equal("|", view.Editor.ToolbarNames[1]);
+                Assert.Equal(5, view.Editor.ToolbarNames.Count);
+                Assert.Equal("Desfazer", view.Editor.ToolbarNames[0]);
+                Assert.Equal("Refazer", view.Editor.ToolbarNames[1]);
+                Assert.Equal("|", view.Editor.ToolbarNames[3]);
 
                 // edited in the app and saved: the bar follows
                 await view.EditEditorLayoutAsync();
@@ -714,7 +716,8 @@ public sealed partial class HeadlessUiTests
                 view.Editor.Editor.Text = "{\"versao\":1,\"barra\":[\"bold\",\"italic\",\"math\",\"box\"]}\n";
                 Assert.True(await view.Editor.SaveAsync());
                 Dispatcher.UIThread.RunJobs();
-                Assert.Equal(4, view.Editor.ToolbarNames.Count);
+                Assert.Equal(6, view.Editor.ToolbarNames.Count);
+                Assert.Equal(new[] { "Desfazer", "Refazer" }, view.Editor.ToolbarNames.Take(2).ToArray());
                 Assert.DoesNotContain("|", view.Editor.ToolbarNames);
                 window.Close();
                 return true;
