@@ -1142,8 +1142,17 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The tools' host: reads from the vault's documents, writes through the app, memory and links through the panel.</summary>
-    private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge, string agentId, string conversationId, AssistantWebSession? web, CancellationToken cancel) : IAssistantHost, IAssistantNames, IAssistantImages, IAssistantDelegation, IAssistantForms
+    private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge, string agentId, string conversationId, AssistantWebSession? web, CancellationToken cancel) : IAssistantHost, IAssistantNames, IAssistantImages, IAssistantDelegation, IAssistantForms, IAssistantAttachmentExtractor
     {
+        public async Task<string> ExtractAsync(string fileName)
+        {
+            if (!panel._activeConversations.TryGetValue(conversationId, out var conversation))
+                throw new AiToolException("Conversa indisponível.");
+            foreach (var message in conversation.Messages.AsEnumerable().Reverse())
+                if (AssistantAttachmentExtraction.List(message).Any(x => x.Name == fileName))
+                    return await panel.ExtractMessageToVaultAsync(message, fileName, open: false);
+            throw new AiToolException("Não encontrei este anexo na conversa: " + fileName);
+        }
         public IAssistantForms? Forms => this;
         public FormSession Request(FormDefinition definition) => panel.RequestForm(conversationId, agentId, definition);
         public IAssistantImages? Images => this;
