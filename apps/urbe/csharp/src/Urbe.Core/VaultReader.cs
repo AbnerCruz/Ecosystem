@@ -588,8 +588,18 @@ public static class VaultReader
         return dot >= 0 && TextExtensions.Contains(path[dot..]);
     }
 
-    private static string TryDecode(byte[] bytes) =>
-        Encoding.UTF8.GetString(bytes);
+    // Imported text can retain its original UTF-8/UTF-16 BOM on disk. Decode for the editor
+    // without rewriting bytes; the canonical writer still refuses implicit non-UTF-8 conversion.
+    private static string TryDecode(byte[] bytes)
+    {
+        if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
+            return Encoding.UTF8.GetString(bytes, 3, bytes.Length - 3);
+        if (bytes.Length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE)
+            return Encoding.Unicode.GetString(bytes, 2, bytes.Length - 2);
+        if (bytes.Length >= 2 && bytes[0] == 0xFE && bytes[1] == 0xFF)
+            return Encoding.BigEndianUnicode.GetString(bytes, 2, bytes.Length - 2);
+        return Encoding.UTF8.GetString(bytes);
+    }
 
     private static bool TryParseObject(VaultFile file, out JsonDocument json)
     {
