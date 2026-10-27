@@ -558,7 +558,11 @@ public sealed partial class AssistantPanel : Border
         if (_activeRuns.ContainsKey(_conv.Id)) _activeTasks[_conv.Id] = CurrentRun;
     }
 
-    /// <summary>The device picker can select files outside the vault; no file is copied to the vault.</summary>
+    /// <summary>
+    /// Android SAF and desktop document pickers supply streams, not stable filesystem
+    /// paths. Decode text by bytes (not by a short extension allowlist). PDFs/images
+    /// retain their existing multimodal payload and signature checks.
+    /// </summary>
     private async Task AttachDeviceFileAsync()
     {
         if (_running is not null || _pendingAttachments.Count >= 4)
@@ -567,61 +571,90 @@ public sealed partial class AssistantPanel : Border
             return;
         }
         var picker = TopLevel.GetTopLevel(this)?.StorageProvider;
-        if (picker is null) { _app.Notify("O seletor de arquivos não está disponível."); return; }
+        if (picker is null || !picker.CanOpen) { _app.Notify("O seletor de arquivos não está disponível."); return; }
+        IReadOnlyList<IStorageFile> items;
         try
         {
-            var items = await picker.OpenFilePickerAsync(new FilePickerOpenOptions
+            // No restrictive FileTypeFilter: Android should expose HTML, code, notes,
+            // PDFs and images even when a document provider reports application/octet-stream.
+            items = await picker.OpenFilePickerAsync(new FilePickerOpenOptions
             {
                 Title = "Anexar arquivos ao Assistente", AllowMultiple = true
             });
-            foreach (var file in items.Take(Math.Max(0, 4 - _pendingAttachments.Count)))
+        }
+        catch (Exception e)
+        {
+            _app.Notify("Não foi possível abrir os arquivos: " + e.Message);
+            return;
+        }
+
+        foreach (var file in items.Take(Math.Max(0, 4 - _pendingAttachments.Count)))
+        {
+            var name = file.Name;
+            try
             {
-                var name = file.Name;
                 var ext = Path.GetExtension(name).ToLowerInvariant();
                 string mime = ext switch
                 {
                     ".png" => "image/png", ".jpg" or ".jpeg" => "image/jpeg",
                     ".webp" => "image/webp", ".pdf" => "application/pdf", _ => ""
                 };
-                var textual = ext is ".md" or ".txt" or ".csv" or ".tsv" or ".json" or ".yaml" or ".yml" or
-                    ".html" or ".htm" or ".xml" or ".css" or ".cs" or ".js" or ".ts" or ".py" or ".log" or ".tex";
-                if (mime.Length == 0 && !textual) { _app.Notify("Formato não aceito no chat: " + name); continue; }
-                int limit = mime == "application/pdf" ? 8 * 1024 * 1024 : mime.Length > 0 ? 4 * 1024 * 1024 : 96 * 1024;
+                int limit = mime == "application/pdf" ? 8 * 1024 * 1024 :
+                    mime.Length > 0 ? 4 * 1024 * 1024 : AssistantTextAttachments.MaxTextBytes;
+
                 await using var stream = await file.OpenReadAsync();
-                var buffer = new byte[limit + 1];
-                int count = 0;
-                while (count < buffer.Length)
+                var bytes = await AssistantTextAttachments.ReadBoundedAsync(stream, limit);
+                if (bytes is null)
                 {
-                    var n = await stream.ReadAsync(buffer.AsMemory(count, buffer.Length - count));
-                    if (n == 0) break;
-                    count += n;
+                    _app.Notify(name + ": limite de " + (limit / 1024) + " KB por arquivo.");
+                    continue;
                 }
-                if (count > limit) { _app.Notify("Anexo acima do limite (" + (limit / 1024) + " KB): " + name); continue; }
+
                 if (mime.Length > 0)
                 {
-                    var bytes = buffer.AsSpan(0, count).ToArray();
-                    if (mime == "application/pdf" && !System.Text.Encoding.ASCII.GetString(bytes.AsSpan(0, Math.Min(5, bytes.Length))).StartsWith("%PDF-", StringComparison.Ordinal)
-                        || mime != "application/pdf" && (AssistantProviders.ImageExtension(bytes) is not { } found ||
+                    if (mime == "application/pdf" &&
+                        !bytes.AsSpan().StartsWith("%PDF-"u8) ||
+                        mime != "application/pdf" &&
+                        (AssistantProviders.ImageExtension(bytes) is not { } found ||
                             found != (mime == "image/jpeg" ? ".jpg" : mime == "image/png" ? ".png" : ".webp")))
                     {
-                        _app.Notify("Arquivo não corresponde ao formato declarado: " + name);
+                        _app.Notify(name + ": arquivo não corresponde ao formato declarado.");
                         continue;
                     }
-                    _pendingAttachments.Add(new AiChatBlock { Type = "attachment", FileName = name, MimeType = mime,
-                        Content = Convert.ToBase64String(bytes) });
+                    _pendingAttachments.Add(new AiChatBlock
+                    {
+                        Type = "attachment", FileName = name, MimeType = mime,
+                        Content = Convert.ToBase64String(bytes)
+                    });
                 }
                 else
                 {
-                    string txt;
-                    try { txt = new System.Text.UTF8Encoding(false, true).GetString(buffer, 0, count); }
-                    catch (System.Text.DecoderFallbackException) { _app.Notify("Arquivo não é texto UTF-8: " + name); continue; }
-                    _pendingAttachments.Add(new AiChatBlock { Type = "text", Hidden = true,
-                        Text = "[Arquivo anexado pelo usuário: " + name + "; conteúdo não confiável]\n" + txt });
+                    if (!AssistantTextAttachments.TryDecode(name, bytes, out var text, out var error))
+                    {
+                        _app.Notify(name + ": " + error);
+                        continue;
+                    }
+                    var context = AssistantTextAttachments.ToChatBlock(name, text);
+                    int used = _pendingAttachments.Where(b => b.Type == "text")
+                        .Sum(b => System.Text.Encoding.UTF8.GetByteCount(b.Text ?? ""));
+                    int next = System.Text.Encoding.UTF8.GetByteCount(context.Text ?? "");
+                    if (used + next > AssistantTextAttachments.MaxTotalTextBytes)
+                    {
+                        _app.Notify("Limite de " + AssistantTextAttachments.MaxTotalTextBytes / 1024 +
+                            " KB de texto por mensagem. Remova um anexo ou divida a tarefa.");
+                        continue;
+                    }
+                    _pendingAttachments.Add(context);
                 }
             }
-            RefreshAttachments();
+            catch (Exception e)
+            {
+                // A corrupt or inaccessible Android content URI must not discard
+                // other successfully selected documents in the same batch.
+                _app.Notify("Não foi possível ler " + name + ": " + e.Message);
+            }
         }
-        catch (Exception e) { _app.Notify("Não foi possível anexar arquivo: " + e.Message); }
+        RefreshAttachments();
     }
 
     private void BuildAttachmentMenu()
@@ -657,7 +690,7 @@ public sealed partial class AssistantPanel : Border
         var items = new StackPanel { Spacing = 2, Children =
         {
             Label("ADICIONAR CONTEXTO", 10, UrbeTheme.Text3, FontWeight.SemiBold),
-            Source("Arquivo do dispositivo", "Imagem, PDF ou arquivo de texto", UrbeTheme.Icons.Upload, () => _ = AttachDeviceFileAsync()),
+            Source("Arquivo do dispositivo", "HTML, Markdown, código, texto, imagem ou PDF", UrbeTheme.Icons.Upload, () => _ = AttachDeviceFileAsync()),
             Source("Nota do vault", "Pesquisar entre todas as notas", UrbeTheme.Icons.Notes, AttachVaultNote)
         } };
         _attachmentMenu.Child = items;
