@@ -463,7 +463,7 @@ public static class AssistantAgent
         Content = m.Content.Select(b => b.Type == "attachment" ? AiChatBlock.TextBlock("[Anexo anterior: " + b.FileName + "; não reenviar conteúdo binário.]")
             : IsTextAttachment(b)
             ? new AiChatBlock { Type = "text", Hidden = true,
-                Text = (b.Text ?? "").Split('\\n')[0] + "\\n[Conteúdo do anexo de uma mensagem anterior omitido; reanexe o arquivo se precisar analisá-lo novamente.]" }
+                Text = (b.Text ?? "").Split('\n')[0] + "\n[Conteúdo do anexo de uma mensagem anterior omitido; reanexe o arquivo se precisar analisá-lo novamente.]" }
             : !IsLong(b) ? b : b.Type == "tool_result"
             ? new AiChatBlock { Type = "tool_result", ToolUseId = b.ToolUseId, IsError = b.IsError, Content = EvidenceExcerpt(b.Content, focus, b.ToolUseId) }
             : new AiChatBlock { Type = "tool_use", Id = b.Id, Name = b.Name, Input = SettledInput((JsonObject)b.Input!) }).ToList()
