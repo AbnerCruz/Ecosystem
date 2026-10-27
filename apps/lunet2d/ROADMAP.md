@@ -28,9 +28,9 @@ Não ampliar instrumentação de áudio enquanto esses fluxos estiverem ausentes
 - [ ] **LUNET-443 — Sprite/assets disponíveis no código (Issue #783, feito, sem validação em aparelho):** Preview rápido e isolado devem aceitar `Content.LoadTexture("Assets/arquivo.png")`; salvar a animação no Sprite Studio deve persistir o `.sprite.json` (frames/FPS) e atualizar automaticamente a spritesheet `.png` em `Assets/`, preservando ordem, transparência e uso do SpriteAnimator, mantendo `Content/` prioritário e sem migrar arquivos. Testes portáteis e CI obrigatórios; DEVICE pendente.
 - [ ] **LUNET-444 — Tilemap 100% criado dentro do Lunet (Issue #785, feito, sem validação em aparelho):** criar tilemap sem PNG importado, gerar atlas editável `.sprite.json` + `.png` em `Content/Textures`, abrir edição de pixels via Tile Studio, recarregar textura, preservar contrato TileMap JSON v1. CI/DEVICE pendentes.
 - [ ] **LUNET-445 — F9 prova técnica APK do jogo (Issue #787, prévia CI):** template Android sem IDE com Game.dll e Content/Assets empacotados, compilador GameCode parametrizado por `GameSourceRoot` para jogos reais; compilação ARM64, checagem de assinatura, ID distinto e artifact no workflow `lunet2d-game-apk-smoke`. Agora inclui UI Arquivo → Gerar APK, snapshot ZIP privado no GitHub, build Actions, download de artifact e exportação/instalação SAF. CI e DEVICE do fluxo completo pendentes; offline, assinatura persistente e AAB ainda faltam.
-- [ ] APK do **jogo**: antecipar o experimento de F9 e sua integração visível; o APK do IDE e exportar ZIP não satisfazem esse item. Fallback GitHub com UI desenvolvido em LUNET-445/#787; validar no aparelho. SDK Android local continua ausente.
+- [ ] APK do **jogo** (fluxo completo F9 ainda aberto): template standalone e fallback cloud via LUNET-445/#787, **packager local offline integrado pelo PR #804**, correção de assinatura #814, alinhamento #817 e identidades/orientação #824. O usuário já conseguiu abrir dois jogos na versão anterior; falta validar no Android físico que os APKs da release #1000428 coexistem sem desinstalação, com orientação correta, saves e atualização. Não confundir packager local com Android SDK integral.
 - [~] **LUNET-441 — Primeiro Tile Studio (Issue #777):** editor Android por toque, tileset PNG, camadas, colisão, desfazer/refazer e JSON v1 conectado ao runtime; CI/DEVICE pendentes. Autotiling, propriedades, brushes avançados e zoom continuam F5.
-- [ ] **LUNET-446 — Painel Assets (implementado, sem validação em aparelho):** workspace com acesso Assets, catálogo de `Content/` e `Assets/`, busca/filtros, preview de PNG/tileset, reprodução WAV/OGG/MP3 via MediaPlayer, código de uso copiável e atalhos Sprite/Tile Studios/JSON. Não cria segundo índice persistente nem modifica binários. Testes de catálogo e CI pendentes; DEVICE pendente.\n- [ ] **LUNET-447 — Audio Studio WAV PCM (Issue #799; em implementação):** editor nativo de waveform, recorte, volume, marcadores SMPL de loop, pré-escuta, cópia WAV em Content/Audio sem substituir o original, importação SAF e criação interna de efeitos sonoros. Edição inicial limitada a PCM WAV 8/16 bits mono/estéreo; MP3/OGG seguem reprodução apenas; sem DAW. Exigir CI e DEVICE.
+- [x] **LUNET-446 — Painel Assets (integrado PR #795, DEVICE aprovado na Issue #800):** workspace com acesso Assets, catálogo de `Content/` e `Assets/`, busca/filtros, preview de PNG/tileset, reprodução WAV/OGG/MP3 via MediaPlayer, código de uso copiável e atalhos Sprite/Tile Studios/JSON. Não cria segundo índice persistente nem modifica binários. Testes de catálogo, CI e validação DEVICE registrados em `HO-20261026-lunet-assets-panel`; isso não encerra F5.\n- [x] **LUNET-447 — Primeiro Audio Studio WAV PCM (PR #801 integrado; DEVICE aprovado na Issue #806):** editor nativo de waveform, recorte, volume, marcadores SMPL de loop, pré-escuta, cópia WAV em Content/Audio sem substituir o original, importação SAF e criação interna de efeitos sonoros. Edição inicial limitada a PCM WAV 8/16 bits mono/estéreo; MP3/OGG seguem reprodução apenas; sem DAW, filtros avançados ou edição multitrack. Evidências em `HO-20261026-lunet-audio-studio`; não conclui o Audio Studio integral de F5.
 - [ ] Em seguida: Assets/Tile/Audio/UI Studios e demais editores de F5, com melhoria contínua da navegação. Física, áudio, A* e todo o restante do roadmap permanecem requisitos.
 
 ## Estado atual
@@ -309,7 +309,7 @@ Gate: modelo configurado altera código, compila, detecta erro, corrige e execut
 
 Gate obrigatório: desligar internet, criar projeto, programar, buildar APK, instalar e jogar. Se etapa local for inviável, implementar fallback via GitHub build e **registrar ADR**; não fingir.
 
-- [ ] Experimento inicial de viabilidade: Game.dll + Content + runtime template → APK (AAPT2, alinhamento, assinatura, arm64) — LUNET-445/#787 iniciou prova Android via CI com smoke game separado da IDE; DEVICE e packager local pendentes; ADR 0010 documenta o fallback provisório (§32 risco 4).
+- [ ] Experimento inicial de viabilidade: Game.dll + Content + runtime template → APK (AAPT2, alinhamento, assinatura, arm64) — smoke #787, packager offline #804 e correções #814/#817/#824 já integrados; execução de jogos em DEVICE relatada pelo proprietário, porém a aceitação da revisão com dois pacotes coexistentes e orientação ainda depende de teste físico. ADR 0010 documenta o fallback cloud histórico e precisa registrar sua superação parcial (§32 risco 4).
 - [ ] `runtime-template/` e `Lunet.Build`.
 - [ ] Empacotamento, recursos, AAPT2, alinhamento (zipalign) e assinatura.
 - [ ] Assinatura de desenvolvimento automática; assinatura de release com chave do usuário (gerar, importar, proteger, verificar, backup, aviso de perda). Nunca usar chave do Lunet nos jogos.
@@ -387,6 +387,7 @@ Princípios (§2), checados em toda auditoria de fase:
 - [ ] Ferramentas oficiais usam as mesmas APIs dos plugins.
 
 Qualidade (§30):
+- [~] **LUNET-449 — Inventário de estado real (Issue #831):** auditoria documental do código, testes, PRs, handoffs e releases em `docs/audits/inventario-estado-2026-10-27.md`; aguarda CI e integração deste PR. Não fecha gates de produto nem substitui DEVICE.
 - [ ] Testes de: unidade, integração, compilador, sistema de projetos, framework, serialização, rede, plugins, build, smoke e ciclo de vida Android.
 - [ ] Sem TODO crítico escondido, mock passado como feature, botão sem comportamento, exceção ignorada, API sem documentação, código morto.
 
@@ -409,7 +410,7 @@ Entrega (§24, §25):
 1. Roslyn no Android — **validado** (v0.0.1-dev.8).
 2. Runtime/Preview executando jogo compilado — **validado**.
 3. Renderer 2D funcional e performático — funcional **validado**; desempenho ainda sem medição.
-4. Estratégia de geração de APK do jogo — **não validada**; experimento na Fase 9 (adiantar se houver dúvida sobre viabilidade).
+4. Estratégia de geração de APK do jogo — **viabilidade comprovada com execução de jogos reais no aparelho**, compilação/empacotamento local em #804, correções #814/#817/#824; gate integral F9 e DEVICE específico da correção de coexistência/orientação continuam abertos.
 
 ## Aceitação final (§29)
 
