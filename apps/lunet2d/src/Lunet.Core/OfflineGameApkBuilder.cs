@@ -249,6 +249,13 @@ public static class OfflineGameApkBuilder
     private static byte[] PatchManifest(byte[] bytes, string packageId, string title, string orientation)
     {
         var modified = AndroidStringPoolPatcher.Replace(bytes, "io.lunet.game.smoke", packageId);
+        // The .NET Android startup provider is process-internal but its authority
+        // must still be globally unique. Patching only the manifest's package
+        // attribute produces INSTALL_FAILED_CONFLICTING_PROVIDER on game #2.
+        // Keep the provider class/name intact; change only its authority.
+        modified = AndroidStringPoolPatcher.Replace(modified,
+            "io.lunet.game.smoke.mono.MonoRuntimeProvider.__mono_init__",
+            packageId + ".mono.MonoRuntimeProvider.__mono_init__");
         // The activity label is a manifest string; the template displays an editable game name.
         modified = AndroidStringPoolPatcher.Replace(modified, "Lunet Game", title, mustFind: false);
         return AndroidManifestOrientationPatcher.Patch(modified, orientation);
