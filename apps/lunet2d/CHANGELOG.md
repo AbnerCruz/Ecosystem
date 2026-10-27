@@ -1,5 +1,8 @@
 # Changelog
 
+- Documentação / LUNET-449: inventário auditável de 27/10/2026 confronta código na main, testes, PRs, handoffs, aprovações DEVICE e releases; reconcilia o estado do painel Assets (#795/#800), Audio Studio (#801/#806) e geração local de APK (#804/#814/#817/#824) sem alterar executáveis ou concluir os gates F4/F5/F9.
+
+
 - F9: corrigido conflito real `INSTALL_FAILED_CONFLICTING_PROVIDER` entre dois APKs gerados: o `mono.MonoRuntimeProvider` agora recebe `android:authorities` único por projeto, além do `PackageId`, preservando a inicialização .NET. CI valida os dois providers e instalação simultânea no Android 13.
 
 

@@ -562,3 +562,11 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Referências: Android Developers manifest unique package ID, <activity> screenOrientation e compatibility mode. Execução emulada e Android físico distinguidas; release só após CI aprovado.
 
 - Investigação de CI posterior: com PackageIds diferentes, `adb install` do segundo APK falhou com `INSTALL_FAILED_CONFLICTING_PROVIDER`: ambos ainda declaravam `io.lunet.game.smoke.mono.MonoRuntimeProvider.__mono_init__`. O .NET Android requer esse provider no manifesto para inicializar o runtime. Teste AAPT das duas authorities registrado ANTES da alteração; corrigir substituição da string pool AXML por `PackageId + ".mono.MonoRuntimeProvider.__mono_init__"` antes de assinar. Não remover provider nem desabilitar teste. Fontes dotnet/android wiki Blueprint e Google manifest provider.
+
+
+### 20261027-chatgpt-lunet-state-inventory — 2026-10-27 (America/Sao_Paulo) — ChatGPT → integrador — review
+- LUNET-449 / Issue #831: executar primeiro checkbox do novo roadmap (inventariar estado real, sem duplicar implementação).
+- BASE: main 4d6565c69163237e619b2ae6ed573e05563d281f; branch docs/lunet-449-state-inventory-20261027. Sem PR Lunet aberto na consulta; preservar outros agentes.
+- Inventário documental por 19 frentes em docs/audits/inventario-estado-2026-10-27.md com evidências do código, testes, PRs merged, handoffs/DEVICE e release lunet2d-v0.0.1-dev.1000428. Corrigida defasagem no ROADMAP de Assets/Audio/apk offline sem mover os gates F4/F5/F9.
+- Metodologia: GitHub API/leitura de código e arquivos de testes. Ambiente desta sessão **sem dotnet e sem Android**; não executou testes, APK ou dispositivo; CI de PR e integração governada pendentes. Nenhum source/runtime/signing/API alterado.
+- Próxima frente do roadmap novo: testes de jornada completa, começando por EndToEndTests e smoke de APK existentes; reteste físico específico da coexistência/orientação da correção #824, sem reabrir bugs já corrigidos.
