@@ -49,6 +49,8 @@ public interface IAssistantApp
     void EndSuggestion() { }
     /// <summary>UC-63: a new file that is not text (an image the Assistente made), written and read back in the vault.</summary>
     Task CreateBinaryFileAsync(string path, byte[] bytes) => throw new NotSupportedException("Este app não grava imagens.");
+    /// <summary>Extract a file from a private chat into the current writable vault, preserving its bytes.</summary>
+    Task CreateImportedFileAsync(string path, byte[] bytes) => throw new NotSupportedException("Este app não extrai arquivos.");
     /// <summary>True when the vault has a file at <paramref name="path"/>, note or not.</summary>
     bool FileExists(string path) => false;
     /// <summary>Small, read-only preview of a generated image stored in the current vault.</summary>
