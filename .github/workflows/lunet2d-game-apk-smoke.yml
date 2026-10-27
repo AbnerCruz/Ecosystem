@@ -30,7 +30,7 @@ jobs:
           dotnet build runtime-template/Lunet.Game.Android.csproj -c Debug
           -p:AndroidSdkDirectory="$ANDROID_HOME"
           -p:GameSourceRoot="$PWD/samples/apk-smoke"
-          -p:ApplicationId="io.lunet.game.smoke"
+          -p:ApplicationId="io.lunet.game.smoke.run${{ github.run_id }}"
           -p:ApplicationTitle="LunetSmoke"
       - name: Check separate package and embedded game files
         run: |
@@ -40,6 +40,15 @@ jobs:
           unzip -l "$apk" | grep -q 'assets/game/Content/Data/level.json' || { echo "Content ausente"; exit 1; }
           unzip -l "$apk" | grep -q 'assets/game/Assets/readme.txt' || { echo "Assets ausente"; exit 1; }
           keytool -printcert -jarfile "$apk" | grep -E 'Owner|SHA256'
+          # This diagnostic APK uses an ephemeral CI debug key: a unique package per
+          # run avoids UPDATE_INCOMPATIBLE with older Standalone Smoke artifacts.
+          expected="io.lunet.game.smoke.run${{ github.run_id }}"
+          aapt=$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -n1)
+          apksigner=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n1)
+          zipalign=$(find "$ANDROID_HOME/build-tools" -name zipalign | sort -V | tail -n1)
+          "$aapt" dump badging "$apk" | grep -F "package: name='$expected'"
+          "$apksigner" verify "$apk"
+          "$zipalign" -c -v 4 "$apk"
           mkdir -p dist
           cp "$apk" dist/standalone-smoke-game.apk
           sha256sum dist/standalone-smoke-game.apk > dist/SHA256SUMS.txt
