@@ -301,6 +301,8 @@ Gate: modelo configurado altera código, compila, detecta erro, corrige e execut
 
 ## Fase 9 — APK Build (§18, §19)
 
+- [ ] LUNET-448 / regressão na geração local: corrigir conversão `IKey` → `IPrivateKey` usando JavaCast JNI, checar assinatura RSA com certificado do jogo, fornecer etapa/stack trace no erro; CI deve verificar APK e DEVICE deve gerar/instalar/atualizar Bosque Lumi em modo offline. PR #814; não marcar concluído só com testes de fonte ou CI.
+
 Gate obrigatório: desligar internet, criar projeto, programar, buildar APK, instalar e jogar. Se etapa local for inviável, implementar fallback via GitHub build e **registrar ADR**; não fingir.
 
 - [ ] Experimento inicial de viabilidade: Game.dll + Content + runtime template → APK (AAPT2, alinhamento, assinatura, arm64) — LUNET-445/#787 iniciou prova Android via CI com smoke game separado da IDE; DEVICE e packager local pendentes; ADR 0010 documenta o fallback provisório (§32 risco 4).
