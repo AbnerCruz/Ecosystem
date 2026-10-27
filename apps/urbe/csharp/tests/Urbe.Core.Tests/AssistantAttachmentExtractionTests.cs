@@ -35,7 +35,7 @@ public sealed class AssistantAttachmentExtractionTests
             Content = [AssistantTextAttachments.ToChatBlock("pagina.html", "texto")] };
         var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Anexos/pagina.html" };
         var path = await AssistantAttachmentExtraction.SaveAsync(m, "pagina.html", existing.Contains,
-            (p, text, _) => { Assert.False(existing.Contains(p)); return Task.CompletedTask; });
+            (p, text, _) => { Assert.DoesNotContain(p, existing); return Task.CompletedTask; });
         Assert.Equal("Anexos/pagina (2).html", path);
         await Assert.ThrowsAsync<IOException>(() => AssistantAttachmentExtraction.SaveAsync(m,
             "pagina.html", _ => false, (_, _, _) => throw new IOException("offline")));
