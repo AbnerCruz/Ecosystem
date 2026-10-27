@@ -12,6 +12,7 @@ public sealed class AssistantDeviceMemoryToolsTests
         var tools = AssistantPanel.ToolsFor(new AiProviderConfig("device", "device"));
         Assert.Contains(tools, t => t.Name == "recall_memory" && t.Access == "read");
         Assert.Contains(tools, t => t.Name == "learn_memory" && t.Access == "memory-write");
+        Assert.DoesNotContain(tools, t => t.Name == "remember");
         Assert.DoesNotContain(tools, t => t.Name == "forget_memory");
         Assert.DoesNotContain(tools, t => t.Name == "supersede_memory");
     }
