@@ -42,12 +42,14 @@ public sealed partial class MainActivity
         _gameApkBuildBusy = true;
         _gameApkBuildCancel = new CancellationTokenSource();
         var ct = _gameApkBuildCancel.Token;
+        string stage = "Preparação do projeto";
         var dialog = new AlertDialog.Builder(this)!.SetTitle("Gerando APK no dispositivo")!
             .SetMessage("Compilando Game.cs…")!
             .SetCancelable(false)!
             .SetNegativeButton("Cancelar", (_, _) => _gameApkBuildCancel?.Cancel())!.Show();
         try
         {
+            stage = "Carregamento do runtime Android";
             using var template = Assets!.Open("templates/game-runtime.apk");
             using var templateBuffer = new MemoryStream();
             await template.CopyToAsync(templateBuffer, ct);
@@ -56,6 +58,7 @@ public sealed partial class MainActivity
             byte[] host = templateBuffer.ToArray();
 
             // Use the same Roslyn compiler and allowed game references as Run/Preview.
+            stage = "Compilação do código C#";
             var sources = project.LoadSources().Select(s => new SourceFile(s.Path, s.Text)).ToList();
             var result = await Task.Run(() => SharedCompiler.Value.Compile(
                 "LunetGame" + Guid.NewGuid().ToString("N"), sources), ct);
@@ -69,6 +72,7 @@ public sealed partial class MainActivity
             var apk = await Task.Run(() =>
             {
                 ct.ThrowIfCancellationRequested();
+                stage = "Leitura dos recursos Content/ e Assets/";
                 var assets = new Dictionary<string, byte[]>(StringComparer.Ordinal)
                 {
                     ["game/Game.dll"] = result.Assembly
@@ -82,18 +86,22 @@ public sealed partial class MainActivity
                     string path = Path.Combine(project.Directory, relative.Replace('/', Path.DirectorySeparatorChar));
                     assets.Add("game/" + relative, File.ReadAllBytes(path));
                 }
+                stage = "Android Keystore: obtenção da chave de assinatura";
                 var signer = new AndroidGameApkSigner(gameId);
+                stage = "Empacotamento e assinatura APK v2";
                 return OfflineGameApkBuilder.Build(host, assets,
                     project.Manifest.PackageId, project.Name, signer);
             }, ct);
 
             ct.ThrowIfCancellationRequested();
+            stage = "Gravação do APK temporário";
             var dest = Path.Combine(CacheDir!.AbsolutePath, "lunet-" + gameId.ToString("N") + ".apk");
             await File.WriteAllBytesAsync(dest, apk, ct);
             if (IsFinishing || IsDestroyed) return;
             _pendingGameApkPath = dest;
             _pendingGameApkName = project.Name + ".apk";
             dialog.Dismiss();
+            stage = "Exportação para o armazenamento Android";
             var intent = new Intent(Intent.ActionCreateDocument);
             intent.AddCategory(Intent.CategoryOpenable);
             intent.SetType("application/vnd.android.package-archive");
@@ -107,9 +115,13 @@ public sealed partial class MainActivity
         }
         catch (Exception ex)
         {
+            // Keep the full stack trace in Logcat and identify the failed pipeline step
+            // for users; the exception type alone does not locate an Android JNI cast.
+            global::Android.Util.Log.Error("Lunet.GameApk", $"Etapa: {stage}\n{ex}");
             if (!IsFinishing && !IsDestroyed)
                 new AlertDialog.Builder(this)!.SetTitle("Falha ao gerar APK local")!
-                    .SetMessage(ex.Message)!.SetPositiveButton("Fechar", (_, _) => { })!.Show();
+                    .SetMessage($"Etapa: {stage}\n{ex.GetType().Name}: {ex.Message}")!
+                    .SetPositiveButton("Fechar", (_, _) => { })!.Show();
         }
         finally
         {

@@ -535,3 +535,12 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Sem editor MP3/OGG nem DAW: delimitado pela SPEC §13. Documentação em docs/guides/audio-studio.md. Arquivos antigos nunca sobrescritos; temporários apenas CacheDir.
 - Gates: testes portáteis (WaveAudioDocumentTests), CI .NET/Android/consistency, handoff e aprovação Android DEVICE. Não marcar [x] antes de aparelho.
 - Reuse assessment: editor PCM é específico do Studio/Lunet; não há consumidores independentes que autorizem extração platform/shared.
+
+
+### 20261026-chatgpt-lunet-apk-keystore-cast — ChatGPT → integrador — verifying
+- Incidente reportado pelo proprietário: «Gerar APK local» de Bosque Lumi lança `InvalidCastException: Specified cast is not valid`.
+- Hipótese localizada: conversão gerenciada `(IPrivateKey)key` de proxy JNI `Java.Security.IKey` em `AndroidGameApkSigner.Sign`. Confirmar etapa real no DEVICE; o screenshot original não inclui stack trace.
+- Testes PREPARADOS e committed primeiro: `AndroidGameApkSignerRegressionTests` (regras de interop, verificação de assinatura, observabilidade), roteiro `docs/guides/game-apk-signing-regression.md`. Corrigido para `key.JavaCast<IPrivateKey>()`, verificação RSA com certificado do Android Keystore e diagnóstico da etapa no diálogo + Logcat.
+- Referências: Android Developers Keystore; Microsoft .NET Android JavaCast; Xamarin.Essentials SecureStorage.android.cs.
+- Escopo: somente exportação APK offline do Lunet, sem modificar o projeto do usuário, framework, assets ou UI não relacionada. CI e instalação/reexportação no Android obrigatórias antes de considerar validação DEVICE concluída.
+- Entrega esperada: PR e release `lunet2d-release` após CI verde/merge segundo governança. Nenhum resultado de DEVICE foi presumido.
