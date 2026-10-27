@@ -108,7 +108,7 @@
   "reuse_assessment": [
     {
       "subject": "urbe-beta34-official-release",
-      "status": "reused",
+      "status": "product-specific",
       "rationale": "Pipeline existente urbe-csharp-mobile-release.yml, só avanço de versão canônica sem duplicar mecanismo."
     }
   ]
