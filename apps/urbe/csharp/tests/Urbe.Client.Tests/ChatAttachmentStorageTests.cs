@@ -22,6 +22,9 @@ public sealed class ChatAttachmentStorageTests
                 "<html><body>Olá</body></html>")).ToArray();
             await storage.CreateImportedFileAsync("Anexos/página.html", original, TestContext.Current.CancellationToken);
             Assert.Equal(original, File.ReadAllBytes(Path.Combine(vault, "Anexos", "página.html")));
+            var reopened = await storage.ReloadAsync(TestContext.Current.CancellationToken);
+            Assert.Equal("<html><body>Olá</body></html>",
+                reopened!.Documents.Single(d => d.Path == "Anexos/página.html").Text);
             await storage.CreateTextFileAsync("Nova.md", "# Nova", TestContext.Current.CancellationToken);
             Assert.Equal("# Nova", File.ReadAllText(Path.Combine(vault, "Nova.md")));
             Assert.Equal("# Original", File.ReadAllText(Path.Combine(vault, "Existente.md")));
