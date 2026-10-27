@@ -96,6 +96,8 @@ public interface IAssistantHost
     /// <summary>Agent-to-agent requests transmit only the explicit task, never another chat or memory.</summary>
     IAssistantDelegation? Delegation => null;
     IAssistantForms? Forms => null;
+    /// <summary>Only the current conversation may supply a received user attachment for extraction.</summary>
+    IAssistantAttachmentExtractor? Attachments => null;
 }
 
 /// <summary>A configured public agent profile, without private memory or chat contents.</summary>
