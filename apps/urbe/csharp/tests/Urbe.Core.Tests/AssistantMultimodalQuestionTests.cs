@@ -83,17 +83,15 @@ public sealed class AssistantMultimodalQuestionTests
     }
 
     [Fact]
-    public void TextFileContextIsSentForCurrentRequestButNotRepeatedForever()
+    public void AttachedTextRemainsAvailableForFollowupUntilTheContextBudgetNeedsCompaction()
     {
-        var file = AssistantTextAttachments.ToChatBlock("pagina.html", new string('a', 160_000));
-        var old = new AiChatMessage { Role = "user", Content = [AiChatBlock.TextBlock("Estude o HTML."), file] };
-        var currentOnly = AssistantAgent.SettlePast([old]);
-        Assert.Same(file, currentOnly[0].Content[1]);
-
-        var next = new AiChatMessage { Role = "user", Content = [AiChatBlock.TextBlock("Agora vamos mudar de assunto.")] };
-        var settled = AssistantAgent.SettlePast([old, next]);
-        Assert.DoesNotContain(settled[0].Content, b => b.Text?.Length > 1000);
-        Assert.Contains(settled[0].Content, b => b.Text?.Contains("pagina.html", StringComparison.Ordinal) == true);
+        var file = AssistantTextAttachments.ToChatBlock("pagina.html", "<main>trecho importante</main>");
+        var old = new AiChatMessage { Role = "user", Content = [AiChatBlock.TextBlock("Analise este HTML."), file] };
+        var next = new AiChatMessage { Role = "user", Content = [AiChatBlock.TextBlock("Agora ajuste o trecho importante.")] };
+        var continued = AssistantAgent.SettlePast([old, next]);
+        Assert.Equal(file.Text, continued[0].Content[1].Text);
+        var prepared = AssistantAgent.Prepare(continued, 100_000);
+        Assert.Contains("trecho importante", string.Join("\n", prepared.SelectMany(m => m.Content).Select(b => b.Text)));
         Assert.Equal(file.Text, old.Content[1].Text);
     }
 
