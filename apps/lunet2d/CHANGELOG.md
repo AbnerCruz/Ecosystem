@@ -1,5 +1,7 @@
 # Changelog
 
+- Pré-beta / LUNET-448 (correção de regressão): conversão JNI verificada de chave RSA do Android Keystore na geração de APK offline do jogo (evita `InvalidCastException` do downcast gerenciado); verificação da assinatura antes do resultado e indicação/log da etapa de falha. Contratos de regressão portáteis e roteiro DEVICE preparados antes da correção; testes reais no aparelho ainda pendentes.
+
 - Pré-beta / LUNET-447: primeiro Audio Studio nativo com síntese de seno/quadrada/triangular/ruído dentro do Lunet, importação de WAV PCM, waveform, recorte, ganho, marcadores SMPL de loop, reprodução e exportação de cópia WAV16 em Content/Audio sem sobrescrever o original. Integra Arte, menu Ferramentas e Assets. Testes portáteis; CI/APK/DEVICE pendentes. Não é DAW nem editor MP3/OGG.
 
 - Pré-beta / LUNET-446: painel Assets no workspace com categorias, busca, preview de imagens/map tileset, escuta de áudio, acesso direto aos editores Sprite/Tile/JSON e exemplo de carregamento C#. Catálogo deriva de ListFiles sem índice paralelo; CI/DEVICE pendentes.
