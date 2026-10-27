@@ -56,6 +56,20 @@ public static class AssistantMemoryEngine
     private static readonly Regex RememberCommand = new(
         @"^\s*(?:por favor,?\s*)?(?:lembre(?:-se)?\s+(?:de\s+)?que|memorize\s+que|guarde\s+que)\s+(.+?)\s*$",
         RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.CultureInvariant);
+    // Narrow lexical aliases improve high-precision offline recall without an embedding download.
+    // These are not a semantic search engine; keep associations conservative and tested.
+    private static readonly string[][] RecallAliases =
+    [
+        ["pet", "cachorro", "cachorra", "cao", "cadela"],
+        ["objetivo", "meta"],
+        ["preferencia", "preferencias"],
+        ["automovel", "carro"]
+    ];
+
+    private static IEnumerable<string> AliasesFor(string term) =>
+        RecallAliases.Where(group => group.Contains(term, StringComparer.Ordinal))
+            .SelectMany(group => group).Where(alias => alias != term);
+
     private static readonly Regex PotentialSecret = new(
         @"(?i)(?:\bsk-[A-Za-z0-9_-]{12,}\b|\b(?:api[_ -]?key|senha|password|token|secret)\s*[:=]\s*\S+)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -111,7 +125,7 @@ public static class AssistantMemoryEngine
 
     private static string[] Tokens(string? s) =>
         Words.Matches(Normalize(s)).Select(m => m.Value)
-            .Where(w => w.Length > 2 && w is not ("que" or "para" or "com" or "uma" or "dos" or "das" or "por" or "sobre" or "the" or "and"))
+            .Where(w => w.Length > 2 && w is not ("que" or "para" or "com" or "uma" or "dos" or "das" or "por" or "sobre" or "the" or "and" or "qual" or "quais" or "meu" or "minha" or "como" or "quem" or "onde" or "quando"))
             .Distinct(StringComparer.Ordinal).ToArray();
 
     /// <summary>The old "memory" JSON is lazily migrated on the first structured write, with no loss.</summary>
@@ -235,6 +249,8 @@ public static class AssistantMemoryEngine
             {
                 if (index.TextTerms.Contains(term)) score += 2.5;
                 else if (index.MetaTerms.Contains(term)) score += 1.5;
+                else if (AliasesFor(term).Any(index.TextTerms.Contains)) score += 1.25;
+                else if (AliasesFor(term).Any(index.MetaTerms.Contains)) score += .75;
             }
             if (terms.Length == 0 && q.Length == 0) score = 1;
             // Short greetings have no useful query tokens. Recency alone must not
@@ -368,6 +384,47 @@ public static class AssistantMemoryEngine
     /// <summary>Explicit transport budget from the final request planner; does not reserve a second window.</summary>
     public static IReadOnlyList<string> ForPromptWithin(AiConfig cfg, string vault, string agentId, string? query, int budgetChars) =>
         PackPrompt(cfg, vault, agentId, Search(cfg, vault, agentId, query, int.MaxValue), budgetChars);
+
+    /// <summary>
+    /// Capture only unambiguous first-person preferences, goals and decisions from a successful
+    /// user turn. No extra model calls, no invisible capture of arbitrary dialogue or attachments.
+    /// Inferred memories are agent-local; explicitly shared memories still use "lembre que".
+    /// </summary>
+    public static IReadOnlyList<AiMemoryRecord> CaptureUserStatements(
+        AiConfig cfg, string vault, string agentId, string? userMessage, string source)
+    {
+        if (string.IsNullOrWhiteSpace(userMessage) || userMessage.Length > 4000 ||
+            string.IsNullOrWhiteSpace(agentId) || userMessage.Contains("\`\`\`", StringComparison.Ordinal) ||
+            ExplicitRememberRequest(userMessage) is not null)
+            return [];
+
+        var learned = new List<AiMemoryRecord>();
+        var sentences = Regex.Split(userMessage, @"(?<=[.!?])\s+|\r?\n+");
+        foreach (var raw in sentences.Take(12))
+        {
+            var sentence = raw.Trim();
+            if (sentence.Length is < 12 or > 260 || sentence.EndsWith('?', StringComparison.Ordinal) ||
+                PotentialSecret.IsMatch(sentence) || sentence.StartsWith('>') ||
+                sentence.StartsWith('-') || sentence.StartsWith('"')) continue;
+
+            var normalized = Normalize(sentence);
+            var kind = Regex.IsMatch(normalized, @"^(?:prefiro|minha preferencia e)\s+\S", RegexOptions.CultureInvariant)
+                ? "preference"
+                : Regex.IsMatch(normalized, @"^(?:meu objetivo e|minha meta e)\s+\S", RegexOptions.CultureInvariant)
+                    ? "goal"
+                    : Regex.IsMatch(normalized, @"^(?:decidi|a decisao e)\s+\S", RegexOptions.CultureInvariant)
+                        ? "decision" : "";
+            if (kind.Length == 0) continue;
+
+            // Preserve the user's exact wording and durable source, without duplicate writes.
+            if (cfg.MemoryRecords.Any(m => m.State == "active" && m.Scope == "agent" &&
+                m.Vault == vault && m.AgentId == agentId && Normalize(m.Text) == normalized))
+                continue;
+            learned.Add(Remember(cfg, sentence, vault, agentId, kind, "agent",
+                "user", source, confidence: 85, verified: true));
+        }
+        return learned;
+    }
 
     public static string? ExplicitRememberRequest(string? userMessage)
     {
