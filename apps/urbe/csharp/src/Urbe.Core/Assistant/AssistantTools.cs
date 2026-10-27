@@ -678,7 +678,7 @@ public static partial class AssistantTools
         },
         new()
         {
-            Name = "remember", Access = "memory",
+            Name = "remember", Access = "memory-write",
             Description = "Guarda um fato durável sobre o usuário ou o vault (preferências, convenções, objetivos) na memória do Assistente, usada em conversas futuras. Não guarde conteúdo de notas.",
             Parameters = Schema("""{"type":"object","properties":{"fact":{"type":"string"}},"required":["fact"],"additionalProperties":false}"""),
             Label = i => { var f = Str(i, "fact"); return "Memorizar: " + (f.Length > 60 ? f[..60] : f); },
