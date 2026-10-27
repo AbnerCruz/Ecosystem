@@ -52,10 +52,10 @@
     {
       "kind": "human",
       "check": "Android físico: anexar HTML 150 KiB, .md, .json, .xml, arquivo desconhecido de texto; rejeitar zip renomeado; múltiplos, model reading and Gboard",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "apps/urbe/docs/csharp/ASSISTANT-TEXT-ATTACHMENTS-20261026.md",
-      "evidence": "Teste em dispositivo/SAF fora do escopo do runner; não executado."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-27 (Issue https://github.com/AbnerCruz/Ecosystem/issues/821); registro em docs/governance/responses/VAL-HO-20261026-urbe-text-attachments-818-068dfdbc375b.md."
     }
   ],
   "known_issues": [
