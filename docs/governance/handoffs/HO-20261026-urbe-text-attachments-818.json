@@ -1,0 +1,124 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261026-urbe-text-attachments-818",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-27T01:19:54.584Z",
+  "agent": {
+    "id": "chatgpt-urbe-text-attachments-818",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-63",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "fix/urbe-818-text-file-attachments-20261026",
+  "base_commit": "0d11cc607925aa0e375dba4aa4610a519dc1e699",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/819",
+  "files_changed": [
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantTextAttachmentsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantMultimodalQuestionTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTextAttachments.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/docs/csharp/ASSISTANT-TEXT-ATTACHMENTS-20261026.md",
+    "docs/governance/handoffs/HO-20261026-urbe-text-attachments-818.json"
+  ],
+  "work_completed": [
+    "Investigado AssistantPanel.AttachDeviceFileAsync e envio do contexto em AssistantAgent/AssistantProviders; HTML já estava na lista, mas texto limitado a 96 KiB e extensões fixas.",
+    "Confirmado, por código Avalonia Android e documentação SAF, que FileTypeFilter omitido utiliza seletor ACTION_OPEN_DOCUMENT sem restrição de tipo; não inventada causa exclusivamente Android.",
+    "Criados previamente testes de HTML maior que 96 KiB, texto sob extensão desconhecida, Unicode com BOM, binários disfarçados e stream não seekable.",
+    "Adicionado AssistantTextAttachments: decoder por conteúdo, UTF-8/UTF-16 BOM, validação de bytes e formatos binários, limite 384 KiB por arquivo, 512 KiB totais de texto por mensagem.",
+    "Refatorado AttachmentDeviceFileAsync para leitura SAF com limite, mensagens por arquivo, falha isolada, mantendo multimodal imagem/PDF e contagem de quatro anexos.",
+    "Contextos textuais históricos são compactados para chamadas posteriores, preservando mensagens e conteúdos no histórico local, com regressão de comportamento.",
+    "Registrada documentação de segurança, limites, escopo e requisitos de validação física."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests + Urbe.Client.Tests no urbe-checks",
+      "result": "pending",
+      "object": "apps/urbe/csharp/tests",
+      "evidence": "Execução pendente no PR https://github.com/AbnerCruz/Ecosystem/pull/819; ambiente de chat não inclui SDK dotnet local."
+    },
+    {
+      "kind": "automated",
+      "check": "consistency + integração governada",
+      "result": "pending",
+      "object": "tests/consistency/Check.cs",
+      "evidence": "Aguardar workflows da PR #819 e analisar logs caso falhem."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: anexar HTML 150 KiB, .md, .json, .xml, arquivo desconhecido de texto; rejeitar zip renomeado; múltiplos, model reading and Gboard",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/docs/csharp/ASSISTANT-TEXT-ATTACHMENTS-20261026.md",
+      "evidence": "Teste em dispositivo/SAF fora do escopo do runner; não executado."
+    }
+  ],
+  "known_issues": [
+    "Codificações textuais legadas sem UTF-8 ou UTF-16 BOM ainda exigem conversão, identificada ao usuário por mensagem explícita.",
+    "O conteúdo total pode ser maior que a janela de contexto do provedor escolhido; os limites evitam alocação descontrolada, mas não prometem que qualquer modelo interprete todo o documento.",
+    "Dispositivo Android e interpretação por provedor real ainda exigem validação separada."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Inspecionar CI e corrigir falhas regressivas de compilação/testes.",
+    "Permitir integração apenas pelo integrador oficial depois dos checks.",
+    "Testar SAF Android com arquivo HTML real, erros por arquivo e conversa com provedor configurado; nenhuma declaração de DEVICE validado antes."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Contexto textual enviado como blocos AiChatBlock existentes, sem duplicação do vault."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Mudança incremental em C# no produto, sem reescrita geral."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #818, PR #819, testes e handoff rastreáveis."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Arquivos só depois de seleção do usuário; não executa HTML nem código e valida conteúdo, tamanho, extensão binária."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI automatizado separado do teste Android SAF e UX."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying; CI e DEVICE pendentes, sem alegar release concluída."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Reutiliza seletor Avalonia nativo, contexto AiChatBlock e provedores existentes, sem outro runtime."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Decodificação pertence ao Urbe; sem framework genérico sem segundo consumidor."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "assistant-text-documents-urbe",
+      "status": "product-specific",
+      "rationale": "Tratamento local de documentos selecionados e contexto da IA do Urbe, sem demanda comprovada de outro host."
+    }
+  ]
+}
