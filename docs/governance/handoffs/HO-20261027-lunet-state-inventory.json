@@ -1,0 +1,118 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261027-lunet-state-inventory",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-27T13:45:09.353Z",
+  "agent": {
+    "id": "chatgpt-lunet-state-inventory",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-449",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "docs/lunet-449-state-inventory-20261027",
+  "base_commit": "4d6565c69163237e619b2ae6ed573e05563d281f",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/docs/audits/inventario-estado-2026-10-27.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261027-lunet-state-inventory.json"
+  ],
+  "work_completed": [
+    "Inventário rastreável de 19 frentes: distinguir integrado com validação, integrado com ressalva, parcial, ausente e falha anteriormente corrigida.",
+    "Confronto de source, testes, estado de PRs, handoffs e release APK dev.1000428; prova local em GitHub API, não substitui CI nem aparelho.",
+    "ROADMAP reconciliado com PR #795 e DEVICE #800 (Assets), PR #801 e DEVICE #806 (Audio Studio), PRs #804/#814/#817/#824 para APK local, mantendo gates F4, F5 e F9 abertos.",
+    "Nenhuma alteração a C#, SDK, pipeline CI, assinatura, runtime, projetos/saves do usuário ou repositórios legados."
+  ],
+  "verification": [
+    {
+      "check": "Auditoria estática por GitHub API",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Leitura confirmada de main 4d6565c69163237e619b2ae6ed573e05563d281f, diretórios e arquivos fonte/testes, PRs #795/#801/#804/#814/#817/#824 merged, handoffs e tag lunet2d-v0.0.1-dev.1000428. Não é execução da suíte."
+    },
+    {
+      "check": "Suíte Lunet.Tests da revisão documental",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "dotnet não disponível neste ambiente; aguardar CI real do PR, sem alegar testes executados."
+    },
+    {
+      "check": "Consistency da revisão documental",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Sem runner dotnet local; integrador precisa rodar tests/consistency/Check.cs no estado combinado."
+    }
+  ],
+  "known_issues": [
+    "F4, F5 e F9 continuam abertos; código integrado não prova o escopo integral dos Studios, profiler ou distribuição.",
+    "Confirmação física pós-PR #824 de dois jogos simultaneamente instalados e rotação horizontal permanece necessária.",
+    "ADR local 0010 descreve fallback cloud histórico como se APK offline ainda não existisse; requer adendo/revisão normativa em tarefa própria.",
+    "Auditoria não substitui teste Android, benchmark e full journey. Nenhum defeito de runtime novo foi reproduzido nesta sessão."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Revisar CI e integração governada do PR do inventário; corrigir falha real sem forçar merge.",
+    "Confrontar status dos itens marcados parcialmente e DEVICE na próxima revisão sem nova abstração.",
+    "Próximo checkbox: testes de jornada completa com início nos testes e smoke já presentes, mais validação pós-#824 no aparelho."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/docs/adr/0007-framework-ide-studio-code-first.md",
+    "apps/lunet2d/docs/adr/0010-cloud-game-apk-fallback.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Manter ROADMAP canônico; auditoria apenas snapshot documental."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Sem Product→Product; sem alteração de código."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #831, branch, auditoria, AgentsChat e handoff; PR será relacionado."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Estado e evidências persistidos na documentação e handoff, não dependentes do chat."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas lidas diretamente, sem tratar resumos como autoridade."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Distinção explícita entre CI histórico, inspeção de código e validação DEVICE existente/pós-#824 pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Não marcar gate ou correção de apk como integralmente done sem integração e aceitação específica."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem abstrações extraídas ou código novo, só inventário da tecnologia existente."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
