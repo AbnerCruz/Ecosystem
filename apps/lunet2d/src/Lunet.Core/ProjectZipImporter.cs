@@ -78,11 +78,19 @@ internal static class ProjectZipImporter
                 var tail = "_" + suffix;
                 name = originalName[..Math.Min(originalName.Length, 60 - tail.Length)] + tail;
             }
-            if (name != manifest.Name)
+            bool renamed = name != manifest.Name;
+            if (renamed) manifest.Name = name;
+            // Restoring a project to an empty store preserves its identity, so old
+            // installed games can still be updated. Importing a duplicate alongside
+            // an existing game creates a new independent app and Keystore identity.
+            bool duplicatedIdentity = store.FindIdentityConflict(manifest) is not null;
+            if (duplicatedIdentity)
             {
-                manifest.Name = name;
-                AtomicFile.WriteAllText(manifestFile, manifest.ToJson());
+                manifest.GameId = Guid.NewGuid().ToString("D");
+                manifest.PackageId = ProjectStore.PackageIdFor(name, manifest.GameId);
             }
+            if (renamed || duplicatedIdentity)
+                AtomicFile.WriteAllText(manifestFile, manifest.ToJson());
             var destination = Path.Combine(store.RootDirectory, name);
             // Move no mesmo filesystem: ou o projeto completo aparece, ou nada muda.
             Directory.Move(extracted, destination);

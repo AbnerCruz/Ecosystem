@@ -301,6 +301,8 @@ Gate: modelo configurado altera código, compila, detecta erro, corrige e execut
 
 ## Fase 9 — APK Build (§18, §19)
 
+- [ ] Correção de múltiplos jogos e orientação (PR #824, feito, validação Android físico pendente): novos `PackageId` únicos mesmo com slugs colidentes; importar cópias em uma mesma biblioteca separa identidade sem alterar restauração sem conflito; legados com colisão solicitam autorização antes de bifurcar; novo projeto e arquivo de projeto configuram portrait/landscape; `AndroidManifest.xml` binário recebe a orientação de cada projeto antes da assinatura. CI verifica dois APKs instaláveis no mesmo emulador Android 13 e AXML; o proprietário valida ambos rodando simultaneamente no telefone.
+
 - [ ] Falha de instalação do APK gerado no Lunet: `resources.arsc` STORED com alinhamento obrigatório em 4 bytes; teste unitário de offsets, `zipalign -c`, `apksigner`, `aapt`, `adb install` no Android 13 emulado; repetir no Bosque Lumi no celular real (DEVICE pendente). PR #817. Não confundir assinatura válida com pacote instalável.
 
 - [ ] LUNET-448 / regressão na geração local: corrigir conversão `IKey` → `IPrivateKey` usando JavaCast JNI, checar assinatura RSA com certificado do jogo, fornecer etapa/stack trace no erro; CI deve verificar APK e DEVICE deve gerar/instalar/atualizar Bosque Lumi em modo offline. PR #814; não marcar concluído só com testes de fonte ou CI.

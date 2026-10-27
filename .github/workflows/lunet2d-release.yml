@@ -76,6 +76,21 @@ jobs:
           "$zipalign" -c -v 4 dist/template/offline-smoke.apk
           "$apksigner" verify --verbose --min-sdk-version 29 dist/template/offline-smoke.apk
           "$aapt" dump badging dist/template/offline-smoke.apk | grep -q "package: name='io.lunet.game.offline.smoketest'"
+          dotnet run --project tools/offline-apk-check/OfflineApkCheck.csproj -- \
+            dist/template/game-runtime.apk "$game" dist/template/offline-landscape.apk \
+            io.lunet.game.offline.landscape landscape
+          "$zipalign" -c -v 4 dist/template/offline-landscape.apk
+          "$apksigner" verify --verbose --min-sdk-version 29 dist/template/offline-landscape.apk
+          "$aapt" dump badging dist/template/offline-landscape.apk | grep -q "package: name='io.lunet.game.offline.landscape'"
+          "$aapt" dump xmltree dist/template/offline-smoke.apk AndroidManifest.xml |
+            grep -F 'io.lunet.game.offline.smoketest.mono.MonoRuntimeProvider.__mono_init__'
+          "$aapt" dump xmltree dist/template/offline-landscape.apk AndroidManifest.xml |
+            grep -F 'io.lunet.game.offline.landscape.mono.MonoRuntimeProvider.__mono_init__'
+          echo "Orientações encontradas no AXML (ARM64):"
+          "$aapt" dump xmltree dist/template/offline-smoke.apk AndroidManifest.xml | grep -i 'screenOrientation'
+          "$aapt" dump xmltree dist/template/offline-landscape.apk AndroidManifest.xml | grep -i 'screenOrientation'
+          "$aapt" dump xmltree dist/template/offline-smoke.apk AndroidManifest.xml | grep -F 'screenOrientation(0x0101001e)=(type 0x10)0x1'
+          "$aapt" dump xmltree dist/template/offline-landscape.apk AndroidManifest.xml | grep -F 'screenOrientation(0x0101001e)=(type 0x10)0x0'
       # The production game template is ARM64, but an x86_64 emulator exercises
       # the SAME offline packager through the Android package manager. A valid
       # signature and resources table alone do not prove installability.
@@ -90,7 +105,14 @@ jobs:
           test -f "$template" || { echo "Missing Android x86_64 standalone template"; exit 1; }
           game=$(find runtime-template/bin -name 'CompiledGame.dll' | head -n1)
           dotnet run --project tools/offline-apk-check/OfflineApkCheck.csproj -- \
-            "$template" "$game" dist/template/offline-smoke-x64.apk
+            "$template" "$game" dist/template/offline-portrait-x64.apk \
+            io.lunet.game.offline.portrait portrait
+          dotnet run --project tools/offline-apk-check/OfflineApkCheck.csproj -- \
+            "$template" "$game" dist/template/offline-landscape-x64.apk \
+            io.lunet.game.offline.landscape landscape
+          aapt=$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -n1)
+          "$aapt" dump xmltree dist/template/offline-portrait-x64.apk AndroidManifest.xml | grep -F 'screenOrientation(0x0101001e)=(type 0x10)0x1'
+          "$aapt" dump xmltree dist/template/offline-landscape-x64.apk AndroidManifest.xml | grep -F 'screenOrientation(0x0101001e)=(type 0x10)0x0'
       - name: Enable KVM for Android installability smoke
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -103,8 +125,13 @@ jobs:
           arch: x86_64
           target: google_apis
           script: |
-            adb install -r apps/lunet2d/dist/template/offline-smoke-x64.apk
-            adb shell pm path io.lunet.game.offline.smoketest | grep -q 'package:'
+            adb install -r apps/lunet2d/dist/template/offline-portrait-x64.apk
+            adb install -r apps/lunet2d/dist/template/offline-landscape-x64.apk
+            adb shell pm path io.lunet.game.offline.portrait | grep -q 'package:'
+            adb shell pm path io.lunet.game.offline.landscape | grep -q 'package:'
+            # Both apps must coexist; neither may overwrite the other.
+            adb shell pm list packages | grep -q 'package:io.lunet.game.offline.portrait'
+            adb shell pm list packages | grep -q 'package:io.lunet.game.offline.landscape'
       - name: Build APK
         run: >
           dotnet build src/Lunet.Android/Lunet.Android.csproj -c Debug

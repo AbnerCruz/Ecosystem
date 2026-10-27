@@ -33,7 +33,7 @@ public sealed class ProjectZipImportTests : IDisposable
     }
 
     [Fact]
-    public void DuplicateName_CreatesCopyWithoutChangingExistingProjectOrGameIdentity()
+    public void DuplicateName_CreatesIndependentGameIdentityWithoutChangingOriginal()
     {
         var store = new ProjectStore(_root);
         var original = store.Create("Game");
@@ -43,10 +43,28 @@ public sealed class ProjectZipImportTests : IDisposable
         zip.Position = 0;
         var copy = store.ImportZip(zip);
         Assert.Equal("Game_2", copy.Name);
-        Assert.Equal(original.Manifest.GameId, copy.Manifest.GameId);
+        Assert.NotEqual(original.Manifest.GameId, copy.Manifest.GameId);
+        Assert.NotEqual(original.Manifest.PackageId, copy.Manifest.PackageId);
         Assert.Equal(json, original.ReadText("lunet.json"));
         zip.Position = 0;
-        Assert.Equal("Game_3", store.ImportZip(zip).Name);
+        var third = store.ImportZip(zip);
+        Assert.Equal("Game_3", third.Name);
+        Assert.NotEqual(copy.Manifest.PackageId, third.Manifest.PackageId);
+    }
+
+    [Fact]
+    public void DifferentImportedGameWithSamePackageIdIsForkedEvenWhenNamesDiffer()
+    {
+        var store = new ProjectStore(_root);
+        var original = store.Create("First");
+        var originalJson = original.ReadText("lunet.json");
+        var duplicate = ProjectManifest.Parse(originalJson);
+        duplicate.Name = "Second";
+        duplicate.GameId = Guid.NewGuid().ToString("D");
+        using var zip = Archive(("lunet.json", duplicate.ToJson()), ("Game.cs", "class Game {}"));
+        var imported = store.ImportZip(zip);
+        Assert.NotEqual(original.Manifest.PackageId, imported.Manifest.PackageId);
+        Assert.Equal(originalJson, original.ReadText("lunet.json"));
     }
 
     [Fact]

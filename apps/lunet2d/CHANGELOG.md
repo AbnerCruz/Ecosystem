@@ -1,5 +1,11 @@
 # Changelog
 
+- F9: corrigido conflito real `INSTALL_FAILED_CONFLICTING_PROVIDER` entre dois APKs gerados: o `mono.MonoRuntimeProvider` agora recebe `android:authorities` único por projeto, além do `PackageId`, preservando a inicialização .NET. CI valida os dois providers e instalação simultânea no Android 13.
+
+
+- Pré-beta / F9: jogos criados ou importados com identidades Android independentes e estáveis, resolução explícita para colisões legadas, orientação Vertical/Horizontal persistente no projeto e aplicada ao `android:screenOrientation` binário antes de assinar o APK. Smoke CI instala dois jogos juntos e verifica manifestos; DEVICE físico ainda precisa validar.
+
+
 - Standalone Smoke (artefato de CI): cada execução agora utiliza um package ID distinto, evitando conflitos de atualização entre APKs assinados por chaves debug efêmeras; o CI passa a verificar assinatura e alinhamento do APK de diagnóstico.
 
 - Pré-beta / correção de instalação do APK do jogo: alinha em 4 bytes os dados dos arquivos ZIP armazenados, especialmente `resources.arsc`, para Android 11+; testes de regressão de offsets, `zipalign` no CI e instalação do pacote exportado em emulador Android 13. DEVICE físico ainda requer validação.

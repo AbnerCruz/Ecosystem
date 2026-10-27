@@ -27,8 +27,10 @@ public sealed class ProjectStore
         .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
         .ToList();
 
-    public LunetProject Create(string rawName, ProjectTemplate template = ProjectTemplate.Blank)
+    public LunetProject Create(string rawName, ProjectTemplate template = ProjectTemplate.Blank, string orientation = "portrait")
     {
+        if (orientation is not ("portrait" or "landscape"))
+            throw new ProjectException("Orientação do projeto inválida: use portrait ou landscape.");
         var name = ValidateName(rawName);
         var directory = Path.Combine(RootDirectory, name);
         if (Directory.Exists(directory)) throw new ProjectException("Esse projeto já existe.");
@@ -39,8 +41,13 @@ public sealed class ProjectStore
             var manifest = new ProjectManifest
             {
                 Name = name,
-                PackageId = "com.lunet.games." + PackageSegment(name),
+                Orientation = orientation,
+                VirtualWidth = orientation == "landscape" ? 640 : 360,
+                VirtualHeight = orientation == "landscape" ? 360 : 640,
             };
+            // Distinct projects must never share an Android package even when names
+            // normalize to the same slug (Bosque-Lumi and BosqueLumi).
+            manifest.PackageId = PackageIdFor(name, manifest.GameId);
             AtomicFile.WriteAllText(Path.Combine(directory, ManifestFileName), manifest.ToJson());
             var className = ClassName(name);
             AtomicFile.WriteAllText(Path.Combine(directory, manifest.EntryPoint),
@@ -91,6 +98,60 @@ public sealed class ProjectStore
         if (name.Length is < 1 or > 60 || name.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '-' && c != '_'))
             throw new ProjectException("Use de 1 a 60 caracteres: letras, números, _ ou -.");
         return name;
+    }
+
+    /// <summary>Stable, globally unique package for a newly created or explicitly forked game.</summary>
+    internal static string PackageIdFor(string name, string gameId)
+    {
+        var id = Guid.Parse(gameId);
+        return "com.lunet.games." + PackageSegment(name) + ".g" + id.ToString("N");
+    }
+
+    /// <summary>Find another local project that would overwrite this game's APK or reuse its signing key.</summary>
+    public string? FindIdentityConflict(ProjectManifest candidate, string? exceptDirectory = null)
+    {
+        foreach (var directory in System.IO.Directory.EnumerateDirectories(RootDirectory))
+        {
+            if (exceptDirectory is not null &&
+                Path.GetFullPath(directory).Equals(Path.GetFullPath(exceptDirectory), StringComparison.OrdinalIgnoreCase))
+                continue;
+            var path = Path.Combine(directory, ManifestFileName);
+            if (!File.Exists(path)) continue;
+            ProjectManifest other;
+            try { other = ProjectManifest.Parse(File.ReadAllText(path)); }
+            catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
+            { continue; }
+            bool duplicatePackage = !string.IsNullOrWhiteSpace(candidate.PackageId) &&
+                candidate.PackageId.Equals(other.PackageId, StringComparison.OrdinalIgnoreCase);
+            bool duplicateKey = Guid.TryParse(candidate.GameId, out var first) &&
+                Guid.TryParse(other.GameId, out var second) && first == second;
+            if (duplicatePackage || duplicateKey) return Path.GetFileName(directory);
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Explicitly fork a conflicting legacy project; do not silently break the
+    /// installed package's update identity. The caller must obtain user consent.
+    /// </summary>
+    public void ForkIdentity(LunetProject project)
+    {
+        if (FindIdentityConflict(project.Manifest, project.Directory) is null)
+            throw new ProjectException("Este projeto não possui conflito de identidade.");
+        string oldGameId = project.Manifest.GameId;
+        string oldPackageId = project.Manifest.PackageId;
+        try
+        {
+            project.Manifest.GameId = Guid.NewGuid().ToString("D");
+            project.Manifest.PackageId = PackageIdFor(project.Name, project.Manifest.GameId);
+            project.WriteText(ManifestFileName, project.Manifest.ToJson());
+        }
+        catch
+        {
+            project.Manifest.GameId = oldGameId;
+            project.Manifest.PackageId = oldPackageId;
+            throw;
+        }
     }
 
     private static string PackageSegment(string name)

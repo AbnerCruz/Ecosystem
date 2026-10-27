@@ -128,6 +128,7 @@ public sealed partial class MainActivity
         ("Formatar documento", () => HandleCommand(EditorCommand.Format)),
         ("Exportar projeto (ZIP)", () => ExportProject()),
         ("Gerar APK do jogo", AskBuildGameApk),
+        ("Orientação do jogo", AskSetGameOrientation),
         ("Importar imagem PNG", ImportImage),
     ]);
 

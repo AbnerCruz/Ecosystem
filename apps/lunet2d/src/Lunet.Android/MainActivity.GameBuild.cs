@@ -32,8 +32,69 @@ public sealed partial class MainActivity
                 .SetPositiveButton("OK", (_, _) => { })!.Show();
             return;
         }
+        if (project.Manifest.Orientation is not ("portrait" or "landscape"))
+        {
+            new AlertDialog.Builder(this)!.SetTitle("Orientação inválida")!
+                .SetMessage("Use Arquivo → Orientação do jogo e selecione Vertical ou Horizontal.")!
+                .SetPositiveButton("OK", (_, _) => { })!.Show();
+            return;
+        }
+
+        // Legacy imported/cloned projects may share package and signing identities.
+        // Ask explicitly before modifying an already installed game's update identity.
+        string? conflict = _store.FindIdentityConflict(project.Manifest, project.Directory);
+        if (conflict is not null)
+        {
+            new AlertDialog.Builder(this)!.SetTitle("Dois jogos com o mesmo identificador")!
+                .SetMessage($"Este projeto usa a identidade Android do projeto \"{conflict}\". " +
+                    "Se exportado assim, um jogo substituirá o outro. " +
+                    "Separar cria uma identidade própria para este jogo, sem alterar o outro projeto.")!
+                .SetNegativeButton("Cancelar", (_, _) => { })!
+                .SetPositiveButton("Separar e gerar APK", (_, _) =>
+                {
+                    try
+                    {
+                        _store.ForkIdentity(project);
+                        _ = RunLocalGameBuild(project, Guid.Parse(project.Manifest.GameId));
+                    }
+                    catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
+                    {
+                        new AlertDialog.Builder(this)!.SetTitle("Não foi possível separar os jogos")!
+                            .SetMessage(ex.Message)!.SetPositiveButton("OK", (_, _) => { })!.Show();
+                    }
+                })!.Show();
+            return;
+        }
+
         // Um toque no comando começa o build. Sem confirmação, login, token ou internet.
         _ = RunLocalGameBuild(project, gameId);
+    }
+
+    /// <summary>Project-owned setting, persisted in lunet.json and applied to the signed APK manifest.</summary>
+    private void AskSetGameOrientation()
+    {
+        if (_project is null) return;
+        var project = _project;
+        string[] choices = ["Vertical (9:16)", "Horizontal (16:9)"];
+        int selected = project.Manifest.Orientation == "landscape" ? 1 : 0;
+        new AlertDialog.Builder(this)!.SetTitle("Orientação do jogo")!
+            .SetSingleChoiceItems(choices, selected, (_, args) => selected = args.Which)!
+            .SetNegativeButton("Cancelar", (_, _) => { })!
+            .SetPositiveButton("Salvar", (_, _) =>
+            {
+                string previous = project.Manifest.Orientation;
+                project.Manifest.Orientation = selected == 1 ? "landscape" : "portrait";
+                try
+                {
+                    project.WriteText(ProjectStore.ManifestFileName, project.Manifest.ToJson());
+                    Toast.MakeText(this, selected == 1 ? "Jogo horizontal configurado." : "Jogo vertical configurado.", ToastLength.Short)?.Show();
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ProjectException)
+                {
+                    project.Manifest.Orientation = previous;
+                    Toast.MakeText(this, "Falha ao salvar orientação: " + ex.Message, ToastLength.Long)?.Show();
+                }
+            })!.Show();
     }
 
     private async Task RunLocalGameBuild(LunetProject project, Guid gameId)
@@ -90,7 +151,7 @@ public sealed partial class MainActivity
                 var signer = new AndroidGameApkSigner(gameId);
                 stage = "Empacotamento e assinatura APK v2";
                 return OfflineGameApkBuilder.Build(host, assets,
-                    project.Manifest.PackageId, project.Name, signer);
+                    project.Manifest.PackageId, project.Name, signer, project.Manifest.Orientation);
             }, ct);
 
             ct.ThrowIfCancellationRequested();
