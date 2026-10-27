@@ -1,5 +1,7 @@
 # Changelog
 
+- Standalone Smoke (artefato de CI): cada execução agora utiliza um package ID distinto, evitando conflitos de atualização entre APKs assinados por chaves debug efêmeras; o CI passa a verificar assinatura e alinhamento do APK de diagnóstico.
+
 - Pré-beta / correção de instalação do APK do jogo: alinha em 4 bytes os dados dos arquivos ZIP armazenados, especialmente `resources.arsc`, para Android 11+; testes de regressão de offsets, `zipalign` no CI e instalação do pacote exportado em emulador Android 13. DEVICE físico ainda requer validação.
 
 - Pré-beta / LUNET-448 (correção de regressão): conversão JNI verificada de chave RSA do Android Keystore na geração de APK offline do jogo (evita `InvalidCastException` do downcast gerenciado); verificação da assinatura antes do resultado e indicação/log da etapa de falha. Contratos de regressão portáteis e roteiro DEVICE preparados antes da correção; testes reais no aparelho ainda pendentes.
