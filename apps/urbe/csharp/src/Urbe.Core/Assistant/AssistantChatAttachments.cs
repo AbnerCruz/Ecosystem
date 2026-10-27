@@ -4,6 +4,8 @@ namespace Urbe.Core.Assistant;
 
 /// <summary>One file supplied by the person in this conversation. Old text-only context is explicitly inexact.</summary>
 public sealed record ChatExtractableAttachment(string Id, string Name, byte[] Bytes, bool Exact);
+/// <summary>Cheap filename metadata for UI rendering; never decode base64 merely to draw buttons.</summary>
+public sealed record ChatAttachmentInfo(string Id, string Name, bool Exact);
 
 /// <summary>
 /// Recover files only from the currently selected conversation. Never treat model text or tool output as an upload.
@@ -18,6 +20,36 @@ public static class AssistantChatAttachments
         ".yaml", ".yml", ".csv", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp",
         ".pdf", ".mp3", ".m4a", ".ogg", ".oga", ".wav", ".flac", ".mp4", ".webm", ".mov"
     };
+
+    public static IReadOnlyList<ChatAttachmentInfo> Describe(AiChatMessage message)
+    {
+        if (message.Role != "user" || message.Meta?.ToolResults == true) return [];
+        var results = new List<ChatAttachmentInfo>();
+        for (var index = 0; index < message.Content.Count; index++)
+        {
+            var block = message.Content[index];
+            if (block.Type == "attachment" && block.FileName.Length > 0 && block.Content.Length > 0)
+            {
+                results.Add(new ChatAttachmentInfo(message.Id + ":" + index, block.FileName, true));
+                continue;
+            }
+            if (block.Type != "text" || !block.Hidden ||
+                block.Text?.StartsWith("[Arquivo anexado pelo usuário: ", StringComparison.Ordinal) != true)
+                continue;
+            var name = block.FileName;
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                var semicolon = block.Text.IndexOf(';', "[Arquivo anexado pelo usuário: ".Length);
+                var newline = block.Text.IndexOf('\n');
+                if (semicolon < 0 || newline < semicolon) continue;
+                name = block.Text["[Arquivo anexado pelo usuário: ".Length..semicolon].Trim();
+            }
+            if (name.Length > 0)
+                results.Add(new ChatAttachmentInfo(message.Id + ":" + index, name,
+                    block.FileName.Length > 0 && block.Content.Length > 0));
+        }
+        return results;
+    }
 
     public static IReadOnlyList<ChatExtractableAttachment> List(AiConversation conversation)
     {
