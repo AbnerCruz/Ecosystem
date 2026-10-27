@@ -32,6 +32,18 @@ public sealed partial class AssistantPanel
                 .Concat(m.Content.Where(b => b.Hidden && b.Type == "text" && b.Text?.StartsWith("[Arquivo anexado pelo usuário:", StringComparison.Ordinal) == true)
                     .Select(b => b.Text!.Split('\n')[0].Trim('[', ']'))).ToList();
             if (files.Count > 0) stack.Children.Add(Wrap("Anexos: " + string.Join(", ", files), 11, UrbeTheme.Text2));
+            var extractables = AssistantChatAttachments.Describe(m);
+            if (extractables.Count > 0)
+            {
+                var fileActions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right };
+                foreach (var file in extractables)
+                {
+                    var caption = "Extrair " + file.Name + (file.Exact ? "" : " (reconstrução)");
+                    fileActions.Children.Add(LinkButton(caption,
+                        () => _ = ExtractChatFileFromUiAsync(_conv.Id, file.Id)));
+                }
+                stack.Children.Add(fileActions);
+            }
             var bubble = new SelectableTextBlock { Text = text, FontSize = 15, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text) };
             Ui.TextActions.Attach(bubble); // native range selection, contextual copy and select-all
             stack.Children.Add(new Border { Child = bubble, Padding = new Thickness(12, 9), CornerRadius = new CornerRadius(16, 16, 4, 16), Background = UrbeTheme.Brush(UrbeTheme.Accent, .16) });

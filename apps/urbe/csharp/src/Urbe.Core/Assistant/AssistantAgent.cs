@@ -16,7 +16,7 @@ public sealed class AiChatBlock
     public JsonNode? Input { get; set; }
     public string ToolUseId { get; set; } = "";
     public string Content { get; set; } = "";
-    /// <summary>Selected files are local to this private conversation; never copied into the vault.</summary>
+    /// <summary>Selected files stay in the private conversation until an explicitly authorized extraction to the vault.</summary>
     public string MimeType { get; set; } = "";
     public string FileName { get; set; } = "";
     public bool IsError { get; set; }
@@ -45,6 +45,9 @@ public sealed class AiChatBlock
             case "text":
                 o["text"] = Text;
                 if (Hidden) o["_hidden"] = true;
+                // Metadata for explicitly selected files only. The model still sees inert text.
+                if (Hidden && FileName.Length > 0 && Content.Length > 0)
+                { o["source_name"] = FileName; o["source_bytes"] = Content; }
                 break;
             case "attachment":
                 o["mime"] = MimeType; o["name"] = FileName; o["data"] = Content;
@@ -68,7 +71,7 @@ public sealed class AiChatBlock
         var type = (string?)n["type"] ?? "text";
         return type switch
         {
-            "text" => new() { Type = "text", Text = n["text"] is JsonValue t && t.TryGetValue<string>(out var s) ? s : null, Hidden = n["_hidden"] is JsonValue h && Urbe.Core.Pages.PageEngine.Truthy(h) },
+            "text" => new() { Type = "text", Text = n["text"] is JsonValue t && t.TryGetValue<string>(out var s) ? s : null, Hidden = n["_hidden"] is JsonValue h && Urbe.Core.Pages.PageEngine.Truthy(h), FileName = (string?)n["source_name"] ?? "", Content = (string?)n["source_bytes"] ?? "" },
             "tool_use" => new() { Type = "tool_use", Id = (string?)n["id"] ?? "", Name = (string?)n["name"] ?? "", Input = n["input"]?.DeepClone(), Pending = n["_pending"] is JsonValue p && Urbe.Core.Pages.PageEngine.Truthy(p), Partial = (string?)n["_partial"] },
             "attachment" => new() { Type = "attachment", MimeType = (string?)n["mime"] ?? "",
                 FileName = (string?)n["name"] ?? "", Content = (string?)n["data"] ?? "" },
@@ -587,6 +590,7 @@ public static class AssistantAgent
         public AssistantWebSession? Web => inner.Web;
         public IAssistantDelegation? Delegation => inner.Delegation;
         public IAssistantForms? Forms => inner.Forms;
+        public IAssistantChatFiles? ChatFiles => inner.ChatFiles;
     }
 
     private sealed record Out(string Content, bool IsError = false, string? Status = null, IReadOnlyList<AiChange>? Changes = null, IReadOnlyList<(string Path, AiPartial? Partial)>? Reads = null);

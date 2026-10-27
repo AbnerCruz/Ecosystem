@@ -1,0 +1,132 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261027-urbe-chat-extraction-coordination-825",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-27T11:14:10Z",
+  "agent": {
+    "id": "chatgpt-urbe-chat-extraction-audit-825",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-63",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-extrair-anexos-chat-20261027",
+  "base_commit": "d328511518aee38f4b00dd5b8f1a811c411d3b37",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/825",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.ChatExtraction.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantChatAttachments.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantChatFileTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTextAttachments.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VaultReader.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ChatAttachmentStorageTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantChatAttachmentsTests.cs",
+    "docs/governance/handoffs/HO-20261027-urbe-chat-extraction-coordination-825.json"
+  ],
+  "work_completed": [
+    "Auditoria e coordenação independente da PR #825 com a PR concorrente #827; selecionada #825 como candidata prioritária porque tem recuperação fiel de bytes e destino editável.",
+    "Confirmados commits de testes-first da PR #825: dfa106d174 (contrato) e 3c2d0128b0 (incluindo legado/byte-exato), ambos antes dos primeiros commits de implementação d85dc8ea7d.",
+    "Inspecionados arquivos modificados pelo diff da PR #825: receiver AiChatBlock, read/write do vault Android SAF/Desktop e serviços de agentes, com nova versão beta.35.",
+    "Registrada necessidade de confirmar CI completo, validação física e integrador, sem dar aprovação antecipada aos artefatos.",
+    "Esta alteração adiciona apenas a presente evidência/handoff de auditoria; não reivindica a autoria dos commits de código da PR #825."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "urbe-checks C# Core/Client/E2E e nativos Android/Windows no head da PR #825",
+      "result": "pending",
+      "object": "https://github.com/AbnerCruz/Ecosystem/actions/runs/40492983005",
+      "evidence": "Na consulta, E2E, checks e nativos Android/Windows passaram; C# portable segue em andamento, não declarar toda a suíte aprovada."
+    },
+    {
+      "kind": "automated",
+      "check": "consistency/integrador e reconciliação com a main",
+      "result": "pending",
+      "object": "https://github.com/AbnerCruz/Ecosystem/pull/825",
+      "evidence": "Consistency da branch passou, mas integrador reportou falta de handoff e mudança é classificada crítica por storage/versão."
+    },
+    {
+      "kind": "human",
+      "check": "No Android físico, importar HTML/UTF16/PDF e abrir sem perda; validar cópia íntegra, seleção de destino e atualização beta.35",
+      "result": "pending",
+      "critical": true,
+      "object": "https://github.com/AbnerCruz/Ecosystem/pull/825",
+      "evidence": "Sem evidência de teste físico do APK beta.35; os builds de prévia não equivalem a release autorizada."
+    }
+  ],
+  "known_issues": [
+    "Existência da PR #827 concorrente, mantida em draft para evitar dupla integração; decisão de código definitivo exige harmonização de branches.",
+    "Armazenamento Android/desktop, formato privado de conversa e versão beta.35 exigem classificação crítica e aprovação do proprietário pela via governada, sem merge manual.",
+    "Limitações de restauração de anexos textuais históricos não byte-exatos precisam continuar explicitadas no aplicativo."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Concluir Core/Client CI e corrigir qualquer regressão de #825 no próprio PR.",
+    "Solicitar a autorização crítica formal do proprietário conforme integrador e conferir PR após reconciliar mudanças.",
+    "Integrar exclusivamente pelo integrador; publicar beta.35 só com nova tag, assinatura e SHA256 oficial.",
+    "Executar validação Android real e documentar como etapa separada."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    ".github/workflows/urbe-csharp-mobile-release.yml"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Preservação do vault é gate, PR anuncia verificação byte a byte de arquivos importados."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Trilha explícita Issue #826, PR #825, #827 em draft, commits de testes-first e handoff."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Escalada declarada como crítica por versão, storage e mudança de formato; exigir autorização do proprietário."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Validação de assinatura/nomes/tamanho e arquivos de terceiros como dados não confiáveis é o requisito auditado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI automatizado e Android físico tratados como validações distintas."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying, ainda não integrado/release publicada."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Reuso do vault nativo e suas verificações, sem migração web."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Diff da PR #825 altera AndroidVaultStorage.cs, FolderVaultStorage.cs, IUrbeVaultStorage.cs, VaultReader.cs e Urbe.Android.csproj: fronteira de dados, formato e release Android; requer autorização."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "urbe-chat-attachment-extraction",
+      "status": "product-specific",
+      "rationale": "Específica da conversa do assistente C# e do vault local do Urbe, sem segundo consumidor confirmado."
+    }
+  ]
+}

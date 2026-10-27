@@ -237,6 +237,27 @@ public sealed partial class MainView : IAssistantApp
         RefreshNotes();
     }
 
+    async Task IAssistantApp.CreateImportedFileAsync(string path, byte[] bytes)
+    {
+        RequireWritable();
+        ArgumentNullException.ThrowIfNull(bytes);
+        IUrbeVaultStorage.EnsureWritableImportedPath(path);
+        if (((IAssistantApp)this).FileExists(path))
+            throw new InvalidOperationException("Já existe " + path + ". A extração nunca substitui arquivos.");
+        await EnsureFolderAsync(DirOf(path));
+        await _vault!.CreateImportedFileAsync(path, bytes);
+        // Only after the verified file exists does it appear in the Explorer or document index.
+        if (IUrbeVaultStorage.WritableExtensions.Contains(System.IO.Path.GetExtension(path)))
+        {
+            if (!AssistantTextAttachments.TryDecode(path, bytes, out var content, out var reason))
+                throw new IOException("Arquivo salvo, mas o índice não pode ler seu texto: " + reason);
+            _library!.AddNote(path, content, Now, "user.attachment");
+            _contents[path] = content;
+        }
+        else _attachments.Add(path);
+        AfterAssistantWrite(path);
+    }
+
     async Task<byte[]?> IAssistantApp.ReadGeneratedImageAsync(string path)
     {
         if (!_attachments.Contains(path) || _vault is not { IsConnected: true } vault) return null;

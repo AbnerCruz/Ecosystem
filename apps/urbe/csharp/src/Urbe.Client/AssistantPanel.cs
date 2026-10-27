@@ -49,6 +49,8 @@ public interface IAssistantApp
     void EndSuggestion() { }
     /// <summary>UC-63: a new file that is not text (an image the Assistente made), written and read back in the vault.</summary>
     Task CreateBinaryFileAsync(string path, byte[] bytes) => throw new NotSupportedException("Este app não grava imagens.");
+    /// <summary>Extract a file from a private chat into the current writable vault, preserving its bytes.</summary>
+    Task CreateImportedFileAsync(string path, byte[] bytes) => throw new NotSupportedException("Este app não extrai arquivos.");
     /// <summary>True when the vault has a file at <paramref name="path"/>, note or not.</summary>
     bool FileExists(string path) => false;
     /// <summary>Small, read-only preview of a generated image stored in the current vault.</summary>
@@ -282,7 +284,7 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, pages/ai-tools.js, customize/ai-tools.js, then the vault plugins).</summary>
-    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan"), AssistantAdaptivePlanTools.Update, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, .. AssistantMemoryTools.All, .. AssistantGraphTools.All, AgentNames.Tool, AssistantImageTools.Tool, AssistantQuestionTools.Ask, AssistantFormTools.Request, AssistantDelegateTools.Consult];
+    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan"), AssistantAdaptivePlanTools.Update, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, .. AssistantMemoryTools.All, .. AssistantGraphTools.All, AgentNames.Tool, AssistantImageTools.Tool, AssistantQuestionTools.Ask, AssistantFormTools.Request, AssistantDelegateTools.Consult, AssistantChatFileTools.List, AssistantChatFileTools.Extract];
 
     /// <summary>UC-63: the image tool is always visible to the chat agent, independently of its provider.</summary>
     public static IReadOnlyList<AiTool> ToolsFor(AiProviderConfig provider) =>
@@ -293,7 +295,7 @@ public sealed partial class AssistantPanel : Border
     /// every request and the device reads the request itself, so the others (links, tags, plans, memory, folders…) cost more
     /// waiting than they give; the bigger models in the cloud keep all of them.
     /// </summary>
-    private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note", "recall_memory", "consult_agent", "request_form"];
+    private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note", "recall_memory", "consult_agent", "request_form", "list_chat_attachments", "extract_chat_attachment"];
 
     private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name)
         ?? AssistantWebTools.All.FirstOrDefault(t => t.Name == name)
@@ -634,7 +636,7 @@ public sealed partial class AssistantPanel : Border
                         _app.Notify(name + ": " + error);
                         continue;
                     }
-                    var context = AssistantTextAttachments.ToChatBlock(name, text);
+                    var context = AssistantTextAttachments.ToChatBlock(name, text, bytes);
                     int used = _pendingAttachments.Where(b => b.Type == "text")
                         .Sum(b => System.Text.Encoding.UTF8.GetByteCount(b.Text ?? ""));
                     int next = System.Text.Encoding.UTF8.GetByteCount(context.Text ?? "");
@@ -1142,8 +1144,12 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The tools' host: reads from the vault's documents, writes through the app, memory and links through the panel.</summary>
-    private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge, string agentId, string conversationId, AssistantWebSession? web, CancellationToken cancel) : IAssistantHost, IAssistantNames, IAssistantImages, IAssistantDelegation, IAssistantForms
+    private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge, string agentId, string conversationId, AssistantWebSession? web, CancellationToken cancel) : IAssistantHost, IAssistantNames, IAssistantImages, IAssistantDelegation, IAssistantForms, IAssistantChatFiles
     {
+        public IAssistantChatFiles? ChatFiles => this;
+        public IReadOnlyList<ChatExtractableAttachment> Available => panel.ChatFilesFor(conversationId);
+        public Task<string> ExtractAsync(string attachmentId, string? path) =>
+            panel.ExtractChatFileAsync(conversationId, attachmentId, path);
         public IAssistantForms? Forms => this;
         public FormSession Request(FormDefinition definition) => panel.RequestForm(conversationId, agentId, definition);
         public IAssistantImages? Images => this;
