@@ -32,7 +32,7 @@ public sealed partial class AssistantPanel
                 .Concat(m.Content.Where(b => b.Hidden && b.Type == "text" && b.Text?.StartsWith("[Arquivo anexado pelo usuário:", StringComparison.Ordinal) == true)
                     .Select(b => b.Text!.Split('\n')[0].Trim('[', ']'))).ToList();
             if (files.Count > 0) stack.Children.Add(Wrap("Anexos: " + string.Join(", ", files), 11, UrbeTheme.Text2));
-            var extractables = AssistantChatAttachments.List(new AiConversation { Messages = [m] });
+            var extractables = AssistantChatAttachments.Describe(m);
             if (extractables.Count > 0)
             {
                 var fileActions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right };
