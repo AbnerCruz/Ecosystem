@@ -51,10 +51,10 @@
     {
       "kind": "human",
       "check": "Instalar beta.34 em Android físico e anexar HTML, TXT, Markdown, PDF e imagem no chat IA",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "apps/urbe/csharp/PATCHNOTES-beta.34.md",
-      "evidence": "Não executado neste ambiente; CI é apenas uma das evidências."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-27 (Issue https://github.com/AbnerCruz/Ecosystem/issues/828); registro em docs/governance/responses/VAL-HO-20261027-urbe-beta34-release-822-95485e64a6f6.md."
     }
   ],
   "known_issues": [
