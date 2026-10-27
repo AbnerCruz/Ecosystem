@@ -394,7 +394,7 @@ public static class AssistantMemoryEngine
         AiConfig cfg, string vault, string agentId, string? userMessage, string source)
     {
         if (string.IsNullOrWhiteSpace(userMessage) || userMessage.Length > 4000 ||
-            string.IsNullOrWhiteSpace(agentId) || userMessage.Contains("\`\`\`", StringComparison.Ordinal) ||
+            string.IsNullOrWhiteSpace(agentId) || userMessage.Contains("```", StringComparison.Ordinal) ||
             ExplicitRememberRequest(userMessage) is not null)
             return [];
 
@@ -403,7 +403,7 @@ public static class AssistantMemoryEngine
         foreach (var raw in sentences.Take(12))
         {
             var sentence = raw.Trim();
-            if (sentence.Length is < 12 or > 260 || sentence.EndsWith('?', StringComparison.Ordinal) ||
+            if (sentence.Length is < 12 or > 260 || sentence.EndsWith('?') ||
                 PotentialSecret.IsMatch(sentence) || sentence.StartsWith('>') ||
                 sentence.StartsWith('-') || sentence.StartsWith('"')) continue;
 
