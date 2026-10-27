@@ -1,0 +1,132 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261027-urbe-chat-attachment-extraction-826",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-27T10:54:10Z",
+  "agent": {
+    "id": "chatgpt-urbe-chat-attachment-extraction-826",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-63",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-attachment-extraction-tests-first-20261027",
+  "base_commit": "d328511518aee38f4b00dd5b8f1a811c411d3b37",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/827",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAttachmentExtraction.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Extraction.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.AssistantAttachments.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantAttachmentExtractionTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ChatAttachmentExtractionUiTests.cs",
+    "apps/urbe/docs/csharp/ASSISTANT-ATTACHMENT-EXTRACTION-20261027.md",
+    "docs/governance/handoffs/HO-20261027-urbe-chat-attachment-extraction-826.json"
+  ],
+  "work_completed": [
+    "Investigada raiz do problema no painel do assistente: anexo é AiChatBlock, sem cópia no vault.",
+    "Pesquisados Obsidian (arquivos reais), Android SAF, OWASP e feedback de editores Markdown; resultados e links documentados.",
+    "TESTES ANTES DO CÓDIGO: primeiros commits 6bc07cee e 9df470e4; implementação depois no be321bcd.",
+    "Implementado extrator de blocos da conversa, validação MIME/assinatura/limite/nome e colisões; escrita via writer verificado do vault.",
+    "Exposta ação Extrair em cada anexo admissível da conversa; agente usa extract_attachment com Access=write sob políticas existentes.",
+    "Preservado oracle legado do AssistantTools.All, registrando extração apenas no painel nativo.",
+    "Adicionados testes de contrato, integridade, falha de I/O e caminho físico do vault."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "C# Core.Tests e Client.Tests, incluindo AssistantToolsOracleTests e extração",
+      "result": "pending",
+      "object": "apps/urbe/csharp/tests",
+      "evidence": "Testes commitados antes do código. Ambiente local sem dotnet; CI da PR é o gate executável."
+    },
+    {
+      "kind": "automated",
+      "check": "urbe-checks Android/Windows, consistency e integração governada",
+      "result": "pending",
+      "object": ".github/workflows/urbe-checks.yml",
+      "evidence": "Aguardando execução dos checks sobre a PR e estado combinado."
+    },
+    {
+      "kind": "human",
+      "check": "Android físico: enviar HTML/PDF/imagem e extrair, abrir e reiniciar",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/docs/csharp/ASSISTANT-ATTACHMENT-EXTRACTION-20261027.md",
+      "evidence": "Não executado fisicamente; respeitar NN-017."
+    }
+  ],
+  "known_issues": [
+    "Anexos textuais antigos são preservados em conteúdo mas exportados como UTF-8; bytes originais do SAF não são persistidos na conversa.",
+    "Extensões textuais fora do catálogo de escrita do vault (.svg, .tsx, .csproj) continuam sendo apenas contexto; não relaxar writer sem auditoria.",
+    "Nova release exige versão inédita, CI verde e integração; a atual beta.34 não contém esta funcionalidade."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Abrir PR #826, observar checks de C# e corrigir falhas.",
+    "Aguardar integrador automático; nunca fazer merge manual.",
+    "Após integração e gates, preparar beta.35 com version code novo via workflow oficial; validar Android físico."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Arquivo real gravado somente por writer nativo do vault; sem cópia paralela escondida."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "C# nativo nas camadas Core e Client, sem novo host/web."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #826, commits TDD, doc e handoff rastreáveis."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Write usa políticas de agente existentes; nenhuma mudança em segurança/permissões persistidas."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Arquivo externo tratado como dados não confiáveis, MIME e assinatura validados e caminhos não arbitrários."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Verificações automatizadas e Android físico separados."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Handoff verifying com CI pendente; não declarar release concluída."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Reutilização de classes e writer do produto, sem segundo runtime."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Extrator local ao Urbe com avaliação de reutilização, sem promover para plataforma."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-chat-attachment-extraction",
+      "status": "product-specific",
+      "rationale": "Extração é transporte da conversa privada do Assistente para o vault nativo, sem segundo consumidor confirmado."
+    }
+  ]
+}
