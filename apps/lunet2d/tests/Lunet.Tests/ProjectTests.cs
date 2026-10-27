@@ -18,8 +18,22 @@ public class ProjectTests : IDisposable
         var project = new ProjectStore(_root).Create("Space_Shooter");
         Assert.True(File.Exists(Path.Combine(_root, "Space_Shooter", "lunet.json")));
         Assert.Contains("class SpaceShooter : Game", project.ReadText("Game.cs"));
-        Assert.Equal("com.lunet.games.spaceshooter", project.Manifest.PackageId);
+        Assert.StartsWith("com.lunet.games.spaceshooter.g", project.Manifest.PackageId);
+        Assert.True(OfflineGameApkBuilder.ValidPackage(project.Manifest.PackageId));
         Assert.True(Guid.TryParse(project.Manifest.GameId, out _));
+    }
+
+    [Fact]
+    public void Create_TwoDistinctNamesWithSameSanitizedSlugHaveDifferentAndroidPackageIds()
+    {
+        var store = new ProjectStore(_root);
+        var first = store.Create("Bosque-Lumi");
+        var second = store.Create("BosqueLumi");
+        Assert.NotEqual(first.Manifest.GameId, second.Manifest.GameId);
+        Assert.NotEqual(first.Manifest.PackageId, second.Manifest.PackageId);
+        Assert.True(OfflineGameApkBuilder.ValidPackage(first.Manifest.PackageId));
+        Assert.True(OfflineGameApkBuilder.ValidPackage(second.Manifest.PackageId));
+        Assert.Equal(first.Manifest.PackageId, store.Open("Bosque-Lumi").Manifest.PackageId);
     }
 
     [Theory]
