@@ -59,7 +59,7 @@ public static class AssistantMemoryTools
         },
         new()
         {
-            Name = "learn_memory", Access = "memory",
+            Name = "learn_memory", Access = "memory-write",
             Description = "Registra um fato, preferência, decisão, objetivo ou PROCEDIMENTO aprendido. Registre procedimentos apenas com evidência de que funcionaram. Evite segredos, conjecturas e conteúdo extenso de notas. Escopo agent é privado e padrão; vault é compartilhado entre agentes do mesmo vault e só deve ser escolhido a pedido do usuário.",
             Parameters = Schema("""{"type":"object","properties":{"fact":{"type":"string"},"kind":{"type":"string","enum":["fact","preference","decision","goal","procedure","observation"]},"scope":{"type":"string","enum":["vault","agent"]},"source_note":{"type":"string"}},"required":["fact","kind"],"additionalProperties":false}"""),
             Label = i => "Aprender " + Get(i, "kind", "fact") + ": " + Get(i, "fact")[..Math.Min(50, Get(i, "fact").Length)],
