@@ -15,7 +15,8 @@ O envio de arquivos textuais já usa blocos `AiChatBlock` de texto oculto como c
 - **384 KiB por arquivo textual, 512 KiB somados por mensagem**, com teto de **quatro anexos**. A leitura da URI Android é por `OpenReadAsync`, limitada e compatível com streams sem `Seek`; o arquivo jamais é copiado ao vault. Sem truncamento silencioso: se passar do limite, informar tamanho e permitir dividir o conteúdo.
 - Preservados limites/mágicas existentes: imagens (4 MiB), PDFs (8 MiB), ambos com verificação de assinatura. Suas estruturas e compatibilidade com provedores continuam como antes.
 - Falha em um arquivo não impede que os outros selecionados sejam anexados. Nome de arquivo é limitado e sanitizado antes de integrar contexto do modelo; conteúdo é declarado não confiável.
-- Apenas o pedido atual envia o texto integral do anexo. Pedidos futuros recebem uma referência compacta, preservando a mensagem original no histórico, para não queimar contexto/tokens desnecessariamente.
+- O texto anexado permanece acessível nas mensagens seguintes da mesma conversa para revisões do documento; o orçamento existente do motor de contexto decide quando compactar mensagens antigas. Não há perda automática do anexo após um único turno.
+- Corrigido também um problema no preparo da requisição: anexos multimodais de imagem/PDF eram confundidos com resultados de ferramenta e podiam desaparecer antes da serialização para o provedor.
 
 ## Verificação
 
@@ -24,7 +25,7 @@ Casos planejados na suíte automatizada:
 1. HTML de 150 KiB (antes rejeitado), Markdown, SVG, TSX, JSONL, CSProj e extensões desconhecidas.
 2. UTF-8 BOM e UTF-16 BOM, arquivo vazio, cabeçalhos de PDF/ZIP falsificados e dados binários.
 3. Leitura em blocos com stream Android não posicionável e corte exato por tamanho.
-4. Serialização de contexto e redução de anexos textuais em mensagens passadas.
+4. Serialização de contexto, continuidade de texto nos turnos seguintes e preservação de imagens/PDF até o provedor.
 5. Sem regressões de imagens/PDF, estados da conversa e demais fluxos de IA.
 
 **Gates:** `Urbe.Core.Tests`, `Urbe.Client.Tests`, `urbe-checks` e `consistency` em CI, mais validação física Android com `ACTION_OPEN_DOCUMENT`/SAF, conteúdo fora do vault, permissões, seletor múltiplo, falha parcial e conversa real. CI headless não comprova esse último gate (NN-017). Não declarar release/dispositivo aprovado sem evidência.
