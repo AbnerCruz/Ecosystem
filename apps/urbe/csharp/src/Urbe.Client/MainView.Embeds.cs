@@ -226,7 +226,7 @@ public sealed partial class MainView
             {
                 var name = Path.GetFileName(path);
                 Control? viewer = null;
-                try { viewer = await ContentViewers.CreateAsync(new ContentRequest(_vault, path, name, kind, read.Bytes)); }
+                try { viewer = await ContentViewers.CreateAsync(new ContentRequest(_vault, path, name, kind, read.Bytes) { AtlasOpenNote = TryOpenAtlasNoteAsync }); }
                 catch (Exception ex) when (ex is IOException or InvalidOperationException or NotSupportedException or UnauthorizedAccessException) { viewer = null; }
                 if (viewer is not null)
                 {
