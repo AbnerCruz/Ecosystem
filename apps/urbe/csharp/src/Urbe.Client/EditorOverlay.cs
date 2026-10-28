@@ -403,7 +403,7 @@ public sealed class EditorOverlay : Grid
     /// <summary>Opens a note fresh (from Notas, a search…): the trail of followed links starts over.</summary>
     public void Open(CityNote note)
     {
-        if (IsVisible && _note is not null && note.Path != _note.Path && ConfirmEmbeddedAtlasExitAsync is { } confirm)
+        if (IsVisible && _note is not null && ConfirmEmbeddedAtlasExitAsync is { } confirm)
         {
             var canLeave = confirm();
             if (canLeave.IsCompletedSuccessfully)
@@ -446,7 +446,7 @@ public sealed class EditorOverlay : Grid
     /// <summary>Follows a link or a backlink to <paramref name="target"/>: saves the open note, remembers it and opens the target.</summary>
     public async Task NavigateAsync(CityNote target)
     {
-        if (target.Path != _note?.Path && !await CanLeaveAtlasAsync()) return;
+        if (!await CanLeaveAtlasAsync()) return;
         var saving = LeaveCurrentAsync();
         Go(target);
         await saving;
@@ -1663,6 +1663,7 @@ public sealed class EditorOverlay : Grid
         // The 1.8.4 only said the note did not exist (owner, DEC-0045): offer to create it, next to this one.
         if (CreateLinked is null || Dialogs is null || !LegacyEditorTools.IsCreatableLinkName(name)) { Notify("A nota vinculada não existe."); return; }
         if (!await Dialogs.ConfirmAsync("Criar nota", $"A nota “{name}” ainda não existe. Criar agora?", "Criar nota")) return;
+        if (!await CanLeaveAtlasAsync()) return;
         var saving = LeaveCurrentAsync();
         if (await CreateLinked(name) is { } made) Go(made);
         await saving;
