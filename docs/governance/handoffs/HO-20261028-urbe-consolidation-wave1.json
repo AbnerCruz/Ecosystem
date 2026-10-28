@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261028-urbe-consolidation-wave1",
   "category": "HANDOFF",
-  "timestamp": "2026-10-28T18:57:21Z",
+  "timestamp": "2026-10-28T19:00:25Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -46,9 +46,11 @@
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantExecutionEfficiency.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantGraphTools.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantGuideTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantQuestionTools.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantQuickNoteTools.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/QuestionProgress.cs",
     "apps/urbe/csharp/src/Urbe.Core/BlockTimes.cs",
     "apps/urbe/csharp/src/Urbe.Core/EmbedFragments.cs",
     "apps/urbe/csharp/src/Urbe.Core/Forms.cs",
@@ -72,6 +74,7 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/FormRendererInputUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/GraphEditUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/PageImagesUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/QuestionProgressUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/QuickVoiceBacklogUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/VoiceBacklogBusyTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AgentLanguageTests.cs",
@@ -88,6 +91,7 @@
     "apps/urbe/csharp/tests/Urbe.Core.Tests/EmbedFragmentsTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/FormsTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/PageImagesTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/QuestionProgressTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/QuickNotesTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/VoiceCapturePolicyTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/VoiceNoteQueueTests.cs",
@@ -119,7 +123,8 @@
     "CST-089: agentes consultam as próprias conversas anteriores (resumos e detalhe), separadas por agente.",
     "Correção: o host de cada execução não repassava os grafos (list_graphs/read_graph inoperantes no app); teste de repasse de todas as capacidades.",
     "CST-068: edit_graph — agentes criam e alteram grafos com aprovação em texto, sem sobrescrever grafo aberto com alterações.",
-    "CST-025: horário da última edição de cada bloco, derivado das Versões anteriores (sem nova fonte de dados), opcional em Personalização → Editor."
+    "CST-025: horário da última edição de cada bloco, derivado das Versões anteriores (sem nova fonte de dados), opcional em Personalização → Editor.",
+    "CST-115: cartão de perguntas com compreensão declarada, dúvidas em aberto e mudança desde a pergunta anterior."
   ],
   "verification": [
     {

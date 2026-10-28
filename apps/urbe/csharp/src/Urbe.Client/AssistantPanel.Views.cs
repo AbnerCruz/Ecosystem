@@ -262,8 +262,10 @@ public sealed partial class AssistantPanel
         var info = call.Input as JsonObject ?? new JsonObject();
         var question = (string?)info["question"] ?? "O que você prefere?";
         var reason = (string?)info["reason"];
-        int total = Math.Max(1, (int)LegacyCustomize.JsToNumber(info["total"]));
-        int done = Math.Clamp((int)LegacyCustomize.JsToNumber(info["resolved"]), 0, total);
+        // CST-115: the counts, the understanding the agent declares, what is still open and what changed
+        var previous = _conv.Messages.SelectMany(m => m.Content).TakeWhile(x => x.Id != call.Id)
+            .LastOrDefault(x => x.Type == "tool_use" && x.Name == "ask_user")?.Input as JsonObject;
+        var progress = QuestionProgress.From(info, previous);
         var input = new TextBox { Text = _questionDrafts.GetValueOrDefault(call.Id, ""), AcceptsReturn = true, MinHeight = 64, MaxHeight = 180,
             TextWrapping = TextWrapping.Wrap, PlaceholderText = "Responda aqui; uma resposta pode resolver várias dúvidas." };
         Ui.TextActions.Attach(input);
@@ -271,8 +273,11 @@ public sealed partial class AssistantPanel
         var panel = new StackPanel { Spacing = 8 };
         panel.Children.Add(Wrap(question, 14, UrbeTheme.Text, FontWeight.SemiBold));
         if (!string.IsNullOrWhiteSpace(reason)) panel.Children.Add(Hint(reason));
-        panel.Children.Add(Label(done + " de " + total + " dúvidas esclarecidas (estimativa)", 12, UrbeTheme.Text3));
-        panel.Children.Add(new ProgressBar { Minimum = 0, Maximum = total, Value = done, Height = 5 });
+        panel.Children.Add(Label(progress.Summary + " (estimativa)", 12, UrbeTheme.Text3));
+        panel.Children.Add(new ProgressBar { Minimum = 0, Maximum = progress.Total, Value = progress.Resolved, Height = 5 });
+        if (progress.Change is { } change) panel.Children.Add(Wrap(change, 12, UrbeTheme.Text2));
+        if (progress.Pending.Count > 0)
+            panel.Children.Add(Wrap("Ainda em aberto: " + string.Join(" · ", progress.Pending), 12, UrbeTheme.Text3));
         panel.Children.Add(input);
         panel.Children.Add(TextButton("Responder e continuar", () =>
         {
