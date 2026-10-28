@@ -342,7 +342,9 @@ public sealed partial class CustomizePanel
         _body.Children.Add(Block("Editor de notas",
             Row("Largura do texto", "Em telas grandes", Seg("editor.largura", S(e, "largura", "media"), [("estreita", "Estreita"), ("media", "Média"), ("larga", "Larga"), ("total", "Toda")])),
             Row("Abrir notas no modo", "Visual mostra formatado; Texto mostra o Markdown", Seg("editor.modoInicial", S(e, "modoInicial", "visual"), [("visual", "Visual"), ("texto", "Texto")])),
-            Toggle("editor.ortografia", Bo(e, "ortografia", true), "Corretor ortográfico", "Sublinha palavras com erro enquanto você escreve")));
+            Toggle("editor.ortografia", Bo(e, "ortografia", true), "Corretor ortográfico", "Sublinha palavras com erro enquanto você escreve"),
+            Toggle(Customization.BlockTimes, "Horário de cada bloco", "Mostra, ao lado de cada bloco, quando ele mudou pela última vez (pelas Versões anteriores)",
+                v => { Customization.BlockTimes = v; return Task.CompletedTask; })));
     }
 
     // ---------------------------------------------------------------- toast

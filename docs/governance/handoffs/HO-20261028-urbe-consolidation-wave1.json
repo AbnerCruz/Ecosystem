@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261028-urbe-consolidation-wave1",
   "category": "HANDOFF",
-  "timestamp": "2026-10-28T18:44:33Z",
+  "timestamp": "2026-10-28T18:57:21Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -22,6 +22,8 @@
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
     "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizationExtras.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizePanel.Sections.cs",
     "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
     "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.AndroidBack.cs",
@@ -29,12 +31,14 @@
     "apps/urbe/csharp/src/Urbe.Client/MainView.Embeds.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.Graphs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.History.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.Pages.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.Studio.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
     "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
     "apps/urbe/csharp/src/Urbe.Client/QuickVoiceNotes.cs",
     "apps/urbe/csharp/src/Urbe.Client/Ui/FormRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
     "apps/urbe/csharp/src/Urbe.Client/WorkspaceView.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AgentLanguage.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
@@ -45,6 +49,7 @@
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantQuickNoteTools.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/BlockTimes.cs",
     "apps/urbe/csharp/src/Urbe.Core/EmbedFragments.cs",
     "apps/urbe/csharp/src/Urbe.Core/Forms.cs",
     "apps/urbe/csharp/src/Urbe.Core/GraphEdits.cs",
@@ -57,6 +62,7 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AgentCreationBlocksUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AndroidBackAndPatchnotesUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AppDocsGuideTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/BlockTimesUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ChatRefreshUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ClockInEditorUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ConversationHistoryUiTests.cs",
@@ -78,6 +84,7 @@
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantReviewAnswerTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantRunHostTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantStaleRewriteTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/BlockTimesTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/EmbedFragmentsTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/FormsTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/PageImagesTests.cs",
@@ -111,14 +118,15 @@
     "CST-056/055: gravação rápida sem pressa (toque para terminar, 45 s de silêncio, 15 min) e consecutiva (próxima nota enquanto a anterior salva).",
     "CST-089: agentes consultam as próprias conversas anteriores (resumos e detalhe), separadas por agente.",
     "Correção: o host de cada execução não repassava os grafos (list_graphs/read_graph inoperantes no app); teste de repasse de todas as capacidades.",
-    "CST-068: edit_graph — agentes criam e alteram grafos com aprovação em texto, sem sobrescrever grafo aberto com alterações."
+    "CST-068: edit_graph — agentes criam e alteram grafos com aprovação em texto, sem sobrescrever grafo aberto com alterações.",
+    "CST-025: horário da última edição de cada bloco, derivado das Versões anteriores (sem nova fonte de dados), opcional em Personalização → Editor."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1369 testes, 0 falhas (local, .NET 10.0.403); Urbe.Android compila (Debug)."
+      "evidence": "1378 testes, 0 falhas (local, .NET 10.0.403); Urbe.Android compila (Debug)."
     },
     {
       "check": "Validação no Android físico dos itens desta leva",

@@ -47,6 +47,8 @@ public sealed partial class MainView : Grid
         Explorer = new NotesExplorer { State = ExplorerState };
         Editor = new EditorOverlay { IsVisible = false, Dialogs = Dialogs, Notes = () => _contents.Select(n => new CityNote(n.Key, n.Value)) };
         Editor.EmbedFor = BuildEmbed;
+        // CST-025: each block's last edit, read from the note's "Versões anteriores" (no file of its own)
+        Editor.BlockTimesFor = path => _store?.Get(path) is { } doc ? new BlockTimes.Index(_history.List(doc.Id), CreatedMs(doc), createdDayOnly: true) : null;
         // CST-040/041: links and embeds find every file of the vault, and a file link opens the viewer
         // (text files that are not notes, .html, .csv, .js…, live with the notes' texts, as the embeds find them)
         Editor.Files = () => _attachments.Where(f => !_contents.ContainsKey(f))
@@ -644,7 +646,7 @@ public sealed partial class MainView : Grid
     private void ApplyCustomization()
     {
         UrbeAppearance.Apply(this);   // Personalização: tema, texto, forma e editor
-        if (Customization.Config["editor"] is System.Text.Json.Nodes.JsonObject ed) Editor.ApplyOptions((string?)ed["largura"], (string?)ed["modoInicial"]);
+        if (Customization.Config["editor"] is System.Text.Json.Nodes.JsonObject ed) Editor.ApplyOptions((string?)ed["largura"], (string?)ed["modoInicial"], Customization.BlockTimes);
         ApplyEditorLayout();
         if (Editor.IsVisible) Editor.RefreshVisual();   // tag colours (DEC-0045, UC-43)
     }

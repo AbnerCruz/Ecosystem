@@ -89,6 +89,9 @@ public sealed class EditorOverlay : Grid
 
     /// <summary>The card of a <c>![[destino]]</c> line in the Visual mode (set by the app, which knows the vault).</summary>
     public Func<string, Control?>? EmbedFor { get => _visual.EmbedFor; set => _visual.EmbedFor = value; }
+
+    /// <summary>CST-025: the block times of a note (by path), from its history.</summary>
+    public Func<string, Urbe.Core.BlockTimes.Index?>? BlockTimesFor { get; set; }
     /// <summary>UD.prompt / UD.choose of the host.</summary>
     public UrbeDialogs? Dialogs { get; set; }
     public VisualSurface Surface => _visual;
@@ -250,6 +253,7 @@ public sealed class EditorOverlay : Grid
         };
         _visual.WikiLinkTapped += name => _ = FollowLinkAsync(name);
         _visual.PinRequested += text => { if (_note is not null) Pinned.Pin(text, _note.Path); };
+        _visual.BlockTimes = () => _note is { } open ? BlockTimesFor?.Invoke(open.Path) : null;
         _visual.ActiveToolsChanged += on => { if (Mode == EditorMode.Visual) ShowActiveTools(on); };
         _visual.EditingChanged += _ => UpdateChrome();
         _visual.WikiCandidates = Candidates;
@@ -789,8 +793,9 @@ public sealed class EditorOverlay : Grid
     public CityNote? Current => _note is null ? null : _note with { Content = Editor.Text ?? "" };
 
     /// <summary>Personalização → editor: largura (estreita 600, media 720, larga 920, total) and modoInicial.</summary>
-    public void ApplyOptions(string? width, string? initialMode)
+    public void ApplyOptions(string? width, string? initialMode, bool blockTimes = false)
     {
+        _visual.ShowBlockTimes = blockTimes;
         var max = width switch { "estreita" => 600.0, "larga" => 920.0, "total" => double.PositiveInfinity, _ => 720.0 };
         _sourceColumn.MaxWidth = max;
         _columnWidth = width ?? "media";

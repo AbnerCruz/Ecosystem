@@ -129,6 +129,7 @@ public static partial class AppDocs
         - **Visual** mostra a nota formatada; toque num trecho para editar aquele bloco.
         - **Fonte** mostra o Markdown puro.
         - O modo inicial fica em **Personalização → Editor**.
+        - **Horário de cada bloco** (Personalização → Editor) mostra, à direita de cada bloco, quando ele mudou pela última vez. Vem das **Versões anteriores**: um bloco só movido mantém o horário, um bloco dividido, juntado, colado ou desfeito ganha o da mudança, e um bloco mais antigo que as versões guardadas mostra o dia em que a nota foi criada, quando o Urbe o conhece.
 
         ## A barra
 
