@@ -149,7 +149,9 @@ public static partial class AppDocs
 
         ## Incorporar
 
-        `![[Nome]]` mostra no lugar o conteúdo, num cartão: a nota (`![[Plano]]`), uma imagem (`![[Imagens/capa.png]]`), PDF, áudio, vídeo, HTML, código ou texto, e um grafo (`![[Mapa.grafo.json]]`), que dá para navegar. Tocar no alto do cartão abre o original; tocar no corpo edita a linha. Um nome que não existe mostra “Não encontrei … no vault”.
+        `![[Nome]]` mostra no lugar o conteúdo, num cartão: a nota (`![[Plano]]`), uma imagem (`![[Imagens/capa.png]]`), PDF, áudio, vídeo, HTML, código ou texto, e um grafo (`![[Mapa.grafo.json]]`), que dá para navegar. Tocar no alto do cartão abre o original; tocar no corpo edita a linha.
+
+        Para mostrar só uma parte da nota: `![[Plano#Orçamento]]` traz a seção desse título (até o próximo título do mesmo nível; `#Título#Subtítulo` desce mais um nível), `![[Plano#^meta]]` traz o parágrafo ou o item de lista que termina com ` ^meta`, e `![[Plano#L3-L8]]` traz as linhas 3 a 8. Os marcadores ` ^meta` não aparecem nos cartões. Um nome que não existe mostra “Não encontrei … no vault”.
 
         ## Fórmulas
 

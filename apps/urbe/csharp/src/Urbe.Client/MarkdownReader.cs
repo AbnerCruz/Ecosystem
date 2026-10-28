@@ -17,7 +17,7 @@ namespace Urbe.Client;
 /// The rendered note of the 1.8.4 editor (#renderedPreview): the element tree of src/editor/markdown.js
 /// (MarkdownTree) drawn with the sizes, colours and spacing of theme.css / base.css, natively. No HTML, no WebView.
 /// </summary>
-public sealed class MarkdownReader
+public sealed partial class MarkdownReader
 {
     /// <summary>The body size (--ui-editor-size, Personalização → Fonte das notas → Tamanho).</summary>
     public bool Selectable { get; init; }
@@ -69,6 +69,13 @@ public sealed class MarkdownReader
             {
                 var t = c.Text.Trim();
                 if (t.Length == 0) continue;
+                // CST-064: the 1.8.4 renderer (kept as its goldens prove) makes no link of [[Nota#Título]]; such an
+                // embed arrives as its own text and is still a card
+                if (!bang && FragmentEmbeds().Match(t) is { Success: true } plain)
+                {
+                    found.AddRange(plain.Groups[1].Captures.Select(x => x.Value.Trim()));
+                    continue;
+                }
                 if (t != "!" || bang) return null;
                 bang = true;
             }
@@ -81,6 +88,9 @@ public sealed class MarkdownReader
         }
         return found.Count > 0 && !bang ? found : null;
     }
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"^(?:!\[\[([^\[\]\n]+#[^\[\]\n]*)\]\]\s*)+$")]
+    private static partial System.Text.RegularExpressions.Regex FragmentEmbeds();
 
     public Func<string, string?>? CitationFor { get; init; }
 
@@ -681,4 +691,5 @@ internal static class MathSvg
         paint is not null && paint != "none" && !(paint.StartsWith("rgba(", StringComparison.Ordinal) && paint.EndsWith(",0)", StringComparison.Ordinal));
 
     private static double D(XElement e, string a) => double.Parse(e.Attribute(a)?.Value ?? "0", CultureInfo.InvariantCulture);
+
 }

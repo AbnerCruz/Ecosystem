@@ -20,6 +20,8 @@ public sealed class AppDocsGuideTests
     [InlineData("&&:")]                   // request in the note
     [InlineData("[[")]                    // links
     [InlineData("![[")]                   // embeds
+    [InlineData("#^")]                    // embed of a block
+    [InlineData("#L3-L8")]                // embed of lines
     [InlineData("$$")]                    // display math
     [InlineData(".grafo.json")]           // graphs
     [InlineData("- [ ] 08:11 —")]         // quick notes are checkboxes
