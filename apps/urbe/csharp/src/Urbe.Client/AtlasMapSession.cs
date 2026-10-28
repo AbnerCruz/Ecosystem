@@ -57,7 +57,9 @@ public sealed class AtlasMapSession
     {
         mapId = "";
         revision = 0;
-        if (string.IsNullOrEmpty(html) || Encoding.UTF8.GetByteCount(html) > MaximumBytes) return false;
+        if (string.IsNullOrEmpty(html) || Encoding.UTF8.GetByteCount(html) > MaximumBytes ||
+            !html.Contains("<head>", StringComparison.OrdinalIgnoreCase) ||
+            !html.Contains("</head>", StringComparison.OrdinalIgnoreCase)) return false;
         try
         {
             var match = DataScript.Match(html);
