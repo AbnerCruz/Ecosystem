@@ -40,10 +40,10 @@
     {
       "kind": "human",
       "check": "Android físico: memória de preferências, isolamentos e permissão de gravação",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "apps/urbe/docs/csharp/ASSISTANT-MEMORY-CONTINUITY-20261027.md",
-      "evidence": "Sem dispositivo físico no executor."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-28 (Issue https://github.com/AbnerCruz/Ecosystem/issues/836); registro em docs/governance/responses/VAL-HO-20261027-urbe-uc87-memory-reconciliation-829-32e889cdfba6.md."
     }
   ],
   "known_issues": [
