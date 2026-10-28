@@ -139,7 +139,7 @@ internal static class AndroidContentViewers
             // Never trust a CSP sentinel supplied inside editable HTML. Remove only the prior host meta
             // and insert a fresh enforced policy on every open; forged marker strings cannot skip it.
             html = System.Text.RegularExpressions.Regex.Replace(html,
-                """<meta\s+data-urbe-atlas-csp="v1"[^>]*>""", "";
+                """<meta\s+data-urbe-atlas-csp="v1"[^>]*>""", "",
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant,
                 TimeSpan.FromSeconds(1));
             html = html.Replace("<head>", "<head>" + csp, StringComparison.OrdinalIgnoreCase);
