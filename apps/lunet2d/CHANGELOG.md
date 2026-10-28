@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-451 / Issue #842 (em revisão): três projetos Lunet de referência versionados (portrait, landscape e full-stack com Sprite Studio fonte, tilemap/collision, áudio WAV, física, UI e save). Testes xUnit anteriores aos fixtures compilam/executam os jogos e validam catálogo, formatos e ZIP. Sem alteração no motor/assinatura; CI, APK e DEVICE pendentes.
+
 - LUNET-450 / Issue #834 (em verificação): teste E2E de projeto criado no Lunet, código e assets editados, Preview headless, ZIP e empacotamento offline do mesmo jogo; workflow preparado para instalar, abrir e capturar logs/tela do jogo no Android 13. Não altera o empacotador de produção, as chaves do usuário nem substitui testes físicos da IDE. Conferir CI e roteiro DEVICE antes de declarar conclusão.
 
 - Documentação / LUNET-449: inventário auditável de 27/10/2026 confronta código na main, testes, PRs, handoffs, aprovações DEVICE e releases; reconcilia o estado do painel Assets (#795/#800), Audio Studio (#801/#806) e geração local de APK (#804/#814/#817/#824) sem alterar executáveis ou concluir os gates F4/F5/F9.

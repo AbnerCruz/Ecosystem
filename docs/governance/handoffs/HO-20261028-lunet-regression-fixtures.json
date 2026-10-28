@@ -1,0 +1,101 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261028-lunet-regression-fixtures",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-28T03:46:27.852Z",
+  "agent": {
+    "id": "chatgpt-lunet-regression-fixtures",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-451",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "test/lunet-regression-fixtures-20261028",
+  "base_commit": "4a260498c0608d062e44824cc04c355ca16a1e9f",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/843",
+  "files_changed": [
+    "apps/lunet2d/tests/Lunet.Tests/RegressionProjectTests.cs",
+    "apps/lunet2d/samples/regression/",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261028-lunet-regression-fixtures.json"
+  ],
+  "work_completed": [
+    "Created three stable, importable game projects: portrait, landscape and full-stack.",
+    "Committed xUnit tests first, then real fixture projects. Tests cover Roslyn, GameHost, assets, save and ZIP.",
+    "Documented physical-device acceptance separate from automated checks."
+  ],
+  "verification": [
+    {
+      "check": "Review of source contracts and committed GitHub files",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Read ProjectStore, ProjectManifest, GameHost, GameCompiler, SpriteDocument, TileMap, WaveAudioDocument, PhysicsWorld, SoundEffect; compared source layout to samples."
+    },
+    {
+      "check": "Lunet.Tests and Ecosystem CI",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Local .NET SDK unavailable; obtain exact workflow results after PR creation."
+    },
+    {
+      "check": "Android DEVICE, native touch, audio and generated APK orientation",
+      "kind": "human",
+      "result": "pending",
+      "evidence": "See apps/lunet2d/samples/regression/README.md; no physical-device run.",
+      "object": "apps/lunet2d/samples/regression/README.md",
+      "critical": true
+    }
+  ],
+  "known_issues": [
+    "No .NET SDK in this runtime: no local compilation was performed.",
+    "Headless recording cannot substitute for physical GPU/touch/audio/APK tests.",
+    "Regression examples do not add a new public framework API."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Check PR CI; repair compilation/asset/ZIP failures if any.",
+    "Integrate through authorized policy, confirm new Lunet release.",
+    "Run physical Android acceptance steps before marking source roadmap item complete."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/adr/0007-framework-ide-studio-code-first.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Ecosystem apps/lunet2d remains canonical; fixtures are test data."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue, branch, commits, handoff and AgentsChat recorded."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI and DEVICE explicitly pending; no unsupported done claim."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Keep checkbox open until verifiable integration and acceptance."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "regression-fixtures",
+      "status": "product-specific",
+      "rationale": "Games exercise existing Lunet contracts; no extraction or parallel runtime."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
