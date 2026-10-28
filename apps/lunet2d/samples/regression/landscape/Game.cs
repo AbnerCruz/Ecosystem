@@ -24,7 +24,7 @@ public sealed class RegressionLandscape : Game
     protected override void Update(GameTime time)
     {
         if (Input.TryGetPointer(out var pointer))
-            position = Vector2.Lerp(position, pointer, MathF.Min(1f, 8f * time.DeltaSeconds));
+            position = Vector2.Lerp(position, pointer, System.MathF.Min(1f, 8f * time.DeltaSeconds));
     }
 
     protected override void Draw(GameTime time)
