@@ -128,6 +128,7 @@ public sealed partial class MainView : Grid
         _stage.Children.Add(Editor);
         WireWorkspace();
         FilePreview.Storage = _vault;
+        FilePreview.AtlasOpenNote = TryOpenAtlasNoteAsync;
         FilePreview.ActionsRequested += path => _ = ShowAttachmentActionsAsync(path);
         FilePreview.PageActionsRequested += path => _ = ShowPageMenuAsync(path);
         _stage.Children.Add(FilePreview);
@@ -172,6 +173,30 @@ public sealed partial class MainView : Grid
 
     /// <summary>quick-open.js / command-palette.js / keymap.js: Buscar notas, Comandos and their shortcuts.</summary>
     public SearchFeature Search { get; }
+
+    /// <summary>A map may navigate only to an existing exact note in this selected vault, never create one.</summary>
+    private Task<bool> TryOpenAtlasNoteAsync(string path)
+    {
+        var result = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+        {
+            try
+            {
+                if (!AtlasMapSession.TryNotePath(path, out var relative) ||
+                    !_contents.TryGetValue(relative, out var content) || _vault is not { IsConnected: true })
+                {
+                    result.TrySetResult(false);
+                    return;
+                }
+                if (FilePreview.IsVisible) FilePreview.Close();
+                CloseNotesOverEditor();
+                await Editor.NavigateAsync(new CityNote(relative, content));
+                result.TrySetResult(Editor.Current?.Path == relative);
+            }
+            catch (Exception) { result.TrySetResult(false); }
+        });
+        return result.Task;
+    }
 
     /// <summary>document.open for a note of the vault: the editor over the Explorer.</summary>
     public void OpenNoteByPath(string path)
