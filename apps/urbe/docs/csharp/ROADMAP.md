@@ -444,6 +444,8 @@ Issue [#793](https://github.com/AbnerCruz/Ecosystem/issues/793), ADR-0043 (propo
 
 > **Estado: conceito e plano propostos. Nenhuma funcionalidade deste item está implementada por este registro.** A arquitetura requer revisão do ADR-0045 e gates de dados/segurança/DEVICE antes de execução. O produto é o Urbe C# nativo; a nota/artefato permanece centro da experiência, sem três editores independentes.
 
+> **UX mandatória do proprietário (28/10/2026): MENOS INTERFACES, VISUAL MINIMALISTA, INTUITIVO E ELEGANTE.** Funcionalidades novas devem reutilizar/consolidar superfícies existentes, não multiplicar modos, HUDs, barras, painéis ou botões. Nenhuma implantação passa se tornar a tarefa comum mais burocrática. Aplicar o gate de minimalismo estrutural definido em `UX.md` §1.1; avaliar rotas obrigatórias, ações novas versus substituídas, descobribilidade, foco, área útil e usabilidade no Android. Preferir ferramentas no próprio documento; expansão é exceção para conteúdos intrinsecamente espaciais.
+
 - [ ] **CD-00/01 — Baseline e arquivos-fonte:** testar fluxo existente em Android (IME, touch, seleção, scroll, memória) e ampliar classificação/edição/salvamento verificado de arquivos `.cs`, `.py`, `.ts` etc. sem romper Markdown/SAF.
 - [ ] **CD-02 — Edição contextual:** avaliar AvaloniaEdit versus controles atuais com spike Android real; implementar realce, indentação, busca, símbolos móveis e scroll consistente **sem** uma IDE geral.
 - [ ] **CD-03/04 — Blocos e ferramentas declarativas:** modelo lossless/fallback Markdown, controles Avalonia (formulário, slider, botão, tabela, gráfico, calculadora), integração com os contratos existentes de UC-90 quando apropriado; nenhuma execução arbitrária por abrir documento.
