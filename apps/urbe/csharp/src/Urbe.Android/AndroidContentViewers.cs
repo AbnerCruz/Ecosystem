@@ -108,7 +108,7 @@ internal static class AndroidContentViewers
                         if (atlas is not null) web.RemoveJavascriptInterface("UrbeAtlas");
                         web.Destroy();
                     }
-                }, request.Messages is not null);
+                }, request.Messages is not null, atlas);
             }
             case VaultFileKinds.Audio or VaultFileKinds.Video when request.Storage is AndroidVaultStorage vault
                                                                  && await vault.DocumentOfAsync(request.Path, cancellationToken) is { } uri:
@@ -294,8 +294,63 @@ internal sealed class AndroidPdfDocument : IPdfDocument
 
 /// <summary>An Android view inside an Avalonia panel (NativeControlHost), released when the panel lets it go.</summary>
 /// <summary>An HTML page whose WebView loads new HTML in place (the studio's preview).</summary>
-internal sealed class AndroidHtmlHost(Func<Context, AView> make, Action<AView>? release, bool relay) : AndroidViewHost(make, release), IHtmlReloadable
+internal sealed class AndroidHtmlHost(Func<Context, AView> make, Action<AView>? release, bool relay, AtlasMapSession? atlas = null) : AndroidViewHost(make, release), IHtmlReloadable, IAtlasMapPendingEdits
 {
+    // Native close/navigation guard for a pending Atlas Map. No HTML reload: editing, camera and map state remain.
+    // The exported runtime is the source of truth for dirty state, never a stale duplicate in the host.
+    public async Task<bool> HasPendingEditsAsync()
+    {
+        if (atlas is null) return false;
+        if (View is not WebView web || web.Handle == IntPtr.Zero) return false;
+        return await EvaluateBooleanAsync(web, "Boolean(window.AtlasMap && window.AtlasMap.isDirty && window.AtlasMap.isDirty())");
+    }
+
+    public async Task<bool> SavePendingEditsAsync()
+    {
+        if (atlas is null) return true;
+        if (View is not WebView web || web.Handle == IntPtr.Zero) return false;
+        if (!await HasPendingEditsAsync()) return true;
+        // The map's own save handles the V1 acknowledgement, including a 15s timeout. It only clears
+        // dirty after a native verified write. Poll the state; failures/collisions preserve pending edits.
+        web.Post(() =>
+        {
+            try { if (web.Handle != IntPtr.Zero) web.EvaluateJavascript("window.AtlasMap && window.AtlasMap.save && window.AtlasMap.save()", null); }
+            catch (ObjectDisposedException) { }
+        });
+        for (int i = 0; i < 45; i++)
+        {
+            await Task.Delay(400);
+            if (View is not WebView current || current.Handle == IntPtr.Zero) return false;
+            try { if (!await HasPendingEditsAsync()) return true; }
+            catch (TimeoutException) { return false; }
+        }
+        return false;
+    }
+
+    private static async Task<bool> EvaluateBooleanAsync(WebView web, string expression)
+    {
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        web.Post(() =>
+        {
+            try
+            {
+                if (web.Handle == IntPtr.Zero) { tcs.TrySetException(new ObjectDisposedException(nameof(WebView))); return; }
+                web.EvaluateJavascript(expression, new BooleanResultCallback(value =>
+                    tcs.TrySetResult(string.Equals(value, "true", StringComparison.OrdinalIgnoreCase))));
+            }
+            catch (Exception ex) when (ex is ObjectDisposedException or Java.Lang.IllegalStateException)
+            {
+                tcs.TrySetException(ex);
+            }
+        });
+        return await tcs.Task.WaitAsync(TimeSpan.FromSeconds(4));
+    }
+
+    private sealed class BooleanResultCallback(Action<string?> onValue) : Java.Lang.Object, IValueCallback
+    {
+        public void OnReceiveValue(Java.Lang.Object? value) => onValue(value?.ToString());
+    }
+
     public void Reload(string html)
     {
         if (View is not WebView web || web.Handle == IntPtr.Zero) return;

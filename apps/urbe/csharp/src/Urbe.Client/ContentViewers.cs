@@ -52,6 +52,16 @@ public static class ContentViewers
     }
 }
 
+/// <summary>
+/// Only approved Atlas Map viewers expose pending-edit checks. Closing a native panel or navigating
+/// away must await this boundary before releasing its WebView. Other HTML viewers do not implement it.
+/// </summary>
+public interface IAtlasMapPendingEdits
+{
+    Task<bool> HasPendingEditsAsync();
+    Task<bool> SavePendingEditsAsync();
+}
+
 /// <summary>An HTML viewer that can show new HTML in place (the studio's preview: no new browser for every change).</summary>
 public interface IHtmlReloadable
 {

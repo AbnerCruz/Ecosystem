@@ -11,10 +11,10 @@
   "task_id": "GH-838",
   "component": "urbe",
   "state": "review",
-  "branch": "feat/urbe-atlas-map-host-20261027",
+  "branch": "feat/urbe-atlas-map-integration-20261028",
   "base_commit": "64deb1b6247df2b2637bad1cd4ae062dfa191636",
   "commit": null,
-  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/839",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/841",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Client/AtlasMapSession.cs",
     "apps/urbe/csharp/src/Urbe.Client/ContentViewers.cs",
@@ -29,27 +29,30 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AtlasMapHostTests.cs",
     "apps/urbe/docs/csharp/ATLAS-MAP-HOST.md",
     "docs/adr/0044-urbe-atlas-map-host.md",
-    "docs/governance/handoffs/HO-20261027-urbe-atlas-map-host.json"
+    "docs/governance/handoffs/HO-20261027-urbe-atlas-map-host.json",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AtlasMapLifecycleUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs"
   ],
   "work_completed": [
     "AtlasMapSession valida o documento exportado, identidade de mapa/revisão e caminhos Markdown do vault.",
     "Writer Android SAF e pasta com comparação atômica de SHA-256 sob lock, sem overwrite externo silencioso.",
     "Android WebView recebe adaptador restrito openNote/saveMap somente para HTML Atlas Map V1; Studio e HTML genérico mantêm isolamento.",
     "Foco do WebView para formulários Atlas e confirmação do save somente após verificação da escrita.",
-    "Teste de contrato e conflito preparado antes de implementação; ADR proposto e documentação de limites."
+    "Teste de contrato e conflito preparado antes de implementação; ADR proposto e documentação de limites.",
+    "Guarda nativa de saída adicionada ao painel de prévia e às transições de notas/abas: salvar, descartar ou cancelar; falha de gravação bloqueia saída."
   ],
   "verification": [
     {
       "check": "dotnet test --project apps/urbe/csharp/tests/Urbe.Client.Tests",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Não há SDK dotnet neste executor; CI do PR precisa executar."
+      "evidence": "Nova execução de CI requerida após mudanças de lifecycle; aguarda PR #841."
     },
     {
       "check": "dotnet run tests/consistency/Check.cs",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Não há SDK dotnet neste executor; verificar em GitHub Actions."
+      "evidence": "Nova execução de CI requerida após mudanças de lifecycle; aguarda PR #841."
     },
     {
       "check": "Android 13 real: HTML offline, worker blob, edição e save no SAF, navegação, teclado, lifecycle e regressões",
@@ -68,9 +71,9 @@
     }
   ],
   "known_issues": [
-    "Descarte de embed/WebView com alterações não salvas ainda exige confirmação ou estratégia de preservação explícita; beforeunload não é garantia.",
     "Validação de Android SAF/WebView real, foco do teclado e performance ainda não executada; não declarar release pronta.",
-    "Contrato AtlasHost V1 abre nota com âncora apenas ao nível do arquivo; posicionamento na seção está fora do V1."
+    "Contrato AtlasHost V1 abre nota com âncora apenas ao nível do arquivo; posicionamento na seção está fora do V1.",
+    "A guarda cobre fechamento/troca de painel e navegação normal no editor; recriação interna de VisualSurface e morte do processo ainda requerem ensaio DEVICE e possível recuperação de rascunho."
   ],
   "blockers": [
     "Teste DEVICE e proteção de alterações não salvas antes de promover a integração a release.",
@@ -78,7 +81,6 @@
   ],
   "next_actions": [
     "Executar CI e corrigir falhas de build/testes/consistência.",
-    "Implementar guarda de alterações pendentes na suspensão/recriação de embeds e prévia.",
     "Testar no Android 13 real com arquivo Atlas Map exportado, fechar/reabrir, concorrência SAF, múltiplos mapas e worker offline.",
     "Submeter integração pela governança, sem merge/release manual."
   ],
@@ -136,6 +138,6 @@
   ],
   "criticality": {
     "declared": "critical",
-    "reason": "Alteração do contrato de conteúdo WebView e da gravação de arquivos do usuário; necessita revisão de segurança e teste Android SAF."
+    "reason": "Ponte com HTML do usuário, gravação de arquivos e navegação interativa; integração requer aprovação da exceção arquitetural e teste Android DEVICE."
   }
 }

@@ -47,6 +47,7 @@ public sealed partial class MainView : Grid
         Explorer = new NotesExplorer { State = ExplorerState };
         Editor = new EditorOverlay { IsVisible = false, Dialogs = Dialogs, Notes = () => _contents.Select(n => new CityNote(n.Key, n.Value)) };
         Editor.EmbedFor = BuildEmbed;
+        Editor.ConfirmEmbeddedAtlasExitAsync = ConfirmEmbeddedAtlasExitAsync;
         Editor.Properties.TagSource = () => _store is null ? [] : _store.List().SelectMany(d => d.Tags).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
         Editor.PropertiesFor = path => _library?.PropertiesText(path, Now);
         // v23Atualizar: v23Dock.hidden = editor (the rail of a wide window stays)
@@ -128,6 +129,7 @@ public sealed partial class MainView : Grid
         _stage.Children.Add(Editor);
         WireWorkspace();
         FilePreview.Storage = _vault;
+        FilePreview.Dialogs = Dialogs;
         FilePreview.AtlasOpenNote = TryOpenAtlasNoteAsync;
         FilePreview.ActionsRequested += path => _ = ShowAttachmentActionsAsync(path);
         FilePreview.PageActionsRequested += path => _ = ShowPageMenuAsync(path);
@@ -188,7 +190,7 @@ public sealed partial class MainView : Grid
                     result.TrySetResult(false);
                     return;
                 }
-                if (FilePreview.IsVisible) FilePreview.Close();
+                if (FilePreview.IsVisible && !await FilePreview.TryCloseAsync()) { result.TrySetResult(false); return; }
                 CloseNotesOverEditor();
                 await Editor.NavigateAsync(new CityNote(relative, content));
                 result.TrySetResult(Editor.Current?.Path == relative);
