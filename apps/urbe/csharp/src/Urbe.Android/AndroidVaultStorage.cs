@@ -50,7 +50,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     private IReadOnlyList<string>? _listing;
     private IReadOnlyDictionary<string, VaultFile>? _baseline;
     public bool IsConnected => _tree is not null && _baseline is not null;
-    public string? VaultIdentity => _tree?.ToString();
+    public string? AtlasVaultSessionKey => _tree?.ToString();
 
     public IImportStorage? ImportStorage => _tree is null ? null : new Importer(this);
 
