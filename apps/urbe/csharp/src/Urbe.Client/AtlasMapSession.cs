@@ -30,7 +30,7 @@ public sealed class AtlasMapSession
     private AtlasMapSession(ContentRequest request, string id, long revision, byte[] original)
     {
         _vault = request.Storage!;
-        _vaultIdentity = _vault.VaultIdentity!;
+        _vaultIdentity = _vault.AtlasVaultSessionKey!;
         _path = request.Path;
         _openNote = request.AtlasOpenNote;
         MapId = id;
@@ -42,7 +42,7 @@ public sealed class AtlasMapSession
 
     public static AtlasMapSession? TryCreate(ContentRequest request)
     {
-        if (request.Kind != VaultFileKinds.Html || request.Storage is not { IsConnected: true, VaultIdentity: not null } ||
+        if (request.Kind != VaultFileKinds.Html || request.Storage is not { IsConnected: true, AtlasVaultSessionKey: not null } ||
             !request.Path.EndsWith(".html", StringComparison.OrdinalIgnoreCase) ||
             request.Bytes is not { Length: > 0 and <= MaximumBytes } bytes)
             return null;
@@ -106,7 +106,7 @@ public sealed class AtlasMapSession
     }
 
     private bool Active => Volatile.Read(ref _closed) == 0 &&
-                           _vault.IsConnected && string.Equals(_vault.VaultIdentity, _vaultIdentity, StringComparison.Ordinal);
+                           _vault.IsConnected && string.Equals(_vault.AtlasVaultSessionKey, _vaultIdentity, StringComparison.Ordinal);
 
     public async Task<bool> OpenNoteAsync(string mapId, string path)
     {
