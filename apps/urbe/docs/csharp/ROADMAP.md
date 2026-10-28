@@ -438,3 +438,19 @@ Issue [#793](https://github.com/AbnerCruz/Ecosystem/issues/793), ADR-0043 (propo
 - [ ] CI Core/Client/consistency/Android/Windows/E2E em estado combinado; teste com notas grandes e teclado/IME/seleção no Android físico.
 - [ ] Publicação beta na sequência canônica via release oficial, identidade/certificado preservados e validação do APK; integração crítica somente por gate autorizado.
 - Referências, implementação e critérios em `apps/urbe/docs/csharp/EDITOR-INTERACTION-STABILITY-20261026.md`; PR #808.
+
+
+## UC-92 — Documentos computacionais, editor de código e ferramentas interativas (direção 28/10/2026)
+
+> **Estado: conceito e plano propostos. Nenhuma funcionalidade deste item está implementada por este registro.** A arquitetura requer revisão do ADR-0045 e gates de dados/segurança/DEVICE antes de execução. O produto é o Urbe C# nativo; a nota/artefato permanece centro da experiência, sem três editores independentes.
+
+- [ ] **CD-00/01 — Baseline e arquivos-fonte:** testar fluxo existente em Android (IME, touch, seleção, scroll, memória) e ampliar classificação/edição/salvamento verificado de arquivos `.cs`, `.py`, `.ts` etc. sem romper Markdown/SAF.
+- [ ] **CD-02 — Edição contextual:** avaliar AvaloniaEdit versus controles atuais com spike Android real; implementar realce, indentação, busca, símbolos móveis e scroll consistente **sem** uma IDE geral.
+- [ ] **CD-03/04 — Blocos e ferramentas declarativas:** modelo lossless/fallback Markdown, controles Avalonia (formulário, slider, botão, tabela, gráfico, calculadora), integração com os contratos existentes de UC-90 quando apropriado; nenhuma execução arbitrária por abrir documento.
+- [ ] **CD-05 — Dependências e resultados:** bindings tipados, cálculos puros, invalidadores, cache derivado, execução lazy/stale para caro, cancelamento, erros e valores persistidos **somente em operações explícitas**.
+- [ ] **CD-06/07 — Fontes vinculadas e agentes:** incorporar trechos reais sem duplicá-los, editar fonte e retornar preservando foco; agentes propõem ferramentas em diff/preview, sem privilégios implícitos.
+- [ ] **CD-08 — Executor avançado (condicional):** threat model, isolamento, permissões, compatibilidade C#/AOT/Android, consumo e recuperação; **não** habilitar se o isolamento não puder ser demonstrado.
+- [ ] **CD-09/10/11 — Exportação, piloto, pesquisa de UX:** degradação legível fora do Urbe, nota com slider/gráfico, ferramenta criada por agente e arquivo `.cs` vinculado; testes em aparelho e feedback antes de ampliar.
+- [ ] Gate de governança: ADR-0045 proposto, revisão dos modelos de dados/permissões, consistência e CI integrado. Não criar release ou marcar `[x]` só pela existência dos documentos.
+
+**Especificação e fontes:** [COMPUTATIONAL-DOCUMENTS-AND-TOOLS.md](COMPUTATIONAL-DOCUMENTS-AND-TOOLS.md). **ADR:** [0045](../../../../docs/adr/0045-urbe-documentos-computacionais-e-ferramentas-interativas.md). **Conflitos a evitar:** UC-57/73/76 (toque e edição), UC-90 (formulários), UC-88 (grafos), ADR-0044 (Atlas Map), ADR-0029/0030 (math-authoring independente).
