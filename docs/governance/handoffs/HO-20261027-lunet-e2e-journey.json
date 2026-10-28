@@ -1,0 +1,131 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261027-lunet-e2e-journey",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-28T00:23:23.367Z",
+  "agent": {
+    "id": "chatgpt-lunet-journey-e2e",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-450",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "test/lunet-journey-e2e-20261027",
+  "base_commit": "64deb1b6247df2b2637bad1cd4ae062dfa191636",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/tests/Lunet.Tests/ProjectJourneyTests.cs",
+    "apps/lunet2d/tools/offline-apk-check/Program.cs",
+    ".github/workflows/lunet2d-release.yml",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/docs/guides/end-to-end-journey.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261027-lunet-e2e-journey.json"
+  ],
+  "work_completed": [
+    "Teste de jornada de criação real, edição de C#/sprite/tilemap/WAV, reabertura, compilação Roslyn, Preview headless, AssetCatalog e ZIP foi escrito ANTES do pipeline.",
+    "Ferramenta de CI estendida para empacotar Content e Assets reais por meio do OfflineGameApkBuilder de produção e verificar integridade dos bytes.",
+    "Workflow de release estendido para compilar o mesmo projeto criado no teste, gerar APK offline x86_64, verificar aapt/apksigner/zipalign, instalar, iniciar e observar log de execução no Android 13; captura logs, APK, projeto ZIP e screenshot.",
+    "Roadmap e Changelog atualizados sem marcar a validação física como completa; guia reproduzível elaborado."
+  ],
+  "verification": [
+    {
+      "check": "Confronto de fontes, pipeline, testes e governança por GitHub API",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Examinados EndToEndTests.cs, ProjectStore, SpriteDocument, TileStudioSession, GameCompiler, GameHost, OfflineGameApkBuilder, workflows da main e alterações desta branch; nenhuma compilação ou execução nesta evidência."
+    },
+    {
+      "check": "CI integrado: suíte xUnit, empacotamento offline e Android 13 emulator launch",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando execução do PR e verificação de artefatos, não declarar green antecipadamente."
+    },
+    {
+      "check": "Jornada completa na interface Android e instalação física do APK exportado no aparelho",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/lunet2d/docs/guides/end-to-end-journey.md",
+      "evidence": "Roteiro DEVICE documentado; requer versão integrada e retorno do proprietário para aceite."
+    }
+  ],
+  "known_issues": [
+    "Teste E2E portátil usa Studio/domain e Preview headless, não automação de gestos na interface Android.",
+    "PNG fixture prova leitura do recurso mas não o encoder do Sprite Studio Android; testes específicos permanecem distintos.",
+    "CI Android 13 x86_64 com chave temporária não valida ABI ARM64 física, instalação/atualização com Keystore real ou orientação na tela de usuário.",
+    "F4/F5/F9 e correção pós-#824 permanecem condicionados a DEVICE; release futura não é presumida."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar checks de PR e CI; corrigir qualquer falha de compilação/execução.",
+    "Integrar somente via integrador governado quando a política e checks permitirem.",
+    "Confirmar release após integração e coletar resultado do roteiro Android físico antes de concluir [x]."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "apps/lunet2d/docs/adr/0007-framework-ide-studio-code-first.md",
+    "apps/lunet2d/docs/adr/0010-cloud-game-apk-fallback.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "ROADMAP canônico mantém item sem conclusão até DEVICE; roadmap externo não substitui autoridade."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nenhuma dependência cruzada Product→Product, somente testes e workflow Lunet."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #834, branch, AgentsChat, PR e handoff verificáveis."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Estado e limitações persistidos em ROADMAP, guia e handoff."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas consultadas diretamente via conector GitHub."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Pipeline isolado no workflow Lunet; sem publicar distribuição fora da política."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Separados inspeção, CI pendente e DEVICE humano pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Não marcar [x] ou done antes de CI, integração e validação humana."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Integração restrita a testes/pipeline Lunet, sem extrair novas capabilities globais."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-authoring-e2e",
+      "status": "product-specific",
+      "rationale": "Harness operacional sobre as classes reais do Lunet, sem segundo consumidor conhecido e sem abstração compartilhada."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
