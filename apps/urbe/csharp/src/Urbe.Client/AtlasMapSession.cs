@@ -15,7 +15,7 @@ public sealed class AtlasMapSession
 {
     public const int MaximumBytes = 32 * 1024 * 1024;
     private static readonly Regex DataScript = new(
-        "<script\\s+type=[\\"']application/json[\\"']\\s+id=[\\"']atlas-map-data[\\"']\\s*>(.*?)</script\\s*>",
+        """<script\s+type=["']application/json["']\s+id=["']atlas-map-data["']\s*>(.*?)</script\s*>""",
         RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.CultureInvariant | RegexOptions.Compiled,
         TimeSpan.FromSeconds(1));
     private readonly IUrbeVaultStorage _vault;
