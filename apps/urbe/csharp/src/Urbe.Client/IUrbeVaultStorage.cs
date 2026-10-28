@@ -8,7 +8,7 @@ public interface IUrbeVaultStorage
 {
     bool IsConnected { get; }
     /// <summary>Opaque native-only identity of the currently selected vault; never passed to HTML.</summary>
-    string? VaultIdentity => null;
+    string? AtlasVaultSessionKey => null;
     Task<VaultSnapshot?> PickAsync(CancellationToken cancellationToken = default);
     Task<VaultSnapshot?> RestoreAsync(CancellationToken cancellationToken = default);
     /// <summary>First safe slice: update one EXISTING Markdown file, with conflict checks,
