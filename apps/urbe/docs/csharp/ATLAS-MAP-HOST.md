@@ -1,6 +1,6 @@
 # Atlas Map V1 no Urbe — contrato e validação
 
-Escopo: `apps/urbe/csharp`. O Atlas Forge gera o mundo e exporta o `Atlas Map` HTML autossuficiente; o Urbe **apenas visualiza e permite editar lugares/notas desse conteúdo**. Nenhum código do gerador foi copiado para o Urbe.
+Escopo: `apps/urbe/csharp`. O gerador externo produz o mundo e exporta o `Atlas Map` HTML autossuficiente; o Urbe **apenas visualiza e permite editar lugares/notas desse conteúdo**. Nenhum código do gerador foi copiado para o Urbe.
 
 ## Fluxo
 
