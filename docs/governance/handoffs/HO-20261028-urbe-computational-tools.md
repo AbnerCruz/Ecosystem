@@ -12,3 +12,10 @@
 - **Riscos principais:** rolagem e foco, perda de dados/round-trip do Visual, duplicação de estado, reatividade onerosa, WebView acidental, execução de código importado e acoplamento entre produtos.
 - **Testes realizados:** inspeção textual do repositório e documentos de referência. **Não** foram rodados builds, testes, testes de dispositivo ou protótipos; não existe afirmação de aprovação técnica. Documentação apenas.
 - **Próximo passo:** review do ADR-0045 e especificação; confirmar ownership do esquema persistido e política do executor; então decompor CD-00..CD-11 em issues/fatias governadas começando por baseline de UX e arquivos reais. Gate humano explícito para mudanças críticas, DEVICE para Android.
+
+## Adendo de UX e estado do PR (28/10/2026)
+
+- O proprietário **não solicitou abertura de PR**. O #844, aberto anteriormente por iniciativa do assistente, foi **fechado sem merge**, por ordem explícita do proprietário. GitHub mantém histórico de PR fechado; não equivale a exclusão física. Nenhum novo PR deve ser aberto sem pedido explícito.
+- A direção de UX foi reiterada: **reduzir interfaces, apresentar mínimo necessário, preservar intuição e elegância apesar do crescimento de recursos**. A avaliação é estrutural, não cosmética.
+- `apps/urbe/docs/csharp/UX.md` recebeu gate global de minimalismo (§1.1), correção do P11 histórico referente à cidade congelada e critérios de revisão. A especificação, ADR-0045 e UC-92 refletem a mesma prioridade.
+- Os documentos permanecem **somente na branch documental** `docs/urbe-computational-artifacts-20261028`, sem integração na main. O usuário não autorizou novo PR, merge, implementação ou release. Revisão e integração são etapas futuras separadas, sujeitas à governança e a pedido explícito.
