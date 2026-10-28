@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "name": "portrait",
+  "gameId": "75c22534-1111-4111-8111-111111111111",
+  "packageId": "com.lunet.regression.portrait",
+  "version": "0.1.0",
+  "frameworkVersion": "0.1.0",
+  "entryPoint": "Game.cs",
+  "orientation": "portrait",
+  "virtualWidth": 360,
+  "virtualHeight": 640
+}

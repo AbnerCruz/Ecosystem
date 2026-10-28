@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "name": "full-stack",
+  "gameId": "75c22534-3333-4333-8333-333333333333",
+  "packageId": "com.lunet.regression.fullstack",
+  "version": "0.1.0",
+  "frameworkVersion": "0.1.0",
+  "entryPoint": "Game.cs",
+  "orientation": "portrait",
+  "virtualWidth": 360,
+  "virtualHeight": 640
+}

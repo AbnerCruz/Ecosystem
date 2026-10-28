@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "name": "landscape",
+  "gameId": "75c22534-2222-4222-8222-222222222222",
+  "packageId": "com.lunet.regression.landscape",
+  "version": "0.1.0",
+  "frameworkVersion": "0.1.0",
+  "entryPoint": "Game.cs",
+  "orientation": "landscape",
+  "virtualWidth": 640,
+  "virtualHeight": 360
+}
