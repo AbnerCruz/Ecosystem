@@ -67,8 +67,11 @@ internal sealed class SpeechSession : Java.Lang.Object, IRecognitionListener
         intent.PutExtra(RecognizerIntent.ExtraLanguage, "pt-BR");
         intent.PutExtra(RecognizerIntent.ExtraPartialResults, true);
         intent.PutExtra(RecognizerIntent.ExtraMaxResults, 1);
-        intent.PutExtra(ExtraCompleteSilence, 2500L);
-        intent.PutExtra(ExtraPossiblyCompleteSilence, 2500L);
+        // from the Urbe's audio the session is segmented and a pause only closes a segment; listening to the microphone
+        // itself (before Android 13) a pause ends the session, so it waits longer (CST-056: a pause to think)
+        long pause = source is null ? 8000L : 2500L;
+        intent.PutExtra(ExtraCompleteSilence, pause);
+        intent.PutExtra(ExtraPossiblyCompleteSilence, pause);
         if (source is not null)
         {
             intent.PutExtra(ExtraAudioSource, source);
