@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261028-urbe-consolidation-wave1",
   "category": "HANDOFF",
-  "timestamp": "2026-10-28T18:28:43Z",
+  "timestamp": "2026-10-28T18:35:28Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -36,6 +36,7 @@
     "apps/urbe/csharp/src/Urbe.Client/WorkspaceView.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AgentLanguage.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantConversationTools.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantExecutionEfficiency.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantGuideTools.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantQuickNoteTools.cs",
@@ -54,6 +55,7 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AppDocsGuideTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ChatRefreshUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ClockInEditorUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ConversationHistoryUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorNavigationUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EmbedFragmentUiTests.cs",
@@ -63,9 +65,11 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/VoiceBacklogBusyTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AgentLanguageTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantAuthorshipSealTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantConversationToolsTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantGuideToolsTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantMultimodalQuestionTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantReviewAnswerTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantRunHostTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantStaleRewriteTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/EmbedFragmentsTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/FormsTests.cs",
@@ -97,14 +101,16 @@
     "CST-075: ferramenta urbe_guide sobre o Tutorial do app; Tutorial completado (incorporações, grafos, notas rápidas) e protegido por teste de cobertura da sintaxe.",
     "CST-064 (parte): incorporação de seção por título, de bloco ^id e de linhas, sem os marcadores no cartão.",
     "CST-059: imagens do vault citadas pela página vão dentro do HTML (prévia, visualização, exportação e impressão).",
-    "CST-056/055: gravação rápida sem pressa (toque para terminar, 45 s de silêncio, 15 min) e consecutiva (próxima nota enquanto a anterior salva)."
+    "CST-056/055: gravação rápida sem pressa (toque para terminar, 45 s de silêncio, 15 min) e consecutiva (próxima nota enquanto a anterior salva).",
+    "CST-089: agentes consultam as próprias conversas anteriores (resumos e detalhe), separadas por agente.",
+    "Correção: o host de cada execução não repassava os grafos (list_graphs/read_graph inoperantes no app); teste de repasse de todas as capacidades."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1352 testes, 0 falhas (local, .NET 10.0.403); Urbe.Android compila (Debug)."
+      "evidence": "1358 testes, 0 falhas (local, .NET 10.0.403); Urbe.Android compila (Debug)."
     },
     {
       "check": "Validação no Android físico dos itens desta leva",

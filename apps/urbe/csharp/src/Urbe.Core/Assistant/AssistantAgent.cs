@@ -594,6 +594,9 @@ public static class AssistantAgent
         public IAssistantDelegation? Delegation => inner.Delegation;
         public IAssistantForms? Forms => inner.Forms;
         public IAssistantAttachmentExtractor? Attachments => inner.Attachments;
+        // a member left out here silently disables its tools in the app (list_graphs/read_graph were): a test checks them all
+        public IAssistantGraphs? Graphs => inner.Graphs;
+        public IAssistantConversations? Conversations => inner.Conversations;
     }
 
     private sealed record Out(string Content, bool IsError = false, string? Status = null, IReadOnlyList<AiChange>? Changes = null, IReadOnlyList<(string Path, AiPartial? Partial)>? Reads = null,

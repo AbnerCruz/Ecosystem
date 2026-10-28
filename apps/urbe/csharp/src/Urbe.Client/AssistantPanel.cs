@@ -283,6 +283,7 @@ public sealed partial class AssistantPanel : Border
 
     /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, pages/ai-tools.js, customize/ai-tools.js, then the vault plugins).</summary>
     public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan" && t.Name != "remember"), AssistantAdaptivePlanTools.Update, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, .. AssistantMemoryTools.All, .. AssistantGraphTools.All, AgentNames.Tool, AssistantAttachmentExtraction.Tool, AssistantImageTools.Tool, AssistantQuestionTools.Ask, AssistantFormTools.Request, AssistantDelegateTools.Consult, AssistantQuickNoteTools.Add,
+        AssistantConversationTools.List, AssistantConversationTools.Read,
         AssistantGuideTools.Create(() => AppDocs.Load().Select(a => (a.Path, a.Content)).ToList())];
 
     /// <summary>UC-63: the image tool is always visible to the chat agent, independently of its provider.</summary>
@@ -1146,8 +1147,12 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The tools' host: reads from the vault's documents, writes through the app, memory and links through the panel.</summary>
-    private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge, string agentId, string conversationId, AssistantWebSession? web, CancellationToken cancel) : IAssistantHost, IAssistantNames, IAssistantImages, IAssistantDelegation, IAssistantForms, IAssistantAttachmentExtractor
+    private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge, string agentId, string conversationId, AssistantWebSession? web, CancellationToken cancel) : IAssistantHost, IAssistantNames, IAssistantImages, IAssistantDelegation, IAssistantForms, IAssistantAttachmentExtractor, IAssistantConversations
     {
+        // CST-089: this agent's own earlier conversations in this vault; never another agent's, never this one
+        public IAssistantConversations? Conversations => this;
+        public IReadOnlyList<AiConversation> Recent() =>
+            panel._store.ConversationsFor(agentId, panel._app.VaultName).Where(c => c.Id != conversationId && c.Messages.Count > 0).ToList();
         public async Task<string> ExtractAsync(string fileName)
         {
             if (!panel._activeConversations.TryGetValue(conversationId, out var conversation))
