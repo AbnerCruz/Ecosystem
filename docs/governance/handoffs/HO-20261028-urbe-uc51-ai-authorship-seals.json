@@ -87,9 +87,10 @@
     {
       "check": "Android físico com Gboard: editar/dividir bloco da IA no Visual, colar, Desfazer/Refazer, alternar Visual/Fonte, aprovação editada e sugestão inline sem salto de caret ou latência perceptível",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/urbe/docs/csharp/AI-AUTHORSHIP-SEALS.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-28 (Issue https://github.com/AbnerCruz/Ecosystem/issues/848); registro em docs/governance/responses/VAL-HO-20261028-urbe-uc51-ai-authorship-seals-bf44c0ea9eae.md."
     }
   ],
   "known_issues": [
