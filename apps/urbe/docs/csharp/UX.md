@@ -8,6 +8,8 @@ O proprietário (16/10/2026): *"o ponto central das observações: EXPERIÊNCIA 
 
 O Urbe tem dois pilares: **desempenho** (ADD-0024) e **fluxo de produção** (observações da beta.13). Experiência de usuário é o que une os dois. Funcionalidade que existe mas não é agradável, imediata e óbvia **não está pronta**.
 
+> **Direção adicional do proprietário, 28/10/2026:** **menos interfaces, visual minimalista, intuição e elegância**, mesmo com o crescimento das capacidades. Mais funcionalidades não implicam mais telas, estúdios, modos, barras ou painéis. Este é um **requisito de arquitetura da experiência**, não um simples tema visual. A extensão de documentos computacionais, editor de código e ferramentas interativas (UC-92) deve servir de prova; referência: [COMPUTATIONAL-DOCUMENTS-AND-TOOLS.md](COMPUTATIONAL-DOCUMENTS-AND-TOOLS.md). A antiga cidade está congelada por DEC-0051 e não é reintroduzida por trechos históricos deste documento.
+
 ## 0. Calibração (proprietário, 16/10/2026)
 
 Não há um app de referência. A escala dada pelo proprietário foi: *"o Notion tá frio, o Obsidian tá morno"*. O Urbe precisa estar **quente**.
@@ -36,9 +38,28 @@ Cada princípio vem com a base (tecnologia ou psicologia) e com a forma de medir
 | P8 | **Gestos naturais.** Arrastar da borda volta. Pinçar dá zoom. Segurar abre opções. Deslizar num item da lista dá ações rápidas. Tudo tem alternativa por botão. | Lei de Jakob: as pessoas esperam o que já usam em outros apps. | Cada gesto tem teste headless e equivalente por botão. |
 | P9 | **Beleza que funciona.** Um sistema visual único: tipografia, espaçamento em grade de 8, raio, cor e elevação definidos uma vez e usados em todo lugar. Nada desalinhado. | Efeito estética-usabilidade. | Tokens de design em `UrbeTheme`; teste que acusa medidas fora da grade nas telas principais. |
 | P10 | **Começo e fim marcantes.** Abrir o app é instantâneo e cai onde a pessoa parou. Concluir algo tem um fechamento claro e agradável. | Regra do pico-fim; efeito Zeigarnik (retomar o que ficou aberto). | Tempo até a última nota editável (UC-59); retomada da sessão. |
-| P11 | **O mundo é calmo.** A cidade viva é ambiente, não distração: anima devagar, pausa atrás das telas, nunca disputa atenção com o texto. | Tecnologia calma; atenção periférica. | Mundo pausado quando coberto (já existe); eventos raros (UC-36). |
+| P11 | **A interface é calma.** Nenhuma superfície ou animação disputa atenção com o conteúdo; informação contextual aparece apenas quando importa. | Tecnologia calma; atenção periférica. | Tela comum sem controles computacionais extras; nenhum salto de foco/scroll ou overlay intrusivo; sem simulação/cidade (DEC-0051). |
 | P12 | **Acessível para todos.** Leitor de tela, contraste AA, fonte ajustável, nada que dependa só de cor. | WCAG 2.2 AA. | Rótulos de automação em todos os controles; contraste verificado nos temas. |
 | P13 | **Personalização sem custo.** Tudo que é preferência pode ser ajustado: barra do editor, atalhos, temas. O padrão já é excelente sem ajuste nenhum. | Controle percebido; padrões bons. | Preferências em `Personalização/`; o padrão passa em todos os itens acima. |
+
+## 1.1. Minimalismo estrutural: mais capacidade, menos interface (28/10/2026)
+
+A complexidade existe no motor do Urbe; **não deve ser transferida ao usuário**. Estudo de referência: [Nielsen Norman Group — progressive disclosure](https://www.nngroup.com/articles/progressive-disclosure/) e [complex application design](https://www.nngroup.com/articles/complex-application-design/); [Android — layouts e navegação](https://developer.android.com/design/ui/mobile/guides/layout-and-content/layout-and-nav-patterns).
+
+- **Reutilizar antes de adicionar.** Uma nova função deve entrar na superfície que já contém o objeto, sempre que possível. Exigir justificativa com alternativas e teste antes de criar aba, estúdio, modo, toolbar, menu, FAB ou painel.
+- **Uma área de trabalho, uma experiência de edição.** A ferramenta contextual se ajusta ao arquivo/seleção; não criar três áreas `Documentos`, `Código`, `Laboratório`. `.cs` tem ferramentas de código no editor; `.md` continua nota; gráficos/controles aparecem dentro do próprio texto.
+- **Conteúdo domina.** Na nota comum, nenhuma nova barra computacional ou widget aparece. Os controles de um bloco só surgem quando aquele bloco está em foco/interação e não cobrem permanentemente a leitura.
+- **Descoberta sem barulho.** Ações frequentes visíveis e compreensíveis; avançadas são reveladas por uma entrada contextual previsível. Não esconder a única ação atrás de gesto secreto ou níveis intermináveis.
+- **Uma rota por intenção.** Evitar ações duplicadas em diferentes painéis. Um resultado é editável no contexto ou possui um caminho claro até sua fonte e retorno exato.
+- **Pouca decoração, hierarquia forte.** Tipografia, alinhamento, espaçamento e uso comedido de cor resolvem hierarquia. Evitar caixas aninhadas, overlays múltiplos, ícones redundantes, badges ornamentais e movimento gratuito.
+- **Espaço e gestos respeitados.** Editor, formulário, gráfico e código não disputam scroll, caret, teclado nem seleção. Expandir uma ferramenta espacial é exceção explícita; ao voltar, foco e âncora são restaurados.
+- **O sistema faz o trabalho difícil.** Criar ferramenta simples não exige escrever JSON/código nem escolher kernel. Autoria por IA é facultativa, com preview e aprovação, sem sequestrar a interface.
+
+### Gate para qualquer PR de interface
+
+Além de P1–P13, a revisão deve registrar **tarefa** e fluxo anterior/novo; **interfaces/controles adicionados versus reutilizados/removidos**; número e motivo das transições obrigatórias; evidência de descobribilidade sem tutorial; captura do mesmo conteúdo antes/depois; espaço disponível com Gboard; teste de gestos, foco e rolagem em Android. Números absolutos de desempenho/espaço dependem de baseline. **Uma funcionalidade nova que aumenta fricção visual ou de navegação sem ganho demonstrado não passa**, ainda que o backend esteja correto.
+
+**Acordo de escopo:** UI minimalista não significa retirar recursos úteis nem esconder funções essenciais. Significa torná-los acessíveis no contexto certo, sem painéis globais para cada recurso.
 
 ## 2. Fundação técnica (antes de redesenhar telas)
 
@@ -63,7 +84,7 @@ Cada tela é auditada contra P1–P13, redesenhada e entregue com testes e captu
    - deslizar para ações e arrastar com háptico;
    - busca instantânea;
    - criação de nota em um toque.
-4. **Cidade e HUD:** controles mínimos e bonitos, gestos de câmera suaves e informação que aparece quando é útil.
+4. **Ferramentas incorporadas:** gráficos, cálculos, formulários e edição de código no contexto do artefato, sem novo HUD ou modo global (UC-92).
 5. **Estúdio de páginas:** edição direta, ferramentas antes de modelos (UC-62).
 6. **Assistente, Personalização, Tutorial, Configurações e widget.**
 
