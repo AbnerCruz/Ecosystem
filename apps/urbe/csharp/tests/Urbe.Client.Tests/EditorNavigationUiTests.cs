@@ -65,6 +65,24 @@ public sealed partial class HeadlessUiTests
             await editor.BackAsync();
             Assert.Equal("Bairro/Casa.md", editor.Current!.Path);
 
+            // CST-021: "Nova nota nesta pasta" from the editor: next to Casa, written, opened with Casa on the trail;
+            // a cancelled name leaves no file
+            var cancelled = editor.NewNoteHereAsync();
+            Dispatcher.UIThread.RunJobs();
+            ClickButtonWithText(view.Dialogs, "Cancelar");
+            await cancelled;
+            Assert.Equal("Bairro/Casa.md", editor.Current!.Path);
+            var created = editor.NewNoteHereAsync();
+            Dispatcher.UIThread.RunJobs();
+            view.Dialogs.GetLogicalDescendants().OfType<TextBox>().First().Text = "Rascunho do capítulo";
+            ClickButtonWithText(view.Dialogs, "Criar nota");
+            await created;
+            Assert.True(File.Exists(Path.Combine(vault, "Bairro", "Rascunho do capítulo.md")));
+            Assert.Equal("Bairro/Rascunho do capítulo.md", editor.Current!.Path);
+            Assert.Equal(["Casa.md", "Nova ideia.md", "Rascunho do capítulo.md"], Directory.GetFiles(Path.Combine(vault, "Bairro")).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+            await editor.BackAsync();
+            Assert.Equal("Bairro/Casa.md", editor.Current!.Path);
+
             // the toolbar is lit by the Markdown under the caret, and goes off again when the caret leaves it
             editor.SetMode(EditorMode.Fonte);
             editor.Editor.Text = "a **forte** b\n# Título";

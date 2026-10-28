@@ -127,26 +127,56 @@ public sealed class FormRenderer : StackPanel
         }
         if (f.Type == "multi_select")
         {
+            // CST-047: one box per option; a tap ticks or unticks it and keeps the others (a list's selection did not on touch)
             var selected = (initial as JsonArray ?? []).Select(x => x?.ToString() ?? "").ToHashSet(StringComparer.Ordinal);
-            var list = new ListBox { ItemsSource = f.Options, SelectionMode = SelectionMode.Multiple, MaxHeight = 220, MinHeight = 48 };
-            foreach (var option in f.Options.Where(selected.Contains)) list.SelectedItems!.Add(option);
-            list.SelectionChanged += (_, _) => Set(new JsonArray(list.SelectedItems!.OfType<string>().Select(x => (JsonNode?)JsonValue.Create(x)).ToArray()));
-            return list;
+            var boxes = new StackPanel { Spacing = 2 };
+            foreach (var option in f.Options)
+            {
+                var box = new CheckBox { Content = option, IsChecked = selected.Contains(option), MinHeight = UrbeTokens.MinTouch };
+                box.IsCheckedChanged += (_, _) => { FormInput.Toggle(Session, f, option, box.IsChecked == true); changed(); };
+                boxes.Children.Add(box);
+            }
+            return boxes;
         }
         var text = new TextBox { Text = f.Type == "list" && initial is JsonArray a ? string.Join("\n", a.Select(x => x?.ToString())) : initial?.ToString() ?? "",
             AcceptsReturn = f.Type is "long_text" or "list", MinHeight = f.Type is "long_text" or "list" ? 96 : UrbeTokens.MinTouch,
             TextWrapping = TextWrapping.Wrap, PlaceholderText = f.Type switch { "date" => "AAAA-MM-DD", "time" => "HH:mm", "list" => "Um item por linha", "color" => "#RRGGBB", _ => "" } };
         TextActions.Attach(text);
+        bool numeric = f.Type is "integer" or "number";
+        // CST-047: the number keyboard, and only what a number may have gets in (whatever the keyboard sends)
+        if (numeric) Avalonia.Input.TextInput.TextInputOptions.SetContentType(text, f.Type == "integer"
+            ? Avalonia.Input.TextInput.TextInputContentType.Digits : Avalonia.Input.TextInput.TextInputContentType.Number);
         text.PropertyChanged += (_, e) =>
         {
             if (e.Property != TextBox.TextProperty) return;
             var value = text.Text ?? "";
-            if (f.Type is "integer" or "number" or "scale" && double.TryParse(value.Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var n) && double.IsFinite(n)) Set(JsonValue.Create(n));
+            if (numeric)
+            {
+                var kept = FormInput.NumberText(value, f.Type == "integer");
+                if (kept != value)
+                {
+                    int caret = Math.Max(0, text.CaretIndex - (value.Length - kept.Length));
+                    text.Text = kept;
+                    text.CaretIndex = Math.Min(caret, kept.Length);
+                    return;
+                }
+                Set(FormInput.ParseNumber(kept) is { } n ? JsonValue.Create(n) : null);
+                ShowError(f);
+            }
             else if (f.Type == "list") Set(new JsonArray(value.Split('\n').Where(x => x.Length > 0).Select(x => (JsonNode?)JsonValue.Create(x)).ToArray()));
             else Set(JsonValue.Create(value));
         };
         return text;
     }
+    /// <summary>A value that is wrong shows why while the person types (an empty one waits for Enviar).</summary>
+    private void ShowError(FormField f)
+    {
+        if (!_rows.TryGetValue(f.Id, out var row)) return;
+        var error = Session.Values[f.Id] is null ? null : Session.ErrorFor(f, _notes, _folders);
+        row.Error.Text = error;
+        row.Error.IsVisible = error is not null;
+    }
+
     private void Refresh()
     {
         foreach (var f in Session.Definition.Fields)

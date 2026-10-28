@@ -451,6 +451,23 @@ public sealed class EditorOverlay : Grid
     /// the vault and returns it without opening it, or null when it could not.</summary>
     public Func<string, Task<CityNote?>>? CreateLinked { get; set; }
 
+    /// <summary>CST-021: asks for a name and creates a note in the open note's folder (not opened; null when cancelled).</summary>
+    public Func<Task<CityNote?>>? CreateHere { get; set; }
+
+    /// <summary>
+    /// CST-021: "Nova nota" from inside the editor — the note is created next to the open one, written to the vault, and
+    /// opened with the current one on the trail (Voltar comes back). Cancelling the name leaves no file.
+    /// </summary>
+    public async Task NewNoteHereAsync()
+    {
+        if (CreateHere is null || _note is null) return;
+        if (!await CanLeaveAtlasAsync()) return;
+        if (await CreateHere() is not { } made) return;
+        var saving = LeaveCurrentAsync();
+        Go(made);
+        await saving;
+    }
+
     /// <summary>Follows a link or a backlink to <paramref name="target"/>: saves the open note, remembers it and opens the target.</summary>
     public async Task NavigateAsync(CityNote target)
     {

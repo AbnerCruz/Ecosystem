@@ -648,6 +648,9 @@ public static class AssistantAgent
         int? maxSteps = o.MaxSteps is > 0 ? o.MaxSteps : null;
         bool runAllow = false, nudged = false, partialNudged = false, qualityReviewed = false, sourceReviewed = false;
         bool noProgressNudged = false;
+        // CST-079: the answer written before the mandatory review, and how many changes there were then
+        AiChatMessage? reviewedAnswer = null;
+        int changesBeforeReview = 0;
         var failed = new Dictionary<string, string>();
         int repeats = 0;
         var partial = new List<(string Path, AiPartial Partial)>();
@@ -782,6 +785,8 @@ public static class AssistantAgent
                 if (o.ReviewWrittenArtifacts && result.Changes.Count > 0 && !qualityReviewed && !cancel.IsCancellationRequested)
                 {
                     qualityReviewed = true;
+                    reviewedAnswer = live;
+                    changesBeforeReview = result.Changes.Count;
                     live.Meta ??= new AiChatMeta();
                     live.Meta.Draft = true;
                     emit(new AiAgentEvent("final", live, Usage: result.Usage));
@@ -794,10 +799,22 @@ public static class AssistantAgent
                         Id = uid("m"), Role = "user", Meta = new AiChatMeta { ToolResults = true },
                         Content = [AiChatBlock.TextBlock("[Revisão obrigatória do trabalho] Você alterou arquivos reais: " +
                             string.Join(", ", files) +
-                            ". Antes de declarar conclusão, use as ferramentas para reler os arquivos salvos, comparar com o pedido e rever estrutura, profundidade, consistência, informação relacionada, notas conectadas e eventuais trechos genéricos. Corrija problemas detectados quando autorizado. Não invente fatos que o usuário não estabeleceu. Depois responda com o resultado verificado e pendências reais.")]
+                            ". Antes de declarar conclusão, use as ferramentas para reler os arquivos salvos, comparar com o pedido e rever estrutura, profundidade, consistência, informação relacionada, notas conectadas e eventuais trechos genéricos. Corrija problemas detectados quando autorizado. Não invente fatos que o usuário não estabeleceu. " +
+                            "Esta revisão é interna. Depois, escreva a resposta final ao usuário como uma resposta completa: o que foi feito, quais arquivos foram criados ou alterados (como [[Título]]), o resultado e as pendências reais, incluindo o que esta revisão corrigiu. Não fale da revisão em si nem diga apenas que a qualidade foi confirmada.")]
                     });
                     emit(new AiAgentEvent("message", messages[^1]));
                     continue;
+                }
+                // CST-079: a review that changed nothing must not replace the answer about the work with one about the
+                // review: the person sees the answer written with the work; the review's words stay internal (hidden)
+                if (qualityReviewed && reviewedAnswer is not null && !ReferenceEquals(live, reviewedAnswer) &&
+                    result.Changes.Count == changesBeforeReview && messages.Count > 0 && ReferenceEquals(messages[^1], live) &&
+                    reviewedAnswer.Content.Any(b => b.Type == "text" && !b.Hidden && LegacyCustomize.JsTrim(b.Text ?? "").Length > 0))
+                {
+                    var notes = live.Content.Where(b => b.Type == "text" && LegacyCustomize.JsTrim(b.Text ?? "").Length > 0)
+                        .Select(b => new AiChatBlock { Type = "text", Text = "[Revisão interna] " + b.Text, Hidden = true });
+                    live.Content = [.. reviewedAnswer.Content.Where(b => b.Type == "text" && !b.Hidden).Select(b => AiChatBlock.TextBlock(b.Text ?? "")), .. notes];
+                    emit(new AiAgentEvent("final", live, Usage: result.Usage));
                 }
                 break;
             }

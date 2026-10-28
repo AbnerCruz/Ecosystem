@@ -84,6 +84,7 @@ public sealed partial class MainView : Grid
         };
         // [[link]] to a note that does not exist yet: created next to the open note, in its folder (DEC-0045, UC-37)
         Editor.CreateLinked = name => CreateNoteAsync(Editor.Current is { } open ? NoteLibrary.FolderOf(open.Path) : "", name, open: false);
+        Editor.CreateHere = () => CreateNoteAsync(Editor.Current is { } open ? NoteLibrary.FolderOf(open.Path) : "", open: false);
         Explorer.SelectionAction += (action, paths) => { if (!StillReading()) _ = SelectionActionAsync(action, paths); };
         Explorer.MoreRequested += () => { if (!StillReading()) _ = ShowNotesMenuAsync(); };
         Explorer.NewRequested += () => { if (!StillReading()) _ = ShowNotesCreateMenuAsync(); };
@@ -734,6 +735,7 @@ public sealed partial class MainView : Grid
         [
             new DialogItem(editor.ReadOnly ? "Modo edição" : "Modo leitura", editor.ReadOnly ? UrbeTheme.Icons.Pencil : UrbeTheme.Icons.Book,
                 editor.ReadOnly ? "Volta a escrever na nota." : "Só ler: nada é alterado sem querer.", Run: () => { editor.ReadOnly = !editor.ReadOnly; return Task.CompletedTask; }),
+            new DialogItem("Nova nota nesta pasta", UrbeTheme.Icons.File, NotesWhere(NoteLibrary.FolderOf(note.Path)), Run: () => editor.NewNoteHereAsync()),
             new DialogItem("Renomear", UrbeTheme.Icons.Pencil, Run: () => RenameNoteAsync(note.Path)),
             new DialogItem("Mover para outra pasta", UrbeTheme.Icons.Folder, Run: async () =>
             {

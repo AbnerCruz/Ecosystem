@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Threading;
 using Urbe.Client;
 using Urbe.Core;
 
@@ -39,6 +40,34 @@ public sealed partial class HeadlessUiTests
                 return true;
             }
             finally { window.Close(); }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task AndroidBackGoesUpTheFoldersOfTheWorkspaceBeforeLeaving() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            // CST-010 (owner: "o Voltar fecha o aplicativo"): inside a project, Voltar walks back up, then lets the app close
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-back-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(Path.Combine(vault, "Projeto", "Capítulos"));
+            File.WriteAllText(Path.Combine(vault, "Projeto", "Capítulos", "Um.md"), "# Um\n");
+            var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+            var window = new Window { Width = 412, Height = 860, Content = view };
+            window.Show();
+            try
+            {
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                view.Workspace.Open("Projeto/Capítulos");
+                Dispatcher.UIThread.RunJobs();
+                Assert.True(view.HandleSystemBack());
+                Assert.Equal("Projeto", view.Workspace.Folder);
+                Assert.True(view.HandleSystemBack());
+                Assert.Equal("", view.Workspace.Folder);
+                Assert.False(view.HandleSystemBack());   // the root: the Activity may close the app
+                return true;
+            }
+            finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
 
     [Fact]

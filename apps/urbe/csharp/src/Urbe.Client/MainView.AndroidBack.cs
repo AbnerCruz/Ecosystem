@@ -20,6 +20,8 @@ public sealed partial class MainView
         if (_pagesPanel is { IsVisible: true } pages) { pages.Close(); return true; }
         if (NotesOverEditor) { CloseNotesOverEditor(); return true; }
         if (Editor.IsVisible) { _ = Editor.BackAsync(); return true; }
+        // CST-010: inside a project of the Área de trabalho, Voltar goes up before it leaves the app
+        if (Workspace.IsEffectivelyVisible && Workspace.Back()) return true;
         return false;
     }
 }

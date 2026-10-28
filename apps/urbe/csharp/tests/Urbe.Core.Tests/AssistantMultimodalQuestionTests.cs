@@ -262,7 +262,11 @@ public sealed class AssistantMultimodalQuestionTests
         Assert.Equal(1, reads);
         Assert.Contains(messages.SelectMany(m => m.Content), block =>
             block.Text?.Contains("Revisão obrigatória do trabalho", StringComparison.Ordinal) == true);
-        Assert.Equal("Revisado.", messages.Last(m => m.Role == "assistant").Content.First(b => b.Type == "text").Text);
+        // CST-079: the review changed nothing, so the answer the person sees is the one about the work; the review's
+        // words stay internal (hidden)
+        var final = messages.Last(m => m.Role == "assistant");
+        Assert.Equal("Pronto.", final.Content.First(b => b.Type == "text" && !b.Hidden).Text);
+        Assert.Contains(final.Content, b => b.Hidden && b.Text == "[Revisão interna] Revisado.");
     }
 
     [Fact]

@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261028-urbe-consolidation-wave1",
   "category": "HANDOFF",
-  "timestamp": "2026-10-28T17:18:21Z",
+  "timestamp": "2026-10-28T17:33:50Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -14,27 +14,38 @@
   "branch": "ccr-939e057e-1zwyg5",
   "base_commit": "cb758c0",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/847",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
     "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
     "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.AndroidBack.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/FormRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/WorkspaceView.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AgentLanguage.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantQuickNoteTools.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Forms.cs",
     "apps/urbe/csharp/src/Urbe.Core/QuickNotes.cs",
     "apps/urbe/csharp/src/Urbe.Core/WikiTargets.cs",
     "apps/urbe/csharp/src/Urbe.Core/WorkspaceIndex.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AgentCreationBlocksUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AndroidBackAndPatchnotesUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ClockInEditorUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorNavigationUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FormRendererInputUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/QuickVoiceBacklogUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AgentLanguageTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantAuthorshipSealTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantMultimodalQuestionTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantReviewAnswerTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/FormsTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/QuickNotesTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/VoiceNoteQueueTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/WikiTargetsTests.cs",
@@ -49,14 +60,19 @@
     "CST-039: seletor Mover para sem a pasta atual nem destinos inválidos.",
     "CST-070: blocos de instrução já na criação do agente, mesmo editor da configuração.",
     "CST-077: idioma padrão do sistema para agentes, configurável; pedido explícito prevalece.",
-    "Progresso CST registrado em apps/urbe/docs/csharp/CONSOLIDATION.md."
+    "Progresso CST registrado em apps/urbe/docs/csharp/CONSOLIDATION.md.",
+    "CST-079: revisão interna não substitui a resposta sobre o trabalho; pedido de revisão exige resposta final completa.",
+    "CST-021: Nova nota nesta pasta no editor, sem arquivo residual ao cancelar.",
+    "CST-047: campos numéricos só aceitam números e mostram o erro específico na hora; seleção múltipla com caixas de marcar.",
+    "CST-052: relógio acessível no editor em largura de celular (verificado por teste).",
+    "CST-010: Voltar sobe as pastas da Área de trabalho antes de sair do app."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1285 testes, 0 falhas (local, .NET 10.0.403)."
+      "evidence": "1305 testes, 0 falhas (local, .NET 10.0.403)."
     },
     {
       "check": "Validação no Android físico dos itens desta leva",
@@ -109,6 +125,6 @@
   ],
   "criticality": {
     "declared": "routine",
-    "reason": "Funcionalidades autorizadas do Product, sem mudança de dados ou distribuição."
+    "reason": "Funcionalidades autorizadas do Product; a classificação efetiva (AssistantStore.cs na zona user-data, campo de configuração aditivo e compatível) é derivada pelo integrador."
   }
 }
