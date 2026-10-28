@@ -7,6 +7,8 @@ namespace Urbe.Client;
 public interface IUrbeVaultStorage
 {
     bool IsConnected { get; }
+    /// <summary>Opaque native-only identity of the currently selected vault; never passed to HTML.</summary>
+    string? VaultIdentity => null;
     Task<VaultSnapshot?> PickAsync(CancellationToken cancellationToken = default);
     Task<VaultSnapshot?> RestoreAsync(CancellationToken cancellationToken = default);
     /// <summary>First safe slice: update one EXISTING Markdown file, with conflict checks,
@@ -30,6 +32,10 @@ public interface IUrbeVaultStorage
 
     /// <summary>Rewrites ONE existing user text file of any editable text type (e.g. tema.json).</summary>
     Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default);
+
+    /// <summary>Atomic compare-and-write for one existing user text file. The SHA-256 comparison is inside the writer lock.</summary>
+    Task SaveExistingTextFileIfUnchangedAsync(string path, string content, byte[] expectedSha256, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException("Este vault não oferece gravação condicional segura.");
 
     /// <summary>Creates ONE user folder (a "Nova pasta"), and the folders above it, inside
     /// the vault. Never inside .urbe/ or any hidden folder; an existing folder is accepted, a file with
