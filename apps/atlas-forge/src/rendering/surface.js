@@ -18,11 +18,13 @@ export class SurfaceTiles {
     this.epoch = 0;
     this.signature = "";
     this.wanted = new Set();
+    this.cacheRevision = 0;
   }
   setWorld(world, derived) {
     this.context = surfaceContext(world, derived);
     this.epoch++;
     this.cache.clear();
+    this.cacheRevision++;
     this.signature = "";
     this.wanted.clear();
     this.error = null;
@@ -66,6 +68,7 @@ export class SurfaceTiles {
         .putImageData(new ImageData(rgba, TILE_SIZE, TILE_SIZE), 0, 0);
       return canvas;
     };
+    this.cacheRevision++;
     this.cache.set(keyOf(data.z, data.x, data.y), {
       ...data,
       canvas: make(data.rgba),
@@ -240,7 +243,7 @@ export class SurfaceTiles {
     return a * (tile.z === this.level && tile.z > 0 ? this.levelBlend : 1);
   }
   flat(renderer, ctx, tiles, now) {
-    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingEnabled = false;
     const span = renderer.scale * 2;
     for (const tile of tiles) {
       const n = 2 ** tile.z,
@@ -310,6 +313,16 @@ export class SurfaceTiles {
     }
     const { canvas, off, im, u, v } = this.projection,
       n = 2 ** z;
+    const frameKey = [this.epoch, this.cacheRevision, camera, renderer.rotation, z, renderer.layer, this.levelBlend].join(":");
+    if (
+      this.projection.frameFinal &&
+      this.projection.frameKey === frameKey &&
+      z < maxSurfaceLevel(this.context.radius)
+    ) {
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(canvas, 0, 0, renderer.w, renderer.h);
+      return;
+    }
     const groups = new Map();
     for (let k = 0; k < u.length; k++) {
       if (u[k] < 0) continue;
@@ -343,22 +356,12 @@ export class SurfaceTiles {
             TILE_SIZE - 1,
           ),
           fy = clamp((v[k] * q - tile.y) * TILE_SIZE - 0.5, 0, TILE_SIZE - 1);
-        const ix = Math.floor(fx),
-          iy = Math.floor(fy),
-          tx = fx - ix,
-          ty = fy - iy;
-        const a = (iy * TILE_SIZE + ix) * 4,
-          b = (iy * TILE_SIZE + Math.min(ix + 1, TILE_SIZE - 1)) * 4,
-          c = (Math.min(iy + 1, TILE_SIZE - 1) * TILE_SIZE + ix) * 4,
-          d =
-            (Math.min(iy + 1, TILE_SIZE - 1) * TILE_SIZE +
-              Math.min(ix + 1, TILE_SIZE - 1)) *
-            4;
+        const ix = Math.min(TILE_SIZE - 1, Math.floor(fx + 0.5)),
+          iy = Math.min(TILE_SIZE - 1, Math.floor(fy + 0.5));
+        const src = (iy * TILE_SIZE + ix) * 4;
         const data = renderer.layer === "elevation" ? tile.topo : tile.rgba;
         for (let channel = 0; channel < 3; channel++) {
-          const value =
-            (data[a + channel] * (1 - tx) + data[b + channel] * tx) * (1 - ty) +
-            (data[c + channel] * (1 - tx) + data[d + channel] * tx) * ty;
+          const value = data[src + channel];
           im.data[out + channel] =
             alpha === 1
               ? value
@@ -367,6 +370,9 @@ export class SurfaceTiles {
       }
     }
     off.putImageData(im, 0, 0);
+    this.projection.frameKey = frameKey;
+    this.projection.frameFinal = !this.fading;
+    ctx.imageSmoothingEnabled = false;
     ctx.drawImage(canvas, 0, 0, renderer.w, renderer.h);
     if (
       renderer.layer !== "elevation" &&

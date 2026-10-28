@@ -207,18 +207,10 @@ test("Version 3 roundtrip, future/malformed/inconsistent inputs rejected without
   assert.equal(serialize(world), src);
   assert.throws(() => parseProject("{bad"));
 });
-test("Synthetic Alpha v1 fixture migrates heights, seed, notes and eras", async () => {
-  const v = JSON.parse(
-      await readFile("fixtures/alpha-v1.synthetic.json", "utf8"),
-    ),
-    world = parseProject(JSON.stringify(v));
-  assert.equal(world.version, 3);
-  assert.equal(world.definition.seed, v.seed);
-  assert.equal(world.definition.planet.radius, 6371000);
-  assert.equal(world.state.entities[0].note.markdown, v.entities[0].md);
-  assert.equal(world.timeline.checkpoints.length, 1);
-  assert.ok(Math.abs(world.state.elevation[0] - -6000) < 0.2);
-  assert.equal(Object.keys(world.state.overrides).length, 72);
+test("Obsolete Alpha v1 imports are rejected without converting or mutating source", async () => {
+  const source = await readFile("fixtures/alpha-v1.synthetic.json", "utf8");
+  assert.throws(() => parseProject(source), /projeto antigo incompatível/);
+  assert.equal(JSON.parse(source).version, 1);
 });
 test("Hostile Markdown and publication JSON cannot close a script or execute active HTML", () => {
   const source =

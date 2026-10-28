@@ -12,11 +12,10 @@
 
 O parse limita entrada a 24 MiB, dimensões, quantidades, comprimentos e valores finitos; copia somente propriedades compreendidas. Topologia, datum, algoritmo ou versão futuros são recusados. O estado em memória só é substituído depois de validar e recalcular com sucesso; cancelamento/import inválido não substitui o mundo anterior. Nunca regrava arquivo de entrada: salvar faz um novo download. IndexedDB verifica transação e releitura; indisponibilidade/quota gera mensagem de fallback.
 
-## Migração v1
+## Ruptura intencional na versão 0.6
 
-Baseada exclusivamente no contrato documentado no mandato; **não foi auditado o HTML real da Alpha**. Fixture `fixtures/alpha-v1.synthetic.json` é sintética, identificada como tal. Alturas U16 em base64 são lidas little-endian e convertidas por `((u16/65535)*2−1)*6.000 m`. Essa escala é uma convenção de migração aproximada, não recuperação de medidas físicas da Alpha. O corpus real pode exigir ajuste do decoder antes de garantir compatibilidade geral.
+Por determinação expressa do proprietário, o Atlas Forge 0.6 **não importa nem converte projetos v1/v2 ou mundos associados ao motor `spherical-causal-1`**. A única definição de gerador aceita é `spherical-tectonic-2`, mantido o envelope JSON de projeto versão 3 para novos mundos. Importadores rejeitam versões futuras e algoritmos desconhecidos com mensagens diferentes de versões antigas. Arquivos incompatíveis não são abertos, sobrescritos ou excluídos automaticamente. Nenhuma migração é executada.
 
-Preserva seed, parâmetros (raio km → m), entidades/Markdown, elevação e snapshots `eras[].height`. Cada pixel importado vira override para evitar substituição por gerador desconhecido. `era` da Alpha não escolhe snapshot ativo automaticamente: o relevo atual do arquivo é a fonte canônica; todos os snapshots são oferecidos como marcos nomeados pelo ano. Mais de 12 snapshots são recusados com explicação, sem truncar história. IDs ausentes recebem IDs de migração estáveis por posição. Projetos com IDs duplicados são recusados.
 
 ## Segurança e limites conhecidos
 
@@ -24,21 +23,20 @@ Markdown é subconjunto de cabeçalhos, parágrafos, listas simples, ênfase e c
 
 Sem ZIP ou paths de arquivo extraídos, não há extração com path traversal. Não existe acesso automático a pastas/vault, arquivos internos de outros aplicativos ou envio de dados pela rede. SHA-256 é verificado na abertura de projetos e na recuperação local, inclusive nos marcos; hash ausente em exemplo/legado é indicado. SHA-256 é metadado de snapshot, não prova de autoria; arquivos não são assinados e o JSON não possui manifest global de integridade. Hashes por campo e arquivo binário/tile são propostas AF-013, não contratos oficiais.
 
-## Compatibilidade da ampliação cartográfica 0.3
+## Refinamento autoral
 
-A representação JSON v2 e o algoritmo `spherical-causal-1` permanecem iguais. O leitor 0.3 amplia a faixa de grades aceitas para larguras pares 12–1.440 (altura = largura/2). Todos os projetos aceitos pelo leitor anterior continuam aceitos; o leitor 0.2 recusa grades acima de 360, sem reinterpretá-las. Não há conversão automática nem redução de resolução ao salvar.
+Cada marco é validado pelas dimensões da sua própria definição, inclusive quando diverge da grade atual após refinamento. A operação explícita de refinar acrescenta marco original com o relevo, as edições e o diário, gerando nova grade com a mesma seed e o mesmo algoritmo tectônico. Não ocorre migração entre geradores. A autoridade de altura continua em `state.elevation`, com `state.overrides` como restrição autoral absoluta. O limite de arquivo é 24 MiB.
 
-Cada marco é validado pelas dimensões da **sua própria definição**, inclusive quando difere da grade atual depois de um refinamento. Isso corrige o uso incorreto das dimensões atuais para validar snapshots. Um refinamento novo acrescenta um marco original e inicia diário vazio para os novos índices; o diário anterior está integral no marco. Dimensões e autoridade das altitudes não são duplicadas em caches. O limite de 24 MiB não mudou; resultado de Worker e criação de marco são verificados antes de substituir o estado atual.
 
 ## Terreno contínuo e publicação 0.4
 
-O formato de projeto continua v2 e não armazena bitmaps do cache. Para projetos `spherical-causal-1`, a expansão visual/local é definida por `spherical-detail-1`; esse mapeamento é estável e uma mudança futura do algoritmo exige novo identificador e compatibilidade. O campo local é derivado de seed, grade canônica e algoritmo; os nós regionais são âncoras exatas, incluindo overrides. Não existe nesta versão override métrico persistente. O cache não é uma segunda autoridade de elevação regional.
+O formato de projeto atual é v3 e não armazena bitmaps do cache. A superfície detalhada de novos mundos usa o campo local versionado `spherical-detail-1`; o gerador planetário é `spherical-tectonic-2`. Uma futura troca de algoritmo exigirá seu próprio identificador, sem compromisso de migração dos mundos descartados. O campo local é derivado de seed, grade canônica e algoritmo; os nós regionais são âncoras exatas, incluindo overrides. Não existe nesta versão override métrico persistente. O cache não é uma segunda autoridade de elevação regional.
 
 Publicações incorporam `surfaceModel` e o avaliador correspondente; o viewer recusa um identificador desconhecido. O viewer inclui o avaliador local para reconstruir blocos sob demanda, sem solvers planetários/editor/storage. O Worker é código confiável empacotado, permitido por `worker-src blob:`; dados/notas nunca são código do Worker. Campos solares derivados usam um valor por **linha de latitude**, não por célula: `solarAnnual`, `solarJune`, `solarDecember`; `solarModel` declara modelo/unidade. Não crescem com número de longitudes e são recalculados ao abrir o projeto.
 
-## Biosfera e eras — v3 (0.5)
+## Biosfera e eras — formato v3
 
-A leitura de v2 produz v3 em memória, preservando relevo, overrides, entidades, notas, mapas filhos, diário e marcos. `species: []` e `ecosystem: null` indicam legado ainda sem biosfera. A inicialização é explícita no editor. Não regrava o arquivo original; leitores antigos recusam v3. Dados ecológicos inesperados em v2 são recusados. v1 mantém a migração sintética descrita acima.
+Projetos novos são salvos e lidos exclusivamente no formato v3 com motor tectônico. `species: []` e `ecosystem: null` identificam um mundo atual sem biosfera iniciada; a inicialização ecológica permanece explícita no editor. Nenhum leitor grava novamente o arquivo importado, e formatos anteriores são recusados.
 
 Catálogo: ID ASCII estável (reservados `detritus`, `__proto__`, `constructor`, `prototype`), nome, papel trófico, habitat, dieta por IDs, massa individual kg, limites térmicos °C, chuva mínima mm/ano, produtividade kg/m²/ano, mortalidade /ano, consumo kg/kg/ano, assimilação 0–1, dispersão km/ano e manejo. Referências ausentes, autoconsumo, IDs duplicados e intervalos inválidos são recusados.
 

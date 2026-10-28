@@ -1,6 +1,7 @@
 import { vegetation } from "../geometry/ecology.js";
 import { index, RAD } from "../geometry/sphere.js";
 import { hash32, sampleSurface } from "./surface-field.js";
+import { natureSprites } from "./pixel-sprites.js";
 
 // Cartographic symbols, not individual organisms or mineral deposits.
 // Locations are quantised in physical metres and never persisted to world state.
@@ -143,7 +144,9 @@ export function drawNature(renderer, ctx) {
     renderer.natureCache = cache;
   }
   const marks = cache.marks;
+  if (!renderer.pixelSprites) renderer.pixelSprites = natureSprites();
   ctx.save();
+  ctx.imageSmoothingEnabled = false;
   for (const mark of marks) {
     const p = renderer.point(mark.lat, mark.lon);
     const size = mark.diameterMetres / mpp;
@@ -155,37 +158,20 @@ export function drawNature(renderer, ctx) {
       p.y > renderer.h + size
     )
       continue;
-    const radius = Math.max(0.7, size / 2);
-    ctx.beginPath();
-    if (mark.kind === "tree") {
-      ctx.fillStyle = "#205a3bc9";
-      ctx.strokeStyle = "#9bc783d8";
-      ctx.lineWidth = Math.max(0.5, Math.min(2, size / 12));
-      ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
-      ctx.fill();
-      if (size > 8) {
-        ctx.stroke();
-        ctx.fillStyle = "#365437";
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, Math.max(0.8, size * 0.1), 0, Math.PI * 2);
-        ctx.fill();
-      }
-    } else if (mark.kind === "shrub") {
-      ctx.fillStyle = "#6d9655d0";
-      ctx.ellipse(p.x, p.y, radius, radius * 0.8, 0, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      ctx.fillStyle = "#9b9c8cc9";
-      ctx.strokeStyle = "#424e47d8";
-      ctx.lineWidth = 0.8;
-      ctx.moveTo(p.x - radius, p.y + radius * 0.2);
-      ctx.lineTo(p.x - radius * 0.3, p.y - radius);
-      ctx.lineTo(p.x + radius * 0.85, p.y - radius * 0.45);
-      ctx.lineTo(p.x + radius, p.y + radius * 0.65);
-      ctx.closePath();
-      ctx.fill();
-      if (size > 6) ctx.stroke();
-    }
+    // Nearest-neighbor 16×16 tile with coherent integer pixel clusters.
+    const sprites = renderer.pixelSprites;
+    const variant =
+      hash32(
+        Math.round(mark.lat * 100000),
+        Math.round(mark.lon * 100000),
+        71,
+        surface.seed,
+      ) % 4;
+    const texture = sprites[mark.kind][variant];
+    const drawSize = Math.max(2, Math.round(size));
+    const px = Math.round((p.x - drawSize / 2) * renderer.ratio) / renderer.ratio;
+    const py = Math.round((p.y - drawSize / 2) * renderer.ratio) / renderer.ratio;
+    ctx.drawImage(texture, px, py, drawSize, drawSize);
   }
   ctx.restore();
 }
