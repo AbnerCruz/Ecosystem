@@ -116,8 +116,17 @@ public sealed partial class MainView : IPageStudioHost
 
     string IPageStudioHost.Render(JsonObject spec, bool preview) => _pageEngine.Render(spec, new StoreNotes(_store), preview);
 
-    Task<Avalonia.Controls.Control?> IPageStudioHost.PreviewAsync(string path, byte[] html, Action<string>? messages) =>
-        ContentViewers.CreateAsync(new ContentRequest(_vault, path, path[(path.LastIndexOf('/') + 1)..], VaultFileKinds.Html, html) { Messages = messages });
+    async Task<Avalonia.Controls.Control?> IPageStudioHost.PreviewAsync(string path, byte[] html, Action<string>? messages)
+    {
+        // CST-059: the preview shows the vault's images too; what was read stays for the next renders of this page
+        if (_previewImagesOf != path) { _previewImages.Clear(); _previewImagesOf = path; }
+        var shown = await WithVaultImagesAsync(System.Text.Encoding.UTF8.GetString(html), path, _previewImages);
+        return await ContentViewers.CreateAsync(new ContentRequest(_vault, path, path[(path.LastIndexOf('/') + 1)..], VaultFileKinds.Html,
+            System.Text.Encoding.UTF8.GetBytes(shown)) { Messages = messages });
+    }
+
+    private readonly Dictionary<string, byte[]?> _previewImages = new(StringComparer.OrdinalIgnoreCase);
+    private string? _previewImagesOf;
 
     async Task IPageStudioHost.SaveAsync(string path, string text)
     {
@@ -219,7 +228,7 @@ public sealed partial class MainView : IPageStudioHost
     /// <summary>printPdf(): the page's export HTML to the system's print ("Salvar como PDF" saves the file).</summary>
     public async Task PrintPageAsync(string path)
     {
-        if (PageHtml(path) is not { } html) return;
+        if (await PageHtmlAsync(path) is not { } html) return;
         if (ContentViewers.Printer is not { } print) { ShowLifeNotice("Este aparelho não oferece impressão. Use Baixar HTML e imprima pelo navegador."); return; }
         try
         {

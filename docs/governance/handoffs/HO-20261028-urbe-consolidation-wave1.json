@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261028-urbe-consolidation-wave1",
   "category": "HANDOFF",
-  "timestamp": "2026-10-28T18:12:11Z",
+  "timestamp": "2026-10-28T18:18:58Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -25,6 +25,8 @@
     "apps/urbe/csharp/src/Urbe.Client/MainView.AndroidBack.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.Embeds.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Pages.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Studio.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
     "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
     "apps/urbe/csharp/src/Urbe.Client/Ui/FormRenderer.cs",
@@ -38,6 +40,7 @@
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
     "apps/urbe/csharp/src/Urbe.Core/EmbedFragments.cs",
     "apps/urbe/csharp/src/Urbe.Core/Forms.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageImages.cs",
     "apps/urbe/csharp/src/Urbe.Core/QuickNotes.cs",
     "apps/urbe/csharp/src/Urbe.Core/WikiTargets.cs",
     "apps/urbe/csharp/src/Urbe.Core/WorkspaceIndex.cs",
@@ -51,6 +54,7 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EmbedFragmentUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/FormRendererInputUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PageImagesUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/QuickVoiceBacklogUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AgentLanguageTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantAuthorshipSealTests.cs",
@@ -60,6 +64,7 @@
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantStaleRewriteTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/EmbedFragmentsTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/FormsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageImagesTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/QuickNotesTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/VoiceNoteQueueTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/WikiTargetsTests.cs",
@@ -84,14 +89,15 @@
     "CST-008: seleção antiga não trava novas respostas no chat.",
     "Edições longas (CST-098, parte): sem reescrita inteira a partir de leitura desatualizada ou parcial; edit_note falho mostra o trecho mais parecido; falhas repetidas pedem replanejar; números da resposta recontados; read_note nativo sem selos.",
     "CST-075: ferramenta urbe_guide sobre o Tutorial do app; Tutorial completado (incorporações, grafos, notas rápidas) e protegido por teste de cobertura da sintaxe.",
-    "CST-064 (parte): incorporação de seção por título, de bloco ^id e de linhas, sem os marcadores no cartão."
+    "CST-064 (parte): incorporação de seção por título, de bloco ^id e de linhas, sem os marcadores no cartão.",
+    "CST-059: imagens do vault citadas pela página vão dentro do HTML (prévia, visualização, exportação e impressão)."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1342 testes, 0 falhas (local, .NET 10.0.403)."
+      "evidence": "1348 testes, 0 falhas (local, .NET 10.0.403)."
     },
     {
       "check": "Validação no Android físico dos itens desta leva",
