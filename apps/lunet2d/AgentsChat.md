@@ -570,3 +570,12 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Inventário documental por 19 frentes em docs/audits/inventario-estado-2026-10-27.md com evidências do código, testes, PRs merged, handoffs/DEVICE e release lunet2d-v0.0.1-dev.1000428. Corrigida defasagem no ROADMAP de Assets/Audio/apk offline sem mover os gates F4/F5/F9.
 - Metodologia: GitHub API/leitura de código e arquivos de testes. Ambiente desta sessão **sem dotnet e sem Android**; não executou testes, APK ou dispositivo; CI de PR e integração governada pendentes. Nenhum source/runtime/signing/API alterado.
 - Próxima frente do roadmap novo: testes de jornada completa, começando por EndToEndTests e smoke de APK existentes; reteste físico específico da coexistência/orientação da correção #824, sem reabrir bugs já corrigidos.
+
+### 20261027-chatgpt-lunet-journey-e2e — 2026-10-27 (America/Sao_Paulo) — ChatGPT → integrador — verifying
+- Item: LUNET-450, Issue #834, primeiro checkbox pendente do roadmap externo: testes de jornada completa de autoria ao APK.
+- BASE: Ecosystem main 64deb1b6247df2b2637bad1cd4ae062dfa191636; branch test/lunet-journey-e2e-20261027; auditoria dos PRs Lunet abertos sem conflito identificado.
+- Testes ANTES do pipeline: ProjectJourneyTests criou projeto, editou Game.cs/Sprite/Tile/WAV, reabriu, compilou Roslyn, rodou Preview com backend registrador e exportou ZIP; depois adicionados fluxo de APK do mesmo projeto, validação de assets exatos e instalação + abertura no emulador.
+- Arquivos: tests/Lunet.Tests/ProjectJourneyTests.cs; tools/offline-apk-check/Program.cs; workflow monorepo .github/workflows/lunet2d-release.yml; ROADMAP, CHANGELOG, docs/guides/end-to-end-journey.md, AgentsChat e handoff.
+- Verificação: inspeção por API GitHub dos fontes, contratos, tests e workflow; CI será autoridade do resultado de execução. Ambiente local sem .NET/SDK Android; nenhuma prova física nesta sessão. Não declarar sucesso ou release antes de checar execuções.
+- Limitações: Preview headless usa os mesmos modelos de domínio, mas não testa gestos Android; PNG fixture verifica carregamento, não o encoder Android. CI usa chave efêmera. Precisam DEVICE físico e confirmação de exportação no aparelho antes de marcar [x]. Sem mudança no motor, no Keystore do usuário ou no empacotador de produção.
+- Próximo: abrir PR # a determinar, exigir CI e integrador governado; em CI vermelho, corrigir a causa; depois release e roteiro DEVICE do guia.
