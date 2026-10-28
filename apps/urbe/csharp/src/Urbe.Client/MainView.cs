@@ -47,6 +47,7 @@ public sealed partial class MainView : Grid
         Explorer = new NotesExplorer { State = ExplorerState };
         Editor = new EditorOverlay { IsVisible = false, Dialogs = Dialogs, Notes = () => _contents.Select(n => new CityNote(n.Key, n.Value)) };
         Editor.EmbedFor = BuildEmbed;
+        Editor.ConfirmEmbeddedAtlasExitAsync = ConfirmEmbeddedAtlasExitAsync;
         Editor.Properties.TagSource = () => _store is null ? [] : _store.List().SelectMany(d => d.Tags).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
         Editor.PropertiesFor = path => _library?.PropertiesText(path, Now);
         // v23Atualizar: v23Dock.hidden = editor (the rail of a wide window stays)
