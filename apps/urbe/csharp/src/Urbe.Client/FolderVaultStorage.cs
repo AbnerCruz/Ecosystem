@@ -35,7 +35,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
     }
 
     public bool IsConnected => _root is not null && _baseline is not null;
-    public string? VaultIdentity => _root is null ? null : Path.GetFullPath(_root);
+    public string? AtlasVaultSessionKey => _root is null ? null : Path.GetFullPath(_root);
 
     /// <summary>The connected folder, if any.</summary>
     public string? Folder => _root;
