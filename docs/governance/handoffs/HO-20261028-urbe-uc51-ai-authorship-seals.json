@@ -73,6 +73,12 @@
       "evidence": "101 selos/126 blocos; reescrita idêntica preserva os bytes; uma edição muda só a linha editada; ~3 ms por atribuição (headless)."
     },
     {
+      "check": "APK x86_64 (Release sem AOT) instalado e aberto em emulador Android 13 (google_apis x86_64) sem aceleração KVM",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Instalação OK e primeira tela (Bem-vindo ao Urbe) desenhada; primeiro quadro em ~5 min por emulação de software, com System UI sem resposta. Fluxo de pasta (SAF) e editor não exercitados; sem valor de desempenho ou de toque."
+    },
+    {
       "check": "dotnet run tests/consistency/Check.cs",
       "kind": "automated",
       "result": "passed",
