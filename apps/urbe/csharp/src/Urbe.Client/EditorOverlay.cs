@@ -403,9 +403,32 @@ public sealed class EditorOverlay : Grid
     /// <summary>Opens a note fresh (from Notas, a search…): the trail of followed links starts over.</summary>
     public void Open(CityNote note)
     {
+        if (IsVisible && _note is not null && note.Path != _note.Path && ConfirmEmbeddedAtlasExitAsync is { } confirm)
+        {
+            var canLeave = confirm();
+            if (canLeave.IsCompletedSuccessfully)
+            {
+                if (!canLeave.Result) return;
+            }
+            else { _ = OpenAfterAtlasGuardAsync(note, canLeave); return; }
+        }
         _trail.Clear();
         Show(note);
     }
+
+    private async Task OpenAfterAtlasGuardAsync(CityNote note, Task<bool> guard)
+    {
+        if (!await guard) return;
+        _trail.Clear();
+        Show(note);
+    }
+
+    /// <summary>Before replacing a note, this guard handles unsaved interactive Atlas Map embeds.</summary>
+    public Func<Task<bool>>? ConfirmEmbeddedAtlasExitAsync { get; set; }
+
+    private async Task<bool> CanLeaveAtlasAsync() =>
+        ConfirmEmbeddedAtlasExitAsync is not { } confirm || await confirm();
+
 
     /// <summary>
     /// Notes left by following a [[link]] or a backlink, most recent on top. The 1.8.4 always closed the editor on
@@ -423,6 +446,7 @@ public sealed class EditorOverlay : Grid
     /// <summary>Follows a link or a backlink to <paramref name="target"/>: saves the open note, remembers it and opens the target.</summary>
     public async Task NavigateAsync(CityNote target)
     {
+        if (target.Path != _note?.Path && !await CanLeaveAtlasAsync()) return;
         var saving = LeaveCurrentAsync();
         Go(target);
         await saving;
@@ -437,6 +461,7 @@ public sealed class EditorOverlay : Grid
     /// <summary>editor.forward: the note Voltar left, if it still exists.</summary>
     public async Task ForwardAsync()
     {
+        if (!await CanLeaveAtlasAsync()) return;
         var saving = LeaveCurrentAsync();
         var notes = Notes?.Invoke().ToList() ?? [];
         while (_forward.TryPop(out var path))
@@ -474,6 +499,7 @@ public sealed class EditorOverlay : Grid
     /// <summary>Voltar: the previous note of the trail, or closes back to where the editor was opened from.</summary>
     public async Task BackAsync()
     {
+        if (!await CanLeaveAtlasAsync()) return;
         var saving = LeaveCurrentAsync();
         var notes = Notes?.Invoke().ToList() ?? [];
         while (_trail.TryPop(out var path))
@@ -700,7 +726,7 @@ public sealed class EditorOverlay : Grid
     /// <summary>A tab tapped: the open note is saved, then the tab's note opens.</summary>
     public async Task SwitchTabAsync(string path)
     {
-        if (path == _note?.Path) return;
+        if (path == _note?.Path || !await CanLeaveAtlasAsync()) return;
         if (Notes?.Invoke().FirstOrDefault(n => n.Path == path) is not { } note) { _tabs.Remove(path); RenderTabs(); return; }
         var saving = LeaveCurrentAsync();
         _trail.Clear();
@@ -711,6 +737,7 @@ public sealed class EditorOverlay : Grid
     /// <summary>× of a tab: it closes; if it was the open note, the last tab opens, or the editor closes when none is left.</summary>
     public async Task CloseTabAsync(string path)
     {
+        if (path == _note?.Path && !await CanLeaveAtlasAsync()) return;
         if (path != _note?.Path)
         {
             _tabs.Remove(path);
