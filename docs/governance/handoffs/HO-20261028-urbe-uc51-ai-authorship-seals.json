@@ -40,7 +40,9 @@
     "apps/urbe/docs/csharp/AI-AUTHORSHIP-SEALS.md",
     "apps/urbe/docs/csharp/ASSISTANT-AUTHORSHIP-INTEGRITY-20261026.md",
     "apps/urbe/docs/csharp/ROADMAP.md",
-    "docs/governance/handoffs/HO-20261028-urbe-uc51-ai-authorship-seals.json"
+    "docs/governance/handoffs/HO-20261028-urbe-uc51-ai-authorship-seals.json",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AndroidBackAndPatchnotesUiTests.cs"
   ],
   "work_completed": [
     "Diagnóstico com evidência nos arquivos do proprietário (FeaturesCheck e notas de outubro de 2026): selo só no último bloco, selos acumulados, selo dentro do negrito, loop de remoção e old_text sem correspondência causados por WithAiMark e pelo bloqueio 'protected' da beta.33.",
@@ -48,7 +50,8 @@
     "Assistente: leitura sem selos (read_note, read_notes, grep_notes, search_notes, seleção); create/edit/write/append compostos pelo motor; tentativa sobre selo vira noop explicativo sem erro; prompt informa que o Urbe administra os selos; aprovação editada atribui à pessoa o que ela escreveu; nota alterada durante a aprovação não é sobrescrita; arquivos não-Markdown nunca recebem selo (antes create_note podia corromper JSON).",
     "Editor: Visual edita o bloco sem expor o selo e o recompõe; selo digitado é descartado; código leva a linha do selo junto; Fonte mantém a guarda e não apaga só o selo do código; selos legados exibidos no lugar canônico no Visual, na exportação e nas incorporações sem regravar o arquivo.",
     "PinAnswer (UC-80) usa o motor; guarda de gravação: rota do Assistente confia no motor, rotas humanas aceitam divisão/junção composta pelo motor.",
-    "Documentação: contrato AI-AUTHORSHIP-SEALS.md, tutorial no app, ROADMAP UC-51, patchnotes beta.36; versão 2.0.0-beta.36 (2000036)."
+    "Documentação: contrato AI-AUTHORSHIP-SEALS.md, tutorial no app, ROADMAP UC-51, patchnotes beta.36; versão 2.0.0-beta.36 (2000036).",
+    "Inspeção visual headless (Avalonia/Skia) da FeaturesCheck real: negrito legado restaurado, um selo por item; o chip do modelo não quebra mais no hífen. Teste de patchnotes embutidos passou a ler a versão do csproj (antes fixava beta.33)."
   ],
   "verification": [
     {
