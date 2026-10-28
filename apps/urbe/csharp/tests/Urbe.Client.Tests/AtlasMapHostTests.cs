@@ -52,9 +52,11 @@ public sealed class AtlasMapHostTests
     {
         var dir = Path.Combine(Path.GetTempPath(), "urbe-atlas-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
-        var mapPath = Path.Combine(dir, "Mundo.html");
+        var vaultDir = Path.Combine(dir, "vault");
+        Directory.CreateDirectory(vaultDir);
+        var mapPath = Path.Combine(vaultDir, "Mundo.html");
         await File.WriteAllTextAsync(mapPath, Html());
-        var vault = new FolderVaultStorage(_ => Task.FromResult<string?>(dir), Path.Combine(dir, "selection.json"));
+        var vault = new FolderVaultStorage(_ => Task.FromResult<string?>(vaultDir), Path.Combine(dir, "selection.json"));
         try
         {
             await vault.PickAsync();
@@ -86,8 +88,10 @@ public sealed class AtlasMapHostTests
         Directory.CreateDirectory(dir);
         try
         {
-            File.WriteAllText(Path.Combine(dir, "Mundo.html"), Html());
-            var vault = new FolderVaultStorage(_ => Task.FromResult<string?>(dir), Path.Combine(dir, "selection.json"));
+            var vaultDir = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(vaultDir);
+            File.WriteAllText(Path.Combine(vaultDir, "Mundo.html"), Html());
+            var vault = new FolderVaultStorage(_ => Task.FromResult<string?>(vaultDir), Path.Combine(dir, "selection.json"));
             await vault.PickAsync();
             var opened = new List<string>();
             var session = AtlasMapSession.TryCreate(new ContentRequest(vault, "Mundo.html", "Mundo.html", Urbe.Core.VaultFileKinds.Html, Encoding.UTF8.GetBytes(Html())) {
