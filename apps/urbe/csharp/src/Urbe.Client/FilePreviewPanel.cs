@@ -49,7 +49,7 @@ public sealed class FilePreviewPanel : Grid
             Background = Brushes.Transparent, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
         };
         ToolTip.SetTip(close, "Fechar");
-        close.Click += (_, _) => Close();
+        close.Click += async (_, _) => await TryCloseAsync();
         // menuEntradaExplorer for an attachment: Renomear, Mover, Excluir
         var more = new Button
         {
@@ -69,7 +69,19 @@ public sealed class FilePreviewPanel : Grid
         head.Children.Add(close);
         head.Children.Add(more);
         head.Children.Add(_title);
-        _choose.SelectionChanged += (_, _) => { if (!_choosing && _choose.SelectedIndex >= 0 && IsVisible) _ = ShowAsync(_choose.SelectedIndex); };
+        _choose.SelectionChanged += async (_, _) =>
+        {
+            if (_choosing || _choose.SelectedIndex < 0 || !IsVisible) return;
+            int selected = _choose.SelectedIndex;
+            if (!await ConfirmMapExitAsync())
+            {
+                _choosing = true;
+                _choose.SelectedIndex = Index;
+                _choosing = false;
+                return;
+            }
+            await ShowAsync(selected);
+        };
         _open.Click += async (_, _) =>
         {
             if (Current is { } path && Storage is { } s && !await s.OpenExternallyAsync(path))
@@ -82,7 +94,12 @@ public sealed class FilePreviewPanel : Grid
         foreach (var (label, source) in new[] { ("Página", false), ("Fonte", true) })
         {
             var b = Chip(label);
-            b.Click += (_, _) => { if (_htmlSource == source) return; _htmlSource = source; _ = ShowAsync(Index); };
+            b.Click += async (_, _) =>
+            {
+                if (_htmlSource == source || !await ConfirmMapExitAsync()) return;
+                _htmlSource = source;
+                await ShowAsync(Index);
+            };
             _htmlMode.Children.Add(b);
         }
         var top = new StackPanel { Children = { head, _meta, _choose, _htmlMode } };
@@ -97,8 +114,8 @@ public sealed class FilePreviewPanel : Grid
         _card.BorderThickness = new Thickness(1);
         _card.Padding = new Thickness(20, 14, 20, 20);
         Children.Add(_card);
-        PointerPressed += (_, e) => { if (e.Source == this) Close(); };
-        KeyDown += (_, e) => { if (e.Key == Key.Escape) { Close(); e.Handled = true; } };
+        PointerPressed += async (_, e) => { if (e.Source == this) await TryCloseAsync(); };
+        KeyDown += async (_, e) => { if (e.Key == Key.Escape) { await TryCloseAsync(); e.Handled = true; } };
         SizeChanged += (_, _) => Place();
     }
 
@@ -109,6 +126,9 @@ public sealed class FilePreviewPanel : Grid
 
     /// <summary>The vault the files are read from.</summary>
     public IUrbeVaultStorage? Storage { get; set; }
+
+    /// <summary>Native dialogs for explicit save/discard/cancel before releasing an edited map.</summary>
+    public UrbeDialogs? Dialogs { get; set; }
 
     /// <summary>Restricted Atlas Map note navigation supplied by the Urbe's native editor.</summary>
     public Func<string, Task<bool>>? AtlasOpenNote { get; set; }
@@ -133,6 +153,7 @@ public sealed class FilePreviewPanel : Grid
     /// </summary>
     public async Task OpenGeneratedAsync(string title, string source, byte[] html)
     {
+        if (IsVisible && !await ConfirmMapExitAsync()) return;
         _generated = (source, html);
         _files = [(title, null)];
         _htmlSource = false;
@@ -153,6 +174,7 @@ public sealed class FilePreviewPanel : Grid
 
     private async Task OpenAsync(IReadOnlyList<(string Name, string? Path)> files, int index)
     {
+        if (IsVisible && !await ConfirmMapExitAsync()) return;
         _generated = null;
         _files = files;
         _htmlSource = false;
@@ -166,7 +188,59 @@ public sealed class FilePreviewPanel : Grid
         Focus();
     }
 
+    private bool _closingMap;
+
+    /// <summary>
+    /// Before losing the WebView the user explicitly saves, discards or cancels. A failed save
+    /// never closes the panel or reports success; the current map remains loaded and dirty.
+    /// </summary>
+    public async Task<bool> ConfirmMapExitAsync()
+    {
+        if (_closingMap) return false;
+        if (_body.Content is not IAtlasMapPendingEdits map) return true;
+        try
+        {
+            _closingMap = true;
+            if (!await map.HasPendingEditsAsync()) return true;
+            if (Dialogs is null) return false; // no native confirmation surface: never silently discard
+            int? choice = await Dialogs.ChooseAsync("Alterações não salvas no mapa",
+            [
+                new DialogItem("Salvar e continuar", Detail: "Gravar os lugares no HTML do vault"),
+                new DialogItem("Descartar alterações", Detail: "Perder as modificações desta sessão", Danger: true),
+                new DialogItem("Cancelar", Detail: "Continuar editando o mapa")
+            ], "Este mapa contém lugares ou descrições ainda não gravados.");
+            if (choice == 1) return true;
+            if (choice == 0)
+            {
+                if (await map.SavePendingEditsAsync() && !await map.HasPendingEditsAsync()) return true;
+                await Dialogs.AlertAsync("Mapa não salvo", "A gravação não foi confirmada. Suas alterações continuam abertas no mapa.");
+            }
+            return false;
+        }
+        catch (Exception ex) when (ex is ObjectDisposedException or TimeoutException or InvalidOperationException or IOException)
+        {
+            if (Dialogs is not null)
+                await Dialogs.AlertAsync("Mapa não salvo", "Não foi possível verificar a gravação: " + ex.Message);
+            return false;
+        }
+        finally { _closingMap = false; }
+    }
+
+    public async Task<bool> TryCloseAsync()
+    {
+        if (!await ConfirmMapExitAsync()) return false;
+        CloseCore();
+        return true;
+    }
+
+    /// <summary>Existing synchronous callers retain the fast path when no WebView/map is pending.</summary>
     public void Close()
+    {
+        if (_body.Content is IAtlasMapPendingEdits) { _ = TryCloseAsync(); return; }
+        CloseCore();
+    }
+
+    private void CloseCore()
     {
         _version++;
         IsVisible = false;

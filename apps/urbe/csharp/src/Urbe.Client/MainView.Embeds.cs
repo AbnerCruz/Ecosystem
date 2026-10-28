@@ -22,6 +22,41 @@ public sealed partial class MainView
     private const long EmbedPageMax = 32L * 1024 * 1024;
     private const double EmbedPageHeight = 420;
 
+    /// <summary>
+    /// Closing/switching a note must not silently destroy an edited map. This includes navigation
+    /// started by the HTML's own "Abrir nota" action; the note stays open when saving fails.
+    /// </summary>
+    private async Task<bool> ConfirmEmbeddedAtlasExitAsync()
+    {
+        var maps = Editor.GetVisualDescendants().OfType<IAtlasMapPendingEdits>().ToArray();
+        foreach (var map in maps)
+        {
+            try
+            {
+                if (!await map.HasPendingEditsAsync()) continue;
+                int? choice = await Dialogs.ChooseAsync("Mapa com alterações não salvas",
+                [
+                    new DialogItem("Salvar e continuar", Detail: "Gravar os lugares no HTML do vault"),
+                    new DialogItem("Descartar alterações", Detail: "Perder as alterações desta sessão", Danger: true),
+                    new DialogItem("Cancelar", Detail: "Voltar à edição do mapa")
+                ], "A nota contém um mapa interativo com alterações pendentes.");
+                if (choice == 1) continue;
+                if (choice == 0)
+                {
+                    if (await map.SavePendingEditsAsync() && !await map.HasPendingEditsAsync()) continue;
+                    await Dialogs.AlertAsync("Mapa não salvo", "Não foi possível confirmar a gravação. O mapa permanece aberto.");
+                }
+                return false;
+            }
+            catch (Exception ex) when (ex is TimeoutException or ObjectDisposedException or InvalidOperationException or IOException)
+            {
+                await Dialogs.AlertAsync("Mapa não salvo", "Falha ao verificar o mapa: " + ex.Message);
+                return false;
+            }
+        }
+        return true;
+    }
+
     /// <summary>The card of <c>![[</c><paramref name="target"/><c>]]</c>: never null, never throws (a missing target says so).</summary>
     internal Control BuildEmbed(string target)
     {
