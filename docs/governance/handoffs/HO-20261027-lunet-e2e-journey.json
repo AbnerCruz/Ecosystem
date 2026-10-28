@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261027-lunet-e2e-journey",
   "category": "HANDOFF",
-  "timestamp": "2026-10-28T00:23:23.367Z",
+  "timestamp": "2026-10-28T00:30:12.986Z",
   "agent": {
     "id": "chatgpt-lunet-journey-e2e",
     "kind": "ai-agent"
@@ -14,10 +14,11 @@
   "branch": "test/lunet-journey-e2e-20261027",
   "base_commit": "64deb1b6247df2b2637bad1cd4ae062dfa191636",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/835",
   "files_changed": [
     "apps/lunet2d/tests/Lunet.Tests/ProjectJourneyTests.cs",
     "apps/lunet2d/tools/offline-apk-check/Program.cs",
+    "apps/lunet2d/tools/ci-android-journey.sh",
     ".github/workflows/lunet2d-release.yml",
     "apps/lunet2d/ROADMAP.md",
     "apps/lunet2d/CHANGELOG.md",
@@ -29,7 +30,8 @@
     "Teste de jornada de criação real, edição de C#/sprite/tilemap/WAV, reabertura, compilação Roslyn, Preview headless, AssetCatalog e ZIP foi escrito ANTES do pipeline.",
     "Ferramenta de CI estendida para empacotar Content e Assets reais por meio do OfflineGameApkBuilder de produção e verificar integridade dos bytes.",
     "Workflow de release estendido para compilar o mesmo projeto criado no teste, gerar APK offline x86_64, verificar aapt/apksigner/zipalign, instalar, iniciar e observar log de execução no Android 13; captura logs, APK, projeto ZIP e screenshot.",
-    "Roadmap e Changelog atualizados sem marcar a validação física como completa; guia reproduzível elaborado."
+    "Roadmap e Changelog atualizados sem marcar a validação física como completa; guia reproduzível elaborado.",
+    "Primeiro CI Android reproduziu falha no harness: script: do android-emulator-runner executa cada linha em subshell; variável não persistia. Fluxo movido para tools/ci-android-journey.sh, executado como único comando; sem alteração no APK."
   ],
   "verification": [
     {
@@ -42,7 +44,7 @@
       "check": "CI integrado: suíte xUnit, empacotamento offline e Android 13 emulator launch",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Aguardando execução do PR e verificação de artefatos, não declarar green antecipadamente."
+      "evidence": "CI inicial https://github.com/AbnerCruz/Ecosystem/actions/runs/40608475768: testes, compilação e exportação reais passaram; instalação dos dois APKs existentes passou; novo smoke falhou ao perder variável shell (/journey-package-id.txt), não no Android. Correção de harness no PR #835; aguardando rerun."
     },
     {
       "check": "Jornada completa na interface Android e instalação física do APK exportado no aparelho",
@@ -61,6 +63,7 @@
   ],
   "blockers": [],
   "next_actions": [
+    "Reexecutar o emulador com script único, garantir leitura de PackageId, adb install, am start e logcat.",
     "Acompanhar checks de PR e CI; corrigir qualquer falha de compilação/execução.",
     "Integrar somente via integrador governado quando a política e checks permitirem.",
     "Confirmar release após integração e coletar resultado do roteiro Android físico antes de concluir [x]."

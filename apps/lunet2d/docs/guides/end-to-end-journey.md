@@ -17,6 +17,8 @@ No job `apk` do workflow `.github/workflows/lunet2d-release.yml`, o projeto prod
 
 O teste novo foi escrito no commit anterior à extensão do empacotador de CI e ao workflow, preservando a ordem *testes antes do código*.
 
+O smoke Android fica em `tools/ci-android-journey.sh`: a ação do emulador executa cada linha de `script:` em shell separado, portanto o workflow chama **uma única** linha `bash ...` para preservar variáveis e interromper a execução em qualquer erro. A primeira execução do CI revelou essa falha de harness após instalar os dois APKs de regressão; a correção mantém o teste completo, sem enfraquecê-lo.
+
 ## O que essa automação NÃO comprova
 
 - Não toca a interface da IDE no emulador nem desenha pixels com gestos reais; edita fontes por meio das mesmas classes de domínio. A exportação pelo botão **Gerar APK do jogo** no dispositivo continua exigindo DEVICE.
