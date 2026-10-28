@@ -97,7 +97,19 @@ internal static class AndroidContentViewers
         switch (request.Kind)
         {
             case VaultFileKinds.Html when request.Bytes is { } bytes && FilePreviewPanel.Text(bytes) is { } html:
-                return new AndroidHtmlHost(context => Page(context, html, request.Messages), view => (view as WebView)?.Destroy(), request.Messages is not null);
+            {
+                // Only a validated Atlas Map exported HTML gets a host capability. Studio and arbitrary HTML remain isolated.
+                var atlas = AtlasMapSession.TryCreate(request);
+                return new AndroidHtmlHost(context => Page(context, html, request.Messages, atlas), view =>
+                {
+                    atlas?.Revoke();
+                    if (view is WebView web)
+                    {
+                        if (atlas is not null) web.RemoveJavascriptInterface("UrbeAtlas");
+                        web.Destroy();
+                    }
+                }, request.Messages is not null);
+            }
             case VaultFileKinds.Audio or VaultFileKinds.Video when request.Storage is AndroidVaultStorage vault
                                                                  && await vault.DocumentOfAsync(request.Path, cancellationToken) is { } uri:
                 return new AndroidViewHost(context => Player(context, uri), view => (view.FindViewWithTag("player") as VideoView)?.StopPlayback());
@@ -107,7 +119,7 @@ internal static class AndroidContentViewers
     }
 
     /// <summary>A page of HTML from the vault: JavaScript on (the HTML products need it), nothing else reachable.</summary>
-    private static AView Page(Context context, string html, Action<string>? messages = null)
+    private static AView Page(Context context, string html, Action<string>? messages = null, AtlasMapSession? atlas = null)
     {
         var web = new WebView(context);
         web.SetBackgroundColor(Color.White);
@@ -119,7 +131,18 @@ internal static class AndroidContentViewers
         settings.SetSupportZoom(true);
         settings.BuiltInZoomControls = true;
         settings.DisplayZoomControls = false;
-        web.SetWebViewClient(new StayOnPage());
+        if (atlas is { } approved)
+        {
+            // No external frames/network/forms. The Atlas uses one inline script and a blob: worker for offline physics.
+            // The CSP is embedded only once; it is harmless if the user later saves the HTML back to the vault.
+            const string csp = "<meta data-urbe-atlas-csp=\"v1\" http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; worker-src blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'\">";
+            if (!html.Contains("data-urbe-atlas-csp=", StringComparison.Ordinal))
+                html = html.Replace("<head>", "<head>" + csp, StringComparison.OrdinalIgnoreCase);
+            var bridge = new AtlasMapJavascriptBridge(web, approved);
+            web.AddJavascriptInterface(bridge, "UrbeAtlas");
+            web.SetWebViewClient(new AtlasStayOnPage(bridge));
+        }
+        else web.SetWebViewClient(new StayOnPage());
         if (messages is not null)
         {
             // the studio's preview: what the page posts to its parent (here, itself) goes out by the console, nothing else
@@ -127,9 +150,9 @@ internal static class AndroidContentViewers
             const string relay = "<script>addEventListener('message',function(e){try{var m=e.data;if(m&&!m.host&&(m.urbePage==='select'||m.urbePage==='text'||m.urbePage==='comment'))console.log('urbe-msg:'+JSON.stringify(m))}catch(_){}})</script>";
             html = html.Contains("</body>", StringComparison.Ordinal) ? html.Replace("</body>", relay + "</body>", StringComparison.Ordinal) : html + relay;
         }
-        if (messages is not null)
+        if (messages is not null || atlas is not null)
         {
-            // writing in the preview: the page's text takes the keyboard (the app's own view holds it otherwise)
+            // writing in the preview or Atlas Map fields: the page's text takes the keyboard (the app's own view holds it otherwise)
             web.Focusable = true;
             web.FocusableInTouchMode = true;
             web.Touch += (_, e) =>
@@ -154,6 +177,20 @@ internal static class AndroidContentViewers
                 return true;
             }
             return base.OnConsoleMessage(consoleMessage);
+        }
+    }
+
+    /// <summary>Only the already-loaded approved document may receive an AtlasHost adapter.</summary>
+    private sealed class AtlasStayOnPage(AtlasMapJavascriptBridge bridge) : WebViewClient
+    {
+        public override bool ShouldOverrideUrlLoading(WebView? view, IWebResourceRequest? request) => true;
+
+        public override void OnPageFinished(WebView? view, string? url)
+        {
+            if (view is null || view.Handle == IntPtr.Zero) return;
+            // The exported map captures initialHTML during boot. Injecting here keeps the per-session
+            // nonce and native object out of any subsequently saved HTML.
+            view.EvaluateJavascript(bridge.AdapterScript, null);
         }
     }
 
