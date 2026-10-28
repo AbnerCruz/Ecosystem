@@ -494,7 +494,9 @@ public sealed partial class MainView : Grid
     // Keep the one-argument signature for Editor.SaveRequested (Func<CityNote, Task>).
     private Task SaveNoteAsync(CityNote note) => SaveNoteAsync(note, expectedUndoContent: null);
 
-    private async Task SaveNoteAsync(CityNote note, string? expectedUndoContent)
+    /// <param name="sealsByEngine">The Assistente's route: its seals were composed by AiAuthorship (UC-51), which may
+    /// replace a regenerated block's seal or drop a deleted block's; the person's routes keep the guard below.</param>
+    private async Task SaveNoteAsync(CityNote note, string? expectedUndoContent, bool sealsByEngine = false)
     {
         if (_vault is null || !_vault.IsConnected || _snapshot is null)
             throw new InvalidOperationException("Selecione uma pasta real para gravar.");
@@ -502,9 +504,11 @@ public sealed partial class MainView : Grid
             throw new InvalidOperationException("Vault em modo somente leitura.");
         // Last defense for every native write route (editor Fonte/Visual and assistant):
         // keep already-persisted attribution tokens immutable.
-        if (note.Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) &&
+        if (!sealsByEngine && note.Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) &&
             _contents.TryGetValue(note.Path, out var previous) &&
             !NoteMarks.PreservesAiAuthorship(previous, note.Content) &&
+            // a person's split or join of an AI block, as the Visual editor composes it
+            note.Content != AiAuthorship.Attribute(previous, note.Content, null) &&
             // A verified inverse of the exact previous AI transaction is permitted.
             // This cannot authorize a generic replacement or stale restoration.
             !string.Equals(previous, expectedUndoContent, StringComparison.Ordinal))

@@ -212,7 +212,7 @@ public sealed partial class MainView
         {
             var reader = new MarkdownReader { Size = UrbeTheme.EditorSize * .94, LineFactor = 1.55, WikiLinkTapped = name => _ = Editor.FollowLinkAsync(name) };
             var text = body.Length > 40_000 ? body[..40_000] + "\n\n…" : body;
-            var view = reader.BuildMarkdown(NoteMarks.StripComments(text));
+            var view = reader.BuildMarkdown(NoteMarks.StripComments(AiAuthorship.Canonical(text)));
             // this text is not the block's own: the caret mapping of a tap must not look into it
             foreach (var tb in view.GetLogicalDescendants().OfType<TextBlock>()) tb.Classes.Remove(MarkdownReader.TextClass);
             shown = new Border { Padding = new Thickness(14, 4, 14, 8), Child = view };

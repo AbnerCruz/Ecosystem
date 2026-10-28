@@ -1,5 +1,7 @@
 # UC-51 / Issue #809 — Integridade das marcas de autoria e recuperação de execução
 
+> **Substituído em 28/10/2026 (beta.36)** por [AI-AUTHORSHIP-SEALS.md](AI-AUTHORSHIP-SEALS.md). O bloqueio de gravação descrito aqui deixava o agente em loop e acumulava selos; agora o agente não vê os selos e o Urbe os compõe por bloco. Mantido como histórico do incidente.
+
 **Incidente reproduzido:** Urbe 2.0.0-beta.32; export de conversa de 26/10/2026. O agente tentou remover `{ia:"gpt-6-luna"}` oito vezes com `edit_note`: duas chamadas enviaram `new_text: ""` e receberam falso erro "falta new_text"; seis chamadas não alteraram o conteúdo. A tentativa de repetição também expôs um encerramento prematuro por `no_progress`.
 
 **Ampliação do proprietário:** o próprio editor permite ao usuário remover as marcas, o que contraria a expectativa de autoria protegida. Não basta ensinar o modelo.

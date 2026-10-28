@@ -24,17 +24,78 @@ public sealed record AiToolOutput(string Content, IReadOnlyList<AiChange>? Chang
 /// <summary>What the approval shows: the note and its text before and after (or a note of what happens).</summary>
 public sealed record AiPreview(string Path, string? Before, string? After, string? Note = null);
 
+/// <summary>An authored note write (UC-51): the tool, the note (null: a new one), its stored text and the text to store.</summary>
+public sealed record AiAuthoredWrite(string Tool, string Path, UrbeDocument? Doc, string? Before, string After, bool SealsOnly = false);
+
 public static partial class AssistantTools
 {
+    /// <summary>The note tools whose text the Assistente authors: the Urbe seals what they write (AiAuthorship).</summary>
+    public static bool IsAuthoredWrite(string name) => name is "create_note" or "edit_note" or "write_note" or "append_to_note";
+
     /// <summary>
-    /// UC-51: every text the Assistente writes into a note ends with its mark, <c>{ia:"modelo"}</c> (NoteMarks.AiMark), so
-    /// it can always be told apart; the person sees it in the preview and can edit it before approving.
+    /// UC-51 / CST-028: what an authored write will store — the tool's change applied to the seal-free text the agent
+    /// read, with the seals the Urbe gives each block (seals the agent sent are ignored). <see cref="AiAuthoredWrite.SealsOnly"/>
+    /// when the call only touched seals: nothing to write.
     /// </summary>
-    public static void Watermark(AiTool tool, JsonObject input, string? model)
+    public static AiAuthoredWrite PlanAuthored(AiTool tool, JsonObject input, IAssistantHost host, string model)
     {
-        var field = tool.Name switch { "create_note" or "write_note" or "append_to_note" => "content", "edit_note" => "new_text", _ => null };
-        if (field is null || input[field] is not JsonValue v || !v.TryGetValue<string>(out var text) || text.Trim().Length == 0) return;
-        input[field] = NoteMarks.WithAiMark(text, model ?? "IA");
+        // only Markdown notes carry seals: a .json, .css or .js the agent writes keeps exactly its text
+        bool seals = true;
+        string Plain(string key) => seals ? AiAuthorship.Strip(Str(input, key)) : Str(input, key);
+        string Sealed(string? before, string text) => seals ? AiAuthorship.Attribute(before, text, model) : text;
+        if (tool.Name == "create_note")
+        {
+            var path = ValidPath(Str(input, "path"));
+            if (host.Documents.Get(path) is not null) throw new AiToolException("Já existe " + path + ". Use edit_note ou write_note.");
+            seals = NoteRe.IsMatch(path);
+            return new(tool.Name, path, null, null, Sealed(null, Plain("content")));
+        }
+        var d = ResolveDoc(host, Str(input, "path"))!;
+        seals = NoteRe.IsMatch(d.Path);
+        var current = seals ? AiAuthorship.Strip(d.Content) : d.Content;
+        string next;
+        switch (tool.Name)
+        {
+            case "edit_note":
+                var oldText = Plain("old_text");
+                if (seals && oldText.Length == 0 && Str(input, "old_text").Length > 0) return new(tool.Name, d.Path, d, d.Content, d.Content, SealsOnly: true);
+                next = ApplyEdit(current, oldText, Plain("new_text"), Has(input, "replace_all"));
+                break;
+            case "write_note":
+                next = Plain("content");
+                break;
+            case "append_to_note":
+                next = AppendText(current, Plain("content"), Has(input, "heading") ? Str(input, "heading") : null);
+                break;
+            default:
+                throw new AiToolException("Ferramenta sem escrita de nota: " + tool.Name);
+        }
+        return new(tool.Name, d.Path, d, d.Content, Sealed(d.Content, next));
+    }
+
+    /// <summary>
+    /// Stores <paramref name="text"/> (the planned text, or the person's edit of it already attributed) with the tool's
+    /// own messages. A note that changed while the approval waited is never overwritten.
+    /// </summary>
+    public static async Task<AiToolOutput> CommitAuthored(AiAuthoredWrite plan, string text, IAssistantHost host)
+    {
+        if (plan.Doc is null)
+        {
+            if (host.Documents.Get(plan.Path) is not null) throw new AiToolException("Já existe " + plan.Path + ". Use edit_note ou write_note.");
+            var created = await host.CreateNoteAsync(plan.Path, text);
+            return new AiToolOutput("Criada: " + created.Path + " (" + Words(AiAuthorship.Strip(created.Content)) + " palavras).", [new AiChange(created.Id, null, Snap(created))]);
+        }
+        var current = host.Documents.Get(plan.Doc.Id) ?? host.Documents.Get(plan.Doc.Path) ?? plan.Doc;
+        if (!string.Equals(current.Content, plan.Before, StringComparison.Ordinal))
+            throw new AiToolException("A nota " + plan.Path + " mudou enquanto a alteração aguardava. Nada foi gravado; leia a nota de novo e refaça a alteração sobre a versão atual.");
+        var u = await host.SaveNoteAsync(current, text);
+        AiChange[] change = [new AiChange(current.Id, Snap(current), Snap(u))];
+        return plan.Tool switch
+        {
+            "edit_note" => new AiToolOutput("Editada: " + u.Path + ".", change),
+            "write_note" => new AiToolOutput("Reescrita: " + u.Path + " (" + Words(AiAuthorship.Strip(u.Content)) + " palavras).", change),
+            _ => new AiToolOutput("Texto acrescentado em " + u.Path + ".", change)
+        };
     }
 
     /// <summary>Tools whose preview's "after" is the note's whole new text, so the person can edit it before approving.</summary>
@@ -66,6 +127,8 @@ public interface IAssistantHost
     (string? Path, string? Selection) EditorContext();
     /// <summary>How much of a note one read may bring (proportional to the model's context).</summary>
     int ReadChars { get; }
+    /// <summary>A note's text as the agent reads it: without the authorship seals when the Urbe manages them (UC-51).</summary>
+    string Readable(string text) => text;
     Task<UrbeDocument> CreateNoteAsync(string path, string content);
     Task<UrbeDocument> SaveNoteAsync(UrbeDocument doc, string content);
     /// <summary>Moves or renames a note (the file first); the other notes' links are the tool's.</summary>
@@ -163,6 +226,16 @@ public static partial class AssistantTools
     private static string Today() => DateTime.UtcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     private static AiNoteSnap? Snap(UrbeDocument? d) => d is null ? null : new AiNoteSnap(d.Path, d.Content);
+
+    /// <summary>The note as the agent reads it (<see cref="IAssistantHost.Readable"/>).</summary>
+    private static UrbeDocument Readable(IAssistantHost host, UrbeDocument d)
+    {
+        var text = ReadableText(host, d);
+        return ReferenceEquals(text, d.Content) || text == d.Content ? d : d with { Content = text };
+    }
+
+    /// <summary>Only Markdown notes carry seals; other text files read as they are.</summary>
+    private static string ReadableText(IAssistantHost host, UrbeDocument d) => NoteRe.IsMatch(d.Path) ? host.Readable(d.Content) : d.Content;
 
     private static int Score(string a, string b)
     {
@@ -372,7 +445,7 @@ public static partial class AssistantTools
             {
                 var q = LegacyCustomize.JsTrim(Str(i, "query"));
                 if (q.Length == 0) throw new AiToolException("Busca vazia.");
-                var docs = host.Documents.List().Select(d => new LegacySearchDoc(d.Id, d.Title, d.Path, d.Content, d.Modified)).ToList();
+                var docs = host.Documents.List().Select(d => new LegacySearchDoc(d.Id, d.Title, d.Path, ReadableText(host, d), d.Modified)).ToList();
                 var hits = LegacyQuickOpen.Rank(docs, q, Int(i, "limit") is { } l && l != 0 ? l : 12).Select(r => "- " + r.Doc.Path +
                     (r.Snippet is { } sn ? "\n  …" + Slice160(LegacyCustomize.JsTrim(Regex.Replace(sn.Before + sn.Match + sn.After, @"\s+", " "))) : "")).ToList();
                 return Task.FromResult(new AiToolOutput(hits.Count > 0 ? string.Join("\n", hits) : "Nada encontrado para \"" + q + "\"."));
@@ -387,7 +460,7 @@ public static partial class AssistantTools
             Run = (i, host) =>
             {
                 var d = ResolveDoc(host, Str(i, "path"))!;
-                var r = ReadSlice(d, Int(i, "start_line"), Int(i, "max_lines"), ReadBudget(host));
+                var r = ReadSlice(Readable(host, d), Int(i, "start_line"), Int(i, "max_lines"), ReadBudget(host));
                 return Task.FromResult(new AiToolOutput(r.Text, Reads: [(d.Path, r.Partial)]));
             }
         },
@@ -408,7 +481,7 @@ public static partial class AssistantTools
                     try
                     {
                         var d = ResolveDoc(host, p)!;
-                        var r = ReadSlice(d, 1, 0, share);
+                        var r = ReadSlice(Readable(host, d), 1, 0, share);
                         output.Add(r.Text);
                         reads.Add((d.Path, r.Partial));
                     }
@@ -444,7 +517,7 @@ public static partial class AssistantTools
                 foreach (var d in host.Documents.List().OrderBy(d => d.Path, Comparer<string>.Create(JsText.LocaleCompare)))
                 {
                     if (more || (f.Length > 0 && !d.Path.ToLowerInvariant().StartsWith(f + "/", StringComparison.Ordinal))) continue;
-                    var lines = d.Content.Split('\n');
+                    var lines = ReadableText(host, d).Split('\n');
                     var shown = new HashSet<int>();
                     var block = new List<string>();
                     for (int n = 0; n < lines.Length; n++)
@@ -504,7 +577,7 @@ public static partial class AssistantTools
             {
                 var (path, selection) = host.EditorContext();
                 if (string.IsNullOrEmpty(path)) return Task.FromResult(new AiToolOutput("Nenhuma nota aberta no editor."));
-                return Task.FromResult(new AiToolOutput("Nota aberta: " + path + (!string.IsNullOrEmpty(selection) ? "\nSeleção do usuário:\n\"\"\"\n" + Clip(selection, 4000) + "\n\"\"\"" : "\nSem texto selecionado.")));
+                return Task.FromResult(new AiToolOutput("Nota aberta: " + path + (!string.IsNullOrEmpty(selection) ? "\nSeleção do usuário:\n\"\"\"\n" + Clip(host.Readable(selection), 4000) + "\n\"\"\"" : "\nSem texto selecionado.")));
             }
         },
         new()

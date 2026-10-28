@@ -374,7 +374,8 @@ public sealed class MarkdownReader
             case "span" when n.HasClass(NoteMarks.AiClass):
             {
                 // {ia:"modelo"} (UC-51): text written by the Assistente — a tiny green "modelo" after it
-                var model = n.Attr("data-model");
+                // the model's name never splits across lines at its hyphens (gpt-6-luna)
+                var model = n.Attr("data-model").Replace('-', '\u2011');
                 into.Add(new Run(" " + model) { FontSize = Size * .55, Foreground = UrbeTheme.Brush("#3fb86b"), BaselineAlignment = BaselineAlignment.Superscript });
                 length += model.Length + 1;
                 return;

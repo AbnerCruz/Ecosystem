@@ -353,6 +353,8 @@ public sealed partial class AssistantPanel
         if (diff is not null) box.Children.Add(diff);
         // UC-51: the proposed text can be edited before approving; what is written is the person's version
         TextBox? editor = null;
+        // the person edits the text, not the seals: the Urbe gives the result its seals (UC-51, AiAuthorship)
+        var editable = pv?.After is { } proposed && pv.Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ? AiAuthorship.Strip(proposed) : pv?.After;
         var actions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right };
         if (AssistantTools.CanEdit(p.Tool, pv))
         {
@@ -363,7 +365,7 @@ public sealed partial class AssistantPanel
                 if (editor is not null) return;
                 editor = new TextBox
                 {
-                    Text = _approvalDrafts.GetValueOrDefault(p.Call.Id, pv!.After ?? ""), AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 120, MaxHeight = 360,
+                    Text = _approvalDrafts.GetValueOrDefault(p.Call.Id, editable ?? ""), AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 120, MaxHeight = 360,
                     FontFamily = UrbeTheme.MonoFont, FontSize = 13, Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text),
                     CaretBrush = UrbeTheme.Brush(UrbeTheme.Accent)
                 };
@@ -386,13 +388,13 @@ public sealed partial class AssistantPanel
         actions.Children.Add(reject);
         if (!danger && !plugin)
         {
-            var all = TextButton("Aprovar todas", () => Respond(editor is not null ? new AiApproval("approve_all", EditedText: editor.Text ?? "") : AiApproval.ApproveAll));
+            var all = TextButton("Aprovar todas", () => Respond(editor is not null && editor.Text != editable ? new AiApproval("approve_all", EditedText: editor.Text ?? "") : AiApproval.ApproveAll));
             ToolTip.SetTip(all, "Aprovar esta e as próximas alterações desta resposta");
             all.Margin = new Thickness(0, 0, 8, 0);
             actions.Children.Add(all);
         }
         actions.Children.Add(TextButton(danger ? "Excluir" : plugin ? "Ligar plugin" : "Aprovar",
-            () => Respond(editor is not null && editor.Text != pv?.After ? AiApproval.ApproveEdited(editor.Text ?? "") : AiApproval.Approve), primary: !danger, danger: danger));
+            () => Respond(editor is not null && editor.Text != editable ? AiApproval.ApproveEdited(editor.Text ?? "") : AiApproval.Approve), primary: !danger, danger: danger));
         box.Children.Add(actions);
         // The surrounding timeline or contextual sheet is already a surface; don't draw another container.
         return new Border { Child = box, Padding = new Thickness(0, 8), Background = Brushes.Transparent };

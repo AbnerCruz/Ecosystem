@@ -105,6 +105,10 @@ public static partial class MarkdownEngine
         return blocks;
     }
 
+    /// <summary>A line that opens or closes fenced code for <see cref="SplitBlocks"/>.</summary>
+    internal static bool IsFenceLine(string line) =>
+        FencePattern().IsMatch(line) || line.StartsWith(new string(Backtick, 3), StringComparison.Ordinal);
+
     private static bool IsListLine(string line) =>
         TaskPattern().IsMatch(line) || UnorderedPattern().IsMatch(line) || OrderedPattern().IsMatch(line);
 

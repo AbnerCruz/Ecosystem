@@ -339,7 +339,7 @@ public sealed partial class MainView : IAssistantApp
         RequireWritable();
         bool editing = Editor.IsVisible && Editor.Current?.Path == doc.Path;
         if (editing && Editor.HasChanges) throw new InvalidOperationException("A nota " + doc.Path + " está aberta no editor com alterações não salvas. Salve ou descarte antes.");
-        await SaveNoteAsync(new CityNote(doc.Path, content));
+        await SaveNoteAsync(new CityNote(doc.Path, content), expectedUndoContent: null, sealsByEngine: true);
         if (editing) Editor.Open(new CityNote(doc.Path, content));
         AfterAssistantWrite(doc.Path);
         return _store!.Get(doc.Id) ?? doc;

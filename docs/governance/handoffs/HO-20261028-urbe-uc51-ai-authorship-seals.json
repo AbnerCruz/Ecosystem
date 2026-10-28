@@ -1,0 +1,158 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261028-urbe-uc51-ai-authorship-seals",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-28T12:35:13Z",
+  "agent": {
+    "id": "claude-code-urbe-authorship",
+    "kind": "ai-agent"
+  },
+  "task_id": "GH-845",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-939e057e-1zwyg5",
+  "base_commit": "65f8011",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/846",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/AiAuthorship.cs",
+    "apps/urbe/csharp/src/Urbe.Core/NoteMarks.cs",
+    "apps/urbe/csharp/src/Urbe.Core/MarkdownEngine.Blocks.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageBookRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Embeds.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AiAuthorshipTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantAuthorshipSealTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorAuthorshipProtectionTests.cs",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-beta.36.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/docs/csharp/AI-AUTHORSHIP-SEALS.md",
+    "apps/urbe/docs/csharp/ASSISTANT-AUTHORSHIP-INTEGRITY-20261026.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261028-urbe-uc51-ai-authorship-seals.json",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AndroidBackAndPatchnotesUiTests.cs"
+  ],
+  "work_completed": [
+    "Diagnóstico com evidência nos arquivos do proprietário (FeaturesCheck e notas de outubro de 2026): selo só no último bloco, selos acumulados, selo dentro do negrito, loop de remoção e old_text sem correspondência causados por WithAiMark e pelo bloqueio 'protected' da beta.33.",
+    "Testes escritos antes da implementação; motor AiAuthorship: blocos de autoria iguais aos do Visual (lista por item), posição canônica válida em qualquer editor (fim da linha, última célula de tabela, linha após código/fórmula), atribuição por blocos idênticos/movidos e similaridade de palavras (estilo WikiWho), correção mantém autor, regeneração substitui sem acumular.",
+    "Assistente: leitura sem selos (read_note, read_notes, grep_notes, search_notes, seleção); create/edit/write/append compostos pelo motor; tentativa sobre selo vira noop explicativo sem erro; prompt informa que o Urbe administra os selos; aprovação editada atribui à pessoa o que ela escreveu; nota alterada durante a aprovação não é sobrescrita; arquivos não-Markdown nunca recebem selo (antes create_note podia corromper JSON).",
+    "Editor: Visual edita o bloco sem expor o selo e o recompõe; selo digitado é descartado; código leva a linha do selo junto; Fonte mantém a guarda e não apaga só o selo do código; selos legados exibidos no lugar canônico no Visual, na exportação e nas incorporações sem regravar o arquivo.",
+    "PinAnswer (UC-80) usa o motor; guarda de gravação: rota do Assistente confia no motor, rotas humanas aceitam divisão/junção composta pelo motor.",
+    "Documentação: contrato AI-AUTHORSHIP-SEALS.md, tutorial no app, ROADMAP UC-51, patchnotes beta.36; versão 2.0.0-beta.36 (2000036).",
+    "Inspeção visual headless (Avalonia/Skia) da FeaturesCheck real: negrito legado restaurado, um selo por item; o chip do modelo não quebra mais no hífen. Teste de patchnotes embutidos passou a ler a versão do csproj (antes fixava beta.33)."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test Urbe.Portable.slnx (Core + Client headless)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1260 testes, 0 falhas, local Linux .NET 10.0.403 (baseline antes da mudança: 1203)."
+    },
+    {
+      "check": "dotnet publish src/Urbe.Android -c Release (arm64, AOT)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "APK gerado localmente; avisos XA0141 de 16 KB do LLamaSharp preexistentes."
+    },
+    {
+      "check": "Sonda com a FeaturesCheck real do proprietário",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "101 selos/126 blocos; reescrita idêntica preserva os bytes; uma edição muda só a linha editada; ~3 ms por atribuição (headless)."
+    },
+    {
+      "check": "APK x86_64 (Release sem AOT) instalado e aberto em emulador Android 13 (google_apis x86_64) sem aceleração KVM",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Instalação OK e primeira tela (Bem-vindo ao Urbe) desenhada; primeiro quadro em ~5 min por emulação de software, com System UI sem resposta. Fluxo de pasta (SAF) e editor não exercitados; sem valor de desempenho ou de toque."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks PASS localmente (avisos preexistentes: DEC-0031/0041/0057 e snapshot de Issues ausente)."
+    },
+    {
+      "check": "Android físico com Gboard: editar/dividir bloco da IA no Visual, colar, Desfazer/Refazer, alternar Visual/Fonte, aprovação editada e sugestão inline sem salto de caret ou latência perceptível",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/docs/csharp/AI-AUTHORSHIP-SEALS.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Classificação correção × geração é por palavras, não por significado: tradução conta como geração; até duas palavras novas isoladas num bloco longo contam como correção.",
+    "O selo continua texto Markdown: edição fora do Urbe não é impedida.",
+    "Selos legados só mudam de bytes quando o bloco é editado; até lá são apenas exibidos no lugar canônico."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI do PR e integração governada (mudança no csproj Android é zona de distribuição: aguarda autorização do proprietário).",
+    "Validação DEVICE no moto g32 conforme a seção 5 do contrato."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "docs/adr/0034-urbe-sem-simulacao-visual.md",
+    "docs/governance/addenda/ADD-0026-urbe-experiencia-de-usuario-topo-de-linha.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/ASSISTANT-AUTHORSHIP-INTEGRITY-20261026.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/communication.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O próprio .md continua a única fonte da autoria (sintaxe DEC-0045); nenhum registro paralelo foi criado."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Mudança restrita a apps/urbe; nenhuma dependência nova entre Products."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #845, branch, handoff e PR rastreáveis."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Sem mudança de formato: o {ia:\"modelo\"} aprovado em DEC-0045/UC-43 continua; muda só onde o app o coloca e quem o administra."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes automatizados e validação DEVICE separados; nada alegado como validado no aparelho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Comandos e números de testes registrados; pendências explícitas."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nada extraído para a plataforma; motor específico do Urbe."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "ai-authorship-seals",
+      "status": "possible-candidate",
+      "rationale": "Outros Products com escrita assistida poderiam querer o mesmo selo, mas não há consumidor real; permanece no Urbe (ADR-0011/NN-022)."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Correção de comportamento do produto sem mudança de formato de dados; a classificação efetiva (o csproj da beta é zona de distribuição) é derivada pelo integrador."
+  }
+}

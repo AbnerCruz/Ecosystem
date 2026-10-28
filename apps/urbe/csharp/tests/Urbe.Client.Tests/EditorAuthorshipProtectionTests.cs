@@ -95,6 +95,105 @@ public sealed class EditorAuthorshipProtectionTests
             return true;
         }, TestContext.Current.CancellationToken));
 
+    private static TextBox EditBlock(EditorOverlay editor, Window window, int index = 0)
+    {
+        window.UpdateLayout();
+        var start = editor.Surface.BlockStarts.ElementAt(index);
+        var holder = editor.Surface.BlockView(start)!;
+        editor.Surface.TapBlock(start, holder, holder, new Point(8, 8), select: false);
+        Dispatcher.UIThread.RunJobs();
+        return Assert.Single(editor.Surface.GetVisualDescendants().OfType<TextBox>());
+    }
+
+    [Fact]
+    public async Task VisualBoxNeverShowsTheSealAndTheEditedBlockKeepsIt() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var editor = new EditorOverlay();
+            var window = new Window { Width = 412, Height = 720, Content = editor };
+            window.Show();
+            editor.Open(new CityNote("Notas/Visual.md", Marked + "\n"));
+            var box = EditBlock(editor, window);
+            Assert.Equal("Texto do agente", box.Text);
+            box.Text = "Texto revisado pela pessoa";
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal("Texto revisado pela pessoa {ia:\"modelo\"}\n", editor.Editor.Text);
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task VisualTypedSealIsNotASeal() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var editor = new EditorOverlay();
+            var window = new Window { Width = 412, Height = 720, Content = editor };
+            window.Show();
+            editor.Open(new CityNote("Notas/Humana.md", "Meu texto\n"));
+            var box = EditBlock(editor, window);
+            box.Text = "Meu texto {ia:\"falso\"}";
+            Dispatcher.UIThread.RunJobs();
+            Assert.DoesNotContain("{ia:", editor.Editor.Text);
+            Assert.DoesNotContain("{ia:", box.Text);
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task VisualSplittingAnAiParagraphKeepsTheSealOnBothParts() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var editor = new EditorOverlay();
+            var window = new Window { Width = 412, Height = 720, Content = editor };
+            window.Show();
+            editor.Open(new CityNote("Notas/Divide.md", "Primeira parte do texto e segunda parte do texto {ia:\"m\"}\n"));
+            var box = EditBlock(editor, window);
+            box.Text = "Primeira parte do texto\ne segunda parte do texto";
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal("Primeira parte do texto {ia:\"m\"}\ne segunda parte do texto {ia:\"m\"}\n", editor.Editor.Text);
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task VisualCodeBlockKeepsTheSealOnTheLineAfterIt() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var editor = new EditorOverlay();
+            var window = new Window { Width = 412, Height = 720, Content = editor };
+            window.Show();
+            editor.Open(new CityNote("Notas/Codigo.md", "```\nvar a = 1;\n```\n{ia:\"m\"}\n"));
+            window.UpdateLayout();
+            Assert.Single(editor.Surface.BlockStarts);
+            var box = EditBlock(editor, window);
+            Assert.Equal("```\nvar a = 1;\n```", box.Text);
+            box.Text = "```\nvar a = 2;\n```";
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal("```\nvar a = 2;\n```\n{ia:\"m\"}\n", editor.Editor.Text);
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task SourceCannotDeleteOnlyTheSealOfACodeBlockButCanDeleteTheBlock() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            const string code = "```\nx\n```\n{ia:\"m\"}\nDepois";
+            var editor = new EditorOverlay { StartInVisual = false };
+            var window = new Window { Width = 412, Height = 720, Content = editor };
+            window.Show();
+            editor.Open(new CityNote("Notas/Fonte.md", code));
+            editor.SetMode(EditorMode.Fonte);
+            editor.Editor.Text = "```\nx\n```\nDepois";
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(code, editor.Editor.Text);
+            editor.Editor.Text = "Depois";
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal("Depois", editor.Editor.Text);
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
     [Fact]
     public async Task FormattingBarIncludesUndoRedoEvenWithPersonalizedButtons() =>
         Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>

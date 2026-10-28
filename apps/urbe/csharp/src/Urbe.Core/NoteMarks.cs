@@ -49,13 +49,19 @@ public static partial class NoteMarks
     /// </summary>
     public static string PinAnswer(string note, string agent, string request, string answer, string model)
     {
-        var quote = string.Join("\n", WithAiMark(answer.Trim(), model).Split('\n').Select(l => l.Length == 0 ? ">" : "> " + l));
+        // the answer's own seals are ignored: the Urbe seals the quote it adds (AiAuthorship), the rest keeps its bytes
+        var quote = string.Join("\n", AiAuthorship.Strip(answer).Trim().Split('\n').Select(l => l.Length == 0 ? ">" : "> " + l));
         var call = AgentCalls(note).FirstOrDefault(c => string.Equals(c.Agent, agent.Trim(), StringComparison.OrdinalIgnoreCase) && c.Request == request.Trim());
+        string pinned;
         if (call is null)
-            return note.TrimEnd('\n') + (note.Length > 0 ? "\n\n" : "") + quote + "\n";
-        int end = call.Start + call.Length;
-        var rest = note[end..].TrimStart('\n');
-        return note[..end] + "\n\n" + quote + "\n" + (rest.Length > 0 ? "\n" + rest : "");
+            pinned = note.TrimEnd('\n') + (note.Length > 0 ? "\n\n" : "") + quote + "\n";
+        else
+        {
+            int end = call.Start + call.Length;
+            var rest = note[end..].TrimStart('\n');
+            pinned = note[..end] + "\n\n" + quote + "\n" + (rest.Length > 0 ? "\n" + rest : "");
+        }
+        return AiAuthorship.Attribute(note, pinned, model);
     }
 
     /// <summary>The mark after text written by the Assistente: <c>{ia:"modelo"}</c>, the model's short name.</summary>
@@ -75,32 +81,10 @@ public static partial class NoteMarks
     }
 
     /// <summary>
-    /// Erases only AI stamps stranded on otherwise empty physical lines. Other
-    /// stamps (including those inside code) remain untouched. Keep the line
-    /// breaks so deleting a line's text never joins unrelated paragraphs.
+    /// Erases only AI stamps stranded on otherwise empty physical lines, keeping the line breaks so deleting a line's
+    /// text never joins unrelated paragraphs. The stamp on the line after a code block belongs to it (AiAuthorship).
     /// </summary>
-    public static string RemoveOrphanedAiMarks(string? markdown)
-    {
-        var text = markdown ?? "";
-        if (!text.Contains("{ia:", StringComparison.Ordinal)) return text;
-        var marks = AuthorshipMarks(text);
-        if (marks.Count == 0) return text;
-        var result = new System.Text.StringBuilder(text.Length);
-        int start = 0;
-        while (start < text.Length)
-        {
-            int newline = text.IndexOf('\n', start);
-            int end = newline < 0 ? text.Length : newline;
-            var line = text[start..end];
-            bool hasMark = marks.Any(m => m.Index >= start && m.Index + m.Length <= end);
-            result.Append(hasMark && string.IsNullOrWhiteSpace(AiMarkRegex().Replace(line, ""))
-                ? "" : line);
-            if (newline < 0) break;
-            result.Append('\n');
-            start = newline + 1;
-        }
-        return result.ToString();
-    }
+    public static string RemoveOrphanedAiMarks(string? markdown) => AiAuthorship.RemoveOrphans(markdown);
 
     /// <summary>
     /// A stamp cannot be deleted while it still attributes content. Clearing
@@ -161,7 +145,9 @@ public static partial class NoteMarks
 
         // There must be no replacement content, and the old diff must span
         // complete physical lines. Deleting the marker alone is never allowed.
+        // Deleting a line of stamps alone (the one after a code block) would remove authorship without its content.
         if (!string.IsNullOrWhiteSpace(after[prefix..newEnd]) ||
+            string.IsNullOrWhiteSpace(AiMarkRegex().Replace(before[prefix..oldEnd], "")) ||
             (prefix > 0 && before[prefix - 1] != '\n') ||
             (oldEnd < before.Length && before[oldEnd] != '\n' && (oldEnd == 0 || before[oldEnd - 1] != '\n')))
             return false;
