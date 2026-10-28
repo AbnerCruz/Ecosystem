@@ -141,14 +141,14 @@ Executor avançado por linguagem/host (não implementado neste plano)
 
 ### Contrato de exemplo (ILUSTRATIVO, NÃO FORMATO APROVADO)
 
-```md
+````md
 # Estudo da função
 Observe o efeito do coeficiente a.
 
 ```urbe-tool
 {"version":1,"kind":"function-plot","inputs":[{"id":"a","type":"range","min":-5,"max":5,"value":1}],"expression":"a*x*x - 4*x + 3"}
 ```
-```
+````
 
 A sintaxe final depende de protótipo lossless, política de versões, migrador e revisão de dados. Não colocar este JSON em produção por analogia.
 
