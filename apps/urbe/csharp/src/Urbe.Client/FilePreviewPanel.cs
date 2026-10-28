@@ -110,6 +110,9 @@ public sealed class FilePreviewPanel : Grid
     /// <summary>The vault the files are read from.</summary>
     public IUrbeVaultStorage? Storage { get; set; }
 
+    /// <summary>Restricted Atlas Map note navigation supplied by the Urbe's native editor.</summary>
+    public Func<string, Task<bool>>? AtlasOpenNote { get; set; }
+
     /// <summary>The vault path of the file shown, or null.</summary>
     public string? Current => _files.Count > 0 && Index < _files.Count ? _files[Index].Path : null;
 
@@ -240,7 +243,7 @@ public sealed class FilePreviewPanel : Grid
         if (kind is VaultFileKinds.Pdf or VaultFileKinds.Audio or VaultFileKinds.Video || (kind == VaultFileKinds.Html && !_htmlSource))
         {
             Control? viewer = null;
-            try { viewer = await ContentViewers.CreateAsync(new ContentRequest(Storage, path ?? _generated?.Source ?? name, name, kind, bytes)); }
+            try { viewer = await ContentViewers.CreateAsync(new ContentRequest(Storage, path ?? _generated?.Source ?? name, name, kind, bytes) { AtlasOpenNote = path is null ? null : AtlasOpenNote }); }
             catch (Exception ex) when (ex is IOException or InvalidOperationException or NotSupportedException or UnauthorizedAccessException) { viewer = null; }
             if (version != _version) { (viewer as IDisposable)?.Dispose(); return; }
             if (viewer is not null)

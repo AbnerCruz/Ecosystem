@@ -1,0 +1,141 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261027-urbe-atlas-map-host",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-28T00:43:26.221Z",
+  "agent": {
+    "id": "chatgpt-gpt6-atlas-map",
+    "kind": "ai-agent"
+  },
+  "task_id": "GH-838",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-atlas-map-host-20261027",
+  "base_commit": "64deb1b6247df2b2637bad1cd4ae062dfa191636",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/839",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/AtlasMapSession.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ContentViewers.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Embeds.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AtlasMapJavascriptBridge.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidContentViewers.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AtlasMapHostTests.cs",
+    "apps/urbe/docs/csharp/ATLAS-MAP-HOST.md",
+    "docs/adr/0044-urbe-atlas-map-host.md",
+    "docs/governance/handoffs/HO-20261027-urbe-atlas-map-host.json"
+  ],
+  "work_completed": [
+    "AtlasMapSession valida o documento exportado, identidade de mapa/revisão e caminhos Markdown do vault.",
+    "Writer Android SAF e pasta com comparação atômica de SHA-256 sob lock, sem overwrite externo silencioso.",
+    "Android WebView recebe adaptador restrito openNote/saveMap somente para HTML Atlas Map V1; Studio e HTML genérico mantêm isolamento.",
+    "Foco do WebView para formulários Atlas e confirmação do save somente após verificação da escrita.",
+    "Teste de contrato e conflito preparado antes de implementação; ADR proposto e documentação de limites."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/urbe/csharp/tests/Urbe.Client.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Não há SDK dotnet neste executor; CI do PR precisa executar."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Não há SDK dotnet neste executor; verificar em GitHub Actions."
+    },
+    {
+      "check": "Android 13 real: HTML offline, worker blob, edição e save no SAF, navegação, teclado, lifecycle e regressões",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/docs/csharp/ATLAS-MAP-HOST.md",
+      "critical": true,
+      "evidence": "Sem conexão com Moto g32 em execução nesta sessão."
+    },
+    {
+      "check": "Decisão arquitetural ADR-0044 para exceção estreita de ponte de conteúdo",
+      "kind": "human",
+      "result": "pending",
+      "object": "docs/adr/0044-urbe-atlas-map-host.md",
+      "critical": true
+    }
+  ],
+  "known_issues": [
+    "Descarte de embed/WebView com alterações não salvas ainda exige confirmação ou estratégia de preservação explícita; beforeunload não é garantia.",
+    "Validação de Android SAF/WebView real, foco do teclado e performance ainda não executada; não declarar release pronta.",
+    "Contrato AtlasHost V1 abre nota com âncora apenas ao nível do arquivo; posicionamento na seção está fora do V1."
+  ],
+  "blockers": [
+    "Teste DEVICE e proteção de alterações não salvas antes de promover a integração a release.",
+    "ADR-0044 proposta: revisão normativa de permissão para ponte exclusivamente Atlas Map."
+  ],
+  "next_actions": [
+    "Executar CI e corrigir falhas de build/testes/consistência.",
+    "Implementar guarda de alterações pendentes na suspensão/recriação de embeds e prévia.",
+    "Testar no Android 13 real com arquivo Atlas Map exportado, fechar/reabrir, concorrência SAF, múltiplos mapas e worker offline.",
+    "Submeter integração pela governança, sem merge/release manual."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/adr/0035-atlas-forge-incorporacao-gradual.md",
+    "docs/governance/addenda/ADD-0023-tudo-no-ecosystem-e-conteudo-dentro-do-urbe.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "docs/governance/communication.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Mapa HTML único no vault é fonte de verdade; não há segundo arquivo de marcadores canônico."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nenhuma dependência de Urbe para Atlas Forge/Lunet."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Branch, issue, handoff e PR rastreáveis."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Referências normativas consultadas diretamente listadas acima."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "ADR-0044 proposta para revisão da nova ponte restrita."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Sem acesso genérico a arquivos; conteúdo, documento, path, hash, nonce, vault e operações validados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes automated e DEVICE separados; sem alegar prova de aparelho."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Não extraída capability sem consumidor adicional."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "atlas-map-host",
+      "status": "product-specific",
+      "rationale": "A ponte atende apenas o visualizador Atlas Map V1 do Urbe; outro consumidor concreto ainda não existe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Alteração do contrato de conteúdo WebView e da gravação de arquivos do usuário; necessita revisão de segurança e teste Android SAF."
+  }
+}

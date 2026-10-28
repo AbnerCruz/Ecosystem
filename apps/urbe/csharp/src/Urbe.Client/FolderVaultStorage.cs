@@ -35,6 +35,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
     }
 
     public bool IsConnected => _root is not null && _baseline is not null;
+    public string? AtlasVaultSessionKey => _root is null ? null : Path.GetFullPath(_root);
 
     /// <summary>The connected folder, if any.</summary>
     public string? Folder => _root;
@@ -86,6 +87,9 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
 
     public Task CreateTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
         WriteTextFileAsync(path, content, create: true, cancellationToken);
+
+    public Task SaveExistingTextFileIfUnchangedAsync(string path, string content, byte[] expectedSha256, CancellationToken cancellationToken = default) =>
+        WriteTextFileAsync(path, content, create: false, cancellationToken, expectedSha256);
 
     public Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
         WriteTextFileAsync(path, content, create: false, cancellationToken);
@@ -455,7 +459,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
 
     /// <summary>Writes ONE user text file (a note, or a Personalização JSON): creates it when
     /// <paramref name="create"/> and it does not exist yet, else rewrites the existing one.</summary>
-    private async Task WriteTextFileAsync(string path, string content, bool create, CancellationToken cancellationToken)
+    private async Task WriteTextFileAsync(string path, string content, bool create, CancellationToken cancellationToken, byte[]? expectedSha256 = null)
     {
         ArgumentNullException.ThrowIfNull(content);
         IUrbeVaultStorage.EnsureWritableTextPath(path);
@@ -471,6 +475,12 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 throw new FileNotFoundException("O arquivo não existe na pasta.", path);
             var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
             EnsureUnchanged(baseline, files);
+            if (expectedSha256 is not null)
+            {
+                if (expectedSha256.Length != 32 || files.FirstOrDefault(f => string.Equals(f.Path, path, StringComparison.Ordinal)) is not { } current ||
+                    !System.Security.Cryptography.SHA256.HashData(current.Bytes.Span).AsSpan().SequenceEqual(expectedSha256))
+                    throw new IOException("Conflito: este mapa foi alterado por outro editor ou não é mais o arquivo aberto.");
+            }
             var snapshot = VaultReader.Read(files, UrbeApp.InstalledVersion);
             if (snapshot.IsReadOnly || snapshot.FutureFiles.Contains(path, StringComparer.OrdinalIgnoreCase))
                 throw new InvalidOperationException("Formato futuro de vault ou arquivo protegido: escrita recusada.");
