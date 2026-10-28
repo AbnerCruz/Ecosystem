@@ -23,6 +23,8 @@ Pendências de validação continuam abertas, mas não impedem ferramentas indep
 A conexão UI do Tile Studio pertence à entrega F5; não bloqueia seu próprio início.
 Não ampliar instrumentação de áudio enquanto esses fluxos estiverem ausentes.
 
+- [ ] **LUNET-450 — Testes de jornada ponta a ponta (Issue #834, automação em verificação):** projeto real → edição C# + Sprite/Tile/Audio → Preview headless → exportação ZIP → compilação do projeto editado → APK offline → assinatura/alinhamento/instalação → abertura em emulador Android 13 e confirmação do log do jogo. Suíte `ProjectJourneyTests`, `offline-apk-check`, CI e evidências em `docs/guides/end-to-end-journey.md`. A validação da interface, do fluxo de exportação **no celular** e de DEVICE físico permanece pendente; não fechar F4/F5/F9.
+
 - [~] **LUNET-440 — Sprite e animação utilizáveis (Issue #775):** tela Android com desenho, frames, playback, persistência fonte e exportação de spritesheet. Primeiro incremento; não equivale aos Studios completos.
 - [~] **LUNET-442 — Sprite Studio ferramentas de desenho (Issue #779):** linha, retângulo, preenchimento, espelhamento vertical, cor ARGB, grade e zoom/pan por toque; CI .NET/Android aprovado, DEVICE pendente. Sem declarar layers, seleção e estados concluídos.
 - [ ] **LUNET-443 — Sprite/assets disponíveis no código (Issue #783, feito, sem validação em aparelho):** Preview rápido e isolado devem aceitar `Content.LoadTexture("Assets/arquivo.png")`; salvar a animação no Sprite Studio deve persistir o `.sprite.json` (frames/FPS) e atualizar automaticamente a spritesheet `.png` em `Assets/`, preservando ordem, transparência e uso do SpriteAnimator, mantendo `Content/` prioritário e sem migrar arquivos. Testes portáteis e CI obrigatórios; DEVICE pendente.
