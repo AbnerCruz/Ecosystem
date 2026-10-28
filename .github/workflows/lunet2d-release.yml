@@ -164,37 +164,8 @@ jobs:
             # Both apps must coexist; neither may overwrite the other.
             adb shell pm list packages | grep -q 'package:io.lunet.game.offline.portrait'
             adb shell pm list packages | grep -q 'package:io.lunet.game.offline.landscape'
-            # Not merely installed: start the edited authored game and observe
-            # its own log from Game.cs after PNG + tilemap load.
-            journey=apps/lunet2d/dist/journey
-            package=$(cat "$journey/journey-package-id.txt")
-            adb install -r "$journey/journey.apk"
-            adb shell pm path "$package" | grep -q '^package:'
-            aapt=$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -n1)
-            activity=$("$aapt" dump badging "$journey/journey.apk" | \
-              sed -n "s/^launchable-activity: name='\\([^']*\\)'.*/\\1/p" | head -n1)
-            test -n "$activity"
-            adb logcat -c
-            adb shell am start -W -n "$package/$activity" | tee "$journey/android-launch.txt"
-            grep -q 'Status: ok' "$journey/android-launch.txt"
-            running=false
-            for attempt in 1 2 3 4 5 6 7 8 9 10; do
-              adb logcat -d > "$journey/android-logcat.txt"
-              if adb shell pidof "$package" | grep -q '[0-9]' && \
-                 grep -Fq 'Jornada editada iniciou' "$journey/android-logcat.txt"; then
-                running=true
-                break
-              fi
-              sleep 2
-            done
-            test "$running" = true || {
-              echo "Jogo não iniciou ou assets não carregaram; consulte android-logcat.txt"
-              tail -n 100 "$journey/android-logcat.txt"
-              exit 1
-            }
-            adb shell screencap -p /sdcard/journey.png
-            adb pull /sdcard/journey.png "$journey/android-screen.png"
-            adb shell am force-stop "$package"
+            # Run as one shell: android-emulator-runner runs each script line separately.
+            bash apps/lunet2d/tools/ci-android-journey.sh
       - name: Archive reproducible journey evidence
         if: always()
         uses: actions/upload-artifact@v6
