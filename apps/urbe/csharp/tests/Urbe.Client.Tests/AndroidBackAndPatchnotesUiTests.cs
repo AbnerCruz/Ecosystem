@@ -44,9 +44,15 @@ public sealed partial class HeadlessUiTests
     [Fact]
     public void EmbeddedPatchnotesComeFromCanonicalPreparedVersion()
     {
+        // the version the Android head publishes is the one authority (NN-001): the embedded notes follow it
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "Urbe.Portable.slnx"))) root = root.Parent;
+        Assert.NotNull(root);
+        var csproj = File.ReadAllText(Path.Combine(root!.FullName, "src", "Urbe.Android", "Urbe.Android.csproj"));
+        var version = System.Text.RegularExpressions.Regex.Match(csproj, "<UrbeBetaVersion>([^<]+)</UrbeBetaVersion>").Groups[1].Value;
+        Assert.NotEmpty(version);
         var notes = MainView.CurrentPatchnotes();
-        Assert.Contains("2.0.0-beta.33", notes);
-        Assert.Contains("Selecionar nota inteira", notes);
+        Assert.Contains("**Versão canônica preparada:** " + version, notes);
         Assert.Contains("publicação", notes, StringComparison.OrdinalIgnoreCase);
     }
 }
