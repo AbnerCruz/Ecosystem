@@ -17,6 +17,9 @@ public sealed record ContentRequest(IUrbeVaultStorage? Storage, string Path, str
     /// are handed here, on the UI thread; null for every other viewer (isolated, no way back to the app).
     /// </summary>
     public Action<string>? Messages { get; init; }
+
+    /// <summary>Only a validated Atlas Map V1 can request opening an existing vault note. No file or vault access is delegated.</summary>
+    public Func<string, Task<bool>>? AtlasOpenNote { get; init; }
 }
 
 /// <summary>
