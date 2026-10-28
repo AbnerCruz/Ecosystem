@@ -76,6 +76,8 @@ public sealed class AssistantReviewAnswerTests
             Answer(AiBlock.TextBlock("Reescrevi [[Plano]] e acrescentei custos e prazos por fase.")));
         Assert.Contains("o que foi feito", review);
         Assert.Contains("Não fale da revisão", review);
+        // owner's report: the agent stated wrong entry counts after a long revision
+        Assert.Contains("contagem feita agora nos arquivos salvos", review);
         Assert.Equal("Reescrevi [[Plano]] e acrescentei custos e prazos por fase.", Visible(messages.Last(m => m.Role == "assistant")));
     }
 }

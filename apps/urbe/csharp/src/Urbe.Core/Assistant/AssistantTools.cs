@@ -19,7 +19,11 @@ public sealed record AiPartial(string Path, int Next, int Total);
 public sealed record AiPlanStep(string Step, string Status, string? Details = null, string? Acceptance = null);
 
 /// <summary>What a tool returns: the text for the model and what it changed or read.</summary>
-public sealed record AiToolOutput(string Content, IReadOnlyList<AiChange>? Changes = null, IReadOnlyList<(string Path, AiPartial? Partial)>? Reads = null);
+public sealed record AiToolOutput(string Content, IReadOnlyList<AiChange>? Changes = null, IReadOnlyList<(string Path, AiPartial? Partial)>? Reads = null,
+    IReadOnlyList<AiSeen>? Seen = null);
+
+/// <summary>Lines From–To (of Total) of a note at a revision, as the agent read them (seal-free view).</summary>
+public sealed record AiSeen(string Path, int Revision, int From, int To, int Total);
 
 /// <summary>What the approval shows: the note and its text before and after (or a note of what happens).</summary>
 public sealed record AiPreview(string Path, string? Before, string? After, string? Note = null);
@@ -72,7 +76,7 @@ public static partial class AssistantTools
             case "edit_note":
                 var oldText = Plain("old_text");
                 if (seals && oldText.Length == 0 && Str(input, "old_text").Length > 0) return new(tool.Name, d.Path, d, d.Content, d.Content, SealsOnly: true);
-                next = ApplyEdit(current, oldText, Plain("new_text"), Has(input, "replace_all"));
+                next = EditOrExplain(current, oldText, Plain("new_text"), Has(input, "replace_all"));
                 break;
             case "write_note":
                 next = Plain("content");
@@ -311,7 +315,7 @@ public static partial class AssistantTools
     private static int ReadBudget(IAssistantHost host) => Math.Max(8000, host.ReadChars > 0 ? host.ReadChars : 24000);
 
     /// <summary>readSlice(d, start, maxLines, budget): the note with line numbers, whole when it fits.</summary>
-    public static (string Text, AiPartial? Partial) ReadSlice(UrbeDocument d, int? start, int? maxLines, int budget, bool exactRange = false)
+    public static (string Text, AiPartial? Partial, AiSeen Seen) ReadSlice(UrbeDocument d, int? start, int? maxLines, int budget, bool exactRange = false)
     {
         var lines = d.Content.Split('\n');
         int total = lines.Length;
@@ -330,7 +334,7 @@ public static partial class AssistantTools
         AiPartial? partial = e < requestedEnd ? new AiPartial(d.Path, e + 1, requestedEnd) : null;
         if (partial is not null)
             body += "\n\n⚠ LEITURA PARCIAL: faltam as linhas " + (e + 1) + "–" + requestedEnd + ". Antes de responder sobre esta nota, chame read_note com path=\"" + d.Path + "\" e start_line=" + (e + 1) + ".";
-        return (head + "\n" + body, partial);
+        return (head + "\n" + body, partial, new AiSeen(d.Path, d.Revision, s, e, total));
     }
 
     /// <summary>applyEdit(content, old, new, all).</summary>
@@ -350,6 +354,59 @@ public static partial class AssistantTools
         if (all) return content.Replace(oldText, newText, StringComparison.Ordinal);
         int at = content.IndexOf(oldText, StringComparison.Ordinal);
         return content[..at] + newText + content[(at + oldText.Length)..];
+    }
+
+    /// <summary>
+    /// <see cref="ApplyEdit"/> for the native tools: when old_text is not there, the error also shows the lines most
+    /// like it, since what the agent remembered is often close to what is there (owner's report on long revisions).
+    /// ApplyEdit itself keeps the original contract of the frozen oracle.
+    /// </summary>
+    public static string EditOrExplain(string content, string oldText, string newText, bool all)
+    {
+        try { return ApplyEdit(content, oldText, newText, all); }
+        catch (AiToolException error) when (oldText.Length > 0 && CountOf(content, oldText) == 0 && Nearest(content, oldText) is { } near)
+        {
+            throw new AiToolException(error.Message + "\nTrecho mais parecido na versão atual (" +
+                (near.From == near.To ? "linha " + near.From : "linhas " + near.From + "–" + near.To) + "):\n\"\"\"\n" + Clip(near.Text, 1500) + "\n\"\"\"");
+        }
+    }
+
+    /// <summary>The run of lines most like <paramref name="text"/> (character bigrams, Dice ≥ 0.5), or null.</summary>
+    public static (int From, int To, string Text)? Nearest(string content, string text)
+    {
+        var lines = content.Split('\n');
+        int n = Math.Max(1, text.Trim('\n').Split('\n').Length);
+        var wanted = Bigrams(text);
+        if (wanted.Count == 0 || n > lines.Length || (long)lines.Length * wanted.Count > 5_000_000) return null;
+        var perLine = lines.Select(Bigrams).ToArray();
+        int wantedTotal = wanted.Values.Sum();
+        var window = new Dictionary<string, int>(StringComparer.Ordinal);
+        int windowTotal = 0;
+        void Shift(Dictionary<string, int> line, int sign)
+        {
+            foreach (var (k, v) in line) { window[k] = window.GetValueOrDefault(k) + sign * v; windowTotal += sign * v; }
+        }
+        double best = 0;
+        int at = -1;
+        for (int i = 0; i < lines.Length; i++)
+        {
+            Shift(perLine[i], 1);
+            if (i >= n) Shift(perLine[i - n], -1);
+            if (i < n - 1) continue;
+            int shared = 0;
+            foreach (var (k, v) in wanted) shared += Math.Min(v, window.GetValueOrDefault(k));
+            double score = 2.0 * shared / (wantedTotal + windowTotal);
+            if (score > best) { best = score; at = i - n + 1; }
+        }
+        return best < 0.5 ? null : (at + 1, at + n, string.Join("\n", lines.Skip(at).Take(n)));
+
+        static Dictionary<string, int> Bigrams(string s)
+        {
+            var folded = Regex.Replace(Fold(s), @"\s+", " ").Trim();
+            var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+            for (int i = 0; i + 1 < folded.Length; i++) { var k = folded.Substring(i, 2); counts[k] = counts.GetValueOrDefault(k) + 1; }
+            return counts;
+        }
     }
 
     private static int CountOf(string s, string part)
@@ -476,7 +533,7 @@ public static partial class AssistantTools
             {
                 var d = ResolveDoc(host, Str(i, "path"))!;
                 var r = ReadSlice(Readable(host, d), Int(i, "start_line"), Int(i, "max_lines"), ReadBudget(host));
-                return Task.FromResult(new AiToolOutput(r.Text, Reads: [(d.Path, r.Partial)]));
+                return Task.FromResult(new AiToolOutput(r.Text, Reads: [(d.Path, r.Partial)], Seen: [r.Seen]));
             }
         },
         new()
@@ -491,6 +548,7 @@ public static partial class AssistantTools
                 int share = Math.Max(4000, ReadBudget(host) / Math.Max(1, paths.Count));
                 var output = new List<string>();
                 var reads = new List<(string, AiPartial?)>();
+                var seen = new List<AiSeen>();
                 foreach (var p in paths)
                 {
                     try
@@ -499,10 +557,11 @@ public static partial class AssistantTools
                         var r = ReadSlice(Readable(host, d), 1, 0, share);
                         output.Add(r.Text);
                         reads.Add((d.Path, r.Partial));
+                        seen.Add(r.Seen);
                     }
                     catch (AiToolException e) { output.Add("# " + p + "\n(erro: " + e.Message + ")"); }
                 }
-                return Task.FromResult(new AiToolOutput(string.Join("\n\n━━━━━━━━\n\n", output), Reads: reads));
+                return Task.FromResult(new AiToolOutput(string.Join("\n\n━━━━━━━━\n\n", output), Reads: reads, Seen: seen));
             }
         },
         new()
@@ -619,12 +678,12 @@ public static partial class AssistantTools
             Preview = (i, host) =>
             {
                 var d = ResolveDoc(host, Str(i, "path"))!;
-                return new AiPreview(d.Path, d.Content, ApplyEdit(d.Content, Str(i, "old_text"), Str(i, "new_text"), Has(i, "replace_all")));
+                return new AiPreview(d.Path, d.Content, EditOrExplain(d.Content, Str(i, "old_text"), Str(i, "new_text"), Has(i, "replace_all")));
             },
             Run = async (i, host) =>
             {
                 var d = ResolveDoc(host, Str(i, "path"))!;
-                var next = ApplyEdit(d.Content, Str(i, "old_text"), Str(i, "new_text"), Has(i, "replace_all"));
+                var next = EditOrExplain(d.Content, Str(i, "old_text"), Str(i, "new_text"), Has(i, "replace_all"));
                 var u = await host.SaveNoteAsync(d, next);
                 return new AiToolOutput("Editada: " + u.Path + ".", [new AiChange(d.Id, Snap(d), Snap(u))]);
             }

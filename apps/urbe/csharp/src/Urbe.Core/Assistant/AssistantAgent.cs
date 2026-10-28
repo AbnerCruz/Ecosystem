@@ -596,7 +596,10 @@ public static class AssistantAgent
         public IAssistantAttachmentExtractor? Attachments => inner.Attachments;
     }
 
-    private sealed record Out(string Content, bool IsError = false, string? Status = null, IReadOnlyList<AiChange>? Changes = null, IReadOnlyList<(string Path, AiPartial? Partial)>? Reads = null);
+    private sealed record Out(string Content, bool IsError = false, string? Status = null, IReadOnlyList<AiChange>? Changes = null, IReadOnlyList<(string Path, AiPartial? Partial)>? Reads = null,
+        IReadOnlyList<AiSeen>? Seen = null);
+
+    private const string EditedByPerson = " O usuário editou o texto antes de aprovar; o que foi gravado é a versão dele.";
 
     /// <summary>CST-033: the agents are told the seals are the app's, so they never try to "clean" them.</summary>
     internal const string SealsRule =
@@ -657,6 +660,10 @@ public static class AssistantAgent
         var gate = new object();
         var readCache = new Dictionary<string, TaskCompletionSource<Out>>(StringComparer.Ordinal);
         var cycles = new HashSet<string>(StringComparer.Ordinal);
+        // owner's report on long revisions: no whole rewrite from a stale or partial read, and no endless blind retries
+        var coverage = new AiReadCoverage();
+        var writeFailures = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var retriesNudged = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         for (int step = 0; maxSteps is null || step < maxSteps.Value; step++)
         {
@@ -800,6 +807,7 @@ public static class AssistantAgent
                         Content = [AiChatBlock.TextBlock("[Revisão obrigatória do trabalho] Você alterou arquivos reais: " +
                             string.Join(", ", files) +
                             ". Antes de declarar conclusão, use as ferramentas para reler os arquivos salvos, comparar com o pedido e rever estrutura, profundidade, consistência, informação relacionada, notas conectadas e eventuais trechos genéricos. Corrija problemas detectados quando autorizado. Não invente fatos que o usuário não estabeleceu. " +
+                            "Todo número que você for informar (quantidade de itens, verbetes, linhas, totais) deve vir de uma contagem feita agora nos arquivos salvos, com leitura ou busca, nunca de memória ou estimativa. " +
                             "Esta revisão é interna. Depois, escreva a resposta final ao usuário como uma resposta completa: o que foi feito, quais arquivos foram criados ou alterados (como [[Título]]), o resultado e as pendências reais, incluindo o que esta revisão corrigiu. Não fale da revisão em si nem diga apenas que a qualidade foi confirmada.")]
                     });
                     emit(new AiAgentEvent("message", messages[^1]));
@@ -851,6 +859,12 @@ public static class AssistantAgent
             {
                 result.Stopped = "needs_input";
                 break;
+            }
+            foreach (var path in writeFailures.Where(f => f.Value >= 3).Select(f => f.Key).ToList())
+            {
+                if (!retriesNudged.Add(path)) continue;
+                answer.Content.Add(AiChatBlock.TextBlock("[Contexto do sistema] Três tentativas de alterar " + path + " falharam em seguida. Pare de tentar variações às cegas: " +
+                    "leia a versão atual (read_note), replaneje a mudança e faça uma edição por vez, conferindo o resultado. Se não for possível, explique o impedimento ao usuário em vez de declarar a tarefa concluída."));
             }
             if (o.OptimizeToolUse)
             {
@@ -936,11 +950,34 @@ public static class AssistantAgent
                 return new Out("Esta chamada idêntica já falhou: " + before + " Não repita. Corrija os argumentos (use search_notes, grep_notes ou list_notes para achar o caminho exato) ou explique o problema ao usuário.", true);
             }
             Out output;
+            var target = WriteTarget(call, tool);
             try { output = await Execute(call, tool); }
             catch (Exception error) { owner?.TrySetResult(new Out(error.Message, true)); throw; }
             owner?.TrySetResult(output);
-            if (output.IsError && output.Status is not "aborted" and not "rejected") lock (gate) failed[sig] = Slice(output.Content, 300);
+            // a stale rewrite is refused until the agent reads again; the same call must work after that read
+            if (output.IsError && output.Status is not "aborted" and not "rejected" and not "stale") lock (gate) failed[sig] = Slice(output.Content, 300);
+            lock (gate) Track(call, output, target);
             return output;
+        }
+
+        UrbeDocument? WriteTarget(AiChatBlock call, AiTool? tool)
+        {
+            if (tool is null || !AssistantTools.IsAuthoredWrite(tool.Name) || call.Input is not JsonObject input || input["path"] is null) return null;
+            try { return AssistantTools.ResolveDoc(host, LegacyCustomize.JsToString(input["path"]), must: false); }
+            catch (AiToolException) { return null; }
+        }
+
+        void Track(AiChatBlock call, Out output, UrbeDocument? target)
+        {
+            foreach (var seen in output.Seen ?? []) coverage.Read(seen);
+            foreach (var change in output.IsError ? [] : output.Changes ?? [])
+                if (change.After is { } after && host.Documents.Get(after.Path) is { } now)
+                    coverage.Wrote(change.Before?.Path, now.Path, target?.Revision ?? -1, now.Revision,
+                        call.Name is "create_note" or "write_note" && !output.Content.Contains(EditedByPerson, StringComparison.Ordinal));
+            if (!AssistantTools.IsAuthoredWrite(call.Name) || output.Status is "aborted" or "rejected" or "noop") return;
+            var key = target?.Path ?? (call.Input as JsonObject)?["path"]?.ToString() ?? "";
+            if (output.IsError) writeFailures[key] = writeFailures.GetValueOrDefault(key) + 1;
+            else writeFailures.Remove(key);
         }
 
         async Task<Out> Execute(AiChatBlock call, AiTool? tool)
@@ -953,6 +990,12 @@ public static class AssistantAgent
             if (tool == Delegate) return await DelegateAsync(call, input);
             AiPreview? preview = null;
             bool noteWrite = tool.Name is "edit_note" or "write_note" or "append_to_note" or "write_page";
+            if (o.OptimizeToolUse && tool.Name == "write_note" && WriteTarget(call, tool) is { } current)
+            {
+                string? blocker;
+                lock (gate) blocker = coverage.RewriteBlocker(current);
+                if (blocker is not null) return new Out(blocker, true, "stale");
+            }
             // UC-51: the Urbe writes the seals of what the agent authors; the agent only ever handles seal-free text
             AiAuthoredWrite? authored = null;
             if (o.MarkAiText && AssistantTools.IsAuthoredWrite(tool.Name))
@@ -1036,7 +1079,7 @@ public static class AssistantAgent
                     try
                     {
                         var r0 = await own.Tool.Run(own.Input, host);
-                        return new Out(r0.Content + " O usuário editou o texto antes de aprovar; o que foi gravado é a versão dele.", Changes: r0.Changes, Reads: r0.Reads);
+                        return new Out(r0.Content + EditedByPerson, Changes: r0.Changes, Reads: r0.Reads, Seen: r0.Seen);
                     }
                     catch (AiToolException e) { return new Out(e.Message, true); }
                     catch (Exception e) { return new Out("Falha na ferramenta: " + e.Message, true); }
@@ -1046,7 +1089,7 @@ public static class AssistantAgent
             try
             {
                 var r = await tool.Run(input, host);
-                return new Out(r.Content, Changes: r.Changes, Reads: r.Reads);
+                return new Out(r.Content, Changes: r.Changes, Reads: r.Reads, Seen: r.Seen);
             }
             catch (AiToolException e) { return new Out(e.Message, true); }
             catch (Exception e) { return new Out("Falha na ferramenta: " + e.Message, true); }
@@ -1057,7 +1100,7 @@ public static class AssistantAgent
             try
             {
                 var r = await AssistantTools.CommitAuthored(plan, text, host);
-                return new Out(r.Content + (editedByPerson ? " O usuário editou o texto antes de aprovar; o que foi gravado é a versão dele." : ""), Changes: r.Changes);
+                return new Out(r.Content + (editedByPerson ? EditedByPerson : ""), Changes: r.Changes);
             }
             catch (AiToolException e) { return new Out(e.Message, true); }
             catch (Exception e) { return new Out("Falha na ferramenta: " + e.Message, true); }
