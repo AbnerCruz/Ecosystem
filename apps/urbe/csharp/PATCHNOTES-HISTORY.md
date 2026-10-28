@@ -2,6 +2,17 @@
 
 A descrição detalhada da versão atualmente publicada pertence exclusivamente a PATCHNOTES.md. Ao preparar a próxima versão, transferir a atual para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada.
 
+## 2.0.0-beta.35 — 28/10/2026
+- Mapas do Atlas incorporados nas notas, com salvar, descartar ou cancelar antes de navegar, trocar de aba ou voltar (PR #841).
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.35
+
+## 2.0.0-beta.34 — 27/10/2026
+- Anexos de texto reais no chat (HTML, código, até 384 KiB por arquivo), Desfazer e Refazer na barra e remoção do selo órfão ao apagar a linha. Fonte: PATCHNOTES-beta.34.md.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.34
+
+## 2.0.0-beta.33 — 26/10/2026
+- Proteção das marcas de autoria por bloqueio de gravação (substituída na beta.36 pelo motor de selos). Fonte: PATCHNOTES-beta.33.md.
+
 ## 2.0.0-beta.32 — 26/10/2026
 - Edição/viewport estáveis, seleção da nota inteira e chat com posição de leitura preservada; cópia, seleção e edição de mensagens enviadas. Fonte: PATCHNOTES-beta.32.md.
 - https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.32

@@ -265,7 +265,13 @@ public static partial class AppDocs
         - Exclusões pedem **Excluir**, e plugins pedem **Ligar plugin**.
         - Depois de uma mudança, **Desfazer** volta atrás.
 
-        O texto escrito pelo Assistente ganha no fim uma marca pequena com o nome do modelo, como `{ia:"modelo"}`, que aparece em verde no editor.
+        Cada bloco que o Assistente cria ou reescreve (título, parágrafo, item de lista, citação, tabela ou código) ganha um selo pequeno com o nome do modelo, como `{ia:"modelo"}`, que aparece em verde no editor. O Urbe cuida dos selos sozinho:
+
+        - Correções de ortografia, pontuação ou poucas palavras mantêm o autor original. Seu texto corrigido continua sendo seu.
+        - Quando a IA reescreve um bloco, o selo antigo é trocado pelo do modelo atual, sem acumular.
+        - No modo Visual você edita o texto sem ver o selo, e ele continua no bloco. Apagar o bloco leva o selo junto.
+        - No modo Fonte o selo não pode ser apagado ou alterado sozinho.
+        - Os agentes não veem os selos e não conseguem removê-los. Se você pedir, eles explicam que a autoria é mantida pelo aplicativo.
 
         **Enviar arquivos ao chat:** toque no único botão **+** ao lado da caixa de mensagem e escolha **Arquivo do dispositivo** ou **Nota do vault**. A busca de notas percorre o vault inteiro, sem limite artificial das primeiras 300 notas. Antes do envio, os anexos aparecem na bandeja compacta de contexto; cada cartão pode ser removido, e **Limpar** remove todos. Texto UTF-8 entra como contexto; imagens PNG/JPEG/WebP e PDFs vão como anexos multimodais. Até quatro anexos por mensagem, com limites por tipo. O Urbe não copia os anexos para o vault. Imagens e PDFs exigem um modelo multimodal compatível; só selecione arquivos que deseja enviar ao provedor de IA.
 

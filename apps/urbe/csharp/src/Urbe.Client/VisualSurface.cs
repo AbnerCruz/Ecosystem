@@ -26,6 +26,8 @@ public sealed class VisualSurface : StackPanel
     private int _editStart = -1, _editEnd = -1;      // range of the block being edited, in _text
     private TextBox? _box;
     private bool _normalizingOrphanMark;
+    // the edited block as it was when the box opened, seals included: the box shows it without them (UC-51)
+    private string _editRaw = "";
     private bool _prompting;
     private readonly WikiSuggestList _wiki = new();
     private readonly SlashMenu _slash = new();
@@ -229,7 +231,7 @@ public sealed class VisualSurface : StackPanel
         var reusable = unchanged ? new Dictionary<int, Control>(_holders) : new Dictionary<int, Control>();
         Children.Clear();
         _holders.Clear();
-        if (!unchanged) _blocks = WithContainers(MarkdownEngine.SplitBlocks(_text), NoteContainers.Parse(_text));
+        if (!unchanged) _blocks = AiAuthorship.WithSealLines(WithContainers(MarkdownEngine.SplitBlocks(_text), NoteContainers.Parse(_text)), _text);
         if (_blocks.Count == 0 && _box is null)
         {
             var empty = new Border
@@ -356,7 +358,9 @@ public sealed class VisualSurface : StackPanel
             CommentsTapped = index => _ = CommentsAsync(block.Start, index),
             AgentAsked = AgentAsked is null ? null : index => AskAgent(block.Start, index)
         };
-        var holder = new Border { Background = Brushes.Transparent, Child = container ? reader.BuildMarkdown(source) : reader.Build(NoteMarks.Parse(source)) };
+        // seals drawn where they belong (one per block, after its text), whatever an older version left in the file (UC-51)
+        var shown = AiAuthorship.Canonical(source);
+        var holder = new Border { Background = Brushes.Transparent, Child = container ? reader.BuildMarkdown(shown) : reader.Build(NoteMarks.Parse(shown)) };
         // a tap (press and release without moving), never the press: a finger that starts a scroll on a block
         // must scroll, not turn the block into an edit box under it (the 1.8.4's preview scrolls the same way)
         if (block.Kind != "frontmatter")
@@ -425,7 +429,7 @@ public sealed class VisualSurface : StackPanel
         _anchorY = scroll is null ? null : EditorScrolling.TopIn(holder, scroll);
         _tapAt = at;
         var end = _blocks.FirstOrDefault(b => b.Start == blockStart)?.End ?? blockStart;
-        var source = _text[blockStart..Math.Clamp(end, blockStart, _text.Length)];
+        var source = AiAuthorship.Strip(_text[blockStart..Math.Clamp(end, blockStart, _text.Length)]);
         _tapCaret = RenderedIndex(holder, hit, at) is { } r ? SourceIndex(source, PlainText(holder), r) : null;
         _selectWord = select;
         Edit(blockStart);
@@ -513,7 +517,7 @@ public sealed class VisualSurface : StackPanel
         var target = blockStart > startedAt && startedAt >= 0 ? blockStart + shift : blockStart;
         var block = _blocks.FirstOrDefault(b => b.Start == target) ?? _blocks.FirstOrDefault(b => b.Start <= target && target <= b.End);
         if (block is null) return;
-        StartBox(_text[block.Start..block.End], block.Start, block.End, block.Kind);
+        StartBox(AiAuthorship.Strip(_text[block.Start..block.End]), block.Start, block.End, block.Kind);
     }
 
     /// <summary>The box's padding: the text inside sits where the drawn text was.</summary>
@@ -523,6 +527,7 @@ public sealed class VisualSurface : StackPanel
     {
         _editStart = start;
         _editEnd = end;
+        _editRaw = start >= 0 && end >= start && end <= _text.Length ? _text[start..end] : "";
         // the box reads like the drawn block: same font, size, line height and place (no jump between the two, UC-57)
         var heading = System.Text.RegularExpressions.Regex.Match(source, @"^(#{1,6})\s");
         var (em, weight, top) = heading.Success
@@ -693,23 +698,26 @@ public sealed class VisualSurface : StackPanel
     {
         if (_box is null || _normalizingOrphanMark) return;
         var block = _box.Text ?? "";
-        var normalized = NoteMarks.RemoveOrphanedAiMarks(block);
-        if (!string.Equals(block, normalized, StringComparison.Ordinal))
+        // seals are the Urbe's (UC-51): one typed or pasted here is only text that pretends, so it goes
+        var plain = AiAuthorship.Strip(block);
+        if (!string.Equals(block, plain, StringComparison.Ordinal))
         {
             var caret = _box.CaretIndex;
             _normalizingOrphanMark = true;
             try
             {
-                _box.Text = normalized;
-                _box.CaretIndex = Math.Clamp(caret, 0, normalized.Length);
+                _box.Text = plain;
+                _box.CaretIndex = Math.Clamp(caret - (block.Length - plain.Length), 0, plain.Length);
             }
             finally { _normalizingOrphanMark = false; }
-            block = normalized;
+            block = plain;
         }
+        // the block keeps the seals of what is still the Assistente's text; what the person wrote has none
+        var source = AiAuthorship.Attribute(_editRaw, block, null);
         _editStart = Math.Clamp(_editStart, 0, _text.Length);
         _editEnd = Math.Clamp(_editEnd, _editStart, _text.Length);
-        _text = _text[.._editStart] + block + _text[_editEnd..];
-        _editEnd = _editStart + block.Length;
+        _text = _text[.._editStart] + source + _text[_editEnd..];
+        _editEnd = _editStart + source.Length;
         TextEdited?.Invoke(_text);
         UpdateTools();
         KeepCaretSoon(typing: true);

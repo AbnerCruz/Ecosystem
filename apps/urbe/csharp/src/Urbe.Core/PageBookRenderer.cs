@@ -7,7 +7,7 @@ namespace Urbe.Core;
 internal static class PageBookRenderer
 {
     // %%comments%% are the writer's, never part of a page or a book (DEC-0045, UC-43)
-    private static string RenderNote(string? markdown) => MarkdownEngine.Render(NoteMarks.StripComments(markdown));
+    private static string RenderNote(string? markdown) => MarkdownEngine.Render(NoteMarks.StripComments(AiAuthorship.Canonical(markdown)));
 
     private static readonly string[] NumberWords =
     [

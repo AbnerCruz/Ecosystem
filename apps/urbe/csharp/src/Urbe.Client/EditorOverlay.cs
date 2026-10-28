@@ -171,6 +171,8 @@ public sealed class EditorOverlay : Grid
         Editor.TextChanging += (_, e) =>
         {
             if (_opening || _note is null || _restoringProtectedSource) return;
+            // a change from the Visual surface was checked there (its seals come from AiAuthorship)
+            if (_fromVisual) { _acceptedSourceText = Editor.Text ?? ""; return; }
             var proposed = Editor.Text ?? "";
             if (!NoteMarks.AllowsUserAuthorshipEdit(_acceptedSourceText, proposed))
             {
@@ -230,9 +232,11 @@ public sealed class EditorOverlay : Grid
         _visual.UserNavigating = () => UserScrolling;
         _visual.TextEdited += md =>
         {
-            if (!NoteMarks.AllowsUserAuthorshipEdit(Editor.Text ?? "", md))
+            // the Visual box never shows seals and composes them with AiAuthorship; this only catches a route that did not
+            var current = Editor.Text ?? "";
+            if (!NoteMarks.AllowsUserAuthorshipEdit(current, md) && md != AiAuthorship.Attribute(current, md, null))
             {
-                _visual.SetText(Editor.Text ?? "");
+                _visual.SetText(current);
                 _toast.Show("A marca de autoria da IA não pode ser editada ou removida.", TimeSpan.FromSeconds(3));
                 return;
             }
