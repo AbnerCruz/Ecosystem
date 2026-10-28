@@ -2,7 +2,9 @@
 
 ## Status
 
-**Proposto** — decisão de integração sujeita à governança e à prova DEVICE, sem merge/release presumidos. Escopo delegado pelo proprietário com o arquivo `Urbe-Atlas-Map-Instrucoes.md` em 2026-10-27.
+Proposto
+
+Decisão de integração sujeita à governança e à prova DEVICE, sem merge/release presumidos. Escopo delegado pelo proprietário com o arquivo `Urbe-Atlas-Map-Instrucoes.md` em 2026-10-27.
 
 ## Contexto
 
@@ -21,7 +23,7 @@ Permitir vínculos para notas existentes e preservar marcadores no HTML do vault
 3. API genérica de leitura/escrita do vault para qualquer HTML (rejeitada): viola o isolamento do conteúdo, NN-016 e ADD-0023.
 4. Reimplementar o motor de geração no Urbe (rejeitada): contradiz o escopo e ADR-0034/0035.
 
-## Decisão proposta
+## Decisão
 
 A opção 1 permanece **local ao produto Urbe**, sem capability compartilhada. `ContentRequest` pode carregar um callback nativo restrito de navegação. O `AtlasMapSession` recebe somente o HTML já lido e o armazenamento vinculado; valida formato/versão/ID, caminho do vault, hash inicial e revisão. O escritor do vault compara o hash **sob a trava da escrita**, antes de salvar, e verifica os bytes depois. Uma revisão autoral não é uma versão do disco.
 
@@ -29,13 +31,17 @@ No head Android, somente arquivos exportados reconhecidos instalam `AtlasHost` a
 
 Um `mapId` é identidade de conteúdo e nunca credencial. O vínculo de autoridade é o documento/vault/sessão selecionado. O `openNote` exige caminho relativo de `.md` existente; `#âncora` é aceito, mas a V1 abre a nota, não a posição do cabeçalho.
 
-## Consequências e gates
+## Consequências
 
 - Sem WebView como interface nativa e sem dependência do Atlas Forge em runtime; HTML autossuficiente permanece conteúdo.
 - A recarga do WebView não é feita após salvar: câmera, ferramentas e formulários ficam na instância atual.
 - A implementação desta fatia ainda **não resolve** o ciclo de vida de alterações não salvas em todo descarte de embed e não inclui teste DEVICE de teclado, worker, importação de lugares, recorte, tamanho/performance ou perda de processo. Até resolver, a integração deve permanecer em revisão, sem afirmação de prontidão de release.
 - Requer prova de escrita no Android SAF, de que o adaptador é inacessível a outros HTML/frames e de que os demais visualizadores e o Studio não regrediram.
 - Reuso avaliado como `product-specific` (ADR-0011/NN-022): o único consumidor é o HTML Atlas Map embutido no Urbe; extrair seria prematuro.
+
+## Alternativas rejeitadas
+
+A navegação irrestrita, uma ponte de arquivos genérica e o uso de downloads Blob como confirmação de persistência são rejeitados por violarem os limites de acesso ou não garantirem escrita no vault. O Urbe não incorpora o motor de geração.
 
 ## Referências
 
