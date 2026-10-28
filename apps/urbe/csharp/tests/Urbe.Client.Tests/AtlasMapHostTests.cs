@@ -50,33 +50,34 @@ public sealed class AtlasMapHostTests
     [Fact]
     public async Task Save_RevisionsIdentityAndExternalConflicts()
     {
+        var ct = TestContext.Current.CancellationToken;
         var dir = Path.Combine(Path.GetTempPath(), "urbe-atlas-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         var vaultDir = Path.Combine(dir, "vault");
         Directory.CreateDirectory(vaultDir);
         var mapPath = Path.Combine(vaultDir, "Mundo.html");
-        await File.WriteAllTextAsync(mapPath, Html());
+        await File.WriteAllTextAsync(mapPath, Html(), ct);
         var vault = new FolderVaultStorage(_ => Task.FromResult<string?>(vaultDir), Path.Combine(dir, "selection.json"));
         try
         {
-            await vault.PickAsync();
+            await vault.PickAsync(ct);
             var bytes = Encoding.UTF8.GetBytes(Html());
             var request = new ContentRequest(vault, "Mundo.html", "Mundo.html", Urbe.Core.VaultFileKinds.Html, bytes);
             var session = AtlasMapSession.TryCreate(request);
             Assert.NotNull(session);
-            var wrongId = await session.SaveAsync("other-map", 1, Html(revision: 1));
+            var wrongId = await session.SaveAsync("other-map", 1, Html(revision: 1), ct);
             Assert.False(wrongId.Ok);
-            var mismatch = await session.SaveAsync("atlas-1", 1, Html(revision: 2));
+            var mismatch = await session.SaveAsync("atlas-1", 1, Html(revision: 2), ct);
             Assert.False(mismatch.Ok);
-            Assert.True((await session.SaveAsync("atlas-1", 1, Html(revision: 1))).Ok);
-            Assert.Equal(Html(revision: 1), await File.ReadAllTextAsync(mapPath));
-            Assert.True((await session.SaveAsync("atlas-1", 2, Html(revision: 2, title: "Nova cidade"))).Ok);
-            Assert.Equal(Html(revision: 2, title: "Nova cidade"), await File.ReadAllTextAsync(mapPath));
-            Assert.False((await session.SaveAsync("atlas-1", 2, Html(revision: 2))).Ok);
+            Assert.True((await session.SaveAsync("atlas-1", 1, Html(revision: 1), ct)).Ok);
+            Assert.Equal(Html(revision: 1), await File.ReadAllTextAsync(mapPath, ct));
+            Assert.True((await session.SaveAsync("atlas-1", 2, Html(revision: 2, title: "Nova cidade"), ct)).Ok);
+            Assert.Equal(Html(revision: 2, title: "Nova cidade"), await File.ReadAllTextAsync(mapPath, ct));
+            Assert.False((await session.SaveAsync("atlas-1", 2, Html(revision: 2), ct)).Ok);
             // Another file writer changes the same file while this WebView still holds revision 2.
-            await vault.SaveExistingTextFileAsync("Mundo.html", Html(revision: 3, title: "Outro editor"));
-            Assert.False((await session.SaveAsync("atlas-1", 3, Html(revision: 3))).Ok);
-            Assert.Equal(Html(revision: 3, title: "Outro editor"), await File.ReadAllTextAsync(mapPath));
+            await vault.SaveExistingTextFileAsync("Mundo.html", Html(revision: 3, title: "Outro editor"), ct);
+            Assert.False((await session.SaveAsync("atlas-1", 3, Html(revision: 3), ct)).Ok);
+            Assert.Equal(Html(revision: 3, title: "Outro editor"), await File.ReadAllTextAsync(mapPath, ct));
         }
         finally { try { Directory.Delete(dir, recursive: true); } catch (IOException) { } }
     }
@@ -84,6 +85,7 @@ public sealed class AtlasMapHostTests
     [Fact]
     public async Task Notes_UseExplicitHostPermissionAndDoNotCreateMissingFiles()
     {
+        var ct = TestContext.Current.CancellationToken;
         var dir = Path.Combine(Path.GetTempPath(), "urbe-atlas-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         try
@@ -92,7 +94,7 @@ public sealed class AtlasMapHostTests
             Directory.CreateDirectory(vaultDir);
             File.WriteAllText(Path.Combine(vaultDir, "Mundo.html"), Html());
             var vault = new FolderVaultStorage(_ => Task.FromResult<string?>(vaultDir), Path.Combine(dir, "selection.json"));
-            await vault.PickAsync();
+            await vault.PickAsync(ct);
             var opened = new List<string>();
             var session = AtlasMapSession.TryCreate(new ContentRequest(vault, "Mundo.html", "Mundo.html", Urbe.Core.VaultFileKinds.Html, Encoding.UTF8.GetBytes(Html())) {
                 AtlasOpenNote = path => { opened.Add(path); return Task.FromResult(path == "Existe.md"); }
