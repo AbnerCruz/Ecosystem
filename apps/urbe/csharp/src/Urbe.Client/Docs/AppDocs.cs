@@ -103,7 +103,7 @@ public static partial class AppDocs
         - **A partir de um modelo**, quando há notas em `Modelos` (veja [[Modelos]]).
         - **Nova pasta**, na pasta selecionada.
         - **Nota rápida**, por voz, quando disponível. No Android também há o widget **Urbe: nota rápida** na tela inicial, que grava sem abrir o app: toque para começar e toque de novo (ou na notificação, que mostra o tempo) para terminar. Pausas para pensar não encerram a nota; ela só para sozinha depois de 45 segundos de silêncio ou aos 15 minutos, com aviso no último minuto. Dá para gravar a próxima enquanto a anterior ainda está sendo salva. No Windows, **Ctrl+Alt+N** (de qualquer programa) ou o ícone do Urbe na bandeja abrem a caixa da nota rápida: escreva, ou aperte **Win+H** para o ditado do Windows escrever o que você fala. As notas rápidas ficam em **Notas rápidas**, uma nota por mês com um título para cada dia; cada uma entra como tarefa com o horário, `- [ ] 08:11 — texto`, venha de você, do widget ou de um agente.
-        - **Novo grafo**: um canvas livre (`Nome.grafo.json`) com cartões, notas e arquivos do vault, ligações (linha ou seta), formas, grupos e desenhos, com desfazer e refazer. **⋯ → Grafos** lista os grafos e gera a estrutura do vault (pastas, arquivos, notas e links).
+        - **Novo grafo**: um canvas livre (`Nome.grafo.json`) com cartões, notas e arquivos do vault, ligações (linha ou seta), formas, grupos e desenhos, com desfazer e refazer. **⋯ → Grafos** lista os grafos e gera a estrutura do vault (pastas, arquivos, notas e links). O Assistente também lê, cria e altera grafos (por exemplo, "faça um grafo da família real com as notas dos personagens"): a mudança aparece em texto para você aprovar.
 
         ## Selecionar e mover
 

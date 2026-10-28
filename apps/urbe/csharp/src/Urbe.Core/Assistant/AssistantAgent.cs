@@ -1030,7 +1030,12 @@ public static class AssistantAgent
                 }
                 catch (Exception error) { return new Out(error.Message, true); }
             }
-            if (authored is null && tool.Preview is not null)
+            if (authored is null && tool.PreviewAsync is not null)
+            {
+                try { preview = await tool.PreviewAsync(input, host); }
+                catch (Exception e) { return new Out(e.Message, true); }
+            }
+            else if (authored is null && tool.Preview is not null)
             {
                 try { preview = tool.Preview(input, host); }
                 catch (Exception e) { return new Out(e.Message, true); }

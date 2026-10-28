@@ -62,7 +62,9 @@ public sealed class AssistantGraphToolsTests
             new JsonObject { ["path"] = "../fora.grafo.json" }, host));
         var empty = await Tool("list_graphs").Run(new JsonObject(), new Host(null));
         Assert.Contains("Não há grafos", empty.Content);
-        Assert.All(AssistantGraphTools.All, t => Assert.Equal("read", t.Access));
+        // the readers only read; writing is edit_graph's, through the approval (CST-068)
+        Assert.All(AssistantGraphTools.All.Where(t => t.Name != "edit_graph"), t => Assert.Equal("read", t.Access));
+        Assert.Equal("write", AssistantGraphTools.Edit.Access);
     }
 
     [Fact]

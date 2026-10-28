@@ -203,6 +203,8 @@ public sealed class AiTool
     public required JsonObject Parameters { get; init; }
     public required Func<JsonObject, string> Label { get; init; }
     public Func<JsonObject, IAssistantHost, AiPreview>? Preview { get; init; }
+    /// <summary>For a tool whose "before" is read from storage (a graph file): awaited by the run before the approval.</summary>
+    public Func<JsonObject, IAssistantHost, Task<AiPreview>>? PreviewAsync { get; init; }
     public required Func<JsonObject, IAssistantHost, Task<AiToolOutput>> Run { get; init; }
     public AiToolSchema Schema => new(Name, Description, (JsonObject)Parameters.DeepClone());
 }
