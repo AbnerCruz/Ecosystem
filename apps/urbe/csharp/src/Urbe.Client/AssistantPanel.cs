@@ -1241,7 +1241,9 @@ public sealed partial class AssistantPanel : Border
         Dispatcher.UIThread.Post(() =>
         {
             _renderPosted = false;
-            if (SelectionActive()) { DeferRender(); RenderChrome(); NotifyCompactChanged(); return; }
+            // CST-008: only a selection inside a message about to be redrawn waits; one left anywhere else (text copied
+            // earlier) used to hold every update back until the panel was closed and opened again
+            if (SelectionInDirty()) { DeferRender(); RenderChrome(); NotifyCompactChanged(); return; }
             bool near = _followChatTail && NearEnd();
             foreach (var d in _dirty) _views.Remove(d);
             _dirty.Clear();
@@ -1254,9 +1256,14 @@ public sealed partial class AssistantPanel : Border
 
     private DispatcherTimer? _selectionWait;
     private bool _deferredAll;
-    private bool SelectionActive() => _log.GetVisualDescendants().Any(v =>
+    private bool SelectionActive() => HasSelection(_log);
+
+    private static bool HasSelection(Visual root) => root.GetVisualDescendants().Any(v =>
         v is SelectableTextBlock text && text.SelectionStart != text.SelectionEnd ||
         v is TextBox box && box.SelectionStart != box.SelectionEnd);
+
+    /// <summary>A selection the person is making inside a view the next render replaces (the dirty messages').</summary>
+    private bool SelectionInDirty() => _dirty.Select(m => _views.GetValueOrDefault(m)).OfType<Visual>().Any(HasSelection);
 
     private void DeferRender()
     {
@@ -1265,7 +1272,7 @@ public sealed partial class AssistantPanel : Border
             _selectionWait = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
             _selectionWait.Tick += (_, _) =>
             {
-                if (SelectionActive()) return;
+                if (_deferredAll ? SelectionActive() : SelectionInDirty()) return;
                 _selectionWait.Stop();
                 bool near = _followChatTail && NearEnd();
                 if (_deferredAll) { _deferredAll = false; _views.Clear(); }
@@ -1423,6 +1430,7 @@ public sealed partial class AssistantPanel : Border
         if (_conv.QueuedMessages.Count > 0 && !ConversationBusy(_conv.Id))
             desired.Add(TextButton("Retomar mensagens na fila", () => CurrentRun = ResumeQueuedAsync(_conv)));
         if (Tail() is { } tail) desired.Add(tail);
+        ForgetUnusedTimelines();
         SetLog(desired);
     }
 

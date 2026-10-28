@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261028-urbe-consolidation-wave1",
   "category": "HANDOFF",
-  "timestamp": "2026-10-28T17:33:50Z",
+  "timestamp": "2026-10-28T17:42:58Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -16,6 +16,7 @@
   "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/847",
   "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
     "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
@@ -34,8 +35,10 @@
     "apps/urbe/csharp/src/Urbe.Core/QuickNotes.cs",
     "apps/urbe/csharp/src/Urbe.Core/WikiTargets.cs",
     "apps/urbe/csharp/src/Urbe.Core/WorkspaceIndex.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ActivityExpansionUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AgentCreationBlocksUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AndroidBackAndPatchnotesUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ChatRefreshUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ClockInEditorUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorNavigationUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTests.cs",
@@ -65,14 +68,16 @@
     "CST-021: Nova nota nesta pasta no editor, sem arquivo residual ao cancelar.",
     "CST-047: campos numéricos só aceitam números e mostram o erro específico na hora; seleção múltipla com caixas de marcar.",
     "CST-052: relógio acessível no editor em largura de celular (verificado por teste).",
-    "CST-010: Voltar sobe as pastas da Área de trabalho antes de sair do app."
+    "CST-010: Voltar sobe as pastas da Área de trabalho antes de sair do app.",
+    "CST-112: linha do tempo da atividade incremental (158,9 → 18,7 ms por atualização com 300 passos abertos).",
+    "CST-008: seleção antiga não trava novas respostas no chat."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1305 testes, 0 falhas (local, .NET 10.0.403)."
+      "evidence": "1307 testes, 0 falhas (local, .NET 10.0.403)."
     },
     {
       "check": "Validação no Android físico dos itens desta leva",
