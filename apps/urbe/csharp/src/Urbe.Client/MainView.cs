@@ -1035,7 +1035,7 @@ public sealed partial class MainView : Grid
         };
         // UC-44: notes in Modelos/ are templates; with any, a note can start from one
         if (NoteTemplateEngine.Templates(_contents.Keys).Count > 0)
-            items.Insert(1, new("A partir de um modelo", UrbeTheme.Icons.File, "Uma nota de “" + NoteTemplateEngine.Folder + "”. " + NotesWhere(folder),
+            items.Insert(1, new("A partir de um modelo", UrbeTheme.Icons.File, "Uma nota de “" + NoteTemplateEngine.Folder + "” ou um arquivo " + NoteTemplateEngine.Suffix + ". " + NotesWhere(folder),
                 Run: () => CreateNoteFromTemplateAsync()));
         if (QuickVoiceItem() is { } voice) items.Add(voice);
         return Dialogs.MenuAsync("Criar", items);
@@ -1054,13 +1054,36 @@ public sealed partial class MainView : Grid
         {
             var pick = await Dialogs.ChooseAsync("A partir de um modelo",
                 templates.Select(p => new DialogItem(NoteTemplateEngine.NameOf(p), UrbeTheme.Icons.File)).ToList(),
-                "Notas da pasta “" + NoteTemplateEngine.Folder + "”.");
+                "Notas da pasta “" + NoteTemplateEngine.Folder + "” e arquivos " + NoteTemplateEngine.Suffix + ".");
             if (pick is not { } i) return;
             templatePath = templates[i];
         }
         if (!_contents.TryGetValue(templatePath, out var template)) return;
+        // CST-046: [Nome] written as if it were a field is not one; say so, and offer to make it one
+        if (NoteTemplateEngine.InputFields(template).Count == 0 && NoteTemplateEngine.BracketPlaceholders(template) is { Count: > 0 } brackets)
+        {
+            var shown = string.Join(", ", brackets.Take(4).Select(b => "[" + b + "]")) + (brackets.Count > 4 ? "…" : "");
+            var choice = await Dialogs.ChooseAsync("Campos entre colchetes",
+            [
+                new DialogItem("Converter em campos", UrbeTheme.Icons.Pencil, "Troca no modelo cada [Texto] por {{Texto}}, que o formulário pergunta."),
+                new DialogItem("Usar como está", UrbeTheme.Icons.File, "Os colchetes ficam como texto na nota nova.")
+            ], "Este modelo tem " + shown + ". Texto entre colchetes não vira pergunta: um campo do modelo se escreve {{Nome}}.");
+            if (choice is null) return;
+            if (choice == 0 && _store?.Get(templatePath) is { } templateDoc)
+            {
+                try
+                {
+                    var converted = NoteTemplateEngine.ConvertBrackets(template);
+                    await ((IAssistantApp)this).SaveNoteAsync(templateDoc, converted);
+                    template = converted;
+                }
+                catch (Exception error) when (error is IOException or InvalidOperationException or UnauthorizedAccessException)
+                { await Dialogs.AlertAsync("Modelo não alterado", error.Message); return; }
+            }
+        }
         folder ??= Explorer.CurrentFolder;
         FormDraftStore? completedDrafts = null;
+        bool fillInEditor = false;
         string? completedKey = null, completedPath = null;
         await CreateNoteInNotesAsync(typedName, folder, async name =>
         {
@@ -1074,10 +1097,11 @@ public sealed partial class MainView : Grid
                     var drafts = new FormDraftStore(storage);
                     var key = FormDraftStore.Key(_vault?.VaultName ?? "", templatePath, name);
                     var session = drafts.LoadOrCreate(key, definition, template);
-                    var answers = await Dialogs.FormAsync(session, () => drafts.Save(key, session),
+                    var (answers, inEditor) = await Dialogs.TemplateFormAsync(session, () => drafts.Save(key, session),
                         _store?.List().Where(d => ArtifactModel.IsNote(d.Path)).Select(d => d.Path).ToArray(), _library?.Folders);
                     if (answers is null) { drafts.Delete(key); return null; }
                     foreach (var entry in session.TemplateValues()) values[entry.Key] = entry.Value;
+                    fillInEditor = inEditor;
                     completedDrafts = drafts;
                     completedKey = key;
                     completedPath = (folder.Length > 0 ? folder + "/" : "") + name + (ArtifactModel.IsText(name) ? "" : ".md");
@@ -1085,7 +1109,11 @@ public sealed partial class MainView : Grid
                 catch (Exception error) when (error is ArgumentException or IOException or System.Text.Json.JsonException)
                 { await Dialogs.AlertAsync("Formulário do modelo", error.Message); return null; }
             }
-            return NoteTemplateEngine.Fill(template, ArtifactModel.IsText(name) ? System.IO.Path.GetFileNameWithoutExtension(name) : name, DateTime.Now, values);
+            var title = ArtifactModel.IsText(name) ? System.IO.Path.GetFileNameWithoutExtension(name) : name;
+            // CST-050: what was answered is in the note; the rest is left blank to be written in the editor
+            return fillInEditor
+                ? NoteTemplateEngine.FillPartially(template, title, DateTime.Now, values.Where(v => v.Value.Length > 0).ToDictionary(v => v.Key, v => v.Value))
+                : NoteTemplateEngine.Fill(template, title, DateTime.Now, values);
         });
         if (completedDrafts is not null && completedKey is not null && completedPath is not null && _contents.ContainsKey(completedPath))
         {

@@ -196,11 +196,11 @@ public static partial class AppDocs
     private const string Modelos = """
         # Modelos
 
-        Um modelo é uma nota comum dentro da pasta `Modelos`. Nada de formato especial.
+        Um modelo é uma nota comum dentro da pasta `Modelos`, ou uma nota com nome terminado em `.modelo.md` em qualquer pasta (por exemplo `Projetos/Droerni/Personagem.modelo.md`). Continua sendo Markdown.
 
         ## Criar um modelo
 
-        Crie a pasta `Modelos` e escreva notas nela. Use campos entre chaves duplas:
+        Escreva a nota do modelo e use campos entre chaves duplas:
 
         ```
         # {{titulo}}
@@ -212,10 +212,11 @@ public static partial class AppDocs
         - `{{titulo}}` vira o nome da nota nova.
         - `{{data}}` vira a data de hoje.
         - Qualquer outro campo, como `{{cliente}}`, é perguntado depois do nome.
+        - Texto entre colchetes, como `[Nome]`, **não** vira pergunta. Ao usar um modelo assim, o Urbe oferece **Converter em campos**, que troca cada `[Texto]` por `{{Texto}}`. Links `[[…]]`, tarefas `- [ ]` e código ficam como estão.
 
         ## Usar
 
-        No [[Explorer]], **Nova → A partir de um modelo**: escolha o modelo, dê o nome, preencha os campos e a nota nasce pronta.
+        No [[Explorer]], **Nova → A partir de um modelo**: escolha o modelo, dê o nome, preencha os campos e a nota nasce pronta. Prefere escrever direto na nota? **Preencher no editor** cria a nota com o que você já respondeu e deixa o resto em branco para completar no editor.
 
         Páginas têm modelos próprios, no estúdio (veja [[Páginas]]).
         """;

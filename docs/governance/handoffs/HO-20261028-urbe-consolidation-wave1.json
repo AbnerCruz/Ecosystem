@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261028-urbe-consolidation-wave1",
   "category": "HANDOFF",
-  "timestamp": "2026-10-28T19:00:25Z",
+  "timestamp": "2026-10-28T19:06:24Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -38,6 +38,7 @@
     "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
     "apps/urbe/csharp/src/Urbe.Client/QuickVoiceNotes.cs",
     "apps/urbe/csharp/src/Urbe.Client/Ui/FormRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.Forms.cs",
     "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
     "apps/urbe/csharp/src/Urbe.Client/WorkspaceView.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AgentLanguage.cs",
@@ -55,6 +56,7 @@
     "apps/urbe/csharp/src/Urbe.Core/EmbedFragments.cs",
     "apps/urbe/csharp/src/Urbe.Core/Forms.cs",
     "apps/urbe/csharp/src/Urbe.Core/GraphEdits.cs",
+    "apps/urbe/csharp/src/Urbe.Core/NoteTemplateEngine.cs",
     "apps/urbe/csharp/src/Urbe.Core/Pages/PageImages.cs",
     "apps/urbe/csharp/src/Urbe.Core/QuickNotes.cs",
     "apps/urbe/csharp/src/Urbe.Core/VoiceCapturePolicy.cs",
@@ -73,6 +75,7 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EmbedFragmentUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/FormRendererInputUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/GraphEditUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteTemplateFlowUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/PageImagesUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/QuestionProgressUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/QuickVoiceBacklogUiTests.cs",
@@ -90,6 +93,7 @@
     "apps/urbe/csharp/tests/Urbe.Core.Tests/BlockTimesTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/EmbedFragmentsTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/FormsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteTemplateIdentityTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/PageImagesTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/QuestionProgressTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/QuickNotesTests.cs",
@@ -124,14 +128,15 @@
     "Correção: o host de cada execução não repassava os grafos (list_graphs/read_graph inoperantes no app); teste de repasse de todas as capacidades.",
     "CST-068: edit_graph — agentes criam e alteram grafos com aprovação em texto, sem sobrescrever grafo aberto com alterações.",
     "CST-025: horário da última edição de cada bloco, derivado das Versões anteriores (sem nova fonte de dados), opcional em Personalização → Editor.",
-    "CST-115: cartão de perguntas com compreensão declarada, dúvidas em aberto e mudança desde a pergunta anterior."
+    "CST-115: cartão de perguntas com compreensão declarada, dúvidas em aberto e mudança desde a pergunta anterior.",
+    "CST-044/046/050: modelos .modelo.md, aviso e conversão de [colchetes] em campos, Preencher no editor."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1378 testes, 0 falhas (local, .NET 10.0.403); Urbe.Android compila (Debug)."
+      "evidence": "1392 testes, 0 falhas (local, .NET 10.0.403); Urbe.Android compila (Debug)."
     },
     {
       "check": "Validação no Android físico dos itens desta leva",
