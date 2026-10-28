@@ -23,6 +23,8 @@ Pendências de validação continuam abertas, mas não impedem ferramentas indep
 A conexão UI do Tile Studio pertence à entrega F5; não bloqueia seu próprio início.
 Não ampliar instrumentação de áudio enquanto esses fluxos estiverem ausentes.
 
+- [ ] **LUNET-451 — Projetos de referência para regressão (Issue #842, implementação em revisão):** amostras versionadas portrait, landscape e full-stack em `samples/regression/`; teste xUnit compila e executa pelo Framework/Preview headless, verifica arte/áudio/tilemap/física/UI/save e round-trip ZIP. Acompanhamento por PR/CI; validação física e APKs instalados pendentes. Não marcar conclusão sem evidência.
+
 - [ ] **LUNET-450 — Testes de jornada ponta a ponta (Issue #834, automação em verificação):** projeto real → edição C# + Sprite/Tile/Audio → Preview headless → exportação ZIP → compilação do projeto editado → APK offline → assinatura/alinhamento/instalação → abertura em emulador Android 13 e confirmação do log do jogo. Suíte `ProjectJourneyTests`, `offline-apk-check`, CI e evidências em `docs/guides/end-to-end-journey.md`. A validação da interface, do fluxo de exportação **no celular** e de DEVICE físico permanece pendente; não fechar F4/F5/F9.
 
 - [~] **LUNET-440 — Sprite e animação utilizáveis (Issue #775):** tela Android com desenho, frames, playback, persistência fonte e exportação de spritesheet. Primeiro incremento; não equivale aos Studios completos.

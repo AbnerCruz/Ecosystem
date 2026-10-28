@@ -584,3 +584,12 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - CAUSA comprovada pelo log: android-emulator-runner@v2 executou cada linha de `script:` separadamente via `/usr/bin/sh -c`, descartando a variável `journey` declarada na linha anterior. Nenhum erro do APK do jogo foi observado nessa falha.
 - CORREÇÃO: `tools/ci-android-journey.sh` reúne variáveis, `adb install`, `am start`, `logcat` e captura num único Bash com `set -euo pipefail`. Workflow chama `bash apps/lunet2d/tools/ci-android-journey.sh` em uma única linha. Nenhum teste desabilitado.
 - EVIDÊNCIA: https://github.com/AbnerCruz/Ecosystem/actions/runs/40608475768 . Reexecução e DEVICE físico ainda pendentes.
+
+### 20261028-chatgpt-lunet-regression-fixtures — 2026-10-28 (America/Sao_Paulo) — ChatGPT → integrador — review
+- Item: LUNET-451 / Issue #842; primeiro item não marcado do novo roadmap: projetos de referência para regressão.
+- Base: Ecosystem main 4a260498c0608d062e44824cc04c355ca16a1e9f, branch test/lunet-regression-fixtures-20261028; sem PR aberto encontrado antes do início.
+- Testes escritos ANTES dos fixtures: commit cba278d7c42a5ab8160d2915c2555e8520bed8e2. Cobrem orientação/identidade, compilação por Roslyn, carregamento por GameLoader, execução por GameHost+RecordingBackend, assets, persistência e ZIP round-trip byte a byte.
+- Implementação: commit e5a4d0af2e026f02d185665cdc972b36a3409140; pastas samples/regression/portrait, landscape e full-stack. Som/PNG próprios e fontes editáveis; sem dependência de Urbe/Hub.
+- Referências de projeto consultadas: Godot demos e MonoGame Samples (coleção por pastas, formatos versionados), discussão MonoGame headless CI, e implementações locais ProjectJourneyTests/EndToEndTests/GameHost/Studio. Código externo não copiado.
+- Verificação nesta etapa: inspeção estrutural e validação de contrato por leitura do repositório; SDK dotnet indisponível no ambiente local, nenhuma execução de teste, APK ou aparelho alegada. Exigir checks reais do PR.
+- Próximo: conferir CI e corrigir falhas, integrar pela governança e confirmar release; executar roteiro DEVICE de samples/regression/README.md antes de [x]. Preservar o trabalho dos outros agentes.
