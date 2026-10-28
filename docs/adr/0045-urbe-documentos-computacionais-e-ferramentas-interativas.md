@@ -46,6 +46,18 @@ Adotar a direção de **C** na especificação do produto. A implementação con
 9. **Sem acoplamento entre produtos:** reuso de capacidades do Ecosystem apenas quando houver segundo consumidor e saldo positivo de complexidade (NN-022); preservar ADR-0029/0030.
 10. **Compatibilidade:** Markdown padrão continua legível; extensão de formato é aditiva, versionada e depende de decisão de dados específica.
 
+## Princípio normativo de UX: menos interfaces, não menos potência
+
+**Direção do proprietário em 28/10/2026:** o crescimento das capacidades do Urbe não autoriza crescimento proporcional de telas, modos, barras, painéis ou etapas. **Minimalismo visual, intuição e elegância são requisitos do produto, não uma preferência cosmética.**
+
+Antes de criar uma superfície, demonstrar por teste de tarefa que edição/contexto/visualização existentes não resolvem o caso. Optar por reusar ou substituir superfícies. O novo código não pode transformar funções comuns em mudança de aplicativo: notas são notas; scripts são arquivos; ferramentas operam dentro do documento. Controles devem ser descobríveis sem esconder funções essenciais em gesto secreto, mas aparecer apenas onde são relevantes.
+
+**Vetos:** nova navegação permanente `Laboratório/Código/Documentos`, FABs concorrentes, barras persistentes dedicadas a cada tipo de bloco, inspeções laterais obrigatórias para operações simples, janelas intrusivas, controles excessivos, editor/resultado que sequestra foco ou rolagem, documento só funcional com IA, e duplicação de ações equivalentes em locais diferentes.
+
+**Exceção justificada:** tarefas intrinsicamente espaciais podem expandir o conteúdo para superfície especializada, reutilizando chrome, identidade de arquivo, Voltar e histórico; voltar deve restaurar âncora/seleção.
+
+**Evidência obrigatória:** para cada fatia de UI, registrar tarefa real, caminho de execução, toques/transições, elementos adicionais visíveis, controles removidos/reutilizados, capacidade de descobrir a ação, área efetiva do texto com Gboard, estabilidade de posição e comparação com a experiência anterior. Não aceitar apenas aprovação estética ou smoke headless. O detalhamento e o veto de UX estão na especificação do produto.
+
 ## Questões técnicas explicitamente não decididas
 
 - Gramática exata de blocos/refs e política de persistência de parâmetros em `.md` versus artefatos textuais versionados.
