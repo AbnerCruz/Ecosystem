@@ -2,6 +2,43 @@
 
 > **Estado:** conceito de produto solicitado e aprovado pelo proprietário em conversa de 28/10/2026; **especificação e arquitetura propostas para revisão**, não implementação concluída. Este documento complementa `PRODUCT-DIRECTION.md`, `UX.md` e `ROADMAP.md`. A formalização estrutural está em `docs/adr/0045-urbe-documentos-computacionais-e-ferramentas-interativas.md` (proposto). Nenhuma mudança em runtime, vault ou release foi realizada neste estudo.
 
+## 0. Mandamento de UX — complexidade interna, simplicidade externa
+
+> **Diretriz explícita do proprietário (28/10/2026):** quanto mais poderoso o Urbe ficar, **menos interfaces** o usuário deve precisar aprender. A apresentação deve ser **minimalista, elegante, intuitiva, fluida e sem poluição visual**. Complexidade técnica é responsabilidade do software, não do usuário. Esta orientação governa esta iniciativa e prevalece sobre propostas que multipliquem telas, modos, barras, botões ou estúdios sem necessidade comprovada.
+
+**Princípio decisório:** uma funcionalidade nova não justifica automaticamente uma superfície nova. Antes de adicionar qualquer aba, modo, painel, estúdio, toolbar, botão flutuante ou configuração, demonstrar que a ação não pode acontecer diretamente no objeto que o usuário já está manipulando e que o componente existente não pode ser reutilizado. Preferir **substituir/consolidar** UI a **acrescentar** UI.
+
+Minimalismo **não** é esconder operações importantes atrás de gestos secretos nem sacrificar a capacidade. É **reduzir o número de decisões, saltos e elementos simultaneamente visíveis**. Ações frequentes permanecem descobríveis; as específicas aparecem no contexto e podem ser alcançadas por uma rota clara.
+
+### Contrato de experiência
+
+- **Uma superfície principal de trabalho:** área de trabalho para encontrar projetos/arquivos; um editor consistente para produzir artefatos. A leitura/edição do conteúdo ocupa a tela. Os tipos de conteúdo mudam ferramentas locais, não a navegação global.
+- **Um modelo de interação:** mesmo Voltar, seleção, toque, rolagem, foco, atalhos, undo/redo, menus e salvamento. Nada de um editor dentro de outro editor com gestos incompatíveis.
+- **Zero modos globais artificiais:** não oferecer `Laboratório`, `Editor de código` e `Documentos` como três aplicativos/áreas permanentes. Abrir um `.cs` apresenta código; abrir um `.md` apresenta a nota; inserir gráfico apresenta gráfico no ponto de inserção.
+- **Ferramentas no contexto:** gráficos, sliders, tabelas, formulários, simuladores e código aparecem onde fazem sentido. `Editar`, `Executar`, `Fonte`, `Expandir` só quando pertinentes. Sem barra específica por tipo ocupando permanentemente a tela.
+- **Expansão somente quando necessária:** mapas, grafos e ferramentas intrinsecamente espaciais podem usar uma superfície ampliada; devem reutilizar cabeçalho, histórico e navegação, e retornar ao local exato, sem criar uma nova identidade de app.
+- **Um único ponto dominante de ação por contexto:** evitar FABs concorrentes, múltiplas barras, menus que se duplicam e badges decorativos. Conteúdo antes de controles; estado somente se informar decisão real.
+- **Criação guiada:** o usuário pede `Inserir → Gráfico` (ou digita comando natural/solicita à IA); o Urbe produz valores iniciais úteis. Não pedir JSON, kernel, runtime, tipo de binding ou linguagem para uma tarefa simples.
+- **Complexidade revelada por intenção, não por surpresa:** controles avançados surgem ao editar/configurar aquela ferramenta. Preferir uma etapa contextual clara, com no máximo dois níveis de revelação; não enterrar ações frequentes.
+- **IA discreta e subordinada:** sugestões e previews não interrompem o texto, não mudam foco, não abrem painéis automaticamente, não executam código e não transformam toda interação em conversa obrigatória.
+- **Não mover a tela do usuário:** edição, cálculo, chegada de resultado e streaming de IA não alteram seleção/scroll sem solicitação. Se o bloco crescer, preservar âncora perceptiva.
+- **Visual silencioso e coerente:** tipografia, espaçamento, hierarquia, contraste, cor e animação vêm de tokens existentes; evitar cartões aninhados, sombras acumuladas, bordas para tudo e indicadores permanentes sem significado.
+
+### Regra de veto para qualquer nova feature de UI
+
+A proposta deve demonstrar: (1) **qual tarefa melhora**; (2) **quais controles/superfícies atuais reutiliza ou elimina**; (3) **quantas transições e decisões adiciona** ao fluxo comum; (4) **como se descobre** a ação sem tutorial; (5) **como protege** o foco, a posição, a digitação e a performance em Android. Se não houver resposta verificável, a feature não entra na interface principal, mesmo que o motor técnico já esteja pronto.
+
+### Evidência de aceitação — comparar antes/depois no Android
+
+- Uma nota comum deve abrir e permitir escrever **sem apresentar qualquer interface computacional nova**.
+- Inserir e ajustar um gráfico deve ocorrer na própria nota, sem navegação obrigatória para `Laboratório`; o caminho curto e os toques são registrados no teste.
+- Código inserido na nota e arquivo-fonte aberto no Vault usam gestos e navegação reconhecíveis, com edição de origem sem cópia.
+- Em viewport compacto e com teclado aberto, o corpo de edição continua legível e utilizável; verificar ocupação de área pelo chrome e controles, sem fixar porcentagem sem baseline.
+- Concluir uma tarefa não deve exigir painel extra nem modal inesperado; retornar de expansão preserva arquivo, foco e âncora.
+- Testes com usuários/tarefas reais avaliam descoberta e conclusão **sem instrução verbal**, além de testes de regressão de toque/IME; limites quantitativos finais derivam de baseline, não de números inventados.
+
+**Referências de ergonomia e confirmação:** Nielsen Norman Group, [progressive disclosure](https://www.nngroup.com/articles/progressive-disclosure/) e [complex application design](https://www.nngroup.com/articles/complex-application-design/); Android Developers, [layout and navigation patterns](https://developer.android.com/design/ui/mobile/guides/layout-and-content/layout-and-nav-patterns); documentação do Obsidian mobile e relatos de regressões por barras/animação excessiva. Não copiar estética ou navegação de desktop por familiaridade.
+
 ## 1. Formulação do produto
 
 **O Urbe é um ambiente de produção de artefatos sobre arquivos reais, onde texto, matemática, código, dados, visualizações e ferramentas interativas podem conviver no mesmo fluxo de trabalho.**
