@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261028-urbe-consolidation-wave1",
   "category": "HANDOFF",
-  "timestamp": "2026-10-28T17:56:55Z",
+  "timestamp": "2026-10-28T18:04:08Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -20,6 +20,7 @@
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
     "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
     "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.AndroidBack.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs",
@@ -29,6 +30,7 @@
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AgentLanguage.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantExecutionEfficiency.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantGuideTools.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantQuickNoteTools.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
@@ -39,6 +41,7 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ActivityExpansionUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AgentCreationBlocksUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AndroidBackAndPatchnotesUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AppDocsGuideTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ChatRefreshUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ClockInEditorUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorNavigationUiTests.cs",
@@ -47,6 +50,7 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/QuickVoiceBacklogUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AgentLanguageTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantAuthorshipSealTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantGuideToolsTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantMultimodalQuestionTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantReviewAnswerTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantStaleRewriteTests.cs",
@@ -73,14 +77,15 @@
     "CST-010: Voltar sobe as pastas da Área de trabalho antes de sair do app.",
     "CST-112: linha do tempo da atividade incremental (158,9 → 18,7 ms por atualização com 300 passos abertos).",
     "CST-008: seleção antiga não trava novas respostas no chat.",
-    "Edições longas (CST-098, parte): sem reescrita inteira a partir de leitura desatualizada ou parcial; edit_note falho mostra o trecho mais parecido; falhas repetidas pedem replanejar; números da resposta recontados; read_note nativo sem selos."
+    "Edições longas (CST-098, parte): sem reescrita inteira a partir de leitura desatualizada ou parcial; edit_note falho mostra o trecho mais parecido; falhas repetidas pedem replanejar; números da resposta recontados; read_note nativo sem selos.",
+    "CST-075: ferramenta urbe_guide sobre o Tutorial do app; Tutorial completado (incorporações, grafos, notas rápidas) e protegido por teste de cobertura da sintaxe."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1314 testes, 0 falhas (local, .NET 10.0.403)."
+      "evidence": "1333 testes, 0 falhas (local, .NET 10.0.403)."
     },
     {
       "check": "Validação no Android físico dos itens desta leva",
