@@ -103,6 +103,7 @@ jobs:
             -p:AndroidSdkDirectory="$ANDROID_HOME"
           template=$(find runtime-template/bin/Release/net10.0-android/android-x64 -name '*-Signed.apk' | head -n1)
           test -f "$template" || { echo "Missing Android x86_64 standalone template"; exit 1; }
+          cp "$template" dist/template/game-runtime-x64.apk
           game=$(find runtime-template/bin -name 'CompiledGame.dll' | head -n1)
           dotnet run --project tools/offline-apk-check/OfflineApkCheck.csproj -- \
             "$template" "$game" dist/template/offline-portrait-x64.apk \
@@ -113,6 +114,37 @@ jobs:
           aapt=$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -n1)
           "$aapt" dump xmltree dist/template/offline-portrait-x64.apk AndroidManifest.xml | grep -F 'screenOrientation(0x0101001e)=(type 0x10)0x1'
           "$aapt" dump xmltree dist/template/offline-landscape-x64.apk AndroidManifest.xml | grep -F 'screenOrientation(0x0101001e)=(type 0x10)0x0'
+      # Author an actual project with the same Core/Studio/Preview classes as the IDE.
+      # Its edited C# and assets are then compiled and exported by the offline packager.
+      - name: Test journey and materialize the edited project
+        run: |
+          mkdir -p dist/journey
+          LUNET_JOURNEY_OUTPUT="$PWD/dist/journey" dotnet test --project tests/Lunet.Tests
+          test -s dist/journey/projects/JourneyPortrait/Game.cs
+          test -s dist/journey/projects/JourneyPortrait/Content/Textures/hero.png
+          test -s dist/journey/journey-export.zip
+      - name: Compile and export the journey APK offline
+        run: |
+          project="$PWD/dist/journey/projects/JourneyPortrait"
+          dotnet build runtime-template/Lunet.GameCode.csproj -c Release -t:Rebuild \
+            -p:GameSourceRoot="$project"
+          game="runtime-template/bin/Release/net10.0/CompiledGame.dll"
+          test -s "$game"
+          package=$(cat dist/journey/journey-package-id.txt)
+          orientation=$(cat dist/journey/journey-orientation.txt)
+          dotnet run --project tools/offline-apk-check/OfflineApkCheck.csproj -- \
+            dist/template/game-runtime-x64.apk "$game" dist/journey/journey.apk \
+            "$package" "$orientation" "$project"
+          aapt=$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -n1)
+          apksigner=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -n1)
+          zipalign=$(find "$ANDROID_HOME/build-tools" -name zipalign | sort -V | tail -n1)
+          "$zipalign" -c -v 4 dist/journey/journey.apk
+          "$apksigner" verify --verbose --min-sdk-version 29 dist/journey/journey.apk
+          "$aapt" dump badging dist/journey/journey.apk | grep -F "package: name='$package'"
+          unzip -l dist/journey/journey.apk | grep -F 'assets/game/Content/Textures/hero.sprite.json'
+          unzip -l dist/journey/journey.apk | grep -F 'assets/game/Content/Textures/hero.png'
+          unzip -l dist/journey/journey.apk | grep -F 'assets/game/Content/Data/level.tilemap.json'
+          unzip -l dist/journey/journey.apk | grep -F 'assets/game/Content/Audio/beep.wav'
       - name: Enable KVM for Android installability smoke
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -132,6 +164,48 @@ jobs:
             # Both apps must coexist; neither may overwrite the other.
             adb shell pm list packages | grep -q 'package:io.lunet.game.offline.portrait'
             adb shell pm list packages | grep -q 'package:io.lunet.game.offline.landscape'
+            # Not merely installed: start the edited authored game and observe
+            # its own log from Game.cs after PNG + tilemap load.
+            journey=apps/lunet2d/dist/journey
+            package=$(cat "$journey/journey-package-id.txt")
+            adb install -r "$journey/journey.apk"
+            adb shell pm path "$package" | grep -q '^package:'
+            aapt=$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -n1)
+            activity=$("$aapt" dump badging "$journey/journey.apk" | \
+              sed -n "s/^launchable-activity: name='\\([^']*\\)'.*/\\1/p" | head -n1)
+            test -n "$activity"
+            adb logcat -c
+            adb shell am start -W -n "$package/$activity" | tee "$journey/android-launch.txt"
+            grep -q 'Status: ok' "$journey/android-launch.txt"
+            running=false
+            for attempt in 1 2 3 4 5 6 7 8 9 10; do
+              adb logcat -d > "$journey/android-logcat.txt"
+              if adb shell pidof "$package" | grep -q '[0-9]' && \
+                 grep -Fq 'Jornada editada iniciou' "$journey/android-logcat.txt"; then
+                running=true
+                break
+              fi
+              sleep 2
+            done
+            test "$running" = true || {
+              echo "Jogo não iniciou ou assets não carregaram; consulte android-logcat.txt"
+              tail -n 100 "$journey/android-logcat.txt"
+              exit 1
+            }
+            adb shell screencap -p /sdcard/journey.png
+            adb pull /sdcard/journey.png "$journey/android-screen.png"
+            adb shell am force-stop "$package"
+      - name: Archive reproducible journey evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: lunet-e2e-journey
+          path: |
+            apps/lunet2d/dist/journey/journey-export.zip
+            apps/lunet2d/dist/journey/journey.apk
+            apps/lunet2d/dist/journey/android-*.txt
+            apps/lunet2d/dist/journey/android-screen.png
+          if-no-files-found: warn
       - name: Build APK
         run: >
           dotnet build src/Lunet.Android/Lunet.Android.csproj -c Debug
