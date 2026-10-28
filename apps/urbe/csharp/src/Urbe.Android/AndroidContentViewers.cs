@@ -134,12 +134,12 @@ internal static class AndroidContentViewers
         if (atlas is { } approved)
         {
             // No external frames/network/forms. The Atlas uses one inline script and a blob: worker for offline physics.
-            // The CSP is embedded only once; it is harmless if the user later saves the HTML back to the vault.
+            // A fresh CSP is installed at each open (the prior host meta, if present, is replaced).
             const string csp = "<meta data-urbe-atlas-csp=\"v1\" http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; worker-src blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'\">";
             // Never trust a CSP sentinel supplied inside editable HTML. Remove only the prior host meta
             // and insert a fresh enforced policy on every open; forged marker strings cannot skip it.
             html = System.Text.RegularExpressions.Regex.Replace(html,
-                "<meta\\s+data-urbe-atlas-csp=\\\"v1\\\"[^>]*>", "",
+                """<meta\s+data-urbe-atlas-csp="v1"[^>]*>""", "";
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant,
                 TimeSpan.FromSeconds(1));
             html = html.Replace("<head>", "<head>" + csp, StringComparison.OrdinalIgnoreCase);
