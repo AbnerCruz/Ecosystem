@@ -346,7 +346,7 @@ internal sealed class AndroidHtmlHost(Func<Context, AView> make, Action<AView>? 
         return await tcs.Task.WaitAsync(TimeSpan.FromSeconds(4));
     }
 
-    private sealed class BooleanResultCallback(Action<string?> onValue) : Java.Lang.Object, Java.Lang.IValueCallback
+    private sealed class BooleanResultCallback(Action<string?> onValue) : Java.Lang.Object, IValueCallback
     {
         public void OnReceiveValue(Java.Lang.Object? value) => onValue(value?.ToString());
     }
