@@ -14,7 +14,7 @@
   "branch": "test/lunet-regression-fixtures-20261028",
   "base_commit": "4a260498c0608d062e44824cc04c355ca16a1e9f",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/843",
   "files_changed": [
     "apps/lunet2d/tests/Lunet.Tests/RegressionProjectTests.cs",
     "apps/lunet2d/samples/regression/",
@@ -45,7 +45,9 @@
       "check": "Android DEVICE, native touch, audio and generated APK orientation",
       "kind": "human",
       "result": "pending",
-      "evidence": "See apps/lunet2d/samples/regression/README.md; no physical-device run."
+      "evidence": "See apps/lunet2d/samples/regression/README.md; no physical-device run.",
+      "object": "apps/lunet2d/samples/regression/README.md",
+      "critical": true
     }
   ],
   "known_issues": [
