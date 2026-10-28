@@ -73,6 +73,31 @@ public sealed class EditorTests
     }, CancellationToken.None));
 
     [Fact]
+    public async Task Fonte_WikilinksAndEmbedsFindEveryFileAndAFileLinkOpensIt() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        // CST-040/041: [[…]] and ![[…]] list images, PDFs and other files, not only notes; a file link opens the file
+        var notes = new[] { new CityNote("Notas/x.md", "x"), new CityNote("Notas/Retratos de família.md", "texto") };
+        var (editor, _) = Show(notes: notes, text: "ver ");
+        string? opened = null;
+        editor.Files = () => ["Imagens/retrato.png", "Personagens/retrato.png", "Livros/Calculo.pdf"];
+        editor.OpenFile = path => { opened = path; return Task.CompletedTask; };
+        editor.SetMode(EditorMode.Fonte);
+        editor.Editor.Text = "ver ![[retr";
+        editor.Editor.CaretIndex = editor.Editor.Text.Length;
+        Dispatcher.UIThread.RunJobs();
+        var names = All<Button>(editor).Select(b => (b.Content as TextBlock)?.Text).Where(t => t is not null).ToList();
+        Assert.Contains("Retratos de família", names);
+        Assert.Contains("Imagens/retrato.png", names);       // two files share the name: their paths
+        Assert.Contains("Personagens/retrato.png", names);
+        All<Button>(editor).First(b => b.Content is TextBlock { Text: "Imagens/retrato.png" }).RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal("ver ![[Imagens/retrato.png]]", editor.Editor.Text);
+        await editor.FollowLinkAsync("Calculo.pdf");
+        Assert.Equal("Livros/Calculo.pdf", opened);
+        return true;
+    }, CancellationToken.None));
+
+    [Fact]
     public async Task Visual_RendersTheNoteAndEditsOneBlockAtATime() => Assert.True(await Session.Dispatch<bool>(() =>
     {
         var (editor, window) = Show(text: "---\ntags: [a]\n---\n# Título\n\nUm **forte** e [[Outra]].\n\n- a\n- [x] b\n\n| h | i |\n|---|---|\n| 1 | 2 |\n\n> [!tip] Dica\n> corpo\n\n$$x^2$$\n");

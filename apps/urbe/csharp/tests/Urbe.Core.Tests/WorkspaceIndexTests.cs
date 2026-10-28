@@ -17,6 +17,21 @@ public sealed class WorkspaceIndexTests
         ["Vazio", "Matemática/curso de calculo/Módulo 1"]);
 
     [Fact]
+    public void TheAppsOwnFolderIsNotAProject()
+    {
+        // owner's note of 25/10/2026: Personalização is the app's folder, not a project of the Área de trabalho
+        var w = new WorkspaceIndex(
+            [("Personalização/AGENTS.md", "AGENTS", "Regras", "2026-10-25T09:00:00Z"), ("Projeto/Nota.md", "Nota", "x", "2026-10-25T08:00:00Z")],
+            ["Personalização/temas/escuro.css", "Personalização/plugins/relogio.js"],
+            ["Personalização", "Personalização/estilos", "Projeto"]);
+        Assert.Equal(["Projeto"], w.Projects.Select(p => p.Folder));
+        Assert.Empty(w.Search("AGENTS"));
+        Assert.Equal(1, w.Count);
+        Assert.True(WorkspaceIndex.IsAppFolder("Personalização/temas"));
+        Assert.False(WorkspaceIndex.IsAppFolder("Personalizações"));
+    }
+
+    [Fact]
     public void TopFoldersAreTheProjectsAndTheRootIsLoose()
     {
         var w = Vault();

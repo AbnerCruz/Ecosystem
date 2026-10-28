@@ -128,6 +128,8 @@ public sealed class AiConfig
     public string Policy { get; set; } = "readonly";
     public string AgentId { get; set; } = "geral";
     public string Instructions { get; set; } = "";
+    /// <summary>CST-077: the agents' answer language (a culture name such as "pt-BR"); "" follows the system's.</summary>
+    public string Language { get; set; } = "";
     /// <summary>Facts to remember, by vault name ('*' for every vault).</summary>
     public Dictionary<string, List<string>> Memory { get; set; } = new(StringComparer.Ordinal);
     /// <summary>Versioned structured memories. Old entries in Memory are migrated on first write.</summary>
@@ -366,7 +368,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
             ["web"] = web, ["version"] = c.Version, ["providers"] = new JsonArray(c.Providers.Select(p => (JsonNode)ProviderToJson(p)).ToArray()), ["providerId"] = c.ProviderId,
             ["model"] = c.Model, ["imageProviderId"] = c.ImageProviderId, ["imageModel"] = c.ImageModel,
             ["agentModels"] = agentModels, ["agentInstructionBlocks"] = instructionBlocks,
-            ["policy"] = c.Policy, ["agentId"] = c.AgentId, ["instructions"] = c.Instructions, ["memory"] = memory,
+            ["policy"] = c.Policy, ["agentId"] = c.AgentId, ["instructions"] = c.Instructions, ["language"] = c.Language, ["memory"] = memory,
             ["memorySchemaVersion"] = 2,
             ["memoryRecords"] = JsonSerializer.SerializeToNode(c.MemoryRecords, new JsonSerializerOptions(JsonSerializerDefaults.Web)),
             ["autoCaptureEpisodes"] = c.AutoCaptureEpisodes,
@@ -384,7 +386,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
             ProviderId = o["providerId"] is JsonValue pid && pid.TryGetValue<string>(out var ps) ? ps : null,
             Model = Str(o["model"]),
             ImageProviderId = o["imageProviderId"] is JsonValue iv && iv.TryGetValue<string>(out var imageId) ? imageId : null,
-            ImageModel = Str(o["imageModel"]), Policy = Str(o["policy"], "ask"), AgentId = Str(o["agentId"], "geral"), Instructions = Str(o["instructions"]),
+            ImageModel = Str(o["imageModel"]), Policy = Str(o["policy"], "ask"), AgentId = Str(o["agentId"], "geral"), Instructions = Str(o["instructions"]), Language = Str(o["language"]),
             CustomAgents = (o["customAgents"] as JsonArray ?? []).OfType<JsonObject>().Select(AgentFromJson).ToList(),
             MaxSteps = o["maxSteps"] is null ? 30 : (int)Num(o["maxSteps"]),
             AutoCaptureEpisodes = o["autoCaptureEpisodes"] is null || (bool?)o["autoCaptureEpisodes"] == true,

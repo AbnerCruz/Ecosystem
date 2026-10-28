@@ -1,0 +1,114 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261028-urbe-consolidation-wave1",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-28T17:18:21Z",
+  "agent": {
+    "id": "claude-code-urbe-consolidation",
+    "kind": "ai-agent"
+  },
+  "task_id": "GH-845",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-939e057e-1zwyg5",
+  "base_commit": "cb758c0",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AgentLanguage.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantQuickNoteTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/QuickNotes.cs",
+    "apps/urbe/csharp/src/Urbe.Core/WikiTargets.cs",
+    "apps/urbe/csharp/src/Urbe.Core/WorkspaceIndex.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AgentCreationBlocksUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/QuickVoiceBacklogUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AgentLanguageTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantAuthorshipSealTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/QuickNotesTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VoiceNoteQueueTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/WikiTargetsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/WorkspaceIndexTests.cs",
+    "apps/urbe/docs/csharp/CONSOLIDATION.md",
+    "docs/governance/handoffs/HO-20261028-urbe-consolidation-wave1.json"
+  ],
+  "work_completed": [
+    "Personalização fora da Área de trabalho (nota do proprietário de 25/10/2026).",
+    "CST-053: checkbox obrigatório em toda nota rápida, sem duplicar; ferramenta add_quick_note para agentes.",
+    "CST-040/041: seletores de link e incorporação com todos os arquivos do vault; link de arquivo abre o visualizador.",
+    "CST-039: seletor Mover para sem a pasta atual nem destinos inválidos.",
+    "CST-070: blocos de instrução já na criação do agente, mesmo editor da configuração.",
+    "CST-077: idioma padrão do sistema para agentes, configurável; pedido explícito prevalece.",
+    "Progresso CST registrado em apps/urbe/docs/csharp/CONSOLIDATION.md."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test Urbe.Portable.slnx",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1285 testes, 0 falhas (local, .NET 10.0.403)."
+    },
+    {
+      "check": "Validação no Android físico dos itens desta leva",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/docs/csharp/CONSOLIDATION.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "CST-041: mensagem para incorporação de tipo não suportado ainda não revisada."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Continuar a consolidação: CST-079, CST-021, CST-047, CST-052, CST-010 e demais."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
+    "docs/governance/communication.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Área de trabalho segue sendo projeção das pastas; idioma é uma configuração com uma fonte (config do Assistente)."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "add_quick_note tem acesso write e passa pela política de aprovação."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação DEVICE pendente e separada."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nada extraído para a plataforma."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "wiki-targets",
+      "status": "product-specific",
+      "rationale": "Resolução de links do vault do Urbe; sem outro consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Funcionalidades autorizadas do Product, sem mudança de dados ou distribuição."
+  }
+}

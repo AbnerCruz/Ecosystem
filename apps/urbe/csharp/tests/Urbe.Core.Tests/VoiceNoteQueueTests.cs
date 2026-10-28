@@ -60,8 +60,8 @@ public sealed class VoiceNoteQueueTests
         var entry = new VoiceNoteEntry("a", At, null, "  ligar\npara a Ana ");
         var made = entry.AppendTo(null)!.Value;
         Assert.Equal("Notas rápidas/2026-10.md", made.Path);
-        Assert.Equal("# Notas rápidas — outubro de 2026\n\n## 21/10 — quarta-feira\n\n- 22:41 — ligar para a Ana\n", made.Content);
-        Assert.Equal(made.Content + "- 22:41 — ligar para a Ana\n", entry.AppendTo(made.Content)!.Value.Content);
+        Assert.Equal("# Notas rápidas — outubro de 2026\n\n## 21/10 — quarta-feira\n\n- [ ] 22:41 — ligar para a Ana\n", made.Content);
+        Assert.Equal(made.Content + "- [ ] 22:41 — ligar para a Ana\n", entry.AppendTo(made.Content)!.Value.Content);
         Assert.Null((entry with { Text = null }).AppendTo(null));
     }
 

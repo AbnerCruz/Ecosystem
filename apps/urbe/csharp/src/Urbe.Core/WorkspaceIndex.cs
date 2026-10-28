@@ -235,8 +235,16 @@ public sealed class WorkspaceIndex
     private IEnumerable<WorkspaceItem> Inside(string folder) =>
         folder.Length == 0 ? _all : _all.Where(i => i.Folder == folder || i.Folder.StartsWith(folder + "/", StringComparison.Ordinal));
 
+    /// <summary>
+    /// The app's own folder (Personalização: themes, styles, plugins, AGENTS.md) is not a project of the Área de trabalho
+    /// (owner's note of 25/10/2026); the Explorer still shows it.
+    /// </summary>
+    public static bool IsAppFolder(string path) =>
+        path == LegacyCustomize.Folder || path.StartsWith(LegacyCustomize.Folder + "/", StringComparison.Ordinal);
+
     private void Add(WorkspaceItem item)
     {
+        if (IsAppFolder(item.Path)) return;
         AddFolder(item.Folder);
         if (!_direct.TryGetValue(item.Folder, out var list)) _direct[item.Folder] = list = [];
         list.Add(item);
@@ -245,6 +253,7 @@ public sealed class WorkspaceIndex
 
     private void AddFolder(string folder)
     {
+        if (IsAppFolder(folder)) return;
         while (folder.Length > 0)
         {
             var parent = NoteLibrary.FolderOf(folder);

@@ -30,14 +30,14 @@ public sealed record AiAuthoredWrite(string Tool, string Path, UrbeDocument? Doc
 public static partial class AssistantTools
 {
     /// <summary>The note tools whose text the Assistente authors: the Urbe seals what they write (AiAuthorship).</summary>
-    public static bool IsAuthoredWrite(string name) => name is "create_note" or "edit_note" or "write_note" or "append_to_note";
+    public static bool IsAuthoredWrite(string name) => name is "create_note" or "edit_note" or "write_note" or "append_to_note" or "add_quick_note";
 
     /// <summary>
     /// UC-51 / CST-028: what an authored write will store — the tool's change applied to the seal-free text the agent
     /// read, with the seals the Urbe gives each block (seals the agent sent are ignored). <see cref="AiAuthoredWrite.SealsOnly"/>
     /// when the call only touched seals: nothing to write.
     /// </summary>
-    public static AiAuthoredWrite PlanAuthored(AiTool tool, JsonObject input, IAssistantHost host, string model)
+    public static AiAuthoredWrite PlanAuthored(AiTool tool, JsonObject input, IAssistantHost host, string model, DateTime? now = null)
     {
         // only Markdown notes carry seals: a .json, .css or .js the agent writes keeps exactly its text
         bool seals = true;
@@ -49,6 +49,19 @@ public static partial class AssistantTools
             if (host.Documents.Get(path) is not null) throw new AiToolException("Já existe " + path + ". Use edit_note ou write_note.");
             seals = NoteRe.IsMatch(path);
             return new(tool.Name, path, null, null, Sealed(null, Plain("content")));
+        }
+        if (tool.Name == "add_quick_note")
+        {
+            // CST-053: the month's note, the day's section and the checkbox are QuickNotes'
+            var at = now ?? DateTime.Now;
+            var note = host.Documents.Get(QuickNotes.PathFor(at));
+            var made = QuickNotes.Append(note is null ? null : AiAuthorship.Strip(note.Content), Plain("text"), at) ?? throw new AiToolException("Texto vazio.");
+            // the month's heading and the day's are the app's scaffolding; only the entry is the agent's
+            var text = AiAuthorship.Attribute(note?.Content, made.Content, null);
+            var entry = QuickNotes.Line(Plain("text"), at)!;
+            int line = text.LastIndexOf(entry + "\n", StringComparison.Ordinal);
+            if (line >= 0) text = text.Insert(line + entry.Length, " " + AiAuthorship.Seal(model));
+            return new(tool.Name, made.Path, note, note?.Content, text);
         }
         var d = ResolveDoc(host, Str(input, "path"))!;
         seals = NoteRe.IsMatch(d.Path);
@@ -83,7 +96,8 @@ public static partial class AssistantTools
         {
             if (host.Documents.Get(plan.Path) is not null) throw new AiToolException("Já existe " + plan.Path + ". Use edit_note ou write_note.");
             var created = await host.CreateNoteAsync(plan.Path, text);
-            return new AiToolOutput("Criada: " + created.Path + " (" + Words(AiAuthorship.Strip(created.Content)) + " palavras).", [new AiChange(created.Id, null, Snap(created))]);
+            return new AiToolOutput(plan.Tool == "add_quick_note" ? "Nota rápida registrada em " + created.Path + "." : "Criada: " + created.Path + " (" + Words(AiAuthorship.Strip(created.Content)) + " palavras).",
+                [new AiChange(created.Id, null, Snap(created))]);
         }
         var current = host.Documents.Get(plan.Doc.Id) ?? host.Documents.Get(plan.Doc.Path) ?? plan.Doc;
         if (!string.Equals(current.Content, plan.Before, StringComparison.Ordinal))
@@ -94,6 +108,7 @@ public static partial class AssistantTools
         {
             "edit_note" => new AiToolOutput("Editada: " + u.Path + ".", change),
             "write_note" => new AiToolOutput("Reescrita: " + u.Path + " (" + Words(AiAuthorship.Strip(u.Content)) + " palavras).", change),
+            "add_quick_note" => new AiToolOutput("Nota rápida registrada em " + u.Path + ".", change),
             _ => new AiToolOutput("Texto acrescentado em " + u.Path + ".", change)
         };
     }

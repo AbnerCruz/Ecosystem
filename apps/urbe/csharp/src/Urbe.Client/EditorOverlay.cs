@@ -82,6 +82,10 @@ public sealed class EditorOverlay : Grid
     public bool StartInVisual { get; set; } = true;
     /// <summary>The notes of the open vault (for [[ suggestions and wikilink targets).</summary>
     public Func<IEnumerable<CityNote>>? Notes { get; set; }
+    /// <summary>CST-040: the vault's other files (images, PDFs, audio, code…), which [[…]] and ![[…]] also find.</summary>
+    public Func<IEnumerable<string>>? Files { get; set; }
+    /// <summary>CST-041: opens a file a link points at in the app's viewer.</summary>
+    public Func<string, Task>? OpenFile { get; set; }
 
     /// <summary>The card of a <c>![[destino]]</c> line in the Visual mode (set by the app, which knows the vault).</summary>
     public Func<string, Control?>? EmbedFor { get => _visual.EmbedFor; set => _visual.EmbedFor = value; }
@@ -1600,9 +1604,22 @@ public sealed class EditorOverlay : Grid
         _index = new KnowledgeIndex(store);
     }
 
-    /// <summary>wikiCandidates(query): knowledge.search(query, 20) without the open note; names are the document titles.</summary>
-    private IReadOnlyList<string> Candidates(string query) =>
-        _index is null ? [] : _index.Search(query, 20).Where(d => d.Id != _currentId).Select(d => d.Title).ToArray();
+    /// <summary>
+    /// wikiCandidates(query): knowledge.search(query, 20) without the open note, names the document titles; then the
+    /// vault's other files (CST-040), by their name or, when two share it, their path. Names that start with what was
+    /// typed come first, notes before files.
+    /// </summary>
+    private IReadOnlyList<string> Candidates(string query)
+    {
+        var notes = _index is null ? [] : _index.Search(query, 20).Where(d => d.Id != _currentId).Select(d => d.Title).ToList();
+        var all = Files?.Invoke().ToList() ?? [];
+        if (all.Count == 0) return notes;
+        var files = WikiTargets.Files(all, query, 20).Select(f => WikiTargets.LinkName(f, all)).ToList();
+        var q = Urbe.Core.Assistant.AssistantTools.Fold(query.Trim());
+        bool Starts(string name) => q.Length > 0 && Urbe.Core.Assistant.AssistantTools.Fold(name).StartsWith(q, StringComparison.Ordinal);
+        if (q.Length == 0) return [.. notes.Take(12), .. files.Take(8)];
+        return [.. notes.Where(Starts), .. files.Where(Starts), .. notes.Where(n => !Starts(n)), .. files.Where(f => !Starts(f))];
+    }
 
     private void UpdateWiki()
     {
@@ -1664,6 +1681,12 @@ public sealed class EditorOverlay : Grid
         }
         if (target is not null) { await NavigateAsync(target); return; }
         if (matches.Count > 1) { Notify("Link ambíguo: use o caminho da nota."); return; }
+        // CST-041: a link to a file that is not a note opens the file, never a new note named after it
+        if (Files?.Invoke() is { } files && WikiTargets.ResolveFile(name, files) is { } file)
+        {
+            if (OpenFile is not null) await OpenFile(file); else Notify("Arquivo: " + file);
+            return;
+        }
         // The 1.8.4 only said the note did not exist (owner, DEC-0045): offer to create it, next to this one.
         if (CreateLinked is null || Dialogs is null || !LegacyEditorTools.IsCreatableLinkName(name)) { Notify("A nota vinculada não existe."); return; }
         if (!await Dialogs.ConfirmAsync("Criar nota", $"A nota “{name}” ainda não existe. Criar agora?", "Criar nota")) return;

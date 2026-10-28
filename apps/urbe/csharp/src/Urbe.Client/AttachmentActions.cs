@@ -89,7 +89,7 @@ public sealed partial class MainView
             await Dialogs.AlertAsync("Mover", NoVaultMessage);
             return;
         }
-        folder ??= await ChooseFolderAsync();
+        folder ??= await ChooseFolderAsync(current: DirOf(path));
         if (folder is null) return;
         var name = path[(path.LastIndexOf('/') + 1)..];
         var to = (folder.Length > 0 ? folder + "/" : "") + name;

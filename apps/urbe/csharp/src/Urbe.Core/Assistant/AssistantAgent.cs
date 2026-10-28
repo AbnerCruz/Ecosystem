@@ -940,7 +940,7 @@ public static class AssistantAgent
             AiAuthoredWrite? authored = null;
             if (o.MarkAiText && AssistantTools.IsAuthoredWrite(tool.Name))
             {
-                try { authored = AssistantTools.PlanAuthored(tool, input, host, o.Model); }
+                try { authored = AssistantTools.PlanAuthored(tool, input, host, o.Model, o.Now); }
                 catch (Exception e) { return new Out(e.Message, true); }
                 if (authored.SealsOnly)
                 {
