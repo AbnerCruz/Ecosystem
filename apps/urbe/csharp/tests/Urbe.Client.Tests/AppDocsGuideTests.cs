@@ -24,6 +24,7 @@ public sealed class AppDocsGuideTests
     [InlineData("#L3-L8")]                // embed of lines
     [InlineData("$$")]                    // display math
     [InlineData(".grafo.json")]           // graphs
+    [InlineData("```grafico")]            // function plots
     [InlineData("- [ ] 08:11 —")]         // quick notes are checkboxes
     [InlineData("Nova nota nesta pasta")]
     [InlineData("Personalização/AGENTS.md")]

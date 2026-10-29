@@ -42,6 +42,9 @@ public sealed class NotesSaveScheduler
 
     public event EventHandler? StateChanged;
 
+    /// <summary>The record as the Urbe last read or wrote it (null before the first).</summary>
+    public string? OnDisk => _onDisk;
+
     /// <summary>A save is waiting (the 120 ms or 900 ms timer, or a request during a write).</summary>
     public bool HasPending => _syncTimer || _timer || _pending;
 

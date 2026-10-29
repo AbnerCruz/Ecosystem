@@ -3,17 +3,17 @@
   "schemaVersion": 1,
   "message_id": "HO-20261028-urbe-consolidation-wave1",
   "category": "HANDOFF",
-  "timestamp": "2026-10-28T18:57:21Z",
+  "timestamp": "2026-10-29T00:15:39Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
   },
-  "task_id": "GH-845",
+  "task_id": "GH-852",
   "component": "urbe",
   "state": "review",
   "branch": "ccr-939e057e-1zwyg5",
   "base_commit": "cb758c0",
-  "commit": null,
+  "commit": "f80c85336b9aca9c434a19404a2654e2c19d2c3c",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/847",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Android/VoiceNoteService.cs",

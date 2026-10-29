@@ -47,6 +47,10 @@ public static partial class AppDocs
         - No computador, arraste a borda da barra para mudar a largura, e o botão de **Pastas** recolhe e devolve a barra. No celular, ela abre como uma gaveta pelo botão **Pastas** ou deslizando da borda esquerda; tocar fora fecha.
         - Para renomear no lugar: segure a linha e toque em **Renomear** (ou F2 no computador). Enter confirma, Esc desiste.
 
+        ## Navegar no celular
+
+        No celular não há abas embaixo: o **botão redondo no canto inferior direito** abre um leque com **Assistente** (para cima), **Notas** e **Grafos** (para a esquerda), cada um com o nome em cima. Toque no que quiser; Voltar ou um toque fora fecha o leque. Com a prática, **segure o botão e arraste** na direção do destino: ao soltar, ele abre, sem parar no leque (arrastar para longe desiste). Quando o Assistente espera uma resposta sua, o botão ganha um ponto. No computador, os destinos ficam na barra da esquerda.
+
         A **Constelação** (a estrela no alto da Área de trabalho) mostra as notas como um céu: veja [[Editor]].
         """;
 
@@ -103,7 +107,8 @@ public static partial class AppDocs
         - **A partir de um modelo**, quando há notas em `Modelos` (veja [[Modelos]]).
         - **Nova pasta**, na pasta selecionada.
         - **Nota rápida**, por voz, quando disponível. No Android também há o widget **Urbe: nota rápida** na tela inicial, que grava sem abrir o app: toque para começar e toque de novo (ou na notificação, que mostra o tempo) para terminar. Pausas para pensar não encerram a nota; ela só para sozinha depois de 45 segundos de silêncio ou aos 15 minutos, com aviso no último minuto. Dá para gravar a próxima enquanto a anterior ainda está sendo salva. No Windows, **Ctrl+Alt+N** (de qualquer programa) ou o ícone do Urbe na bandeja abrem a caixa da nota rápida: escreva, ou aperte **Win+H** para o ditado do Windows escrever o que você fala. As notas rápidas ficam em **Notas rápidas**, uma nota por mês com um título para cada dia; cada uma entra como tarefa com o horário, `- [ ] 08:11 — texto`, venha de você, do widget ou de um agente.
-        - **Novo grafo**: um canvas livre (`Nome.grafo.json`) com cartões, notas e arquivos do vault, ligações (linha ou seta), formas, grupos e desenhos, com desfazer e refazer. **⋯ → Grafos** lista os grafos e gera a estrutura do vault (pastas, arquivos, notas e links). O Assistente também lê, cria e altera grafos (por exemplo, "faça um grafo da família real com as notas dos personagens"): a mudança aparece em texto para você aprovar.
+        - **Transcrever em nota** (Android 13 ou mais novo): no menu de um áudio do vault (uma aula, uma reunião; importe o arquivo ou grave com o gravador do celular), o Urbe transcreve no próprio aparelho, em trechos cortados nas pausas, e cria ao lado a nota **Nome — transcrição**, com o áudio, o texto e o horário de cada trecho, para revisar. O andamento aparece no alto, com **Cancelar**; parar não deixa nada. Pronta a nota, **Organizar com o Assistente** abre o Assistente com o pedido escrito, para você escolher o agente e enviar.
+        - **Novo grafo**: um canvas livre (`Nome.grafo.json`) com cartões, notas e arquivos do vault, ligações (linha ou seta), formas, grupos e desenhos, com desfazer e refazer. **⋯ → Grafos** lista os grafos e gera a estrutura do vault (pastas, arquivos, notas e links). Renomear ou mover uma nota, um arquivo ou uma pasta pelo Urbe atualiza os cartões em todos os grafos; um cartão cuja nota foi excluída aparece como **não encontrada**. Um grafo incorporado numa nota (`![[Mapa]]`) não prende a rolagem: um dedo rola a nota, **dois dedos** movem e aproximam o grafo (no computador, Ctrl+roda), e tocar num cartão abre a nota, o arquivo ou a pasta. O Assistente também lê, cria e altera grafos (por exemplo, "faça um grafo da família real com as notas dos personagens"): a mudança aparece em texto para você aprovar.
 
         ## Selecionar e mover
 
@@ -147,6 +152,7 @@ public static partial class AppDocs
         - A **Constelação** (a estrela no alto da Área de trabalho, ou ⋯ do Explorer) mostra todas as notas como um céu: cada projeto é uma névoa na sua cor. Arraste para passear, aproxime com a pinça ou a roda; toque numa estrela para ver as ligações dela e toque de novo para abrir. As posições ficam em `.urbe/constelacao.json`.
         - Tocar num link abre a nota. Se ela ainda não existe, o Urbe pergunta se quer **criar nota**. Um link para um arquivo que não é nota (`[[foto.png]]`) abre o visualizador.
         - As sugestões de `[[` e `![[` trazem as notas e qualquer arquivo do vault: imagens, PDF, áudio, vídeo, código, páginas e grafos.
+        - `[[Plano#Metas]]` leva direto ao título **Metas** da nota (aparece como “Plano › Metas”), `[[Plano#^meta]]` ao trecho que termina com ` ^meta`, e `[[#Metas]]` a um título da própria nota. O sumário também leva ao título no modo Visual.
 
         ## Incorporar
 
@@ -157,6 +163,36 @@ public static partial class AppDocs
         ## Fórmulas
 
         Escreva LaTeX entre `$…$` no texto ou `$$…$$` em destaque, por exemplo $E = mc^2$. O botão **∑** (ou **Ctrl+M**) abre o editor de fórmulas, com **No texto** / **Destaque**, prévia, símbolos e modelos. Toque numa fórmula pronta para editar.
+
+        ## Gráficos de funções
+
+        Um bloco ```` ```grafico ```` desenha as funções escritas nele, uma por linha, com eixos e legenda (menu `/` → **Gráfico de função**):
+
+        ```
+        título: Ondas
+        y = sin(x)
+        f(x) = x^2/8 - 1
+        x: -6..6
+        y: -2..3
+        ```
+
+        Vale `+ - * / ^`, parênteses, `2x` e `3(x+1)`, `pi` e `e`, e as funções `sin` (ou `sen`), `cos`, `tan`, `sqrt` (ou `raiz`), `abs`, `ln`, `log`, `exp`, entre outras. Sem a linha `y:`, a altura se ajusta às curvas. Uma linha que não dá para ler aparece em vermelho embaixo do gráfico, e as outras continuam desenhadas. Toque no gráfico para editar o texto. Nas páginas, ele sai como imagem.
+
+        ### Parâmetros e movimentos
+
+        Uma linha como `a = 2 em 0..5` cria um **parâmetro**: um controle deslizante embaixo do gráfico. As curvas acompanham enquanto você arrasta, e a nota guarda o valor onde você soltar. Sem `em`, o controle vai de -10 a 10. Nomes juntos se multiplicam: `ax` é `a·x`.
+
+        Uma curva **paramétrica** é escrita como `(x(t), y(t))`, com `t:` para o intervalo (sem ele, de 0 a 2π). Assim dá para desenhar movimentos, como um lançamento:
+
+        ```
+        título: Lançamento
+        v = 10 em 0..30
+        θ = pi/4
+        g = 9,8
+        (v cos(θ) t, v sin(θ) t - g t^2/2)
+        t: 0..1,44
+        y: 0..6
+        ```
 
         ## Marcas do Urbe
 
@@ -196,11 +232,11 @@ public static partial class AppDocs
     private const string Modelos = """
         # Modelos
 
-        Um modelo é uma nota comum dentro da pasta `Modelos`. Nada de formato especial.
+        Um modelo é uma nota comum dentro da pasta `Modelos`, ou uma nota com nome terminado em `.modelo.md` em qualquer pasta (por exemplo `Projetos/Droerni/Personagem.modelo.md`). Continua sendo Markdown.
 
         ## Criar um modelo
 
-        Crie a pasta `Modelos` e escreva notas nela. Use campos entre chaves duplas:
+        Escreva a nota do modelo e use campos entre chaves duplas:
 
         ```
         # {{titulo}}
@@ -212,10 +248,11 @@ public static partial class AppDocs
         - `{{titulo}}` vira o nome da nota nova.
         - `{{data}}` vira a data de hoje.
         - Qualquer outro campo, como `{{cliente}}`, é perguntado depois do nome.
+        - Texto entre colchetes, como `[Nome]`, **não** vira pergunta. Ao usar um modelo assim, o Urbe oferece **Converter em campos**, que troca cada `[Texto]` por `{{Texto}}`. Links `[[…]]`, tarefas `- [ ]` e código ficam como estão.
 
         ## Usar
 
-        No [[Explorer]], **Nova → A partir de um modelo**: escolha o modelo, dê o nome, preencha os campos e a nota nasce pronta.
+        No [[Explorer]], **Nova → A partir de um modelo**: escolha o modelo, dê o nome, preencha os campos e a nota nasce pronta. Prefere escrever direto na nota? **Preencher no editor** cria a nota com o que você já respondeu e deixa o resto em branco para completar no editor.
 
         Páginas têm modelos próprios, no estúdio (veja [[Páginas]]).
         """;
@@ -254,7 +291,7 @@ public static partial class AppDocs
     private const string Assistente = """
         # Assistente
 
-        O **Assistente** (embaixo, ou no alto do editor) é um conjunto de agentes que pesquisam, escrevem e organizam a sua pasta, com um modelo de IA que você escolhe.
+        O **Assistente** (no botão redondo do canto inferior direito no celular, no botão flutuante no computador, ou no alto do editor) é um conjunto de agentes que pesquisam, escrevem e organizam a sua pasta, com um modelo de IA que você escolhe.
 
         ## Conectar um modelo
 
@@ -284,9 +321,11 @@ public static partial class AppDocs
 
         **Enviar arquivos ao chat:** toque no único botão **+** ao lado da caixa de mensagem e escolha **Arquivo do dispositivo** ou **Nota do vault**. A busca de notas percorre o vault inteiro, sem limite artificial das primeiras 300 notas. Antes do envio, os anexos aparecem na bandeja compacta de contexto; cada cartão pode ser removido, e **Limpar** remove todos. Texto UTF-8 entra como contexto; imagens PNG/JPEG/WebP e PDFs vão como anexos multimodais. Até quatro anexos por mensagem, com limites por tipo. O Urbe não copia os anexos para o vault. Imagens e PDFs exigem um modelo multimodal compatível; só selecione arquivos que deseja enviar ao provedor de IA.
 
-        **Perguntas e planejamento:** em tarefas complexas, o agente registra as etapas pelo plano e, se uma decisão importante estiver faltando, abre um cartão com uma pergunta por vez. Responda no cartão para continuar. A contagem de dúvidas resolvidas é uma estimativa declarada pelo agente, não uma porcentagem medida de compreensão.
+        **Perguntas e planejamento:** em tarefas complexas, o agente registra as etapas pelo plano e, se uma decisão importante estiver faltando, abre um cartão com uma pergunta por vez. Responda no cartão para continuar. O cartão mostra quantas dúvidas já foram esclarecidas, a compreensão que o agente declara, as dúvidas que ainda estão em aberto e o que mudou desde a pergunta anterior (as esclarecidas e as novas). São estimativas declaradas pelo agente, não medições.
 
         No chat, peça **"gere uma imagem"** sem trocar o modelo da conversa. Em **Configurações do Assistente → Geração de imagens**, selecione o provedor salvo e o modelo de imagem: OpenRouter lista modelos pela API específica de imagens; OpenAI e Gemini também podem ser escolhidos, e é possível informar o ID manual de um modelo compatível. **Automático** mantém a escolha anterior. O Assistente pede aprovação, guarda o arquivo na pasta **Imagens** sem sobrescrever arquivos e, se você quiser, coloca `![[Imagens/…]]` na nota. Sem uma chave válida, ele informa o que falta; não substitui a imagem por uma página.
+
+        **Quanto levou:** embaixo de cada resposta aparece quanto tempo ela levou e onde: o modelo (rede e geração), as ferramentas e a espera pela sua aprovação, além das chamadas, falhas, edições e de quantos arquivos o agente conferiu relendo. Em **Custos e consumo → Desempenho por agente** ficam os números juntos de cada agente (mediana, p90, concluídas, falhas por execução e edições conferidas). São só tempos e contagens, nunca o conteúdo; ficam neste aparelho, em cada conversa, e **Medir execuções** desliga.
 
         **Preços de imagens:** a lista de modelos mostra valores em dólares **por imagem, por megapixel ou por 1 milhão de tokens**, com fonte consultável. Para OpenRouter, a consulta utiliza o endpoint de preços do modelo escolhido; para modelos específicos OpenAI e Gemini, são exibidas referências públicas com data de verificação. Preço ausente aparece como **não informado**, nunca como gratuito. Os valores são referências ou mínimos, não previsão exata de cobrança: entrada, qualidade, resolução e rota podem alterar a fatura.
 
@@ -298,6 +337,7 @@ public static partial class AppDocs
         - **Modelo por agente:** em Configurações → Nomes dos agentes → **Configurar**, você pode selecionar um provedor/modelo de conversa específico para qualquer agente (inclusive os prontos). Sem escolha, o agente herda o modelo normal do Assistente. Trocar de agente passa a trocar também o modelo efetivo, sem mudar o padrão salvo.
         - **Instruções por blocos:** no mesmo painel, adicione quantos blocos titulados precisar (ex.: Tom, Fontes, Procedimento), edite e remova. Esses blocos se somam às instruções gerais e às instruções existentes do agente, sem ampliar as permissões. Os ajustes são guardados só na configuração local do Assistente.
         - **Conversas anteriores**: cada agente consulta as próprias conversas deste vault (o pedido, a resposta, os arquivos alterados e, se precisar, a conversa inteira), por exemplo quando você diz "continue aquilo de ontem". Ele nunca vê as conversas de outro agente nem o que ficou oculto.
+        - **Consultar um especialista**: um agente pode pedir ajuda a outro agente seu, que trabalha na própria conversa, com o próprio modelo e permissões. Se o especialista precisar perguntar algo a você, pedir um formulário ou uma aprovação, o pedido aparece na conversa em que você está; a resposta vai para ele, e o trabalho continua sem trocar de conversa.
         - **Nomes dos agentes**: cada agente pode ter um nome seu, como Jarvis. Numa conversa, chame-o por um nome novo ("Jarvis, resuma esta nota") e ele pergunta se deve passar a se chamar assim. O nome fica só neste aparelho.
         - **Pedir dentro da nota**: escreva numa linha `&Jarvis&: dê uma sugestão de nome` (ou `&&:` para o agente padrão). A linha vira um cartão com **Pedir a Jarvis** (ou Ctrl+Enter nela); só ao tocar o pedido vai, numa conversa própria "Na nota …", com a nota como contexto. Uma mudança na nota aparece no lugar da linha, como sugestão, com **Aceitar** e **Recusar**; uma resposta em palavras abre o Assistente, com **Pôr na nota** para guardá-la como citação logo abaixo da linha. Essas linhas não aparecem nas páginas.
         - **Personalização/AGENTS.md** na sua pasta: instruções suas, lidas a cada conversa. Separe por modelo:
@@ -362,6 +402,10 @@ public static partial class AppDocs
         ## Backups automáticos
 
         Antes de migrar ou importar, o Urbe guarda um backup em `.urbe/backup`. Para ver e restaurar: **Ctrl+K → Backups do vault**.
+
+        ## Quando a pasta muda fora do Urbe
+
+        Outro aplicativo ou uma sincronização pode mudar os arquivos enquanto o Urbe está aberto. O Urbe nunca grava por cima do que mudou lá: ao salvar, ele lê a pasta de novo, e as mudanças de fora aparecem. Se a própria nota que você está escrevendo foi mudada lá fora, as duas versões ficam: a de fora continua na nota, e a sua é salva ao lado como **Nome (conflito data hora)**, que segue aberta no editor para você juntar o que quiser.
 
         ## Versões e lixeira
 

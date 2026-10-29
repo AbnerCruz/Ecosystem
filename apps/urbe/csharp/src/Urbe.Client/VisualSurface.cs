@@ -80,6 +80,20 @@ public sealed class VisualSurface : StackPanel
     /// <summary>The drawn block that starts at <paramref name="start"/> in the text, or null (tests, the host).</summary>
     public Control? BlockView(int start) => _holders.GetValueOrDefault(start);
 
+    /// <summary>The block that holds <paramref name="offset"/> of the text comes on screen, at the top.</summary>
+    public void RevealOffset(int offset)
+    {
+        var block = _blocks.LastOrDefault(b => b.Start <= offset) ?? _blocks.FirstOrDefault();
+        if (block is null || _holders.GetValueOrDefault(block.Start) is not { } holder) return;
+        RevealedBlock = block.Start;
+        if (holder.FindAncestorOfType<ScrollViewer>() is { } scroll && holder.TranslatePoint(new Point(0, 0), scroll) is { } at)
+            scroll.Offset = new Vector(scroll.Offset.X, Math.Max(0, scroll.Offset.Y + at.Y - 12));
+        else holder.BringIntoView();
+    }
+
+    /// <summary>The block <see cref="RevealOffset"/> last brought on screen (tests).</summary>
+    public int? RevealedBlock { get; private set; }
+
     /// <summary>The blocks of the note as drawn (their start in the text, in order).</summary>
     public IReadOnlyList<int> BlockStarts => _blocks.Select(b => b.Start).ToList();
 
@@ -391,6 +405,7 @@ public sealed class VisualSurface : StackPanel
             EmbedFor = EmbedFor,
             // a task inside a container: the tap edits the block (its list lines are not the block's lines)
             TaskToggled = container ? null : (line, on) => ToggleTask(block, line, on),
+            PlotParameterChanged = container ? null : (name, value) => SetPlotParameter(block, name, value),
             MathTapped = index => _ = EditFormulaAsync(block.Start, index),
             CommentsTapped = index => _ = CommentsAsync(block.Start, index),
             AgentAsked = AgentAsked is null ? null : index => AskAgent(block.Start, index)
@@ -423,6 +438,18 @@ public sealed class VisualSurface : StackPanel
             });
         }
         return holder;
+    }
+
+    /// <summary>CST-069: a graph's slider was let go — only that parameter's number changes in the block.</summary>
+    private void SetPlotParameter(MarkdownBlock block, string name, double value)
+    {
+        if (_readOnly) return;
+        var source = _text[block.Start..block.End];
+        var changed = FunctionPlot.WithValue(source, name, value);
+        if (changed == source) return;
+        _text = _text[..block.Start] + changed + _text[block.End..];
+        TextEdited?.Invoke(_text);
+        Rebuild();
     }
 
     private void ToggleTask(MarkdownBlock block, int line, bool on)
@@ -1038,6 +1065,7 @@ public sealed class VisualSurface : StackPanel
             case "pin": if (b > a) PinRequested?.Invoke(text[a..b]); break;
             case "wordComment": _ = WordCommentAsync(text, a, b); break;
             case "codeblock": Apply(LegacyVisualEdit.CodeBlock(text, _box.CaretIndex)); break;
+            case "plot": Apply(LegacyVisualEdit.Plot(text, _box.CaretIndex)); break;
             case "box": _ = BoxAsync(text, a, b); break;
             case "comment":
                 // from the "/" menu the typed "/query" goes first
@@ -1112,6 +1140,7 @@ public sealed class VisualSurface : StackPanel
         if (act == "box") Run("box");
         // Slash("codeblock") has no edit of its own: the block becomes an empty fenced block
         if (act == "codeblock") Run("codeblock");
+        if (act == "plot") Run("plot");
     }
 
     private void InsertRule()

@@ -245,7 +245,11 @@ public sealed partial class AssistantPanel
                     Source = bitmap, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly,
                     MaxHeight = 420, MaxWidth = 640, HorizontalAlignment = HorizontalAlignment.Left
                 };
-                picture.DetachedFromVisualTree += (_, _) => { bitmap.Dispose(); loaded = false; };
+                // CST-111: leaving the screen frees the decoded picture, but the log keeps this card and may put it back:
+                // the image lets go of it first (a freed bitmap drawn again closed the app at the end of long image runs)
+                // and coming back decodes it again
+                picture.DetachedFromVisualTree += (_, _) => { picture.Source = null; bitmap.Dispose(); loaded = false; };
+                picture.AttachedToVisualTree += (_, _) => { if (picture.Source is null) _ = Load(); };
                 visual.Child = picture;
             }
             catch (Exception)
@@ -257,13 +261,17 @@ public sealed partial class AssistantPanel
         return frame;
     }
 
-    private Control Clarification(AiChatBlock call)
+    /// <param name="owner">The conversation that asked (a consulted specialist's, CST-091); the one on screen by default.</param>
+    /// <param name="answer">Where the answer goes instead of a new message here.</param>
+    private Control Clarification(AiChatBlock call, AiConversation? owner = null, Action<string>? answer = null)
     {
         var info = call.Input as JsonObject ?? new JsonObject();
         var question = (string?)info["question"] ?? "O que você prefere?";
         var reason = (string?)info["reason"];
-        int total = Math.Max(1, (int)LegacyCustomize.JsToNumber(info["total"]));
-        int done = Math.Clamp((int)LegacyCustomize.JsToNumber(info["resolved"]), 0, total);
+        // CST-115: the counts, the understanding the agent declares, what is still open and what changed
+        var previous = (owner ?? _conv).Messages.SelectMany(m => m.Content).TakeWhile(x => x.Id != call.Id)
+            .LastOrDefault(x => x.Type == "tool_use" && x.Name == "ask_user")?.Input as JsonObject;
+        var progress = QuestionProgress.From(info, previous);
         var input = new TextBox { Text = _questionDrafts.GetValueOrDefault(call.Id, ""), AcceptsReturn = true, MinHeight = 64, MaxHeight = 180,
             TextWrapping = TextWrapping.Wrap, PlaceholderText = "Responda aqui; uma resposta pode resolver várias dúvidas." };
         Ui.TextActions.Attach(input);
@@ -271,15 +279,19 @@ public sealed partial class AssistantPanel
         var panel = new StackPanel { Spacing = 8 };
         panel.Children.Add(Wrap(question, 14, UrbeTheme.Text, FontWeight.SemiBold));
         if (!string.IsNullOrWhiteSpace(reason)) panel.Children.Add(Hint(reason));
-        panel.Children.Add(Label(done + " de " + total + " dúvidas esclarecidas (estimativa)", 12, UrbeTheme.Text3));
-        panel.Children.Add(new ProgressBar { Minimum = 0, Maximum = total, Value = done, Height = 5 });
+        panel.Children.Add(Label(progress.Summary + " (estimativa)", 12, UrbeTheme.Text3));
+        panel.Children.Add(new ProgressBar { Minimum = 0, Maximum = progress.Total, Value = progress.Resolved, Height = 5 });
+        if (progress.Change is { } change) panel.Children.Add(Wrap(change, 12, UrbeTheme.Text2));
+        if (progress.Pending.Count > 0)
+            panel.Children.Add(Wrap("Ainda em aberto: " + string.Join(" · ", progress.Pending), 12, UrbeTheme.Text3));
         panel.Children.Add(input);
         panel.Children.Add(TextButton("Responder e continuar", () =>
         {
-            var answer = (input.Text ?? "").Trim();
-            if (answer.Length == 0 || _running is not null) return;
+            var text = (input.Text ?? "").Trim();
+            if (text.Length == 0 || answer is null && _running is not null) return;
             _questionDrafts.Remove(call.Id);
-            Send(answer);
+            if (answer is not null) answer(text);
+            else Send(text);
         }, primary: true));
         return panel;
     }
@@ -341,9 +353,14 @@ public sealed partial class AssistantPanel
 
     // ---------------------------------------------------------------- approval with a preview
 
-    private Control Approval(AiApprovalRequest p)
+    /// <param name="respond">Where the answer goes (a consulted specialist's request, CST-091); the run on screen by default.</param>
+    private Control Approval(AiApprovalRequest p, Action<AiApproval>? respond = null)
     {
-        void Respond(AiApproval answer) { if (_pending?.Request.Call.Id == p.Call.Id) Answer(answer); }
+        void Respond(AiApproval answer)
+        {
+            if (respond is not null) respond(answer);
+            else if (_pending?.Request.Call.Id == p.Call.Id) Answer(answer);
+        }
         var pv = p.Preview;
         bool danger = p.Access == "destructive", plugin = p.Access == "plugin";
         var box = new StackPanel { Spacing = 8 };
@@ -489,6 +506,7 @@ public sealed partial class AssistantPanel
         else if (r.Stopped == "no_progress") tail.Children.Add(Note("O modelo repetiu operações sem produzir informação ou alteração nova. O ciclo foi interrompido; nenhuma operação foi escondida.", "Continuar", () => Send("Continue usando as evidências já obtidas; explique o que ainda falta de fato.")));
         else if (r.Stopped == "loop") tail.Children.Add(Note("Parei: o agente repetia uma ação que falhava.", "Continuar", () => Send("Continue de onde parou.")));
         else if (r.Stopped == "max_tokens") tail.Children.Add(Note("A resposta foi cortada pelo limite do modelo.", "Continuar", () => Send("Continue de onde parou.")));
+        if (r.Efficiency.Describe() is { } measured) tail.Children.Add(Wrap(measured, 11, UrbeTheme.Text2));
         if (r.Efficiency.ReusedReads > 0 || r.Efficiency.NoOpWrites > 0 || r.Efficiency.ContextCharsSaved > 0)
             tail.Children.Add(Wrap(r.Efficiency.ReusedReads + " leituras reutilizadas · " + r.Efficiency.NoOpWrites +
                 " gravações sem alteração evitadas · " + r.Efficiency.ContextCharsSaved + " caracteres redundantes não reenviados", 11, UrbeTheme.Text2));

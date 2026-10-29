@@ -196,7 +196,9 @@ public static class PageMarkdown
                 i++;
                 while (i < lines.Length && !LegacyCustomize.JsTrim(lines[i]).StartsWith(fence, StringComparison.Ordinal)) code.Add(lines[i++]);
                 i++;
-                output.Add("<pre class=\"code\"" + (lang.Length > 0 ? " data-lang=\"" + Esc(lang) + "\"" : "") + "><code>" + Esc(string.Join("\n", code)) + "</code></pre>");
+                // CST-069: a ```grafico block is its graph on the page too (an SVG drawn from the text, no script)
+                if (FunctionPlot.IsPlotLanguage(lang)) output.Add("<figure class=\"figure urbe-plot\">" + FunctionPlot.Parse(string.Join("\n", code)).ToSvg() + "</figure>");
+                else output.Add("<pre class=\"code\"" + (lang.Length > 0 ? " data-lang=\"" + Esc(lang) + "\"" : "") + "><code>" + Esc(string.Join("\n", code)) + "</code></pre>");
                 continue;
             }
             if ((m = Heading.Match(line)).Success)

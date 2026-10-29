@@ -36,6 +36,7 @@ public sealed partial class MainView
             panel.UndoRequested += () => _ = GraphUndoAsync(redo: false);
             panel.RedoRequested += () => _ = GraphUndoAsync(redo: true);
             panel.Canvas.Changed += () => { _graphDirty = true; panel.Refresh(); _ = SaveGraphAsync(); };
+            panel.Canvas.Exists = ReferenceExists;
             _graphBoard = panel;
             _stage.Children.Add(panel);
             return panel;
@@ -43,6 +44,67 @@ public sealed partial class MainView
     }
 
     public bool GraphOpen => _graphBoard?.IsVisible == true;
+
+    /// <summary>The graph open in the board (tests).</summary>
+    public GraphDocument? OpenGraph => _openGraph;
+
+    /// <summary>CST-066: a card's note (by its id first, so a rename never loses it), file or folder is in the vault.</summary>
+    private bool ReferenceExists(GraphNode node)
+    {
+        if (node.Target is not { } target) return true;
+        return node.Kind switch
+        {
+            GraphNodeKind.Note => node.ReferenceId is { } id && _store?.Get(id) is not null || _contents.ContainsKey(target),
+            GraphNodeKind.File => _attachments.Contains(target) || _contents.ContainsKey(target),
+            GraphNodeKind.Folder => _library?.Folders.Contains(target.TrimEnd('/')) == true ||
+                _contents.Keys.Concat(_attachments).Any(p => p.StartsWith(target.TrimEnd('/') + "/", StringComparison.Ordinal)),
+            _ => true
+        };
+    }
+
+    /// <summary>
+    /// CST-066: notes, files or folders renamed or moved in the Urbe — every graph of the vault follows (the open one in
+    /// memory, saved with it; the others written and verified). A graph that cannot be read is left as it is.
+    /// </summary>
+    private async Task RetargetGraphsAsync(IReadOnlyList<(string From, string To)> moves)
+    {
+        if (moves.Count == 0 || _vault is not { IsConnected: true } vault || !VaultWritable) return;
+        await _graphWriteGate.WaitAsync();
+        var failed = new List<string>();
+        try
+        {
+            // the open graph's own file may have moved with its folder
+            if (_openGraphPath is { } openPath)
+                foreach (var (from, to) in moves)
+                {
+                    if (string.Equals(openPath, from, StringComparison.OrdinalIgnoreCase)) _openGraphPath = to;
+                    else if (openPath.StartsWith(from.TrimEnd('/') + "/", StringComparison.OrdinalIgnoreCase)) _openGraphPath = to.TrimEnd('/') + openPath[from.TrimEnd('/').Length..];
+                }
+            foreach (var path in _attachments.Where(GraphDocument.IsGraphPath).ToList())
+            {
+                bool open = _openGraph is not null && string.Equals(_openGraphPath, path, StringComparison.OrdinalIgnoreCase);
+                try
+                {
+                    GraphDocument graph;
+                    if (open) graph = _openGraph!;
+                    else if ((await vault.ReadFileAsync(path, long.MaxValue))?.Bytes is { } bytes) graph = GraphDocument.Parse(Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF'));
+                    else continue;
+                    int changed = 0;
+                    foreach (var (from, to) in moves) changed += graph.Retarget(from, to);
+                    if (changed == 0) continue;
+                    if (open) { _graphDirty = true; GraphsPanel.Canvas.InvalidateVisual(); }
+                    else await vault.SaveExistingTextFileAsync(path, graph.Serialize());
+                }
+                catch (Exception ex) when (ex is IOException or InvalidDataException or System.Text.Json.JsonException or UnauthorizedAccessException or InvalidOperationException)
+                {
+                    failed.Add(Path.GetFileName(path));
+                }
+            }
+        }
+        finally { _graphWriteGate.Release(); }
+        if (_graphDirty) await SaveGraphAsync();
+        if (failed.Count > 0) ShowLifeNotice("Não foi possível atualizar as referências em: " + string.Join(", ", failed) + ". Os grafos ficaram como estavam.", Ui.ToastKind.Warning);
+    }
 
     /// <summary>The Grafos destination lists authored graph documents, never replaces the vault's hierarchy.</summary>
     public async Task ShowGraphsHomeAsync()
@@ -413,9 +475,17 @@ public sealed partial class MainView
         if (!await SaveGraphAsync()) return;
         GraphsPanel.IsVisible = false;
         UpdateNav();
+        await OpenReferenceAsync(selected with { Target = path });
+    }
+
+    /// <summary>What a card points to: its note (found by its id after a rename), file or folder.</summary>
+    private async Task OpenReferenceAsync(GraphNode node)
+    {
+        if (node.Target is not { } target) return;
+        var path = node.Kind == GraphNodeKind.Note && node.ReferenceId is { } id ? _store?.Get(id)?.Path ?? target : target;
         if (_contents.ContainsKey(path)) OpenNoteByPath(path);
         else if (_attachments.Contains(path)) await ShowFileAsync(path);
-        else if (GraphsPanel.Canvas.SelectedNode?.Kind == GraphNodeKind.Folder) Workspace.Open(path);
+        else if (node.Kind == GraphNodeKind.Folder) Workspace.Open(path);
         else ShowLifeNotice("A referência não foi encontrada no vault: " + path, Ui.ToastKind.Warning);
     }
 }

@@ -58,7 +58,7 @@ public sealed partial class HeadlessUiTests
                 Assert.NotEmpty(panel.Conversation.Messages);
                 panel.DismissCompact();
                 Assert.False(view.AssistantMini.IsVisible);
-                Assert.True(view.AssistantLauncher.IsVisible);
+                Assert.True(view.Navigation.IsVisible);   // CST-043: on a phone the radial menu has the corner
                 return true;
             }
             finally { window.Close(); }

@@ -21,7 +21,6 @@ public sealed partial class MainView : Grid
 
     private readonly Panel _stage = new();
     private readonly StackPanel _rail = new();
-    private readonly Grid _dock = new();
     private readonly Dictionary<string, string> _contents = new(StringComparer.Ordinal);
     private readonly IUrbeVaultStorage? _vault;
     private VaultSnapshot? _snapshot;
@@ -42,7 +41,7 @@ public sealed partial class MainView : Grid
         _vault = storage ?? UrbeApp.VaultStorageFactory?.Invoke();
         Background = UrbeTheme.Brush(UrbeTheme.Bg);
         ColumnDefinitions = new ColumnDefinitions("Auto,*");
-        RowDefinitions = new RowDefinitions("*,Auto");
+        RowDefinitions = new RowDefinitions("*");
 
         Explorer = new NotesExplorer { State = ExplorerState };
         Editor = new EditorOverlay { IsVisible = false, Dialogs = Dialogs, Notes = () => _contents.Select(n => new CityNote(n.Key, n.Value)) };
@@ -57,8 +56,6 @@ public sealed partial class MainView : Grid
         Editor.ConfirmEmbeddedAtlasExitAsync = ConfirmEmbeddedAtlasExitAsync;
         Editor.Properties.TagSource = () => _store is null ? [] : _store.List().SelectMany(d => d.Tags).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
         Editor.PropertiesFor = path => _library?.PropertiesText(path, Now);
-        // v23Atualizar: v23Dock.hidden = editor (the rail of a wide window stays)
-        Editor.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) _dock.IsVisible = !Editor.IsVisible && !(Bounds.Width >= WideBreakpoint); };
         // overlays enter with a short fade + slide (UX.md P6); IsVisible flips at once, so nothing waits for the motion
         Ui.UrbeMotion.EnterOnShow(Editor, dy: 12);
         Explorer.Closed += CloseNotesOverEditor;
@@ -158,10 +155,6 @@ public sealed partial class MainView : Grid
         BuildRail();
         SetColumn(_rail, 0);
         Children.Add(_rail);
-        BuildDock();
-        SetRow(_dock, 1);
-        SetColumnSpan(_dock, 2);
-        Children.Add(_dock);
 
         // .uc and .udlg are position:fixed over the whole app, bottom navigation included
         // #mathPane (z-index 10400), under the dialogs
@@ -485,7 +478,8 @@ public sealed partial class MainView : Grid
     }
 
     /// <summary>The notes' ids, dates or folders changed: their record is written soon (marcarSinc).</summary>
-    private void NotesChanged() => _notesSave?.MarkSync();
+    // the open graph redraws too: a card may have lost (or found again) its note (CST-066)
+    private void NotesChanged() { _notesSave?.MarkSync(); _graphBoard?.Canvas.InvalidateVisual(); }
 
     /// <summary>The save of the notes' record (null with no folder open and for read-only vaults).</summary>
     public NotesSaveScheduler? NotesSave => _notesSave;
@@ -500,7 +494,56 @@ public sealed partial class MainView : Grid
     public Task FlushPendingAsync() => _notesSave?.FlushAsync() ?? Task.CompletedTask;
 
     // Keep the one-argument signature for Editor.SaveRequested (Func<CityNote, Task>).
-    private Task SaveNoteAsync(CityNote note) => SaveNoteAsync(note, expectedUndoContent: null);
+    private async Task SaveNoteAsync(CityNote note)
+    {
+        try { await SaveNoteAsync(note, expectedUndoContent: null); }
+        catch (VaultChangedOutsideException) { await SaveAfterOutsideChangeAsync(note); }
+    }
+
+    /// <summary>
+    /// CST-005: the folder changed outside the Urbe (a sync, another editor) since it was read. It is read again —
+    /// every change made outside is kept and shown — and then the note is saved, when the note itself is as the Urbe
+    /// knew it. When the note was changed outside too, nothing is overwritten: the person's text goes to a copy next
+    /// to it, which the editor goes on with.
+    /// </summary>
+    private async Task SaveAfterOutsideChangeAsync(CityNote note)
+    {
+        var known = _contents.GetValueOrDefault(note.Path);
+        if (await _vault!.ReloadAsync() is not { } snapshot) throw new VaultChangedOutsideException();
+        // the notes' record changed outside too (another device): the one there wins over the one waiting here
+        if (_notesSave is { } waiting && snapshot.Files.FirstOrDefault(f => string.Equals(f.Key, NoteLibrary.Path, StringComparison.OrdinalIgnoreCase)).Value is { } record &&
+            System.Text.Encoding.UTF8.GetString(record.Bytes.Span).TrimStart('\uFEFF') != waiting.OnDisk)
+        {
+            waiting.Stop();
+            _notesSave = null;
+        }
+        await ShowVaultAsync(snapshot);
+        if (known is not null && _contents.TryGetValue(note.Path, out var onDisk) && onDisk == known)
+        {
+            await SaveNoteAsync(note, expectedUndoContent: null);
+            Editor.Notify("A pasta mudou fora do Urbe: ela foi lida de novo, e a nota foi salva.");
+            return;
+        }
+        var copy = ConflictCopyPath(note.Path, DateTimeOffset.Now);
+        await WriteVaultFileAsync(copy, note.Content, exists: false);
+        await SaveHistoryAsync();
+        if (Editor.Current?.Path == note.Path) Editor.Renamed(copy);
+        ShowLifeNotice("“" + System.IO.Path.GetFileNameWithoutExtension(note.Path) + "” foi alterada fora do Urbe. As duas versões ficaram: " +
+            "a de fora na nota, a sua em “" + System.IO.Path.GetFileNameWithoutExtension(copy) + "”.", Ui.ToastKind.Warning);
+    }
+
+    /// <summary>"Nome (conflito 2026-10-29 14h05).md", next to the note and free.</summary>
+    private string ConflictCopyPath(string path, DateTimeOffset at)
+    {
+        var folder = path.Contains('/') ? path[..(path.LastIndexOf('/') + 1)] : "";
+        var name = System.IO.Path.GetFileNameWithoutExtension(path);
+        var extension = System.IO.Path.GetExtension(path);
+        var stamp = at.ToString("yyyy-MM-dd HH'h'mm", System.Globalization.CultureInfo.InvariantCulture);
+        bool Taken(string candidate) => _contents.Keys.Concat(_attachments).Any(p => string.Equals(p, candidate, StringComparison.OrdinalIgnoreCase));
+        var copy = folder + name + " (conflito " + stamp + ")" + extension;
+        for (int n = 2; Taken(copy); n++) copy = folder + name + " (conflito " + stamp + " " + n + ")" + extension;
+        return copy;
+    }
 
     /// <param name="sealsByEngine">The Assistente's route: its seals were composed by AiAuthorship (UC-51), which may
     /// replace a regenerated block's seal or drop a deleted block's; the person's routes keep the guard below.</param>
@@ -556,7 +599,7 @@ public sealed partial class MainView : Grid
         base.OnSizeChanged(e);
         bool wide = e.NewSize.Width >= WideBreakpoint;
         _rail.IsVisible = wide;
-        _dock.IsVisible = !wide && !Editor.IsVisible;
+        UpdateFloatingNav();
         PlaceAssistant(_assistant, e.NewSize.Width);
     }
 
@@ -860,6 +903,7 @@ public sealed partial class MainView : Grid
             Editor.Renamed(plan.Path);
             Editor.Notify("Arquivo renomeado.");
         }
+        await RetargetGraphsAsync([(path, plan.Path)]);
     }
 
     /// <summary>
@@ -1035,7 +1079,7 @@ public sealed partial class MainView : Grid
         };
         // UC-44: notes in Modelos/ are templates; with any, a note can start from one
         if (NoteTemplateEngine.Templates(_contents.Keys).Count > 0)
-            items.Insert(1, new("A partir de um modelo", UrbeTheme.Icons.File, "Uma nota de “" + NoteTemplateEngine.Folder + "”. " + NotesWhere(folder),
+            items.Insert(1, new("A partir de um modelo", UrbeTheme.Icons.File, "Uma nota de “" + NoteTemplateEngine.Folder + "” ou um arquivo " + NoteTemplateEngine.Suffix + ". " + NotesWhere(folder),
                 Run: () => CreateNoteFromTemplateAsync()));
         if (QuickVoiceItem() is { } voice) items.Add(voice);
         return Dialogs.MenuAsync("Criar", items);
@@ -1054,13 +1098,36 @@ public sealed partial class MainView : Grid
         {
             var pick = await Dialogs.ChooseAsync("A partir de um modelo",
                 templates.Select(p => new DialogItem(NoteTemplateEngine.NameOf(p), UrbeTheme.Icons.File)).ToList(),
-                "Notas da pasta “" + NoteTemplateEngine.Folder + "”.");
+                "Notas da pasta “" + NoteTemplateEngine.Folder + "” e arquivos " + NoteTemplateEngine.Suffix + ".");
             if (pick is not { } i) return;
             templatePath = templates[i];
         }
         if (!_contents.TryGetValue(templatePath, out var template)) return;
+        // CST-046: [Nome] written as if it were a field is not one; say so, and offer to make it one
+        if (NoteTemplateEngine.InputFields(template).Count == 0 && NoteTemplateEngine.BracketPlaceholders(template) is { Count: > 0 } brackets)
+        {
+            var shown = string.Join(", ", brackets.Take(4).Select(b => "[" + b + "]")) + (brackets.Count > 4 ? "…" : "");
+            var choice = await Dialogs.ChooseAsync("Campos entre colchetes",
+            [
+                new DialogItem("Converter em campos", UrbeTheme.Icons.Pencil, "Troca no modelo cada [Texto] por {{Texto}}, que o formulário pergunta."),
+                new DialogItem("Usar como está", UrbeTheme.Icons.File, "Os colchetes ficam como texto na nota nova.")
+            ], "Este modelo tem " + shown + ". Texto entre colchetes não vira pergunta: um campo do modelo se escreve {{Nome}}.");
+            if (choice is null) return;
+            if (choice == 0 && _store?.Get(templatePath) is { } templateDoc)
+            {
+                try
+                {
+                    var converted = NoteTemplateEngine.ConvertBrackets(template);
+                    await ((IAssistantApp)this).SaveNoteAsync(templateDoc, converted);
+                    template = converted;
+                }
+                catch (Exception error) when (error is IOException or InvalidOperationException or UnauthorizedAccessException)
+                { await Dialogs.AlertAsync("Modelo não alterado", error.Message); return; }
+            }
+        }
         folder ??= Explorer.CurrentFolder;
         FormDraftStore? completedDrafts = null;
+        bool fillInEditor = false;
         string? completedKey = null, completedPath = null;
         await CreateNoteInNotesAsync(typedName, folder, async name =>
         {
@@ -1074,10 +1141,11 @@ public sealed partial class MainView : Grid
                     var drafts = new FormDraftStore(storage);
                     var key = FormDraftStore.Key(_vault?.VaultName ?? "", templatePath, name);
                     var session = drafts.LoadOrCreate(key, definition, template);
-                    var answers = await Dialogs.FormAsync(session, () => drafts.Save(key, session),
+                    var (answers, inEditor) = await Dialogs.TemplateFormAsync(session, () => drafts.Save(key, session),
                         _store?.List().Where(d => ArtifactModel.IsNote(d.Path)).Select(d => d.Path).ToArray(), _library?.Folders);
                     if (answers is null) { drafts.Delete(key); return null; }
                     foreach (var entry in session.TemplateValues()) values[entry.Key] = entry.Value;
+                    fillInEditor = inEditor;
                     completedDrafts = drafts;
                     completedKey = key;
                     completedPath = (folder.Length > 0 ? folder + "/" : "") + name + (ArtifactModel.IsText(name) ? "" : ".md");
@@ -1085,7 +1153,11 @@ public sealed partial class MainView : Grid
                 catch (Exception error) when (error is ArgumentException or IOException or System.Text.Json.JsonException)
                 { await Dialogs.AlertAsync("Formulário do modelo", error.Message); return null; }
             }
-            return NoteTemplateEngine.Fill(template, ArtifactModel.IsText(name) ? System.IO.Path.GetFileNameWithoutExtension(name) : name, DateTime.Now, values);
+            var title = ArtifactModel.IsText(name) ? System.IO.Path.GetFileNameWithoutExtension(name) : name;
+            // CST-050: what was answered is in the note; the rest is left blank to be written in the editor
+            return fillInEditor
+                ? NoteTemplateEngine.FillPartially(template, title, DateTime.Now, values.Where(v => v.Value.Length > 0).ToDictionary(v => v.Key, v => v.Value))
+                : NoteTemplateEngine.Fill(template, title, DateTime.Now, values);
         });
         if (completedDrafts is not null && completedKey is not null && completedPath is not null && _contents.ContainsKey(completedPath))
         {
@@ -1393,6 +1465,7 @@ public sealed partial class MainView : Grid
             return;
         }
         long now = Now;
+        var moves = new List<(string From, string To)>();
         foreach (var from in paths)
         {
             if (_store.Get(from) is not { } doc) continue;
@@ -1406,9 +1479,11 @@ public sealed partial class MainView : Grid
             library.Edited(moved.Path, moved.Content, now);
             library.AddFolder(folder);
             if (Editor.IsVisible && Editor.Current?.Path == from) Editor.Renamed(to);
+            moves.Add((from, to));
         }
         NotesChanged();
         RefreshNotes();
+        await RetargetGraphsAsync(moves);
     }
 
     /// <summary>duplicateSelected: explorer.duplicate for each note — "X cópia.ext" in the same folder with the same
@@ -1604,9 +1679,9 @@ public sealed partial class MainView : Grid
         }
     }
 
-    // ---------------- navigation (rail / dock) ----------------
+    // ---------------- navigation (rail / radial menu) ----------------
 
-    // Assistente remains in its floating launcher; Grafos is the second work area.
+    // A wide window: the rail, with the Assistente in its floating launcher. A phone: the radial menu (CST-043).
     private static readonly (string Icon, string Label)[] Destinations =
         [(UrbeTheme.Icons.Notes, "Notas"), (UrbeTheme.Icons.Layers, "Grafos")];
 
@@ -1620,26 +1695,9 @@ public sealed partial class MainView : Grid
             _rail.Children.Add(NavItem(Destinations[i].Icon, Destinations[i].Label, i == 0));
     }
 
-    private void BuildDock()
-    {
-        // #v23Dock: rgba(bg, .94) with a 1px line on top
-        _dock.Background = UrbeTheme.Brush(UrbeTheme.Bg, .94);
-        _dock.Height = 64;
-        var line = new Border { Height = 1, VerticalAlignment = VerticalAlignment.Top, Background = UrbeTheme.Brush(UrbeTheme.Line) };
-        SetColumnSpan(line, Destinations.Length);
-        _dock.Children.Add(line);
-        _dock.ColumnDefinitions = new ColumnDefinitions(string.Join(",", Destinations.Select(_ => "*")));
-        for (int i = 0; i < Destinations.Length; i++)
-        {
-            var item = NavItem(Destinations[i].Icon, Destinations[i].Label, i == 0);
-            SetColumn(item, i);
-            _dock.Children.Add(item);
-        }
-    }
-
     private readonly List<(string Label, string Icon, Border Ico, TextBlock Text)> _nav = [];
 
-    /// <summary>The destination shown as active (.ativo) in the rail and the dock: Assistente while it is open, else Notas.</summary>
+    /// <summary>The destination shown as active (.ativo) in the rail and the radial menu: Assistente while it is open, else Notas.</summary>
     public string ActiveDestination => GraphOpen ? "Grafos" : AssistantOpen ? "Assistente" : "Notas";
 
     private void UpdateNav()
@@ -1651,6 +1709,14 @@ public sealed partial class MainView : Grid
             ico.Child = UrbeTheme.Icon(icon, 22, active ? UrbeTheme.Accent : UrbeTheme.Text3, 1.8);
             text.Foreground = UrbeTheme.Brush(active ? UrbeTheme.Text : UrbeTheme.Text3);
         }
+        _radial?.SetActive(ActiveDestination);
+    }
+
+    private async Task GoToNotesAsync()
+    {
+        if (GraphOpen && !await CloseGraphAsync()) return;
+        if (AssistantOpen) ToggleAssistant();
+        ShowWorkspace();
     }
 
     private Control NavItem(string icon, string label, bool active)
@@ -1689,7 +1755,7 @@ public sealed partial class MainView : Grid
         if (label == "Notas")
         {
             ToolTip.SetTip(button, "Notas e pastas do vault");
-            button.Click += async (_, _) => { if (GraphOpen && !await CloseGraphAsync()) return; if (AssistantOpen) ToggleAssistant(); ShowWorkspace(); };
+            button.Click += (_, _) => _ = GoToNotesAsync();
         }
         else if (label == "Grafos")
         {

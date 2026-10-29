@@ -2078,6 +2078,39 @@
       "decidedAt": "2026-10-25",
       "record": "docs/governance/responses/DEC-0057.md",
       "consequencesApplied": false
+    },
+    {
+      "id": "DEC-0058",
+      "status": "pending",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Urbe: de onde vêm as tags herdadas por projeto (CST-042)",
+      "context": "O FeaturesCheck pede que um projeto (pasta do topo, como Droerni) defina tags, como #worldbuilding, herdadas pelo seu conteúdo. A CST-042 exige definir herança, sobrescrita, remoção e movimento entre projetos. Hoje as tags vêm só do texto de cada nota; o .urbe/area.json guarda só a aparência das caixas. Os plugins de pasta do Obsidian copiam as tags para cada nota.",
+      "question": "Onde as tags de um projeto ficam e como chegam às notas dele?",
+      "alternatives": [
+        {
+          "option": "A — Nota da pasta, herança calculada (recomendada)",
+          "consequences": "As tags do frontmatter de Droerni/Droerni.md valem para tudo dentro da pasta. Nada é reescrito; mover uma nota muda as herdadas na hora; uma nota recusa com herdar: false ou sem-tags: [...]; a nota mostra a origem (#worldbuilding · de Droerni). Portátil: a nota da pasta é Markdown comum. Fora do Urbe, as outras notas não mostram as herdadas."
+        },
+        {
+          "option": "B — Copiar as tags para cada nota (como os plugins do Obsidian)",
+          "consequences": "As tags aparecem em qualquer editor, mas o Urbe reescreve o frontmatter ao criar ou mover notas, e uma mudança no projeto reescreve todas as notas dele; separar a tag herdada da escrita pela pessoa fica frágil."
+        },
+        {
+          "option": "C — Tags na caixa do projeto (.urbe/area.json), calculadas",
+          "consequences": "Nada é reescrito, mas as tags não são portáteis (somem fora do Urbe), e o area.json deixa de guardar só a aparência."
+        }
+      ],
+      "consequences": "Enquanto pendente, a CST-042 não é implementada; o resto da consolidação segue.",
+      "manifestCompatibility": "NN-001: uma autoridade por conceito (a nota da pasta em A; cada nota em B; area.json em C). NN-011: modelo de dados exige decisão. NN-017: validação no aparelho depois.",
+      "recommendation": "A: portátil, sem reescrever arquivos do usuário, com uma autoridade só e a origem visível.",
+      "related": [
+        "docs/adr/0046-urbe-tags-herdadas-por-projeto.md",
+        "apps/urbe/docs/csharp/CONSOLIDATION.md",
+        "https://github.com/AbnerCruz/Ecosystem/pull/853"
+      ],
+      "raisedBy": "claude-code",
+      "raisedAt": "2026-10-29"
     }
   ]
 }

@@ -47,6 +47,56 @@ public static partial class EmbedFragments
         return new(string.Join("\n", lines[start..end]).TrimEnd(), null);
     }
 
+    /// <summary>
+    /// CST-120: the line (from 1) a link's fragment leads to — the heading (a path of headings narrows, as in an
+    /// embed) or the line that ends with <c> ^id</c>; null when the note has no such part.
+    /// </summary>
+    public static int? LineOf(string markdown, string fragment)
+    {
+        var lines = markdown.Replace("\r\n", "\n").Split('\n');
+        fragment = fragment.Trim().TrimStart('#');
+        if (fragment.StartsWith('^'))
+        {
+            var code = CodeLines(lines);
+            var marker = " ^" + fragment[1..];
+            for (int i = 0; i < lines.Length; i++)
+                if (!code[i] && lines[i].TrimEnd().EndsWith(marker, StringComparison.Ordinal)) return i + 1;
+            return null;
+        }
+        int start = 0, end = lines.Length;
+        foreach (var name in fragment.Split('#', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (Heading(lines, start, end, name) is not { } found) return null;
+            (start, end) = found;
+        }
+        return start + 1;
+    }
+
+    /// <summary>The headings of a note, in order, outside code (what <c>[[Nota#</c> suggests).</summary>
+    public static IReadOnlyList<string> Headings(string markdown)
+    {
+        var lines = markdown.Replace("\r\n", "\n").Split('\n');
+        var code = CodeLines(lines);
+        var found = new List<string>();
+        for (int i = 0; i < lines.Length; i++)
+            if (!code[i] && HeadingRegex().Match(lines[i]) is { Success: true } h && h.Groups[2].Value.Trim() is { Length: > 0 } title) found.Add(title);
+        return found;
+    }
+
+    /// <summary>The <c>^id</c> markers that end lines of a note, outside code (what <c>[[Nota#^</c> suggests).</summary>
+    public static IReadOnlyList<string> BlockIds(string markdown)
+    {
+        var lines = markdown.Replace("\r\n", "\n").Split('\n');
+        var code = CodeLines(lines);
+        var found = new List<string>();
+        for (int i = 0; i < lines.Length; i++)
+            if (!code[i] && BlockIdMarkRegex().Match(lines[i]) is { Success: true } m) found.Add(m.Groups[1].Value);
+        return found;
+    }
+
+    [GeneratedRegex(@"[ \t]+\^([A-Za-z0-9-]+)(?=(?:[ \t]*\{ia:""[^""\n]*""\})*[ \t]*$)")]
+    private static partial Regex BlockIdMarkRegex();
+
     /// <summary>The section [start, end) of the first heading named <paramref name="name"/> between the two lines.</summary>
     private static (int Start, int End)? Heading(string[] lines, int from, int to, string name)
     {

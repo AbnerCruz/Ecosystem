@@ -38,9 +38,10 @@ public sealed class LegacySlashAddonsTests
     public void TheFormulaItemsFollowTheMenuAndUseItsFilter()
     {
         var all = LegacyEditorTools.FilterSlashWithAddons("").Select(x => x.Act).ToList();
-        Assert.Equal(LegacyEditorTools.FilterSlash("").Select(x => x.Act).Concat(["formula", "formulaBlock", "codeblock", "comment", "box"]), all);
+        Assert.Equal(LegacyEditorTools.FilterSlash("").Select(x => x.Act).Concat(["formula", "formulaBlock", "codeblock", "comment", "box", "plot"]), all);
         Assert.Equal(["formula", "formulaBlock"], LegacyEditorTools.FilterSlashWithAddons("formula").Select(x => x.Act));
         Assert.Equal(["formulaBlock"], LegacyEditorTools.FilterSlashWithAddons("destaque").Select(x => x.Act));
-        Assert.Equal(["formula", "formulaBlock"], LegacyEditorTools.FilterSlashWithAddons("EQUAÇÃO").Select(x => x.Act)); // fold()
+        // fold(); the graph of a function (CST-069) is found by "equação" too
+        Assert.Equal(["formula", "formulaBlock", "plot"], LegacyEditorTools.FilterSlashWithAddons("EQUAÇÃO").Select(x => x.Act));
     }
 }

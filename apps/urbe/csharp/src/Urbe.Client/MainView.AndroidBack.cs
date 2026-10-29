@@ -10,6 +10,7 @@ public sealed partial class MainView
     {
         if (Dialogs.IsOpen) { Dialogs.Cancel(); return true; }
         if (ActionSheet.IsOpen) { _ = ActionSheet.CloseAsync(); return true; }
+        if (_radial?.HandleBack() == true) return true;
         if (Formula.IsVisible) { Formula.IsVisible = false; return true; }
         if (Customize.IsVisible) { Customize.Close(); return true; }
         if (_assistant is { IsVisible: true } panel) return panel.HandleBack();

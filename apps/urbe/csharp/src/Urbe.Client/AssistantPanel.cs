@@ -173,7 +173,7 @@ public sealed partial class AssistantPanel : Border
         var bar = new WrapPanel { Orientation = Orientation.Horizontal,
             Margin = new Thickness(12, 0, 12, 8), Children = { _modelChip, _usageButton, _latestMessage } };
 
-        _log.DetachedFromVisualTree += (_, _) => _selectionWait?.Stop();
+        WatchSelections();
         _scroll = new ScrollViewer
         {
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
@@ -902,7 +902,7 @@ public sealed partial class AssistantPanel : Border
                 Tools = conv.OriginConversationId is null ? availableTools : availableTools.Where(t => t.Name != "consult_agent").ToList()
             });
             run.Changes = r.Changes;
-            run.Efficiency = r.Efficiency;
+            run.Efficiency = _cfg.MeasureRuns ? r.Efficiency : r.Efficiency.CountersOnly();
             run.Stopped = r.Stopped;
             run.Error = r.Error;
             conv.Usage = AiUsage.Add(conv.Usage, r.Usage);
@@ -958,7 +958,7 @@ public sealed partial class AssistantPanel : Border
             conv.Runs.Add(run);
             if (conv.Runs.Count > 20) conv.Runs.RemoveRange(0, conv.Runs.Count - 20);
             if (web is not null) conv.WebSources = web.Sources.ToList();
-            if (ReferenceEquals(conv, _conv)) { _views.Clear(); RenderAll(); } else RenderChrome();
+            if (ReferenceEquals(conv, _conv)) RenderAll(); else RenderChrome();
             if (conv.Messages.Count > 0) _store.SaveConversation(conv);
             var kind = run.Stopped switch
             {
@@ -1028,9 +1028,32 @@ public sealed partial class AssistantPanel : Border
         var outcome = child.Runs.LastOrDefault();
         if (outcome?.Stopped is "error" or "aborted" || outcome?.Error is not null)
             throw new AiToolException("O especialista não concluiu a consulta: " + (outcome?.Error ?? outcome?.Stopped));
-        if (outcome?.Stopped == "needs_input")
-            throw new AiToolException("O especialista precisa de uma resposta do usuário. Abra a conversa de " +
-                AgentNames.CallName(target, _cfg) + " para continuar.");
+        // CST-091: the specialist's question is answered from here; it goes on in its own conversation
+        while (outcome?.Stopped == "needs_input")
+        {
+            if (child.Forms.Any(f => f.State == "pending"))
+            {
+                // each form in turn; its answer is the specialist's message (FormView)
+                while (child.Forms.FirstOrDefault(f => f.State == "pending") is { } form) await FillThroughRequesterAsync(child, form, cancel);
+            }
+            else
+            {
+                var question = child.Messages.Skip(lastExchangeStart).SelectMany(m => m.Content)
+                    .LastOrDefault(b => b.Type == "tool_use" && b.Name == "ask_user");
+                if (question is null)
+                    throw new AiToolException("O especialista precisa de uma resposta do usuário. Abra a conversa de " +
+                        AgentNames.CallName(target, _cfg) + " para continuar.");
+                var reply = await AskThroughRequesterAsync(child, question, cancel);
+                child.Messages.Add(new AiChatMessage { Id = AssistantAgent.NewId("m"), Role = "user", Content = [AiChatBlock.TextBlock(reply)] });
+                _store.SaveConversation(child);
+            }
+            childRun = StartAsync(child, cancel);
+            if (_activeRuns.ContainsKey(child.Id)) _activeTasks[child.Id] = childRun;
+            await childRun;
+            outcome = child.Runs.LastOrDefault();
+            if (outcome?.Stopped is "error" or "aborted" || outcome?.Error is not null)
+                throw new AiToolException("O especialista não concluiu a consulta: " + (outcome?.Error ?? outcome?.Stopped));
+        }
         var last = child.Messages.LastOrDefault(m => m.Role == "assistant" && m.Content.Any(b => b.Type == "text" && !string.IsNullOrWhiteSpace(b.Text)));
         var summary = last is null ? "" : string.Join("\n", last.Content.Where(b => b.Type == "text").Select(b => b.Text));
         var generated = child.Messages.Skip(lastExchangeStart).SelectMany(m => m.Content)
@@ -1083,7 +1106,9 @@ public sealed partial class AssistantPanel : Border
         if (ReferenceEquals(conversation, _conv)) _pending = (req, answer);
         var chosen = AssistantAgent.AgentById(conversation.AgentId, _cfg.CustomAgents);
         PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(AssistantActivityKind.ApprovalNeeded, AgentNames.CallName(chosen, _cfg), conversation.Id));
-        if (!ReferenceEquals(conversation, _conv))
+        // CST-091: a consulted specialist's request shows in the conversation that consulted it
+        bool forwarded = ForwardApproval(conversation, req, answer, cancel);
+        if (!ReferenceEquals(conversation, _conv) && !forwarded)
             _app.Notify(AgentNames.CallName(chosen, _cfg) + " está aguardando aprovação. Abra a conversa ativa do agente.");
         // UC-80: a change to the note the request came from is shown in the note itself, to accept or refuse there
         if (ReferenceEquals(conversation, _conv) && _inNote is { } asked && req.Preview is { Before: { } before, After: { } after } preview && preview.Path == asked.Path &&
@@ -1115,6 +1140,7 @@ public sealed partial class AssistantPanel : Border
         _pending = null;
         _pendingRuns.Remove(_conv.Id);
         _approvalDrafts.Remove(p.Request.Call.Id);
+        ForgetForwarded(p.Request);
         p.Answer.TrySetResult(answer);
         if (_running is not null)
         {
@@ -1247,9 +1273,7 @@ public sealed partial class AssistantPanel : Border
         Dispatcher.UIThread.Post(() =>
         {
             _renderPosted = false;
-            // CST-008: only a selection inside a message about to be redrawn waits; one left anywhere else (text copied
-            // earlier) used to hold every update back until the panel was closed and opened again
-            if (SelectionInDirty()) { DeferRender(); RenderChrome(); NotifyCompactChanged(); return; }
+            // CST-008: a selection never holds the chat back; SetLog keeps it (see AssistantPanel.Selection)
             bool near = _followChatTail && NearEnd();
             foreach (var d in _dirty) _views.Remove(d);
             _dirty.Clear();
@@ -1258,37 +1282,6 @@ public sealed partial class AssistantPanel : Border
             NotifyCompactChanged();
             if (near) ScrollEnd();
         }, DispatcherPriority.Background);
-    }
-
-    private DispatcherTimer? _selectionWait;
-    private bool _deferredAll;
-    private bool SelectionActive() => HasSelection(_log);
-
-    private static bool HasSelection(Visual root) => root.GetVisualDescendants().Any(v =>
-        v is SelectableTextBlock text && text.SelectionStart != text.SelectionEnd ||
-        v is TextBox box && box.SelectionStart != box.SelectionEnd);
-
-    /// <summary>A selection the person is making inside a view the next render replaces (the dirty messages').</summary>
-    private bool SelectionInDirty() => _dirty.Select(m => _views.GetValueOrDefault(m)).OfType<Visual>().Any(HasSelection);
-
-    private void DeferRender()
-    {
-        if (_selectionWait is null)
-        {
-            _selectionWait = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
-            _selectionWait.Tick += (_, _) =>
-            {
-                if (_deferredAll ? SelectionActive() : SelectionInDirty()) return;
-                _selectionWait.Stop();
-                bool near = _followChatTail && NearEnd();
-                if (_deferredAll) { _deferredAll = false; _views.Clear(); }
-                foreach (var m in _dirty) _views.Remove(m);
-                _dirty.Clear();
-                RenderLog();
-                if (near) ScrollEnd();
-            };
-        }
-        _selectionWait.Start();
     }
 
     private double ChatEndGap => Math.Max(0, _scroll.Extent.Height - _scroll.Offset.Y - _scroll.Viewport.Height);
@@ -1320,14 +1313,12 @@ public sealed partial class AssistantPanel : Border
             _toolStarted.Clear();
             _toolElapsed.Clear();
             _dirty.Clear();
-            _deferredAll = false;
             _selectionWait?.Stop();
             foreach (var text in _log.GetVisualDescendants().OfType<SelectableTextBlock>()) text.SelectionEnd = text.SelectionStart;
             foreach (var box in _log.GetVisualDescendants().OfType<TextBox>()) box.SelectionEnd = box.SelectionStart;
         }
         RenderChrome();
-        if (SelectionActive()) { _deferredAll = true; DeferRender(); return; }
-        _views.Clear();
+        ForgetViewsKeepingSelections();
         RenderLog();
         NotifyCompactChanged();
         ScrollEnd();
@@ -1432,6 +1423,7 @@ public sealed partial class AssistantPanel : Border
             i = end - 1;
         }
         foreach (var form in _conv.Forms.Where(f => f.State == "pending")) desired.Add(FormView(form));
+        desired.AddRange(ForwardedCards());
         foreach (var queued in _conv.QueuedMessages) desired.Add(Wrap("Na fila · " + string.Join(" ", queued.Content.Where(b => b.Type == "text" && !b.Hidden).Select(b => b.Text)), 13, UrbeTheme.Text2));
         if (_conv.QueuedMessages.Count > 0 && !ConversationBusy(_conv.Id))
             desired.Add(TextButton("Retomar mensagens na fila", () => CurrentRun = ResumeQueuedAsync(_conv)));
@@ -1455,6 +1447,16 @@ public sealed partial class AssistantPanel : Border
     {
         var kids = _log.Children;
         var wanted = new HashSet<Control>(desired);
+        var leaving = kids.Where(k => !wanted.Contains(k)).ToList();
+        if (leaving.Any(SelectionBusy)) { WaitForSelection(); return; }
+        var held = SelectionsIn(leaving);
+        var present = new HashSet<Control>(kids);
+        Replace(kids, desired, wanted);
+        if (held.Count > 0) CarrySelections(held, desired.Where(d => !present.Contains(d)));
+    }
+
+    private static void Replace(Avalonia.Controls.Controls kids, IReadOnlyList<Control> desired, HashSet<Control> wanted)
+    {
         for (int i = 0; i < desired.Count; i++)
         {
             var want = desired[i];

@@ -125,8 +125,10 @@ public sealed partial class MainView
             var file = await _vault.ReadFileAsync(path, long.MaxValue);
             if (file?.Bytes is not { } bytes) throw new InvalidDataException("Grafo não encontrado ou ilegível.");
             var document = GraphDocument.Parse(System.Text.Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF'));
-            var view = new GraphCanvasView { Height = 300 };
+            // CST-067: inside the note one finger scrolls the note, two move the graph; a tap on a card opens it
+            var view = new GraphCanvasView { Height = 300, Cooperative = true };
             view.Show(document, readOnly: true);
+            view.NodeOpened += node => _ = OpenReferenceAsync(node);
             holder.Child = view;
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or UnauthorizedAccessException or System.Text.Json.JsonException)
@@ -297,9 +299,18 @@ public sealed partial class MainView
                 });
                 return;
             }
-            holder.Child = Message(media ? "Toque no título para abrir." : "Sem prévia para este tipo de arquivo. Toque no título para abrir.");
+            // CST-041: the link is fine; it is the showing that the Urbe cannot do for this kind of file
+            holder.Child = Message(media ? "Toque no título para abrir." : NoPreview(path));
         }
         catch (Exception ex) { holder.Child = Message("Não foi possível mostrar o arquivo: " + ex.Message); }
+    }
+
+    /// <summary>CST-041: which file it is, that the link works and where it opens.</summary>
+    public static string NoPreview(string path)
+    {
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        var kind = ext.Length > 1 ? "arquivos " + ext : "este arquivo";
+        return "O Urbe não mostra " + kind + " dentro da nota, mas o link continua valendo: toque no título para abrir no app do aparelho.";
     }
 
     private static void SetMeta(Border card, string meta)

@@ -26,6 +26,9 @@ public enum EditorMode { Visual, Fonte }
 public sealed class EditorOverlay : Grid
 {
     private readonly TextBlock _title = new();
+    private UrbeIconButton? _modeToggle;
+    /// <summary>Below this header width the Visual/Fonte switch is a single button, so the title keeps room.</summary>
+    private const double CompactHeaderWidth = 520;
     private readonly TextBlock _status = new();
     private readonly Border _saveDot = new();
     private readonly UrbeToast _toast = new(top: 64);
@@ -392,6 +395,25 @@ public sealed class EditorOverlay : Grid
     public ConnectionsPanel Connections { get; } = new();
 
     /// <summary>The outline's tap: the caret at the start of that line of the text, focused.</summary>
+    /// <summary>The one note a link's name means: its path, its name, or one of its aliases (null when none or several).</summary>
+    private static CityNote? LinkTarget(string name, List<CityNote> all)
+    {
+        var exact = all.FirstOrDefault(n => string.Equals(n.Path, name, StringComparison.Ordinal) || string.Equals(n.Path, name + ".md", StringComparison.Ordinal));
+        if (exact is not null) return exact;
+        var named = all.Where(n => string.Equals(n.Name, name, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (named.Count > 0) return named.Count == 1 ? named[0] : null;
+        var aliased = all.Where(n => NoteProperties.AliasesOf(n.Content).Any(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase))).ToList();
+        return aliased.Count == 1 ? aliased[0] : null;
+    }
+
+    /// <summary>The heading or block a link names, in the note open (the caret there and, in Visual, its block on screen).</summary>
+    public bool RevealFragment(string fragment)
+    {
+        if (EmbedFragments.LineOf(Editor.Text ?? "", fragment) is not { } line) return false;
+        GoToLine(line);
+        return true;
+    }
+
     private void GoToLine(int line)
     {
         var text = Editor.Text ?? "";
@@ -404,6 +426,8 @@ public sealed class EditorOverlay : Grid
         }
         pos = Math.Min(pos, text.Length);
         Editor.SelectionStart = Editor.SelectionEnd = Editor.CaretIndex = pos;
+        // in Visual the block of that line comes on screen too (the outline and the links to a heading)
+        if (Mode == EditorMode.Visual) _visual.RevealOffset(pos);
         if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid()) && Mode == EditorMode.Fonte) Editor.Focus();
     }
 
@@ -895,6 +919,9 @@ public sealed class EditorOverlay : Grid
     /// <summary>#editorScroll.previewMode #propertiesBox{display:none}.</summary>
     private void UpdateProperties() => _properties.IsVisible = _hasProperties && Mode == EditorMode.Fonte;
 
+    /// <summary>The block being written goes into the text (before the Assistente reads the note, from any button).</summary>
+    public void FinishEditing() => _visual.FinishEdit();
+
     public void SetMode(EditorMode mode) => ShowMode(mode == EditorMode.Visual && (_note is null || CanVisual(_note.Path)) ? EditorMode.Visual : EditorMode.Fonte);
 
     private void ShowMode(EditorMode mode)
@@ -917,6 +944,13 @@ public sealed class EditorOverlay : Grid
         _sourceScroll.IsVisible = !visual;
         if (visual) _visual.SetText(Editor.Text ?? "");
         else _wiki.Hide();
+        if (_modeToggle is not null)
+        {
+            _modeToggle.Content = UrbeTheme.Icon(visual ? UrbeTheme.Icons.FileCode : UrbeTheme.Icons.Book, 22, C.TextSecondary, 1.8);
+            var tip = visual ? "Mudar para Fonte" : "Mudar para Visual";
+            ToolTip.SetTip(_modeToggle, tip);
+            AutomationProperties.SetName(_modeToggle, tip);
+        }
         if (_visualButton is not null)
         {
             Style(_visualButton, visual);
@@ -1127,8 +1161,18 @@ public sealed class EditorOverlay : Grid
             _visual.FinishEdit();
             AssistantRequested?.Invoke();
         };
-        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { PluginButtons, assistant, _segment, more } };
+        // CST-105/106: on a phone the two-word switch left the title no room; there Visual/Fonte is one button
+        _modeToggle = new UrbeIconButton(UrbeTheme.Icons.FileCode, "Mudar para Fonte") { IsVisible = false };
+        _modeToggle.Click += (_, _) => SetMode(Mode == EditorMode.Visual ? EditorMode.Fonte : EditorMode.Visual);
+        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { PluginButtons, assistant, _segment, _modeToggle, more } };
         var bar = new DockPanel { Margin = new Thickness(UrbeTokens.Space.Xxs, 0), LastChildFill = true };
+        bar.PropertyChanged += (_, e) =>
+        {
+            if (e.Property != BoundsProperty) return;
+            bool compact = bar.Bounds.Width < CompactHeaderWidth;
+            _segment.IsVisible = !compact;
+            _modeToggle.IsVisible = compact;
+        };
         DockPanel.SetDock(back, Dock.Left);
         DockPanel.SetDock(right, Dock.Right);
         bar.Children.Add(back);
@@ -1631,8 +1675,24 @@ public sealed class EditorOverlay : Grid
     /// vault's other files (CST-040), by their name or, when two share it, their path. Names that start with what was
     /// typed come first, notes before files.
     /// </summary>
+    /// <summary>The names the "[[" list shows now (tests).</summary>
+    public IReadOnlyList<string> WikiSuggestions => _wiki.IsOpen ? _wiki.Names : [];
+
     private IReadOnlyList<string> Candidates(string query)
     {
+        // CST-120: after "Nota#" the note's headings, after "Nota#^" its blocks; "#" alone is this note's
+        if (query.IndexOf('#') is var hash and >= 0)
+        {
+            var notePart = query[..hash].Trim();
+            var part = query[(hash + 1)..];
+            var markdown = notePart.Length == 0 ? Editor.Text : LinkTarget(notePart, Notes?.Invoke().ToList() ?? [])?.Content;
+            if (markdown is null) return [];
+            bool blocks = part.StartsWith('^');
+            var wanted = Urbe.Core.Assistant.AssistantTools.Fold(part.TrimStart('^').Trim());
+            var names = blocks ? EmbedFragments.BlockIds(markdown).Select(id => "^" + id) : EmbedFragments.Headings(markdown);
+            return [.. names.Where(n => Urbe.Core.Assistant.AssistantTools.Fold(n.TrimStart('^')).Contains(wanted, StringComparison.Ordinal))
+                .Distinct().Take(20).Select(n => notePart + "#" + n)];
+        }
         var notes = _index is null ? [] : _index.Search(query, 20).Where(d => d.Id != _currentId).Select(d => d.Title).ToList();
         var all = Files?.Invoke().ToList() ?? [];
         if (all.Count == 0) return notes;
@@ -1690,18 +1750,28 @@ public sealed class EditorOverlay : Grid
     /// <summary>bindPreviewWikiLinks: open the note a wikilink names (exact path/title, else the single case-insensitive title match).</summary>
     public async Task FollowLinkAsync(string name)
     {
+        // CST-120: [[Nota#Título]] / [[Nota#^id]] open the note at that part; [[#Título]] is a part of this note
+        var (linkTarget, fragment) = EmbedFragments.Split(name);
+        if (fragment is not null)
+        {
+            if (linkTarget.Length == 0) { if (!RevealFragment(fragment)) Notify("Esta nota não tem “" + fragment + "”."); return; }
+            name = linkTarget;
+        }
         var all = Notes?.Invoke().ToList() ?? [];
         var exact = all.FirstOrDefault(n => string.Equals(n.Path, name, StringComparison.Ordinal) || string.Equals(n.Path, name + ".md", StringComparison.Ordinal));
         var matches = all.Where(n => string.Equals(n.Name, name, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (exact is null && matches.Count == 0 && LinkTarget(name, all) is { } aliased) { exact = aliased; }
         var target = exact ?? (matches.Count == 1 ? matches[0] : null);
         // an alias of the properties (aliases: […]) names the note too
-        if (target is null && matches.Count == 0)
+        if (target is null && matches.Count == 0 &&
+            all.Count(n => NoteProperties.AliasesOf(n.Content).Any(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase))) > 1)
+        { Notify("Alias ambíguo: mais de uma nota usa “" + name + "”."); return; }
+        if (target is not null)
         {
-            var byAlias = all.Where(n => NoteProperties.AliasesOf(n.Content).Any(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase))).ToList();
-            if (byAlias.Count == 1) target = byAlias[0];
-            else if (byAlias.Count > 1) { Notify("Alias ambíguo: mais de uma nota usa “" + name + "”."); return; }
+            await NavigateAsync(target);
+            if (fragment is not null && !RevealFragment(fragment)) Notify("A nota abriu, mas não tem “" + fragment + "”.");
+            return;
         }
-        if (target is not null) { await NavigateAsync(target); return; }
         if (matches.Count > 1) { Notify("Link ambíguo: use o caminho da nota."); return; }
         // CST-041: a link to a file that is not a note opens the file, never a new note named after it
         if (Files?.Invoke() is { } files && WikiTargets.ResolveFile(name, files) is { } file)

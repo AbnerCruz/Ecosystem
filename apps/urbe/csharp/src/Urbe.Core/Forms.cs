@@ -72,7 +72,7 @@ public sealed class FormDefinition
                 throw new ArgumentException("Os metadados não incluem todos os campos do modelo.");
             return form;
         }
-        return new() { Title = title, Fields = NoteTemplateEngine.InputFields(template).Select(id => new FormField { Id = id, Label = id }).ToList() };
+        return new() { Title = title, Fields = NoteTemplateEngine.InputFields(template).Select(id => new FormField { Id = id, Label = NoteTemplateEngine.LabelOf(id) }).ToList() };
     }
 }
 

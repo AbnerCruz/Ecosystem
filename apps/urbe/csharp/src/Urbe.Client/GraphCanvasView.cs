@@ -13,7 +13,7 @@ namespace Urbe.Client;
 /// Never moves a referenced vault object: gestures only change the authored graph's coordinates.</summary>
 public enum GraphCanvasTool { Select, Draw, Erase }
 
-public sealed class GraphCanvasView : Control
+public sealed partial class GraphCanvasView : Control
 {
     private GraphDocument? _document;
     private double _zoom = 1;
@@ -48,6 +48,13 @@ public sealed class GraphCanvasView : Control
         AddHandler(InputElement.PinchEvent, (_, e) => { ZoomAt(e.ScaleOrigin, e.Scale / _pinch); _pinch = e.Scale; e.Handled = true; });
         AddHandler(InputElement.PinchEndedEvent, (_, _) => _pinch = 1);
     }
+
+    /// <summary>CST-066: whether a card's note, file or folder is still in the vault (null: not known, nothing marked).</summary>
+    public Func<GraphNode, bool>? Exists { get; set; }
+
+    /// <summary>A card pointing to something no longer in the vault (deleted, or changed outside the Urbe).</summary>
+    public bool IsMissing(GraphNode node) =>
+        node.Kind is GraphNodeKind.Note or GraphNodeKind.File or GraphNodeKind.Folder && Exists is { } exists && !exists(node);
 
     public void Show(GraphDocument document, bool readOnly = false)
     {
@@ -111,6 +118,8 @@ public sealed class GraphCanvasView : Control
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {
         base.OnPointerWheelChanged(e);
+        // in a note the wheel scrolls the note; Ctrl with it zooms the graph (CST-067)
+        if (Cooperative && !e.KeyModifiers.HasFlag(KeyModifiers.Control)) return;
         ZoomAt(e.GetPosition(this), Math.Pow(1.15, e.Delta.Y));
         e.Handled = true;
     }
@@ -118,6 +127,7 @@ public sealed class GraphCanvasView : Control
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
+        if (Cooperative && e.Pointer.Type == PointerType.Touch) { TouchPressed(e); return; }
         if (!_fitted) Fit();
         _press = _last = e.GetPosition(this);
         _moved = false;
@@ -157,6 +167,7 @@ public sealed class GraphCanvasView : Control
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
+        if (Cooperative && e.Pointer.Type == PointerType.Touch) { TouchMoved(e); return; }
         if (_press is null || _document is null) return;
         var at = e.GetPosition(this);
         if (_drawing is not null)
@@ -188,6 +199,13 @@ public sealed class GraphCanvasView : Control
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
+        if (Cooperative && e.Pointer.Type == PointerType.Touch) { TouchReleased(e); return; }
+        // a click on a card of a graph in a note opens what it points to
+        if (Cooperative && ReadOnly && !_moved && _pressedNode is { } clicked && _document?.Node(clicked) is { Target: not null } target)
+        {
+            e.Handled = true;
+            NodeOpened?.Invoke(target);
+        }
         if (_press is null) return;
         _press = null;
         e.Pointer.Capture(null);
@@ -283,7 +301,8 @@ public sealed class GraphCanvasView : Control
                 GraphNodeKind.Note => UrbeTheme.Brush(UrbeTheme.Accent, .09),
                 _ => UrbeTheme.Brush(UrbeTheme.Surface2)
             };
-            var outline = new Pen(UrbeTheme.Brush(stroke), selected ? 2 : 1);
+            bool missing = IsMissing(n);
+            var outline = new Pen(UrbeTheme.Brush(missing && !selected ? UrbeTheme.Danger : stroke), selected ? 2 : 1, dashStyle: missing ? new DashStyle([4, 3], 0) : null);
             if (n.Kind == GraphNodeKind.Shape)
                 ctx.DrawEllipse(background, outline, bounds.Center, bounds.Width / 2, bounds.Height / 2);
             else ctx.DrawRectangle(background, outline, bounds, n.Kind == GraphNodeKind.Group ? 4 : 11,
@@ -296,9 +315,11 @@ public sealed class GraphCanvasView : Control
                 GraphNodeKind.Shape => "FORMA", _ => "TEXTO"
             };
             var px = bounds.X + 12 * _zoom;
-            DrawLabel(ctx, caption, new Point(px, bounds.Y + 11 * _zoom), Color.Parse(UrbeTheme.Text3), Math.Max(8, 10 * _zoom), FontWeight.Normal);
+            if (missing) caption += " · NÃO ENCONTRADA";
+            DrawLabel(ctx, caption, new Point(px, bounds.Y + 11 * _zoom), Color.Parse(missing ? UrbeTheme.Danger : UrbeTheme.Text3), Math.Max(8, 10 * _zoom), FontWeight.Normal);
             DrawLabel(ctx, n.Label, new Point(px, bounds.Y + 33 * _zoom), Color.Parse(UrbeTheme.Text), Math.Max(10, 13 * _zoom), FontWeight.SemiBold);
         }
+        RenderHint(ctx);
     }
 }
 
