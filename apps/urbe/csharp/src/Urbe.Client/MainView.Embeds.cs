@@ -125,8 +125,10 @@ public sealed partial class MainView
             var file = await _vault.ReadFileAsync(path, long.MaxValue);
             if (file?.Bytes is not { } bytes) throw new InvalidDataException("Grafo não encontrado ou ilegível.");
             var document = GraphDocument.Parse(System.Text.Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF'));
-            var view = new GraphCanvasView { Height = 300 };
+            // CST-067: inside the note one finger scrolls the note, two move the graph; a tap on a card opens it
+            var view = new GraphCanvasView { Height = 300, Cooperative = true };
             view.Show(document, readOnly: true);
+            view.NodeOpened += node => _ = OpenReferenceAsync(node);
             holder.Child = view;
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or UnauthorizedAccessException or System.Text.Json.JsonException)

@@ -475,9 +475,17 @@ public sealed partial class MainView
         if (!await SaveGraphAsync()) return;
         GraphsPanel.IsVisible = false;
         UpdateNav();
+        await OpenReferenceAsync(selected with { Target = path });
+    }
+
+    /// <summary>What a card points to: its note (found by its id after a rename), file or folder.</summary>
+    private async Task OpenReferenceAsync(GraphNode node)
+    {
+        if (node.Target is not { } target) return;
+        var path = node.Kind == GraphNodeKind.Note && node.ReferenceId is { } id ? _store?.Get(id)?.Path ?? target : target;
         if (_contents.ContainsKey(path)) OpenNoteByPath(path);
         else if (_attachments.Contains(path)) await ShowFileAsync(path);
-        else if (GraphsPanel.Canvas.SelectedNode?.Kind == GraphNodeKind.Folder) Workspace.Open(path);
+        else if (node.Kind == GraphNodeKind.Folder) Workspace.Open(path);
         else ShowLifeNotice("A referência não foi encontrada no vault: " + path, Ui.ToastKind.Warning);
     }
 }

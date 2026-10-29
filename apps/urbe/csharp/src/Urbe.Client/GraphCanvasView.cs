@@ -13,7 +13,7 @@ namespace Urbe.Client;
 /// Never moves a referenced vault object: gestures only change the authored graph's coordinates.</summary>
 public enum GraphCanvasTool { Select, Draw, Erase }
 
-public sealed class GraphCanvasView : Control
+public sealed partial class GraphCanvasView : Control
 {
     private GraphDocument? _document;
     private double _zoom = 1;
@@ -118,6 +118,8 @@ public sealed class GraphCanvasView : Control
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {
         base.OnPointerWheelChanged(e);
+        // in a note the wheel scrolls the note; Ctrl with it zooms the graph (CST-067)
+        if (Cooperative && !e.KeyModifiers.HasFlag(KeyModifiers.Control)) return;
         ZoomAt(e.GetPosition(this), Math.Pow(1.15, e.Delta.Y));
         e.Handled = true;
     }
@@ -125,6 +127,7 @@ public sealed class GraphCanvasView : Control
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
+        if (Cooperative && e.Pointer.Type == PointerType.Touch) { TouchPressed(e); return; }
         if (!_fitted) Fit();
         _press = _last = e.GetPosition(this);
         _moved = false;
@@ -164,6 +167,7 @@ public sealed class GraphCanvasView : Control
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
+        if (Cooperative && e.Pointer.Type == PointerType.Touch) { TouchMoved(e); return; }
         if (_press is null || _document is null) return;
         var at = e.GetPosition(this);
         if (_drawing is not null)
@@ -195,6 +199,13 @@ public sealed class GraphCanvasView : Control
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
+        if (Cooperative && e.Pointer.Type == PointerType.Touch) { TouchReleased(e); return; }
+        // a click on a card of a graph in a note opens what it points to
+        if (Cooperative && ReadOnly && !_moved && _pressedNode is { } clicked && _document?.Node(clicked) is { Target: not null } target)
+        {
+            e.Handled = true;
+            NodeOpened?.Invoke(target);
+        }
         if (_press is null) return;
         _press = null;
         e.Pointer.Capture(null);
@@ -308,6 +319,7 @@ public sealed class GraphCanvasView : Control
             DrawLabel(ctx, caption, new Point(px, bounds.Y + 11 * _zoom), Color.Parse(missing ? UrbeTheme.Danger : UrbeTheme.Text3), Math.Max(8, 10 * _zoom), FontWeight.Normal);
             DrawLabel(ctx, n.Label, new Point(px, bounds.Y + 33 * _zoom), Color.Parse(UrbeTheme.Text), Math.Max(10, 13 * _zoom), FontWeight.SemiBold);
         }
+        RenderHint(ctx);
     }
 }
 
