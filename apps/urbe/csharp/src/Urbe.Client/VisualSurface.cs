@@ -1038,6 +1038,7 @@ public sealed class VisualSurface : StackPanel
             case "pin": if (b > a) PinRequested?.Invoke(text[a..b]); break;
             case "wordComment": _ = WordCommentAsync(text, a, b); break;
             case "codeblock": Apply(LegacyVisualEdit.CodeBlock(text, _box.CaretIndex)); break;
+            case "plot": Apply(LegacyVisualEdit.Plot(text, _box.CaretIndex)); break;
             case "box": _ = BoxAsync(text, a, b); break;
             case "comment":
                 // from the "/" menu the typed "/query" goes first
@@ -1112,6 +1113,7 @@ public sealed class VisualSurface : StackPanel
         if (act == "box") Run("box");
         // Slash("codeblock") has no edit of its own: the block becomes an empty fenced block
         if (act == "codeblock") Run("codeblock");
+        if (act == "plot") Run("plot");
     }
 
     private void InsertRule()

@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261029-urbe-consolidation-wave6",
   "category": "HANDOFF",
-  "timestamp": "2026-10-29T00:15:39Z",
+  "timestamp": "2026-10-29T00:27:14Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -23,20 +23,31 @@
     "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/FunctionPlotView.cs",
     "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.Forms.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantExecutionEfficiency.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantQuestionTools.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/QuestionProgress.cs",
     "apps/urbe/csharp/src/Urbe.Core/Forms.cs",
+    "apps/urbe/csharp/src/Urbe.Core/FunctionPlot.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyEditorTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyVisualEdit.cs",
     "apps/urbe/csharp/src/Urbe.Core/NoteTemplateEngine.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageMarkdown.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AppDocsGuideTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ClockInEditorUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FunctionPlotUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteTemplateFlowUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/QuestionProgressUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/RunMetricsUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/UxFoundationUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantRunMetricsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/FunctionPlotTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyEditorFindOracleTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteTemplateIdentityTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/QuestionProgressTests.cs",
     "apps/urbe/docs/csharp/CONSOLIDATION.md",
@@ -47,6 +58,7 @@
     "CST-044/046/050: modelos .modelo.md em qualquer pasta, aviso e conversão de [colchetes] em campos, Preencher no editor.",
     "CST-094/095/096: métrica de execução útil (tempos separados por provedor, ferramentas e aprovação; trabalho, retrabalho e conferência; resumo por agente), local, sem conteúdo, desligável.",
     "CST-105/106: título do editor volta a aparecer no celular (Visual/Fonte num botão só abaixo de 520 px); o botão flutuante do Assistente fecha o bloco em edição antes de abrir.",
+    "CST-069: gráficos de funções em blocos ```grafico (avaliador fechado, assíntotas, eixos e legenda), desenhados no Visual e em SVG nas páginas; item Gráfico de função no menu /.",
     "UC-51 (GH-845) encerrada: validação no aparelho aprovada pelo proprietário (Issue #848); ROADMAP [x] e handoff done."
   ],
   "verification": [
@@ -54,10 +66,10 @@
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1397 testes, 0 falhas (local, .NET 10.0.403)."
+      "evidence": "1422 testes, 0 falhas (local, .NET 10.0.403)."
     },
     {
-      "check": "Android físico: cartão de perguntas, modelos (.modelo.md, conversão de colchetes, Preencher no editor), linha de tempo das execuções e Desempenho por agente, título do editor a 360 dp",
+      "check": "Android físico: cartão de perguntas, modelos (.modelo.md, conversão de colchetes, Preencher no editor), linha de tempo das execuções e Desempenho por agente, título do editor a 360 dp, gráfico de função no editor e na página",
       "kind": "human",
       "result": "pending",
       "object": "apps/urbe/docs/csharp/CONSOLIDATION.md",
@@ -70,7 +82,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Continuar a consolidação: CST-069 (gráficos por equações), CST-058 (áudio longo), CST-111 (crash do carrossel), além dos itens que dependem do proprietário (nome e logo Numa, tags herdadas, menu radial)."
+    "Continuar a consolidação: CST-058 (áudio longo), CST-111 (crash do carrossel), CST-069 adiante (prévia ao vivo, paramétricas e física), além dos itens que dependem do proprietário (nome e logo Numa, tags herdadas, menu radial)."
   ],
   "decisions_required": [],
   "normative_sources": [

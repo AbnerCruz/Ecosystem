@@ -158,6 +158,20 @@ public static partial class AppDocs
 
         Escreva LaTeX entre `$…$` no texto ou `$$…$$` em destaque, por exemplo $E = mc^2$. O botão **∑** (ou **Ctrl+M**) abre o editor de fórmulas, com **No texto** / **Destaque**, prévia, símbolos e modelos. Toque numa fórmula pronta para editar.
 
+        ## Gráficos de funções
+
+        Um bloco ```` ```grafico ```` desenha as funções escritas nele, uma por linha, com eixos e legenda (menu `/` → **Gráfico de função**):
+
+        ```
+        título: Ondas
+        y = sin(x)
+        f(x) = x^2/8 - 1
+        x: -6..6
+        y: -2..3
+        ```
+
+        Vale `+ - * / ^`, parênteses, `2x` e `3(x+1)`, `pi` e `e`, e as funções `sin` (ou `sen`), `cos`, `tan`, `sqrt` (ou `raiz`), `abs`, `ln`, `log`, `exp`, entre outras. Sem a linha `y:`, a altura se ajusta às curvas. Uma linha que não dá para ler aparece em vermelho embaixo do gráfico, e as outras continuam desenhadas. Toque no gráfico para editar o texto. Nas páginas, ele sai como imagem.
+
         ## Marcas do Urbe
 
         São texto comum no arquivo, então a nota continua legível em qualquer editor:

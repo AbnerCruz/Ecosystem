@@ -510,6 +510,9 @@ public sealed partial class MarkdownReader
     private Control Pre(RichNode pre)
     {
         var code = string.Concat(pre.Children.Select(Plain));
+        // CST-069: a ```grafico block is drawn as its graph; a tap edits its text like any block
+        if (FunctionPlot.IsPlotLanguage(pre.Attr("data-lang")))
+            return new Ui.FunctionPlotView(FunctionPlot.Parse(code), Size) { Margin = new Thickness(0, Size * .6) };
         return new Ui.CodeBlockView(code, pre.Attr("data-lang"), Size * .88)
         {
             Margin = new Thickness(0, Size)
