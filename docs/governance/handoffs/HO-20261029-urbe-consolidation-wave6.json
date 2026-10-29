@@ -1,0 +1,118 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261029-urbe-consolidation-wave6",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-29T00:15:39Z",
+  "agent": {
+    "id": "claude-code-urbe-consolidation",
+    "kind": "ai-agent"
+  },
+  "task_id": "GH-852",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-939e057e-1zwyg5",
+  "base_commit": "4e98a94",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Costs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.Forms.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantExecutionEfficiency.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantQuestionTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/QuestionProgress.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Forms.cs",
+    "apps/urbe/csharp/src/Urbe.Core/NoteTemplateEngine.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ClockInEditorUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteTemplateFlowUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/QuestionProgressUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/RunMetricsUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/UxFoundationUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantRunMetricsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteTemplateIdentityTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/QuestionProgressTests.cs",
+    "apps/urbe/docs/csharp/CONSOLIDATION.md",
+    "docs/governance/handoffs/HO-20261029-urbe-consolidation-wave6.json"
+  ],
+  "work_completed": [
+    "CST-115: cartão de perguntas com compreensão declarada, dúvidas em aberto e mudança desde a pergunta anterior.",
+    "CST-044/046/050: modelos .modelo.md em qualquer pasta, aviso e conversão de [colchetes] em campos, Preencher no editor.",
+    "CST-094/095/096: métrica de execução útil (tempos separados por provedor, ferramentas e aprovação; trabalho, retrabalho e conferência; resumo por agente), local, sem conteúdo, desligável.",
+    "CST-105/106: título do editor volta a aparecer no celular (Visual/Fonte num botão só abaixo de 520 px); o botão flutuante do Assistente fecha o bloco em edição antes de abrir.",
+    "UC-51 (GH-845) encerrada: validação no aparelho aprovada pelo proprietário (Issue #848); ROADMAP [x] e handoff done."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test Urbe.Portable.slnx",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1397 testes, 0 falhas (local, .NET 10.0.403)."
+    },
+    {
+      "check": "Android físico: cartão de perguntas, modelos (.modelo.md, conversão de colchetes, Preencher no editor), linha de tempo das execuções e Desempenho por agente, título do editor a 360 dp",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/docs/csharp/CONSOLIDATION.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "CST-041: a mensagem para incorporação de tipo não suportado ainda não foi revisada.",
+    "A extensão .modelo.md segue a convenção das extensões compostas do app (.page.json, .grafo.json); trocar é reversível."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Continuar a consolidação: CST-069 (gráficos por equações), CST-058 (áudio longo), CST-111 (crash do carrossel), além dos itens que dependem do proprietário (nome e logo Numa, tags herdadas, menu radial)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
+    "docs/governance/communication.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Área de trabalho segue sendo projeção das pastas; idioma é uma configuração com uma fonte (config do Assistente)."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "add_quick_note tem acesso write e passa pela política de aprovação."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação DEVICE pendente e separada."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nada extraído para a plataforma."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "run-metrics",
+      "status": "product-specific",
+      "rationale": "Métrica de execução do Assistente do Urbe; o Ecosystem AI tem contabilidade própria e não consome esta."
+    },
+    {
+      "subject": "note-templates",
+      "status": "product-specific",
+      "rationale": "Modelos de notas do vault do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Funcionalidades autorizadas do Product. AiConfig ganha measureRuns (aditivo e compatível, AssistantStore.cs na zona user-data); a classificação efetiva é do integrador."
+  }
+}
