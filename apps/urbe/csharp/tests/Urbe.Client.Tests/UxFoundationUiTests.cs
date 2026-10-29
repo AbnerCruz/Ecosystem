@@ -99,7 +99,7 @@ public sealed partial class HeadlessUiTests
         Button Named(Control root, string name) => root.GetLogicalDescendants().OfType<Button>().FirstOrDefault(b => Shown(b) && (AutomationProperties.GetName(b) ?? ToolTip.GetTip(b) as string) == name)
             ?? throw new InvalidOperationException(name + " not in: " + string.Join(", ", root.GetLogicalDescendants().OfType<Button>().Where(Shown).Select(b => AutomationProperties.GetName(b) ?? ToolTip.GetTip(b) as string ?? "?")));
 
-        foreach (var name in new[] { "Nova nota", "Mais opções", "Configurações", "Abrir Assistente" })
+        foreach (var name in new[] { "Nova nota", "Mais opções", "Configurações", "Menu: Assistente, Notas e Grafos" })
         {
             var b = Named(view, name);
             var p = Centre(b, window);

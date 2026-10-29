@@ -219,6 +219,8 @@ public static class UrbeTheme
         public const string Storage = "M5 6.5a7 2.8 0 1 0 14 0a7 2.8 0 1 0-14 0z M5 6.5v11c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-11 M5 12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8";
         public const string SearchUi = "M11 4.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13z M20 20l-4.2-4.2";
         public const string CloseUi = "M6.5 6.5l11 11M17.5 6.5l-11 11";
+        // CST-043: the radial menu's button, its three places on the quarter arc around the corner
+        public const string Radial = "M17 14.6a2.4 2.4 0 1 0 0 4.8a2.4 2.4 0 1 0 0-4.8z M17 4.4a.9 .9 0 1 0 0 1.8a.9 .9 0 1 0 0-1.8z M8.9 8a.9 .9 0 1 0 0 1.8a.9 .9 0 1 0 0-1.8z M5.4 16.1a.9 .9 0 1 0 0 1.8a.9 .9 0 1 0 0-1.8z";
         public const string MoreUi = "M5.5 10.7a1.3 1.3 0 1 0 0 2.6a1.3 1.3 0 1 0 0-2.6z M12 10.7a1.3 1.3 0 1 0 0 2.6a1.3 1.3 0 1 0 0-2.6z M18.5 10.7a1.3 1.3 0 1 0 0 2.6a1.3 1.3 0 1 0 0-2.6z";
     }
 }

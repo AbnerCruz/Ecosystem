@@ -24,6 +24,9 @@ public sealed partial class MainView : IAssistantApp
     private string? _assistantMiniRenderedKey;
 
     public Button AssistantLauncher => _assistantLauncher;
+    /// <summary>CST-043: the phone's navigation (Assistente, Notas, Grafos) in the bottom right corner.</summary>
+    public Ui.RadialNav Navigation => _radial!;
+    private Ui.RadialNav? _radial;
     public Border AssistantMini => _assistantMini;
 
     /// <summary>Called once after the editor and plugin surfaces have been added to the stage.</summary>
@@ -49,7 +52,7 @@ public sealed partial class MainView : IAssistantApp
         Avalonia.Automation.AutomationProperties.SetName(_assistantLauncher, "Abrir Assistente");
         ToolTip.SetTip(_assistantLauncher, "Assistente");
         // like the editor's own button: the block being written is in the text the Assistente sees
-        _assistantLauncher.Click += (_, _) => { if (Editor.IsVisible) Editor.FinishEditing(); ToggleAssistant(); };
+        _assistantLauncher.Click += (_, _) => OpenAssistantFromLauncher();
 
         _assistantMini.Background = UrbeTheme.Brush(UrbeTheme.Surface2, .98);
         _assistantMini.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2);
@@ -65,6 +68,35 @@ public sealed partial class MainView : IAssistantApp
         Avalonia.Automation.AutomationProperties.SetName(_assistantMini, "Assistente contextual");
         _stage.Children.Add(_assistantMini);
         _stage.Children.Add(Ui.UrbeMotion.Pressable(_assistantLauncher));
+
+        // the same destinations as the rail; the Assistente first, straight up from the thumb
+        _radial = new Ui.RadialNav(
+        [
+            new("Assistente", UrbeTheme.Icons.Assistant, "Assistente", OpenAssistantFromLauncher),
+            new("Notas", UrbeTheme.Icons.Notes, "Notas e pastas do vault", () => _ = GoToNotesAsync()),
+            new("Grafos", UrbeTheme.Icons.Layers, "Grafos: criar, conectar e navegar no vault", () => _ = ShowGraphsHomeAsync())
+        ]) { ZIndex = 20 };   // over the Notes drawer, like the launcher
+        _radial.SetActive(ActiveDestination);
+        _stage.Children.Add(_radial);
+        UpdateFloatingNav();
+    }
+
+    // like the editor's own button: the block being written is in the text the Assistente sees
+    private void OpenAssistantFromLauncher()
+    {
+        if (Editor.IsVisible) Editor.FinishEditing();
+        ToggleAssistant();
+    }
+
+    /// <summary>A phone shows the radial menu, a wide window its rail and the launcher; neither while the Assistente is open.</summary>
+    private void UpdateFloatingNav()
+    {
+        bool phone = !(Bounds.Width >= WideBreakpoint);
+        bool free = _assistant is not { IsVisible: true };
+        _assistantLauncher.IsVisible = free && !phone;
+        if (_radial is null) return;
+        _radial.IsVisible = free && phone;
+        if (!_radial.IsVisible) _radial.Close();
     }
 
     private void RefreshAssistantMini()
@@ -72,10 +104,11 @@ public sealed partial class MainView : IAssistantApp
         var panel = _assistant;
         bool showing = panel is { CompactActive: true, IsVisible: false };
         _assistantMini.IsVisible = showing;
-        _assistantLauncher.IsVisible = panel is not { IsVisible: true };
+        UpdateFloatingNav();
         var attention = panel?.PendingApproval is not null || panel?.Conversation.Runs.LastOrDefault()?.Stopped == "needs_input";
         _assistantLauncher.BorderBrush = UrbeTheme.Brush(attention ? UrbeTheme.Accent : UrbeTheme.Line2);
         Avalonia.Automation.AutomationProperties.SetName(_assistantLauncher, attention ? "Assistente: aguardando sua resposta" : "Abrir Assistente");
+        _radial?.SetAttention(attention);
         if (!showing)
         {
             _assistantMiniRenderedKey = null;

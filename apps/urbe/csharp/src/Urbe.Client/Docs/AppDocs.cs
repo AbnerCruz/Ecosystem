@@ -47,6 +47,10 @@ public static partial class AppDocs
         - No computador, arraste a borda da barra para mudar a largura, e o botão de **Pastas** recolhe e devolve a barra. No celular, ela abre como uma gaveta pelo botão **Pastas** ou deslizando da borda esquerda; tocar fora fecha.
         - Para renomear no lugar: segure a linha e toque em **Renomear** (ou F2 no computador). Enter confirma, Esc desiste.
 
+        ## Navegar no celular
+
+        No celular não há abas embaixo: o **botão redondo no canto inferior direito** abre um leque com **Assistente** (para cima), **Notas** e **Grafos** (para a esquerda), cada um com o nome em cima. Toque no que quiser; Voltar ou um toque fora fecha o leque. Com a prática, **segure o botão e arraste** na direção do destino: ao soltar, ele abre, sem parar no leque (arrastar para longe desiste). Quando o Assistente espera uma resposta sua, o botão ganha um ponto. No computador, os destinos ficam na barra da esquerda.
+
         A **Constelação** (a estrela no alto da Área de trabalho) mostra as notas como um céu: veja [[Editor]].
         """;
 
@@ -269,7 +273,7 @@ public static partial class AppDocs
     private const string Assistente = """
         # Assistente
 
-        O **Assistente** (embaixo, ou no alto do editor) é um conjunto de agentes que pesquisam, escrevem e organizam a sua pasta, com um modelo de IA que você escolhe.
+        O **Assistente** (no botão redondo do canto inferior direito no celular, no botão flutuante no computador, ou no alto do editor) é um conjunto de agentes que pesquisam, escrevem e organizam a sua pasta, com um modelo de IA que você escolhe.
 
         ## Conectar um modelo
 

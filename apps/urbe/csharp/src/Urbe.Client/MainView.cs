@@ -21,7 +21,6 @@ public sealed partial class MainView : Grid
 
     private readonly Panel _stage = new();
     private readonly StackPanel _rail = new();
-    private readonly Grid _dock = new();
     private readonly Dictionary<string, string> _contents = new(StringComparer.Ordinal);
     private readonly IUrbeVaultStorage? _vault;
     private VaultSnapshot? _snapshot;
@@ -42,7 +41,7 @@ public sealed partial class MainView : Grid
         _vault = storage ?? UrbeApp.VaultStorageFactory?.Invoke();
         Background = UrbeTheme.Brush(UrbeTheme.Bg);
         ColumnDefinitions = new ColumnDefinitions("Auto,*");
-        RowDefinitions = new RowDefinitions("*,Auto");
+        RowDefinitions = new RowDefinitions("*");
 
         Explorer = new NotesExplorer { State = ExplorerState };
         Editor = new EditorOverlay { IsVisible = false, Dialogs = Dialogs, Notes = () => _contents.Select(n => new CityNote(n.Key, n.Value)) };
@@ -57,8 +56,6 @@ public sealed partial class MainView : Grid
         Editor.ConfirmEmbeddedAtlasExitAsync = ConfirmEmbeddedAtlasExitAsync;
         Editor.Properties.TagSource = () => _store is null ? [] : _store.List().SelectMany(d => d.Tags).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
         Editor.PropertiesFor = path => _library?.PropertiesText(path, Now);
-        // v23Atualizar: v23Dock.hidden = editor (the rail of a wide window stays)
-        Editor.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) _dock.IsVisible = !Editor.IsVisible && !(Bounds.Width >= WideBreakpoint); };
         // overlays enter with a short fade + slide (UX.md P6); IsVisible flips at once, so nothing waits for the motion
         Ui.UrbeMotion.EnterOnShow(Editor, dy: 12);
         Explorer.Closed += CloseNotesOverEditor;
@@ -158,10 +155,6 @@ public sealed partial class MainView : Grid
         BuildRail();
         SetColumn(_rail, 0);
         Children.Add(_rail);
-        BuildDock();
-        SetRow(_dock, 1);
-        SetColumnSpan(_dock, 2);
-        Children.Add(_dock);
 
         // .uc and .udlg are position:fixed over the whole app, bottom navigation included
         // #mathPane (z-index 10400), under the dialogs
@@ -556,7 +549,7 @@ public sealed partial class MainView : Grid
         base.OnSizeChanged(e);
         bool wide = e.NewSize.Width >= WideBreakpoint;
         _rail.IsVisible = wide;
-        _dock.IsVisible = !wide && !Editor.IsVisible;
+        UpdateFloatingNav();
         PlaceAssistant(_assistant, e.NewSize.Width);
     }
 
@@ -1632,9 +1625,9 @@ public sealed partial class MainView : Grid
         }
     }
 
-    // ---------------- navigation (rail / dock) ----------------
+    // ---------------- navigation (rail / radial menu) ----------------
 
-    // Assistente remains in its floating launcher; Grafos is the second work area.
+    // A wide window: the rail, with the Assistente in its floating launcher. A phone: the radial menu (CST-043).
     private static readonly (string Icon, string Label)[] Destinations =
         [(UrbeTheme.Icons.Notes, "Notas"), (UrbeTheme.Icons.Layers, "Grafos")];
 
@@ -1648,26 +1641,9 @@ public sealed partial class MainView : Grid
             _rail.Children.Add(NavItem(Destinations[i].Icon, Destinations[i].Label, i == 0));
     }
 
-    private void BuildDock()
-    {
-        // #v23Dock: rgba(bg, .94) with a 1px line on top
-        _dock.Background = UrbeTheme.Brush(UrbeTheme.Bg, .94);
-        _dock.Height = 64;
-        var line = new Border { Height = 1, VerticalAlignment = VerticalAlignment.Top, Background = UrbeTheme.Brush(UrbeTheme.Line) };
-        SetColumnSpan(line, Destinations.Length);
-        _dock.Children.Add(line);
-        _dock.ColumnDefinitions = new ColumnDefinitions(string.Join(",", Destinations.Select(_ => "*")));
-        for (int i = 0; i < Destinations.Length; i++)
-        {
-            var item = NavItem(Destinations[i].Icon, Destinations[i].Label, i == 0);
-            SetColumn(item, i);
-            _dock.Children.Add(item);
-        }
-    }
-
     private readonly List<(string Label, string Icon, Border Ico, TextBlock Text)> _nav = [];
 
-    /// <summary>The destination shown as active (.ativo) in the rail and the dock: Assistente while it is open, else Notas.</summary>
+    /// <summary>The destination shown as active (.ativo) in the rail and the radial menu: Assistente while it is open, else Notas.</summary>
     public string ActiveDestination => GraphOpen ? "Grafos" : AssistantOpen ? "Assistente" : "Notas";
 
     private void UpdateNav()
@@ -1679,6 +1655,14 @@ public sealed partial class MainView : Grid
             ico.Child = UrbeTheme.Icon(icon, 22, active ? UrbeTheme.Accent : UrbeTheme.Text3, 1.8);
             text.Foreground = UrbeTheme.Brush(active ? UrbeTheme.Text : UrbeTheme.Text3);
         }
+        _radial?.SetActive(ActiveDestination);
+    }
+
+    private async Task GoToNotesAsync()
+    {
+        if (GraphOpen && !await CloseGraphAsync()) return;
+        if (AssistantOpen) ToggleAssistant();
+        ShowWorkspace();
     }
 
     private Control NavItem(string icon, string label, bool active)
@@ -1717,7 +1701,7 @@ public sealed partial class MainView : Grid
         if (label == "Notas")
         {
             ToolTip.SetTip(button, "Notas e pastas do vault");
-            button.Click += async (_, _) => { if (GraphOpen && !await CloseGraphAsync()) return; if (AssistantOpen) ToggleAssistant(); ShowWorkspace(); };
+            button.Click += (_, _) => _ = GoToNotesAsync();
         }
         else if (label == "Grafos")
         {

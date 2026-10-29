@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261029-urbe-consolidation-wave6",
   "category": "HANDOFF",
-  "timestamp": "2026-10-29T00:33:53Z",
+  "timestamp": "2026-10-29T01:24:28Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -55,7 +55,13 @@
     "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteTemplateIdentityTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/QuestionProgressTests.cs",
     "apps/urbe/docs/csharp/CONSOLIDATION.md",
-    "docs/governance/handoffs/HO-20261029-urbe-consolidation-wave6.json"
+    "docs/governance/handoffs/HO-20261029-urbe-consolidation-wave6.json",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/RadialLayout.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/RadialNav.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.AndroidBack.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/RadialLayoutTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/RadialNavUiTests.cs"
   ],
   "work_completed": [
     "CST-115: cartão de perguntas com compreensão declarada, dúvidas em aberto e mudança desde a pergunta anterior.",
@@ -65,21 +71,28 @@
     "CST-069: gráficos de funções em blocos ```grafico (avaliador fechado, assíntotas, eixos e legenda), desenhados no Visual e em SVG nas páginas; item Gráfico de função no menu /.",
     "CST-041: incorporação sem prévia diz o tipo do arquivo e que o link continua valendo.",
     "CST-111: causa provável do crash do carrossel — bitmap da prévia liberado e redesenhado num cartão reaproveitado; corrigido e reproduzido por teste.",
-    "UC-51 (GH-845) encerrada: validação no aparelho aprovada pelo proprietário (Issue #848); ROADMAP [x] e handoff done."
+    "UC-51 (GH-845) encerrada: validação no aparelho aprovada pelo proprietário (Issue #848); ROADMAP [x] e handoff done.",
+    "CST-043: menu radial no canto inferior direito substitui as abas do celular e o botão separado do Assistente (Assistente, Notas, Grafos num quarto de círculo; toque ou segurar-arrastar-soltar; Voltar/Esc/toque fora fecham; acessível). Computador mantém o trilho."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1424 testes, 0 falhas (local, .NET 10.0.403)."
+      "evidence": "1441 testes, 0 falhas (local, .NET 10.0.403)."
     },
     {
-      "check": "Android físico: cartão de perguntas, modelos (.modelo.md, conversão de colchetes, Preencher no editor), linha de tempo das execuções e Desempenho por agente, título do editor a 360 dp, gráfico de função no editor e na página, agente de carrossel com várias imagens até o fim sem fechar o app",
+      "check": "Android físico: cartão de perguntas, modelos (.modelo.md, conversão de colchetes, Preencher no editor), linha de tempo das execuções e Desempenho por agente, título do editor a 360 dp, gráfico de função no editor e na página, agente de carrossel com várias imagens até o fim sem fechar o app, menu radial (toque, arrastar com o polegar, TalkBack, Voltar, gestos do sistema no canto)",
       "kind": "human",
       "result": "pending",
       "object": "apps/urbe/docs/csharp/CONSOLIDATION.md",
       "critical": false
+    },
+    {
+      "check": "Emulador Android x64 (sem KVM): APK instalado, mas o system_server do emulador reiniciou (DeadSystemException) antes da primeira tela; sem captura no emulador",
+      "kind": "automated",
+      "result": "not-applicable",
+      "evidence": "Limitação do ambiente; capturas headless 360×760 (native-radial-closed/open) conferidas."
     }
   ],
   "known_issues": [
