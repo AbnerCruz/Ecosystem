@@ -596,7 +596,7 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 
 ### 20261029-chatgpt-lunet-networking-foundation — 2026-10-29 (America/Sao_Paulo) — ChatGPT → integrador — verifying
 - Item: LUNET-460 / primeira fatia experimental F7 de networking, solicitada pelo proprietário com pesquisa anterior, testes antes de implementação e release somente após CI.
-- Base: Ecosystem main 69a54a0dab4912d80f8bc2437de25db158f59d09, branch `feat/lunet-networking-foundation-20261029`. Não tocar Urbe/infra de outros agentes.
+- Base: Ecosystem main 69a54a0dab4912d80f8bc2437de25db158f59d09, branch `feat/lunet-networking-foundation-20261029`. Não tocar código de outros produtos ou agentes.
 - Referências: Godot high-level multiplayer, Unity Netcode, Mirror, FishNet, LiteNetLib, Gaffer UDP vs TCP e Android INTERNET. Rejeitados como antipadrões snapshots realtime por TCP, autoridade de posição no cliente, UDP confiável caseiro, publicar host sem auth/TLS e anunciar MMO sem infraestrutura.
 - TDD: primeiro commit `ba71adc` criou `NetworkingFoundationTests`; posteriormente `NetworkFrameCodec` e `TcpGameHost`/`TcpGameClient` no Framework com identidade emitida pelo host, input não confiável, estado produzido só pelo host, frames com limite, filas e escrita serializada. Permissões INTERNET no manifesto standalone. Docs em ADR 0011/guia; roadmap e changelog preservam gate F7 aberto.
 - Verificação: fontes e documentação inspecionados por GitHub; ambiente não dispõe de .NET/Android nem acesso Git remoto via terminal. CI e DEVICE pendentes; **não declarar compilação, release ou demo Android verificada**. Handoff `HO-20261029-lunet-networking-foundation.json`.
