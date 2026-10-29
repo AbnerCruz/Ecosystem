@@ -7,7 +7,7 @@ namespace Lunet.Compiler;
 /// <summary>
 /// Referências obtidas dos assemblies já carregados no processo, lendo seus metadados em memória.
 /// Não usa caminhos de arquivo, então funciona no Android (assemblies dentro do APK) e offline.
-/// Somente a API permitida aos jogos é exposta: BCL (<c>System.*</c>, <c>netstandard</c>) e <c>Lunet.Framework</c>.
+/// Somente a API permitida aos jogos é exposta: BCL, <c>Lunet.Framework</c> e <c>Lunet.Networking</c>.
 /// </summary>
 public sealed unsafe class LoadedAssembliesReferenceProvider : IReferenceProvider
 {
@@ -17,7 +17,7 @@ public sealed unsafe class LoadedAssembliesReferenceProvider : IReferenceProvide
         "System.Numerics.Vectors", "System.Runtime.Numerics", "System.Memory", "System.Console",
         "System.Text.Json", "System.Threading", "System.Diagnostics.Debug", "System.Runtime.Extensions",
         "System.Collections.Concurrent", "System.Text.RegularExpressions", "System.Runtime.InteropServices",
-        "netstandard",
+        "netstandard", "Lunet.Networking",
     ];
 
     private readonly Assembly[] _extra;
