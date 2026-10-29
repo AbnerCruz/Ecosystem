@@ -19,10 +19,13 @@ namespace Urbe.Client;
 /// </summary>
 public sealed class FilePreviewPanel : Grid
 {
-    /// <summary>The largest file read for a preview (the vault's own limit).</summary>
-    public const long MaxBytes = 32L * 1024 * 1024;
-    /// <summary>Text shown as text up to this size (the 1.8.4: blob.size &lt; 2 MB).</summary>
-    public const long MaxTextBytes = 2L * 1024 * 1024;
+    /// <summary>
+    /// The largest file read into memory for a preview (DEC-0059: before, 32 MB, and text only up to 2 MB). Audio and
+    /// video are played from the vault and never read here; a bigger file says so and opens in another app.
+    /// </summary>
+    public const long MaxBytes = 512L * 1024 * 1024;
+    /// <summary>How much of a text is laid out at once; "Mostrar mais" adds the next part (a long log stays fluid).</summary>
+    public const int TextPart = 256 * 1024;
 
     private readonly Border _card = new();
     private readonly TextBlock _title = new() { FontSize = 18, FontWeight = FontWeight.Bold, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
@@ -307,7 +310,7 @@ public sealed class FilePreviewPanel : Grid
             {
                 using var zip = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read);
                 var names = zip.Entries.Where(e => !e.FullName.EndsWith('/')).Select(e => e.FullName).ToList();
-                var text = (names.Count > 0 ? string.Join("\n", names.Take(400)) : "Arquivo compactado vazio") + (names.Count > 400 ? $"\n… +{names.Count - 400} itens" : "");
+                var text = names.Count > 0 ? string.Join("\n", names) : "Arquivo compactado vazio";
                 ShowText(text, "zip");
             }
             catch (InvalidDataException) { _body.Content = Empty("Arquivo compactado", name); }
@@ -329,9 +332,14 @@ public sealed class FilePreviewPanel : Grid
             }
         }
         bool textual = kind is VaultFileKinds.Html or VaultFileKinds.Other || name.EndsWith(".svg", StringComparison.OrdinalIgnoreCase);
-        if (textual && bytes is not null && read.Size < MaxTextBytes && Text(bytes) is { } source)
+        if (textual && bytes is not null && Text(bytes) is { } source)
         {
             ShowText(source, "text");
+            return;
+        }
+        if (bytes is null && read.Size > MaxBytes)
+        {
+            _body.Content = Empty(name, "O arquivo tem " + VaultFileKinds.FormatBytes(read.Size) + ", mais do que este aparelho abre aqui de uma vez. Use Abrir em outro app.");
             return;
         }
         _body.Content = Empty(name, kind is VaultFileKinds.Pdf or VaultFileKinds.Audio or VaultFileKinds.Video
@@ -357,25 +365,52 @@ public sealed class FilePreviewPanel : Grid
 
     private void ShowText(string text, string shown)
     {
+        var parts = new StackPanel();
+        SelectableTextBlock Part(string piece) => new()
+        {
+            Text = piece, FontFamily = new FontFamily("Consolas, Menlo, monospace"), FontSize = 13, LineHeight = 19,
+            Foreground = UrbeTheme.Brush(UrbeTheme.Text2), Padding = new Thickness(12, 0)
+        };
+        // a long text is laid out in parts, each one ending at a line, so opening it never freezes the screen
+        int shownUpTo = 0;
+        Button? more = null;
+        void Next()
+        {
+            int end = Math.Min(text.Length, shownUpTo + TextPart);
+            if (end < text.Length && text.LastIndexOf('\n', end - 1, end - shownUpTo) is var nl and >= 0 && nl + 1 > shownUpTo) end = nl + 1;
+            if (end < text.Length && char.IsHighSurrogate(text[end - 1])) end++;
+            parts.Children.Insert(more is null ? parts.Children.Count : parts.Children.Count - 1, Part(text[shownUpTo..end]));
+            shownUpTo = end;
+            var left = text.Length - shownUpTo;
+            if (left == 0) { if (more is not null) parts.Children.Remove(more); return; }
+            if (more is null)
+            {
+                more = new Button { Margin = new Thickness(12, 8), HorizontalAlignment = HorizontalAlignment.Left };
+                more.Click += (_, _) => Next();
+                parts.Children.Add(more);
+            }
+            more.Content = "Mostrar mais (" + VaultFileKinds.FormatBytes(Encoding.UTF8.GetByteCount(text.AsSpan(shownUpTo))) + " restantes)";
+        }
+        Next();
         _body.Content = new ScrollViewer
         {
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-            Content = new SelectableTextBlock
-            {
-                Text = text, FontFamily = new FontFamily("Consolas, Menlo, monospace"), FontSize = 13, LineHeight = 19,
-                Foreground = UrbeTheme.Brush(UrbeTheme.Text2), Padding = new Thickness(12)
-            },
+            Content = new Border { Padding = new Thickness(0, 12), Child = parts },
             Background = UrbeTheme.Brush(UrbeTheme.Bg)
         };
         Shown = shown;
         ShownText = text;
     }
 
+    /// <summary>The widest a picture is decoded for the preview (it zooms in from there): an 8000-pixel scan would take hundreds of MB.</summary>
+    private const int MaxPictureWidth = 4096;
+
     private static Control? Image(byte[] bytes)
     {
         try
         {
-            var bitmap = new Bitmap(new MemoryStream(bytes));
+            // a very large picture (a panorama, a scan) is decoded at a size the screen can still zoom into, never refused
+            var bitmap = ImageHeader.Width(bytes) is > MaxPictureWidth ? Bitmap.DecodeToWidth(new MemoryStream(bytes), MaxPictureWidth) : new Bitmap(new MemoryStream(bytes));
             return new Ui.ZoomImageView(bitmap);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or NotSupportedException or IOException) { return null; }

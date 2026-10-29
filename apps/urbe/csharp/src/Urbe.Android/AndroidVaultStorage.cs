@@ -41,9 +41,11 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         else FileCache.TryRemove(entry.DocumentId, out _);
         return bytes;
     }
-    private const long MaxFileBytes = 32L * 1024 * 1024;
-    private const long MaxVaultBytes = 256L * 1024 * 1024;
-    private const int MaxEntries = 10000;
+    /// <summary>
+    /// DEC-0059: the vault has no limit of items, size or depth. Only a data file this large that is not a note nor of
+    /// .urbe/ (a CSV, a JSON export) is not kept in memory to check the vault: it is listed and opened like any other file.
+    /// </summary>
+    private const long InMemoryTextBytes = 32L * 1024 * 1024;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private AndroidUri? _tree;
     /// <summary>The files listed by the walk of the last opening, for the Explorer's ListFilePathsAsync right after it.</summary>
@@ -182,7 +184,6 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         ArgumentNullException.ThrowIfNull(bytes);
         if (imported) IUrbeVaultStorage.EnsureWritableImportedPath(path);
         else IUrbeVaultStorage.EnsureWritableBinaryPath(path);
-        if (bytes.LongLength > MaxFileBytes) throw new InvalidDataException("O arquivo passa do limite de 32 MB: " + path);
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -283,12 +284,11 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 void Walk(AndroidUri dir, string prefix, int depth)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    if (depth > 32 || paths.Count >= MaxEntries) return;
                     foreach (var entry in Children(tree, dir))
                     {
                         if (entry.Name.StartsWith('.')) continue;
                         if (entry.MimeType == DirectoryMime) Walk(DocumentUri(tree, entry.DocumentId), prefix + entry.Name + "/", depth + 1);
-                        else if (paths.Count < MaxEntries) paths.Add(prefix + entry.Name);
+                        else paths.Add(prefix + entry.Name);
                     }
                 }
                 Walk(Root(tree), string.Empty, 0);
@@ -821,18 +821,16 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     private static List<VaultFile> ReadFiles(AndroidUri tree, CancellationToken token, bool includeAll = false, List<string>? listing = null)
     {
         var wanted = new List<(string Path, AndroidUri Uri, Entry Entry)>();
-        long total = 0;
+        // no depth or item limit (DEC-0059); a folder met twice (a provider that loops) is walked once
+        var visited = new HashSet<string>(StringComparer.Ordinal);
         void Walk(AndroidUri dir, string prefix, int depth, bool hidden)
         {
             token.ThrowIfCancellationRequested();
-            if (depth > 32)
-                throw new IOException("O vault ultrapassa 32 níveis de pastas.");
+            if (DocumentsContract.GetDocumentId(dir) is { } id && !visited.Add(id)) return;
 
             foreach (var entry in Children(tree, dir))
             {
                 token.ThrowIfCancellationRequested();
-                if (++total > MaxEntries)
-                    throw new IOException("Limite de itens excedido; use um vault menor nesta beta.");
 
                 var path = prefix + entry.Name;
                 var uri = DocumentUri(tree, entry.DocumentId);
@@ -848,6 +846,8 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 // disk, and are not rewritten/deleted by a text-only beta.
                 if (!includeAll && !IsIncluded(path))
                     continue;
+                if (!includeAll && entry.Size > InMemoryTextBytes && !IsSupportedNote(path) && !path.StartsWith(".urbe/", StringComparison.OrdinalIgnoreCase))
+                    continue;
                 wanted.Add((path, uri, entry));
             }
         }
@@ -858,10 +858,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         {
             Parallel.For(0, wanted.Count, new ParallelOptions { MaxDegreeOfParallelism = ReadersAtOnce, CancellationToken = token }, i =>
             {
-                var bytes = ReadListed(wanted[i].Uri, wanted[i].Entry);
-                if (bytes.LongLength > MaxFileBytes)
-                    throw new IOException("Arquivo grande demais para esta beta: " + wanted[i].Path);
-                read[i] = bytes;
+                read[i] = ReadListed(wanted[i].Uri, wanted[i].Entry);
             });
         }
         catch (System.AggregateException e) when (e.InnerExceptions.Count > 0)
@@ -870,9 +867,6 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         }
         var files = new List<VaultFile>(wanted.Count);
         for (int i = 0; i < wanted.Count; i++) files.Add(new VaultFile(wanted[i].Path, read[i]));
-        var size = files.Sum(file => (long)file.Bytes.Length);
-        if (size > MaxVaultBytes)
-            throw new IOException("Vault excede o limite temporário de leitura da beta.");
         return files;
     }
 
@@ -881,13 +875,10 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     {
         var folders = new List<string>();
         var visited = new HashSet<string>(StringComparer.Ordinal);
-        var entries = 0;
 
         void Walk(AndroidUri parent, string prefix, int depth)
         {
             token.ThrowIfCancellationRequested();
-            if (depth > 32)
-                throw new IOException("O vault ultrapassa 32 níveis de pastas.");
 
             var parentId = DocumentsContract.GetDocumentId(parent)
                 ?? throw new IOException("Identificador de pasta Android indisponível.");
@@ -897,8 +888,6 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
             foreach (var child in Children(tree, parent))
             {
                 token.ThrowIfCancellationRequested();
-                if (++entries > MaxEntries)
-                    throw new IOException("Limite de pastas/arquivos excedido.");
 
                 if (child.MimeType != DirectoryMime)
                     continue;
@@ -935,8 +924,6 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         int read;
         while ((read = stream.Read(chunk, 0, chunk.Length)) > 0)
         {
-            if (buffer.Length + read > MaxFileBytes)
-                throw new IOException("Arquivo acima do limite de segurança da beta.");
             buffer.Write(chunk, 0, read);
         }
         return buffer.ToArray();

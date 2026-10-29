@@ -1691,15 +1691,17 @@ public sealed class EditorOverlay : Grid
             var wanted = Urbe.Core.Assistant.AssistantTools.Fold(part.TrimStart('^').Trim());
             var names = blocks ? EmbedFragments.BlockIds(markdown).Select(id => "^" + id) : EmbedFragments.Headings(markdown);
             return [.. names.Where(n => Urbe.Core.Assistant.AssistantTools.Fold(n.TrimStart('^')).Contains(wanted, StringComparison.Ordinal))
-                .Distinct().Take(20).Select(n => notePart + "#" + n)];
+                .Distinct().Select(n => notePart + "#" + n)];
         }
-        var notes = _index is null ? [] : _index.Search(query, 20).Where(d => d.Id != _currentId).Select(d => d.Title).ToList();
+        // DEC-0059: every match (the list scrolls); before, 20 notes and 20 files
+        var notes = _index is null ? [] : _index.Search(query, int.MaxValue).Where(d => d.Id != _currentId).Select(d => d.Title).ToList();
         var all = Files?.Invoke().ToList() ?? [];
         if (all.Count == 0) return notes;
-        var files = WikiTargets.Files(all, query, 20).Select(f => WikiTargets.LinkName(f, all)).ToList();
+        var files = WikiTargets.Files(all, query, int.MaxValue).Select(f => WikiTargets.LinkName(f, all)).ToList();
         var q = Urbe.Core.Assistant.AssistantTools.Fold(query.Trim());
         bool Starts(string name) => q.Length > 0 && Urbe.Core.Assistant.AssistantTools.Fold(name).StartsWith(q, StringComparison.Ordinal);
-        if (q.Length == 0) return [.. notes.Take(12), .. files.Take(8)];
+        // nothing typed: the most recent notes and files first, as before, then all the others
+        if (q.Length == 0) return [.. notes.Take(12), .. files.Take(8), .. notes.Skip(12), .. files.Skip(8)];
         return [.. notes.Where(Starts), .. files.Where(Starts), .. notes.Where(n => !Starts(n)), .. files.Where(f => !Starts(f))];
     }
 

@@ -16,35 +16,50 @@
   "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/855",
   "files_changed": [
+    "AGENTS.md",
     "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorPopups.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
     "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
     "apps/urbe/csharp/src/Urbe.Client/WorkspaceView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ImageHeader.cs",
     "apps/urbe/csharp/src/Urbe.Core/LegacyHistory.cs",
-    "apps/urbe/csharp/src/Urbe.Core/WorkspaceIndex.cs",
     "apps/urbe/csharp/src/Urbe.Core/MarkdownEngine.cs",
-    "apps/urbe/csharp/tools/editor-oracle.mjs",
+    "apps/urbe/csharp/src/Urbe.Core/WorkspaceIndex.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CompositionReconversionUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorLeaveTimingUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FilePreviewNoLimitsUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultNoLimitsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/WikiSuggestNoLimitUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ImageHeaderTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyEditorToolsOracleTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyHistoryExportTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/WorkspaceIndexTests.cs",
-    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyEditorToolsOracleTests.cs",
+    "apps/urbe/csharp/tools/editor-oracle.mjs",
     "apps/urbe/docs/csharp/CONSOLIDATION.md",
-    "docs/governance/handoffs/HO-20261029-urbe-consolidation-wave7.json",
-    "apps/urbe/csharp/tests/Urbe.Client.Tests/CompositionReconversionUiTests.cs"
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "docs/governance/addenda/ADD-0033-urbe-sem-paridade-com-a-1-8-4-e-sem-limitadores.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261029-urbe-consolidation-wave7.json"
   ],
   "work_completed": [
     "CST-129: saída do editor medida (85–110 ms síncronos com 400 notas e uma nota de ~40 KB) e corrigida: a Área de trabalho não é refeita quando nada que os cartões mostram mudou e, depois de uma edição, só a caixa do projeto é refeita, depois do quadro; o histórico é montado de pedaços prontos (texto idêntico ao da 1.8.4); o armazenamento (pasta e Android) não continua na thread da tela. Saída depois de ler 15–27 ms, sem nada pendente; depois de editar ~25–31 ms.",
     "CST-128: ênfase com as regras de borda do CommonMark/Obsidian: sem negrito ou itálico involuntário em 'palavra ** solta **', '2 * 3 * 4', 'tool_use e tool_result'; o Visual deixa de reescrever '2 * 3 * 4' como '2 _ 3 _ 4'. Tipografia conferida: peso, tinta e entrelinha iguais no Visual e na Fonte.",
     "Teste Source_DraggingAFingerScrolls: lê a posição depois do trabalho pendente do gesto (falhava em máquina carregada, 1 em 4 execuções locais).",
-    "CST-062 e CST-060 conferidos: a conversão das composições mantém ordem e originais e não se repete depois de reabrir o vault; comentários das páginas ficam fora da exportação, da impressão e da página aberta (mesmo Render). Nenhum defeito."
+    "CST-062 e CST-060 conferidos: a conversão das composições mantém ordem e originais e não se repete depois de reabrir o vault; comentários das páginas ficam fora da exportação, da impressão e da página aberta (mesmo Render). Nenhum defeito.",
+    "DEC-0059 registrada (ADD-0033): a 1.8.4 deixa de ser referência; desenvolvimento contínuo; sem limitadores. AGENTS.md §1.2 e PRODUCT-DIRECTION atualizados.",
+    "Sem limitadores: vault sem teto de itens (10 000), profundidade (32), tamanho de texto (32 MB/256 MB) nem de importação (32 MB), no computador e no Android; prévia com texto de qualquer tamanho em partes, zip completo, imagem enorme decodificada na largura útil; busca do Explorer e lista do [[ sem corte."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1508 testes, 0 falhas (local, .NET 10); Urbe.Client.Tests em Release 4 vezes: 3 verdes e 1 falha do teste de rolagem corrigido aqui (10 execuções seguidas verdes depois); build Android Debug ok."
+      "evidence": "1516 testes, 0 falhas (local, .NET 10); os testes de limites falhavam antes da mudança; build Android Debug ok."
     },
     {
       "check": "Oráculos da 1.8.4: goldens Markdown e Visual, histórico e corpus do repositório (contra o markdown.js original com só inlineEmphasis trocado)",
@@ -59,7 +74,7 @@
       "evidence": "22 checks."
     },
     {
-      "check": "Android físico: sair do editor depois de ler e depois de editar uma nota longa num vault grande (moto g32); o texto não aparece em negrito sem marcação e a leitura é confortável no Visual e na Fonte",
+      "check": "Android físico: sair do editor depois de ler e depois de editar uma nota longa num vault grande (moto g32); o texto não aparece em negrito sem marcação e a leitura é confortável no Visual e na Fonte; um vault grande (mais de 10 000 arquivos, imagens e áudios grandes) abre e salva no Android",
       "kind": "human",
       "result": "pending",
       "object": "apps/urbe/docs/csharp/CONSOLIDATION.md",

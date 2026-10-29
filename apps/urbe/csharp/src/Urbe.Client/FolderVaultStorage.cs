@@ -14,9 +14,11 @@ namespace Urbe.Client;
 /// </summary>
 public sealed class FolderVaultStorage : IUrbeVaultStorage
 {
-    private const long MaxFileBytes = 32L * 1024 * 1024;
-    private const long MaxVaultBytes = 256L * 1024 * 1024;
-    private const int MaxEntries = 10000;
+    /// <summary>
+    /// DEC-0059: the vault has no limit of items, size or depth. Only a data file this large that is not a note nor of
+    /// .urbe/ (a CSV, a JSON export) is not kept in memory to check the vault: it is listed and opened like any other file.
+    /// </summary>
+    private const long InMemoryTextBytes = 32L * 1024 * 1024;
     private static readonly string[] Included =
         [".md", ".markdown", ".txt", ".json", ".yaml", ".yml", ".html", ".htm", ".css", ".js", ".mjs", ".csv"];
 
@@ -105,7 +107,6 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         ArgumentNullException.ThrowIfNull(bytes);
         if (imported) IUrbeVaultStorage.EnsureWritableImportedPath(path);
         else IUrbeVaultStorage.EnsureWritableBinaryPath(path);
-        if (bytes.LongLength > MaxFileBytes) throw new InvalidDataException("O arquivo passa do limite de 32 MB: " + path);
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -243,18 +244,8 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
             return await Task.Run(() =>
             {
                 var paths = new List<string>();
-                void Walk(string dir, string prefix, int depth)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    if (depth > 32 || paths.Count >= MaxEntries) return;
-                    foreach (var entry in new DirectoryInfo(dir).EnumerateFileSystemInfos().OrderBy(e => e.Name, StringComparer.Ordinal))
-                    {
-                        if (entry.LinkTarget is not null || entry.Name.StartsWith('.')) continue;
-                        if (entry is DirectoryInfo sub) Walk(sub.FullName, prefix + entry.Name + "/", depth + 1);
-                        else if (paths.Count < MaxEntries) paths.Add(prefix + entry.Name);
-                    }
-                }
-                Walk(root, string.Empty, 0);
+                foreach (var (entry, path) in Entries(root, cancellationToken))
+                    if (entry is FileInfo && !path.Split('/').Any(part => part.StartsWith('.'))) paths.Add(path);
                 return (IReadOnlyList<string>)paths;
             }, cancellationToken).ConfigureAwait(false);
         }
@@ -724,30 +715,33 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
     private static List<VaultFile> ReadFiles(string root, CancellationToken token, bool includeAll = false)
     {
         var files = new List<VaultFile>();
-        long entries = 0;
-        void Walk(string dir, string prefix, int depth)
+        foreach (var (entry, path) in Entries(root, token))
+        {
+            if (entry is not FileInfo file || (!includeAll && !IsIncluded(path))) continue;
+            if (file.Length > InMemoryTextBytes && !includeAll && !IsSupportedNote(path) && !path.StartsWith(".urbe/", StringComparison.OrdinalIgnoreCase)) continue;
+            files.Add(new VaultFile(path, ReadListed(file)));
+        }
+        return files;
+    }
+
+    /// <summary>Every file and folder of the vault, in name order, at any depth; links are never followed out of it.</summary>
+    private static IEnumerable<(FileSystemInfo Entry, string Path)> Entries(string root, CancellationToken token)
+    {
+        // a stack instead of recursion: no folder is too deep; the order is the recursive walk's (a folder's content
+        // right after the folder, names in ordinal order)
+        IEnumerator<FileSystemInfo> Children(string dir) =>
+            new DirectoryInfo(dir).EnumerateFileSystemInfos().Where(e => e.LinkTarget is null).OrderBy(e => e.Name, StringComparer.Ordinal).ToList().GetEnumerator();
+        var pending = new Stack<(IEnumerator<FileSystemInfo> Children, string Prefix)>();
+        pending.Push((Children(root), ""));
+        while (pending.TryPeek(out var at))
         {
             token.ThrowIfCancellationRequested();
-            if (depth > 32) throw new IOException("O vault ultrapassa 32 níveis de pastas.");
-            var info = new DirectoryInfo(dir);
-            foreach (var entry in info.EnumerateFileSystemInfos().OrderBy(e => e.Name, StringComparer.Ordinal))
-            {
-                token.ThrowIfCancellationRequested();
-                if (++entries > MaxEntries) throw new IOException("Limite de itens excedido; use um vault menor nesta beta.");
-                // Never follow links out of the chosen folder.
-                if (entry.LinkTarget is not null) continue;
-                var path = prefix + entry.Name;
-                if (entry is DirectoryInfo sub) { Walk(sub.FullName, path + "/", depth + 1); continue; }
-                if (!includeAll && !IsIncluded(path)) continue;
-                var file = (FileInfo)entry;
-                if (file.Length > MaxFileBytes) throw new IOException("Arquivo grande demais para esta beta: " + path);
-                files.Add(new VaultFile(path, ReadListed(file)));
-            }
+            if (!at.Children.MoveNext()) { pending.Pop(); continue; }
+            var entry = at.Children.Current;
+            var path = at.Prefix + entry.Name;
+            yield return (entry, path);
+            if (entry is DirectoryInfo) pending.Push((Children(entry.FullName), path + "/"));
         }
-        Walk(root, string.Empty, 0);
-        if (files.Sum(f => (long)f.Bytes.Length) > MaxVaultBytes)
-            throw new IOException("Vault excede o limite temporário de leitura da beta.");
-        return files;
     }
 
     /// <summary>
