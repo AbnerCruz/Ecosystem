@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261029-urbe-consolidation-wave6",
   "category": "HANDOFF",
-  "timestamp": "2026-10-29T01:34:16Z",
+  "timestamp": "2026-10-29T01:39:14Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -75,14 +75,15 @@
     "CST-111: causa provável do crash do carrossel — bitmap da prévia liberado e redesenhado num cartão reaproveitado; corrigido e reproduzido por teste.",
     "UC-51 (GH-845) encerrada: validação no aparelho aprovada pelo proprietário (Issue #848); ROADMAP [x] e handoff done.",
     "CST-043: menu radial no canto inferior direito substitui as abas do celular e o botão separado do Assistente (Assistente, Notas, Grafos num quarto de círculo; toque ou segurar-arrastar-soltar; Voltar/Esc/toque fora fecham; acessível). Computador mantém o trilho.",
-    "CST-008 (segunda parte): renderizações completas não esperam mais por qualquer seleção no chat; a seleção é mantida/levada ao texto refeito, e só uma seleção em curso numa vista que sai segura a atualização por até 1,5 s."
+    "CST-008 (segunda parte): renderizações completas não esperam mais por qualquer seleção no chat; a seleção é mantida/levada ao texto refeito, e só uma seleção em curso numa vista que sai segura a atualização por até 1,5 s.",
+    "CST-094 (correção do CI): execução medida em menos de 1 ms registrava TotalMs 0, marca de execução sem medida; agora vale no mínimo 1 ms."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1443 testes, 0 falhas (local, .NET 10.0.403)."
+      "evidence": "1444 testes, 0 falhas (local, Release, .NET 10.0.403)."
     },
     {
       "check": "Android físico: cartão de perguntas, modelos (.modelo.md, conversão de colchetes, Preencher no editor), linha de tempo das execuções e Desempenho por agente, título do editor a 360 dp, gráfico de função no editor e na página, agente de carrossel com várias imagens até o fim sem fechar o app, menu radial (toque, arrastar com o polegar, TalkBack, Voltar, gestos do sistema no canto)",

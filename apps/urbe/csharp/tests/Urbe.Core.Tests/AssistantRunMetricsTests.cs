@@ -67,6 +67,22 @@ public sealed class AssistantRunMetricsTests
     }
 
     [Fact]
+    public async Task AnInstantRunIsStillMeasured()
+    {
+        // CI: a run under 1 ms recorded TotalMs 0, the mark of a run from before the measures, so it had no line
+        // under the answer and was left out of the summary
+        var messages = new List<AiChatMessage> { new() { Id = "u", Role = "user", Content = [AiChatBlock.TextBlock("oi")] } };
+        var r = await AssistantAgent.RunAsync(new()
+        {
+            Host = new Host(), Agent = AssistantAgent.AgentById("geral"), Policy = "auto", Model = "m", Provider = new("p", "openai"),
+            Messages = messages, Stream = (_, _, _, _) => Task.FromResult(Answer(AiBlock.TextBlock("já")))
+        });
+        Assert.True(r.Efficiency.TotalMs >= 1);
+        Assert.StartsWith("Levou ", r.Efficiency.Describe());
+        Assert.Equal(1, AiRunStats.Of([new AiRunRecord { Efficiency = r.Efficiency }])?.Runs);
+    }
+
+    [Fact]
     public async Task WaitingForThePersonIsNotToolTimeAndARefusalIsCounted()
     {
         var r = await Run(async _ => { await Task.Delay(120); return new AiApproval("reject"); },

@@ -919,7 +919,8 @@ public static class AssistantAgent
                 }
             }
         }
-        metrics.TotalMs = clock.ElapsedMilliseconds;
+        // at least 1 ms: 0 is the mark of a run recorded before the measures (or with them turned off)
+        metrics.TotalMs = Math.Max(1, clock.ElapsedMilliseconds);
         metrics.FirstUsefulMs ??= metrics.TotalMs;
         metrics.Repeats = repeats;
         metrics.Verified = checkedFiles.Count;
