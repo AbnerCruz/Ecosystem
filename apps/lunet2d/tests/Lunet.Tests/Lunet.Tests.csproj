@@ -16,6 +16,7 @@
     <ProjectReference Include="..\..\src\Lunet.Docs\Lunet.Docs.csproj" />
     <ProjectReference Include="..\..\src\Lunet.Compiler\Lunet.Compiler.csproj" />
     <ProjectReference Include="..\..\src\Lunet.Framework\Lunet.Framework.csproj" />
+    <ProjectReference Include="../../src/Lunet.Networking/Lunet.Networking.csproj" />
     <ProjectReference Include="..\..\src\Lunet.Runtime\Lunet.Runtime.csproj" />
   </ItemGroup>
   <ItemGroup>
