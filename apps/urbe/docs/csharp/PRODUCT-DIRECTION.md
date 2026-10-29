@@ -30,7 +30,7 @@ Na abertura, o app volta direto para a última nota que estava aberta.
 
 Primeiro vem o painel **Conexões** da nota aberta, depois a **constelação** do vault, como uma tela para passear. Nunca a base do app.
 
-**A 1.8.4 continua referência fora da simulação.** Isso vale para as regras do editor, do Explorer, da lixeira, do histórico, da importação, das páginas e do assistente. Mas ela é referência de essência, não de defeitos (DEC-0045, [ADD-0022](../../../../docs/governance/addenda/ADD-0022-urbe-1-8-4-como-essencia-e-observacoes-de-uso.md)). O que o proprietário apontou como defeito ou aprovou como melhoria nas observações de uso é corrigido, não reproduzido.
+**A 1.8.4 deixou de ser referência** (DEC-0059, [ADD-0033](../../../../docs/governance/addenda/ADD-0033-urbe-sem-paridade-com-a-1-8-4-e-sem-limitadores.md), 29/10/2026). O Urbe amadureceu e segue o que é melhor para quem usa: nada é mantido igual à 1.8.4 por ser legado, e os oráculos dela são testes de regressão que mudam com as melhorias. A leitura de vaults antigos continua, porque são dados da pessoa. A experiência não ganha limitadores para contornar problemas; um limite inevitável fica no máximo possível e é explicado. (Antes: referência de essência, não de defeitos, DEC-0045/ADD-0022.)
 
 **Dados.** Id, datas e pastas das notas ficam em `.urbe/notas.json`. Os arquivos da cidade num vault antigo (`.urbe/mapa.json`, `.urbe/mundo.json`) são lidos uma vez e nunca apagados nem reescritos.
 
