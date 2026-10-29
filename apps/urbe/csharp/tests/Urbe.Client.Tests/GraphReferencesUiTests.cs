@@ -18,8 +18,9 @@ public sealed partial class HeadlessUiTests
         var plan = graph.AddReference(GraphNodeKind.Note, "Plano.md", 0, 0);
         var lore = graph.AddReference(GraphNodeKind.Note, "Droerni/Lore.md", 0, 140);
         var folder = graph.AddReference(GraphNodeKind.Folder, "Droerni", 0, 280);
+        var picture = graph.AddReference(GraphNodeKind.File, "mapa.png", 260, 0);
         var (view, window, dir, vault) = await OpenRealVaultAsync(("Plano.md", "# Plano\n"), ("Droerni/Lore.md", "# Lore\n"),
-            ("Mundos/.keep.md", "# Mundos\n"), ("Mapa.grafo.json", graph.Serialize()));
+            ("Mundos/.keep.md", "# Mundos\n"), ("mapa.png", "png"), ("Mapa.grafo.json", graph.Serialize()));
         var graphFile = Path.Combine(vault, "Mapa.grafo.json");
         GraphDocument OnDisk() => GraphDocument.Parse(File.ReadAllText(graphFile));
         try
@@ -28,6 +29,10 @@ public sealed partial class HeadlessUiTests
             await Settle(window, view);
             var after = OnDisk().Node(plan.Id)!;
             Assert.Equal(("Plano final.md", "Plano final.md"), (after.Target, after.Label));
+
+            await view.RenameAttachmentAsync("mapa.png", "mapa do mundo.png");
+            await Settle(window, view);
+            Assert.Equal(("mapa do mundo.png", "mapa do mundo.png"), (OnDisk().Node(picture.Id)!.Target, OnDisk().Node(picture.Id)!.Label));
 
             Assert.True(await view.MoveFolderAsync("Droerni", "Mundos"));
             await Settle(window, view);

@@ -115,6 +115,7 @@ public sealed partial class MainView
         NotesChanged();
         RefreshNotes();
         if (FilePreview.IsVisible && FilePreview.Current == from) await FilePreview.OpenAsync(to);
+        await RetargetGraphsAsync([(from, to)]);   // CST-066: the graphs' file cards follow
         ShowLifeNotice(notice);
     }
 
