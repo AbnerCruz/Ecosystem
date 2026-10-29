@@ -40,7 +40,7 @@ public static partial class VaultFileKinds
         ".mp3" => "audio/mpeg", ".wav" => "audio/wav", ".ogg" => "audio/ogg", ".m4a" => "audio/mp4", ".aac" => "audio/aac", ".flac" => "audio/flac",
         ".mp4" or ".m4v" => "video/mp4", ".webm" => "video/webm", ".mov" => "video/quicktime", ".mkv" => "video/x-matroska", ".avi" => "video/x-msvideo",
         ".pdf" => "application/pdf", ".html" or ".htm" or ".xhtml" => "text/html", ".zip" => "application/zip",
-        ".txt" or ".md" or ".markdown" or ".csv" or ".css" or ".js" or ".json" or ".yaml" or ".yml" => "text/plain",
+        var other when VaultTextFiles.Extensions.Contains(other) => "text/plain",
         _ => "application/octet-stream"
     };
 

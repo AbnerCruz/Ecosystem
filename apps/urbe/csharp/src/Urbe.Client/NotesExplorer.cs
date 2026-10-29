@@ -365,7 +365,7 @@ public sealed class NotesExplorer : Border
             ".md" or ".markdown" or ".txt" => UrbeTheme.Icons.File,
             ".png" or ".jpg" or ".jpeg" or ".gif" or ".webp" or ".svg" or ".bmp" or ".avif" => UrbeTheme.Icons.Image,
             ".pdf" => UrbeTheme.Icons.Book,
-            ".json" or ".js" or ".css" or ".html" or ".htm" or ".yaml" or ".yml" or ".csv" or ".xml" or ".cs" or ".py" => UrbeTheme.Icons.FileCode,
+            _ when Urbe.Core.VaultTextFiles.IsText(p) => UrbeTheme.Icons.FileCode,
             _ => UrbeTheme.Icons.FileOther
         };
     }

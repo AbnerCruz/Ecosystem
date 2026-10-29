@@ -30,23 +30,6 @@ public static partial class ArtifactModel
 {
     private const string PersonalizationRoot = "Personalização/";
 
-    private static readonly HashSet<string> TextExtensions =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            ".md",
-            ".markdown",
-            ".txt",
-            ".html",
-            ".htm",
-            ".js",
-            ".mjs",
-            ".css",
-            ".json",
-            ".yaml",
-            ".yml",
-            ".csv"
-        };
-
     private static readonly HashSet<string> NoteTextExtensions =
         new(StringComparer.OrdinalIgnoreCase)
         {
@@ -70,7 +53,7 @@ public static partial class ArtifactModel
         var normalized = NormalizeArtifactPath(path);
         var extension = Extension(normalized);
         var system = IsSystem(normalized);
-        var textualByExtension = TextExtensions.Contains(extension);
+        var textualByExtension = VaultTextFiles.Extensions.Contains(extension);
         var type = ArtifactType.Asset;
 
         if (system)

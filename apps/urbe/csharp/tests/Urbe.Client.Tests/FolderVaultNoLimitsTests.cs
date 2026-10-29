@@ -76,3 +76,33 @@ public sealed class FolderVaultNoLimitsTests : IDisposable
         Assert.Equal(audio.Length, new FileInfo(Path.Combine(Vault, "Aula.m4a")).Length);
     }
 }
+
+/// <summary>CST-141: code files of the vault open and save as text, like notes (one list of text types, VaultTextFiles).</summary>
+public sealed class FolderVaultCodeFilesTests : IDisposable
+{
+    private readonly string _dir = Path.Combine(Path.GetTempPath(), "urbe-code-" + Guid.NewGuid().ToString("N"));
+    private string Vault => Path.Combine(_dir, "vault");
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
+
+    public void Dispose()
+    {
+        try { Directory.Delete(_dir, recursive: true); } catch (IOException) { }
+    }
+
+    [Fact]
+    public async Task CodeFilesAreReadAndSavedAsText()
+    {
+        Directory.CreateDirectory(Path.Combine(Vault, "Projeto", "src"));
+        File.WriteAllText(Path.Combine(Vault, "Projeto", "src", "Program.cs"), "Console.WriteLine(\"oi\");\n");
+        File.WriteAllText(Path.Combine(Vault, "Projeto", "main.py"), "print('oi')\n");
+        File.WriteAllText(Path.Combine(Vault, "Projeto", "app.ts"), "export const a = 1;\n");
+        var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(Vault), Path.Combine(_dir, "app", "sel.json"));
+        var snapshot = await storage.PickAsync(Ct);
+        foreach (var path in new[] { "Projeto/src/Program.cs", "Projeto/main.py", "Projeto/app.ts" })
+            Assert.Contains(snapshot!.Documents, d => d.Path == path && d.Text is not null);
+        await storage.SaveExistingTextFileAsync("Projeto/main.py", "print('olá')\n", Ct);
+        Assert.Equal("print('olá')\n", File.ReadAllText(Path.Combine(Vault, "Projeto", "main.py")));
+        await storage.CreateTextFileAsync("Projeto/novo.go", "package main\n", Ct);
+        Assert.True(File.Exists(Path.Combine(Vault, "Projeto", "novo.go")));
+    }
+}

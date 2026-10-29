@@ -911,9 +911,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
 
     private static bool IsIncluded(string path) =>
         path.StartsWith(".urbe/", StringComparison.OrdinalIgnoreCase) ||
-        new[] { ".md", ".markdown", ".txt", ".json", ".yaml", ".yml",
-                ".html", ".htm", ".css", ".js", ".mjs", ".csv" }
-            .Contains(System.IO.Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
+        VaultTextFiles.IsText(path);
 
     private static byte[] ReadBytes(AndroidUri uri)
     {

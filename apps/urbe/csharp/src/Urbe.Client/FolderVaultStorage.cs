@@ -19,8 +19,6 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
     /// .urbe/ (a CSV, a JSON export) is not kept in memory to check the vault: it is listed and opened like any other file.
     /// </summary>
     private const long InMemoryTextBytes = 32L * 1024 * 1024;
-    private static readonly string[] Included =
-        [".md", ".markdown", ".txt", ".json", ".yaml", ".yml", ".html", ".htm", ".css", ".js", ".mjs", ".csv"];
 
     private readonly Func<CancellationToken, Task<string?>> _pickFolder;
     private readonly string _selectionFile;
@@ -769,7 +767,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
 
     private static bool IsIncluded(string path) =>
         path.StartsWith(".urbe/", StringComparison.OrdinalIgnoreCase) ||
-        Included.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
+        VaultTextFiles.IsText(path);
 
     private static IReadOnlyDictionary<string, VaultFile> Snapshot(IEnumerable<VaultFile> files) =>
         new ReadOnlyDictionary<string, VaultFile>(files.ToDictionary(f => f.Path, f => f, StringComparer.OrdinalIgnoreCase));

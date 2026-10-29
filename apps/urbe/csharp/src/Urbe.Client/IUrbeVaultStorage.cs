@@ -109,8 +109,7 @@ public interface IUrbeVaultStorage
 
     /// <summary>The documents the Urbe reads as text (they belong to the vault's baseline, not to the attachments).</summary>
     static bool TextDocument(string path) =>
-        new[] { ".md", ".markdown", ".txt", ".json", ".yaml", ".yml", ".html", ".htm", ".css", ".js", ".mjs", ".csv" }
-            .Contains(System.IO.Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
+        VaultTextFiles.IsText(path);
 
     /// <summary>
     /// Renames ONE folder of the vault (Renomear pasta in the Explorer), keeping it in
@@ -526,10 +525,7 @@ public interface IUrbeVaultStorage
         ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".pdf", ".mp3", ".m4a", ".ogg", ".oga", ".wav", ".flac", ".mp4", ".webm", ".mov"
     };
 
-    static readonly HashSet<string> WritableExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".md", ".markdown", ".txt", ".html", ".htm", ".js", ".mjs", ".css", ".json", ".yaml", ".yml", ".csv"
-    };
+    static IReadOnlySet<string> WritableExtensions => VaultTextFiles.Extensions;
 }
 
 /// <summary>A file read for its preview: its size, and its bytes when they were within the limit asked.</summary>
