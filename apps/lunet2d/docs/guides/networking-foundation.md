@@ -53,7 +53,7 @@ Para testes LAN entre dois aparelhos de confiança, o host pode vincular `IPAddr
 
 ## Passos seguintes e gates
 
-1. Reestruturar para `Lunet.Networking` independente e `INetworkTransport` substituível, sem quebrar o empacotador standalone.
+1. Validar o projeto `Lunet.Networking` independente no compilador Roslyn e no APK standalone; introduzir `INetworkTransport` substituível.
 2. Transport realtime LiteNetLib 2 e canais reliable/unreliable, simulação de loss/jitter/latência.
 3. Replicação com autoridade do servidor, `NetworkIdentity`, snapshots, interpolação/predição/reconciliação, validação e limites.
 4. Demo de dois clientes em Android com movimento e colisões sincronizados, testes automatizados e validação física.
