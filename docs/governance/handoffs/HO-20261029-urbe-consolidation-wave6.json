@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261029-urbe-consolidation-wave6",
   "category": "HANDOFF",
-  "timestamp": "2026-10-29T11:53:36Z",
+  "timestamp": "2026-10-29T11:55:05Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -84,7 +84,10 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/GraphEmbedGestureUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantCancelUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ChatIsolationUiTests.cs",
-    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantQueueUiTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantQueueUiTests.cs",
+    "docs/adr/0046-urbe-tags-herdadas-por-projeto.md",
+    "docs/governance/decisions.json",
+    "docs/adr/README.md"
   ],
   "work_completed": [
     "CST-115: cartão de perguntas com compreensão declarada, dúvidas em aberto e mudança desde a pergunta anterior.",
@@ -105,7 +108,8 @@
     "CST-067: grafo incorporado na nota com gestos cooperativos (um dedo/roda rolam a nota; dois dedos/Ctrl+roda movem e aproximam o grafo; toque num cartão abre o alvo).",
     "CST-012 conferido: parar encerra a execução na hora e a tela mostra; parar com pergunta encaminhada encerra as duas (testes de regressão).",
     "CST-014 conferido: resposta de uma conversa não vaza para outra; a volta mostra tudo (teste de regressão).",
-    "CST-009 conferido: fila sobrevive a interrupção (retomável) e erro do provedor mantém a mensagem com Tentar de novo (testes de regressão)."
+    "CST-009 conferido: fila sobrevive a interrupção (retomável) e erro do provedor mantém a mensagem com Tentar de novo (testes de regressão).",
+    "CST-042: proposta registrada (ADR-0046 Proposto) e decisão pendente DEC-0058 no portal — de onde vêm as tags herdadas por projeto; implementação aguarda a escolha."
   ],
   "verification": [
     {
@@ -135,7 +139,9 @@
   "next_actions": [
     "Continuar a consolidação: CST-058 (áudio longo), CST-069 adiante (prévia ao vivo, paramétricas e física), além dos itens que dependem do proprietário (nome e logo Numa, tags herdadas, menu radial)."
   ],
-  "decisions_required": [],
+  "decisions_required": [
+    "DEC-0058"
+  ],
   "normative_sources": [
     "MANIFEST.md",
     "AGENTS.md",
