@@ -72,6 +72,31 @@ public static partial class EmbedFragments
         return start + 1;
     }
 
+    /// <summary>The headings of a note, in order, outside code (what <c>[[Nota#</c> suggests).</summary>
+    public static IReadOnlyList<string> Headings(string markdown)
+    {
+        var lines = markdown.Replace("\r\n", "\n").Split('\n');
+        var code = CodeLines(lines);
+        var found = new List<string>();
+        for (int i = 0; i < lines.Length; i++)
+            if (!code[i] && HeadingRegex().Match(lines[i]) is { Success: true } h && h.Groups[2].Value.Trim() is { Length: > 0 } title) found.Add(title);
+        return found;
+    }
+
+    /// <summary>The <c>^id</c> markers that end lines of a note, outside code (what <c>[[Nota#^</c> suggests).</summary>
+    public static IReadOnlyList<string> BlockIds(string markdown)
+    {
+        var lines = markdown.Replace("\r\n", "\n").Split('\n');
+        var code = CodeLines(lines);
+        var found = new List<string>();
+        for (int i = 0; i < lines.Length; i++)
+            if (!code[i] && BlockIdMarkRegex().Match(lines[i]) is { Success: true } m) found.Add(m.Groups[1].Value);
+        return found;
+    }
+
+    [GeneratedRegex(@"[ \t]+\^([A-Za-z0-9-]+)(?=(?:[ \t]*\{ia:""[^""\n]*""\})*[ \t]*$)")]
+    private static partial Regex BlockIdMarkRegex();
+
     /// <summary>The section [start, end) of the first heading named <paramref name="name"/> between the two lines.</summary>
     private static (int Start, int End)? Heading(string[] lines, int from, int to, string name)
     {

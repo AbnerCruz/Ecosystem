@@ -395,6 +395,17 @@ public sealed class EditorOverlay : Grid
     public ConnectionsPanel Connections { get; } = new();
 
     /// <summary>The outline's tap: the caret at the start of that line of the text, focused.</summary>
+    /// <summary>The one note a link's name means: its path, its name, or one of its aliases (null when none or several).</summary>
+    private static CityNote? LinkTarget(string name, List<CityNote> all)
+    {
+        var exact = all.FirstOrDefault(n => string.Equals(n.Path, name, StringComparison.Ordinal) || string.Equals(n.Path, name + ".md", StringComparison.Ordinal));
+        if (exact is not null) return exact;
+        var named = all.Where(n => string.Equals(n.Name, name, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (named.Count > 0) return named.Count == 1 ? named[0] : null;
+        var aliased = all.Where(n => NoteProperties.AliasesOf(n.Content).Any(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase))).ToList();
+        return aliased.Count == 1 ? aliased[0] : null;
+    }
+
     /// <summary>The heading or block a link names, in the note open (the caret there and, in Visual, its block on screen).</summary>
     public bool RevealFragment(string fragment)
     {
@@ -1664,8 +1675,24 @@ public sealed class EditorOverlay : Grid
     /// vault's other files (CST-040), by their name or, when two share it, their path. Names that start with what was
     /// typed come first, notes before files.
     /// </summary>
+    /// <summary>The names the "[[" list shows now (tests).</summary>
+    public IReadOnlyList<string> WikiSuggestions => _wiki.IsOpen ? _wiki.Names : [];
+
     private IReadOnlyList<string> Candidates(string query)
     {
+        // CST-120: after "Nota#" the note's headings, after "Nota#^" its blocks; "#" alone is this note's
+        if (query.IndexOf('#') is var hash and >= 0)
+        {
+            var notePart = query[..hash].Trim();
+            var part = query[(hash + 1)..];
+            var markdown = notePart.Length == 0 ? Editor.Text : LinkTarget(notePart, Notes?.Invoke().ToList() ?? [])?.Content;
+            if (markdown is null) return [];
+            bool blocks = part.StartsWith('^');
+            var wanted = Urbe.Core.Assistant.AssistantTools.Fold(part.TrimStart('^').Trim());
+            var names = blocks ? EmbedFragments.BlockIds(markdown).Select(id => "^" + id) : EmbedFragments.Headings(markdown);
+            return [.. names.Where(n => Urbe.Core.Assistant.AssistantTools.Fold(n.TrimStart('^')).Contains(wanted, StringComparison.Ordinal))
+                .Distinct().Take(20).Select(n => notePart + "#" + n)];
+        }
         var notes = _index is null ? [] : _index.Search(query, 20).Where(d => d.Id != _currentId).Select(d => d.Title).ToList();
         var all = Files?.Invoke().ToList() ?? [];
         if (all.Count == 0) return notes;
@@ -1733,14 +1760,12 @@ public sealed class EditorOverlay : Grid
         var all = Notes?.Invoke().ToList() ?? [];
         var exact = all.FirstOrDefault(n => string.Equals(n.Path, name, StringComparison.Ordinal) || string.Equals(n.Path, name + ".md", StringComparison.Ordinal));
         var matches = all.Where(n => string.Equals(n.Name, name, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (exact is null && matches.Count == 0 && LinkTarget(name, all) is { } aliased) { exact = aliased; }
         var target = exact ?? (matches.Count == 1 ? matches[0] : null);
         // an alias of the properties (aliases: […]) names the note too
-        if (target is null && matches.Count == 0)
-        {
-            var byAlias = all.Where(n => NoteProperties.AliasesOf(n.Content).Any(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase))).ToList();
-            if (byAlias.Count == 1) target = byAlias[0];
-            else if (byAlias.Count > 1) { Notify("Alias ambíguo: mais de uma nota usa “" + name + "”."); return; }
-        }
+        if (target is null && matches.Count == 0 &&
+            all.Count(n => NoteProperties.AliasesOf(n.Content).Any(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase))) > 1)
+        { Notify("Alias ambíguo: mais de uma nota usa “" + name + "”."); return; }
         if (target is not null)
         {
             await NavigateAsync(target);

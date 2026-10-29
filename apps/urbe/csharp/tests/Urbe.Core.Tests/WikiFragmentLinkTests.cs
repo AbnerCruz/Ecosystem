@@ -36,4 +36,12 @@ public sealed class WikiFragmentLinkTests
     [InlineData("Veja [[Plano]] e [[Plano|o plano]] aqui.")]
     public void AFragmentLinkSurvivesTheVisualRoundTrip(string markdown) =>
         Assert.Equal(markdown, VisualMarkdown.FromHtml(MarkdownEngine.Render(markdown)).Trim());
+
+    [Fact]
+    public void TheHeadingsAndBlocksALinkCanNameOutsideCode()
+    {
+        const string note = "# Plano\n\n## Metas\n\n- correr ^meta\n\n```\n## Falso\n```\n\n### Orçamento anual\n";
+        Assert.Equal(["Plano", "Metas", "Orçamento anual"], EmbedFragments.Headings(note));
+        Assert.Equal(["meta"], EmbedFragments.BlockIds(note));
+    }
 }

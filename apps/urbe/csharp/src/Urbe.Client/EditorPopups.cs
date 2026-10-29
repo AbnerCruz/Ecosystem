@@ -48,6 +48,9 @@ internal sealed class WikiSuggestList : Border
     public bool IsOpen => IsVisible;
     public event Action<string>? Chosen;
 
+    /// <summary>The names shown now.</summary>
+    public IReadOnlyList<string> Names => _names;
+
     public void Show(IReadOnlyList<string> names)
     {
         _names = names;

@@ -46,4 +46,33 @@ public sealed partial class HeadlessUiTests
         }
         finally { window.Close(); }
     }, CancellationToken.None));
+
+    [Fact]
+    public async Task Links_AfterNoteAndHashTheHeadingsAreSuggested() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        var view = new MainView();
+        var window = new Window { Width = 412, Height = 760, Content = view };
+        window.Show();
+        try
+        {
+            await view.LoadAsync([new CityNote("A.md", "# A\n\n## Própria\n"), new CityNote("Plano.md", "# Plano\n\n## Metas\n\n## Orçamento\n\nGasto. ^custo\n")]);
+            await Settle(window, view);
+            view.OpenNoteByPath("A.md");
+            await Settle(window, view);
+            view.Editor.SetMode(EditorMode.Fonte);
+            IReadOnlyList<string> Typed(string text)
+            {
+                view.Editor.Editor.Text = "# A\n\n## Própria\n\n" + text;
+                view.Editor.Editor.CaretIndex = view.Editor.Editor.Text.Length;
+                Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+                return view.Editor.WikiSuggestions;
+            }
+            Assert.Equal(["Plano#Plano", "Plano#Metas", "Plano#Orçamento"], Typed("Veja [[Plano#"));
+            Assert.Equal(["Plano#Orçamento"], Typed("Veja [[Plano#orç"));
+            Assert.Equal(["Plano#^custo"], Typed("Veja [[Plano#^"));
+            Assert.Equal(["#A", "#Própria"], Typed("Veja [[#"));   // this note's own
+            return true;
+        }
+        finally { window.Close(); }
+    }, CancellationToken.None));
 }
