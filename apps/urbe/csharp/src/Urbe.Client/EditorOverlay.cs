@@ -26,6 +26,9 @@ public enum EditorMode { Visual, Fonte }
 public sealed class EditorOverlay : Grid
 {
     private readonly TextBlock _title = new();
+    private UrbeIconButton? _modeToggle;
+    /// <summary>Below this header width the Visual/Fonte switch is a single button, so the title keeps room.</summary>
+    private const double CompactHeaderWidth = 520;
     private readonly TextBlock _status = new();
     private readonly Border _saveDot = new();
     private readonly UrbeToast _toast = new(top: 64);
@@ -895,6 +898,9 @@ public sealed class EditorOverlay : Grid
     /// <summary>#editorScroll.previewMode #propertiesBox{display:none}.</summary>
     private void UpdateProperties() => _properties.IsVisible = _hasProperties && Mode == EditorMode.Fonte;
 
+    /// <summary>The block being written goes into the text (before the Assistente reads the note, from any button).</summary>
+    public void FinishEditing() => _visual.FinishEdit();
+
     public void SetMode(EditorMode mode) => ShowMode(mode == EditorMode.Visual && (_note is null || CanVisual(_note.Path)) ? EditorMode.Visual : EditorMode.Fonte);
 
     private void ShowMode(EditorMode mode)
@@ -917,6 +923,13 @@ public sealed class EditorOverlay : Grid
         _sourceScroll.IsVisible = !visual;
         if (visual) _visual.SetText(Editor.Text ?? "");
         else _wiki.Hide();
+        if (_modeToggle is not null)
+        {
+            _modeToggle.Content = UrbeTheme.Icon(visual ? UrbeTheme.Icons.FileCode : UrbeTheme.Icons.Book, 22, C.TextSecondary, 1.8);
+            var tip = visual ? "Mudar para Fonte" : "Mudar para Visual";
+            ToolTip.SetTip(_modeToggle, tip);
+            AutomationProperties.SetName(_modeToggle, tip);
+        }
         if (_visualButton is not null)
         {
             Style(_visualButton, visual);
@@ -1127,8 +1140,18 @@ public sealed class EditorOverlay : Grid
             _visual.FinishEdit();
             AssistantRequested?.Invoke();
         };
-        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { PluginButtons, assistant, _segment, more } };
+        // CST-105/106: on a phone the two-word switch left the title no room; there Visual/Fonte is one button
+        _modeToggle = new UrbeIconButton(UrbeTheme.Icons.FileCode, "Mudar para Fonte") { IsVisible = false };
+        _modeToggle.Click += (_, _) => SetMode(Mode == EditorMode.Visual ? EditorMode.Fonte : EditorMode.Visual);
+        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { PluginButtons, assistant, _segment, _modeToggle, more } };
         var bar = new DockPanel { Margin = new Thickness(UrbeTokens.Space.Xxs, 0), LastChildFill = true };
+        bar.PropertyChanged += (_, e) =>
+        {
+            if (e.Property != BoundsProperty) return;
+            bool compact = bar.Bounds.Width < CompactHeaderWidth;
+            _segment.IsVisible = !compact;
+            _modeToggle.IsVisible = compact;
+        };
         DockPanel.SetDock(back, Dock.Left);
         DockPanel.SetDock(right, Dock.Right);
         bar.Children.Add(back);

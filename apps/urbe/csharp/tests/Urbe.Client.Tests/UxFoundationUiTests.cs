@@ -118,7 +118,8 @@ public sealed partial class HeadlessUiTests
         Dispatcher.UIThread.RunJobs();
         Assert.True(view.Editor.IsVisible);
         Assert.Equal(1, view.Editor.Opacity);   // reduced motion in tests: the overlay is there at once
-        foreach (var name in new[] { "Fonte", "Mais ações", "Voltar" })
+        // on a phone Visual/Fonte is one button (CST-105/106: the title needs the room)
+        foreach (var name in new[] { "Mudar para Fonte", "Mais ações", "Voltar" })
         {
             var b = Named(view.Editor, name);
             var p = Centre(b, window);

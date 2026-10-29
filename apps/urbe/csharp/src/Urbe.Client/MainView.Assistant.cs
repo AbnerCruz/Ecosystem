@@ -48,7 +48,8 @@ public sealed partial class MainView : IAssistantApp
         _assistantLauncher.Opacity = .9;
         Avalonia.Automation.AutomationProperties.SetName(_assistantLauncher, "Abrir Assistente");
         ToolTip.SetTip(_assistantLauncher, "Assistente");
-        _assistantLauncher.Click += (_, _) => ToggleAssistant();
+        // like the editor's own button: the block being written is in the text the Assistente sees
+        _assistantLauncher.Click += (_, _) => { if (Editor.IsVisible) Editor.FinishEditing(); ToggleAssistant(); };
 
         _assistantMini.Background = UrbeTheme.Brush(UrbeTheme.Surface2, .98);
         _assistantMini.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2);

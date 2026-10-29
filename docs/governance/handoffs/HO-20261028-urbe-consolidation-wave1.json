@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261028-urbe-consolidation-wave1",
   "category": "HANDOFF",
-  "timestamp": "2026-10-29T00:04:43Z",
+  "timestamp": "2026-10-29T00:13:00Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -81,6 +81,7 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/QuestionProgressUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/QuickVoiceBacklogUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/RunMetricsUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/UxFoundationUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/VoiceBacklogBusyTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AgentLanguageTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantAuthorshipSealTests.cs",
@@ -133,7 +134,8 @@
     "CST-025: horário da última edição de cada bloco, derivado das Versões anteriores (sem nova fonte de dados), opcional em Personalização → Editor.",
     "CST-115: cartão de perguntas com compreensão declarada, dúvidas em aberto e mudança desde a pergunta anterior.",
     "CST-044/046/050: modelos .modelo.md, aviso e conversão de [colchetes] em campos, Preencher no editor.",
-    "CST-094/095/096: métrica de execução útil (tempos separados por provedor, ferramentas e aprovação; trabalho, retrabalho e conferência; resumo por agente), local, sem conteúdo, desligável."
+    "CST-094/095/096: métrica de execução útil (tempos separados por provedor, ferramentas e aprovação; trabalho, retrabalho e conferência; resumo por agente), local, sem conteúdo, desligável.",
+    "CST-105/106: título do editor volta a aparecer no celular (Visual/Fonte num botão só em telas estreitas); o botão flutuante do Assistente fecha o bloco em edição antes de abrir."
   ],
   "verification": [
     {
