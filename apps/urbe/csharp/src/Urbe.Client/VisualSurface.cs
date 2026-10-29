@@ -80,6 +80,20 @@ public sealed class VisualSurface : StackPanel
     /// <summary>The drawn block that starts at <paramref name="start"/> in the text, or null (tests, the host).</summary>
     public Control? BlockView(int start) => _holders.GetValueOrDefault(start);
 
+    /// <summary>The block that holds <paramref name="offset"/> of the text comes on screen, at the top.</summary>
+    public void RevealOffset(int offset)
+    {
+        var block = _blocks.LastOrDefault(b => b.Start <= offset) ?? _blocks.FirstOrDefault();
+        if (block is null || _holders.GetValueOrDefault(block.Start) is not { } holder) return;
+        RevealedBlock = block.Start;
+        if (holder.FindAncestorOfType<ScrollViewer>() is { } scroll && holder.TranslatePoint(new Point(0, 0), scroll) is { } at)
+            scroll.Offset = new Vector(scroll.Offset.X, Math.Max(0, scroll.Offset.Y + at.Y - 12));
+        else holder.BringIntoView();
+    }
+
+    /// <summary>The block <see cref="RevealOffset"/> last brought on screen (tests).</summary>
+    public int? RevealedBlock { get; private set; }
+
     /// <summary>The blocks of the note as drawn (their start in the text, in order).</summary>
     public IReadOnlyList<int> BlockStarts => _blocks.Select(b => b.Start).ToList();
 

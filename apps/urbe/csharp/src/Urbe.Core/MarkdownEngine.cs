@@ -122,9 +122,15 @@ public static partial class MarkdownEngine
         text = WikiPattern().Replace(text, match =>
         {
             var target = match.Groups[1].Value.Trim();
-            var label = match.Groups[2].Success ? match.Groups[2].Value.Trim() : target;
-            return Store("<span class=\"wikilink\" data-note-name=\"" +
-                         EscapeHtml(target) + "\">" + EscapeHtml(label) + "</span>");
+            // CST-120: [[Nota#Título]], [[Nota#^id]] and [[#Título]] (this note) lead to that part, shown "Nota › Título"
+            var fragment = match.Groups[2].Success ? match.Groups[2].Value.Trim() : "";
+            if (target.Length == 0 && fragment.Length <= 1) return match.Value;
+            // "[[Com #hash]]" (a space before #) stays text, as in the 1.8.4
+            if (fragment.Length > 0 && match.Groups[1].Value.Length > 0 && char.IsWhiteSpace(match.Groups[1].Value[^1])) return match.Value;
+            var label = match.Groups[3].Success ? match.Groups[3].Value.Trim()
+                : fragment.Length > 1 ? (target.Length > 0 ? target + " › " : "") + fragment[1..].Replace("#", " › ") : target;
+            return Store("<span class=\"wikilink\" data-note-name=\"" + EscapeHtml(target) + "\"" +
+                         (fragment.Length > 1 ? " data-fragment=\"" + EscapeHtml(fragment) + "\"" : "") + ">" + EscapeHtml(label) + "</span>");
         });
 
         text = ImagePattern().Replace(text, match =>
@@ -730,7 +736,7 @@ public static partial class MarkdownEngine
     private static partial Regex FrontmatterListItemPattern();
     [GeneratedRegex(@"\x60([^\x60\n]+)\x60", RegexOptions.CultureInvariant)]
     private static partial Regex InlineCodePattern();
-    [GeneratedRegex(@"\[\[([^\]|#]+)(?:\|([^\]]+))?\]\]", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\[\[([^\]|#]*)(#[^\]|]*)?(?:\|([^\]]+))?\]\]", RegexOptions.CultureInvariant)]
     private static partial Regex WikiPattern();
     [GeneratedRegex(@"!\[([^\]]*)\]\(([^)\s]+)(?:\s+""[^""]*"")?\)", RegexOptions.CultureInvariant)]
     private static partial Regex ImagePattern();

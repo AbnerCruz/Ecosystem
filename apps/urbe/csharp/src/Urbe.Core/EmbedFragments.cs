@@ -47,6 +47,31 @@ public static partial class EmbedFragments
         return new(string.Join("\n", lines[start..end]).TrimEnd(), null);
     }
 
+    /// <summary>
+    /// CST-120: the line (from 1) a link's fragment leads to — the heading (a path of headings narrows, as in an
+    /// embed) or the line that ends with <c> ^id</c>; null when the note has no such part.
+    /// </summary>
+    public static int? LineOf(string markdown, string fragment)
+    {
+        var lines = markdown.Replace("\r\n", "\n").Split('\n');
+        fragment = fragment.Trim().TrimStart('#');
+        if (fragment.StartsWith('^'))
+        {
+            var code = CodeLines(lines);
+            var marker = " ^" + fragment[1..];
+            for (int i = 0; i < lines.Length; i++)
+                if (!code[i] && lines[i].TrimEnd().EndsWith(marker, StringComparison.Ordinal)) return i + 1;
+            return null;
+        }
+        int start = 0, end = lines.Length;
+        foreach (var name in fragment.Split('#', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (Heading(lines, start, end, name) is not { } found) return null;
+            (start, end) = found;
+        }
+        return start + 1;
+    }
+
     /// <summary>The section [start, end) of the first heading named <paramref name="name"/> between the two lines.</summary>
     private static (int Start, int End)? Heading(string[] lines, int from, int to, string name)
     {

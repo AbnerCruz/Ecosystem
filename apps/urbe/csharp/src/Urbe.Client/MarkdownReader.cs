@@ -72,8 +72,7 @@ public sealed partial class MarkdownReader
             {
                 var t = c.Text.Trim();
                 if (t.Length == 0) continue;
-                // CST-064: the 1.8.4 renderer (kept as its goldens prove) makes no link of [[Nota#Título]]; such an
-                // embed arrives as its own text and is still a card
+                // CST-064: an embed the renderer leaves as text (as "[[Com #hash]]", the 1.8.4's) is still a card
                 if (!bang && FragmentEmbeds().Match(t) is { Success: true } plain)
                 {
                     found.AddRange(plain.Groups[1].Captures.Select(x => x.Value.Trim()));
@@ -84,7 +83,8 @@ public sealed partial class MarkdownReader
             }
             else if (c.Tag == "span" && c.HasClass("wikilink") && bang && c.Attr("data-note-name") is { Length: > 0 } name)
             {
-                found.Add(name);
+                // ![[Nota#Título]] is now a link span too (CST-120): the part goes with the name
+                found.Add(name + c.Attr("data-fragment"));
                 bang = false;
             }
             else return null;
@@ -356,7 +356,8 @@ public sealed partial class MarkdownReader
                 if (st.Bold) run.FontWeight = FontWeight.Bold;
                 if (st.Italic) run.FontStyle = FontStyle.Italic;
                 into.Add(run); length += inner.Length;
-                State(host).Wiki.Add((start, inner.Length, n.Attr("data-note-name")));
+                // CST-120: the part of the note goes with the name (Nota#Título, #Título)
+                State(host).Wiki.Add((start, inner.Length, n.Attr("data-note-name") + n.Attr("data-fragment")));
                 return;
             }
             case "span" when n.HasClass(NoteMarks.CommentClass):

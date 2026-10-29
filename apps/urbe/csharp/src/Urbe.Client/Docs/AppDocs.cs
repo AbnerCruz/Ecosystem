@@ -152,6 +152,7 @@ public static partial class AppDocs
         - A **Constelação** (a estrela no alto da Área de trabalho, ou ⋯ do Explorer) mostra todas as notas como um céu: cada projeto é uma névoa na sua cor. Arraste para passear, aproxime com a pinça ou a roda; toque numa estrela para ver as ligações dela e toque de novo para abrir. As posições ficam em `.urbe/constelacao.json`.
         - Tocar num link abre a nota. Se ela ainda não existe, o Urbe pergunta se quer **criar nota**. Um link para um arquivo que não é nota (`[[foto.png]]`) abre o visualizador.
         - As sugestões de `[[` e `![[` trazem as notas e qualquer arquivo do vault: imagens, PDF, áudio, vídeo, código, páginas e grafos.
+        - `[[Plano#Metas]]` leva direto ao título **Metas** da nota (aparece como “Plano › Metas”), `[[Plano#^meta]]` ao trecho que termina com ` ^meta`, e `[[#Metas]]` a um título da própria nota. O sumário também leva ao título no modo Visual.
 
         ## Incorporar
 

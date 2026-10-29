@@ -424,9 +424,13 @@ public static partial class VisualMarkdown
 
         if (element.HasClass("wikilink"))
         {
-            var target = element.Attribute("data-note-name") ?? inner;
+            var name = element.Attribute("data-note-name") ?? inner;
+            // CST-120: [[Nota#Título]] keeps its part, and its "Nota › Título" is not an alias
+            var fragment = element.Attribute("data-fragment") ?? "";
+            var target = name + fragment;
+            var shown = fragment.Length > 1 ? (name.Length > 0 ? name + " › " : "") + fragment[1..].Replace("#", " › ") : name;
             var label = inner.Trim();
-            return label.Length > 0 && !string.Equals(label, target, StringComparison.Ordinal)
+            return label.Length > 0 && !string.Equals(label, shown, StringComparison.Ordinal)
                 ? "[[" + target + "|" + label + "]]"
                 : "[[" + target + "]]";
         }

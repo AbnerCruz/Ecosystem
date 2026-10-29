@@ -395,6 +395,14 @@ public sealed class EditorOverlay : Grid
     public ConnectionsPanel Connections { get; } = new();
 
     /// <summary>The outline's tap: the caret at the start of that line of the text, focused.</summary>
+    /// <summary>The heading or block a link names, in the note open (the caret there and, in Visual, its block on screen).</summary>
+    public bool RevealFragment(string fragment)
+    {
+        if (EmbedFragments.LineOf(Editor.Text ?? "", fragment) is not { } line) return false;
+        GoToLine(line);
+        return true;
+    }
+
     private void GoToLine(int line)
     {
         var text = Editor.Text ?? "";
@@ -407,6 +415,8 @@ public sealed class EditorOverlay : Grid
         }
         pos = Math.Min(pos, text.Length);
         Editor.SelectionStart = Editor.SelectionEnd = Editor.CaretIndex = pos;
+        // in Visual the block of that line comes on screen too (the outline and the links to a heading)
+        if (Mode == EditorMode.Visual) _visual.RevealOffset(pos);
         if (KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid()) && Mode == EditorMode.Fonte) Editor.Focus();
     }
 
@@ -1713,6 +1723,13 @@ public sealed class EditorOverlay : Grid
     /// <summary>bindPreviewWikiLinks: open the note a wikilink names (exact path/title, else the single case-insensitive title match).</summary>
     public async Task FollowLinkAsync(string name)
     {
+        // CST-120: [[Nota#Título]] / [[Nota#^id]] open the note at that part; [[#Título]] is a part of this note
+        var (linkTarget, fragment) = EmbedFragments.Split(name);
+        if (fragment is not null)
+        {
+            if (linkTarget.Length == 0) { if (!RevealFragment(fragment)) Notify("Esta nota não tem “" + fragment + "”."); return; }
+            name = linkTarget;
+        }
         var all = Notes?.Invoke().ToList() ?? [];
         var exact = all.FirstOrDefault(n => string.Equals(n.Path, name, StringComparison.Ordinal) || string.Equals(n.Path, name + ".md", StringComparison.Ordinal));
         var matches = all.Where(n => string.Equals(n.Name, name, StringComparison.OrdinalIgnoreCase)).ToList();
@@ -1724,7 +1741,12 @@ public sealed class EditorOverlay : Grid
             if (byAlias.Count == 1) target = byAlias[0];
             else if (byAlias.Count > 1) { Notify("Alias ambíguo: mais de uma nota usa “" + name + "”."); return; }
         }
-        if (target is not null) { await NavigateAsync(target); return; }
+        if (target is not null)
+        {
+            await NavigateAsync(target);
+            if (fragment is not null && !RevealFragment(fragment)) Notify("A nota abriu, mas não tem “" + fragment + "”.");
+            return;
+        }
         if (matches.Count > 1) { Notify("Link ambíguo: use o caminho da nota."); return; }
         // CST-041: a link to a file that is not a note opens the file, never a new note named after it
         if (Files?.Invoke() is { } files && WikiTargets.ResolveFile(name, files) is { } file)
