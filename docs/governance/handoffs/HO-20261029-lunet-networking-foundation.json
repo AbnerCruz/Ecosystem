@@ -34,12 +34,6 @@
   ],
   "verification": [
     {
-      "check": "Leitura do código e contratos no GitHub",
-      "kind": "manual",
-      "result": "passed",
-      "evidence": "https://github.com/AbnerCruz/Ecosystem/tree/feat/lunet-networking-foundation-20261029/apps/lunet2d"
-    },
-    {
       "check": "Lunet .NET tests",
       "kind": "automated",
       "result": "pending"
@@ -57,7 +51,9 @@
     {
       "check": "Dois aparelhos reais LAN/Android",
       "kind": "human",
-      "result": "pending"
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/networking-foundation.md",
+      "critical": false
     }
   ],
   "known_issues": [
