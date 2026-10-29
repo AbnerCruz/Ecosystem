@@ -65,9 +65,10 @@
     {
       "check": "Decisão arquitetural ADR-0044 para exceção estreita de ponte de conteúdo",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "docs/adr/0044-urbe-atlas-map-host.md",
-      "critical": true
+      "critical": true,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-28 (Issue https://github.com/AbnerCruz/Ecosystem/issues/850); registro em docs/governance/responses/VAL-HO-20261027-urbe-atlas-map-host-f0e8a09b9d8a.md."
     }
   ],
   "known_issues": [
