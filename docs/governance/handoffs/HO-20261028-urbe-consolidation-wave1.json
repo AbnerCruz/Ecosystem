@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261028-urbe-consolidation-wave1",
   "category": "HANDOFF",
-  "timestamp": "2026-10-28T19:06:24Z",
+  "timestamp": "2026-10-29T00:04:43Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -19,6 +19,7 @@
     "apps/urbe/csharp/src/Urbe.Android/VoiceNoteService.cs",
     "apps/urbe/csharp/src/Urbe.Android/VoiceSpeech.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Costs.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
     "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
@@ -79,6 +80,7 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/PageImagesUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/QuestionProgressUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/QuickVoiceBacklogUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/RunMetricsUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/VoiceBacklogBusyTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AgentLanguageTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantAuthorshipSealTests.cs",
@@ -89,6 +91,7 @@
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantMultimodalQuestionTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantReviewAnswerTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantRunHostTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantRunMetricsTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantStaleRewriteTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/BlockTimesTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/EmbedFragmentsTests.cs",
@@ -129,14 +132,15 @@
     "CST-068: edit_graph — agentes criam e alteram grafos com aprovação em texto, sem sobrescrever grafo aberto com alterações.",
     "CST-025: horário da última edição de cada bloco, derivado das Versões anteriores (sem nova fonte de dados), opcional em Personalização → Editor.",
     "CST-115: cartão de perguntas com compreensão declarada, dúvidas em aberto e mudança desde a pergunta anterior.",
-    "CST-044/046/050: modelos .modelo.md, aviso e conversão de [colchetes] em campos, Preencher no editor."
+    "CST-044/046/050: modelos .modelo.md, aviso e conversão de [colchetes] em campos, Preencher no editor.",
+    "CST-094/095/096: métrica de execução útil (tempos separados por provedor, ferramentas e aprovação; trabalho, retrabalho e conferência; resumo por agente), local, sem conteúdo, desligável."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1392 testes, 0 falhas (local, .NET 10.0.403); Urbe.Android compila (Debug)."
+      "evidence": "1397 testes, 0 falhas (local, .NET 10.0.403); Urbe.Android compila (Debug)."
     },
     {
       "check": "Validação no Android físico dos itens desta leva",

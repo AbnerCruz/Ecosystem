@@ -57,5 +57,29 @@ public sealed partial class AssistantPanel
                 Wrap(cost, 12, UrbeTheme.Text2)));
         }
         body.Children.Add(Hint("Não há um teto financeiro obrigatório. Consulte a fatura do provedor para conciliação."));
+        PerformanceSection(body);
+    }
+
+    /// <summary>
+    /// CST-096: each agent's runs in this vault, as the owner asked them measured: time (median, p90) with completion,
+    /// rework and checked edits. Only counts and durations, kept in the conversations of this device; can be turned off.
+    /// </summary>
+    private void PerformanceSection(StackPanel body)
+    {
+        var rows = new List<Control>();
+        var byAgent = _store.ListConversations().Where(c => c.Vault == _app.VaultName).GroupBy(c => c.AgentId);
+        foreach (var group in byAgent)
+        {
+            var stats = AiRunStats.Of(group.SelectMany(c => c.Runs));
+            if (stats.Runs == 0) continue;
+            var name = AgentNames.All(_cfg).FirstOrDefault(a => a.Id == group.Key) is { } agent ? AgentNames.CallName(agent, _cfg) : group.Key;
+            rows.Add(Wrap(name + ": " + stats.Describe(), 12, UrbeTheme.Text2));
+        }
+        if (rows.Count == 0) rows.Add(Wrap("Sem execuções medidas ainda.", 12, UrbeTheme.Text3));
+        var measure = new CheckBox { Content = "Medir execuções", IsChecked = _cfg.MeasureRuns, MinHeight = UrbeTokens.MinTouch };
+        measure.IsCheckedChanged += (_, _) => { _cfg.MeasureRuns = measure.IsChecked == true; SaveConfig(); };
+        rows.Add(measure);
+        rows.Add(Hint("Guarda só tempos e contagens de cada execução (modelo, ferramentas, espera pela sua aprovação, chamadas, falhas, edições e conferências), nunca o conteúdo das notas ou dos pedidos. Fica neste aparelho, dentro de cada conversa, e some quando a conversa é apagada."));
+        body.Children.Add(Section("Desempenho por agente", [.. rows]));
     }
 }

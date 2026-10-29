@@ -15,11 +15,88 @@ public static class AssistantExecutionEfficiency
     };
 }
 
+/// <summary>
+/// What one run did and where its time went (CST-094/095). Only counts and durations: never the content of notes,
+/// prompts or answers. Kept in the conversation's own run record, so it lives and goes with the conversation.
+/// Time not measured is never estimated: there is no "reasoning time", only waiting for the provider.
+/// </summary>
 public sealed class AiExecutionMetrics
 {
     public int ReusedReads { get; set; }
     public int NoOpWrites { get; set; }
     public long ContextCharsSaved { get; set; }
+    /// <summary>From the start of the run to its end, ms (0: a run recorded before these measures).</summary>
+    public long TotalMs { get; set; }
+    /// <summary>Until the first change was written, or the answer when nothing was changed.</summary>
+    public long? FirstUsefulMs { get; set; }
+    /// <summary>Waiting for the model's provider (network and generation), summed over its calls.</summary>
+    public long ProviderMs { get; set; }
+    /// <summary>The tools running, without the time spent waiting for the person's approval.</summary>
+    public long ToolMs { get; set; }
+    public long ApprovalMs { get; set; }
+    public int ModelCalls { get; set; }
+    public int ToolCalls { get; set; }
+    public int ToolFailures { get; set; }
+    public int Rejected { get; set; }
+    /// <summary>Calls identical to one that had already failed.</summary>
+    public int Repeats { get; set; }
+    /// <summary>Tool calls that changed files.</summary>
+    public int Edits { get; set; }
+    /// <summary>Files written in the run that the agent read again afterwards (a check of what was saved).</summary>
+    public int Verified { get; set; }
+    /// <summary>The run ended by itself with an answer (not interrupted, cut, looping or failed).</summary>
+    public bool Completed { get; set; }
+
+    /// <summary>The line under a run: where the time went and what was done, as measured (null for an unmeasured run).</summary>
+    public string? Describe()
+    {
+        if (TotalMs <= 0) return null;
+        var parts = new List<string> { "Levou " + AiRunStats.Seconds(TotalMs) };
+        if (ProviderMs > 0) parts.Add("modelo " + AiRunStats.Seconds(ProviderMs));
+        if (ToolMs > 0) parts.Add("ferramentas " + AiRunStats.Seconds(ToolMs));
+        if (ApprovalMs > 0) parts.Add("aguardando você " + AiRunStats.Seconds(ApprovalMs));
+        if (ToolCalls > 0)
+            parts.Add(ToolCalls + (ToolCalls == 1 ? " chamada" : " chamadas") +
+                      (ToolFailures + Repeats > 0 ? ", " + (ToolFailures + Repeats) + (ToolFailures + Repeats == 1 ? " falhou" : " falharam") : "") +
+                      (Rejected > 0 ? ", " + Rejected + (Rejected == 1 ? " recusada" : " recusadas") : ""));
+        if (Edits > 0) parts.Add(Edits + (Edits == 1 ? " edição" : " edições") + ", " + Verified + (Verified == 1 ? " arquivo conferido" : " arquivos conferidos"));
+        return string.Join(" · ", parts);
+    }
+
+    /// <summary>Without the measures (CST-094 turned off): only the counters kept since before them.</summary>
+    public AiExecutionMetrics CountersOnly() => new() { ReusedReads = ReusedReads, NoOpWrites = NoOpWrites, ContextCharsSaved = ContextCharsSaved };
+}
+
+/// <summary>
+/// CST-096: many runs together, as the owner asked: latency (median and p90) read with completion, rework and
+/// checked work, never speed alone. Runs recorded before the measures are left out.
+/// </summary>
+public sealed record AiRunStats(int Runs, long MedianMs, long P90Ms, double Completion, double FailuresPerRun, double? VerifiedShare)
+{
+    public static AiRunStats Of(IEnumerable<AiRunRecord> runs)
+    {
+        var measured = runs.Where(r => r.Efficiency.TotalMs > 0).ToList();
+        if (measured.Count == 0) return new(0, 0, 0, 0, 0, null);
+        var times = measured.Select(r => r.Efficiency.TotalMs).OrderBy(t => t).ToList();
+        long median = times.Count % 2 == 1 ? times[times.Count / 2] : (times[times.Count / 2 - 1] + times[times.Count / 2]) / 2;
+        long p90 = times[Math.Clamp((int)Math.Ceiling(times.Count * 0.9) - 1, 0, times.Count - 1)];
+        int edits = measured.Sum(r => r.Efficiency.Edits);
+        return new(measured.Count, median, p90,
+            measured.Count(r => r.Efficiency.Completed) / (double)measured.Count,
+            measured.Sum(r => r.Efficiency.ToolFailures + r.Efficiency.Repeats) / (double)measured.Count,
+            edits == 0 ? null : Math.Min(1, measured.Sum(r => r.Efficiency.Verified) / (double)edits));
+    }
+
+    public string Describe() => Runs == 0 ? "Sem execuções medidas ainda." :
+        Runs + (Runs == 1 ? " execução" : " execuções") + " · mediana " + Seconds(MedianMs) + " · p90 " + Seconds(P90Ms) +
+        " · " + Percent(Completion) + " concluídas · " + FailuresPerRun.ToString("0.#", System.Globalization.CultureInfo.GetCultureInfo("pt-BR")) + " falhas por execução" +
+        (VerifiedShare is { } v ? " · " + Percent(v) + " das edições conferidas" : "");
+
+    public static string Seconds(long ms) => ms < 60_000
+        ? (ms / 1000.0).ToString("0.#", System.Globalization.CultureInfo.GetCultureInfo("pt-BR")) + " s"
+        : ms / 60_000 + " min " + ms % 60_000 / 1000 + " s";
+
+    private static string Percent(double share) => Math.Round(share * 100) + "%";
 }
 
 public static partial class AssistantTools

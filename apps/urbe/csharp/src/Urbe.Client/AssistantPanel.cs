@@ -902,7 +902,7 @@ public sealed partial class AssistantPanel : Border
                 Tools = conv.OriginConversationId is null ? availableTools : availableTools.Where(t => t.Name != "consult_agent").ToList()
             });
             run.Changes = r.Changes;
-            run.Efficiency = r.Efficiency;
+            run.Efficiency = _cfg.MeasureRuns ? r.Efficiency : r.Efficiency.CountersOnly();
             run.Stopped = r.Stopped;
             run.Error = r.Error;
             conv.Usage = AiUsage.Add(conv.Usage, r.Usage);

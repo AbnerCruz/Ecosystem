@@ -629,6 +629,11 @@ public static class AssistantAgent
         int readChars = (int)Math.Max(16000, Math.Min(120000, Math.Floor(contextTokens * 3.2 * 0.2)));
         int resultLimit = Math.Max(ResultLimit, readChars + 4000);
         var result = new AiAgentResult();
+        // CST-094/095: where the run's time went and what it did (counts and durations only)
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var metrics = result.Efficiency;
+        var written = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var checkedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var host = new RunHost(o.Host, readChars, steps => { result.Plan = steps; emit(new AiAgentEvent("plan", Steps: steps)); }, o.MarkAiText);
         var tools = (o.Tools ?? AssistantTools.All).Where(t => AllowTool(agent, policy, t.Access)).ToList();
         if (agent.Delegate && !o.IsSubagent) tools.Add(Delegate);
@@ -692,7 +697,7 @@ public static class AssistantAgent
                     }, system, schemas, source, result.Efficiency, o.CountInputTokens)
                     : new AiRequest(o.Model, Prepare(SettlePast(source), budget, false), system, schemas,
                         o.MaxTokens is null or 0 ? 8192 : o.MaxTokens, o.Temperature);
-                res = await o.Stream(o.Provider, req, e =>
+                res = await TimedStream(o.Provider, req, e =>
                 {
                     switch (e.Type)
                     {
@@ -914,7 +919,19 @@ public static class AssistantAgent
                 }
             }
         }
+        metrics.TotalMs = clock.ElapsedMilliseconds;
+        metrics.FirstUsefulMs ??= metrics.TotalMs;
+        metrics.Repeats = repeats;
+        metrics.Verified = checkedFiles.Count;
+        metrics.Completed = result.Stopped == "end" && result.Error is null;
         return result;
+
+        async Task<AiResult> TimedStream(AiProviderConfig provider, AiRequest request, Action<AiStreamEvent> on, CancellationToken token)
+        {
+            long start = clock.ElapsedMilliseconds;
+            try { return await o.Stream(provider, request, on, token); }
+            finally { lock (gate) { metrics.ProviderMs += clock.ElapsedMilliseconds - start; metrics.ModelCalls++; } }
+        }
 
         bool ParallelOk(AiChatBlock call) => byName.TryGetValue(call.Name, out var t) && t != Delegate && t.Access == "read";
 
@@ -954,8 +971,12 @@ public static class AssistantAgent
             }
             Out output;
             var target = WriteTarget(call, tool);
+            long toolStart = clock.ElapsedMilliseconds, approvalBefore;
+            lock (gate) approvalBefore = metrics.ApprovalMs;
             try { output = await Execute(call, tool); }
             catch (Exception error) { owner?.TrySetResult(new Out(error.Message, true)); throw; }
+            // the person's time deciding an approval is not the tool's
+            finally { lock (gate) metrics.ToolMs += Math.Max(0, clock.ElapsedMilliseconds - toolStart - (metrics.ApprovalMs - approvalBefore)); }
             owner?.TrySetResult(output);
             // a stale rewrite is refused until the agent reads again; the same call must work after that read
             if (output.IsError && output.Status is not "aborted" and not "rejected" and not "stale") lock (gate) failed[sig] = Slice(output.Content, 300);
@@ -972,6 +993,16 @@ public static class AssistantAgent
 
         void Track(AiChatBlock call, Out output, UrbeDocument? target)
         {
+            metrics.ToolCalls++;
+            if (output.Status == "rejected") metrics.Rejected++;
+            else if (output.IsError && output.Status != "aborted") metrics.ToolFailures++;
+            if (!output.IsError && output.Changes is { Count: > 0 } changed)
+            {
+                metrics.Edits++;
+                metrics.FirstUsefulMs ??= clock.ElapsedMilliseconds;
+                foreach (var c in changed) if ((c.After ?? c.Before)?.Path is { } p) written.Add(p);
+            }
+            foreach (var seen in output.Seen ?? []) if (written.Contains(seen.Path)) checkedFiles.Add(seen.Path);
             foreach (var seen in output.Seen ?? []) coverage.Read(seen);
             foreach (var change in output.IsError ? [] : output.Changes ?? [])
                 if (change.After is { } after && host.Documents.Get(after.Path) is { } now)
@@ -1053,7 +1084,9 @@ public static class AssistantAgent
             if (NeedsApproval(tool.Access, policy, runAllow))
             {
                 emit(new AiAgentEvent("tool_status", Call: call, Status: "waiting"));
+                long asked = clock.ElapsedMilliseconds;
                 var ans = o.Approve is not null ? await o.Approve(new AiApprovalRequest(call, tool, tool.Label(input), preview, tool.Access), cancel) : AiApproval.Approve;
+                lock (gate) metrics.ApprovalMs += clock.ElapsedMilliseconds - asked;
                 if (cancel.IsCancellationRequested) return new Out("Interrompido pelo usuário.", true, "aborted");
                 if (ans.Kind == "approve_all") runAllow = true;
                 else if (ans.Kind != "approve")
