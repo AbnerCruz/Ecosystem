@@ -6,7 +6,6 @@
     <DefineConstants>$(DefineConstants);STBSHARP_INTERNAL</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../Lunet.Networking/Lunet.Networking.csproj" />
     <PackageReference Include="Box2D.NET" Version="3.1.654" />
   </ItemGroup>
   <ItemGroup>
