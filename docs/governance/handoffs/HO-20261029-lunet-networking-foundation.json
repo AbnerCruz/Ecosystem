@@ -32,13 +32,16 @@
     "apps/lunet2d/tests/Lunet.Tests/Lunet.Tests.csproj",
     "apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj",
     "apps/lunet2d/runtime-template/Lunet.Game.Android.csproj",
-    "apps/lunet2d/runtime-template/Lunet.GameCode.csproj"
+    "apps/lunet2d/runtime-template/Lunet.GameCode.csproj",
+    "apps/lunet2d/src/Lunet.Framework/Physics/PhysicsWorld.cs",
+    "apps/lunet2d/tests/Lunet.Tests/PhysicsWorldTests.cs"
   ],
   "work_completed": [
     "Pesquisa comparativa de Godot, Mirror, Unity, FishNet, LiteNetLib, Gaffer e Android; limitações e antipadrões registrados",
     "Testes gravados antes da implementação: framing, ID do host, dois peers, estado, rejeição de estado forjado e API de compilador",
     "Projeto C# independente Lunet.Networking com API experimental TcpGameHost/TcpGameClient para tráfego TCP LAN confiável com filas limitadas e host autoritativo",
-    "Permissões de rede do APK standalone sem alterar formato de projeto nem dados antigos"
+    "Permissões de rede do APK standalone sem alterar formato de projeto nem dados antigos",
+    "Correção TDD da corrida em criação/destruição de mundos Box2D baseada no documento oficial (falha intermitente em CI de integração)"
   ],
   "verification": [
     {
@@ -69,7 +72,8 @@
     "Sem auth/TLS/rate limiting/relay, não seguro para internet pública",
     "Projeto Lunet.Networking criado, mas ainda sem INetworkTransport e sem aprovação CI/DEVICE",
     "Não há demonstração jogável Android entre dois dispositivos nem validação DEVICE",
-    "Blueprint de modos local, Bluetooth, online, MMO permanece pendente"
+    "Blueprint de modos local, Bluetooth, online, MMO permanece pendente",
+    "Nova execução de CI do teste concorrente e integração governada pendentes após correção da corrida Box2D."
   ],
   "blockers": [
     "CI e validação de aparelho pendentes antes de publicar release"
