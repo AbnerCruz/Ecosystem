@@ -1,12 +1,25 @@
 using System.Buffers.Binary;
 using System.Net;
 using Lunet.Networking;
+using Lunet.Compiler;
+using Lunet.Core;
 
 namespace Lunet.Tests;
 
 /// <summary>Primeiro gate de F7: transporte real, IDs do host, framing e proteção de memória.</summary>
 public sealed class NetworkingFoundationTests
 {
+    [Fact]
+    public void NetworkApi_IsVisibleToTheRealGameCompiler()
+    {
+        var compiler = new GameCompiler(new LoadedAssembliesReferenceProvider(typeof(Lunet.Game).Assembly));
+        var game = "using Lunet; using Lunet.Networking; public sealed class OnlineGame : Game { " +
+            "private TcpGameClient? _client; protected override void Update(GameTime time) { " +
+            "if (_client is not null && _client.TryReceive(out var msg)) { _ = msg.Payload.Length; } } }";
+        var result = compiler.Compile("online_game", [new SourceFile("Game.cs", game)]);
+        Assert.True(result.Success, string.Join("\\n", result.Diagnostics));
+    }
+
     [Fact]
     public async Task TcpHost_TwoClients_ReceivesInputsWithServerAssignedIdentity_AndBroadcastsState()
     {
