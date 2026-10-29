@@ -176,6 +176,22 @@ public static partial class AppDocs
 
         Vale `+ - * / ^`, parênteses, `2x` e `3(x+1)`, `pi` e `e`, e as funções `sin` (ou `sen`), `cos`, `tan`, `sqrt` (ou `raiz`), `abs`, `ln`, `log`, `exp`, entre outras. Sem a linha `y:`, a altura se ajusta às curvas. Uma linha que não dá para ler aparece em vermelho embaixo do gráfico, e as outras continuam desenhadas. Toque no gráfico para editar o texto. Nas páginas, ele sai como imagem.
 
+        ### Parâmetros e movimentos
+
+        Uma linha como `a = 2 em 0..5` cria um **parâmetro**: um controle deslizante embaixo do gráfico. As curvas acompanham enquanto você arrasta, e a nota guarda o valor onde você soltar. Sem `em`, o controle vai de -10 a 10. Nomes juntos se multiplicam: `ax` é `a·x`.
+
+        Uma curva **paramétrica** é escrita como `(x(t), y(t))`, com `t:` para o intervalo (sem ele, de 0 a 2π). Assim dá para desenhar movimentos, como um lançamento:
+
+        ```
+        título: Lançamento
+        v = 10 em 0..30
+        θ = pi/4
+        g = 9,8
+        (v cos(θ) t, v sin(θ) t - g t^2/2)
+        t: 0..1,44
+        y: 0..6
+        ```
+
         ## Marcas do Urbe
 
         São texto comum no arquivo, então a nota continua legível em qualquer editor:

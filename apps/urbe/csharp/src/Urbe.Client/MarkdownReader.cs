@@ -41,6 +41,9 @@ public sealed partial class MarkdownReader
     public Action<string>? WikiLinkTapped { get; set; }
     /// <summary>A task checkbox was toggled: index of the list line inside the block, new state.</summary>
     public Action<int, bool>? TaskToggled { get; set; }
+
+    /// <summary>CST-069: a graph's slider let go (parameter name, value); null where the note cannot change.</summary>
+    public Action<string, double>? PlotParameterChanged { get; set; }
     /// <summary>A formula was tapped: its index among the formulas of this text, in order (math/editor.js: a click on .umath
     /// opens the pane to edit it).</summary>
     public Action<int>? MathTapped { get; set; }
@@ -512,7 +515,13 @@ public sealed partial class MarkdownReader
         var code = string.Concat(pre.Children.Select(Plain));
         // CST-069: a ```grafico block is drawn as its graph; a tap edits its text like any block
         if (FunctionPlot.IsPlotLanguage(pre.Attr("data-lang")))
-            return new Ui.FunctionPlotView(FunctionPlot.Parse(code), Size) { Margin = new Thickness(0, Size * .6) };
+        {
+            var plot = FunctionPlot.Parse(code);
+            // with parameters, their sliders come under it (a read-only view moves them without writing)
+            if (plot.Parameters.Count > 0)
+                return new Ui.FunctionPlotPanel(plot, Size) { Margin = new Thickness(0, Size * .6), ParameterChanged = PlotParameterChanged };
+            return new Ui.FunctionPlotView(plot, Size) { Margin = new Thickness(0, Size * .6) };
+        }
         return new Ui.CodeBlockView(code, pre.Attr("data-lang"), Size * .88)
         {
             Margin = new Thickness(0, Size)

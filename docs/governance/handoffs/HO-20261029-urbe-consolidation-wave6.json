@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261029-urbe-consolidation-wave6",
   "category": "HANDOFF",
-  "timestamp": "2026-10-29T02:08:59Z",
+  "timestamp": "2026-10-29T02:15:29Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -71,7 +71,8 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/OutsideChangeSaveUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultStorageTests.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Forwarding.cs",
-    "apps/urbe/csharp/tests/Urbe.Client.Tests/ConsultForwardingUiTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ConsultForwardingUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/FunctionPlotParametersTests.cs"
   ],
   "work_completed": [
     "CST-115: cartão de perguntas com compreensão declarada, dúvidas em aberto e mudança desde a pergunta anterior.",
@@ -86,7 +87,8 @@
     "CST-008 (segunda parte): renderizações completas não esperam mais por qualquer seleção no chat; a seleção é mantida/levada ao texto refeito, e só uma seleção em curso numa vista que sai segura a atualização por até 1,5 s.",
     "CST-094 (correção do CI): execução medida em menos de 1 ms registrava TotalMs 0, marca de execução sem medida; agora vale no mínimo 1 ms.",
     "CST-005: mudança externa em qualquer arquivo não bloqueia mais a gravação da nota (relê e salva); se a própria nota mudou fora, as duas versões ficam (cópia de conflito), nada sobrescrito.",
-    "CST-091: pergunta, formulário e aprovação do especialista consultado aparecem na conversa que consultou; a resposta volta ao especialista sem troca manual."
+    "CST-091: pergunta, formulário e aprovação do especialista consultado aparecem na conversa que consultou; a resposta volta ao especialista sem troca manual.",
+    "CST-069 (parte 2): parâmetros com controle deslizante (curvas ao vivo, valor gravado ao soltar), curvas paramétricas (física: lançamento) e produtos implícitos entre nomes."
   ],
   "verification": [
     {

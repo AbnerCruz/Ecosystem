@@ -13,10 +13,29 @@ public sealed record PlotDrawing(string? Title, double XMin, double XMax, double
 /// <c>y = sin(x)</c> or <c>f(x) = x^2/4</c> (a function), <c>x: -6..6</c> and <c>y: -2..4</c> (the ranges; without y the
 /// curves are fitted), <c>título: Ondas</c>. Expressions are read by a small closed evaluator — numbers, x, + - * / ^,
 /// parentheses, implicit products (2x, 3(x+1)) and a fixed set of functions and constants: nothing is ever run.
+/// Parameters (<c>a = 2 em 0..5</c>) are numbers the editor shows as sliders, read by the curves as they move (Desmos
+/// does the same); <c>(cos(t), sin(t))</c> is a parametric curve over <c>t: 0..2pi</c>, for movements and other physics.
 /// </summary>
 public sealed class FunctionPlot
 {
-    public sealed record Function(string Source, Expression Expression, string Label);
+    /// <param name="ParametricX">x(t) for a parametric curve, whose <paramref name="Expression"/> is y(t).</param>
+    public sealed record Function(string Source, Expression Expression, string Label, Expression? ParametricX = null);
+
+    /// <summary>A number of the graph the person moves (a slider); the curves read <see cref="Value"/> as they are drawn.</summary>
+    public sealed class Parameter(string name, double value, double min, double max)
+    {
+        public string Name { get; } = name;
+        public double Value { get; set; } = value;
+        public double Min { get; } = min;
+        public double Max { get; } = max;
+        /// <summary>The slider's step: a 200th of the range.</summary>
+        public double Step => (Max - Min) / 200;
+    }
+
+    public List<Parameter> Parameters { get; } = [];
+    public double TMin { get; private set; }
+    public double TMax { get; private set; } = 2 * Math.PI;
+    private bool _xGiven;
 
     public string? Title { get; private set; }
     public List<Function> Functions { get; } = [];
@@ -31,24 +50,66 @@ public sealed class FunctionPlot
     /// <summary>The code-block languages that are graphs.</summary>
     public static bool IsPlotLanguage(string? lang) => lang is not null && lang.Trim().ToLowerInvariant() is "grafico" or "gráfico" or "plot";
 
+    private static readonly System.Text.RegularExpressions.Regex ParameterLine =
+        new(@"^(?<lead>\s*)(?<name>\p{L}+)(?<eq>\s*=\s*)(?<value>.+?)(?<range>\s+(?:em|in)\s+.+?)?(?<trail>\s*)$");
+
+    private static bool IsParameterLine(string line, out System.Text.RegularExpressions.Match match)
+    {
+        match = ParameterLine.Match(line);
+        return match.Success && match.Groups["name"].Value is not ("x" or "X" or "y" or "Y" or "t");
+    }
+
     public static FunctionPlot Parse(string text)
     {
         var plot = new FunctionPlot();
         var lines = text.Replace("\r\n", "\n").Split('\n');
+        var parameters = new Dictionary<string, Parameter>(StringComparer.Ordinal);
+        // the parameters first, so a curve may use one written below it
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (!IsParameterLine(lines[i], out var m)) continue;
+            try
+            {
+                double value = Expression.Parse(m.Groups["value"].Value, constant: true).Evaluate(0);
+                if (!double.IsFinite(value)) throw new FormatException("o parâmetro precisa de um número");
+                double min, max;
+                if (m.Groups["range"].Success)
+                {
+                    (min, max) = Range(System.Text.RegularExpressions.Regex.Replace(m.Groups["range"].Value, @"^\s+(?:em|in)\s+", ""));
+                    if (value < min || value > max) throw new FormatException("o valor está fora do intervalo " + Format2(min) + ".." + Format2(max));
+                }
+                else (min, max) = Math.Abs(value) <= 10 ? (-10, 10) : (-2 * Math.Abs(value), 2 * Math.Abs(value));
+                var name = m.Groups["name"].Value;
+                if (parameters.ContainsKey(name)) throw new FormatException(name + " já foi definido");
+                var parameter = new Parameter(name, value, min, max);
+                parameters[name] = parameter;
+                plot.Parameters.Add(parameter);
+            }
+            catch (FormatException error) { plot.Errors.Add("Linha " + (i + 1) + ": " + error.Message); }
+        }
         for (int i = 0; i < lines.Length; i++)
         {
             var line = lines[i].Trim();
-            if (line.Length == 0 || line.StartsWith('#') || line.StartsWith("//", StringComparison.Ordinal)) continue;
+            if (line.Length == 0 || line.StartsWith('#') || line.StartsWith("//", StringComparison.Ordinal) || IsParameterLine(lines[i], out _)) continue;
             try
             {
                 var colon = line.IndexOf(':');
                 var key = colon > 0 ? line[..colon].Trim().ToLowerInvariant() : "";
                 if (key is "título" or "titulo" or "title") { plot.Title = line[(colon + 1)..].Trim(); continue; }
-                if (key is "x" or "y")
+                if (key is "x" or "y" or "t")
                 {
                     var (a, b) = Range(line[(colon + 1)..]);
-                    if (key == "x") { plot.XMin = a; plot.XMax = b; }
-                    else { plot.YMin = a; plot.YMax = b; }
+                    if (key == "x") { plot.XMin = a; plot.XMax = b; plot._xGiven = true; }
+                    else if (key == "y") { plot.YMin = a; plot.YMax = b; }
+                    else { plot.TMin = a; plot.TMax = b; }
+                    continue;
+                }
+                // (x(t), y(t)): a parametric curve
+                if (line.StartsWith('(') && line.EndsWith(')') && TopLevelComma(line[1..^1]) is int comma)
+                {
+                    var inside = line[1..^1];
+                    plot.Functions.Add(new Function(line, Expression.Parse(inside[(comma + 1)..], "t", parameters), line,
+                        Expression.Parse(inside[..comma], "t", parameters)));
                     continue;
                 }
                 var source = line;
@@ -60,12 +121,48 @@ public sealed class FunctionPlot
                         throw new FormatException("antes do = use y ou f(x)");
                     source = line[(eq + 1)..].Trim();
                 }
-                plot.Functions.Add(new Function(source, Expression.Parse(source), (eq >= 0 ? line[..eq].Trim() : "y") + " = " + source));
+                plot.Functions.Add(new Function(source, Expression.Parse(source, "x", parameters), (eq >= 0 ? line[..eq].Trim() : "y") + " = " + source));
             }
             catch (FormatException error) { plot.Errors.Add("Linha " + (i + 1) + ": " + error.Message); }
         }
         if (plot.Functions.Count == 0 && plot.Errors.Count == 0) plot.Errors.Add("Escreva uma função, como y = sin(x).");
         return plot;
+    }
+
+    /// <summary>The comma between x(t) and y(t): outside parentheses, and not a decimal comma (1,5).</summary>
+    private static int? TopLevelComma(string inside)
+    {
+        int depth = 0;
+        var found = new List<int>();
+        for (int k = 0; k < inside.Length; k++)
+        {
+            var c = inside[k];
+            if (c == '(') depth++;
+            else if (c == ')') depth--;
+            else if (c == ',' && depth == 0 && !(k > 0 && char.IsDigit(inside[k - 1]) && k + 1 < inside.Length && char.IsDigit(inside[k + 1]))) found.Add(k);
+        }
+        return found.Count == 1 ? found[0] : null;
+    }
+
+    /// <summary>
+    /// The text with parameter <paramref name="name"/> set to <paramref name="value"/> (a slider let go): only its
+    /// number changes, written with the note's decimal separator and spacing.
+    /// </summary>
+    public static string WithValue(string text, string name, double value)
+    {
+        var lines = text.Split('\n');
+        for (int i = 0; i < lines.Length; i++)
+        {
+            var line = lines[i].TrimEnd('\r');
+            if (!IsParameterLine(line, out var m) || m.Groups["name"].Value != name) continue;
+            var old = m.Groups["value"].Value;
+            var number = Math.Round(value, 4).ToString("0.####", CultureInfo.InvariantCulture);
+            if (old.Contains(',') && !old.Contains('.')) number = number.Replace('.', ',');
+            var at = m.Groups["value"].Index;
+            lines[i] = line[..at] + number + line[(at + old.Length)..] + (lines[i].EndsWith('\r') ? "\r" : "");
+            return string.Join('\n', lines);
+        }
+        return text;
     }
 
     private static (double, double) Range(string text)
@@ -81,25 +178,18 @@ public sealed class FunctionPlot
     public PlotDrawing Sample(int samples = 400)
     {
         samples = Math.Clamp(samples, 16, 4000);
-        var raw = Functions.Select(f => Enumerable.Range(0, samples + 1)
-            .Select(k => XMin + (XMax - XMin) * k / samples)
-            .Select(x => new PlotPoint(x, Safe(f.Expression, x))).ToList()).ToList();
+        var raw = Functions.Select(f => f.ParametricX is { } fx
+            ? Enumerable.Range(0, samples + 1).Select(k => TMin + (TMax - TMin) * k / samples)
+                .Select(t => new PlotPoint(Safe(fx, t), Safe(f.Expression, t))).ToList()
+            : Enumerable.Range(0, samples + 1).Select(k => XMin + (XMax - XMin) * k / samples)
+                .Select(x => new PlotPoint(x, Safe(f.Expression, x))).ToList()).ToList();
+        double xMin = XMin, xMax = XMax;
+        // parametric curves only and no x: the view fits them, as it does with y
+        if (!_xGiven && Functions.Count > 0 && Functions.All(f => f.ParametricX is not null))
+            (xMin, xMax) = Fit(raw.SelectMany(c => c).Select(p => p.X), null, null);
         double yMin, yMax;
-        if (YMin is { } lo && YMax is { } hi) (yMin, yMax) = (lo, hi);
-        else
-        {
-            // fitted to the curves, ignoring the extremes an asymptote throws up
-            var ys = raw.SelectMany(c => c).Select(p => p.Y).Where(double.IsFinite).OrderBy(y => y).ToList();
-            if (ys.Count == 0) (yMin, yMax) = (-1, 1);
-            else
-            {
-                double a = ys[(int)(ys.Count * .02)], b = ys[Math.Min(ys.Count - 1, (int)(ys.Count * .98))];
-                if (b - a < 1e-9) { a -= 1; b += 1; }
-                var pad = (b - a) * .08;
-                (yMin, yMax) = (YMin ?? a - pad, YMax ?? b + pad);
-            }
-        }
-        double span = yMax - yMin, middle = (yMin + yMax) / 2;
+        (yMin, yMax) = Fit(raw.SelectMany(c => c).Select(p => p.Y), YMin, YMax);
+        double span = yMax - yMin, middle = (yMin + yMax) / 2, xSpan = xMax - xMin, xMiddle = (xMin + xMax) / 2;
         var curves = new List<PlotCurve>();
         for (int c = 0; c < raw.Count; c++)
         {
@@ -108,9 +198,11 @@ public sealed class FunctionPlot
             PlotPoint? last = null;
             foreach (var p in raw[c])
             {
-                bool ok = double.IsFinite(p.Y) && Math.Abs(p.Y) < 1e12;
+                bool ok = double.IsFinite(p.Y) && Math.Abs(p.Y) < 1e12 && double.IsFinite(p.X) && Math.Abs(p.X) < 1e12;
                 // an asymptote: between two samples the curve leaps across the view from one side to the other
-                bool jump = ok && last is not null && Math.Abs(p.Y - last.Y) > span * 2 && Math.Sign(p.Y - middle) != Math.Sign(last.Y - middle);
+                bool jump = ok && last is not null &&
+                    (Math.Abs(p.Y - last.Y) > span * 2 && Math.Sign(p.Y - middle) != Math.Sign(last.Y - middle) ||
+                     Math.Abs(p.X - last.X) > xSpan * 2 && Math.Sign(p.X - xMiddle) != Math.Sign(last.X - xMiddle));
                 if (!ok || jump)
                 {
                     if (current.Count > 1) segments.Add(current);
@@ -124,7 +216,19 @@ public sealed class FunctionPlot
             if (current.Count > 1) segments.Add(current);
             curves.Add(new PlotCurve(c, Functions[c].Label, segments));
         }
-        return new PlotDrawing(Title, XMin, XMax, yMin, yMax, curves, Errors);
+        return new PlotDrawing(Title, xMin, xMax, yMin, yMax, curves, Errors);
+    }
+
+    /// <summary>A range fitted to the values, ignoring the extremes an asymptote throws up; a given end is kept.</summary>
+    private static (double, double) Fit(IEnumerable<double> values, double? min, double? max)
+    {
+        if (min is { } lo && max is { } hi) return (lo, hi);
+        var sorted = values.Where(double.IsFinite).OrderBy(v => v).ToList();
+        if (sorted.Count == 0) return (min ?? -1, max ?? 1);
+        double a = sorted[(int)(sorted.Count * .02)], b = sorted[Math.Min(sorted.Count - 1, (int)(sorted.Count * .98))];
+        if (b - a < 1e-9) { a -= 1; b += 1; }
+        var pad = (b - a) * .08;
+        return (min ?? a - pad, max ?? b + pad);
     }
 
     private static double Safe(Expression e, double x)
@@ -203,16 +307,42 @@ public sealed class FunctionPlot
 
         private static readonly Dictionary<string, double> Constants = new(StringComparer.OrdinalIgnoreCase) { ["pi"] = Math.PI, ["π"] = Math.PI, ["e"] = Math.E, ["tau"] = Math.Tau };
 
-        public static Expression Parse(string text)
+        /// <param name="variable">The variable the expression is of: x for a function, t for a parametric curve.</param>
+        /// <param name="parameters">The graph's parameters, read as they are when evaluated (the sliders).</param>
+        /// <param name="constant">A parameter's value: numbers and constants only.</param>
+        public static Expression Parse(string text, string variable = "x", IReadOnlyDictionary<string, Parameter>? parameters = null, bool constant = false)
         {
-            var parser = new Parser(text);
+            var parser = new Parser(text, variable, parameters, constant);
             var run = parser.Sum();
             parser.End();
             return new Expression(run);
         }
 
-        private sealed class Parser(string text)
+        private sealed class Parser(string text, string variable, IReadOnlyDictionary<string, Parameter>? parameters, bool constant)
         {
+            /// <summary>The variable, a parameter or a constant called <paramref name="name"/>, or null.</summary>
+            private Func<double, double>? Known(string name)
+            {
+                if (name == variable || variable == "x" && name == "X")
+                    return constant ? throw new FormatException("o parâmetro precisa de um número, sem " + variable) : v => v;
+                if (parameters is not null && parameters.TryGetValue(name, out var parameter)) return _ => parameter.Value;
+                if (Constants.TryGetValue(name, out var k)) return _ => k;
+                return null;
+            }
+
+            /// <summary>Names written together multiply (ax, 2ab, vt), as in Desmos: the longest known name first.</summary>
+            private Func<double, double>? Split(string name)
+            {
+                for (int length = name.Length - 1; length >= 1; length--)
+                {
+                    if (Known(name[..length]) is not { } head) continue;
+                    var rest = name[length..];
+                    if ((Known(rest) ?? Split(rest)) is not { } tail) continue;
+                    return v => head(v) * tail(v);
+                }
+                return null;
+            }
+
             private int _at;
 
             private char Peek() { Skip(); return _at < text.Length ? text[_at] : '\0'; }
@@ -324,20 +454,23 @@ public sealed class FunctionPlot
                             _at++;
                             return x => f(arg(x));
                         }
-                        if (name.Length > 1 && name.StartsWith('x') && Functions.TryGetValue(name[1..], out var g))
+                        // xsin(x), a sin(x) written together: the names before the function multiply it
+                        for (int length = 1; length < name.Length; length++)
                         {
+                            if (!Functions.TryGetValue(name[length..], out var g) || (Known(name[..length]) ?? Split(name[..length])) is not { } factor) continue;
                             _at++;
                             var arg = Sum();
-                            if (Peek() != ')') throw new FormatException("falta fechar o parêntese de " + name[1..]);
+                            if (Peek() != ')') throw new FormatException("falta fechar o parêntese de " + name[length..]);
                             _at++;
-                            return x => x * g(arg(x));
+                            return x => factor(x) * g(arg(x));
                         }
+                        // a(x + 1): a parameter times the parenthesis, read by the implicit product
+                        if ((Known(name) ?? Split(name)) is { } times) return times;
                         throw new FormatException("função desconhecida: " + name);
                     }
-                    if (name == "x" || name == "X") return x => x;
-                    if (Constants.TryGetValue(name, out var k)) return _ => k;
-                    if (name.All(ch => ch is 'x' or 'X')) { int n = name.Length; return x => Math.Pow(x, n); }
-                    throw new FormatException("\"" + name + "\" não é x, um número, uma constante (pi, e) nem uma função");
+                    if (Known(name) is { } known) return known;
+                    if (Split(name) is { } product) return product;
+                    throw new FormatException("\"" + name + "\" não é " + variable + ", um número, " + (parameters is { Count: > 0 } ? "um parâmetro, " : "") + "uma constante (pi, e) nem uma função");
                 }
                 throw new FormatException("não entendi \"" + c + "\"");
             }

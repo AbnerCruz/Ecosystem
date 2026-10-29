@@ -391,6 +391,7 @@ public sealed class VisualSurface : StackPanel
             EmbedFor = EmbedFor,
             // a task inside a container: the tap edits the block (its list lines are not the block's lines)
             TaskToggled = container ? null : (line, on) => ToggleTask(block, line, on),
+            PlotParameterChanged = container ? null : (name, value) => SetPlotParameter(block, name, value),
             MathTapped = index => _ = EditFormulaAsync(block.Start, index),
             CommentsTapped = index => _ = CommentsAsync(block.Start, index),
             AgentAsked = AgentAsked is null ? null : index => AskAgent(block.Start, index)
@@ -423,6 +424,18 @@ public sealed class VisualSurface : StackPanel
             });
         }
         return holder;
+    }
+
+    /// <summary>CST-069: a graph's slider was let go — only that parameter's number changes in the block.</summary>
+    private void SetPlotParameter(MarkdownBlock block, string name, double value)
+    {
+        if (_readOnly) return;
+        var source = _text[block.Start..block.End];
+        var changed = FunctionPlot.WithValue(source, name, value);
+        if (changed == source) return;
+        _text = _text[..block.Start] + changed + _text[block.End..];
+        TextEdited?.Invoke(_text);
+        Rebuild();
     }
 
     private void ToggleTask(MarkdownBlock block, int line, bool on)
