@@ -282,6 +282,8 @@ public static partial class AppDocs
 
         Funciona com o teclado do celular e com um teclado físico. Notas `.md` continuam com as teclas de Markdown (listas, tarefas).
 
+        O código aparece **em cores**: palavras-chave, textos entre aspas, números, comentários, tags e atributos do HTML, propriedades do CSS e chaves do JSON, YAML e TOML. Enquanto você digita, o texto fica na cor normal; as cores voltam um instante depois da pausa.
+
         ## Prévia ao vivo de um HTML
 
         Num arquivo `.html`, o seletor do topo do editor passa a ser **Prévia | Código**. Em **Prévia**, a página aparece ao lado do código (numa tela larga) ou no lugar dele (no celular), e acompanha o que você escreve: cada mudança aparece um instante depois, sem salvar e sem atualizar.

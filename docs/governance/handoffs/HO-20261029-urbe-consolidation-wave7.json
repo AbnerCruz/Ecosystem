@@ -33,6 +33,7 @@
     "apps/urbe/csharp/src/Urbe.Core/ArtifactModel.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAttachmentExtraction.cs",
     "apps/urbe/csharp/src/Urbe.Core/CodeEditing.cs",
+    "apps/urbe/csharp/src/Urbe.Core/CodeHighlighter.cs",
     "apps/urbe/csharp/src/Urbe.Core/ImageHeader.cs",
     "apps/urbe/csharp/src/Urbe.Core/LegacyHistory.cs",
     "apps/urbe/csharp/src/Urbe.Core/LivePreview.cs",
@@ -42,6 +43,7 @@
     "apps/urbe/csharp/src/Urbe.Core/VaultTextFiles.cs",
     "apps/urbe/csharp/src/Urbe.Core/VaultWriter.cs",
     "apps/urbe/csharp/src/Urbe.Core/WorkspaceIndex.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CodeColoursUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/CodeEditingUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/CompositionReconversionUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorLeaveTimingUiTests.cs",
@@ -52,6 +54,7 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/StartupEarlyNoteUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/WikiSuggestNoLimitUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/CodeEditingTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/CodeHighlighterTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/ImageHeaderTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyEditorToolsOracleTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyHistoryExportTests.cs",
@@ -73,14 +76,15 @@
     "Sem limitadores: vault sem teto de itens (10 000), profundidade (32), tamanho de texto (32 MB/256 MB) nem de importação (32 MB), no computador e no Android; prévia com texto de qualquer tamanho em partes, zip completo, imagem enorme decodificada na largura útil; busca do Explorer e lista do [[ sem corte.",
     "CST-141 (primeira entrega): arquivos de código do vault abrem e salvam (lista única VaultTextFiles); Prévia | Código num .html com página ao vivo (CSS, scripts, módulos, imagens, fetch/XHR do vault, erros dentro da página, isolada); no computador, Abrir no navegador com recarga automática (localhost). Conferido no Chromium.",
     "CST-141 (edição de código): Enter com indentação, Tab/Shift+Tab, chave de fechamento que recua, no passo do próprio arquivo; teclado do celular e físico.",
-    "Abertura imediata: a última nota é lida sozinha (PeekTextAsync, computador e Android) e aparece antes de a pasta inteira ser lida, só para leitura; depois vira editável onde está."
+    "Abertura imediata: a última nota é lida sozinha (PeekTextAsync, computador e Android) e aparece antes de a pasta inteira ser lida, só para leitura; depois vira editável onde está.",
+    "CST-141 (cores do código): realce de sintaxe por camada sob a caixa de texto (sem dependência nova, IME/toque inalterados), cores voltam depois da pausa; seletor Visual|Fonte só onde existe."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1539 testes, 0 falhas (local, .NET 10); os testes de limites falhavam antes da mudança; prévia ao vivo conferida no Chromium (Playwright) como o WebView a carrega; build Android Debug ok."
+      "evidence": "1546 testes, 0 falhas (local, .NET 10); os testes de limites falhavam antes da mudança; prévia ao vivo conferida no Chromium (Playwright) como o WebView a carrega; build Android Debug ok."
     },
     {
       "check": "Oráculos da 1.8.4: goldens Markdown e Visual, histórico e corpus do repositório (contra o markdown.js original com só inlineEmphasis trocado)",
@@ -95,7 +99,7 @@
       "evidence": "22 checks."
     },
     {
-      "check": "Android físico: sair do editor depois de ler e depois de editar uma nota longa num vault grande (moto g32); o texto não aparece em negrito sem marcação e a leitura é confortável no Visual e na Fonte; um vault grande (mais de 10 000 arquivos, imagens e áudios grandes) abre e salva no Android; Prévia de um .html no Android (página ao lado/no lugar do código, acompanha a digitação, erros no quadro da página); a última nota aparece logo ao abrir o app e vira editável quando a pasta termina de ser lida",
+      "check": "Android físico: sair do editor depois de ler e depois de editar uma nota longa num vault grande (moto g32); o texto não aparece em negrito sem marcação e a leitura é confortável no Visual e na Fonte; um vault grande (mais de 10 000 arquivos, imagens e áudios grandes) abre e salva no Android; Prévia de um .html no Android (página ao lado/no lugar do código, acompanha a digitação, erros no quadro da página); a última nota aparece logo ao abrir o app e vira editável quando a pasta termina de ser lida; cores do código alinhadas e sem atraso ao digitar",
       "kind": "human",
       "result": "pending",
       "object": "apps/urbe/docs/csharp/CONSOLIDATION.md",

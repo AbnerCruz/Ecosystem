@@ -141,6 +141,7 @@ public sealed class EditorOverlay : Grid
         Editor.MaxWidth = columnWidth;
         Editor.FontSize = codeSize;
         Editor.LineHeight = codeSize * lineHeight;
+        if (_highlight.IsVisible) ColourCode();
         _visual.ApplyText(textSize ?? _visual.TextSize, lineHeight);
         FitReadingColumn();
     }
@@ -319,7 +320,9 @@ public sealed class EditorOverlay : Grid
         _propertiesText.LineHeight = 16.5;
         _propertiesText.TextWrapping = TextWrapping.Wrap;
         // the text column fills the width up to the column size (the textarea is width:100%)
-        _sourceColumn = new StackPanel { Children = { _properties, Editor, _wiki }, HorizontalAlignment = HorizontalAlignment.Stretch };
+        // CST-141: the colours of code sit under the text, glyph for glyph (the text itself goes transparent over them)
+        var codeText = new Grid { Children = { _highlight, Editor } };
+        _sourceColumn = new StackPanel { Children = { _properties, codeText, _wiki }, HorizontalAlignment = HorizontalAlignment.Stretch };
         _sourceScroll = Column(_sourceColumn);
         // the properties form is the first thing of the text in either mode, and scrolls away with it
         _visualColumn = new StackPanel { Children = { _visual }, HorizontalAlignment = HorizontalAlignment.Stretch };
@@ -358,6 +361,9 @@ public sealed class EditorOverlay : Grid
         body.SizeChanged += (_, e) => { Split.Width = Math.Round(e.NewSize.Width * (1 - SplitRatio)); PlaceLive(e.NewSize.Width); };
         _body = body;
         Editor.TextChanged += (_, _) => { if (!_opening && (_live || LivePane.BrowserAddress is not null)) LivePane.CodeChanged(); };
+        Editor.TextChanged += (_, _) => { if (!_opening) CodeTyped(); };
+        _highlightSoon.Tick += (_, _) => ColourCode();
+        _sourceInk = Editor.Foreground;
         Context.LineChosen += GoToLine;
         // the pinned reference above the text, up to 40 % of the height, with its own scroll (DEC-0045, UC-39)
         var bodyHost = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*") };
@@ -681,9 +687,10 @@ public sealed class EditorOverlay : Grid
         _opening = false;
         RebuildIndex();
         var canVisual = CanVisual(note.Path);
-        _segment.IsVisible = canVisual || IsHtml;
+        PlaceSwitch();
         ShowMode(canVisual && StartInVisual ? EditorMode.Visual : EditorMode.Fonte);
         ApplyCodeSwitch();
+        ColourCode();
         UpdateChrome();
         UpdateStatus(changed: false);
         RefreshProperties();
@@ -742,7 +749,7 @@ public sealed class EditorOverlay : Grid
         _title.Text = System.IO.Path.GetFileName(path);
         RebuildIndex();
         var canVisual = CanVisual(path);
-        _segment.IsVisible = canVisual || IsHtml;
+        PlaceSwitch();
         if (!canVisual && Mode == EditorMode.Visual) ShowMode(EditorMode.Fonte);
         ApplyCodeSwitch();
         UpdateChrome();
@@ -953,6 +960,87 @@ public sealed class EditorOverlay : Grid
     private bool _live;
 
     private bool IsHtml => _note is not null && Kind(_note.Path) is "html" or "htm";
+
+    private bool _compactHeader;
+
+    /// <summary>The two-way switch only where there are two ways to see the file: Visual | Fonte of a note, Prévia | Código of an HTML (a phone shows one button).</summary>
+    private void PlaceSwitch()
+    {
+        bool two = _note is not null && (CanVisual(_note.Path) || IsHtml);
+        _segment.IsVisible = two && !_compactHeader;
+        if (_modeToggle is not null) _modeToggle.IsVisible = two && _compactHeader;
+    }
+
+    // ------------------------------------------------------------------ CST-141: the colours of code
+
+    private readonly TextBlock _highlight = new() { IsHitTestVisible = false, IsVisible = false, TextWrapping = TextWrapping.Wrap };
+    private readonly DispatcherTimer _highlightSoon = new() { Interval = TimeSpan.FromMilliseconds(250) };
+    private IBrush? _sourceInk;
+    private string? _colouredText;
+
+    /// <summary>The code is shown in colour now (tests).</summary>
+    public bool CodeColoured => _highlight.IsVisible;
+
+    /// <summary>The coloured pieces shown (tests): the text of each and its colour.</summary>
+    public IReadOnlyList<(string Text, IBrush? Colour)> CodeColours =>
+        [.. (_highlight.Inlines ?? []).OfType<Avalonia.Controls.Documents.Run>().Where(r => r.Foreground is not null).Select(r => (r.Text ?? "", r.Foreground))];
+
+    /// <summary>While typing, the text in its own colour; a moment after, the colours again (never a frame where they do not match the text).</summary>
+    private void CodeTyped()
+    {
+        if (_highlight.IsVisible && string.Equals(Editor.Text, _colouredText, StringComparison.Ordinal)) return;   // the same text set again
+        if (_highlight.IsVisible) ShowCodePlain();
+        if (Urbe.Core.CodeHighlighter.LanguageOf(_note?.Path ?? "") is null) return;
+        _highlightSoon.Stop();
+        _highlightSoon.Start();
+    }
+
+    private void ShowCodePlain()
+    {
+        _highlightSoon.Stop();
+        _highlight.IsVisible = false;
+        if (_sourceInk is not null) Editor.Foreground = _sourceInk;
+    }
+
+    private void ColourCode()
+    {
+        _highlightSoon.Stop();
+        if (_note is null || Mode != EditorMode.Fonte || Urbe.Core.CodeHighlighter.LanguageOf(_note.Path) is not { } language) { ShowCodePlain(); return; }
+        var text = Editor.Text ?? "";
+        var inlines = new Avalonia.Controls.Documents.InlineCollection();
+        int at = 0;
+        foreach (var token in Urbe.Core.CodeHighlighter.Tokens(text, language))
+        {
+            if (token.Start > at) inlines.Add(new Avalonia.Controls.Documents.Run(text[at..token.Start]));
+            inlines.Add(new Avalonia.Controls.Documents.Run(text.Substring(token.Start, token.Length)) { Foreground = CodeColour(token.Kind) });
+            at = token.Start + token.Length;
+        }
+        if (at < text.Length) inlines.Add(new Avalonia.Controls.Documents.Run(text[at..]));
+        // the same letters, size, lines and wrapping as the text box, so every colour lies under its own character
+        _highlight.FontFamily = Editor.FontFamily;
+        _highlight.FontSize = Editor.FontSize;
+        _highlight.FontWeight = Editor.FontWeight;
+        _highlight.LineHeight = Editor.LineHeight;
+        _highlight.Padding = Editor.Padding;
+        _highlight.Foreground = _sourceInk;
+        _highlight.Inlines = inlines;
+        _colouredText = text;
+        _highlight.IsVisible = true;
+        Editor.Foreground = Brushes.Transparent;
+    }
+
+    // the app's dark theme: soft colours that keep the text readable
+    private static IBrush CodeColour(Urbe.Core.CodeTokenKind kind) => UrbeTheme.Brush(kind switch
+    {
+        Urbe.Core.CodeTokenKind.Keyword => "#c792ea",
+        Urbe.Core.CodeTokenKind.String => "#a5d68a",
+        Urbe.Core.CodeTokenKind.Comment => "#7f8b99",
+        Urbe.Core.CodeTokenKind.Number => "#f2a65a",
+        Urbe.Core.CodeTokenKind.Literal => "#6fd3e3",
+        Urbe.Core.CodeTokenKind.Tag => "#f07178",
+        Urbe.Core.CodeTokenKind.Attribute => "#ffcb6b",
+        _ => "#82aaff"
+    });
 
     /// <summary>A code file: a text type of the vault that is neither a note nor plain text or a table.</summary>
     private bool IsCode => _note is not null && !IsMarkdown && VaultTextFiles.IsText(_note.Path) && Kind(_note.Path) is not ("txt" or "csv" or "tsv");
@@ -1333,9 +1421,8 @@ public sealed class EditorOverlay : Grid
         bar.PropertyChanged += (_, e) =>
         {
             if (e.Property != BoundsProperty) return;
-            bool compact = bar.Bounds.Width < CompactHeaderWidth;
-            _segment.IsVisible = !compact;
-            _modeToggle.IsVisible = compact;
+            _compactHeader = bar.Bounds.Width < CompactHeaderWidth;
+            PlaceSwitch();
         };
         DockPanel.SetDock(back, Dock.Left);
         DockPanel.SetDock(right, Dock.Right);
