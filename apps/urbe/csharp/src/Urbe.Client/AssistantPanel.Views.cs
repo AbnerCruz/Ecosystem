@@ -917,6 +917,10 @@ public sealed partial class AssistantPanel
         instr.LostFocus += (_, _) => { c.Instructions = instr.Text ?? ""; SaveConfig(); };
         instr.TextChanged += (_, _) => c.Instructions = instr.Text ?? "";
         body.Children.Add(Section("Instruções para todos os agentes", instr));
+        // CST-077: the system's language by default; an explicit request in the conversation still wins
+        var language = AgentLanguage.Choices.FirstOrDefault(x => x.Code == c.Language);
+        body.Children.Add(Section("Idioma das respostas", Hint("Os agentes respondem neste idioma, salvo se você pedir outro na conversa."),
+            TextButton(language.Name ?? AgentLanguage.Name(c.Language), () => _ = PickLanguageAsync())));
 
         var nmem = c.MemoryRecords.Count + c.Memory.Values.Sum(items => items.Count);
         body.Children.Add(Section("Memória",
@@ -1239,6 +1243,47 @@ public sealed partial class AssistantPanel
         ShowSettings();
     }
 
+    /// <summary>
+    /// CST-070: the instruction blocks (an optional title and the text), the same editor when the agent is created and
+    /// when it is configured later; the function reads what is there now (blocks without text are left out).
+    /// </summary>
+    private (Control Editor, Func<List<AiInstructionBlock>> Read) InstructionBlocksEditor(IEnumerable<AiInstructionBlock> initial)
+    {
+        var blocksPanel = new StackPanel { Spacing = 10 };
+        var rows = new List<(TextBox Title, TextBox Body, Control Card)>();
+        void AddBlock(AiInstructionBlock block)
+        {
+            var title = new TextBox { Text = block.Title, PlaceholderText = "Nome do bloco (opcional), ex.: Estilo de escrita" };
+            var details = new TextBox { Text = block.Content, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
+                MinHeight = 90, PlaceholderText = "Instruções detalhadas para este aspecto do trabalho." };
+            var field = new StackPanel { Spacing = 6 };
+            var card = Card(field);
+            var rm = TextButton("Remover bloco", () =>
+            {
+                rows.RemoveAll(r => ReferenceEquals(r.Card, card));
+                blocksPanel.Children.Remove(card);
+            });
+            field.Children.Add(title);
+            field.Children.Add(details);
+            field.Children.Add(rm);
+            rows.Add((title, details, card));
+            blocksPanel.Children.Add(card);
+        }
+        foreach (var block in initial) AddBlock(block);
+        var editor = Section("Instruções por blocos", Hint("Você pode criar vários blocos. Todos são usados em conjunto com as instruções gerais, mantendo as permissões do agente."),
+            blocksPanel, TextButton("+ Adicionar bloco", () => AddBlock(new AiInstructionBlock("", ""))));
+        return (editor, () => [.. rows.Select(r => new AiInstructionBlock((r.Title.Text ?? "").Trim(), (r.Body.Text ?? "").Trim())).Where(b => b.Content.Length > 0)]);
+    }
+
+    private async Task PickLanguageAsync()
+    {
+        var choices = AgentLanguage.Choices;
+        if (await _app.Dialogs.ChooseAsync("Idioma das respostas", [.. choices.Select(x => new DialogItem(x.Name, Detail: x.Code.Length > 0 ? x.Code : null))]) is not { } i) return;
+        _cfg.Language = choices[i].Code;
+        SaveConfig();
+        ShowSettings();
+    }
+
     private void EditAgent(AiAgentDef? a)
     {
         bool isNew = a is null;
@@ -1259,6 +1304,9 @@ public sealed partial class AssistantPanel
         }
         body.Children.Add(Section("Nome", name));
         body.Children.Add(Section("Instruções", prompt));
+        // CST-070: the blocks are there from the start, the same ones the agent's settings show later
+        var (blocksEditor, readBlocks) = InstructionBlocksEditor(a is null ? [] : _cfg.AgentInstructionBlocks.GetValueOrDefault(a.Id) ?? []);
+        body.Children.Add(blocksEditor);
         body.Children.Add(Hint("Acesso às ferramentas é configurado em Permissões, junto da autonomia do agente."));
         var save = TextButton("Salvar", () =>
         {
@@ -1270,6 +1318,8 @@ public sealed partial class AssistantPanel
             var made = new AiAgentDef(a?.Id ?? AssistantAgent.NewId("a"), n, t == "read" ? "search" : "sparkle", p.Length > 80 ? p[..80] : p, t, t == "all", p);
             int at = _cfg.CustomAgents.FindIndex(x => x.Id == made.Id);
             if (at >= 0) _cfg.CustomAgents[at] = made; else _cfg.CustomAgents.Add(made);
+            var blocks = readBlocks();
+            if (blocks.Count == 0) _cfg.AgentInstructionBlocks.Remove(made.Id); else _cfg.AgentInstructionBlocks[made.Id] = blocks;
             SaveConfig();
             EditAgentProfile(made);
         }, primary: true);
@@ -1490,31 +1540,10 @@ public sealed partial class AssistantPanel
         var selected = _cfg.AgentModels.GetValueOrDefault(agent.Id);
         var provider = selected is null ? null : _cfg.Providers.FirstOrDefault(p => p.Id == selected.ProviderId);
         var choice = provider is null ? "Padrão do Assistente (herdado)" : (provider.Name ?? provider.Id) + " · " + selected!.Model;
-        var blocksPanel = new StackPanel { Spacing = 10 };
-        var rows = new List<(TextBox Title, TextBox Body, Control Card)>();
-
-        void AddBlock(AiInstructionBlock block)
-        {
-            var title = new TextBox { Text = block.Title, PlaceholderText = "Nome do bloco, ex.: Estilo de escrita" };
-            var details = new TextBox { Text = block.Content, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
-                MinHeight = 90, PlaceholderText = "Instruções detalhadas para este aspecto do trabalho." };
-            var field = new StackPanel { Spacing = 6 };
-            var card = Card(field);
-            var rm = TextButton("Remover bloco", () =>
-            {
-                rows.RemoveAll(r => ReferenceEquals(r.Card, card));
-                blocksPanel.Children.Remove(card);
-            });
-            field.Children.Add(title);
-            field.Children.Add(details);
-            field.Children.Add(rm);
-            rows.Add((title, details, card));
-            blocksPanel.Children.Add(card);
-        }
+        var (blocksEditor, readBlocks) = InstructionBlocksEditor(_cfg.AgentInstructionBlocks.GetValueOrDefault(agent.Id) ?? []);
         void SaveBlocks()
         {
-            var values = rows.Select(r => new AiInstructionBlock((r.Title.Text ?? "").Trim(), (r.Body.Text ?? "").Trim()))
-                .Where(b => b.Content.Length > 0).ToList();
+            var values = readBlocks();
             if (values.Count == 0) _cfg.AgentInstructionBlocks.Remove(agent.Id);
             else _cfg.AgentInstructionBlocks[agent.Id] = values;
             SaveConfig();
@@ -1523,10 +1552,7 @@ public sealed partial class AssistantPanel
             Wrap(choice, 13, UrbeTheme.Text, FontWeight.SemiBold),
             Wrap(ModelPriceFor(selected ?? _cfg.ModelFor(new AiConversation { AgentId = agent.Id })), 12, UrbeTheme.Text2),
             TextButton("Selecionar provedor e modelo", () => { SaveBlocks(); _ = PickConfiguredModelAsync(agent.Id); })));
-        body.Children.Add(Section("Instruções por blocos", Hint("Você pode criar vários blocos. Todos são usados em conjunto com as instruções gerais, mantendo as permissões do agente."),
-            blocksPanel, TextButton("+ Adicionar bloco", () => AddBlock(new AiInstructionBlock("", "")))));
-        if (_cfg.AgentInstructionBlocks.TryGetValue(agent.Id, out var existing))
-            foreach (var block in existing) AddBlock(block);
+        body.Children.Add(blocksEditor);
         var save = TextButton("Salvar instruções", () => { SaveBlocks(); ShowSettings(); }, primary: true);
         body.Children.Add(save);
     }

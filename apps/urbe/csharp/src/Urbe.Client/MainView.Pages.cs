@@ -139,13 +139,31 @@ public sealed partial class MainView
     public async Task ShowPageAsync(string path)
     {
         if (_store?.Get(path) is not { } doc) { ShowLifeNotice("Página não encontrada: " + path); return; }
-        var html = _pageEngine.Render(doc.Content, new StoreNotes(_store));
+        var html = await WithVaultImagesAsync(_pageEngine.Render(doc.Content, new StoreNotes(_store)), path);
         var title = (string?)_pageEngine.Normalize(doc.Content).Spec["meta"]!["title"] ?? doc.Title;
         await FilePreview.OpenGeneratedAsync(title, path, System.Text.Encoding.UTF8.GetBytes(html));
     }
 
     /// <summary>html(false): the page's HTML as the engine writes it for export (null when the page is gone).</summary>
-    private string? PageHtml(string path) => _store?.Get(path) is { } doc ? _pageEngine.Render(doc.Content, new StoreNotes(_store)) : null;
+    private async Task<string?> PageHtmlAsync(string path) =>
+        _store?.Get(path) is { } doc ? await WithVaultImagesAsync(_pageEngine.Render(doc.Content, new StoreNotes(_store)), path) : null;
+
+    /// <summary>
+    /// CST-059: the vault images a page names travel inside its HTML (the platform's viewer reaches nothing outside the
+    /// page, and a downloaded page is a single file). <paramref name="cache"/> keeps what the studio's preview already read.
+    /// </summary>
+    private async Task<string> WithVaultImagesAsync(string html, string pagePath, Dictionary<string, byte[]?>? cache = null)
+    {
+        if (_vault is not { } vault) return html;
+        var files = _attachments.Concat(_contents.Keys).ToList();
+        return await Urbe.Core.Pages.PageImages.InlineAsync(html, pagePath, files, async file =>
+        {
+            if (cache is not null && cache.TryGetValue(file, out var known)) return known;
+            var bytes = (await vault.ReadFileAsync(file, Urbe.Core.Pages.PageImages.MaxBytes))?.Bytes;
+            if (cache is not null) cache[file] = bytes;
+            return bytes;
+        });
+    }
 
     /// <summary>fileBase(): the page's file name without .page.json.</summary>
     private static string PageFileBase(string path) =>
@@ -157,7 +175,7 @@ public sealed partial class MainView
     /// <summary>download(): "Baixar HTML" — the page as one .html file, saved where the person chooses.</summary>
     public async Task DownloadPageHtmlAsync(string path)
     {
-        if (PageHtml(path) is not { } html) return;
+        if (await PageHtmlAsync(path) is not { } html) return;
         var name = PageFileBase(path) + ".html";
         try
         {
@@ -185,7 +203,7 @@ public sealed partial class MainView
     /// <summary>saveHtmlToVault(): the page's HTML next to it (x.page.json → x.html), created or replaced, then its document.</summary>
     public async Task SavePageHtmlInVaultAsync(string path)
     {
-        if (PageHtml(path) is not { } html || _library is not { } library || _store is null) return;
+        if (await PageHtmlAsync(path) is not { } html || _library is not { } library || _store is null) return;
         if (!VaultWritable) { await Dialogs.AlertAsync("Salvar HTML no vault", NoVaultMessage); return; }
         var target = System.Text.RegularExpressions.Regex.Replace(path, @"\.page\.json$", ".html", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         try
@@ -216,7 +234,7 @@ public sealed partial class MainView
     /// <summary>"Copiar HTML".</summary>
     public async Task CopyPageHtmlAsync(string path)
     {
-        if (PageHtml(path) is not { } html) return;
+        if (await PageHtmlAsync(path) is not { } html) return;
         if (Avalonia.Controls.TopLevel.GetTopLevel(this)?.Clipboard is not { } clipboard) { ShowLifeNotice("Este aparelho não deixou copiar."); return; }
         await clipboard.SetTextAsync(html);
         CopiedText = html;

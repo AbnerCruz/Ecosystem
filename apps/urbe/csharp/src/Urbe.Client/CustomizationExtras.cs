@@ -126,6 +126,18 @@ public sealed partial class Customization
     // ---------------------------------------------------------------- safe mode, plugins
 
     /// <summary>modoSeguro(): all styles and plugins off, nothing deleted; kept on this device.</summary>
+    /// <summary>
+    /// CST-025: Personalização → Editor → "Horário de cada bloco". A display preference of this device, so the
+    /// 1.8.4's personalizacao.json keeps its format.
+    /// </summary>
+    public bool BlockTimes
+    {
+        get => Device.Get(BlockTimesKey) == "1";
+        set { Device.Set(BlockTimesKey, value ? "1" : null); Applied?.Invoke(); }
+    }
+
+    private const string BlockTimesKey = "urbe.editor.horarios";
+
     public bool SafeMode
     {
         get => Device.Get(SafeKey) == "1";

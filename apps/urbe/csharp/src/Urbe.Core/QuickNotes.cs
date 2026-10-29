@@ -5,7 +5,8 @@ namespace Urbe.Core;
 
 /// <summary>
 /// UC-56: quick notes (spoken or typed). One note per month in "Notas rápidas/yyyy-MM.md" (observation of 22/10/2026:
-/// monthly, not one per day), a section per day ("## 22/10 — quinta-feira"), each entry a line "- HH:mm — texto".
+/// monthly, not one per day), a section per day ("## 22/10 — quinta-feira"), each entry a checklist line
+/// "- [ ] HH:mm — texto" (CST-053: every quick note is a checkbox, whatever wrote it: the person, the widget or an agent).
 /// The day notes written before ("yyyy-MM-dd.md") stay as they are. Pure: the client writes the result to the vault.
 /// </summary>
 public static partial class QuickNotes
@@ -34,9 +35,19 @@ public static partial class QuickNotes
         return t.Length == 0 ? null : t;
     }
 
-    /// <summary>The entry for a text at a local time; null when the text is empty.</summary>
-    public static string? Line(string? text, DateTime local) =>
-        Clean(text) is { } t ? "- " + local.ToString("HH:mm", CultureInfo.InvariantCulture) + " — " + t : null;
+    /// <summary>
+    /// The entry for a text at a local time, always one checkbox: a bullet or checkbox the text already starts with is
+    /// taken in (a ticked one stays ticked), never doubled. Null when the text is empty.
+    /// </summary>
+    public static string? Line(string? text, DateTime local)
+    {
+        if (Clean(text) is not { } t) return null;
+        var box = LeadingBox().Match(t);
+        bool done = box.Groups[1].Value is "x" or "X";
+        t = t[box.Length..].Trim();
+        if (t.Length == 0) return null;
+        return "- [" + (done ? "x" : " ") + "] " + local.ToString("HH:mm", CultureInfo.InvariantCulture) + " — " + t;
+    }
 
     /// <summary>
     /// The month's note with the entry in its day's section: <paramref name="existing"/> is the note's current content,
@@ -69,4 +80,8 @@ public static partial class QuickNotes
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex Spaces();
+
+    // "- ", "* ", "+ ", "[ ] ", "- [x] " at the start of the text
+    [GeneratedRegex(@"^(?:[-*+][ \t]+)?(?:\[([ xX])\][ \t]*)?")]
+    private static partial Regex LeadingBox();
 }

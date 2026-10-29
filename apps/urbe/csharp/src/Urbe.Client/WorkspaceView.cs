@@ -197,6 +197,18 @@ public sealed class WorkspaceView : Grid
         Render();
     }
 
+    /// <summary>
+    /// CST-010: Voltar inside the Área de trabalho — a search is cleared first, then each Voltar goes up one folder. False
+    /// at the root with nothing to clear (the app's own exit takes over).
+    /// </summary>
+    public bool Back()
+    {
+        if (!string.IsNullOrEmpty(_search.Text)) { _search.Text = ""; return true; }
+        if (Folder.Length == 0) return false;
+        Open(NoteLibrary.FolderOf(Folder));
+        return true;
+    }
+
     /// <summary>Opens a folder's box ("" for the root).</summary>
     public void Open(string folder)
     {

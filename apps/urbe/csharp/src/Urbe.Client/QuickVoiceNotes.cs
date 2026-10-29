@@ -81,14 +81,15 @@ public interface IVoiceNoteBacklog
 /// The backlog over the queue file: <paramref name="transcribe"/> turns a kept recording (its full path) into text,
 /// or null when it still cannot. Entries with neither text nor audio have nothing left to save and are dropped.
 /// </summary>
-public sealed class VoiceNoteQueueBacklog(VoiceNoteQueueFile queue, Func<string, Task<string?>> transcribe, Func<string?>? busyId = null) : IVoiceNoteBacklog
+/// <param name="busy">An entry the widget's service is still recording or saving (CST-055: there can be several).</param>
+public sealed class VoiceNoteQueueBacklog(VoiceNoteQueueFile queue, Func<string, Task<string?>> transcribe, Func<string, bool>? busy = null) : IVoiceNoteBacklog
 {
     private static readonly SemaphoreSlim Gate = new(1, 1);
 
     /// <summary>Serializes saving and dequeuing between the widget's service and the app (same process).</summary>
     public static SemaphoreSlim SaveGate => Gate;
 
-    public int Count => queue.LoadAdoptingOrphans().Count(e => e.Id != busyId?.Invoke());
+    public int Count => queue.LoadAdoptingOrphans().Count(e => busy?.Invoke(e.Id) != true);
 
     public async Task<(int Saved, int Left)> RetryAsync(Func<string, DateTime, Task<bool>> save)
     {
@@ -98,7 +99,7 @@ public sealed class VoiceNoteQueueBacklog(VoiceNoteQueueFile queue, Func<string,
             int saved = 0, left = 0;
             foreach (var entry in queue.LoadAdoptingOrphans())
             {
-                if (entry.Id == busyId?.Invoke()) continue;   // still being recorded
+                if (busy?.Invoke(entry.Id) == true) continue;   // still being recorded or saved by the service
                 var current = entry;
                 if (QuickNotes.Clean(current.Text) is null)
                 {

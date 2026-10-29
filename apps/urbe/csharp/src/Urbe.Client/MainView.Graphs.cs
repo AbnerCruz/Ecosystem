@@ -162,6 +162,37 @@ public sealed partial class MainView
         }
     }
 
+    /// <summary>
+    /// CST-068: the Assistente's edit_graph, after the approval. It waits for the editor's own save, never overwrites a
+    /// graph open with edits not yet written, and an open graph shows the new version at once.
+    /// </summary>
+    internal async Task WriteGraphForAssistantAsync(string path, string json, bool create)
+    {
+        if (_vault is not { IsConnected: true } vault || !VaultWritable)
+            throw new Urbe.Core.Assistant.AiToolException("O vault está em somente leitura; o grafo não foi gravado.");
+        await _graphWriteGate.WaitAsync();
+        try
+        {
+            bool open = _openGraphPath is { } current && string.Equals(current, path, StringComparison.OrdinalIgnoreCase);
+            if (open && _graphDirty)
+                throw new Urbe.Core.Assistant.AiToolException("O grafo está aberto com alterações não salvas. Nada foi gravado; tente de novo depois que o grafo for salvo.");
+            if (create)
+            {
+                if (_contents.ContainsKey(path) || _attachments.Contains(path)) throw new Urbe.Core.Assistant.AiToolException("Já existe " + path + ".");
+                await vault.CreateTextFileAsync(path, json);
+                _attachments.Add(path);
+                RefreshNotes();
+            }
+            else await vault.SaveExistingTextFileAsync(path, json);
+            if (open)
+            {
+                _openGraph = GraphDocument.Parse(json);
+                GraphsPanel.Show(_openGraph);
+            }
+        }
+        finally { _graphWriteGate.Release(); }
+    }
+
     private async Task<bool> SaveGraphAsync()
     {
         await _graphWriteGate.WaitAsync();

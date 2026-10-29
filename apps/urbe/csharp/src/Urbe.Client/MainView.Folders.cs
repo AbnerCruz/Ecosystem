@@ -132,7 +132,7 @@ public sealed partial class MainView
             await Dialogs.AlertAsync("Mover pasta", NoVaultMessage);
             return false;
         }
-        parent ??= await ChooseFolderAsync(except: folder);
+        parent ??= await ChooseFolderAsync(except: folder, current: DirOf(folder));
         if (parent is null || parent == DirOf(folder)) return false;
         const string Title = "Não foi possível mover a pasta";
         if (parent == folder || parent.StartsWith(folder + "/", StringComparison.Ordinal))

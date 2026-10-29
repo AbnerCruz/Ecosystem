@@ -111,33 +111,50 @@ public sealed class FormSession
     public Dictionary<string, string> Validate(IReadOnlyCollection<string>? notes = null, IReadOnlyCollection<string>? folders = null)
     {
         var errors = new Dictionary<string, string>(StringComparer.Ordinal);
-        var answers = Answers();
         foreach (var f in Definition.Fields.Where(Visible))
-        {
-            var v = answers[f.Id];
-            var text = v?.ToString() ?? "";
-            if (v is null || string.IsNullOrWhiteSpace(text) || v is JsonArray { Count: 0 })
-            { if (f.Required) errors[f.Id] = "Preencha este campo."; continue; }
-            bool ok = f.Type switch
-            {
-                "integer" => Number(v, out var n) && n == Math.Truncate(n) && InRange(n, f),
-                "number" or "scale" or "calculated" => Number(v, out var n) && InRange(n, f),
-                "checkbox" or "toggle" => v is JsonValue j && j.TryGetValue<bool>(out _),
-                "date" => DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
-                "time" => TimeOnly.TryParseExact(text, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
-                "select" => f.Options.Contains(text, StringComparer.Ordinal),
-                "multi_select" => v is JsonArray a && a.All(x => x is JsonValue j && j.TryGetValue<string>(out var s) && f.Options.Contains(s, StringComparer.Ordinal)),
-                "list" => v is JsonArray a && a.All(x => x is JsonValue j && j.TryGetValue<string>(out _)),
-                "repeat" => v is JsonArray a && (f.Min is null || a.Count >= f.Min) && (f.Max is null || a.Count <= f.Max) && a.All(item => item is JsonObject row && new FormSession { Definition = new() { Fields = f.Fields }, Values = row }.Validate(notes, folders).Count == 0),
-                "note" => notes is null || notes.Contains(text),
-                "folder" => folders is null || folders.Contains(text),
-                "color" => text.Length == 7 && text[0] == '#' && int.TryParse(text[1..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out _),
-                _ => v is JsonValue j && j.TryGetValue<string>(out _) && (f.Min is null || text.Length >= f.Min) && (f.Max is null || text.Length <= f.Max)
-            };
-            if (!ok) errors[f.Id] = "Valor inválido para " + f.Label + ".";
-        }
+            if (ErrorFor(f, notes, folders) is { } error) errors[f.Id] = error;
         return errors;
     }
+
+    /// <summary>
+    /// What is wrong with a field's value, in words the person can act on (CST-047), or null when it is fine. An empty
+    /// field is only an error when it is required.
+    /// </summary>
+    public string? ErrorFor(FormField f, IReadOnlyCollection<string>? notes = null, IReadOnlyCollection<string>? folders = null)
+    {
+        var v = Answers()[f.Id];
+        var text = v?.ToString() ?? "";
+        if (v is null || string.IsNullOrWhiteSpace(text) || v is JsonArray { Count: 0 })
+            return f.Required ? "Preencha este campo." : null;
+        if (f.Type is "integer" or "number" or "scale" or "calculated")
+        {
+            if (!Number(v, out var n)) return "Use um número.";
+            if (f.Type == "integer" && n != Math.Truncate(n)) return "Use um número inteiro.";
+            if (!InRange(n, f))
+                return f.Min is { } lo && f.Max is { } hi ? "Use um valor entre " + Show(lo) + " e " + Show(hi) + "."
+                    : f.Min is { } min ? "Use um valor a partir de " + Show(min) + "." : "Use um valor até " + Show(f.Max!.Value) + ".";
+            return null;
+        }
+        bool ok = f.Type switch
+        {
+            "checkbox" or "toggle" => v is JsonValue j && j.TryGetValue<bool>(out _),
+            "date" => DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
+            "time" => TimeOnly.TryParseExact(text, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
+            "select" => f.Options.Contains(text, StringComparer.Ordinal),
+            "multi_select" => v is JsonArray a && a.All(x => x is JsonValue j && j.TryGetValue<string>(out var s) && f.Options.Contains(s, StringComparer.Ordinal)),
+            "list" => v is JsonArray a && a.All(x => x is JsonValue j && j.TryGetValue<string>(out _)),
+            "repeat" => v is JsonArray a && (f.Min is null || a.Count >= f.Min) && (f.Max is null || a.Count <= f.Max) && a.All(item => item is JsonObject row && new FormSession { Definition = new() { Fields = f.Fields }, Values = row }.Validate(notes, folders).Count == 0),
+            "note" => notes is null || notes.Contains(text),
+            "folder" => folders is null || folders.Contains(text),
+            "color" => text.Length == 7 && text[0] == '#' && int.TryParse(text[1..], NumberStyles.HexNumber, CultureInfo.InvariantCulture, out _),
+            _ => v is JsonValue j && j.TryGetValue<string>(out _) && (f.Min is null || text.Length >= f.Min) && (f.Max is null || text.Length <= f.Max)
+        };
+        return ok ? null : "Valor inválido para " + f.Label + ".";
+    }
+
+    // the person's way of writing numbers (pt-BR): 0,5
+    private static string Show(double n) => n.ToString("0.##", CultureInfo.GetCultureInfo("pt-BR"));
+
     public Dictionary<string, string> TemplateValues() => Answers().ToDictionary(item => item.Key, item => item.Value switch
     {
         JsonArray list => string.Join("\n", list.Select(x => x?.ToString() ?? "")),
@@ -151,4 +168,34 @@ public sealed class FormSession
             double.TryParse(v.ToJsonString(), NumberStyles.Float, CultureInfo.InvariantCulture, out number) && double.IsFinite(number);
     }
     private static bool InRange(double n, FormField f) => (f.Min is null || n >= f.Min) && (f.Max is null || n <= f.Max);
+}
+
+/// <summary>CST-047: what the native form's editors let into a value — numbers only in number fields, every ticked option kept.</summary>
+public static class FormInput
+{
+    /// <summary>The typed text with only what a number may have: digits, one leading minus and (unless integer) one decimal mark.</summary>
+    public static string NumberText(string? typed, bool integer)
+    {
+        var sb = new System.Text.StringBuilder();
+        bool mark = false;
+        foreach (var c in typed ?? "")
+        {
+            if (char.IsAsciiDigit(c)) sb.Append(c);
+            else if (c == '-' && sb.Length == 0) sb.Append(c);
+            else if (!integer && !mark && c is ',' or '.') { sb.Append(c); mark = true; }
+        }
+        return sb.ToString();
+    }
+
+    /// <summary>The number of a field's text (comma or point), or null while it is not one yet ("", "-").</summary>
+    public static double? ParseNumber(string? text) =>
+        double.TryParse((text ?? "").Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var n) && double.IsFinite(n) ? n : null;
+
+    /// <summary>Ticks or unticks one option of a multiple choice, keeping the others (in the options' order, never doubled).</summary>
+    public static void Toggle(FormSession session, FormField field, string option, bool on)
+    {
+        var chosen = (session.Values[field.Id] as JsonArray ?? []).Select(x => x?.ToString() ?? "").ToHashSet(StringComparer.Ordinal);
+        if (on) chosen.Add(option); else chosen.Remove(option);
+        session.Values[field.Id] = new JsonArray([.. field.Options.Where(chosen.Contains).Select(x => (JsonNode?)JsonValue.Create(x))]);
+    }
 }

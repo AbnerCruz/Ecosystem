@@ -47,6 +47,13 @@ public sealed partial class MainView : Grid
         Explorer = new NotesExplorer { State = ExplorerState };
         Editor = new EditorOverlay { IsVisible = false, Dialogs = Dialogs, Notes = () => _contents.Select(n => new CityNote(n.Key, n.Value)) };
         Editor.EmbedFor = BuildEmbed;
+        // CST-025: each block's last edit, read from the note's "Versões anteriores" (no file of its own)
+        Editor.BlockTimesFor = path => _store?.Get(path) is { } doc ? new BlockTimes.Index(_history.List(doc.Id), CreatedMs(doc), createdDayOnly: true) : null;
+        // CST-040/041: links and embeds find every file of the vault, and a file link opens the viewer
+        // (text files that are not notes, .html, .csv, .js…, live with the notes' texts, as the embeds find them)
+        Editor.Files = () => _attachments.Where(f => !_contents.ContainsKey(f))
+            .Concat(_contents.Keys.Where(p => !p.EndsWith(".md", StringComparison.OrdinalIgnoreCase) && !p.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase)));
+        Editor.OpenFile = path => FilePreview.OpenAsync(path);
         Editor.ConfirmEmbeddedAtlasExitAsync = ConfirmEmbeddedAtlasExitAsync;
         Editor.Properties.TagSource = () => _store is null ? [] : _store.List().SelectMany(d => d.Tags).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
         Editor.PropertiesFor = path => _library?.PropertiesText(path, Now);
@@ -79,6 +86,7 @@ public sealed partial class MainView : Grid
         };
         // [[link]] to a note that does not exist yet: created next to the open note, in its folder (DEC-0045, UC-37)
         Editor.CreateLinked = name => CreateNoteAsync(Editor.Current is { } open ? NoteLibrary.FolderOf(open.Path) : "", name, open: false);
+        Editor.CreateHere = () => CreateNoteAsync(Editor.Current is { } open ? NoteLibrary.FolderOf(open.Path) : "", open: false);
         Explorer.SelectionAction += (action, paths) => { if (!StillReading()) _ = SelectionActionAsync(action, paths); };
         Explorer.MoreRequested += () => { if (!StillReading()) _ = ShowNotesMenuAsync(); };
         Explorer.NewRequested += () => { if (!StillReading()) _ = ShowNotesCreateMenuAsync(); };
@@ -638,7 +646,7 @@ public sealed partial class MainView : Grid
     private void ApplyCustomization()
     {
         UrbeAppearance.Apply(this);   // Personalização: tema, texto, forma e editor
-        if (Customization.Config["editor"] is System.Text.Json.Nodes.JsonObject ed) Editor.ApplyOptions((string?)ed["largura"], (string?)ed["modoInicial"]);
+        if (Customization.Config["editor"] is System.Text.Json.Nodes.JsonObject ed) Editor.ApplyOptions((string?)ed["largura"], (string?)ed["modoInicial"], Customization.BlockTimes);
         ApplyEditorLayout();
         if (Editor.IsVisible) Editor.RefreshVisual();   // tag colours (DEC-0045, UC-43)
     }
@@ -729,11 +737,12 @@ public sealed partial class MainView : Grid
         [
             new DialogItem(editor.ReadOnly ? "Modo edição" : "Modo leitura", editor.ReadOnly ? UrbeTheme.Icons.Pencil : UrbeTheme.Icons.Book,
                 editor.ReadOnly ? "Volta a escrever na nota." : "Só ler: nada é alterado sem querer.", Run: () => { editor.ReadOnly = !editor.ReadOnly; return Task.CompletedTask; }),
+            new DialogItem("Nova nota nesta pasta", UrbeTheme.Icons.File, NotesWhere(NoteLibrary.FolderOf(note.Path)), Run: () => editor.NewNoteHereAsync()),
             new DialogItem("Renomear", UrbeTheme.Icons.Pencil, Run: () => RenameNoteAsync(note.Path)),
             new DialogItem("Mover para outra pasta", UrbeTheme.Icons.Folder, Run: async () =>
             {
                 // UC-54: move from inside the editor (the note stays open at its new path)
-                if (await ChooseFolderAsync() is { } folder) await MoveNotesToAsync([note.Path], folder);
+                if (await ChooseFolderAsync(current: DirOf(note.Path)) is { } folder) await MoveNotesToAsync([note.Path], folder);
             }),
             new DialogItem("Selecionar nota inteira", UrbeTheme.Icons.List,
                 "Seleciona todo o Markdown, além do bloco atual. Pode copiar ou formatar a seleção.",
@@ -1341,21 +1350,37 @@ public sealed partial class MainView : Grid
             await Dialogs.AlertAsync("Mover", NoVaultMessage);
             return;
         }
-        if (await ChooseFolderAsync() is not { } folder) return;
+        if (await ChooseFolderAsync(current: SharedFolder(paths)) is not { } folder) return;
         await MoveNotesToAsync(paths, folder);
     }
 
     /// <summary>uiDestinoRegiao("Mover para"): Raiz or one of the folders; "" is the root, null when cancelled. A folder
     /// being moved leaves itself and the folders below it out (UC-54).</summary>
-    private async Task<string?> ChooseFolderAsync(string? except = null)
+    /// <summary>
+    /// "Mover para": Raiz and the folders, without the folder being moved and its subfolders (<paramref name="except"/>)
+    /// nor the folder the items are already in (<paramref name="current"/>, CST-039: choosing it would do nothing).
+    /// </summary>
+    private async Task<string?> ChooseFolderAsync(string? except = null, string? current = null)
     {
         var folders = NoteFolders();
         if (except is { Length: > 0 }) folders.RemoveAll(f => f == except || f.StartsWith(except + "/", StringComparison.Ordinal));
-        var options = new List<DialogItem> { new("Raiz", UrbeTheme.Icons.Notes, "Fora de qualquer pasta") };
-        options.AddRange(folders.Select(f => new DialogItem(LastName(f), UrbeTheme.Icons.Folder, f)));
+        if (current is { Length: > 0 }) folders.Remove(current);
+        var targets = new List<string>();
+        var options = new List<DialogItem>();
+        if (current is not "") { targets.Add(""); options.Add(new("Raiz", UrbeTheme.Icons.Notes, "Fora de qualquer pasta")); }
+        foreach (var f in folders) { targets.Add(f); options.Add(new DialogItem(LastName(f), UrbeTheme.Icons.Folder, f)); }
+        if (options.Count == 0)
+        {
+            await Dialogs.AlertAsync("Mover para", "Não há outra pasta para onde mover. Crie uma pasta primeiro.");
+            return null;
+        }
         if (await Dialogs.ChooseAsync("Mover para", options) is not { } chosen) return null;
-        return chosen == 0 ? "" : folders[chosen - 1];
+        return targets[chosen];
     }
+
+    /// <summary>The folder every one of <paramref name="paths"/> is in, or null when they are in different folders.</summary>
+    private static string? SharedFolder(IReadOnlyList<string> paths) =>
+        paths.Count > 0 && paths.Select(DirOf).Distinct(StringComparer.Ordinal).Count() == 1 ? DirOf(paths[0]) : null;
 
     /// <summary>explorer.move of each note into <paramref name="folder"/> ("" = the root): the file first, then the
     /// document (modified today). Also what dragging notes onto a folder in the Explorer does (DEC-0045, UC-38).</summary>

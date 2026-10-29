@@ -37,7 +37,7 @@ internal static class VoiceNotes
 
     /// <summary>The app's backlog: kept recordings transcribed again and written through the open app.</summary>
     public static IVoiceNoteBacklog Backlog(Context context) =>
-        new VoiceNoteQueueBacklog(Queue(context), wav => VoiceSpeech.TranscribeFileAsync(context, wav), () => VoiceNoteService.ActiveId);
+        new VoiceNoteQueueBacklog(Queue(context), wav => VoiceSpeech.TranscribeFileAsync(context, wav), VoiceNoteService.IsBusy);
 
     /// <summary>
     /// Appends the line with the verified write: through the open app when there is one (its notes and vault stay in
@@ -98,8 +98,10 @@ internal static class VoiceNotes
 
 /// <summary>
 /// UC-66: the widget's recorder. A tap starts it (foreground service, type microphone; no activity opens), a second
-/// tap or the notification stops it, and it also stops by itself after ~2.5 s of silence following speech or after
-/// 2 minutes. Android 13+: the Urbe records 16 kHz PCM to a private WAV and streams it to the on-device recognizer;
+/// tap or the notification stops it, and it stops by itself only as <see cref="VoiceCapturePolicy"/> says (CST-056: a pause
+/// to think no longer ends the note). A tap while the previous note is still being saved starts the next one (CST-055);
+/// the recognizer serves one recording at a time, so a later one waits for it with its audio kept.
+/// Android 13+: the Urbe records 16 kHz PCM to a private WAV and streams it to the on-device recognizer;
 /// before 13 the recognizer listens to the microphone itself. The line is appended to "Notas rápidas/&lt;mês&gt;.md"
 /// with the verified write; the recording leaves the queue only after that, so turning the phone off loses nothing.
 /// </summary>
@@ -113,23 +115,28 @@ public sealed class VoiceNoteService : Service
     private const string DoneChannel = "urbe-voz-salva";
     private const int RecordingId = 6601;
     private const int DoneId = 6602;
-    private const int MaxMillis = 120_000;
-    private const int SilenceAfterSpeechMillis = 2_500;
-    private const int NoSpeechMillis = 10_000;
     private const int ChunkMillis = 100;
 
     /// <summary>True while the microphone is recording (the widget shows "Gravando…").</summary>
     public static volatile bool IsRecording;
 
-    /// <summary>The queue entry being recorded now (the app's retry leaves it alone).</summary>
-    public static volatile string? ActiveId;
+    /// <summary>The queue entries being recorded or saved now (the app's retry leaves them alone).</summary>
+    private static readonly ConcurrentDictionary<string, byte> Active = new();
+
+    public static bool IsBusy(string id) => Active.ContainsKey(id);
+
+    /// <summary>One recording at a time uses the recognizer; a later one waits with its audio kept.</summary>
+    private static readonly SemaphoreSlim Recognizer = new(1, 1);
 
     private volatile bool _stop;
-    private bool _busy;
+    private int _saving;
+    private volatile int _elapsed;
     private SpeechSession? _live;
     private string _heard = "";
     private long _lastNotify;
     private int _session;
+
+    private string Title() => IsRecording ? VoiceCapturePolicy.RecordingTitle(_elapsed, Volatile.Read(ref _saving)) : VoiceCapturePolicy.SavingTitle(Math.Max(1, Volatile.Read(ref _saving)));
 
     /// <summary>A short toast, always from the main thread.</summary>
     private void Say(string text, ToastLength length) =>
@@ -145,8 +152,9 @@ public sealed class VoiceNoteService : Service
     {
         var action = intent?.Action ?? ActionToggle;
         // every start through startForegroundService must be answered with startForeground
-        bool foreground = Foreground(RecordingNotification(IsRecording || !_busy ? "Gravando… toque para parar" : "Salvando…", _heard));
-        if (!foreground && !_busy)
+        bool busy = IsRecording || Volatile.Read(ref _saving) > 0;
+        bool foreground = Foreground(RecordingNotification(busy ? Title() : VoiceCapturePolicy.RecordingTitle(0, 0), _heard));
+        if (!foreground && !busy)
         {
             if (!VoiceNotes.HasMicrophone(this))
                 NotifyDone("Permita o microfone para gravar", "Toque aqui ou no widget para permitir.", permission: true);
@@ -161,11 +169,7 @@ public sealed class VoiceNoteService : Service
             if (action != ActionStart) RequestStop();
             return StartCommandResult.NotSticky;
         }
-        if (_busy)
-        {
-            Say("Salvando a nota anterior…", ToastLength.Short);
-            return StartCommandResult.NotSticky;
-        }
+        // the notification's tap while only saving: nothing to stop; the saving goes on
         if (action == ActionStop) { Finish(); return StartCommandResult.NotSticky; }
         Begin();
         return StartCommandResult.NotSticky;
@@ -173,18 +177,18 @@ public sealed class VoiceNoteService : Service
 
     private void Begin()
     {
-        _busy = true;
         _stop = false;
         _heard = "";
+        _elapsed = 0;
         IsRecording = true;
         var created = DateTimeOffset.Now;
         var id = created.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture) + "-" + Guid.NewGuid().ToString("N")[..6];
-        ActiveId = id;
+        Active[id] = 0;
         VoiceNoteWidget.Refresh(this, recording: true);
         VoiceNotes.Vibrate(this, confirm: false);
         int token = ++_session;
-        MainThread.PostDelayed(() => { if (token == _session && IsRecording) RequestStop(); }, MaxMillis);
-        _ = OperatingSystem.IsAndroidVersionAtLeast(33) ? RecordAsync(id, created) : ListenAsync(id, created);
+        MainThread.PostDelayed(() => { if (token == _session && IsRecording) RequestStop(); }, VoiceCapturePolicy.MaxMillis);
+        _ = OperatingSystem.IsAndroidVersionAtLeast(33) ? RecordAsync(id, created, token) : ListenAsync(id, created, token);
     }
 
     private void RequestStop()
@@ -195,23 +199,28 @@ public sealed class VoiceNoteService : Service
     }
 
     /// <summary>Android 13+: record the WAV (kept) and stream the same PCM to the recognizer.</summary>
-    private async Task RecordAsync(string id, DateTimeOffset created)
+    private async Task RecordAsync(string id, DateTimeOffset created, int token)
     {
         var queue = VoiceNotes.Queue(this);
         var wavName = id + ".wav";
         var wavPath = System.IO.Path.Combine(queue.Folder, wavName);
         var entry = new VoiceNoteEntry(id, created, wavName, null);
+        // the recognizer listens live only when no earlier note is still using it; otherwise this one waits for it
+        bool recognizer = Recognizer.Wait(0);
+        bool recording = true;
         try
         {
             Directory.CreateDirectory(queue.Folder);
             queue.Add(entry);
-            var pipe = ParcelFileDescriptor.CreatePipe();
+            var pipe = recognizer ? ParcelFileDescriptor.CreatePipe() : null;
             var session = pipe is { Length: >= 2 } ? await MainThread.RunAsync(() => SpeechSession.Start(this, pipe[0], preferOnDevice: true)) : null;
-            if (session is not null) { _live = session; session.Heard = Heard; }
+            if (session is not null) { _live = session; session.Heard = t => { if (token == _session) Heard(t); }; }
             else if (pipe is not null) foreach (var end in pipe) end.Close();
             var capture = await Task.Run(() => Capture(wavPath, session is null ? null : pipe![1], session));
-            IsRecording = false;
-            VoiceNoteWidget.Refresh(this, recording: false);
+            Interlocked.Increment(ref _saving);
+            recording = false;
+            if (token == _session) IsRecording = false;
+            VoiceNoteWidget.Refresh(this, recording: IsRecording);
             if (!capture.HeardSpeech)
             {
                 if (session is not null) await MainThread.RunAsync(() => { session.Abort(); return true; });
@@ -219,9 +228,15 @@ public sealed class VoiceNoteService : Service
                 Say(capture.Error ?? "Não ouvi nada. Toque e fale sua nota.", ToastLength.Short);
                 return;
             }
-            UpdateRecording("Salvando…", _heard);
+            UpdateRecording(Title(), IsRecording ? _heard : null);
+            if (!recognizer) { await Recognizer.WaitAsync(); recognizer = true; }
             string? text = null;
-            if (session is not null)
+            if (session is null)
+            {
+                try { text = QuickNotes.Clean(await VoiceSpeech.TranscribeFileAsync(this, wavPath, preferOnDevice: true)); }
+                catch (InvalidOperationException) { }
+            }
+            else
             {
                 bool early = capture.LiveEndedEarly;   // the engine ended before the audio did: transcribe the whole file
                 if (await Task.WhenAny(session.Result, Task.Delay(20_000)) != session.Result)
@@ -241,6 +256,7 @@ public sealed class VoiceNoteService : Service
                 NotifyDone("Nota de voz guardada", "O Urbe transcreve quando você abrir o app.", permission: false);
                 return;
             }
+            if (recognizer) { Recognizer.Release(); recognizer = false; }
             await SaveAsync(queue, entry with { Text = text });
         }
         catch (Exception ex)
@@ -249,13 +265,23 @@ public sealed class VoiceNoteService : Service
             CrashLog.Write(ex, "voz");
             NotifyDone("Nota de voz guardada", "O Urbe tenta de novo quando você abrir o app.", permission: false);
         }
-        finally { Finish(); }
+        finally
+        {
+            if (recognizer) Recognizer.Release();
+            if (recording) { if (token == _session) IsRecording = false; }
+            else Interlocked.Decrement(ref _saving);
+            Active.TryRemove(id, out _);
+            Finish();
+        }
     }
 
     /// <summary>Before Android 13: the recognizer listens to the microphone; only the text is kept.</summary>
-    private async Task ListenAsync(string id, DateTimeOffset created)
+    private async Task ListenAsync(string id, DateTimeOffset created, int token)
     {
         var queue = VoiceNotes.Queue(this);
+        // here the recognizer is the microphone: a new note waits until the previous one has been understood
+        await Recognizer.WaitAsync();
+        bool recognizer = true, recording = true;
         try
         {
             var session = await MainThread.RunAsync(() => SpeechSession.Start(this, null, preferOnDevice: false));
@@ -266,12 +292,16 @@ public sealed class VoiceNoteService : Service
                 return;
             }
             _live = session;
-            session.Heard = Heard;
-            if (await Task.WhenAny(session.Result, Task.Delay(MaxMillis + 20_000)) != session.Result)
+            session.Heard = t => { if (token == _session) Heard(t); };
+            if (await Task.WhenAny(session.Result, Task.Delay(VoiceCapturePolicy.MaxMillis + 20_000)) != session.Result)
                 await MainThread.RunAsync(() => { session.Abort(); return true; });
             var outcome = await session.Result;
-            IsRecording = false;
-            VoiceNoteWidget.Refresh(this, recording: false);
+            Recognizer.Release();
+            recognizer = false;
+            Interlocked.Increment(ref _saving);
+            recording = false;
+            if (token == _session) IsRecording = false;
+            VoiceNoteWidget.Refresh(this, recording: IsRecording);
             if (QuickNotes.Clean(outcome.Text) is not { } text)
             {
                 Say(outcome.NothingSaid ? "Não ouvi nada. Toque e fale sua nota." : "Não consegui transcrever. Tente de novo.", ToastLength.Short);
@@ -286,7 +316,14 @@ public sealed class VoiceNoteService : Service
             CrashLog.Write(ex, "voz");
             NotifyDone("Nota de voz não salva", ex.Message, permission: false);
         }
-        finally { Finish(); }
+        finally
+        {
+            if (recognizer) Recognizer.Release();
+            if (recording) { if (token == _session) IsRecording = false; }
+            else Interlocked.Decrement(ref _saving);
+            Active.TryRemove(id, out _);
+            Finish();
+        }
     }
 
     private async Task SaveAsync(VoiceNoteQueueFile queue, VoiceNoteEntry entry)
@@ -346,9 +383,9 @@ public sealed class VoiceNoteService : Service
             record.StartRecording();
             var buffer = new byte[chunkBytes];
             long total = 0, sinceFlush = 0;
-            int elapsed = 0, loud = 0, silence = 0;
+            int elapsed = 0, loud = 0, silence = 0, shown = -1;
             double floor = -1;
-            while (!_stop && elapsed < MaxMillis)
+            while (!_stop && !VoiceCapturePolicy.ShouldStop(elapsed, heard, silence))
             {
                 int read = record.Read(buffer, 0, buffer.Length);
                 if (read <= 0) { if (read < 0) break; continue; }
@@ -364,8 +401,9 @@ public sealed class VoiceNoteService : Service
                 bool voice = rms > Math.Max(350, floor * 3);
                 if (voice) { loud++; silence = 0; if (loud >= 3) heard = true; }
                 else { loud = 0; silence += ChunkMillis; }
-                if (heard && silence >= SilenceAfterSpeechMillis) break;
-                if (!heard && elapsed >= NoSpeechMillis) break;
+                // the time on the notification, once a second (CST-056: the person sees there is no hurry)
+                _elapsed = elapsed;
+                if (elapsed / 1000 != shown) { shown = elapsed / 1000; UpdateRecording(Title(), _heard); }
             }
             bool early = live?.Result.IsCompleted == true;
             try { record.Stop(); } catch (Java.Lang.IllegalStateException) { }
@@ -387,14 +425,13 @@ public sealed class VoiceNoteService : Service
         long now = System.Environment.TickCount64;
         if (now - _lastNotify < 400) return;
         _lastNotify = now;
-        UpdateRecording(IsRecording ? "Gravando… toque para parar" : "Salvando…", text);
+        UpdateRecording(Title(), text);
     }
 
     private void Finish()
     {
-        IsRecording = false;
-        ActiveId = null;
-        _busy = false;
+        // another note is still being recorded or saved: the service (and its notification) stays
+        if (IsRecording || Volatile.Read(ref _saving) > 0) { UpdateRecording(Title(), IsRecording ? _heard : null); return; }
         _live = null;
         VoiceNoteWidget.Refresh(this, recording: false);
         try

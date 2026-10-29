@@ -14,6 +14,10 @@ public sealed partial class MainView
     private bool _historyReadOnly, _historyDirty;
     private string? _historyNote, _historyText;
 
+    /// <summary>When a note was created (ms), for the block times of the blocks the whole history already had.</summary>
+    private static long? CreatedMs(UrbeDocument doc) =>
+        DateTimeOffset.TryParse(doc.Created, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var at) ? at.ToUnixTimeMilliseconds() : null;
+
     /// <summary>The history as it is now (tests).</summary>
     public LegacyHistory History => _history;
 

@@ -38,7 +38,7 @@ public sealed partial class HeadlessUiTests
                 Dispatcher.UIThread.RunJobs();
 
                 var file = Path.Combine(vault, QuickNotes.Folder, "2026-10.md");
-                const string expected = "# Notas rápidas — outubro de 2026\n\n## 21/10 — quarta-feira\n\n- 07:30 — comprar pão\n- 07:35 — ligar para a Ana\n";
+                const string expected = "# Notas rápidas — outubro de 2026\n\n## 21/10 — quarta-feira\n\n- [ ] 07:30 — comprar pão\n- [ ] 07:35 — ligar para a Ana\n";
                 Assert.Equal(expected, await ReadWhenWritten(file, t => t == expected));
                 Assert.Equal(["a.wav", "f.wav"], transcribed);
                 // the written ones and their audio are gone; the failing one stays, with its audio

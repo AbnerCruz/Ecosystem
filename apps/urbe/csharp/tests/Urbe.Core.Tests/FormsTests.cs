@@ -31,6 +31,60 @@ public sealed class FormsTests
         Assert.Contains("spell", session.Validate().Keys);
         Assert.Equal("A {{data}} $1", NoteTemplateEngine.Fill("{{nome}}", "Ficha", DateTime.Now, new Dictionary<string, string> { ["nome"] = (string)session.Values["name"]! }));
     }
+    [Theory]
+    [InlineData("12a", false, "12")]
+    [InlineData("abc", false, "")]
+    [InlineData("-3,5x", false, "-3,5")]
+    [InlineData("1.2.3", false, "1.23")]
+    [InlineData("--4", false, "-4")]
+    [InlineData("4-2", false, "42")]
+    [InlineData("3,5", true, "35")]
+    [InlineData("-7", true, "-7")]
+    public void NumericFieldsOnlyTakeNumbers(string typed, bool integer, string kept) =>
+        // CST-047: letters never get into a number field, whatever the keyboard sends
+        Assert.Equal(kept, FormInput.NumberText(typed, integer));
+
+    [Theory]
+    [InlineData("3,5", 3.5)]
+    [InlineData("-2", -2.0)]
+    [InlineData("1.25", 1.25)]
+    [InlineData("-", null)]
+    [InlineData("", null)]
+    public void NumberTextParsesWithCommaOrPoint(string text, double? number) =>
+        Assert.Equal(number, FormInput.ParseNumber(text));
+
+    [Fact]
+    public void ErrorsSayWhatIsWrongWithTheValue()
+    {
+        var age = new FormField { Id = "age", Label = "Idade", Type = "integer", Min = 0, Max = 120 };
+        var height = new FormField { Id = "h", Label = "Altura", Type = "number", Min = 0.5 };
+        var session = FormSession.Create(new FormDefinition { Fields = [age, height] });
+        session.Values["age"] = 1.5;
+        session.Values["h"] = 0.2;
+        Assert.Equal("Use um número inteiro.", session.ErrorFor(age));
+        Assert.Equal("Use um valor a partir de 0,5.", session.ErrorFor(height));
+        session.Values["age"] = 130;
+        Assert.Equal("Use um valor entre 0 e 120.", session.ErrorFor(age));
+        session.Values["age"] = "doze";
+        Assert.Equal("Use um número.", session.ErrorFor(age));
+        session.Values["age"] = 30;
+        Assert.Null(session.ErrorFor(age));
+    }
+
+    [Fact]
+    public void MultipleChoiceKeepsEverySelectedOption()
+    {
+        var tags = new FormField { Id = "t", Label = "Temas", Type = "multi_select", Options = ["Mapa", "Clima", "Povos"] };
+        var session = FormSession.Create(new FormDefinition { Fields = [tags] });
+        FormInput.Toggle(session, tags, "Mapa", true);
+        FormInput.Toggle(session, tags, "Povos", true);
+        FormInput.Toggle(session, tags, "Mapa", true);   // already on: not doubled
+        Assert.Equal(["Mapa", "Povos"], ((JsonArray)session.Values["t"]!).Select(x => (string)x!));
+        FormInput.Toggle(session, tags, "Mapa", false);
+        Assert.Equal(["Povos"], ((JsonArray)session.Values["t"]!).Select(x => (string)x!));
+        Assert.Empty(session.Validate());
+    }
+
     [Fact]
     public void ConversationRoundTripKeepsDraftsProvenanceAndQueueIsolated()
     {

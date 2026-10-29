@@ -62,15 +62,13 @@ public sealed partial class MainView
     {
         try
         {
-            var name = target;
-            var cut = name.IndexOfAny(['|', '#']);
-            if (cut >= 0) name = name[..cut];
-            name = name.Trim();
+            // CST-064: what comes after # is a part of the note (a heading's section, a ^block or lines)
+            var (name, fragment) = EmbedFragments.Split(target);
             if (name.Length == 0) return Missing(target);
             if (FindEmbeddedGraph(name) is { } graph) return GraphCard(graph);
             var file = FindEmbeddedFile(name);
             if (file is not null && !name.EndsWith(".md", StringComparison.OrdinalIgnoreCase)) return FileCard(file);
-            if (FindEmbeddedNote(name) is { } note) return NoteCard(note);
+            if (FindEmbeddedNote(name) is { } note) return NoteCard(note, fragment);
             return file is not null ? FileCard(file) : Missing(target);
         }
         catch (Exception ex) { return Missing(target + " (" + ex.Message + ")"); }
@@ -199,20 +197,30 @@ public sealed partial class MainView
 
     // ------------------------------------------------------------------ a note
 
-    private Control NoteCard(string path)
+    private Control NoteCard(string path, string? fragment = null)
     {
         var content = _contents.GetValueOrDefault(path, "");
         var body = MarkdownEngine.SplitFrontmatter(content).Body;
         var title = path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ? Path.GetFileNameWithoutExtension(path) : Path.GetFileName(path);
+        string? problem = null;
+        if (fragment is not null)
+        {
+            // the seals stay with the blocks they mark (the part is cut from the note as written)
+            var part = EmbedFragments.Extract(body, fragment);
+            title += " › " + (fragment.StartsWith('^') || fragment.StartsWith('L') || fragment.StartsWith('l') ? fragment : fragment.Replace("#", " › "));
+            body = part.Text ?? "";
+            problem = part.Error;
+        }
         var words = body.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
         var meta = words == 1 ? "1 palavra" : words + " palavras";
         Control shown;
-        if (body.Trim().Length == 0) shown = Message("Nota vazia.");
+        if (problem is not null) shown = Message(problem);
+        else if (body.Trim().Length == 0) shown = Message(fragment is null ? "Nota vazia." : "Esta parte está vazia.");
         else
         {
             var reader = new MarkdownReader { Size = UrbeTheme.EditorSize * .94, LineFactor = 1.55, WikiLinkTapped = name => _ = Editor.FollowLinkAsync(name) };
             var text = body.Length > 40_000 ? body[..40_000] + "\n\n…" : body;
-            var view = reader.BuildMarkdown(NoteMarks.StripComments(AiAuthorship.Canonical(text)));
+            var view = reader.BuildMarkdown(NoteMarks.StripComments(AiAuthorship.Canonical(EmbedFragments.HideBlockIds(text))));
             // this text is not the block's own: the caret mapping of a tap must not look into it
             foreach (var tb in view.GetLogicalDescendants().OfType<TextBlock>()) tb.Classes.Remove(MarkdownReader.TextClass);
             shown = new Border { Padding = new Thickness(14, 4, 14, 8), Child = view };

@@ -124,6 +124,18 @@ public sealed class VisualSurface : StackPanel
     /// <summary>A card for a <c>![[destino]]</c> line (a note, an image, a file shown in place), or null for the plain link.</summary>
     public Func<string, Control?>? EmbedFor { get; set; }
 
+    /// <summary>CST-025: the times of the note's blocks (from its history), asked in document order; null shows none.</summary>
+    public Func<BlockTimes.Index?>? BlockTimes { get; set; }
+
+    private bool _showBlockTimes;
+
+    /// <summary>Personalização → Editor → "Horário de cada bloco": a small time beside each block.</summary>
+    public bool ShowBlockTimes
+    {
+        get => _showBlockTimes;
+        set { if (_showBlockTimes == value) return; _showBlockTimes = value; _lastRebuiltText = null; if (_box is null) Rebuild(); }
+    }
+
     /// <summary>The bubble's "Fixar em painel": the selected text of the block (DEC-0045, UC-39).</summary>
     public event Action<string>? PinRequested;
 
@@ -244,8 +256,11 @@ public sealed class VisualSurface : StackPanel
         }
         var editorAdded = false;
         var suggested = _suggestion is null;
+        // the index walks every block in order (copies of a text are told apart by their order)
+        var times = _showBlockTimes && !unchanged ? BlockTimes?.Invoke() : null;
         foreach (var block in _blocks)
         {
+            var time = times?.Next(_text[block.Start..block.End]);
             if (_hideFrontmatter && block.Kind == "frontmatter") continue;
             if (_box is not null && !editorAdded && block.Start >= _editStart)
             {
@@ -259,7 +274,7 @@ public sealed class VisualSurface : StackPanel
                 if (!suggested) { suggested = true; Children.Add(SuggestionCard(sg)); }
                 if (block.Start < sg.Change.End) continue;
             }
-            var drawn = reusable.TryGetValue(block.Start, out var old) ? old : Rendered(block);
+            var drawn = reusable.TryGetValue(block.Start, out var old) ? old : WithTime(Rendered(block), time, block.Kind);
             _holders[block.Start] = drawn;
             Children.Add(drawn);
         }
@@ -341,6 +356,28 @@ public sealed class VisualSurface : StackPanel
         }
         while (b < blocks.Count) result.Add(blocks[b++]);
         return result;
+    }
+
+    /// <summary>CST-025: the block with the time of its last edit at its right, small and quiet.</summary>
+    private Control WithTime(Control drawn, Urbe.Core.BlockTimes.Stamp? stamp, string kind)
+    {
+        if (!_showBlockTimes || stamp is not { } at || kind == "frontmatter") return drawn;
+        // a day alone (the note's creation date) is a calendar date, not a moment: no time zone shift
+        var when = at.DayOnly ? DateTimeOffset.FromUnixTimeMilliseconds(at.Ms).UtcDateTime : DateTimeOffset.FromUnixTimeMilliseconds(at.Ms).LocalDateTime;
+        var label = new TextBlock
+        {
+            Text = Urbe.Core.BlockTimes.Label(when, DateTime.Now, at.DayOnly), FontSize = Math.Max(10, TextSize * .6), FontFamily = UrbeTheme.UiFont,
+            Foreground = UrbeTheme.Brush(UrbeTheme.Text3), Opacity = .8, VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(8, TextSize * 1.05, 0, 0), IsHitTestVisible = false   // level with the first line of text
+        };
+        label.Classes.Add("urbe-block-time");
+        ToolTip.SetTip(drawn, at.DayOnly ? "Desde a criação da nota, " + when.ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture)
+            : "Editado " + when.ToString("dd/MM/yyyy HH:mm", System.Globalization.CultureInfo.InvariantCulture));
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+        grid.Children.Add(drawn);
+        Grid.SetColumn(label, 1);
+        grid.Children.Add(label);
+        return grid;
     }
 
     private Control Rendered(MarkdownBlock block)

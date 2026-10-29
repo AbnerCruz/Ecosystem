@@ -186,6 +186,8 @@ public sealed partial class MainView : IAssistantApp
             var file = await vault.ReadFileAsync(path, long.MaxValue);
             return file?.Bytes is { } bytes ? System.Text.Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF') : null;
         }
+
+        public Task WriteAsync(string path, string json, bool create) => view.WriteGraphForAssistantAsync(path, json, create);
     }
 
     /// <summary>The vault's plugins for write_plugin: listed as Personalização lists them; turned on for their exact text.</summary>

@@ -17,6 +17,33 @@ public sealed partial class AssistantPanel
     private readonly Dictionary<string, bool> _activityExpanded = new(StringComparer.Ordinal);
     private readonly Dictionary<string, bool> _stageExpanded = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// CST-112: the current request's timeline, kept between renders. Each render (every streamed token) only updates the
+    /// header and the stages whose state changed; the others, and their expanded details, are the same controls.
+    /// </summary>
+    private sealed class Timeline
+    {
+        public required StackPanel Root { get; init; }
+        public required StackPanel Head { get; init; }
+        public required Expander Fold { get; init; }
+        public StackPanel? List { get; set; }
+        public IReadOnlyList<AiChatMessage> Messages { get; set; } = [];
+        public Dictionary<string, (string Signature, Control View)> Items { get; } = new(StringComparer.Ordinal);
+    }
+
+    private readonly Dictionary<string, Timeline> _timelines = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _timelinesUsed = new(StringComparer.Ordinal);
+
+    private static string KeyOf(AiChatMessage m) =>
+        m.Id.Length > 0 ? m.Id : "#" + System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(m).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>The timelines of requests no longer on screen are dropped (called once per render of the log).</summary>
+    private void ForgetUnusedTimelines()
+    {
+        foreach (var key in _timelines.Keys.Where(k => !_timelinesUsed.Contains(k)).ToArray()) _timelines.Remove(key);
+        _timelinesUsed.Clear();
+    }
+
     private Control ActivityTimeline(AiChatMessage request, IReadOnlyList<AiChatMessage> messages)
     {
         var calls = messages.SelectMany(message => message.Content
@@ -44,7 +71,24 @@ public sealed partial class AssistantPanel
         if (!running && !needsApproval && !needsAnswer && !needsForm && (calls.LastOrDefault(x => x.Block.Name == "update_plan").Block?.Input as JsonObject)?["steps"] is JsonArray remaining &&
             remaining.Any(x => x is not JsonObject step || JsonText(step["status"]) != "done"))
             headline = "Execução encerrada · plano com pendências";
-        var header = new StackPanel { Spacing = 5 };
+        var key = KeyOf(request);
+        _timelinesUsed.Add(key);
+        if (!_timelines.TryGetValue(key, out var timeline))
+        {
+            var head = new StackPanel { Spacing = 5 };
+            Timeline? made = null;
+            var fold = Lazy(head, () => SyncTimeline(made!));
+            made = timeline = new Timeline { Root = new StackPanel { Spacing = 9 }, Head = head, Fold = fold };
+            fold.IsExpanded = _activityExpanded.GetValueOrDefault(request.Id);
+            fold.PropertyChanged += (_, e) =>
+            {
+                if (e.Property == Expander.IsExpandedProperty) _activityExpanded[request.Id] = fold.IsExpanded;
+            };
+            _timelines[key] = timeline;
+        }
+        timeline.Messages = messages;
+        var header = timeline.Head;
+        header.Children.Clear();
         var line = new Grid { ColumnDefinitions = new ColumnDefinitions("24,*") };
         var icon = UrbeTheme.Icon(UrbeTheme.Icons.Assistant, 16, running ? UrbeTheme.Accent : UrbeTheme.Text2);
         var heading = Wrap(headline, 13, UrbeTheme.Text, FontWeight.SemiBold);
@@ -71,52 +115,93 @@ public sealed partial class AssistantPanel
                 Background = UrbeTheme.Brush(UrbeTheme.Line2)
             });
 
-        var fold = Lazy(header, () =>
-        {
-            var list = new StackPanel { Spacing = 5, Margin = new Thickness(0, 8, 0, 2) };
-            // Preserve the *entire* chronology, including model reasoning and intermediate drafts.
-            // Every part is loaded only when the person requests that part of the history.
-            foreach (var message in messages)
+        // an expanded history keeps its controls: only new or changed stages are made (CST-112)
+        if (timeline.Fold.Content is not null) SyncTimeline(timeline);
+        Avalonia.Automation.AutomationProperties.SetName(timeline.Fold, "Atividade do agente: " + headline + ". " + detail);
+        var root = timeline.Root;
+        if (root.Children.Count == 0)
+            root.Children.Add(new Border
             {
-                if (message.Meta?.Reasoning is { Length: > 0 } thought)
-                    list.Children.Add(Lazy(Label("Resumo de raciocínio do modelo", 12, UrbeTheme.Text2),
-                        () => Markdown(thought)));
-                foreach (var block in message.Content)
-                {
-                    if (block.Type == "tool_use") list.Children.Add(ActivityStage(block, message));
-                    else if (block.Type == "text" && !block.Hidden && !string.IsNullOrEmpty(block.Text))
-                    {
-                        var draft = block.Text;
-                        list.Children.Add(Lazy(Label(message.Meta?.Draft == true ? "Rascunho intermediário" : "Observação do agente", 12, UrbeTheme.Text2),
-                            () => Markdown(draft)));
-                    }
-                }
-            }
-            if (list.Children.Count == 0)
-                list.Children.Add(Hint("O modelo ainda não registrou operações."));
-            return list;
-        });
-        fold.IsExpanded = _activityExpanded.GetValueOrDefault(request.Id);
-        fold.PropertyChanged += (_, e) =>
-        {
-            if (e.Property == Expander.IsExpandedProperty) _activityExpanded[request.Id] = fold.IsExpanded;
-        };
-        Avalonia.Automation.AutomationProperties.SetName(fold, "Atividade do agente: " + headline + ". " + detail);
-        var root = new StackPanel { Spacing = 9 };
-        root.Children.Add(new Border
-        {
-            CornerRadius = new CornerRadius(0),
-            Padding = new Thickness(6, 7, 2, 7),
-            Background = Brushes.Transparent,
-            BorderThickness = new Thickness(0),
-            Child = fold
-        });
+                CornerRadius = new CornerRadius(0),
+                Padding = new Thickness(6, 7, 2, 7),
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Child = timeline.Fold
+            });
+        while (root.Children.Count > 1) root.Children.RemoveAt(1);
 
         // Actionable requests must never be buried inside a collapsed operation history.
         if (needsApproval && _pending is { } action) root.Children.Add(Approval(action.Request));
         if (needsAnswer && lastQuestion is not null) root.Children.Add(Clarification(lastQuestion));
 
         return root;
+    }
+
+    /// <summary>
+    /// The whole chronology (reasoning, every operation, intermediate drafts) as controls, reusing the ones whose state did
+    /// not change; parts are still loaded only when the person opens them.
+    /// </summary>
+    private StackPanel SyncTimeline(Timeline timeline)
+    {
+        var list = timeline.List ??= new StackPanel { Spacing = 5, Margin = new Thickness(0, 8, 0, 2) };
+        var desired = new List<Control>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        Control Item(string key, string signature, Func<Control> make)
+        {
+            seen.Add(key);
+            if (timeline.Items.TryGetValue(key, out var kept) && kept.Signature == signature) return kept.View;
+            var view = make();
+            timeline.Items[key] = (signature, view);
+            return view;
+        }
+        foreach (var message in timeline.Messages)
+        {
+            var mk = KeyOf(message);
+            if (message.Meta?.Reasoning is { Length: > 0 } thought)
+                desired.Add(Item(mk + ":think", thought.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    () => Lazy(Label("Resumo de raciocínio do modelo", 12, UrbeTheme.Text2), () => Markdown(thought))));
+            for (int i = 0; i < message.Content.Count; i++)
+            {
+                var block = message.Content[i];
+                if (block.Type == "tool_use")
+                {
+                    var stageKey = block.Id.Length > 0 && !block.Pending ? "t:" + block.Id : mk + ":tool:" + i;
+                    desired.Add(Item(stageKey, StageSignature(block, message), () => ActivityStage(block, message)));
+                }
+                else if (block.Type == "text" && !block.Hidden && !string.IsNullOrEmpty(block.Text))
+                {
+                    var draft = block.Text;
+                    bool isDraft = message.Meta?.Draft == true;
+                    desired.Add(Item(mk + ":text:" + i, (isDraft ? "d" : "o") + draft.Length.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        () => Lazy(Label(isDraft ? "Rascunho intermediário" : "Observação do agente", 12, UrbeTheme.Text2), () => Markdown(draft))));
+                }
+            }
+        }
+        foreach (var gone in timeline.Items.Keys.Where(k => !seen.Contains(k)).ToArray()) timeline.Items.Remove(gone);
+        if (desired.Count == 0) desired.Add(Hint("O modelo ainda não registrou operações."));
+        // appending is the common case (a new step): keep every control in place and add the new ones
+        int same = 0;
+        while (same < desired.Count && same < list.Children.Count && ReferenceEquals(list.Children[same], desired[same])) same++;
+        if (same == list.Children.Count) for (int i = same; i < desired.Count; i++) list.Children.Add(desired[i]);
+        else if (same < desired.Count || same < list.Children.Count)
+        {
+            list.Children.Clear();
+            list.Children.AddRange(desired);
+        }
+        return list;
+    }
+
+    /// <summary>What a stage shows: when any of it changes, the stage is made again.</summary>
+    private string StageSignature(AiChatBlock block, AiChatMessage message)
+    {
+        var result = ResultFor(block.Id);
+        var sb = new System.Text.StringBuilder();
+        sb.Append(block.Pending).Append('|').Append(block.Name).Append('|').Append(block.Partial?.Length ?? 0).Append('|')
+            .Append(result?.Status).Append('|').Append(result?.IsError).Append('|').Append(result?.Content.Length ?? -1).Append('|')
+            .Append(_pending?.Request.Call.Id == block.Id).Append('|').Append(message.Meta?.Streaming).Append('|').Append(_running is null).Append('|')
+            .Append(_progress.GetValueOrDefault(block.Id)).Append('|').Append(_toolElapsed.GetValueOrDefault(block.Id)).Append('|')
+            .Append(block.Name == "update_plan" && block.Id == LatestPlanId());
+        return sb.ToString();
     }
 
     private static string ActivityVerb(string tool) => tool switch

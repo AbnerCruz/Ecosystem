@@ -1,0 +1,184 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261028-urbe-consolidation-wave1",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-28T18:57:21Z",
+  "agent": {
+    "id": "claude-code-urbe-consolidation",
+    "kind": "ai-agent"
+  },
+  "task_id": "GH-845",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-939e057e-1zwyg5",
+  "base_commit": "cb758c0",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/847",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/VoiceNoteService.cs",
+    "apps/urbe/csharp/src/Urbe.Android/VoiceSpeech.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizationExtras.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizePanel.Sections.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.AndroidBack.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Embeds.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Graphs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.History.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Pages.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Studio.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/QuickVoiceNotes.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/FormRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/WorkspaceView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AgentLanguage.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantConversationTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantExecutionEfficiency.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantGraphTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantGuideTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantQuickNoteTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/BlockTimes.cs",
+    "apps/urbe/csharp/src/Urbe.Core/EmbedFragments.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Forms.cs",
+    "apps/urbe/csharp/src/Urbe.Core/GraphEdits.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Pages/PageImages.cs",
+    "apps/urbe/csharp/src/Urbe.Core/QuickNotes.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VoiceCapturePolicy.cs",
+    "apps/urbe/csharp/src/Urbe.Core/WikiTargets.cs",
+    "apps/urbe/csharp/src/Urbe.Core/WorkspaceIndex.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ActivityExpansionUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AgentCreationBlocksUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AndroidBackAndPatchnotesUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AppDocsGuideTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/BlockTimesUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ChatRefreshUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ClockInEditorUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ConversationHistoryUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorNavigationUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EmbedFragmentUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FormRendererInputUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/GraphEditUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PageImagesUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/QuickVoiceBacklogUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/VoiceBacklogBusyTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AgentLanguageTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantAuthorshipSealTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantConversationToolsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantGraphEditTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantGraphToolsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantGuideToolsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantMultimodalQuestionTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantReviewAnswerTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantRunHostTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantStaleRewriteTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/BlockTimesTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/EmbedFragmentsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/FormsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageImagesTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/QuickNotesTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VoiceCapturePolicyTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VoiceNoteQueueTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/WikiTargetsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/WorkspaceIndexTests.cs",
+    "apps/urbe/docs/csharp/CONSOLIDATION.md",
+    "docs/governance/handoffs/HO-20261028-urbe-consolidation-wave1.json"
+  ],
+  "work_completed": [
+    "Personalização fora da Área de trabalho (nota do proprietário de 25/10/2026).",
+    "CST-053: checkbox obrigatório em toda nota rápida, sem duplicar; ferramenta add_quick_note para agentes.",
+    "CST-040/041: seletores de link e incorporação com todos os arquivos do vault; link de arquivo abre o visualizador.",
+    "CST-039: seletor Mover para sem a pasta atual nem destinos inválidos.",
+    "CST-070: blocos de instrução já na criação do agente, mesmo editor da configuração.",
+    "CST-077: idioma padrão do sistema para agentes, configurável; pedido explícito prevalece.",
+    "Progresso CST registrado em apps/urbe/docs/csharp/CONSOLIDATION.md.",
+    "CST-079: revisão interna não substitui a resposta sobre o trabalho; pedido de revisão exige resposta final completa.",
+    "CST-021: Nova nota nesta pasta no editor, sem arquivo residual ao cancelar.",
+    "CST-047: campos numéricos só aceitam números e mostram o erro específico na hora; seleção múltipla com caixas de marcar.",
+    "CST-052: relógio acessível no editor em largura de celular (verificado por teste).",
+    "CST-010: Voltar sobe as pastas da Área de trabalho antes de sair do app.",
+    "CST-112: linha do tempo da atividade incremental (158,9 → 18,7 ms por atualização com 300 passos abertos).",
+    "CST-008: seleção antiga não trava novas respostas no chat.",
+    "Edições longas (CST-098, parte): sem reescrita inteira a partir de leitura desatualizada ou parcial; edit_note falho mostra o trecho mais parecido; falhas repetidas pedem replanejar; números da resposta recontados; read_note nativo sem selos.",
+    "CST-075: ferramenta urbe_guide sobre o Tutorial do app; Tutorial completado (incorporações, grafos, notas rápidas) e protegido por teste de cobertura da sintaxe.",
+    "CST-064 (parte): incorporação de seção por título, de bloco ^id e de linhas, sem os marcadores no cartão.",
+    "CST-059: imagens do vault citadas pela página vão dentro do HTML (prévia, visualização, exportação e impressão).",
+    "CST-056/055: gravação rápida sem pressa (toque para terminar, 45 s de silêncio, 15 min) e consecutiva (próxima nota enquanto a anterior salva).",
+    "CST-089: agentes consultam as próprias conversas anteriores (resumos e detalhe), separadas por agente.",
+    "Correção: o host de cada execução não repassava os grafos (list_graphs/read_graph inoperantes no app); teste de repasse de todas as capacidades.",
+    "CST-068: edit_graph — agentes criam e alteram grafos com aprovação em texto, sem sobrescrever grafo aberto com alterações.",
+    "CST-025: horário da última edição de cada bloco, derivado das Versões anteriores (sem nova fonte de dados), opcional em Personalização → Editor."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test Urbe.Portable.slnx",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1378 testes, 0 falhas (local, .NET 10.0.403); Urbe.Android compila (Debug)."
+    },
+    {
+      "check": "Validação no Android físico dos itens desta leva",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/docs/csharp/CONSOLIDATION.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "CST-041: mensagem para incorporação de tipo não suportado ainda não revisada."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Continuar a consolidação: CST-079, CST-021, CST-047, CST-052, CST-010 e demais."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/addenda/ADD-0030-urbe-area-de-trabalho.md",
+    "docs/governance/communication.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Área de trabalho segue sendo projeção das pastas; idioma é uma configuração com uma fonte (config do Assistente)."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "add_quick_note tem acesso write e passa pela política de aprovação."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação DEVICE pendente e separada."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nada extraído para a plataforma."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "wiki-targets",
+      "status": "product-specific",
+      "rationale": "Resolução de links do vault do Urbe; sem outro consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Funcionalidades autorizadas do Product; a classificação efetiva (AssistantStore.cs na zona user-data, campo de configuração aditivo e compatível) é derivada pelo integrador."
+  }
+}

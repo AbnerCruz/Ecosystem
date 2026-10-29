@@ -54,7 +54,8 @@ public sealed class AssistantAuthorshipSealTests
         var result = await AssistantAgent.RunAsync(new()
         {
             Host = host, Agent = AssistantAgent.AgentById("geral"), Policy = policy, Model = "provedor/gpt-x", Provider = new("p", "openai"),
-            Messages = messages, OptimizeToolUse = true, MarkAiText = true,
+            Messages = messages, OptimizeToolUse = true, MarkAiText = true, Now = new DateTime(2026, 10, 25, 8, 11, 0),
+            Tools = [.. AssistantTools.All, AssistantQuickNoteTools.Add],
             Approve = (r, _) => { approvals.Add(r); return Task.FromResult(approve?.Invoke(r) ?? AiApproval.Approve); },
             Stream = (_, _, _, _) => Task.FromResult(step < steps.Length ? Answer(steps[step++]) : Answer(AiBlock.TextBlock("Pronto.")))
         });
@@ -158,6 +159,22 @@ public sealed class AssistantAuthorshipSealTests
         await Run(host, "auto", null,
             [AiBlock.ToolUse("c", "create_note", new JsonObject { ["path"] = "Personalização/tema.json", ["content"] = json })]);
         Assert.Equal(json, host.Documents.Get("Personalização/tema.json")!.Content);
+    }
+
+    [Fact]
+    public async Task AnAgentsQuickNoteIsACheckboxInTheMonthsNote()
+    {
+        // CST-053: the agent sends only the text; the month's note, the day and the checkbox are the Urbe's
+        var host = new Host("");
+        host.Documents.Upsert(new() { Path = "Notas rápidas/2026-10.md", Content = "# Notas rápidas — outubro de 2026\n\n## 25/10 — domingo\n\n- [ ] 07:00 — minha\n" });
+        await Run(host, "auto", null,
+            [AiBlock.ToolUse("q", "add_quick_note", new JsonObject { ["text"] = "- [ ] revisar a pasta de Personalização" })]);
+        Assert.Equal("# Notas rápidas — outubro de 2026\n\n## 25/10 — domingo\n\n- [ ] 07:00 — minha\n- [ ] 08:11 — revisar a pasta de Personalização " + S("gpt-x") + "\n",
+            host.Documents.Get("Notas rápidas/2026-10.md")!.Content);
+        var fresh = new Host("");
+        await Run(fresh, "auto", null, [AiBlock.ToolUse("q", "add_quick_note", new JsonObject { ["text"] = "comprar pão" })]);
+        Assert.Equal("# Notas rápidas — outubro de 2026\n\n## 25/10 — domingo\n\n- [ ] 08:11 — comprar pão " + S("gpt-x") + "\n",
+            fresh.Documents.Get("Notas rápidas/2026-10.md")!.Content);
     }
 
     [Fact]

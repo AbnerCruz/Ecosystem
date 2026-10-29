@@ -82,9 +82,16 @@ public sealed class EditorOverlay : Grid
     public bool StartInVisual { get; set; } = true;
     /// <summary>The notes of the open vault (for [[ suggestions and wikilink targets).</summary>
     public Func<IEnumerable<CityNote>>? Notes { get; set; }
+    /// <summary>CST-040: the vault's other files (images, PDFs, audio, code…), which [[…]] and ![[…]] also find.</summary>
+    public Func<IEnumerable<string>>? Files { get; set; }
+    /// <summary>CST-041: opens a file a link points at in the app's viewer.</summary>
+    public Func<string, Task>? OpenFile { get; set; }
 
     /// <summary>The card of a <c>![[destino]]</c> line in the Visual mode (set by the app, which knows the vault).</summary>
     public Func<string, Control?>? EmbedFor { get => _visual.EmbedFor; set => _visual.EmbedFor = value; }
+
+    /// <summary>CST-025: the block times of a note (by path), from its history.</summary>
+    public Func<string, Urbe.Core.BlockTimes.Index?>? BlockTimesFor { get; set; }
     /// <summary>UD.prompt / UD.choose of the host.</summary>
     public UrbeDialogs? Dialogs { get; set; }
     public VisualSurface Surface => _visual;
@@ -246,6 +253,7 @@ public sealed class EditorOverlay : Grid
         };
         _visual.WikiLinkTapped += name => _ = FollowLinkAsync(name);
         _visual.PinRequested += text => { if (_note is not null) Pinned.Pin(text, _note.Path); };
+        _visual.BlockTimes = () => _note is { } open ? BlockTimesFor?.Invoke(open.Path) : null;
         _visual.ActiveToolsChanged += on => { if (Mode == EditorMode.Visual) ShowActiveTools(on); };
         _visual.EditingChanged += _ => UpdateChrome();
         _visual.WikiCandidates = Candidates;
@@ -446,6 +454,23 @@ public sealed class EditorOverlay : Grid
     /// <summary>Creates the note a [[link]] names when it does not exist yet (DEC-0045, UC-37): the host writes it to
     /// the vault and returns it without opening it, or null when it could not.</summary>
     public Func<string, Task<CityNote?>>? CreateLinked { get; set; }
+
+    /// <summary>CST-021: asks for a name and creates a note in the open note's folder (not opened; null when cancelled).</summary>
+    public Func<Task<CityNote?>>? CreateHere { get; set; }
+
+    /// <summary>
+    /// CST-021: "Nova nota" from inside the editor — the note is created next to the open one, written to the vault, and
+    /// opened with the current one on the trail (Voltar comes back). Cancelling the name leaves no file.
+    /// </summary>
+    public async Task NewNoteHereAsync()
+    {
+        if (CreateHere is null || _note is null) return;
+        if (!await CanLeaveAtlasAsync()) return;
+        if (await CreateHere() is not { } made) return;
+        var saving = LeaveCurrentAsync();
+        Go(made);
+        await saving;
+    }
 
     /// <summary>Follows a link or a backlink to <paramref name="target"/>: saves the open note, remembers it and opens the target.</summary>
     public async Task NavigateAsync(CityNote target)
@@ -768,8 +793,9 @@ public sealed class EditorOverlay : Grid
     public CityNote? Current => _note is null ? null : _note with { Content = Editor.Text ?? "" };
 
     /// <summary>Personalização → editor: largura (estreita 600, media 720, larga 920, total) and modoInicial.</summary>
-    public void ApplyOptions(string? width, string? initialMode)
+    public void ApplyOptions(string? width, string? initialMode, bool blockTimes = false)
     {
+        _visual.ShowBlockTimes = blockTimes;
         var max = width switch { "estreita" => 600.0, "larga" => 920.0, "total" => double.PositiveInfinity, _ => 720.0 };
         _sourceColumn.MaxWidth = max;
         _columnWidth = width ?? "media";
@@ -1600,9 +1626,22 @@ public sealed class EditorOverlay : Grid
         _index = new KnowledgeIndex(store);
     }
 
-    /// <summary>wikiCandidates(query): knowledge.search(query, 20) without the open note; names are the document titles.</summary>
-    private IReadOnlyList<string> Candidates(string query) =>
-        _index is null ? [] : _index.Search(query, 20).Where(d => d.Id != _currentId).Select(d => d.Title).ToArray();
+    /// <summary>
+    /// wikiCandidates(query): knowledge.search(query, 20) without the open note, names the document titles; then the
+    /// vault's other files (CST-040), by their name or, when two share it, their path. Names that start with what was
+    /// typed come first, notes before files.
+    /// </summary>
+    private IReadOnlyList<string> Candidates(string query)
+    {
+        var notes = _index is null ? [] : _index.Search(query, 20).Where(d => d.Id != _currentId).Select(d => d.Title).ToList();
+        var all = Files?.Invoke().ToList() ?? [];
+        if (all.Count == 0) return notes;
+        var files = WikiTargets.Files(all, query, 20).Select(f => WikiTargets.LinkName(f, all)).ToList();
+        var q = Urbe.Core.Assistant.AssistantTools.Fold(query.Trim());
+        bool Starts(string name) => q.Length > 0 && Urbe.Core.Assistant.AssistantTools.Fold(name).StartsWith(q, StringComparison.Ordinal);
+        if (q.Length == 0) return [.. notes.Take(12), .. files.Take(8)];
+        return [.. notes.Where(Starts), .. files.Where(Starts), .. notes.Where(n => !Starts(n)), .. files.Where(f => !Starts(f))];
+    }
 
     private void UpdateWiki()
     {
@@ -1664,6 +1703,12 @@ public sealed class EditorOverlay : Grid
         }
         if (target is not null) { await NavigateAsync(target); return; }
         if (matches.Count > 1) { Notify("Link ambíguo: use o caminho da nota."); return; }
+        // CST-041: a link to a file that is not a note opens the file, never a new note named after it
+        if (Files?.Invoke() is { } files && WikiTargets.ResolveFile(name, files) is { } file)
+        {
+            if (OpenFile is not null) await OpenFile(file); else Notify("Arquivo: " + file);
+            return;
+        }
         // The 1.8.4 only said the note did not exist (owner, DEC-0045): offer to create it, next to this one.
         if (CreateLinked is null || Dialogs is null || !LegacyEditorTools.IsCreatableLinkName(name)) { Notify("A nota vinculada não existe."); return; }
         if (!await Dialogs.ConfirmAsync("Criar nota", $"A nota “{name}” ainda não existe. Criar agora?", "Criar nota")) return;
