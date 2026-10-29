@@ -1028,9 +1028,24 @@ public sealed partial class AssistantPanel : Border
         var outcome = child.Runs.LastOrDefault();
         if (outcome?.Stopped is "error" or "aborted" || outcome?.Error is not null)
             throw new AiToolException("O especialista não concluiu a consulta: " + (outcome?.Error ?? outcome?.Stopped));
-        if (outcome?.Stopped == "needs_input")
-            throw new AiToolException("O especialista precisa de uma resposta do usuário. Abra a conversa de " +
-                AgentNames.CallName(target, _cfg) + " para continuar.");
+        // CST-091: the specialist's question is answered from here; it goes on in its own conversation
+        while (outcome?.Stopped == "needs_input")
+        {
+            var question = child.Messages.Skip(lastExchangeStart).SelectMany(m => m.Content)
+                .LastOrDefault(b => b.Type == "tool_use" && b.Name == "ask_user");
+            if (question is null || child.Forms.Any(f => f.State == "pending"))
+                throw new AiToolException("O especialista precisa de uma resposta do usuário. Abra a conversa de " +
+                    AgentNames.CallName(target, _cfg) + " para continuar.");
+            var reply = await AskThroughRequesterAsync(child, question, cancel);
+            child.Messages.Add(new AiChatMessage { Id = AssistantAgent.NewId("m"), Role = "user", Content = [AiChatBlock.TextBlock(reply)] });
+            _store.SaveConversation(child);
+            childRun = StartAsync(child, cancel);
+            if (_activeRuns.ContainsKey(child.Id)) _activeTasks[child.Id] = childRun;
+            await childRun;
+            outcome = child.Runs.LastOrDefault();
+            if (outcome?.Stopped is "error" or "aborted" || outcome?.Error is not null)
+                throw new AiToolException("O especialista não concluiu a consulta: " + (outcome?.Error ?? outcome?.Stopped));
+        }
         var last = child.Messages.LastOrDefault(m => m.Role == "assistant" && m.Content.Any(b => b.Type == "text" && !string.IsNullOrWhiteSpace(b.Text)));
         var summary = last is null ? "" : string.Join("\n", last.Content.Where(b => b.Type == "text").Select(b => b.Text));
         var generated = child.Messages.Skip(lastExchangeStart).SelectMany(m => m.Content)
@@ -1083,7 +1098,9 @@ public sealed partial class AssistantPanel : Border
         if (ReferenceEquals(conversation, _conv)) _pending = (req, answer);
         var chosen = AssistantAgent.AgentById(conversation.AgentId, _cfg.CustomAgents);
         PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(AssistantActivityKind.ApprovalNeeded, AgentNames.CallName(chosen, _cfg), conversation.Id));
-        if (!ReferenceEquals(conversation, _conv))
+        // CST-091: a consulted specialist's request shows in the conversation that consulted it
+        bool forwarded = ForwardApproval(conversation, req, answer, cancel);
+        if (!ReferenceEquals(conversation, _conv) && !forwarded)
             _app.Notify(AgentNames.CallName(chosen, _cfg) + " está aguardando aprovação. Abra a conversa ativa do agente.");
         // UC-80: a change to the note the request came from is shown in the note itself, to accept or refuse there
         if (ReferenceEquals(conversation, _conv) && _inNote is { } asked && req.Preview is { Before: { } before, After: { } after } preview && preview.Path == asked.Path &&
@@ -1115,6 +1132,7 @@ public sealed partial class AssistantPanel : Border
         _pending = null;
         _pendingRuns.Remove(_conv.Id);
         _approvalDrafts.Remove(p.Request.Call.Id);
+        ForgetForwarded(p.Request);
         p.Answer.TrySetResult(answer);
         if (_running is not null)
         {
@@ -1397,6 +1415,7 @@ public sealed partial class AssistantPanel : Border
             i = end - 1;
         }
         foreach (var form in _conv.Forms.Where(f => f.State == "pending")) desired.Add(FormView(form));
+        desired.AddRange(ForwardedCards());
         foreach (var queued in _conv.QueuedMessages) desired.Add(Wrap("Na fila · " + string.Join(" ", queued.Content.Where(b => b.Type == "text" && !b.Hidden).Select(b => b.Text)), 13, UrbeTheme.Text2));
         if (_conv.QueuedMessages.Count > 0 && !ConversationBusy(_conv.Id))
             desired.Add(TextButton("Retomar mensagens na fila", () => CurrentRun = ResumeQueuedAsync(_conv)));
