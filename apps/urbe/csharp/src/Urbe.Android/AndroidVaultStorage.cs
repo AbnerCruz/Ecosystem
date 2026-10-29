@@ -149,6 +149,22 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public Task<string?> PeekTextAsync(string path, CancellationToken cancellationToken = default)
+    {
+        var stored = _tree?.ToString() ?? Preferences.GetString(PreferenceKey, string.Empty);
+        if (string.IsNullOrWhiteSpace(stored)) return Task.FromResult<string?>(null);
+        // one file of the remembered folder, outside the gate: the whole reading may start meanwhile
+        return Task.Run(() =>
+        {
+            try
+            {
+                if (AndroidUri.Parse(stored) is not { } tree || FindDocument(tree, path) is not { } uri) return null;
+                return new UTF8Encoding(false, true).GetString(ReadBytes(uri)).TrimStart('\uFEFF');
+            }
+            catch (Exception ex) when (ex is IOException or InvalidDataException or DecoderFallbackException or Java.Lang.Exception or ArgumentException) { return null; }
+        }, cancellationToken);
+    }
+
     public async Task<VaultSnapshot?> ReloadAsync(CancellationToken cancellationToken = default)
     {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);

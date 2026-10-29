@@ -587,6 +587,15 @@ public sealed class EditorOverlay : Grid
     /// <summary>Voltar: the previous note of the trail, or closes back to where the editor was opened from.</summary>
     public async Task BackAsync()
     {
+        if (_early is { } early)
+        {
+            // nothing was edited: the editor closes, and the folder's reading does not bring it back
+            _early = early with { Dismissed = true };
+            Leaving?.Invoke();
+            IsVisible = false;
+            _note = null;
+            return;
+        }
         if (!await CanLeaveAtlasAsync()) return;
         var saving = LeaveCurrentAsync();
         var notes = Notes?.Invoke().ToList() ?? [];
@@ -762,9 +771,66 @@ public sealed class EditorOverlay : Grid
         var notes = Notes?.Invoke().ToList() ?? [];
         foreach (var t in tabs) if (notes.Any(n => n.Path == t) && !_tabs.Contains(t)) _tabs.Add(t);
         var show = notes.FirstOrDefault(n => n.Path == active) ?? notes.FirstOrDefault(n => n.Path == _tabs.LastOrDefault());
+        if (EndEarly() is { } early)
+        {
+            // the person closed it while the folder was read: it stays closed
+            if (early.Dismissed) { RenderTabs(); return; }
+            // the note shown at once is the vault's: it becomes editable where it is (caret, scroll and mode kept)
+            if (show is not null && early.Path == show.Path && string.Equals(show.Content, Editor.Text, StringComparison.Ordinal))
+            {
+                _note = show;
+                _savedContent = _acceptedSourceText = show.Content;
+                TouchTab(show.Path);
+                RebuildIndex();
+                RefreshProperties();
+                UpdateChrome();
+                UpdateStatus(changed: false);
+                return;
+            }
+        }
         if (show is null) { RenderTabs(); return; }
         IsVisible = true;
         Show(show);
+    }
+
+    // ------------------------------------------------------------------ the last note before the folder is read
+
+    private (string Path, bool ReadOnlyBefore, bool Dismissed)? _early;
+
+    /// <summary>The note shown before the folder is read (read only until then).</summary>
+    public bool ShowingEarly => _early is not null;
+
+    /// <summary>
+    /// The opening's last note, read alone before the whole folder (FeaturesCheck: "abertura imediata"). It is seen and
+    /// scrolled at once; it is not edited, and nothing is saved from it, until the folder is read and the note is the
+    /// vault's (<see cref="RestoreSession"/>).
+    /// </summary>
+    public void ShowEarly(CityNote note)
+    {
+        if (IsVisible || _note is not null) return;
+        var before = ReadOnly;
+        Show(note);
+        ReadOnly = true;
+        _early = (note.Path, before, false);
+        Notify("Abrindo a pasta… a nota já pode ser lida.");
+    }
+
+    /// <summary>Ends the early note: what it was, or null when there was none.</summary>
+    private (string Path, bool ReadOnlyBefore, bool Dismissed)? EndEarly()
+    {
+        if (_early is not { } early) return null;
+        _early = null;
+        ReadOnly = early.ReadOnlyBefore;
+        return early;
+    }
+
+    /// <summary>The folder could not be read: the note shown at once goes away.</summary>
+    public void CancelEarly()
+    {
+        if (EndEarly() is null) return;
+        IsVisible = false;
+        _note = null;
+        Editor.Text = "";
     }
 
     /// <summary>v21TouchTab: tabs of notes that no longer exist go; the note opened joins at the end.</summary>

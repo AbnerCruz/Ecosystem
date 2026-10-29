@@ -307,6 +307,8 @@ public sealed partial class MainView : Grid
                 Explorer.Opening = Workspace.Opening = true;
                 // UC-78: the tree of the last opening at once, from its names, while the folder is read
                 ShowLastNames();
+                // and the last note, read alone, before the whole folder (it becomes editable once the folder is read)
+                await ShowLastNoteEarlyAsync();
                 try
                 {
                     var snapshot = await _vault.RestoreAsync();
@@ -320,6 +322,7 @@ public sealed partial class MainView : Grid
         }
         finally
         {
+            Editor.CancelEarly();   // the folder was not read: no note shown from before
             LeaveLastNames();
             Explorer.Opening = Workspace.Opening = false;
             MarkReady();   // UC-56: a widget's quick note waits for the first vault

@@ -80,6 +80,13 @@ public interface IUrbeVaultStorage
         Task.FromResult<IReadOnlyList<string>>([]);
 
     /// <summary>
+    /// The opening shows the last note at once: the text of ONE file of the folder remembered for the next opening,
+    /// read before the whole folder is. Only read and only shown (the folder's reading is what the app works from);
+    /// null when there is no remembered folder, the file is missing, is a link or is not UTF-8 text.
+    /// </summary>
+    Task<string?> PeekTextAsync(string path, CancellationToken cancellationToken = default) => Task.FromResult<string?>(null);
+
+    /// <summary>
     /// Renames or moves ONE attachment of the vault (renomearAsset / moverAsset): a file that is not a note or text
     /// document the Urbe reads (those move with <see cref="MoveTextFileAsync"/>), never inside <c>.urbe</c>. Nothing with
     /// the new name may exist; the folder of <paramref name="to"/> must exist; afterwards the file is there with the same

@@ -62,6 +62,23 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         return await OpenAsync(stored.Folder, cancellationToken);
     }
 
+    public async Task<string?> PeekTextAsync(string path, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var root = _root;
+            if (root is null)
+            {
+                if (!File.Exists(_selectionFile)) return null;
+                root = JsonSerializer.Deserialize<Selection>(await File.ReadAllTextAsync(_selectionFile, cancellationToken).ConfigureAwait(false))?.Folder;
+            }
+            if (string.IsNullOrWhiteSpace(root) || ExistingFile(root, path) is not { } full) return null;
+            var bytes = await File.ReadAllBytesAsync(full, cancellationToken).ConfigureAwait(false);
+            return new UTF8Encoding(false, true).GetString(bytes).TrimStart('\uFEFF');
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or DecoderFallbackException or ArgumentException) { return null; }
+    }
+
     public async Task<VaultSnapshot?> ReloadAsync(CancellationToken cancellationToken = default) =>
         _root is { } root ? await OpenAsync(root, cancellationToken) : null;
 
