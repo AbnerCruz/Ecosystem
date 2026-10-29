@@ -11,10 +11,10 @@ O Lunet dispõe de jogo C# e exportação standalone, mas nenhum runtime multipl
 ## Decisão incremental
 
 1. Primeiro demonstrar a fronteira de segurança (input do cliente / estado exclusivo do host) e o protocolo com testes de dois peers reais, rejeição de frames inválidos e limite de 8 KiB.
-2. Disponibilizar `Lunet.Networking` no assembly do Framework como **incremento interno de compatibilidade com o packager existente**. Isso é um namespace, **não** a entrega do projeto independente `Lunet.Networking` exigido no SPEC.
+2. Criar o projeto independente `src/Lunet.Networking` com referências explícitas no Framework, solução, testes e compilador Roslyn, conforme o SPEC. O empacotador standalone deve receber a dependência transitivamente e será validado em CI.
 3. `TcpGameHost` / `TcpGameClient` servem apenas a LAN, baixa frequência e testes. O contrato público não promete predição, UDP, criptografia, autenticação nem uso em servidor público. Não contam como gate realtime.
 4. Não alterar saves, projeto, código dos jogos existentes, GameHost, assinatura ou formato do APK; declarar `INTERNET` no manifesto do jogo standalone, requisito Android para rede opt-in.
-5. Em uma próxima etapa separar transporte em projeto próprio, criar `INetworkTransport` estável, adaptar LiteNetLib 2.1.x sem expor tipos, e só então implementar netcode realtime, replicação e segurança.
+5. Em uma próxima etapa criar `INetworkTransport` estável, adaptar LiteNetLib 2.1.x sem expor tipos, e só então implementar netcode realtime, replicação e segurança.
 
 ## Alternativas descartadas
 
@@ -22,7 +22,7 @@ O Lunet dispõe de jogo C# e exportação standalone, mas nenhum runtime multipl
 - **TCP como transporte definitivo para todos os gêneros:** bloqueio entre pacotes, inadequado para ações e snapshots de alta frequência.
 - **Afirmar MMO/online pronto com duas conexões:** falso; faltam operações, shard/servidor, segurança, consistência e load testing.
 - **Auto-hospedar internet sem auth/TLS:** expõe jogadores a vazamento/tampering e abuso.
-- **Quebrar agora o empacotador com nova DLL transiente:** pior do que validar primeiro o contrato de transporte. A separação de assembly permanece pendência explícita.
+- **Tornar a DLL independente sem validar dependências transitivas:** risco de APK sem dependência; exigimos smoke e teste de build antes da integração.
 
 ## Critérios de reversão
 
