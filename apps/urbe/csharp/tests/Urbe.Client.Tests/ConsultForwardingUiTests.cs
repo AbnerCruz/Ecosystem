@@ -164,4 +164,32 @@ public sealed partial class HeadlessUiTests
         }
         finally { window.Close(); UrbeApp.AssistantFolder = before; try { Directory.Delete(folder, true); Directory.Delete(vault, true); } catch (IOException) { } }
     }, CancellationToken.None));
+
+    [Fact]
+    public async Task Consult_StoppingWhileTheSpecialistAsksEndsBothAndRemovesTheCard() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        var vault = Path.Combine(Path.GetTempPath(), "urbe-forward-vault-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(vault);
+        File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n");
+        var (view, window, panel, model, folder, before) = await TwoAgentsAsync("read", vault);
+        try
+        {
+            model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"consult-1","function":{"name":"consult_agent","arguments":"{\"agent_id\":\"two\",\"task\":\"Revise\"}"}}]}}]}""",
+                """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
+            model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"ask-1","function":{"name":"ask_user","arguments":"{\"question\":\"Formal?\",\"resolved\":0,\"total\":1}"}}]}}]}""",
+                """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
+            panel.Send("Peça à revisora.");
+            var run = panel.CurrentRun!;
+            await WaitFor(window, view, () => panel.Log.GetLogicalDescendants().OfType<Border>()
+                .FirstOrDefault(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Pergunta de Revisora"));
+            panel.StopCompact();
+            Assert.Same(run, await Task.WhenAny(run, Task.Delay(3000)));
+            for (int i = 0; i < 3; i++) await Settle(window, view);
+            Assert.Equal("aborted", panel.Conversation.Runs[^1].Stopped);
+            Assert.False(panel.SpecialistWaiting);
+            Assert.DoesNotContain(panel.Log.GetLogicalDescendants().OfType<Border>(), b => Avalonia.Automation.AutomationProperties.GetName(b) == "Pergunta de Revisora");
+            return true;
+        }
+        finally { window.Close(); UrbeApp.AssistantFolder = before; try { Directory.Delete(folder, true); Directory.Delete(vault, true); } catch (IOException) { } }
+    }, CancellationToken.None));
 }
