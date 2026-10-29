@@ -61,7 +61,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
 
         public async ValueTask<IAsyncDisposable> AcquireExclusiveAsync(CancellationToken cancellationToken)
         {
-            await host._gate.WaitAsync(cancellationToken);
+            await host._gate.WaitAsync(cancellationToken).ConfigureAwait(false);
             return new Release(host);
         }
 
@@ -111,11 +111,11 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         });
         var selected = await pending.Task.WaitAsync(cancellationToken);
         if (selected is null) return null;
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var listing = new List<string>();
-            var files = await Task.Run(() => ReadFiles(selected, cancellationToken, listing: listing), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(selected, cancellationToken, listing: listing), cancellationToken).ConfigureAwait(false);
             var snapshot = VaultReader.Read(files, UrbeApp.InstalledVersion);
             _listing = listing;
             _tree = selected;
@@ -131,13 +131,13 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         if (IsConnected) return null;
         var stored = Preferences.GetString(PreferenceKey, string.Empty);
         if (string.IsNullOrWhiteSpace(stored)) return null;
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var selected = AndroidUri.Parse(stored)
                 ?? throw new IOException("Pasta Android anteriormente selecionada é inválida.");
             var listing = new List<string>();
-            var files = await Task.Run(() => ReadFiles(selected, cancellationToken, listing: listing), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(selected, cancellationToken, listing: listing), cancellationToken).ConfigureAwait(false);
             var snapshot = VaultReader.Read(files, UrbeApp.InstalledVersion);
             _listing = listing;
             _tree = selected;
@@ -149,12 +149,12 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
 
     public async Task<VaultSnapshot?> ReloadAsync(CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (_tree is not { } tree) return null;
             var listing = new List<string>();
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken, listing: listing), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken, listing: listing), cancellationToken).ConfigureAwait(false);
             _baseline = Snapshot(files);
             _listing = listing;
             return VaultReader.Read(files, UrbeApp.InstalledVersion);
@@ -183,7 +183,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         if (imported) IUrbeVaultStorage.EnsureWritableImportedPath(path);
         else IUrbeVaultStorage.EnsureWritableBinaryPath(path);
         if (bytes.LongLength > MaxFileBytes) throw new InvalidDataException("O arquivo passa do limite de 32 MB: " + path);
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
@@ -206,7 +206,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 if (FindDocument(tree, path) is not { } made || !ReadBytes(made).AsSpan().SequenceEqual(bytes))
                     throw new IOException("O arquivo criado não passou na verificação: " + path);
                 _baseline = Snapshot(ReadFiles(tree, cancellationToken));
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
@@ -220,7 +220,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     public async Task CreateDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureWritableFolderPath(path);
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
@@ -238,7 +238,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 }
                 EnsureDirectory(tree, path);
                 if (FindDocument(tree, path) is null) throw new IOException("A pasta criada não passou na verificação: " + path);
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
@@ -259,18 +259,18 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
 
     public async Task<IReadOnlyList<VaultFile>> ReadAllFilesAsync(CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
-            return await Task.Run(() => ReadFiles(tree, cancellationToken, includeAll: true), cancellationToken);
+            return await Task.Run(() => ReadFiles(tree, cancellationToken, includeAll: true), cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
 
     public async Task<IReadOnlyList<string>> ListFilePathsAsync(CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
@@ -293,7 +293,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 }
                 Walk(Root(tree), string.Empty, 0);
                 return (IReadOnlyList<string>)paths;
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
@@ -302,12 +302,12 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     {
         IUrbeVaultStorage.EnsureAttachmentPath(from);
         IUrbeVaultStorage.EnsureAttachmentPath(to);
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken).ConfigureAwait(false);
             EnsureUnchanged(baseline, files);
             await Task.Run(() =>
             {
@@ -332,7 +332,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 if (FindDocument(tree, to) is null || (!caseOnly && FindDocument(tree, from) is not null))
                     throw new IOException("O arquivo movido não passou na verificação: " + to);
                 EnsureUnchanged(baseline, ReadFiles(tree, cancellationToken));
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
@@ -340,12 +340,12 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     public async Task DeleteFileAsync(string path, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureAttachmentPath(path);
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken).ConfigureAwait(false);
             EnsureUnchanged(baseline, files);
             await Task.Run(() =>
             {
@@ -353,7 +353,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 if (!DocumentsContract.DeleteDocument(Resolver, uri) || FindDocument(tree, path) is not null)
                     throw new IOException("O provedor não excluiu o arquivo: " + path);
                 EnsureUnchanged(baseline, ReadFiles(tree, cancellationToken));
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
@@ -361,12 +361,12 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     public async Task RenameFolderAsync(string from, string to, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureFolderRename(from, to);
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken).ConfigureAwait(false);
             EnsureUnchanged(baseline, files);
             await Task.Run(() =>
             {
@@ -386,14 +386,14 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 var observed = Snapshot(ReadFiles(tree, cancellationToken));
                 IUrbeVaultStorage.EnsureRenamed(baseline, observed, from, to);
                 _baseline = observed;
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
 
     public async Task<VaultFileRead?> ReadFileAsync(string path, long maxBytes, CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (_tree is not { } tree) return null;
@@ -423,7 +423,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                     buffer.Write(chunk, 0, read);
                 }
                 return new VaultFileRead(buffer.Length, buffer.ToArray());
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is IOException or Java.Lang.Exception) { return null; }
         finally { _gate.Release(); }
@@ -435,11 +435,11 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     /// </summary>
     internal async Task<AndroidUri?> DocumentOfAsync(string path, CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (_tree is not { } tree) return null;
-            try { return await Task.Run(() => FindDocument(tree, path), cancellationToken); }
+            try { return await Task.Run(() => FindDocument(tree, path), cancellationToken).ConfigureAwait(false); }
             catch (InvalidDataException) { return null; }
         }
         catch (Exception ex) when (ex is IOException or Java.Lang.Exception) { return null; }
@@ -448,12 +448,12 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
 
     public async Task<bool> OpenExternallyAsync(string path, CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (_tree is not { } tree) return false;
             AndroidUri? uri;
-            try { uri = await Task.Run(() => FindDocument(tree, path), cancellationToken); }
+            try { uri = await Task.Run(() => FindDocument(tree, path), cancellationToken).ConfigureAwait(false); }
             catch (InvalidDataException) { return false; }
             if (uri is null) return false;
             // the app holding the vault grants the viewer read access to this one document only
@@ -472,7 +472,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     public async Task<bool> RemoveEmptyDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureWritableFolderPath(path);
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
@@ -490,7 +490,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 if (Children(tree, parent).Count > 0) return false;
                 if (!DocumentsContract.DeleteDocument(Resolver, parent)) return false;
                 return FindDocument(tree, path) is null;
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
@@ -502,7 +502,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         ArgumentNullException.ThrowIfNull(content);
         IUrbeVaultStorage.EnsureWritableTextPath(path);
 
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
@@ -511,7 +511,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 throw new IOException("Já existe um arquivo com esse nome: " + path);
             if (!create && !baseline.ContainsKey(path))
                 throw new FileNotFoundException("O arquivo não existe na pasta.", path);
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken).ConfigureAwait(false);
             EnsureUnchanged(baseline, files);
             if (expectedSha256 is not null)
             {
@@ -562,7 +562,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 if (observed.Count != baseline.Count + (create ? 1 : 0))
                     throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
                 _baseline = observed;
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
@@ -571,12 +571,12 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     /// one is deleted; a change of case only goes through a temporary copy; then every file is verified.</summary>
     public async Task MoveTextFileAsync(string from, string to, CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken).ConfigureAwait(false);
             EnsureUnchanged(baseline, files);
             var (source, bytes, caseOnly) = IUrbeVaultStorage.PlanMove(files, from, to);
 
@@ -621,7 +621,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 if (!observed.Keys.Contains(to, StringComparer.Ordinal))
                     throw new IOException("O arquivo movido não passou na verificação: " + to);
                 _baseline = observed;
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
@@ -630,12 +630,12 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     /// deleted, then every file verified.</summary>
     public async Task TrashTextFileAsync(string path, string trashJson, CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken).ConfigureAwait(false);
             EnsureUnchanged(baseline, files);
             var (source, trashPath, trashBytes) = IUrbeVaultStorage.PlanTrash(files, path, trashJson);
             var create = !baseline.ContainsKey(trashPath);
@@ -663,19 +663,19 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 if (!observed.TryGetValue(trashPath, out var written) || !written.Bytes.Span.SequenceEqual(trashBytes))
                     throw new IOException("A lixeira não passou na verificação: " + trashPath);
                 _baseline = observed;
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
 
     public async Task TrashTextFilesAsync(IReadOnlyList<string> paths, string trashJson, CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken).ConfigureAwait(false);
             EnsureUnchanged(baseline, files);
             var (sources, trashPath, trashBytes) = IUrbeVaultStorage.PlanTrashMany(files, paths, trashJson);
             var create = !baseline.ContainsKey(trashPath);
@@ -705,7 +705,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                 if (!observed.TryGetValue(trashPath, out var written) || !written.Bytes.Span.SequenceEqual(trashBytes))
                     throw new IOException("A lixeira não passou na verificação: " + trashPath);
                 _baseline = observed;
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
@@ -739,12 +739,12 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
     /// written with verification of it and of every other file.</summary>
     private async Task SaveUrbeFileAsync(Func<IReadOnlyList<VaultFile>, (string, byte[])> plan, string what, CancellationToken cancellationToken, bool createOnly = false)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken).ConfigureAwait(false);
             EnsureUnchanged(baseline, files);
             var (target, plannedBytes) = plan(files);
             var create = !baseline.ContainsKey(target);
@@ -766,7 +766,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
                     observed.Count != baseline.Count + (create ? 1 : 0))
                     throw new IOException(what + " não passou na verificação: " + target);
                 _baseline = observed;
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }

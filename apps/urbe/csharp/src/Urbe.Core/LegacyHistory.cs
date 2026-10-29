@@ -100,13 +100,30 @@ public sealed class LegacyHistory
     public bool Forget(string id) => _byDoc.RemoveAll(x => x.Id == id) > 0;
 
     /// <summary>The text of .urbe/history.v2.json.</summary>
+    /// <remarks>CST-129: each save writes it, and it holds up to 40 texts of every note. A revision never changes once
+    /// kept, so its text is made once and the file is put together from those pieces (the same text JSON.stringify
+    /// gives for the whole), instead of copying and writing every revision again at each save.</remarks>
     public string Export()
     {
-        var documents = new JsonObject();
+        var sb = new System.Text.StringBuilder("{\"version\":2,\"documents\":{");
+        bool firstDoc = true;
         foreach (var (id, revisions) in _byDoc)
-            documents[id] = new JsonArray(revisions.Select(r => (JsonNode)r.DeepClone()).ToArray());
-        return LegacyJson.Stringify(new JsonObject { ["version"] = 2, ["documents"] = documents });
+        {
+            if (!firstDoc) sb.Append(',');
+            firstDoc = false;
+            sb.Append(LegacyJson.Stringify(JsonValue.Create(id))).Append(":[");
+            for (int i = 0; i < revisions.Count; i++)
+            {
+                if (i > 0) sb.Append(',');
+                sb.Append(_text.GetValue(revisions[i], r => LegacyJson.Stringify(r)));
+            }
+            sb.Append(']');
+        }
+        return sb.Append("}}").ToString();
     }
+
+    // the JSON text of each kept revision (they are never changed after being kept)
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<JsonObject, string> _text = new();
 
     private List<JsonObject> Revisions(string id)
     {

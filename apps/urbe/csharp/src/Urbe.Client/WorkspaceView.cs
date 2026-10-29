@@ -190,6 +190,8 @@ public sealed class WorkspaceView : Grid
     /// <summary>The vault changed: the same folder stays open if it still exists, else the nearest one that does.</summary>
     public void SetIndex(WorkspaceIndex index)
     {
+        // CST-129: the same notes as on screen (a note only read, a refresh with nothing new) leave the screen as it is
+        if (index.SameAs(_index) && _laidOutFor == Bounds.Width) return;
         _index = index;
         var folder = Folder;
         while (folder.Length > 0 && !Exists(folder)) folder = NoteLibrary.FolderOf(folder);
@@ -332,9 +334,11 @@ public sealed class WorkspaceView : Grid
                 : EmptyRoot());
             return;
         }
-        var boxes = projects.Select(p => (Control)PreviewBox(p)).ToList();
+        var boxes = projects.Select(p => (Control)CachedPreviewBox(p)).ToList();
         if (loose.Count > 0) boxes.Add(LooseBox(loose));
         boxes.Add(NewProjectTile());
+        (_boxes, _nextBoxes) = (_nextBoxes, _boxes);
+        _nextBoxes.Clear();
         _body.Children.Add(Columned(boxes));
     }
 
@@ -400,6 +404,37 @@ public sealed class WorkspaceView : Grid
     }
 
     /// <summary>A project on the root: its head, its subfolders, its most recent items through the glass, and Ver tudo.</summary>
+    /// <summary>
+    /// CST-129: a project's box is built again only when something it shows changed (its head, subfolders, cards and
+    /// their dates, its look). After an edit, one box is new and the others stay as they were.
+    /// </summary>
+    private Control CachedPreviewBox(WorkspaceBox box)
+    {
+        int cardCols = Bounds.Width / Columns(Bounds.Width) >= 520 ? 3 : 2;
+        var key = new System.Text.StringBuilder()
+            .Append(cardCols).Append('|').Append(box).Append('|').Append(ColorOf(box.Folder)).Append('|').Append(BoxIcon(box.Folder)).Append('|')
+            .Append(_layout.Of(box.Folder)?.Border).Append('|').Append(box.Modified is { } m ? When(m) : null).Append('|');
+        var subs = _index.Children(box.Folder);
+        key.Append(subs.Count).Append('|');
+        foreach (var s in subs.Take(6)) key.Append(_index.Box(s)).Append(ColorOf(s)).Append(BoxIcon(s)).Append('|');
+        foreach (var i in _index.Recent(box.Folder, cardCols * 3))
+            key.Append(i.Path).Append('\u0001').Append(i.Title).Append('\u0001').Append(i.Kind).Append('\u0001')
+               .Append(i.Modified is { } im ? When(im) : null).Append('\u0001').Append(i.Snippet).Append('|');
+        var text = key.ToString();
+        if (_boxes.TryGetValue(box.Folder, out var kept) && kept.Key == text)
+        {
+            if (kept.Box.Parent is Panel parent) parent.Children.Remove(kept.Box);
+            _nextBoxes[box.Folder] = kept;
+            return kept.Box;
+        }
+        var built = PreviewBox(box);
+        _nextBoxes[box.Folder] = (text, built);
+        return built;
+    }
+
+    private Dictionary<string, (string Key, Control Box)> _boxes = new(StringComparer.Ordinal);
+    private Dictionary<string, (string Key, Control Box)> _nextBoxes = new(StringComparer.Ordinal);
+
     private Control PreviewBox(WorkspaceBox box)
     {
         var content = new StackPanel { Spacing = 12 };

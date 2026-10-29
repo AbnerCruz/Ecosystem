@@ -71,6 +71,22 @@ public sealed class WorkspaceIndex
         foreach (var list in _direct.Values) list.Sort(Recent);
     }
 
+    /// <summary>
+    /// CST-129: true when <paramref name="other"/> holds the same folders and the same items, as each card shows them
+    /// (title, kind, dates, start of the text, tags): the screen built from it would be the same, so it is not built again.
+    /// </summary>
+    public bool SameAs(WorkspaceIndex? other)
+    {
+        if (other is null || other._all.Count != _all.Count || other._children.Count != _children.Count) return false;
+        foreach (var (folder, set) in _children)
+            if (!other._children.TryGetValue(folder, out var theirs) || !set.SetEquals(theirs)) return false;
+        var byPath = new Dictionary<string, WorkspaceItem>(_all.Count, StringComparer.Ordinal);
+        foreach (var item in other._all) byPath[item.Path] = item;
+        foreach (var item in _all)
+            if (!byPath.TryGetValue(item.Path, out var theirs) || theirs with { Tags = item.Tags } != item || !theirs.Tags.SequenceEqual(item.Tags)) return false;
+        return true;
+    }
+
     /// <summary>The projects: the top folders, by name.</summary>
     public IReadOnlyList<WorkspaceBox> Projects => [.. Children("").Select(Box)];
 

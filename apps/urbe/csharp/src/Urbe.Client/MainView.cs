@@ -112,7 +112,9 @@ public sealed partial class MainView : Grid
             Editor.Context.IsVisible = false;
             Editor.Connections.IsVisible = false;
             SaveEditorToMemory();
-            RefreshNotes();
+            // CST-129: the Explorer is drawn first; the lists catch up with the note right after (rebuilding the
+            // Área de trabalho cost a frozen frame at every exit)
+            Dispatcher.UIThread.Post(RefreshNotes, DispatcherPriority.Background);
         };
         if (_vault is not null) Editor.SaveRequested += SaveNoteAsync;
         Editor.Editor.TextChanged += (_, _) => CaptureEditorHistory();
