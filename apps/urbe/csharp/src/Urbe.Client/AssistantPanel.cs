@@ -173,7 +173,7 @@ public sealed partial class AssistantPanel : Border
         var bar = new WrapPanel { Orientation = Orientation.Horizontal,
             Margin = new Thickness(12, 0, 12, 8), Children = { _modelChip, _usageButton, _latestMessage } };
 
-        _log.DetachedFromVisualTree += (_, _) => _selectionWait?.Stop();
+        WatchSelections();
         _scroll = new ScrollViewer
         {
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
@@ -958,7 +958,7 @@ public sealed partial class AssistantPanel : Border
             conv.Runs.Add(run);
             if (conv.Runs.Count > 20) conv.Runs.RemoveRange(0, conv.Runs.Count - 20);
             if (web is not null) conv.WebSources = web.Sources.ToList();
-            if (ReferenceEquals(conv, _conv)) { _views.Clear(); RenderAll(); } else RenderChrome();
+            if (ReferenceEquals(conv, _conv)) RenderAll(); else RenderChrome();
             if (conv.Messages.Count > 0) _store.SaveConversation(conv);
             var kind = run.Stopped switch
             {
@@ -1247,9 +1247,7 @@ public sealed partial class AssistantPanel : Border
         Dispatcher.UIThread.Post(() =>
         {
             _renderPosted = false;
-            // CST-008: only a selection inside a message about to be redrawn waits; one left anywhere else (text copied
-            // earlier) used to hold every update back until the panel was closed and opened again
-            if (SelectionInDirty()) { DeferRender(); RenderChrome(); NotifyCompactChanged(); return; }
+            // CST-008: a selection never holds the chat back; SetLog keeps it (see AssistantPanel.Selection)
             bool near = _followChatTail && NearEnd();
             foreach (var d in _dirty) _views.Remove(d);
             _dirty.Clear();
@@ -1258,37 +1256,6 @@ public sealed partial class AssistantPanel : Border
             NotifyCompactChanged();
             if (near) ScrollEnd();
         }, DispatcherPriority.Background);
-    }
-
-    private DispatcherTimer? _selectionWait;
-    private bool _deferredAll;
-    private bool SelectionActive() => HasSelection(_log);
-
-    private static bool HasSelection(Visual root) => root.GetVisualDescendants().Any(v =>
-        v is SelectableTextBlock text && text.SelectionStart != text.SelectionEnd ||
-        v is TextBox box && box.SelectionStart != box.SelectionEnd);
-
-    /// <summary>A selection the person is making inside a view the next render replaces (the dirty messages').</summary>
-    private bool SelectionInDirty() => _dirty.Select(m => _views.GetValueOrDefault(m)).OfType<Visual>().Any(HasSelection);
-
-    private void DeferRender()
-    {
-        if (_selectionWait is null)
-        {
-            _selectionWait = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
-            _selectionWait.Tick += (_, _) =>
-            {
-                if (_deferredAll ? SelectionActive() : SelectionInDirty()) return;
-                _selectionWait.Stop();
-                bool near = _followChatTail && NearEnd();
-                if (_deferredAll) { _deferredAll = false; _views.Clear(); }
-                foreach (var m in _dirty) _views.Remove(m);
-                _dirty.Clear();
-                RenderLog();
-                if (near) ScrollEnd();
-            };
-        }
-        _selectionWait.Start();
     }
 
     private double ChatEndGap => Math.Max(0, _scroll.Extent.Height - _scroll.Offset.Y - _scroll.Viewport.Height);
@@ -1320,14 +1287,12 @@ public sealed partial class AssistantPanel : Border
             _toolStarted.Clear();
             _toolElapsed.Clear();
             _dirty.Clear();
-            _deferredAll = false;
             _selectionWait?.Stop();
             foreach (var text in _log.GetVisualDescendants().OfType<SelectableTextBlock>()) text.SelectionEnd = text.SelectionStart;
             foreach (var box in _log.GetVisualDescendants().OfType<TextBox>()) box.SelectionEnd = box.SelectionStart;
         }
         RenderChrome();
-        if (SelectionActive()) { _deferredAll = true; DeferRender(); return; }
-        _views.Clear();
+        ForgetViewsKeepingSelections();
         RenderLog();
         NotifyCompactChanged();
         ScrollEnd();
@@ -1455,6 +1420,16 @@ public sealed partial class AssistantPanel : Border
     {
         var kids = _log.Children;
         var wanted = new HashSet<Control>(desired);
+        var leaving = kids.Where(k => !wanted.Contains(k)).ToList();
+        if (leaving.Any(SelectionBusy)) { WaitForSelection(); return; }
+        var held = SelectionsIn(leaving);
+        var present = new HashSet<Control>(kids);
+        Replace(kids, desired, wanted);
+        if (held.Count > 0) CarrySelections(held, desired.Where(d => !present.Contains(d)));
+    }
+
+    private static void Replace(Avalonia.Controls.Controls kids, IReadOnlyList<Control> desired, HashSet<Control> wanted)
+    {
         for (int i = 0; i < desired.Count; i++)
         {
             var want = desired[i];
