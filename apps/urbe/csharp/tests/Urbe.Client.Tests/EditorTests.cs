@@ -210,6 +210,8 @@ public sealed class EditorTests
             window.TouchMove(flick, new Point(flickFrom.X, flickFrom.Y - i * 30), RawInputModifiers.None);
         }
         window.TouchEnd(flick, new Point(flickFrom.X, flickFrom.Y - 120), RawInputModifiers.None);
+        // the drag's own work still waiting (a loaded machine) is done first: the glide is what comes after it
+        Dispatcher.UIThread.RunJobs();
         var released = scroll.Offset.Y;
         // the glide's first frame comes from a timer: a slow machine may take longer than a frame to run it
         for (int i = 0; i < 20 && scroll.Offset.Y <= released; i++) { await Task.Delay(20); Dispatcher.UIThread.RunJobs(); }
