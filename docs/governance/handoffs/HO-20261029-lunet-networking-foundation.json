@@ -29,7 +29,10 @@
     "apps/lunet2d/src/Lunet.Framework/Lunet.Framework.csproj",
     "apps/lunet2d/src/Lunet.Compiler/LoadedAssembliesReferenceProvider.cs",
     "apps/lunet2d/Lunet.slnx",
-    "apps/lunet2d/tests/Lunet.Tests/Lunet.Tests.csproj"
+    "apps/lunet2d/tests/Lunet.Tests/Lunet.Tests.csproj",
+    "apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj",
+    "apps/lunet2d/runtime-template/Lunet.Game.Android.csproj",
+    "apps/lunet2d/runtime-template/Lunet.GameCode.csproj"
   ],
   "work_completed": [
     "Pesquisa comparativa de Godot, Mirror, Unity, FishNet, LiteNetLib, Gaffer e Android; limitações e antipadrões registrados",
