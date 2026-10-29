@@ -44,6 +44,7 @@
     <ProjectReference Include="..\Lunet.Git\Lunet.Git.csproj" />
     <ProjectReference Include="..\Lunet.Editor\Lunet.Editor.csproj" />
     <ProjectReference Include="..\Lunet.Framework\Lunet.Framework.csproj" />
+    <ProjectReference Include="../Lunet.Networking/Lunet.Networking.csproj" />
     <ProjectReference Include="..\Lunet.Runtime\Lunet.Runtime.csproj" />
   </ItemGroup>
 </Project>
