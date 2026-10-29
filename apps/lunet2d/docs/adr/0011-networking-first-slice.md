@@ -11,7 +11,7 @@ O Lunet dispõe de jogo C# e exportação standalone, mas nenhum runtime multipl
 ## Decisão incremental
 
 1. Primeiro demonstrar a fronteira de segurança (input do cliente / estado exclusivo do host) e o protocolo com testes de dois peers reais, rejeição de frames inválidos e limite de 8 KiB.
-2. Criar o projeto independente `src/Lunet.Networking` com referências explícitas no Framework, solução, testes e compilador Roslyn, conforme o SPEC. O empacotador standalone deve receber a dependência transitivamente e será validado em CI.
+2. Criar o projeto independente `src/Lunet.Networking` com referências explícitas no Android, template standalone e testes; Framework mantém zero dependências Lunet, e o compilador Roslyn carrega metadados opcionalmente, conforme o SPEC. O empacotador standalone deve receber a dependência transitivamente e será validado em CI.
 3. `TcpGameHost` / `TcpGameClient` servem apenas a LAN, baixa frequência e testes. O contrato público não promete predição, UDP, criptografia, autenticação nem uso em servidor público. Não contam como gate realtime.
 4. Não alterar saves, projeto, código dos jogos existentes, GameHost, assinatura ou formato do APK; declarar `INTERNET` no manifesto do jogo standalone, requisito Android para rede opt-in.
 5. Em uma próxima etapa criar `INetworkTransport` estável, adaptar LiteNetLib 2.1.x sem expor tipos, e só então implementar netcode realtime, replicação e segurança.
