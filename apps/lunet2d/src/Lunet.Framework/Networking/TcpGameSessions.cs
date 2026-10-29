@@ -138,8 +138,7 @@ public sealed class TcpGameHost : IAsyncDisposable
                     _lifetime.Token).ConfigureAwait(false);
             }
         }
-        catch (Exception exception) when (exception is IOException or SocketException or EndOfStreamException
-            or InvalidDataException or ObjectDisposedException or OperationCanceledException) { }
+        catch (Exception exception) when (exception is IOException or SocketException or ObjectDisposedException or OperationCanceledException) { }
         finally
         {
             RemovePeer(peerId);
@@ -253,8 +252,7 @@ public sealed class TcpGameClient : IAsyncDisposable
                     _lifetime.Token).ConfigureAwait(false);
             }
         }
-        catch (Exception exception) when (exception is IOException or SocketException or EndOfStreamException
-            or InvalidDataException or ObjectDisposedException or OperationCanceledException) { }
+        catch (Exception exception) when (exception is IOException or SocketException or ObjectDisposedException or OperationCanceledException) { }
         finally { _incoming.Writer.TryComplete(); }
     }
 
