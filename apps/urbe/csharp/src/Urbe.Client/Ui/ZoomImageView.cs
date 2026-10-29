@@ -40,7 +40,8 @@ public sealed class ZoomImageView : Grid
         _scroll.AddHandler(InputElement.PinchEvent, (_, e) => { SetZoom(Zoom * e.Scale / _pinch); _pinch = e.Scale; e.Handled = true; });
         _scroll.AddHandler(InputElement.PinchEndedEvent, (_, _) => _pinch = 1);
         _scroll.PointerWheelChanged += (_, e) => { if (!e.KeyModifiers.HasFlag(KeyModifiers.Control)) return; SetZoom(Zoom * Math.Pow(1.15, e.Delta.Y)); e.Handled = true; };
-        DetachedFromVisualTree += (_, _) => bitmap.Dispose();
+        // the image lets go of the picture before it is freed (CST-111: a freed bitmap drawn again closes the app)
+        DetachedFromVisualTree += (_, _) => { _image.Source = null; bitmap.Dispose(); };
     }
 
     public void SetZoom(double zoom)

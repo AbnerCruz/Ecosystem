@@ -245,7 +245,11 @@ public sealed partial class AssistantPanel
                     Source = bitmap, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly,
                     MaxHeight = 420, MaxWidth = 640, HorizontalAlignment = HorizontalAlignment.Left
                 };
-                picture.DetachedFromVisualTree += (_, _) => { bitmap.Dispose(); loaded = false; };
+                // CST-111: leaving the screen frees the decoded picture, but the log keeps this card and may put it back:
+                // the image lets go of it first (a freed bitmap drawn again closed the app at the end of long image runs)
+                // and coming back decodes it again
+                picture.DetachedFromVisualTree += (_, _) => { picture.Source = null; bitmap.Dispose(); loaded = false; };
+                picture.AttachedToVisualTree += (_, _) => { if (picture.Source is null) _ = Load(); };
                 visual.Child = picture;
             }
             catch (Exception)

@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261029-urbe-consolidation-wave6",
   "category": "HANDOFF",
-  "timestamp": "2026-10-29T00:28:44Z",
+  "timestamp": "2026-10-29T00:33:53Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -26,6 +26,7 @@
     "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
     "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
     "apps/urbe/csharp/src/Urbe.Client/Ui/FunctionPlotView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/ZoomImageView.cs",
     "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.Forms.cs",
     "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
@@ -43,6 +44,7 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ClockInEditorUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EmbedNoPreviewTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/FunctionPlotUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/GeneratedImageReuseUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteTemplateFlowUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/QuestionProgressUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/RunMetricsUiTests.cs",
@@ -62,6 +64,7 @@
     "CST-105/106: título do editor volta a aparecer no celular (Visual/Fonte num botão só abaixo de 520 px); o botão flutuante do Assistente fecha o bloco em edição antes de abrir.",
     "CST-069: gráficos de funções em blocos ```grafico (avaliador fechado, assíntotas, eixos e legenda), desenhados no Visual e em SVG nas páginas; item Gráfico de função no menu /.",
     "CST-041: incorporação sem prévia diz o tipo do arquivo e que o link continua valendo.",
+    "CST-111: causa provável do crash do carrossel — bitmap da prévia liberado e redesenhado num cartão reaproveitado; corrigido e reproduzido por teste.",
     "UC-51 (GH-845) encerrada: validação no aparelho aprovada pelo proprietário (Issue #848); ROADMAP [x] e handoff done."
   ],
   "verification": [
@@ -69,10 +72,10 @@
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1422 testes, 0 falhas (local, .NET 10.0.403)."
+      "evidence": "1424 testes, 0 falhas (local, .NET 10.0.403)."
     },
     {
-      "check": "Android físico: cartão de perguntas, modelos (.modelo.md, conversão de colchetes, Preencher no editor), linha de tempo das execuções e Desempenho por agente, título do editor a 360 dp, gráfico de função no editor e na página",
+      "check": "Android físico: cartão de perguntas, modelos (.modelo.md, conversão de colchetes, Preencher no editor), linha de tempo das execuções e Desempenho por agente, título do editor a 360 dp, gráfico de função no editor e na página, agente de carrossel com várias imagens até o fim sem fechar o app",
       "kind": "human",
       "result": "pending",
       "object": "apps/urbe/docs/csharp/CONSOLIDATION.md",
@@ -84,7 +87,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Continuar a consolidação: CST-058 (áudio longo), CST-111 (crash do carrossel), CST-069 adiante (prévia ao vivo, paramétricas e física), além dos itens que dependem do proprietário (nome e logo Numa, tags herdadas, menu radial)."
+    "Continuar a consolidação: CST-058 (áudio longo), CST-069 adiante (prévia ao vivo, paramétricas e física), além dos itens que dependem do proprietário (nome e logo Numa, tags herdadas, menu radial)."
   ],
   "decisions_required": [],
   "normative_sources": [
