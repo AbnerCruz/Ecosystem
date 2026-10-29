@@ -14,11 +14,11 @@ namespace Urbe.Client;
 /// </summary>
 public sealed class FolderVaultStorage : IUrbeVaultStorage
 {
-    private const long MaxFileBytes = 32L * 1024 * 1024;
-    private const long MaxVaultBytes = 256L * 1024 * 1024;
-    private const int MaxEntries = 10000;
-    private static readonly string[] Included =
-        [".md", ".markdown", ".txt", ".json", ".yaml", ".yml", ".html", ".htm", ".css", ".js", ".mjs", ".csv"];
+    /// <summary>
+    /// DEC-0059: the vault has no limit of items, size or depth. Only a data file this large that is not a note nor of
+    /// .urbe/ (a CSV, a JSON export) is not kept in memory to check the vault: it is listed and opened like any other file.
+    /// </summary>
+    private const long InMemoryTextBytes = 32L * 1024 * 1024;
 
     private readonly Func<CancellationToken, Task<string?>> _pickFolder;
     private readonly string _selectionFile;
@@ -62,15 +62,32 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         return await OpenAsync(stored.Folder, cancellationToken);
     }
 
+    public async Task<string?> PeekTextAsync(string path, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var root = _root;
+            if (root is null)
+            {
+                if (!File.Exists(_selectionFile)) return null;
+                root = JsonSerializer.Deserialize<Selection>(await File.ReadAllTextAsync(_selectionFile, cancellationToken).ConfigureAwait(false))?.Folder;
+            }
+            if (string.IsNullOrWhiteSpace(root) || ExistingFile(root, path) is not { } full) return null;
+            var bytes = await File.ReadAllBytesAsync(full, cancellationToken).ConfigureAwait(false);
+            return new UTF8Encoding(false, true).GetString(bytes).TrimStart('\uFEFF');
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or DecoderFallbackException or ArgumentException) { return null; }
+    }
+
     public async Task<VaultSnapshot?> ReloadAsync(CancellationToken cancellationToken = default) =>
         _root is { } root ? await OpenAsync(root, cancellationToken) : null;
 
     private async Task<VaultSnapshot> OpenAsync(string root, CancellationToken cancellationToken)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken).ConfigureAwait(false);
             var snapshot = VaultReader.Read(files, UrbeApp.InstalledVersion);
             _root = root;
             _baseline = Snapshot(files);
@@ -105,8 +122,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         ArgumentNullException.ThrowIfNull(bytes);
         if (imported) IUrbeVaultStorage.EnsureWritableImportedPath(path);
         else IUrbeVaultStorage.EnsureWritableBinaryPath(path);
-        if (bytes.LongLength > MaxFileBytes) throw new InvalidDataException("O arquivo passa do limite de 32 MB: " + path);
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
@@ -139,7 +155,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                     (!observed.TryGetValue(path, out var saved) || !saved.Bytes.Span.SequenceEqual(bytes)))
                     throw new IOException("O arquivo extraído não corresponde ao original: " + path);
                 _baseline = observed;
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
@@ -147,7 +163,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
     public async Task CreateDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureWritableFolderPath(path);
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
@@ -169,7 +185,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 }
                 Directory.CreateDirectory(full);
                 if (!Directory.Exists(full)) throw new IOException("A pasta criada não passou na verificação: " + path);
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
@@ -183,7 +199,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
 
         public async ValueTask<IAsyncDisposable> AcquireExclusiveAsync(CancellationToken cancellationToken)
         {
-            await host._gate.WaitAsync(cancellationToken);
+            await host._gate.WaitAsync(cancellationToken).ConfigureAwait(false);
             return new Release(host);
         }
 
@@ -225,38 +241,28 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
 
     public async Task<IReadOnlyList<VaultFile>> ReadAllFilesAsync(CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
-            return await Task.Run(() => ReadFiles(root, cancellationToken, includeAll: true), cancellationToken);
+            return await Task.Run(() => ReadFiles(root, cancellationToken, includeAll: true), cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
 
     public async Task<IReadOnlyList<string>> ListFilePathsAsync(CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             return await Task.Run(() =>
             {
                 var paths = new List<string>();
-                void Walk(string dir, string prefix, int depth)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    if (depth > 32 || paths.Count >= MaxEntries) return;
-                    foreach (var entry in new DirectoryInfo(dir).EnumerateFileSystemInfos().OrderBy(e => e.Name, StringComparer.Ordinal))
-                    {
-                        if (entry.LinkTarget is not null || entry.Name.StartsWith('.')) continue;
-                        if (entry is DirectoryInfo sub) Walk(sub.FullName, prefix + entry.Name + "/", depth + 1);
-                        else if (paths.Count < MaxEntries) paths.Add(prefix + entry.Name);
-                    }
-                }
-                Walk(root, string.Empty, 0);
+                foreach (var (entry, path) in Entries(root, cancellationToken))
+                    if (entry is FileInfo && !path.Split('/').Any(part => part.StartsWith('.'))) paths.Add(path);
                 return (IReadOnlyList<string>)paths;
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
@@ -265,12 +271,12 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
     {
         IUrbeVaultStorage.EnsureAttachmentPath(from);
         IUrbeVaultStorage.EnsureAttachmentPath(to);
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken).ConfigureAwait(false);
             EnsureUnchanged(baseline, files);
             await Task.Run(() =>
             {
@@ -291,7 +297,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 if (!File.Exists(target) || new FileInfo(target).Length != size || (!caseOnly && File.Exists(source)))
                     throw new IOException("O arquivo movido não passou na verificação: " + to);
                 EnsureUnchanged(baseline, ReadFiles(root, cancellationToken));
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
@@ -299,12 +305,12 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
     public async Task DeleteFileAsync(string path, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureAttachmentPath(path);
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken).ConfigureAwait(false);
             EnsureUnchanged(baseline, files);
             await Task.Run(() =>
             {
@@ -312,7 +318,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 File.Delete(full);
                 if (File.Exists(full)) throw new IOException("O arquivo não foi excluído: " + path);
                 EnsureUnchanged(baseline, ReadFiles(root, cancellationToken));
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
@@ -337,12 +343,12 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
     public async Task RenameFolderAsync(string from, string to, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureFolderRename(from, to);
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken).ConfigureAwait(false);
             EnsureUnchanged(baseline, files);
             await Task.Run(() =>
             {
@@ -374,14 +380,14 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 var observed = Snapshot(ReadFiles(root, cancellationToken));
                 IUrbeVaultStorage.EnsureRenamed(baseline, observed, from, to);
                 _baseline = observed;
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
 
     public async Task<VaultFileRead?> ReadFileAsync(string path, long maxBytes, CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (_root is not { } root || ExistingFile(root, path) is not { } full) return null;
@@ -389,14 +395,14 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
             {
                 var info = new FileInfo(full);
                 return new VaultFileRead(info.Length, info.Length <= maxBytes ? File.ReadAllBytes(full) : null);
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
 
     public async Task<bool> OpenExternallyAsync(string path, CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (_root is not { } root || ExistingFile(root, path) is not { } full) return false;
@@ -430,7 +436,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
     public async Task<bool> RemoveEmptyDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureWritableFolderPath(path);
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
@@ -452,7 +458,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 if (Directory.EnumerateFileSystemEntries(full).Any()) return false;
                 Directory.Delete(full, recursive: false);
                 return !Directory.Exists(full);
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
@@ -464,7 +470,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         ArgumentNullException.ThrowIfNull(content);
         IUrbeVaultStorage.EnsureWritableTextPath(path);
 
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
@@ -473,7 +479,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 throw new IOException("Já existe um arquivo com esse nome: " + path);
             if (!create && !baseline.ContainsKey(path))
                 throw new FileNotFoundException("O arquivo não existe na pasta.", path);
-            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken).ConfigureAwait(false);
             EnsureUnchanged(baseline, files);
             if (expectedSha256 is not null)
             {
@@ -515,19 +521,19 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 if (observed.Count != baseline.Count + (create ? 1 : 0))
                     throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
                 _baseline = observed;
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
 
     public async Task MoveTextFileAsync(string from, string to, CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken).ConfigureAwait(false);
             EnsureUnchanged(baseline, files);
             var (source, bytes, caseOnly) = IUrbeVaultStorage.PlanMove(files, from, to);
 
@@ -561,19 +567,19 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 if (!observed.Keys.Contains(to, StringComparer.Ordinal))
                     throw new IOException("O arquivo movido não passou na verificação: " + to);
                 _baseline = observed;
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
 
     public async Task TrashTextFileAsync(string path, string trashJson, CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken).ConfigureAwait(false);
             EnsureUnchanged(baseline, files);
             var (source, trashPath, trashBytes) = IUrbeVaultStorage.PlanTrash(files, path, trashJson);
             bool create = !baseline.ContainsKey(trashPath);
@@ -597,19 +603,19 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 if (!observed.TryGetValue(trashPath, out var written) || !written.Bytes.Span.SequenceEqual(trashBytes))
                     throw new IOException("A lixeira não passou na verificação: " + trashPath);
                 _baseline = observed;
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
 
     public async Task TrashTextFilesAsync(IReadOnlyList<string> paths, string trashJson, CancellationToken cancellationToken = default)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken).ConfigureAwait(false);
             EnsureUnchanged(baseline, files);
             var (sources, trashPath, trashBytes) = IUrbeVaultStorage.PlanTrashMany(files, paths, trashJson);
             bool create = !baseline.ContainsKey(trashPath);
@@ -634,7 +640,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                 if (!observed.TryGetValue(trashPath, out var written) || !written.Bytes.Span.SequenceEqual(trashBytes))
                     throw new IOException("A lixeira não passou na verificação: " + trashPath);
                 _baseline = observed;
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
@@ -667,12 +673,12 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
     /// written with verification of it and of every other file.</summary>
     private async Task SaveUrbeFileAsync(Func<IReadOnlyList<VaultFile>, (string, byte[])> plan, string what, CancellationToken cancellationToken, bool createOnly = false)
     {
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
             var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
-            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
+            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken).ConfigureAwait(false);
             EnsureUnchanged(baseline, files);
             var (target, planned) = plan(files);
             bool create = !baseline.ContainsKey(target);
@@ -692,7 +698,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
                     observed.Count != baseline.Count + (create ? 1 : 0))
                     throw new IOException(what + " não passou na verificação: " + target);
                 _baseline = observed;
-            }, cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
         }
         finally { _gate.Release(); }
     }
@@ -724,30 +730,33 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
     private static List<VaultFile> ReadFiles(string root, CancellationToken token, bool includeAll = false)
     {
         var files = new List<VaultFile>();
-        long entries = 0;
-        void Walk(string dir, string prefix, int depth)
+        foreach (var (entry, path) in Entries(root, token))
+        {
+            if (entry is not FileInfo file || (!includeAll && !IsIncluded(path))) continue;
+            if (file.Length > InMemoryTextBytes && !includeAll && !IsSupportedNote(path) && !path.StartsWith(".urbe/", StringComparison.OrdinalIgnoreCase)) continue;
+            files.Add(new VaultFile(path, ReadListed(file)));
+        }
+        return files;
+    }
+
+    /// <summary>Every file and folder of the vault, in name order, at any depth; links are never followed out of it.</summary>
+    private static IEnumerable<(FileSystemInfo Entry, string Path)> Entries(string root, CancellationToken token)
+    {
+        // a stack instead of recursion: no folder is too deep; the order is the recursive walk's (a folder's content
+        // right after the folder, names in ordinal order)
+        IEnumerator<FileSystemInfo> Children(string dir) =>
+            new DirectoryInfo(dir).EnumerateFileSystemInfos().Where(e => e.LinkTarget is null).OrderBy(e => e.Name, StringComparer.Ordinal).ToList().GetEnumerator();
+        var pending = new Stack<(IEnumerator<FileSystemInfo> Children, string Prefix)>();
+        pending.Push((Children(root), ""));
+        while (pending.TryPeek(out var at))
         {
             token.ThrowIfCancellationRequested();
-            if (depth > 32) throw new IOException("O vault ultrapassa 32 níveis de pastas.");
-            var info = new DirectoryInfo(dir);
-            foreach (var entry in info.EnumerateFileSystemInfos().OrderBy(e => e.Name, StringComparer.Ordinal))
-            {
-                token.ThrowIfCancellationRequested();
-                if (++entries > MaxEntries) throw new IOException("Limite de itens excedido; use um vault menor nesta beta.");
-                // Never follow links out of the chosen folder.
-                if (entry.LinkTarget is not null) continue;
-                var path = prefix + entry.Name;
-                if (entry is DirectoryInfo sub) { Walk(sub.FullName, path + "/", depth + 1); continue; }
-                if (!includeAll && !IsIncluded(path)) continue;
-                var file = (FileInfo)entry;
-                if (file.Length > MaxFileBytes) throw new IOException("Arquivo grande demais para esta beta: " + path);
-                files.Add(new VaultFile(path, ReadListed(file)));
-            }
+            if (!at.Children.MoveNext()) { pending.Pop(); continue; }
+            var entry = at.Children.Current;
+            var path = at.Prefix + entry.Name;
+            yield return (entry, path);
+            if (entry is DirectoryInfo) pending.Push((Children(entry.FullName), path + "/"));
         }
-        Walk(root, string.Empty, 0);
-        if (files.Sum(f => (long)f.Bytes.Length) > MaxVaultBytes)
-            throw new IOException("Vault excede o limite temporário de leitura da beta.");
-        return files;
     }
 
     /// <summary>
@@ -775,7 +784,7 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
 
     private static bool IsIncluded(string path) =>
         path.StartsWith(".urbe/", StringComparison.OrdinalIgnoreCase) ||
-        Included.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
+        VaultTextFiles.IsText(path);
 
     private static IReadOnlyDictionary<string, VaultFile> Snapshot(IEnumerable<VaultFile> files) =>
         new ReadOnlyDictionary<string, VaultFile>(files.ToDictionary(f => f.Path, f => f, StringComparer.OrdinalIgnoreCase));

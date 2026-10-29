@@ -18,6 +18,7 @@ public static partial class AppDocs
         new("Tutorial/Escrever/Editor.md", Editor),
         new("Tutorial/Escrever/Modelos.md", Modelos),
         new("Tutorial/Ferramentas/Páginas.md", Paginas),
+        new("Tutorial/Ferramentas/Código e prévia ao vivo.md", Codigo),
         new("Tutorial/Ferramentas/Assistente.md", Assistente),
         new("Tutorial/Ferramentas/Plugins.md", Plugins),
         new("Tutorial/Ajustes/Personalização.md", Personalizacao),
@@ -74,6 +75,7 @@ public static partial class AppDocs
 
         - [[Área de trabalho]], [[Explorer]] e [[Editor]]: escrever e organizar.
         - [[Modelos]]: notas que começam prontas.
+        - [[Código e prévia ao vivo]]: editar código do vault e ver um HTML como página enquanto escreve.
         - [[Atalhos]]: os atalhos de teclado.
 
         Na primeira vez, a **Configuração inicial** leva pela pasta, pelo tema e pelo Assistente; ela pode ser refeita em **Configurações → Configuração inicial**.
@@ -255,6 +257,48 @@ public static partial class AppDocs
         No [[Explorer]], **Nova → A partir de um modelo**: escolha o modelo, dê o nome, preencha os campos e a nota nasce pronta. Prefere escrever direto na nota? **Preencher no editor** cria a nota com o que você já respondeu e deixa o resto em branco para completar no editor.
 
         Páginas têm modelos próprios, no estúdio (veja [[Páginas]]).
+        """;
+
+    private const string Codigo = """
+        # Código e prévia ao vivo
+
+        O Urbe abre e edita os arquivos de código do vault como abre as notas: toque num arquivo no Explorer ou na Área de trabalho, e ele abre no editor. O que você escreve é salvo no próprio arquivo, com a mesma verificação das notas: nada é gravado por cima de uma mudança feita fora do Urbe, e um texto que não foi salvo nunca se perde.
+
+        ## Linguagens
+
+        - **Web:** HTML, CSS, SCSS, Less, JavaScript (js, mjs, cjs, jsx), TypeScript (ts, tsx), Vue e Svelte.
+        - **Código:** C#, Python, Java, Kotlin, C e C++, Go, Rust, Ruby, PHP, Lua, Swift, Dart, R, SQL, shell (sh, bash, ps1, bat), Gradle e LaTeX.
+        - **Dados:** JSON, YAML, TOML, INI, XML, CSV e TSV.
+
+        Os demais arquivos (imagens, PDFs, áudio, vídeo) são abertos no visualizador.
+
+        ## Escrever código
+
+        Num arquivo de código, o editor cuida da indentação, com o passo do próprio arquivo (tab, 2 ou 4 espaços):
+
+        - **Enter** começa a linha nova na mesma indentação, e um nível adiante depois de `{`, `[`, `(` ou de `:` no fim da linha (Python). Entre `{` e `}`, abre o bloco com o `}` na linha de baixo.
+        - **Tab** avança um nível as linhas selecionadas (ou põe um nível onde está o cursor); **Shift+Tab** volta um nível.
+        - Um `}`, `]` ou `)` digitado numa linha só com espaços volta um nível.
+
+        Funciona com o teclado do celular e com um teclado físico. Notas `.md` continuam com as teclas de Markdown (listas, tarefas).
+
+        O código aparece **em cores**: palavras-chave, textos entre aspas, números, comentários, tags e atributos do HTML, propriedades do CSS e chaves do JSON, YAML e TOML. Enquanto você digita, o texto fica na cor normal; as cores voltam um instante depois da pausa.
+
+        ## Prévia ao vivo de um HTML
+
+        Num arquivo `.html`, o seletor do topo do editor passa a ser **Prévia | Código**. Em **Prévia**, a página aparece ao lado do código (numa tela larga) ou no lugar dele (no celular), e acompanha o que você escreve: cada mudança aparece um instante depois, sem salvar e sem atualizar.
+
+        - A página usa os arquivos do vault a que o HTML se refere: folhas de estilo (`<link rel="stylesheet">`, com os `url()` delas), scripts (`<script src>`), módulos (`import` entre arquivos), imagens, áudio e vídeo. Caminhos relativos partem da pasta do HTML; os que começam com `/` partem da raiz do vault.
+        - O que vale é o texto como está no editor, salvo ou não. Um CSS ou JS aberto no Urbe entra como está escrito.
+        - `fetch()` e `XMLHttpRequest` de um arquivo de texto da pasta do HTML (um JSON, um CSV) recebem esse arquivo.
+        - Endereços da internet (`https://…`) continuam como estão.
+        - **Erros do código** (do JavaScript, de uma promessa rejeitada ou de `console.error`) aparecem num quadro vermelho dentro da própria página. O editor e os arquivos não são afetados por eles.
+
+        A página roda isolada: ela não lê nem grava arquivos do vault e não tem acesso ao aplicativo.
+
+        ## No computador
+
+        No computador, **Abrir no navegador** mostra a mesma página no navegador. Ela é servida só para este computador e recarrega sozinha a cada mudança do código, como um Live Server, mesmo com o editor de volta em **Código**. Ela para quando você fecha o arquivo.
         """;
 
     private const string Paginas = """

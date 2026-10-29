@@ -181,6 +181,7 @@ public sealed partial class AssistantPanel : Border
             BringIntoViewOnFocusChange = false,
             Content = _log
         };
+        Ui.Deferred.Watch(_log);
         // Reader gestures own the viewport. Only a deliberate return to the bottom resumes follow-tail.
         _scroll.AddHandler(PointerPressedEvent, (_, _) => { _readerDraggingChat = true; _readerScrolledChat = false; },
             Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
@@ -1275,7 +1276,7 @@ public sealed partial class AssistantPanel : Border
             _renderPosted = false;
             // CST-008: a selection never holds the chat back; SetLog keeps it (see AssistantPanel.Selection)
             bool near = _followChatTail && NearEnd();
-            foreach (var d in _dirty) _views.Remove(d);
+            foreach (var d in _dirty) ForgetView(d);
             _dirty.Clear();
             RenderLog();
             RenderChrome();
@@ -1307,6 +1308,7 @@ public sealed partial class AssistantPanel : Border
             _followChatTail = true;
             UpdateLatestMessageAction();
             _past.Clear();
+            _madeBefore.Clear();
             _generatedViews.Clear();
             _activityExpanded.Clear();
             _stageExpanded.Clear();
@@ -1430,12 +1432,54 @@ public sealed partial class AssistantPanel : Border
         if (Tail() is { } tail) desired.Add(tail);
         ForgetUnusedTimelines();
         SetLog(desired);
+        if (_followChatTail) MakeTail();
     }
+
+    // A long conversation took seconds to open: every message was made and measured, and every full render made them
+    // all again. Each message is now made when it comes near the screen (Ui.Deferred); a message already made is made
+    // again at once when its view is renewed, so what is on the screen never waits.
+    private readonly HashSet<AiChatMessage> _madeBefore = [];
 
     private Control View(AiChatMessage m)
     {
-        if (!_views.TryGetValue(m, out var view)) _views[m] = view = MessageView(m);
+        if (!_views.TryGetValue(m, out var view))
+        {
+            var deferred = new Ui.Deferred(() => MessageView(m), EstimatedHeight(m));
+            if (_madeBefore.Remove(m)) deferred.Make();
+            _views[m] = view = deferred;
+        }
         return view;
+    }
+
+    private void ForgetView(AiChatMessage m)
+    {
+        if (_views.Remove(m, out var view) && view is Ui.Deferred { IsMade: true }) _madeBefore.Add(m);
+    }
+
+    /// <summary>About the height of a message, from its text (the scroll is corrected when a message turns out otherwise).</summary>
+    private static double EstimatedHeight(AiChatMessage m)
+    {
+        double lines = 0;
+        foreach (var block in m.Content)
+            if (block.Type == "text" && !block.Hidden && block.Text is { } text)
+            {
+                lines += 1 + text.Length / 42.0;
+                foreach (var c in text) if (c == '\n') lines += .5;
+            }
+        return 64 + lines * 22;
+    }
+
+    /// <summary>The end of the chat, where it opens, is made at once: the scroll lands on the real end.</summary>
+    private void MakeTail()
+    {
+        double room = Math.Max(_scroll.Viewport.Height, _scroll.Bounds.Height);
+        room = 2 * (room > 0 ? room : 1000);
+        for (int i = _log.Children.Count - 1; i >= 0 && room > 0; i--)
+        {
+            var item = _log.Children[i];
+            room -= item is Ui.Deferred deferred ? deferred.TakenHeight : item.Bounds.Height;
+            (item as Ui.Deferred)?.Make();
+        }
     }
 
     /// <summary>A message the person wrote (not the results the loop sends back, nor its reminders).</summary>
@@ -1539,7 +1583,7 @@ public sealed partial class AssistantPanel : Border
                 else if (b is { Type: "tool_use", Name: "update_plan", Pending: false }) _latestPlan = b.Id;
             }
         // a newer plan: the older one folds back to a line
-        if (plan is not null && plan != _latestPlan && MessageOf(plan) is { } old) _views.Remove(old);
+        if (plan is not null && plan != _latestPlan && MessageOf(plan) is { } old) ForgetView(old);
     }
 
     // ---------------------------------------------------------------- small builders

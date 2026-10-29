@@ -141,6 +141,7 @@ public sealed class EditorOverlay : Grid
         Editor.MaxWidth = columnWidth;
         Editor.FontSize = codeSize;
         Editor.LineHeight = codeSize * lineHeight;
+        if (_highlight.IsVisible) ColourCode();
         _visual.ApplyText(textSize ?? _visual.TextSize, lineHeight);
         FitReadingColumn();
     }
@@ -221,6 +222,37 @@ public sealed class EditorOverlay : Grid
                 UpdateActiveTools();
         };
         Editor.AddHandler(KeyDownEvent, (object? _, KeyEventArgs e) => { if (_wiki.HandleKey(e.Key)) e.Handled = true; }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        // CST-141: the keys of an editor of code, in a code file (a note keeps the Markdown ones)
+        Editor.AddHandler(KeyDownEvent, (object? _, KeyEventArgs e) =>
+        {
+            if (e.Handled || !IsCode || Editor.IsReadOnly || _wiki.IsOpen) return;
+            var mods = e.KeyModifiers & ~KeyModifiers.Shift;
+            if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None)
+            {
+                e.Handled = true;
+                ApplyEdit(CodeEditing.NewLine(Editor.Text ?? "", Editor.SelectionStart, Editor.SelectionEnd));
+            }
+            else if (e.Key == Key.Tab && mods == KeyModifiers.None)
+            {
+                e.Handled = true;
+                ApplyEdit(CodeEditing.Indent(Editor.Text ?? "", Editor.SelectionStart, Editor.SelectionEnd, outdent: e.KeyModifiers.HasFlag(KeyModifiers.Shift)));
+            }
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        Editor.AddHandler(TextInputEvent, (object? _, TextInputEventArgs e) =>
+        {
+            if (e.Handled || !IsCode || Editor.IsReadOnly || e.Text is not { Length: 1 } typed) return;
+            // a phone's keyboard sends Enter as a line break of text
+            if (typed is "\n" or "\r")
+            {
+                e.Handled = true;
+                ApplyEdit(CodeEditing.NewLine(Editor.Text ?? "", Editor.SelectionStart, Editor.SelectionEnd));
+            }
+            else if (Editor.SelectionStart == Editor.SelectionEnd && CodeEditing.Closing(Editor.Text ?? "", Editor.CaretIndex, typed[0]) is { } closing)
+            {
+                e.Handled = true;
+                ApplyEdit(closing);
+            }
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         // math/editor.js: Ctrl+M inserts a formula, Ctrl+Shift+M a display formula, with the focus in the text
         AddHandler(KeyDownEvent, (object? _, KeyEventArgs e) =>
         {
@@ -288,7 +320,9 @@ public sealed class EditorOverlay : Grid
         _propertiesText.LineHeight = 16.5;
         _propertiesText.TextWrapping = TextWrapping.Wrap;
         // the text column fills the width up to the column size (the textarea is width:100%)
-        _sourceColumn = new StackPanel { Children = { _properties, Editor, _wiki }, HorizontalAlignment = HorizontalAlignment.Stretch };
+        // CST-141: the colours of code sit under the text, glyph for glyph (the text itself goes transparent over them)
+        var codeText = new Grid { Children = { _highlight, Editor } };
+        _sourceColumn = new StackPanel { Children = { _properties, codeText, _wiki }, HorizontalAlignment = HorizontalAlignment.Stretch };
         _sourceScroll = Column(_sourceColumn);
         // the properties form is the first thing of the text in either mode, and scrolls away with it
         _visualColumn = new StackPanel { Children = { _visual }, HorizontalAlignment = HorizontalAlignment.Stretch };
@@ -318,11 +352,18 @@ public sealed class EditorOverlay : Grid
         Context.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty && Context.IsVisible) Connections.IsVisible = false; };
         Connections.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty && Connections.IsVisible) Context.IsVisible = false; };
         // #urbeSplitPane: another note beside this one, (1 - ratio) of the width (editor/split-ui.js)
-        var body = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+        var body = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto") };
         body.Children.Add(text);
         SetColumn(Split, 1);
         body.Children.Add(Split);
-        body.SizeChanged += (_, e) => Split.Width = Math.Round(e.NewSize.Width * (1 - SplitRatio));
+        // CST-141: the page of an HTML being edited, beside the code when there is room, over it on a phone
+        body.Children.Add(LivePane);
+        body.SizeChanged += (_, e) => { Split.Width = Math.Round(e.NewSize.Width * (1 - SplitRatio)); PlaceLive(e.NewSize.Width); };
+        _body = body;
+        Editor.TextChanged += (_, _) => { if (!_opening && (_live || LivePane.BrowserAddress is not null)) LivePane.CodeChanged(); };
+        Editor.TextChanged += (_, _) => { if (!_opening) CodeTyped(); };
+        _highlightSoon.Tick += (_, _) => ColourCode();
+        _sourceInk = Editor.Foreground;
         Context.LineChosen += GoToLine;
         // the pinned reference above the text, up to 40 % of the height, with its own scroll (DEC-0045, UC-39)
         var bodyHost = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*") };
@@ -552,6 +593,15 @@ public sealed class EditorOverlay : Grid
     /// <summary>Voltar: the previous note of the trail, or closes back to where the editor was opened from.</summary>
     public async Task BackAsync()
     {
+        if (_early is { } early)
+        {
+            // nothing was edited: the editor closes, and the folder's reading does not bring it back
+            _early = early with { Dismissed = true };
+            Leaving?.Invoke();
+            IsVisible = false;
+            _note = null;
+            return;
+        }
         if (!await CanLeaveAtlasAsync()) return;
         var saving = LeaveCurrentAsync();
         var notes = Notes?.Invoke().ToList() ?? [];
@@ -568,6 +618,7 @@ public sealed class EditorOverlay : Grid
         if (Editor.IsFocused || _visual.IsKeyboardFocusWithin) FinishWriting();
         // the Explorer is back at once; the note finishes saving behind it
         Leaving?.Invoke();
+        if (_live || LivePane.BrowserAddress is not null) { _live = false; LivePane.Close(); }
         IsVisible = false;
         Closed?.Invoke(this, EventArgs.Empty);
         await saving;
@@ -636,8 +687,10 @@ public sealed class EditorOverlay : Grid
         _opening = false;
         RebuildIndex();
         var canVisual = CanVisual(note.Path);
-        _segment.IsVisible = canVisual;
+        PlaceSwitch();
         ShowMode(canVisual && StartInVisual ? EditorMode.Visual : EditorMode.Fonte);
+        ApplyCodeSwitch();
+        ColourCode();
         UpdateChrome();
         UpdateStatus(changed: false);
         RefreshProperties();
@@ -696,8 +749,9 @@ public sealed class EditorOverlay : Grid
         _title.Text = System.IO.Path.GetFileName(path);
         RebuildIndex();
         var canVisual = CanVisual(path);
-        _segment.IsVisible = canVisual;
+        PlaceSwitch();
         if (!canVisual && Mode == EditorMode.Visual) ShowMode(EditorMode.Fonte);
+        ApplyCodeSwitch();
         UpdateChrome();
         UpdateStatus(changed: HasChanges);
         RenderTabs();
@@ -724,9 +778,66 @@ public sealed class EditorOverlay : Grid
         var notes = Notes?.Invoke().ToList() ?? [];
         foreach (var t in tabs) if (notes.Any(n => n.Path == t) && !_tabs.Contains(t)) _tabs.Add(t);
         var show = notes.FirstOrDefault(n => n.Path == active) ?? notes.FirstOrDefault(n => n.Path == _tabs.LastOrDefault());
+        if (EndEarly() is { } early)
+        {
+            // the person closed it while the folder was read: it stays closed
+            if (early.Dismissed) { RenderTabs(); return; }
+            // the note shown at once is the vault's: it becomes editable where it is (caret, scroll and mode kept)
+            if (show is not null && early.Path == show.Path && string.Equals(show.Content, Editor.Text, StringComparison.Ordinal))
+            {
+                _note = show;
+                _savedContent = _acceptedSourceText = show.Content;
+                TouchTab(show.Path);
+                RebuildIndex();
+                RefreshProperties();
+                UpdateChrome();
+                UpdateStatus(changed: false);
+                return;
+            }
+        }
         if (show is null) { RenderTabs(); return; }
         IsVisible = true;
         Show(show);
+    }
+
+    // ------------------------------------------------------------------ the last note before the folder is read
+
+    private (string Path, bool ReadOnlyBefore, bool Dismissed)? _early;
+
+    /// <summary>The note shown before the folder is read (read only until then).</summary>
+    public bool ShowingEarly => _early is not null;
+
+    /// <summary>
+    /// The opening's last note, read alone before the whole folder (FeaturesCheck: "abertura imediata"). It is seen and
+    /// scrolled at once; it is not edited, and nothing is saved from it, until the folder is read and the note is the
+    /// vault's (<see cref="RestoreSession"/>).
+    /// </summary>
+    public void ShowEarly(CityNote note)
+    {
+        if (IsVisible || _note is not null) return;
+        var before = ReadOnly;
+        Show(note);
+        ReadOnly = true;
+        _early = (note.Path, before, false);
+        Notify("Abrindo a pasta… a nota já pode ser lida.");
+    }
+
+    /// <summary>Ends the early note: what it was, or null when there was none.</summary>
+    private (string Path, bool ReadOnlyBefore, bool Dismissed)? EndEarly()
+    {
+        if (_early is not { } early) return null;
+        _early = null;
+        ReadOnly = early.ReadOnlyBefore;
+        return early;
+    }
+
+    /// <summary>The folder could not be read: the note shown at once goes away.</summary>
+    public void CancelEarly()
+    {
+        if (EndEarly() is null) return;
+        IsVisible = false;
+        _note = null;
+        Editor.Text = "";
     }
 
     /// <summary>v21TouchTab: tabs of notes that no longer exist go; the note opened joins at the end.</summary>
@@ -839,6 +950,150 @@ public sealed class EditorOverlay : Grid
         _visual.MaxWidth = _columnWidth == "media" ? Math.Min(_columnMax, Math.Round(_visual.TextSize * 38)) : _columnMax;
 
     private static bool CanVisual(string path) => Kind(path) is "md" or "markdown";
+
+    // ------------------------------------------------------------------ CST-141: Código | Prévia of an HTML
+
+    /// <summary>The live page of the HTML being edited.</summary>
+    public LiveHtmlPane LivePane { get; } = new();
+
+    private Grid? _body;
+    private bool _live;
+
+    private bool IsHtml => _note is not null && Kind(_note.Path) is "html" or "htm";
+
+    private bool _compactHeader;
+
+    /// <summary>The two-way switch only where there are two ways to see the file: Visual | Fonte of a note, Prévia | Código of an HTML (a phone shows one button).</summary>
+    private void PlaceSwitch()
+    {
+        bool two = _note is not null && (CanVisual(_note.Path) || IsHtml);
+        _segment.IsVisible = two && !_compactHeader;
+        if (_modeToggle is not null) _modeToggle.IsVisible = two && _compactHeader;
+    }
+
+    // ------------------------------------------------------------------ CST-141: the colours of code
+
+    private readonly TextBlock _highlight = new() { IsHitTestVisible = false, IsVisible = false, TextWrapping = TextWrapping.Wrap };
+    private readonly DispatcherTimer _highlightSoon = new() { Interval = TimeSpan.FromMilliseconds(250) };
+    private IBrush? _sourceInk;
+    private string? _colouredText;
+
+    /// <summary>The code is shown in colour now (tests).</summary>
+    public bool CodeColoured => _highlight.IsVisible;
+
+    /// <summary>The coloured pieces shown (tests): the text of each and its colour.</summary>
+    public IReadOnlyList<(string Text, IBrush? Colour)> CodeColours =>
+        [.. (_highlight.Inlines ?? []).OfType<Avalonia.Controls.Documents.Run>().Where(r => r.Foreground is not null).Select(r => (r.Text ?? "", r.Foreground))];
+
+    /// <summary>While typing, the text in its own colour; a moment after, the colours again (never a frame where they do not match the text).</summary>
+    private void CodeTyped()
+    {
+        if (_highlight.IsVisible && string.Equals(Editor.Text, _colouredText, StringComparison.Ordinal)) return;   // the same text set again
+        if (_highlight.IsVisible) ShowCodePlain();
+        if (Urbe.Core.CodeHighlighter.LanguageOf(_note?.Path ?? "") is null) return;
+        _highlightSoon.Stop();
+        _highlightSoon.Start();
+    }
+
+    private void ShowCodePlain()
+    {
+        _highlightSoon.Stop();
+        _highlight.IsVisible = false;
+        if (_sourceInk is not null) Editor.Foreground = _sourceInk;
+    }
+
+    private void ColourCode()
+    {
+        _highlightSoon.Stop();
+        if (_note is null || Mode != EditorMode.Fonte || Urbe.Core.CodeHighlighter.LanguageOf(_note.Path) is not { } language) { ShowCodePlain(); return; }
+        var text = Editor.Text ?? "";
+        var inlines = new Avalonia.Controls.Documents.InlineCollection();
+        int at = 0;
+        foreach (var token in Urbe.Core.CodeHighlighter.Tokens(text, language))
+        {
+            if (token.Start > at) inlines.Add(new Avalonia.Controls.Documents.Run(text[at..token.Start]));
+            inlines.Add(new Avalonia.Controls.Documents.Run(text.Substring(token.Start, token.Length)) { Foreground = CodeColour(token.Kind) });
+            at = token.Start + token.Length;
+        }
+        if (at < text.Length) inlines.Add(new Avalonia.Controls.Documents.Run(text[at..]));
+        // the same letters, size, lines and wrapping as the text box, so every colour lies under its own character
+        _highlight.FontFamily = Editor.FontFamily;
+        _highlight.FontSize = Editor.FontSize;
+        _highlight.FontWeight = Editor.FontWeight;
+        _highlight.LineHeight = Editor.LineHeight;
+        _highlight.Padding = Editor.Padding;
+        _highlight.Foreground = _sourceInk;
+        _highlight.Inlines = inlines;
+        _colouredText = text;
+        _highlight.IsVisible = true;
+        Editor.Foreground = Brushes.Transparent;
+    }
+
+    // the app's dark theme: soft colours that keep the text readable
+    private static IBrush CodeColour(Urbe.Core.CodeTokenKind kind) => UrbeTheme.Brush(kind switch
+    {
+        Urbe.Core.CodeTokenKind.Keyword => "#c792ea",
+        Urbe.Core.CodeTokenKind.String => "#a5d68a",
+        Urbe.Core.CodeTokenKind.Comment => "#7f8b99",
+        Urbe.Core.CodeTokenKind.Number => "#f2a65a",
+        Urbe.Core.CodeTokenKind.Literal => "#6fd3e3",
+        Urbe.Core.CodeTokenKind.Tag => "#f07178",
+        Urbe.Core.CodeTokenKind.Attribute => "#ffcb6b",
+        _ => "#82aaff"
+    });
+
+    /// <summary>A code file: a text type of the vault that is neither a note nor plain text or a table.</summary>
+    private bool IsCode => _note is not null && !IsMarkdown && VaultTextFiles.IsText(_note.Path) && Kind(_note.Path) is not ("txt" or "csv" or "tsv");
+
+    /// <summary>The page is shown (Prévia) for the HTML being edited.</summary>
+    public bool LivePreviewOn => _live;
+
+    /// <summary>Prévia on or off (Código).</summary>
+    public void SetLive(bool on)
+    {
+        var note = IsHtml ? _note : null;
+        if (note is null) on = false;
+        _live = on;
+        if (on) LivePane.Show(note!.Path, () => Editor.Text ?? "", () => Notes?.Invoke() ?? []);
+        else LivePane.Hide();
+        PlaceLive(_body?.Bounds.Width ?? Bounds.Width);
+        StyleSwitch();
+    }
+
+    /// <summary>The switch says Prévia | Código for an HTML and Visual | Fonte for a note; another file stops a preview.</summary>
+    private void ApplyCodeSwitch()
+    {
+        bool html = IsHtml;
+        if (_visualButton is not null) { _visualButton.Content = html ? "Prévia" : "Visual"; _sourceButton.Content = html ? "Código" : "Fonte"; }
+        if (!html) { if (_live || LivePane.BrowserAddress is not null) { _live = false; LivePane.Close(); } }
+        else if (_live) LivePane.Show(_note!.Path, () => Editor.Text ?? "", () => Notes?.Invoke() ?? []);
+        PlaceLive(_body?.Bounds.Width ?? Bounds.Width);
+        StyleSwitch();
+    }
+
+    private void StyleSwitch()
+    {
+        if (_visualButton is null) return;
+        bool first = IsHtml ? _live : Mode == EditorMode.Visual;
+        Style(_visualButton, first);
+        Style(_sourceButton, !first);
+        if (_modeToggle is not null && IsHtml)
+        {
+            var tip = _live ? "Mostrar o código" : "Mostrar a prévia";
+            ToolTip.SetTip(_modeToggle, tip);
+            AutomationProperties.SetName(_modeToggle, tip);
+        }
+    }
+
+    /// <summary>Beside the code from 900 px (half the width); below that, over the code.</summary>
+    private void PlaceLive(double width)
+    {
+        bool wide = width >= 900;
+        SetColumn(LivePane, wide ? 2 : 0);
+        SetColumnSpan(LivePane, wide ? 1 : 3);
+        LivePane.Width = wide ? Math.Round(width * .5) : double.NaN;
+        LivePane.BorderThickness = new Thickness(wide ? 1 : 0, 0, 0, 0);
+    }
     private static string Kind(string path) => System.IO.Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
     private bool IsMarkdown => _note is not null && CanVisual(_note.Path);
 
@@ -859,7 +1114,8 @@ public sealed class EditorOverlay : Grid
     {
         var props = _note is null ? null : PropertiesFor?.Invoke(_note.Path);
         _propertiesText.Text = props is null ? "" : System.Text.RegularExpressions.Regex.Replace(props, @"\s+", " ");
-        _hasProperties = props is not null;
+        // the note's summary (título, tags, datas) is for notes; a code file shows only its code (DEC-0059)
+        _hasProperties = props is not null && IsMarkdown;
         UpdateProperties();
         Properties.Dialogs = Dialogs;
         Properties.IsVisible = IsMarkdown;
@@ -951,11 +1207,7 @@ public sealed class EditorOverlay : Grid
             ToolTip.SetTip(_modeToggle, tip);
             AutomationProperties.SetName(_modeToggle, tip);
         }
-        if (_visualButton is not null)
-        {
-            Style(_visualButton, visual);
-            Style(_sourceButton, !visual);
-        }
+        StyleSwitch();
         UpdateChrome();
         if (!visual && IsVisible && KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) Dispatcher.UIThread.Post(FocusSource, DispatcherPriority.Loaded);
         // the text switching modes fades in briefly (≤ 150 ms): it is the same note, seen another way
@@ -1134,8 +1386,8 @@ public sealed class EditorOverlay : Grid
 
         _visualButton = Segment("Visual");
         _sourceButton = Segment("Fonte");
-        _visualButton.Click += (_, _) => SetMode(EditorMode.Visual);
-        _sourceButton.Click += (_, _) => SetMode(EditorMode.Fonte);
+        _visualButton.Click += (_, _) => { if (IsHtml) SetLive(true); else SetMode(EditorMode.Visual); };
+        _sourceButton.Click += (_, _) => { if (IsHtml) SetLive(false); else SetMode(EditorMode.Fonte); };
         Style(_visualButton, true);
         Style(_sourceButton, false);
         _segment = new Border
@@ -1163,15 +1415,14 @@ public sealed class EditorOverlay : Grid
         };
         // CST-105/106: on a phone the two-word switch left the title no room; there Visual/Fonte is one button
         _modeToggle = new UrbeIconButton(UrbeTheme.Icons.FileCode, "Mudar para Fonte") { IsVisible = false };
-        _modeToggle.Click += (_, _) => SetMode(Mode == EditorMode.Visual ? EditorMode.Fonte : EditorMode.Visual);
+        _modeToggle.Click += (_, _) => { if (IsHtml) SetLive(!_live); else SetMode(Mode == EditorMode.Visual ? EditorMode.Fonte : EditorMode.Visual); };
         var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { PluginButtons, assistant, _segment, _modeToggle, more } };
         var bar = new DockPanel { Margin = new Thickness(UrbeTokens.Space.Xxs, 0), LastChildFill = true };
         bar.PropertyChanged += (_, e) =>
         {
             if (e.Property != BoundsProperty) return;
-            bool compact = bar.Bounds.Width < CompactHeaderWidth;
-            _segment.IsVisible = !compact;
-            _modeToggle.IsVisible = compact;
+            _compactHeader = bar.Bounds.Width < CompactHeaderWidth;
+            PlaceSwitch();
         };
         DockPanel.SetDock(back, Dock.Left);
         DockPanel.SetDock(right, Dock.Right);
@@ -1691,15 +1942,17 @@ public sealed class EditorOverlay : Grid
             var wanted = Urbe.Core.Assistant.AssistantTools.Fold(part.TrimStart('^').Trim());
             var names = blocks ? EmbedFragments.BlockIds(markdown).Select(id => "^" + id) : EmbedFragments.Headings(markdown);
             return [.. names.Where(n => Urbe.Core.Assistant.AssistantTools.Fold(n.TrimStart('^')).Contains(wanted, StringComparison.Ordinal))
-                .Distinct().Take(20).Select(n => notePart + "#" + n)];
+                .Distinct().Select(n => notePart + "#" + n)];
         }
-        var notes = _index is null ? [] : _index.Search(query, 20).Where(d => d.Id != _currentId).Select(d => d.Title).ToList();
+        // DEC-0059: every match (the list scrolls); before, 20 notes and 20 files
+        var notes = _index is null ? [] : _index.Search(query, int.MaxValue).Where(d => d.Id != _currentId).Select(d => d.Title).ToList();
         var all = Files?.Invoke().ToList() ?? [];
         if (all.Count == 0) return notes;
-        var files = WikiTargets.Files(all, query, 20).Select(f => WikiTargets.LinkName(f, all)).ToList();
+        var files = WikiTargets.Files(all, query, int.MaxValue).Select(f => WikiTargets.LinkName(f, all)).ToList();
         var q = Urbe.Core.Assistant.AssistantTools.Fold(query.Trim());
         bool Starts(string name) => q.Length > 0 && Urbe.Core.Assistant.AssistantTools.Fold(name).StartsWith(q, StringComparison.Ordinal);
-        if (q.Length == 0) return [.. notes.Take(12), .. files.Take(8)];
+        // nothing typed: the most recent notes and files first, as before, then all the others
+        if (q.Length == 0) return [.. notes.Take(12), .. files.Take(8), .. notes.Skip(12), .. files.Skip(8)];
         return [.. notes.Where(Starts), .. files.Where(Starts), .. notes.Where(n => !Starts(n)), .. files.Where(f => !Starts(f))];
     }
 

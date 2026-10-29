@@ -28,6 +28,9 @@ public sealed class AppDocsGuideTests
     [InlineData("- [ ] 08:11 —")]         // quick notes are checkboxes
     [InlineData("Nova nota nesta pasta")]
     [InlineData("Personalização/AGENTS.md")]
+    [InlineData("Prévia | Código")]       // CST-141: live preview of an HTML
+    [InlineData("Abrir no navegador")]
+    [InlineData("Shift+Tab")]
     [InlineData("{{titulo}}")]            // template fields
     public void TheTutorialCoversTheUrbesOwnSyntax(string mark) => Assert.Contains(mark, All);
 

@@ -80,6 +80,13 @@ public interface IUrbeVaultStorage
         Task.FromResult<IReadOnlyList<string>>([]);
 
     /// <summary>
+    /// The opening shows the last note at once: the text of ONE file of the folder remembered for the next opening,
+    /// read before the whole folder is. Only read and only shown (the folder's reading is what the app works from);
+    /// null when there is no remembered folder, the file is missing, is a link or is not UTF-8 text.
+    /// </summary>
+    Task<string?> PeekTextAsync(string path, CancellationToken cancellationToken = default) => Task.FromResult<string?>(null);
+
+    /// <summary>
     /// Renames or moves ONE attachment of the vault (renomearAsset / moverAsset): a file that is not a note or text
     /// document the Urbe reads (those move with <see cref="MoveTextFileAsync"/>), never inside <c>.urbe</c>. Nothing with
     /// the new name may exist; the folder of <paramref name="to"/> must exist; afterwards the file is there with the same
@@ -109,8 +116,7 @@ public interface IUrbeVaultStorage
 
     /// <summary>The documents the Urbe reads as text (they belong to the vault's baseline, not to the attachments).</summary>
     static bool TextDocument(string path) =>
-        new[] { ".md", ".markdown", ".txt", ".json", ".yaml", ".yml", ".html", ".htm", ".css", ".js", ".mjs", ".csv" }
-            .Contains(System.IO.Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
+        VaultTextFiles.IsText(path);
 
     /// <summary>
     /// Renames ONE folder of the vault (Renomear pasta in the Explorer), keeping it in
@@ -526,10 +532,7 @@ public interface IUrbeVaultStorage
         ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".pdf", ".mp3", ".m4a", ".ogg", ".oga", ".wav", ".flac", ".mp4", ".webm", ".mov"
     };
 
-    static readonly HashSet<string> WritableExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".md", ".markdown", ".txt", ".html", ".htm", ".js", ".mjs", ".css", ".json", ".yaml", ".yml", ".csv"
-    };
+    static IReadOnlySet<string> WritableExtensions => VaultTextFiles.Extensions;
 }
 
 /// <summary>A file read for its preview: its size, and its bytes when they were within the limit asked.</summary>

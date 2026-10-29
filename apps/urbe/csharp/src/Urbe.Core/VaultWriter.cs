@@ -86,11 +86,6 @@ public static class VaultWriter
         ".urbe/merged-v1.json"
     ];
 
-    private static readonly HashSet<string> TextExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".md", ".markdown", ".txt", ".html", ".htm", ".js", ".mjs", ".css",
-        ".json", ".yaml", ".yml", ".csv"
-    };
 
     /// <summary>
     /// UC-60: what <see cref="Plan"/> gives ONE text document of the vault as it is (its bytes in the planned files),
@@ -770,7 +765,7 @@ public static class VaultWriter
         if (IsSystemPath(path))
             return false;
         var dot = path.LastIndexOf('.');
-        return dot >= 0 && TextExtensions.Contains(path[dot..]);
+        return dot >= 0 && VaultTextFiles.Extensions.Contains(path[dot..]);
     }
 
     private static bool IsSystemPath(string path) =>

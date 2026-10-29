@@ -123,4 +123,24 @@ public sealed class WorkspaceIndexTests
         Assert.Equal(["calculo", "aula"], w.TagsIn("P"));
         Assert.Empty(w.TagsIn("Outra"));
     }
+
+    [Fact]
+    public void AnIndexOfTheSameVaultIsTheSameScreen()
+    {
+        // CST-129: closing the editor rebuilt the whole Área de trabalho even when nothing a card shows had changed
+        WorkspaceIndex Of(params WorkspaceNote[] extra) => new(
+            [new("Casa/Lista.md", null, "# Lista\n\n- pão\n", "2026-10-01", "2026-09-01", ["casa"]), new("Solta.md", "Solta", "Texto", null), .. extra],
+            ["Casa/foto.png"], ["Casa/Vazia"]);
+        static WorkspaceIndex With(WorkspaceNote[] notes, string file, string folder) => new(notes, [file], [folder]);
+        var shown = Of();
+        Assert.True(shown.SameAs(Of()));
+        Assert.False(shown.SameAs(null));
+        Assert.False(shown.SameAs(Of(new WorkspaceNote("Nova.md", null, "", null))));
+        Assert.False(shown.SameAs(With([new("Casa/Lista.md", null, "# Lista\n\n- café\n- pão\n", "2026-10-01", "2026-09-01", ["casa"]), new("Solta.md", "Solta", "Texto", null)], "Casa/foto.png", "Casa/Vazia")));
+        Assert.False(shown.SameAs(With([new("Casa/Lista.md", null, "# Lista\n\n- pão\n", "2026-10-02", "2026-09-01", ["casa"]), new("Solta.md", "Solta", "Texto", null)], "Casa/foto.png", "Casa/Vazia")));
+        Assert.False(shown.SameAs(With([new("Casa/Lista.md", null, "# Lista\n\n- pão\n", "2026-10-01", "2026-09-01", ["mercado"]), new("Solta.md", "Solta", "Texto", null)], "Casa/foto.png", "Casa/Vazia")));
+        Assert.False(shown.SameAs(With([new("Casa/Lista.md", null, "# Lista\n\n- pão\n", "2026-10-01", "2026-09-01", ["casa"]), new("Solta.md", "Outro título", "Texto", null)], "Casa/foto.png", "Casa/Vazia")));
+        Assert.False(shown.SameAs(With([new("Casa/Lista.md", null, "# Lista\n\n- pão\n", "2026-10-01", "2026-09-01", ["casa"]), new("Solta.md", "Solta", "Texto", null)], "Casa/foto.png", "Casa/Outra")));
+        Assert.False(shown.SameAs(With([new("Casa/Lista.md", null, "# Lista\n\n- pão\n", "2026-10-01", "2026-09-01", ["casa"]), new("Solta.md", "Solta", "Texto", null)], "Casa/foto.jpg", "Casa/Vazia")));
+    }
 }

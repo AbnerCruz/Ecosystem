@@ -2111,6 +2111,39 @@
       ],
       "raisedBy": "claude-code",
       "raisedAt": "2026-10-29"
+    },
+    {
+      "id": "DEC-0059",
+      "status": "decided",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Urbe: a 1.8.4 deixa de ser referência; desenvolvimento contínuo e sem limitadores na experiência",
+      "context": "FATO OBSERVADO: AGENTS.md §1.2 e DEC-0045/ADD-0022 mantinham a 1.8.4-beta como referência de regras e comportamento fora da simulação, com oráculos. O proprietário afirmou que o Urbe amadureceu e que não é preciso manter nada igual à 1.8.4; que o desenvolvimento não deve parar; e que limitadores postos para contornar problemas pioram a experiência.",
+      "question": "A 1.8.4 continua referência de comportamento? Limites na experiência são aceitáveis para resolver problemas?",
+      "alternatives": [
+        {
+          "option": "A — A 1.8.4 deixa de ser referência; oráculos viram testes de regressão que mudam com as melhorias; sem limitadores por conveniência; dados dos vaults antigos continuam protegidos",
+          "consequences": "O Urbe evolui pelo que é melhor para quem usa; divergências deixam de exigir justificativa de paridade."
+        },
+        {
+          "option": "B — Manter a 1.8.4 como referência de essência (estado anterior, DEC-0045)",
+          "consequences": "Melhorias continuam presas a comportamentos antigos."
+        }
+      ],
+      "consequences": "Opção A. AGENTS.md §1.2 e PRODUCT-DIRECTION apontam para ADD-0033; o agente segue para o próximo item ao fechar cada um; limites só quando necessários e no máximo possível.",
+      "manifestCompatibility": "Não muda boundaries, dependências nem a pilha (ADR-0032). Preserva NN-001 (uma autoridade por dado), NN-017 (validação no aparelho) e a proteção dos dados do usuário; a simulação continua fora (DEC-0051).",
+      "recommendation": "A.",
+      "related": [
+        "docs/governance/addenda/ADD-0033-urbe-sem-paridade-com-a-1-8-4-e-sem-limitadores.md",
+        "AGENTS.md",
+        "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md"
+      ],
+      "raisedBy": "claude-code-urbe-consolidation",
+      "raisedAt": "2026-10-29",
+      "decision": "A — proprietário nesta conversa: \"pode esquecer tudo que for legado, não precisa manter nada igual a 1.8.4 [...] nunca pare o desenvolvimento [...] Odeio que a experiência do usuário seja limitada, mas por vezes é necessário ai nesse caso a gente faz o maximo possível para maximizar.\"",
+      "decidedAt": "2026-10-29",
+      "record": "docs/governance/addenda/ADD-0033-urbe-sem-paridade-com-a-1-8-4-e-sem-limitadores.md",
+      "consequencesApplied": true
     }
   ]
 }

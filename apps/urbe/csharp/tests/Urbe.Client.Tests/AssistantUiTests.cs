@@ -461,7 +461,7 @@ public sealed partial class HeadlessUiTests
                 Dispatcher.UIThread.RunJobs();
                 var timeline = Assert.IsType<StackPanel>(activityFold.Content);
                 Assert.Equal(10, timeline.Children.Count);
-                var firstStage = Assert.IsType<Expander>(Assert.IsType<Border>(timeline.Children[0]).Child);
+                var firstStage = Assert.IsType<Expander>(Assert.IsType<Border>(Assert.IsType<Ui.Deferred>(timeline.Children[0]).View).Child);
                 firstStage.IsExpanded = true;
                 Dispatcher.UIThread.RunJobs();
                 Assert.Contains("Resultado devolvido ao agente",

@@ -33,13 +33,24 @@ internal static class EditorChrome
 /// <summary>#wikiSuggest: the note suggestions after "[[" (names from the knowledge search; Enter/Tab pick, arrows move, Escape closes).</summary>
 internal sealed class WikiSuggestList : Border
 {
+    /// <summary>How many rows are made at a time; scrolling (or the arrows) near the end makes the next ones.</summary>
+    private const int Page = 40;
+
     private readonly StackPanel _items = new() { MinWidth = 220, MaxWidth = 360 };
+    private readonly ScrollViewer _scroll;
     private IReadOnlyList<string> _names = [];
     private int _index;
+    private int _made;
 
     public WikiSuggestList()
     {
-        var card = EditorChrome.Card(_items);
+        // DEC-0059: every match is in the list (before, 20 notes and 20 files); it scrolls and grows as it is read
+        _scroll = new ScrollViewer { Content = _items, MaxHeight = 320, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
+        _scroll.ScrollChanged += (_, _) =>
+        {
+            if (_made < _names.Count && _scroll.Offset.Y + _scroll.Viewport.Height >= _scroll.Extent.Height - 120) Grow(_made + Page);
+        };
+        var card = EditorChrome.Card(_scroll);
         Child = card;
         IsVisible = false;
         Margin = new Thickness(0, 4);
@@ -60,21 +71,45 @@ internal sealed class WikiSuggestList : Border
         ((Border)Child!).IsVisible = true;
     }
 
-    public void Hide() { IsVisible = false; _index = 0; _names = []; }
+    public void Hide() { IsVisible = false; _index = 0; _names = []; _made = 0; _items.Children.Clear(); }
 
     private void Render()
     {
         _items.Children.Clear();
+        _made = 0;
         if (_names.Count == 0)
         {
             _items.Children.Add(new TextBlock { Text = "Nenhuma nota encontrada.", Foreground = UrbeTheme.Brush(UrbeTheme.Text3), FontSize = 13, Margin = new Thickness(10, 10) });
             return;
         }
-        for (var i = 0; i < _names.Count; i++)
+        Grow(Math.Max(Page, _index + 1));
+    }
+
+    /// <summary>Makes the rows up to <paramref name="count"/> (never past the names).</summary>
+    private void Grow(int count)
+    {
+        for (; _made < Math.Min(count, _names.Count); _made++)
+        {
+            var name = _names[_made];
+            _items.Children.Add(EditorChrome.Item(new TextBlock { Text = name, FontSize = 15, TextTrimming = TextTrimming.CharacterEllipsis }, _made == _index, () => Chosen?.Invoke(name)));
+        }
+    }
+
+    /// <summary>The highlight moves from one row to the other (the rows are not made again) and the row comes into view.</summary>
+    private void Select(int to)
+    {
+        if (_names.Count == 0) return;
+        var from = _index;
+        _index = to;
+        if (_index >= _made) Grow(_index + Page);
+        void Mark(int i)
         {
             var name = _names[i];
-            _items.Children.Add(EditorChrome.Item(new TextBlock { Text = name, FontSize = 15, TextTrimming = TextTrimming.CharacterEllipsis }, i == _index, () => Chosen?.Invoke(name)));
+            _items.Children[i] = EditorChrome.Item(new TextBlock { Text = name, FontSize = 15, TextTrimming = TextTrimming.CharacterEllipsis }, i == _index, () => Chosen?.Invoke(name));
         }
+        if (from < _made) Mark(from);
+        Mark(_index);
+        _items.Children[_index].BringIntoView();
     }
 
     /// <summary>Arrow/Enter/Tab/Escape of bodyEditor's keydown while the list is open. True when the key was used.</summary>
@@ -83,8 +118,8 @@ internal sealed class WikiSuggestList : Border
         if (!IsOpen) return false;
         switch (key)
         {
-            case Key.Down: if (_names.Count > 0) _index = (_index + 1) % _names.Count; Render(); return true;
-            case Key.Up: if (_names.Count > 0) _index = (_index - 1 + _names.Count) % _names.Count; Render(); return true;
+            case Key.Down: if (_names.Count > 0) Select((_index + 1) % _names.Count); return true;
+            case Key.Up: if (_names.Count > 0) Select((_index - 1 + _names.Count) % _names.Count); return true;
             case Key.Enter or Key.Tab when _names.Count > 0: Chosen?.Invoke(_names[_index]); return true;
             case Key.Escape: Hide(); return true;
         }

@@ -57,7 +57,7 @@ public sealed class AssistantAttachmentExtractionTests
     public void UnsupportedExtensionsAreNotPresentedAsExtractable()
     {
         var m = new AiChatMessage { Role = "user", Content = [
-            AssistantTextAttachments.ToChatBlock("programa.tsx", "const a = 1;")] };
+            AssistantTextAttachments.ToChatBlock("instalador.exe", "MZ")] };
         Assert.Empty(AssistantAttachmentExtraction.List(m));
     }
 

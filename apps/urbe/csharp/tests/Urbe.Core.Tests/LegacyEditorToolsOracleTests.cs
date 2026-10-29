@@ -176,8 +176,32 @@ public sealed class LegacyEditorToolsOracleTests
         ]);
         var inputs = corpus.Where(c => !c.Contains('$')).ToArray();
         Assert.True(inputs.Length > 40);
-        var js = await Run(inputs.Select(c => (object)new { op = "markdown", md = c }).ToArray());
+        // CST-128: the original with only its emphasis following the flanking rules; the rest is the 1.8.4's
+        var js = await Run(inputs.Select(c => (object)new { op = "markdownFlanking", md = c }).ToArray());
         for (var i = 0; i < inputs.Length; i++)
             Assert.Equal(js[i].GetString(), MarkdownEngine.Render(inputs[i]));
+    }
+
+    [Fact]
+    public async Task EmphasisNoLongerAppearsWhereNoOneWroteIt()
+    {
+        // CST-128 ("texto que aparece em negrito sem intenção"): the 1.8.4 made bold or italic of markers no one
+        // closed on purpose. The same as CommonMark and the Obsidian now; what is meant stays formatted.
+        (string Md, string Was, string Now)[] cases =
+        [
+            ("palavra ** solta ** aqui", "<p>palavra <strong> solta </strong> aqui</p>", "<p>palavra ** solta ** aqui</p>"),
+            ("2 * 3 * 4 = 24", "<p>2 <em> 3 </em> 4 = 24</p>", "<p>2 * 3 * 4 = 24</p>"),
+            ("snake_case_nome", "<p>snake<em>case</em>nome</p>", "<p>snake_case_nome</p>"),
+            ("tool_use e tool_result", "<p>tool<em>use e tool</em>result</p>", "<p>tool_use e tool_result</p>"),
+            ("a ~~ b ~~ c", "<p>a <del> b </del> c</p>", "<p>a ~~ b ~~ c</p>"),
+            ("**negrito** e *itálico* e _itálico_ e __negrito__ e ~~riscado~~", null!, "<p><strong>negrito</strong> e <em>itálico</em> e <em>itálico</em> e <strong>negrito</strong> e <del>riscado</del></p>"),
+            ("a**b**c e x**2 + y**2", null!, "<p>a<strong>b</strong>c e x<strong>2 + y</strong>2</p>"),
+        ];
+        var original = await Run(cases.Select(c => (object)new { op = "markdown", md = c.Md }).ToArray());
+        for (var i = 0; i < cases.Length; i++)
+        {
+            Assert.Equal(cases[i].Was ?? cases[i].Now, original[i].GetString());
+            Assert.Equal(cases[i].Now, MarkdownEngine.Render(cases[i].Md));
+        }
     }
 }

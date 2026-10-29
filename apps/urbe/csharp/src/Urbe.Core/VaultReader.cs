@@ -120,11 +120,6 @@ public static class VaultReader
     private const int CurrentVaultVersion = 2;
     private const int CurrentMapVersion = 4;
 
-    private static readonly HashSet<string> TextExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".md", ".markdown", ".txt", ".html", ".htm", ".js", ".mjs", ".css",
-        ".json", ".yaml", ".yml", ".csv"
-    };
 
     public static VaultSnapshot Read(IEnumerable<VaultFile> source, string? installedVersion = null)
     {
@@ -584,8 +579,7 @@ public static class VaultReader
         if (IsSystemPath(path))
             return false;
 
-        var dot = path.LastIndexOf('.');
-        return dot >= 0 && TextExtensions.Contains(path[dot..]);
+        return VaultTextFiles.IsText(path);
     }
 
     private static string TryDecode(byte[] bytes)

@@ -34,7 +34,7 @@ public sealed partial class HeadlessUiTests
             var fold = panel.Log.GetLogicalDescendants().OfType<Expander>().First();
             fold.IsExpanded = true;
             await Settle(window, view);
-            var stage = ((Panel)fold.Content!).Children.OfType<Border>().First().Child as Expander;
+            var stage = ((Panel)fold.Content!).Children.Select(c => c is Ui.Deferred d ? d.View : c).OfType<Border>().First().Child as Expander;
             stage!.IsExpanded = true;
             await Settle(window, view);
             panel.RenderAll();

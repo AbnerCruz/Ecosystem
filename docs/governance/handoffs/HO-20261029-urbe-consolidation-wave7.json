@@ -1,0 +1,179 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261029-urbe-consolidation-wave7",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-29T19:44:04Z",
+  "agent": {
+    "id": "claude-code-urbe-consolidation",
+    "kind": "ai-agent"
+  },
+  "task_id": "GH-852",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-939e057e-1zwyg5",
+  "base_commit": "69a54a0",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/855",
+  "files_changed": [
+    "AGENTS.md",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorPopups.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/LiveBrowserServer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/LiveHtmlPane.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Commands.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/WorkspaceView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ArtifactModel.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAttachmentExtraction.cs",
+    "apps/urbe/csharp/src/Urbe.Core/CodeEditing.cs",
+    "apps/urbe/csharp/src/Urbe.Core/CodeHighlighter.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ImageHeader.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyHistory.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LivePreview.cs",
+    "apps/urbe/csharp/src/Urbe.Core/MarkdownEngine.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VaultFileKinds.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VaultReader.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VaultTextFiles.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VaultWriter.cs",
+    "apps/urbe/csharp/src/Urbe.Core/WorkspaceIndex.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CodeColoursUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CodeEditingUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CompositionReconversionUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorLeaveTimingUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FilePreviewNoLimitsUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultNoLimitsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/LiveHtmlPreviewUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/StartupEarlyNoteUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/WikiSuggestNoLimitUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/CodeEditingTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/CodeHighlighterTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ImageHeaderTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyEditorToolsOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyHistoryExportTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LivePreviewTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/WorkspaceIndexTests.cs",
+    "apps/urbe/csharp/tools/editor-oracle.mjs",
+    "apps/urbe/docs/csharp/CONSOLIDATION.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "docs/governance/addenda/ADD-0033-urbe-sem-paridade-com-a-1-8-4-e-sem-limitadores.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261029-urbe-consolidation-wave7.json",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/Deferred.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/CodeBlockView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/FlatDisclosure.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ActivityExpansionUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Selection.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantLongChatUiTests.cs"
+  ],
+  "work_completed": [
+    "CST-129: saída do editor medida (85–110 ms síncronos com 400 notas e uma nota de ~40 KB) e corrigida: a Área de trabalho não é refeita quando nada que os cartões mostram mudou e, depois de uma edição, só a caixa do projeto é refeita, depois do quadro; o histórico é montado de pedaços prontos (texto idêntico ao da 1.8.4); o armazenamento (pasta e Android) não continua na thread da tela. Saída depois de ler 15–27 ms, sem nada pendente; depois de editar ~25–31 ms.",
+    "CST-128: ênfase com as regras de borda do CommonMark/Obsidian: sem negrito ou itálico involuntário em 'palavra ** solta **', '2 * 3 * 4', 'tool_use e tool_result'; o Visual deixa de reescrever '2 * 3 * 4' como '2 _ 3 _ 4'. Tipografia conferida: peso, tinta e entrelinha iguais no Visual e na Fonte.",
+    "Teste Source_DraggingAFingerScrolls: lê a posição depois do trabalho pendente do gesto (falhava em máquina carregada, 1 em 4 execuções locais).",
+    "CST-062 e CST-060 conferidos: a conversão das composições mantém ordem e originais e não se repete depois de reabrir o vault; comentários das páginas ficam fora da exportação, da impressão e da página aberta (mesmo Render). Nenhum defeito.",
+    "DEC-0059 registrada (ADD-0033): a 1.8.4 deixa de ser referência; desenvolvimento contínuo; sem limitadores. AGENTS.md §1.2 e PRODUCT-DIRECTION atualizados.",
+    "Sem limitadores: vault sem teto de itens (10 000), profundidade (32), tamanho de texto (32 MB/256 MB) nem de importação (32 MB), no computador e no Android; prévia com texto de qualquer tamanho em partes, zip completo, imagem enorme decodificada na largura útil; busca do Explorer e lista do [[ sem corte.",
+    "CST-141 (primeira entrega): arquivos de código do vault abrem e salvam (lista única VaultTextFiles); Prévia | Código num .html com página ao vivo (CSS, scripts, módulos, imagens, fetch/XHR do vault, erros dentro da página, isolada); no computador, Abrir no navegador com recarga automática (localhost). Conferido no Chromium.",
+    "CST-141 (edição de código): Enter com indentação, Tab/Shift+Tab, chave de fechamento que recua, no passo do próprio arquivo; teclado do celular e físico.",
+    "Abertura imediata: a última nota é lida sozinha (PeekTextAsync, computador e Android) e aparece antes de a pasta inteira ser lida, só para leitura; depois vira editável onde está.",
+    "CST-141 (cores do código): realce de sintaxe por camada sob a caixa de texto (sem dependência nova, IME/toque inalterados), cores voltam depois da pausa; seletor Visual|Fonte só onde existe.",
+    "CST-112 (abrir): travamento ao expandir muitas etapas reproduzido (300 operações: 1 141 ms) e resolvido com itens feitos perto da tela (Ui.Deferred, ~70 ms) e rolagem compensada; resultado de ferramenta inteiro, sem páginas, em pedaços de linhas (200 KB: 44 ms).",
+    "Digitação no Fonte investigada (sem mudança): ~0,3 ms do Urbe por tecla; o resto é o layout do texto inteiro da caixa do Avalonia, igual na main.",
+    "Conversa longa do Assistente: abrir 200 perguntas e respostas levava 3,0 s; mensagens feitas perto da tela, fim feito na hora, atualização completa refaz só as feitas (~250 ms ao abrir)."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test Urbe.Portable.slnx",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1550 testes, 0 falhas (local, .NET 10, Release); os testes de limites falhavam antes da mudança; Activity_StepsMadeAboveTheScreenDoNotMoveWhatIsOnIt vermelho sem a compensação; prévia ao vivo conferida no Chromium (Playwright) como o WebView a carrega; build Android Debug ok."
+    },
+    {
+      "check": "Oráculos da 1.8.4: goldens Markdown e Visual, histórico e corpus do repositório (contra o markdown.js original com só inlineEmphasis trocado)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "LegacyEditorToolsOracleTests, MarkdownVisualTests, LegacyHistoryOracleTests."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks."
+    },
+    {
+      "check": "Android físico: sair do editor depois de ler e depois de editar uma nota longa num vault grande (moto g32); o texto não aparece em negrito sem marcação e a leitura é confortável no Visual e na Fonte; um vault grande (mais de 10 000 arquivos, imagens e áudios grandes) abre e salva no Android; Prévia de um .html no Android (página ao lado/no lugar do código, acompanha a digitação, erros no quadro da página); a última nota aparece logo ao abrir o app e vira editável quando a pasta termina de ser lida; cores do código alinhadas e sem atraso ao digitar",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/docs/csharp/CONSOLIDATION.md",
+      "critical": false
+    },
+    {
+      "check": "Desempenho medido sozinho (URBE_PERF=1, Release, headless)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "activity.open300: 1 141 ms antes → ~70 ms; abrir etapa com resultado de 200 KB: 44 ms (antes ~300 ms para uma página de 12 000 caracteres); ux.typing Fonte 5 KB: 29–35 ms antes e depois (perfil dotnet-trace: TextPresenter.CreateTextLayout do Avalonia; código do Urbe ~0,3 ms por tecla). Conversa de 400 mensagens: abrir 3 032 ms → ~250 ms; atualização completa ~110 ms."
+    }
+  ],
+  "known_issues": [
+    "A mudança do armazenamento para fora da thread da tela não teve ganho mensurável no computador; é correção de princípio (no Android a leitura do vault custa mais) e precisa da medição DEVICE.",
+    "CI: uma saída 139 do host de testes depois de todos os testes passarem (job csharp-portable, estado combinado de 12:29) não se reproduziu em 4 execuções locais em Release.",
+    "CI: Workspace_ACardDraggedOntoAnotherBoxMovesThere falhou uma vez (a nota abriu depois de soltar o cartão; run 40928856666, head 9186788) e passou nos dois heads seguintes; não se reproduziu em 12 execuções isoladas nem em 3 suítes completas em Release. A hipótese de o cache das caixas guardar o botão pressionado foi testada e descartada (o Avalonia solta o botão ao mover a caixa). Causa não identificada.",
+    "Removido Leave_TheScreenAnswersWhileTheVaultIsCheckedAndWritten: o teste de tempo falhava no CI carregado (70 ms de 98 ms) e nunca falhou sem a mudança que deveria provar; a mudança do armazenamento não tem ganho medido no computador."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Continuar a consolidação: CST-061/063 (editor de páginas), CST-058 adiante (gravação longa no app), e os itens do proprietário (nome e logo Numa, DEC-0058)."
+  ],
+  "decisions_required": [
+    "DEC-0058"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/UX.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O histórico continua com uma autoridade (.urbe/history.v2.json); a Área segue projeção das pastas, sem estado novo."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Tempos medidos no computador (headless); DEVICE pendente e separado."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nada extraído para a plataforma."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "markdown-emphasis",
+      "status": "product-specific",
+      "rationale": "Renderizador de notas do Urbe; as páginas têm o seu próprio, com oráculo próprio."
+    },
+    {
+      "subject": "live-html-preview",
+      "status": "product-specific",
+      "rationale": "Prévia de HTML do editor do Urbe; não há segundo consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Correções de desempenho e de renderização de um Product; os arquivos do vault são escritos pelos mesmos caminhos verificados (FolderVaultStorage/AndroidVaultStorage na zona user-data); a classificação efetiva é do integrador."
+  }
+}

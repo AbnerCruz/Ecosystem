@@ -365,7 +365,7 @@ public sealed class NotesExplorer : Border
             ".md" or ".markdown" or ".txt" => UrbeTheme.Icons.File,
             ".png" or ".jpg" or ".jpeg" or ".gif" or ".webp" or ".svg" or ".bmp" or ".avif" => UrbeTheme.Icons.Image,
             ".pdf" => UrbeTheme.Icons.Book,
-            ".json" or ".js" or ".css" or ".html" or ".htm" or ".yaml" or ".yml" or ".csv" or ".xml" or ".cs" or ".py" => UrbeTheme.Icons.FileCode,
+            _ when Urbe.Core.VaultTextFiles.IsText(p) => UrbeTheme.Icons.FileCode,
             _ => UrbeTheme.Icons.FileOther
         };
     }
@@ -755,15 +755,15 @@ public sealed class NotesExplorer : Border
         });
     }
 
-    /// <summary>renderSearch: documents whose path or title holds the query (lower case), at most 200, with their folder.</summary>
+    /// <summary>renderSearch: documents whose path or title holds the query (lower case), with their folder; all of them (DEC-0059: before, 200), the rows made as they come into view.</summary>
     private void RenderSearch()
     {
         var query = (_search.Text ?? "").Trim();
         var q = query.ToLowerInvariant();
         foreach (var n in _notes.Where(n => n.Path.ToLowerInvariant().Contains(q, StringComparison.Ordinal)
-                     || (n.Title ?? "").ToLowerInvariant().Contains(q, StringComparison.Ordinal)).Take(200))
+                     || (n.Title ?? "").ToLowerInvariant().Contains(q, StringComparison.Ordinal)))
             AddNoteRow(n, 0, withPath: true);
-        foreach (var f in _files.Where(f => f.ToLowerInvariant().Contains(q, StringComparison.Ordinal)).Take(200))
+        foreach (var f in _files.Where(f => f.ToLowerInvariant().Contains(q, StringComparison.Ordinal)))
             AddFileRow(f, 0, withPath: true);
         if (_list.Children.Count == 0) _list.Children.Add(Empty("Nada encontrado", "Nenhum arquivo com “" + query + "”."));
     }
