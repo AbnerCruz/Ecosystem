@@ -221,6 +221,37 @@ public sealed class EditorOverlay : Grid
                 UpdateActiveTools();
         };
         Editor.AddHandler(KeyDownEvent, (object? _, KeyEventArgs e) => { if (_wiki.HandleKey(e.Key)) e.Handled = true; }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        // CST-141: the keys of an editor of code, in a code file (a note keeps the Markdown ones)
+        Editor.AddHandler(KeyDownEvent, (object? _, KeyEventArgs e) =>
+        {
+            if (e.Handled || !IsCode || Editor.IsReadOnly || _wiki.IsOpen) return;
+            var mods = e.KeyModifiers & ~KeyModifiers.Shift;
+            if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None)
+            {
+                e.Handled = true;
+                ApplyEdit(CodeEditing.NewLine(Editor.Text ?? "", Editor.SelectionStart, Editor.SelectionEnd));
+            }
+            else if (e.Key == Key.Tab && mods == KeyModifiers.None)
+            {
+                e.Handled = true;
+                ApplyEdit(CodeEditing.Indent(Editor.Text ?? "", Editor.SelectionStart, Editor.SelectionEnd, outdent: e.KeyModifiers.HasFlag(KeyModifiers.Shift)));
+            }
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        Editor.AddHandler(TextInputEvent, (object? _, TextInputEventArgs e) =>
+        {
+            if (e.Handled || !IsCode || Editor.IsReadOnly || e.Text is not { Length: 1 } typed) return;
+            // a phone's keyboard sends Enter as a line break of text
+            if (typed is "\n" or "\r")
+            {
+                e.Handled = true;
+                ApplyEdit(CodeEditing.NewLine(Editor.Text ?? "", Editor.SelectionStart, Editor.SelectionEnd));
+            }
+            else if (Editor.SelectionStart == Editor.SelectionEnd && CodeEditing.Closing(Editor.Text ?? "", Editor.CaretIndex, typed[0]) is { } closing)
+            {
+                e.Handled = true;
+                ApplyEdit(closing);
+            }
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         // math/editor.js: Ctrl+M inserts a formula, Ctrl+Shift+M a display formula, with the focus in the text
         AddHandler(KeyDownEvent, (object? _, KeyEventArgs e) =>
         {
@@ -856,6 +887,9 @@ public sealed class EditorOverlay : Grid
     private bool _live;
 
     private bool IsHtml => _note is not null && Kind(_note.Path) is "html" or "htm";
+
+    /// <summary>A code file: a text type of the vault that is neither a note nor plain text or a table.</summary>
+    private bool IsCode => _note is not null && !IsMarkdown && VaultTextFiles.IsText(_note.Path) && Kind(_note.Path) is not ("txt" or "csv" or "tsv");
 
     /// <summary>The page is shown (Prévia) for the HTML being edited.</summary>
     public bool LivePreviewOn => _live;

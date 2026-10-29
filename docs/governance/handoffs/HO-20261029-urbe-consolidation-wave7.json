@@ -31,6 +31,7 @@
     "apps/urbe/csharp/src/Urbe.Client/WorkspaceView.cs",
     "apps/urbe/csharp/src/Urbe.Core/ArtifactModel.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAttachmentExtraction.cs",
+    "apps/urbe/csharp/src/Urbe.Core/CodeEditing.cs",
     "apps/urbe/csharp/src/Urbe.Core/ImageHeader.cs",
     "apps/urbe/csharp/src/Urbe.Core/LegacyHistory.cs",
     "apps/urbe/csharp/src/Urbe.Core/LivePreview.cs",
@@ -40,6 +41,7 @@
     "apps/urbe/csharp/src/Urbe.Core/VaultTextFiles.cs",
     "apps/urbe/csharp/src/Urbe.Core/VaultWriter.cs",
     "apps/urbe/csharp/src/Urbe.Core/WorkspaceIndex.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CodeEditingUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/CompositionReconversionUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorLeaveTimingUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTests.cs",
@@ -47,6 +49,7 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultNoLimitsTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/LiveHtmlPreviewUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/WikiSuggestNoLimitUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/CodeEditingTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/ImageHeaderTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyEditorToolsOracleTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyHistoryExportTests.cs",
@@ -66,14 +69,15 @@
     "CST-062 e CST-060 conferidos: a conversão das composições mantém ordem e originais e não se repete depois de reabrir o vault; comentários das páginas ficam fora da exportação, da impressão e da página aberta (mesmo Render). Nenhum defeito.",
     "DEC-0059 registrada (ADD-0033): a 1.8.4 deixa de ser referência; desenvolvimento contínuo; sem limitadores. AGENTS.md §1.2 e PRODUCT-DIRECTION atualizados.",
     "Sem limitadores: vault sem teto de itens (10 000), profundidade (32), tamanho de texto (32 MB/256 MB) nem de importação (32 MB), no computador e no Android; prévia com texto de qualquer tamanho em partes, zip completo, imagem enorme decodificada na largura útil; busca do Explorer e lista do [[ sem corte.",
-    "CST-141 (primeira entrega): arquivos de código do vault abrem e salvam (lista única VaultTextFiles); Prévia | Código num .html com página ao vivo (CSS, scripts, módulos, imagens, fetch/XHR do vault, erros dentro da página, isolada); no computador, Abrir no navegador com recarga automática (localhost). Conferido no Chromium."
+    "CST-141 (primeira entrega): arquivos de código do vault abrem e salvam (lista única VaultTextFiles); Prévia | Código num .html com página ao vivo (CSS, scripts, módulos, imagens, fetch/XHR do vault, erros dentro da página, isolada); no computador, Abrir no navegador com recarga automática (localhost). Conferido no Chromium.",
+    "CST-141 (edição de código): Enter com indentação, Tab/Shift+Tab, chave de fechamento que recua, no passo do próprio arquivo; teclado do celular e físico."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1527 testes, 0 falhas (local, .NET 10); os testes de limites falhavam antes da mudança; prévia ao vivo conferida no Chromium (Playwright) como o WebView a carrega; build Android Debug ok."
+      "evidence": "1538 testes, 0 falhas (local, .NET 10); os testes de limites falhavam antes da mudança; prévia ao vivo conferida no Chromium (Playwright) como o WebView a carrega; build Android Debug ok."
     },
     {
       "check": "Oráculos da 1.8.4: goldens Markdown e Visual, histórico e corpus do repositório (contra o markdown.js original com só inlineEmphasis trocado)",

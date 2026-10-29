@@ -272,6 +272,16 @@ public static partial class AppDocs
 
         Os demais arquivos (imagens, PDFs, áudio, vídeo) são abertos no visualizador.
 
+        ## Escrever código
+
+        Num arquivo de código, o editor cuida da indentação, com o passo do próprio arquivo (tab, 2 ou 4 espaços):
+
+        - **Enter** começa a linha nova na mesma indentação, e um nível adiante depois de `{`, `[`, `(` ou de `:` no fim da linha (Python). Entre `{` e `}`, abre o bloco com o `}` na linha de baixo.
+        - **Tab** avança um nível as linhas selecionadas (ou põe um nível onde está o cursor); **Shift+Tab** volta um nível.
+        - Um `}`, `]` ou `)` digitado numa linha só com espaços volta um nível.
+
+        Funciona com o teclado do celular e com um teclado físico. Notas `.md` continuam com as teclas de Markdown (listas, tarefas).
+
         ## Prévia ao vivo de um HTML
 
         Num arquivo `.html`, o seletor do topo do editor passa a ser **Prévia | Código**. Em **Prévia**, a página aparece ao lado do código (numa tela larga) ou no lugar dele (no celular), e acompanha o que você escreve: cada mudança aparece um instante depois, sem salvar e sem atualizar.

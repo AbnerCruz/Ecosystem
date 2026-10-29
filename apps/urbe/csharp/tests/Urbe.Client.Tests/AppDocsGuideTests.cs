@@ -30,6 +30,7 @@ public sealed class AppDocsGuideTests
     [InlineData("Personalização/AGENTS.md")]
     [InlineData("Prévia | Código")]       // CST-141: live preview of an HTML
     [InlineData("Abrir no navegador")]
+    [InlineData("Shift+Tab")]
     [InlineData("{{titulo}}")]            // template fields
     public void TheTutorialCoversTheUrbesOwnSyntax(string mark) => Assert.Contains(mark, All);
 
