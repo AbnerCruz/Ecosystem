@@ -50,6 +50,8 @@ public sealed partial class MainView : Grid
         Editor.BlockTimesFor = path => _store?.Get(path) is { } doc ? new BlockTimes.Index(_history.List(doc.Id), CreatedMs(doc), createdDayOnly: true) : null;
         // CST-040/041: links and embeds find every file of the vault, and a file link opens the viewer
         // (text files that are not notes, .html, .csv, .js…, live with the notes' texts, as the embeds find them)
+        // CST-141: the pictures and media an HTML being previewed uses, read from the vault (never written)
+        Editor.LivePane.ReadFile = async path => _vault is { } vault ? (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes : null;
         Editor.Files = () => _attachments.Where(f => !_contents.ContainsKey(f))
             .Concat(_contents.Keys.Where(p => !p.EndsWith(".md", StringComparison.OrdinalIgnoreCase) && !p.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase)));
         Editor.OpenFile = path => FilePreview.OpenAsync(path);

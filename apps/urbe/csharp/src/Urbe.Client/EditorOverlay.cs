@@ -318,11 +318,15 @@ public sealed class EditorOverlay : Grid
         Context.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty && Context.IsVisible) Connections.IsVisible = false; };
         Connections.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty && Connections.IsVisible) Context.IsVisible = false; };
         // #urbeSplitPane: another note beside this one, (1 - ratio) of the width (editor/split-ui.js)
-        var body = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+        var body = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto") };
         body.Children.Add(text);
         SetColumn(Split, 1);
         body.Children.Add(Split);
-        body.SizeChanged += (_, e) => Split.Width = Math.Round(e.NewSize.Width * (1 - SplitRatio));
+        // CST-141: the page of an HTML being edited, beside the code when there is room, over it on a phone
+        body.Children.Add(LivePane);
+        body.SizeChanged += (_, e) => { Split.Width = Math.Round(e.NewSize.Width * (1 - SplitRatio)); PlaceLive(e.NewSize.Width); };
+        _body = body;
+        Editor.TextChanged += (_, _) => { if (!_opening && (_live || LivePane.BrowserAddress is not null)) LivePane.CodeChanged(); };
         Context.LineChosen += GoToLine;
         // the pinned reference above the text, up to 40 % of the height, with its own scroll (DEC-0045, UC-39)
         var bodyHost = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*") };
@@ -568,6 +572,7 @@ public sealed class EditorOverlay : Grid
         if (Editor.IsFocused || _visual.IsKeyboardFocusWithin) FinishWriting();
         // the Explorer is back at once; the note finishes saving behind it
         Leaving?.Invoke();
+        if (_live || LivePane.BrowserAddress is not null) { _live = false; LivePane.Close(); }
         IsVisible = false;
         Closed?.Invoke(this, EventArgs.Empty);
         await saving;
@@ -636,8 +641,9 @@ public sealed class EditorOverlay : Grid
         _opening = false;
         RebuildIndex();
         var canVisual = CanVisual(note.Path);
-        _segment.IsVisible = canVisual;
+        _segment.IsVisible = canVisual || IsHtml;
         ShowMode(canVisual && StartInVisual ? EditorMode.Visual : EditorMode.Fonte);
+        ApplyCodeSwitch();
         UpdateChrome();
         UpdateStatus(changed: false);
         RefreshProperties();
@@ -696,8 +702,9 @@ public sealed class EditorOverlay : Grid
         _title.Text = System.IO.Path.GetFileName(path);
         RebuildIndex();
         var canVisual = CanVisual(path);
-        _segment.IsVisible = canVisual;
+        _segment.IsVisible = canVisual || IsHtml;
         if (!canVisual && Mode == EditorMode.Visual) ShowMode(EditorMode.Fonte);
+        ApplyCodeSwitch();
         UpdateChrome();
         UpdateStatus(changed: HasChanges);
         RenderTabs();
@@ -839,6 +846,66 @@ public sealed class EditorOverlay : Grid
         _visual.MaxWidth = _columnWidth == "media" ? Math.Min(_columnMax, Math.Round(_visual.TextSize * 38)) : _columnMax;
 
     private static bool CanVisual(string path) => Kind(path) is "md" or "markdown";
+
+    // ------------------------------------------------------------------ CST-141: Código | Prévia of an HTML
+
+    /// <summary>The live page of the HTML being edited.</summary>
+    public LiveHtmlPane LivePane { get; } = new();
+
+    private Grid? _body;
+    private bool _live;
+
+    private bool IsHtml => _note is not null && Kind(_note.Path) is "html" or "htm";
+
+    /// <summary>The page is shown (Prévia) for the HTML being edited.</summary>
+    public bool LivePreviewOn => _live;
+
+    /// <summary>Prévia on or off (Código).</summary>
+    public void SetLive(bool on)
+    {
+        var note = IsHtml ? _note : null;
+        if (note is null) on = false;
+        _live = on;
+        if (on) LivePane.Show(note!.Path, () => Editor.Text ?? "", () => Notes?.Invoke() ?? []);
+        else LivePane.Hide();
+        PlaceLive(_body?.Bounds.Width ?? Bounds.Width);
+        StyleSwitch();
+    }
+
+    /// <summary>The switch says Prévia | Código for an HTML and Visual | Fonte for a note; another file stops a preview.</summary>
+    private void ApplyCodeSwitch()
+    {
+        bool html = IsHtml;
+        if (_visualButton is not null) { _visualButton.Content = html ? "Prévia" : "Visual"; _sourceButton.Content = html ? "Código" : "Fonte"; }
+        if (!html) { if (_live || LivePane.BrowserAddress is not null) { _live = false; LivePane.Close(); } }
+        else if (_live) LivePane.Show(_note!.Path, () => Editor.Text ?? "", () => Notes?.Invoke() ?? []);
+        PlaceLive(_body?.Bounds.Width ?? Bounds.Width);
+        StyleSwitch();
+    }
+
+    private void StyleSwitch()
+    {
+        if (_visualButton is null) return;
+        bool first = IsHtml ? _live : Mode == EditorMode.Visual;
+        Style(_visualButton, first);
+        Style(_sourceButton, !first);
+        if (_modeToggle is not null && IsHtml)
+        {
+            var tip = _live ? "Mostrar o código" : "Mostrar a prévia";
+            ToolTip.SetTip(_modeToggle, tip);
+            AutomationProperties.SetName(_modeToggle, tip);
+        }
+    }
+
+    /// <summary>Beside the code from 900 px (half the width); below that, over the code.</summary>
+    private void PlaceLive(double width)
+    {
+        bool wide = width >= 900;
+        SetColumn(LivePane, wide ? 2 : 0);
+        SetColumnSpan(LivePane, wide ? 1 : 3);
+        LivePane.Width = wide ? Math.Round(width * .5) : double.NaN;
+        LivePane.BorderThickness = new Thickness(wide ? 1 : 0, 0, 0, 0);
+    }
     private static string Kind(string path) => System.IO.Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
     private bool IsMarkdown => _note is not null && CanVisual(_note.Path);
 
@@ -859,7 +926,8 @@ public sealed class EditorOverlay : Grid
     {
         var props = _note is null ? null : PropertiesFor?.Invoke(_note.Path);
         _propertiesText.Text = props is null ? "" : System.Text.RegularExpressions.Regex.Replace(props, @"\s+", " ");
-        _hasProperties = props is not null;
+        // the note's summary (título, tags, datas) is for notes; a code file shows only its code (DEC-0059)
+        _hasProperties = props is not null && IsMarkdown;
         UpdateProperties();
         Properties.Dialogs = Dialogs;
         Properties.IsVisible = IsMarkdown;
@@ -951,11 +1019,7 @@ public sealed class EditorOverlay : Grid
             ToolTip.SetTip(_modeToggle, tip);
             AutomationProperties.SetName(_modeToggle, tip);
         }
-        if (_visualButton is not null)
-        {
-            Style(_visualButton, visual);
-            Style(_sourceButton, !visual);
-        }
+        StyleSwitch();
         UpdateChrome();
         if (!visual && IsVisible && KeyboardFocusPolicy.AutoFocusOnOpen(OperatingSystem.IsAndroid())) Dispatcher.UIThread.Post(FocusSource, DispatcherPriority.Loaded);
         // the text switching modes fades in briefly (≤ 150 ms): it is the same note, seen another way
@@ -1134,8 +1198,8 @@ public sealed class EditorOverlay : Grid
 
         _visualButton = Segment("Visual");
         _sourceButton = Segment("Fonte");
-        _visualButton.Click += (_, _) => SetMode(EditorMode.Visual);
-        _sourceButton.Click += (_, _) => SetMode(EditorMode.Fonte);
+        _visualButton.Click += (_, _) => { if (IsHtml) SetLive(true); else SetMode(EditorMode.Visual); };
+        _sourceButton.Click += (_, _) => { if (IsHtml) SetLive(false); else SetMode(EditorMode.Fonte); };
         Style(_visualButton, true);
         Style(_sourceButton, false);
         _segment = new Border
@@ -1163,7 +1227,7 @@ public sealed class EditorOverlay : Grid
         };
         // CST-105/106: on a phone the two-word switch left the title no room; there Visual/Fonte is one button
         _modeToggle = new UrbeIconButton(UrbeTheme.Icons.FileCode, "Mudar para Fonte") { IsVisible = false };
-        _modeToggle.Click += (_, _) => SetMode(Mode == EditorMode.Visual ? EditorMode.Fonte : EditorMode.Visual);
+        _modeToggle.Click += (_, _) => { if (IsHtml) SetLive(!_live); else SetMode(Mode == EditorMode.Visual ? EditorMode.Fonte : EditorMode.Visual); };
         var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { PluginButtons, assistant, _segment, _modeToggle, more } };
         var bar = new DockPanel { Margin = new Thickness(UrbeTokens.Space.Xxs, 0), LastChildFill = true };
         bar.PropertyChanged += (_, e) =>

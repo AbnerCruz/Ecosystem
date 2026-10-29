@@ -18,26 +18,39 @@
   "files_changed": [
     "AGENTS.md",
     "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
     "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
     "apps/urbe/csharp/src/Urbe.Client/EditorPopups.cs",
     "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
     "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/LiveBrowserServer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/LiveHtmlPane.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
     "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
     "apps/urbe/csharp/src/Urbe.Client/WorkspaceView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ArtifactModel.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAttachmentExtraction.cs",
     "apps/urbe/csharp/src/Urbe.Core/ImageHeader.cs",
     "apps/urbe/csharp/src/Urbe.Core/LegacyHistory.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LivePreview.cs",
     "apps/urbe/csharp/src/Urbe.Core/MarkdownEngine.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VaultFileKinds.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VaultReader.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VaultTextFiles.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VaultWriter.cs",
     "apps/urbe/csharp/src/Urbe.Core/WorkspaceIndex.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/CompositionReconversionUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorLeaveTimingUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/FilePreviewNoLimitsUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultNoLimitsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/LiveHtmlPreviewUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/WikiSuggestNoLimitUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/ImageHeaderTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyEditorToolsOracleTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyHistoryExportTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LivePreviewTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/WorkspaceIndexTests.cs",
     "apps/urbe/csharp/tools/editor-oracle.mjs",
     "apps/urbe/docs/csharp/CONSOLIDATION.md",
@@ -52,14 +65,15 @@
     "Teste Source_DraggingAFingerScrolls: lê a posição depois do trabalho pendente do gesto (falhava em máquina carregada, 1 em 4 execuções locais).",
     "CST-062 e CST-060 conferidos: a conversão das composições mantém ordem e originais e não se repete depois de reabrir o vault; comentários das páginas ficam fora da exportação, da impressão e da página aberta (mesmo Render). Nenhum defeito.",
     "DEC-0059 registrada (ADD-0033): a 1.8.4 deixa de ser referência; desenvolvimento contínuo; sem limitadores. AGENTS.md §1.2 e PRODUCT-DIRECTION atualizados.",
-    "Sem limitadores: vault sem teto de itens (10 000), profundidade (32), tamanho de texto (32 MB/256 MB) nem de importação (32 MB), no computador e no Android; prévia com texto de qualquer tamanho em partes, zip completo, imagem enorme decodificada na largura útil; busca do Explorer e lista do [[ sem corte."
+    "Sem limitadores: vault sem teto de itens (10 000), profundidade (32), tamanho de texto (32 MB/256 MB) nem de importação (32 MB), no computador e no Android; prévia com texto de qualquer tamanho em partes, zip completo, imagem enorme decodificada na largura útil; busca do Explorer e lista do [[ sem corte.",
+    "CST-141 (primeira entrega): arquivos de código do vault abrem e salvam (lista única VaultTextFiles); Prévia | Código num .html com página ao vivo (CSS, scripts, módulos, imagens, fetch/XHR do vault, erros dentro da página, isolada); no computador, Abrir no navegador com recarga automática (localhost). Conferido no Chromium."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1516 testes, 0 falhas (local, .NET 10); os testes de limites falhavam antes da mudança; build Android Debug ok."
+      "evidence": "1527 testes, 0 falhas (local, .NET 10); os testes de limites falhavam antes da mudança; prévia ao vivo conferida no Chromium (Playwright) como o WebView a carrega; build Android Debug ok."
     },
     {
       "check": "Oráculos da 1.8.4: goldens Markdown e Visual, histórico e corpus do repositório (contra o markdown.js original com só inlineEmphasis trocado)",
@@ -74,7 +88,7 @@
       "evidence": "22 checks."
     },
     {
-      "check": "Android físico: sair do editor depois de ler e depois de editar uma nota longa num vault grande (moto g32); o texto não aparece em negrito sem marcação e a leitura é confortável no Visual e na Fonte; um vault grande (mais de 10 000 arquivos, imagens e áudios grandes) abre e salva no Android",
+      "check": "Android físico: sair do editor depois de ler e depois de editar uma nota longa num vault grande (moto g32); o texto não aparece em negrito sem marcação e a leitura é confortável no Visual e na Fonte; um vault grande (mais de 10 000 arquivos, imagens e áudios grandes) abre e salva no Android; Prévia de um .html no Android (página ao lado/no lugar do código, acompanha a digitação, erros no quadro da página)",
       "kind": "human",
       "result": "pending",
       "object": "apps/urbe/docs/csharp/CONSOLIDATION.md",
@@ -120,6 +134,11 @@
       "subject": "markdown-emphasis",
       "status": "product-specific",
       "rationale": "Renderizador de notas do Urbe; as páginas têm o seu próprio, com oráculo próprio."
+    },
+    {
+      "subject": "live-html-preview",
+      "status": "product-specific",
+      "rationale": "Prévia de HTML do editor do Urbe; não há segundo consumidor."
     }
   ],
   "criticality": {
