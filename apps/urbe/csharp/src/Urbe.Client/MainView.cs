@@ -493,7 +493,56 @@ public sealed partial class MainView : Grid
     public Task FlushPendingAsync() => _notesSave?.FlushAsync() ?? Task.CompletedTask;
 
     // Keep the one-argument signature for Editor.SaveRequested (Func<CityNote, Task>).
-    private Task SaveNoteAsync(CityNote note) => SaveNoteAsync(note, expectedUndoContent: null);
+    private async Task SaveNoteAsync(CityNote note)
+    {
+        try { await SaveNoteAsync(note, expectedUndoContent: null); }
+        catch (VaultChangedOutsideException) { await SaveAfterOutsideChangeAsync(note); }
+    }
+
+    /// <summary>
+    /// CST-005: the folder changed outside the Urbe (a sync, another editor) since it was read. It is read again —
+    /// every change made outside is kept and shown — and then the note is saved, when the note itself is as the Urbe
+    /// knew it. When the note was changed outside too, nothing is overwritten: the person's text goes to a copy next
+    /// to it, which the editor goes on with.
+    /// </summary>
+    private async Task SaveAfterOutsideChangeAsync(CityNote note)
+    {
+        var known = _contents.GetValueOrDefault(note.Path);
+        if (await _vault!.ReloadAsync() is not { } snapshot) throw new VaultChangedOutsideException();
+        // the notes' record changed outside too (another device): the one there wins over the one waiting here
+        if (_notesSave is { } waiting && snapshot.Files.FirstOrDefault(f => string.Equals(f.Key, NoteLibrary.Path, StringComparison.OrdinalIgnoreCase)).Value is { } record &&
+            System.Text.Encoding.UTF8.GetString(record.Bytes.Span).TrimStart('\uFEFF') != waiting.OnDisk)
+        {
+            waiting.Stop();
+            _notesSave = null;
+        }
+        await ShowVaultAsync(snapshot);
+        if (known is not null && _contents.TryGetValue(note.Path, out var onDisk) && onDisk == known)
+        {
+            await SaveNoteAsync(note, expectedUndoContent: null);
+            Editor.Notify("A pasta mudou fora do Urbe: ela foi lida de novo, e a nota foi salva.");
+            return;
+        }
+        var copy = ConflictCopyPath(note.Path, DateTimeOffset.Now);
+        await WriteVaultFileAsync(copy, note.Content, exists: false);
+        await SaveHistoryAsync();
+        if (Editor.Current?.Path == note.Path) Editor.Renamed(copy);
+        ShowLifeNotice("“" + System.IO.Path.GetFileNameWithoutExtension(note.Path) + "” foi alterada fora do Urbe. As duas versões ficaram: " +
+            "a de fora na nota, a sua em “" + System.IO.Path.GetFileNameWithoutExtension(copy) + "”.", Ui.ToastKind.Warning);
+    }
+
+    /// <summary>"Nome (conflito 2026-10-29 14h05).md", next to the note and free.</summary>
+    private string ConflictCopyPath(string path, DateTimeOffset at)
+    {
+        var folder = path.Contains('/') ? path[..(path.LastIndexOf('/') + 1)] : "";
+        var name = System.IO.Path.GetFileNameWithoutExtension(path);
+        var extension = System.IO.Path.GetExtension(path);
+        var stamp = at.ToString("yyyy-MM-dd HH'h'mm", System.Globalization.CultureInfo.InvariantCulture);
+        bool Taken(string candidate) => _contents.Keys.Concat(_attachments).Any(p => string.Equals(p, candidate, StringComparison.OrdinalIgnoreCase));
+        var copy = folder + name + " (conflito " + stamp + ")" + extension;
+        for (int n = 2; Taken(copy); n++) copy = folder + name + " (conflito " + stamp + " " + n + ")" + extension;
+        return copy;
+    }
 
     /// <param name="sealsByEngine">The Assistente's route: its seals were composed by AiAuthorship (UC-51), which may
     /// replace a regenerated block's seal or drop a deleted block's; the person's routes keep the guard below.</param>

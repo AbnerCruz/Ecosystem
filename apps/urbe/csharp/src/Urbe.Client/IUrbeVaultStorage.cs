@@ -4,6 +4,13 @@ namespace Urbe.Client;
 
 /// <summary>Native-platform vault boundary. The Core remains the canonical parser/writer;
 /// clients receive immutable snapshots, never filesystem or Android APIs.</summary>
+/// <summary>
+/// The folder changed outside the Urbe since it was read (another app, a sync): the write was refused so that
+/// nothing written there is overwritten. The caller reads the folder again before writing (CST-005).
+/// </summary>
+public sealed class VaultChangedOutsideException()
+    : IOException("A pasta foi modificada fora do Urbe. Reabra o vault antes de salvar para evitar sobrescrever dados.");
+
 public interface IUrbeVaultStorage
 {
     bool IsConnected { get; }

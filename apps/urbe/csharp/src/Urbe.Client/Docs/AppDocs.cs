@@ -384,6 +384,10 @@ public static partial class AppDocs
 
         Antes de migrar ou importar, o Urbe guarda um backup em `.urbe/backup`. Para ver e restaurar: **Ctrl+K → Backups do vault**.
 
+        ## Quando a pasta muda fora do Urbe
+
+        Outro aplicativo ou uma sincronização pode mudar os arquivos enquanto o Urbe está aberto. O Urbe nunca grava por cima do que mudou lá: ao salvar, ele lê a pasta de novo, e as mudanças de fora aparecem. Se a própria nota que você está escrevendo foi mudada lá fora, as duas versões ficam: a de fora continua na nota, e a sua é salva ao lado como **Nome (conflito data hora)**, que segue aberta no editor para você juntar o que quiser.
+
         ## Versões e lixeira
 
         - **Versões anteriores**, no **Mais ações** do [[Editor]], restaura um texto anterior da nota.

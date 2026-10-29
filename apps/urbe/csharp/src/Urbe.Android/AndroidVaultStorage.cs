@@ -955,8 +955,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         if (original.Count != recent.Count ||
             original.Any(pair => !recent.TryGetValue(pair.Key, out var file) ||
                 !pair.Value.Bytes.Span.SequenceEqual(file.Bytes.Span)))
-            throw new IOException(
-                "A pasta foi modificada fora do Urbe. Reabra o vault antes de salvar para evitar sobrescrever dados.");
+            throw new VaultChangedOutsideException();
     }
 
     private static string[] Segments(string path)

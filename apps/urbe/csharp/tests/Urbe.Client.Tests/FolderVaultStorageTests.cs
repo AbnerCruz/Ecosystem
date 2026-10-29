@@ -123,7 +123,7 @@ public sealed class FolderVaultStorageTests : IDisposable
         var storage = Storage();
         await storage.PickAsync(Ct);
         File.WriteAllText(Path.Combine(Vault, "Comece.md"), "# Comece\n\nEditado em outro app.\n");
-        await Assert.ThrowsAsync<IOException>(() => storage.SaveExistingNoteAsync("Bairro/Um.md", "x", Ct));
+        await Assert.ThrowsAsync<VaultChangedOutsideException>(() => storage.SaveExistingNoteAsync("Bairro/Um.md", "x", Ct));
         Assert.Equal("# Um\n", File.ReadAllText(Path.Combine(Vault, "Bairro", "Um.md")));
         Assert.Equal("# Comece\n\nEditado em outro app.\n", File.ReadAllText(Path.Combine(Vault, "Comece.md")));
     }
@@ -235,7 +235,7 @@ public sealed class FolderVaultStorageTests : IDisposable
         var storage = Storage();
         await storage.PickAsync(Ct);
         File.WriteAllText(Path.Combine(Vault, "Bairro", "Um.md"), "# Um\n\nEditado em outro app.\n");
-        await Assert.ThrowsAsync<IOException>(() => storage.MoveTextFileAsync("Bairro/Um.md", "Bairro/Dois.md", Ct));
+        await Assert.ThrowsAsync<VaultChangedOutsideException>(() => storage.MoveTextFileAsync("Bairro/Um.md", "Bairro/Dois.md", Ct));
         Assert.True(File.Exists(Path.Combine(Vault, "Bairro", "Um.md")));
         Assert.False(File.Exists(Path.Combine(Vault, "Bairro", "Dois.md")));
     }
@@ -301,7 +301,7 @@ public sealed class FolderVaultStorageTests : IDisposable
         await storage.SaveExistingNoteAsync("Comece.md", "# Comece\n\nmais\n", Ct);   // reads (and keeps) the old notes
         File.WriteAllText(Path.Combine(Vault, "Bairro", "Um.md"), "# Ux\n");             // same size, changed outside
         File.SetLastWriteTimeUtc(Path.Combine(Vault, "Bairro", "Um.md"), DateTime.UtcNow.AddDays(-1));
-        await Assert.ThrowsAsync<IOException>(() => storage.SaveExistingNoteAsync("Comece.md", "# Comece\n", Ct));
+        await Assert.ThrowsAsync<VaultChangedOutsideException>(() => storage.SaveExistingNoteAsync("Comece.md", "# Comece\n", Ct));
         Assert.Equal("# Comece\n\nmais\n", File.ReadAllText(Path.Combine(Vault, "Comece.md")));
         Assert.Equal("# Ux\n", File.ReadAllText(Path.Combine(Vault, "Bairro", "Um.md")));
     }
@@ -444,7 +444,7 @@ public sealed class FolderVaultStorageTests : IDisposable
         var storage = Storage();
         await storage.PickAsync(Ct);
         File.WriteAllText(Path.Combine(Vault, "Fora.md"), "# Fora\n");   // another device synced a note
-        await Assert.ThrowsAsync<IOException>(() => storage.SaveNotesRecordAsync(Record1, Ct));
+        await Assert.ThrowsAsync<VaultChangedOutsideException>(() => storage.SaveNotesRecordAsync(Record1, Ct));
         Assert.False(File.Exists(Path.Combine(Vault, ".urbe", "notas.json")));
     }
 

@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261029-urbe-consolidation-wave6",
   "category": "HANDOFF",
-  "timestamp": "2026-10-29T01:39:14Z",
+  "timestamp": "2026-10-29T01:49:06Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -63,7 +63,13 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/RadialLayoutTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/RadialNavUiTests.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Selection.cs",
-    "apps/urbe/csharp/tests/Urbe.Client.Tests/ChatRefreshUiTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ChatRefreshUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/NotesSaveScheduler.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/OutsideChangeSaveUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultStorageTests.cs"
   ],
   "work_completed": [
     "CST-115: cartão de perguntas com compreensão declarada, dúvidas em aberto e mudança desde a pergunta anterior.",
@@ -76,7 +82,8 @@
     "UC-51 (GH-845) encerrada: validação no aparelho aprovada pelo proprietário (Issue #848); ROADMAP [x] e handoff done.",
     "CST-043: menu radial no canto inferior direito substitui as abas do celular e o botão separado do Assistente (Assistente, Notas, Grafos num quarto de círculo; toque ou segurar-arrastar-soltar; Voltar/Esc/toque fora fecham; acessível). Computador mantém o trilho.",
     "CST-008 (segunda parte): renderizações completas não esperam mais por qualquer seleção no chat; a seleção é mantida/levada ao texto refeito, e só uma seleção em curso numa vista que sai segura a atualização por até 1,5 s.",
-    "CST-094 (correção do CI): execução medida em menos de 1 ms registrava TotalMs 0, marca de execução sem medida; agora vale no mínimo 1 ms."
+    "CST-094 (correção do CI): execução medida em menos de 1 ms registrava TotalMs 0, marca de execução sem medida; agora vale no mínimo 1 ms.",
+    "CST-005: mudança externa em qualquer arquivo não bloqueia mais a gravação da nota (relê e salva); se a própria nota mudou fora, as duas versões ficam (cópia de conflito), nada sobrescrito."
   ],
   "verification": [
     {
