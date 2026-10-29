@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261029-urbe-consolidation-wave6",
   "category": "HANDOFF",
-  "timestamp": "2026-10-29T00:27:14Z",
+  "timestamp": "2026-10-29T00:28:44Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -22,6 +22,7 @@
     "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
     "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Embeds.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
     "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
     "apps/urbe/csharp/src/Urbe.Client/Ui/FunctionPlotView.cs",
@@ -40,6 +41,7 @@
     "apps/urbe/csharp/src/Urbe.Core/Pages/PageMarkdown.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AppDocsGuideTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ClockInEditorUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EmbedNoPreviewTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/FunctionPlotUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteTemplateFlowUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/QuestionProgressUiTests.cs",
@@ -59,6 +61,7 @@
     "CST-094/095/096: métrica de execução útil (tempos separados por provedor, ferramentas e aprovação; trabalho, retrabalho e conferência; resumo por agente), local, sem conteúdo, desligável.",
     "CST-105/106: título do editor volta a aparecer no celular (Visual/Fonte num botão só abaixo de 520 px); o botão flutuante do Assistente fecha o bloco em edição antes de abrir.",
     "CST-069: gráficos de funções em blocos ```grafico (avaliador fechado, assíntotas, eixos e legenda), desenhados no Visual e em SVG nas páginas; item Gráfico de função no menu /.",
+    "CST-041: incorporação sem prévia diz o tipo do arquivo e que o link continua valendo.",
     "UC-51 (GH-845) encerrada: validação no aparelho aprovada pelo proprietário (Issue #848); ROADMAP [x] e handoff done."
   ],
   "verification": [
@@ -77,7 +80,6 @@
     }
   ],
   "known_issues": [
-    "CST-041: a mensagem para incorporação de tipo não suportado ainda não foi revisada.",
     "A extensão .modelo.md segue a convenção das extensões compostas do app (.page.json, .grafo.json); trocar é reversível."
   ],
   "blockers": [],
