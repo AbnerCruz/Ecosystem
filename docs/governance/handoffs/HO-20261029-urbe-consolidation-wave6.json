@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261029-urbe-consolidation-wave6",
   "category": "HANDOFF",
-  "timestamp": "2026-10-29T11:55:05Z",
+  "timestamp": "2026-10-29T12:02:25Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -87,7 +87,15 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantQueueUiTests.cs",
     "docs/adr/0046-urbe-tags-herdadas-por-projeto.md",
     "docs/governance/decisions.json",
-    "docs/adr/README.md"
+    "docs/adr/README.md",
+    "apps/urbe/csharp/src/Urbe.Core/LongAudio.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PlatformAudio.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Transcribe.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AudioDecoder.cs",
+    "apps/urbe/csharp/src/Urbe.Android/MainActivity.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LongAudioTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/LongAudioUiTests.cs"
   ],
   "work_completed": [
     "CST-115: cartão de perguntas com compreensão declarada, dúvidas em aberto e mudança desde a pergunta anterior.",
@@ -109,17 +117,18 @@
     "CST-012 conferido: parar encerra a execução na hora e a tela mostra; parar com pergunta encaminhada encerra as duas (testes de regressão).",
     "CST-014 conferido: resposta de uma conversa não vaza para outra; a volta mostra tudo (teste de regressão).",
     "CST-009 conferido: fila sobrevive a interrupção (retomável) e erro do provedor mantém a mensagem com Tentar de novo (testes de regressão).",
-    "CST-042: proposta registrada (ADR-0046 Proposto) e decisão pendente DEC-0058 no portal — de onde vêm as tags herdadas por projeto; implementação aguarda a escolha."
+    "CST-042: proposta registrada (ADR-0046 Proposto) e decisão pendente DEC-0058 no portal — de onde vêm as tags herdadas por projeto; implementação aguarda a escolha.",
+    "CST-058 (fatia 1): Transcrever em nota — áudio do vault decodificado no Android (streaming), cortado nas pausas, transcrito pelo reconhecimento do aparelho em trechos, nota com horários ao lado; cancelável; Organizar com o Assistente."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1478 testes, 0 falhas (local, .NET 10.0.403)."
+      "evidence": "1488 testes, 0 falhas (local, .NET 10.0.403); build Android Debug ok."
     },
     {
-      "check": "Android físico: cartão de perguntas, modelos (.modelo.md, conversão de colchetes, Preencher no editor), linha de tempo das execuções e Desempenho por agente, título do editor a 360 dp, gráfico de função no editor e na página, agente de carrossel com várias imagens até o fim sem fechar o app, menu radial (toque, arrastar com o polegar, TalkBack, Voltar, gestos do sistema no canto)",
+      "check": "Android físico: cartão de perguntas, modelos (.modelo.md, conversão de colchetes, Preencher no editor), linha de tempo das execuções e Desempenho por agente, título do editor a 360 dp, gráfico de função no editor e na página, agente de carrossel com várias imagens até o fim sem fechar o app, menu radial (toque, arrastar com o polegar, TalkBack, Voltar, gestos do sistema no canto), Transcrever em nota com uma aula real (Android 13+)",
       "kind": "human",
       "result": "pending",
       "object": "apps/urbe/docs/csharp/CONSOLIDATION.md",

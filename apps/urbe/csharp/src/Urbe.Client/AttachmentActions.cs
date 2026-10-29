@@ -19,6 +19,9 @@ public sealed partial class MainView
         // #downloadPreviewBtn: a copy where the person chooses (only reads the vault)
         if (_vault is not null) items.Add(new DialogItem("Baixar arquivo", UrbeTheme.Icons.Download, "Uma cópia onde você escolher.", Run: () => DownloadFileAsync(path)));
         if (!VaultWritable) return items.Count > 0 ? Dialogs.MenuAsync(name, items) : Dialogs.AlertAsync(name, NoVaultMessage);
+        // CST-058: a recording (a class, a meeting) into a note to review, where the device can transcribe
+        if (CanTranscribe(path))
+            items.Add(new DialogItem("Transcrever em nota", UrbeTheme.Icons.Mic, "Uma nota ao lado, com o texto e os horários, para revisar.", Run: () => TranscribeAudioToNoteAsync(path)));
         items.AddRange(
         [
             new DialogItem("Renomear", UrbeTheme.Icons.Pencil, "Mantenha a extensão para preservar o tipo.", Run: () => RenameAttachmentAsync(path)),

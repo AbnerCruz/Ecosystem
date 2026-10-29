@@ -75,6 +75,9 @@ public sealed class UrbeToast : Border
 
     public bool IsShown { get; private set; }
 
+    /// <summary>The action of the notice shown now (tests), or null.</summary>
+    public string? ActionText => IsShown ? _action?.Content as string : null;
+
     /// <summary>
     /// Shows <paramref name="text"/> for <paramref name="duration"/> (default 4.5 s, the 1.8.4 notice), replacing the
     /// one shown. An optional action (e.g. "Desfazer") makes the pill touchable.
