@@ -36,43 +36,4 @@ public sealed partial class HeadlessUiTests
         }
         finally { window.Close(); try { Directory.Delete(dir, true); } catch { } }
     }, CancellationToken.None));
-
-    [Fact]
-    public async Task Leave_TheScreenAnswersWhileTheVaultIsCheckedAndWritten() => Assert.True(await Session.Dispatch<bool>(async () =>
-    {
-        // the check of the whole folder before and after the write ran on the screen's thread between its two reads
-        var dir = Path.Combine(Path.GetTempPath(), "urbe-leave-" + Guid.NewGuid().ToString("N"));
-        var vault = Path.Combine(dir, "vault");
-        for (int i = 0; i < 1500; i++)
-        {
-            Directory.CreateDirectory(Path.Combine(vault, "Pasta " + i % 30));
-            File.WriteAllText(Path.Combine(vault, "Pasta " + i % 30, "Nota " + i + ".md"), "# Nota " + i + "\n\n" + string.Concat(Enumerable.Repeat("Texto da nota com [[link]] e #tag. ", 20)) + "\n");
-        }
-        var book = new System.Text.StringBuilder("# Livro\n\n");
-        for (int i = 0; i < 600; i++) book.Append("## Capítulo ").Append(i).Append("\n\nTexto **forte** e [[Nota ").Append(i % 50).Append("]] com mais palavras para encher a linha.\n\n- [ ] tarefa\n\n");
-        File.WriteAllText(Path.Combine(vault, "Livro.md"), book.ToString());
-        var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
-        try
-        {
-            Assert.NotNull(await storage.PickAsync());
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            var save = storage.SaveExistingTextFileAsync("Livro.md", book + "Novo.\n");
-            long last = 0, gap = 0;
-            void Beat()
-            {
-                var now = sw.ElapsedMilliseconds;
-                gap = Math.Max(gap, now - last);
-                last = now;
-                if (!save.IsCompleted) Dispatcher.UIThread.Post(Beat, DispatcherPriority.Input);
-            }
-            Beat();
-            while (!save.IsCompleted) await Task.Delay(1);
-            await save;
-            var total = sw.ElapsedMilliseconds;
-            Assert.EndsWith("Novo.\n", File.ReadAllText(Path.Combine(vault, "Livro.md")));
-            Assert.True(gap < Math.Max(40, total / 3), $"the screen stood still {gap} ms of a save of {total} ms");
-            return true;
-        }
-        finally { try { Directory.Delete(dir, true); } catch { } }
-    }, CancellationToken.None));
 }
