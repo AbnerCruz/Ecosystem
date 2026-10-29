@@ -126,4 +126,42 @@ public sealed partial class HeadlessUiTests
         }
         finally { window.Close(); UrbeApp.AssistantFolder = before; try { Directory.Delete(folder, true); Directory.Delete(vault, true); } catch (IOException) { } }
     }, CancellationToken.None));
+
+    [Fact]
+    public async Task Consult_TheSpecialistsFormIsFilledFromTheAskingConversation() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        var vault = Path.Combine(Path.GetTempPath(), "urbe-forward-vault-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(vault);
+        File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n");
+        var (view, window, panel, model, folder, before) = await TwoAgentsAsync("read", vault);
+        try
+        {
+            model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"consult-1","function":{"name":"consult_agent","arguments":"{\"agent_id\":\"two\",\"task\":\"Monte a ficha\"}"}}]}}]}""",
+                """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
+            model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"form-1","function":{"name":"request_form","arguments":"{\"title\":\"Ficha\",\"fields\":[{\"id\":\"nome\",\"label\":\"Nome\",\"type\":\"text\",\"required\":true}]}"}}]}}]}""",
+                """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
+            model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Ficha de Arven pronta."}}]}""", """{"choices":[{"delta":{},"finish_reason":"stop"}]}"""));
+            model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"A revisora montou a ficha."}}]}""", """{"choices":[{"delta":{},"finish_reason":"stop"}]}"""));
+            panel.Send("Peça à revisora a ficha.");
+            var run = panel.CurrentRun!;
+            var card = await WaitFor(window, view, () => panel.Log.GetLogicalDescendants().OfType<Border>()
+                .FirstOrDefault(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Formulário de Revisora"));
+            var form = card.GetLogicalDescendants().OfType<Urbe.Client.Ui.FormRenderer>().Single();
+            form.GetLogicalDescendants().OfType<TextBox>().Single().Text = "Arven";
+            form.SubmitButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            await run;
+            await Settle(window, view);
+            Assert.Equal("end", panel.Conversation.Runs[^1].Stopped);
+            var result = panel.Conversation.Messages.SelectMany(m => m.Content).First(b => b.Type == "tool_result" && b.ToolUseId == "consult-1");
+            Assert.False(result.IsError);
+            Assert.Contains("Ficha de Arven pronta.", result.Content);
+            var store = new AssistantStore(new FolderAssistantStorage(folder));
+            var specialist = Assert.Single(store.ConversationsFor("two", panel.Conversation.Vault));
+            Assert.Equal("submitted", specialist.Forms.Single().State);
+            Assert.Contains(specialist.Messages, m => m.Role == "user" && m.Content.Any(b => (b.Text ?? "").Contains("Arven")));
+            Assert.DoesNotContain(panel.Log.GetLogicalDescendants().OfType<Border>(), b => Avalonia.Automation.AutomationProperties.GetName(b) == "Formulário de Revisora");
+            return true;
+        }
+        finally { window.Close(); UrbeApp.AssistantFolder = before; try { Directory.Delete(folder, true); Directory.Delete(vault, true); } catch (IOException) { } }
+    }, CancellationToken.None));
 }

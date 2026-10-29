@@ -1031,14 +1031,22 @@ public sealed partial class AssistantPanel : Border
         // CST-091: the specialist's question is answered from here; it goes on in its own conversation
         while (outcome?.Stopped == "needs_input")
         {
-            var question = child.Messages.Skip(lastExchangeStart).SelectMany(m => m.Content)
-                .LastOrDefault(b => b.Type == "tool_use" && b.Name == "ask_user");
-            if (question is null || child.Forms.Any(f => f.State == "pending"))
-                throw new AiToolException("O especialista precisa de uma resposta do usuário. Abra a conversa de " +
-                    AgentNames.CallName(target, _cfg) + " para continuar.");
-            var reply = await AskThroughRequesterAsync(child, question, cancel);
-            child.Messages.Add(new AiChatMessage { Id = AssistantAgent.NewId("m"), Role = "user", Content = [AiChatBlock.TextBlock(reply)] });
-            _store.SaveConversation(child);
+            if (child.Forms.Any(f => f.State == "pending"))
+            {
+                // each form in turn; its answer is the specialist's message (FormView)
+                while (child.Forms.FirstOrDefault(f => f.State == "pending") is { } form) await FillThroughRequesterAsync(child, form, cancel);
+            }
+            else
+            {
+                var question = child.Messages.Skip(lastExchangeStart).SelectMany(m => m.Content)
+                    .LastOrDefault(b => b.Type == "tool_use" && b.Name == "ask_user");
+                if (question is null)
+                    throw new AiToolException("O especialista precisa de uma resposta do usuário. Abra a conversa de " +
+                        AgentNames.CallName(target, _cfg) + " para continuar.");
+                var reply = await AskThroughRequesterAsync(child, question, cancel);
+                child.Messages.Add(new AiChatMessage { Id = AssistantAgent.NewId("m"), Role = "user", Content = [AiChatBlock.TextBlock(reply)] });
+                _store.SaveConversation(child);
+            }
             childRun = StartAsync(child, cancel);
             if (_activeRuns.ContainsKey(child.Id)) _activeTasks[child.Id] = childRun;
             await childRun;

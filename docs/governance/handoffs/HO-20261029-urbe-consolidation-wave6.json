@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261029-urbe-consolidation-wave6",
   "category": "HANDOFF",
-  "timestamp": "2026-10-29T02:03:55Z",
+  "timestamp": "2026-10-29T02:08:59Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -86,14 +86,14 @@
     "CST-008 (segunda parte): renderizações completas não esperam mais por qualquer seleção no chat; a seleção é mantida/levada ao texto refeito, e só uma seleção em curso numa vista que sai segura a atualização por até 1,5 s.",
     "CST-094 (correção do CI): execução medida em menos de 1 ms registrava TotalMs 0, marca de execução sem medida; agora vale no mínimo 1 ms.",
     "CST-005: mudança externa em qualquer arquivo não bloqueia mais a gravação da nota (relê e salva); se a própria nota mudou fora, as duas versões ficam (cópia de conflito), nada sobrescrito.",
-    "CST-091: pergunta e aprovação do especialista consultado aparecem na conversa que consultou; a resposta volta ao especialista sem troca manual (formulários ainda pendentes)."
+    "CST-091: pergunta, formulário e aprovação do especialista consultado aparecem na conversa que consultou; a resposta volta ao especialista sem troca manual."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1448 testes, 0 falhas (local, .NET 10.0.403)."
+      "evidence": "1449 testes, 0 falhas (local, .NET 10.0.403)."
     },
     {
       "check": "Android físico: cartão de perguntas, modelos (.modelo.md, conversão de colchetes, Preencher no editor), linha de tempo das execuções e Desempenho por agente, título do editor a 360 dp, gráfico de função no editor e na página, agente de carrossel com várias imagens até o fim sem fechar o app, menu radial (toque, arrastar com o polegar, TalkBack, Voltar, gestos do sistema no canto)",

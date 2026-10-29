@@ -27,11 +27,12 @@ public sealed partial class AssistantPanel
         catch { conversation.Forms.Remove(session); throw; }
         return session;
     }
-    private Control FormView(FormSession session)
+    /// <param name="owner">The conversation the form belongs to (a consulted specialist's, CST-091); the one on screen by default.</param>
+    private Control FormView(FormSession session, AiConversation? owner = null)
     {
         if (_formViews.TryGetValue(session.Id, out var existing))
         { existing.SubmitButton.IsEnabled = !ConversationBusy(session.ConversationId); return existing; }
-        var conversation = _conv;
+        var conversation = owner ?? _conv;
         var allPaths = _app.Documents?.List().Select(d => d.Path).ToArray() ?? [];
         var notes = allPaths.Where(ArtifactModel.IsNote).ToArray();
         var folders = allPaths.SelectMany(path => Enumerable.Range(0, path.Length).Where(i => path[i] == '/').Select(i => path[..i])).Concat(_app.VaultFolders).Append("").Distinct().ToArray();
@@ -58,6 +59,7 @@ public sealed partial class AssistantPanel
             try { _store.SaveConversationVerified(conversation); }
             catch (Exception e) { conversation.Messages.Remove(message); session.State = "pending"; session.SubmissionMessageId = null; view!.Status.Text = e.Message; return; }
             _formViews.Remove(session.Id);
+            if (FinishForwardedForm(session)) return;   // the consultation that waits for it goes on
             if (conversation.Forms.Any(f => f.State == "pending")) { if (ReferenceEquals(conversation, _conv)) RenderAll(); return; }
             if (ReferenceEquals(conversation, _conv)) { RenderAll(); CurrentRun = StartAsync(); }
             else _ = StartAsync(conversation);

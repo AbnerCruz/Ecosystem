@@ -1,26 +1,29 @@
 using Avalonia.Controls;
 using Avalonia.Threading;
+using Urbe.Core;
 using Urbe.Core.Assistant;
 
 namespace Urbe.Client;
 
 /// <summary>
-/// CST-091: what a consulted specialist needs from the person — a question (<c>ask_user</c>) or an approval — shows in
+/// CST-091: what a consulted specialist needs from the person — a question (<c>ask_user</c>), a form or an approval — shows in
 /// the conversation that asked for the consultation, and the answer goes back to the specialist's own conversation;
-/// the asking agent waits in its consult_agent call meanwhile. Forms still ask for the specialist's conversation.
+/// the asking agent waits in its consult_agent call meanwhile. A form it asks for is filled there too.
 /// </summary>
 public sealed partial class AssistantPanel
 {
     private sealed record ForwardedApproval(AiConversation Child, AiApprovalRequest Request, TaskCompletionSource<AiApproval> Answer);
     private sealed record ForwardedQuestion(AiConversation Child, AiChatBlock Call, TaskCompletionSource<string> Answer);
+    private sealed record ForwardedForm(AiConversation Child, FormSession Session, TaskCompletionSource Answer);
 
     // by the asking conversation's id
     private readonly Dictionary<string, ForwardedApproval> _forwardedApprovals = new(StringComparer.Ordinal);
     private readonly Dictionary<string, ForwardedQuestion> _forwardedQuestions = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, ForwardedForm> _forwardedForms = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Control> _forwardViews = new(StringComparer.Ordinal);
 
     /// <summary>A consulted specialist waits for the person in some conversation (a question or an approval).</summary>
-    public bool SpecialistWaiting => _forwardedApprovals.Count > 0 || _forwardedQuestions.Count > 0;
+    public bool SpecialistWaiting => _forwardedApprovals.Count > 0 || _forwardedQuestions.Count > 0 || _forwardedForms.Count > 0;
 
     private string SpecialistName(AiConversation child) =>
         AgentNames.CallName(AssistantAgent.AgentById(child.AgentId, _cfg.CustomAgents), _cfg);
@@ -55,6 +58,38 @@ public sealed partial class AssistantPanel
         if (origin == _conv.Id) { RenderAll(); NotifyCompactChanged(); }
         if (origin != _conv.Id || !IsVisible) _app.Notify(SpecialistName(child) + " tem uma pergunta para você.");
         return await answer.Task;
+    }
+
+    /// <summary>The specialist asked for a form: it is filled in the asking conversation; the answer is its own message there.</summary>
+    private async Task FillThroughRequesterAsync(AiConversation child, FormSession session, CancellationToken cancel)
+    {
+        var origin = child.OriginConversationId ?? throw new InvalidOperationException("Consulta sem conversa de origem.");
+        var done = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _forwardedForms[origin] = new(child, session, done);
+        using var registration = cancel.Register(() => Dispatcher.UIThread.Post(() =>
+        {
+            if (_forwardedForms.TryGetValue(origin, out var f) && f.Answer == done) { _forwardedForms.Remove(origin); _forwardViews.Remove(session.Id); if (origin == _conv.Id) RenderAll(); NotifyCompactChanged(); done.TrySetCanceled(); }
+        }));
+        PlatformAssistantActivity.Publish?.Invoke(new AssistantActivity(AssistantActivityKind.QuestionNeeded, SpecialistName(child), origin));
+        if (origin == _conv.Id) { RenderAll(); NotifyCompactChanged(); }
+        if (origin != _conv.Id || !IsVisible) _app.Notify(SpecialistName(child) + " pede que você preencha um formulário.");
+        await done.Task;
+    }
+
+    /// <summary>A forwarded form was sent or cancelled: the consultation goes on (instead of a run of its own).</summary>
+    private bool FinishForwardedForm(FormSession session)
+    {
+        foreach (var (origin, f) in _forwardedForms.ToList())
+        {
+            if (!ReferenceEquals(f.Session, session)) continue;
+            _forwardedForms.Remove(origin);
+            _forwardViews.Remove(session.Id);
+            if (origin == _conv.Id) RenderAll();
+            NotifyCompactChanged();
+            f.Answer.TrySetResult();
+            return true;
+        }
+        return false;
     }
 
     private void Unforward(string origin, bool approvals)
@@ -93,6 +128,9 @@ public sealed partial class AssistantPanel
                     Unforward(origin, approvals: false);
                     q.Answer.TrySetResult(text);
                 }));
+        if (_forwardedForms.TryGetValue(origin, out var form))
+            yield return Forwarded(form.Session.Id, "Formulário de " + SpecialistName(form.Child), SpecialistName(form.Child) + " pede que você preencha (consultada por este agente):", form.Child,
+                () => FormView(form.Session, form.Child));
         if (_forwardedApprovals.TryGetValue(origin, out var f))
             yield return Forwarded(f.Request.Call.Id, "Pedido de " + SpecialistName(f.Child), SpecialistName(f.Child) + " pede uma aprovação (consultada por este agente):", f.Child,
                 () => Approval(f.Request, answer => AnswerForwarded(origin, f, answer)));
