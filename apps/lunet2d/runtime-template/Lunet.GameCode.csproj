@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../src/Lunet.Framework/Lunet.Framework.csproj" />
+    <ProjectReference Include="../src/Lunet.Networking/Lunet.Networking.csproj" />
     <Compile Include="$(GameSourceRoot)/**/*.cs"
              Exclude="$(GameSourceRoot)/Tests/**/*.cs;$(GameSourceRoot)/bin/**/*.cs;$(GameSourceRoot)/obj/**/*.cs;$(GameSourceRoot)/.lunet/**/*.cs" />
   </ItemGroup>
