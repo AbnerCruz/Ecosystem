@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261029-urbe-consolidation-wave7",
   "category": "HANDOFF",
-  "timestamp": "2026-10-29T19:35:47Z",
+  "timestamp": "2026-10-29T19:44:04Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -71,7 +71,10 @@
     "apps/urbe/csharp/src/Urbe.Client/Ui/FlatDisclosure.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
-    "apps/urbe/csharp/tests/Urbe.Client.Tests/ActivityExpansionUiTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ActivityExpansionUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Selection.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantLongChatUiTests.cs"
   ],
   "work_completed": [
     "CST-129: saída do editor medida (85–110 ms síncronos com 400 notas e uma nota de ~40 KB) e corrigida: a Área de trabalho não é refeita quando nada que os cartões mostram mudou e, depois de uma edição, só a caixa do projeto é refeita, depois do quadro; o histórico é montado de pedaços prontos (texto idêntico ao da 1.8.4); o armazenamento (pasta e Android) não continua na thread da tela. Saída depois de ler 15–27 ms, sem nada pendente; depois de editar ~25–31 ms.",
@@ -85,14 +88,15 @@
     "Abertura imediata: a última nota é lida sozinha (PeekTextAsync, computador e Android) e aparece antes de a pasta inteira ser lida, só para leitura; depois vira editável onde está.",
     "CST-141 (cores do código): realce de sintaxe por camada sob a caixa de texto (sem dependência nova, IME/toque inalterados), cores voltam depois da pausa; seletor Visual|Fonte só onde existe.",
     "CST-112 (abrir): travamento ao expandir muitas etapas reproduzido (300 operações: 1 141 ms) e resolvido com itens feitos perto da tela (Ui.Deferred, ~70 ms) e rolagem compensada; resultado de ferramenta inteiro, sem páginas, em pedaços de linhas (200 KB: 44 ms).",
-    "Digitação no Fonte investigada (sem mudança): ~0,3 ms do Urbe por tecla; o resto é o layout do texto inteiro da caixa do Avalonia, igual na main."
+    "Digitação no Fonte investigada (sem mudança): ~0,3 ms do Urbe por tecla; o resto é o layout do texto inteiro da caixa do Avalonia, igual na main.",
+    "Conversa longa do Assistente: abrir 200 perguntas e respostas levava 3,0 s; mensagens feitas perto da tela, fim feito na hora, atualização completa refaz só as feitas (~250 ms ao abrir)."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1549 testes, 0 falhas (local, .NET 10, Release); os testes de limites falhavam antes da mudança; Activity_StepsMadeAboveTheScreenDoNotMoveWhatIsOnIt vermelho sem a compensação; prévia ao vivo conferida no Chromium (Playwright) como o WebView a carrega; build Android Debug ok."
+      "evidence": "1550 testes, 0 falhas (local, .NET 10, Release); os testes de limites falhavam antes da mudança; Activity_StepsMadeAboveTheScreenDoNotMoveWhatIsOnIt vermelho sem a compensação; prévia ao vivo conferida no Chromium (Playwright) como o WebView a carrega; build Android Debug ok."
     },
     {
       "check": "Oráculos da 1.8.4: goldens Markdown e Visual, histórico e corpus do repositório (contra o markdown.js original com só inlineEmphasis trocado)",
@@ -117,7 +121,7 @@
       "check": "Desempenho medido sozinho (URBE_PERF=1, Release, headless)",
       "kind": "automated",
       "result": "passed",
-      "evidence": "activity.open300: 1 141 ms antes → ~70 ms; abrir etapa com resultado de 200 KB: 44 ms (antes ~300 ms para uma página de 12 000 caracteres); ux.typing Fonte 5 KB: 29–35 ms antes e depois (perfil dotnet-trace: TextPresenter.CreateTextLayout do Avalonia; código do Urbe ~0,3 ms por tecla)."
+      "evidence": "activity.open300: 1 141 ms antes → ~70 ms; abrir etapa com resultado de 200 KB: 44 ms (antes ~300 ms para uma página de 12 000 caracteres); ux.typing Fonte 5 KB: 29–35 ms antes e depois (perfil dotnet-trace: TextPresenter.CreateTextLayout do Avalonia; código do Urbe ~0,3 ms por tecla). Conversa de 400 mensagens: abrir 3 032 ms → ~250 ms; atualização completa ~110 ms."
     }
   ],
   "known_issues": [

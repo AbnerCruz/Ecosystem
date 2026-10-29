@@ -68,7 +68,7 @@ public sealed partial class AssistantPanel
     private void ForgetViewsKeepingSelections()
     {
         foreach (var (message, view) in _views.ToList())
-            if (!HasSelection(view)) _views.Remove(message);
+            if (!HasSelection(view)) ForgetView(message);
     }
 
     /// <summary>Renders again once the selection in the way is let go.</summary>

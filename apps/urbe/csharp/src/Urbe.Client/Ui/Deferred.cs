@@ -16,10 +16,14 @@ public sealed class Deferred : Decorator
     public Deferred(Func<Control> make, double estimatedHeight = 56)
     {
         _make = make;
-        MinHeight = estimatedHeight;
+        MinHeight = EstimatedHeight = estimatedHeight;
     }
 
     public bool IsMade => _make is null;
+    public double EstimatedHeight { get; }
+
+    /// <summary>The height it takes: the measured one once laid out, the estimate before.</summary>
+    public double TakenHeight => Bounds.Height > 0 && IsArrangeValid ? Bounds.Height : EstimatedHeight;
 
     /// <summary>The control itself (made now if it was still waiting).</summary>
     public Control View
