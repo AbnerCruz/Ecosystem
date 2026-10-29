@@ -125,7 +125,8 @@
     "CST-042: proposta registrada (ADR-0046 Proposto) e decisão pendente DEC-0058 no portal — de onde vêm as tags herdadas por projeto; implementação aguarda a escolha.",
     "CST-058 (fatia 1): Transcrever em nota — áudio do vault decodificado no Android (streaming), cortado nas pausas, transcrito pelo reconhecimento do aparelho em trechos, nota com horários ao lado; cancelável; Organizar com o Assistente.",
     "CST-120: links para título/trecho ([[Nota#Título]], [[Nota#^id]], [[#Título]]) passam a ser links que abrem na parte; sumário rola no Visual; ida e volta do Visual preserva o fragmento; o seletor [[ sugere títulos após Nota# e trechos após Nota#^.",
-    "CST-129: saída do editor medida (85–110 ms síncronos com 400 notas) e corrigida: a Área de trabalho não é refeita sem mudança e só a caixa alterada é refeita depois do quadro; histórico exportado de pedaços prontos (idêntico à 1.8.4); armazenamento sem trabalho na thread da tela. Saída depois de ler 15–27 ms; depois de editar ~25–31 ms. DEVICE pendente."
+    "CST-129: saída do editor medida (85–110 ms síncronos com 400 notas) e corrigida: a Área de trabalho não é refeita sem mudança e só a caixa alterada é refeita depois do quadro; histórico exportado de pedaços prontos (idêntico à 1.8.4); armazenamento sem trabalho na thread da tela. Saída depois de ler 15–27 ms; depois de editar ~25–31 ms. DEVICE pendente.",
+    "CST-128: ênfase com regras de borda do CommonMark (sem negrito/itálico involuntário em ' ** x ** ', '2 * 3 * 4', 'tool_use'); o Visual deixa de reescrever '2 * 3 * 4' como '2 _ 3 _ 4'. Oráculo do corpus compara com o markdown.js original só com inlineEmphasis trocado; goldens da 1.8.4 passam."
   ],
   "verification": [
     {

@@ -41,6 +41,7 @@ const foldSrc = vt.slice(vt.indexOf('function fold('), vt.indexOf('\n', vt.index
 const slashSb = {}; runInNewContext(itemsSrc + '\n' + foldSrc, slashSb);
 const slashRe = /^\/([^\s\/]{0,24})$/;
 let md = null;
+let mdFlanking = null;
 const out = cases.map(c => {
   ta.value = c.value ?? ''; ta.selectionStart = c.start ?? c.caret ?? 0; ta.selectionEnd = c.end ?? c.caret ?? 0;
   switch (c.op) {
@@ -55,6 +56,27 @@ const out = cases.map(c => {
     case 'markdown': {
       if (!md) { const w = {}; w.window = w; runInNewContext(readFileSync(`${src}/editor/markdown.js`, 'utf8'), w, { filename: 'markdown.js' }); md = w.UrbeMarkdown; }
       return md.render(c.md);
+    }
+    // CST-128: the same markdown.js with only inlineEmphasis following the CommonMark flanking rules (an opener is
+    // followed by a non-space, a closer preceded by one, "_" never inside a word). Everything else stays the original's.
+    case 'markdownFlanking': {
+      if (!mdFlanking) {
+        const original = readFileSync(`${src}/editor/markdown.js`, 'utf8');
+        const from = original.indexOf('function inlineEmphasis(t){'), to = original.indexOf('function safeUrl(u){');
+        if (from < 0 || to < from) throw new Error('inlineEmphasis not found in markdown.js');
+        const flanking = `function inlineEmphasis(t){
+  return t.replace(/\\*\\*(?!\\s)([^*\\n]+?)(?<!\\s)\\*\\*/g,'<strong>$1</strong>')
+          .replace(/(?<![\\p{L}\\p{N}_])__(?!\\s)([^_\\n]+?)(?<!\\s)__(?![\\p{L}\\p{N}_])/gu,'<strong>$1</strong>')
+          .replace(/(?<!\\*)\\*(?![\\s*])([^*\\n]+?)(?<![\\s*])\\*(?!\\*)/g,'<em>$1</em>')
+          .replace(/(?<![\\p{L}\\p{N}_])_(?![\\s_])([^_\\n]+?)(?<![\\s_])_(?![\\p{L}\\p{N}_])/gu,'<em>$1</em>')
+          .replace(/~~(?!\\s)([^~\\n]+?)(?<!\\s)~~/g,'<del>$1</del>');
+}
+`;
+        const w = {}; w.window = w;
+        runInNewContext(original.slice(0, from) + flanking + original.slice(to), w, { filename: 'markdown.js' });
+        mdFlanking = w.UrbeMarkdown;
+      }
+      return mdFlanking.render(c.md);
     }
     default: throw new Error('op ' + c.op);
   }

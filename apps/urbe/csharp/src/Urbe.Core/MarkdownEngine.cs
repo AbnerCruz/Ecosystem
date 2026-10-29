@@ -744,15 +744,15 @@ public static partial class MarkdownEngine
     private static partial Regex LinkPattern();
     [GeneratedRegex(@"\u0002(\d+)\u0002", RegexOptions.CultureInvariant)]
     private static partial Regex PlaceholderPattern();
-    [GeneratedRegex(@"\*\*([^*\n]+)\*\*", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\*\*(?!\s)([^*\n]+?)(?<!\s)\*\*", RegexOptions.CultureInvariant)]
     private static partial Regex BoldAsteriskPattern();
-    [GeneratedRegex(@"__([^_\n]+)__", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"(?<![\p{L}\p{N}_])__(?!\s)([^_\n]+?)(?<!\s)__(?![\p{L}\p{N}_])", RegexOptions.CultureInvariant)]
     private static partial Regex BoldUnderscorePattern();
-    [GeneratedRegex(@"(?<!\*)\*([^*\n]+)\*(?!\*)", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"(?<!\*)\*(?![\s*])([^*\n]+?)(?<![\s*])\*(?!\*)", RegexOptions.CultureInvariant)]
     private static partial Regex ItalicAsteriskPattern();
-    [GeneratedRegex(@"(?<!_)_([^_\n]+)_(?!_)", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"(?<![\p{L}\p{N}_])_(?![\s_])([^_\n]+?)(?<![\s_])_(?![\p{L}\p{N}_])", RegexOptions.CultureInvariant)]
     private static partial Regex ItalicUnderscorePattern();
-    [GeneratedRegex(@"~~([^~\n]+)~~", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"~~(?!\s)([^~\n]+?)(?<!\s)~~", RegexOptions.CultureInvariant)]
     private static partial Regex StrikePattern();
     [GeneratedRegex(@"^(#{1,6})[ \t]*$", RegexOptions.CultureInvariant)]
     private static partial Regex EmptyHeadingPattern();
