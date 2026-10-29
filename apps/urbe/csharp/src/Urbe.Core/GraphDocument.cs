@@ -243,6 +243,33 @@ public sealed class GraphDocument
         return true;
     }
 
+    /// <summary>
+    /// CST-066: <paramref name="from"/> (a note, a file or a folder) was renamed or moved to <paramref name="to"/> in the
+    /// vault: the cards that point to it, or to something inside it, follow — the path, and the name when it was still the
+    /// old file name (a name the person gave stays). Not an edit of the graph, so not in its undo history.
+    /// </summary>
+    public int Retarget(string from, string to)
+    {
+        from = from.TrimEnd('/');
+        to = to.TrimEnd('/');
+        if (from.Length == 0 || to.Length == 0 || string.Equals(from, to, StringComparison.Ordinal)) return 0;
+        ValidateTarget(to);
+        int changed = 0;
+        for (int i = 0; i < _nodes.Count; i++)
+        {
+            var node = _nodes[i];
+            if (node.Target is not { } target) continue;
+            var bare = target.TrimEnd('/');
+            string? next = string.Equals(bare, from, StringComparison.OrdinalIgnoreCase) ? to
+                : bare.StartsWith(from + "/", StringComparison.OrdinalIgnoreCase) ? to + bare[from.Length..] : null;
+            if (next is null) continue;
+            var label = node.Label == Path.GetFileName(bare) ? Path.GetFileName(next) : node.Label;
+            _nodes[i] = node with { Target = next, Label = label };
+            changed++;
+        }
+        return changed;
+    }
+
     public bool RemoveNode(string id)
     {
         var node = Node(id);

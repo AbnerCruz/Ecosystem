@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261029-urbe-consolidation-wave6",
   "category": "HANDOFF",
-  "timestamp": "2026-10-29T02:15:29Z",
+  "timestamp": "2026-10-29T11:36:49Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -72,7 +72,14 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultStorageTests.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Forwarding.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ConsultForwardingUiTests.cs",
-    "apps/urbe/csharp/tests/Urbe.Core.Tests/FunctionPlotParametersTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/FunctionPlotParametersTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/GraphDocument.cs",
+    "apps/urbe/csharp/src/Urbe.Core/GraphEdits.cs",
+    "apps/urbe/csharp/src/Urbe.Client/GraphCanvasView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Graphs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/GraphRetargetTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/GraphReferencesUiTests.cs"
   ],
   "work_completed": [
     "CST-115: cartão de perguntas com compreensão declarada, dúvidas em aberto e mudança desde a pergunta anterior.",
@@ -88,14 +95,15 @@
     "CST-094 (correção do CI): execução medida em menos de 1 ms registrava TotalMs 0, marca de execução sem medida; agora vale no mínimo 1 ms.",
     "CST-005: mudança externa em qualquer arquivo não bloqueia mais a gravação da nota (relê e salva); se a própria nota mudou fora, as duas versões ficam (cópia de conflito), nada sobrescrito.",
     "CST-091: pergunta, formulário e aprovação do especialista consultado aparecem na conversa que consultou; a resposta volta ao especialista sem troca manual.",
-    "CST-069 (parte 2): parâmetros com controle deslizante (curvas ao vivo, valor gravado ao soltar), curvas paramétricas (física: lançamento) e produtos implícitos entre nomes."
+    "CST-069 (parte 2): parâmetros com controle deslizante (curvas ao vivo, valor gravado ao soltar), curvas paramétricas (física: lançamento) e produtos implícitos entre nomes.",
+    "CST-066: grafos acompanham renomear/mover notas, arquivos e pastas (caminho e nome padrão; gravação verificada); cartão cujo alvo sumiu aparece como não encontrado; edit_graph guarda o id da nota."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1449 testes, 0 falhas (local, .NET 10.0.403)."
+      "evidence": "1472 testes, 0 falhas (local, .NET 10.0.403)."
     },
     {
       "check": "Android físico: cartão de perguntas, modelos (.modelo.md, conversão de colchetes, Preencher no editor), linha de tempo das execuções e Desempenho por agente, título do editor a 360 dp, gráfico de função no editor e na página, agente de carrossel com várias imagens até o fim sem fechar o app, menu radial (toque, arrastar com o polegar, TalkBack, Voltar, gestos do sistema no canto)",

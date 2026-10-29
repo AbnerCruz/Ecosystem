@@ -395,6 +395,7 @@ public sealed partial class MainView : IAssistantApp
         moved = _library!.Edited(moved.Path, moved.Content, Now) ?? moved;
         if (editing) Editor.Renamed(newPath);
         AfterAssistantWrite(newPath);
+        await RetargetGraphsAsync([(from, newPath)]);
         return _store.Get(moved.Id) ?? moved;
     }
 

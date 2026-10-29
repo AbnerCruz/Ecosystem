@@ -14,7 +14,8 @@ public static class GraphEdits
     private const int Columns = 4;
 
     /// <returns>A short summary of what changed ("3 nós, 2 ligações").</returns>
-    public static string Apply(GraphDocument graph, JsonArray operations, Func<string, (GraphNodeKind Kind, string Path)?> resolve)
+    /// <param name="idOf">A note's stable id (CST-066: its card follows renames, like one placed by hand).</param>
+    public static string Apply(GraphDocument graph, JsonArray operations, Func<string, (GraphNodeKind Kind, string Path)?> resolve, Func<string, string?>? idOf = null)
     {
         var refs = new Dictionary<string, string>(StringComparer.Ordinal);
         double top = graph.Nodes.Count == 0 ? 0 : graph.Nodes.Max(n => n.Y + n.Height) + 60;
@@ -64,7 +65,7 @@ public static class GraphEdits
                         var wanted = ((string?)op["path"] ?? "").Trim();
                         var found = resolve(wanted) ?? throw new AiToolException("Operação " + index + ": \"" + wanted + "\" não existe no vault.");
                         var (x, y) = Next();
-                        Remember(op, graph.AddReference(found.Kind, found.Path, x, y), index);
+                        Remember(op, graph.AddReference(found.Kind, found.Path, x, y, found.Kind == GraphNodeKind.Note ? idOf?.Invoke(found.Path) : null), index);
                         nodes++;
                         break;
                     }

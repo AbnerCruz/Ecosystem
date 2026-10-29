@@ -70,7 +70,7 @@ public static class AssistantGraphTools
         var after = before is null
             ? GraphDocument.Create(Str(input, "title") is { Length: > 0 } t ? t : Path.GetFileName(path)[..^GraphDocument.FileSuffix.Length])
             : GraphDocument.Parse(before.Serialize());
-        var summary = GraphEdits.Apply(after, ops, reference => ResolveReference(host, graphs, reference));
+        var summary = GraphEdits.Apply(after, ops, reference => ResolveReference(host, graphs, reference), notePath => host.Documents.Get(notePath)?.Id);
         return (path, before, after, summary);
     }
 

@@ -49,6 +49,13 @@ public sealed class GraphCanvasView : Control
         AddHandler(InputElement.PinchEndedEvent, (_, _) => _pinch = 1);
     }
 
+    /// <summary>CST-066: whether a card's note, file or folder is still in the vault (null: not known, nothing marked).</summary>
+    public Func<GraphNode, bool>? Exists { get; set; }
+
+    /// <summary>A card pointing to something no longer in the vault (deleted, or changed outside the Urbe).</summary>
+    public bool IsMissing(GraphNode node) =>
+        node.Kind is GraphNodeKind.Note or GraphNodeKind.File or GraphNodeKind.Folder && Exists is { } exists && !exists(node);
+
     public void Show(GraphDocument document, bool readOnly = false)
     {
         _document = document;
@@ -283,7 +290,8 @@ public sealed class GraphCanvasView : Control
                 GraphNodeKind.Note => UrbeTheme.Brush(UrbeTheme.Accent, .09),
                 _ => UrbeTheme.Brush(UrbeTheme.Surface2)
             };
-            var outline = new Pen(UrbeTheme.Brush(stroke), selected ? 2 : 1);
+            bool missing = IsMissing(n);
+            var outline = new Pen(UrbeTheme.Brush(missing && !selected ? UrbeTheme.Danger : stroke), selected ? 2 : 1, dashStyle: missing ? new DashStyle([4, 3], 0) : null);
             if (n.Kind == GraphNodeKind.Shape)
                 ctx.DrawEllipse(background, outline, bounds.Center, bounds.Width / 2, bounds.Height / 2);
             else ctx.DrawRectangle(background, outline, bounds, n.Kind == GraphNodeKind.Group ? 4 : 11,
@@ -296,7 +304,8 @@ public sealed class GraphCanvasView : Control
                 GraphNodeKind.Shape => "FORMA", _ => "TEXTO"
             };
             var px = bounds.X + 12 * _zoom;
-            DrawLabel(ctx, caption, new Point(px, bounds.Y + 11 * _zoom), Color.Parse(UrbeTheme.Text3), Math.Max(8, 10 * _zoom), FontWeight.Normal);
+            if (missing) caption += " · NÃO ENCONTRADA";
+            DrawLabel(ctx, caption, new Point(px, bounds.Y + 11 * _zoom), Color.Parse(missing ? UrbeTheme.Danger : UrbeTheme.Text3), Math.Max(8, 10 * _zoom), FontWeight.Normal);
             DrawLabel(ctx, n.Label, new Point(px, bounds.Y + 33 * _zoom), Color.Parse(UrbeTheme.Text), Math.Max(10, 13 * _zoom), FontWeight.SemiBold);
         }
     }

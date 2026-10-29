@@ -478,7 +478,8 @@ public sealed partial class MainView : Grid
     }
 
     /// <summary>The notes' ids, dates or folders changed: their record is written soon (marcarSinc).</summary>
-    private void NotesChanged() => _notesSave?.MarkSync();
+    // the open graph redraws too: a card may have lost (or found again) its note (CST-066)
+    private void NotesChanged() { _notesSave?.MarkSync(); _graphBoard?.Canvas.InvalidateVisual(); }
 
     /// <summary>The save of the notes' record (null with no folder open and for read-only vaults).</summary>
     public NotesSaveScheduler? NotesSave => _notesSave;
@@ -902,6 +903,7 @@ public sealed partial class MainView : Grid
             Editor.Renamed(plan.Path);
             Editor.Notify("Arquivo renomeado.");
         }
+        await RetargetGraphsAsync([(path, plan.Path)]);
     }
 
     /// <summary>
@@ -1463,6 +1465,7 @@ public sealed partial class MainView : Grid
             return;
         }
         long now = Now;
+        var moves = new List<(string From, string To)>();
         foreach (var from in paths)
         {
             if (_store.Get(from) is not { } doc) continue;
@@ -1476,9 +1479,11 @@ public sealed partial class MainView : Grid
             library.Edited(moved.Path, moved.Content, now);
             library.AddFolder(folder);
             if (Editor.IsVisible && Editor.Current?.Path == from) Editor.Renamed(to);
+            moves.Add((from, to));
         }
         NotesChanged();
         RefreshNotes();
+        await RetargetGraphsAsync(moves);
     }
 
     /// <summary>duplicateSelected: explorer.duplicate for each note — "X cópia.ext" in the same folder with the same
