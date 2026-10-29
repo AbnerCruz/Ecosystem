@@ -96,7 +96,7 @@ public sealed partial class HeadlessUiTests
             await Settle(window, view);
             Assert.True(activity.IsExpanded);
             Assert.DoesNotContain(activity.GetVisualDescendants().OfType<TextBlock>(), t => t.Text is "⌃" or "⌄");
-            var stage = ((Panel)activity.Content!).Children.OfType<Border>().First().Child as Expander;
+            var stage = ((Panel)activity.Content!).Children.Select(c => c is Ui.Deferred d ? d.View : c).OfType<Border>().First().Child as Expander;
             Assert.NotNull(stage);
             Assert.Null(stage.Content);
             stage.IsExpanded = true;

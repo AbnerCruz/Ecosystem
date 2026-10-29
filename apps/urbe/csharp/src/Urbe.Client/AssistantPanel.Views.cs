@@ -306,32 +306,9 @@ public sealed partial class AssistantPanel
 
     private static string? JsonText(JsonNode? node) => node is JsonValue value && value.TryGetValue<string>(out var text) ? text : null;
 
-    private static Control Pre(string text, bool error)
-    {
-        // Tool results may contain entire documents or a single enormous line. Keep every byte
-        // available, but give Skia only a bounded page to shape when expanding on a phone.
-        const int pageSize = 12000;
-        if (text.Length <= pageSize) return new Ui.CodeBlockView(text, error ? "Erro" : "Texto", 11.5);
-        var root = new StackPanel { Spacing = 8 };
-        var body = new ContentControl();
-        var count = Hint("");
-        int page = 0;
-        void Paint()
-        {
-            int start = page * pageSize;
-            body.Content = new Ui.CodeBlockView(text.Substring(start, Math.Min(pageSize, text.Length - start)), error ? "Erro" : "Texto", 11.5);
-            count.Text = "Página " + (page + 1) + " de " + ((text.Length + pageSize - 1) / pageSize) + " · conteúdo integral preservado";
-        }
-        var copy = TextButton("Copiar resultado completo", () => { });
-        copy.Click += async (_, _) => { copy.Content = await Ui.TextActions.CopyAsync(copy, text) ? "Copiado" : "Falha ao copiar"; };
-        root.Children.Add(count);
-        root.Children.Add(new WrapPanel { Children = {
-            TextButton("Anterior", () => { if (page > 0) { page--; Paint(); } }),
-            TextButton("Próxima", () => { if ((page + 1) * pageSize < text.Length) { page++; Paint(); } }), copy } });
-        root.Children.Add(body);
-        Paint();
-        return root;
-    }
+    // Tool results may contain entire documents or a single enormous line: all of it is shown, in pieces made as they
+    // come near the screen (CodeBlockView), so expanding a step on a phone shapes only what is seen
+    private static Control Pre(string text, bool error) => new Ui.CodeBlockView(text, error ? "Erro" : "Texto", 11.5);
 
     private static Control Plan(JsonArray steps)
     {

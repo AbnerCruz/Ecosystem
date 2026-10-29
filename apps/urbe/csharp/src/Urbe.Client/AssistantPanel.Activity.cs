@@ -143,14 +143,22 @@ public sealed partial class AssistantPanel
     /// </summary>
     private StackPanel SyncTimeline(Timeline timeline)
     {
-        var list = timeline.List ??= new StackPanel { Spacing = 5, Margin = new Thickness(0, 8, 0, 2) };
+        if (timeline.List is null)
+        {
+            timeline.List = new StackPanel { Spacing = 5, Margin = new Thickness(0, 8, 0, 2) };
+            Ui.Deferred.Watch(timeline.List);   // a run of hundreds of steps opens at once: only those near the screen are made
+        }
+        var list = timeline.List;
         var desired = new List<Control>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
-        Control Item(string key, string signature, Func<Control> make)
+        // the estimates are the heights of a closed line (48) and of a closed step (65): the list keeps its length while the
+        // lines far from the screen wait
+        Control Item(string key, string signature, Func<Control> make, double estimate = 48)
         {
             seen.Add(key);
             if (timeline.Items.TryGetValue(key, out var kept) && kept.Signature == signature) return kept.View;
-            var view = make();
+            var view = new Ui.Deferred(make, estimate);
+            if (kept.View is Ui.Deferred { IsMade: true }) view.Make();   // a step that changed on screen is redrawn at once
             timeline.Items[key] = (signature, view);
             return view;
         }
@@ -166,7 +174,7 @@ public sealed partial class AssistantPanel
                 if (block.Type == "tool_use")
                 {
                     var stageKey = block.Id.Length > 0 && !block.Pending ? "t:" + block.Id : mk + ":tool:" + i;
-                    desired.Add(Item(stageKey, StageSignature(block, message), () => ActivityStage(block, message)));
+                    desired.Add(Item(stageKey, StageSignature(block, message), () => ActivityStage(block, message), 65));
                 }
                 else if (block.Type == "text" && !block.Hidden && !string.IsNullOrEmpty(block.Text))
                 {
