@@ -57,7 +57,7 @@ public sealed partial class MainView
         try { await _vault!.CreateDirectoryAsync(folder); }
         catch (Exception ex)
         {
-            await Dialogs.AlertAsync("Não foi possível criar a pasta", ex.Message);
+            await Dialogs.AlertAsync("Não foi possível criar a pasta", StorageProblems.Explain(ex));
             return false;
         }
         _library?.AddFolder(folder);

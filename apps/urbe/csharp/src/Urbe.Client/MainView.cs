@@ -384,6 +384,23 @@ public sealed partial class MainView : Grid
             // every other file of the vault, by name only, for the Explorer (DEC-0045, UC-38); hidden folders (.urbe) stay out
             try { foreach (var path in await _vault.ListFilePathsAsync()) _attachments.Add(path); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { /* the Explorer shows the notes */ }
+            // CST-006: a write the app closing cut in the middle left the storage's copy of the previous text: it is
+            // resolved and the folder read again, once, before the notes are shown
+            if (!_recoveringWrites && !snapshot.IsReadOnly && _attachments.Any(InterruptedWrites.IsCopy))
+            {
+                _recoveringWrites = true;
+                try
+                {
+                    var told = await RecoverInterruptedWritesAsync(snapshot);
+                    if (told is not null && await _vault.ReloadAsync() is { } again)
+                    {
+                        await ShowVaultAsync(again, restoreSession);
+                        ShowLifeNotice(told, Ui.ToastKind.Warning);
+                        return;
+                    }
+                }
+                finally { _recoveringWrites = false; }
+            }
         }
         _lastNames = null;   // UC-78: the folder read replaces the names of the last opening
         Open(NoteLibrary.Open(notes.Select(n => (n.Path, n.Content, ids[n.Path])).ToList(), record, snapshot.MapJson, _attachments), notes);
@@ -571,7 +588,12 @@ public sealed partial class MainView : Grid
             // This cannot authorize a generic replacement or stale restoration.
             !string.Equals(previous, expectedUndoContent, StringComparison.Ordinal))
             throw new InvalidOperationException("A marca de autoria da IA é protegida pelo Urbe. A alteração não foi salva; preserve o selo e edite somente o conteúdo.");
-        await _vault.SaveExistingTextFileAsync(note.Path, note.Content);
+        try { await _vault.SaveExistingTextFileAsync(note.Path, note.Content); }
+        catch (Exception error) when (error is not VaultChangedOutsideException)
+        {
+            // CST-004: the bytes may be there although the answer was lost; only a text that is not there failed
+            if (await OnDiskAsync(note.Path) != note.Content) throw new IOException(StorageProblems.Explain(error), error);
+        }
         _contents[note.Path] = note.Content;
         RecordSaved(note.Path, note.Content);
         await SaveHistoryAsync();
@@ -750,15 +772,9 @@ public sealed partial class MainView : Grid
             Hint: "Sem extensão, vira .md. Também aceita .txt, .html, .css, .js, .json, .yaml e .csv.", Confirm: "Criar nota"));
         if (typed is null) return null;
         var (path, content) = library.PlanNewNote(folder ?? "", typed);
-        try
-        {
-            await _vault!.CreateTextFileAsync(path, content);
-        }
-        catch (Exception ex)
-        {
-            await Dialogs.AlertAsync("Não foi possível criar a nota", ex.Message);
+        if (!await WriteOrAskAsync("Não foi possível criar a nota", () => _vault!.CreateTextFileAsync(path, content),
+                async () => await OnDiskAsync(path) == content))
             return null;
-        }
         _contents[path] = content;
         library.AddNote(path, content, Now);
         NotesChanged();
@@ -887,15 +903,11 @@ public sealed partial class MainView : Grid
             return;
         }
         if (string.Equals(plan.Path, path, StringComparison.Ordinal)) return;
-        try
-        {
-            await _vault!.MoveTextFileAsync(path, plan.Path);
-        }
-        catch (Exception ex)
-        {
-            await Dialogs.AlertAsync("Não foi possível renomear", ex.Message);
+        var text = _contents.GetValueOrDefault(path) ?? _store.Get(path)?.Content;
+        bool caseOnly = string.Equals(plan.Path, path, StringComparison.OrdinalIgnoreCase);
+        if (!await WriteOrAskAsync("Não foi possível renomear", () => _vault!.MoveTextFileAsync(path, plan.Path),
+                async () => !caseOnly && text is not null && await OnDiskAsync(plan.Path) == text && await OnDiskAsync(path) is null))
             return;
-        }
         if (_contents.Remove(path, out var content)) _contents[plan.Path] = content;
         // aplicarNomeCompletoNota: the same document at the new path, modified today
         if (_store.Get(path) is { } doc)
@@ -943,15 +955,10 @@ public sealed partial class MainView : Grid
         if (_store.Get(path) is not { } doc) return false;
         // the trash as it will be: nothing changes in memory until the vault holds it
         long now = Now;
-        try
-        {
-            await _vault!.TrashTextFileAsync(path, _trash.ExportWith(doc, now));
-        }
-        catch (Exception ex)
-        {
-            await Dialogs.AlertAsync("Não foi possível excluir", ex.Message);
+        // the storage writes the trash, then removes the file: both on the disk means it is in the trash
+        if (!await WriteOrAskAsync("Não foi possível mover para a lixeira", () => _vault!.TrashTextFileAsync(path, _trash.ExportWith(doc, now)),
+                async () => await OnDiskAsync(path) is null && await TrashOnDiskHoldsAsync(doc.Id)))
             return false;
-        }
         _trash.Trash(_store, doc.Id, now, "explorer.delete");
         _contents.Remove(path);
         if (editing) Editor.IsVisible = false;
@@ -996,7 +1003,7 @@ public sealed partial class MainView : Grid
         }
         catch (Exception ex)
         {
-            await Dialogs.AlertAsync("Não foi possível excluir", ex.Message);
+            await Dialogs.AlertAsync("Não foi possível excluir", StorageProblems.Explain(ex));
             if (await _vault.ReloadAsync() is { } snapshot) await ShowVaultAsync(snapshot);
             return false;
         }
@@ -1036,6 +1043,7 @@ public sealed partial class MainView : Grid
 
     /// <summary>The vault's files that are not notes (images, PDFs…), by path, for the Explorer.</summary>
     private readonly HashSet<string> _attachments = new(StringComparer.Ordinal);
+    private bool _recoveringWrites;
 
     /// <summary>Notas shows the notes, every folder (empty ones too, like model.folders) and the other files.</summary>
     private void RefreshNotes()
@@ -1213,8 +1221,10 @@ public sealed partial class MainView : Grid
         // UC-44: a note made from a template starts with its filled-in content (null: the person gave up)
         var content = contentFor is null ? "" : await contentFor(name);
         if (content is null) return;
-        try { await _vault!.CreateTextFileAsync(path, content); }
-        catch (Exception ex) { await Dialogs.AlertAsync("Não foi possível criar a nota", ex.Message); return; }
+        // a template's filled-in form is not lost to a failed write: it can be tried again
+        if (!await WriteOrAskAsync("Não foi possível criar a nota", () => _vault!.CreateTextFileAsync(path, content),
+                async () => await OnDiskAsync(path) == content))
+            return;
         library.AddNote(path, content, Now);
         _contents[path] = content;
         NotesChanged();
@@ -1479,8 +1489,10 @@ public sealed partial class MainView : Grid
             var to = NoteLibrary.FolderMovePath(_store, doc, folder);
             if (to == from) continue;
             if (Editor.IsVisible && Editor.Current?.Path == from && Editor.HasChanges && !await Editor.SaveAsync()) continue;
-            try { await _vault!.MoveTextFileAsync(from, to); }
-            catch (Exception ex) { await Dialogs.AlertAsync("Não foi possível mover", ex.Message); break; }
+            var text = _contents.GetValueOrDefault(from) ?? doc.Content;
+            if (!await WriteOrAskAsync("Não foi possível mover “" + NoteLibrary.FullNoteName(from) + "”", () => _vault!.MoveTextFileAsync(from, to),
+                    async () => await OnDiskAsync(to) == text && await OnDiskAsync(from) is null))
+                break;
             if (_contents.Remove(from, out var content)) _contents[to] = content;
             var moved = NoteLibrary.MoveDocument(_store, doc, to);
             library.Edited(moved.Path, moved.Content, now);
@@ -1510,8 +1522,9 @@ public sealed partial class MainView : Grid
             int dot = doc.Path.LastIndexOf('.');
             var target = NoteLibrary.UniqueDocumentPath(_store, (dot >= 0 ? doc.Path[..dot] : doc.Path) + " cópia" + (dot >= 0 ? doc.Path[dot..] : ""));
             var content = _contents.GetValueOrDefault(from, doc.Content);
-            try { await _vault!.CreateTextFileAsync(target, content); }
-            catch (Exception ex) { await Dialogs.AlertAsync("Não foi possível duplicar", ex.Message); break; }
+            if (!await WriteOrAskAsync("Não foi possível duplicar “" + NoteLibrary.FullNoteName(from) + "”", () => _vault!.CreateTextFileAsync(target, content),
+                    async () => await OnDiskAsync(target) == content))
+                break;
             var copy = NoteLibrary.DuplicateDocument(_store, doc with { Content = content }, now);
             _contents[copy.Path] = content;
         }
@@ -1542,18 +1555,20 @@ public sealed partial class MainView : Grid
         if (item is null || _library is not { } library) return;
         var path = (string?)item["originalPath"] ?? (string?)item["document"]?["path"] ?? "";
         var content = (string?)item["document"]?["content"] ?? "";
-        try
+        if (_store!.Get(path) is not null || _contents.ContainsKey(path))
         {
-            if (_store!.Get(path) is not null || _contents.ContainsKey(path)) throw new InvalidOperationException("Já existe um documento em " + path);
-            await _vault!.CreateTextFileAsync(path, content);
-            await _vault.SaveTrashAsync(_trash.ExportAfter(t => t.Purge(id)));
-        }
-        catch (Exception ex)
-        {
-            await Dialogs.AlertAsync("Não foi possível restaurar", ex.Message);
+            await Dialogs.AlertAsync("Não foi possível restaurar", "Já existe uma nota em " + path + ". Renomeie ou mova essa nota e restaure de novo.");
             return;
         }
+        // the note is written back first (a try that wrote it already finds it there), then the trash without it
+        if (!await WriteOrAskAsync("Não foi possível restaurar", () => _vault!.CreateTextFileAsync(path, content),
+                async () => await OnDiskAsync(path) == content))
+            return;
+        bool trashWritten = await WriteOrAskAsync("A nota voltou, mas a lixeira não foi atualizada", () => _vault!.SaveTrashAsync(_trash.ExportAfter(t => t.Purge(id))),
+            async () => !await TrashOnDiskHoldsAsync(id));
         var doc = library.Restore(_trash.Restore(_store!, id)!, Now);
+        // the note is back on the disk either way: it is shown; a trash not rewritten still lists it until the next write
+        if (!trashWritten) ShowLifeNotice("“" + doc.Title + "” foi restaurada. A lixeira ainda a lista até a próxima gravação.", Ui.ToastKind.Warning);
         _contents[doc.Path] = doc.Content;
         NotesChanged();
         RefreshNotes();
@@ -1569,8 +1584,9 @@ public sealed partial class MainView : Grid
         if (!confirmed && !await Dialogs.ConfirmAsync("Excluir de vez?",
                 "“" + ((string?)item["document"]?["title"] ?? "") + "” será apagada para sempre. Não dá para desfazer.", "Excluir de vez", danger: true))
             return;
-        try { await _vault!.SaveTrashAsync(_trash.ExportAfter(t => t.Purge(id))); }
-        catch (Exception ex) { await Dialogs.AlertAsync("Não foi possível excluir", ex.Message); return; }
+        if (!await WriteOrAskAsync("Não foi possível excluir de vez", () => _vault!.SaveTrashAsync(_trash.ExportAfter(t => t.Purge(id))),
+                async () => !await TrashOnDiskHoldsAsync(id)))
+            return;
         _trash.Purge(id);
         ShowTrashView();
     }
@@ -1584,8 +1600,10 @@ public sealed partial class MainView : Grid
         if (!confirmed && !await Dialogs.ConfirmAsync("Esvaziar a lixeira?",
                 "Todos os " + n.ToString(System.Globalization.CultureInfo.InvariantCulture) + " itens serão apagados para sempre. Não dá para desfazer.", "Esvaziar", danger: true))
             return;
-        try { await _vault!.SaveTrashAsync(_trash.ExportAfter(t => t.Clear())); }
-        catch (Exception ex) { await Dialogs.AlertAsync("Não foi possível esvaziar", ex.Message); return; }
+        var ids = _trash.Items.Select(i => (string?)i["document"]?["id"]).OfType<string>().ToList();
+        if (!await WriteOrAskAsync("Não foi possível esvaziar a lixeira", () => _vault!.SaveTrashAsync(_trash.ExportAfter(t => t.Clear())),
+                async () => ids.Count > 0 && (await Task.WhenAll(ids.Select(TrashOnDiskHoldsAsync))).All(held => !held)))
+            return;
         _trash.Clear();
         ShowTrashView();
     }

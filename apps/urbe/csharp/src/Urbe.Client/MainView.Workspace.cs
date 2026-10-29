@@ -54,7 +54,7 @@ public sealed partial class MainView
         catch (Exception ex)
         {
             _historyDirty = true;
-            await Dialogs.AlertAsync("Não foi possível limpar", ex.Message);
+            await Dialogs.AlertAsync("Não foi possível limpar", StorageProblems.Explain(ex));
             return;
         }
         ShowLifeNotice("Limpeza feita e registrada no vault.", Ui.ToastKind.Success);

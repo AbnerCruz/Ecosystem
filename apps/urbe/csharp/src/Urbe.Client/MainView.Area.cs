@@ -240,7 +240,7 @@ public sealed partial class MainView
         try { await _vault.SaveAreaLayoutAsync(_area.Serialize()); }
         catch (Exception ex)
         {
-            await Dialogs.AlertAsync("Não foi possível gravar a aparência das caixas", ex.Message);
+            await Dialogs.AlertAsync("Não foi possível gravar a aparência das caixas", StorageProblems.Explain(ex));
             return false;
         }
         return true;

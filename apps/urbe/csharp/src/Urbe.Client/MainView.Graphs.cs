@@ -144,7 +144,7 @@ public sealed partial class MainView
         }
         catch (Exception ex) when (ex is InvalidDataException or InvalidOperationException)
         {
-            await Dialogs.AlertAsync("Não foi possível gerar o grafo", ex.Message);
+            await Dialogs.AlertAsync("Não foi possível gerar o grafo", StorageProblems.Explain(ex));
             return;
         }
         var prefix = (scope.Length > 0 ? scope.TrimEnd('/') + "/" : "");
@@ -156,7 +156,7 @@ public sealed partial class MainView
         try { await _vault.CreateTextFileAsync(path, graph.Serialize()); }
         catch (Exception ex)
         {
-            await Dialogs.AlertAsync("Não foi possível salvar a estrutura", ex.Message);
+            await Dialogs.AlertAsync("Não foi possível salvar a estrutura", StorageProblems.Explain(ex));
             return;
         }
         _attachments.Add(path);
@@ -191,7 +191,7 @@ public sealed partial class MainView
         try { await _vault.CreateTextFileAsync(path, document.Serialize()); }
         catch (Exception ex)
         {
-            await Dialogs.AlertAsync("Não foi possível criar o grafo", ex.Message);
+            await Dialogs.AlertAsync("Não foi possível criar o grafo", StorageProblems.Explain(ex));
             return;
         }
         _attachments.Add(path);
@@ -220,7 +220,7 @@ public sealed partial class MainView
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or UnauthorizedAccessException or System.Text.Json.JsonException)
         {
-            await Dialogs.AlertAsync("Não foi possível abrir o grafo", ex.Message + " O arquivo original não foi alterado.");
+            await Dialogs.AlertAsync("Não foi possível abrir o grafo", StorageProblems.Explain(ex) + " O arquivo original não foi alterado.");
         }
     }
 
@@ -429,7 +429,7 @@ public sealed partial class MainView
             await SaveGraphAsync();
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidDataException)
-        { await Dialogs.AlertAsync("Não foi possível agrupar", ex.Message); }
+        { await Dialogs.AlertAsync("Não foi possível agrupar", StorageProblems.Explain(ex)); }
     }
 
     private async Task ResizeGraphNodeAsync()
@@ -452,7 +452,7 @@ public sealed partial class MainView
                 await SaveGraphAsync();
             }
         }
-        catch (InvalidDataException ex) { await Dialogs.AlertAsync("Tamanho inválido", ex.Message); }
+        catch (InvalidDataException ex) { await Dialogs.AlertAsync("Tamanho inválido", StorageProblems.Explain(ex)); }
     }
 
     private static (double Width, double Height)? ParseSize(string value)

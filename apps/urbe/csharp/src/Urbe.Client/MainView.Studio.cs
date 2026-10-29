@@ -44,7 +44,7 @@ public sealed partial class MainView : IPageStudioHost
         try { await ((IAssistantApp)this).CreateNoteAsync(path, LegacyCustomize.Stringify(_pageEngine.Compact(spec), 2) + "\n"); }
         catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or InvalidDataException or NotSupportedException)
         {
-            await Dialogs.AlertAsync("Não foi possível criar a página", ex.Message);
+            await Dialogs.AlertAsync("Não foi possível criar a página", StorageProblems.Explain(ex));
             return;
         }
         await OpenStudioAsync(path);
@@ -91,7 +91,7 @@ public sealed partial class MainView : IPageStudioHost
         try { await ((IAssistantApp)this).CreateNoteAsync(path, LegacyCustomize.Stringify(_pageEngine.Compact(spec), 2) + "\n"); }
         catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or InvalidDataException or NotSupportedException)
         {
-            await Dialogs.AlertAsync("Não foi possível criar a página", ex.Message);
+            await Dialogs.AlertAsync("Não foi possível criar a página", StorageProblems.Explain(ex));
             return;
         }
         await OpenStudioAsync(path);
@@ -274,7 +274,7 @@ public sealed partial class MainView : IPageStudioHost
         }
         catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or InvalidDataException or NotSupportedException)
         {
-            await Dialogs.AlertAsync("Não foi possível salvar o modelo", ex.Message);
+            await Dialogs.AlertAsync("Não foi possível salvar o modelo", StorageProblems.Explain(ex));
         }
     }
 
@@ -289,7 +289,7 @@ public sealed partial class MainView : IPageStudioHost
         try { await ((IAssistantApp)this).CreateNoteAsync(target, LegacyCustomize.Stringify(_pageEngine.Compact(spec), 2) + "\n"); }
         catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or InvalidDataException or NotSupportedException)
         {
-            await Dialogs.AlertAsync("Não foi possível duplicar", ex.Message);
+            await Dialogs.AlertAsync("Não foi possível duplicar", StorageProblems.Explain(ex));
             return;
         }
         await OpenStudioAsync(target);
