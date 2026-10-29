@@ -131,9 +131,10 @@
     {
       "check": "Validação no Android físico dos itens desta leva",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/urbe/docs/csharp/CONSOLIDATION.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-29 (Issue https://github.com/AbnerCruz/Ecosystem/issues/854); registro em docs/governance/responses/VAL-HO-20261028-urbe-consolidation-wave1-1bac2b0fca46.md."
     }
   ],
   "known_issues": [
