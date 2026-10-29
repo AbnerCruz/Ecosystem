@@ -350,6 +350,9 @@ public readonly struct RaycastHit
 /// </code></example>
 public sealed class PhysicsWorld : IDisposable
 {
+    // Box2D keeps a shared world registry. Create/destroy from different threads
+    // requires a mutex; simulation of independent worlds may still run concurrently.
+    private static readonly object WorldLifetimeGate = new();
     private readonly B2WorldId id;
     private readonly List<RigidBody2D> bodies = new();
     private readonly Dictionary<B2ShapeId, Fixture2D> fixtures = new();
@@ -385,7 +388,10 @@ public sealed class PhysicsWorld : IDisposable
         var def = b2DefaultWorldDef();
         def.gravity = Collider2D.ToB2(gravity);
         def.workerCount = 1;
-        id = b2CreateWorld(def);
+        lock (WorldLifetimeGate)
+        {
+            id = b2CreateWorld(def);
+        }
     }
 
     internal void EnsureAlive()
@@ -640,7 +646,10 @@ public sealed class PhysicsWorld : IDisposable
     {
         if (IsDisposed) return;
         IsDisposed = true;
-        b2DestroyWorld(id);
+        lock (WorldLifetimeGate)
+        {
+            b2DestroyWorld(id);
+        }
         bodies.Clear(); fixtures.Clear(); ClearEvents();
     }
 }
