@@ -3,7 +3,8 @@ using Urbe.Core;
 namespace Urbe.Core.Tests;
 
 /// <summary>
-/// CST-105: in every ready-made theme, the three text colours read at WCAG AA (4.5:1) on every surface. texto3
+/// CST-105: in every ready-made theme, the text colours (and the coloured ones used as text: links, warnings) read at
+/// WCAG AA (4.5:1) on every surface. texto3
 /// (hints, dates, counts) was 2.5–3.9:1 in all of them; it moved the least it could toward texto2, keeping each tint.
 /// </summary>
 public sealed class ThemeContrastTests
@@ -32,7 +33,7 @@ public sealed class ThemeContrastTests
     public void EveryTextColourReadsOnEverySurface(string id)
     {
         var colors = LegacyCustomizeTheme.PresetById(id)!.Colors;
-        foreach (var text in new[] { "texto", "texto2", "texto3" })
+        foreach (var text in new[] { "texto", "texto2", "texto3", "destaque", "perigo", "sucesso", "aviso" })
             foreach (var surface in new[] { "fundo", "superficie", "superficie2", "superficie3" })
                 Assert.True(Contrast(colors[text], colors[surface]) >= 4.5,
                     $"{id}: {text} {colors[text]} sobre {surface} {colors[surface]} = {Contrast(colors[text], colors[surface]):0.00}:1");
