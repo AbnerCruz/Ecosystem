@@ -55,6 +55,19 @@ public sealed partial class HeadlessUiTests
         await menu;
     }
 
+    /// <summary>Lets the app work until a dialog shows <paramref name="text"/> (up to 10 s), then checks it is there.</summary>
+    private static async Task UntilDialogSays(MainView view, string text)
+    {
+        bool Shown() => view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == text);
+        for (int i = 0; i < 500 && !Shown(); i++)
+        {
+            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+            Dispatcher.UIThread.RunJobs();
+            await Task.Delay(20);
+        }
+        Assert.Contains(text, view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text));
+    }
+
     /// <summary>A flow started directly (what the Explorer's Nova pasta does), with <paramref name="next"/> answering its dialog.</summary>
     private static async Task RunWithDialog(Task flow, Func<Task> next)
     {
@@ -225,13 +238,10 @@ public sealed partial class HeadlessUiTests
                 await PickFromNotesMenu(view, "Importar arquivos", async () =>
                 {
                     ClickButtonWithText(view.Dialogs, "Pasta inteira");
-                    await Task.Delay(80);
-                    Dispatcher.UIThread.RunJobs();
-                    Assert.Contains("Vault para restauração", view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text));
+                    // the plan is read before the next dialog: wait for it, not for a fixed time (CI is slower)
+                    await UntilDialogSays(view, "Vault para restauração");
                     ClickButtonWithText(view.Dialogs, "Continuar");
-                    await Task.Delay(150);
-                    Dispatcher.UIThread.RunJobs();
-                    Assert.Contains("Restaurar este vault?", view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text));
+                    await UntilDialogSays(view, "Restaurar este vault?");
                     Snapshot(window, "native-import-restore.png");
                     ClickButtonWithText(view.Dialogs, "Restaurar com backup");
                     await Task.Delay(400);
@@ -253,11 +263,9 @@ public sealed partial class HeadlessUiTests
                     var label = view.Dialogs.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).Single(t => t?.StartsWith("Antes de importar · ", StringComparison.Ordinal) == true)!;
                     Snapshot(window, "native-backups-list.png");
                     ClickButtonWithText(view.Dialogs, label);
-                    await Task.Delay(120);
-                    Dispatcher.UIThread.RunJobs();
+                    await UntilDialogSays(view, "Continuar");
                     ClickButtonWithText(view.Dialogs, "Continuar");
-                    await Task.Delay(150);
-                    Dispatcher.UIThread.RunJobs();
+                    await UntilDialogSays(view, "Restaurar com backup");
                     ClickButtonWithText(view.Dialogs, "Restaurar com backup");
                     await Task.Delay(400);
                     Dispatcher.UIThread.RunJobs();
