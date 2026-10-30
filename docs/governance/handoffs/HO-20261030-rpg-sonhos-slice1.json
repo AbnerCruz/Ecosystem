@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261030-rpg-sonhos-slice1",
   "category": "HANDOFF",
-  "timestamp": "2026-10-30T17:26:19Z",
+  "timestamp": "2026-10-30T17:39:00Z",
   "agent": {
     "id": "codex-rpg-sonhos",
     "kind": "ai-agent"
@@ -57,8 +57,7 @@
       "check": "Lunet CI, 758 testes incluindo 6 cenários novos",
       "kind": "automated",
       "result": "passed",
-      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/41099224752",
-      "tested_commit": "960e62fe8ea0385247e2ec223cee87afaf2a9070"
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/41099224752; fontes f875eef testadas no merge temporário de PR 960e62f (não mantido como ref Git)."
     },
     {
       "check": "Primeiro smoke Android 13",
@@ -118,5 +117,12 @@
       "status": "product-specific",
       "rationale": "Regras locais de jogo usam APIs Lunet existentes; sem segundo consumidor ou extração."
     }
-  ]
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "Novo workflow específico do jogo em .github/workflows; autorização do proprietário exigida pela política para integrar, sem alterar verificadores ou permissões de outros pipelines."
+  }
 }
