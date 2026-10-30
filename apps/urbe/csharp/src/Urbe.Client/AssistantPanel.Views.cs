@@ -1060,7 +1060,8 @@ public sealed partial class AssistantPanel
             if (filtered.Length == 0) list.Children.Add(Hint("Sem resultados. Você pode adicionar uma lembrança ou usar “lembre que…” no chat."));
             foreach (var m in filtered)
             {
-                var info = MemoryKindName(m.Kind) + " · " + MemoryWho(m) + (m.State == "active" ? "" : " · " + MemoryStateName(m.State));
+                var info = MemoryKindName(m.Kind) + " · " + MemoryWho(m) + (m.State == "active" ? "" : " · " + MemoryStateName(m.State)) +
+                    " · " + AssistantMemoryEngine.Standing(m);
                 var label = new StackPanel { Spacing = 4 };
                 label.Children.Add(Label(info, 11, UrbeTheme.Text3));
                 label.Children.Add(Wrap(m.Text, 13, UrbeTheme.Text));

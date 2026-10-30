@@ -38,9 +38,9 @@ public sealed partial class HeadlessUiTests
             ClickButtonWithText(panel, "Gerenciar memórias");
             Dispatcher.UIThread.RunJobs();
             List<string?> Texts() => [.. panel.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text)];
-            Assert.Contains("Preferência · só Assistente (privada)", Texts());
-            Assert.Contains("Fato · compartilhada · todos os agentes deste vault", Texts());
-            Assert.Contains("Procedimento · só Revisora (privada)", Texts());
+            Assert.Contains(Texts(), t => t?.StartsWith("Preferência · só Assistente (privada) · ", StringComparison.Ordinal) == true);
+            Assert.Contains(Texts(), t => t?.StartsWith("Fato · compartilhada · todos os agentes deste vault · ", StringComparison.Ordinal) == true);
+            Assert.Contains(Texts(), t => t?.StartsWith("Procedimento · só Revisora (privada) · ", StringComparison.Ordinal) == true);
 
             ClickButtonWithText(panel, "Privadas de Assistente");
             Dispatcher.UIThread.RunJobs();

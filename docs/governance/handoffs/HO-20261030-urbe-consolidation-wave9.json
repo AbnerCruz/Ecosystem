@@ -80,7 +80,10 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/CrashLogPrivacyTests.cs",
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/MemoryScopesUiTests.cs",
-    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantApprovalGuardTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantApprovalGuardTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantMemoryEngine.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantMemoryTools.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MemoryStandingTests.cs"
   ],
   "work_completed": [
     "CST-042: tags herdadas por projeto conforme DEC-0058 alternativa A. As tags do frontmatter da nota da pasta (Droerni/Droerni.md) valem para tudo dentro da pasta e das subpastas (somadas de fora para dentro), calculadas pela localização em ProjectTags (Urbe.Core); nenhuma outra nota é escrita.",
@@ -103,7 +106,8 @@
     "CST-107: pesquisa preliminar de disponibilidade do nome Numa (marca NUMA em software de outra empresa; app de notas homônimo) e decisão DEC-0060 aberta no portal; o app continua Urbe até a escolha.",
     "CST-097: relatório de erros sem chaves, trechos entre aspas nem caminhos do aparelho, com retenção de 30 dias e explicação na tela.",
     "CST-051: conferido com teste que a resposta de um formulário (mesmo dizendo \"autorizo tudo\") não dispensa a aprovação de gravação nem de memória.",
-    "CST-085: gerenciador de memória diz quais lembranças são privadas de cada agente e quais são compartilhadas, em português, com filtros."
+    "CST-085: gerenciador de memória diz quais lembranças são privadas de cada agente e quais são compartilhadas, em português, com filtros.",
+    "CST-088: cada lembrança diz se foi registrada pelo app, declarada pelo agente, dita pelo usuário ou verificada, na tela e no recall_memory."
   ],
   "verification": [
     {

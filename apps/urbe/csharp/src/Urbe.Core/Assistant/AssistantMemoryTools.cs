@@ -32,7 +32,7 @@ public static class AssistantMemoryTools
                     var m = match.Memory;
                     var paths = AssistantMemoryEngine.NearbyDocumentPaths(m, host.Knowledge);
                     var line = "- " + m.Id + " (" + m.Kind + "; confiança " + m.Confidence +
-                        "%; origem " + m.Origin + "; referência " + m.SourceReference + "): " +
+                        "%; origem " + m.Origin + "; " + AssistantMemoryEngine.Standing(m) + "; referência " + m.SourceReference + "): " +
                         m.Text.Replace('\n', ' ') +
                         (paths.Count > 0 ? "\n  Fontes e vizinhos: " + string.Join(", ", paths) : "");
                     if (used + line.Length > available)
