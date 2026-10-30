@@ -301,11 +301,20 @@ public sealed partial class UrbeDialogs : Grid
             BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), CaretBrush = UrbeTheme.Brush(UrbeTheme.Accent)
         };
         Avalonia.Automation.AutomationProperties.SetName(search, "Buscar");
+        // CST-039: a search that finds nothing says so, instead of an empty list
+        var none = new TextBlock
+        {
+            IsVisible = false, Margin = new Thickness(4, 12, 4, 4), TextWrapping = TextWrapping.Wrap, FontFamily = UrbeTheme.UiFont, FontSize = 14,
+            Foreground = UrbeTheme.Brush(UrbeTheme.Text3)
+        };
         search.TextChanged += (_, _) =>
         {
             var q = Fold(search.Text ?? "");
-            foreach (var c in list.Children) c.IsVisible = q.Length == 0 || ((string?)c.Tag ?? "").Contains(q, StringComparison.Ordinal);
+            foreach (var c in list.Children) if (c is Button) c.IsVisible = q.Length == 0 || ((string?)c.Tag ?? "").Contains(q, StringComparison.Ordinal);
+            none.IsVisible = !list.Children.Any(c => c is Button && c.IsVisible);
+            none.Text = "Nada com “" + (search.Text ?? "").Trim() + "”.";
         };
+        list.Children.Add(none);
         // Enter takes the first one still shown
         void First() { if (list.Children.FirstOrDefault(c => c.IsVisible) is Button f) f.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent)); }
         var scroll = new ScrollViewer { Content = list, MaxHeight = 420, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
