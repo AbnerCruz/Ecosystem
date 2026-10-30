@@ -53,6 +53,11 @@ Andamento item a item: `apps/urbe/docs/csharp/CONSOLIDATION.md`.
   - O que você estava escrevendo para cada agente, com os anexos, volta mesmo depois de o Android encerrar o app.
   - Até 20 anexos por mensagem (antes, 4). Fotos grandes ou deitadas vão de pé e reduzidas, em vez de recusadas.
 - **Métrica de cada resposta:** tempo, chamadas e onde o tempo foi gasto.
+- **Memória:**
+  - Cada lembrança diz se é privada do agente ou compartilhada, e se foi registrada pelo app, declarada pelo agente, dita por você ou verificada.
+  - Há filtros para ver só as privadas ou só as compartilhadas.
+- **Relatório de erros:** não guarda chaves, trechos de notas nem caminhos de pastas, e apaga erros com mais de 30 dias.
+- **Mover para:** a busca diz quando não acha nada.
 
 ## Navegação
 
