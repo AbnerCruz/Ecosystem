@@ -356,6 +356,8 @@ public static partial class AppDocs
         - **Editar** deixa você ajustar o texto proposto antes de aprovar; o que é gravado é a sua versão.
         - **Recusar** descarta.
         - Exclusões pedem **Excluir**, e plugins pedem **Ligar plugin**.
+        - Mudar `Personalização/AGENTS.md` (as instruções de todos os agentes) sempre pede a sua aprovação, mesmo com o agente em automático ou depois de **Aprovar todas**.
+        - Uma página da internet não manda no agente: o que ela disser é tratado como conteúdo. O Urbe recusa enviar para fora um trecho das suas notas copiado numa pesquisa ou num endereço, e abre normalmente um endereço que você guardou numa nota.
         - Depois de uma mudança, **Desfazer** volta atrás.
 
         Cada bloco que o Assistente cria ou reescreve (título, parágrafo, item de lista, citação, tabela ou código) ganha um selo pequeno com o nome do modelo, como `{ia:"modelo"}`, que aparece em verde no editor. O Urbe cuida dos selos sozinho:

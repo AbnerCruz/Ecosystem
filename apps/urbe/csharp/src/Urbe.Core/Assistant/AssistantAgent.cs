@@ -281,6 +281,21 @@ public static class AssistantAgent
         return true;
     }
 
+    /// <summary>Whether a tool call writes, moves or renames the person's instructions for the agents.</summary>
+    public static bool TouchesInstructions(JsonObject input, string? previewPath)
+    {
+        static bool Is(string? path)
+        {
+            var p = (path ?? "").Replace('\\', '/').Trim().TrimStart('/');
+            return p.Equals(UserAgentsFile.Path, StringComparison.OrdinalIgnoreCase) ||
+                   p.Equals(UserAgentsFile.Path[..^3], StringComparison.OrdinalIgnoreCase);
+        }
+        if (Is(previewPath)) return true;
+        foreach (var (_, value) in input)
+            if (value is JsonValue v && v.TryGetValue<string>(out var text) && Is(text)) return true;
+        return false;
+    }
+
     // ---------------------------------------------------------------- system prompt
 
     private static readonly string[] Weekdays = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
@@ -1082,7 +1097,12 @@ public static class AssistantAgent
                     return new Out("Sem alteração em " + preview.Path + ": conteúdo e marca de autoria já conferem; nenhuma gravação foi feita.", Status: "noop");
                 }
             }
-            if (NeedsApproval(tool.Access, policy, runAllow))
+            // the instructions every agent follows (Personalização/AGENTS.md) are asked for, whatever the policy and
+            // "aprovar tudo": a page read earlier in the run must not be able to plant a lasting instruction (CST-084)
+            bool instructions = !Read.Contains(tool.Access) && TouchesInstructions(input, preview?.Path);
+            if (instructions && preview is not null && preview.Note is null)
+                preview = preview with { Note = "São as instruções de todos os agentes: o Urbe sempre pede a sua aprovação para mudá-las." };
+            if (NeedsApproval(tool.Access, policy, runAllow) || instructions)
             {
                 emit(new AiAgentEvent("tool_status", Call: call, Status: "waiting"));
                 long asked = clock.ElapsedMilliseconds;

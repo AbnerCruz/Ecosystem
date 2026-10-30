@@ -35,7 +35,11 @@
     "apps/urbe/csharp/src/Urbe.Core/LinkRename.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.Relink.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/MarkdownLinkRenameTests.cs",
-    "apps/urbe/csharp/tests/Urbe.Client.Tests/CombinedFlowsUiTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CombinedFlowsUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantWebTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantOutboundTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantInstructionsGuardTests.cs"
   ],
   "work_completed": [
     "CST-042: tags herdadas por projeto conforme DEC-0058 alternativa A. As tags do frontmatter da nota da pasta (Droerni/Droerni.md) valem para tudo dentro da pasta e das subpastas (somadas de fora para dentro), calculadas pela localização em ProjectTags (Urbe.Core); nenhuma outra nota é escrita.",
@@ -43,14 +47,15 @@
     "Consulta: KnowledgeIndex.Tagged (find_by_tag), read_note e get_links do Assistente (com a origem), visão do vault do Assistente, filtros por tag da Área de trabalho e consultas por tag das páginas incluem as herdadas.",
     "Interface: o formulário de propriedades mostra 'herdadas' com a origem (#worldbuilding de Droerni) e um × que escreve sem-tags na nota; uma tag herdada não é mais oferecida como sugestão para adicionar. Tutorial (AppDocs) explica o recurso, consultável pelo Assistente.",
     "Consequências de DEC-0058 aplicadas: ADR-0046 Aceito com o contrato implementado; índice de ADRs; consequencesApplied=true.",
-    "CST-101 (parte): links Markdown ([texto](Nota.md), ![](foto.png)) acompanham renomear e mover, na forma escrita (relativo/raiz, <…>, %20, #trecho); uma nota que mudou de pasta tem os links relativos reescritos. Fecha a pendência conhecida da leva 8."
+    "CST-101 (parte): links Markdown ([texto](Nota.md), ![](foto.png)) acompanham renomear e mover, na forma escrita (relativo/raiz, <…>, %20, #trecho); uma nota que mudou de pasta tem os links relativos reescritos. Fecha a pendência conhecida da leva 8.",
+    "CST-084: o filtro de envio externo recusa 40+ caracteres de texto de uma nota levados num endereço (caminho, consulta, #) e passa a abrir endereços guardados nas notas (dois defeitos, 5 casos vermelhos antes). Mudar Personalização/AGENTS.md sempre pede aprovação, mesmo em automático ou depois de Aprovar todas, com o motivo no cartão."
   ],
   "verification": [
     {
       "check": "dotnet test tests/Urbe.Core.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1188 testes, 0 falhas (local, .NET 10): ProjectTagsTests (5); depois, MarkdownLinkRenameTests (5) e LinkRenameTests verdes."
+      "evidence": "1209 testes, 0 falhas (local, .NET 10), com ProjectTagsTests (5), MarkdownLinkRenameTests (5), AssistantOutboundTests (9, 5 vermelhos contra o filtro anterior) e AssistantInstructionsGuardTests (7)."
     },
     {
       "check": "dotnet test tests/Urbe.Client.Tests",
@@ -82,7 +87,8 @@
   "known_issues": [
     "Propriedades herdadas além das tags ficam para a segunda fatia (ADR-0046), depois da validação das tags no aparelho.",
     "A descrição da ferramenta find_by_tag continua a do oráculo; o Assistente aprende a herança pelo guia do Urbe e pela saída das ferramentas.",
-    "As sugestões de tags do formulário vêm só das tags próprias do vault (as herdadas não são sugeridas para escrever)."
+    "As sugestões de tags do formulário vêm só das tags próprias do vault (as herdadas não são sugeridas para escrever).",
+    "CST-084: só cópias literais do texto das notas são reconhecidas no envio externo; texto codificado de propósito não é (a internet continua sendo permissão de cada agente)."
   ],
   "blockers": [],
   "next_actions": [

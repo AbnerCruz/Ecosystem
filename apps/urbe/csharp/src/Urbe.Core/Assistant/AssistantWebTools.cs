@@ -7,15 +7,42 @@ public static class AssistantWebTools
 {
     private static string Text(JsonObject input, string key) =>
         input[key] is JsonValue value && value.TryGetValue<string>(out var s) ? s.Trim() : "";
-    /// <summary>Refuse common credential material and exact long vault excerpts in outbound queries/URLs.</summary>
-    private static void GuardOutbound(string value, IAssistantHost host)
+    /// <summary>
+    /// CST-084: what leaves the device through a search or a page address. Credentials and private paths are refused. So is
+    /// text of the person's notes: a whole query copied from a note (70+ characters, as before), or 40+ characters of a
+    /// note's text carried inside an address (in its path or its query, where a page's hidden instruction would ask to put
+    /// it). An address the person saved in a note is theirs to open, however long. Only literal copies can be told apart:
+    /// text encoded on purpose (base64…) is not, which is why the internet is a permission of each agent.
+    /// </summary>
+    public static string? OutboundProblem(string value, IEnumerable<UrbeDocument> documents, bool address)
     {
-        if (System.Text.RegularExpressions.Regex.IsMatch(value,
+        ArgumentNullException.ThrowIfNull(value);
+        ArgumentNullException.ThrowIfNull(documents);
+        var decoded = address ? Decode(value) : value;
+        if (System.Text.RegularExpressions.Regex.IsMatch(decoded,
                 @"(?i)(?:sk-[a-z0-9_-]{16,}|bearer\s+[a-z0-9._-]{12,}|(?:api[_-]?key|authorization|password|token)=|content://|file://|/data/user/0/|/storage/emulated/)"))
-            throw new AiToolException("Envio externo bloqueado: possível segredo, credencial ou caminho privado.");
-        if (value.Length >= 70 && host.Documents.List().Any(doc =>
-                doc.Content.Contains(value, StringComparison.OrdinalIgnoreCase)))
-            throw new AiToolException("A consulta parece copiar texto privado do vault. Reformule em termos públicos ou peça autorização específica.");
+            return "Envio externo bloqueado: possível segredo, credencial ou caminho privado.";
+        var notes = documents.Select(d => d.Content).Where(c => c.Length > 0).ToList();
+        bool InNotes(string piece) => notes.Any(c => c.Contains(piece, StringComparison.OrdinalIgnoreCase));
+        const string Copied = "A consulta parece copiar texto privado do vault. Reformule em termos públicos ou peça autorização específica.";
+        if (!address) return value.Length >= 70 && InNotes(value) ? Copied : null;
+        // a link the person keeps in a note
+        if (InNotes(value) || InNotes(decoded)) return null;
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri)) return decoded.Length >= 70 && InNotes(decoded) ? Copied : null;
+        var carried = uri.AbsolutePath.Split('/').Concat((uri.Query.TrimStart('?') + "&" + uri.Fragment.TrimStart('#')).Split('&', ';').SelectMany(p => p.Split('=', 2)))
+            .Select(p => Decode(p.Replace('+', ' ')).Trim()).Where(p => p.Length >= 40);
+        return carried.Any(InNotes) ? Copied : null;
+    }
+
+    private static string Decode(string value)
+    {
+        try { return Uri.UnescapeDataString(value); }
+        catch (UriFormatException) { return value; }
+    }
+
+    private static void GuardOutbound(string value, IAssistantHost host, bool address)
+    {
+        if (OutboundProblem(value, host.Documents.List(), address) is { } problem) throw new AiToolException(problem);
     }
 
     private static int Number(JsonObject input, string key, int fallback) =>
@@ -34,7 +61,7 @@ public static class AssistantWebTools
             Run = async (input, host) =>
             {
                 var web = host.Web ?? throw new AiToolException("Internet não autorizada para este agente.");
-                GuardOutbound(Text(input, "query"), host);
+                GuardOutbound(Text(input, "query"), host, address: false);
                 var output = await web.SearchAsync(Text(input, "query"), Text(input, "language"), Text(input, "country"),
                     Text(input, "freshness"), Text(input, "domain"), Number(input, "count", 8), Number(input, "page", 0));
                 return new AiToolOutput(output);
@@ -51,7 +78,7 @@ public static class AssistantWebTools
             Run = async (input, host) =>
             {
                 var web = host.Web ?? throw new AiToolException("Internet não autorizada para este agente.");
-                GuardOutbound(Uri.UnescapeDataString(Text(input, "url")), host);
+                GuardOutbound(Text(input, "url"), host, address: true);
                 return new AiToolOutput(await web.FetchAsync(Text(input, "url"), Number(input, "start_line", 1), Number(input, "max_lines", 100)));
             }
         }
