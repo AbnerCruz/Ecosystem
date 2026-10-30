@@ -277,6 +277,8 @@ Gate: plugin criado no Lunet adiciona painel e inspector sem modificar o app.
 
 Gate: dois clientes jogam demonstração realtime com latência simulada.
 
+- [ ] **LUNET-460 — primeiro corte TCP/LAN (branch `feat/lunet-networking-foundation-20261029`, CI/DEVICE pendentes):** testes criados antes do código; `TcpGameHost`/`TcpGameClient` no projeto `Lunet.Networking`, frames limitados, dois peers, autoridade host e permissão Android standalone. Não é transporte UDP realtime, não satisfaz `INetworkTransport`, autenticação, lobby, dois celulares, nem o gate da Fase 7. Referências, riscos e próximo passo em `docs/guides/networking-foundation.md` e ADR 0011.
+
 - [ ] `Lunet.Networking`: `INetworkTransport`, transports substituíveis (LiteNetLib interno, sem vazar tipos).
 - [ ] Serialização, `NetworkClock`, conexões, sessões, mensagens, RPC.
 - [ ] `NetworkIdentity`, `NetworkObject`, `NetworkVariable`.
@@ -285,6 +287,11 @@ Gate: dois clientes jogam demonstração realtime com latência simulada.
 - [ ] Client-hosted, dedicated server e backend-integrated; servidor .NET headless; projetos `Shared/`, `Client/`, `Server/`.
 - [ ] Network Simulator: latência, jitter, perda, duplicação, limite de banda.
 - [ ] Testes de rede (serialização, reconexão, perda de pacotes).
+- [ ] Multiplayer local no mesmo aparelho, tela compartilhada, split-screen, hot-seat, turnos, entradas e câmeras independentes.
+- [ ] Conectividade próxima: LAN Wi-Fi, descoberta segura, Wi-Fi Direct e Bluetooth opcional com fallback e permissões adequadas por Android.
+- [ ] Jogo assíncrono, estado persistido e troca de turnos com segurança de versões/conflitos, sem exigir conexão contínua.
+- [ ] Coop/PvP online, modo híbrido local+remoto e cross-platform: contratos de transportes e interoperabilidade validados em Android e demais plataformas suportadas.
+- [ ] Servidor persistente, escalabilidade e documentação de arquiteturas MMO/zonas/shards; benchmark real, limites e custos explícitos (não anunciar milhares sem prova).
 - [ ] Auditoria de fechamento da Fase 7 registrada em `docs/audits/`.
 
 ## Fase 8 — Agentic Workspace (§16)

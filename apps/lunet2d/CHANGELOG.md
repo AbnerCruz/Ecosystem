@@ -1,5 +1,9 @@
 # Changelog
 
+- F4 / Correção de CI integrado do PR #856: criação e destruição de mundos Box2D passam por mutex global de ciclo de vida, como exige a documentação oficial do Box2D. Mantém simulação de mundos distintos paralela; teste de regressão com 256 ciclos concorrentes. O teste PhysicsWorldTests.DynamicBallFallsOntoGround havia falhado de forma intermitente no estado combinado; CI novo e DEVICE pendentes.
+
+- F7 / LUNET-460 (em revisão, CI/DEVICE pendentes): primeiro corte em assembly independente `Lunet.Networking` para LAN confiável em C#: host e clientes, IDs atribuídos pelo host, mensagens limitadas, rejeição de estado enviado por cliente e fila assíncrona consumível pelo jogo. Jogo standalone recebe permissão INTERNET. Não é multiplayer realtime completo nem seguro para internet pública. Consulte ADR 0011 e docs/guides/networking-foundation.md.
+
 - LUNET-451 / Issue #842 (em revisão): três projetos Lunet de referência versionados (portrait, landscape e full-stack com Sprite Studio fonte, tilemap/collision, áudio WAV, física, UI e save). Testes xUnit anteriores aos fixtures compilam/executam os jogos e validam catálogo, formatos e ZIP. Sem alteração no motor/assinatura; CI, APK e DEVICE pendentes.
 
 - LUNET-450 / Issue #834 (em verificação): teste E2E de projeto criado no Lunet, código e assets editados, Preview headless, ZIP e empacotamento offline do mesmo jogo; workflow preparado para instalar, abrir e capturar logs/tela do jogo no Android 13. Não altera o empacotador de produção, as chaves do usuário nem substitui testes físicos da IDE. Conferir CI e roteiro DEVICE antes de declarar conclusão.

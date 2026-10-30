@@ -7,6 +7,7 @@
     <Project Path="src/Lunet.Git/Lunet.Git.csproj" />
     <Project Path="src/Lunet.Editor/Lunet.Editor.csproj" />
     <Project Path="src/Lunet.Framework/Lunet.Framework.csproj" />
+    <Project Path="src/Lunet.Networking/Lunet.Networking.csproj" />
     <Project Path="src/Lunet.Runtime/Lunet.Runtime.csproj" />
   </Folder>
   <Folder Name="/tests/">

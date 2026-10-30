@@ -76,6 +76,21 @@ public sealed class PhysicsWorldTests
         Assert.Throws<ArgumentOutOfRangeException>(() => world.Raycast(Vector2.Zero, Vector2.Zero, 1, out _));
     }
 
+    // Box2D documents that world create/destroy must be serialized across threads.
+    // This is not an attempt to call a single PhysicsWorld from multiple threads.
+    [Fact]
+    public void IndependentWorlds_ConcurrentCreationAndDisposal_AreSafe()
+    {
+        Parallel.For(0, 256, new ParallelOptions { MaxDegreeOfParallelism = 8 }, _ =>
+        {
+            using var world = new PhysicsWorld(new Vector2(0, 9.8f));
+            var body = world.CreateBody(PhysicsBodyType.Dynamic, Vector2.Zero);
+            body.AddFixture(Collider2D.Circle(0.25f));
+            world.Step(1f / 60f);
+            Assert.True(float.IsFinite(body.Position.Y));
+        });
+    }
+
     [Fact]
     public void DisposeIsIdempotent_AndRejectsStaleAccess()
     {

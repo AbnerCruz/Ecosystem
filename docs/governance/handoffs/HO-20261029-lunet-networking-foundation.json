@@ -1,0 +1,134 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261029-lunet-networking-foundation",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-29T14:56:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-networking-foundation",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-460",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-networking-foundation-20261029",
+  "base_commit": "69a54a0dab4912d80f8bc2437de25db158f59d09",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/tests/Lunet.Tests/NetworkingFoundationTests.cs",
+    "apps/lunet2d/src/Lunet.Networking/NetworkFrameCodec.cs",
+    "apps/lunet2d/src/Lunet.Networking/TcpGameSessions.cs",
+    "apps/lunet2d/runtime-template/Properties/AndroidManifest.xml",
+    "apps/lunet2d/docs/adr/0011-networking-first-slice.md",
+    "apps/lunet2d/docs/guides/networking-foundation.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/src/Lunet.Networking/Lunet.Networking.csproj",
+    "apps/lunet2d/src/Lunet.Framework/Lunet.Framework.csproj",
+    "apps/lunet2d/src/Lunet.Compiler/LoadedAssembliesReferenceProvider.cs",
+    "apps/lunet2d/Lunet.slnx",
+    "apps/lunet2d/tests/Lunet.Tests/Lunet.Tests.csproj",
+    "apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj",
+    "apps/lunet2d/runtime-template/Lunet.Game.Android.csproj",
+    "apps/lunet2d/runtime-template/Lunet.GameCode.csproj",
+    "apps/lunet2d/src/Lunet.Framework/Physics/PhysicsWorld.cs",
+    "apps/lunet2d/tests/Lunet.Tests/PhysicsWorldTests.cs"
+  ],
+  "work_completed": [
+    "Pesquisa comparativa de Godot, Mirror, Unity, FishNet, LiteNetLib, Gaffer e Android; limitações e antipadrões registrados",
+    "Testes gravados antes da implementação: framing, ID do host, dois peers, estado, rejeição de estado forjado e API de compilador",
+    "Projeto C# independente Lunet.Networking com API experimental TcpGameHost/TcpGameClient para tráfego TCP LAN confiável com filas limitadas e host autoritativo",
+    "Permissões de rede do APK standalone sem alterar formato de projeto nem dados antigos",
+    "Correção TDD da corrida em criação/destruição de mundos Box2D baseada no documento oficial (falha intermitente em CI de integração)"
+  ],
+  "verification": [
+    {
+      "check": "Lunet .NET tests",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Lunet Android APK build",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Ecosystem consistency",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Dois aparelhos reais LAN/Android",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/networking-foundation.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Não é netcode realtime por UDP; snapshots de alta frequência por TCP são inadequados",
+    "Sem auth/TLS/rate limiting/relay, não seguro para internet pública",
+    "Projeto Lunet.Networking criado, mas ainda sem INetworkTransport e sem aprovação CI/DEVICE",
+    "Não há demonstração jogável Android entre dois dispositivos nem validação DEVICE",
+    "Blueprint de modos local, Bluetooth, online, MMO permanece pendente",
+    "Nova execução de CI do teste concorrente e integração governada pendentes após correção da corrida Box2D."
+  ],
+  "blockers": [
+    "CI e validação de aparelho pendentes antes de publicar release"
+  ],
+  "next_actions": [
+    "Rodar xUnit e checks de CI, corrigir qualquer regressão no PR antes de integrar",
+    "Após CI aprovado e integração governada, verificar release real e testar duas instalações Android",
+    "Criar transporte LiteNetLib UDP separado e demo realtime antes de reivindicar gate F7"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/docs/adr/0011-networking-first-slice.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Identidade de peer atribuída apenas pelo host, sem estado duplicado."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Namespace implementado dentro do Lunet Framework, sem imports de outros produtos."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Branch e testes documentados; handoff registra limitações."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI ainda pendente e validação física não reivindicada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Fase 7 e LUNET-460 mantidos não concluídos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "API permanece local a Lunet e não extraída ao Ecosystem sem segundo consumidor."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "multiplayer-transport",
+      "status": "product-specific",
+      "rationale": "Nenhum segundo Product requer transporte de jogos; infraestrutura local por enquanto."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

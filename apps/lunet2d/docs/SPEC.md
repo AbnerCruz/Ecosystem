@@ -343,6 +343,23 @@ projetos separando `Shared/`, `Client/` e `Server/`.
 Crie Network Simulator nativo para latency, jitter, packet loss,
 duplication e bandwidth throttling.
 
+A infraestrutura deve contemplar **todas as modalidades**, com contratos
+adaptáveis por jogo e por plataforma, sem obrigar o usuário a contratar
+servidores ou criar contas para desenvolvimento offline: multiplayer local
+na mesma tela, split-screen, hot-seat, por turnos, assíncrono por troca
+de estado, LAN Wi-Fi, Wi-Fi Direct, Bluetooth quando suportado pela
+plataforma, partidas híbridas local+remoto, cooperativo e competitivo
+online, cross-platform e simulação persistente de grande escala.
+
+**Não** faça esses modos dependerem de um único protocolo. Diferencie
+entrada compartilhada, transporte por rede, autoridade do jogo, relógio,
+persistência, descoberta e infraestrutura de serviços. MMO requer
+distribuição, capacidade e operações demonstradas, não somente APIs.
+Transporte local não pode abrir porta pública ou oferecer autenticação
+falsa por padrão. Testes obrigatórios incluem desconexão, reconexão,
+perda/duplicação/ordenação, compatibilidade Android standalone,
+sincronização e segurança da autoridade.
+
 ------------------------------------------------------------------------
 
 ## 9. EDITOR DE CÓDIGO E ROSLYN
