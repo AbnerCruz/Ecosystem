@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261029-urbe-consolidation-wave7",
   "category": "HANDOFF",
-  "timestamp": "2026-10-29T23:59:46Z",
+  "timestamp": "2026-10-30T00:04:42Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -79,7 +79,8 @@
     "apps/urbe/csharp/src/Urbe.Client/StorageProblems.cs",
     "apps/urbe/csharp/src/Urbe.Core/InterruptedWrites.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/StorageFailureUiTests.cs",
-    "apps/urbe/csharp/tests/Urbe.Core.Tests/InterruptedWritesTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/InterruptedWritesTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs"
   ],
   "work_completed": [
     "CST-129: saída do editor medida (85–110 ms síncronos com 400 notas e uma nota de ~40 KB) e corrigida: a Área de trabalho não é refeita quando nada que os cartões mostram mudou e, depois de uma edição, só a caixa do projeto é refeita, depois do quadro; o histórico é montado de pedaços prontos (texto idêntico ao da 1.8.4); o armazenamento (pasta e Android) não continua na thread da tela. Saída depois de ler 15–27 ms, sem nada pendente; depois de editar ~25–31 ms.",
@@ -96,14 +97,15 @@
     "Digitação no Fonte investigada (sem mudança): ~0,3 ms do Urbe por tecla; o resto é o layout do texto inteiro da caixa do Avalonia, igual na main.",
     "Conversa longa do Assistente: abrir 200 perguntas e respostas levava 3,0 s; mensagens feitas perto da tela, fim feito na hora, atualização completa refaz só as feitas (~250 ms ao abrir).",
     "CST-004/007: falhas do armazenamento antes e depois da gravação conferidas no disco (WriteOrAskAsync): sem falso sucesso, sem tela diferente do disco, mensagem com Tentar de novo e palavras da pessoa (StorageProblems).",
-    "CST-006: gravação cortada pelo app fechando resolvida na abertura seguinte (InterruptedWrites): nota vazia recupera o texto anterior, textos diferentes ficam lado a lado, cópia só sai depois de conferida."
+    "CST-006: gravação cortada pelo app fechando resolvida na abertura seguinte (InterruptedWrites): nota vazia recupera o texto anterior, textos diferentes ficam lado a lado, cópia só sai depois de conferida.",
+    "CST-013 (parte): fechar a janela no computador salva a nota aberta antes (UrbeApp.SaveBeforeClosing); sem conseguir salvar, a janela fica e pergunta."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1565 testes, 0 falhas (local, .NET 10, Release); os testes de limites falhavam antes da mudança; Activity_StepsMadeAboveTheScreenDoNotMoveWhatIsOnIt vermelho sem a compensação; prévia ao vivo conferida no Chromium (Playwright) como o WebView a carrega; build Android Debug ok."
+      "evidence": "1567 testes, 0 falhas (local, .NET 10, Release); os testes de limites falhavam antes da mudança; Activity_StepsMadeAboveTheScreenDoNotMoveWhatIsOnIt vermelho sem a compensação; prévia ao vivo conferida no Chromium (Playwright) como o WebView a carrega; build Android Debug ok."
     },
     {
       "check": "Oráculos da 1.8.4: goldens Markdown e Visual, histórico e corpus do repositório (contra o markdown.js original com só inlineEmphasis trocado)",

@@ -320,4 +320,47 @@ public sealed partial class HeadlessUiTests
         Assert.Contains(view.Notices, n => n.Contains("Cortada") && n.Contains("Dupla"));
         return true;
     }, CancellationToken.None));
+
+    [Fact]
+    public async Task Closing_TheWindowSavesWhatWasTypedSinceTheLastAutosave() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        // the window waited only for the notes' record: the last seconds of typing went with it
+        var vault = await OpenFaultyVaultAsync(("Comece.md", "# Comece\n"));
+        var view = vault.View;
+        UrbeApp.SaveBeforeClosing(vault.Window, view);
+        view.Editor.Open(new CityNote("Comece.md", "# Comece\n"));
+        view.Editor.SetMode(EditorMode.Fonte);
+        await Settle(vault.Window, view);
+        view.Editor.Editor.Text = "# Comece\n\nescrito agora\n";
+        Assert.True(view.Editor.HasChanges);
+        var closed = false;
+        vault.Window.Closed += (_, _) => closed = true;
+        vault.Window.Close();
+        for (int i = 0; i < 200 && !closed; i++) { Dispatcher.UIThread.RunJobs(); await Task.Delay(10); }
+        Assert.True(closed);
+        Assert.Equal("# Comece\n\nescrito agora\n", vault.Read("Comece.md"));
+        return true;
+    }, CancellationToken.None));
+
+    [Fact]
+    public async Task Closing_ANoteThatCannotBeSavedKeepsTheWindowUnlessThePersonChooses() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        using var vault = await OpenFaultyVaultAsync(("Comece.md", "# Comece\n"));
+        var view = vault.View;
+        UrbeApp.SaveBeforeClosing(vault.Window, view);
+        view.Editor.Open(new CityNote("Comece.md", "# Comece\n"));
+        view.Editor.SetMode(EditorMode.Fonte);
+        await Settle(vault.Window, view);
+        view.Editor.Editor.Text = "# Comece\n\nnão some\n";
+        vault.Storage.Fail("save");
+        var closed = false;
+        vault.Window.Closed += (_, _) => closed = true;
+        var dialogs = await AnsweringAsync(vault, () => { vault.Window.Close(); return Task.Delay(300); }, _ => "Continuar no Urbe");
+        Assert.Contains(dialogs, d => d.Contains("A nota não foi salva") && d.Contains("Fechar sem salvar"));
+        Assert.False(closed);
+        Assert.True(view.Editor.HasChanges);   // the text is still there; saving now works
+        Assert.True(await view.Editor.SaveAsync());
+        Assert.Equal("# Comece\n\nnão some\n", vault.Read("Comece.md"));
+        return true;
+    }, CancellationToken.None));
 }
