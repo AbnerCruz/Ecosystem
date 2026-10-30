@@ -2151,7 +2151,7 @@
     },
     {
       "id": "DEC-0060",
-      "status": "pending",
+      "status": "decided",
       "component": "urbe",
       "blocking": false,
       "title": "Urbe: adotar o nome Numa agora ou depois da busca de marca (CST-107)",
@@ -2179,7 +2179,11 @@
         "apps/urbe/docs/csharp/CONSOLIDATION.md"
       ],
       "raisedBy": "claude-code-urbe-consolidation",
-      "raisedAt": "2026-10-30"
+      "raisedAt": "2026-10-30",
+      "decision": "Alternativa A — A — Adotar Numa agora no app (recomendada só se o risco for aceito) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/866).",
+      "decidedAt": "2026-10-30",
+      "record": "docs/governance/responses/DEC-0060.md",
+      "consequencesApplied": false
     }
   ]
 }
