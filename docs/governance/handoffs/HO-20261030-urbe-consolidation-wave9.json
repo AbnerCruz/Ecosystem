@@ -74,7 +74,10 @@
     "apps/urbe/csharp/src/Urbe.Client/CustomizePanel.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/TagStylesUiTests.cs",
     "apps/urbe/docs/csharp/NUMA-NAME-AVAILABILITY.md",
-    "docs/governance/decisions.json"
+    "docs/governance/decisions.json",
+    "apps/urbe/csharp/src/Urbe.Client/CrashLog.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Errors.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CrashLogPrivacyTests.cs"
   ],
   "work_completed": [
     "CST-042: tags herdadas por projeto conforme DEC-0058 alternativa A. As tags do frontmatter da nota da pasta (Droerni/Droerni.md) valem para tudo dentro da pasta e das subpastas (somadas de fora para dentro), calculadas pela localização em ProjectTags (Urbe.Core); nenhuma outra nota é escrita.",
@@ -94,7 +97,8 @@
     "CST-039: teste de UI do seletor Mover para (busca sem acentos, destinos inválidos excluídos, pasta movida com o conteúdo) e mensagem quando a busca não acha nada.",
     "CST-083 / DEC-0059: pesquisa web sem o teto escondido de 12 buscas e 20 páginas por resposta (agora 100 de cada, só contra ciclos), com migração das configurações salvas e mensagem que explica o limite.",
     "CST-024: tags com ícone além da cor (tags.json compatível com os arquivos antigos), escolhido em Personalização → Tags e mostrado no rótulo da nota.",
-    "CST-107: pesquisa preliminar de disponibilidade do nome Numa (marca NUMA em software de outra empresa; app de notas homônimo) e decisão DEC-0060 aberta no portal; o app continua Urbe até a escolha."
+    "CST-107: pesquisa preliminar de disponibilidade do nome Numa (marca NUMA em software de outra empresa; app de notas homônimo) e decisão DEC-0060 aberta no portal; o app continua Urbe até a escolha.",
+    "CST-097: relatório de erros sem chaves, trechos entre aspas nem caminhos do aparelho, com retenção de 30 dias e explicação na tela."
   ],
   "verification": [
     {
