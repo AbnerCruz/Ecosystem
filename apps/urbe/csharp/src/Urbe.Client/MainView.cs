@@ -1156,7 +1156,10 @@ public sealed partial class MainView : Grid
                     IAssistantStorage storage = UrbeApp.AssistantFolder is { } formFolder ? new FolderAssistantStorage(formFolder) : new MemoryAssistantStorage();
                     var drafts = new FormDraftStore(storage);
                     var key = FormDraftStore.Key(_vault?.VaultName ?? "", templatePath, name);
-                    var session = drafts.LoadOrCreate(key, definition, template);
+                    var session = drafts.LoadOrCreate(key, definition, template, out var left);
+                    if (left.Count > 0)
+                        await Dialogs.AlertAsync("O modelo mudou", "As respostas que você deixou continuam onde o modelo ainda tem os mesmos campos. Estas não cabem mais nele:\n\n" +
+                            string.Join("\n", left.Select(l => "• " + l.Label + ": " + l.Value)));
                     var (answers, inEditor) = await Dialogs.TemplateFormAsync(session, () => drafts.Save(key, session),
                         _store?.List().Where(d => ArtifactModel.IsNote(d.Path)).Select(d => d.Path).ToArray(), _library?.Folders);
                     if (answers is null) { drafts.Delete(key); return null; }

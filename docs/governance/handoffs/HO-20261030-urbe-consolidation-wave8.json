@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261030-urbe-consolidation-wave8",
   "category": "HANDOFF",
-  "timestamp": "2026-10-30T00:21:46Z",
+  "timestamp": "2026-10-30T01:10:56Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -34,13 +34,16 @@
     "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
     "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/LinkRenameTests.cs",
-    "apps/urbe/csharp/tests/Urbe.Client.Tests/CombinedFlowsUiTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CombinedFlowsUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/FormDraftStore.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/FormsTests.cs"
   ],
   "work_completed": [
     "CST-004/007: falhas do armazenamento antes e depois da gravação conferidas no disco (WriteOrAskAsync) em criar, salvar, renomear, mover, excluir, restaurar, duplicar, criar por modelo, excluir de vez e esvaziar: sem falso sucesso, sem tela diferente do disco, mesmo id; mensagem com Tentar de novo e palavras da pessoa (StorageProblems).",
     "CST-006: gravação cortada pelo app fechando resolvida na abertura seguinte (InterruptedWrites): nota vazia ou ausente recupera o texto anterior, textos diferentes ficam lado a lado, a cópia do armazenamento só sai depois de o texto estar conferido numa nota.",
     "CST-013 (parte): fechar a janela no computador salva a nota aberta antes (UrbeApp.SaveBeforeClosing); sem conseguir salvar, a janela fica e pergunta.",
-    "CST-101 (parte): renomear ou mover nota, pasta ou anexo atualiza os [[links]] em todas as notas (LinkRename + DocumentModel.RewriteLinks), mantendo seção, apelido e forma; nomes ambíguos e código ficam intactos."
+    "CST-101 (parte): renomear ou mover nota, pasta ou anexo atualiza os [[links]] em todas as notas (LinkRename + DocumentModel.RewriteLinks), mantendo seção, apelido e forma; nomes ambíguos e código ficam intactos.",
+    "CST-049 (parte): rascunho de formulário de um modelo que mudou não trava mais a criação; as respostas que ainda cabem vão para o modelo novo e as outras aparecem num aviso."
   ],
   "verification": [
     {
