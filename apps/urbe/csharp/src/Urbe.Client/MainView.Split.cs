@@ -52,11 +52,16 @@ public sealed partial class MainView
         var list = _store.List()
             .Where(d => d.Path != active && System.Text.RegularExpressions.Regex.IsMatch(d.Path, @"\.(md|markdown|txt)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
             .OrderBy(d => d.Modified ?? "", Comparer<string>.Create((a, b) => string.Compare(b, a, StringComparison.InvariantCulture)))
-            .Take(60).ToList();
+            .ToList();
         if (list.Count == 0) return;
-        var pick = await Dialogs.ChooseAsync("Abrir ao lado", list.Select(d => new DialogItem(d.Title, UrbeTheme.Icons.Notes, d.Path)).ToList(),
-            "Escolha a nota para ver ao lado da que está aberta.");
-        if (pick is { } i) OpenSplit(list[i].Path);
+        // the 60 most recent at hand; any other through the search of the whole vault (DEC-0059: none is out of reach)
+        var recent = list.Take(60).ToList();
+        var items = recent.Select(d => new DialogItem(d.Title, UrbeTheme.Icons.Notes, d.Path)).ToList();
+        if (list.Count > recent.Count) items.Insert(0, new DialogItem("Buscar entre todas as notas…", UrbeTheme.Icons.Search, list.Count + " notas"));
+        var pick = await Dialogs.ChooseAsync("Abrir ao lado", items, "Escolha a nota para ver ao lado da que está aberta.");
+        if (pick is not { } i) return;
+        if (list.Count > recent.Count && i == 0) { Search.PickNote(path => OpenSplit(path)); return; }
+        OpenSplit(recent[list.Count > recent.Count ? i - 1 : i].Path);
     }
 
     private void WireSplit()

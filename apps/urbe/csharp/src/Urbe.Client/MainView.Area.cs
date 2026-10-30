@@ -42,6 +42,8 @@ public sealed partial class MainView
         Workspace.ZIndex = -1;
         _stage.Children.Insert(_stage.Children.IndexOf(Explorer) + 1, Workspace);
         Workspace.NoteRequested += path => OpenFromNotes(new CityNote(path, _contents.GetValueOrDefault(path, "")));
+        Workspace.ChooseTag = async tags =>
+            await Dialogs.ChooseAsync("Filtrar por tag", tags.Select(t => new DialogItem("#" + t, UrbeTheme.Icons.List)).ToList()) is { } i ? tags[i] : null;
         Workspace.FileRequested += path => { if (!StillReading()) _ = ShowFileAsync(path); };
         Workspace.NewProjectRequested += () => { if (!StillReading()) _ = CreateProjectAsync(); };
         Workspace.NewNoteRequested += folder => { if (!StillReading()) _ = CreateNoteInNotesAsync(folder: folder); };

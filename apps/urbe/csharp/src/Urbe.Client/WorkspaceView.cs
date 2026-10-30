@@ -139,6 +139,9 @@ public sealed class WorkspaceView : Grid
 
     /// <summary>A note's card was tapped.</summary>
     public event Action<string>? NoteRequested;
+
+    /// <summary>Chooses one of the tags not shown as chips (the host's list with search); null when none was chosen.</summary>
+    public Func<IReadOnlyList<string>, Task<string?>>? ChooseTag { get; set; }
     /// <summary>A file's card was tapped (a page, an image, a PDF…).</summary>
     public event Action<string>? FileRequested;
     /// <summary>A card was held (or right-clicked): its information and actions.</summary>
@@ -271,8 +274,16 @@ public sealed class WorkspaceView : Grid
         foreach (var (kind, label) in Kinds)
             if (kind is null || present.Contains(kind.Value))
                 _tools.Children.Add(Chip(label, _kind == kind, () => KindFilter = kind));
-        foreach (var tag in _index.TagsIn(Folder).Take(6))
+        // the most used tags as chips; every other one through "+N tags" (DEC-0059: any tag can filter), and the one
+        // chosen there stays shown while it filters
+        var tags = _index.TagsIn(Folder);
+        var shownTags = tags.Take(6).ToList();
+        if (_tag is not null && !shownTags.Contains(_tag, StringComparer.OrdinalIgnoreCase) && tags.Contains(_tag, StringComparer.OrdinalIgnoreCase)) shownTags.Add(_tag);
+        foreach (var tag in shownTags)
             _tools.Children.Add(Chip("#" + tag, string.Equals(_tag, tag, StringComparison.OrdinalIgnoreCase), () => TagFilter = string.Equals(_tag, tag, StringComparison.OrdinalIgnoreCase) ? null : tag));
+        var rest = tags.Where(t => !shownTags.Contains(t, StringComparer.OrdinalIgnoreCase)).ToList();
+        if (rest.Count > 0 && ChooseTag is { } choose)
+            _tools.Children.Add(Chip("+" + rest.Count + " tags", false, async () => { if (await choose(rest) is { } picked) TagFilter = picked; }));
         var order = Chip(_order switch { WorkspaceOrder.Name => "Ordem: nome", WorkspaceOrder.Created => "Ordem: criação", _ => "Ordem: recentes" }, false,
             () => Order = _order switch { WorkspaceOrder.Recent => WorkspaceOrder.Name, WorkspaceOrder.Name => WorkspaceOrder.Created, _ => WorkspaceOrder.Recent });
         AutomationProperties.SetName(order, "Ordem");

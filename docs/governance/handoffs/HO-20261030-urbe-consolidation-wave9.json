@@ -97,7 +97,14 @@
     "apps/urbe/csharp/src/Urbe.Core/Forms.cs",
     "apps/urbe/csharp/src/Urbe.Core/NoteTemplateEngine.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteTemplateEngineTests.cs",
-    "apps/urbe/csharp/tests/Urbe.Client.Tests/ApprovalDiffUiTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ApprovalDiffUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/WorkspaceView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Area.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Split.cs",
+    "apps/urbe/csharp/src/Urbe.Client/QuickOpen.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PageStudioView.Panels.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/WorkspaceTagsUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/SplitPickUiTests.cs"
   ],
   "work_completed": [
     "CST-042: tags herdadas por projeto conforme DEC-0058 alternativa A. As tags do frontmatter da nota da pasta (Droerni/Droerni.md) valem para tudo dentro da pasta e das subpastas (somadas de fora para dentro), calculadas pela localização em ProjectTags (Urbe.Core); nenhuma outra nota é escrita.",
@@ -128,7 +135,8 @@
     "CST-054: conferido com uma nota do mês na forma real (entradas antigas, parágrafos, selo), sem levar o conteúdo pessoal ao repositório.",
     "CST-092: o resultado de uma consulta diz ao agente que pediu quais notas o especialista criou, alterou, moveu ou mandou para a lixeira.",
     "CST-045 (parte) / DEC-0059: modelos perguntam até 128 campos, o mesmo limite dos formulários (antes paravam em 32 sem aviso).",
-    "DEC-0059: o cartão de aprovação deixa ver todas as linhas mudadas (parava em 160); os demais máximos do código foram conferidos como limites técnicos reais."
+    "DEC-0059: o cartão de aprovação deixa ver todas as linhas mudadas (parava em 160); os demais máximos do código foram conferidos como limites técnicos reais.",
+    "DEC-0059: qualquer tag filtra a Área de trabalho (+N tags), Abrir ao lado alcança qualquer nota pela busca, e capítulos de uma pasta não param em 200."
   ],
   "verification": [
     {
