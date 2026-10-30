@@ -606,3 +606,9 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Responde a: 20261029-chatgpt-lunet-networking-foundation. PR #856 bloqueado no estado combinado 46917dcb, job 123535729974: `PhysicsWorldTests.DynamicBallFallsOntoGround_WithoutPassingThrough` falhou em `Box2D.NET.B2Worlds.b2DestroyWorld` com NullReferenceException. PR CI normal passou 751/751; falha intermitente, sem evidência de erro do networking.
 - Fonte oficial https://box2d.org/documentation/md_foundation.html registra corrida quando mundos Box2D são criados/destruídos por múltiplas threads e prescreve mutex; outros mundos podem simular paralelamente. No Framework, `PhysicsWorld` antes não protegia `b2CreateWorld`/`b2DestroyWorld`.
 - TDD: `629f0e2` acrescentou teste de 256 mundos concorrentes (8 workers), cada qual com corpo e passo de simulação; `64781c3` sincronizou somente criação e destruição via `WorldLifetimeGate`, sem serializar `Step`, corpos nem renderização. Evita gambiarra de repetir CI/ignorar teste. Revalidar suíte e estado combinado, incluir APK, sem declarar sucesso até os novos logs.
+
+### 20261030-codex-standalone-pause — review
+- A pedido do proprietário, removidos do PR #863 os fontes do jogo, testes e pipeline específicos, bem como sua entrada no roadmap. Nenhuma alteração na main: o PR ainda não foi integrado.
+- Permanece somente a correção genérica de pausa em runtime-template/StandaloneGameActivity.cs: QueueEvent(PauseForBackground) antes de suspender GLSurfaceView, igual ao PreviewHost existente.
+- Evidência anterior à remoção: suíte 758/758 e teste Android 13 emulado de HOME→save em disco→retorno pausado→force-stop→restore passaram nas execuções 41100144389 e 41100144277. Não afirma teste físico nem nova execução após a retirada dos fixtures.
+- Handoff: HO-20261030-lunet-standalone-pause.json. Próximo: checks do PR reduzido e integração governada.

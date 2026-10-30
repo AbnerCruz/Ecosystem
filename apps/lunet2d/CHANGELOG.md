@@ -1,5 +1,7 @@
 # Changelog
 
+- Fixed / host standalone: entrega Game.OnPause na thread GL antes de suspendê-la, usando o mesmo PauseForBackground do PreviewHost. Regressão provada por smoke Android que falhou antes e passou após a correção; JSON privado e restore após force-stop conferidos.
+
 - F4 / Correção de CI integrado do PR #856: criação e destruição de mundos Box2D passam por mutex global de ciclo de vida, como exige a documentação oficial do Box2D. Mantém simulação de mundos distintos paralela; teste de regressão com 256 ciclos concorrentes. O teste PhysicsWorldTests.DynamicBallFallsOntoGround havia falhado de forma intermitente no estado combinado; CI novo e DEVICE pendentes.
 
 - F7 / LUNET-460 (em revisão, CI/DEVICE pendentes): primeiro corte em assembly independente `Lunet.Networking` para LAN confiável em C#: host e clientes, IDs atribuídos pelo host, mensagens limitadas, rejeição de estado enviado por cliente e fila assíncrona consumível pelo jogo. Jogo standalone recebe permissão INTERNET. Não é multiplayer realtime completo nem seguro para internet pública. Consulte ADR 0011 e docs/guides/networking-foundation.md.
