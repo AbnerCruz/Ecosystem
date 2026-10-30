@@ -701,8 +701,11 @@ public sealed partial class AssistantPanel
         if (_activeConversations.Values.Any(c => c.AgentId == agent.Id))
         { await _app.Dialogs.AlertAsync("Agente trabalhando", "Interrompa as conversas ativas deste agente antes de excluí-lo."); return; }
         var count = _store.ListConversations().Count(c => c.AgentId == agent.Id);
+        // CST-074: its private memories go with it (no other agent can use them), and the person is told so
+        var memories = _cfg.MemoryRecords.Count(m => m.Scope == "agent" && m.AgentId == agent.Id);
         if (!await _app.Dialogs.ConfirmAsync("Excluir " + AgentNames.CallName(agent, _cfg) + "?",
-            "O agente e suas " + count + " conversa(s) em todos os vaults serão excluídos permanentemente. Esta ação não pode ser desfeita.",
+            "O agente, suas " + count + " conversa(s) em todos os vaults" + (memories > 0 ? " e suas " + memories + " lembrança(s) privada(s)" : "") +
+            " serão excluídos permanentemente. As lembranças compartilhadas e as notas ficam. Esta ação não pode ser desfeita.",
             "Excluir agente e histórico", danger: true)) return;
         try
         {
@@ -715,6 +718,7 @@ public sealed partial class AssistantPanel
             _cfg.AgentDelegationAuto.Remove(agent.Id);
             _cfg.AgentInstructionBlocks.Remove(agent.Id);
             _cfg.AgentNames.Remove(agent.Id);
+            _cfg.MemoryRecords.RemoveAll(m => m.Scope == "agent" && m.AgentId == agent.Id);
             _agentDrafts.Remove(agent.Id);
             SaveDrafts();
             if (_cfg.AgentId == agent.Id)
@@ -727,7 +731,7 @@ public sealed partial class AssistantPanel
             SaveConfig();
             ShowSettings();
             RenderChrome();
-            _app.Notify("Agente e " + count + " conversa(s) excluídos.");
+            _app.Notify("Agente, " + count + " conversa(s)" + (memories > 0 ? " e " + memories + " lembrança(s) privada(s)" : "") + " excluídos.");
         }
         catch (IOException e)
         {

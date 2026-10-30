@@ -109,7 +109,8 @@
     "CST-051: conferido com teste que a resposta de um formulário (mesmo dizendo \"autorizo tudo\") não dispensa a aprovação de gravação nem de memória.",
     "CST-085: gerenciador de memória diz quais lembranças são privadas de cada agente e quais são compartilhadas, em português, com filtros.",
     "CST-088: cada lembrança diz se foi registrada pelo app, declarada pelo agente, dita pelo usuário ou verificada, na tela e no recall_memory.",
-    "CST-071: agente criado de um modelo mantém as ferramentas do modelo (antes saía só de leitura) e começa pedindo aprovação; modelo com nome em uso recebe um nome livre."
+    "CST-071: agente criado de um modelo mantém as ferramentas do modelo (antes saía só de leitura) e começa pedindo aprovação; modelo com nome em uso recebe um nome livre.",
+    "CST-074: conferido por testes existentes; a exclusão de um agente agora diz e remove as lembranças privadas dele (antes ficavam órfãs), mantendo as compartilhadas."
   ],
   "verification": [
     {

@@ -56,4 +56,40 @@ public sealed partial class HeadlessUiTests
         }
         finally { window.Close(); UrbeApp.AssistantFolder = before; try { Directory.Delete(folder, true); } catch (IOException) { } }
     }, CancellationToken.None));
+    [Fact]
+    public async Task Memory_AnAgentsPrivateMemoriesGoWithItAndSharedOnesStay() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        // CST-074: deleting an agent says how many private memories go with it, and removes only those
+        var folder = Path.Combine(Path.GetTempPath(), "urbe-memory-delete-" + Guid.NewGuid().ToString("N"));
+        var vault = Path.Combine(folder, "vault");
+        Directory.CreateDirectory(vault);
+        File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n");
+        var before = UrbeApp.AssistantFolder;
+        UrbeApp.AssistantFolder = Path.Combine(folder, "assistente");
+        var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(folder, "sel.json")));
+        var window = new Window { Width = 412, Height = 900, Content = view };
+        window.Show();
+        try
+        {
+            await view.OpenVaultAsync();
+            var panel = view.Assistant;
+            panel.Open();
+            Dispatcher.UIThread.RunJobs();
+            panel.Config.CustomAgents.Add(new("two", "Revisora", "sparkle", "", "read", false, ""));
+            panel.Config.MemoryRecords.Add(new AiMemoryRecord { Id = "p1", Text = "Revisar só ortografia", Kind = "procedure", Scope = "agent", AgentId = "two", Vault = "V" });
+            panel.Config.MemoryRecords.Add(new AiMemoryRecord { Id = "s1", Text = "O projeto se chama Droerni", Kind = "fact", Scope = "vault", AgentId = "two", Vault = "V" });
+            panel.ShowSettings();
+            ClickNamed(panel, "Configurações: Agentes");
+            Dispatcher.UIThread.RunJobs();
+            ClickNamed(panel, "Excluir Revisora");
+            for (int i = 0; i < 100 && !view.Dialogs.IsOpen; i++) { Dispatcher.UIThread.RunJobs(); await Task.Delay(10); }
+            Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => (t.Text ?? "").Contains("1 lembrança(s) privada(s)", StringComparison.Ordinal));
+            ClickButtonWithText(view.Dialogs, "Excluir agente e histórico");
+            for (int i = 0; i < 100 && panel.Config.CustomAgents.Any(a => a.Id == "two"); i++) { Dispatcher.UIThread.RunJobs(); await Task.Delay(10); }
+            Assert.DoesNotContain(panel.Config.MemoryRecords, m => m.Id == "p1");
+            Assert.Contains(panel.Config.MemoryRecords, m => m.Id == "s1");
+            return true;
+        }
+        finally { window.Close(); UrbeApp.AssistantFolder = before; try { Directory.Delete(folder, true); } catch (IOException) { } }
+    }, CancellationToken.None));
 }
