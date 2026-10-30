@@ -41,6 +41,22 @@ public sealed partial class Customization
     }
 
     private string? _tagsText;
+    // read at each use from the vault's documents: a hand edit of editor.json is never written over from an old copy
+    private string? LayoutText => _documents.TryGetValue(EditorLayout.Path, out var text) ? text : null;
+
+    /// <summary>The editor's bar as Personalização/editor.json has it (null: the default), with "|" for separators.</summary>
+    public IReadOnlyList<string>? EditorBar(IReadOnlyCollection<string> ids) => EditorLayout.Parse(LayoutText, ids, []).Bar;
+
+    /// <summary>Writes the editor's bar (null: back to the default) in editor.json, keeping the "/" menu, and applies it (CST-019).</summary>
+    public async Task SetEditorBarAsync(IReadOnlyList<string>? bar)
+    {
+        var before = LayoutText;
+        var text = EditorLayout.WithBar(before, bar);
+        if (text == before) return;
+        if (Writer is not { } write) throw new InvalidOperationException("Selecione uma pasta real para gravar.");
+        await write(EditorLayout.Path, text, before is not null);
+        Applied?.Invoke();
+    }
 
     /// <summary>The colours chosen for the tags (Personalização/tags.json, DEC-0045, UC-43).</summary>
     public IReadOnlyDictionary<string, string> TagColors { get; private set; } = new Dictionary<string, string>();

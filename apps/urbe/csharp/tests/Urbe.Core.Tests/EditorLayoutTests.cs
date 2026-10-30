@@ -29,4 +29,20 @@ public sealed class EditorLayoutTests
         Assert.Equal(["bold", "|", "h1"], b);
         Assert.Equal(["h1", "task"], m);
     }
+    [Fact]
+    public void TheBarIsReplacedAndEverythingElseInTheFileStays()
+    {
+        const string file = "{\n  \"versao\": 1,\n  \"menu\": [\"h1\"],\n  \"meu\": true\n}\n";
+        var next = EditorLayout.WithBar(file, ["undo", "redo", "|", "italic", "bold"]);
+        var (bar, menu) = EditorLayout.Parse(next, ["undo", "redo", "bold", "italic"], ["h1"]);
+        Assert.Equal(["undo", "redo", "|", "italic", "bold"], bar);
+        Assert.Equal(["h1"], menu);
+        Assert.Contains("\"meu\": true", next);
+        // back to the default: "barra" leaves, the rest stays
+        var back = EditorLayout.WithBar(next, null);
+        Assert.Null(EditorLayout.Parse(back, ["bold"], ["h1"]).Bar);
+        Assert.Equal(["h1"], EditorLayout.Parse(back, ["bold"], ["h1"]).Menu);
+        // a broken file is started again rather than refused
+        Assert.Equal(["bold"], EditorLayout.Parse(EditorLayout.WithBar("{ quebrado", ["bold"]), ["bold"], []).Bar);
+    }
 }

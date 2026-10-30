@@ -39,4 +39,14 @@ public sealed class UserAgentsFileTests
         Assert.Equal("Só texto solto.", UserAgentsFile.For("Só texto solto.", "qualquer"));
         Assert.Equal("", UserAgentsFile.For(null, "x"));
     }
+    [Fact]
+    public void WithAPartForTheModelEachPartSaysWhatItIs()
+    {
+        var claude = UserAgentsFile.For(File, "anthropic/claude-opus-5-5");
+        Assert.StartsWith("Geral:\n", claude);
+        Assert.Contains("Para este modelo (Claude 5), vale sobre a parte geral onde divergirem:\n", claude);
+        Assert.True(claude.IndexOf("português", StringComparison.Ordinal) < claude.IndexOf("Seja breve.", StringComparison.Ordinal));
+        // only the general part: as written
+        Assert.Equal("Escreva em português do Brasil.", UserAgentsFile.For(File, "mistral/large"));
+    }
 }

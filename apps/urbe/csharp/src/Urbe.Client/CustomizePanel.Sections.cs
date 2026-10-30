@@ -345,6 +345,67 @@ public sealed partial class CustomizePanel
             Toggle("editor.ortografia", Bo(e, "ortografia", true), "Corretor ortográfico", "Sublinha palavras com erro enquanto você escreve"),
             Toggle(Customization.BlockTimes, "Horário de cada bloco", "Mostra, ao lado de cada bloco, quando ele mudou pela última vez (pelas Versões anteriores)",
                 v => { Customization.BlockTimes = v; return Task.CompletedTask; })));
+        _body.Children.Add(BarBlock());
+    }
+
+    /// <summary>
+    /// CST-019: the formatting bar of the editor (the one over the keyboard on the phone), by touch: each button on or off
+    /// and in which order, separators included; Desfazer and Refazer always stay first. Kept in Personalização/editor.json
+    /// ("barra"), the same file as before, whose "/" menu is left as it is.
+    /// </summary>
+    private Border BarBlock()
+    {
+        var ids = EditorOverlay.ToolbarIds;
+        var bar = (Customization.EditorBar(ids) ?? EditorOverlay.ToolbarOrder).Where(x => x is not ("undo" or "redo")).ToList();
+        while (bar.Count > 0 && bar[0] == "|") bar.RemoveAt(0);
+        var off = ids.Where(x => x is not ("undo" or "redo") && !bar.Contains(x)).ToList();
+
+        async Task Save(List<string> next)
+        {
+            // separators at the ends or side by side are tidied when read; the default comes back as the default
+            var full = new List<string> { "undo", "redo", "|" };
+            full.AddRange(next);
+            try { await Customization.SetEditorBarAsync(full.SequenceEqual(EditorOverlay.ToolbarOrder) ? null : full); }
+            catch (InvalidOperationException ex) { await Dialogs.AlertAsync("Barra do editor", ex.Message); }
+            Render();
+        }
+        List<string> Moved(int from, int to)
+        {
+            var next = bar.ToList();
+            (next[from], next[to]) = (next[to], next[from]);
+            return next;
+        }
+
+        var rows = new List<Control>();
+        for (int i = 0; i < bar.Count; i++)
+        {
+            var at = i;
+            var id = bar[i];
+            var name = id == "|" ? "Separador" : EditorOverlay.ToolbarTitle(id);
+            var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+            var up = Mini(UrbeTheme.Icons.ArrowUp, "Subir " + name, () => _ = Save(Moved(at, at - 1)));
+            // the arrow that has nowhere to go is hidden, keeping its place so the rows line up
+            if (at == 0) { up.IsEnabled = false; up.Opacity = 0; }
+            var down = Mini(UrbeTheme.Icons.ArrowDown, "Descer " + name, () => _ = Save(Moved(at, at + 1)));
+            if (at == bar.Count - 1) { down.IsEnabled = false; down.Opacity = 0; }
+            var remove = Mini(UrbeTheme.Icons.Close, "Tirar " + name + " da barra", () => { var next = bar.ToList(); next.RemoveAt(at); _ = Save(next); });
+            actions.Children.Add(up);
+            actions.Children.Add(down);
+            actions.Children.Add(remove);
+            rows.Add(Row(name, null, actions));
+        }
+        foreach (var id in off)
+        {
+            var add = Mini(Icons.Plus, "Pôr " + EditorOverlay.ToolbarTitle(id) + " na barra", () => _ = Save([.. bar, id]));
+            rows.Add(Row(EditorOverlay.ToolbarTitle(id), "Fora da barra", add));
+        }
+        // a new separator goes before the last button (one at the end would be tidied away); it can then be moved
+        rows.Add(More("Separador", Icons.Plus, () => { var next = bar.ToList(); next.Insert(Math.Max(0, next.Count - 1), "|"); _ = Save(next); }));
+        var restore = SmallButton("Padrão", false);
+        AutomationName(restore, "Barra padrão");
+        restore.Click += async (_, _) => { try { await Customization.SetEditorBarAsync(null); } catch (InvalidOperationException ex) { await Dialogs.AlertAsync("Barra do editor", ex.Message); } Render(); };
+        rows.Add(Help("Desfazer e Refazer ficam sempre no começo. O menu “/” continua em Personalização/editor.json."));
+        return BlockWith("Barra de formatação", restore, [.. rows]);
     }
 
     // ---------------------------------------------------------------- toast

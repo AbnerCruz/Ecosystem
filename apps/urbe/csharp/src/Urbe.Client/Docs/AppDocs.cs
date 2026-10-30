@@ -386,7 +386,8 @@ public static partial class AppDocs
         - **Modelo por agente:** em Configurações → Nomes dos agentes → **Configurar**, você pode selecionar um provedor/modelo de conversa específico para qualquer agente (inclusive os prontos). Sem escolha, o agente herda o modelo normal do Assistente. Trocar de agente passa a trocar também o modelo efetivo, sem mudar o padrão salvo.
         - **Instruções por blocos:** no mesmo painel, adicione quantos blocos titulados precisar (ex.: Tom, Fontes, Procedimento), edite e remova. Esses blocos se somam às instruções gerais e às instruções existentes do agente, sem ampliar as permissões. Os ajustes são guardados só na configuração local do Assistente.
         - **Conversas anteriores**: cada agente consulta as próprias conversas deste vault (o pedido, a resposta, os arquivos alterados e, se precisar, a conversa inteira), por exemplo quando você diz "continue aquilo de ontem". Ele nunca vê as conversas de outro agente nem o que ficou oculto.
-        - **Consultar um especialista**: um agente pode pedir ajuda a outro agente seu, que trabalha na própria conversa, com o próprio modelo e permissões. Se o especialista precisar perguntar algo a você, pedir um formulário ou uma aprovação, o pedido aparece na conversa em que você está; a resposta vai para ele, e o trabalho continua sem trocar de conversa.
+        - **Permissões do agente** (somente leitura, com aprovação, automático): mudar para uma mais restrita enquanto ele trabalha já vale a partir da próxima ação; mudar para uma mais livre vale a partir da próxima resposta. O Urbe avisa qual dos dois aconteceu.
+        - **Consultar um especialista**: um agente pode pedir ajuda a outro agente seu, que trabalha na própria conversa, com o próprio modelo e permissões. Se o especialista precisar perguntar algo a você, pedir um formulário ou uma aprovação, o pedido aparece na conversa em que você está; a resposta vai para ele, e o trabalho continua sem trocar de conversa. Numa consulta, o especialista nunca tem menos aprovações que o agente que pediu: se ele está em automático e o que pediu não, as mudanças dele pedem a sua aprovação na conversa que pediu.
         - **Nomes dos agentes**: cada agente pode ter um nome seu, como Jarvis. Numa conversa, chame-o por um nome novo ("Jarvis, resuma esta nota") e ele pergunta se deve passar a se chamar assim. O nome fica só neste aparelho.
         - **Pedir dentro da nota**: escreva numa linha `&Jarvis&: dê uma sugestão de nome` (ou `&&:` para o agente padrão). A linha vira um cartão com **Pedir a Jarvis** (ou Ctrl+Enter nela); só ao tocar o pedido vai, numa conversa própria "Na nota …", com a nota como contexto. Uma mudança na nota aparece no lugar da linha, como sugestão, com **Aceitar** e **Recusar**; uma resposta em palavras abre o Assistente, com **Pôr na nota** para guardá-la como citação logo abaixo da linha. Essas linhas não aparecem nas páginas.
         - **Personalização/AGENTS.md** na sua pasta: instruções suas, lidas a cada conversa. Separe por modelo:
@@ -397,6 +398,8 @@ public static partial class AppDocs
         ```
 
         A parte **Geral** vale sempre; uma parte com nome vale quando todas as palavras do nome estão no modelo em uso. Títulos `## Claude 5` também funcionam.
+
+        **Quando instruções divergem**, vale a mais específica: o que você pede agora; depois o papel e os blocos do agente; depois o `AGENTS.md` (a parte do modelo antes da Geral); por último as orientações do Urbe. Segurança, permissões, aprovações e selos de autoria valem sempre, mesmo que uma instrução peça o contrário.
         """;
 
     private const string Plugins = """
@@ -484,6 +487,8 @@ public static partial class AppDocs
         **Abrir comandos** (Ctrl+K) lista tudo o que o Urbe faz: backups, painel dividido, restaurar versão, plugins e mais.
 
         **Seus atalhos:** Configurações → Atalhos lista todos e **Editar meus atalhos** abre `Personalização/atalhos.json`, por exemplo `"Mod+Shift+K": "ui.constellation"` (Mod é Ctrl). Um atalho seu vale por cima do padrão; `""` desliga um padrão. Os nomes dos comandos (como `ui.workspace`, `ui.sidebar.toggle`) aparecem no próprio arquivo de exemplo.
+
+        **A barra de formatação, pelo toque:** em **Personalização → Editor → Barra de formatação**, cada botão tem ↑ e ↓ para mudar de lugar e × para sair da barra; os que estão fora aparecem com +, e **Separador** cria um grupo. **Padrão** volta à barra original. Desfazer e Refazer ficam sempre no começo. A escolha vai para o mesmo `Personalização/editor.json`, sem mexer no menu `/`.
 
         **A barra do editor e o menu /:** Configurações → **Barra do editor e menu /** abre `Personalização/editor.json`, com a lista `barra` (os botões, na ordem; `|` separa) e a lista `menu` (os itens do `/`). Apague o que não usa, troque a ordem e salve.
 

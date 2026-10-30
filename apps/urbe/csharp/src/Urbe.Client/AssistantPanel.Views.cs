@@ -658,10 +658,24 @@ public sealed partial class AssistantPanel
             modes.Select(m => new DialogItem(m.Title, m.Icon, m.Detail)).ToArray());
         if (picked is not { } index || index < 0 || index >= modes.Length) return;
         _cfg.AgentToolScopes[agent.Id] = modes[index].Scope;
+        var was = _cfg.PolicyFor(agent.Id);
         _cfg.AgentPolicies[agent.Id] = modes[index].Policy;
         SaveConfig();
         EditAgentProfile(agent);
+        // CST-073: when the change counts, for a conversation of this agent that is working now
+        if (_activeConversations.Values.Any(c => c.AgentId == agent.Id) && was != modes[index].Policy)
+            await _app.Dialogs.AlertAsync("Permissões de " + AgentNames.CallName(agent, _cfg),
+                PermissionTiming(was, modes[index].Policy));
     }
+
+    /// <summary>What happens to a run already working when its agent's permission changes.</summary>
+    public static string PermissionTiming(string was, string now) =>
+        (was, now) switch
+        {
+            (_, "readonly") => "Já vale para a execução em andamento: a partir da próxima ação, o agente não altera mais nada.",
+            ("auto", "ask") => "Já vale para a execução em andamento: a próxima alteração pede a sua aprovação.",
+            _ => "A execução em andamento continua com as permissões de quando começou; as novas valem a partir da próxima resposta."
+        };
 
     private async Task PickDelegationAsync(AiAgentDef agent)
     {

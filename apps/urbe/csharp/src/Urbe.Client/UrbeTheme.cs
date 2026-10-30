@@ -211,6 +211,7 @@ public static class UrbeTheme
         public const string Redo = "M15 14l5-5-5-5 M20 9h-9a6 6 0 0 0 0 12";
         public const string Check = "M5 12.5l4.5 4.5L19 7.5";
         public const string ArrowUp = "M12 19V5M5.5 11.5L12 5l6.5 6.5";
+        public const string ArrowDown = "M12 5v14M5.5 12.5L12 19l6.5-6.5";
         public const string Edit = "M4.5 19.5h4l10-10-4-4-10 10z M13 7l4 4";
         public const string Layers = "M12 3.5l8.5 4.5-8.5 4.5L3.5 8z M3.5 12.5l8.5 4.5 8.5-4.5";
         public const string MapUi = "M9 4.5L3.5 6.5v13l5.5-2 6 2 5.5-2v-13l-5.5 2z M9 4.5v13M15 6.5v13";

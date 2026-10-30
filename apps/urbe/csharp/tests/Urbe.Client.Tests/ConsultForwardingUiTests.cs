@@ -192,4 +192,38 @@ public sealed partial class HeadlessUiTests
         }
         finally { window.Close(); UrbeApp.AssistantFolder = before; try { Directory.Delete(folder, true); Directory.Delete(vault, true); } catch (IOException) { } }
     }, CancellationToken.None));
+    [Fact]
+    public async Task Consult_ASpecialistOnAutoStillAsksWhenTheAskingAgentDoes() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        // CST-093: a consultation never removes the approvals of the agent that asked
+        var vault = Path.Combine(Path.GetTempPath(), "urbe-forward-vault-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(vault);
+        File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n\nTexto.\n");
+        var (view, window, panel, model, folder, before) = await TwoAgentsAsync("write", vault);
+        panel.Config.AgentPolicies["two"] = "auto";
+        try
+        {
+            model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"consult-1","function":{"name":"consult_agent","arguments":"{\"agent_id\":\"two\",\"task\":\"Acrescente uma linha\"}"}}]}}]}""",
+                """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
+            model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"w-1","function":{"name":"append_to_note","arguments":"{\"path\":\"Comece.md\",\"content\":\"Linha da revisora.\"}"}}]}}]}""",
+                """{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"""));
+            model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Linha acrescentada."}}]}""", """{"choices":[{"delta":{},"finish_reason":"stop"}]}"""));
+            model.Chats.Enqueue(Sse("""{"choices":[{"delta":{"content":"Feito pela revisora."}}]}""", """{"choices":[{"delta":{},"finish_reason":"stop"}]}"""));
+            panel.Send("Peça à revisora para acrescentar uma linha.");
+            var run = panel.CurrentRun!;
+            await WaitFor(window, view, () => view.Dialogs.IsOpen ? view.Dialogs : null);
+            ClickButtonWithText(view.Dialogs, "Iniciar consulta");
+            // the specialist is on auto, but the asking agent only reads: its write is asked for here, and nothing is written before
+            var card = await WaitFor(window, view, () => panel.Log.GetLogicalDescendants().OfType<Border>()
+                .FirstOrDefault(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Pedido de Revisora"));
+            Assert.DoesNotContain("revisora", File.ReadAllText(Path.Combine(vault, "Comece.md")));
+            ClickButtonWithText(card, "Aprovar");
+            await run;
+            await Settle(window, view);
+            Assert.Contains("Linha da revisora.", await ReadWhenWritten(Path.Combine(vault, "Comece.md"), t => t.Contains("revisora")));
+            Assert.Equal("end", panel.Conversation.Runs[^1].Stopped);
+            return true;
+        }
+        finally { window.Close(); UrbeApp.AssistantFolder = before; try { Directory.Delete(folder, true); Directory.Delete(vault, true); } catch (IOException) { } }
+    }, CancellationToken.None));
 }

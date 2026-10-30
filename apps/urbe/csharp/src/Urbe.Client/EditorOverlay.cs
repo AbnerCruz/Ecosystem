@@ -1484,6 +1484,16 @@ public sealed class EditorOverlay : Grid
     /// <summary>The names of the bar's buttons, in order ("|" a separator) — tests.</summary>
     public IReadOnlyList<string> ToolbarNames => [.. _markdownTools.Children.Select(c => c is Button b ? AutomationProperties.GetName(b) ?? "" : "|")];
 
+    /// <summary>The name of a button of the bar, as its tooltip says it (Personalização → Editor).</summary>
+    public static string ToolbarTitle(string id) => id switch
+    {
+        "undo" => "Desfazer",
+        "redo" => "Refazer",
+        "math" => "Fórmula",
+        "box" => "Caixa",
+        _ => LegacyEditorTools.Toolbar.FirstOrDefault(t => t.Id == id)?.Title ?? id
+    };
+
     /// <summary>The ids the bar knows.</summary>
     public static IReadOnlyCollection<string> ToolbarIds => [.. ToolbarOrder.Where(x => x != "|")];
 
