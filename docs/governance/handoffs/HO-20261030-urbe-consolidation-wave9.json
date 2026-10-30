@@ -158,7 +158,7 @@
     }
   ],
   "criticality": {
-    "declared": "routine",
-    "reason": "Projeção calculada sobre as notas; a única escrita é sem-tags pela ação explícita da pessoa no formulário, pelo caminho de gravação existente."
+    "declared": "critical",
+    "reason": "Aplica as consequências de DEC-0058: o ADR-0046 passa de Proposto a Aceito (zona de constituição da política de integração). O código das levas é rotina: projeções calculadas, relink pelo caminho conferido da leva 8 e guardas de aprovação que só restringem."
   }
 }
