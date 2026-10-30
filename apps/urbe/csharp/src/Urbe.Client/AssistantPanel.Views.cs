@@ -1018,6 +1018,12 @@ public sealed partial class AssistantPanel
         var search = new TextBox { PlaceholderText = "Pesquisar fatos, decisões, procedimentos ou fontes…",
             MinHeight = 44 };
         body.Children.Add(search);
+        // CST-085: which memories only this agent uses and which every agent shares
+        var agentId = _conv.AgentId;
+        var agentName = AgentNames.CallName(AssistantAgent.AgentById(agentId, _cfg.CustomAgents), _cfg);
+        string show = "all";
+        var filters = new WrapPanel { Orientation = Orientation.Horizontal };
+        body.Children.Add(filters);
         var list = new StackPanel { Spacing = 8 };
         body.Children.Add(list);
         var visibleRows = 80; // Only the UI page size; all memories remain searchable.
@@ -1036,7 +1042,15 @@ public sealed partial class AssistantPanel
                 })
                 : Array.Empty<AiMemoryRecord>());
             var term = AssistantMemoryEngine.Normalize(search.Text?.Trim());
-            var matching = entries.Concat(older).Where(m => term.Length == 0 ||
+            filters.Children.Clear();
+            foreach (var (key, title) in new[] { ("all", "Todas"), ("mine", "Privadas de " + agentName), ("shared", "Compartilhadas") })
+            {
+                var chip = TextButton(title, () => { show = key; visibleRows = 80; Refresh(); }, primary: show == key);
+                chip.Margin = new Thickness(0, 0, 6, 6);
+                filters.Children.Add(chip);
+            }
+            var matching = entries.Concat(older).Where(m => show == "all" || (show == "mine" ? m.Scope == "agent" && m.AgentId == agentId : m.Scope != "agent"))
+                .Where(m => term.Length == 0 ||
                 AssistantMemoryEngine.Normalize(m.Text + " " + m.Kind + " " +
                     m.SourceReference + " " + string.Join(" ", m.RelatedPaths)).Contains(term, StringComparison.Ordinal))
                 .ToArray();
@@ -1046,9 +1060,7 @@ public sealed partial class AssistantPanel
             if (filtered.Length == 0) list.Children.Add(Hint("Sem resultados. Você pode adicionar uma lembrança ou usar “lembre que…” no chat."));
             foreach (var m in filtered)
             {
-                var info = m.Kind + " · " + (m.Scope == "agent" ? "agente " + m.AgentId :
-                    m.Scope == "global" ? "geral" : "vault") +
-                    " · " + (m.State == "active" ? "ativa" : m.State);
+                var info = MemoryKindName(m.Kind) + " · " + MemoryWho(m) + (m.State == "active" ? "" : " · " + MemoryStateName(m.State));
                 var label = new StackPanel { Spacing = 4 };
                 label.Children.Add(Label(info, 11, UrbeTheme.Text3));
                 label.Children.Add(Wrap(m.Text, 13, UrbeTheme.Text));
@@ -1085,6 +1097,25 @@ public sealed partial class AssistantPanel
         search.TextChanged += (_, _) => { visibleRows = 80; Refresh(); };
         Refresh();
     }
+
+    /// <summary>Who can use a memory, in the person's words (CST-085).</summary>
+    private string MemoryWho(AiMemoryRecord m) => m.Scope switch
+    {
+        "agent" => "só " + AgentNames.CallName(AssistantAgent.AgentById(m.AgentId, _cfg.CustomAgents), _cfg) + " (privada)",
+        "global" => "compartilhada · todos os agentes, todos os vaults",
+        _ => "compartilhada · todos os agentes deste vault"
+    };
+
+    public static string MemoryKindName(string kind) => kind switch
+    {
+        "fact" => "Fato", "preference" => "Preferência", "decision" => "Decisão", "goal" => "Objetivo",
+        "procedure" => "Procedimento", "observation" => "Observação", "episode" => "Tarefa feita", _ => kind
+    };
+
+    public static string MemoryStateName(string state) => state switch
+    {
+        "disputed" => "em conflito", "superseded" => "substituída", "archived" => "arquivada", _ => state
+    };
 
     private async Task AddMemoryByHandAsync()
     {
