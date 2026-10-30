@@ -2081,7 +2081,7 @@
     },
     {
       "id": "DEC-0058",
-      "status": "pending",
+      "status": "decided",
       "component": "urbe",
       "blocking": false,
       "title": "Urbe: de onde vêm as tags herdadas por projeto (CST-042)",
@@ -2110,7 +2110,11 @@
         "https://github.com/AbnerCruz/Ecosystem/pull/853"
       ],
       "raisedBy": "claude-code",
-      "raisedAt": "2026-10-29"
+      "raisedAt": "2026-10-29",
+      "decision": "Alternativa A — A — Nota da pasta, herança calculada (recomendada) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/859).",
+      "decidedAt": "2026-10-30",
+      "record": "docs/governance/responses/DEC-0058.md",
+      "consequencesApplied": false
     },
     {
       "id": "DEC-0059",
