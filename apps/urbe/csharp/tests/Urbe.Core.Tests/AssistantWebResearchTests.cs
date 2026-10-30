@@ -326,4 +326,17 @@ public sealed class AssistantWebResearchTests
         Assert.Contains("https://example.org/data", messages.Last().Content[0].Text);
         Assert.Equal("página acessada", Assert.Single(web.Sources).Status);
     }
+    [Fact]
+    public void ResearchIsNotCutShortByHiddenDefaults()
+    {
+        // DEC-0059: the old hidden 12 searches / 20 reads per answer become the code's maximum, also in saved configurations
+        Assert.Equal(AiWebConfig.MostCalls, new AiWebConfig().MaxSearchCalls);
+        Assert.Equal(AiWebConfig.MostCalls, new AiWebConfig().MaxFetchCalls);
+        var saved = new JsonObject { ["web"] = new JsonObject { ["maxSearchCalls"] = 12, ["maxFetchCalls"] = 20 } };
+        var loaded = AssistantStore.ConfigFromJson(saved).Web;
+        Assert.Equal((AiWebConfig.MostCalls, AiWebConfig.MostCalls), (loaded.MaxSearchCalls, loaded.MaxFetchCalls));
+        // a value someone chose stays
+        var chosen = AssistantStore.ConfigFromJson(new JsonObject { ["web"] = new JsonObject { ["maxSearchCalls"] = 30, ["maxFetchCalls"] = 40 } }).Web;
+        Assert.Equal((30, 40), (chosen.MaxSearchCalls, chosen.MaxFetchCalls));
+    }
 }

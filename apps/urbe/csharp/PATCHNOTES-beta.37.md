@@ -41,6 +41,7 @@ Andamento item a item: `apps/urbe/docs/csharp/CONSOLIDATION.md`.
   - Um especialista em automático pede aprovação quando quem pediu a consulta também pede.
   - Mudar `Personalização/AGENTS.md` sempre pede a sua aprovação.
 - **Internet:**
+  - Pesquisas longas não param mais em 12 buscas e 20 páginas por resposta.
   - Uma página não consegue fazer o agente enviar trechos das suas notas.
   - Um endereço que você guardou numa nota abre normalmente.
 - **Ordem das instruções:** quando duas divergem, vale a mais específica. Segurança e aprovações valem sempre.

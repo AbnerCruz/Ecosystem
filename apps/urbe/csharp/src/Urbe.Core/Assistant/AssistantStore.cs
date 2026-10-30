@@ -446,8 +446,10 @@ public sealed class AssistantStore(IAssistantStorage storage)
             // search setting to keyless search; users with an actual Brave credential keep it.
             if (c.Web.Provider == "brave" && string.IsNullOrWhiteSpace(c.Web.ApiKey))
                 c.Web.Provider = "bing-rss";
-            c.Web.MaxSearchCalls = (int)Math.Clamp(w["maxSearchCalls"] is null ? 12 : Num(w["maxSearchCalls"]), 1, 100);
-            c.Web.MaxFetchCalls = (int)Math.Clamp(w["maxFetchCalls"] is null ? 20 : Num(w["maxFetchCalls"]), 1, 100);
+            // 12 and 20 were the old defaults, saved with every configuration though nobody chose them: they become the new one
+            static int Calls(JsonNode? n, int old) => n is null || Num(n) == old ? AiWebConfig.MostCalls : (int)Math.Clamp(Num(n), 1, AiWebConfig.MostCalls);
+            c.Web.MaxSearchCalls = Calls(w["maxSearchCalls"], 12);
+            c.Web.MaxFetchCalls = Calls(w["maxFetchCalls"], 20);
             c.Web.TimeoutSeconds = (int)Math.Clamp(w["timeoutSeconds"] is null ? 18 : Num(w["timeoutSeconds"]), 3, 60);
             c.Web.MaxDownloadBytes = (int)Math.Clamp(w["maxDownloadBytes"] is null ? 1_000_000 : Num(w["maxDownloadBytes"]), 10_000, 5_000_000);
             if (w["agentAccess"] is JsonObject grants)

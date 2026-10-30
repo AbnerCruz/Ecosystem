@@ -17,8 +17,11 @@ public sealed class AiWebConfig
     public bool Enabled { get; set; } = true;
     public string Provider { get; set; } = "bing-rss";
     public string ApiKey { get; set; } = "";
-    public int MaxSearchCalls { get; set; } = 12;
-    public int MaxFetchCalls { get; set; } = 20;
+    // DEC-0059: the most the code allows (100 each), as a guard against a run stuck in a loop, not a cap on research
+    // depth; they were 12 and 20, hidden, which cut short real research (nine verified news slides, for one)
+    public const int MostCalls = 100;
+    public int MaxSearchCalls { get; set; } = MostCalls;
+    public int MaxFetchCalls { get; set; } = MostCalls;
     public int TimeoutSeconds { get; set; } = 18;
     public int MaxDownloadBytes { get; set; } = 1_000_000;
     // Retained only for reading old configs; ordinary public research does not depend on agent IDs.
@@ -277,8 +280,8 @@ public sealed class AssistantWebSession : IDisposable
         RequireEnabled();
         _cancel.ThrowIfCancellationRequested();
         if (string.IsNullOrWhiteSpace(query)) throw new AiToolException("Informe os termos da pesquisa.");
-        if (_searchCalls >= Math.Clamp(_config.MaxSearchCalls, 1, 100))
-            throw new AiToolException("Proteção de uso: número máximo de pesquisas nesta execução. Inicie outra tarefa se precisar continuar.");
+        if (_searchCalls >= Math.Clamp(_config.MaxSearchCalls, 1, AiWebConfig.MostCalls))
+            throw new AiToolException("Esta resposta já fez " + _searchCalls + " pesquisas, o máximo de uma resposta (uma proteção contra ciclos). Responda com o que já foi encontrado, dizendo o que faltou; o usuário pode pedir para continuar numa nova mensagem.");
         if (_config.Provider != _search.Id) throw new AiToolException("Provedor de busca não suportado: " + _config.Provider);
         await ValidateDns(ValidateUrl(_search.Id == "brave"
             ? "https://api.search.brave.com/res/v1/web/search" : "https://www.bing.com/search?format=rss"));
@@ -310,8 +313,8 @@ public sealed class AssistantWebSession : IDisposable
     {
         RequireEnabled();
         _cancel.ThrowIfCancellationRequested();
-        if (_fetchCalls >= Math.Clamp(_config.MaxFetchCalls, 1, 100))
-            throw new AiToolException("Limite de leituras externas da execução atingido.");
+        if (_fetchCalls >= Math.Clamp(_config.MaxFetchCalls, 1, AiWebConfig.MostCalls))
+            throw new AiToolException("Esta resposta já abriu " + _fetchCalls + " páginas, o máximo de uma resposta (uma proteção contra ciclos). Responda com o que já foi lido, dizendo o que faltou; o usuário pode pedir para continuar numa nova mensagem.");
         _fetchCalls++;
         var initial = ValidateUrl(url);
         var current = initial;
