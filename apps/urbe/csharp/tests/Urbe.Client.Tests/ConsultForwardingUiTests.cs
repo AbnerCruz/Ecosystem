@@ -222,6 +222,9 @@ public sealed partial class HeadlessUiTests
             await Settle(window, view);
             Assert.Contains("Linha da revisora.", await ReadWhenWritten(Path.Combine(vault, "Comece.md"), t => t.Contains("revisora")));
             Assert.Equal("end", panel.Conversation.Runs[^1].Stopped);
+            // CST-092: the asking agent is told what the specialist changed in the vault
+            var consulted = panel.Conversation.Messages.SelectMany(m => m.Content).First(b => b.Type == "tool_result" && b.ToolUseId == "consult-1");
+            Assert.Contains("alterou Comece.md", consulted.Content);
             return true;
         }
         finally { window.Close(); UrbeApp.AssistantFolder = before; try { Directory.Delete(folder, true); Directory.Delete(vault, true); } catch (IOException) { } }

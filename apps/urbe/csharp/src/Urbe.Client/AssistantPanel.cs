@@ -1089,6 +1089,7 @@ public sealed partial class AssistantPanel : Border
             };
         }
         int lastExchangeStart = child.Messages.Count;
+        int runsBefore = child.Runs.Count;
         child.Messages.Add(new AiChatMessage
         {
             Id = AssistantAgent.NewId("m"), Role = "user", Content = [AiChatBlock.TextBlock(task)]
@@ -1137,7 +1138,10 @@ public sealed partial class AssistantPanel : Border
         return (generated.Count > 0 ? "Imagem guardada em " + generated[0] + ".\n" : "") +
             "Resposta de " + AgentNames.CallName(target, _cfg) + " (conversa separada " + child.Id + "):\n" +
             (summary.Length > 0 ? summary : "A consulta terminou sem uma resposta textual.") +
-            (generated.Count > 0 ? "\nArquivos gerados pelo especialista:\n" + string.Join("\n", generated) : "");
+            (generated.Count > 0 ? "\nArquivos gerados pelo especialista:\n" + string.Join("\n", generated) : "") +
+            (AssistantDelegateTools.DescribeChanges(child.Runs.Skip(runsBefore).SelectMany(r => r.Changes)) is { Count: > 0 } changed
+                ? "\nNo vault, o especialista " + string.Join("; ", changed) + ". Diga isso na sua resposta."
+                : "");
     }
 
     private Task<AiResult> StreamForUiAsync(AiProviderConfig provider, AiRequest request, Action<AiStreamEvent> update, CancellationToken cancel) =>
