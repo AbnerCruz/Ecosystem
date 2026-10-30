@@ -147,7 +147,8 @@
     "DEC-0059: qualquer tag filtra a Área de trabalho (+N tags), Abrir ao lado alcança qualquer nota pela busca, e capítulos de uma pasta não param em 200.",
     "CST-105 (parte): auditoria automática de áreas de toque nas telas principais; todos os botões visíveis com pelo menos 40 px (o Edição/Leitura tinha 17 px), com teste de regressão.",
     "CST-105 (parte): a auditoria de toque cobre também Personalização, configurações do Assistente e Páginas; teste de que todo botão visível tem nome para o leitor de tela (as abas já tinham, pelo texto; o commit 3abe417 disse o contrário por engano).",
-    "CST-105 (parte): texto3 de todos os temas prontos passa a 4,5:1 (WCAG AA) em todas as superfícies (era 2,5–3,9:1), com o mínimo de mudança e teste por tema."
+    "CST-105 (parte): texto3 de todos os temas prontos passa a 4,5:1 (WCAG AA) em todas as superfícies (era 2,5–3,9:1), com o mínimo de mudança e teste por tema.",
+    "CST-109 (parte): FeaturesCheck reconciliado com as entregas até a beta.37 e entregue ao proprietário (o arquivo é do vault dele; não entra no repositório)."
   ],
   "verification": [
     {
