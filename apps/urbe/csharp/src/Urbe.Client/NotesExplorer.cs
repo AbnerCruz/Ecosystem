@@ -797,7 +797,7 @@ public sealed class NotesExplorer : Border
         var more = new Button
         {
             Content = UrbeTheme.Icon(UrbeTheme.Icons.MoreUi, 18, UrbeTheme.Text3, 1.8),
-            Width = 36, Height = 36, Padding = new Thickness(0), CornerRadius = new CornerRadius(8),
+            Width = 44, Height = 44, Padding = new Thickness(0), CornerRadius = new CornerRadius(10),
             Background = Brushes.Transparent, BorderThickness = new Thickness(0),
             HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
         };
@@ -907,10 +907,10 @@ public sealed class NotesExplorer : Border
             var purge = new Button
             {
                 Content = UrbeTheme.Icon(UrbeTheme.Icons.CloseUi, 17, UrbeTheme.Text3, 1.8),
-                Width = 36,
-                Height = 36,
+                Width = 44,
+                Height = 44,
                 Padding = new Thickness(0),
-                CornerRadius = new CornerRadius(8),
+                CornerRadius = new CornerRadius(10),
                 Background = Brushes.Transparent,
                 BorderThickness = new Thickness(0),
                 HorizontalContentAlignment = HorizontalAlignment.Center,
@@ -975,7 +975,7 @@ public sealed class NotesExplorer : Border
                 new TextBlock { Text = label, FontSize = 13, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(color), VerticalAlignment = VerticalAlignment.Center }
             }
         },
-        MinHeight = 36,
+        MinHeight = 44,
         Padding = new Thickness(12, 0),
         CornerRadius = new CornerRadius(12),
         Background = UrbeTheme.Brush(UrbeTheme.Surface3),

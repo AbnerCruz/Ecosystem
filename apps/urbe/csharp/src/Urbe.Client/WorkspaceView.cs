@@ -289,7 +289,6 @@ public sealed class WorkspaceView : Grid
         AutomationProperties.SetName(order, "Ordem");
         _tools.Children.Add(order);
         var view = HeaderButton(_asList ? UrbeTheme.Icons.Region : UrbeTheme.Icons.List, _asList ? "Ver em grade" : "Ver em lista");
-        view.Width = view.Height = 36;
         view.Click += (_, _) => AsList = !_asList;
         _tools.Children.Add(view);
     }
@@ -299,7 +298,7 @@ public sealed class WorkspaceView : Grid
         var b = Ui.UrbeMotion.Pressable(new Button
         {
             Content = new TextBlock { Text = text, FontSize = 13, FontWeight = on ? FontWeight.SemiBold : FontWeight.Normal, Foreground = UrbeTheme.Brush(on ? UrbeTheme.AccentInk : UrbeTheme.Text2) },
-            Padding = new Thickness(12, 6), MinHeight = 34, CornerRadius = new CornerRadius(17), VerticalContentAlignment = VerticalAlignment.Center,
+            Padding = new Thickness(12, 6), MinHeight = 40, CornerRadius = new CornerRadius(20), VerticalContentAlignment = VerticalAlignment.Center,
             Background = on ? UrbeTheme.Brush(UrbeTheme.Accent) : UrbeTheme.Brush(UrbeTheme.Surface2), BorderBrush = UrbeTheme.Brush(on ? UrbeTheme.Accent : UrbeTheme.Line2), BorderThickness = new Thickness(1)
         });
         AutomationProperties.SetName(b, text);
@@ -646,6 +645,7 @@ public sealed class WorkspaceView : Grid
         var title = new StackPanel { Orientation = Orientation.Horizontal, Children = { icon, text } };
         if (!open) { row.Children.Add(title); return row; }
         var b = Plain(title);
+        b.MinHeight = 44;
         b.HorizontalAlignment = HorizontalAlignment.Stretch;
         b.HorizontalContentAlignment = HorizontalAlignment.Left;
         AutomationProperties.SetName(b, box.Name);
@@ -680,7 +680,7 @@ public sealed class WorkspaceView : Grid
                     new TextBlock { Text = box.Count.ToString(System.Globalization.CultureInfo.InvariantCulture), FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center }
                 }
             },
-            Padding = new Thickness(10, 6), Margin = new Thickness(0, 0, 6, 6), CornerRadius = new CornerRadius(10),
+            Padding = new Thickness(10, 6), MinHeight = 40, Margin = new Thickness(0, 0, 6, 6), CornerRadius = new CornerRadius(10),
             Background = UrbeTheme.Brush(hex, .08), BorderBrush = UrbeTheme.Brush(hex, .35), BorderThickness = new Thickness(1)
         });
         AutomationProperties.SetName(b, box.Name);

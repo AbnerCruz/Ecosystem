@@ -1434,7 +1434,7 @@ public sealed partial class AssistantPanel : Border
             var chip = new Button
             {
                 Content = Row(UrbeTheme.Icon(UrbeTheme.Icons.File, 14, _useOpen ? UrbeTheme.Accent : UrbeTheme.Text3), Label(path.Split('/')[^1] + (e.Selection is { Length: > 0 } ? " · seleção" : ""), 12, _useOpen ? UrbeTheme.Text : UrbeTheme.Text3)),
-                Padding = new Thickness(10, 4), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1),
+                Padding = new Thickness(10, 4), MinHeight = 40, CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1),
                 BorderBrush = UrbeTheme.Brush(_useOpen ? UrbeTheme.Accent : UrbeTheme.Line2), Background = _useOpen ? UrbeTheme.Brush(UrbeTheme.Accent, .12) : Brushes.Transparent
             };
             ToolTip.SetTip(chip, "Incluir a nota aberta no pedido");
