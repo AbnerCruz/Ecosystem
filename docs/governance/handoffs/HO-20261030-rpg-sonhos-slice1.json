@@ -13,7 +13,7 @@
   "branch": "feat/rpg-sonhos-slice1-20261030",
   "base_commit": "f2d67c4de77385e49c91cd73760ec468895e7799",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/863",
   "files_changed": [
     "apps/lunet2d/samples/rpg-dos-sonhos/Game.cs",
     "apps/lunet2d/samples/rpg-dos-sonhos/DreamWorld.cs",
@@ -22,12 +22,16 @@
     "apps/lunet2d/tests/Lunet.Tests/RpgSonhosSliceTests.cs",
     "apps/lunet2d/ROADMAP.md",
     "apps/lunet2d/CHANGELOG.md",
-    "apps/lunet2d/AgentsChat.md"
+    "apps/lunet2d/AgentsChat.md",
+    ".github/workflows/rpg-sonhos-ci.yml",
+    "apps/lunet2d/tools/ci-rpg-sonhos.sh",
+    "apps/lunet2d/runtime-template/StandaloneGameActivity.cs"
   ],
   "work_completed": [
     "Projeto Lunet exclusivo: coleta finita, produção por NPC, cura, pistas redundantes, ruína com combate anunciado, touch, pausa e SaveData.",
     "Testes escritos antes da implementação: commit 7cb9757411b3104754c7a3d3fcf35dd4bfc4284e.",
-    "README classifica requisitos/propostas/pendências e registra APIs confirmadas, aceites e instruções."
+    "README classifica requisitos/propostas/pendências e registra APIs confirmadas, aceites e instruções.",
+    "Emulador revelou OnPause perdido no host standalone; correção usa QueueEvent(PauseForBackground), como PreviewHost já faz. Smoke reforçado confere JSON privado e restore após force-stop."
   ],
   "verification": [
     {
@@ -48,14 +52,26 @@
       "result": "pending",
       "critical": false,
       "object": "apps/lunet2d/samples/rpg-dos-sonhos/README.md"
+    },
+    {
+      "check": "Lunet CI, 758 testes incluindo 6 cenários novos",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/41099224752",
+      "tested_commit": "960e62fe8ea0385247e2ec223cee87afaf2a9070"
+    },
+    {
+      "check": "Primeiro smoke Android 13",
+      "kind": "automated",
+      "result": "failed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/41099224603 — ARM64/x64 compilados, assinatura/alinhamento/instalação/boot passaram. Save no background falhou; corrigido antes de entregar."
     }
   ],
   "known_issues": [
     "Arte placeholder; batedor estático; região de rotas fixas com obstáculos por seed; não implementa sete portais, habilidades, anatomia, economia ampla ou multiplayer.",
     "Protótipo HTML e Caderno de Teste indisponível; nenhum playtest fornecido foi presumido.",
     "Seed, portrait, combate e recuo na derrota são decisões provisórias; sem política final de campanha.",
-    "Save incompatível/corrompido fica preservado e bloqueia escrita; recuperação/migração não implementadas.",
-    "APK do jogo ainda não gerado nesta sessão; CI headless não prova Android."
+    "Save incompatível/corrompido fica preservado e bloqueia escrita; recuperação/migração não implementadas."
   ],
   "blockers": [],
   "next_actions": [

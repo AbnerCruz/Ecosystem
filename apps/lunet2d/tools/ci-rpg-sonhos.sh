@@ -29,6 +29,8 @@ adb shell input keyevent KEYCODE_HOME
 sleep 2
 adb logcat -d > "$output/android-paused-logcat.txt"
 grep -Fq 'RPG: Estado gravado' "$output/android-paused-logcat.txt"
+adb shell run-as "$package" cat files/saves/rpg-slice-v1.sav > "$output/android-save.json"
+python3 -c 'import json,sys; s=json.load(open(sys.argv[1])); assert s["Version"]==1 and s["Seed"]==20261030 and s["Health"]==100' "$output/android-save.json"
 adb shell am start -W -n "$package/$activity"
 sleep 2
 adb exec-out screencap -p > "$output/android-resumed.png"
@@ -38,6 +40,7 @@ adb shell am start -W -n "$package/$activity"
 sleep 4
 adb logcat -d > "$output/android-restarted-logcat.txt"
 grep -Fq 'RPG:seed=20261030; slice=1; offline' "$output/android-restarted-logcat.txt"
+grep -Fq 'RPG:restore=loaded' "$output/android-restarted-logcat.txt"
 adb shell pidof "$package"
 adb exec-out screencap -p > "$output/android-restarted.png"
 adb shell am force-stop "$package"

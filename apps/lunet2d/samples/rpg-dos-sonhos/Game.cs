@@ -36,6 +36,7 @@ public sealed class RpgSonhosGame : Game
         if(saveBlocked) World.Message="Save inválido preservado. Sessão temporária; salvamento bloqueado.";
         World.Event+=message=>Log.Info("RPG: "+message);
         Log.Info("RPG:seed="+World.State.Seed+"; slice=1; offline");
+        Log.Info("RPG:restore="+(state!=null && !saveBlocked ? "loaded" : "new"));
     }
     private void SaveNow()
     {
@@ -100,7 +101,6 @@ public sealed class RpgSonhosGame : Game
     {
         GraphicsDevice.Clear(Color.FromHex(0x111c23));
         batch.Begin(sampler:SamplerState.PointClamp);
-        var camera=Camera;
         for(int y=0;y<DreamWorld.Size;y++) for(int x=0;x<DreamWorld.Size;x++)
         {
             var p=Screen(new Vector2(x*32,y*32));
@@ -133,10 +133,10 @@ public sealed class RpgSonhosGame : Game
         if(World.Slash>0) batch.Circle(Screen(World.Position),54,Color.FromHex(0xeace87),3);
         // Opaque HUD bands keep world geometry away from touch targets/text.
         Box(0,0,480,94,0x111c23); Box(0,500,480,300,0x111c23);
-        Text("RPG DOS SONHOS · FATIA 1",14,16,0xe9d4a5,1.5f);
+        Text("RPG DOS SONHOS - FATIA 1",14,16,0xe9d4a5,1.5f);
         Text("Vida "+World.State.Health+"   Frutos "+World.State.Berries+"   Provisões "+World.State.Meals,14,47,0xa9c1b4,1.5f);
-        Text("N ↑  |  "+World.CookGoal+"  |  seed "+World.State.Seed,14,75,0x9ba89e,1);
-        MessageLines(World.Message);
+        Text("NORTE  |  "+World.CookGoal+"  |  seed "+World.State.Seed,14,75,0x9ba89e,1);
+        MessageLines(saveBlocked ? "Save inválido preservado. Sessão temporária; gravação bloqueada." : World.Message);
         batch.Circle(stick.Center,55,Color.FromHex(0x66877f),3); batch.Circle(stick.Knob,19,Color.FromHex(0xc5d4be),3);
         Text("MOVER",77,770,0x9ba89e,1);
         Control(attack,"ATACAR",0xcf947f); Control(interact,"USAR",0x93bba2); Control(eat,"COMER",0xcbb984);

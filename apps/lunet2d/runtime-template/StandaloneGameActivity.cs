@@ -78,6 +78,9 @@ public sealed class StandaloneGameActivity : Activity
     protected override void OnPause()
     {
         _renderer?.SetAppPaused(true);
+        // Match PreviewHost: deliver Game.OnPause on GL before GLSurfaceView suspends it.
+        if (_surface is not null && _renderer is { } renderer)
+            _surface.QueueEvent(renderer.PauseForBackground);
         _surface?.OnPause();
         base.OnPause();
     }

@@ -6,6 +6,7 @@ on:
       - 'apps/lunet2d/samples/rpg-dos-sonhos/**'
       - 'apps/lunet2d/tests/Lunet.Tests/RpgSonhosSliceTests.cs'
       - 'apps/lunet2d/tools/ci-rpg-sonhos.sh'
+      - 'apps/lunet2d/runtime-template/**'
       - '.github/workflows/rpg-sonhos-ci.yml'
   workflow_dispatch:
 
