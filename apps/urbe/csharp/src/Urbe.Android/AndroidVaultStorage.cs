@@ -485,6 +485,33 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public bool CanShare => true;
+
+    public async Task<bool> ShareAsync(string path, CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (_tree is not { } tree) return false;
+            AndroidUri? uri;
+            try { uri = await Task.Run(() => FindDocument(tree, path), cancellationToken).ConfigureAwait(false); }
+            catch (InvalidDataException) { return false; }
+            if (uri is null) return false;
+            // the receiving app may read this one document only
+            var intent = new Intent(Intent.ActionSend);
+            intent.SetType(VaultFileKinds.Mime(path));
+            intent.PutExtra(Intent.ExtraStream, uri);
+            intent.PutExtra(Intent.ExtraTitle, path[(path.LastIndexOf('/') + 1)..]);
+            intent.AddFlags(ActivityFlags.GrantReadUriPermission);
+            var chooser = Intent.CreateChooser(intent, "Compartilhar")!;
+            chooser.AddFlags(ActivityFlags.NewTask | ActivityFlags.GrantReadUriPermission);
+            Android.App.Application.Context.StartActivity(chooser);
+            return true;
+        }
+        catch (Exception ex) when (ex is ActivityNotFoundException or Java.Lang.Exception) { return false; }
+        finally { _gate.Release(); }
+    }
+
     public async Task<bool> RemoveEmptyDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
         IUrbeVaultStorage.EnsureWritableFolderPath(path);

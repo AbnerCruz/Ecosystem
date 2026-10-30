@@ -15,6 +15,7 @@
 - **Barra de formatação pelo toque:** em Personalização → Editor você escolhe os botões e a ordem.
 - **Horário de cada bloco**, opcional, em Personalização → Editor.
 - **Ícone nas tags:** em Personalização → Tags, cada `#Tag:` pode ter um ícone antes do nome, além da cor.
+- **Compartilhar:** mande um arquivo ou uma nota para o WhatsApp, o e-mail ou o Drive, pelas ações do arquivo ou por Mais ações da nota.
 - **Código com cores** e prévia HTML ao vivo ao lado do código.
 - **Gráficos de funções** com parâmetros que você arrasta.
 - **Sem negrito ou itálico** onde ninguém os escreveu. A saída do editor ficou mais rápida.

@@ -23,6 +23,10 @@ public sealed partial class HeadlessUiTests
         public enum When { Before, After }
         private readonly Dictionary<string, When> _faults = new(StringComparer.Ordinal);
         public List<string> Calls { get; } = [];
+        // CST-036: a host that can share, recording what it was asked to send
+        public List<string> Shared { get; } = [];
+        public bool CanShare => true;
+        public Task<bool> ShareAsync(string path, CancellationToken c = default) { Shared.Add(path); return Task.FromResult(true); }
 
         public void Fail(string operation, When when = When.Before) => _faults[operation] = when;
 

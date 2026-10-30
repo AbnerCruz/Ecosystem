@@ -84,7 +84,12 @@
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantMemoryEngine.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantMemoryTools.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/MemoryStandingTests.cs",
-    "apps/urbe/csharp/tests/Urbe.Client.Tests/AgentPresetsUiTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AgentPresetsUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ShareUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/StorageFailureUiTests.cs"
   ],
   "work_completed": [
     "CST-042: tags herdadas por projeto conforme DEC-0058 alternativa A. As tags do frontmatter da nota da pasta (Droerni/Droerni.md) valem para tudo dentro da pasta e das subpastas (somadas de fora para dentro), calculadas pela localização em ProjectTags (Urbe.Core); nenhuma outra nota é escrita.",
@@ -110,7 +115,8 @@
     "CST-085: gerenciador de memória diz quais lembranças são privadas de cada agente e quais são compartilhadas, em português, com filtros.",
     "CST-088: cada lembrança diz se foi registrada pelo app, declarada pelo agente, dita pelo usuário ou verificada, na tela e no recall_memory.",
     "CST-071: agente criado de um modelo mantém as ferramentas do modelo (antes saía só de leitura) e começa pedindo aprovação; modelo com nome em uso recebe um nome livre.",
-    "CST-074: conferido por testes existentes; a exclusão de um agente agora diz e remove as lembranças privadas dele (antes ficavam órfãs), mantendo as compartilhadas."
+    "CST-074: conferido por testes existentes; a exclusão de um agente agora diz e remove as lembranças privadas dele (antes ficavam órfãs), mantendo as compartilhadas.",
+    "CST-036 (parte): Compartilhar arquivo ou nota com outro app pelo menu do Android (a nota é salva antes)."
   ],
   "verification": [
     {

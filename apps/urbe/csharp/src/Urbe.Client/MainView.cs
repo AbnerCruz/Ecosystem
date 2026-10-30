@@ -819,6 +819,12 @@ public sealed partial class MainView : Grid
             new DialogItem("Versões anteriores", UrbeTheme.Icons.Restore, Run: ShowVersionsAsync),
             new DialogItem("Conexões", UrbeTheme.Icons.Connections, "As notas que ela cita e as que a citam.", Run: () => { ShowEditorConnections(); return Task.CompletedTask; }),
             new DialogItem("Estrutura e backlinks", UrbeTheme.Icons.List, Run: () => { ShowEditorContext(); return Task.CompletedTask; }),
+            .. (_vault is { CanShare: true } ? [new DialogItem("Compartilhar", UrbeTheme.Icons.Share, "Enviar o arquivo da nota para outro app.", Run: async () =>
+            {
+                // what is shared is the file: the note is saved first
+                if (editor.HasChanges && !await editor.SaveAsync()) return;
+                if (!await _vault.ShareAsync(note.Path)) ShowLifeNotice("Não foi possível compartilhar esta nota.", Ui.ToastKind.Warning);
+            })] : Array.Empty<DialogItem>()),
             new DialogItem("Criar página daqui", UrbeTheme.Icons.Layers, "Uma página com esta nota.", Run: async () => { if (!editor.HasChanges || await editor.SaveAsync()) await CreatePageFromAsync(notePath: note.Path); }),
             // DEC-0045, UC-39: the selection (or the whole note) stays at the top while writing
             new DialogItem("Fixar em painel", UrbeTheme.Icons.Pin, "A seleção, ou a nota inteira, fica no topo enquanto você escreve.",

@@ -18,6 +18,7 @@ public sealed partial class MainView
         if (withView) items.Add(new DialogItem("Visualizar", UrbeTheme.Icons.Image, "A prévia dentro do Urbe.", Run: () => ShowFileAsync(path)));
         // #downloadPreviewBtn: a copy where the person chooses (only reads the vault)
         if (_vault is not null) items.Add(new DialogItem("Baixar arquivo", UrbeTheme.Icons.Download, "Uma cópia onde você escolher.", Run: () => DownloadFileAsync(path)));
+        if (_vault is { CanShare: true }) items.Add(ShareItem(path));
         if (!VaultWritable) return items.Count > 0 ? Dialogs.MenuAsync(name, items) : Dialogs.AlertAsync(name, NoVaultMessage);
         // CST-058: a recording (a class, a meeting) into a note to review, where the device can transcribe
         if (CanTranscribe(path))
@@ -139,4 +140,10 @@ public sealed partial class MainView
         RefreshNotes();
         ShowLifeNotice("Arquivo excluído.");
     }
+    /// <summary>CST-036: "Compartilhar" a file of the vault with another app (WhatsApp, e-mail…), where the device can.</summary>
+    private DialogItem ShareItem(string path) =>
+        new("Compartilhar", UrbeTheme.Icons.Share, "Enviar para outro app, como WhatsApp ou e-mail.", Run: async () =>
+        {
+            if (_vault is not { } vault || !await vault.ShareAsync(path)) ShowLifeNotice("Não foi possível compartilhar este arquivo.", Ui.ToastKind.Warning);
+        });
 }
