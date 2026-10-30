@@ -114,20 +114,28 @@ public sealed class LegacyCustomizeThemeOracleTests
             var pal = LegacyCustomizeTheme.PaletteOf(config, Saved);
             var ep = e.GetProperty("palette");
             Assert.True(ep.GetProperty("claro").GetBoolean() == pal.Light, at + " claro");
-            var ec = ep.GetProperty("cores").EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString());
+            var ec = ep.GetProperty("cores").EnumerateObject().ToDictionary(p => p.Name, p => NativeContrast.Native(p.Value.GetString()));
             Assert.Equal(ec.OrderBy(k => k.Key).Select(k => k.Key + k.Value), pal.Colors.OrderBy(k => k.Key).Select(k => k.Key + k.Value));
 
             // variaveis
             var vars = LegacyCustomizeTheme.VariablesOf(config, Saved);
             var ev = e.GetProperty("variables");
-            Assert.Equal(ev.GetProperty("vars").EnumerateObject().Select(p => p.Name + "=" + p.Value.GetString()), vars.Vars.Select(p => p.Key + "=" + p.Value));
+            // --ui-accent-hover is a mix computed from the accent: where a light theme's accent was deepened for contrast it
+            // is the native accent's mix, which no replacement of the original's text can give
+            var expectedVars = ev.GetProperty("vars").EnumerateObject().Select(p => (p.Name, Value: NativeContrast.Native(p.Value.GetString()))).ToList();
+            Assert.Equal(expectedVars.Select(p => p.Name), vars.Vars.Select(p => p.Key));
+            bool accentChanged = NativeContrast.Changed(ep.GetProperty("cores").TryGetProperty("destaque", out var originalAccent) ? originalAccent.GetString() : null);
+            var nativeVars = vars.Vars.ToDictionary(p => p.Key, p => p.Value);
+            foreach (var (name, value) in expectedVars)
+                if (!(accentChanged && name == "--ui-accent-hover"))
+                    Assert.Equal(name + "=" + value, name + "=" + nativeVars[name]);
             Assert.Equal(ev.GetProperty("attrs").EnumerateObject().Select(p => p.Name + "=" + p.Value.GetString()).OrderBy(x => x), vars.Attrs.Select(p => p.Key + "=" + p.Value).OrderBy(x => x));
             Assert.Equal(ev.GetProperty("claro").GetBoolean(), vars.Light);
             Assert.Equal(ev.GetProperty("fundo").GetString(), vars.Background);
 
             var (themePath, themeText) = LegacyCustomizeTheme.ThemeFile(config, "Tema \"x\"/y é", Saved);
             Assert.Equal(e.GetProperty("savedTheme").GetProperty("path").GetString(), themePath);
-            Assert.Equal(e.GetProperty("savedTheme").GetProperty("content").GetString(), themeText);
+            Assert.Equal(NativeContrast.Native(e.GetProperty("savedTheme").GetProperty("content").GetString()), themeText);
         }
     }
 
@@ -135,4 +143,49 @@ public sealed class LegacyCustomizeThemeOracleTests
     {
         try { return f(); } catch (JsonException) { return null; }
     }
+}
+
+/// <summary>
+/// CST-105 / DEC-0059: the 1.8.4's texto3 of each ready-made theme (2.5–3.9:1), and the coloured texts of the light ones
+/// (destaque, perigo, sucesso, aviso: 2.95–4.16:1), read at WCAG AA in the native app
+/// (ThemeContrastTests). The oracle's output becomes the native one with exactly these replacements; nothing else may drift.
+/// </summary>
+internal static class NativeContrast
+{
+    private static readonly (string Original, string Native)[] Colours =
+    [
+        ("#6d7079", "#898c95"),
+        ("#6c7d69", "#879883"),
+        ("#62818a", "#7b9aa2"),
+        ("#86686f", "#9f8288"),
+        ("#8a8d97", "#656872"),
+        ("#9a876d", "#6e5e4a"),
+        ("#6b6f96", "#868aaf"),
+        ("#3b6fe0", "#3563c7"),
+        ("#d23a4b", "#bf3544"),
+        ("#1e9a5a", "#177846"),
+        ("#b77a09", "#8f5f07"),
+        ("#a0582a", "#904f26"),
+        ("#b8382e", "#af352c"),
+        ("#4f7d3a", "#436a31"),
+        ("#a36f12", "#81580e")
+    ];
+
+    /// <summary>Whether this colour of the original is one the native app changed.</summary>
+    public static bool Changed(string? original) => original is not null && Colours.Any(c => string.Equals(c.Original, original, StringComparison.OrdinalIgnoreCase));
+
+    public static string? Native(string? value)
+    {
+        if (value is null) return null;
+        foreach (var (from, to) in Colours)
+        {
+            value = value.Replace(from, to, StringComparison.OrdinalIgnoreCase);
+            // the same colour written as r,g,b (the *-soft and *-rgb variables)
+            value = value.Replace(Rgb(from), Rgb(to), StringComparison.Ordinal).Replace(Rgb(from, ", "), Rgb(to, ", "), StringComparison.Ordinal);
+        }
+        return value;
+    }
+
+    private static string Rgb(string hex, string separator = ",") =>
+        string.Join(separator, Enumerable.Range(0, 3).Select(i => Convert.ToInt32(hex.Substring(1 + 2 * i, 2), 16)));
 }

@@ -165,6 +165,15 @@ public interface IUrbeVaultStorage
     /// </summary>
     Task<bool> OpenExternallyAsync(string path, CancellationToken cancellationToken = default) => Task.FromResult(false);
 
+    /// <summary>Whether this host can hand a file to another app (the Android share sheet); the action only shows where it can.</summary>
+    bool CanShare => false;
+
+    /// <summary>
+    /// Sends one file of the vault to another app (WhatsApp, e-mail, Drive…) through the system's share sheet, with read
+    /// access to that file only. Nothing is written. False when the host cannot or the file is not there.
+    /// </summary>
+    Task<bool> ShareAsync(string path, CancellationToken cancellationToken = default) => Task.FromResult(false);
+
     /// <summary>Removes ONE user folder when it is empty (the 1.8.4 sync's FS.apagarPasta after a folder is deleted in
     /// Notas: removeEntry of a folder that still holds anything fails and is ignored). A folder holding any entry, a
     /// link, a file with that name or a missing folder is left as it is and false returned; nothing else is touched.</summary>

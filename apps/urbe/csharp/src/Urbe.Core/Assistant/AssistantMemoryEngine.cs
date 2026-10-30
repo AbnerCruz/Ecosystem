@@ -457,6 +457,20 @@ public static class AssistantMemoryEngine
             "run", "run:" + runId, names, 50, false, timestamp);
     }
 
+    /// <summary>
+    /// CST-088: what a memory is worth, apart: what the app recorded happening (a task that changed files), what an
+    /// agent declared, what the person said, and what was checked. Shown to the person and to the agent that recalls it.
+    /// </summary>
+    public static string Standing(AiMemoryRecord m) =>
+        m.Verified ? "verificada"
+        : m.Origin switch
+        {
+            "run" => "registrada pelo app; o resultado não foi conferido",
+            "agent" => "declarada pelo agente; não conferida",
+            "user" or "legacy" => "dita pelo usuário",
+            _ => "não conferida"
+        };
+
     /// <summary>Resolve an old UI memory identity before migrating, then use canonical IDs.</summary>
     public static AiMemoryRecord? ResolveForEdit(AiConfig cfg, string id)
     {

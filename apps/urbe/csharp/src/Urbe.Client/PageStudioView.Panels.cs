@@ -256,7 +256,7 @@ public sealed partial class PageStudioView
             var list = (JsonArray)s["sections"]!;
             int i = st.IndexOf(id);
             list.RemoveAt(i);
-            foreach (var d in notes.Take(200).Reverse())
+            foreach (var d in Enumerable.Reverse(notes))   // every note of the folder (it stopped at 200, silently; DEC-0059)
                 list.Insert(i, st.Engine.NewSection("chapter", new JsonObject { ["title"] = d.Title, ["source"] = "note", ["path"] = d.Path, ["dropCap"] = dropCap?.DeepClone() }));
         });
         st.Select(null);

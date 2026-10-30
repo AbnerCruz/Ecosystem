@@ -436,7 +436,23 @@ public sealed class SearchFeature
 
     public void OpenPalette() { QuickOpen.Close(); Palette.Open(); }
 
-    private void OpenNote(string path) => _view.OpenNoteByPath(path);
+    private Action<string>? _pick;
+
+    /// <summary>The quick search used to choose a note for something else (the split view): the chosen note goes to
+    /// <paramref name="chosen"/> instead of opening, once; closing the search without choosing does nothing.</summary>
+    public void PickNote(Action<string> chosen)
+    {
+        _pick = chosen;
+        void Reset() { QuickOpen.Closed -= Reset; Dispatcher.UIThread.Post(() => _pick = null); }
+        QuickOpen.Closed += Reset;
+        OpenQuickOpen();
+    }
+
+    private void OpenNote(string path)
+    {
+        if (_pick is { } pick) { _pick = null; pick(path); return; }
+        _view.OpenNoteByPath(path);
+    }
 
     private async Task CreateOrOpenAsync(string path)
     {

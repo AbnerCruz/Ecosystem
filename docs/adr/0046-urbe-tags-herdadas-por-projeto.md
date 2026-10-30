@@ -2,9 +2,7 @@
 
 ## Status
 
-Proposto
-
-Aguarda a decisão do proprietário em DEC-0058. O número 0045 fica reservado para a proposta de documentos computacionais citada na consolidação Numa (UC-92).
+Aceito — DEC-0058, alternativa A, escolhida pelo proprietário no portal em 30/10/2026 ([Issue #859](https://github.com/AbnerCruz/Ecosystem/issues/859), [resposta](../governance/responses/DEC-0058.md)). O número 0045 fica reservado para a proposta de documentos computacionais citada na consolidação Numa (UC-92).
 
 ## Contexto
 
@@ -31,7 +29,16 @@ Onde as tags de um projeto ficam e como elas chegam às notas sem duas autoridad
 
 ## Decisão
 
-Pendente (DEC-0058). Recomendação: opção 1.
+Opção 1: herança calculada a partir da nota da pasta (DEC-0058, alternativa A). O contrato implementado:
+
+- **Nota da pasta:** a nota com o nome da pasta, dentro dela (`Droerni/Droerni.md`). Só as tags do **frontmatter** dela valem para o projeto (`tags: [a, b]` ou uma por linha com `-`); um `#tag` no corpo da nota da pasta é só dela. Se duas notas têm o nome da pasta (extensões diferentes), vale a de caminho mais curto, como na resolução de links.
+- **Alcance:** tudo o que está na pasta e nas subpastas. Subpastas somam as tags das próprias notas de pasta, de fora para dentro. A nota da pasta não herda de si mesma, só das pastas acima.
+- **Sobrescrita e remoção:** `herdar: false` recusa toda a herança; `sem-tags: [worldbuilding]` (lista, uma por linha, ou texto) recusa algumas. Uma tag que a nota já tem é dela, não aparece como herdada.
+- **Movimento:** o índice recalcula a herança pela localização a cada mudança do vault; mover, renomear ou mudar a nota da pasta não escreve em nenhuma outra nota.
+- **Consulta e interface:** `find_by_tag`, `read_note` e `get_links` do Assistente, os filtros por tag da Área de trabalho e as consultas por tag das páginas usam as tags próprias e as herdadas. O formulário de propriedades mostra **herdadas**, cada uma com a origem (`#worldbuilding` de Droerni); o × dela escreve `sem-tags` na nota (reversível).
+- **Autoridade:** a nota da pasta. `ProjectTags` (`Urbe.Core`) é a projeção calculada, sem cache persistido.
+
+Propriedades herdadas (além das tags) ficam para uma segunda fatia, depois da validação das tags no aparelho.
 
 ## Consequências
 
@@ -39,7 +46,8 @@ Com a opção 1, a implementação fica no `Urbe.Core`: o índice de tags ganha 
 
 ## Alternativas rejeitadas
 
-Nenhuma até a decisão.
+- **Copiar as tags para cada nota (opção 2):** reescreveria o frontmatter das notas ao criar e mover, e a remoção ao sair do projeto poderia apagar uma tag escrita pela pessoa.
+- **Tags no `.urbe/area.json` (opção 3):** não são portáteis e misturariam conteúdo com a aparência das caixas (DEC-0053).
 
 ## Referências
 

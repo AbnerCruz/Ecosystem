@@ -421,7 +421,8 @@ public sealed partial class AssistantPanel
         return output;
     }
 
-    private static Control Diff(string? before, string? after)
+    /// <summary>The approval card's view of a change: lines added and removed with a little context around them.</summary>
+    public static Control Diff(string? before, string? after)
     {
         var x = before is null ? [] : before.Split('\n');
         var y = after is null ? [] : after.Split('\n');
@@ -431,28 +432,37 @@ public sealed partial class AssistantPanel
             if (ops[i].Op != ' ')
                 for (int k = Math.Max(0, i - 2); k <= Math.Min(ops.Count - 1, i + 2); k++) keep[k] = true;
         var lines = new StackPanel();
-        bool gap = false;
-        int shown = 0;
-        const int Max = 160;
-        for (int i = 0; i < ops.Count && shown < Max; i++)
+        // DEC-0059: everything that is going to be approved can be seen; it comes 160 lines at a time
+        int limit = 160;
+        void Paint()
         {
-            if (!keep[i])
+            lines.Children.Clear();
+            bool gap = false;
+            int shown = 0;
+            int i = 0;
+            for (; i < ops.Count && shown < limit; i++)
             {
-                if (!gap) lines.Children.Add(Label("⋯", 12, UrbeTheme.Text3));
-                gap = true;
-                continue;
+                if (!keep[i])
+                {
+                    if (!gap) lines.Children.Add(Label("⋯", 12, UrbeTheme.Text3));
+                    gap = true;
+                    continue;
+                }
+                gap = false;
+                shown++;
+                var (op, line) = ops[i];
+                lines.Children.Add(new Border
+                {
+                    Background = op == '+' ? UrbeTheme.Brush("#3a9a5b", .16) : op == '-' ? UrbeTheme.Brush("#c0504d", .16) : Brushes.Transparent,
+                    Padding = new Thickness(4, 1),
+                    Child = new TextBlock { Text = op + " " + (line.Length > 0 ? line : " "), FontFamily = UrbeTheme.MonoFont, FontSize = 12, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text) }
+                });
             }
-            gap = false;
-            shown++;
-            var (op, line) = ops[i];
-            lines.Children.Add(new Border
-            {
-                Background = op == '+' ? UrbeTheme.Brush("#3a9a5b", .16) : op == '-' ? UrbeTheme.Brush("#c0504d", .16) : Brushes.Transparent,
-                Padding = new Thickness(4, 1),
-                Child = new TextBlock { Text = op + " " + (line.Length > 0 ? line : " "), FontFamily = UrbeTheme.MonoFont, FontSize = 12, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text) }
-            });
+            int left = 0;
+            for (int k = i; k < ops.Count; k++) if (keep[k]) left++;
+            if (left > 0) lines.Children.Add(TextButton("Mostrar mais (" + left + " linhas)", () => { limit += 160; Paint(); }));
         }
-        if (shown >= Max) lines.Children.Add(Label("… mais linhas", 12, UrbeTheme.Text3));
+        Paint();
         int add = ops.Count(o => o.Op == '+'), del = ops.Count(o => o.Op == '-');
         return new StackPanel
         {
@@ -622,10 +632,13 @@ public sealed partial class AssistantPanel
         Persist();
         _agentDrafts[_conv.AgentId] = (_input.Text ?? "", _pendingAttachments.ToList());
         var draft = _agentDrafts.GetValueOrDefault(agentId);
+        _restoringDraft = true;
         _input.Text = draft.Text ?? "";
         _pendingAttachments.Clear();
         if (draft.Attachments is not null) _pendingAttachments.AddRange(draft.Attachments);
         RefreshAttachments();
+        _restoringDraft = false;
+        SaveDrafts();
         _cfg.AgentId = agentId;
         _conv = NewConversation(); // Opening an agent starts a fresh chat; old conversations remain in its history.
         SyncActiveConversation();
@@ -658,10 +671,24 @@ public sealed partial class AssistantPanel
             modes.Select(m => new DialogItem(m.Title, m.Icon, m.Detail)).ToArray());
         if (picked is not { } index || index < 0 || index >= modes.Length) return;
         _cfg.AgentToolScopes[agent.Id] = modes[index].Scope;
+        var was = _cfg.PolicyFor(agent.Id);
         _cfg.AgentPolicies[agent.Id] = modes[index].Policy;
         SaveConfig();
         EditAgentProfile(agent);
+        // CST-073: when the change counts, for a conversation of this agent that is working now
+        if (_activeConversations.Values.Any(c => c.AgentId == agent.Id) && was != modes[index].Policy)
+            await _app.Dialogs.AlertAsync("Permissões de " + AgentNames.CallName(agent, _cfg),
+                PermissionTiming(was, modes[index].Policy));
     }
+
+    /// <summary>What happens to a run already working when its agent's permission changes.</summary>
+    public static string PermissionTiming(string was, string now) =>
+        (was, now) switch
+        {
+            (_, "readonly") => "Já vale para a execução em andamento: a partir da próxima ação, o agente não altera mais nada.",
+            ("auto", "ask") => "Já vale para a execução em andamento: a próxima alteração pede a sua aprovação.",
+            _ => "A execução em andamento continua com as permissões de quando começou; as novas valem a partir da próxima resposta."
+        };
 
     private async Task PickDelegationAsync(AiAgentDef agent)
     {
@@ -684,8 +711,11 @@ public sealed partial class AssistantPanel
         if (_activeConversations.Values.Any(c => c.AgentId == agent.Id))
         { await _app.Dialogs.AlertAsync("Agente trabalhando", "Interrompa as conversas ativas deste agente antes de excluí-lo."); return; }
         var count = _store.ListConversations().Count(c => c.AgentId == agent.Id);
+        // CST-074: its private memories go with it (no other agent can use them), and the person is told so
+        var memories = _cfg.MemoryRecords.Count(m => m.Scope == "agent" && m.AgentId == agent.Id);
         if (!await _app.Dialogs.ConfirmAsync("Excluir " + AgentNames.CallName(agent, _cfg) + "?",
-            "O agente e suas " + count + " conversa(s) em todos os vaults serão excluídos permanentemente. Esta ação não pode ser desfeita.",
+            "O agente, suas " + count + " conversa(s) em todos os vaults" + (memories > 0 ? " e suas " + memories + " lembrança(s) privada(s)" : "") +
+            " serão excluídos permanentemente. As lembranças compartilhadas e as notas ficam. Esta ação não pode ser desfeita.",
             "Excluir agente e histórico", danger: true)) return;
         try
         {
@@ -698,7 +728,9 @@ public sealed partial class AssistantPanel
             _cfg.AgentDelegationAuto.Remove(agent.Id);
             _cfg.AgentInstructionBlocks.Remove(agent.Id);
             _cfg.AgentNames.Remove(agent.Id);
+            _cfg.MemoryRecords.RemoveAll(m => m.Scope == "agent" && m.AgentId == agent.Id);
             _agentDrafts.Remove(agent.Id);
+            SaveDrafts();
             if (_cfg.AgentId == agent.Id)
             {
                 _cfg.AgentId = "geral";
@@ -709,7 +741,7 @@ public sealed partial class AssistantPanel
             SaveConfig();
             ShowSettings();
             RenderChrome();
-            _app.Notify("Agente e " + count + " conversa(s) excluídos.");
+            _app.Notify("Agente, " + count + " conversa(s)" + (memories > 0 ? " e " + memories + " lembrança(s) privada(s)" : "") + " excluídos.");
         }
         catch (IOException e)
         {
@@ -1000,6 +1032,12 @@ public sealed partial class AssistantPanel
         var search = new TextBox { PlaceholderText = "Pesquisar fatos, decisões, procedimentos ou fontes…",
             MinHeight = 44 };
         body.Children.Add(search);
+        // CST-085: which memories only this agent uses and which every agent shares
+        var agentId = _conv.AgentId;
+        var agentName = AgentNames.CallName(AssistantAgent.AgentById(agentId, _cfg.CustomAgents), _cfg);
+        string show = "all";
+        var filters = new WrapPanel { Orientation = Orientation.Horizontal };
+        body.Children.Add(filters);
         var list = new StackPanel { Spacing = 8 };
         body.Children.Add(list);
         var visibleRows = 80; // Only the UI page size; all memories remain searchable.
@@ -1018,7 +1056,15 @@ public sealed partial class AssistantPanel
                 })
                 : Array.Empty<AiMemoryRecord>());
             var term = AssistantMemoryEngine.Normalize(search.Text?.Trim());
-            var matching = entries.Concat(older).Where(m => term.Length == 0 ||
+            filters.Children.Clear();
+            foreach (var (key, title) in new[] { ("all", "Todas"), ("mine", "Privadas de " + agentName), ("shared", "Compartilhadas") })
+            {
+                var chip = TextButton(title, () => { show = key; visibleRows = 80; Refresh(); }, primary: show == key);
+                chip.Margin = new Thickness(0, 0, 6, 6);
+                filters.Children.Add(chip);
+            }
+            var matching = entries.Concat(older).Where(m => show == "all" || (show == "mine" ? m.Scope == "agent" && m.AgentId == agentId : m.Scope != "agent"))
+                .Where(m => term.Length == 0 ||
                 AssistantMemoryEngine.Normalize(m.Text + " " + m.Kind + " " +
                     m.SourceReference + " " + string.Join(" ", m.RelatedPaths)).Contains(term, StringComparison.Ordinal))
                 .ToArray();
@@ -1028,9 +1074,8 @@ public sealed partial class AssistantPanel
             if (filtered.Length == 0) list.Children.Add(Hint("Sem resultados. Você pode adicionar uma lembrança ou usar “lembre que…” no chat."));
             foreach (var m in filtered)
             {
-                var info = m.Kind + " · " + (m.Scope == "agent" ? "agente " + m.AgentId :
-                    m.Scope == "global" ? "geral" : "vault") +
-                    " · " + (m.State == "active" ? "ativa" : m.State);
+                var info = MemoryKindName(m.Kind) + " · " + MemoryWho(m) + (m.State == "active" ? "" : " · " + MemoryStateName(m.State)) +
+                    " · " + AssistantMemoryEngine.Standing(m);
                 var label = new StackPanel { Spacing = 4 };
                 label.Children.Add(Label(info, 11, UrbeTheme.Text3));
                 label.Children.Add(Wrap(m.Text, 13, UrbeTheme.Text));
@@ -1067,6 +1112,33 @@ public sealed partial class AssistantPanel
         search.TextChanged += (_, _) => { visibleRows = 80; Refresh(); };
         Refresh();
     }
+
+    /// <summary>The name, or the name with the first free number after it, among the agents' names.</summary>
+    private string FreeAgentName(string name)
+    {
+        if (AgentNames.Problem(name, "", _cfg) is null) return name;
+        for (int i = 2; ; i++)
+            if (AgentNames.Problem(name + " " + i, "", _cfg) is null) return name + " " + i;
+    }
+
+    /// <summary>Who can use a memory, in the person's words (CST-085).</summary>
+    private string MemoryWho(AiMemoryRecord m) => m.Scope switch
+    {
+        "agent" => "só " + AgentNames.CallName(AssistantAgent.AgentById(m.AgentId, _cfg.CustomAgents), _cfg) + " (privada)",
+        "global" => "compartilhada · todos os agentes, todos os vaults",
+        _ => "compartilhada · todos os agentes deste vault"
+    };
+
+    public static string MemoryKindName(string kind) => kind switch
+    {
+        "fact" => "Fato", "preference" => "Preferência", "decision" => "Decisão", "goal" => "Objetivo",
+        "procedure" => "Procedimento", "observation" => "Observação", "episode" => "Tarefa feita", _ => kind
+    };
+
+    public static string MemoryStateName(string state) => state switch
+    {
+        "disputed" => "em conflito", "superseded" => "substituída", "archived" => "arquivada", _ => state
+    };
 
     private async Task AddMemoryByHandAsync()
     {
@@ -1285,15 +1357,18 @@ public sealed partial class AssistantPanel
         var body = OpenView(isNew ? "Novo agente" : a!.Name, () => ShowSettings());
         var name = new TextBox { Text = a?.Name ?? "", PlaceholderText = "Ex.: Revisor acadêmico" };
         var prompt = new TextBox { Text = a?.Prompt ?? "", AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 140, PlaceholderText = "Como este agente deve pensar e trabalhar." };
+        AiAgentDef? chosen = null;   // the preset the new agent starts from (its tools come with it)
         if (isNew)
         {
             var templates = new ComboBox { ItemsSource = new[] { "Em branco" }.Concat(AssistantAgent.Agents.Skip(1).Select(t => t.Name)).ToList(), SelectedIndex = 0 };
+            Avalonia.Automation.AutomationProperties.SetName(templates, "Modelo de agente");
             templates.SelectionChanged += (_, _) =>
             {
-                if (templates.SelectedIndex <= 0) { prompt.Text = ""; return; }
-                var template = AssistantAgent.Agents[templates.SelectedIndex];
-                name.Text = template.Name;
-                prompt.Text = template.Prompt;
+                if (templates.SelectedIndex <= 0) { chosen = null; prompt.Text = ""; return; }
+                chosen = AssistantAgent.Agents[templates.SelectedIndex];
+                // CST-071: a preset already in use gets a free name ("Pesquisador 2"), not an error on Salvar
+                name.Text = FreeAgentName(chosen.Name);
+                prompt.Text = chosen.Prompt;
             };
             body.Children.Add(Section("Modelo de agente", templates));
         }
@@ -1309,10 +1384,17 @@ public sealed partial class AssistantPanel
             if (n.Length == 0) return;
             if (AgentNames.Problem(n, a?.Id ?? "", _cfg) is { } problem) { _app.Notify(problem); return; }
             var p = (prompt.Text ?? "").Trim();
-            var t = a?.Tools ?? "read";
-            var made = new AiAgentDef(a?.Id ?? AssistantAgent.NewId("a"), n, t == "read" ? "search" : "sparkle", p.Length > 80 ? p[..80] : p, t, t == "all", p);
+            // CST-071: a preset keeps its tools (Escritor writes, Organizador organizes); it was always made read-only
+            var t = a?.Tools ?? chosen?.Tools ?? "read";
+            var made = new AiAgentDef(a?.Id ?? AssistantAgent.NewId("a"), n, chosen?.Icon ?? (t == "read" ? "search" : "sparkle"), p.Length > 80 ? p[..80] : p, t, t == "all", p);
             int at = _cfg.CustomAgents.FindIndex(x => x.Id == made.Id);
             if (at >= 0) _cfg.CustomAgents[at] = made; else _cfg.CustomAgents.Add(made);
+            if (a is null && t != "read")
+            {
+                // a new agent that writes starts asking before each change; Permissões can make it automatic
+                _cfg.AgentToolScopes[made.Id] = t;
+                _cfg.AgentPolicies[made.Id] = "ask";
+            }
             var blocks = readBlocks();
             if (blocks.Count == 0) _cfg.AgentInstructionBlocks.Remove(made.Id); else _cfg.AgentInstructionBlocks[made.Id] = blocks;
             SaveConfig();

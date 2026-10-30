@@ -34,6 +34,8 @@ public sealed partial class Customization
         _tagsText = documents.TryGetValue(TagStyles.FilePath, out var tags) ? tags : null;
         TagColors = TagStyles.Parse(_tagsText);
         UrbeTheme.TagOverrides = TagColors;
+        TagIcons = TagStyles.Icons(_tagsText);
+        UrbeTheme.TagIcons = TagIcons;
         var n = LegacyCustomize.Normalize(FileContent);
         Errors = n.Errors;
         Warnings = n.Warnings;
@@ -41,9 +43,45 @@ public sealed partial class Customization
     }
 
     private string? _tagsText;
+    // read at each use from the vault's documents: a hand edit of editor.json is never written over from an old copy
+    private string? LayoutText => _documents.TryGetValue(EditorLayout.Path, out var text) ? text : null;
+
+    /// <summary>The editor's bar as Personalização/editor.json has it (null: the default), with "|" for separators.</summary>
+    public IReadOnlyList<string>? EditorBar(IReadOnlyCollection<string> ids) => EditorLayout.Parse(LayoutText, ids, []).Bar;
+
+    /// <summary>Writes the editor's bar (null: back to the default) in editor.json, keeping the "/" menu, and applies it (CST-019).</summary>
+    public async Task SetEditorBarAsync(IReadOnlyList<string>? bar)
+    {
+        var before = LayoutText;
+        var text = EditorLayout.WithBar(before, bar);
+        if (text == before) return;
+        if (Writer is not { } write) throw new InvalidOperationException("Selecione uma pasta real para gravar.");
+        await write(EditorLayout.Path, text, before is not null);
+        Applied?.Invoke();
+    }
 
     /// <summary>The colours chosen for the tags (Personalização/tags.json, DEC-0045, UC-43).</summary>
     public IReadOnlyDictionary<string, string> TagColors { get; private set; } = new Dictionary<string, string>();
+
+    /// <summary>The icons chosen for the tags (CST-024), in the same file.</summary>
+    public IReadOnlyDictionary<string, string> TagIcons { get; private set; } = new Dictionary<string, string>();
+
+    /// <summary>Chooses the icon of a tag, or (null) none; writes tags.json, keeping the colours, and applies it.</summary>
+    public async Task SetTagIconAsync(string tag, string? icon)
+    {
+        if (!TagStyles.IsTag(tag) || (icon is not null && !TagStyles.IsIcon(icon))) return;
+        var next = new Dictionary<string, string>(TagIcons, StringComparer.OrdinalIgnoreCase);
+        if (icon is null) next.Remove(tag); else next[tag] = icon;
+        var text = TagStyles.Text(TagColors, next);
+        if (Writer is { } write && text != _tagsText)
+        {
+            await write(TagStyles.FilePath, text, _tagsText is not null);
+            _tagsText = text;
+        }
+        TagIcons = next;
+        UrbeTheme.TagIcons = next;
+        Applied?.Invoke();
+    }
 
     /// <summary>Chooses the colour of a tag, or (null) goes back to the app's own; writes tags.json and applies it.</summary>
     public async Task SetTagColorAsync(string tag, string? color)
@@ -51,7 +89,7 @@ public sealed partial class Customization
         if (!TagStyles.IsTag(tag) || (color is not null && !TagStyles.IsColor(color))) return;
         var next = new Dictionary<string, string>(TagColors, StringComparer.OrdinalIgnoreCase);
         if (color is null) next.Remove(tag); else next[tag] = color.ToLowerInvariant();
-        var text = TagStyles.Text(next);
+        var text = TagStyles.Text(next, TagIcons);
         if (Writer is { } write && text != _tagsText)
         {
             await write(TagStyles.FilePath, text, _tagsText is not null);

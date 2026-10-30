@@ -47,7 +47,7 @@ public static partial class AppDocs
         - No alto: **Favoritos** e **Recentes**, depois os **projetos** em árvore, com linhas que mostram os níveis.
         - No computador, arraste a borda da barra para mudar a largura, e o botão de **Pastas** recolhe e devolve a barra. No celular, ela abre como uma gaveta pelo botão **Pastas** ou deslizando da borda esquerda; tocar fora fecha.
         - Para renomear no lugar: segure a linha e toque em **Renomear** (ou F2 no computador). Enter confirma, Esc desiste.
-        - Renomear ou mover uma nota, um arquivo ou uma pasta atualiza os links para ela em todas as notas (`[[Nome]]`, `[[Pasta/Nome]]`, `![[foto.png]]`, com `#seção` e `|apelido`). Um nome que mais de um arquivo do vault usa fica como está, porque não dá para saber qual era.
+        - Renomear ou mover uma nota, um arquivo ou uma pasta atualiza os links para ela em todas as notas (`[[Nome]]`, `[[Pasta/Nome]]`, `![[foto.png]]`, com `#seção` e `|apelido`), e também os links Markdown (`[texto](Pasta/Nome.md)`, `![](foto.png)`), do jeito que foram escritos: um caminho relativo à nota continua relativo, inclusive quando é a própria nota que muda de pasta. Um nome que mais de um arquivo do vault usa fica como está, porque não dá para saber qual era.
 
         ## Navegar no celular
 
@@ -82,6 +82,8 @@ public static partial class AppDocs
         Na primeira vez, a **Configuração inicial** leva pela pasta, pelo tema e pelo Assistente; ela pode ser refeita em **Configurações → Configuração inicial**.
 
         As **Propriedades** da nota (o bloco `---` do começo) têm um formulário no alto da nota, em Visual e em Fonte: toque em **Propriedades** para abrir. **Aliases** são outros nomes da nota: um link `[[apelido]]` leva a ela, aparece nas conexões e funciona em `![[apelido]]`. **Tags** aceitam as do vault com um toque. Texto, número, data, sim/não e listas têm campo próprio, e **Adicionar propriedade** cria outras. O que o formulário não entende fica como estava.
+
+        **Tags do projeto.** As tags escritas nas propriedades da **nota da pasta** (a nota com o nome da pasta, dentro dela: `Droerni/Droerni.md`) valem para tudo o que está nessa pasta e nas subpastas, sem ser escritas nas outras notas. Elas aparecem em **herdadas**, com a origem (`#worldbuilding` de Droerni), e contam na busca por tag, nos filtros da Área de trabalho, nas consultas das páginas e para o Assistente. Mover uma nota para outro projeto troca as herdadas na hora. Para uma nota não herdar uma tag, toque no × dela (o Urbe escreve `sem-tags: [worldbuilding]`); para não herdar nenhuma, use `herdar: false`. Fora do Urbe, as tags herdadas não aparecem nas outras notas.
 
         O **modo leitura** (o botão **Edição/Leitura** no rodapé do editor, ou **Mais ações → Modo leitura**) vale para Visual e Fonte: nada é alterado sem querer, a barra de formatação some e as propriedades só são mostradas. Links, comentários e cartões continuam funcionando.
 
@@ -354,6 +356,8 @@ public static partial class AppDocs
         - **Editar** deixa você ajustar o texto proposto antes de aprovar; o que é gravado é a sua versão.
         - **Recusar** descarta.
         - Exclusões pedem **Excluir**, e plugins pedem **Ligar plugin**.
+        - Mudar `Personalização/AGENTS.md` (as instruções de todos os agentes) sempre pede a sua aprovação, mesmo com o agente em automático ou depois de **Aprovar todas**.
+        - Uma página da internet não manda no agente: o que ela disser é tratado como conteúdo. O Urbe recusa enviar para fora um trecho das suas notas copiado numa pesquisa ou num endereço, e abre normalmente um endereço que você guardou numa nota.
         - Depois de uma mudança, **Desfazer** volta atrás.
 
         Cada bloco que o Assistente cria ou reescreve (título, parágrafo, item de lista, citação, tabela ou código) ganha um selo pequeno com o nome do modelo, como `{ia:"modelo"}`, que aparece em verde no editor. O Urbe cuida dos selos sozinho:
@@ -364,7 +368,7 @@ public static partial class AppDocs
         - No modo Fonte o selo não pode ser apagado ou alterado sozinho.
         - Os agentes não veem os selos e não conseguem removê-los. Se você pedir, eles explicam que a autoria é mantida pelo aplicativo.
 
-        **Enviar arquivos ao chat:** toque no único botão **+** ao lado da caixa de mensagem e escolha **Arquivo do dispositivo** ou **Nota do vault**. A busca de notas percorre o vault inteiro, sem limite artificial das primeiras 300 notas. Antes do envio, os anexos aparecem na bandeja compacta de contexto; cada cartão pode ser removido, e **Limpar** remove todos. Texto UTF-8 entra como contexto; imagens PNG/JPEG/WebP e PDFs vão como anexos multimodais. Até quatro anexos por mensagem, com limites por tipo. O Urbe não copia os anexos para o vault. Imagens e PDFs exigem um modelo multimodal compatível; só selecione arquivos que deseja enviar ao provedor de IA.
+        **Enviar arquivos ao chat:** toque no único botão **+** ao lado da caixa de mensagem e escolha **Arquivo do dispositivo** ou **Nota do vault**. A busca de notas percorre o vault inteiro, sem limite artificial das primeiras 300 notas. Antes do envio, os anexos aparecem na bandeja compacta de contexto; cada cartão pode ser removido, e **Limpar** remove todos. Texto UTF-8 entra como contexto; imagens PNG/JPEG/WebP e PDFs vão como anexos multimodais. Uma mensagem leva até 20 anexos, somando até 30 MB, o que os provedores aceitam juntos. Fotos grandes ou deitadas vão de pé e reduzidas (2000 px, JPEG), em vez de serem recusadas. PDFs vão até 20 MB e textos até 384 KB por arquivo, tanto do aparelho quanto do vault. O Urbe não copia os anexos para o vault. Imagens e PDFs exigem um modelo multimodal compatível; só selecione arquivos que deseja enviar ao provedor de IA.
 
         **Perguntas e planejamento:** em tarefas complexas, o agente registra as etapas pelo plano e, se uma decisão importante estiver faltando, abre um cartão com uma pergunta por vez. Responda no cartão para continuar. O cartão mostra quantas dúvidas já foram esclarecidas, a compreensão que o agente declara, as dúvidas que ainda estão em aberto e o que mudou desde a pergunta anterior (as esclarecidas e as novas). São estimativas declaradas pelo agente, não medições.
 
@@ -382,7 +386,8 @@ public static partial class AppDocs
         - **Modelo por agente:** em Configurações → Nomes dos agentes → **Configurar**, você pode selecionar um provedor/modelo de conversa específico para qualquer agente (inclusive os prontos). Sem escolha, o agente herda o modelo normal do Assistente. Trocar de agente passa a trocar também o modelo efetivo, sem mudar o padrão salvo.
         - **Instruções por blocos:** no mesmo painel, adicione quantos blocos titulados precisar (ex.: Tom, Fontes, Procedimento), edite e remova. Esses blocos se somam às instruções gerais e às instruções existentes do agente, sem ampliar as permissões. Os ajustes são guardados só na configuração local do Assistente.
         - **Conversas anteriores**: cada agente consulta as próprias conversas deste vault (o pedido, a resposta, os arquivos alterados e, se precisar, a conversa inteira), por exemplo quando você diz "continue aquilo de ontem". Ele nunca vê as conversas de outro agente nem o que ficou oculto.
-        - **Consultar um especialista**: um agente pode pedir ajuda a outro agente seu, que trabalha na própria conversa, com o próprio modelo e permissões. Se o especialista precisar perguntar algo a você, pedir um formulário ou uma aprovação, o pedido aparece na conversa em que você está; a resposta vai para ele, e o trabalho continua sem trocar de conversa.
+        - **Permissões do agente** (somente leitura, com aprovação, automático): mudar para uma mais restrita enquanto ele trabalha já vale a partir da próxima ação; mudar para uma mais livre vale a partir da próxima resposta. O Urbe avisa qual dos dois aconteceu.
+        - **Consultar um especialista**: um agente pode pedir ajuda a outro agente seu, que trabalha na própria conversa, com o próprio modelo e permissões. Se o especialista precisar perguntar algo a você, pedir um formulário ou uma aprovação, o pedido aparece na conversa em que você está; a resposta vai para ele, e o trabalho continua sem trocar de conversa. Numa consulta, o especialista nunca tem menos aprovações que o agente que pediu: se ele está em automático e o que pediu não, as mudanças dele pedem a sua aprovação na conversa que pediu.
         - **Nomes dos agentes**: cada agente pode ter um nome seu, como Jarvis. Numa conversa, chame-o por um nome novo ("Jarvis, resuma esta nota") e ele pergunta se deve passar a se chamar assim. O nome fica só neste aparelho.
         - **Pedir dentro da nota**: escreva numa linha `&Jarvis&: dê uma sugestão de nome` (ou `&&:` para o agente padrão). A linha vira um cartão com **Pedir a Jarvis** (ou Ctrl+Enter nela); só ao tocar o pedido vai, numa conversa própria "Na nota …", com a nota como contexto. Uma mudança na nota aparece no lugar da linha, como sugestão, com **Aceitar** e **Recusar**; uma resposta em palavras abre o Assistente, com **Pôr na nota** para guardá-la como citação logo abaixo da linha. Essas linhas não aparecem nas páginas.
         - **Personalização/AGENTS.md** na sua pasta: instruções suas, lidas a cada conversa. Separe por modelo:
@@ -393,6 +398,8 @@ public static partial class AppDocs
         ```
 
         A parte **Geral** vale sempre; uma parte com nome vale quando todas as palavras do nome estão no modelo em uso. Títulos `## Claude 5` também funcionam.
+
+        **Quando instruções divergem**, vale a mais específica: o que você pede agora; depois o papel e os blocos do agente; depois o `AGENTS.md` (a parte do modelo antes da Geral); por último as orientações do Urbe. Segurança, permissões, aprovações e selos de autoria valem sempre, mesmo que uma instrução peça o contrário.
         """;
 
     private const string Plugins = """
@@ -424,7 +431,7 @@ public static partial class AppDocs
         - **Texto:** fonte e tamanho da interface e das notas, altura da linha.
         - **Editor:** largura do texto e o modo em que as notas abrem (Visual ou Texto).
         - **Estilos CSS:** guardados no tema; o app nativo não usa CSS, eles valem na versão web.
-        - **Tags:** a cor de cada `#Tag:` (veja [[Editor]]). Fica em `Personalização/tags.json`.
+        - **Tags:** a cor de cada `#Tag:` e, se quiser, um ícone antes do nome (✅, 💡, ⚠️…; toque no escolhido de novo para tirar). Veja [[Editor]]. Fica em `Personalização/tags.json`.
         - **Plugins:** veja [[Plugins]].
         - **Arquivo:** o `tema.json` para editar à mão, e **Restaurar padrão**.
 
@@ -480,6 +487,8 @@ public static partial class AppDocs
         **Abrir comandos** (Ctrl+K) lista tudo o que o Urbe faz: backups, painel dividido, restaurar versão, plugins e mais.
 
         **Seus atalhos:** Configurações → Atalhos lista todos e **Editar meus atalhos** abre `Personalização/atalhos.json`, por exemplo `"Mod+Shift+K": "ui.constellation"` (Mod é Ctrl). Um atalho seu vale por cima do padrão; `""` desliga um padrão. Os nomes dos comandos (como `ui.workspace`, `ui.sidebar.toggle`) aparecem no próprio arquivo de exemplo.
+
+        **A barra de formatação, pelo toque:** em **Personalização → Editor → Barra de formatação**, cada botão tem ↑ e ↓ para mudar de lugar e × para sair da barra; os que estão fora aparecem com +, e **Separador** cria um grupo. **Padrão** volta à barra original. Desfazer e Refazer ficam sempre no começo. A escolha vai para o mesmo `Personalização/editor.json`, sem mexer no menu `/`.
 
         **A barra do editor e o menu /:** Configurações → **Barra do editor e menu /** abre `Personalização/editor.json`, com a lista `barra` (os botões, na ordem; `|` separa) e a lista `menu` (os itens do `/`). Apague o que não usa, troque a ordem e salve.
 

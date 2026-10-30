@@ -11,7 +11,8 @@ public static partial class NoteTemplateEngine
 {
     public const string Folder = "Modelos";
     public const string Suffix = ".modelo.md";
-    public const int MaxFields = 32;
+    // CST-045 / DEC-0059: as many fields as a form takes (it was 32: from the 33rd on, fields were never asked)
+    public const int MaxFields = FormDefinition.MaxFields;
 
     public static bool IsTemplatePath(string? path)
     {

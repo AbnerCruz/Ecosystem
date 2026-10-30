@@ -15,7 +15,8 @@ public static class UrbeTheme
     public const string Line2 = "#33363e";
     public const string Text = "#ececf0";
     public const string Text2 = "#a3a6af";
-    public const string Text3 = "#6d7079";
+    // CST-105: 4.5:1 (WCAG AA) on every surface of the theme; it was #6d7079, 3.1–3.9:1
+    public const string Text3 = "#898c95";
     public const string Accent = "#8fb3ff";
     public const string AccentInk = "#0b1325";
     public const string Ok = "#7fdca6";
@@ -47,6 +48,12 @@ public static class UrbeTheme
 
     /// <summary>The colours chosen in Personalização → Tags (Personalização/tags.json), by tag, ignoring case.</summary>
     public static IReadOnlyDictionary<string, string> TagOverrides { get; set; } = new Dictionary<string, string>();
+
+    /// <summary>The icon of each tag (Personalização/tags.json, CST-024).</summary>
+    public static IReadOnlyDictionary<string, string> TagIcons { get; set; } = new Dictionary<string, string>();
+
+    /// <summary>The icon shown before a tag's name, or null.</summary>
+    public static string? TagIcon(string? tag) => tag is not null && TagIcons.TryGetValue(tag, out var icon) ? icon : null;
 
     /// <summary>The colours offered for a tag.</summary>
     public static IReadOnlyList<string> TagChoices => TagPalette;
@@ -211,6 +218,8 @@ public static class UrbeTheme
         public const string Redo = "M15 14l5-5-5-5 M20 9h-9a6 6 0 0 0 0 12";
         public const string Check = "M5 12.5l4.5 4.5L19 7.5";
         public const string ArrowUp = "M12 19V5M5.5 11.5L12 5l6.5 6.5";
+        public const string ArrowDown = "M12 5v14M5.5 12.5L12 19l6.5-6.5";
+        public const string Share = "M18 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z M6 9.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z M18 15.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5z M8.2 10.8l7.6-4.1 M8.2 13.2l7.6 4.1";
         public const string Edit = "M4.5 19.5h4l10-10-4-4-10 10z M13 7l4 4";
         public const string Layers = "M12 3.5l8.5 4.5-8.5 4.5L3.5 8z M3.5 12.5l8.5 4.5 8.5-4.5";
         public const string MapUi = "M9 4.5L3.5 6.5v13l5.5-2 6 2 5.5-2v-13l-5.5 2z M9 4.5v13M15 6.5v13";

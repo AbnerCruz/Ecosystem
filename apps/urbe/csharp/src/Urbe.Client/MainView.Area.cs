@@ -42,6 +42,8 @@ public sealed partial class MainView
         Workspace.ZIndex = -1;
         _stage.Children.Insert(_stage.Children.IndexOf(Explorer) + 1, Workspace);
         Workspace.NoteRequested += path => OpenFromNotes(new CityNote(path, _contents.GetValueOrDefault(path, "")));
+        Workspace.ChooseTag = async tags =>
+            await Dialogs.ChooseAsync("Filtrar por tag", tags.Select(t => new DialogItem("#" + t, UrbeTheme.Icons.List)).ToList()) is { } i ? tags[i] : null;
         Workspace.FileRequested += path => { if (!StillReading()) _ = ShowFileAsync(path); };
         Workspace.NewProjectRequested += () => { if (!StillReading()) _ = CreateProjectAsync(); };
         Workspace.NewNoteRequested += folder => { if (!StillReading()) _ = CreateNoteInNotesAsync(folder: folder); };
@@ -149,10 +151,12 @@ public sealed partial class MainView
     /// <summary>The Área de trabalho as the vault is now.</summary>
     private void RefreshWorkspace()
     {
+        // the filters by tag include the ones inherited from the project (DEC-0058)
+        var projects = _store is null ? ProjectTags.Empty : ProjectTags.Of(_store.List());
         var notes = _contents.Select(n =>
         {
             var doc = _store?.Get(n.Key);
-            return new WorkspaceNote(n.Key, doc?.Title, n.Value, doc?.Modified ?? doc?.Created, doc?.Created, doc?.Tags);
+            return new WorkspaceNote(n.Key, doc?.Title, n.Value, doc?.Modified ?? doc?.Created, doc?.Created, doc is null ? null : projects.Effective(doc));
         }).ToList();
         var files = new HashSet<string>(_attachments, StringComparer.Ordinal);
         files.ExceptWith(_contents.Keys);

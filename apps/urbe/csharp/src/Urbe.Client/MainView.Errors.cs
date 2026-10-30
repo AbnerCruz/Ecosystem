@@ -32,6 +32,6 @@ public sealed partial class MainView
                 ShowLifeNotice("Relatório copiado.", Ui.ToastKind.Success);
             }),
             new DialogItem("Apagar relatório", UrbeTheme.Icons.Trash, Danger: true, Run: () => { CrashLog.Clear(); ShowLifeNotice("Relatório apagado."); return Task.CompletedTask; })
-        ], tail);
+        ], "Fica só neste aparelho e o Urbe não envia a ninguém. Leva o erro, sem o texto das suas notas, chaves ou pastas; erros com mais de " + CrashLog.KeepDays + " dias saem sozinhos.\n\n" + (tail.Length > 0 ? tail : "Nenhum erro registrado."));
     }
 }

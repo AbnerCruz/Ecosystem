@@ -73,13 +73,19 @@ public static partial class UserAgentsFile
     public static string For(string? markdown, string model)
     {
         var modelWords = Words(model);
-        var parts = new List<string>();
+        var general = new List<string>();
+        var own = new List<(string Name, string Text)>();
         foreach (var s in Parse(markdown))
         {
             var words = Words(s.Name);
-            bool general = words.Count == 1 && words[0] is "geral" or "todos" or "todas" or "general" or "all";
-            if (general || (words.Count > 0 && words.All(modelWords.Contains))) parts.Add(s.Text);
+            if (words.Count == 1 && words[0] is "geral" or "todos" or "todas" or "general" or "all") general.Add(s.Text);
+            else if (words.Count > 0 && words.All(modelWords.Contains)) own.Add((s.Name, s.Text));
         }
+        // CST-076: with a part for this model, each part says what it is, and the model's part prevails where they differ
+        if (own.Count == 0) return string.Join("\n\n", general);
+        var parts = new List<string>();
+        if (general.Count > 0) parts.Add("Geral:\n" + string.Join("\n\n", general));
+        parts.AddRange(own.Select(o => "Para este modelo (" + o.Name + "), vale sobre a parte geral onde divergirem:\n" + o.Text));
         return string.Join("\n\n", parts);
     }
 

@@ -26,6 +26,9 @@ public sealed class FormField
 
 public sealed class FormDefinition
 {
+    /// <summary>The most fields of one form; note templates ask the same many (CST-045), so a template and its form never disagree.</summary>
+    public const int MaxFields = 128;
+
     public int Version { get; set; } = 1;
     public string Title { get; set; } = "Formulário";
     public string? Description { get; set; }
@@ -42,8 +45,8 @@ public sealed class FormDefinition
     }
     public void Check(int depth = 0)
     {
-        if (depth > 4 || Version != 1 || string.IsNullOrWhiteSpace(Title) || Fields.Count == 0 || Fields.Count > 128)
-            throw new ArgumentException("Formulário inválido: versão 1, título e 1 a 128 campos são necessários.");
+        if (depth > 4 || Version != 1 || string.IsNullOrWhiteSpace(Title) || Fields.Count == 0 || Fields.Count > MaxFields)
+            throw new ArgumentException("Formulário inválido: versão 1, título e 1 a " + MaxFields + " campos são necessários.");
         var ids = new HashSet<string>(StringComparer.Ordinal);
         foreach (var f in Fields)
         {

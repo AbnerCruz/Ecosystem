@@ -251,6 +251,37 @@ public sealed class AssistantStore(IAssistantStorage storage)
             throw new IOException("Não foi possível confirmar a gravação da configuração do assistente.");
     }
 
+    private const string DraftsFile = "rascunhos.json";
+
+    /// <summary>
+    /// CST-122: what the person was writing to each agent, text and attachments, kept on this device (never in the vault)
+    /// so it survives switching agents, closing the panel and Android ending the app in the background.
+    /// </summary>
+    public Dictionary<string, (string Text, List<AiChatBlock> Attachments)> LoadDrafts()
+    {
+        var drafts = new Dictionary<string, (string, List<AiChatBlock>)>(StringComparer.Ordinal);
+        try
+        {
+            if (storage.Read(DraftsFile) is not { Length: > 0 } text || JsonNode.Parse(text) is not JsonObject root) return drafts;
+            foreach (var (agent, node) in root)
+                if (node is JsonObject d)
+                    drafts[agent] = ((string?)d["texto"] ?? "", [.. (d["anexos"] as JsonArray ?? []).OfType<JsonObject>().Select(b => AiChatBlock.FromJson(b))]);
+        }
+        catch (System.Text.Json.JsonException) { }
+        return drafts;
+    }
+
+    /// <summary>Writes the drafts; an agent with nothing written and nothing attached leaves the file.</summary>
+    public void SaveDrafts(IReadOnlyDictionary<string, (string Text, List<AiChatBlock> Attachments)> drafts)
+    {
+        var root = new JsonObject();
+        foreach (var (agent, (text, attachments)) in drafts.OrderBy(p => p.Key, StringComparer.Ordinal))
+            if (text.Length > 0 || attachments.Count > 0)
+                root[agent] = new JsonObject { ["texto"] = text, ["anexos"] = new JsonArray([.. attachments.Select(b => (JsonNode)b.ToJson())]) };
+        if (root.Count == 0) { if (storage.Read(DraftsFile) is not null) storage.Delete(DraftsFile); return; }
+        storage.Write(DraftsFile, root.ToJsonString());
+    }
+
     /// <summary>The conversations, the most recent first.</summary>
     public List<AiConversation> ListConversations() =>
         storage.List().Where(n => n.StartsWith(Prefix, StringComparison.Ordinal) && n.EndsWith(".json", StringComparison.Ordinal))
@@ -415,8 +446,10 @@ public sealed class AssistantStore(IAssistantStorage storage)
             // search setting to keyless search; users with an actual Brave credential keep it.
             if (c.Web.Provider == "brave" && string.IsNullOrWhiteSpace(c.Web.ApiKey))
                 c.Web.Provider = "bing-rss";
-            c.Web.MaxSearchCalls = (int)Math.Clamp(w["maxSearchCalls"] is null ? 12 : Num(w["maxSearchCalls"]), 1, 100);
-            c.Web.MaxFetchCalls = (int)Math.Clamp(w["maxFetchCalls"] is null ? 20 : Num(w["maxFetchCalls"]), 1, 100);
+            // 12 and 20 were the old defaults, saved with every configuration though nobody chose them: they become the new one
+            static int Calls(JsonNode? n, int old) => n is null || Num(n) == old ? AiWebConfig.MostCalls : (int)Math.Clamp(Num(n), 1, AiWebConfig.MostCalls);
+            c.Web.MaxSearchCalls = Calls(w["maxSearchCalls"], 12);
+            c.Web.MaxFetchCalls = Calls(w["maxFetchCalls"], 20);
             c.Web.TimeoutSeconds = (int)Math.Clamp(w["timeoutSeconds"] is null ? 18 : Num(w["timeoutSeconds"]), 3, 60);
             c.Web.MaxDownloadBytes = (int)Math.Clamp(w["maxDownloadBytes"] is null ? 1_000_000 : Num(w["maxDownloadBytes"]), 10_000, 5_000_000);
             if (w["agentAccess"] is JsonObject grants)

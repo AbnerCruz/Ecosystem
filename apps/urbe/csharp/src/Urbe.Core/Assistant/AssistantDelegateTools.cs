@@ -30,4 +30,26 @@ public static class AssistantDelegateTools
             return new AiToolOutput(await gateway.ConsultAsync(agentId, task, ((string?)i["conversation_id"] ?? "").Trim()));
         }
     };
+    /// <summary>
+    /// CST-092: what a consulted specialist changed in the vault, for the agent that asked (which must say what changed in
+    /// its answer): created, changed, moved or sent to the trash, one line each, in the order they happened.
+    /// </summary>
+    public static IReadOnlyList<string> DescribeChanges(IEnumerable<AiChange> changes)
+    {
+        var lines = new List<string>();
+        foreach (var c in changes)
+        {
+            var line = (c.Before, c.After, c.Trashed) switch
+            {
+                (_, _, true) => "moveu para a lixeira " + (c.Before ?? c.After)?.Path,
+                (null, { } after, _) => "criou " + after.Path,
+                ({ } before, { } after, _) when before.Path != after.Path => "moveu " + before.Path + " → " + after.Path,
+                (_, { } after, _) => "alterou " + after.Path,
+                ({ } before, null, _) => "apagou " + before.Path,
+                _ => null
+            };
+            if (line is not null && !lines.Contains(line)) lines.Add(line);
+        }
+        return lines;
+    }
 }

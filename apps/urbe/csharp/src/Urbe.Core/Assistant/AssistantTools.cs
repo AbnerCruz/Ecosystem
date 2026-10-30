@@ -319,7 +319,7 @@ public static partial class AssistantTools
     private static int ReadBudget(IAssistantHost host) => Math.Max(8000, host.ReadChars > 0 ? host.ReadChars : 24000);
 
     /// <summary>readSlice(d, start, maxLines, budget): the note with line numbers, whole when it fits.</summary>
-    public static (string Text, AiPartial? Partial, AiSeen Seen) ReadSlice(UrbeDocument d, int? start, int? maxLines, int budget, bool exactRange = false)
+    public static (string Text, AiPartial? Partial, AiSeen Seen) ReadSlice(UrbeDocument d, int? start, int? maxLines, int budget, bool exactRange = false, IReadOnlyList<InheritedTag>? inherited = null)
     {
         var lines = d.Content.Split('\n');
         int total = lines.Length;
@@ -332,7 +332,9 @@ public static partial class AssistantTools
         int w = e.ToString(CultureInfo.InvariantCulture).Length;
         var output = new List<string>();
         for (int i = s; i <= e; i++) output.Add(i.ToString(CultureInfo.InvariantCulture).PadLeft(w, ' ') + "| " + lines[i - 1]);
-        var head = "# " + d.Path + " (" + total + " linhas" + (d.Tags.Count > 0 ? " · tags: " + string.Join(" ", d.Tags.Select(t => "#" + t)) : "") + ")" +
+        inherited ??= [];
+        var head = "# " + d.Path + " (" + total + " linhas" + (d.Tags.Count > 0 ? " · tags: " + string.Join(" ", d.Tags.Select(t => "#" + t)) : "") +
+                   (inherited.Count > 0 ? " · herdadas: " + string.Join(", ", inherited.Select(ProjectTags.Describe)) : "") + ")" +
                    (s > 1 || e < total ? " — linhas " + s + "–" + e : " — completa");
         var body = d.Content.Length > 0 ? string.Join("\n", output) : "(nota vazia)";
         AiPartial? partial = e < requestedEnd ? new AiPartial(d.Path, e + 1, requestedEnd) : null;
@@ -476,7 +478,7 @@ public static partial class AssistantTools
                 {
                     var f = d.Path.Contains('/') ? d.Path[..d.Path.LastIndexOf('/')] : "(raiz)";
                     folders[f] = folders.GetValueOrDefault(f) + 1;
-                    foreach (var t in d.Tags) { if (!tags.ContainsKey(t)) tagOrder.Add(t); tags[t] = tags.GetValueOrDefault(t) + 1; }
+                    foreach (var t in host.Knowledge.Projects.Effective(d)) { if (!tags.ContainsKey(t)) tagOrder.Add(t); tags[t] = tags.GetValueOrDefault(t) + 1; }
                 }
                 var recent = all.OrderBy(d => d.Modified ?? "", Comparer<string>.Create((a, b) => JsText.LocaleCompare(b, a))).Take(10).Select(d => "- " + d.Path);
                 var open = host.EditorContext().Path;
@@ -536,7 +538,7 @@ public static partial class AssistantTools
             Run = (i, host) =>
             {
                 var d = ResolveDoc(host, Str(i, "path"))!;
-                var r = ReadSlice(Readable(host, d), Int(i, "start_line"), Int(i, "max_lines"), ReadBudget(host));
+                var r = ReadSlice(Readable(host, d), Int(i, "start_line"), Int(i, "max_lines"), ReadBudget(host), inherited: host.Knowledge.Inherited(d.Id));
                 return Task.FromResult(new AiToolOutput(r.Text, Reads: [(d.Path, r.Partial)], Seen: [r.Seen]));
             }
         },
@@ -558,7 +560,7 @@ public static partial class AssistantTools
                     try
                     {
                         var d = ResolveDoc(host, p)!;
-                        var r = ReadSlice(Readable(host, d), 1, 0, share);
+                        var r = ReadSlice(Readable(host, d), 1, 0, share, inherited: host.Knowledge.Inherited(d.Id));
                         output.Add(r.Text);
                         reads.Add((d.Path, r.Partial));
                         seen.Add(r.Seen);
@@ -629,7 +631,8 @@ public static partial class AssistantTools
                 return Task.FromResult(new AiToolOutput("Links de " + d.Path + ":\n" + (output.Count > 0 ? string.Join("\n", output.Select(p => "- " + p)) : "- nenhum") +
                     (missing.Count > 0 ? "\nLinks para notas inexistentes: " + string.Join(", ", missing.Select(l => "[[" + l + "]]")) : "") +
                     "\n\nBacklinks:\n" + (back.Count > 0 ? string.Join("\n", back.Select(p => "- " + p)) : "- nenhum") +
-                    "\n\nTags: " + (d.Tags.Count > 0 ? string.Join(" ", d.Tags.Select(t => "#" + t)) : "nenhuma")));
+                    "\n\nTags: " + (d.Tags.Count > 0 ? string.Join(" ", d.Tags.Select(t => "#" + t)) : "nenhuma") +
+                    (host.Knowledge.Inherited(d.Id) is { Count: > 0 } inherited ? "\nHerdadas do projeto: " + string.Join(", ", inherited.Select(ProjectTags.Describe)) : "")));
             }
         },
         new()

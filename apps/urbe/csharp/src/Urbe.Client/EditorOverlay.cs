@@ -1484,6 +1484,16 @@ public sealed class EditorOverlay : Grid
     /// <summary>The names of the bar's buttons, in order ("|" a separator) — tests.</summary>
     public IReadOnlyList<string> ToolbarNames => [.. _markdownTools.Children.Select(c => c is Button b ? AutomationProperties.GetName(b) ?? "" : "|")];
 
+    /// <summary>The name of a button of the bar, as its tooltip says it (Personalização → Editor).</summary>
+    public static string ToolbarTitle(string id) => id switch
+    {
+        "undo" => "Desfazer",
+        "redo" => "Refazer",
+        "math" => "Fórmula",
+        "box" => "Caixa",
+        _ => LegacyEditorTools.Toolbar.FirstOrDefault(t => t.Id == id)?.Title ?? id
+    };
+
     /// <summary>The ids the bar knows.</summary>
     public static IReadOnlyCollection<string> ToolbarIds => [.. ToolbarOrder.Where(x => x != "|")];
 
@@ -1637,8 +1647,9 @@ public sealed class EditorOverlay : Grid
         _status.Foreground = UrbeTheme.Brush(C.TextTertiary);
         _status.VerticalAlignment = VerticalAlignment.Center;
         AutomationProperties.SetName(_status, "Estatísticas da nota");
-        _readChip.Padding = new Thickness(10, 1);
-        _readChip.MinHeight = 0;
+        // CST-105: a tap target, not a 17 px line (the footer grows a little)
+        _readChip.Padding = new Thickness(12, 4);
+        _readChip.MinHeight = 40;
         _readChip.CornerRadius = new CornerRadius(999);
         _readChip.BorderThickness = new Thickness(0);
         _readChip.VerticalAlignment = VerticalAlignment.Center;

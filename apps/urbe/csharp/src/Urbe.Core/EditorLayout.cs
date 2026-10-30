@@ -52,6 +52,20 @@ public static class EditorLayout
         return root.ToJsonString(new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) + "\n";
     }
 
+    /// <summary>
+    /// The file with the bar replaced (CST-019, from Personalização → Editor): the "/" menu and anything else in it stay;
+    /// a null bar removes "barra", so the default comes back. A file that is not valid JSON is started again.
+    /// </summary>
+    public static string WithBar(string? json, IReadOnlyList<string>? bar)
+    {
+        JsonObject root;
+        try { root = !string.IsNullOrWhiteSpace(json) && JsonNode.Parse(json) is JsonObject o ? o : new JsonObject { ["versao"] = 1 }; }
+        catch (JsonException) { root = new JsonObject { ["versao"] = 1 }; }
+        if (bar is null) root.Remove("barra");
+        else root["barra"] = new JsonArray([.. bar.Select(x => (JsonNode)x)]);
+        return root.ToJsonString(new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) + "\n";
+    }
+
     /// <summary>The "/" menu in the person's order (only those items), or as it is.</summary>
     public static IReadOnlyList<LegacyEditorTools.SlashItem> Arrange(IReadOnlyList<LegacyEditorTools.SlashItem> items, IReadOnlyList<string>? menu)
     {

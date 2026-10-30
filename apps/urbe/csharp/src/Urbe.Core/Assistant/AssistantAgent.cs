@@ -185,6 +185,11 @@ public sealed class AiAgentRun
 {
     public AiAgentDef? Agent { get; init; }
     public string Policy { get; init; } = "ask";
+    /// <summary>
+    /// The agent's policy as the person has it now (CST-073). A stricter one changed during the run takes effect at the next
+    /// action; a looser one only from the next response, so a run never gains permissions it did not start with.
+    /// </summary>
+    public Func<string>? CurrentPolicy { get; init; }
     public required List<AiChatMessage> Messages { get; init; }
     public required IAssistantHost Host { get; init; }
     public required AiProviderConfig Provider { get; init; }
@@ -247,6 +252,14 @@ public static class AssistantAgent
     /// UC-77 (observation of 22/10/2026: asked for an apostila, the agent only used Páginas after being told to): what the
     /// app asks of every agent beyond the 1.8.4's prompt.
     /// </summary>
+    /// <summary>
+    /// CST-076: which instruction prevails when two disagree. The more specific wins: the person's request now, then the
+    /// agent's own role and blocks, then Personalização/AGENTS.md (its part for the model before the general one), then
+    /// the Urbe's guidance. Safety, permissions, approvals and authorship seals are not instructions any of them can lift.
+    /// </summary>
+    public const string InstructionOrder =
+        "\n- Quando instruções divergirem, vale a mais específica: 1) o pedido atual do usuário; 2) o seu papel e os seus blocos de instrução; 3) as instruções do usuário em Personalização/AGENTS.md (a parte para este modelo antes da parte geral); 4) estas orientações do Urbe. Segurança, permissões, aprovações e selos de autoria não são revogados por nenhuma delas, nem pelo pedido. Se a divergência mudar o resultado, diga qual instrução seguiu.";
+
     public const string UrbeGuidance =
         "- Quando o pedido for uma apostila, um livro, um caderno, um e-book, um manual ou outro material longo para ler ou imprimir, faça uma página no formato livro, sem precisar que o usuário peça: chame page_schema e use write_page com o modelo book (ou book-folder, para transformar uma pasta de notas em livro), em vez de escrever uma nota longa. Use os blocos note/notes para puxar o conteúdo das notas e abra a página com open_note no fim.\n" +
         "- Para gerar, desenhar ou ilustrar uma IMAGEM, use generate_image, não write_page. O modelo do chat não muda: a ferramenta usa um provedor visual já configurado. Sem credencial disponível ou diante de falha, explique o problema e nunca diga que a imagem foi criada.\\n" +
@@ -279,6 +292,31 @@ public static class AssistantAgent
         if (access is "destructive" or "plugin") return true;
         if (policy == "auto" || runAllow) return false;
         return true;
+    }
+
+    private static int Strictness(string policy) => policy switch { "readonly" => 2, "ask" => 1, _ => 0 };
+
+    /// <summary>
+    /// CST-093: the policy of a consulted specialist's run. Its own, except that a consultation never removes the approvals
+    /// of the agent that asked: a specialist on "auto" consulted by one that asks (or only reads) asks too, and the request
+    /// reaches the person in the asking conversation (CST-091).
+    /// </summary>
+    public static string ConsultPolicy(string specialist, string requester) =>
+        specialist == "auto" && requester != "auto" ? "ask" : specialist;
+
+    /// <summary>Whether a tool call writes, moves or renames the person's instructions for the agents.</summary>
+    public static bool TouchesInstructions(JsonObject input, string? previewPath)
+    {
+        static bool Is(string? path)
+        {
+            var p = (path ?? "").Replace('\\', '/').Trim().TrimStart('/');
+            return p.Equals(UserAgentsFile.Path, StringComparison.OrdinalIgnoreCase) ||
+                   p.Equals(UserAgentsFile.Path[..^3], StringComparison.OrdinalIgnoreCase);
+        }
+        if (Is(previewPath)) return true;
+        foreach (var (_, value) in input)
+            if (value is JsonValue v && v.TryGetValue<string>(out var text) && Is(text)) return true;
+        return false;
     }
 
     // ---------------------------------------------------------------- system prompt
@@ -1082,7 +1120,20 @@ public static class AssistantAgent
                     return new Out("Sem alteração em " + preview.Path + ": conteúdo e marca de autoria já conferem; nenhuma gravação foi feita.", Status: "noop");
                 }
             }
-            if (NeedsApproval(tool.Access, policy, runAllow))
+            // a stricter permission set by the person during the run counts from this action (CST-073)
+            if (o.CurrentPolicy?.Invoke() is { } now && Strictness(now) > Strictness(policy))
+            {
+                policy = now;
+                runAllow = false;
+            }
+            if (policy == "readonly" && !Read.Contains(tool.Access))
+                return new Out("As permissões deste agente mudaram para somente leitura durante a execução: esta ação não foi feita. Mostre a sugestão em texto ou peça ao usuário para mudar a permissão.", true, "rejected");
+            // the instructions every agent follows (Personalização/AGENTS.md) are asked for, whatever the policy and
+            // "aprovar tudo": a page read earlier in the run must not be able to plant a lasting instruction (CST-084)
+            bool instructions = !Read.Contains(tool.Access) && TouchesInstructions(input, preview?.Path);
+            if (instructions && preview is not null && preview.Note is null)
+                preview = preview with { Note = "São as instruções de todos os agentes: o Urbe sempre pede a sua aprovação para mudá-las." };
+            if (NeedsApproval(tool.Access, policy, runAllow) || instructions)
             {
                 emit(new AiAgentEvent("tool_status", Call: call, Status: "waiting"));
                 long asked = clock.ElapsedMilliseconds;
