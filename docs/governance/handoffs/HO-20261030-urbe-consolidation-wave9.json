@@ -172,9 +172,10 @@
     {
       "check": "Android físico (moto g32): numa pasta de projeto com a nota da pasta tendo tags, abrir uma nota dentro, ver 'herdadas' com a origem, tocar no × (sem-tags escrito), filtrar a caixa do projeto pela tag herdada, mover a nota para fora e ver a herdada sumir",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/urbe/docs/csharp/CONSOLIDATION.md#CST-042",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-30 (Issue https://github.com/AbnerCruz/Ecosystem/issues/870); registro em docs/governance/responses/VAL-HO-20261030-urbe-consolidation-wave9-33e7df58df43.md."
     },
     {
       "check": "Android físico (moto g32): renomear uma nota ligada por [texto](Nota.md) e mover uma nota com links relativos; os links continuam abrindo",
