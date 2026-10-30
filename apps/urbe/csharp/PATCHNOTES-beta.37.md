@@ -60,6 +60,13 @@ Andamento item a item: `apps/urbe/docs/csharp/CONSOLIDATION.md`.
   - Há filtros para ver só as privadas ou só as compartilhadas.
 - **Relatório de erros:** não guarda chaves, trechos de notas nem caminhos de pastas, e apaga erros com mais de 30 dias.
 - **Mover para:** a busca diz quando não acha nada.
+- **Ver e alcançar tudo:**
+  - O cartão de aprovação mostra todas as linhas da mudança, não só 160.
+  - Qualquer tag filtra a Área de trabalho ("+N tags").
+  - "Abrir ao lado" alcança qualquer nota pela busca.
+  - Modelos de nota perguntam até 128 campos, não só 32.
+- **Consultas:** quem pediu fica sabendo quais notas o especialista mudou.
+- **Excluir um agente** leva as lembranças privadas dele, e a confirmação diz quantas são.
 
 ## Navegação
 
