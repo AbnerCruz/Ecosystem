@@ -45,9 +45,16 @@ public sealed partial class MainView
     /// <summary>The notes a page shows (documents.get by path, documents.list).</summary>
     private sealed class StoreNotes(DocumentStore? store) : IPageNotes
     {
-        private static PageNote Of(UrbeDocument d) => new(d.Path, d.Title, d.Content, d.Modified, d.Tags);
-        public PageNote? Get(string path) => store?.Get(path) is { } d ? Of(d) : null;
-        public IReadOnlyList<PageNote> List() => store is null ? [] : store.List().Select(Of).ToList();
+        // a page's queries by tag see the ones inherited from the project (DEC-0058)
+        private static PageNote Of(UrbeDocument d, ProjectTags projects) => new(d.Path, d.Title, d.Content, d.Modified, projects.Effective(d));
+        public PageNote? Get(string path) => store?.Get(path) is { } d ? Of(d, ProjectTags.Of(store.List())) : null;
+        public IReadOnlyList<PageNote> List()
+        {
+            if (store is null) return [];
+            var all = store.List();
+            var projects = ProjectTags.Of(all);
+            return all.Select(d => Of(d, projects)).ToList();
+        }
     }
 
     /// <summary>pageDocs(): the pages (not templates), the most recently changed first.</summary>

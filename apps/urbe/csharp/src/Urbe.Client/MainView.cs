@@ -58,6 +58,8 @@ public sealed partial class MainView : Grid
         Editor.ConfirmEmbeddedAtlasExitAsync = ConfirmEmbeddedAtlasExitAsync;
         Editor.Properties.TagSource = () => _store is null ? [] : _store.List().SelectMany(d => d.Tags).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
         Editor.PropertiesFor = path => _library?.PropertiesText(path, Now);
+        // the tags the open note gets from its project (DEC-0058), shown with where they come from
+        Editor.Properties.InheritedSource = text => _store is null || Editor.Current is not { } open ? [] : ProjectTags.Of(_store.List()).For(open.Path, text);
         // overlays enter with a short fade + slide (UX.md P6); IsVisible flips at once, so nothing waits for the motion
         Ui.UrbeMotion.EnterOnShow(Editor, dy: 12);
         Explorer.Closed += CloseNotesOverEditor;

@@ -149,10 +149,12 @@ public sealed partial class MainView
     /// <summary>The Área de trabalho as the vault is now.</summary>
     private void RefreshWorkspace()
     {
+        // the filters by tag include the ones inherited from the project (DEC-0058)
+        var projects = _store is null ? ProjectTags.Empty : ProjectTags.Of(_store.List());
         var notes = _contents.Select(n =>
         {
             var doc = _store?.Get(n.Key);
-            return new WorkspaceNote(n.Key, doc?.Title, n.Value, doc?.Modified ?? doc?.Created, doc?.Created, doc?.Tags);
+            return new WorkspaceNote(n.Key, doc?.Title, n.Value, doc?.Modified ?? doc?.Created, doc?.Created, doc is null ? null : projects.Effective(doc));
         }).ToList();
         var files = new HashSet<string>(_attachments, StringComparer.Ordinal);
         files.ExceptWith(_contents.Keys);

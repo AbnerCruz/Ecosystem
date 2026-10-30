@@ -26,6 +26,7 @@ public sealed partial class KnowledgeIndex : IDisposable
         new(StringComparer.Ordinal);
     private readonly Dictionary<string, List<string>> _tokens =
         new(StringComparer.Ordinal);
+    private ProjectTags _projects = ProjectTags.Empty;
 
     public KnowledgeIndex(DocumentStore store)
     {
@@ -52,6 +53,7 @@ public sealed partial class KnowledgeIndex : IDisposable
         _tokens.Clear();
 
         var all = _store.List();
+        _projects = ProjectTags.Of(all);
         var aliases = new Dictionary<string, string>(StringComparer.Ordinal);
 
         foreach (var document in all.Where(document => ArtifactModel.Linkable(document.Path)))
@@ -71,6 +73,9 @@ public sealed partial class KnowledgeIndex : IDisposable
         {
             foreach (var tag in document.Tags)
                 Add(_byTag, tag, document.Id);
+            // the tags of the project the note is in (DEC-0058): found by tag like its own
+            foreach (var inherited in _projects.For(document.Path, document.Content, document.Tags))
+                Add(_byTag, inherited.Tag, document.Id);
 
             var outgoing = new HashSet<string>(StringComparer.Ordinal);
             foreach (var raw in document.Links)
@@ -126,6 +131,17 @@ public sealed partial class KnowledgeIndex : IDisposable
                 .Cast<UrbeDocument>()
                 .ToArray());
     }
+
+    /// <summary>The folder notes that give tags to what is inside their folders (DEC-0058).</summary>
+    public ProjectTags Projects => _projects;
+
+    /// <summary>The tags a note inherits from its project, with where each comes from.</summary>
+    public IReadOnlyList<InheritedTag> Inherited(string? idOrPath) =>
+        _store.Get(idOrPath) is { } document ? _projects.For(document.Path, document.Content, document.Tags) : [];
+
+    /// <summary>Own tags and then the inherited ones.</summary>
+    public IReadOnlyList<string> EffectiveTags(string? idOrPath) =>
+        _store.Get(idOrPath) is { } document ? _projects.Effective(document) : [];
 
     public IReadOnlyList<UrbeDocument> Tagged(string? tag) =>
         Resolve(_byTag.GetValueOrDefault(Normalize(tag)));

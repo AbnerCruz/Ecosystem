@@ -115,7 +115,7 @@ public static partial class AssistantTools
             {
                 var document = ResolveDoc(host, Str(input, "path"))!;
                 // the agent reads what it may write: the note without the seals the Urbe manages (UC-51)
-                var read = ReadSlice(Readable(host, document), Int(input, "start_line"), Int(input, "max_lines"), ReadBudget(host), exactRange: true);
+                var read = ReadSlice(Readable(host, document), Int(input, "start_line"), Int(input, "max_lines"), ReadBudget(host), exactRange: true, inherited: host.Knowledge.Inherited(document.Id));
                 return Task.FromResult(new AiToolOutput("Versão da nota: " + document.Revision + "\n" + read.Text, Reads: [(document.Path, read.Partial)], Seen: [read.Seen]));
             }
         };

@@ -23,6 +23,7 @@ public sealed class PropertiesPanel : Border
     private readonly TextBlock _summary = new();
     private readonly TextBlock _chevron = new() { Text = "›", FontSize = 18 };
     private string _front = "";
+    private IReadOnlyList<InheritedTag> _inherited = [];
     private bool _readOnly;
 
     /// <summary>The note's text now (the host finishes any block being written first).</summary>
@@ -30,6 +31,9 @@ public sealed class PropertiesPanel : Border
 
     /// <summary>The tags of the vault, for suggestions.</summary>
     public Func<IEnumerable<string>>? TagSource { get; set; }
+
+    /// <summary>The tags the note inherits from its project, for its text now (DEC-0058).</summary>
+    public Func<string, IReadOnlyList<InheritedTag>>? InheritedSource { get; set; }
 
     public UrbeDialogs? Dialogs { get; set; }
 
@@ -122,16 +126,19 @@ public sealed class PropertiesPanel : Border
         var props = NoteProperties.Parse(text);
         var aliases = props.Aliases.Count;
         var tags = props.Tags.Count;
+        var inherited = _inherited = InheritedSource?.Invoke(text) ?? [];
         var other = props.Items.Count(p => p.Key.Length > 0 && !p.Key.Equals("aliases", StringComparison.OrdinalIgnoreCase) && !p.Key.Equals("tags", StringComparison.OrdinalIgnoreCase));
         var parts = new List<string>();
         if (aliases > 0) parts.Add(aliases == 1 ? "1 alias" : aliases + " aliases");
         if (tags > 0) parts.Add(tags == 1 ? "1 tag" : tags + " tags");
+        if (inherited.Count > 0) parts.Add(inherited.Count == 1 ? "1 herdada" : inherited.Count + " herdadas");
         if (other > 0) parts.Add(other == 1 ? "1 propriedade" : other + " propriedades");
         _summary.Text = parts.Count > 0 ? string.Join(" · ", parts) : (_readOnly ? "nenhuma" : "adicionar");
         if (!_scroll.IsVisible) return;
         _body.Children.Clear();
         _body.Children.Add(ListRow("aliases", "aliases", props.Aliases, "adicionar", false));
         _body.Children.Add(ListRow("tags", "tags", props.Tags, "adicionar", true));
+        if (inherited.Count > 0) _body.Children.Add(InheritedRow(inherited));
         foreach (var p in props.Items)
         {
             if (p.Key.Length == 0 || p.Key.Equals("aliases", StringComparison.OrdinalIgnoreCase) || p.Key.Equals("tags", StringComparison.OrdinalIgnoreCase)) continue;
@@ -335,7 +342,8 @@ public sealed class PropertiesPanel : Border
             {
                 offered.Children.Clear();
                 var typed = NoteProperties.NormalizeTag(input.Text ?? "");
-                foreach (var tag in TagSource().Where(t => !items.Contains(t, StringComparer.OrdinalIgnoreCase) && (typed.Length == 0 || t.Contains(typed, StringComparison.OrdinalIgnoreCase))).Take(6))
+                // a tag the note already inherits is not offered again
+                foreach (var tag in TagSource().Where(t => !items.Contains(t, StringComparer.OrdinalIgnoreCase) && !_inherited.Any(i => i.Tag.Equals(t, StringComparison.OrdinalIgnoreCase)) && (typed.Length == 0 || t.Contains(typed, StringComparison.OrdinalIgnoreCase))).Take(6))
                 {
                     var chip = new Button
                     {
@@ -353,6 +361,55 @@ public sealed class PropertiesPanel : Border
         }
         return Line(Glyph(key, PropertyKind.List), name, holder, remove);
     }
+
+    /// <summary>
+    /// The project's tags: each with the folder it comes from ("#worldbuilding · de Droerni"). They are not written in this
+    /// note; × refuses one here (sem-tags), which is reversible by removing it from sem-tags.
+    /// </summary>
+    private Control InheritedRow(IReadOnlyList<InheritedTag> inherited)
+    {
+        var chips = new WrapPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        foreach (var tag in inherited)
+        {
+            // × on the right; when the row is narrow the folder's name gives way first, then the tag (both trimmed, never cut)
+            var name = new TextBlock { Text = "#" + tag.Tag, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
+            var from = new TextBlock
+            {
+                Text = "de " + ProjectTags.FolderName(tag), FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(6, 0, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis
+            };
+            var words = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*") };
+            Grid.SetColumn(from, 1);
+            words.Children.Add(name);
+            words.Children.Add(from);
+            var line = new DockPanel();
+            ToolTip.SetTip(line, ProjectTags.Describe(tag) + " (" + tag.FolderNote + ")");
+            Avalonia.Automation.AutomationProperties.SetName(line, ProjectTags.Describe(tag));
+            if (!_readOnly)
+            {
+                var x = new Button
+                {
+                    Content = new TextBlock { Text = "×", FontSize = 14, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) }, Padding = new Thickness(8, 0, 0, 0), MinHeight = 0, MinWidth = 0,
+                    Background = Brushes.Transparent, BorderThickness = new Thickness(0), VerticalAlignment = VerticalAlignment.Center
+                };
+                Avalonia.Automation.AutomationProperties.SetName(x, "Não herdar " + tag.Tag);
+                var captured = tag.Tag;
+                x.Click += (_, _) => Apply(n => n.SetList("sem-tags", [.. ItemsOf(n.Get("sem-tags")), captured]), rebuild: true);
+                DockPanel.SetDock(x, Dock.Right);
+                line.Children.Add(x);
+            }
+            line.Children.Add(words);
+            chips.Children.Add(new Border
+            {
+                Child = line, Padding = new Thickness(10, 4, _readOnly ? 10 : 6, 4), Margin = new Thickness(0, 3, 6, 3), CornerRadius = new CornerRadius(999),
+                BorderThickness = new Thickness(1), BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent, .35), Background = Brushes.Transparent
+            });
+        }
+        return Line(Glyph("tags", PropertyKind.List), "herdadas", chips, null);
+    }
+
+    private static IEnumerable<string> ItemsOf(NoteProperty? p) =>
+        p is null ? [] : p.Items.Count > 0 ? p.Items : p.Value.Split([',', ' '], StringSplitOptions.RemoveEmptyEntries);
 
     // ------------------------------------------------------------------ a new property
 

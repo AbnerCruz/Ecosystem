@@ -2114,7 +2114,7 @@
       "decision": "Alternativa A — A — Nota da pasta, herança calculada (recomendada) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/859).",
       "decidedAt": "2026-10-30",
       "record": "docs/governance/responses/DEC-0058.md",
-      "consequencesApplied": false
+      "consequencesApplied": true
     },
     {
       "id": "DEC-0059",

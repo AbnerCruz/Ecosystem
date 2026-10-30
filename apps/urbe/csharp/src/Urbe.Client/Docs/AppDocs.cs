@@ -83,6 +83,8 @@ public static partial class AppDocs
 
         As **Propriedades** da nota (o bloco `---` do começo) têm um formulário no alto da nota, em Visual e em Fonte: toque em **Propriedades** para abrir. **Aliases** são outros nomes da nota: um link `[[apelido]]` leva a ela, aparece nas conexões e funciona em `![[apelido]]`. **Tags** aceitam as do vault com um toque. Texto, número, data, sim/não e listas têm campo próprio, e **Adicionar propriedade** cria outras. O que o formulário não entende fica como estava.
 
+        **Tags do projeto.** As tags escritas nas propriedades da **nota da pasta** (a nota com o nome da pasta, dentro dela: `Droerni/Droerni.md`) valem para tudo o que está nessa pasta e nas subpastas, sem ser escritas nas outras notas. Elas aparecem em **herdadas**, com a origem (`#worldbuilding` de Droerni), e contam na busca por tag, nos filtros da Área de trabalho, nas consultas das páginas e para o Assistente. Mover uma nota para outro projeto troca as herdadas na hora. Para uma nota não herdar uma tag, toque no × dela (o Urbe escreve `sem-tags: [worldbuilding]`); para não herdar nenhuma, use `herdar: false`. Fora do Urbe, as tags herdadas não aparecem nas outras notas.
+
         O **modo leitura** (o botão **Edição/Leitura** no rodapé do editor, ou **Mais ações → Modo leitura**) vale para Visual e Fonte: nada é alterado sem querer, a barra de formatação some e as propriedades só são mostradas. Links, comentários e cartões continuam funcionando.
 
         Para atualizar: **Configurações → Verificar atualização** procura uma versão mais nova do Urbe (só quando você pede). O arquivo abre no navegador: no Android, instale por cima do Urbe atual; no Windows, extraia o .zip por cima da pasta do Urbe. Suas notas ficam onde estão.
