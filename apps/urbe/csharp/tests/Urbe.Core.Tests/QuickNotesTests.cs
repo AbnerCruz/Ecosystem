@@ -61,4 +61,32 @@ public sealed class QuickNotesTests
         Assert.Equal("Notas rápidas/2026-01.md", QuickNotes.PathFor(new DateTime(2026, 1, 31, 23, 59, 0)));
         Assert.Equal("Notas rápidas/2026-02.md", QuickNotes.PathFor(new DateTime(2026, 2, 1, 0, 0, 0)));
     }
+    /// <summary>The shape of a real month note (entries before the checkbox, an entry with paragraphs and a seal).</summary>
+    private static string RealMonth()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Urbe.Portable.slnx"))) dir = dir.Parent;
+        return File.ReadAllText(Path.Combine(dir!.FullName, "tests", "fixtures", "quick-notes", "2026-10-estrutura-real.md")).Replace("\r\n", "\n");
+    }
+
+    [Fact]
+    public void ARealMonthNoteKeepsEverythingItHadAndGetsTheNewEntriesInTheirDay()
+    {
+        // CST-054: the last day, then a new one; what was there stays byte for byte, old entries keep their form
+        var month = RealMonth();
+        var sameDay = QuickNotes.Append(month, "revisar a lista", new DateTime(2026, 10, 25, 21, 3, 0))!.Value;
+        Assert.Equal("Notas rápidas/2026-10.md", sameDay.Path);
+        Assert.StartsWith(month.TrimEnd('\n'), sameDay.Content);
+        Assert.EndsWith("projetos\n- [ ] 21:03 — revisar a lista\n", sameDay.Content);
+
+        var newDay = QuickNotes.Append(sameDay.Content, "comprar sementes", new DateTime(2026, 10, 30, 7, 15, 0))!.Value;
+        Assert.StartsWith(sameDay.Content, newDay.Content);
+        Assert.EndsWith("\n## 30/10 — sexta-feira\n\n- [ ] 07:15 — comprar sementes\n", newDay.Content);
+
+        // a day in the middle of the month (with an entry of paragraphs) gets it after that entry, before the next day
+        var middle = QuickNotes.Append(month, "regar", new DateTime(2026, 10, 19, 18, 0, 0))!.Value.Content;
+        var at = middle.IndexOf("- [ ] 18:00 — regar", StringComparison.Ordinal);
+        Assert.True(at > middle.IndexOf("{ia:\"modelo-x\"}", StringComparison.Ordinal) && at < middle.IndexOf("## 24/10", StringComparison.Ordinal));
+        Assert.Equal(month.Length + "- [ ] 18:00 — regar\n".Length, middle.Length);
+    }
 }
