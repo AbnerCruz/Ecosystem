@@ -1,6 +1,5 @@
 # Changelog
 
-- Added / LUNET-461 (#862, PR #863): RPG dos Sonhos exclusivamente Lunet em samples/rpg-dos-sonhos; fatia coleta→produção→preparação→pista→combate, touch, pausa e save. Suíte 758/758 e Android 13 emulado com save/restore verificados; arte provisória e DEVICE físico pendente.
 - Fixed / host standalone: entrega Game.OnPause na thread GL antes de suspendê-la, usando o mesmo PauseForBackground do PreviewHost. Regressão provada por smoke Android que falhou antes e passou após a correção; JSON privado e restore após force-stop conferidos.
 
 - F4 / Correção de CI integrado do PR #856: criação e destruição de mundos Box2D passam por mutex global de ciclo de vida, como exige a documentação oficial do Box2D. Mantém simulação de mundos distintos paralela; teste de regressão com 256 ciclos concorrentes. O teste PhysicsWorldTests.DynamicBallFallsOntoGround havia falhado de forma intermitente no estado combinado; CI novo e DEVICE pendentes.

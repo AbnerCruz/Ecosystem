@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261030-lunet-standalone-pause",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-30T18:08:16Z",
+  "agent": {
+    "id": "codex-rpg-sonhos",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-461",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "feat/rpg-sonhos-slice1-20261030",
+  "base_commit": "f2d67c4de77385e49c91cd73760ec468895e7799",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/863",
+  "files_changed": [
+    "apps/lunet2d/runtime-template/StandaloneGameActivity.cs",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md"
+  ],
+  "work_completed": [
+    "Correção genérica do host standalone: entrega de OnPause na thread GL antes da suspensão.",
+    "Por solicitação do proprietário, retirados do PR os arquivos do jogo, testes, script e workflow específicos; retirada a entrada de jogo no roadmap."
+  ],
+  "verification": [
+    {
+      "check": "Suíte Lunet antes da retirada dos fixtures específicos",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/41100144389 — 758/758."
+    },
+    {
+      "check": "Pausa/save/restore no Android 13 emulado antes da retirada dos fixtures",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/41100144277 — JSON privado e restore após force-stop."
+    },
+    {
+      "check": "Verificação estrutural da retirada",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Exclusão dos quatro arquivos de samples/rpg-dos-sonhos, RpgSonhosSliceTests, ci-rpg-sonhos.sh e rpg-sonhos-ci.yml; correção do host preservada."
+    },
+    {
+      "check": "CI do PR reduzido",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Nova execução após o commit de retirada."
+    }
+  ],
+  "known_issues": [
+    "Nenhuma validação física executada nesta sessão."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Conferir CI e integrar somente a correção genérica pela governança existente."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "MANIFEST.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Sem alteração em outro produto."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Emulador e aparelho físico distinguidos."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Evidência anterior preservada, CI posterior declarado pendente."
+    }
+  ]
+}
