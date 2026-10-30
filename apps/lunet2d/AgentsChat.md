@@ -613,3 +613,8 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Testes anteriores ao código em 7cb9757; GameCompiler/GameLoader/GameHost reais. Primeiro CI detectou conversão int/uint na paleta; corrigida explicitamente. Referências nominais desnecessárias a outros produtos no texto novo removidas para respeitar CHK-ARCH-REFS.
 - Pipeline específico gera APK ARM64 pelo template real Lunet, ZIP importável e smoke em Android 13 emulado. Não presume validação física.
 - Escolhas provisórias e roteiro em samples/rpg-dos-sonhos/README.md. Próximo: CI verde, inspeção da captura do runtime e DEVICE. Handoff HO-20261030-rpg-sonhos-slice1.json.
+
+### 20261030-codex-rpg-sonhos-slice1-result — review
+- Correção necessária no host standalone: PauseForBackground enfileirado antes de GLSurfaceView.OnPause, igual ao PreviewHost. O primeiro smoke havia falhado justamente ao cobrar gravação no background; não houve afrouxamento do teste.
+- Fontes c455129: CI Lunet 41100144389 passou 758/758; pipeline do jogo 41100144277 gerou ARM64/x64, instalou e abriu Android 13 emulado, conferiu save privado no background e restore após force-stop. Capturas reais inspecionadas; checksums dos bytes baixados OK. DEVICE físico segue pendente.
+- PR #863 inclui workflow novo: integração é crítica control-plane por política; o autor não põe label integrar. Artefato de teste 12998187299, projeto ZIP com Game.cs/DreamWorld.cs/lunet.json/README. Sem prometer atualização de APK CI assinado por chave efêmera.

@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261030-rpg-sonhos-slice1",
   "category": "HANDOFF",
-  "timestamp": "2026-10-30T17:39:00Z",
+  "timestamp": "2026-10-30T17:41:10Z",
   "agent": {
     "id": "codex-rpg-sonhos",
     "kind": "ai-agent"
   },
   "task_id": "LUNET-461",
   "component": "lunet2d",
-  "state": "verifying",
+  "state": "review",
   "branch": "feat/rpg-sonhos-slice1-20261030",
   "base_commit": "f2d67c4de77385e49c91cd73760ec468895e7799",
   "commit": null,
@@ -31,7 +31,8 @@
     "Projeto Lunet exclusivo: coleta finita, produção por NPC, cura, pistas redundantes, ruína com combate anunciado, touch, pausa e SaveData.",
     "Testes escritos antes da implementação: commit 7cb9757411b3104754c7a3d3fcf35dd4bfc4284e.",
     "README classifica requisitos/propostas/pendências e registra APIs confirmadas, aceites e instruções.",
-    "Emulador revelou OnPause perdido no host standalone; correção usa QueueEvent(PauseForBackground), como PreviewHost já faz. Smoke reforçado confere JSON privado e restore após force-stop."
+    "Emulador revelou OnPause perdido no host standalone; correção usa QueueEvent(PauseForBackground), como PreviewHost já faz. Smoke reforçado confere JSON privado e restore após force-stop.",
+    "APK ARM64 do jogo e ZIP importável gerados pelo template Lunet. Capturas de abertura, pausa e reinício inspecionadas; save em disco confirmado no emulador."
   ],
   "verification": [
     {
@@ -39,12 +40,6 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "APIs consultadas diretamente na base; seis notas disponíveis lidas."
-    },
-    {
-      "check": "Suíte Lunet incluindo RpgSonhosSliceTests e checks de consistência",
-      "kind": "automated",
-      "result": "pending",
-      "evidence": "CI do PR. Ambiente local sem dotnet/adb. Não executados localmente."
     },
     {
       "check": "Loop touch, layout, APK offline e retomada no Android físico",
@@ -64,6 +59,30 @@
       "kind": "automated",
       "result": "failed",
       "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/41099224603 — ARM64/x64 compilados, assinatura/alinhamento/instalação/boot passaram. Save no background falhou; corrigido antes de entregar."
+    },
+    {
+      "check": "Suíte Lunet após correção do host",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/41100144389 — log do job 124215814286: 758/758 passaram, 0 skips. Fontes c455129."
+    },
+    {
+      "check": "APK real e lifecycle Android 13 x86_64 emulado",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/41100144277 — ARM64/x64 gerados, assinatura/alinhamento, adb install, boot, HOME→save JSON privado, retorno pausado, force-stop→restore=loaded. Artefato 12998187299, capturas inspecionadas."
+    },
+    {
+      "check": "Checksums ARM64 e ZIP baixados do CI",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "sha256sum -c SHA256SUMS.txt: os dois OK."
+    },
+    {
+      "check": "Consistency e self-test finais",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI do PR após correção da referência de merge temporário; não marcar sucesso antes do log."
     }
   ],
   "known_issues": [
@@ -74,8 +93,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Executar CI real, corrigir qualquer falha e manter revisão pendente até evidência.",
-    "Gerar/importar o projeto no Lunet e validar roteiro no aparelho antes de expandir."
+    "Conferir checks finais e autorização control-plane para integração governada do PR #863.",
+    "Validar a primeira fatia no celular do proprietário antes de expandir sistemas. APK de teste usa PackageId por execução e chave debug efêmera; projeto Lunet mantém identidade própria."
   ],
   "decisions_required": [],
   "normative_sources": [

@@ -14,7 +14,7 @@ Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andame
 
 ## Jogo solicitado pelo proprietário — RPG dos Sonhos
 
-- [ ] **LUNET-461 / Issue #862:** primeira fatia offline em `samples/rpg-dos-sonhos`, exclusivamente com Lunet. Coleta→produção→preparação→pista recuperável→combate em ruína, região procedural compacta, touch, pausa e save. Aceites e escolhas provisórias no README do projeto; testes `RpgSonhosSliceTests` anteriores ao código. Compilação/execução CI e DEVICE ainda pendentes. Não fecha gates da IDE nem equivale ao jogo completo.
+- [ ] **LUNET-461 / Issue #862:** primeira fatia offline em `samples/rpg-dos-sonhos`, exclusivamente com Lunet. Coleta→produção→preparação→pista recuperável→combate em ruína, região procedural compacta, touch, pausa e save. Aceites e escolhas provisórias no README do projeto; testes `RpgSonhosSliceTests` anteriores ao código. Compilação/execução e 758 testes CI passaram; APK ARM64 e smoke Android 13 emulado com save/restore verificados (PR #863). Implementado, sem validação em aparelho físico; integração governada e checks finais pendentes. Não fecha gates da IDE nem equivale ao jogo completo.
 
 ## Prioridade de execução — ordem do proprietário em 25/10/2026
 
