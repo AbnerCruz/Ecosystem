@@ -922,6 +922,7 @@ public sealed partial class MainView : Grid
             Editor.Renamed(plan.Path);
             Editor.Notify("Arquivo renomeado.");
         }
+        await RelinkAsync([(path, plan.Path)]);
         await RetargetGraphsAsync([(path, plan.Path)]);
     }
 
@@ -1502,6 +1503,7 @@ public sealed partial class MainView : Grid
         }
         NotesChanged();
         RefreshNotes();
+        await RelinkAsync(moves);
         await RetargetGraphsAsync(moves);
     }
 

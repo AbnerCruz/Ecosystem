@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261030-urbe-consolidation-wave8",
   "category": "HANDOFF",
-  "timestamp": "2026-10-30T00:06:14Z",
+  "timestamp": "2026-10-30T00:21:46Z",
   "agent": {
     "id": "claude-code-urbe-consolidation",
     "kind": "ai-agent"
@@ -25,19 +25,29 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/StorageFailureUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/InterruptedWritesTests.cs",
     "apps/urbe/docs/csharp/CONSOLIDATION.md",
-    "docs/governance/handoffs/HO-20261030-urbe-consolidation-wave8.json"
+    "docs/governance/handoffs/HO-20261030-urbe-consolidation-wave8.json",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Relink.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LinkRename.cs",
+    "apps/urbe/csharp/src/Urbe.Core/DocumentModel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LinkRenameTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CombinedFlowsUiTests.cs"
   ],
   "work_completed": [
     "CST-004/007: falhas do armazenamento antes e depois da gravação conferidas no disco (WriteOrAskAsync) em criar, salvar, renomear, mover, excluir, restaurar, duplicar, criar por modelo, excluir de vez e esvaziar: sem falso sucesso, sem tela diferente do disco, mesmo id; mensagem com Tentar de novo e palavras da pessoa (StorageProblems).",
     "CST-006: gravação cortada pelo app fechando resolvida na abertura seguinte (InterruptedWrites): nota vazia ou ausente recupera o texto anterior, textos diferentes ficam lado a lado, a cópia do armazenamento só sai depois de o texto estar conferido numa nota.",
-    "CST-013 (parte): fechar a janela no computador salva a nota aberta antes (UrbeApp.SaveBeforeClosing); sem conseguir salvar, a janela fica e pergunta."
+    "CST-013 (parte): fechar a janela no computador salva a nota aberta antes (UrbeApp.SaveBeforeClosing); sem conseguir salvar, a janela fica e pergunta.",
+    "CST-101 (parte): renomear ou mover nota, pasta ou anexo atualiza os [[links]] em todas as notas (LinkRename + DocumentModel.RewriteLinks), mantendo seção, apelido e forma; nomes ambíguos e código ficam intactos."
   ],
   "verification": [
     {
       "check": "dotnet test Urbe.Portable.slnx",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1567 testes, 0 falhas (local, .NET 10, Release). StorageFailureUiTests: 8 dos 10 casos de falha vermelhos antes da correção; a gravação cortada e o fechamento da janela vermelhos antes. Build Android Debug e Desktop Release ok."
+      "evidence": "1574 testes, 0 falhas (local, .NET 10, Release). StorageFailureUiTests: 8 dos 10 casos de falha vermelhos antes da correção; a gravação cortada e o fechamento da janela vermelhos antes. Build Android Debug e Desktop Release ok."
     },
     {
       "check": "dotnet run tests/consistency/Check.cs",
@@ -55,11 +65,12 @@
   ],
   "known_issues": [
     "Os arquivos internos (.urbe/) não entram na recuperação de gravação cortada: continuam protegidos pelos próprios leitores; a cópia de um deles fica onde está.",
-    "Execução do Assistente com o app em segundo plano e morte do processo (resto do CST-013) ainda não conferida."
+    "Execução do Assistente com o app em segundo plano e morte do processo (resto do CST-013) ainda não conferida.",
+    "Links Markdown [texto](Nota.md) não são reescritos ao renomear; só os wiki links."
   ],
   "blockers": [],
   "next_actions": [
-    "CST-101: procurar defeitos combinando recursos (formulário com nota alterada, arquivo movido enquanto aberto, aprovação pendente durante consulta).",
+    "CST-101 (resto): formulário com nota alterada, aprovação pendente durante consulta; links Markdown ao renomear.",
     "Depois: editor (CST-015 a 026) e agentes (CST-071 em diante)."
   ],
   "decisions_required": [
@@ -98,6 +109,11 @@
       "subject": "interrupted-writes",
       "status": "product-specific",
       "rationale": "Ligado ao formato das cópias .urbe-recovery- dos armazenamentos do Urbe."
+    },
+    {
+      "subject": "link-rename",
+      "status": "product-specific",
+      "rationale": "Resolução de links das notas do Urbe (KnowledgeIndex); nenhum outro Product tem wiki links."
     }
   ],
   "criticality": {

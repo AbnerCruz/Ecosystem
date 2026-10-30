@@ -118,6 +118,7 @@ public sealed partial class MainView
         if (Editor.IsVisible && Editor.Current is { } current && moves.TryGetValue(current.Path, out var renamed)) Editor.Renamed(renamed);
         NotesChanged();
         RefreshNotes();
+        await RelinkAsync([(folder, target)]);
         await RetargetGraphsAsync([(folder, target)]);
         ShowLifeNotice("Pasta renomeada para “" + name + "”.");
         return true;
@@ -225,6 +226,7 @@ public sealed partial class MainView
         NotesChanged();
         RefreshNotes();
         // the graphs follow what moved: the whole folder, or the files that went before a failure
+        await RelinkAsync(failure is null ? [(folder, target)] : [.. moved.Select(m => (m.From, m.To))]);
         await RetargetGraphsAsync(failure is null ? [(folder, target)] : [.. moved.Select(m => (m.From, m.To))]);
         if (FilePreview.IsVisible && FilePreview.Current is { } shown && moved.Find(m => m.From == shown) is { To: { } shownTo })
             await FilePreview.OpenAsync(shownTo);

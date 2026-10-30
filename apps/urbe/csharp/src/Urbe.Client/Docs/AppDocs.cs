@@ -47,6 +47,7 @@ public static partial class AppDocs
         - No alto: **Favoritos** e **Recentes**, depois os **projetos** em árvore, com linhas que mostram os níveis.
         - No computador, arraste a borda da barra para mudar a largura, e o botão de **Pastas** recolhe e devolve a barra. No celular, ela abre como uma gaveta pelo botão **Pastas** ou deslizando da borda esquerda; tocar fora fecha.
         - Para renomear no lugar: segure a linha e toque em **Renomear** (ou F2 no computador). Enter confirma, Esc desiste.
+        - Renomear ou mover uma nota, um arquivo ou uma pasta atualiza os links para ela em todas as notas (`[[Nome]]`, `[[Pasta/Nome]]`, `![[foto.png]]`, com `#seção` e `|apelido`). Um nome que mais de um arquivo do vault usa fica como está, porque não dá para saber qual era.
 
         ## Navegar no celular
 
