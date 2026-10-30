@@ -81,7 +81,7 @@ public sealed partial class CustomizePanel
         var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
         if (icon is not null) content.Children.Add(UrbeTheme.Icon(icon, 17, UrbeTheme.Accent));
         content.Children.Add(Label(text, 13, FontWeight.SemiBold, UrbeTheme.Accent));
-        var b = new Button { Content = content, MinHeight = 36, Padding = new Thickness(10, 0), CornerRadius = new CornerRadius(8), Background = Brushes.Transparent, VerticalContentAlignment = VerticalAlignment.Center };
+        var b = new Button { Content = content, MinHeight = 40, Padding = new Thickness(10, 0), CornerRadius = new CornerRadius(8), Background = Brushes.Transparent, VerticalContentAlignment = VerticalAlignment.Center };
         b.Click += (_, _) => click();
         return b;
     }
@@ -101,7 +101,7 @@ public sealed partial class CustomizePanel
         return b;
     }
 
-    private static Button Mini(string icon, string tip, Action click, double size = 36)
+    private static Button Mini(string icon, string tip, Action click, double size = 40)
     {
         var b = new Button { Content = UrbeTheme.Icon(icon, 18, UrbeTheme.Text3), Width = size, Height = size, Padding = new Thickness(0), CornerRadius = new CornerRadius(8), Background = Brushes.Transparent, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
         ToolTip.SetTip(b, tip);
@@ -249,7 +249,7 @@ public sealed partial class CustomizePanel
             bool on = pal.Colors["destaque"] == a;
             var b = new Button
             {
-                Width = 38, Height = 38, Margin = new Thickness(0, 0, 10, 10), Padding = new Thickness(0), CornerRadius = new CornerRadius(19), Background = new SolidColorBrush(Color.Parse(a)),
+                Width = 42, Height = 42, Margin = new Thickness(0, 0, 8, 10), Padding = new Thickness(0), CornerRadius = new CornerRadius(19), Background = new SolidColorBrush(Color.Parse(a)),
                 BorderBrush = UrbeTheme.Brush(on ? UrbeTheme.Text : UrbeTheme.Line2), BorderThickness = new Thickness(on ? 2 : 1)
             };
             AutomationName(b, "Destaque " + a);

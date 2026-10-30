@@ -166,11 +166,12 @@ public sealed partial class CustomizePanel : Grid
         {
             Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = _narrow ? 7 : 12, VerticalAlignment = VerticalAlignment.Center,
                 Children = { UrbeTheme.Icon(icon, _narrow ? 17 : 20, on ? UrbeTheme.Accent : UrbeTheme.Text2), Label(name, _narrow ? 13.5 : 14, FontWeight.SemiBold, on ? UrbeTheme.Accent : UrbeTheme.Text2) } },
-            MinHeight = _narrow ? 38 : 44, Padding = new Thickness(_narrow ? 14 : 12, 0), HorizontalAlignment = _narrow ? HorizontalAlignment.Left : HorizontalAlignment.Stretch,
+            MinHeight = _narrow ? 40 : 44, Padding = new Thickness(_narrow ? 14 : 12, 0), HorizontalAlignment = _narrow ? HorizontalAlignment.Left : HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Left, VerticalContentAlignment = VerticalAlignment.Center,
             CornerRadius = new CornerRadius(_narrow ? 999 : 12), Background = on ? UrbeTheme.AccentSoft : Brushes.Transparent,
             BorderThickness = new Thickness(_narrow && !on ? 1 : 0), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2)
         };
+        AutomationName(b, name);   // CST-105: a screen reader says the section, not "botão"
         b.Click += (_, _) => { _section = id; BuildFrame(); _bodyScroll.Offset = default; Render(); };
         return b;
     }
@@ -207,7 +208,7 @@ public sealed partial class CustomizePanel : Grid
         var add = new Button
         {
             Content = new TextBlock { Text = "Adicionar tag", FontSize = 13, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text) },
-            Padding = new Thickness(12, 6), CornerRadius = new CornerRadius(10), Background = UrbeTheme.Brush(UrbeTheme.Surface3)
+            Padding = new Thickness(12, 6), MinHeight = 40, CornerRadius = new CornerRadius(10), Background = UrbeTheme.Brush(UrbeTheme.Surface3)
         };
         add.Click += async (_, _) =>
         {
@@ -240,7 +241,7 @@ public sealed partial class CustomizePanel : Grid
             var chosen = string.Equals(c, current, StringComparison.OrdinalIgnoreCase);
             var dot = new Button
             {
-                Width = 26, Height = 26, Padding = new Thickness(0), Margin = new Thickness(3), CornerRadius = new CornerRadius(13),
+                Width = 40, Height = 40, Padding = new Thickness(0), Margin = new Thickness(2), CornerRadius = new CornerRadius(20),
                 Background = UrbeTheme.Brush(c), BorderBrush = UrbeTheme.Brush(chosen ? UrbeTheme.Text : UrbeTheme.Line2), BorderThickness = new Thickness(chosen ? 2 : 1)
             };
             ToolTip.SetTip(dot, c);
@@ -269,7 +270,7 @@ public sealed partial class CustomizePanel : Grid
             var on = i == chosenIcon;
             var b = new Button
             {
-                Content = new TextBlock { Text = i, FontSize = 16 }, Width = 34, Height = 34, Padding = new Thickness(0), Margin = new Thickness(2), CornerRadius = new CornerRadius(8),
+                Content = new TextBlock { Text = i, FontSize = 17 }, Width = 40, Height = 40, Padding = new Thickness(0), Margin = new Thickness(2), CornerRadius = new CornerRadius(8),
                 HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center,
                 Background = on ? UrbeTheme.Brush(current, .2) : Brushes.Transparent, BorderBrush = UrbeTheme.Brush(on ? current : UrbeTheme.Line2), BorderThickness = new Thickness(on ? 2 : 1)
             };
@@ -457,7 +458,7 @@ public sealed partial class CustomizePanel : Grid
             bool on = v == value;
             var b = new Button
             {
-                Content = label, MinHeight = 34, Padding = new Thickness(12, 0), CornerRadius = new CornerRadius(7), FontFamily = UrbeTheme.UiFont, FontSize = 13,
+                Content = label, MinHeight = 40, Padding = new Thickness(12, 0), CornerRadius = new CornerRadius(7), FontFamily = UrbeTheme.UiFont, FontSize = 13,
                 FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(on ? UrbeTheme.Text : UrbeTheme.Text2),
                 Background = on ? UrbeTheme.Brush(UrbeTheme.Surface3) : Brushes.Transparent, HorizontalContentAlignment = HorizontalAlignment.Center,
                 VerticalContentAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Stretch

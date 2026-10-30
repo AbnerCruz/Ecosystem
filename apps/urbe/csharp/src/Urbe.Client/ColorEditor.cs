@@ -64,7 +64,7 @@ public static class ColorEditor
     }
 
     /// <summary>A swatch button that opens the editor; <paramref name="commit"/> runs once, when the flyout closes with a new colour.</summary>
-    public static Button Button(string hex, string name, Action<string> preview, Action<string> commit, double width = 44, double height = 36, double radius = 8)
+    public static Button Button(string hex, string name, Action<string> preview, Action<string> commit, double width = 48, double height = 40, double radius = 8)
     {
         var swatch = new Border { Background = new SolidColorBrush(Color.Parse(hex)), CornerRadius = new CornerRadius(Math.Max(0, radius - 3)), Margin = new Thickness(3) };
         string current = hex;
