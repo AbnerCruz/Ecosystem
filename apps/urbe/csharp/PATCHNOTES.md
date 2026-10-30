@@ -50,6 +50,7 @@
   - A tela acompanha o que acontece sem fechar e reabrir.
   - Perguntas mostram o quanto o agente já entendeu.
   - O que você estava escrevendo para cada agente, com os anexos, volta mesmo depois de o Android encerrar o app.
+  - Até 20 anexos por mensagem (antes, 4). Fotos grandes ou deitadas vão de pé e reduzidas, em vez de recusadas.
 - **Métrica de cada resposta:** tempo, chamadas e onde o tempo foi gasto.
 
 ## Navegação

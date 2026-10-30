@@ -58,7 +58,12 @@
     "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
     "apps/urbe/csharp/PATCHNOTES.md",
     "apps/urbe/csharp/PATCHNOTES-beta.37.md",
-    "apps/urbe/csharp/PATCHNOTES-HISTORY.md"
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/src/Urbe.Client/AttachmentImages.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Urbe.Client.csproj",
+    "apps/urbe/csharp/Directory.Build.props",
+    "apps/urbe/docs/csharp/DEPENDENCIES.md",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AttachmentImagesTests.cs"
   ],
   "work_completed": [
     "CST-042: tags herdadas por projeto conforme DEC-0058 alternativa A. As tags do frontmatter da nota da pasta (Droerni/Droerni.md) valem para tudo dentro da pasta e das subpastas (somadas de fora para dentro), calculadas pela localização em ProjectTags (Urbe.Core); nenhuma outra nota é escrita.",
@@ -73,7 +78,8 @@
     "CST-019 (parte): Personalização → Editor → Barra de formatação arruma a barra pelo toque (subir, descer, tirar, pôr, separador, padrão), gravando só a chave barra do mesmo editor.json, lido na hora.",
     "CST-076: ordem das instruções definida e enviada ao agente (pedido atual > papel e blocos do agente > AGENTS.md, parte do modelo antes da Geral > orientações do Urbe; segurança, permissões, aprovações e selos acima de todas); partes do AGENTS.md nomeadas quando há parte do modelo.",
     "CST-122: rascunhos do chat (texto e anexos) por agente guardados no aparelho e restaurados depois de o app ser encerrado.",
-    "Release 2.0.0-beta.37 preparada (versionCode 2000037, notas das levas 1 a 9): o workflow oficial publica o APK quando o PR entrar na main. APK de prévia construído localmente com a mesma chave beta para o proprietário."
+    "Release 2.0.0-beta.37 preparada (versionCode 2000037, notas das levas 1 a 9): o workflow oficial publica o APK quando o PR entrar na main. APK de prévia construído localmente com a mesma chave beta para o proprietário.",
+    "CST-081 / DEC-0059: anexos do chat sem limitador artificial: 20 por mensagem dentro de 30 MB (limites reais dos provedores, pesquisados), fotos grandes ou deitadas endireitadas e reduzidas em vez de recusadas, PDF até 20 MB, notas com o mesmo orçamento dos arquivos."
   ],
   "verification": [
     {

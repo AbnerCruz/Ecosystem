@@ -5,5 +5,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- ADR-0032: versão única e fixa do Avalonia para o cliente nativo. -->
     <AvaloniaVersion>12.1.3</AvaloniaVersion>
+    <!-- the SkiaSharp Avalonia 12.1.3 renders with; Urbe.Client uses it directly to reduce attached photos (CST-081) -->
+    <SkiaSharpVersion>3.119.4</SkiaSharpVersion>
   </PropertyGroup>
 </Project>

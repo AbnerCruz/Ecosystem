@@ -49,5 +49,6 @@ O inventário registra uso real, opções por ambiente, riscos e prova para toda
 | Avalonia.Desktop | 12.1.3 | MIT | Head Windows (executa também em Linux para desenvolvimento) | `src/Urbe.Desktop` |
 | Avalonia.Android | 12.1.3 | MIT | Head Android | `src/Urbe.Android` |
 | Avalonia.Headless, Avalonia.Skia | 12.1.3 | MIT | Testes de interface com renderização Skia real, sem janela | `tests/Urbe.Client.Tests` |
+| SkiaSharp | 3.119.4 (a mesma que o Avalonia 12.1.3 usa; fixa em `csharp/Directory.Build.props`) | MIT | Reduzir e endireitar (EXIF) fotos anexadas ao chat (CST-081); já vinha no app pelo Avalonia, agora é referência direta | `src/Urbe.Client` |
 
 Dependências transitivas relevantes: SkiaSharp e HarfBuzzSharp (MIT), AndroidX AppCompat/DocumentFile/Window (Apache-2.0) no head Android. Os avisos de terceiros do pacote distribuído entram no item de release (UC-27); as prévias do UC-33 são artefatos de CI, não distribuição.

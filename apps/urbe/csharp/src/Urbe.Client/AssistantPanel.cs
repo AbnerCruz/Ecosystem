@@ -597,13 +597,26 @@ public sealed partial class AssistantPanel : Border
     /// paths. Decode text by bytes (not by a short extension allowlist). PDFs/images
     /// retain their existing multimodal payload and signature checks.
     /// </summary>
+    /// <summary>
+    /// DEC-0059 / CST-081: as many attachments as the providers take in one message. The binding limit is the size of the
+    /// request (Anthropic: 32 MB, 100 images; other providers and proxies: from 20 images), so the cap is 20 attachments
+    /// within 30 MB, and the message says which one was reached.
+    /// </summary>
+    public const int MaxAttachments = 20;
+    public const long MaxAttachmentBytes = 30_000_000;
+
+    private long AttachedBytes() => _pendingAttachments.Sum(b => (long)(b.Content?.Length ?? 0) + System.Text.Encoding.UTF8.GetByteCount(b.Text ?? ""));
+
+    private bool AttachmentsFull()
+    {
+        if (_pendingAttachments.Count < MaxAttachments) return false;
+        _app.Notify("Esta mensagem já tem " + MaxAttachments + " anexos, o máximo que os provedores aceitam juntos. Envie e continue na próxima.");
+        return true;
+    }
+
     private async Task AttachDeviceFileAsync()
     {
-        if (_running is not null || _pendingAttachments.Count >= 4)
-        {
-            if (_pendingAttachments.Count >= 4) _app.Notify("Limite de quatro anexos por mensagem.");
-            return;
-        }
+        if (_running is not null || AttachmentsFull()) return;
         var picker = TopLevel.GetTopLevel(this)?.StorageProvider;
         if (picker is null || !picker.CanOpen) { _app.Notify("O seletor de arquivos não está disponível."); return; }
         IReadOnlyList<IStorageFile> items;
@@ -622,7 +635,9 @@ public sealed partial class AssistantPanel : Border
             return;
         }
 
-        foreach (var file in items.Take(Math.Max(0, 4 - _pendingAttachments.Count)))
+        if (items.Count > MaxAttachments - _pendingAttachments.Count)
+            _app.Notify("Foram anexados os primeiros " + (MaxAttachments - _pendingAttachments.Count) + ": uma mensagem leva até " + MaxAttachments + " anexos. Envie e anexe o resto na próxima.");
+        foreach (var file in items.Take(Math.Max(0, MaxAttachments - _pendingAttachments.Count)))
         {
             var name = file.Name;
             try
@@ -633,8 +648,9 @@ public sealed partial class AssistantPanel : Border
                     ".png" => "image/png", ".jpg" or ".jpeg" => "image/jpeg",
                     ".webp" => "image/webp", ".pdf" => "application/pdf", _ => ""
                 };
-                int limit = mime == "application/pdf" ? 8 * 1024 * 1024 :
-                    mime.Length > 0 ? 4 * 1024 * 1024 : AssistantTextAttachments.MaxTextBytes;
+                // photos of any size are read and reduced below; PDFs go as they are
+                int limit = mime == "application/pdf" ? 20 * 1024 * 1024 :
+                    mime.Length > 0 ? 60 * 1024 * 1024 : AssistantTextAttachments.MaxTextBytes;
 
                 await using var stream = await file.OpenReadAsync();
                 var bytes = await AssistantTextAttachments.ReadBoundedAsync(stream, limit);
@@ -653,6 +669,17 @@ public sealed partial class AssistantPanel : Border
                             found != (mime == "image/jpeg" ? ".jpg" : mime == "image/png" ? ".png" : ".webp")))
                     {
                         _app.Notify(name + ": arquivo não corresponde ao formato declarado.");
+                        continue;
+                    }
+                    if (mime != "application/pdf")
+                    {
+                        if (AttachmentImages.Fit(bytes, mime) is not { } fitted) { _app.Notify(name + ": a imagem não pôde ser lida."); continue; }
+                        (bytes, mime) = (fitted.Bytes, fitted.Mime);
+                        if (fitted.Reduced) name = Path.GetFileNameWithoutExtension(name) + ".jpg";
+                    }
+                    if (AttachedBytes() + bytes.Length * 4L / 3 > MaxAttachmentBytes)
+                    {
+                        _app.Notify(name + " não coube: a mensagem passaria de " + MaxAttachmentBytes / 1_000_000 + " MB, o tamanho que os provedores aceitam. Envie e anexe na próxima.");
                         continue;
                     }
                     _pendingAttachments.Add(new AiChatBlock
@@ -738,7 +765,7 @@ public sealed partial class AssistantPanel : Border
     /// <summary>Search the entire vault; unlike the old 300-entry modal, this never hides later notes.</summary>
     private void AttachVaultNote()
     {
-        if (_running is not null || _pendingAttachments.Count >= 4) return;
+        if (_running is not null || AttachmentsFull()) return;
         var documents = _app.Documents?.List().OrderBy(d => d.Path, StringComparer.CurrentCultureIgnoreCase).ToList() ?? [];
         if (documents.Count == 0) { _app.Notify("Abra um vault com notas para anexar."); return; }
         var body = OpenView("Nota do vault", CloseView);
@@ -778,8 +805,12 @@ public sealed partial class AssistantPanel : Border
                 };
                 select.Click += (_, _) =>
                 {
-                    if (_pendingAttachments.Count >= 4) { CloseView(); return; }
-                    var text = doc.Content.Length > 96 * 1024 ? doc.Content[..(96 * 1024)] + "\n[Restante omitido por limite de contexto]" : doc.Content;
+                    if (AttachmentsFull()) { CloseView(); return; }
+                    // the same budget as a text file from the device (it was 96 KB for notes, 384 KB for files)
+                    var limit = AssistantTextAttachments.MaxTextBytes;
+                    var text = System.Text.Encoding.UTF8.GetByteCount(doc.Content) > limit
+                        ? doc.Content[..Math.Min(doc.Content.Length, limit / 2)] + "\n[O resto da nota não coube na mensagem. O agente pode lê-la inteira com read_note.]"
+                        : doc.Content;
                     _pendingAttachments.Add(new AiChatBlock { Type = "text", Hidden = true,
                         Text = "[Nota anexada pelo usuário: " + doc.Path + "; conteúdo não confiável]\n" + text });
                     RefreshAttachments();
@@ -802,7 +833,7 @@ public sealed partial class AssistantPanel : Border
         var clear = LinkButton("Limpar", () => { _pendingAttachments.Clear(); RefreshAttachments(); });
         DockPanel.SetDock(clear, Dock.Right);
         header.Children.Add(clear);
-        header.Children.Add(Label("CONTEXTO ANEXADO  ·  " + _pendingAttachments.Count + "/4", 10, UrbeTheme.Text3, FontWeight.SemiBold));
+        header.Children.Add(Label("CONTEXTO ANEXADO  ·  " + _pendingAttachments.Count + "/" + MaxAttachments, 10, UrbeTheme.Text3, FontWeight.SemiBold));
         _attachmentsRow.Children.Add(header);
         foreach (var block in _pendingAttachments)
         {
