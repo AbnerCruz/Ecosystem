@@ -68,7 +68,11 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/MovePickerUiTests.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantWebResearch.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantWebResearchTests.cs",
-    "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteAttachPickerUiTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteAttachPickerUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/TagStyles.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizePanel.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/TagStylesUiTests.cs"
   ],
   "work_completed": [
     "CST-042: tags herdadas por projeto conforme DEC-0058 alternativa A. As tags do frontmatter da nota da pasta (Droerni/Droerni.md) valem para tudo dentro da pasta e das subpastas (somadas de fora para dentro), calculadas pela localização em ProjectTags (Urbe.Core); nenhuma outra nota é escrita.",
@@ -86,7 +90,8 @@
     "Release 2.0.0-beta.37 preparada (versionCode 2000037, notas das levas 1 a 9): o workflow oficial publica o APK quando o PR entrar na main. APK de prévia construído localmente com a mesma chave beta para o proprietário.",
     "CST-081 / DEC-0059: anexos do chat sem limitador artificial: 20 por mensagem dentro de 30 MB (limites reais dos provedores, pesquisados), fotos grandes ou deitadas endireitadas e reduzidas em vez de recusadas, PDF até 20 MB, notas com o mesmo orçamento dos arquivos.",
     "CST-039: teste de UI do seletor Mover para (busca sem acentos, destinos inválidos excluídos, pasta movida com o conteúdo) e mensagem quando a busca não acha nada.",
-    "CST-083 / DEC-0059: pesquisa web sem o teto escondido de 12 buscas e 20 páginas por resposta (agora 100 de cada, só contra ciclos), com migração das configurações salvas e mensagem que explica o limite."
+    "CST-083 / DEC-0059: pesquisa web sem o teto escondido de 12 buscas e 20 páginas por resposta (agora 100 de cada, só contra ciclos), com migração das configurações salvas e mensagem que explica o limite.",
+    "CST-024: tags com ícone além da cor (tags.json compatível com os arquivos antigos), escolhido em Personalização → Tags e mostrado no rótulo da nota."
   ],
   "verification": [
     {

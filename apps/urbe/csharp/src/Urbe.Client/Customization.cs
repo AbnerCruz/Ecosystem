@@ -34,6 +34,8 @@ public sealed partial class Customization
         _tagsText = documents.TryGetValue(TagStyles.FilePath, out var tags) ? tags : null;
         TagColors = TagStyles.Parse(_tagsText);
         UrbeTheme.TagOverrides = TagColors;
+        TagIcons = TagStyles.Icons(_tagsText);
+        UrbeTheme.TagIcons = TagIcons;
         var n = LegacyCustomize.Normalize(FileContent);
         Errors = n.Errors;
         Warnings = n.Warnings;
@@ -61,13 +63,33 @@ public sealed partial class Customization
     /// <summary>The colours chosen for the tags (Personalização/tags.json, DEC-0045, UC-43).</summary>
     public IReadOnlyDictionary<string, string> TagColors { get; private set; } = new Dictionary<string, string>();
 
+    /// <summary>The icons chosen for the tags (CST-024), in the same file.</summary>
+    public IReadOnlyDictionary<string, string> TagIcons { get; private set; } = new Dictionary<string, string>();
+
+    /// <summary>Chooses the icon of a tag, or (null) none; writes tags.json, keeping the colours, and applies it.</summary>
+    public async Task SetTagIconAsync(string tag, string? icon)
+    {
+        if (!TagStyles.IsTag(tag) || (icon is not null && !TagStyles.IsIcon(icon))) return;
+        var next = new Dictionary<string, string>(TagIcons, StringComparer.OrdinalIgnoreCase);
+        if (icon is null) next.Remove(tag); else next[tag] = icon;
+        var text = TagStyles.Text(TagColors, next);
+        if (Writer is { } write && text != _tagsText)
+        {
+            await write(TagStyles.FilePath, text, _tagsText is not null);
+            _tagsText = text;
+        }
+        TagIcons = next;
+        UrbeTheme.TagIcons = next;
+        Applied?.Invoke();
+    }
+
     /// <summary>Chooses the colour of a tag, or (null) goes back to the app's own; writes tags.json and applies it.</summary>
     public async Task SetTagColorAsync(string tag, string? color)
     {
         if (!TagStyles.IsTag(tag) || (color is not null && !TagStyles.IsColor(color))) return;
         var next = new Dictionary<string, string>(TagColors, StringComparer.OrdinalIgnoreCase);
         if (color is null) next.Remove(tag); else next[tag] = color.ToLowerInvariant();
-        var text = TagStyles.Text(next);
+        var text = TagStyles.Text(next, TagIcons);
         if (Writer is { } write && text != _tagsText)
         {
             await write(TagStyles.FilePath, text, _tagsText is not null);

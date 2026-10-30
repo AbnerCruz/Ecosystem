@@ -222,10 +222,13 @@ public sealed partial class CustomizePanel : Grid
         _body.Children.Add(BlockWith("Tags", add, rows));
         _body.Children.Add(new TextBlock
         {
-            Text = "Um parágrafo que começa com “#Todo:” ganha o estilo da tag Todo. O arquivo fica em Personalização/tags.json.",
+            Text = "Um parágrafo que começa com “#Todo:” ganha o estilo da tag Todo: a cor e, se você escolher, um ícone antes do nome (toque no ícone escolhido de novo para tirar). O arquivo fica em Personalização/tags.json.",
             FontFamily = UrbeTheme.UiFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(4, 0)
         });
     }
+
+    /// <summary>The icons offered for a tag; tapping the chosen one again takes it off.</summary>
+    private static readonly string[] TagIconChoices = ["✅", "💡", "⚠️", "❓", "📌", "⭐", "🔥", "📝", "🎯", "📚"];
 
     private Border TagRow(string tag)
     {
@@ -255,9 +258,26 @@ public sealed partial class CustomizePanel : Grid
         {
             Background = UrbeTheme.Brush(current, .12), BorderBrush = UrbeTheme.Brush(current), BorderThickness = new Thickness(3, 0, 0, 0),
             CornerRadius = new CornerRadius(6), Padding = new Thickness(8, 4), HorizontalAlignment = HorizontalAlignment.Left,
-            Child = new TextBlock { Text = "#" + tag, FontWeight = FontWeight.Bold, FontSize = 13, Foreground = UrbeTheme.Brush(current) }
+            Child = new TextBlock { Text = (UrbeTheme.TagIcon(tag) is { } shown ? shown + " " : "") + "#" + tag, FontWeight = FontWeight.Bold, FontSize = 13, Foreground = UrbeTheme.Brush(current) }
         };
-        var row = new StackPanel { Spacing = 6, Children = { chip, swatches } };
+        // CST-024: an icon before the name, from a short set or none
+        var icons = new WrapPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Left };
+        var chosenIcon = UrbeTheme.TagIcon(tag);
+        foreach (var icon in TagIconChoices)
+        {
+            var i = icon;
+            var on = i == chosenIcon;
+            var b = new Button
+            {
+                Content = new TextBlock { Text = i, FontSize = 16 }, Width = 34, Height = 34, Padding = new Thickness(0), Margin = new Thickness(2), CornerRadius = new CornerRadius(8),
+                HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center,
+                Background = on ? UrbeTheme.Brush(current, .2) : Brushes.Transparent, BorderBrush = UrbeTheme.Brush(on ? current : UrbeTheme.Line2), BorderThickness = new Thickness(on ? 2 : 1)
+            };
+            AutomationName(b, "#" + tag + " ícone " + i);
+            b.Click += async (_, _) => { await Customization.SetTagIconAsync(tag, on ? null : i); Render(); };
+            icons.Children.Add(b);
+        }
+        var row = new StackPanel { Spacing = 6, Children = { chip, swatches, icons } };
         swatches.HorizontalAlignment = HorizontalAlignment.Left;
         return new Border { Tag = "row", Child = row, Padding = new Thickness(0, 8), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line) };
     }

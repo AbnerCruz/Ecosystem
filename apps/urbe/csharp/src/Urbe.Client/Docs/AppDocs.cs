@@ -431,7 +431,7 @@ public static partial class AppDocs
         - **Texto:** fonte e tamanho da interface e das notas, altura da linha.
         - **Editor:** largura do texto e o modo em que as notas abrem (Visual ou Texto).
         - **Estilos CSS:** guardados no tema; o app nativo não usa CSS, eles valem na versão web.
-        - **Tags:** a cor de cada `#Tag:` (veja [[Editor]]). Fica em `Personalização/tags.json`.
+        - **Tags:** a cor de cada `#Tag:` e, se quiser, um ícone antes do nome (✅, 💡, ⚠️…; toque no escolhido de novo para tirar). Veja [[Editor]]. Fica em `Personalização/tags.json`.
         - **Plugins:** veja [[Plugins]].
         - **Arquivo:** o `tema.json` para editar à mão, e **Restaurar padrão**.
 

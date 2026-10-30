@@ -13,6 +13,7 @@ Andamento item a item: `apps/urbe/docs/csharp/CONSOLIDATION.md`.
 - **Links e incorporações para qualquer arquivo:** `[[…]]` e `![[…]]` sugerem imagens, PDF, áudio, código, páginas e grafos, não só notas. Links para título e trecho (`[[Nota#Título]]`) também funcionam.
 - **Barra de formatação pelo toque:** em Personalização → Editor você escolhe os botões e a ordem.
 - **Horário de cada bloco**, opcional, em Personalização → Editor.
+- **Ícone nas tags:** em Personalização → Tags, cada `#Tag:` pode ter um ícone antes do nome, além da cor.
 - **Código com cores** e prévia HTML ao vivo ao lado do código.
 - **Gráficos de funções** com parâmetros que você arrasta.
 - **Sem negrito ou itálico** onde ninguém os escreveu. A saída do editor ficou mais rápida.

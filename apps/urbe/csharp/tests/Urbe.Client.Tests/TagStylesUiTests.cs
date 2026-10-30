@@ -71,4 +71,60 @@ public sealed partial class HeadlessUiTests
             try { Directory.Delete(dir, true); } catch (IOException) { }
         }
     }
+    [Fact]
+    public void TagStyles_AnIconLivesBesideTheColourAndOldFilesReadTheSame()
+    {
+        var text = TagStyles.Text(new Dictionary<string, string> { ["Feito"] = "#7fdca6", ["Projeto"] = "#c79bff" },
+            new Dictionary<string, string> { ["Feito"] = "✅", ["Ideia"] = "💡", ["Texto"] = "abc" });
+        Assert.Contains("\"Projeto\": \"#c79bff\"", text);                       // only a colour: still a string
+        Assert.Equal("#7fdca6", TagStyles.Parse(text)["Feito"]);
+        Assert.Equal("✅", TagStyles.Icons(text)["Feito"]);
+        Assert.Equal("💡", TagStyles.Icons(text)["Ideia"]);                       // an icon without a colour
+        Assert.False(TagStyles.Parse(text).ContainsKey("Ideia"));
+        Assert.False(TagStyles.Icons(text).ContainsKey("Texto"));                 // words are not icons
+        Assert.True(TagStyles.IsIcon("⚠️"));
+        Assert.True(TagStyles.IsIcon("👍🏽"));
+        Assert.False(TagStyles.IsIcon("a"));
+        Assert.False(TagStyles.IsIcon("🔥🔥🔥"));
+    }
+
+    [Fact]
+    public async Task TagStyles_AnIconIsChosenKeepsTheColourAndShowsInTheNote() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "urbe-tag-icons-" + Guid.NewGuid().ToString("N"));
+        var vault = Path.Combine(dir, "vault");
+        Directory.CreateDirectory(Path.Combine(vault, "Personalização"));
+        File.WriteAllText(Path.Combine(vault, "Casa.md"), "#Feito: telhado\n");
+        File.WriteAllText(Path.Combine(vault, "Personalização", "tags.json"), "{ \"tags\": { \"Feito\": \"#c79bff\" } }\n");
+        async Task Settled() { for (int i = 0; i < 30; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); } }
+        try
+        {
+            var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+            var window = new Window { Width = 412, Height = 860, Content = view };
+            window.Show();
+            await view.OpenVaultAsync();
+            await Settled();
+            view.Customize.Open("tags");
+            Dispatcher.UIThread.RunJobs();
+            view.Customize.GetLogicalDescendants().OfType<Button>().First(b => Avalonia.Automation.AutomationProperties.GetName(b) == "#Feito ícone ✅")
+                .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            await Settled();
+            var file = File.ReadAllText(Path.Combine(vault, "Personalização", "tags.json"));
+            Assert.Equal("✅", TagStyles.Icons(file)["Feito"]);
+            Assert.Equal("#c79bff", TagStyles.Parse(file)["Feito"]);
+            view.Customize.Close();
+
+            view.OpenNoteByPath("Casa.md");
+            await Settled();
+            Assert.Contains(view.Editor.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "✅ #Feito");
+            window.Close();
+            return true;
+        }
+        finally
+        {
+            UrbeTheme.TagOverrides = new Dictionary<string, string>();
+            UrbeTheme.TagIcons = new Dictionary<string, string>();
+            try { Directory.Delete(dir, true); } catch (IOException) { }
+        }
+    }, CancellationToken.None));
 }

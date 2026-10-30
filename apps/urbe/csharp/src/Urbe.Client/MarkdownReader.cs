@@ -209,7 +209,7 @@ public sealed partial class MarkdownReader
         var color = UrbeTheme.TagColor(tag);
         var label = new TextBlock
         {
-            Text = "#" + tag, FontSize = Size * .72, FontWeight = FontWeight.Bold, LetterSpacing = .3,
+            Text = (UrbeTheme.TagIcon(tag) is { } icon ? icon + " " : "") + "#" + tag, FontSize = Size * .72, FontWeight = FontWeight.Bold, LetterSpacing = .3,
             Foreground = UrbeTheme.Brush(color), Margin = new Thickness(0, 0, 0, 2)
         };
         var body = Text(n.Children, Size);

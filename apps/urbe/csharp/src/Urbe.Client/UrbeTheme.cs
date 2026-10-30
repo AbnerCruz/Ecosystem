@@ -48,6 +48,12 @@ public static class UrbeTheme
     /// <summary>The colours chosen in Personalização → Tags (Personalização/tags.json), by tag, ignoring case.</summary>
     public static IReadOnlyDictionary<string, string> TagOverrides { get; set; } = new Dictionary<string, string>();
 
+    /// <summary>The icon of each tag (Personalização/tags.json, CST-024).</summary>
+    public static IReadOnlyDictionary<string, string> TagIcons { get; set; } = new Dictionary<string, string>();
+
+    /// <summary>The icon shown before a tag's name, or null.</summary>
+    public static string? TagIcon(string? tag) => tag is not null && TagIcons.TryGetValue(tag, out var icon) ? icon : null;
+
     /// <summary>The colours offered for a tag.</summary>
     public static IReadOnlyList<string> TagChoices => TagPalette;
 
