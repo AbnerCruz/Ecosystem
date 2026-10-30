@@ -114,25 +114,50 @@ public sealed class LegacyCustomizeThemeOracleTests
             var pal = LegacyCustomizeTheme.PaletteOf(config, Saved);
             var ep = e.GetProperty("palette");
             Assert.True(ep.GetProperty("claro").GetBoolean() == pal.Light, at + " claro");
-            var ec = ep.GetProperty("cores").EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString());
+            var ec = ep.GetProperty("cores").EnumerateObject().ToDictionary(p => p.Name, p => NativeContrast.Native(p.Value.GetString()));
             Assert.Equal(ec.OrderBy(k => k.Key).Select(k => k.Key + k.Value), pal.Colors.OrderBy(k => k.Key).Select(k => k.Key + k.Value));
 
             // variaveis
             var vars = LegacyCustomizeTheme.VariablesOf(config, Saved);
             var ev = e.GetProperty("variables");
-            Assert.Equal(ev.GetProperty("vars").EnumerateObject().Select(p => p.Name + "=" + p.Value.GetString()), vars.Vars.Select(p => p.Key + "=" + p.Value));
+            Assert.Equal(ev.GetProperty("vars").EnumerateObject().Select(p => p.Name + "=" + NativeContrast.Native(p.Value.GetString())), vars.Vars.Select(p => p.Key + "=" + p.Value));
             Assert.Equal(ev.GetProperty("attrs").EnumerateObject().Select(p => p.Name + "=" + p.Value.GetString()).OrderBy(x => x), vars.Attrs.Select(p => p.Key + "=" + p.Value).OrderBy(x => x));
             Assert.Equal(ev.GetProperty("claro").GetBoolean(), vars.Light);
             Assert.Equal(ev.GetProperty("fundo").GetString(), vars.Background);
 
             var (themePath, themeText) = LegacyCustomizeTheme.ThemeFile(config, "Tema \"x\"/y é", Saved);
             Assert.Equal(e.GetProperty("savedTheme").GetProperty("path").GetString(), themePath);
-            Assert.Equal(e.GetProperty("savedTheme").GetProperty("content").GetString(), themeText);
+            Assert.Equal(NativeContrast.Native(e.GetProperty("savedTheme").GetProperty("content").GetString()), themeText);
         }
     }
 
     private static JsonNode? Try(Func<JsonNode?> f)
     {
         try { return f(); } catch (JsonException) { return null; }
+    }
+}
+
+/// <summary>
+/// CST-105 / DEC-0059: the 1.8.4's texto3 of each ready-made theme read at 2.5–3.9:1; the native app's reads at WCAG AA
+/// (ThemeContrastTests). The oracle's output becomes the native one with exactly these replacements; nothing else may drift.
+/// </summary>
+internal static class NativeContrast
+{
+    private static readonly (string Original, string Native)[] Texto3 =
+    [
+        ("#6d7079", "#898c95"),
+        ("#6c7d69", "#879883"),
+        ("#62818a", "#7b9aa2"),
+        ("#86686f", "#9f8288"),
+        ("#8a8d97", "#656872"),
+        ("#9a876d", "#6e5e4a"),
+        ("#6b6f96", "#868aaf")
+    ];
+
+    public static string? Native(string? value)
+    {
+        if (value is null) return null;
+        foreach (var (from, to) in Texto3) value = value.Replace(from, to, StringComparison.OrdinalIgnoreCase);
+        return value;
     }
 }

@@ -15,7 +15,8 @@ public static class UrbeTheme
     public const string Line2 = "#33363e";
     public const string Text = "#ececf0";
     public const string Text2 = "#a3a6af";
-    public const string Text3 = "#6d7079";
+    // CST-105: 4.5:1 (WCAG AA) on every surface of the theme; it was #6d7079, 3.1–3.9:1
+    public const string Text3 = "#898c95";
     public const string Accent = "#8fb3ff";
     public const string AccentInk = "#0b1325";
     public const string Ok = "#7fdca6";

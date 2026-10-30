@@ -70,6 +70,7 @@ Andamento item a item: `apps/urbe/docs/csharp/CONSOLIDATION.md`.
 
 ## Navegação
 
+- Textos secundários (dicas, datas, contagens) mais legíveis em todos os temas, no nível de contraste recomendado (WCAG AA).
 - Botões pequenos demais para o dedo ficaram maiores: Edição/Leitura no editor, "Incluir a nota aberta" no chat, chips e opções das pastas.
 - Menu radial no celular.
 - O Voltar do Android fecha primeiro o que está aberto e percorre as abas antes de sair.
