@@ -2148,6 +2148,38 @@
       "decidedAt": "2026-10-29",
       "record": "docs/governance/addenda/ADD-0033-urbe-sem-paridade-com-a-1-8-4-e-sem-limitadores.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0060",
+      "status": "pending",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Urbe: adotar o nome Numa agora ou depois da busca de marca (CST-107)",
+      "context": "O FeaturesCheck registra o nome Numa e o símbolo orgânico como proposta aprovada, e pede verificar disponibilidade jurídica, comercial, de domínios e lojas antes de concluir. A pesquisa preliminar (NUMA-NAME-AVAILABILITY.md) achou: pedido de marca NUMA nos EUA da numa group GmbH (hospedagem, Berlim) cobrindo software para smartphones; o app 'Numa - Rooms & Apartments' dessa empresa nas lojas; e um app de notas 'Numa Booknote'. INPI e domínios não foram verificados. O logo depende do estudo que está no vault do proprietário, não no repositório.",
+      "question": "O app passa a se chamar Numa agora, ou só depois de uma busca formal de marca?",
+      "alternatives": [
+        {
+          "option": "A — Adotar Numa agora no app (recomendada só se o risco for aceito)",
+          "consequences": "Nome exibido, ícone e textos mudam na próxima beta; pacote app.urbe.csharp e id urbe ficam, então a atualização instala por cima. O risco de conflito com a marca NUMA em software fica assumido até a busca formal; nas lojas, o nome pode precisar mudar depois."
+        },
+        {
+          "option": "B — Buscar a marca primeiro (recomendada)",
+          "consequences": "Nada muda no app até a busca no INPI e, se for publicar fora do Brasil, nos registros desses mercados; o proprietário traz o resultado e o estudo do logo, e a troca entra numa beta seguinte. O app continua como Urbe enquanto isso."
+        },
+        {
+          "option": "C — Procurar outro nome",
+          "consequences": "A troca fica para depois de escolher outro nome, com nova pesquisa; o símbolo aprovado pode ser mantido com o nome novo."
+        }
+      ],
+      "consequences": "Enquanto pendente, o app continua como Urbe; o resto da consolidação segue.",
+      "manifestCompatibility": "NN-009: a aprovação estava só na conversa e no FeaturesCheck. NN-011: identidade do produto exige decisão. NN-014: pacote e versões não mudam em nenhuma alternativa.",
+      "recommendation": "B: a marca alheia cobre software para smartphones; buscar no INPI antes evita trocar o nome duas vezes.",
+      "related": [
+        "apps/urbe/docs/csharp/NUMA-NAME-AVAILABILITY.md",
+        "apps/urbe/docs/csharp/CONSOLIDATION.md"
+      ],
+      "raisedBy": "claude-code-urbe-consolidation",
+      "raisedAt": "2026-10-30"
     }
   ]
 }
