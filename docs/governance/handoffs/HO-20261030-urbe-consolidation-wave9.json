@@ -67,7 +67,8 @@
     "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/MovePickerUiTests.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantWebResearch.cs",
-    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantWebResearchTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantWebResearchTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteAttachPickerUiTests.cs"
   ],
   "work_completed": [
     "CST-042: tags herdadas por projeto conforme DEC-0058 alternativa A. As tags do frontmatter da nota da pasta (Droerni/Droerni.md) valem para tudo dentro da pasta e das subpastas (somadas de fora para dentro), calculadas pela localização em ProjectTags (Urbe.Core); nenhuma outra nota é escrita.",

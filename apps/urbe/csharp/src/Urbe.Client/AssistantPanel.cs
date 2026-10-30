@@ -778,14 +778,16 @@ public sealed partial class AssistantPanel : Border
         body.Children.Add(count);
         body.Children.Add(list);
 
+        // DEC-0059: every match can be reached; they come 60 at a time so a big vault stays fast
+        int shown = 60;
         void Paint()
         {
             list.Children.Clear();
             var q = (search.Text ?? "").Trim();
             var matches = documents.Where(d => q.Length == 0 || d.Path.Contains(q, StringComparison.CurrentCultureIgnoreCase)
                 || d.Title.Contains(q, StringComparison.CurrentCultureIgnoreCase)).ToList();
-            count.Text = matches.Count + " nota(s) encontrada(s)" + (matches.Count > 60 ? " · mostrando as primeiras 60" : "");
-            foreach (var doc in matches.Take(60))
+            count.Text = matches.Count + " nota(s) encontrada(s)";
+            foreach (var doc in matches.Take(shown))
             {
                 var select = new Button
                 {
@@ -818,8 +820,10 @@ public sealed partial class AssistantPanel : Border
                 };
                 list.Children.Add(select);
             }
+            if (matches.Count > shown)
+                list.Children.Add(TextButton("Mostrar mais (" + (matches.Count - shown) + " restantes)", () => { shown += 60; Paint(); }));
         }
-        search.TextChanged += (_, _) => Paint();
+        search.TextChanged += (_, _) => { shown = 60; Paint(); };
         Paint();
     }
 
