@@ -622,10 +622,13 @@ public sealed partial class AssistantPanel
         Persist();
         _agentDrafts[_conv.AgentId] = (_input.Text ?? "", _pendingAttachments.ToList());
         var draft = _agentDrafts.GetValueOrDefault(agentId);
+        _restoringDraft = true;
         _input.Text = draft.Text ?? "";
         _pendingAttachments.Clear();
         if (draft.Attachments is not null) _pendingAttachments.AddRange(draft.Attachments);
         RefreshAttachments();
+        _restoringDraft = false;
+        SaveDrafts();
         _cfg.AgentId = agentId;
         _conv = NewConversation(); // Opening an agent starts a fresh chat; old conversations remain in its history.
         SyncActiveConversation();
@@ -713,6 +716,7 @@ public sealed partial class AssistantPanel
             _cfg.AgentInstructionBlocks.Remove(agent.Id);
             _cfg.AgentNames.Remove(agent.Id);
             _agentDrafts.Remove(agent.Id);
+            SaveDrafts();
             if (_cfg.AgentId == agent.Id)
             {
                 _cfg.AgentId = "geral";

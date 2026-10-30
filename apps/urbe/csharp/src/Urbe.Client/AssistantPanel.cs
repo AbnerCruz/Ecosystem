@@ -239,7 +239,7 @@ public sealed partial class AssistantPanel : Border
         _send.VerticalContentAlignment = VerticalAlignment.Center;
         _send.Padding = new Thickness(0);
         _send.Click += (_, _) => { if (_running is not null && string.IsNullOrWhiteSpace(_input.Text)) Stop(); else Submit(); };
-        _input.PropertyChanged += (_, e) => { if (e.Property == TextBox.TextProperty && _loaded) RenderChrome(); };
+        _input.PropertyChanged += (_, e) => { if (e.Property == TextBox.TextProperty && _loaded) { RenderChrome(); DraftChanged(); } };
         // One compact, accessible attachment control instead of permanent secondary actions.
         _attach.Width = UrbeTokens.MinTouch;
         _attach.Height = UrbeTokens.MinTouch;
@@ -338,6 +338,7 @@ public sealed partial class AssistantPanel : Border
 
     public void Close()
     {
+        if (_draftTimer?.IsEnabled == true) SaveDrafts();
         CloseView(); IsVisible = false;
         _selectionWait?.Stop();
         foreach (var text in _log.GetVisualDescendants().OfType<SelectableTextBlock>()) text.SelectionEnd = text.SelectionStart;
@@ -352,6 +353,36 @@ public sealed partial class AssistantPanel : Border
         if (!AgentNames.All(_cfg).Any(a => a.Id == _cfg.AgentId)) _cfg.AgentId = "geral";
         _conv = NewConversation(); // Opening the assistant never silently resumes history; choose it explicitly.
         SyncActiveConversation();
+        // CST-122: what was being written to each agent comes back, even after Android ended the app
+        foreach (var (agent, draft) in _store.LoadDrafts()) _agentDrafts[agent] = draft;
+        if (_agentDrafts.GetValueOrDefault(_cfg.AgentId) is { } mine && (_input.Text ?? "").Length == 0 && _pendingAttachments.Count == 0)
+        {
+            _restoringDraft = true;
+            _input.Text = mine.Text ?? "";
+            if (mine.Attachments is not null) _pendingAttachments.AddRange(mine.Attachments);
+            RefreshAttachments();
+            _restoringDraft = false;
+        }
+    }
+
+    private DispatcherTimer? _draftTimer;
+    private bool _restoringDraft;   // putting an agent's draft on screen is not writing a new one
+
+    /// <summary>The draft of the agent in use changed: kept on the device a moment after the last keystroke.</summary>
+    private void DraftChanged()
+    {
+        if (!_loaded || _restoringDraft) return;
+        _agentDrafts[_conv.AgentId] = (_input.Text ?? "", _pendingAttachments.ToList());
+        _draftTimer ??= new DispatcherTimer(TimeSpan.FromMilliseconds(400), DispatcherPriority.Background, (_, _) => SaveDrafts());
+        _draftTimer.Stop();
+        _draftTimer.Start();
+    }
+
+    private void SaveDrafts()
+    {
+        _draftTimer?.Stop();
+        try { _store.SaveDrafts(_agentDrafts); }
+        catch (IOException) { }   // a draft that could not be kept is not worth interrupting the writing; the text is still on screen
     }
 
     // UC-80: the request asked from a note: its conversation, the note and the agent's name
@@ -763,6 +794,7 @@ public sealed partial class AssistantPanel : Border
 
     private void RefreshAttachments()
     {
+        DraftChanged();
         _attachmentsRow.Children.Clear();
         _attachmentsRow.IsVisible = _pendingAttachments.Count > 0;
         if (_pendingAttachments.Count == 0) return;

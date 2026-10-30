@@ -251,6 +251,37 @@ public sealed class AssistantStore(IAssistantStorage storage)
             throw new IOException("Não foi possível confirmar a gravação da configuração do assistente.");
     }
 
+    private const string DraftsFile = "rascunhos.json";
+
+    /// <summary>
+    /// CST-122: what the person was writing to each agent, text and attachments, kept on this device (never in the vault)
+    /// so it survives switching agents, closing the panel and Android ending the app in the background.
+    /// </summary>
+    public Dictionary<string, (string Text, List<AiChatBlock> Attachments)> LoadDrafts()
+    {
+        var drafts = new Dictionary<string, (string, List<AiChatBlock>)>(StringComparer.Ordinal);
+        try
+        {
+            if (storage.Read(DraftsFile) is not { Length: > 0 } text || JsonNode.Parse(text) is not JsonObject root) return drafts;
+            foreach (var (agent, node) in root)
+                if (node is JsonObject d)
+                    drafts[agent] = ((string?)d["texto"] ?? "", [.. (d["anexos"] as JsonArray ?? []).OfType<JsonObject>().Select(b => AiChatBlock.FromJson(b))]);
+        }
+        catch (System.Text.Json.JsonException) { }
+        return drafts;
+    }
+
+    /// <summary>Writes the drafts; an agent with nothing written and nothing attached leaves the file.</summary>
+    public void SaveDrafts(IReadOnlyDictionary<string, (string Text, List<AiChatBlock> Attachments)> drafts)
+    {
+        var root = new JsonObject();
+        foreach (var (agent, (text, attachments)) in drafts.OrderBy(p => p.Key, StringComparer.Ordinal))
+            if (text.Length > 0 || attachments.Count > 0)
+                root[agent] = new JsonObject { ["texto"] = text, ["anexos"] = new JsonArray([.. attachments.Select(b => (JsonNode)b.ToJson())]) };
+        if (root.Count == 0) { if (storage.Read(DraftsFile) is not null) storage.Delete(DraftsFile); return; }
+        storage.Write(DraftsFile, root.ToJsonString());
+    }
+
     /// <summary>The conversations, the most recent first.</summary>
     public List<AiConversation> ListConversations() =>
         storage.List().Where(n => n.StartsWith(Prefix, StringComparison.Ordinal) && n.EndsWith(".json", StringComparison.Ordinal))
