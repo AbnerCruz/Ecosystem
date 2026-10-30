@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "name": "RPG dos Sonhos - Fatia 1",
+  "gameId": "6ba645f8-063c-4cd6-8310-6fef4c8e2dbb",
+  "packageId": "io.lunet.rpgsonhos.slice1",
+  "version": "0.1.0",
+  "frameworkVersion": "0.1.0",
+  "entryPoint": "Game.cs",
+  "orientation": "portrait",
+  "virtualWidth": 480,
+  "virtualHeight": 800
+}

@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261030-rpg-sonhos-slice1",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-30T17:26:19Z",
+  "agent": {
+    "id": "codex-rpg-sonhos",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-461",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/rpg-sonhos-slice1-20261030",
+  "base_commit": "f2d67c4de77385e49c91cd73760ec468895e7799",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/samples/rpg-dos-sonhos/Game.cs",
+    "apps/lunet2d/samples/rpg-dos-sonhos/DreamWorld.cs",
+    "apps/lunet2d/samples/rpg-dos-sonhos/lunet.json",
+    "apps/lunet2d/samples/rpg-dos-sonhos/README.md",
+    "apps/lunet2d/tests/Lunet.Tests/RpgSonhosSliceTests.cs",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md"
+  ],
+  "work_completed": [
+    "Projeto Lunet exclusivo: coleta finita, produção por NPC, cura, pistas redundantes, ruína com combate anunciado, touch, pausa e SaveData.",
+    "Testes escritos antes da implementação: commit 7cb9757411b3104754c7a3d3fcf35dd4bfc4284e.",
+    "README classifica requisitos/propostas/pendências e registra APIs confirmadas, aceites e instruções."
+  ],
+  "verification": [
+    {
+      "check": "Inspeção do Framework, Compiler, Runtime, standalone Android e notas anexadas",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "APIs consultadas diretamente na base; seis notas disponíveis lidas."
+    },
+    {
+      "check": "Suíte Lunet incluindo RpgSonhosSliceTests e checks de consistência",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI do PR. Ambiente local sem dotnet/adb. Não executados localmente."
+    },
+    {
+      "check": "Loop touch, layout, APK offline e retomada no Android físico",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/samples/rpg-dos-sonhos/README.md"
+    }
+  ],
+  "known_issues": [
+    "Arte placeholder; batedor estático; região de rotas fixas com obstáculos por seed; não implementa sete portais, habilidades, anatomia, economia ampla ou multiplayer.",
+    "Protótipo HTML e Caderno de Teste indisponível; nenhum playtest fornecido foi presumido.",
+    "Seed, portrait, combate e recuo na derrota são decisões provisórias; sem política final de campanha.",
+    "Save incompatível/corrompido fica preservado e bloqueia escrita; recuperação/migração não implementadas.",
+    "APK do jogo ainda não gerado nesta sessão; CI headless não prova Android."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar CI real, corrigir qualquer falha e manter revisão pendente até evidência.",
+    "Gerar/importar o projeto no Lunet e validar roteiro no aparelho antes de expandir."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Nenhum código Urbe/Hub usado ou alterado."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #862, branch, testes anteriores e handoff com limitações explícitas."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Headless/CI e DEVICE separados; não declarado teste físico."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Fatia não declarada concluída antes dos testes."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Regras específicas do jogo ficam no projeto, sem extração compartilhada."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "dream-rpg-slice",
+      "status": "product-specific",
+      "rationale": "Regras locais de jogo usam APIs Lunet existentes; sem segundo consumidor ou extração."
+    }
+  ]
+}

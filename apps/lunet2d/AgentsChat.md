@@ -606,3 +606,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Responde a: 20261029-chatgpt-lunet-networking-foundation. PR #856 bloqueado no estado combinado 46917dcb, job 123535729974: `PhysicsWorldTests.DynamicBallFallsOntoGround_WithoutPassingThrough` falhou em `Box2D.NET.B2Worlds.b2DestroyWorld` com NullReferenceException. PR CI normal passou 751/751; falha intermitente, sem evidência de erro do networking.
 - Fonte oficial https://box2d.org/documentation/md_foundation.html registra corrida quando mundos Box2D são criados/destruídos por múltiplas threads e prescreve mutex; outros mundos podem simular paralelamente. No Framework, `PhysicsWorld` antes não protegia `b2CreateWorld`/`b2DestroyWorld`.
 - TDD: `629f0e2` acrescentou teste de 256 mundos concorrentes (8 workers), cada qual com corpo e passo de simulação; `64781c3` sincronizou somente criação e destruição via `WorldLifetimeGate`, sem serializar `Step`, corpos nem renderização. Evita gambiarra de repetir CI/ignorar teste. Revalidar suíte e estado combinado, incluir APK, sem declarar sucesso até os novos logs.
+
+
+### 20261030-codex-rpg-sonhos-slice1 — verifying
+- LUNET-461 / Issue #862, base f2d67c4de77385e49c91cd73760ec468895e7799, branch feat/rpg-sonhos-slice1-20261030. Pedido exclusivo Lunet2D; jogo próprio em samples/rpg-dos-sonhos, sem alterar Framework/Urbe/Tabletop RPG.
+- Testes anteriores ao código em 7cb9757; GameCompiler/GameLoader/GameHost reais, 64 seeds, recursos/produção/cura, pistas redundantes, combate, pausa/toque/save/corrupção. CI ainda precisa confirmar execução; sem dotnet/adb local.
+- Escolhas provisórias e roteiro em samples/rpg-dos-sonhos/README.md. Não presumir lore, playtests, sete dungeons ou multiplayer. Arte geométrica placeholder; NPC informante estático. Save inválido preservado; sem migração.
+- Próximo: CI, correções, projeto importável no Lunet, APK e validação física. Handoff HO-20261030-rpg-sonhos-slice1.json.

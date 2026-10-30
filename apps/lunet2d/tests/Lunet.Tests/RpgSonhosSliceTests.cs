@@ -125,6 +125,31 @@ public sealed class RpgSonhosSliceTests
     }
 
     [Fact]
+    public void VictoryRetreatAndSemanticSaveValidationAreRealRules()
+    {
+        using var game = Load();
+        dynamic w = World(game);
+        for(int hit=0; hit<3; hit++)
+        {
+            w.State.X=624f; w.State.Y=210f;
+            w.Step(0.016f,Vector2.Zero,true,false,false);
+            for(int i=0;i<40;i++) w.Step(1f/60,Vector2.Zero,false,false,false);
+        }
+        Assert.True((bool)w.State.RuinCleared);
+        Assert.Equal(0,(int)w.State.EnemyHealth);
+        Assert.Contains("não é um dos sete",(string)w.Message);
+        dynamic vulnerable=World(game);
+        vulnerable.State.X=624f; vulnerable.State.Y=210f; vulnerable.State.Health=1;
+        vulnerable.State.Berries=2;
+        for(int i=0;i<90;i++) vulnerable.Step(1f/60,Vector2.Zero,false,false,false);
+        Assert.Equal(100,(int)vulnerable.State.Health);
+        Assert.Equal(144f,(float)vulnerable.State.X);
+        Assert.Equal(2,(int)vulnerable.State.Berries);
+        vulnerable.State.X=float.NaN;
+        Assert.False((bool)w.Restore(vulnerable.State));
+    }
+
+    [Fact]
     public void ActualLunetRuntimeRendersAcceptsTouchPausesAndRestoresDiskSave()
     {
         string directory = Path.Combine(Path.GetTempPath(), "rpg-sonhos-" + Guid.NewGuid().ToString("N"));
