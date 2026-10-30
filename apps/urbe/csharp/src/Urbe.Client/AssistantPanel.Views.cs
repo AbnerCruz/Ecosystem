@@ -421,7 +421,8 @@ public sealed partial class AssistantPanel
         return output;
     }
 
-    private static Control Diff(string? before, string? after)
+    /// <summary>The approval card's view of a change: lines added and removed with a little context around them.</summary>
+    public static Control Diff(string? before, string? after)
     {
         var x = before is null ? [] : before.Split('\n');
         var y = after is null ? [] : after.Split('\n');
@@ -431,28 +432,37 @@ public sealed partial class AssistantPanel
             if (ops[i].Op != ' ')
                 for (int k = Math.Max(0, i - 2); k <= Math.Min(ops.Count - 1, i + 2); k++) keep[k] = true;
         var lines = new StackPanel();
-        bool gap = false;
-        int shown = 0;
-        const int Max = 160;
-        for (int i = 0; i < ops.Count && shown < Max; i++)
+        // DEC-0059: everything that is going to be approved can be seen; it comes 160 lines at a time
+        int limit = 160;
+        void Paint()
         {
-            if (!keep[i])
+            lines.Children.Clear();
+            bool gap = false;
+            int shown = 0;
+            int i = 0;
+            for (; i < ops.Count && shown < limit; i++)
             {
-                if (!gap) lines.Children.Add(Label("⋯", 12, UrbeTheme.Text3));
-                gap = true;
-                continue;
+                if (!keep[i])
+                {
+                    if (!gap) lines.Children.Add(Label("⋯", 12, UrbeTheme.Text3));
+                    gap = true;
+                    continue;
+                }
+                gap = false;
+                shown++;
+                var (op, line) = ops[i];
+                lines.Children.Add(new Border
+                {
+                    Background = op == '+' ? UrbeTheme.Brush("#3a9a5b", .16) : op == '-' ? UrbeTheme.Brush("#c0504d", .16) : Brushes.Transparent,
+                    Padding = new Thickness(4, 1),
+                    Child = new TextBlock { Text = op + " " + (line.Length > 0 ? line : " "), FontFamily = UrbeTheme.MonoFont, FontSize = 12, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text) }
+                });
             }
-            gap = false;
-            shown++;
-            var (op, line) = ops[i];
-            lines.Children.Add(new Border
-            {
-                Background = op == '+' ? UrbeTheme.Brush("#3a9a5b", .16) : op == '-' ? UrbeTheme.Brush("#c0504d", .16) : Brushes.Transparent,
-                Padding = new Thickness(4, 1),
-                Child = new TextBlock { Text = op + " " + (line.Length > 0 ? line : " "), FontFamily = UrbeTheme.MonoFont, FontSize = 12, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text) }
-            });
+            int left = 0;
+            for (int k = i; k < ops.Count; k++) if (keep[k]) left++;
+            if (left > 0) lines.Children.Add(TextButton("Mostrar mais (" + left + " linhas)", () => { limit += 160; Paint(); }));
         }
-        if (shown >= Max) lines.Children.Add(Label("… mais linhas", 12, UrbeTheme.Text3));
+        Paint();
         int add = ops.Count(o => o.Op == '+'), del = ops.Count(o => o.Op == '-');
         return new StackPanel
         {
