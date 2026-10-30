@@ -1099,6 +1099,14 @@ public sealed partial class AssistantPanel
         Refresh();
     }
 
+    /// <summary>The name, or the name with the first free number after it, among the agents' names.</summary>
+    private string FreeAgentName(string name)
+    {
+        if (AgentNames.Problem(name, "", _cfg) is null) return name;
+        for (int i = 2; ; i++)
+            if (AgentNames.Problem(name + " " + i, "", _cfg) is null) return name + " " + i;
+    }
+
     /// <summary>Who can use a memory, in the person's words (CST-085).</summary>
     private string MemoryWho(AiMemoryRecord m) => m.Scope switch
     {
@@ -1335,15 +1343,18 @@ public sealed partial class AssistantPanel
         var body = OpenView(isNew ? "Novo agente" : a!.Name, () => ShowSettings());
         var name = new TextBox { Text = a?.Name ?? "", PlaceholderText = "Ex.: Revisor acadêmico" };
         var prompt = new TextBox { Text = a?.Prompt ?? "", AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 140, PlaceholderText = "Como este agente deve pensar e trabalhar." };
+        AiAgentDef? chosen = null;   // the preset the new agent starts from (its tools come with it)
         if (isNew)
         {
             var templates = new ComboBox { ItemsSource = new[] { "Em branco" }.Concat(AssistantAgent.Agents.Skip(1).Select(t => t.Name)).ToList(), SelectedIndex = 0 };
+            Avalonia.Automation.AutomationProperties.SetName(templates, "Modelo de agente");
             templates.SelectionChanged += (_, _) =>
             {
-                if (templates.SelectedIndex <= 0) { prompt.Text = ""; return; }
-                var template = AssistantAgent.Agents[templates.SelectedIndex];
-                name.Text = template.Name;
-                prompt.Text = template.Prompt;
+                if (templates.SelectedIndex <= 0) { chosen = null; prompt.Text = ""; return; }
+                chosen = AssistantAgent.Agents[templates.SelectedIndex];
+                // CST-071: a preset already in use gets a free name ("Pesquisador 2"), not an error on Salvar
+                name.Text = FreeAgentName(chosen.Name);
+                prompt.Text = chosen.Prompt;
             };
             body.Children.Add(Section("Modelo de agente", templates));
         }
@@ -1359,10 +1370,17 @@ public sealed partial class AssistantPanel
             if (n.Length == 0) return;
             if (AgentNames.Problem(n, a?.Id ?? "", _cfg) is { } problem) { _app.Notify(problem); return; }
             var p = (prompt.Text ?? "").Trim();
-            var t = a?.Tools ?? "read";
-            var made = new AiAgentDef(a?.Id ?? AssistantAgent.NewId("a"), n, t == "read" ? "search" : "sparkle", p.Length > 80 ? p[..80] : p, t, t == "all", p);
+            // CST-071: a preset keeps its tools (Escritor writes, Organizador organizes); it was always made read-only
+            var t = a?.Tools ?? chosen?.Tools ?? "read";
+            var made = new AiAgentDef(a?.Id ?? AssistantAgent.NewId("a"), n, chosen?.Icon ?? (t == "read" ? "search" : "sparkle"), p.Length > 80 ? p[..80] : p, t, t == "all", p);
             int at = _cfg.CustomAgents.FindIndex(x => x.Id == made.Id);
             if (at >= 0) _cfg.CustomAgents[at] = made; else _cfg.CustomAgents.Add(made);
+            if (a is null && t != "read")
+            {
+                // a new agent that writes starts asking before each change; Permissões can make it automatic
+                _cfg.AgentToolScopes[made.Id] = t;
+                _cfg.AgentPolicies[made.Id] = "ask";
+            }
             var blocks = readBlocks();
             if (blocks.Count == 0) _cfg.AgentInstructionBlocks.Remove(made.Id); else _cfg.AgentInstructionBlocks[made.Id] = blocks;
             SaveConfig();

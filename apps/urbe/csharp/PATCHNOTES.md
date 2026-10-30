@@ -36,6 +36,7 @@
   - Idioma do sistema como padrão.
   - Guia do Urbe consultável pelo agente.
   - Conversas anteriores consultáveis.
+  - Um agente criado a partir de um modelo (Escritor, Organizador) mantém as ferramentas do modelo; antes saía só de leitura.
 - **Resposta final** que diz o que foi feito; a revisão fica interna.
 - **Consulta a especialistas:** perguntas, formulários e aprovações do especialista aparecem na conversa em que você está.
 - **Permissões:**
