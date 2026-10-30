@@ -87,4 +87,12 @@ public sealed class NoteTemplateEngineTests
         Assert.False(NoteTemplateEngine.TryRender(source, values, out var rendered));
         Assert.Equal(string.Empty, rendered);
     }
+    [Fact]
+    public void ALongSheetAsksEveryFieldAsAFormWould()
+    {
+        // CST-045: a template with 40 fields asked only the first 32; it asks as many as a form takes
+        var source = string.Join("\n", Enumerable.Range(1, 40).Select(i => "Campo " + i + ": {{campo_" + i + "}}"));
+        Assert.Equal(40, NoteTemplateEngine.InputFields(source).Count);
+        Assert.Equal(FormDefinition.MaxFields, NoteTemplateEngine.MaxFields);
+    }
 }
