@@ -31,39 +31,51 @@
     "docs/adr/0046-urbe-tags-herdadas-por-projeto.md",
     "docs/adr/README.md",
     "docs/governance/decisions.json",
-    "docs/governance/handoffs/HO-20261030-urbe-consolidation-wave9.json"
+    "docs/governance/handoffs/HO-20261030-urbe-consolidation-wave9.json",
+    "apps/urbe/csharp/src/Urbe.Core/LinkRename.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Relink.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MarkdownLinkRenameTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CombinedFlowsUiTests.cs"
   ],
   "work_completed": [
     "CST-042: tags herdadas por projeto conforme DEC-0058 alternativa A. As tags do frontmatter da nota da pasta (Droerni/Droerni.md) valem para tudo dentro da pasta e das subpastas (somadas de fora para dentro), calculadas pela localização em ProjectTags (Urbe.Core); nenhuma outra nota é escrita.",
     "Recusa: herdar: false (tudo) e sem-tags (lista, uma por linha ou texto); uma tag que a nota já tem é dela. Mover, renomear ou mudar a nota da pasta muda as herdadas na próxima reconstrução do índice, sem gravação.",
     "Consulta: KnowledgeIndex.Tagged (find_by_tag), read_note e get_links do Assistente (com a origem), visão do vault do Assistente, filtros por tag da Área de trabalho e consultas por tag das páginas incluem as herdadas.",
     "Interface: o formulário de propriedades mostra 'herdadas' com a origem (#worldbuilding de Droerni) e um × que escreve sem-tags na nota; uma tag herdada não é mais oferecida como sugestão para adicionar. Tutorial (AppDocs) explica o recurso, consultável pelo Assistente.",
-    "Consequências de DEC-0058 aplicadas: ADR-0046 Aceito com o contrato implementado; índice de ADRs; consequencesApplied=true."
+    "Consequências de DEC-0058 aplicadas: ADR-0046 Aceito com o contrato implementado; índice de ADRs; consequencesApplied=true.",
+    "CST-101 (parte): links Markdown ([texto](Nota.md), ![](foto.png)) acompanham renomear e mover, na forma escrita (relativo/raiz, <…>, %20, #trecho); uma nota que mudou de pasta tem os links relativos reescritos. Fecha a pendência conhecida da leva 8."
   ],
   "verification": [
     {
       "check": "dotnet test tests/Urbe.Core.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1188 testes, 0 falhas (local, .NET 10). ProjectTagsTests (5) novos."
+      "evidence": "1188 testes, 0 falhas (local, .NET 10): ProjectTagsTests (5); depois, MarkdownLinkRenameTests (5) e LinkRenameTests verdes."
     },
     {
       "check": "dotnet test tests/Urbe.Client.Tests",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "em execução"
+      "result": "passed",
+      "evidence": "392 testes, 0 falhas (local, .NET 10), incluindo ProjectTags_TheBoxFiltersByAnInheritedTagAndTheNoteShowsWhereItComesFrom; Combined_* (4) depois dos links Markdown."
     },
     {
       "check": "dotnet run tests/consistency/Check.cs",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "a rodar"
+      "result": "passed",
+      "evidence": "22 checks."
     },
     {
       "check": "Android físico (moto g32): numa pasta de projeto com a nota da pasta tendo tags, abrir uma nota dentro, ver 'herdadas' com a origem, tocar no × (sem-tags escrito), filtrar a caixa do projeto pela tag herdada, mover a nota para fora e ver a herdada sumir",
       "kind": "human",
       "result": "pending",
       "object": "apps/urbe/docs/csharp/CONSOLIDATION.md#CST-042",
+      "critical": false
+    },
+    {
+      "check": "Android físico (moto g32): renomear uma nota ligada por [texto](Nota.md) e mover uma nota com links relativos; os links continuam abrindo",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/docs/csharp/CONSOLIDATION.md#CST-101",
       "critical": false
     }
   ],
@@ -74,7 +86,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "CST-101 (resto): formulário com nota alterada e aprovação pendente durante consulta; links Markdown ao renomear.",
+    "CST-101 (resto): formulário com nota alterada e aprovação pendente durante consulta.",
     "Editor (CST-015 a 026) e agentes (CST-071 em diante) sem entrada no CONSOLIDATION.md."
   ],
   "decisions_required": [],

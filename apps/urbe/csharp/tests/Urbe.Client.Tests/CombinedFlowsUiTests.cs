@@ -58,4 +58,25 @@ public sealed partial class HeadlessUiTests
         Assert.False(view.Editor.HasChanges);
         return true;
     }, CancellationToken.None));
+    [Fact]
+    public async Task Combined_MarkdownLinksFollowARenameAndANoteThatMoved() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        using var vault = await OpenFaultyVaultAsync(("Comece.md", "# Comece\n\nVeja [o rascunho](Rascunho.md#Parte) e [[Rascunho]].\n"),
+            ("Rascunho.md", "# Parte\n"), ("Pasta/Outra.md", "ligada a [r](../Rascunho.md) e ![](foto.png)\n"));
+        File.WriteAllBytes(Path.Combine(vault.Folder, "Pasta", "foto.png"), [0x89, 0x50, 0x4E, 0x47]);
+        var view = vault.View;
+        await view.OpenVaultAsync();
+        await Settle(vault.Window, view);
+
+        await view.RenameNoteAsync("Rascunho.md", "Plano final");
+        await Settle(vault.Window, view);
+        Assert.Equal("# Comece\n\nVeja [o rascunho](Plano%20final.md#Parte) e [[Plano final]].\n", vault.Read("Comece.md"));
+        Assert.Equal("ligada a [r](../Plano%20final.md) e ![](foto.png)\n", vault.Read("Pasta/Outra.md"));
+
+        // the note that links moves to the root: its relative links are written from where it is now
+        await view.MoveNotesToAsync(["Pasta/Outra.md"], "");
+        await Settle(vault.Window, view);
+        Assert.Equal("ligada a [r](Plano%20final.md) e ![](Pasta/foto.png)\n", vault.Read("Outra.md"));
+        return true;
+    }, CancellationToken.None));
 }

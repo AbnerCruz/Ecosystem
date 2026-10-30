@@ -3,7 +3,8 @@ using Urbe.Core;
 namespace Urbe.Client;
 
 /// <summary>
-/// CST-101: renaming or moving a note, a file or a folder broke every link to it (Obsidian keeps them). Each note that
+/// CST-101: renaming or moving a note, a file or a folder broke every link to it (Obsidian keeps them), wiki links and
+/// Markdown links alike; a note that moved has its relative Markdown links fixed too. Each note that
 /// links to what moved is rewritten through the same verified save as the editor's (LinkRename): an open note is
 /// saved first and shown with its links updated.
 /// </summary>
@@ -24,19 +25,21 @@ public sealed partial class MainView
         }
         if (files.Count == 0) return;
         var retarget = LinkRename.Retarget(files, all);
+        var cameFrom = files.ToDictionary(f => f.To, f => f.From, StringComparer.Ordinal);
         int changed = 0;
         var failed = new List<string>();
         foreach (var doc in _store.List().Where(d => d.Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase)).ToList())
         {
             var text = _contents.GetValueOrDefault(doc.Path, doc.Content);
-            if (!text.Contains("[[", StringComparison.Ordinal)) continue;
+            if (!text.Contains("[[", StringComparison.Ordinal) && !text.Contains("](", StringComparison.Ordinal)) continue;
             bool editing = Editor.IsVisible && Editor.Current?.Path == doc.Path;
             if (editing && Editor.HasChanges)
             {
                 if (!await Editor.SaveAsync()) { failed.Add(NoteLibrary.FullNoteName(doc.Path)); continue; }
                 text = Editor.Current!.Content;
             }
-            var next = DocumentModel.RewriteLinks(text, retarget);
+            // wiki links, then Markdown links ([texto](Pasta/Nota.md)), each in the form it was written
+            var next = LinkRename.RewriteMarkdownLinks(DocumentModel.RewriteLinks(text, retarget), cameFrom.GetValueOrDefault(doc.Path, doc.Path), doc.Path, files, all);
             if (next == text) continue;
             try
             {
