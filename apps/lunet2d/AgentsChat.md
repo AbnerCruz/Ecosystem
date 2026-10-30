@@ -609,7 +609,7 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 
 
 ### 20261030-codex-rpg-sonhos-slice1 — verifying
-- LUNET-461 / Issue #862, base f2d67c4de77385e49c91cd73760ec468895e7799, branch feat/rpg-sonhos-slice1-20261030. Pedido exclusivo Lunet2D; jogo próprio em samples/rpg-dos-sonhos, sem alterar Framework/Urbe/Tabletop RPG.
-- Testes anteriores ao código em 7cb9757; GameCompiler/GameLoader/GameHost reais, 64 seeds, recursos/produção/cura, pistas redundantes, combate, pausa/toque/save/corrupção. CI ainda precisa confirmar execução; sem dotnet/adb local.
-- Escolhas provisórias e roteiro em samples/rpg-dos-sonhos/README.md. Não presumir lore, playtests, sete dungeons ou multiplayer. Arte geométrica placeholder; NPC informante estático. Save inválido preservado; sem migração.
-- Próximo: CI, correções, projeto importável no Lunet, APK e validação física. Handoff HO-20261030-rpg-sonhos-slice1.json.
+- LUNET-461 / Issue #862, base f2d67c4de77385e49c91cd73760ec468895e7799, branch feat/rpg-sonhos-slice1-20261030. Projeto exclusivo em samples/rpg-dos-sonhos; sem alterar outros produtos ou Framework.
+- Testes anteriores ao código em 7cb9757; GameCompiler/GameLoader/GameHost reais. Primeiro CI detectou conversão int/uint na paleta; corrigida explicitamente. Referências nominais desnecessárias a outros produtos no texto novo removidas para respeitar CHK-ARCH-REFS.
+- Pipeline específico gera APK ARM64 pelo template real Lunet, ZIP importável e smoke em Android 13 emulado. Não presume validação física.
+- Escolhas provisórias e roteiro em samples/rpg-dos-sonhos/README.md. Próximo: CI verde, inspeção da captura do runtime e DEVICE. Handoff HO-20261030-rpg-sonhos-slice1.json.

@@ -106,7 +106,7 @@ public sealed class RpgSonhosGame : Game
             var p=Screen(new Vector2(x*32,y*32));
             if(p.X < -32 || p.X>480 || p.Y < 62 || p.Y>500) continue;
             char tile=World.TileAt(x,y);
-            uint color=tile=='~'?0x315b6c:tile=='='?0xaa8859:tile=='#'?0x334147:tile=='T'?0x263f32:((x+y)%2==0?0x51634a:0x4d5e45);
+            uint color=(uint)(tile=='~'?0x315b6c:tile=='='?0xaa8859:tile=='#'?0x334147:tile=='T'?0x263f32:((x+y)%2==0?0x51634a:0x4d5e45));
             Box(p.X,p.Y,32,32,color);
             if(tile=='T') { Box(p.X+13,p.Y+15,6,15,0x6c5141); Box(p.X+4,p.Y+2,24,19,0x284b3b); }
             if(tile=='.' && (y==12 || x==19 && y>=5 && y<=12 || x==6 && y>=12 && y<=19)) Box(p.X+3,p.Y+5,26,22,0x897b59);

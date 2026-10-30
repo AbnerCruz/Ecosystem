@@ -1,6 +1,6 @@
 # RPG dos Sonhos — fatia 1
 
-LUNET-461 / Issue #862. Jogo C# exclusivamente Lunet2D. Não é o produto Tabletop RPG, nem mudança da IDE. Fonte técnica auditada: Ecosystem `f2d67c4de77385e49c91cd73760ec468895e7799`, `apps/lunet2d/VERSION` = 0.0.1. Isso identifica o código consultado; não prova qual versão está instalada no telefone do autor.
+LUNET-461 / Issue #862. Jogo C# exclusivamente Lunet2D. É um projeto de jogo, sem mudar a IDE. Fonte técnica auditada: Ecosystem `f2d67c4de77385e49c91cd73760ec468895e7799`, `apps/lunet2d/VERSION` = 0.0.1. Isso identifica o código consultado; não prova qual versão está instalada no telefone do autor.
 
 ## Auditoria e escolha da fatia
 
