@@ -91,7 +91,7 @@ public sealed partial class MainView
         catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or InvalidDataException)
         {
             _notice.Hide();
-            await Dialogs.AlertAsync("Transcrever em nota", ex.Message + " Nada foi criado.");
+            await Dialogs.AlertAsync("Transcrever em nota", StorageProblems.Explain(ex) + " Nada foi criado.");
             return null;
         }
         finally

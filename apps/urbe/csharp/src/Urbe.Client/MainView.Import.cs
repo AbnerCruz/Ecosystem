@@ -50,7 +50,7 @@ public sealed partial class MainView
             try { selection = await PickImportAsync(mode == 1); }
             catch (Exception ex)
             {
-                await Dialogs.AlertAsync("Não foi possível abrir a seleção", ex.Message);
+                await Dialogs.AlertAsync("Não foi possível abrir a seleção", StorageProblems.Explain(ex));
                 return;
             }
             if (selection is null) return;
@@ -92,7 +92,7 @@ public sealed partial class MainView
         }
         catch (InvalidDataException ex)
         {
-            await Dialogs.AlertAsync("Não foi possível importar", ex.Message);
+            await Dialogs.AlertAsync("Não foi possível importar", StorageProblems.Explain(ex));
             return;
         }
         if (inspection.Kind != ImportKind.Documents)
@@ -132,7 +132,7 @@ public sealed partial class MainView
         }
         catch (Exception ex)
         {
-            await Dialogs.AlertAsync("Não foi possível importar", $"{written} de {total} arquivo(s) foram gravados antes do erro: {ex.Message}");
+            await Dialogs.AlertAsync("Não foi possível importar", $"{written} de {total} arquivo(s) foram gravados antes do erro: {StorageProblems.Explain(ex)}");
             if (plan.Attachments.Count > 0) RefreshNotes();
             return;
         }
@@ -201,7 +201,7 @@ public sealed partial class MainView
         }
         catch (Exception ex)
         {
-            await Dialogs.AlertAsync("Não foi possível importar", ex.Message.Length > 0 ? ex.Message : "A seleção não pôde ser lida. O vault atual foi preservado.");
+            await Dialogs.AlertAsync("Não foi possível importar", ex.Message.Length > 0 ? StorageProblems.Explain(ex) : "A seleção não pôde ser lida. O vault atual foi preservado.");
         }
         finally
         {
@@ -278,7 +278,7 @@ public sealed partial class MainView
         try { inspection = await ImportPipeline.InspectAsync(new ImportSelection(sources, IsDirectory: true)); }
         catch (InvalidDataException ex)
         {
-            await Dialogs.AlertAsync("Não foi possível restaurar", ex.Message);
+            await Dialogs.AlertAsync("Não foi possível restaurar", StorageProblems.Explain(ex));
             return;
         }
         await RestoreSelectionAsync(inspection);

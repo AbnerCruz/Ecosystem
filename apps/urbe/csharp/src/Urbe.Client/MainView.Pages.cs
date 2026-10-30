@@ -223,7 +223,7 @@ public sealed partial class MainView
         }
         catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or InvalidDataException)
         {
-            await Dialogs.AlertAsync("Não foi possível salvar o HTML", ex.Message);
+            await Dialogs.AlertAsync("Não foi possível salvar o HTML", StorageProblems.Explain(ex));
             return;
         }
         _contents[target] = html;

@@ -52,17 +52,7 @@ public sealed class UrbeApp : Application
                     Background = UrbeTheme.Brush(UrbeTheme.Bg),
                     Content = view
                 };
-                // workspace.js flushPending on pagehide: a pending save of the notes' record is written before the window closes
-                bool flushed = false;
-                window.Closing += async (_, e) =>
-                {
-                    if (flushed || view.NotesSave is not { HasPending: true }) return;
-                    e.Cancel = true;
-                    try { await view.FlushPendingAsync(); }
-                    catch { /* the error state was shown; closing must not be blocked forever */ }
-                    flushed = true;
-                    window.Close();
-                };
+                SaveBeforeClosing(window, view);
                 desktop.MainWindow = window;
                 DesktopWindowReady?.Invoke(window);
                 break;
@@ -74,6 +64,34 @@ public sealed class UrbeApp : Application
                 break;
         }
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>
+    /// CST-013: closing the window (the ✕, Alt+F4, the system shutting down) waits for what is not written yet: the
+    /// open note's text typed since the last autosave, then the notes' record (workspace.js flushPending on pagehide).
+    /// Only the record was waited for: the last seconds of typing were lost with the window. When the note cannot be
+    /// saved, the window stays open unless the person chooses to close without saving.
+    /// </summary>
+    public static void SaveBeforeClosing(Window window, MainView view)
+    {
+        ArgumentNullException.ThrowIfNull(window);
+        ArgumentNullException.ThrowIfNull(view);
+        bool done = false;
+        window.Closing += async (_, e) =>
+        {
+            bool typed = view.Editor.Current is not null && view.Editor.HasChanges;
+            if (done || (!typed && view.NotesSave is not { HasPending: true })) return;
+            e.Cancel = true;
+            if (typed && !await view.Editor.SaveAsync() &&
+                !await view.Dialogs.ConfirmAsync("A nota não foi salva",
+                    "O que foi escrito desde a última gravação de “" + System.IO.Path.GetFileNameWithoutExtension(view.Editor.Current!.Path) +
+                    "” não está no vault. Se fechar agora, esse texto se perde.", "Fechar sem salvar", danger: true, cancel: "Continuar no Urbe"))
+                return;
+            try { await view.FlushPendingAsync(); }
+            catch { /* the error state was shown; closing must not be blocked forever */ }
+            done = true;
+            window.Close();
+        };
     }
 
     /// <summary>The view of the running app (the Android head flushes its pending saves on pause).</summary>

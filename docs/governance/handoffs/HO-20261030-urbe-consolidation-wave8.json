@@ -1,0 +1,126 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261030-urbe-consolidation-wave8",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-30T01:10:56Z",
+  "agent": {
+    "id": "claude-code-urbe-consolidation",
+    "kind": "ai-agent"
+  },
+  "task_id": "GH-852",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-939e057e-1zwyg5",
+  "base_commit": "0936ab7",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/857",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.StorageFailures.cs",
+    "apps/urbe/csharp/src/Urbe.Client/StorageProblems.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Import.cs",
+    "apps/urbe/csharp/src/Urbe.Core/InterruptedWrites.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/StorageFailureUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/InterruptedWritesTests.cs",
+    "apps/urbe/docs/csharp/CONSOLIDATION.md",
+    "docs/governance/handoffs/HO-20261030-urbe-consolidation-wave8.json",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Relink.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LinkRename.cs",
+    "apps/urbe/csharp/src/Urbe.Core/DocumentModel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Folders.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AttachmentActions.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LinkRenameTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CombinedFlowsUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/FormDraftStore.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/FormsTests.cs"
+  ],
+  "work_completed": [
+    "CST-004/007: falhas do armazenamento antes e depois da gravação conferidas no disco (WriteOrAskAsync) em criar, salvar, renomear, mover, excluir, restaurar, duplicar, criar por modelo, excluir de vez e esvaziar: sem falso sucesso, sem tela diferente do disco, mesmo id; mensagem com Tentar de novo e palavras da pessoa (StorageProblems).",
+    "CST-006: gravação cortada pelo app fechando resolvida na abertura seguinte (InterruptedWrites): nota vazia ou ausente recupera o texto anterior, textos diferentes ficam lado a lado, a cópia do armazenamento só sai depois de o texto estar conferido numa nota.",
+    "CST-013 (parte): fechar a janela no computador salva a nota aberta antes (UrbeApp.SaveBeforeClosing); sem conseguir salvar, a janela fica e pergunta.",
+    "CST-101 (parte): renomear ou mover nota, pasta ou anexo atualiza os [[links]] em todas as notas (LinkRename + DocumentModel.RewriteLinks), mantendo seção, apelido e forma; nomes ambíguos e código ficam intactos.",
+    "CST-049 (parte): rascunho de formulário de um modelo que mudou não trava mais a criação; as respostas que ainda cabem vão para o modelo novo e as outras aparecem num aviso."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test Urbe.Portable.slnx",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1574 testes, 0 falhas (local, .NET 10, Release). StorageFailureUiTests: 8 dos 10 casos de falha vermelhos antes da correção; a gravação cortada e o fechamento da janela vermelhos antes. Build Android Debug e Desktop Release ok."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks."
+    },
+    {
+      "check": "Android físico (moto g32): pasta sem espaço ou com permissão perdida mostra o erro com Tentar de novo e nada some; matar o app durante uma gravação e reabrir: a nota volta inteira ou as duas versões ficam",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/docs/csharp/CONSOLIDATION.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Os arquivos internos (.urbe/) não entram na recuperação de gravação cortada: continuam protegidos pelos próprios leitores; a cópia de um deles fica onde está.",
+    "Execução do Assistente com o app em segundo plano e morte do processo (resto do CST-013) ainda não conferida.",
+    "Links Markdown [texto](Nota.md) não são reescritos ao renomear; só os wiki links."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CST-101 (resto): formulário com nota alterada, aprovação pendente durante consulta; links Markdown ao renomear.",
+    "Depois: editor (CST-015 a 026) e agentes (CST-071 em diante)."
+  ],
+  "decisions_required": [
+    "DEC-0058"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/UX.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O histórico continua com uma autoridade (.urbe/history.v2.json); a Área segue projeção das pastas, sem estado novo."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Tempos medidos no computador (headless); DEVICE pendente e separado."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nada extraído para a plataforma."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "storage-failure-recovery",
+      "status": "product-specific",
+      "rationale": "Fluxo das operações do vault do Urbe sobre IUrbeVaultStorage; nenhum outro Product usa esse armazenamento."
+    },
+    {
+      "subject": "interrupted-writes",
+      "status": "product-specific",
+      "rationale": "Ligado ao formato das cópias .urbe-recovery- dos armazenamentos do Urbe."
+    },
+    {
+      "subject": "link-rename",
+      "status": "product-specific",
+      "rationale": "Resolução de links das notas do Urbe (KnowledgeIndex); nenhum outro Product tem wiki links."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Toca o caminho de dados do usuário: operações do vault conferem o disco depois de falhas e a abertura resolve cópias de gravação interrompida (cria notas e apaga a cópia só depois de conferir)."
+  }
+}

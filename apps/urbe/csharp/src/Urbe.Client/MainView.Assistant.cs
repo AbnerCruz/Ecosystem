@@ -311,7 +311,7 @@ public sealed partial class MainView : IAssistantApp
             if (await (SaveFileCopy ?? SaveAnyFileAsync)("Urbe-imagens.zip", memory.ToArray()) == true)
                 ShowLifeNotice("Imagens exportadas.", Ui.ToastKind.Success);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException) { await Dialogs.AlertAsync("Exportar imagens", ex.Message); }
+        catch (Exception ex) when (ex is not OperationCanceledException) { await Dialogs.AlertAsync("Exportar imagens", StorageProblems.Explain(ex)); }
     }
 
     bool IAssistantApp.FileExists(string path) =>
@@ -395,6 +395,7 @@ public sealed partial class MainView : IAssistantApp
         moved = _library!.Edited(moved.Path, moved.Content, Now) ?? moved;
         if (editing) Editor.Renamed(newPath);
         AfterAssistantWrite(newPath);
+        await RelinkAsync([(from, newPath)]);
         await RetargetGraphsAsync([(from, newPath)]);
         return _store.Get(moved.Id) ?? moved;
     }

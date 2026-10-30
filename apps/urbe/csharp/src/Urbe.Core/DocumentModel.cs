@@ -129,6 +129,39 @@ public static partial class DocumentModel
         return output.AsReadOnly();
     }
 
+    /// <summary>
+    /// The wiki links of <paramref name="content"/> (<c>[[alvo]]</c>, <c>![[alvo]]</c>, with <c>#seção</c> and
+    /// <c>|apelido</c>) whose target <paramref name="retarget"/> gives a new one, rewritten in place; the section, the
+    /// alias and everything else stay as they are, and links inside code are left alone (as <see cref="ParseLinks"/>
+    /// does not read them).
+    /// </summary>
+    public static string RewriteLinks(string content, Func<string, string?> retarget)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentNullException.ThrowIfNull(retarget);
+        if (!content.Contains("[[", StringComparison.Ordinal)) return content;
+        var code = new List<(int Start, int End)>();
+        foreach (Match fence in FencedCodeRegex().Matches(content)) code.Add((fence.Index, fence.Index + fence.Length));
+        foreach (Match inline in InlineCodeRegex().Matches(content))
+            if (!code.Any(c => inline.Index >= c.Start && inline.Index < c.End)) code.Add((inline.Index, inline.Index + inline.Length));
+        var output = new System.Text.StringBuilder(content.Length);
+        int at = 0;
+        foreach (Match match in WikiLinkRegex().Matches(content))
+        {
+            if (code.Any(c => match.Index < c.End && match.Index + match.Length > c.Start)) continue;
+            var raw = match.Groups[1].Value;
+            int pipe = raw.IndexOf('|');
+            var left = pipe >= 0 ? raw[..pipe] : raw;
+            int hash = left.IndexOf('#');
+            var target = (hash >= 0 ? left[..hash] : left).Trim();
+            if (target.Length == 0 || retarget(target) is not { } replaced || replaced == target) continue;
+            output.Append(content, at, match.Groups[1].Index - at)
+                .Append(replaced).Append(hash >= 0 ? left[hash..] : "").Append(pipe >= 0 ? raw[pipe..] : "");
+            at = match.Groups[1].Index + match.Groups[1].Length;
+        }
+        return at == 0 ? content : output.Append(content, at, content.Length - at).ToString();
+    }
+
     public static IReadOnlyList<string> ParseTags(
         string? content,
         IReadOnlyDictionary<string, string>? properties = null)

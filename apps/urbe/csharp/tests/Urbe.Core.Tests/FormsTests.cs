@@ -130,7 +130,7 @@ public sealed class FormsTests
     public void SilentPersistenceFailureIsNeverReportedAsSaved() =>
         Assert.Throws<IOException>(() => new AssistantStore(new BrokenStorage()).SaveConversationVerified(new() { Id = "one" }));
     [Fact]
-    public void TemplateDraftResumesAndRefusesChangedSource()
+    public void TemplateDraftResumesAndCarriesItsAnswersToAChangedTemplate()
     {
         var storage = new MemoryAssistantStorage();
         var drafts = new FormDraftStore(storage);
@@ -140,8 +140,15 @@ public sealed class FormsTests
         session.Values["nome"] = "Arven";
         drafts.Save(key, session);
         Assert.Equal("Arven", (string?)new FormDraftStore(storage).LoadOrCreate(key, definition, "{{nome}}").Values["nome"]);
-        Assert.Throws<IOException>(() => drafts.LoadOrCreate(key, definition, "mudou {{nome}}"));
-        Assert.Contains("Arven", storage.Read(key));
+        // the template changed: its form opens with the answers that still fit, and says which did not (CST-049)
+        var changed = FormDefinition.FromTemplate("Ficha", "mudou {{nome}}");
+        var carried = drafts.LoadOrCreate(key, changed, "mudou {{nome}}", out var left);
+        Assert.Equal("Arven", (string?)carried.Values["nome"]);
+        Assert.Empty(left);
+        var other = FormDefinition.FromTemplate("Ficha", "{{apelido}}");
+        var moved = drafts.LoadOrCreate(key, other, "{{apelido}}", out left);
+        Assert.Null((string?)moved.Values["nome"]);
+        Assert.Equal(("nome", "Arven"), Assert.Single(left));
         drafts.Delete(key);
         Assert.Null(storage.Read(key));
     }
