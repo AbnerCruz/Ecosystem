@@ -228,12 +228,14 @@ public sealed partial class MainView : IPageStudioHost
     /// <summary>printPdf(): the page's export HTML to the system's print ("Salvar como PDF" saves the file).</summary>
     public async Task PrintPageAsync(string path)
     {
-        if (await PageHtmlAsync(path) is not { } html) return;
+        if (_store?.Get(path) is not { } page || await PageHtmlAsync(path) is not { } html) return;
+        var layout = (JsonObject)_pageEngine.Normalize(page.Content).Spec["layout"]!;
+        var settings = PagePrintSettings.FromLayout(layout);
         if (ContentViewers.Printer is not { } print) { ShowLifeNotice("Este aparelho não oferece impressão. Use Baixar HTML e imprima pelo navegador."); return; }
         try
         {
             ShowLifeNotice("Preparando o PDF…");
-            await print(PageFileBase(path), html);
+            await print(PageFileBase(path), html, settings);
             ShowLifeNotice("Escolha “Salvar como PDF” para gerar o arquivo.");
         }
         catch (Exception ex) when (ex is not OutOfMemoryException) { ShowLifeNotice("Não consegui gerar o PDF: " + ex.Message); }
