@@ -33,34 +33,87 @@ internal static class AndroidContentViewers
     }
 
     /// <summary>
-    /// printPdf (UrbeNative.printHtml in the 1.8.4 APK): the page in an off-screen WebView, then the system's print
-    /// dialog for it — "Salvar como PDF" saves the file where the person chooses; a book keeps its page size and margins.
+    /// Android WebView print adapter: keep the HTML view alive for the whole system print job.
+    /// The print service does not reliably honor CSS @page size, so the paper is selected natively.
     /// </summary>
-    private static Task PrintAsync(string title, string html)
+    private static Task PrintAsync(string title, string html, PagePrintSettings settings)
     {
         var activity = MainActivity.Current ?? throw new InvalidOperationException("O aplicativo não está aberto.");
         var done = new TaskCompletionSource();
         activity.RunOnUiThread(() =>
         {
+            WebView? web = null;
             try
             {
-                var web = new WebView(activity);
+                web = new WebView(activity);
                 web.Settings.JavaScriptEnabled = true;
                 web.Settings.AllowFileAccess = false;
                 web.Settings.AllowContentAccess = false;
-                web.SetWebViewClient(new PrintWhenLoaded(activity, title, done));
-                web.LoadDataWithBaseURL(null, html, "text/html", "utf-8", null);
+                web.SetWebViewClient(new PrintWhenLoaded(activity, title, settings, done));
+                // Retain the view before loading: it can finish quickly for inline-only HTML.
                 Kept.Add(web);
+                web.LoadDataWithBaseURL(null, html, "text/html", "utf-8", null);
             }
-            catch (Exception ex) { done.TrySetException(ex); }
+            catch (Exception ex)
+            {
+                if (web is not null) ReleasePrintView(web);
+                done.TrySetException(ex);
+            }
         });
         return done.Task;
     }
 
-    // the off-screen WebView must live until the print job has read the page
+    // The print dialog and PDF conversion are asynchronous. A fixed timeout or WebView.PostDelayed
+    // is wrong here: the dialog may stay open, and PostDelayed on a detached view never runs.
     private static readonly List<WebView> Kept = [];
+    private static readonly Handler PrintHandler = new(Looper.MainLooper!);
 
-    private sealed class PrintWhenLoaded(Activity activity, string title, TaskCompletionSource done) : WebViewClient
+    private static void ReleasePrintView(WebView view)
+    {
+        Kept.Remove(view);
+        try { if (view.Handle != IntPtr.Zero) view.Destroy(); }
+        catch (ObjectDisposedException) { }
+        catch (Java.Lang.Exception) { }
+    }
+
+    private static void ReleaseAfterPrint(WebView view, Android.Print.PrintJob job)
+    {
+        void Check()
+        {
+            try
+            {
+                if (job.IsCompleted || job.IsCancelled || job.IsFailed)
+                {
+                    ReleasePrintView(view);
+                    return;
+                }
+                PrintHandler.PostDelayed(Check, 1000);
+            }
+            catch (Java.Lang.Exception) { ReleasePrintView(view); }
+        }
+        PrintHandler.PostDelayed(Check, 1000);
+    }
+
+    private static Android.Print.PrintAttributes PrintAttributesFor(PagePrintSettings settings)
+    {
+        // WebView's print adapter ignores CSS @page paper sizes on Android. Use physical dimensions
+        // in thousandths of an inch; CSS is responsible for the book's own internal padding/margins.
+        var paper = !settings.IsBook ? Android.Print.PrintAttributes.MediaSize.IsoA4 : settings.Paper switch
+        {
+            "a4" => Android.Print.PrintAttributes.MediaSize.IsoA4,
+            "letter" => Android.Print.PrintAttributes.MediaSize.NaLetter,
+            "6x9" => new Android.Print.PrintAttributes.MediaSize("URBE_6X9", "6 x 9 in", 6000, 9000),
+            "pocket" => new Android.Print.PrintAttributes.MediaSize("URBE_POCKET", "110 x 180 mm", 4331, 7087),
+            _ => Android.Print.PrintAttributes.MediaSize.IsoA5
+        };
+        return new Android.Print.PrintAttributes.Builder()
+            .SetMediaSize(paper)
+            .SetMinMargins(new Android.Print.PrintAttributes.Margins(0, 0, 0, 0))
+            .Build();
+    }
+
+    private sealed class PrintWhenLoaded(
+        Activity activity, string title, PagePrintSettings settings, TaskCompletionSource done) : WebViewClient
     {
         private bool _printed;
 
@@ -74,20 +127,16 @@ internal static class AndroidContentViewers
             {
                 if (activity.GetSystemService(Context.PrintService) is not Android.Print.PrintManager printer)
                     throw new InvalidOperationException("Este aparelho não tem impressão.");
-                var job = string.IsNullOrWhiteSpace(title) ? "Página" : title;
-                printer.Print(job, view.CreatePrintDocumentAdapter(job), new Android.Print.PrintAttributes.Builder().Build());
+                var jobName = string.IsNullOrWhiteSpace(title) ? "Página" : title;
+                var job = printer.Print(jobName, view.CreatePrintDocumentAdapter(jobName), PrintAttributesFor(settings));
+                if (job is null) throw new InvalidOperationException("O sistema não iniciou a impressão.");
+                ReleaseAfterPrint(view, job);
                 done.TrySetResult();
             }
-            catch (Exception ex) { done.TrySetException(ex); }
-            finally
+            catch (Exception ex)
             {
-                // released a while later: the system has copied the document by then
-                view.PostDelayed(() =>
-                {
-                    Kept.Remove(view);
-                    try { if (view.Handle != IntPtr.Zero) view.Destroy(); }
-                    catch (ObjectDisposedException) { }
-                }, 120_000);
+                ReleasePrintView(view);
+                done.TrySetException(ex);
             }
         }
     }
