@@ -100,9 +100,9 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal("Salvo", view.Studio.Status);
 
                 // Exportar → Imprimir ou salvar PDF: the export HTML goes to the system's print
-                (string Title, string Html)? printed = null;
+                (string Title, string Html, PagePrintSettings Settings)? printed = null;
                 var before = ContentViewers.Printer;
-                ContentViewers.Printer = (t, h) => { printed = (t, h); return Task.CompletedTask; };
+                ContentViewers.Printer = (t, h, settings) => { printed = (t, h, settings); return Task.CompletedTask; };
                 try { await view.PrintPageAsync("Páginas/Nova página.page.json"); }
                 finally { ContentViewers.Printer = before; }
                 Assert.Equal("Nova página", printed!.Value.Title);
