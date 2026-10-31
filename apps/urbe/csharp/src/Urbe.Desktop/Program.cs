@@ -19,7 +19,7 @@ public static class Program
         UrbeApp.OpeningNamesPath = Path.Combine(Path.GetDirectoryName(selection)!, "opening-names.json");
         UrbeApp.AssistantFolder = Path.Combine(Path.GetDirectoryName(selection)!, "assistant");
         // Imprimir ou salvar PDF: the page in the browser, which opens its print dialog (the 1.8.4's print frame)
-        ContentViewers.Printer = (title, html) =>
+        ContentViewers.Printer = (title, html, _) =>
         {
             var dir = Path.Combine(Path.GetTempPath(), "urbe-print");
             Directory.CreateDirectory(dir);

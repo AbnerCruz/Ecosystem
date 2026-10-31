@@ -1,0 +1,96 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261031-urbe-page-pdf-beta38",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-31T10:45:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-pdf-fix",
+    "kind": "ai-agent"
+  },
+  "task_id": "GH-871",
+  "component": "urbe",
+  "state": "review",
+  "branch": "fix/urbe-beta38-page-pdf-20261031",
+  "base_commit": "ea233369bbc979936ea3d597e92e367488ce2363",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/871",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/AndroidContentViewers.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/ContentViewers.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Studio.cs",
+    "apps/urbe/csharp/src/Urbe.Desktop/Program.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PageStudioUiTests.cs",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES-beta.38.md",
+    "docs/governance/handoffs/HO-20261031-urbe-page-pdf-beta38.json"
+  ],
+  "work_completed": [
+    "Corrigido o WebView Android da impressão para acompanhar o PrintJob até concluir, falhar ou cancelar, sem temporizador arbitrário de 120 segundos.",
+    "Enviadas ao Android as dimensões físicas do papel configurado no editor de livros, com A4 para páginas comuns.",
+    "Contrato unificado e testes C# de regressão adicionados; callback Windows ajustado.",
+    "Beta.38 e patchnotes preparados, preservando app.urbe.csharp e certificado beta."
+  ],
+  "verification": [
+    {
+      "check": "CI C# portátil, testes de interface e build Android do PR #871",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Primeira tentativa: erros CS1593 (Desktop) e CS8604 (Android), corrigidos em dois commits. Nova execução em andamento."
+    },
+    {
+      "check": "APK beta.38 assinado e release no workflow oficial",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Depende da integração e dos gates aprovados."
+    },
+    {
+      "check": "Validar PDF em Android físico: página simples, livro, imagens, espera no diálogo, salvar e cancelar",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/PATCHNOTES-beta.38.md",
+      "evidence": "Não executado neste ambiente."
+    }
+  ],
+  "known_issues": [
+    "CSS editorial avançado (@page, números e cabeçalhos) pode não ser reproduzido totalmente pelo WebView Android.",
+    "Não há teste físico para reproduzir o defeito específico da beta.37."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Concluir CI, integrar via governança, executar workflow oficial de release beta.38 e validar APK no aparelho."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/governance/definition-of-done.md",
+    "apps/urbe/csharp/PATCHNOTES-beta.37.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "PR #871 e handoff rastreáveis."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Automação e validação humana Android explicitamente separadas."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Resultados iniciais da compilação e correções documentados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Mudança isolada ao Urbe; sem novas dependências de outros produtos."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Correção comportamental do produto; a alteração do csproj na zona de distribuição permanece sujeita à classificação e autorização do integrador."
+  }
+}

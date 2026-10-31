@@ -12,6 +12,21 @@ namespace Urbe.Client.Tests;
 /// <summary>The page studio through the native UI against a real folder vault: Nova página, blocks, fields, undo, JSON and saving.</summary>
 public sealed partial class HeadlessUiTests
 {
+    [Theory]
+    [InlineData("book", "a5", true, "a5")]
+    [InlineData("book", "a4", true, "a4")]
+    [InlineData("book", "letter", true, "letter")]
+    [InlineData("book", "6x9", true, "6x9")]
+    [InlineData("book", "pocket", true, "pocket")]
+    [InlineData("book", "invalid", true, "a5")]
+    [InlineData("site", "a5", false, "a4")]
+    public void PagePrintSettings_PreservesBookPaperAndDefaultsToA4ForSites(
+        string format, string paper, bool book, string expectedPaper)
+    {
+        var layout = new System.Text.Json.Nodes.JsonObject { ["format"] = format, ["pageSize"] = paper };
+        Assert.Equal(new PagePrintSettings(book, expectedPaper), PagePrintSettings.FromLayout(layout));
+    }
+
     private static async Task Pump(int ms = 120)
     {
         for (int i = 0; i < ms / 20; i++) { Dispatcher.UIThread.RunJobs(); await Task.Delay(20); }
@@ -100,13 +115,14 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal("Salvo", view.Studio.Status);
 
                 // Exportar → Imprimir ou salvar PDF: the export HTML goes to the system's print
-                (string Title, string Html)? printed = null;
+                (string Title, string Html, PagePrintSettings Settings)? printed = null;
                 var before = ContentViewers.Printer;
-                ContentViewers.Printer = (t, h) => { printed = (t, h); return Task.CompletedTask; };
+                ContentViewers.Printer = (t, h, settings) => { printed = (t, h, settings); return Task.CompletedTask; };
                 try { await view.PrintPageAsync("Páginas/Nova página.page.json"); }
                 finally { ContentViewers.Printer = before; }
                 Assert.Equal("Nova página", printed!.Value.Title);
                 Assert.Contains("Uma frase", printed.Value.Html);
+                Assert.Equal(new PagePrintSettings(false, "a4"), printed.Value.Settings);
 
                 // Voltar: the page is listed with its new title
                 await view.Studio.CloseAsync();
