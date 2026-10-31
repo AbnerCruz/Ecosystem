@@ -107,7 +107,7 @@ internal static class AndroidContentViewers
             _ => Android.Print.PrintAttributes.MediaSize.IsoA5
         };
         return new Android.Print.PrintAttributes.Builder()
-            .SetMediaSize(paper)
+            .SetMediaSize(paper!)
             .SetMinMargins(new Android.Print.PrintAttributes.Margins(0, 0, 0, 0))
             .Build();
     }
