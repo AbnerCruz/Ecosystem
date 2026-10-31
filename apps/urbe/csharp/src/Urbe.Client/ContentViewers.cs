@@ -55,7 +55,7 @@ public static class ContentViewers
     /// printPdf(): the platform prints this HTML (the system's print dialog, where "Salvar como PDF" is one of the
     /// printers), named after the page; null when the platform cannot print.
     /// </summary>
-    public static Func<string, string, Task>? Printer { get; set; }
+    public static Func<string, string, PagePrintSettings, Task>? Printer { get; set; }
 
     /// <summary>A viewer for <paramref name="request"/>: a PDF by the platform's reader, anything else by its factory.</summary>
     public static async Task<Control?> CreateAsync(ContentRequest request, CancellationToken cancellationToken = default)
