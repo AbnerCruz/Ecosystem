@@ -23,6 +23,20 @@ public sealed record ContentRequest(IUrbeVaultStorage? Storage, string Path, str
 }
 
 /// <summary>
+/// Printing is a platform operation, but page/paper semantics come from the page document.
+/// Android WebView printing does not honor CSS @page size; the print service needs the paper explicitly.
+/// </summary>
+public sealed record PagePrintSettings(bool IsBook, string Paper)
+{
+    public static PagePrintSettings FromLayout(System.Text.Json.Nodes.JsonObject layout)
+    {
+        if ((string?)layout["format"] != "book") return new(false, "a4");
+        var paper = (string?)layout["pageSize"] ?? "a5";
+        return new(true, paper is "a4" or "a5" or "letter" or "6x9" or "pocket" ? paper : "a5");
+    }
+}
+
+/// <summary>
 /// The content viewers inside the Urbe (owner, ADD-0023: "dá um jeito da visualização aparecer no próprio Urbe,
 /// muitos painéis assim serão necessários"). The interface stays native (ADR-0032); a viewer is content inside a
 /// native panel: HTML and media in the system's web view and player, PDF pages drawn as images. Each platform head
