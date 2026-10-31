@@ -107,6 +107,7 @@ public sealed partial class HeadlessUiTests
                 finally { ContentViewers.Printer = before; }
                 Assert.Equal("Nova página", printed!.Value.Title);
                 Assert.Contains("Uma frase", printed.Value.Html);
+                Assert.Equal(new PagePrintSettings(false, "a4"), printed.Value.Settings);
 
                 // Voltar: the page is listed with its new title
                 await view.Studio.CloseAsync();
