@@ -12,6 +12,21 @@ namespace Urbe.Client.Tests;
 /// <summary>The page studio through the native UI against a real folder vault: Nova página, blocks, fields, undo, JSON and saving.</summary>
 public sealed partial class HeadlessUiTests
 {
+    [Theory]
+    [InlineData("book", "a5", true, "a5")]
+    [InlineData("book", "a4", true, "a4")]
+    [InlineData("book", "letter", true, "letter")]
+    [InlineData("book", "6x9", true, "6x9")]
+    [InlineData("book", "pocket", true, "pocket")]
+    [InlineData("book", "invalid", true, "a5")]
+    [InlineData("site", "a5", false, "a4")]
+    public void PagePrintSettings_PreservesBookPaperAndDefaultsToA4ForSites(
+        string format, string paper, bool book, string expectedPaper)
+    {
+        var layout = new System.Text.Json.Nodes.JsonObject { ["format"] = format, ["pageSize"] = paper };
+        Assert.Equal(new PagePrintSettings(book, expectedPaper), PagePrintSettings.FromLayout(layout));
+    }
+
     private static async Task Pump(int ms = 120)
     {
         for (int i = 0; i < ms / 20; i++) { Dispatcher.UIThread.RunJobs(); await Task.Delay(20); }
