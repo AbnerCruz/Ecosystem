@@ -63,46 +63,22 @@ public sealed class PublicationStudioView : Border
         var sourceGroup = new StackPanel { Children = { sourcesHead, _status, _sources } };
         _status.Margin = new Thickness(16, 0, 16, 8);
         _sources.Margin = new Thickness(16, 0, 16, 12);
-        var columns = new Grid { ColumnDefinitions = new ColumnDefinitions("3*,5*") };
-        var sourceScroll = new ScrollViewer { Content = sourceGroup, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-        Grid.SetColumn(sourceScroll, 0);
-        columns.Children.Add(sourceScroll);
-        var previewScroll = new ScrollViewer
+        // One scroll owner in every viewport: no reparenting a live text surface
+        // during Android keyboard/layout changes (a known editor reliability risk).
+        var body = new ScrollViewer
         {
-            Content = _preview, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Content = new StackPanel
+            {
+                Spacing = 12,
+                Children =
+                {
+                    sourceGroup,
+                    new Border { Height = 1, Background = UrbeTheme.Brush(UrbeTheme.Line2), Margin = new Thickness(16, 0) },
+                    _preview
+                }
+            },
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
-        };
-        Grid.SetColumn(previewScroll, 1);
-        columns.Children.Add(previewScroll);
-
-        // No permanent two-column clutter on phones; let the composition flow vertically.
-        var compact = new StackPanel { IsVisible = false, Children = { new ScrollViewer { Content = _preview } } };
-        // A single scroller is more reliable than nested scrollers on narrow touch screens.
-        var phoneScroll = new ScrollViewer { Content = new StackPanel { Children = { sourceGroup } } };
-        // The source list and preview are moved between hosts when the layout changes.
-        var body = new Grid { Children = { columns } };
-        body.SizeChanged += (_, e) =>
-        {
-            bool narrow = e.NewSize.Width < 720;
-            var target = narrow ? phoneScroll : sourceScroll;
-            if (sourceGroup.Parent is Panel old && !ReferenceEquals(old, (target.Content as Panel)))
-                old.Children.Remove(sourceGroup);
-            if (target.Content is Panel host && sourceGroup.Parent is null) host.Children.Add(sourceGroup);
-            // Preview is not duplicated: in narrow mode it is directly below the sources.
-            if (narrow)
-            {
-                if (_preview.Parent is Panel oldPreview) oldPreview.Children.Remove(_preview);
-                if (phoneScroll.Content is StackPanel stack && !stack.Children.Contains(_preview)) stack.Children.Add(_preview);
-                if (!body.Children.Contains(phoneScroll)) body.Children.Add(phoneScroll);
-            }
-            else
-            {
-                if (_preview.Parent is Panel oldPreview) oldPreview.Children.Remove(_preview);
-                previewScroll.Content = _preview;
-                body.Children.Remove(phoneScroll);
-            }
-            phoneScroll.IsVisible = narrow;
-            columns.IsVisible = !narrow;
         };
         var root = new DockPanel { LastChildFill = true };
         DockPanel.SetDock(bar, Dock.Top);
@@ -196,7 +172,7 @@ public sealed class PublicationStudioView : Border
             remove.Click += (_, _) => { if (_project is { } p) UpdateProject(p.RemoveSource(documentId)); };
             DockPanel.SetDock(remove, Dock.Right);
             item.Children.Add(remove);
-            var up = ActionButton(UrbeTheme.Icons.Up, "Mover fonte para cima");
+            var up = ActionButton(UrbeTheme.Icons.ArrowUp, "Mover fonte para cima");
             up.Click += (_, _) => { if (_project is { } p) UpdateProject(p.MoveSource(documentId, Math.Max(0, p.Sections.FindIndex(s => s.Source.DocumentId == documentId) - 1))); };
             DockPanel.SetDock(up, Dock.Right);
             item.Children.Add(up);
