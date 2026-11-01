@@ -370,7 +370,8 @@ public sealed partial class MainActivity : Activity
         var root = Vertical();
         root.SetBackgroundColor(WorkbenchBackground);
 
-        var bar = new LinearLayout(this) { Orientation = Orientation.Horizontal, Gravity = GravityFlags.CenterVertical };
+        var bar = new LinearLayout(this) { Orientation = Orientation.Horizontal };
+        bar.SetGravity(GravityFlags.CenterVertical);
         bar.SetPadding(Dp(6), Dp(4), Dp(6), Dp(4));
         void AddTopButton(string label, Action action, int width, bool primary = false)
         {
@@ -389,7 +390,8 @@ public sealed partial class MainActivity : Activity
         AddTopButton("⋯", ShowCommandPalette, 48);
         root.AddView(bar);
 
-        var document = new LinearLayout(this) { Orientation = Orientation.Horizontal, Gravity = GravityFlags.CenterVertical };
+        var document = new LinearLayout(this) { Orientation = Orientation.Horizontal };
+        document.SetGravity(GravityFlags.CenterVertical);
         document.SetPadding(Dp(10), 0, Dp(8), Dp(4));
         _status = WorkbenchLabel(project.Name, 13);
         _status.SetSingleLine(true);
