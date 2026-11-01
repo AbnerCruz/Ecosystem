@@ -419,10 +419,17 @@ public sealed partial class MainActivity : Activity
         _chipScroll.AddView(_chips);
 
         var tabs = new LinearLayout(this) { Orientation = Orientation.Horizontal };
-        _problemsTab = MakeBarButton("Problemas", () => OpenWorkbenchPanel(false));
-        tabs.AddView(_problemsTab);
-        tabs.AddView(MakeBarButton("Console", () => OpenWorkbenchPanel(true)));
-        tabs.AddView(MakeBarButton("Profiler", () =>
+        tabs.SetBackgroundColor(WorkbenchBackground);
+        void AddPanelTab(Button tab)
+        {
+            var parameters = new LinearLayout.LayoutParams(0, Dp(48), 1f);
+            parameters.SetMargins(Dp(3), 0, Dp(3), 0);
+            tabs.AddView(tab, parameters);
+        }
+        _problemsTab = WorkbenchButton("Problemas", () => OpenWorkbenchPanel(false));
+        AddPanelTab(_problemsTab);
+        AddPanelTab(WorkbenchButton("Console", () => OpenWorkbenchPanel(true)));
+        AddPanelTab(WorkbenchButton("Profiler", () =>
         {
             _layoutStore.Current.OpenPanel("profiler");
             SetProfilerPanel();
@@ -468,9 +475,16 @@ public sealed partial class MainActivity : Activity
         var header = new LinearLayout(this) { Orientation = Orientation.Horizontal };
         header.SetPadding(Dp(8), Dp(8), Dp(8), Dp(4));
         header.AddView(WorkbenchLabel("ARQUIVOS", 14, true), new LinearLayout.LayoutParams(0, Dp(48), 1));
-        header.AddView(MakeBarButton("+ arq.", () => AskForNewEntry("", isDirectory: false), 1.4f));
-        header.AddView(MakeBarButton("+ pasta", () => AskForNewEntry("", isDirectory: true), 1.4f));
-        header.AddView(MakeBarButton("✕", ToggleExplorer, 0.8f));
+        var newItem = WorkbenchButton("+", () => ShowActionMenu("Criar no projeto",
+        [
+            ("Novo arquivo", () => AskForNewEntry("", isDirectory: false)),
+            ("Nova pasta", () => AskForNewEntry("", isDirectory: true)),
+        ]));
+        newItem.ContentDescription = "Criar arquivo ou pasta";
+        header.AddView(newItem, new LinearLayout.LayoutParams(Dp(48), Dp(48)));
+        var closeDrawer = WorkbenchButton("×", ToggleExplorer);
+        closeDrawer.ContentDescription = "Fechar explorador de arquivos";
+        header.AddView(closeDrawer, new LinearLayout.LayoutParams(Dp(48), Dp(48)));
         _drawer.AddView(header);
 
         _drawerList = Vertical();
