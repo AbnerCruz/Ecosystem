@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261101-urbe-beta39-explicit-tabs-publications",
   "category": "HANDOFF",
-  "timestamp": "2026-11-01T21:49:15Z",
+  "timestamp": "2026-11-01T21:53:03Z",
   "agent": {
     "id": "codex",
     "kind": "ai-agent"
@@ -14,7 +14,7 @@
   "branch": "feat/urbe-explicit-tabs-publications-beta39",
   "base_commit": "7eb10c842f44dc9b8e1536abd593aba2f1c816fa",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/881",
   "files_changed": [
     "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
     "apps/urbe/csharp/PATCHNOTES.md",
@@ -35,7 +35,7 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ParityGapsUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationRecoveryUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationStudioUiTests.cs",
-    "apps/urbe/docs/v2/discovery/DATA-CATALOG.md",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md",
     "docs/product-plans/urbe/Numa_Consolidacao_2.5.md",
     "apps/urbe/csharp/PATCHNOTES-beta.39.md",
     "docs/governance/handoffs/HO-20261101-urbe-beta39-explicit-tabs-publications.json"
@@ -46,7 +46,8 @@
     "CST-149/157/158/160 parciais: criação no menu da nota, pasta, área, painel e paleta direciona ao novo estúdio. Páginas antigas continuam visualizáveis/exportáveis; módulos internos e ferramentas IA legadas ainda não retirados.",
     "CST-160 parcial: publicação de pasta seleciona referências por ID das notas presentes, incluindo subpastas e excluindo prefixos vizinhos; não duplica Markdown nem promete inclusão dinâmica futura.",
     "CST-162/164 parciais: HTML e impressão usam a mesma composição salva e notas reais atuais. Impressão A4 pela adaptação nativa existente, com quebra entre fontes; abrir diálogo não comprova arquivo PDF salvo. Motor editorial profissional continua pendente.",
-    "Preparada beta.39/2000039 no mecanismo oficial existente, mantendo identidade, certificado e canal beta. Pedido direto do proprietário nesta sessão: Continue até finalizar release."
+    "Preparada beta.39/2000039 no mecanismo oficial existente, mantendo identidade, certificado e canal beta. Pedido direto do proprietário nesta sessão: Continue até finalizar release.",
+    "CI identificou alteração indevida do catálogo histórico congelado. Bytes originais restaurados e contrato de sessão registrado no catálogo C# já existente, sem regenerar/desabilitar o oráculo."
   ],
   "verification": [
     {
@@ -76,7 +77,8 @@
     {
       "check": "CI Android/Windows e publicação beta.39",
       "kind": "automated",
-      "result": "pending"
+      "result": "pending",
+      "evidence": "Primeiro CI: Windows aprovado; E2E rejeitou catálogo histórico alterado (oráculo protegido). Catálogo restaurado e documentação nativa movida para docs/csharp/DATA-CATALOG.md; CI do novo commit obrigatório."
     },
     {
       "check": "Toque/IME e atualização no aparelho físico",
@@ -107,7 +109,7 @@
     "docs/product-plans/urbe/Numa_Consolidacao_2.5.md",
     "apps/urbe/docs/csharp/ROADMAP.md",
     "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
-    "apps/urbe/docs/v2/discovery/DATA-CATALOG.md",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md",
     "docs/governance/integration-policy.json",
     "docs/governance/definition-of-done.md",
     ".github/workflows/urbe-csharp-mobile-release.yml"
