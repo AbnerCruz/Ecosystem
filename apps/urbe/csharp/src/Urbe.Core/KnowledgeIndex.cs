@@ -24,7 +24,11 @@ public sealed partial class KnowledgeIndex : IDisposable
         new(StringComparer.Ordinal);
     private readonly Dictionary<string, List<string>> _incoming =
         new(StringComparer.Ordinal);
-    private readonly Dictionary<string, List<string>> _tokens =
+    // Inverted terms can be shared by thousands of documents. A List.Contains
+    // per insert made rebuilding the index quadratic (CST-114 / 2,000-note CI).
+    // Search explicitly orders its final results by DocumentStore order, so
+    // token posting order does not need to be stored as a list.
+    private readonly Dictionary<string, HashSet<string>> _tokens =
         new(StringComparer.Ordinal);
     private ProjectTags _projects = ProjectTags.Empty;
 
@@ -95,8 +99,10 @@ public sealed partial class KnowledgeIndex : IDisposable
             foreach (Match match in TokenRegex().Matches(text))
             {
                 var word = match.Value;
-                if (seenWords.Add(word))
-                    Add(_tokens, word, document.Id);
+                if (!seenWords.Add(word)) continue;
+                if (!_tokens.TryGetValue(word, out var ids))
+                    _tokens[word] = ids = new HashSet<string>(StringComparer.Ordinal);
+                ids.Add(document.Id);
             }
         }
 
