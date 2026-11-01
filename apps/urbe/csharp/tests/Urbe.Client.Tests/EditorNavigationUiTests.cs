@@ -17,6 +17,93 @@ public sealed partial class HeadlessUiTests
     public async Task Editor_BackWalksTheFollowedLinksAndAMissingLinkCreatesItsNote() =>
         Assert.True(await Session.Dispatch(EditorNavigationScenario, CancellationToken.None));
 
+    [Fact]
+    public async Task Editor_DirectOpenPreservesAndSavesPendingTextFromPreviousNote() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        // CST-144: opening another note from the Explorer/search used to replace the
+        // current editor state without the LeaveCurrentAsync path used by wikilinks.
+        var editor = new EditorOverlay { SaveOnClose = true };
+        var window = new Window { Width = 412, Height = 800, Content = editor };
+        window.Show();
+        var written = new TaskCompletionSource<CityNote>(TaskCreationOptions.RunContinuationsAsynchronously);
+        editor.SaveRequested += note => { written.TrySetResult(note); return Task.CompletedTask; };
+        try
+        {
+            editor.Open(new CityNote("Projeto/Origem.md", "# Versão antiga"));
+            editor.SetMode(EditorMode.Fonte);
+            editor.Editor.Text = "# Texto digitado que não pode sumir";
+            Assert.True(editor.HasChanges);
+
+            editor.Open(new CityNote("Projeto/Destino.md", "# Destino"));
+            Assert.Equal("Projeto/Destino.md", editor.Current?.Path);
+            Assert.Equal("# Destino", editor.Current?.Content);
+            var saved = await written.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal("Projeto/Origem.md", saved.Path);
+            Assert.Equal("# Texto digitado que não pode sumir", saved.Content);
+            return true;
+        }
+        finally { window.Close(); }
+    }, CancellationToken.None));
+
+    [Fact]
+    public async Task Editor_DirectReopenOfSameNoteNeverOverwritesUnsavedDraft() =>
+        Assert.True(await Session.Dispatch<bool>(() =>
+    {
+        var editor = new EditorOverlay { SaveOnClose = true };
+        var window = new Window { Width = 412, Height = 800, Content = editor };
+        window.Show();
+        try
+        {
+            editor.SaveRequested += _ => Task.CompletedTask;
+            editor.Open(new CityNote("Origem.md", "texto salvo"));
+            editor.SetMode(EditorMode.Fonte);
+            editor.Editor.Text = "texto ainda não salvo";
+            editor.Open(new CityNote("Origem.md", "texto salvo"));
+            Assert.Equal("texto ainda não salvo", editor.Current?.Content);
+            Assert.True(editor.HasChanges);
+            return Task.FromResult(true);
+        }
+        finally { window.Close(); }
+    }, CancellationToken.None));
+
+    [Fact]
+    public async Task Editor_ReopenDuringPendingBackgroundSaveRetainsLatestDraft() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        // CST-144: opening a note while its asynchronous leave-save is still
+        // in progress must not show the stale Explorer snapshot.
+        var editor = new EditorOverlay { SaveOnClose = true };
+        var window = new Window { Width = 412, Height = 800, Content = editor };
+        window.Show();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var resume = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        editor.SaveRequested += async note =>
+        {
+            if (note.Path != "Origem.md") return;
+            started.TrySetResult();
+            await resume.Task;
+        };
+        try
+        {
+            editor.Open(new CityNote("Origem.md", "texto antigo"));
+            editor.SetMode(EditorMode.Fonte);
+            editor.Editor.Text = "últimas palavras recém digitadas";
+            editor.Open(new CityNote("Destino.md", "destino"));
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+            editor.Open(new CityNote("Origem.md", "texto antigo"));
+            Assert.Equal("últimas palavras recém digitadas", editor.Current?.Content);
+            Assert.True(editor.HasChanges);
+            return true;
+        }
+        finally
+        {
+            resume.TrySetResult();
+            window.Close();
+        }
+    }, CancellationToken.None));
+
     private static async Task<bool> EditorNavigationScenario()
     {
         var dir = Path.Combine(Path.GetTempPath(), "urbe-nav-" + Guid.NewGuid().ToString("N"));

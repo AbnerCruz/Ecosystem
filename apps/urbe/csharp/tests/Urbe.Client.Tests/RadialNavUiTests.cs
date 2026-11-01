@@ -164,6 +164,50 @@ public sealed partial class HeadlessUiTests
     }, CancellationToken.None));
 
     [Fact]
+    public async Task RadialNav_DoesNotCoverReadingEditingControlOnCompactEditor() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        var view = new MainView();
+        var window = new Window { Width = 360, Height = 760, Content = view };
+        window.Show();
+        try
+        {
+            await view.LoadAsync(TutorialNotes.Load());
+            view.OpenNoteByPath("Tutorial/Comece aqui.md");
+            view.Editor.SetMode(EditorMode.Fonte);
+            await Settle(window, view);
+            var chip = view.Editor.GetLogicalDescendants().OfType<Button>()
+                .Single(b => Name(b).StartsWith("Modo edição:", StringComparison.Ordinal));
+            foreach (var width in new[] { 320.0, 360.0, 412.0 })
+            {
+                window.Width = width;
+                await Settle(window, view);
+                Assert.True(view.Navigation.Trigger.IsEffectivelyVisible);
+                Assert.True(chip.IsEffectivelyVisible);
+                Assert.Equal(Dock.Left, DockPanel.GetDock(chip));
+                var readOrigin = chip.TranslatePoint(new Point(0, 0), window)!.Value;
+                var navOrigin = view.Navigation.Trigger.TranslatePoint(new Point(0, 0), window)!.Value;
+                var readRect = new Rect(readOrigin, chip.Bounds.Size);
+                var navRect = new Rect(navOrigin, view.Navigation.Trigger.Bounds.Size);
+                Assert.False(readRect.Intersects(navRect),
+                    $"CST-143: menu radial cobre leitura/edição em {width} dp: {readRect} / {navRect}");
+                Assert.True(readRect.X >= 0 && readRect.Right <= width);
+                chip.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Assert.True(view.Editor.ReadOnly);
+                chip.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Assert.False(view.Editor.ReadOnly);
+            }
+
+            window.Width = 1100;
+            await Settle(window, view);
+            Assert.Equal(Dock.Right, DockPanel.GetDock(chip));
+            Assert.False(view.Navigation.IsEffectivelyVisible);
+            return true;
+        }
+        finally { window.Close(); }
+    }, CancellationToken.None));
+
+    [Fact]
     public async Task RadialNav_WorksOverTheEditorAndStaysOffWideWindows() => Assert.True(await Session.Dispatch<bool>(async () =>
     {
         var view = new MainView();

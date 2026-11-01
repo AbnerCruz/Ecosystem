@@ -489,13 +489,28 @@ public sealed class EditorOverlay : Grid
             }
             else { _ = OpenAfterAtlasGuardAsync(note, canLeave); return; }
         }
-        _trail.Clear();
-        Show(note);
+        OpenDirect(note);
     }
 
     private async Task OpenAfterAtlasGuardAsync(CityNote note, Task<bool> guard)
     {
         if (!await guard) return;
+        OpenDirect(note);
+    }
+
+    /// <summary>
+    /// CST-144: direct navigation (Explorer, search, recent notes) must use the same
+    /// verified leave/save path as following links. Keep navigation immediate; a failed
+    /// background save is retained by SaveLeftAsync for recovery, not discarded by Show.
+    /// </summary>
+    private void OpenDirect(CityNote note)
+    {
+        if (IsVisible && _note is { } current)
+        {
+            // A stale list/search snapshot of the same file must not overwrite a draft.
+            if (current.Path == note.Path && HasChanges) return;
+            _ = LeaveCurrentAsync();
+        }
         _trail.Clear();
         Show(note);
     }
@@ -635,16 +650,32 @@ public sealed class EditorOverlay : Grid
         _visual.FinishEdit();
         _autosave.Stop();
         if (!SaveOnClose || !HasChanges || Current is not { } note) return Task.CompletedTask;
-        return SaveLeftAsync(note, _savedContent);
+        var previous = _savedContent;
+        // A fast reopen can happen before the asynchronous save completes. Keep
+        // this snapshot reachable by identity until the outstanding write ends.
+        _leaving[note.Path] = (note, previous);
+        return SaveLeftAsync(note, previous);
     }
 
     private async Task SaveLeftAsync(CityNote note, string previous)
     {
-        if (await SaveSnapshotAsync(note)) return;
-        // the text that did not reach the vault, and what the vault has, for the next open of this note
-        if (!_failed.ContainsKey(note.Path)) _failed[note.Path] = (note, previous);
-        else _failed[note.Path] = (note, _failed[note.Path].Previous);
+        try
+        {
+            if (await SaveSnapshotAsync(note)) return;
+            // The newest unsaved text survives even when navigation already switched notes.
+            if (!_failed.ContainsKey(note.Path)) _failed[note.Path] = (note, previous);
+            else _failed[note.Path] = (note, _failed[note.Path].Previous);
+        }
+        finally
+        {
+            // Do not remove the newer draft when two leave-saves overlap for one path.
+            if (_leaving.TryGetValue(note.Path, out var pending) && ReferenceEquals(pending.Note, note))
+                _leaving.Remove(note.Path);
+        }
     }
+
+    /// <summary>In-flight snapshots: only for restoring a note reopened before its save completes.</summary>
+    private readonly Dictionary<string, (CityNote Note, string Previous)> _leaving = new(StringComparer.Ordinal);
 
     /// <summary>Notes whose last save failed after the editor left them: their text and the text the vault still has.</summary>
     private readonly Dictionary<string, (CityNote Note, string Previous)> _failed = new(StringComparer.Ordinal);
@@ -676,6 +707,12 @@ public sealed class EditorOverlay : Grid
         // a note whose save failed comes back with the text that was not saved, still pending
         var pendingFrom = (string?)null;
         if (_failed.Remove(note.Path, out var failed)) { note = note with { Content = failed.Note.Content }; pendingFrom = failed.Previous; }
+        else if (_leaving.TryGetValue(note.Path, out var inFlight))
+        {
+            // Never let a stale Explorer/search item replace the note currently being written to disk.
+            note = note with { Content = inFlight.Note.Content };
+            pendingFrom = inFlight.Previous;
+        }
         _note = note;
         _acceptedSourceText = note.Content;
         _savedContent = pendingFrom ?? note.Content;
@@ -1656,7 +1693,16 @@ public sealed class EditorOverlay : Grid
         _readChip.Click += (_, _) => ReadOnly = !ReadOnly;
         UpdateReadChip();
         var line = new DockPanel { LastChildFill = true };
-        DockPanel.SetDock(_readChip, Dock.Right);
+        // CST-143: on a phone the floating radial navigation occupies the lower-right corner.
+        // Keep the reading/editing switch reachable on the opposite side of the footer.
+        // On wider layouts retain the original right-aligned control.
+        DockPanel.SetDock(_readChip, Dock.Left);
+        line.PropertyChanged += (_, e) =>
+        {
+            if (e.Property != BoundsProperty) return;
+            var target = line.Bounds.Width < CompactHeaderWidth ? Dock.Left : Dock.Right;
+            if (DockPanel.GetDock(_readChip) != target) DockPanel.SetDock(_readChip, target);
+        };
         line.Children.Add(_readChip);
         line.Children.Add(_status);
         return new Border { Height = 28, Padding = new Thickness(UrbeTokens.Space.M, 0, UrbeTokens.Space.S, 0), Child = line };
