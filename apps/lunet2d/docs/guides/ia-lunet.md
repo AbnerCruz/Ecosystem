@@ -6,10 +6,10 @@ Esta implementação inicial habilita um agente de código no **Lunet IDE Androi
 **Lunet Framework** e os jogos gerados não dependem de IA: nenhuma dependência
 de IA foi adicionada ao Framework/Runtime do jogo.
 
-O Urbe dispõe de uma IA mais abrangente, porém seu `AssistantTools` e
-`AssistantAgent` dependem do vault e de tipos de notas. Copiá-los duplicaria
+A IA do editor de notas possui funcionalidades próprias de vault, porém os seus
+contratos de ferramentas de notas não devem ser exportados diretamente. Copiá-los duplicaria
 manutenção e transportaria contratos incorretos para o Lunet. Por isso o
-núcleo compartilhado selecionado é **`apps/ecosystem-ai/src/AgentRuntime.Core`**,
+núcleo compartilhado selecionado é o **AgentRuntime.Core** canônico,
 com o provider **`AgentRuntime.Providers.ChatCompletions`**. O produto Lunet
 implementa somente as ferramentas específicas do projeto em `Lunet.Ai`.
 
@@ -37,7 +37,7 @@ implementa somente as ferramentas específicas do projeto em `Lunet.Ai`.
 
 ## Limites declarados
 
-Não foram transferidos para o Lunet o painel inteiro do Urbe, a memória
+Não foram transferidos para o Lunet o painel inteiro do editor de notas, a memória
 semântica, pesquisa web, geração de imagens/vídeos, agentes especialistas,
 edição de sprite por IA, testes automatizados executados pelo agente, nem
 ferramentas de build. A edição é inicialmente de arquivos de texto. O
@@ -56,7 +56,7 @@ Dependências externas não são embutidas nos APKs dos jogos.
   contextual, edição rastreável e validação; não copiar sua arquitetura Python.
 - [Continue](https://github.com/continuedev/continue): separação do editor e
   ferramentas do agente (repositório read-only em 2026); não copiar UI/web.
-- [Ecosystem AgentRuntime](../../../ecosystem-ai/src/AgentRuntime.Core):
+- AgentRuntime compartilhado (gerado automaticamente e validado por projeção):
   políticas de execução, permissões e verificação existentes, portanto
   reutilizados diretamente.
 
