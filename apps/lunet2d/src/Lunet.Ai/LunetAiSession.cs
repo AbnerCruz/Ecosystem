@@ -8,7 +8,7 @@ namespace Lunet.Ai;
 public sealed record LunetAiTurn(string Role, string Text);
 public sealed record LunetAiReply(string Text, IReadOnlyList<string> ChangedFiles, RunStatus Status);
 
-/// <summary>Product-specific adapter over the shared Ecosystem Agent Runtime; no Urbe or game-framework dependency.</summary>
+/// <summary>Product-specific adapter over the shared Ecosystem Agent Runtime; no note-vault or game-framework dependency.</summary>
 public sealed class LunetAiSession
 {
     private readonly LunetProject _project;
