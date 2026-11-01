@@ -17,12 +17,18 @@ implementa somente as ferramentas específicas do projeto em `Lunet.Ai`.
 
 - Abrir projeto → **⋯ → Ferramentas → IA · Assistente de código**.
 - Configurar endpoint completo OpenAI-compatible terminando em
-  `/chat/completions`, ID do modelo e chave do provider. Padrão: endpoint
+  `/chat/completions`, ID do modelo e chave do provider. **HTTPS obrigatório**,
+  sem parâmetros de URL, fragmentos ou credenciais embutidas. Padrão: endpoint
   OpenRouter. Outros provedores que realmente ofereçam esse protocolo também
   funcionam; não confundir compatibilidade de rede com capacidades do modelo.
-- Conversar sobre arquivos C# e dados de projeto. As ferramentas são
-  `lunet.files.list`, `lunet.files.read` (leitura com SHA256) e
-  `lunet.files.write` (escrita condicionada ao hash).
+- Conversar sobre arquivos C# e dados de projeto. As seis capacidades são:
+  `lunet.files.list`, `lunet.files.read` (texto e SHA256),
+  `lunet.files.search` (busca limitada e posições verificáveis),
+  `lunet.files.excerpt` (linhas paginadas de arquivo grande, SHA256 do arquivo inteiro),
+  `lunet.files.write` (gravação atômica condicionada ao hash) e
+  `lunet.files.replace` (substituição de um trecho exato único sob o mesmo hash).
+  Arquivos de configuração C# em texto como `.csproj`, `.props` e `.slnx`
+  também são elegíveis, preservadas as regras de permissões e isolamento.
 - **Somente leitura por padrão**; autorizar escrita por caixa de seleção
   em cada abertura do painel.
 - Escrita de textos usa gravação atômica, limita tamanho e recusa caminhos
@@ -30,7 +36,9 @@ implementa somente as ferramentas específicas do projeto em `Lunet.Ai`.
   Se outro processo alterar arquivo depois da leitura, a IA não o sobrescreve.
 - Histórico textual por projeto gravado em área privada do app, separada
   da pasta do jogo. A chave **não é persistida**; precisa ser informada
-  ao reiniciar o processo.
+  ao reiniciar o processo. A chave é registrada no redator de segredos do
+  runtime e a interface avisa que trechos lidos podem ser transmitidos
+  ao serviço externo de IA escolhido.
 - Cancelar execução. A UI não presume compilação nem prova correção de
   programa a partir de uma resposta textual: verificação atual somente
   confirma a resposta e o hash dos arquivos gravados.
@@ -46,6 +54,24 @@ modelo no dispositivo. Não foi implementado catálogo de preços do provider:
 não interpretar os valores internos do ledger como custo real de API.
 A aprovação atual protege a habilitação de escrita por sessão, não oferece
 um diff visual de cada alteração. **Usar somente em projetos com backup**.
+A substituição por trecho não cria um commit Git automaticamente e a
+verificação de hash não substitui compilação, testes, revisão humana ou
+controle de versão.
+
+## Limite de autoridade e unificação
+
+**Proibição do proprietário em 01/11/2026:** nenhum arquivo, configuração,
+workflow ou comportamento do Urbe pode ser alterado nesta iniciativa. A integração
+usa os contratos do runtime genérico existentes; extensões especializadas vivem
+exclusivamente no Lunet. A cópia compilada do núcleo é **uma projeção validada
+byte a byte** do fonte canônico, e não uma segunda implementação independente.
+O CI bloqueia divergências entre projeção e origem.
+
+Isso **não** significa que toda a IA do Urbe agora utiliza o mesmo núcleo:
+componentes históricos continuam separados. Migrá-los ou alterá-los exige
+autorização futura explícita. Fora do Urbe, a arquitetura deve priorizar
+capabilities compartilháveis no runtime canônico, mantendo só adapters
+e ferramentas de projeto dentro dos aplicativos.
 Dependências externas não são embutidas nos APKs dos jogos.
 
 ## Referências analisadas
