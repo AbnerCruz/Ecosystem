@@ -285,7 +285,8 @@ public sealed partial class MarkdownReader
     {
         var t = Text(n.Children, Size * em, UrbeTheme.Text, weight, UrbeTheme.UiFont);
         t.Margin = margin;
-        t.LineHeight = Size * em * 1.25;
+        // A heading containing an inline formula needs the SVG's natural ascent/descent.
+        if (!HasInlineMath(n.Children)) t.LineHeight = Size * em * 1.25;
         return t;
     }
 
@@ -305,7 +306,13 @@ public sealed partial class MarkdownReader
     {
         TextBlock tb = Selectable ? new SelectableTextBlock() : new TextBlock();
         tb.FontSize = size; tb.Foreground = Ink(color, weight); tb.FontWeight = weight;
-        tb.TextWrapping = TextWrapping.Wrap; tb.LineHeight = size * LineFactor;
+        tb.TextWrapping = TextWrapping.Wrap;
+        // CST-142: Avalonia's default fixed LineHeight cuts tall InlineUIContainer
+        // fractions/sums and lets the next paragraph draw over the truncated glyph.
+        // For mathematical inlines use measured line metrics, not an arbitrary pixel cap.
+        var containsMath = HasInlineMath(children);
+        tb.LineHeight = containsMath ? double.NaN : size * LineFactor;
+        if (containsMath) tb.ClipToBounds = false;
         tb.FontFamily = family ?? Family ?? UrbeTheme.EditorFont;
         tb.Classes.Add(TextClass);
         var length = 0;
@@ -314,6 +321,9 @@ public sealed partial class MarkdownReader
         tb.Tapped += OnTextTapped;
         return tb;
     }
+
+    private static bool HasInlineMath(IEnumerable<RichNode> nodes) =>
+        nodes.Any(n => n.Tag == "span" && n.HasClass("umath") || HasInlineMath(n.Children));
 
     private readonly record struct Style(bool Bold = false, bool Italic = false, bool Strike = false, bool Code = false, bool Link = false, string Color = UrbeTheme.Text)
     {
