@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.Json;
 using AgentRuntime;
 using AgentRuntime.Providers.ChatCompletions;
@@ -115,7 +114,9 @@ public sealed class LunetAiSession
                 _history.Add(new LunetAiTurn("Lunet", response));
                 if (_history.Count > 20) _history.RemoveRange(0, _history.Count - 20);
                 Directory.CreateDirectory(Path.GetDirectoryName(_historyPath)!);
-                AtomicFile.WriteAllText(_historyPath, JsonSerializer.Serialize(_history));
+                var temporary = _historyPath + ".tmp";
+                File.WriteAllText(temporary, JsonSerializer.Serialize(_history));
+                File.Move(temporary, _historyPath, overwrite: true);
             }
             return new LunetAiReply(response, changed, result.State.Status);
         }
