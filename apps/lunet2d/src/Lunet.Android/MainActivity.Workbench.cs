@@ -60,7 +60,8 @@ public sealed partial class MainActivity
     private LinearLayout BuildWorkbenchNavigation()
     {
         _workbenchNavButtons.Clear();
-        var nav = new LinearLayout(this) { Orientation = Orientation.Horizontal, Gravity = GravityFlags.CenterVertical };
+        var nav = new LinearLayout(this) { Orientation = Orientation.Horizontal };
+        nav.SetGravity(GravityFlags.CenterVertical);
         nav.SetPadding(Dp(5), Dp(4), Dp(5), Dp(4));
         nav.SetBackgroundColor(WorkbenchBackground);
 
