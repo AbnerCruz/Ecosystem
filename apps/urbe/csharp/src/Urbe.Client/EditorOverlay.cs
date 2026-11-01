@@ -1656,7 +1656,16 @@ public sealed class EditorOverlay : Grid
         _readChip.Click += (_, _) => ReadOnly = !ReadOnly;
         UpdateReadChip();
         var line = new DockPanel { LastChildFill = true };
-        DockPanel.SetDock(_readChip, Dock.Right);
+        // CST-143: on a phone the floating radial navigation occupies the lower-right corner.
+        // Keep the reading/editing switch reachable on the opposite side of the footer.
+        // On wider layouts retain the original right-aligned control.
+        DockPanel.SetDock(_readChip, Dock.Left);
+        line.PropertyChanged += (_, e) =>
+        {
+            if (e.Property != BoundsProperty) return;
+            var target = line.Bounds.Width < CompactHeaderWidth ? Dock.Left : Dock.Right;
+            if (DockPanel.GetDock(_readChip) != target) DockPanel.SetDock(_readChip, target);
+        };
         line.Children.Add(_readChip);
         line.Children.Add(_status);
         return new Border { Height = 28, Padding = new Thickness(UrbeTokens.Space.M, 0, UrbeTokens.Space.S, 0), Child = line };
