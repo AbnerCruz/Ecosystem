@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-470 / Workbench mobile-first (em revisão, CI/DEVICE pendentes): nova entrada de projetos, workspace de código em foco com navegação Código/Arquivos/Erros/Console/Ações, command palette em português com busca sem distinção de caixa/acentos, drawer modal com scrim, alvos de toque de 48dp, toolbar sem captura de foco e Back contextual. Testes de contrato registrados antes da implementação, pesquisa rastreável em `docs/research/mobile-workbench-ux-2026-11-01.md`. Não afirma redesign dos Studios, compilação verificada nem release publicada.
+
 - Fixed / host standalone: entrega Game.OnPause na thread GL antes de suspendê-la, usando o mesmo PauseForBackground do PreviewHost. Regressão provada por smoke Android que falhou antes e passou após a correção; JSON privado e restore após force-stop conferidos.
 
 - F4 / Correção de CI integrado do PR #856: criação e destruição de mundos Box2D passam por mutex global de ciclo de vida, como exige a documentação oficial do Box2D. Mantém simulação de mundos distintos paralela; teste de regressão com 256 ciclos concorrentes. O teste PhysicsWorldTests.DynamicBallFallsOntoGround havia falhado de forma intermitente no estado combinado; CI novo e DEVICE pendentes.
