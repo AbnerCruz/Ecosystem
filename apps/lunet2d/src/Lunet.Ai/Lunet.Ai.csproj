@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Lunet.Ai</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Lunet.Core/Lunet.Core.csproj" />
+    <ProjectReference Include="../../../ecosystem-ai/src/AgentRuntime.Core/AgentRuntime.Core.csproj" />
+    <ProjectReference Include="../../../ecosystem-ai/src/AgentRuntime.Providers.ChatCompletions/AgentRuntime.Providers.ChatCompletions.csproj" />
+  </ItemGroup>
+</Project>
