@@ -65,7 +65,7 @@ public sealed class LunetAiProjectFiles(LunetProject project)
         if (string.IsNullOrWhiteSpace(path) || Path.IsPathRooted(path) || path.Contains('\\') ||
             path.Contains(':') || path.Contains('\0') || path.StartsWith('/')) return false;
         var segments = path.Split('/');
-        if (segments.Any(s => s is "" or "." or ".." || s.StartsWith('.', StringComparison.Ordinal))) return false;
+        if (segments.Any(s => s is "" or "." or ".." || s.StartsWith(".", StringComparison.Ordinal))) return false;
         return TextExtensions.Contains(Path.GetExtension(path));
     }
 
