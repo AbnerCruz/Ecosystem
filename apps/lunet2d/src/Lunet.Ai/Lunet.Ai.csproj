@@ -5,7 +5,5 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../Lunet.Core/Lunet.Core.csproj" />
-    <ProjectReference Include="../../../ecosystem-ai/src/AgentRuntime.Core/AgentRuntime.Core.csproj" />
-    <ProjectReference Include="../../../ecosystem-ai/src/AgentRuntime.Providers.ChatCompletions/AgentRuntime.Providers.ChatCompletions.csproj" />
   </ItemGroup>
 </Project>
