@@ -464,4 +464,4 @@ Scene Studio e shader tooling são expansões futuras do Lunet Studio, sem criar
 - [ ] Ferramentas nativas versionadas para Sprite Studio, Audio Studio, Tile Studio, cenas e assets.
 - [ ] Memória contextual indexada, orçamento de tokens real e custo de API medido por provider; não confundir histórico simples com memória semântica.
 - [ ] Agentes especialistas, planejamento em camadas, revisão independente e recuperação persistente entre runs.
-- [ ] Verificação de uso generalizado do runtime em outros produtos **somente com autorização explícita dos respectivos proprietários**; o Urbe está fora do escopo de edição.
+- [ ] Verificação de uso generalizado do runtime em outros produtos **somente com autorização explícita dos respectivos proprietários**; o editor de notas está fora do escopo de edição.
