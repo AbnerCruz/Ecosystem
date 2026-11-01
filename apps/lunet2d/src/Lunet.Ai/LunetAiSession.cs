@@ -44,10 +44,9 @@ public sealed class LunetAiSession
             throw new ArgumentException("Informe um modelo no provider.");
         if (string.IsNullOrWhiteSpace(apiKey))
             throw new ArgumentException("Informe a chave da API. Ela fica apenas em memória nesta sessão.");
-        if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var url))
-            throw new ArgumentException("Informe a URL completa do endpoint /chat/completions.");
-        if (!url.AbsolutePath.EndsWith("/chat/completions", StringComparison.OrdinalIgnoreCase))
-            throw new ArgumentException("A URL precisa terminar com /chat/completions.");
+        if (apiKey.Length < SecretRedactor.MinimumLength)
+            throw new ArgumentException("Chave de API curta demais para garantir ocultação nos logs.");
+        var url = LunetAiEndpoint.Validate(endpoint);
         await _runGate.WaitAsync(cancellationToken);
         try
         {
@@ -57,8 +56,10 @@ public sealed class LunetAiSession
                 new ContextStep(ContextLevel.Product, "lunet2d"),
                 new ContextStep(ContextLevel.Project, _project.Manifest.GameId));
             var names = enableProjectWrites
-                ? new[] { LunetAiProjectTool.ListName, LunetAiProjectTool.ReadName, LunetAiProjectTool.WriteName }
-                : new[] { LunetAiProjectTool.ListName, LunetAiProjectTool.ReadName };
+                ? new[] { LunetAiProjectTool.ListName, LunetAiProjectTool.ReadName, LunetAiProjectTool.SearchName,
+                    LunetAiProjectTool.ExcerptName, LunetAiProjectTool.WriteName, LunetAiProjectTool.ReplaceName }
+                : new[] { LunetAiProjectTool.ListName, LunetAiProjectTool.ReadName, LunetAiProjectTool.SearchName,
+                    LunetAiProjectTool.ExcerptName };
             var permissions = enableProjectWrites
                 ? new[] { Permissions.AgentAct, Permissions.FsRead, Permissions.FsWrite }
                 : new[] { Permissions.AgentAct, Permissions.FsRead };
@@ -66,7 +67,10 @@ public sealed class LunetAiSession
             var host = new ToolHost()
                 .Register(new LunetAiProjectTool(_project, LunetAiProjectTool.ListName))
                 .Register(new LunetAiProjectTool(_project, LunetAiProjectTool.ReadName))
-                .Register(new LunetAiProjectTool(_project, LunetAiProjectTool.WriteName));
+                .Register(new LunetAiProjectTool(_project, LunetAiProjectTool.WriteName))
+                .Register(new LunetAiProjectTool(_project, LunetAiProjectTool.SearchName))
+                .Register(new LunetAiProjectTool(_project, LunetAiProjectTool.ExcerptName))
+                .Register(new LunetAiProjectTool(_project, LunetAiProjectTool.ReplaceName));
 
             using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(3) };
             var provider = new ChatCompletionsProvider(http, url, apiKey, 0, 0);
@@ -82,17 +86,24 @@ public sealed class LunetAiSession
                 new ModelProfile(provider.ProviderId, model,
                     new ModelCapabilities(true, false, true, false, false, 32_000), new Money(500, "USD")),
                 "Você é a IA especializada do Lunet2D (Framework, IDE e Studio). " +
-                "Trabalhe somente no projeto Lunet atual e use lunet.files.list/read antes de propor alterações. " +
+                "Trabalhe somente no projeto Lunet atual. Investigue com lunet.files.list/search/read/excerpt. " +
+                "Para arquivos longos, use excerpt, que fornece o hash do arquivo inteiro. " +
+                "Prefira lunet.files.replace para alterar um único trecho sem substituir o arquivo todo. " +
                 "Leia os arquivos reais e nunca invente APIs do Framework. " +
                 "O código do jogo é a fonte da verdade. " +
                 "Se escrever, leia primeiro, envie o hash exato e preserve o restante do arquivo. " +
+                "Antes de mudanças complexas, descreva o objetivo, os testes e a verificação possível; " +
+                "não confunda planejamento com resultado executado. " +
                 "Quando o contexto ou uma ferramenta não for suficiente, informe a limitação. " +
                 "Não alegue ter testado, compilado ou instalado algo que não executou. " +
                 "Responda em português, com caminhos e ações verificáveis.",
-                8, grant);
+                12, grant);
             var task = new TaskSpec(runId, ComposePrompt(prompt), []);
             var request = new RunRequest(runId, task, agent, context, grant, grant, [scope], RunPolicy.Default);
-            var runner = new AgentRunner(providers, host, ledger, events, clock, new LunetVerifier(_project));
+            var redactor = new SecretRedactor();
+            redactor.Register(apiKey);
+            var runner = new AgentRunner(providers, host, ledger, events, clock, new LunetVerifier(_project),
+                redactor: redactor);
             var result = await runner.RunAsync(request, cancellationToken);
             var entries = await events.ReadRunAsync(runId, CancellationToken.None);
             var answer = entries.Where(e => e.Kind == EventKind.ModelResponded && e.Payload is not null)
