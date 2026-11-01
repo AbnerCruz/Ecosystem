@@ -167,6 +167,7 @@ public static class PublicationHtml
           .Append("main{max-width:760px;padding:clamp(20px,5vw,64px);margin:auto}h1,h2,h3{line-height:1.24}article{margin:2.5rem 0}")
           .Append("img,video,svg{max-width:100%;height:auto}pre{overflow:auto}code{white-space:pre-wrap;overflow-wrap:anywhere}")
           .Append("blockquote{border-left:3px solid #999;padding-left:1rem}table{display:block;overflow-x:auto}")
+          .Append(".umath{display:inline-block;max-width:100%;vertical-align:middle}.umath svg{vertical-align:middle}.umath-block{display:block;overflow-x:auto;text-align:center;margin:1.2rem 0}")
           .Append(".missing{border:1px dashed #a35;padding:1rem} @media print{main{max-width:none}}")
           .Append("</style></head><body><main><header><h1>").Append(title).Append("</h1></header>");
         var missing = new List<string>();
@@ -180,10 +181,19 @@ public static class PublicationHtml
                 sb.Append("<section class=\"missing\" role=\"status\">Fonte indisponível para esta publicação.</section>");
                 continue;
             }
-            var body = MarkdownEngine.SplitFrontmatter(source.Markdown).Body;
-            sb.Append("<article>").Append(MarkdownEngine.Render(body)).Append("</article>");
+            var body = NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body);
+            sb.Append("<article>").Append(MarkdownEngine.Render(body, RenderMath)).Append("</article>");
         }
         sb.Append("</main></body></html>");
         return new PublicationHtmlResult(sb.ToString(), missing.AsReadOnly());
+    }
+
+    private static string RenderMath(string tex, bool display)
+    {
+        var result = MathRenderer.RenderSvg(tex, display, 18);
+        var label = MarkdownEngine.EscapeHtml(tex);
+        if (result.Success)
+            return "<span role=\"math\" aria-label=\"" + label + "\">" + result.Svg + "</span>";
+        return "<code class=\"umath-raw\" title=\"" + MarkdownEngine.EscapeHtml(result.Diagnostic ?? "Fórmula não renderizada") + "\">" + label + "</code>";
     }
 }

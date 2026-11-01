@@ -19,6 +19,8 @@ public sealed class PublicationStudioView : Border
     private readonly StackPanel _preview = new() { Spacing = 20, Margin = new Thickness(18, 14, 18, 32) };
     private readonly TextBlock _title = new() { FontSize = 20, FontWeight = FontWeight.Bold };
     private readonly TextBlock _status = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap };
+    private readonly TextBlock _saveStatus = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap };
+    private readonly Button _retry = new() { Content = "Tentar salvar novamente", MinHeight = 44, IsVisible = false };
     private PublicationSourceCatalog? _catalog;
     private PublicationProject? _project;
 
@@ -61,7 +63,11 @@ public sealed class PublicationStudioView : Border
             Text = "Fontes vivas", FontSize = 16, FontWeight = FontWeight.SemiBold,
             VerticalAlignment = VerticalAlignment.Center, Foreground = UrbeTheme.Brush(UrbeTheme.Text)
         });
-        var sourceGroup = new StackPanel { Children = { sourcesHead, _status, _sources } };
+        _saveStatus.Margin = new Thickness(16, 0, 16, 4);
+        _saveStatus.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
+        _retry.Margin = new Thickness(16, 0, 16, 8);
+        _retry.Click += (_, _) => RetrySaveRequested?.Invoke();
+        var sourceGroup = new StackPanel { Children = { sourcesHead, _saveStatus, _retry, _status, _sources } };
         _status.Margin = new Thickness(16, 0, 16, 8);
         _sources.Margin = new Thickness(16, 0, 16, 12);
         // One scroll owner in every viewport: no reparenting a live text surface
@@ -90,12 +96,25 @@ public sealed class PublicationStudioView : Border
 
     public string ProjectPath { get; private set; } = "";
     public PublicationProject? Project => _project;
+    public bool HasUnsavedChanges { get; private set; }
+    public string? SaveError { get; private set; }
+    public event Action? RetrySaveRequested;
     public event Action? AddSourceRequested;
     public event Action? ExportRequested;
     public event Action? RenameRequested;
     public event Action? Closed;
     public event Action<string>? EditSourceRequested;
     public event Action<PublicationProject>? ProjectChanged;
+
+    public void SetSaveState(bool dirty, string? error = null)
+    {
+        HasUnsavedChanges = dirty;
+        SaveError = error;
+        _saveStatus.Text = error is not null
+            ? "Não foi possível salvar. O rascunho está preservado nesta sessão. " + error
+            : dirty ? "Salvando composição…" : "Composição salva no vault";
+        _retry.IsVisible = error is not null;
+    }
 
     public void Open(string path, PublicationProject project, PublicationSourceCatalog catalog)
     {

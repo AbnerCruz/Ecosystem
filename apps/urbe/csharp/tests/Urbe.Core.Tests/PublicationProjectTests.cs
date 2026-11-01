@@ -78,4 +78,32 @@ public sealed class PublicationProjectTests
         Assert.Contains("default-src 'none'", html.Html);
         Assert.Contains("lang=\"pt-BR\"", html.Html);
     }
+
+    [Fact]
+    public void HtmlOmitsPrivateEditorialCommentsKeepsAttributionAndLeavesCodeUntouched()
+    {
+        var store = new DocumentStore();
+        const string content = "Texto público {ia:\"modelo-x\"}\n\n%%revisão PRIVADA%%\n\npalavra{\"comentário PRIVADO\"}\n\n&Agente&: pedido PRIVADO\n\n`%%exemplo literal%%`";
+        var note = store.Upsert(new DocumentInput { Path = "A.md", Content = content });
+        using var catalog = new PublicationSourceCatalog(store);
+        var result = PublicationHtml.Export(PublicationProject.Create("Artigo", note.Id), catalog);
+        Assert.DoesNotContain("PRIVAD", result.Html);
+        Assert.Contains("IA: modelo-x", result.Html);
+        Assert.Contains("<code>%%exemplo literal%%</code>", result.Html);
+        Assert.Equal(content, store.Get(note.Id)!.Content);
+    }
+
+    [Fact]
+    public void HtmlDrawsMathOfflineWithAccessibleTexAndPreservesLiteralCode()
+    {
+        var store = new DocumentStore();
+        var note = store.Upsert(new DocumentInput { Path = "A.md", Content = "Área $\\frac{a}{b}$.\n\n$$\\int_0^1 x dx$$\n\n`$x$`" });
+        using var catalog = new PublicationSourceCatalog(store);
+        var result = PublicationHtml.Export(PublicationProject.Create("Matemática", note.Id), catalog);
+        Assert.Contains("<svg", result.Html);
+        Assert.Contains("aria-label=\"\\frac{a}{b}\"", result.Html);
+        Assert.Contains("<code>$x$</code>", result.Html);
+        Assert.DoesNotContain("<script", result.Html, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("<code class=\"umath-raw\">", result.Html);
+    }
 }

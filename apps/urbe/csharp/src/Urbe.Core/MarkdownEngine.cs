@@ -165,7 +165,11 @@ public static partial class MarkdownEngine
         return text;
     }
 
-    public static string Render(string? markdown)
+    public static string Render(string? markdown) => Render(markdown, null);
+
+    // Output adapters may render math without replacing the canonical Markdown parser.
+    // The default remains byte-compatible with the editor's semantic umath atoms.
+    internal static string Render(string? markdown, Func<string, bool, string>? math)
     {
         var source = markdown ?? string.Empty;
         var atoms = ScanMath(source);
@@ -191,19 +195,19 @@ public static partial class MarkdownEngine
             html,
             "<p>\\s*" + Regex.Escape(BlockOpen.ToString()) + "(\\d+)" +
             Regex.Escape(BlockClose.ToString()) + "\\s*</p>",
-            match => MathAtomHtml(atoms[int.Parse(match.Groups[1].Value)], true),
+            match => MathAtomHtml(atoms[int.Parse(match.Groups[1].Value)], true, math),
             RegexOptions.CultureInvariant);
 
         html = Regex.Replace(
             html,
             Regex.Escape(BlockOpen.ToString()) + "(\\d+)" + Regex.Escape(BlockClose.ToString()),
-            match => MathAtomHtml(atoms[int.Parse(match.Groups[1].Value)], false),
+            match => MathAtomHtml(atoms[int.Parse(match.Groups[1].Value)], false, math),
             RegexOptions.CultureInvariant);
 
         html = Regex.Replace(
             html,
             Regex.Escape(InlineOpen.ToString()) + "(\\d+)" + Regex.Escape(InlineClose.ToString()),
-            match => MathAtomHtml(atoms[int.Parse(match.Groups[1].Value)], false),
+            match => MathAtomHtml(atoms[int.Parse(match.Groups[1].Value)], false, math),
             RegexOptions.CultureInvariant);
 
         return html;
@@ -706,13 +710,14 @@ public static partial class MarkdownEngine
         return atoms;
     }
 
-    private static string MathAtomHtml(MathFormula atom, bool block)
+    private static string MathAtomHtml(MathFormula atom, bool block, Func<string, bool, string>? math)
     {
         var attrs = " data-tex=\"" + EscapeHtml(atom.Tex) +
                     "\" data-open=\"" + EscapeHtml(atom.Open) +
                     "\" data-close=\"" + EscapeHtml(atom.Close) +
                     "\" contenteditable=\"false\"";
-        var inner = "<code class=\"umath-raw\">" + EscapeHtml(atom.Tex) + "</code>";
+        var inner = math?.Invoke(atom.Tex, block || atom.Display)
+            ?? "<code class=\"umath-raw\">" + EscapeHtml(atom.Tex) + "</code>";
 
         if (block)
             return "<div class=\"umath umath-block\"" + attrs + ">" + inner + "</div>";

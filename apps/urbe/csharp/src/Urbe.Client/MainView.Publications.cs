@@ -11,6 +11,19 @@ public sealed partial class MainView
     private DocumentStore? _publicationsCatalogStore;
     private readonly SemaphoreSlim _publicationWrites = new(1, 1);
     private string? _publicationReturnPath;
+    // Uncommitted layout drafts only. Authored note content remains in DocumentStore.
+    // Key by vault/store and document identity so a queued save cannot target another vault.
+    private sealed class PublicationDraft(DocumentStore store, string id, string baseline, PublicationProject project)
+    {
+        public DocumentStore Store { get; } = store;
+        public string DocumentId { get; } = id;
+        public string Baseline { get; set; } = baseline;
+        public PublicationProject Project { get; set; } = project;
+        public bool Dirty { get; set; }
+        public string? Error { get; set; }
+    }
+    private readonly Dictionary<(DocumentStore, string), PublicationDraft> _publicationDrafts = [];
+    private PublicationDraft? _publicationDraft;
 
     public PublicationStudioView PublicationsStudio => _publicationsStudio ??= MakePublicationsStudio();
 
@@ -21,8 +34,16 @@ public sealed partial class MainView
         studio.RenameRequested += () => _ = RenamePublicationAsync();
         studio.EditSourceRequested += EditPublicationSource;
         studio.ExportRequested += () => _ = ExportPublicationHtmlAsync();
+        studio.RetrySaveRequested += () => _ = SavePublicationAsync();
         studio.Closed += UpdateFloatingNav;
-        studio.ProjectChanged += project => _ = SavePublicationProjectAsync(studio.ProjectPath, project);
+        studio.ProjectChanged += project =>
+        {
+            if (_publicationDraft is not { } draft) return;
+            draft.Project = project;
+            draft.Dirty = true;
+            studio.SetSaveState(true);
+            _ = SavePublicationDraftAsync(draft);
+        };
         _stage.Children.Insert(Math.Max(0, _stage.Children.IndexOf(FilePreview)), studio);
         return studio;
     }
@@ -30,6 +51,9 @@ public sealed partial class MainView
     /// <summary>Open an existing project by path, preserving the current unsaved note first.</summary>
     public async Task OpenPublicationAsync(string path)
     {
+        // Reopening during an outstanding write must not reload its stale on-disk state.
+        await _publicationWrites.WaitAsync();
+        _publicationWrites.Release();
         if (_store?.Get(path) is not { } file) { ShowLifeNotice("Publicação não encontrada: " + path); return; }
         PublicationProject project;
         try { project = PublicationProjectCodec.Parse(file.Content); }
@@ -38,10 +62,10 @@ public sealed partial class MainView
             await Dialogs.AlertAsync("Não foi possível abrir a publicação", e.Message);
             return;
         }
-        if (Editor.IsVisible && Editor.HasChanges)
+        if (Editor.IsVisible)
         {
             Editor.FinishEditing();
-            if (!await Editor.SaveAsync())
+            if (Editor.HasChanges && !await Editor.SaveAsync())
             {
                 ShowLifeNotice("Salve a nota antes de abrir Publicações.", Ui.ToastKind.Warning);
                 return;
@@ -55,7 +79,15 @@ public sealed partial class MainView
         }
         _pagesPanel?.Close();
         if (_studio?.IsVisible == true) await _studio.CloseAsync();
-        PublicationsStudio.Open(path, project, _publicationsCatalog!);
+        var key = (_store!, file.Id);
+        if (!_publicationDrafts.TryGetValue(key, out var draft) || !draft.Dirty)
+        {
+            draft = new PublicationDraft(_store!, file.Id, file.Content, project);
+            _publicationDrafts[key] = draft;
+        }
+        _publicationDraft = draft;
+        PublicationsStudio.Open(path, draft.Project, _publicationsCatalog!);
+        PublicationsStudio.SetSaveState(draft.Dirty, draft.Error);
         UpdateFloatingNav();
     }
 
@@ -117,6 +149,7 @@ public sealed partial class MainView
 
     private async Task AddPublicationSourceAsync()
     {
+        var draft = _publicationDraft;
         var project = _publicationsStudio?.Project;
         if (project is null || _store is null) return;
         var existing = project.Sources.Select(s => s.DocumentId).ToHashSet(StringComparer.Ordinal);
@@ -128,7 +161,9 @@ public sealed partial class MainView
             return;
         }
         var chosen = await Dialogs.ChooseAsync("Selecionar nota de origem", notes.Select(n => new DialogItem(n.Title, Detail: n.Path)).ToList());
-        if (chosen is { } i) _publicationsStudio?.AddSource(notes[i].Id);
+        if (chosen is { } i && ReferenceEquals(_publicationDraft, draft) &&
+            ReferenceEquals(_store, draft?.Store) && _publicationsStudio?.IsVisible == true)
+            _publicationsStudio.AddSource(notes[i].Id);
     }
 
     private void EditPublicationSource(string documentId)
@@ -145,37 +180,61 @@ public sealed partial class MainView
 
     private async Task RenamePublicationAsync()
     {
+        var draft = _publicationDraft;
         if (_publicationsStudio?.Project is not { } project) return;
         var name = await Dialogs.PromptAsync(new PromptOptions("Renomear publicação", Label: "Título", Placeholder: project.Title, Confirm: "Salvar"));
-        if (!string.IsNullOrWhiteSpace(name)) _publicationsStudio.UpdateProject(project with { Title = name.Trim() });
+        if (!string.IsNullOrWhiteSpace(name) && ReferenceEquals(_publicationDraft, draft) &&
+            ReferenceEquals(_store, draft?.Store) && _publicationsStudio.IsVisible)
+            _publicationsStudio.UpdateProject(_publicationsStudio.Project! with { Title = name.Trim() });
     }
 
-    private async Task SavePublicationProjectAsync(string path, PublicationProject project)
+    /// <summary>Explicit retry/flush: false means the composition is still only a session draft.</summary>
+    public Task<bool> SavePublicationAsync() => _publicationDraft is { } draft
+        ? SavePublicationDraftAsync(draft) : Task.FromResult(false);
+
+    private async Task<bool> SavePublicationDraftAsync(PublicationDraft draft)
     {
-        // Serializes rapid touch operations. A later revision can never be written before an earlier one.
         await _publicationWrites.WaitAsync();
         try
         {
-            if (_store?.Get(path) is not { } file) throw new InvalidOperationException("Publicação não está mais no vault.");
+            if (!draft.Dirty) return true;
+            if (!ReferenceEquals(_store, draft.Store))
+                throw new InvalidOperationException("Volte ao vault de origem para salvar este rascunho.");
+            if (draft.Store.Get(draft.DocumentId) is not { } file)
+                throw new InvalidOperationException("Publicação não está mais no vault.");
+            if (file.Content != draft.Baseline)
+                throw new InvalidOperationException("A publicação foi alterada por outra operação. A versão do arquivo foi preservada; compare-a com seu rascunho antes de substituir.");
+            var project = draft.Project;
             var json = PublicationProjectCodec.Serialize(project);
-            if (file.Content == json) return;
-            await ((IAssistantApp)this).SaveNoteAsync(file, json);
+            if (file.Content != json) await ((IAssistantApp)this).SaveNoteAsync(file, json);
+            draft.Baseline = json;
+            draft.Dirty = !ReferenceEquals(project, draft.Project);
+            draft.Error = null;
+            return !draft.Dirty;
         }
         catch (Exception e) when (e is IOException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException or InvalidDataException)
         {
+            draft.Error = e.Message;
             ShowLifeNotice("Não consegui salvar a Publicação: " + e.Message, Ui.ToastKind.Warning);
+            return false;
         }
-        finally { _publicationWrites.Release(); }
+        finally
+        {
+            if (ReferenceEquals(_publicationDraft, draft))
+                _publicationsStudio?.SetSaveState(draft.Dirty, draft.Error);
+            _publicationWrites.Release();
+        }
     }
 
     private async Task ExportPublicationHtmlAsync()
     {
-        if (_publicationsStudio?.Project is not { } project || _publicationsCatalog is null) return;
-        // Save all pending composition actions before claiming a valid export.
-        await _publicationWrites.WaitAsync();
-        _publicationWrites.Release();
+        if (_publicationsStudio?.Project is null || _publicationsCatalog is not { } catalog ||
+            _publicationDraft is not { } draft) return;
+        if (!await SavePublicationAsync()) return;
+        if (!ReferenceEquals(_publicationDraft, draft) || !ReferenceEquals(_store, draft.Store) || draft.Dirty) return;
+        var project = draft.Project;
         PublicationHtmlResult result;
-        try { result = PublicationHtml.Export(project, _publicationsCatalog); }
+        try { result = PublicationHtml.Export(project, catalog); }
         catch (Exception ex) when (ex is InvalidDataException or NotSupportedException)
         {
             await Dialogs.AlertAsync("Exportação não disponível", ex.Message);

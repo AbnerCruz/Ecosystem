@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless;
@@ -26,8 +27,17 @@ public sealed partial class HeadlessUiTests
             Assert.True(double.IsNaN(withFormula.LineHeight),
                 "Uma linha com matemática inline não pode forçar altura fixa menor que o SVG.");
             Assert.False(withFormula.ClipToBounds);
-            var after = text.First(t => t.Text == "Parágrafo abaixo.");
+            // MarkdownReader builds paragraphs from Runs, not TextBlock.Text.
+            var after = text.Single(t => t.Inlines?.OfType<Run>().Any(r => r.Text == "Parágrafo abaixo.") == true);
             Assert.True(after.Bounds.Height > 0);
+            var formula = Assert.Single(withFormula.Inlines!.OfType<InlineUIContainer>()).Child!;
+            Assert.True(formula.Bounds.Height > reader.Size * reader.LineFactor,
+                "A reprodução precisa conter uma fórmula mais alta que uma linha normal.");
+            var top = formula.TranslatePoint(default, window)!.Value.Y;
+            var next = after.TranslatePoint(default, window)!.Value.Y;
+            Assert.True(next >= top + formula.Bounds.Height - 1,
+                "O parágrafo seguinte não pode desenhar por cima da fórmula.");
+            Snapshot(window, "native-math-natural-height.png");
             return Task.FromResult(true);
         }
         finally { window.Close(); }

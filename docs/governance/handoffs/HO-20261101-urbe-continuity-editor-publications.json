@@ -1,0 +1,135 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261101-urbe-continuity-editor-publications",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-01T20:58:40Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "URBE-878",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-publications-native-studio-20261101",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/876",
+  "base_commit": "f364110cda362f6bfb7c8c5489c44704d5e907fe",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Publications.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationStudioView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/MarkdownEngine.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationProject.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorNavigationUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/MathLayoutUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PagesUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationStudioUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationProjectTests.cs",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.5.md",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationRecoveryUiTests.cs",
+    "docs/governance/handoffs/HO-20261101-urbe-continuity-editor-publications.json"
+  ],
+  "work_completed": [
+    "Continuação autorizada do PR #876, preservando as branches #874 (método obrigatório) e #877 (índice). Plano 2.5 confrontado com código e estado remoto antes de editar.",
+    "CST-144: reprodução vermelha de rascunho novo substituído por antigo após falha em save concorrente; ordem de recuperação corrigida, regressão agora verde.",
+    "CST-142: teste geométrico de não sobreposição e screenshot; correção da consulta de Runs do teste anterior, sem restaurar UI legada no menu.",
+    "CST-152/153: drafts de composição vinculados a vault e ID; falhas retêm draft na sessão, reabertura preserva o draft e UI oferece retry; baseline protege edição concorrente.",
+    "CST-152/162: exportação só após gravação confirmada; retorno do editor salva e utiliza a nota real atualizada, sem Markdown autoral no projeto.",
+    "CST-162: testes vermelhos de comentários privados e matemática crua no HTML; reuso de NoteMarks e MathRenderer com parser canônico; comentários omitidos, autoria e código mantidos, SVG offline acessível."
+  ],
+  "verification": [
+    {
+      "check": "Build Release portátil .NET 10.0.100",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet build Urbe.Portable.slnx -c Release --no-restore -m:1 -nr:false -p:UseSharedCompilation=false; 0 warnings, 0 errors. Logs locais /tmp/urbe-build-5.log e /tmp/urbe-editor-green-build.log."
+    },
+    {
+      "check": "Core completo",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Assembly xUnit Release: 1242 testes, 0 erros/falhas/skips. /tmp/urbe-core-final.log. Named pipe de dotnet test indisponível; assembly executado diretamente sem trocar testes."
+    },
+    {
+      "check": "UI completa final",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Rodada em execução /tmp/urbe-client-final.log. Rodada anterior 439/439 passou; sete cenários focados finais passaram, incluindo perda de texto, fontes vivas, falha/retry, conflito e matemática."
+    },
+    {
+      "check": "Consistência Ecosystem",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "22 checks passaram antes do registro final; reexecutar com handoff e plano atualizados."
+    },
+    {
+      "check": "CI e builds Android/Windows do commit final",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Acompanhar checks do PR #876 após push; builds do head anterior passaram, mas não substituem o commit final."
+    },
+    {
+      "check": "Android: toque/IME/ciclo de vida e salvamento no aparelho",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationRecoveryUiTests.cs",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Drafts recuperáveis nesta sessão não substituem journal durável após morte de processo.",
+    "CST-149: legado ainda acessível por suas operações existentes; retirada integral não foi declarada.",
+    "Publicações ainda tem HTML como primeiro formato; PDF/EPUB/PPTX/MP4 e packaging de mídia não estão entregues.",
+    "Conflito de composição bloqueia substituição e exportação; comparação/merge assistido ainda pendente.",
+    "CSTs mantidos abertos e sem alegação de DEVICE/release."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Concluir CI do PR #876 e corrigir regressões antes de integração governada.",
+    "Avançar retirada inventariada do legado, recuperação durável e alvos de publicação conforme dependências reais.",
+    "Preservar #877 e integração crítica do protocolo #874; não criar cópias concorrentes."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.5.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Fonte autoral permanece no DocumentStore; draft transitório guarda somente composição. Parser Markdown e renderizador existentes reutilizados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Screenshot headless e CI são provas automáticas; validação física explicitamente pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying, IDs CST abertos, falhas vermelhas e testes verdes documentados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Adaptação interna ao Urbe, sem extração compartilhada ou dependência de outro Product."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "publication-recovery-and-rendering",
+      "status": "product-specific",
+      "rationale": "Operações sobre DocumentStore, notas e marcas do Urbe; sem segundo consumidor comprovado. Reutiliza serviços existentes em vez de criar runtime/parser."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Correções e regressões no contrato/formato existente; sem mudar modelo persistido, migração, permissões, assinatura, distribuição ou governança. Protocolo constitucional permanece em PR separado #874."
+  }
+}

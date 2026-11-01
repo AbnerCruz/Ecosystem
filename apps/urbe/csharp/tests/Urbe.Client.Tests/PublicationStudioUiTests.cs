@@ -80,6 +80,20 @@ public sealed partial class HeadlessUiTests
             Assert.True(view.Editor.IsVisible);
 
             Assert.Equal("# Capítulo\n\nTexto ORIGINAL\n", File.ReadAllText(Path.Combine(vault, "Capitulo.md")));
+            view.Editor.SetMode(EditorMode.Fonte);
+            view.Editor.Editor.Text = "# Capítulo\n\nTexto REVISADO\n";
+            await view.ReturnToPublicationAsync();
+            await Pump();
+            Assert.True(studio.IsVisible);
+            Assert.Equal("# Capítulo\n\nTexto REVISADO\n", File.ReadAllText(Path.Combine(vault, "Capitulo.md")));
+            Assert.DoesNotContain("Texto REVISADO", File.ReadAllText(target));
+            export = null;
+            exportButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            for (int j = 0; j < 60 && export is null; j++) await Pump();
+            Assert.NotNull(export);
+            Assert.Contains("Texto REVISADO", export.Value.Text);
+            Assert.DoesNotContain("Texto ORIGINAL", export.Value.Text);
+            Snapshot(window, "native-publications-live-source.png");
             window.Close();
             return true;
         }

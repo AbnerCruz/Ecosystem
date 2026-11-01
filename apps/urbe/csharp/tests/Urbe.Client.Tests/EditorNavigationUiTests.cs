@@ -104,6 +104,57 @@ public sealed partial class HeadlessUiTests
         }
     }, CancellationToken.None));
 
+    [Fact]
+    public async Task Editor_NewerPendingDraftWinsOverAnOlderFailedSave() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        var editor = new EditorOverlay { SaveOnClose = true };
+        var window = new Window { Width = 412, Height = 800, Content = editor };
+        window.Show();
+        var firstStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var failFirst = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var finishSecond = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var attempts = 0;
+        editor.SaveRequested += async note =>
+        {
+            if (note.Path != "Origem.md") return;
+            if (++attempts == 1)
+            {
+                firstStarted.TrySetResult();
+                await failFirst.Task;
+                throw new IOException("Primeira gravação falhou");
+            }
+            secondStarted.TrySetResult();
+            await finishSecond.Task;
+        };
+        try
+        {
+            editor.Open(new CityNote("Origem.md", "salvo"));
+            editor.SetMode(EditorMode.Fonte);
+            editor.Editor.Text = "rascunho antigo";
+            editor.Open(new CityNote("Destino.md", "destino"));
+            await firstStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            editor.Open(new CityNote("Origem.md", "salvo"));
+            editor.SetMode(EditorMode.Fonte);
+            editor.Editor.Text = "rascunho MAIS NOVO";
+            editor.Open(new CityNote("Destino.md", "destino"));
+            failFirst.TrySetResult();
+            await secondStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Dispatcher.UIThread.RunJobs();
+            editor.Open(new CityNote("Origem.md", "salvo"));
+            Assert.Equal("rascunho MAIS NOVO", editor.Current?.Content);
+            Assert.True(editor.HasChanges);
+            return true;
+        }
+        finally
+        {
+            failFirst.TrySetResult();
+            finishSecond.TrySetResult();
+            window.Close();
+        }
+    }, CancellationToken.None));
+
     private static async Task<bool> EditorNavigationScenario()
     {
         var dir = Path.Combine(Path.GetTempPath(), "urbe-nav-" + Guid.NewGuid().ToString("N"));
