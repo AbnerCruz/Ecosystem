@@ -93,6 +93,7 @@ public sealed class PublicationStudioView : Border
     public event Action? AddSourceRequested;
     public event Action? ExportRequested;
     public event Action? RenameRequested;
+    public event Action? Closed;
     public event Action<string>? EditSourceRequested;
     public event Action<PublicationProject>? ProjectChanged;
 
@@ -112,6 +113,7 @@ public sealed class PublicationStudioView : Border
         IsVisible = false;
         if (_catalog is not null) _catalog.SourceChanged -= SourceChanged;
         _catalog = null;
+        Closed?.Invoke();
     }
 
     public void UpdateProject(PublicationProject project)
