@@ -1,6 +1,6 @@
 # LUNET-470 — Auditoria e redesign do workbench mobile (01/11/2026)
 
-**Estado:** proposta implementada em branch isolada; CI, capturas reais e validação DEVICE pendentes. **Base da auditoria:** Ecosystem `main` `4e64b950b4424183dc045e5f3afcf9f2a604259b`. **Produto:** Lunet IDE Android, sem alteração de Framework, Runtime, Studio ou Urbe. **Contrato:** SPEC §§9–13, ROADMAP e protocolo transversal.
+**Estado:** proposta implementada em branch isolada; CI, capturas reais e validação DEVICE pendentes. **Base da auditoria:** Ecosystem `main` `4e64b950b4424183dc045e5f3afcf9f2a604259b`. **Produto:** Lunet IDE Android, sem alteração de Framework, Runtime, Studio ou outros produtos. **Contrato:** SPEC §§9–13, ROADMAP e protocolo transversal.
 
 ## 1. Auditoria do código existente
 
