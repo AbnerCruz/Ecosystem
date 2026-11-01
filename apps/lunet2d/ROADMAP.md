@@ -449,3 +449,19 @@ Registro de escopo futuro; não autoriza avanço além do gate atual.
 | Remote Device Preview local | Investigação pós-1.0 | Pareamento autorizado, transporte e segurança por ADR; sem implementação agora |
 
 Scene Studio e shader tooling são expansões futuras do Lunet Studio, sem criar cenas obrigatórias.
+
+
+## IA especializada — runtime único e integração segura (LUNET-AI-002)
+
+- [x] Contratos do runtime/provedor canônicos e projeção byte a byte verificável; sem copiar implementações de outros apps.
+- [x] Ferramentas de busca textual, leitura por trechos grandes e substituição exata com SHA256, em adição a listar/ler/gravar.
+- [x] Testes criados antes do código para pesquisa, limites, edição sem ambiguidades, CAS e endpoint HTTPS.
+- [x] Redação da chave do provider nos eventos do agente; chave somente em memória e host HTTPS validado.
+- [x] Separação entre runtime compartilhado, adaptador do Lunet e runtime dos jogos; governança documentada em `platform/agent-runtime/ARCHITECTURE.md`.
+- [ ] Teste de conexão real a cada provider, em aparelho Android e com projeto de teste, inclusive falhas e cancelamento.
+- [ ] Preview de diff por arquivo, backups e restauração de alterações do agente sem depender de `git` externo.
+- [ ] Compilação, diagnóstico Roslyn e execução de testes invocáveis pelo agente com verificação independente.
+- [ ] Ferramentas nativas versionadas para Sprite Studio, Audio Studio, Tile Studio, cenas e assets.
+- [ ] Memória contextual indexada, orçamento de tokens real e custo de API medido por provider; não confundir histórico simples com memória semântica.
+- [ ] Agentes especialistas, planejamento em camadas, revisão independente e recuperação persistente entre runs.
+- [ ] Verificação de uso generalizado do runtime em outros produtos **somente com autorização explícita dos respectivos proprietários**; o Urbe está fora do escopo de edição.
