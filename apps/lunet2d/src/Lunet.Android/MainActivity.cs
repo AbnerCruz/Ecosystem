@@ -399,6 +399,12 @@ public sealed partial class MainActivity : Activity
         {
             var button = WorkbenchButton(text, action);
             button.ContentDescription = description;
+            if (description is "Desfazer" or "Refazer")
+            {
+                // Preserve IME enquanto permite foco e teclado externo nas demais ações.
+                button.Focusable = false;
+                button.FocusableInTouchMode = false;
+            }
             var p = new LinearLayout.LayoutParams(Dp(48), Dp(48));
             p.SetMargins(Dp(2), 0, Dp(2), 0);
             document.AddView(button, p);
