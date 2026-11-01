@@ -57,7 +57,8 @@
       "kind": "human",
       "result": "pending",
       "critical": false,
-      "evidence": "DEVICE não executado nesta sessão."
+      "evidence": "Cenário físico pendente: planejar tarefa complexa, verificar passos e expansão, alternar foco/IME, minimizar/retornar e confirmar que chat não perde dados. Testes de CI não substituem DEVICE.",
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs"
     }
   ],
   "known_issues": [
