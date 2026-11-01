@@ -1,23 +1,37 @@
 # Urbe — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.38
+**Versão canônica preparada:** 2.0.0-beta.39
 **Canal:** Urbe 2.0 nativo, Android e Windows
-**Publicação:** exclusivamente pelo workflow oficial, após a integração e os gates
-**Identidade Android:** app.urbe.csharp (mesmo certificado da beta.37)
+**Publicação:** workflow oficial, após CI e integração
+**Identidade Android:** app.urbe.csharp, mesmo certificado e atualização por cima da beta.38
 
-> Esta nota descreve a versão preparada. A publicação exige a release `urbe-csharp-v2.0.0-beta.38` com APK assinado. O histórico das versões anteriores fica em `PATCHNOTES-HISTORY.md`.
+## Abas sob seu controle
 
-## Exportação PDF — editor de páginas
+- Abrir outra nota pelo Explorer, busca ou links substitui a aba atual. O histórico de navegação continua disponível em Voltar/Avançar, sem virar uma fila de abas.
+- O botão **+** no topo abre a busca para escolher uma nota em uma aba adicional. Cancelar mantém tudo como estava; selecionar uma nota já aberta não duplica a aba.
+- As abas extras continuam disponíveis. A navegação comum substitui apenas a aba ativa; escolher uma aba existente muda o foco para ela.
+- Trocar ou fechar salva pelo mesmo caminho verificado do editor. Falhas de gravação mantêm o texto recuperável na sessão.
+- A primeira restauração de uma sessão antiga abre somente a última nota ativa. As abas abertas explicitamente nesta versão são restauradas como foram escolhidas; abas fechadas não voltam sozinhas.
 
-- Corrigido o ciclo de vida do WebView de impressão: o Android não destrói o documento enquanto o serviço de impressão está trabalhando ou enquanto o usuário escolhe onde salvar.
-- Os livros exportam com a mídia correspondente à configuração do editor: A5, A4, Carta, 6 × 9 polegadas e bolso (110 × 180 mm).
-- Páginas comuns usam A4 por padrão; o usuário ainda pode escolher outro papel no diálogo de impressão do sistema.
-- A exportação mantém o mesmo HTML do editor, incluindo imagens incorporadas do vault; não altera as páginas ou as notas salvas.
-- Regressões automatizadas verificam a seleção do papel e o contrato de envio ao sistema de impressão.
+## Editor mais confiável
 
-## Compatibilidade e validação
+- Corrigida perda do rascunho mais novo após duas gravações sobrepostas, quando a primeira falhava.
+- Frações e fórmulas altas usam a altura necessária, sem invadir o parágrafo seguinte. Equações largas podem rolar horizontalmente, inclusive no painel de fórmulas.
+- Corrigido acesso a bitmap já descartado ao tirar e recolocar uma prévia de imagem na tela. A prévia mantém o zoom e reutiliza os bytes já lidos.
 
-- Instala por cima da beta.37, mantendo a identidade `app.urbe.csharp`; faça backup antes de atualizar.
-- O sistema Android continua sendo responsável por concluir e salvar o PDF após a escolha de “Salvar como PDF”.
-- A paginação final e a renderização no aparelho Android ainda exigem validação manual com documentos simples, livros extensos e imagens.
-- Permanecem as funcionalidades da beta.37. Detalhes: `PATCHNOTES-beta.37.md` e `PATCHNOTES-beta.38.md`.
+## Novo estúdio de Publicações
+
+- Criação a partir de nota, pasta, Área de trabalho, configurações ou paleta. A pasta seleciona as notas existentes naquele momento, inclusive subpastas; novas notas não são adicionadas automaticamente à composição.
+- Referências por identidade às notas reais: adicionar, reordenar e remover fontes; editar a nota no editor e voltar com o conteúdo atualizado. O projeto não guarda outra cópia autoral do texto.
+- Composição com erro ao salvar pode ser recuperada ao fechar/reabrir o estúdio no mesmo vault carregado; há aviso e ação de tentar novamente. Conflitos bloqueiam sobrescrita e exportação silenciosas.
+- HTML offline com matemática vetorial, autoria da IA preservada e comentários editoriais privados omitidos. Trechos de código mantêm o texto literal.
+- **Imprimir ou salvar como PDF** usa o serviço de impressão da plataforma e as notas atuais. No Android, escolha “Salvar como PDF” e o destino no diálogo do sistema. Abrir esse diálogo não significa que o arquivo já foi salvo.
+- Os caminhos normais de criação passam a usar Publicações. Arquivos `.page.json` antigos continuam preservados, com visualização, exportação e acesso ao JSON.
+
+## Limites desta beta
+
+- Esta release não conclui o plano de consolidação inteiro. O estúdio ainda não oferece todos os formatos e recursos editoriais planejados.
+- Recuperação durável após morte do processo e através de recarga/troca do vault permanece em desenvolvimento.
+- A impressão desta entrega não equivale ao motor editorial profissional do CST-164; paginação final e resultado no aparelho precisam de verificação própria. EPUB, DOCX/PPTX e vídeo não são anunciados nesta versão.
+- O pipeline de autoria e os módulos internos legados ainda têm etapas de retirada e adaptação no plano. Os dados existentes não são apagados.
+- Builds e testes automatizados são registrados separadamente de toque, IME e ciclo de vida em Android real.

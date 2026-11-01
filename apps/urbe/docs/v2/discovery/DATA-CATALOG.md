@@ -61,6 +61,7 @@ Storage isolado por origem: web (host), Electron `app://urbe` (`main.js:14`), An
 | `urbe.plugins.v1` | `{"<vault>::<path>":{hash:'sha256:…'|'fnv:…',em}}` (aprovação) | `plugins.js:19-25,135-136` | chave `vault::path` (vault sempre `'Urbe'` na 1.8) |
 | `urbe.plugin.<vault>.<id>.<k>` | JSON livre do plugin | `plugins.js:43,79-80` | sim |
 | `urbe.editor.workspace.v1` | `{tabs[{id,pinned}],activeId,back[docId],forward[docId]}` (≤80) | `editor/workspace.js:4-7` | **não; guarda docIds** |
+| ↳ C# beta.39 (01/11/2026) | estado local do dispositivo: `{tabs:[path],activeId:path|null,vault,tabPolicy:"explicit-v1"}`; campo `tabPolicy` é opcional para leitura, não altera notas nem metadados do vault | `MainView.Commands.SaveSession` → `RestoreSession`; formatos anteriores sem marcador restauram apenas a nota ativa (ou última disponível). Estado novo preserva somente abas escolhidas; fechar a última grava `tabs:[]` e não reabre histórico | nome do vault como no contrato nativo preexistente; não é migração de arquivos. Fixtures: `EditorTabs_RestoresLegacyHistoryAsOneTabAndPersistsExplicitClosures` e `Parity_CommandsSessionDownloadAndTips`. |
 | `urbe.explorer.v2` | `{favorites,recent,expanded}` | `explorer/model.js:9,13-14` | não |
 | `urbe.tutorial.v1::<vault>` | versão | `tutorial.js:13` | sim |
 | `urbe.tip.<k>`, `urbe.touchDebug` | flags | `ui/tips.js:7-8`, `ui/touch-debug.js:8` | não |

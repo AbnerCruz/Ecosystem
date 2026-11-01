@@ -34,16 +34,16 @@ public sealed class PagesPanel : Border
             Margin = new Thickness(8, 0), VerticalAlignment = VerticalAlignment.Center,
             Children =
             {
-                new TextBlock { Text = "Páginas", FontSize = 20, FontWeight = FontWeight.Bold, Foreground = UrbeTheme.Brush(UrbeTheme.Text) },
-                new TextBlock { Text = "Sites e páginas HTML feitos a partir do vault", FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis }
+                new TextBlock { Text = "Páginas antigas", FontSize = 20, FontWeight = FontWeight.Bold, Foreground = UrbeTheme.Brush(UrbeTheme.Text) },
+                new TextBlock { Text = "Arquivos preservados · visualizar e exportar", FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis }
             }
         };
         var create = new Button
         {
-            Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { UrbeTheme.Icon(UrbeTheme.Icons.Plus, 16, UrbeTheme.AccentInk, 2.2), new TextBlock { Text = "Nova página", FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.AccentInk), VerticalAlignment = VerticalAlignment.Center } } },
+            Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { UrbeTheme.Icon(UrbeTheme.Icons.Plus, 16, UrbeTheme.AccentInk, 2.2), new TextBlock { Text = "Nova publicação", FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.AccentInk), VerticalAlignment = VerticalAlignment.Center } } },
             Height = 40, Padding = new Thickness(14, 0), CornerRadius = new CornerRadius(12), Background = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center
         };
-        Avalonia.Automation.AutomationProperties.SetName(create, "Nova página");
+        Avalonia.Automation.AutomationProperties.SetName(create, "Nova publicação");
         create.Click += (_, _) => NewRequested?.Invoke();
         var head = new DockPanel { Margin = new Thickness(8, 6, 12, 8), Height = 60 };
         DockPanel.SetDock(close, Dock.Left);

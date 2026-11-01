@@ -34,6 +34,7 @@ public sealed partial class MainView
         studio.RenameRequested += () => _ = RenamePublicationAsync();
         studio.EditSourceRequested += EditPublicationSource;
         studio.ExportRequested += () => _ = ExportPublicationHtmlAsync();
+        studio.PrintRequested += () => _ = PrintPublicationAsync();
         studio.RetrySaveRequested += () => _ = SavePublicationAsync();
         studio.Closed += () =>
         {
@@ -97,7 +98,7 @@ public sealed partial class MainView
     }
 
     /// <summary>First-class creation from the current note, or an empty project chosen in Settings.</summary>
-    public async Task CreatePublicationAsync(string? sourcePath = null)
+    public async Task CreatePublicationAsync(string? sourcePath = null, string? sourceFolder = null)
     {
         if (!VaultWritable || _store is null)
         {
@@ -106,9 +107,25 @@ public sealed partial class MainView
         }
         var source = sourcePath is null ? null : _store.Get(sourcePath);
         if (source is not null && !ArtifactModel.IsNote(source.Path)) source = null;
-        var title = await Dialogs.PromptAsync(new PromptOptions("Nova publicação", Label: "Título", Placeholder: source?.Title ?? "Ex.: Meu livro", Confirm: "Criar"));
+        var originalStore = _store;
+        var originalVault = _vault;
+        var folder = sourceFolder?.Trim('/');
+        var suggested = source?.Title ?? (folder is { Length: > 0 } ? System.IO.Path.GetFileName(folder) : null);
+        var title = await Dialogs.PromptAsync(new PromptOptions("Nova publicação", Label: "Título", Placeholder: suggested ?? "Ex.: Meu livro", Confirm: "Criar"));
         if (string.IsNullOrWhiteSpace(title)) return;
+        if (!ReferenceEquals(_store, originalStore) || !ReferenceEquals(_vault, originalVault))
+        {
+            ShowLifeNotice("O vault mudou. Abra a criação novamente no vault desejado.", Ui.ToastKind.Warning);
+            return;
+        }
         var project = PublicationProject.Create(title.Trim(), source?.Id);
+        if (folder is not null)
+        {
+            var prefix = folder.Length == 0 ? "" : folder + "/";
+            foreach (var note in _store.List().Where(d => ArtifactModel.IsNote(d.Path) && d.Path.StartsWith(prefix, StringComparison.Ordinal))
+                .OrderBy(d => d.Path, StringComparer.OrdinalIgnoreCase))
+                project = project.AddSource(note.Id);
+        }
         var path = "Publicações/" + ArtifactModel.SafeName(title.Trim()) + ".publication.json";
         if (_store.Get(path) is not null || _attachments.Contains(path))
         {
@@ -242,25 +259,50 @@ public sealed partial class MainView
         }
     }
 
-    private async Task ExportPublicationHtmlAsync()
+    private async Task<(PublicationProject Project, PublicationHtmlResult Render)?> PreparePublicationOutputAsync()
     {
         if (_publicationsStudio?.Project is null || _publicationsCatalog is not { } catalog ||
-            _publicationDraft is not { } draft) return;
-        if (!await SavePublicationAsync()) return;
-        if (!ReferenceEquals(_publicationDraft, draft) || !ReferenceEquals(_store, draft.Store) || draft.Dirty) return;
+            _publicationDraft is not { } draft) return null;
+        if (!await SavePublicationAsync()) return null;
+        if (!ReferenceEquals(_publicationDraft, draft) || !ReferenceEquals(_store, draft.Store) || draft.Dirty) return null;
         var project = draft.Project;
         PublicationHtmlResult result;
         try { result = PublicationHtml.Export(project, catalog); }
         catch (Exception ex) when (ex is InvalidDataException or NotSupportedException)
         {
             await Dialogs.AlertAsync("Exportação não disponível", ex.Message);
-            return;
+            return null;
         }
         if (!result.IsComplete)
         {
             await Dialogs.AlertAsync("Fontes indisponíveis", "Resolva as notas ausentes antes de exportar: " + result.MissingDocumentIds.Count + " referência(s).");
+            return null;
+        }
+        return (project, result);
+    }
+
+    /// <summary>Uses the platform's print service; opening its dialog is not proof that a PDF was saved.</summary>
+    public async Task PrintPublicationAsync()
+    {
+        if (ContentViewers.Printer is not { } print)
+        {
+            ShowLifeNotice("Impressão indisponível neste aparelho.", Ui.ToastKind.Warning);
             return;
         }
+        if (await PreparePublicationOutputAsync() is not { } output) return;
+        try
+        {
+            await print(output.Project.Title, output.Render.Html, new PagePrintSettings(false, "a4"));
+            ShowLifeNotice("Na impressão do sistema, escolha “Salvar como PDF” para gerar o arquivo.");
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        { ShowLifeNotice("Não consegui preparar a impressão: " + ex.Message, Ui.ToastKind.Warning); }
+    }
+
+    private async Task ExportPublicationHtmlAsync()
+    {
+        if (await PreparePublicationOutputAsync() is not { } output) return;
+        var (project, result) = output;
         var filename = ArtifactModel.SafeName(project.Title) + ".html";
         try
         {

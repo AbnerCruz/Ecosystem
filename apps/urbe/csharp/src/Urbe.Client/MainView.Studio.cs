@@ -103,8 +103,8 @@ public sealed partial class MainView : IPageStudioHost
     {
         var pages = PageCards();
         if (pages.Count == 0) { ShowPages(); return; }
-        var pick = await Dialogs.ChooseAsync("Abrir página no estúdio", pages.Select(p => new DialogItem(p.Icon + "  " + p.Title, Detail: p.Path)).ToList());
-        if (pick is not null) await OpenStudioAsync(pages[pick.Value].Path);
+        var pick = await Dialogs.ChooseAsync("Ver página antiga", pages.Select(p => new DialogItem(p.Icon + "  " + p.Title, Detail: p.Path)).ToList());
+        if (pick is not null) await ShowPageAsync(pages[pick.Value].Path);
     }
 
     // ---------------------------------------------------------------- IPageStudioHost

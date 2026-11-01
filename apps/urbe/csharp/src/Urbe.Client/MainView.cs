@@ -841,7 +841,6 @@ public sealed partial class MainView : Grid
                 if (editor.HasChanges && !await editor.SaveAsync()) return;
                 if (!await _vault.ShareAsync(note.Path)) ShowLifeNotice("Não foi possível compartilhar esta nota.", Ui.ToastKind.Warning);
             })] : Array.Empty<DialogItem>()),
-            new DialogItem("Criar página daqui", UrbeTheme.Icons.Layers, "Uma página com esta nota.", Run: async () => { if (!editor.HasChanges || await editor.SaveAsync()) await CreatePageFromAsync(notePath: note.Path); }),
             // DEC-0045, UC-39: the selection (or the whole note) stays at the top while writing
             new DialogItem("Fixar em painel", UrbeTheme.Icons.Pin, "A seleção, ou a nota inteira, fica no topo enquanto você escreve.",
                 Run: () => { editor.PinSelectionOrNote(); return Task.CompletedTask; }),
@@ -1099,7 +1098,7 @@ public sealed partial class MainView : Grid
             new("Renomear", UrbeTheme.Icons.Pencil, "Muda o nome da pasta no vault.",
                 Run: () => inExplorer && Explorer.BeginRename(NotesExplorer.FolderPrefix + folder) ? Task.CompletedTask : RenameFolderAsync(folder)),
             new("Mover para", UrbeTheme.Icons.Move, "A pasta e tudo o que há nela.", Run: () => MoveFolderAsync(folder)),
-            new("Criar página daqui", UrbeTheme.Icons.Layers, "Uma página com as notas desta pasta, que acompanha as mudanças.", Run: () => CreatePageFromAsync(folder: folder)),
+            new("Criar publicação desta pasta", UrbeTheme.Icons.Page, "Seleciona as notas atuais da pasta e vincula suas fontes reais.", Run: () => CreatePublicationAsync(sourceFolder: folder)),
             new("Mover para a lixeira", UrbeTheme.Icons.Trash, "A pasta e as notas dela.", Run: () => SelectionActionAsync("delete", [NotesExplorer.FolderPrefix + folder])),
             .. AreaMenuItems(folder)
         ]);
