@@ -21,7 +21,7 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorNavigationUiTests.cs",
     "apps/urbe/csharp/src/Urbe.Core/PublicationSources.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationSourceCatalogTests.cs",
-    "apps/urbe/docs/csharp/Numa_Consolidacao_2.5.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.5.md",
     "apps/urbe/docs/csharp/PUBLICATIONS-RESEARCH-2026-11-01.md",
     "docs/governance/handoffs/HO-20261101-urbe-editor-publicacoes-fundacao.json"
   ],
@@ -68,7 +68,7 @@
     "AGENTS.md",
     "ecosystem.json",
     "apps/urbe/AGENTS.md",
-    "apps/urbe/docs/csharp/Numa_Consolidacao_2.5.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.5.md",
     "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
     "docs/governance/definition-of-done.md",
     "docs/governance/integration-policy.json"
