@@ -181,6 +181,7 @@ public sealed class QuickOpenPanel : SearchPanel
 {
     private readonly Func<IReadOnlyList<CityNote>> _notes;
     private readonly List<string> _recent = [];
+    public bool AllowCreate { get; set; } = true;
 
     public QuickOpenPanel(Func<IReadOnlyList<CityNote>> notes)
         : base("Buscar ou criar nota…", UrbeTheme.Icon(UrbeTheme.Icons.Search, 20, UrbeTheme.Text3), FooterBar())
@@ -214,8 +215,11 @@ public sealed class QuickOpenPanel : SearchPanel
         foreach (var r in view.Rows)
         {
             if (r.Create is { } create)
+            {
+                if (!AllowCreate) continue;
                 rows.Add(new SearchRow(Item(UrbeTheme.Icons.Plus, "Criar nota “" + create + "”", "Na raiz · uma nota nova no vault", null, true),
                     () => Choose(() => CreateChosen?.Invoke(LegacyQuickOpen.CreatePath(create)))));
+            }
             else
             {
                 var doc = r.Doc!;
@@ -223,7 +227,7 @@ public sealed class QuickOpenPanel : SearchPanel
                     () => Choose(() => { TouchRecent(doc.Path); NoteChosen?.Invoke(doc.Path); })));
             }
         }
-        Show(rows, view.RecentGroup ? "Recentes" : null, "Nenhuma nota ainda. Digite um nome para criar a primeira.");
+        Show(rows, view.RecentGroup ? "Recentes" : null, AllowCreate ? "Nenhuma nota ainda. Digite um nome para criar a primeira." : "Nenhuma nota encontrada.");
     }
 
     private void Choose(Action then)
@@ -339,13 +343,15 @@ public sealed class SearchFeature
         }
         QuickOpen.NoteChosen += OpenNote;
         QuickOpen.CreateChosen += path => _ = CreateOrOpenAsync(path);
+        view.Editor.NewTabRequested += OpenNewTabPicker;
 
         Register("ui.quickOpen.open", "Buscar notas", "Navegação", OpenQuickOpen);
         Register("ui.commandPalette.open", "Abrir comandos", "Interface", OpenPalette);
         Register("ui.explorer.open", "Abrir notas", "Navegação", view.ShowNotes);
         Register("document.create", "Nova nota", "Documento", () => _ = view.CreateNoteAsync());
         Register("ui.customize", "Personalização", "Aplicativo", () => view.Customize.Open());
-        Register("pages.home", "Páginas", "Páginas", view.ShowPages);
+        Register("publications.home", "Publicações", "Publicações", () => _ = view.ShowPublicationsAsync());
+        Register("pages.home", "Páginas antigas", "Arquivos existentes", view.ShowPages);
         Register("workspace.save", "Salvar workspace", "Workspace", () => _ = view.Editor.SaveAsync(), () => view.Editor.IsVisible);
         Register("ui.find.open", "Localizar e substituir", "Editor", view.Editor.FindBar.Open, () => view.Editor.IsVisible);
         Register("editor.split.open", "Abrir em painel dividido", "Editor", () => _ = view.ChooseSplitAsync());
@@ -355,6 +361,7 @@ public sealed class SearchFeature
         Register("editor.back", "Voltar", "Navegação", () => _ = view.Editor.BackAsync(), () => view.Editor.IsVisible);
         Register("editor.forward", "Avançar", "Navegação", () => _ = view.Editor.ForwardAsync(), () => view.Editor.IsVisible && view.Editor.CanForward);
         Register("editor.closeTab", "Fechar aba", "Editor", () => { if (view.Editor.Current is { } n) _ = view.Editor.CloseTabAsync(n.Path); }, () => view.Editor.IsVisible);
+        Register("editor.newTab", "Abrir nova aba", "Editor", OpenNewTabPicker, () => view.Editor.IsVisible);
         Register("editor.undo", "Desfazer", "Editor", view.Editor.Undo, () => view.Editor.IsVisible);
         Register("editor.redo", "Refazer", "Editor", view.Editor.Redo, () => view.Editor.IsVisible);
         Register("editor.contextPanel", "Outline e backlinks", "Editor", view.ShowEditorContext, () => view.Editor.IsVisible);
@@ -366,12 +373,12 @@ public sealed class SearchFeature
         Register("customize.edit-file", "Abrir tema.json", "Personalização", () => _ = view.EditThemeFileAsync());
         Register("ui.plugins", "Plugins", "Personalização", () => view.Customize.Open("plugins"));
         Register("plugins.reload", "Recarregar plugins", "Personalização", view.SyncPlugins);
-        Register("pages.open", "Abrir página no estúdio", "Páginas", () => _ = view.ChoosePageForStudioAsync());
+        Register("pages.open", "Ver página antiga", "Arquivos existentes", () => _ = view.ChoosePageForStudioAsync());
         Register("tutorial.open", "Tutorial", "Ajuda", () => _ = view.ShowTutorialMenuAsync());
         Register("tutorial.restore", "Restaurar o Tutorial", "Ajuda", () => _ = view.RestoreTutorialAsync(true));
         Register("editor.find", "Localizar no documento", "Editor", view.Editor.FindBar.Open, () => view.Editor.IsVisible);
         Register("editor.replace", "Substituir no documento", "Editor", view.Editor.FindBar.Open, () => view.Editor.IsVisible);
-        Register("pages.new", "Nova página", "Páginas", () => _ = view.NewPageAsync());
+        Register("publications.new", "Nova publicação", "Publicações", () => _ = view.CreatePublicationAsync());
         Register("workspace.backups", "Backups do vault", "Workspace", () => _ = view.ShowBackupsAsync());
         Register("workspace.cleanOrphans", "Limpar referências órfãs", "Workspace", () => _ = view.CleanOrphansAsync());
         Register("workspace.diagnostics", "Diagnóstico do workspace", "Workspace", () => _ = view.ShowDiagnosticsAsync());
@@ -418,7 +425,8 @@ public sealed class SearchFeature
     }
 
     /// <summary>core.commands.has(id).</summary>
-    public bool Has(string id) => _commands.Any(c => c.Info.Id == id);
+    private static string ResolveCommandAlias(string id) => id == "pages.new" ? "publications.new" : id;
+    public bool Has(string id) => _commands.Any(c => c.Info.Id == ResolveCommandAlias(id));
 
     private void Register(string id, string title, string category, Action run, Func<bool>? enabled = null) =>
         _commands.Add(new NativeCommand(new LegacyCommand(id, title, category, enabled), run));
@@ -426,26 +434,51 @@ public sealed class SearchFeature
     /// <summary>core.commands.execute(id): false when the command is disabled.</summary>
     public bool Execute(string id)
     {
-        var command = _commands.Last(c => c.Info.Id == id);
+        var command = _commands.Last(c => c.Info.Id == ResolveCommandAlias(id));
         if (!command.Info.IsEnabled) return false;
         command.Run();
         return true;
     }
 
-    public void OpenQuickOpen() { Palette.Close(); QuickOpen.Open(); }
+    public void OpenQuickOpen()
+    {
+        _pickGeneration++;
+        _pick = null;
+        QuickOpen.AllowCreate = true;
+        QuickOpen.Input.PlaceholderText = "Buscar ou criar nota…";
+        ShowQuickOpen();
+    }
+
+    private void ShowQuickOpen() { Palette.Close(); QuickOpen.Open(); }
+
+    public void OpenNewTabPicker() => PickNote(path => _ = _view.Editor.OpenInNewTabAsync(path));
 
     public void OpenPalette() { QuickOpen.Close(); Palette.Open(); }
 
     private Action<string>? _pick;
+    private long _pickGeneration;
 
     /// <summary>The quick search used to choose a note for something else (the split view): the chosen note goes to
     /// <paramref name="chosen"/> instead of opening, once; closing the search without choosing does nothing.</summary>
     public void PickNote(Action<string> chosen)
     {
         _pick = chosen;
-        void Reset() { QuickOpen.Closed -= Reset; Dispatcher.UIThread.Post(() => _pick = null); }
+        var generation = ++_pickGeneration;
+        QuickOpen.AllowCreate = false;
+        QuickOpen.Input.PlaceholderText = "Escolher nota…";
+        void Reset()
+        {
+            QuickOpen.Closed -= Reset;
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (_pickGeneration != generation) return;
+                _pick = null;
+                QuickOpen.AllowCreate = true;
+                QuickOpen.Input.PlaceholderText = "Buscar ou criar nota…";
+            });
+        }
         QuickOpen.Closed += Reset;
-        OpenQuickOpen();
+        ShowQuickOpen();
     }
 
     private void OpenNote(string path)

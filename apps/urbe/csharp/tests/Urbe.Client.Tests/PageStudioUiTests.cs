@@ -40,10 +40,10 @@ public sealed partial class HeadlessUiTests
             var (view, window, vault, dir) = await OpenCreateVault();
             try
             {
+                // Legacy engine regression fixture. Product navigation now creates Publicações;
+                // old files and their renderer are preserved independently of those entrypoints.
                 view.ShowPages();
-                Dispatcher.UIThread.RunJobs();
-                var create = view.Pages.GetLogicalDescendants().OfType<Button>().First(b => AutomationProperties.GetName(b) == "Nova página");
-                create.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                await view.NewPageAsync();
                 for (int i = 0; i < 100 && view.Studio.Path is null; i++) await Pump(20);
                 Assert.Equal("Páginas/Nova página.page.json", view.Studio.Path);
                 var file = Path.Combine(vault, "Páginas", "Nova página.page.json");
@@ -192,10 +192,10 @@ public sealed partial class HeadlessUiTests
             var (view, window, vault, dir) = await OpenCreateVault();
             try
             {
+                // Legacy engine regression fixture. Product navigation now creates Publicações;
+                // old files and their renderer are preserved independently of those entrypoints.
                 view.ShowPages();
-                Dispatcher.UIThread.RunJobs();
-                var create = view.Pages.GetLogicalDescendants().OfType<Button>().First(b => AutomationProperties.GetName(b) == "Nova página");
-                create.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                await view.NewPageAsync();
                 for (int i = 0; i < 100 && view.Studio.Path is null; i++) await Pump(20);
                 var st = view.Studio.Model!;
                 view.Studio.OpenJson();

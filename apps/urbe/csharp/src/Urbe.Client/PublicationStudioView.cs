@@ -21,6 +21,7 @@ public sealed class PublicationStudioView : Border
     private readonly TextBlock _status = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap };
     private readonly TextBlock _saveStatus = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap };
     private readonly Button _retry = new() { Content = "Tentar salvar novamente", MinHeight = 44, IsVisible = false };
+    private readonly Button _print;
     private PublicationSourceCatalog? _catalog;
     private PublicationProject? _project;
 
@@ -37,6 +38,10 @@ public sealed class PublicationStudioView : Border
         save.Click += (_, _) => ExportRequested?.Invoke();
         DockPanel.SetDock(save, Dock.Right);
         bar.Children.Add(save);
+        _print = ActionButton(UrbeTheme.Icons.File, "Imprimir ou salvar como PDF");
+        _print.Click += (_, _) => PrintRequested?.Invoke();
+        DockPanel.SetDock(_print, Dock.Right);
+        bar.Children.Add(_print);
         var rename = ActionButton(UrbeTheme.Icons.Pencil, "Renomear publicação");
         rename.Click += (_, _) => RenameRequested?.Invoke();
         DockPanel.SetDock(rename, Dock.Right);
@@ -101,6 +106,7 @@ public sealed class PublicationStudioView : Border
     public event Action? RetrySaveRequested;
     public event Action? AddSourceRequested;
     public event Action? ExportRequested;
+    public event Action? PrintRequested;
     public event Action? RenameRequested;
     public event Action? Closed;
     public event Action<string>? EditSourceRequested;
@@ -123,6 +129,7 @@ public sealed class PublicationStudioView : Border
         _project = project;
         _catalog = catalog;
         _catalog.SourceChanged += SourceChanged;
+        _print.IsVisible = ContentViewers.Printer is not null;
         IsVisible = true;
         Refresh();
     }

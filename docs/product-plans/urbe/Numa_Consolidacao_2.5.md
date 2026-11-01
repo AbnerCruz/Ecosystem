@@ -47,6 +47,10 @@ A especificação normativa, as pesquisas e os contratos de implementação cons
 
 **Integração de produto:** criação contextual pelo editor, exibição nativa Avalonia/C#, uso sem IA, leitura/edição acessíveis por toque e teclado, suporte a templates e vínculos de notas; agentes e plugins que modificam essas informações devem obedecer ao contrato canônico de edição, versão, permissão e undo/redo. O indicador é uma visão derivada dos dados reais, nunca um banco paralelo. O Markdown permanece legível fora do Urbe, com representação textual/fallback documentada. Publicações usam os mesmos valores e referências, com representação estática ou interativa adequada ao formato. **Escopo e critérios normativos: CST-227 e CST-228 (seção 4.16).**
 
+### 1.4. Decisão de execução — abas explícitas (01/11/2026)
+
+**Ordem do proprietário:** navegação comum não deve acumular abas. Abrir outra nota substitui o conteúdo da aba ativa, com salvamento/recuperação no caminho canônico. Abas extras exigem **+ → escolher nota** no topo; cancelar não cria aba, selecionar nota já aberta foca essa aba. Voltar/Avançar preservam navegação sem poluir a barra. Sessões antigas de histórico automático passam a uma nota ativa; sessões novas conservam as abas deliberadamente escolhidas. **Requisito verificável: CST-229.** A publicação da próxima beta foi solicitada expressamente pelo proprietário nesta sessão; isso autoriza o corte pelo workflow existente, sem afirmar validação física ou conclusão integral do plano.
+
 ## 2. Regras de execução e conclusão
 
 - Cada ID CST é estável. CST-001 a CST-110 correspondem aos 110 itens anteriores; CST-111 em diante cobrem complementos. A ordem de apresentação pode mudar sem renumerar IDs.
@@ -1631,6 +1635,15 @@ A especificação normativa, as pesquisas e os contratos de implementação cons
   **Dependências:** CST-227, CST-004, CST-005, CST-018, CST-038, CST-064, CST-119; reutilizar alterações semânticas CST-224 e referências/invalidação CST-226 quando disponíveis, sem exigir implementação duplicada.  
   **Critério de conclusão:** Vincular o componente a um **escopo explícito**, começando por checklist, seção ou nota; permitir referência declarada a outra nota/lista, preservando a identidade de origem e informando vínculos quebrados. Contar **itens concluídos / itens de checklist pertinentes**, exibir percentual e **quantidade restante** (ex.: 3/8, 37,5%, faltam 5), sem tratar texto comum, checkboxes literais em código ou listas fora do escopo como tarefas. Definir a regra para subtarefas e evitar dupla contagem; se o total for zero, exibir "sem tarefas", nunca 100% fictícios. Marcar/desmarcar, adicionar/remover, dividir/mover itens, renomear notas, editar externamente, desfazer/refazer e reabrir recalcula o indicador sem exigir atualização manual; mudanças da barra **não marcam/desmarcam tarefas por conta própria**. O total exibido é derivado dos checkboxes reais e não uma segunda cópia editável do resultado. Tocar no resumo permite localizar as tarefas pendentes sem perder o contexto de edição. Agentes, plugins e Publicações leem o mesmo resultado e atualizam a fonte por operações autorizadas; prevenir loops, referências circulares e recomputação desnecessária. Demonstrar 0/0, 0/8, 3/8, 8/8, lista aninhada, itens excluídos do escopo, nota vinculada renomeada e duas visões do mesmo conjunto; testar persistência, acessibilidade e resposta ao toque em Android real e Windows, inclusive listas longas.
 
+### 4.17. Navegação com abas deliberadas
+
+- [ ] **CST-229 — Reutilizar uma aba por padrão e oferecer abertura explícita de abas adicionais.**
+
+  **Estado observado:** implementação em verificação para beta.39; não encerrado por existência de código.
+  **Frente:** editor e UX.
+  **Dependências:** salvamento e recuperação do editor (CST-004–007/144); sessão local e seleção de notas existentes.
+  **Critério de conclusão:** Explorer, busca e links reutilizam a aba ativa; **+** acessível no topo escolhe uma nota e abre outra aba sem duplicar a já aberta. Cancelar não adiciona aba, inclusive reabrindo o seletor rapidamente. Troca/fechamento não descartam rascunhos; histórico Voltar/Avançar não vira abas. Fechar abas é persistido; sessões antigas sem marcador não restauram a fila automática e sessões novas restauram as abas explícitas. Verificar 320/412 dp e desktop, teclado, salvamento falho, renomeio e ciclo Android; arquivos de notas intactos.
+
 ## 5. Evidência de conclusão e validação de release
 
 Para cada tarefa concluída, registrar:
@@ -2704,3 +2717,17 @@ As referências de **OpenCode #4659/#11314** (compactação), **Cline #4359/#123
 - **Próximos formatos:** a investigação da especificação oficial EPUB 3.3 (https://www.w3.org/TR/epub-33/) confirmou exigências de pacote/manifest/spine, navegação XHTML e identificação ZIP específica; um HTML renomeado não entrega EPUB. Não se anuncia novo formato enquanto o adaptador, os recursos empacotados e o arquivo real não forem demonstrados. Isso permanece nos IDs de publicação existentes; não foi criado roadmap paralelo.
 
 **Resultado local final deste incremento:** **1.242 testes Core e 444 testes UI aprovados**, sem falhas/skips; build Release portátil sem warnings/erros e 22 checks de consistência aprovados. O lote final inclui prévia matemática, ciclo de imagem e liberação do cache limpo. Os três entrypoints documentais C# agora encaminham ao plano 2.5 e preservam evidências históricas. A integração/CI do último commit e a validação Android real continuam registradas separadamente no handoff.
+
+
+## 18. Continuidade para a release beta.39 — 01/11/2026
+
+**Base:** main `7eb10c8`, após integração governada do PR #876. Escopo autorizado: continuar a consolidação e finalizar a release, com a decisão de abas explícitas acima. Não reabrir decisões anteriores nem confundir beta publicada com produto integralmente pronto.
+
+- **CST-229:** reprodução vermelha de histórico automático, nova política de reutilização, botão + fixo fora da rolagem, seletor pesquisável existente, alvos de 48 dp e persistência de fechamento/aba ativa. O seletor usado para escolher nota não cria arquivos por engano; fechamento antigo não cancela uma seleção mais nova. Registro local descrito em `apps/urbe/docs/csharp/DATA-CATALOG.md` (catálogo histórico do JS intacto); nenhuma nota é migrada/apagada.
+- **CST-149/157/158/160, parcialmente:** menus de nota/Área/pasta e paleta criam Publicações; ação nova do painel legado também cria Publicação. Cards e seleção de páginas antigas abrem a visualização, não o editor retirado. JSON, exportações e arquivos antigos são preservados. O módulo legado e suas tools ainda têm trabalho de retirada/adaptação; não marcar CST-149 completo por esconder entrypoints.
+- **CST-160, parcialmente:** criação por pasta inclui notas atuais e subpastas por identidade, com fronteira de caminho exata e ordenação estável, sem Markdown duplicado no projeto. Não é consulta dinâmica de futuras notas; o critério completo permanece aberto.
+- **CST-162/164, parcialmente:** impressão pelo adapter existente Android/Windows usa composição salva e fontes atuais, com CSS de impressão A4, margens e quebras por seção. O serviço da plataforma oferece salvar PDF; **diálogo aberto não é arquivo salvo nem motor editorial concluído**. Teste de contrato verifica título, fontes, matemática, omissão de comentários e papel; arquivo/paginação Android real continuam separados.
+
+**Pesquisa e confronto das abas:** documentação oficial https://code.visualstudio.com/docs/editing/getting-started/userinterface e código https://github.com/microsoft/vscode/blob/main/src/vs/workbench/common/editor/editorGroupModel.ts foram examinados. O grupo distingue preview/pinned e substitui o preview; o Urbe adapta a ideia ao slot ativo e rejeita pin automático por digitação, porque o proprietário exige aba extra explícita. A issue oficial https://github.com/microsoft/vscode/issues/246058 mostra preferência diferente entre contextos e desconforto com gestos implícitos; é evidência qualitativa, não consenso. Mantidos um seletor já existente e o writer canônico do Urbe, sem importar editor web ou novo domínio.
+
+**Entrega planejada:** beta.39 pelo workflow nativo existente, identidade/certificado preservados. Evidências locais, CI, integração e distribuição ficam no handoff `HO-20261101-urbe-beta39-explicit-tabs-publications`. Nenhum CST é fechado automaticamente com a tag da release.

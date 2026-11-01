@@ -46,13 +46,16 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal("Plano.md", view.Editor.Current!.Path);
 
                 // the session: closed editor, Restaurar sessão reopens the tabs and the active note
-                Assert.Equal(["Comece.md", "Plano.md"], view.Editor.Tabs);
+                Assert.Equal(["Plano.md"], view.Editor.Tabs);
+                await view.Editor.OpenInNewTabAsync("Comece.md");
+                await view.Editor.SwitchTabAsync("Plano.md");
+                Assert.Equal(["Plano.md", "Comece.md"], view.Editor.Tabs);
                 view.Editor.IsVisible = false;
                 Dispatcher.UIThread.RunJobs();
                 Assert.True(view.RestoreSession());
                 Assert.True(view.Editor.IsVisible);
                 Assert.Equal("Plano.md", view.Editor.Current!.Path);
-                Assert.Equal(["Comece.md", "Plano.md"], view.Editor.Tabs);
+                Assert.Equal(["Plano.md", "Comece.md"], view.Editor.Tabs);
                 Assert.True(view.Search.Execute("editor.closeTab"));
                 for (int i = 0; i < 20 && view.Editor.Tabs.Count != 1; i++) { await Task.Delay(5); Dispatcher.UIThread.RunJobs(); }
                 Assert.Equal(["Comece.md"], view.Editor.Tabs);
