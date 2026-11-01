@@ -3,8 +3,9 @@ using System.Text.Json.Nodes;
 namespace Urbe.Core.Assistant;
 
 /// <summary>
-/// Urbe's opt-in dynamic plan contract. The legacy AssistantTools.All remains byte-for-byte
-/// compatible with the 1.8.4 oracle, while the active Urbe chat gets unlimited plan depth.
+/// The native assistant's opt-in plan graph. Legacy AssistantTools.All stays unchanged
+/// for 1.8.4 oracles; meaningful Urbe tasks can use objectives, dependencies and
+/// declared evidence without introducing a second state store or an extra agent.
 /// </summary>
 public static class AssistantAdaptivePlanTools
 {
@@ -12,9 +13,9 @@ public static class AssistantAdaptivePlanTools
     {
         Name = "update_plan",
         Access = "plan",
-        Description = "Plano vivo com extensão e detalhamento proporcionais à tarefa. Use details para método e dependências; acceptance para critério verificável. Investigue decisões, riscos e informação relacionada. Replaneje com base em evidências, sem inventar etapas.",
+        Description = "Plano vivo e proporcional. Para tarefa complexa informe goal (pedido original), current_state, target_state e steps como nós com IDs estáveis e depends_on. Cada nó iniciado precisa de acceptance e tests definidos ANTES de executar. Para done registre test_evidence, implementation_evidence e verification_evidence; depois confronte o resultado global com plano (final_plan_review) e pedido (final_user_review). Evidências textuais são relatos, NUNCA execução de teste ou aceite independente. Para tarefas simples mantenha steps legados. Replaneje com evidências sem etapas artificiais.",
         Parameters = (JsonObject)JsonNode.Parse("""
-        {"type":"object","properties":{"steps":{"type":"array","items":{"type":"object","properties":{"step":{"type":"string"},"details":{"type":"string"},"acceptance":{"type":"string"},"status":{"type":"string","enum":["pending","in_progress","done"]}},"required":["step","status"]}}},"required":["steps"],"additionalProperties":false}
+        {"type":"object","properties":{"goal":{"type":"string","description":"Pedido original; ativa planejamento em camadas."},"current_state":{"type":"string","description":"Estado inicial observado, com fontes reais."},"target_state":{"type":"string","description":"Resultado final verificável."},"final_plan_review":{"type":"string","description":"Confronto dos resultados com a estratégia inicial."},"final_user_review":{"type":"string","description":"Confronto dos resultados com o pedido original."},"steps":{"type":"array","items":{"type":"object","properties":{"id":{"type":"string"},"step":{"type":"string"},"details":{"type":"string"},"acceptance":{"type":"string"},"status":{"type":"string","enum":["pending","in_progress","done"]},"depends_on":{"type":"array","items":{"type":"string"}},"tests":{"type":"string"},"test_evidence":{"type":"string"},"implementation_evidence":{"type":"string"},"verification_evidence":{"type":"string"}},"required":["step","status"],"additionalProperties":false}}},"required":["steps"],"additionalProperties":false}
         """)!,
         Label = input =>
         {
@@ -24,24 +25,14 @@ public static class AssistantAdaptivePlanTools
         },
         Run = (input, host) =>
         {
-            var steps = (input["steps"] as JsonArray ?? []).OfType<JsonObject>()
-                .Where(s => !string.IsNullOrWhiteSpace((string?)s["step"]))
-                .Select(s =>
-                {
-                    var step = ((string?)s["step"] ?? "").Trim();
-                    var status = (string?)s["status"] ?? "pending";
-                    var details = ((string?)s["details"])?.Trim();
-                    var acceptance = ((string?)s["acceptance"])?.Trim();
-                    return new AiPlanStep(step, status is "pending" or "in_progress" or "done" ? status : "pending",
-                        string.IsNullOrWhiteSpace(details) ? null : details,
-                        string.IsNullOrWhiteSpace(acceptance) ? null : acceptance);
-                }).ToList();
-            if (steps.Count == 0) throw new AiToolException("Envie ao menos um passo.");
-            host.SetPlan(steps);
-            var completed = steps.Count(s => s.Status == "done");
-            var next = steps.FirstOrDefault(s => s.Status != "done");
-            return Task.FromResult(new AiToolOutput("Plano atualizado: " + completed + "/" + steps.Count
-                + " concluídos." + (next is null ? " Todas as etapas concluídas." : " Próximo: " + next.Step)));
+            var plan = AssistantLayeredPlan.Build(input);
+            host.SetPlan(plan.Steps);
+            if (plan.Layered)
+                return Task.FromResult(new AiToolOutput(plan.Summary));
+            var completed = plan.Steps.Count(s => s.Status == "done");
+            var next = plan.Steps.FirstOrDefault(s => s.Status != "done");
+            return Task.FromResult(new AiToolOutput("Plano atualizado: " + completed + "/" + plan.Steps.Count
+                + " concluídos." + (next is null ? " Todas as etapas declaradas concluídas; revise o pedido antes de finalizar." : " Próximo: " + next.Step)));
         }
     };
 }

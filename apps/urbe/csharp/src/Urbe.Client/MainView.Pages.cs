@@ -34,8 +34,8 @@ public sealed partial class MainView
     private PagesPanel MakePagesPanel()
     {
         var panel = new PagesPanel();
-        panel.PageRequested += path => _ = OpenStudioAsync(path);
-        panel.NewRequested += () => _ = NewPageAsync();
+        panel.PageRequested += path => _ = ShowPageAsync(path);
+        panel.NewRequested += () => _ = CreatePublicationAsync();
         panel.ConvertCompositionsRequested += () => _ = ConvertCompositionsAsync();
         panel.MenuRequested += path => _ = ShowPageMenuAsync(path);
         _stage.Children.Insert(Math.Max(0, _stage.Children.IndexOf(FilePreview)), panel);
@@ -258,7 +258,6 @@ public sealed partial class MainView
         var name = path[(path.LastIndexOf('/') + 1)..];
         return Dialogs.MenuAsync(name,
         [
-            new DialogItem("Abrir no estúdio", UrbeTheme.Icons.Edit, "Editar seções, tema e página", Run: () => OpenStudioAsync(path)),
             new DialogItem("Ver página", UrbeTheme.Icons.Page, "A página dentro do Urbe.", Run: () => ShowPageAsync(path)),
             new DialogItem("Imprimir ou salvar PDF", UrbeTheme.Icons.Page, "Pela impressão do sistema", Run: () => PrintPageAsync(path)),
             new DialogItem("Baixar HTML", UrbeTheme.Icons.Download, "Arquivo único, funciona em qualquer hospedagem", Run: () => DownloadPageHtmlAsync(path)),

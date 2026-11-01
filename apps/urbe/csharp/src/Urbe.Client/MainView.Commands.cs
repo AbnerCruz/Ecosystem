@@ -16,6 +16,7 @@ public sealed partial class MainView
     private void WatchSession()
     {
         Editor.Shown += _ => SaveSession();
+        Editor.TabsChanged += SaveSession;
         Editor.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) SaveSession(); };
     }
 
@@ -23,11 +24,12 @@ public sealed partial class MainView
     private void SaveSession()
     {
         // the note shown before the folder is read is not a session of its own (nor is a vault not open yet)
-        if (_vault is not { IsConnected: true } || Editor.Tabs.Count == 0 || Editor.ShowingEarly) return;
+        if (_vault is not { IsConnected: true } || Editor.ShowingEarly) return;
         var o = new JsonObject
         {
             ["tabs"] = new JsonArray(Editor.Tabs.Select(t => (JsonNode)JsonValue.Create(t)).ToArray()),
-            ["activeId"] = Editor.IsVisible ? Editor.Current?.Path : null,
+            ["activeId"] = Editor.Current is { } current && Editor.Tabs.Contains(current.Path) ? current.Path : null,
+            ["tabPolicy"] = "explicit-v1",
             ["vault"] = _vault.VaultName
         };
         Customization.Device.Set(SessionKey, o.ToJsonString());
@@ -56,6 +58,13 @@ public sealed partial class MainView
             if ((string?)o["vault"] != _vault?.VaultName) return false;
             var tabs = (o["tabs"] as JsonArray ?? []).Select(x => (string?)x).OfType<string>().Where(_contents.ContainsKey).ToList();
             if (tabs.Count == 0) return false;
+            // Older releases stored every visited note here. Restore only the active
+            // note once; sessions from the explicit-tab policy preserve the chosen slots.
+            if ((string?)o["tabPolicy"] != "explicit-v1")
+            {
+                var active = (string?)o["activeId"];
+                tabs = [active is not null && tabs.Contains(active) ? active : tabs[^1]];
+            }
             Editor.RestoreSession(tabs, (string?)o["activeId"]);
             return true;
         }

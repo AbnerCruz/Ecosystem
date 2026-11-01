@@ -10,6 +10,35 @@ namespace Urbe.Client.Tests;
 public sealed partial class HeadlessUiTests
 {
     [Fact]
+    public async Task Publications_SystemPrintReceivesSavedCompositionAndCurrentNotes() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        using var vault = await OpenFaultyVaultAsync(("Origem.md", "# Origem\n\nTexto atual $x^2$\n\n%%privado%%"));
+        var view = vault.View;
+        var source = view.Documents!.Get("Origem.md")!;
+        var project = PublicationProject.Create("Livro", source.Id);
+        await ((IAssistantApp)view).CreateNoteAsync("Livro.publication.json", PublicationProjectCodec.Serialize(project));
+        var previous = ContentViewers.Printer;
+        (string Title, string Html, PagePrintSettings Settings)? printed = null;
+        ContentViewers.Printer = (title, html, settings) => { printed = (title, html, settings); return Task.CompletedTask; };
+        try
+        {
+            await view.OpenPublicationAsync("Livro.publication.json");
+            view.PublicationsStudio.UpdateProject(project with { Title = "Livro revisado" });
+            await view.PrintPublicationAsync();
+            Assert.NotNull(printed);
+            Assert.Equal("Livro revisado", printed.Value.Title);
+            Assert.Contains("Texto atual", printed.Value.Html);
+            Assert.Contains("<svg", printed.Value.Html);
+            Assert.DoesNotContain("privado", printed.Value.Html);
+            Assert.Equal("a4", printed.Value.Settings.Paper);
+            Assert.Equal("Livro revisado", PublicationProjectCodec.Parse(vault.Read("Livro.publication.json")).Title);
+        }
+        finally { ContentViewers.Printer = previous; }
+        return true;
+    }, CancellationToken.None));
+
+    [Fact]
     public async Task Publications_FailedCompositionSaveSurvivesCloseAndCanBeRetried() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
     {

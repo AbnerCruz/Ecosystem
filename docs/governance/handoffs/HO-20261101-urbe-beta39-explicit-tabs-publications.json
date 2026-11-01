@@ -1,0 +1,151 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261101-urbe-beta39-explicit-tabs-publications",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-01T21:57:56Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "URBE-879",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-explicit-tabs-publications-beta39",
+  "base_commit": "7eb10c842f44dc9b8e1536abd593aba2f1c816fa",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/881",
+  "files_changed": [
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Area.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Commands.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Pages.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Publications.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Studio.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PagesPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationStudioView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/QuickOpen.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationProject.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTabsUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PageStudioUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ParityGapsUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationRecoveryUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationStudioUiTests.cs",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.5.md",
+    "apps/urbe/csharp/PATCHNOTES-beta.39.md",
+    "docs/governance/handoffs/HO-20261101-urbe-beta39-explicit-tabs-publications.json"
+  ],
+  "work_completed": [
+    "CST-229: navegação comum substitui a aba ativa; + fixo abre seletor de notas existentes e cria aba somente após escolha; nota já aberta é focada sem duplicar. Histórico voltar/avançar continua independente.",
+    "Sessões antigas restauram somente a nota ativa; sessões explicit-v1 preservam abas escolhidas e fechamento inclusive da última. Marcador opcional em preferência local existente; nenhum arquivo autoral migrado.",
+    "CST-149/157/158/160 parciais: criação no menu da nota, pasta, área, painel e paleta direciona ao novo estúdio. Páginas antigas continuam visualizáveis/exportáveis; módulos internos e ferramentas IA legadas ainda não retirados.",
+    "CST-160 parcial: publicação de pasta seleciona referências por ID das notas presentes, incluindo subpastas e excluindo prefixos vizinhos; não duplica Markdown nem promete inclusão dinâmica futura.",
+    "CST-162/164 parciais: HTML e impressão usam a mesma composição salva e notas reais atuais. Impressão A4 pela adaptação nativa existente, com quebra entre fontes; abrir diálogo não comprova arquivo PDF salvo. Motor editorial profissional continua pendente.",
+    "Preparada beta.39/2000039 no mecanismo oficial existente, mantendo identidade, certificado e canal beta. Pedido direto do proprietário nesta sessão: Continue até finalizar release.",
+    "CI identificou alteração indevida do catálogo histórico congelado. Bytes originais restaurados e contrato de sessão registrado no catálogo C# já existente, sem regenerar/desabilitar o oráculo.",
+    "Confronto com o head Windows confirmou que impressão abre HTML no navegador. Aviso e patchnotes orientam explicitamente Ctrl+P no computador; não dependem da execução de script inline bloqueado pela CSP de exportação. A política de segurança do HTML permanece restritiva."
+  ],
+  "verification": [
+    {
+      "check": "Build Release portátil",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Build Release portátil final: 0 warnings, 0 errors; /tmp/urbe39-release-build.log; .NET 10.0.100, -m:1 -nr:false -p:UseSharedCompilation=false. Nova build após orientação de impressão: 0 warnings/errors em /tmp/urbe39-print-guidance-build.log."
+    },
+    {
+      "check": "Core completo final",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1242/1242 testes, sem falhas/erros/skips; /tmp/urbe39-core-final.log; assembly xUnit Release executado diretamente por restrição de named pipe do executor."
+    },
+    {
+      "check": "Client completo final",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "449/449 testes finais, sem falhas/erros/skips; /tmp/urbe39-client-final.log. Reprodução TDD vermelha de navegação automática antes da correção; seletor/cancelamento/fechamento/restauração e publicação de pasta/impressão cobertos. Screenshot headless native-explicit-tabs-320.png inspecionada. Após ajuste textual do aviso desktop, contrato de impressão reexecutado: 1/1 aprovado em /tmp/urbe39-print-guidance-test.log; última suíte completa fica no CI do commit final."
+    },
+    {
+      "check": "Consistência Ecosystem",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os 22 checks passaram em /tmp/urbe39-consistency.log; posterior alteração apenas de evidências não muda código."
+    },
+    {
+      "check": "CI Android/Windows e publicação beta.39",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Primeiro CI: Windows aprovado; E2E rejeitou catálogo histórico alterado (oráculo protegido). Catálogo restaurado e documentação nativa movida para docs/csharp/DATA-CATALOG.md; CI do novo commit obrigatório."
+    },
+    {
+      "check": "Toque/IME e atualização no aparelho físico",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTabsUiTests.cs",
+      "critical": false,
+      "evidence": "Testes e screenshots headless não substituem DEVICE; não afirmado como aprovado."
+    }
+  ],
+  "known_issues": [
+    "Recuperação de composição após morte de processo ou reabertura de vault ainda pendente; drafts atuais são de sessão.",
+    "Publicações não conclui todos os CST-149–192; EPUB, DOCX, PPTX, vídeo, packaging e motor editorial PDF permanecem abertos.",
+    "Retirada de todos os módulos internos e ferramentas IA do estúdio legado ainda pendente.",
+    "Seleção de pasta é fotografia das referências atuais, não consulta dinâmica."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Concluir testes finais e CI do estado combinado.",
+    "Integrar pelo mecanismo governado e acompanhar a publicação oficial Android e Windows; verificar assets, versão e hashes reais.",
+    "Atualizar evidências de entrega sem atribuir validação física ao CI."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.5.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md",
+    ".github/workflows/urbe-csharp-mobile-release.yml"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Notas reais continuam fonte autoral, composição contém IDs e writer existente confirma gravação."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE explicitamente pendente e separado de testes automatizados."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "CSTs parciais e critérios registrados no plano canônico; nenhuma declaração de consolidação integral."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem dependência de outro Product ou novo runtime; adaptadores existentes reutilizados."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "explicit-editor-tabs-and-publication-output",
+      "status": "product-specific",
+      "rationale": "Sessão e referências de notas são conceitos do Urbe; reaproveitados seletor, writer e adaptador de impressão existentes, sem segundo consumidor comprovado."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution",
+      "user-data"
+    ],
+    "reason": "Bump beta.39 no canal já existente e marcador opcional de sessão no dispositivo. Proprietário autorizou explicitamente finalizar a release nesta sessão; nenhuma mudança de assinatura, identidade ou governança."
+  }
+}

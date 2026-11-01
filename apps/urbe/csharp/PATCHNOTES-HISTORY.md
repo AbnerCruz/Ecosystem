@@ -2,6 +2,14 @@
 
 A descrição detalhada da versão atualmente publicada pertence exclusivamente a PATCHNOTES.md. Ao preparar a próxima versão, transferir a atual para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada.
 
+## 2.0.0-beta.39 — 01/11/2026
+- Abas explícitas, editor mais confiável e estúdio de Publicações; PDF pelo diálogo de impressão. Fonte: PATCHNOTES-beta.39.md.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.39
+
+## 2.0.0-beta.38 — 31/10/2026
+- Correção do ciclo de impressão PDF Android e do papel de livros. Fonte: PATCHNOTES-beta.38.md.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.38
+
 ## 2.0.0-beta.37 — 30/10/2026
 - Consolidação Numa: editor, permissões, agentes, acessibilidade, notas, tags e interface. Fonte: PATCHNOTES-beta.37.md.
 - https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.37

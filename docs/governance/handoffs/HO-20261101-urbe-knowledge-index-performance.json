@@ -1,0 +1,80 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261101-urbe-knowledge-index-performance",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-01T20:41:00Z",
+  "agent": {
+    "id": "gpt-6",
+    "kind": "ai-agent"
+  },
+  "task_id": "URBE-872",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "perf/urbe-knowledge-inverted-index-20261101",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/877",
+  "base_commit": "c02a42ef8d85484fc700d36724f110a99c6e8795",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/KnowledgeIndex.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/KnowledgeIndexScaleTests.cs",
+    "docs/governance/handoffs/HO-20261101-urbe-knowledge-index-performance.json"
+  ],
+  "work_completed": [
+    "Substituída a posting list por token do KnowledgeIndex (List.Contains quadrático) por HashSet Ordinal com inserção média O(1).",
+    "A ordenação final da consulta continua derivada de DocumentStore, preservando ranking e desempate.",
+    "TDD adicionado: 1.200 notas, termo compartilhado, ordenação e atualização por documento editado. Não alterados limites de tempo nem formato do vault."
+  ],
+  "verification": [
+    {
+      "check": "Urbe Core e oráculos de busca + benchmark de 2.000 notas",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "GitHub Actions do PR #877."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI PR #877."
+    }
+  ],
+  "known_issues": [
+    "Benchmark anterior no PR #876 excedeu a tolerância (1616 ms > 1500 ms), sem esta otimização; medir delta após CI.",
+    "Ramo independente do PR #876 para não bloquear progresso enquanto teste de editor/Publicações aguardava."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Corrigir falha real se CI reportar diferença semântica da busca ou regressão de desempenho.",
+    "Integrar automaticamente via governança se CI passar; sem alteração de interfaces."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/governance/definition-of-done.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.5.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Mesma DocumentStore; índice é derivado, não autoridade paralela."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Mudança puramente de domínio; sem reivindicação de dispositivo validado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Em verificação, não declarado done."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Alteração confinada ao Urbe.Core."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Otimização de estrutura interna sem persistência ou mudança de contratos públicos."
+  }
+}

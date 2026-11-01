@@ -1,5 +1,7 @@
 # Instruções compartilhadas para agentes
 
+> **Protocolo transversal obrigatório:** [auditoria interna → pesquisa externa aprofundada → comunidades → confronto crítico → consolidação → implementação/TDD/validação, quando autorizada](../../docs/governance/protocolo-estudo-desenvolvimento.md), subordinado ao MANIFEST. Ao investigar a consolidação Lunet, estudar em três frentes **separadas, nesta ordem: framework, editor e estúdio**, e investigar UX/acessibilidade do editor e estúdio. Não confundir estudo com autorização para alterar código.
+
 Este repositório implementa o Lunet2D. Antes de qualquer trabalho, siga `docs/DEVELOPMENT.md`:
 
 1. Leia `ROADMAP.md` (estado atual) e rode `bash tools/roadmap-status.sh --pending`.

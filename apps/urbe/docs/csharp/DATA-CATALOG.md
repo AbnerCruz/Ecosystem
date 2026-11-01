@@ -66,3 +66,19 @@ Formato armazenado: mesmo `conversa-*.json` em `AssistantStore`, com `usage` em 
 A Anthropic discrimina `input_tokens` não cacheados e categorias de leitura/criação de cache; o total é a soma dos buckets disjuntos, mantendo os subtotais como subgrupos. OpenAI usa `prompt_tokens` como total e `prompt_tokens_details.cached_tokens` como subconjunto; nunca somar `cached_tokens` ao total. `reasoning_tokens` são subconjunto de saída. Custos sem tarifas ou dados de provedor permanecem desconhecidos, nunca tratados como gratuitos. O acumulado indica `partial` quando alguma chamada não informa custo. Dados de uso não contêm credenciais nem texto para benchmarks.
 
 Cache lexical transitório UC-87.2: `ConditionalWeakTable` em memória de processo, por objeto `AiMemoryRecord` com uma única versão recalculada ao detectar mudança de texto/tipo/caminhos; escopo, estado, datas e confiança são filtrados em cada consulta. Não existe persistência desse cache nem indexação secundária de autoridade. Fonte de verdade: `config.json` e `memoryRecords` atuais, sem migração.
+
+## CST-229 — sessão de abas explícitas (beta.39, 01/11/2026)
+
+Preferência local do dispositivo, chave existente `urbe.editor.workspace.v1`:
+`{tabs:[path],activeId:path|null,vault,tabPolicy:"explicit-v1"}`.
+Autoridade: `MainView.Commands.SaveSession` / `RestoreSession`. `tabPolicy` é
+opcional na leitura; sessões antigas sem marcador restauram somente a nota
+ativa disponível, ou a última disponível. Sessões novas preservam as abas
+escolhidas pelo usuário e o foco, sem transformar navegação comum em histórico
+de abas. Fechar a última grava `tabs:[]`; não ressuscita abas fechadas.
+
+O escopo por nome de vault é o contrato nativo preexistente. Não há migração
+de notas nem alteração de metadados ou conteúdo do vault. Versões anteriores
+ignoram o campo aditivo; o catálogo histórico JavaScript continua congelado.
+Fixtures: `EditorTabs_RestoresLegacyHistoryAsOneTabAndPersistsExplicitClosures`
+e `Parity_CommandsSessionDownloadAndTips`.

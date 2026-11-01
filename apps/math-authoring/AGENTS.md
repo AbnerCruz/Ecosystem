@@ -1,5 +1,7 @@
 # AGENTS.md — math-authoring
 
+> Aplicar o [protocolo universal em seis etapas](../../docs/governance/protocolo-estudo-desenvolvimento.md): auditar código/contratos, estudar referências externas e comunidades, confrontar as evidências com a matemática estruturada, consolidar resultados e só então implementar/testar se autorizado.
+
 Complementa `/AGENTS.md`; nunca o substitui.
 
 ## Fontes obrigatórias

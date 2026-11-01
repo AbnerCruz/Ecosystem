@@ -12,6 +12,49 @@ namespace Urbe.Client.Tests;
 public sealed partial class HeadlessUiTests
 {
     [Fact]
+    public async Task Publications_FolderCreationSelectsRealNotesAndLegacyNewActionRoutesToPublications() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        var (view, window, vault, dir) = await OpenCreateVault();
+        try
+        {
+            var app = (IAssistantApp)view;
+            await app.CreateNoteAsync("Bairro/Sub/Dois.md", "# Dois\n\nFonte aninhada");
+            await app.CreateNoteAsync("BairroVizinho/Fora.md", "# Fora\n");
+            var creating = view.CreatePublicationAsync(sourceFolder: "Bairro");
+            Dispatcher.UIThread.RunJobs();
+            view.Dialogs.GetLogicalDescendants().OfType<TextBox>().First().Text = "Do bairro";
+            ClickButtonWithText(view.Dialogs, "Criar");
+            await creating;
+            var project = view.PublicationsStudio.Project!;
+            Assert.Equal(new[] { "Bairro/Sub/Dois.md", "Bairro/Um.md" },
+                project.Sources.Select(s => view.Documents!.Get(s.DocumentId)!.Path));
+            Assert.DoesNotContain("Fonte aninhada", File.ReadAllText(Path.Combine(vault, "Publicações", "Do bairro.publication.json")));
+            Assert.False(view.Studio.IsVisible);
+            view.PublicationsStudio.Close();
+
+            // Existing shortcut ID stays valid but cannot resurrect the retired editor.
+            Assert.True(view.Search.Has("publications.new"));
+            Assert.True(view.Search.Execute("pages.new"));
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(view.Dialogs.IsOpen);
+            Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Nova publicação");
+            view.Dialogs.Cancel();
+            Assert.False(view.Studio.IsVisible);
+
+            view.ShowPages();
+            var create = view.Pages.GetLogicalDescendants().OfType<Button>()
+                .Single(b => AutomationProperties.GetName(b) == "Nova publicação");
+            create.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Assert.Contains(view.Dialogs.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Nova publicação");
+            view.Dialogs.Cancel();
+            return true;
+        }
+        finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
+    }, CancellationToken.None));
+
+    [Fact]
     public async Task Publications_CreateFromNoteComposeAndExportUsingActualVaultDocuments() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
     {

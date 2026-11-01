@@ -1,0 +1,84 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261101-ecosystem-agent-protocol",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-01T19:57:15Z",
+  "agent": {
+    "id": "gpt-6",
+    "kind": "ai-agent"
+  },
+  "task_id": "URBE-872",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "docs/ecosystem-six-stage-agent-protocol-20261101",
+  "commit": null,
+  "pr": null,
+  "base_commit": "703d99ccfe1f4c56a6dc71e7c57300d90c0891ab",
+  "files_changed": [
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/atlas-forge/AGENTS.md",
+    "apps/tabletop-rpg/AGENTS.md",
+    "apps/math-authoring/AGENTS.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/handoffs/HO-20261101-ecosystem-agent-protocol.json"
+  ],
+  "work_completed": [
+    "Protocolo de seis fases aprovado pelo proprietário: auditoria interna, pesquisa externa abrangente, comunidades, confronto crítico, consolidação em tarefas e implementação TDD/validação quando autorizada.",
+    "Diretriz registrada no AGENTS raiz e em todos os AGENTS dos cinco Products existentes; regras de missão estudo versus implementação, autonomia e continuidade sem saltar gates.",
+    "Incorporadas especificidades Lunet em três fases, Urbe fontes de verdade, Atlas evidência física/geográfica e Ecosystem boundaries. Não modifica o código de nenhum Product."
+  ],
+  "verification": [
+    {
+      "check": "CI de consistência do Ecosystem incluindo AGENTS e handoff",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Acompanhar PR de governança."
+    }
+  ],
+  "known_issues": [
+    "Arquivos normativos constituem mudança crítica 'constitution' e dependem do gate de autorização do proprietário no integrador.",
+    "Link da consolidação 2.5 em Urbe AGENTS será resolvido com o PR funcional #873 antes da integração desta diretriz."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar primeiro PR funcional #873 após CI e check obrigatório; conferir existência do plano 2.5.",
+    "Solicitar aprovação no mecanismo 'integrar' apenas para este PR normativo se o check exigir, sem contornar gates.",
+    "Verificar documentação dos agentes e regras de precedência em CI."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/communication.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Documentação de processos não cria evidência de DEVICE."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Handoff review com CI ainda pendente."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nenhum Product recebeu ProjectReference para outros Products ou Hub."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Mudança declarativa de diretrizes, sem nova dependência no código."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution"
+    ],
+    "reason": "Registra instruções normativas do proprietário em AGENTS raiz e arquivos de agentes, e estabelece protocolo geral de governança; política requer gate crítico."
+  }
+}

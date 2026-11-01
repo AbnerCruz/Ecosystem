@@ -1,5 +1,7 @@
 # AGENTS.md — Atlas Forge
 
+> **Protocolo obrigatório:** [seis etapas transversais do Ecosystem](../../docs/governance/protocolo-estudo-desenvolvimento.md), com confronto entre código real, ciência, implementações externas, relatos da comunidade e consolidação. Não confundir semelhança visual com validação física, geográfica ou de desempenho. Implementar só em missão autorizada, com TDD e provas.
+
 Complementa o AGENTS.md raiz; a constituição, as decisões e a política de integração do repositório continuam valendo.
 
 Antes de alterar este aplicativo, leia MANIFEST.md (incluindo NN), ecosystem.json, ADR-0035/DEC-0054, SPEC.md, ROADMAP.md e as notas do modelo/formato afetado. A fonte canônica está em apps/atlas-forge; a versão vem de package.json.

@@ -1,5 +1,7 @@
 # AGENTS.md — Tabletop RPG
 
+> Aplicar integralmente o [protocolo de investigação, consolidação e desenvolvimento em seis etapas](../../docs/governance/protocolo-estudo-desenvolvimento.md) do Ecosystem, respeitando regras do motor, a privacidade do conhecimento dos agentes e a separação entre fatos e suposições.
+
 Complementa o `/AGENTS.md`; nunca o substitui.
 
 ## Fontes obrigatórias

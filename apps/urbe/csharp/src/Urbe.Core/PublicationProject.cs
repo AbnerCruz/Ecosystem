@@ -168,7 +168,8 @@ public static class PublicationHtml
           .Append("img,video,svg{max-width:100%;height:auto}pre{overflow:auto}code{white-space:pre-wrap;overflow-wrap:anywhere}")
           .Append("blockquote{border-left:3px solid #999;padding-left:1rem}table{display:block;overflow-x:auto}")
           .Append(".umath{display:inline-block;max-width:100%;vertical-align:middle}.umath svg{vertical-align:middle}.umath-block{display:block;overflow-x:auto;text-align:center;margin:1.2rem 0}")
-          .Append(".missing{border:1px dashed #a35;padding:1rem} @media print{main{max-width:none}}")
+          .Append(".missing{border:1px dashed #a35;padding:1rem}@page{size:A4;margin:18mm}")
+          .Append("@media print{main{max-width:none;padding:0}article{break-before:page}article:first-of-type{break-before:auto}h1,h2,h3{break-after:avoid}p{widows:3;orphans:3}pre,table,img{break-inside:avoid}}")
           .Append("</style></head><body><main><header><h1>").Append(title).Append("</h1></header>");
         var missing = new List<string>();
         foreach (var placement in project.Sections)

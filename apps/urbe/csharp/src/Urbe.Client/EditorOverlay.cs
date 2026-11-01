@@ -367,7 +367,7 @@ public sealed class EditorOverlay : Grid
         Context.LineChosen += GoToLine;
         // the pinned reference above the text, up to 40 % of the height, with its own scroll (DEC-0045, UC-39)
         var bodyHost = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*") };
-        bodyHost.Children.Add(_tabBar);
+        bodyHost.Children.Add(_tabStrip);
         SetRow(Pinned, 1);
         bodyHost.Children.Add(Pinned);
         SetRow(body, 2);
@@ -783,6 +783,7 @@ public sealed class EditorOverlay : Grid
         if (_note is null) return;
         var index = _tabs.IndexOf(_note.Path);
         if (index >= 0) _tabs[index] = path;
+        if (_activeTabPath == _note.Path) _activeTabPath = path;
         _note = _note with { Path = path };
         _title.Text = System.IO.Path.GetFileName(path);
         RebuildIndex();
@@ -793,29 +794,37 @@ public sealed class EditorOverlay : Grid
         UpdateChrome();
         UpdateStatus(changed: HasChanges);
         RenderTabs();
+        TabsChanged?.Invoke();
     }
 
     // ------------------------------------------------------------------ tabs (v21OpenTabs)
 
-    /// <summary>The notes opened, in the order they were first opened (v21OpenTabs).</summary>
+    /// <summary>Explicit workspace slots. Ordinary navigation replaces the active slot.</summary>
     private readonly List<string> _tabs = [];
+    private string? _activeTabPath;
+    private readonly Grid _tabStrip = new() { ColumnDefinitions = new ColumnDefinitions("*,Auto"), IsVisible = false };
     private readonly StackPanel _tabRow = new() { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(12, 6) };
     private readonly ScrollViewer _tabBar = new()
     {
-        IsVisible = false,
         HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
         VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
     };
 
     /// <summary>The open tabs (tests and the host).</summary>
     public IReadOnlyList<string> Tabs => _tabs;
+    public event Action? NewTabRequested;
+    public event Action? TabsChanged;
 
     /// <summary>editor.session.restore: the tabs of a session (the existing notes), the active one shown.</summary>
     public void RestoreSession(IReadOnlyList<string> tabs, string? active)
     {
         var notes = Notes?.Invoke().ToList() ?? [];
+        if (IsVisible && HasChanges) _ = LeaveCurrentAsync();
+        _tabs.Clear();
+        _activeTabPath = null;
         foreach (var t in tabs) if (notes.Any(n => n.Path == t) && !_tabs.Contains(t)) _tabs.Add(t);
         var show = notes.FirstOrDefault(n => n.Path == active) ?? notes.FirstOrDefault(n => n.Path == _tabs.LastOrDefault());
+        _activeTabPath = show?.Path;
         if (EndEarly() is { } early)
         {
             // the person closed it while the folder was read: it stays closed
@@ -878,19 +887,41 @@ public sealed class EditorOverlay : Grid
         Editor.Text = "";
     }
 
-    /// <summary>v21TouchTab: tabs of notes that no longer exist go; the note opened joins at the end.</summary>
+    /// <summary>Reuse the active slot; only OpenInNewTabAsync adds an extra slot.</summary>
     private void TouchTab(string path)
     {
         if (Notes?.Invoke().Select(n => n.Path).ToHashSet(StringComparer.Ordinal) is { } existing)
             _tabs.RemoveAll(t => t != path && !existing.Contains(t));
-        if (!_tabs.Contains(path)) _tabs.Add(path);
+        if (!_tabs.Contains(path))
+        {
+            var slot = _activeTabPath is { } active ? _tabs.IndexOf(active) : -1;
+            if (slot >= 0) _tabs[slot] = path;
+            else _tabs.Add(path);
+        }
+        _activeTabPath = path;
         RenderTabs();
     }
 
-    /// <summary>v21RenderTabs: a tab per note, the open one marked, each with ×; the bar shows from two tabs on (v22Single).</summary>
+    /// <summary>One tab is visible by default; the explicit + action stays outside horizontal tab scrolling.</summary>
     private void RenderTabs()
     {
         _tabBar.Content ??= _tabRow;
+        if (_tabStrip.Children.Count == 0)
+        {
+            _tabStrip.Children.Add(_tabBar);
+            var add = new Button
+            {
+                Content = UrbeTheme.Icon(UrbeTheme.Icons.Plus, 18, UrbeTheme.Text2),
+                MinWidth = 48, MinHeight = 48, Padding = new Thickness(10),
+                Margin = new Thickness(0, 6, 8, 6), CornerRadius = new CornerRadius(12),
+                Background = Brushes.Transparent, BorderThickness = new Thickness(0)
+            };
+            AutomationProperties.SetName(add, "Abrir nova aba");
+            ToolTip.SetTip(add, "Abrir nova aba");
+            add.Click += (_, _) => NewTabRequested?.Invoke();
+            SetColumn(add, 1);
+            _tabStrip.Children.Add(add);
+        }
         _tabRow.Children.Clear();
         foreach (var path in _tabs)
         {
@@ -898,7 +929,7 @@ public sealed class EditorOverlay : Grid
             var close = new Button
             {
                 Content = UrbeTheme.Icon(UrbeTheme.Icons.CloseUi, 12, active ? UrbeTheme.Text : UrbeTheme.Text3, 2),
-                Width = 22, Height = 22, Padding = new Thickness(0), CornerRadius = new CornerRadius(11), Background = Brushes.Transparent,
+                Width = 48, Height = 48, Padding = new Thickness(12), CornerRadius = new CornerRadius(12), Background = Brushes.Transparent,
                 HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
             };
             ToolTip.SetTip(close, "Fechar aba");
@@ -913,7 +944,7 @@ public sealed class EditorOverlay : Grid
             var button = new Button
             {
                 Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { label, close } },
-                Height = 32, Padding = new Thickness(12, 0, 6, 0), CornerRadius = new CornerRadius(16),
+                MinHeight = 48, Padding = new Thickness(12, 0, 0, 0), CornerRadius = new CornerRadius(16),
                 Background = UrbeTheme.Brush(active ? UrbeTheme.Surface3 : UrbeTheme.Surface2),
                 BorderBrush = UrbeTheme.Brush(active ? UrbeTheme.Accent : UrbeTheme.Line2), BorderThickness = new Thickness(1),
                 VerticalContentAlignment = VerticalAlignment.Center
@@ -922,7 +953,20 @@ public sealed class EditorOverlay : Grid
             button.Click += async (_, _) => await SwitchTabAsync(tab);
             _tabRow.Children.Add(button);
         }
-        _tabBar.IsVisible = _tabs.Count >= 2;
+        _tabStrip.IsVisible = _tabs.Count > 0;
+    }
+
+    /// <summary>The explicit new-tab action, using the same leave/save/recovery pipeline as navigation.</summary>
+    public async Task OpenInNewTabAsync(string path)
+    {
+        if (!await CanLeaveAtlasAsync()) return;
+        if (Notes?.Invoke().FirstOrDefault(n => n.Path == path) is not { } note) return;
+        if (_tabs.Contains(path)) { await SwitchTabAsync(path); return; }
+        var saving = LeaveCurrentAsync();
+        _tabs.Add(path);
+        _trail.Clear();
+        Show(note);
+        await saving;
     }
 
     /// <summary>A tab tapped: the open note is saved, then the tab's note opens.</summary>
@@ -944,6 +988,7 @@ public sealed class EditorOverlay : Grid
         {
             _tabs.Remove(path);
             RenderTabs();
+            TabsChanged?.Invoke();
             return;
         }
         var saving = LeaveCurrentAsync();
@@ -956,6 +1001,8 @@ public sealed class EditorOverlay : Grid
             _tabs.RemoveAt(_tabs.Count - 1);
         }
         RenderTabs();
+        _activeTabPath = null;
+        TabsChanged?.Invoke();
         Leaving?.Invoke();
         IsVisible = false;
         Closed?.Invoke(this, EventArgs.Empty);
