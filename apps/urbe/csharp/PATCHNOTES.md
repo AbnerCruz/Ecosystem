@@ -1,37 +1,28 @@
 # Urbe — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.39
+**Versão canônica preparada:** 2.0.0-beta.40
 **Canal:** Urbe 2.0 nativo, Android e Windows
-**Publicação:** workflow oficial, após CI e integração
-**Identidade Android:** app.urbe.csharp, mesmo certificado e atualização por cima da beta.38
+**Publicação:** exclusivamente pelo workflow oficial, depois do CI e da integração
+**Identidade Android:** app.urbe.csharp, mesmo certificado e atualização sobre a beta.39
 
-## Abas sob seu controle
+## IA — Planejamento adaptativo em camadas
 
-- Abrir outra nota pelo Explorer, busca ou links substitui a aba atual. O histórico de navegação continua disponível em Voltar/Avançar, sem virar uma fila de abas.
-- O botão **+** no topo abre a busca para escolher uma nota em uma aba adicional. Cancelar mantém tudo como estava; selecionar uma nota já aberta não duplica a aba.
-- As abas extras continuam disponíveis. A navegação comum substitui apenas a aba ativa; escolher uma aba existente muda o foco para ela.
-- Trocar ou fechar salva pelo mesmo caminho verificado do editor. Falhas de gravação mantêm o texto recuperável na sessão.
-- A primeira restauração de uma sessão antiga abre somente a última nota ativa. As abas abertas explicitamente nesta versão são restauradas como foram escolhidas; abas fechadas não voltam sozinhas.
+- Tarefas complexas podem registrar o pedido original, o ponto de partida e o resultado final esperado em `update_plan`, sem criar um planejador independente.
+- Os objetivos possuem IDs e dependências verificadas contra IDs repetidos, referências ausentes, ciclos e avanço antes das pré-condições.
+- Para iniciar um nó, o agente precisa definir testes e critérios de aceite. Para declará-lo concluído, registra separadamente evidências de testes, implementação e confronto com objetivos anteriores.
+- Uma lista de nós marcados como concluídos não encerra automaticamente o objetivo: há confrontos separados com o plano e o pedido original.
+- O plano simples continua disponível para tarefas pequenas, evitando chamadas desnecessárias. A ferramenta mantém a lista de objetivos na interface atual.
+- Evidência textual fornecida pelo modelo é apresentada como relato, nunca como comprovante automático de CI, teste executado, verificação independente ou validação física.
 
-## Editor mais confiável
+## Recursos mantidos da beta.39
 
-- Corrigida perda do rascunho mais novo após duas gravações sobrepostas, quando a primeira falhava.
-- Frações e fórmulas altas usam a altura necessária, sem invadir o parágrafo seguinte. Equações largas podem rolar horizontalmente, inclusive no painel de fórmulas.
-- Corrigido acesso a bitmap já descartado ao tirar e recolocar uma prévia de imagem na tela. A prévia mantém o zoom e reutiliza os bytes já lidos.
+- Abas controladas pelo usuário: navegação comum substitui a aba atual, enquanto o botão + abre uma aba adicional sob escolha.
+- Correções de preservação de rascunhos, renderização de fórmulas e previews de imagem.
+- Estúdio de Publicações com referências às notas reais, exportação HTML e impressão/salvamento como PDF pelo diálogo da plataforma.
 
-## Novo estúdio de Publicações
+## Limites conhecidos
 
-- Criação a partir de nota, pasta, Área de trabalho, configurações ou paleta. A pasta seleciona as notas existentes naquele momento, inclusive subpastas; novas notas não são adicionadas automaticamente à composição.
-- Referências por identidade às notas reais: adicionar, reordenar e remover fontes; editar a nota no editor e voltar com o conteúdo atualizado. O projeto não guarda outra cópia autoral do texto.
-- Composição com erro ao salvar pode ser recuperada ao fechar/reabrir o estúdio no mesmo vault carregado; há aviso e ação de tentar novamente. Conflitos bloqueiam sobrescrita e exportação silenciosas.
-- HTML offline com matemática vetorial, autoria da IA preservada e comentários editoriais privados omitidos. Trechos de código mantêm o texto literal.
-- **Imprimir ou salvar como PDF** usa o serviço de impressão da plataforma e as notas atuais. No Android, escolha “Salvar como PDF” e o destino no diálogo do sistema. No Windows, a composição abre no navegador: use Imprimir (Ctrl+P) e selecione o destino PDF. Preparar a impressão não significa que o arquivo já foi salvo.
-- Os caminhos normais de criação passam a usar Publicações. Arquivos `.page.json` antigos continuam preservados, com visualização, exportação e acesso ao JSON.
-
-## Limites desta beta
-
-- Esta release não conclui o plano de consolidação inteiro. O estúdio ainda não oferece todos os formatos e recursos editoriais planejados.
-- Recuperação durável após morte do processo e através de recarga/troca do vault permanece em desenvolvimento.
-- A impressão desta entrega não equivale ao motor editorial profissional do CST-164; paginação final e resultado no aparelho precisam de verificação própria. EPUB, DOCX/PPTX e vídeo não são anunciados nesta versão.
-- O pipeline de autoria e os módulos internos legados ainda têm etapas de retirada e adaptação no plano. Os dados existentes não são apagados.
-- Builds e testes automatizados são registrados separadamente de toque, IME e ciclo de vida em Android real.
+- O modelo de planejamento estruturado é opt-in e não substitui os verificadores independentes por formato. Os recibos de CI, testes reais e validação no dispositivo continuam sendo produzidos fora dos campos declarativos do plano.
+- O planejador não é ainda um executor distribuído persistente de grafos; interromper ou encerrar o processo permanece sujeito às capacidades de recuperação existentes do Urbe.
+- Esta versão não conclui todo o plano Numa Consolidação 2.5 nem os formatos editoriais ainda pendentes.
+- Nenhum resultado desta release é declarado validado fisicamente no Android sem evidência correspondente.

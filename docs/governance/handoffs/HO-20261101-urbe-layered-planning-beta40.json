@@ -1,0 +1,116 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261101-urbe-layered-planning-beta40",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-01T22:42:39.161Z",
+  "agent": {
+    "id": "gpt-6",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-078",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-layered-planning-beta40",
+  "base_commit": "4e64b950b4424183dc045e5f3afcf9f2a604259b",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/882",
+  "files_changed": [
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantLayeredPlanTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantLayeredPlan.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAdaptivePlanTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES-beta.40.md",
+    "apps/urbe/docs/csharp/PLANEJAMENTO-CAMADAS.md",
+    "docs/governance/handoffs/HO-20261101-urbe-layered-planning-beta40.json"
+  ],
+  "work_completed": [
+    "Testes TDD no primeiro commit c416efe: grafo, dependências, estados e conclusão, antes do novo parser.",
+    "Modo opt-in em update_plan com pedido original, baseline, target, grafo, testes e critérios anteriores à execução, evidências distintas e confrontos finais.",
+    "Orientação do agente preserva autonomia proporcional e diferencia evidências de relatos.",
+    "Versão beta.40/2000040 preparada no mesmo canal/assinatura; patchnotes publicados no branch."
+  ],
+  "verification": [
+    {
+      "check": "CI C# Core/Client/Android/Windows",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "PR #882 aciona urbe-checks, aguardando conclusão."
+    },
+    {
+      "check": "Consistência Ecosystem",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI consistency acionado, aguardando conclusão."
+    },
+    {
+      "check": "APK assinado/certificado e release oficial",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Produção reservada ao workflow oficial após integração autorizada."
+    },
+    {
+      "check": "Toque, IME, ciclo de vida no aparelho",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "evidence": "Cenário físico pendente: planejar tarefa complexa, verificar passos e expansão, alternar foco/IME, minimizar/retornar e confirmar que chat não perde dados. Testes de CI não substituem DEVICE.",
+      "object": "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs"
+    }
+  ],
+  "known_issues": [
+    "Campos textuais de evidência são relatos, não recibos autenticados de ferramentas nem testes executados.",
+    "Sem executor de DAG persistente entre reinícios; UI reaproveita SetPlan existente.",
+    "Verificação material por domínio, invalidação de evidências por revisão de arquivos e benchmark A/B permanecem para avaliação posterior."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Conferir CI e corrigir falhas, registrando testes e builds com fontes reais.",
+    "Integrar pelo mecanismo governado e autorizado do Ecosystem.",
+    "Disparar release oficial da beta.40 e conferir arquivo APK, assinatura, URL e hashes."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.5.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Sem segunda autoridade de dados: SetPlan único; sem escrita no vault."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI não substitui validação física."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Relato não é aceite material, limitação explicitada."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem nova biblioteca transversal não justificada."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "planning-graph",
+      "status": "product-specific",
+      "rationale": "Evolução do Urbe; AgentRuntime.TeamPlan e IVerifier ainda são contratos comuns independentes."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Bump beta.40 solicitado pelo proprietário; identidade e certificado inalterados."
+  }
+}
