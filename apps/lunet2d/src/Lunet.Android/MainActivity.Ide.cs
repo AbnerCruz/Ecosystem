@@ -171,6 +171,7 @@ public sealed partial class MainActivity
     private void ShowToolsMenu() => ShowActionMenu("Ferramentas",
     [
         ("Documentação", () => HandleCommand(EditorCommand.Documentation)),
+        ("IA · Assistente de código", ShowAiAssistant),
         ("Assets", ShowAssets),
         ("Audio Studio", ShowAudioStudio),
         ("Sprites e tilemaps", ShowArtTools),
