@@ -27,7 +27,7 @@ public sealed partial class MainActivity
         var model = new EditText(this) { Text = _aiModel, Hint = "Modelo (id exato no provider)" };
         var key = new EditText(this) { Text = _aiSecret, Hint = "API key (somente em memória)" };
         key.InputType = InputTypes.ClassText | InputTypes.TextVariationPassword;
-        form.AddView(new TextView(this) { Text = "Endpoint OpenAI-compatible (OpenRouter, OpenAI, Gemini ou servidor compatível)" });
+        form.AddView(new TextView(this) { Text = "Endpoint HTTPS compatível com /chat/completions (OpenRouter, OpenAI ou servidor compatível)" });
         form.AddView(endpoint);
         form.AddView(new TextView(this) { Text = "Modelo" });
         form.AddView(model);
@@ -65,7 +65,7 @@ public sealed partial class MainActivity
 
         root.AddView(new TextView(this)
         {
-            Text = "Agente de código · " + project.Name + "\nLeitura liberada; edição só com permissão nesta conversa.",
+            Text = "Agente de código · " + project.Name + "\nBusca, leitura por trechos e edição pontual com hash. Apenas leitura por padrão; escrita exige autorização nesta conversa.",
             TextSize = 12
         });
         root.AddView(MakeButton("Configurar provedor, modelo e API key", ShowAiSettings));
@@ -75,6 +75,12 @@ public sealed partial class MainActivity
             Checked = false
         };
         root.AddView(write);
+        root.AddView(new TextView(this)
+        {
+            Text = "O provedor recebe trechos do projeto enviados pelo agente. Revise arquivos confidenciais antes de usar. " +
+                   "A IA não compila nem testa automaticamente o código; mantenha um backup do projeto.",
+            TextSize = 12
+        });
         var transcript = new TextView(this) { TextSize = 13 };
         transcript.SetPadding(Dp(5), Dp(6), Dp(5), Dp(6));
         void DrawTranscript(string? extra = null)
