@@ -122,40 +122,75 @@ public sealed partial class MainActivity : Activity
         _panelColumn = null;
         _splitter = null;
         _minimap = null;
+        _drawer = null;
+        _drawerScrim = null;
+        _workbenchNavButtons.Clear();
 
         var root = Vertical();
-        root.SetPadding(Dp(16), Dp(16), Dp(16), Dp(16));
-        root.AddView(new TextView(this) { Text = "Lunet", TextSize = 28 });
-        root.AddView(new TextView(this) { Text = "Projetos" , TextSize = 16 });
-        root.AddView(MakeButton("Novo projeto", AskForProjectName));
-        root.AddView(MakeButton("Importar ZIP", ImportProject));
-        root.AddView(MakeButton("Clonar do Git", AskClone));
-        root.AddView(MakeButton("Configurações", ShowSettings));
-        root.AddView(MakeButton("Conexões", ShowEcosystemConnection));
+        root.SetPadding(Dp(16), Dp(16), Dp(16), Dp(10));
+        root.SetBackgroundColor(WorkbenchBackground);
+
+        root.AddView(WorkbenchLabel("LUNET  /  WORKSPACE", 12, true));
+        var title = WorkbenchLabel("Seus projetos", 28, true);
+        title.SetPadding(0, Dp(10), 0, 0);
+        root.AddView(title);
+        var subtitle = WorkbenchLabel("Crie, programe, teste e publique no próprio Android.", 14);
+        subtitle.SetPadding(0, 0, 0, Dp(18));
+        root.AddView(subtitle);
+
+        root.AddView(WorkbenchButton("+  Novo projeto", AskForProjectName, emphasized: true),
+            new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(56)));
+
+        var actions = new LinearLayout(this) { Orientation = Orientation.Horizontal };
+        actions.SetPadding(0, Dp(8), 0, Dp(12));
+        void AddAction(string label, Action run)
+        {
+            var button = WorkbenchButton(label, run);
+            var p = new LinearLayout.LayoutParams(0, Dp(52), 1f);
+            p.SetMargins(Dp(2), 0, Dp(2), 0);
+            actions.AddView(button, p);
+        }
+        AddAction("Importar ZIP", ImportProject);
+        AddAction("Clonar Git", AskClone);
+        AddAction("Ajustes", ShowSettings);
+        root.AddView(actions);
+
+        var section = WorkbenchLabel("PROJETOS LOCAIS", 12, true);
+        section.SetPadding(0, Dp(8), 0, Dp(8));
+        root.AddView(section);
 
         var list = Vertical();
         foreach (var name in _store.List())
         {
             var captured = name;
-            var row = MakeButton(captured, () => OpenProject(captured));
+            var row = WorkbenchButton("◫  " + captured, () => OpenProject(captured));
+            row.Gravity = GravityFlags.CenterVertical | GravityFlags.Left;
+            row.TextSize = 16;
+            row.SetPadding(Dp(16), 0, Dp(12), 0);
+            row.ContentDescription = "Abrir projeto " + captured + ". Toque longo para opções.";
             row.LongClick += (_, e) =>
             {
                 ShowProjectMenu(captured);
                 e.Handled = true;
             };
-            list.AddView(row);
+            var margin = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(60));
+            margin.SetMargins(0, 0, 0, Dp(8));
+            list.AddView(row, margin);
         }
         if (list.ChildCount == 0)
-            list.AddView(new TextView(this) { Text = "Nenhum projeto ainda. Crie ou importe o primeiro." });
+        {
+            var empty = WorkbenchLabel("Nenhum projeto ainda. Crie um projeto ou importe uma pasta ZIP.", 15);
+            empty.SetPadding(Dp(8), Dp(20), Dp(8), Dp(20));
+            list.AddView(empty);
+        }
         var scroll = new ScrollView(this);
         scroll.AddView(list);
         root.AddView(scroll, Fill(1));
 
-        root.AddView(new TextView(this)
-        {
-            Text = $"Versão {BuildInfo.Version} · Toque longo num projeto: exportar ZIP ou excluir. Os projetos ficam no armazenamento do app; exporte em ZIP para guardar.",
-            TextSize = 12,
-        });
+        root.AddView(WorkbenchButton("Conexões do Ecosystem", ShowEcosystemConnection));
+        var footer = WorkbenchLabel($"v{BuildInfo.Version}  ·  Projetos locais. Exporte ZIP para fazer backup.", 11);
+        footer.SetPadding(Dp(4), Dp(10), Dp(4), Dp(2));
+        root.AddView(footer);
         SetContentView(root);
     }
 
@@ -330,41 +365,90 @@ public sealed partial class MainActivity : Activity
     private void ShowWorkspace()
     {
         DisposePreview();
-        _session.Unload(); // o editor abaixo é novo e vazio: nada pode ser gravado a partir dele até um arquivo ser carregado
+        _session.Unload(); // novo editor: nenhum buffer antigo deve ser gravado antes da carga
         var project = _project!;
         var root = Vertical();
+        root.SetBackgroundColor(WorkbenchBackground);
 
         var bar = new LinearLayout(this) { Orientation = Orientation.Horizontal };
-        bar.SetPadding(Dp(4), Dp(4), Dp(4), Dp(4));
-        bar.AddView(MakeBarButton("←", () => ShowProjects()));
-        bar.AddView(MakeBarButton("☰", ToggleExplorer));
-        bar.AddView(MakeBarButton("▶ Run", Run, 2f));
-        bar.AddView(MakeBarButton("↶", () => _editor?.Undo()));
-        bar.AddView(MakeBarButton("↷", () => _editor?.Redo()));
-        bar.AddView(MakeBarButton("Assets", ShowAssets, 1.5f));
-        bar.AddView(MakeBarButton("⋯", ShowMenu));
+        bar.SetGravity(GravityFlags.CenterVertical);
+        bar.SetPadding(Dp(6), Dp(4), Dp(6), Dp(4));
+        void AddTopButton(string label, Action action, int width, bool primary = false)
+        {
+            var p = new LinearLayout.LayoutParams(Dp(width), Dp(50));
+            p.SetMargins(Dp(2), 0, Dp(2), 0);
+            bar.AddView(WorkbenchButton(label, action, primary), p);
+        }
+        AddTopButton("‹", ShowProjects, 48);
+        AddTopButton("☰", ToggleExplorer, 48);
+        var projectTitle = WorkbenchLabel(project.Name, 17, true);
+        projectTitle.SetSingleLine(true);
+        projectTitle.Ellipsize = TextUtils.TruncateAt.End;
+        projectTitle.SetPadding(Dp(8), 0, Dp(4), 0);
+        bar.AddView(projectTitle, new LinearLayout.LayoutParams(0, Dp(50), 1f));
+        AddTopButton("▶ Run", Run, 82, primary: true);
+        AddTopButton("⋯", ShowCommandPalette, 48);
         root.AddView(bar);
 
-        _status = new TextView(this) { TextSize = 12 };
-        _status.SetPadding(Dp(8), 0, Dp(8), 0);
-        root.AddView(_status);
+        var document = new LinearLayout(this) { Orientation = Orientation.Horizontal };
+        document.SetGravity(GravityFlags.CenterVertical);
+        document.SetPadding(Dp(10), 0, Dp(8), Dp(4));
+        _status = WorkbenchLabel(project.Name, 13);
+        _status.SetSingleLine(true);
+        _status.Ellipsize = TextUtils.TruncateAt.Middle;
+        document.AddView(_status, new LinearLayout.LayoutParams(0, Dp(48), 1f));
+        void AddEditAction(string text, string description, Action action)
+        {
+            var button = WorkbenchButton(text, action);
+            button.ContentDescription = description;
+            if (description is "Desfazer" or "Refazer")
+            {
+                // Preserve IME enquanto permite foco e teclado externo nas demais ações.
+                button.Focusable = false;
+                button.FocusableInTouchMode = false;
+            }
+            var p = new LinearLayout.LayoutParams(Dp(48), Dp(48));
+            p.SetMargins(Dp(2), 0, Dp(2), 0);
+            document.AddView(button, p);
+        }
+        AddEditAction("⌕", "Localizar no arquivo", ShowFind);
+        AddEditAction("↶", "Desfazer", () => _editor?.Undo());
+        AddEditAction("↷", "Refazer", () => _editor?.Redo());
+        root.AddView(document);
 
         _chips = new LinearLayout(this) { Orientation = Orientation.Horizontal };
         _chipScroll = new HorizontalScrollView(this) { Visibility = ViewStates.Gone, HorizontalScrollBarEnabled = false };
         _chipScroll.AddView(_chips);
 
         var tabs = new LinearLayout(this) { Orientation = Orientation.Horizontal };
-        _problemsTab = MakeBarButton("Problemas", () => SetPanel(false));
-        tabs.AddView(_problemsTab);
-        tabs.AddView(MakeBarButton("Console", () => SetPanel(true)));
-        tabs.AddView(MakeBarButton("Profiler", SetProfilerPanel));
+        tabs.SetBackgroundColor(WorkbenchBackground);
+        void AddPanelTab(Button tab)
+        {
+            var parameters = new LinearLayout.LayoutParams(0, Dp(48), 1f);
+            parameters.SetMargins(Dp(3), 0, Dp(3), 0);
+            tabs.AddView(tab, parameters);
+        }
+        _problemsTab = WorkbenchButton("Problemas", () => OpenWorkbenchPanel(false));
+        AddPanelTab(_problemsTab);
+        AddPanelTab(WorkbenchButton("Console", () => OpenWorkbenchPanel(true)));
+        AddPanelTab(WorkbenchButton("Profiler", () =>
+        {
+            _layoutStore.Current.OpenPanel("profiler");
+            SetProfilerPanel();
+            ApplyWorkspaceLayout();
+            SaveLayouts();
+            RefreshWorkbenchNavigation();
+        }));
 
         _panelList = Vertical();
+        _panelList.SetPadding(Dp(10), Dp(6), Dp(10), Dp(8));
         var panelScroll = new ScrollView(this);
+        panelScroll.SetBackgroundColor(WorkbenchSurface);
         panelScroll.AddView(_panelList);
 
         _showConsole = _layoutStore.Current.PanelTab == "console";
         root.AddView(BuildBody(BuildEditorHost(), _chipScroll, tabs, panelScroll), Fill(1));
+        root.AddView(BuildWorkbenchNavigation());
 
         var frame = new FrameLayout(this);
         frame.AddView(root, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent));
@@ -372,24 +456,37 @@ public sealed partial class MainActivity : Activity
         SetContentView(frame);
         if (_layoutStore.Current.PanelTab == "profiler") SetProfilerPanel();
         else SetPanel(_showConsole);
-        _status.Text = $"{project.Name}";
+        RefreshWorkbenchNavigation();
+        _status.Text = project.Name;
     }
 
     // ---------- Explorer ----------
 
     private void BuildDrawer(FrameLayout frame)
     {
+        _drawerScrim = new View(this) { Visibility = ViewStates.Gone, Clickable = true };
+        _drawerScrim.SetBackgroundColor(AndroidColor.Argb(174, 0, 0, 0));
+        _drawerScrim.Click += (_, _) => ToggleExplorer();
+        frame.AddView(_drawerScrim, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent));
+
         _drawer = Vertical();
-        _drawer.SetBackgroundColor(AndroidColor.Rgb(30, 33, 40));
+        _drawer.SetBackgroundColor(WorkbenchSurface);
         _drawer.Visibility = ViewStates.Gone;
         _drawer.Clickable = true; // não deixa toques passarem para o editor
 
         var header = new LinearLayout(this) { Orientation = Orientation.Horizontal };
         header.SetPadding(Dp(8), Dp(8), Dp(8), Dp(4));
-        header.AddView(new TextView(this) { Text = "Explorer", TextSize = 16 }, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1));
-        header.AddView(MakeBarButton("+ arq.", () => AskForNewEntry("", isDirectory: false), 1.4f));
-        header.AddView(MakeBarButton("+ pasta", () => AskForNewEntry("", isDirectory: true), 1.4f));
-        header.AddView(MakeBarButton("✕", ToggleExplorer, 0.8f));
+        header.AddView(WorkbenchLabel("ARQUIVOS", 14, true), new LinearLayout.LayoutParams(0, Dp(48), 1));
+        var newItem = WorkbenchButton("+", () => ShowActionMenu("Criar no projeto",
+        [
+            ("Novo arquivo", () => AskForNewEntry("", isDirectory: false)),
+            ("Nova pasta", () => AskForNewEntry("", isDirectory: true)),
+        ]));
+        newItem.ContentDescription = "Criar arquivo ou pasta";
+        header.AddView(newItem, new LinearLayout.LayoutParams(Dp(48), Dp(48)));
+        var closeDrawer = WorkbenchButton("×", ToggleExplorer);
+        closeDrawer.ContentDescription = "Fechar explorador de arquivos";
+        header.AddView(closeDrawer, new LinearLayout.LayoutParams(Dp(48), Dp(48)));
         _drawer.AddView(header);
 
         _drawerList = Vertical();
@@ -404,7 +501,9 @@ public sealed partial class MainActivity : Activity
         if (_drawer is null) return;
         var show = _drawer.Visibility != ViewStates.Visible;
         _drawer.Visibility = show ? ViewStates.Visible : ViewStates.Gone;
+        if (_drawerScrim is not null) _drawerScrim.Visibility = show ? ViewStates.Visible : ViewStates.Gone;
         if (show) RefreshExplorer();
+        RefreshWorkbenchNavigation();
     }
 
     private void RefreshExplorer()
@@ -417,7 +516,9 @@ public sealed partial class MainActivity : Activity
             var captured = entry;
             var label = (entry.IsDirectory ? (_collapsed.Contains(entry.Path) ? "▸ " : "▾ ") : "") + entry.Name;
             var row = new TextView(this) { Text = label, TextSize = 15 };
-            row.SetPadding(Dp(12 + entry.Depth * 16), Dp(10), Dp(8), Dp(10));
+            row.SetPadding(Dp(12 + entry.Depth * 16), Dp(14), Dp(8), Dp(14));
+            row.SetMinHeight(Dp(48));
+            row.ContentDescription = entry.IsDirectory ? "Pasta " + entry.Path : "Arquivo " + entry.Path;
             if (entry.Path == _openFile) row.SetBackgroundColor(AndroidColor.Rgb(50, 56, 70));
             row.SetTextColor(entry.IsDirectory ? AndroidColor.Rgb(170, 200, 255) : IsTextFile(entry.Path) ? AndroidColor.Rgb(230, 230, 230) : AndroidColor.Rgb(140, 140, 140));
             row.Click += (_, _) => OnExplorerTap(captured);
@@ -583,7 +684,7 @@ public sealed partial class MainActivity : Activity
             var text = _project!.ReadText(path);
             _editor.LoadText(text);
             _session.Load(path, text);
-            _status!.Text = $"{_project.Name} / {path}";
+            _status!.Text = path;
         }
         catch (Exception ex) when (ex is ProjectException or IOException)
         {
@@ -966,7 +1067,7 @@ public sealed partial class MainActivity : Activity
             var message = task.Exception?.GetBaseException().Message ?? "erro desconhecido";
             _problems = [new LunetDiagnostic(DiagnosticSeverity.Error, "LUNET0002", "Falha interna do compilador: " + message, null, 0, 0, 0, 0)];
             _status!.Text = "Falha ao compilar";
-            SetPanel(false);
+            OpenWorkbenchPanel(false);
             return;
         }
         var result = task.Result;
@@ -974,7 +1075,7 @@ public sealed partial class MainActivity : Activity
         if (!result.Success)
         {
             _status!.Text = $"Compilação falhou: {result.ErrorCount} erro(s)";
-            SetPanel(false);
+            OpenWorkbenchPanel(false);
             return;
         }
         _status!.Text = "Compilado" + DescribeChange(_pendingChange, result.FromCache);
@@ -1026,8 +1127,15 @@ public sealed partial class MainActivity : Activity
         _openFile = null;
         ShowWorkspace();
         if (file is not null) OpenFile(file);
-        if (_lastProfilerReport is not null) SetProfilerPanel();
-        else SetPanel(true);
+        if (_lastProfilerReport is not null)
+        {
+            _layoutStore.Current.OpenPanel("profiler");
+            SetProfilerPanel();
+            ApplyWorkspaceLayout();
+            SaveLayouts();
+            RefreshWorkbenchNavigation();
+        }
+        else OpenWorkbenchPanel(true);
     }
 
     private void DisposePreview()
@@ -1207,6 +1315,8 @@ public sealed partial class MainActivity : Activity
     public override void OnBackPressed()
     {
         if (_preview is not null) StopPreview();
+        else if (_drawer?.Visibility == ViewStates.Visible) ToggleExplorer();
+        else if (_project is not null && _layoutStore.Current.ShowPanel) FocusWorkbenchCode();
         else if (_project is not null) ShowProjects();
         else base.OnBackPressed();
     }

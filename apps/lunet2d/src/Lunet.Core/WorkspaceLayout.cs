@@ -13,7 +13,7 @@ public sealed class WorkspaceLayout
     public const int MinExplorerWidth = 200;
     public const int MaxExplorerWidth = 480;
 
-    public bool ShowPanel { get; set; } = true;
+    public bool ShowPanel { get; set; } = false;
     public PanelDock Dock { get; set; } = PanelDock.Auto;
 
     /// <summary>Fração da área (altura ou largura, conforme o encaixe) ocupada pelo painel.</summary>
@@ -32,6 +32,18 @@ public sealed class WorkspaceLayout
         if (!Enum.IsDefined(Dock)) Dock = PanelDock.Auto;
         if (PanelTab is not ("problems" or "console" or "profiler")) PanelTab = "problems";
         return this;
+    }
+
+    /// <summary>Usa toda a área disponível para código, sem perder a aba selecionada do painel.</summary>
+    public void FocusCode() => ShowPanel = false;
+
+    /// <summary>Abre um painel conhecido; valores não suportados não alteram a navegação.</summary>
+    public bool OpenPanel(string tab)
+    {
+        if (tab is not ("problems" or "console" or "profiler")) return false;
+        PanelTab = tab;
+        ShowPanel = true;
+        return true;
     }
 
     public WorkspaceLayout Clone() => (WorkspaceLayout)MemberwiseClone();
@@ -58,7 +70,7 @@ public sealed class LayoutStore(string path)
     {
         ["Padrão"] = new WorkspaceLayout(),
         ["Foco no código"] = new WorkspaceLayout { ShowPanel = false },
-        ["Depuração"] = new WorkspaceLayout { PanelFraction = 0.5, PanelTab = "console" },
+        ["Depuração"] = new WorkspaceLayout { ShowPanel = true, PanelFraction = 0.5, PanelTab = "console" },
     };
 
     public WorkspaceLayout Current

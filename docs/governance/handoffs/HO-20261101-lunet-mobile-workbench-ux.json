@@ -1,0 +1,130 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261101-lunet-mobile-workbench-ux",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-01T23:04:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-mobile-workbench-ux",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-470",
+  "component": "lunet2d",
+  "state": "verifying",
+  "branch": "feat/lunet-mobile-workbench-ux-20261101",
+  "base_commit": "4e64b950b4424183dc045e5f3afcf9f2a604259b",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/883",
+  "files_changed": [
+    "apps/lunet2d/tests/Lunet.Tests/MobileWorkbenchTests.cs",
+    "apps/lunet2d/src/Lunet.Core/WorkspaceLayout.cs",
+    "apps/lunet2d/src/Lunet.Core/WorkbenchCommands.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Workbench.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/docs/research/mobile-workbench-ux-2026-11-01.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261101-lunet-mobile-workbench-ux.json"
+  ],
+  "work_completed": [
+    "Realizada auditoria de MainActivity, IDE menus, WorkspaceLayout, SPEC, ROADMAP e testes canônicos",
+    "Comparadas implementações de VS Code QuickAccess, Acode QuickTools/TabView e AndroidIDE/editor e recomendações Material/Android 48dp",
+    "Consultadas evidências comunitárias Acode #2374 e #2408 de perda de foco do teclado durante comandos",
+    "Escritos testes MobileWorkbenchTests em commit prévio c39fa8d antes da implementação",
+    "Implementados foco por padrão no código, navegação nativa contextual, launcher com hierarquia, palette pesquisável e drawer scrim",
+    "Atualizados documentação, roadmap sem marcar concluído e comunicação entre agentes"
+  ],
+  "verification": [
+    {
+      "check": "TDD tests authored before implementation",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Lunet .NET xUnit CI",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Android APK build and artifact",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Ecosystem consistency and architecture checks",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Device UI: keyboard/Undo/Redo, Run, Explorer, tabs, rotation, TalkBack",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/research/mobile-workbench-ux-2026-11-01.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Sem screenshots nem testes físicos de UX nesta sessão",
+    "Rail adaptativo para tablet e redesign profundo dos Studios não incluídos neste corte",
+    "Toolbar com Focusable=false implementada mas resultado no IME precisa de DEVICE",
+    "Arquivo MainActivity permanece extenso, mas a navegação nova ficou num arquivo parcial separado"
+  ],
+  "blockers": [
+    "Compilação e testes do PR em CI precisam ser confirmados antes de oferecer APK",
+    "Release oficial depende da integração governada e do gate de validação física"
+  ],
+  "next_actions": [
+    "Conferir jobs lunet2d-ci/lunet2d-release do PR #883 e corrigir falhas reais",
+    "Inspecionar artefato assinado e disponibilizar instalação de teste",
+    "Validar roteiro DEVICE antes de fechar LUNET-470; avançar adaptação tablet e Studio em tarefas independentes"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Mantidos LayoutStore e EditorSession como autoridades existentes; sem novo armazenamento de arquivos."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Mudanças de UI isoladas a apps/lunet2d, sem dependências diretas de outros produtos."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Branch/PR, AgentsChat e handoff registram escopo e limitações."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes DEVICE marcados pendentes e nenhuma release alegada sem CI."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "ROADMAP mantém LUNET-470 [ ] até testes e validação física."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Helpers de UI específicos do Lunet, sem extração prematura ao núcleo."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "mobile-ide-workbench",
+      "status": "product-specific",
+      "rationale": "Nenhum segundo consumidor com contratos UI equivalentes; a navegação é específica da IDE do Lunet."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
