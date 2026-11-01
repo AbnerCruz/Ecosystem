@@ -650,16 +650,32 @@ public sealed class EditorOverlay : Grid
         _visual.FinishEdit();
         _autosave.Stop();
         if (!SaveOnClose || !HasChanges || Current is not { } note) return Task.CompletedTask;
-        return SaveLeftAsync(note, _savedContent);
+        var previous = _savedContent;
+        // A fast reopen can happen before the asynchronous save completes. Keep
+        // this snapshot reachable by identity until the outstanding write ends.
+        _leaving[note.Path] = (note, previous);
+        return SaveLeftAsync(note, previous);
     }
 
     private async Task SaveLeftAsync(CityNote note, string previous)
     {
-        if (await SaveSnapshotAsync(note)) return;
-        // the text that did not reach the vault, and what the vault has, for the next open of this note
-        if (!_failed.ContainsKey(note.Path)) _failed[note.Path] = (note, previous);
-        else _failed[note.Path] = (note, _failed[note.Path].Previous);
+        try
+        {
+            if (await SaveSnapshotAsync(note)) return;
+            // The newest unsaved text survives even when navigation already switched notes.
+            if (!_failed.ContainsKey(note.Path)) _failed[note.Path] = (note, previous);
+            else _failed[note.Path] = (note, _failed[note.Path].Previous);
+        }
+        finally
+        {
+            // Do not remove the newer draft when two leave-saves overlap for one path.
+            if (_leaving.TryGetValue(note.Path, out var pending) && ReferenceEquals(pending.Note, note))
+                _leaving.Remove(note.Path);
+        }
     }
+
+    /// <summary>In-flight snapshots: only for restoring a note reopened before its save completes.</summary>
+    private readonly Dictionary<string, (CityNote Note, string Previous)> _leaving = new(StringComparer.Ordinal);
 
     /// <summary>Notes whose last save failed after the editor left them: their text and the text the vault still has.</summary>
     private readonly Dictionary<string, (CityNote Note, string Previous)> _failed = new(StringComparer.Ordinal);
@@ -691,6 +707,12 @@ public sealed class EditorOverlay : Grid
         // a note whose save failed comes back with the text that was not saved, still pending
         var pendingFrom = (string?)null;
         if (_failed.Remove(note.Path, out var failed)) { note = note with { Content = failed.Note.Content }; pendingFrom = failed.Previous; }
+        else if (_leaving.TryGetValue(note.Path, out var inFlight))
+        {
+            // Never let a stale Explorer/search item replace the note currently being written to disk.
+            note = note with { Content = inFlight.Note.Content };
+            pendingFrom = inFlight.Previous;
+        }
         _note = note;
         _acceptedSourceText = note.Content;
         _savedContent = pendingFrom ?? note.Content;
