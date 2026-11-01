@@ -489,13 +489,28 @@ public sealed class EditorOverlay : Grid
             }
             else { _ = OpenAfterAtlasGuardAsync(note, canLeave); return; }
         }
-        _trail.Clear();
-        Show(note);
+        OpenDirect(note);
     }
 
     private async Task OpenAfterAtlasGuardAsync(CityNote note, Task<bool> guard)
     {
         if (!await guard) return;
+        OpenDirect(note);
+    }
+
+    /// <summary>
+    /// CST-144: direct navigation (Explorer, search, recent notes) must use the same
+    /// verified leave/save path as following links. Keep navigation immediate; a failed
+    /// background save is retained by SaveLeftAsync for recovery, not discarded by Show.
+    /// </summary>
+    private void OpenDirect(CityNote note)
+    {
+        if (IsVisible && _note is { } current)
+        {
+            // A stale list/search snapshot of the same file must not overwrite a draft.
+            if (current.Path == note.Path && HasChanges) return;
+            _ = LeaveCurrentAsync();
+        }
         _trail.Clear();
         Show(note);
     }
@@ -1656,7 +1671,16 @@ public sealed class EditorOverlay : Grid
         _readChip.Click += (_, _) => ReadOnly = !ReadOnly;
         UpdateReadChip();
         var line = new DockPanel { LastChildFill = true };
-        DockPanel.SetDock(_readChip, Dock.Right);
+        // CST-143: on a phone the floating radial navigation occupies the lower-right corner.
+        // Keep the reading/editing switch reachable on the opposite side of the footer.
+        // On wider layouts retain the original right-aligned control.
+        DockPanel.SetDock(_readChip, Dock.Left);
+        line.PropertyChanged += (_, e) =>
+        {
+            if (e.Property != BoundsProperty) return;
+            var target = line.Bounds.Width < CompactHeaderWidth ? Dock.Left : Dock.Right;
+            if (DockPanel.GetDock(_readChip) != target) DockPanel.SetDock(_readChip, target);
+        };
         line.Children.Add(_readChip);
         line.Children.Add(_status);
         return new Border { Height = 28, Padding = new Thickness(UrbeTokens.Space.M, 0, UrbeTokens.Space.S, 0), Child = line };
