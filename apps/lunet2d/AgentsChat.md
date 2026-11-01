@@ -614,10 +614,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Handoff: HO-20261030-lunet-standalone-pause.json. Próximo: checks do PR reduzido e integração governada.
 
 ### 20261101-chatgpt-lunet-ai-shared-runtime — 2026-11-01 (America/Sao_Paulo) — ChatGPT → integrador — verifying
-- Missão explícita do proprietário: estudar IA do Urbe e Lunet, referências externas, integrar IA e entregar APK. Auditoria de `Urbe.Core/Assistant`, Lunet IDE, capacidades e `AgentRuntime.Core` já existente.
-- PR #880 / branch `feat/lunet-ai-shared-runtime-20261101`, base `main`. Testes de isolamento de projeto, hash CAS e arquivos protegidos registrados ANTES do código. Nenhuma alteração feita no código do Urbe, motor do jogo ou assinatura.
+- Missão explícita do proprietário: estudar IA do editor de notas e Lunet, referências externas, integrar IA e entregar APK. Auditoria de do assistente de notas, Lunet IDE, capacidades e `AgentRuntime.Core` já existente.
+- PR #880 / branch `feat/lunet-ai-shared-runtime-20261101`, base `main`. Testes de isolamento de projeto, hash CAS e arquivos protegidos registrados ANTES do código. Nenhuma alteração feita no código do editor de notas, motor do jogo ou assinatura.
 - Arquitetura: o agente central usa `AgentRuntime.Core` e o adapter OpenAI-compatible canônicos; projeção **gerada/checável** em `Lunet.Ai/Generated` permite build autocontido, pois o check CHK-ARCH-REFS impediu ProjectReference cruzado. A fonte é única, nenhuma manutenção paralela de cópias permitida: usar `python3 platform/agent-runtime/projection.py --sync` e CI rejeitar divergência.
-- UI Android de agente por projeto, ferramentas de código com permissões e revisão de hash, histórico privado, execução cancelável e modelo escolhido pelo usuário. Não equivale a IA integral do Urbe: build, arte/áudio, especialistas, multimodal e teste no celular continuam pendentes.
+- UI Android de agente por projeto, ferramentas de código com permissões e revisão de hash, histórico privado, execução cancelável e modelo escolhido pelo usuário. Não equivale a IA integral do editor de notas: build, arte/áudio, especialistas, multimodal e teste no celular continuam pendentes.
 - Referências: Microsoft Agent Framework .NET (tools/approvals/persistence), Aider (codebase context + edit), Continue (IDE agent integration). Nenhum pacote extra introduzido.
 - Verificação: CI e build APK pela Actions exigidos; sem dotnet/SDK/Android de aparelho no ambiente deste agente. Não alegar compilação, teste de provider nem APK validado até evidência; DEVICE somente após distribuição.
 - Próximo: observar `lunet2d-ci`, `lunet2d-release` e `consistency`, corrigir qualquer falha, obter artefato `lunet-apk`, submeter ao integrador e usuário para DEVICE.
