@@ -49,10 +49,10 @@
     {
       "check": "Validar PDF em Android físico: página simples, livro, imagens, espera no diálogo, salvar e cancelar",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "apps/urbe/csharp/PATCHNOTES-beta.38.md",
-      "evidence": "Não executado neste ambiente."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-01 (Issue https://github.com/AbnerCruz/Ecosystem/issues/875); registro em docs/governance/responses/VAL-HO-20261031-urbe-page-pdf-beta38-06065198c0ff.md."
     }
   ],
   "known_issues": [
