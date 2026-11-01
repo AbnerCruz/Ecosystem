@@ -21,6 +21,7 @@ public sealed partial class MainView
         studio.RenameRequested += () => _ = RenamePublicationAsync();
         studio.EditSourceRequested += EditPublicationSource;
         studio.ExportRequested += () => _ = ExportPublicationHtmlAsync();
+        studio.Closed += UpdateFloatingNav;
         studio.ProjectChanged += project => _ = SavePublicationProjectAsync(studio.ProjectPath, project);
         _stage.Children.Insert(Math.Max(0, _stage.Children.IndexOf(FilePreview)), studio);
         return studio;
