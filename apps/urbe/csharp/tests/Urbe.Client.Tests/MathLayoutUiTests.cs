@@ -91,4 +91,28 @@ public sealed partial class HeadlessUiTests
         }
         finally { window.Close(); }
     }, CancellationToken.None));
+
+    [Fact]
+    public async Task EditorMath_FormulaEditorPreviewAlsoReachesBothEndsOfWideEquations() =>
+        Assert.True(await Session.Dispatch<bool>(() =>
+    {
+        var pane = new FormulaPane();
+        var window = new Window { Width = 320, Height = 720, Content = pane };
+        window.Show();
+        try
+        {
+            _ = pane.ShowAsync("a+b+c+d+e+f+g+h+i+j+k+l+m+n+o+p+q+r+s+t+u+v+w+x+y+z", true);
+            window.UpdateLayout();
+            var scroller = pane.GetLogicalDescendants().OfType<ScrollViewer>()
+                .Single(s => s.Content is Canvas);
+            Assert.True(scroller.Viewport.Width > 0);
+            Assert.True(scroller.Extent.Width > scroller.Viewport.Width);
+            scroller.Offset = new Vector(scroller.Extent.Width, 0);
+            window.UpdateLayout();
+            Assert.True(scroller.Offset.X > 0);
+            Snapshot(window, "native-formula-pane-wide.png");
+            return Task.FromResult(true);
+        }
+        finally { pane.Cancel(); window.Close(); }
+    }, CancellationToken.None));
 }

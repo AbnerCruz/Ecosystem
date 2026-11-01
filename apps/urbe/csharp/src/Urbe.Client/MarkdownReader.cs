@@ -652,6 +652,7 @@ public sealed partial class MarkdownReader
                     var scroll = new ScrollViewer
                     {
                         Content = view,
+                        HorizontalContentAlignment = HorizontalAlignment.Center,
                         HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
                         VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
                     };

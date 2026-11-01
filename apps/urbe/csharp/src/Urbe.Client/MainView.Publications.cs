@@ -35,7 +35,11 @@ public sealed partial class MainView
         studio.EditSourceRequested += EditPublicationSource;
         studio.ExportRequested += () => _ = ExportPublicationHtmlAsync();
         studio.RetrySaveRequested += () => _ = SavePublicationAsync();
-        studio.Closed += UpdateFloatingNav;
+        studio.Closed += () =>
+        {
+            ReleaseSavedPublicationDraft(_publicationDraft);
+            UpdateFloatingNav();
+        };
         studio.ProjectChanged += project =>
         {
             if (_publicationDraft is not { } draft) return;
@@ -79,6 +83,7 @@ public sealed partial class MainView
         }
         _pagesPanel?.Close();
         if (_studio?.IsVisible == true) await _studio.CloseAsync();
+        ReleaseSavedPublicationDraft(_publicationDraft);
         var key = (_store!, file.Id);
         if (!_publicationDrafts.TryGetValue(key, out var draft) || !draft.Dirty)
         {
@@ -192,6 +197,15 @@ public sealed partial class MainView
     public Task<bool> SavePublicationAsync() => _publicationDraft is { } draft
         ? SavePublicationDraftAsync(draft) : Task.FromResult(false);
 
+    private void ReleaseSavedPublicationDraft(PublicationDraft? draft)
+    {
+        if (draft is null || draft.Dirty) return;
+        var key = (draft.Store, draft.DocumentId);
+        if (_publicationDrafts.TryGetValue(key, out var retained) && ReferenceEquals(retained, draft))
+            _publicationDrafts.Remove(key);
+        if (ReferenceEquals(_publicationDraft, draft)) _publicationDraft = null;
+    }
+
     private async Task<bool> SavePublicationDraftAsync(PublicationDraft draft)
     {
         await _publicationWrites.WaitAsync();
@@ -222,6 +236,8 @@ public sealed partial class MainView
         {
             if (ReferenceEquals(_publicationDraft, draft))
                 _publicationsStudio?.SetSaveState(draft.Dirty, draft.Error);
+            // Successful closed projects need no recovery cache retaining an entire old vault.
+            if (_publicationsStudio?.IsVisible != true) ReleaseSavedPublicationDraft(draft);
             _publicationWrites.Release();
         }
     }

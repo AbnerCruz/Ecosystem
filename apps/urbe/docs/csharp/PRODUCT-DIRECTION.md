@@ -1,5 +1,7 @@
 # O que é o Urbe — direção do cliente C#
 
+> **Atualização do proprietário — 01/11/2026:** os requisitos atuais de consolidação são os do [plano Numa 2.5](../../../../docs/product-plans/urbe/Numa_Consolidacao_2.5.md), incluindo editor confiável como bloqueador de prontidão e **Publicações no lugar do Editor de Páginas**. O plano prevalece sobre descrições antigas deste arquivo quando conflitarem; IDs UC e evidências históricas são preservados. O novo estúdio referencia notas reais do vault e usa as operações canônicas de edição, sem cópia autoral em seus metadados. A seção 17 do plano registra a execução em andamento; nenhum CST se fecha por referência a uma implementação histórica.
+
 > **Autoridade:** DEC-0051 / [ADD-0028](../../../../docs/governance/addenda/ADD-0028-urbe-sem-simulacao-visual.md) e [ADR-0034](../../../../docs/adr/0034-urbe-sem-simulacao-visual.md) (ordem do proprietário, 2026-10-22), sobre DEC-0043 / [ADD-0020](../../../../docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md) e [ADR-0032](../../../../docs/adr/0032-urbe-ui-nativa-sem-webview.md). Escopo e estado dos itens: [`ROADMAP.md`](ROADMAP.md). Este documento descreve o produto; não registra andamento.
 
 ## 1. O Urbe são as suas notas

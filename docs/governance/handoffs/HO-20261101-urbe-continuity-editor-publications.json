@@ -29,7 +29,14 @@
     "docs/product-plans/urbe/Numa_Consolidacao_2.5.md",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationRecoveryUiTests.cs",
     "docs/governance/handoffs/HO-20261101-urbe-continuity-editor-publications.json",
-    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs"
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FormulaPane.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/ZoomImageView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ImageLifecycleUiTests.cs",
+    "apps/urbe/docs/csharp/CONSOLIDATION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md"
   ],
   "work_completed": [
     "Continuação autorizada do PR #876, preservando as branches #874 (método obrigatório) e #877 (índice). Plano 2.5 confrontado com código e estado remoto antes de editar.",
@@ -38,14 +45,18 @@
     "CST-152/153: drafts de composição vinculados a vault e ID; falhas retêm draft na sessão, reabertura preserva o draft e UI oferece retry; baseline protege edição concorrente.",
     "CST-152/162: exportação só após gravação confirmada; retorno do editor salva e utiliza a nota real atualizada, sem Markdown autoral no projeto.",
     "CST-162: testes vermelhos de comentários privados e matemática crua no HTML; reuso de NoteMarks e MathRenderer com parser canônico; comentários omitidos, autoria e código mantidos, SVG offline acessível.",
-    "CST-142: dois testes vermelhos demonstraram ausência de navegação para extremos de equações largas em telas 320/412 dp. Fórmulas de bloco agora preservam escala/altura com rolagem horizontal nativa; screenshots inspecionadas e 10 testes focados passaram."
+    "CST-142: dois testes vermelhos demonstraram ausência de navegação para extremos de equações largas em telas 320/412 dp. Fórmulas de bloco agora preservam escala/altura com rolagem horizontal nativa; screenshots inspecionadas e 10 testes focados passaram.",
+    "CST-142: painel de inserção/edição de fórmulas também usa viewport horizontal, com teste vermelho→verde em 320 dp e screenshot. Fórmulas curtas permanecem centralizadas.",
+    "CST-017/111: ObjectDisposedException reproduzida ao tirar ZoomImageView da árvore visual, redimensionar e recolocar. Dimensões são imutáveis e o bitmap é decodificado novamente dos mesmos bytes já lidos; pixels nativos são liberados ao sair. Regressão e visualizador de arquivos passaram. Não se atribui a este cenário a causa dos relatos antigos ou de SIGSEGV no CI.",
+    "Cache transitório libera composições já salvas ao fechar/trocar de projeto, para não reter o DocumentStore de um vault antigo; drafts sujos continuam disponíveis para retry.",
+    "Reconciliados os entrypoints documentais ROADMAP/PRODUCT-DIRECTION/CONSOLIDATION: apontam para Numa 2.5, preservam histórico e deixam explícita a substituição do editor legado, sem segunda autoridade de requisitos."
   ],
   "verification": [
     {
       "check": "Build Release portátil .NET 10.0.100",
       "kind": "automated",
       "result": "passed",
-      "evidence": "dotnet build Urbe.Portable.slnx -c Release --no-restore -m:1 -nr:false -p:UseSharedCompilation=false; 0 warnings, 0 errors. Logs locais /tmp/urbe-build-5.log e /tmp/urbe-editor-green-build.log."
+      "evidence": "Build Release portátil final: 0 warnings/0 errors em /tmp/urbe-delivery-build.log (.NET 10.0.100; -m:1 -nr:false -p:UseSharedCompilation=false)."
     },
     {
       "check": "Core completo",
@@ -57,19 +68,19 @@
       "check": "UI completa final",
       "kind": "automated",
       "result": "passed",
-      "evidence": "440/440 testes UI aprovados na rodada completa /tmp/urbe-client-final.log; após ampliar CST-142, 10/10 testes focados passaram (fórmulas largas em 320/412 dp, edição de fórmula, fonte viva, recuperação e conflito)."
+      "evidence": "444/444 testes UI aprovados no código final em /tmp/urbe-client-delivery.log, sem erros/falhas/skips (175.570 s). Antes, 14/14 focados passaram com screenshot do painel de fórmulas e reattach de imagem. Execução direta do assembly xUnit Release, sem alterar asserts ou suprimir falhas."
     },
     {
       "check": "Consistência Ecosystem",
       "kind": "automated",
       "result": "passed",
-      "evidence": "Todos os 22 checks passaram em /tmp/urbe-consistency-final.log, já incluindo este handoff e o plano atualizado."
+      "evidence": "Todos os 22 checks passaram em /tmp/urbe-doc-checks.log com reconciliação de ROADMAP/PRODUCT-DIRECTION/CONSOLIDATION e handoff; rechecagem final sem mudança de código."
     },
     {
       "check": "CI e builds Android/Windows do commit final",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Acompanhar checks do PR #876 após push; builds do head anterior passaram, mas não substituem o commit final."
+      "evidence": "Commit 90c260689306fe7d101a1da72b364d988c780fa0: todos os cinco jobs urbe-checks (#1277, run 41349966043) aprovados, incluindo Android, Windows, Core/Client e E2E. Lote posterior de bitmap/painel/cache exige novo CI e não herda essa prova."
     },
     {
       "check": "Android: toque/IME/ciclo de vida e salvamento no aparelho",
