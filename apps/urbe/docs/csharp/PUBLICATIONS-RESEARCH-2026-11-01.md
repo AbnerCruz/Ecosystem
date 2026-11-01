@@ -1,6 +1,6 @@
 # Urbe — Auditoria confrontada do Editor e de Publicações (01/11/2026)
 
-> **Escopo e autoridade:** investigação aplicada à `main` em `703d99ccfe1f4c56a6dc71e7c57300d90c0891ab`, complementada pela consolidação do proprietário [Numa 2.5](Numa_Consolidacao_2.5.md). Este documento registra **evidências e decisões locais de execução**, não é um segundo roadmap; IDs CST permanecem em aberto até testes, CI e DEVICE adequados. Protocolo: `docs/governance/protocolo-estudo-desenvolvimento.md`.
+> **Escopo e autoridade:** investigação aplicada à `main` em `703d99ccfe1f4c56a6dc71e7c57300d90c0891ab`, complementada pela consolidação do proprietário [Numa 2.5](../../../../docs/product-plans/urbe/Numa_Consolidacao_2.5.md). Este documento registra **evidências e decisões locais de execução**, não é um segundo roadmap; IDs CST permanecem em aberto até testes, CI e DEVICE adequados. Protocolo: `docs/governance/protocolo-estudo-desenvolvimento.md`.
 
 ## 1. Auditoria interna — código real
 
