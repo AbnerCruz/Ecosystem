@@ -92,7 +92,7 @@ public sealed partial class MainView : IAssistantApp
     private void UpdateFloatingNav()
     {
         bool phone = !(Bounds.Width >= WideBreakpoint);
-        bool free = _assistant is not { IsVisible: true };
+        bool free = _assistant is not { IsVisible: true } && _publicationsStudio is not { IsVisible: true };
         _assistantLauncher.IsVisible = free && !phone;
         if (_radial is null) return;
         _radial.IsVisible = free && phone;
