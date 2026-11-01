@@ -464,6 +464,15 @@ public sealed partial class MainView : Grid
     /// <summary>The notes of the vault on the screen: the Explorer, the Personalização and the editor's properties.</summary>
     private void Open(NoteLibrary? library, IReadOnlyList<CityNote> notes)
     {
+        // A new vault must not retain source IDs, subscriptions or previews from the last one.
+        if (!ReferenceEquals(_store, library?.Store))
+        {
+            _publicationsStudio?.Close();
+            _publicationsCatalog?.Dispose();
+            _publicationsCatalog = null;
+            _publicationsCatalogStore = null;
+            _publicationReturnPath = null;
+        }
         _library = library;
         _store = library?.Store;
         _contents.Clear();
