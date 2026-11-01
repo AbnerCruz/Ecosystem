@@ -1,0 +1,112 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261101-urbe-publicacoes-nativo",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-01T20:31:00Z",
+  "agent": {
+    "id": "gpt-6",
+    "kind": "ai-agent"
+  },
+  "task_id": "URBE-872",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-publications-native-studio-20261101",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/876",
+  "base_commit": "20b7ccb95c6527e8b6a29f36dd2987245128bde1",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/PublicationProject.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationProjectTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationStudioView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Publications.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.AndroidBack.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/MathLayoutUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationStudioUiTests.cs",
+    "docs/governance/handoffs/HO-20261101-urbe-publicacoes-nativo.json"
+  ],
+  "work_completed": [
+    "Implementado contrato versionado .publication.json com fontes por DocumentId e composição ordenada sem duplicar Markdown: validação, leitura/escrita JSON, detecção de projetos futuros, preservação de metadados desconhecidos.",
+    "Implementado primeiro estúdio native Avalonia com prévia da fonte real, adicionar, mover/remover notas e abrir nota original pelo editor existente; criação a partir de nota ou Configurações, navegação Android e export HTML por file picker.",
+    "Publicação HTML utiliza somente o conteúdo atual do vault no catálogo integrado #873; CSP offline e fontes ausentes impedem exportação silenciosamente incompleta.",
+    "CST-142 parcial: fórmulas inline no MarkdownReader usam altura natural da linha e não são cortadas por ClipToBounds; linhas normais mantêm line-height configurado.",
+    "Regressões de domínio e UI adicionadas para criação, edição de fonte, composição, renomeio, fontes removidas e layout de fórmulas."
+  ],
+  "verification": [
+    {
+      "check": "Consistency do Ecosystem no PR #876",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "GitHub Actions consistency; não preencher passed sem logs do head atual."
+    },
+    {
+      "check": "Urbe portable + UI headless + Android/Windows build",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "GitHub Actions urbe-checks, testes adicionados nesta branch."
+    },
+    {
+      "check": "Comportamento no Android físico: teclado, toque, layout, export real",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationStudioUiTests.cs",
+      "critical": false,
+      "evidence": "Proprietário autorizou prosseguir autonomamente sem aguardar este aceite; não declarar DEVICE validado."
+    }
+  ],
+  "known_issues": [
+    "UI do antigo Editor de Páginas e seus arquivos continuam disponíveis para não retirar funções/arquivos antes da substituição integral (CST-149/157); novo estúdio não é implementação total CST-149–192.",
+    "Fontes de blocos/headings, ativos e multimídia, PDF/EPUB/PPTX/MP4, templates, modelos tipados de destino, revisão e edição inline continuam pendentes.",
+    "HTML estático inicial, com CSP sem rede; imagens relativas não são empacotadas nesta entrega.",
+    "CST-142 cobre linha com SVG de fórmula; testar outros casos de clip, layout de teclado e bounds em Android no futuro.",
+    "PRs de governança #874 e outras atividades de agentes são independentes; não alterar seus arquivos."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Obter CI verde na branch #876, corrigir erros de compilação e regressão reais antes de integrar via workflow oficial.",
+    "Integrar quando o integrador automático autorizar, sem merge manual.",
+    "Consolidar substituição gradual dos entrypoints de Páginas com preservação de .page.json e testes de abertura como JSON.",
+    "Avançar no estúdio com edição contextual, fragmentos estáveis, assets, exportadores e atualização incremental; CST-142 precisa de teste visual/IME."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.5.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Manifests contêm somente IDs/ordem/layout, não texto das notas; PublicationSourceCatalog usa DocumentStore."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes CI e aceite físico explicitamente distintos; status humano pending."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying, não done antes de integração e checks."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Novas classes locais ao Urbe; nenhuma abstração transversal arbitrária."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "publication-project",
+      "status": "product-specific",
+      "rationale": "Modelo semântico específico da publicação Urbe; não há consumidor confirmado fora do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Criação opt-in de novo arquivo .publication.json e UI do Urbe sem migração/alteração de arquivos já existentes; não modifica políticas nem contratos de outros Products."
+  }
+}
