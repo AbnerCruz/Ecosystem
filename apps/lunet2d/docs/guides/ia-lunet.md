@@ -61,15 +61,15 @@ controle de versão.
 ## Limite de autoridade e unificação
 
 **Proibição do proprietário em 01/11/2026:** nenhum arquivo, configuração,
-workflow ou comportamento do Urbe pode ser alterado nesta iniciativa. A integração
+workflow ou comportamento do editor de notas pode ser alterado nesta iniciativa. A integração
 usa os contratos do runtime genérico existentes; extensões especializadas vivem
 exclusivamente no Lunet. A cópia compilada do núcleo é **uma projeção validada
 byte a byte** do fonte canônico, e não uma segunda implementação independente.
 O CI bloqueia divergências entre projeção e origem.
 
-Isso **não** significa que toda a IA do Urbe agora utiliza o mesmo núcleo:
+Isso **não** significa que toda a IA do editor de notas agora utiliza o mesmo núcleo:
 componentes históricos continuam separados. Migrá-los ou alterá-los exige
-autorização futura explícita. Fora do Urbe, a arquitetura deve priorizar
+autorização futura explícita. Fora do editor de notas, a arquitetura deve priorizar
 capabilities compartilháveis no runtime canônico, mantendo só adapters
 e ferramentas de projeto dentro dos aplicativos.
 Dependências externas não são embutidas nos APKs dos jogos.
