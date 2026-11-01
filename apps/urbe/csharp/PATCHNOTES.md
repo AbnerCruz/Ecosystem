@@ -25,7 +25,7 @@
 - Referências por identidade às notas reais: adicionar, reordenar e remover fontes; editar a nota no editor e voltar com o conteúdo atualizado. O projeto não guarda outra cópia autoral do texto.
 - Composição com erro ao salvar pode ser recuperada ao fechar/reabrir o estúdio no mesmo vault carregado; há aviso e ação de tentar novamente. Conflitos bloqueiam sobrescrita e exportação silenciosas.
 - HTML offline com matemática vetorial, autoria da IA preservada e comentários editoriais privados omitidos. Trechos de código mantêm o texto literal.
-- **Imprimir ou salvar como PDF** usa o serviço de impressão da plataforma e as notas atuais. No Android, escolha “Salvar como PDF” e o destino no diálogo do sistema. Abrir esse diálogo não significa que o arquivo já foi salvo.
+- **Imprimir ou salvar como PDF** usa o serviço de impressão da plataforma e as notas atuais. No Android, escolha “Salvar como PDF” e o destino no diálogo do sistema. No Windows, a composição abre no navegador: use Imprimir (Ctrl+P) e selecione o destino PDF. Preparar a impressão não significa que o arquivo já foi salvo.
 - Os caminhos normais de criação passam a usar Publicações. Arquivos `.page.json` antigos continuam preservados, com visualização, exportação e acesso ao JSON.
 
 ## Limites desta beta

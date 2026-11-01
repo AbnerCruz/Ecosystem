@@ -293,7 +293,9 @@ public sealed partial class MainView
         try
         {
             await print(output.Project.Title, output.Render.Html, new PagePrintSettings(false, "a4"));
-            ShowLifeNotice("Na impressão do sistema, escolha “Salvar como PDF” para gerar o arquivo.");
+            ShowLifeNotice(OperatingSystem.IsAndroid()
+                ? "Na impressão do sistema, escolha “Salvar como PDF” para gerar o arquivo."
+                : "No navegador aberto, use Imprimir (Ctrl+P) e escolha “Salvar como PDF”.");
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         { ShowLifeNotice("Não consegui preparar a impressão: " + ex.Message, Ui.ToastKind.Warning); }

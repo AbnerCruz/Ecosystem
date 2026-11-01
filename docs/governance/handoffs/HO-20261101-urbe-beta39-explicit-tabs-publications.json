@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261101-urbe-beta39-explicit-tabs-publications",
   "category": "HANDOFF",
-  "timestamp": "2026-11-01T21:53:03Z",
+  "timestamp": "2026-11-01T21:57:56Z",
   "agent": {
     "id": "codex",
     "kind": "ai-agent"
@@ -47,14 +47,15 @@
     "CST-160 parcial: publicação de pasta seleciona referências por ID das notas presentes, incluindo subpastas e excluindo prefixos vizinhos; não duplica Markdown nem promete inclusão dinâmica futura.",
     "CST-162/164 parciais: HTML e impressão usam a mesma composição salva e notas reais atuais. Impressão A4 pela adaptação nativa existente, com quebra entre fontes; abrir diálogo não comprova arquivo PDF salvo. Motor editorial profissional continua pendente.",
     "Preparada beta.39/2000039 no mecanismo oficial existente, mantendo identidade, certificado e canal beta. Pedido direto do proprietário nesta sessão: Continue até finalizar release.",
-    "CI identificou alteração indevida do catálogo histórico congelado. Bytes originais restaurados e contrato de sessão registrado no catálogo C# já existente, sem regenerar/desabilitar o oráculo."
+    "CI identificou alteração indevida do catálogo histórico congelado. Bytes originais restaurados e contrato de sessão registrado no catálogo C# já existente, sem regenerar/desabilitar o oráculo.",
+    "Confronto com o head Windows confirmou que impressão abre HTML no navegador. Aviso e patchnotes orientam explicitamente Ctrl+P no computador; não dependem da execução de script inline bloqueado pela CSP de exportação. A política de segurança do HTML permanece restritiva."
   ],
   "verification": [
     {
       "check": "Build Release portátil",
       "kind": "automated",
       "result": "passed",
-      "evidence": "Build Release portátil final: 0 warnings, 0 errors; /tmp/urbe39-release-build.log; .NET 10.0.100, -m:1 -nr:false -p:UseSharedCompilation=false."
+      "evidence": "Build Release portátil final: 0 warnings, 0 errors; /tmp/urbe39-release-build.log; .NET 10.0.100, -m:1 -nr:false -p:UseSharedCompilation=false. Nova build após orientação de impressão: 0 warnings/errors em /tmp/urbe39-print-guidance-build.log."
     },
     {
       "check": "Core completo final",
@@ -66,7 +67,7 @@
       "check": "Client completo final",
       "kind": "automated",
       "result": "passed",
-      "evidence": "449/449 testes finais, sem falhas/erros/skips; /tmp/urbe39-client-final.log. Reprodução TDD vermelha de navegação automática antes da correção; seletor/cancelamento/fechamento/restauração e publicação de pasta/impressão cobertos. Screenshot headless native-explicit-tabs-320.png inspecionada."
+      "evidence": "449/449 testes finais, sem falhas/erros/skips; /tmp/urbe39-client-final.log. Reprodução TDD vermelha de navegação automática antes da correção; seletor/cancelamento/fechamento/restauração e publicação de pasta/impressão cobertos. Screenshot headless native-explicit-tabs-320.png inspecionada. Após ajuste textual do aviso desktop, contrato de impressão reexecutado: 1/1 aprovado em /tmp/urbe39-print-guidance-test.log; última suíte completa fica no CI do commit final."
     },
     {
       "check": "Consistência Ecosystem",
