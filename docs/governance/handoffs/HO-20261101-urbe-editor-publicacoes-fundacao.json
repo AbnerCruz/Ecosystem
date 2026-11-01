@@ -1,0 +1,105 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261101-urbe-editor-publicacoes-fundacao",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-01T19:56:56Z",
+  "agent": {
+    "id": "gpt-6",
+    "kind": "ai-agent"
+  },
+  "task_id": "URBE-872",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-editor-publications-foundations-20261101",
+  "commit": null,
+  "pr": null,
+  "base_commit": "703d99ccfe1f4c56a6dc71e7c57300d90c0891ab",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/RadialNavUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorNavigationUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationSources.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationSourceCatalogTests.cs",
+    "apps/urbe/docs/csharp/Numa_Consolidacao_2.5.md",
+    "apps/urbe/docs/csharp/PUBLICATIONS-RESEARCH-2026-11-01.md",
+    "docs/governance/handoffs/HO-20261101-urbe-editor-publicacoes-fundacao.json"
+  ],
+  "work_completed": [
+    "Plano Numa 2.5 completo recebido do proprietário foi versionado, sem marcar CST como concluído.",
+    "CST-143: controle de leitura/edição movido para o lado esquerdo em layout compacto; regressão geométrica com larguras 320/360/412/1100 dp escrita.",
+    "CST-144: abertura direta de outra nota agora invoca fluxo canônico LeaveCurrentAsync antes de Show; reabertura da mesma nota não elimina rascunho; testes de navegação/persistência escritos antes do código.",
+    "CST-151/153 inicial: catálogo nativo de fontes vivas resolve nota no DocumentStore por ID, invalidando consumidores em alterações/exclusão/reset, sem replicar estado autoral. Seletores de bloco indisponíveis explicitamente, em vez de fornecer conteúdo errado.",
+    "Pesquisa e confronto escritos em PUBLICATIONS-RESEARCH-2026-11-01.md, com referências reais de código, produtos e comunidades. Nenhuma alegação de estúdio concluído."
+  ],
+  "verification": [
+    {
+      "check": "CI do PR: dotnet build e testes Urbe.Core/Client + checks do Ecosystem",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "SDK .NET/Android indisponível no executor desta sessão; acompanhar Actions do PR."
+    },
+    {
+      "check": "Teste em Android real: toque, IME, alternância leitura/edição, navegação e perda de rascunho",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/csharp/tests/Urbe.Client.Tests/RadialNavUiTests.cs",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "CST-142 matemática sobreposta/cortada ainda não corrigido; demanda reprodução e inspeção do renderizador.",
+    "CST-144 não oferece ainda journal durável após morte de processo nem cobre toda a matriz IME; fluxo direto foi protegido e tests escritos, não validados.",
+    "CST-149–192: Estúdio de Publicações novo ainda não substitui a UI Páginas legado; catálogo de fontes vivas é fundação não conectada à UI.",
+    "CST-151: referência por bloco/título está explicitamente não suportada; resolver ids estáveis antes de ampliar.",
+    "CST-143: risco de interação física pendente em telas reais."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar o CI do PR e corrigir falhas reais antes da integração. Não declarar testes aprovados sem logs.",
+    "Confrontar ciclo de IME e salvamento do editor com dispositivo, corrigir CST-142 e remaining CST-144 com testes.",
+    "Construir contrato semântico de Publicação CST-150/156 e novo fluxo touch-first CST-158; substituir Páginas CST-149 com inventário de dependências e preservação de arquivos antigos.",
+    "Implementar escrita bidirecional de notas reais CST-152/154, eventos/vínculos CST-153 e formatos/render/export em etapas verificáveis.",
+    "Executar QA físico e release após CI e integrações."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/Numa_Consolidacao_2.5.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Referências retornam DocumentStore, não há cópia de conteúdo gravada em publicação."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma alegação de DEVICE validado; verificação física pendente registrada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review; não marcado done antes de CI/integração."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Catálogo mantém-se interno a Urbe.Core; não muda boundaries da plataforma."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "publication-source-catalog",
+      "status": "product-specific",
+      "rationale": "Referências diretamente à identidade DocumentStore/UrbeDocument; sem consumidor comprovado fora do Urbe. Não extrair abstração para platform."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Implementações e regressões confinadas ao Urbe; formato persistido de dados e regras constitucionais não alterados."
+  }
+}
