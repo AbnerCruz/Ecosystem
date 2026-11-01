@@ -67,6 +67,43 @@ public sealed partial class HeadlessUiTests
         finally { window.Close(); }
     }, CancellationToken.None));
 
+    [Fact]
+    public async Task Editor_ReopenDuringPendingBackgroundSaveRetainsLatestDraft() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        // CST-144: opening a note while its asynchronous leave-save is still
+        // in progress must not show the stale Explorer snapshot.
+        var editor = new EditorOverlay { SaveOnClose = true };
+        var window = new Window { Width = 412, Height = 800, Content = editor };
+        window.Show();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var resume = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        editor.SaveRequested += async note =>
+        {
+            if (note.Path != "Origem.md") return;
+            started.TrySetResult();
+            await resume.Task;
+        };
+        try
+        {
+            editor.Open(new CityNote("Origem.md", "texto antigo"));
+            editor.SetMode(EditorMode.Fonte);
+            editor.Editor.Text = "últimas palavras recém digitadas";
+            editor.Open(new CityNote("Destino.md", "destino"));
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+            editor.Open(new CityNote("Origem.md", "texto antigo"));
+            Assert.Equal("últimas palavras recém digitadas", editor.Current?.Content);
+            Assert.True(editor.HasChanges);
+            return true;
+        }
+        finally
+        {
+            resume.TrySetResult();
+            window.Close();
+        }
+    }, CancellationToken.None));
+
     private static async Task<bool> EditorNavigationScenario()
     {
         var dir = Path.Combine(Path.GetTempPath(), "urbe-nav-" + Guid.NewGuid().ToString("N"));
