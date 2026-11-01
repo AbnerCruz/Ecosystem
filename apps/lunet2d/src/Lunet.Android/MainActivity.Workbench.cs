@@ -30,9 +30,6 @@ public sealed partial class MainActivity
         button.SetPadding(Dp(8), 0, Dp(8), 0);
         button.TextSize = 13;
         button.ContentDescription = title;
-        // A barra não deve roubar o foco do IME ao acionar desfazer/refazer.
-        button.Focusable = false;
-        button.FocusableInTouchMode = false;
         StyleWorkbenchButton(button, emphasized);
         return button;
     }
