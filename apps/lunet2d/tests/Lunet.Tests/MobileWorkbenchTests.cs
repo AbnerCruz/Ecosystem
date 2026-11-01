@@ -42,7 +42,8 @@ public sealed class MobileWorkbenchTests
     public void CommandSearchIsCaseAndAccentInsensitiveAndPreservesOrder()
     {
         string[] labels = ["Ações rápidas", "Gerar APK", "Configurações", "Buscar no projeto"];
-        Assert.Equal(["Ações rápidas"], WorkbenchCommands.Filter(labels, "acoes"));
+        Assert.Equal(["Ações rápidas", "Configurações"], WorkbenchCommands.Filter(labels, "acoes"));
+        Assert.Equal(["Ações rápidas"], WorkbenchCommands.Filter(labels, "acoes rápidas"));
         Assert.Equal(["Gerar APK"], WorkbenchCommands.Filter(labels, "apk"));
         Assert.Equal(["Configurações"], WorkbenchCommands.Filter(labels, "CONFIGURAÇÕES"));
         Assert.Equal(labels, WorkbenchCommands.Filter(labels, " "));
