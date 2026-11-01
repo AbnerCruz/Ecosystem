@@ -31,11 +31,13 @@ public sealed partial class HeadlessUiTests
                 await view.OpenVaultAsync();
                 await Settle(window, view);
 
-                // Configurações → Páginas
+                // Publicações replaces the legacy entrypoint. Existing page data/rendering
+                // remain covered directly, without restoring the retired UI in Settings.
                 _ = view.ShowSettingsAsync();
                 Dispatcher.UIThread.RunJobs();
-                Assert.Contains("Sites e páginas HTML do vault", view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
-                ClickButtonWithText(view.Dialogs, "Páginas");
+                Assert.Contains("Livros, artigos e páginas feitos de notas reais", view.Dialogs.GetLogicalDescendants().OfType<TextBlock>().Select(t => t.Text));
+                view.Dialogs.Cancel();
+                Assert.True(view.Search.Execute("pages.home"));
                 for (int i = 0; i < 20 && !view.Pages.IsVisible; i++) { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
                 var card = Assert.Single(view.Pages.Listed);
                 Assert.Equal(new PageCard("Páginas/Meu site.page.json", "Meu site", "🚀", 2), card);

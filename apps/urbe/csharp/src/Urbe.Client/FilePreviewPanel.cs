@@ -410,8 +410,12 @@ public sealed class FilePreviewPanel : Grid
         try
         {
             // a very large picture (a panorama, a scan) is decoded at a size the screen can still zoom into, never refused
-            var bitmap = ImageHeader.Width(bytes) is > MaxPictureWidth ? Bitmap.DecodeToWidth(new MemoryStream(bytes), MaxPictureWidth) : new Bitmap(new MemoryStream(bytes));
-            return new Ui.ZoomImageView(bitmap);
+            Bitmap Decode()
+            {
+                using var input = new MemoryStream(bytes, writable: false);
+                return ImageHeader.Width(bytes) is > MaxPictureWidth ? Bitmap.DecodeToWidth(input, MaxPictureWidth) : new Bitmap(input);
+            }
+            return new Ui.ZoomImageView(Decode);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or NotSupportedException or IOException) { return null; }
     }

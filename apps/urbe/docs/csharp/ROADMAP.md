@@ -1,5 +1,7 @@
 # ROADMAP — Urbe em C# (UC-n)
 
+> **Atualização do proprietário — 01/11/2026:** os requisitos atuais de consolidação são os do [plano Numa 2.5](../../../../docs/product-plans/urbe/Numa_Consolidacao_2.5.md), incluindo editor confiável como bloqueador de prontidão e **Publicações no lugar do Editor de Páginas**. O plano prevalece sobre descrições antigas deste arquivo quando conflitarem; IDs UC e evidências históricas são preservados. O novo estúdio referencia notas reais do vault e usa as operações canônicas de edição, sem cópia autoral em seus metadados. A seção 17 do plano registra a execução em andamento; nenhum CST se fecha por referência a uma implementação histórica.
+
 > **Autoridade:** abaixo do Ecosystem ADR-0016 e do Urbe ADR-0010; escopo e IDs dos itens. IDs `UC-n` são estáveis (NN-019): nunca reutilizar. Estado vivo das tarefas em andamento = Issues (`state:<estado>`); evidência = handoffs em `docs/governance/handoffs/` (raiz do repositório).
 > **Estados:** `[ ]` aberto · `[~]` verificado automaticamente, aguardando validação humana/revisão · `[x]` concluído com evidência. Um item nunca é `[x]` enquanto depender de validação humana (NN-017).
 > **Estado de um gate:** linha `*Estado do gate:* **aprovado**`, `**aguardando**` ou `**não iniciado**` logo depois de cada `**Gate:**`.

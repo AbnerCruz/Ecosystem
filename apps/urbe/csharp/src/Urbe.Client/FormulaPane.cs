@@ -239,7 +239,13 @@ public sealed class FormulaPane : Grid
         else
         {
             var view = Formula(tex, _block, 17.5 * 1.21, out err);
-            _preview.Child = view ?? new TextBlock { Text = tex, FontFamily = UrbeTheme.MonoFont, Foreground = UrbeTheme.Brush(UrbeTheme.Warn), HorizontalAlignment = HorizontalAlignment.Center };
+            _preview.Child = view is not null ? new ScrollViewer
+            {
+                Content = view,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Disabled
+            } : new TextBlock { Text = tex, FontFamily = UrbeTheme.MonoFont, Foreground = UrbeTheme.Brush(UrbeTheme.Warn), HorizontalAlignment = HorizontalAlignment.Center };
         }
         _error.IsVisible = err is not null;
         _errorText.Text = err is null ? "" : "⚠ " + err;

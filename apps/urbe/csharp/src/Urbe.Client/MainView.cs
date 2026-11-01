@@ -464,6 +464,15 @@ public sealed partial class MainView : Grid
     /// <summary>The notes of the vault on the screen: the Explorer, the Personalização and the editor's properties.</summary>
     private void Open(NoteLibrary? library, IReadOnlyList<CityNote> notes)
     {
+        // A new vault must not retain source IDs, subscriptions or previews from the last one.
+        if (!ReferenceEquals(_store, library?.Store))
+        {
+            _publicationsStudio?.Close();
+            _publicationsCatalog?.Dispose();
+            _publicationsCatalog = null;
+            _publicationsCatalogStore = null;
+            _publicationReturnPath = null;
+        }
         _library = library;
         _store = library?.Store;
         _contents.Clear();
@@ -673,7 +682,7 @@ public sealed partial class MainView : Grid
         if (_vault is not null)
             items.Add(new("Pasta no dispositivo", UrbeTheme.Icons.Storage, "Onde os arquivos ficam salvos", Run: () => OpenVaultAsync()));
         items.Add(new("Assistente", UrbeTheme.Icons.Assistant, "Agentes que pesquisam, escrevem e organizam o vault", Run: () => { ToggleAssistant(); return Task.CompletedTask; }));
-        items.Add(new("Páginas", UrbeTheme.Icons.Page, "Sites e páginas HTML do vault", Run: () => { ShowPages(); return Task.CompletedTask; }));
+        items.Add(new("Publicações", UrbeTheme.Icons.Page, "Livros, artigos e páginas feitos de notas reais", Run: ShowPublicationsAsync));
         items.Add(new("Diagnóstico de teclado e toques", UrbeTheme.Icons.Select, TouchDebugOn ? "Ligado — toque para desligar" : "Registrar foco, rolagem, IME e toques; desligado por padrão", Run: ToggleTouchDebugAsync));
         if (UpdateItem() is { } update) items.Add(update);
         if (_snapshot is { FutureFiles.Count: > 0 })
@@ -806,6 +815,13 @@ public sealed partial class MainView : Grid
             new DialogItem(editor.ReadOnly ? "Modo edição" : "Modo leitura", editor.ReadOnly ? UrbeTheme.Icons.Pencil : UrbeTheme.Icons.Book,
                 editor.ReadOnly ? "Volta a escrever na nota." : "Só ler: nada é alterado sem querer.", Run: () => { editor.ReadOnly = !editor.ReadOnly; return Task.CompletedTask; }),
             new DialogItem("Nova nota nesta pasta", UrbeTheme.Icons.File, NotesWhere(NoteLibrary.FolderOf(note.Path)), Run: () => editor.NewNoteHereAsync()),
+            new DialogItem("Criar publicação desta nota", UrbeTheme.Icons.Page,
+                "Composição viva ligada à nota original, sem copiar o conteúdo.", Run: () => CreatePublicationAsync(note.Path)),
+            .. (_publicationReturnPath is null ? [] : new[]
+                {
+                    new DialogItem("Voltar à publicação", UrbeTheme.Icons.Back,
+                        "Retornar ao estúdio com a nota atualizada.", Run: ReturnToPublicationAsync)
+                }),
             new DialogItem("Renomear", UrbeTheme.Icons.Pencil, Run: () => RenameNoteAsync(note.Path)),
             new DialogItem("Mover para outra pasta", UrbeTheme.Icons.Folder, Run: async () =>
             {

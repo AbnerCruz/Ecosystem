@@ -1,6 +1,6 @@
 # Consolidação Numa — progresso verificado (CST)
 
-Este arquivo é a autoridade do **andamento técnico** dos itens CST da consolidação do proprietário (“Numa Product Consolidation — Roadmap Atualizado”, 25–28/10/2026, versão 2.0). Os IDs e os critérios de conclusão são os do documento do proprietário. Aqui fica o que foi entregue, com evidência, e o que ainda falta.
+**Fonte atual dos requisitos e critérios CST:** [Numa Consolidação 2.5 — 01/11/2026](../../../../docs/product-plans/urbe/Numa_Consolidacao_2.5.md), recebida do proprietário. Este arquivo preserva o registro histórico de entregas das revisões 2.0 e seguintes; não é outro roadmap nem redefine os critérios atuais. As evidências abaixo e os handoffs continuam válidos para os cenários registrados, sem fechar automaticamente os CST atuais ou restaurar o Editor de Páginas substituído por Publicações. Estado vivo: Issues/PRs; resultado verificável: handoffs e seção 17 do plano canônico.
 
 Regras:
 - **Entregue (automatizado)** significa código e testes na `main`.

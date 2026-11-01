@@ -706,13 +706,14 @@ public sealed class EditorOverlay : Grid
         _saveError = null;
         // a note whose save failed comes back with the text that was not saved, still pending
         var pendingFrom = (string?)null;
-        if (_failed.Remove(note.Path, out var failed)) { note = note with { Content = failed.Note.Content }; pendingFrom = failed.Previous; }
-        else if (_leaving.TryGetValue(note.Path, out var inFlight))
+        if (_leaving.TryGetValue(note.Path, out var inFlight))
         {
-            // Never let a stale Explorer/search item replace the note currently being written to disk.
+            // A newer leave-save may be waiting while an older one has failed.
+            // The latest in-flight draft takes precedence over that older recovery copy.
             note = note with { Content = inFlight.Note.Content };
             pendingFrom = inFlight.Previous;
         }
+        else if (_failed.Remove(note.Path, out var failed)) { note = note with { Content = failed.Note.Content }; pendingFrom = failed.Previous; }
         _note = note;
         _acceptedSourceText = note.Content;
         _savedContent = pendingFrom ?? note.Content;
