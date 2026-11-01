@@ -19,7 +19,7 @@ public static class AssistantLayeredPlan
 
     private static string Get(JsonObject obj, string key) =>
         obj[key] is JsonValue value && value.TryGetValue<string>(out var text)
-            ? text.Trim() : "";
+            ? text?.Trim() ?? "" : "";
 
     public static Result Build(JsonObject input)
     {
