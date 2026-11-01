@@ -17,13 +17,35 @@ public sealed class LunetAiProjectFiles(LunetProject project)
         ".cs", ".json", ".md", ".txt", ".xml", ".yml", ".yaml", ".glsl", ".hlsl", ".shader", ".csv"
     };
 
-    public IReadOnlyList<string> List() => project.ListFiles()
-        .Where(IsAllowed).OrderBy(p => p, StringComparer.Ordinal).ToList();
+    public IReadOnlyList<string> List()
+    {
+        var result = new List<string>();
+        void Walk(string absolute, string prefix)
+        {
+            foreach (var file in Directory.EnumerateFiles(absolute))
+            {
+                if (IsLink(file)) continue;
+                var relative = prefix + Path.GetFileName(file);
+                if (IsAllowed(relative)) result.Add(relative);
+            }
+            foreach (var directory in Directory.EnumerateDirectories(absolute))
+            {
+                var name = Path.GetFileName(directory);
+                if (name is ".git" or ".lunet" or "bin" or "obj" || name.StartsWith(".", StringComparison.Ordinal) ||
+                    IsLink(directory)) continue;
+                Walk(directory, prefix + name + "/");
+            }
+        }
+        Walk(project.Directory, "");
+        result.Sort(StringComparer.Ordinal);
+        return result;
+    }
 
     public LunetAiFile Read(string relativePath)
     {
         Validate(relativePath, writing: false);
-        if (!project.ListFiles().Contains(relativePath, StringComparer.Ordinal))
+        EnsureNoLinks(relativePath);
+        if (!List().Contains(relativePath, StringComparer.Ordinal))
             throw new FileNotFoundException("Arquivo não encontrado no projeto.");
         var content = project.ReadText(relativePath);
         return new(relativePath, content, Hash(content));
@@ -33,10 +55,11 @@ public sealed class LunetAiProjectFiles(LunetProject project)
     public LunetAiFileChange Write(string relativePath, string content, string expectedSha256)
     {
         Validate(relativePath, writing: true);
+        EnsureNoLinks(relativePath);
         ArgumentNullException.ThrowIfNull(content);
         if (Encoding.UTF8.GetByteCount(content) > 120_000)
             throw new InvalidOperationException("Arquivo excede 120 KB; divida a alteração.");
-        var exists = project.ListFiles().Contains(relativePath, StringComparer.Ordinal);
+        var exists = List().Contains(relativePath, StringComparer.Ordinal);
         if (exists)
         {
             var current = Read(relativePath);
@@ -50,6 +73,24 @@ public sealed class LunetAiProjectFiles(LunetProject project)
         if (!string.Equals(saved.Content, content, StringComparison.Ordinal))
             throw new IOException("O arquivo persistido difere do solicitado.");
         return new(relativePath, saved.Sha256);
+    }
+
+    private void EnsureNoLinks(string path)
+    {
+        var current = project.Directory;
+        foreach (var part in path.Split('/'))
+        {
+            current = Path.Combine(current, part);
+            if (IsLink(current))
+                throw new InvalidOperationException("Links simbólicos não podem ser usados por ferramentas de IA.");
+        }
+    }
+
+    private static bool IsLink(string path)
+    {
+        try { return (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0; }
+        catch (FileNotFoundException) { return false; }
+        catch (DirectoryNotFoundException) { return false; }
     }
 
     private static void Validate(string path, bool writing)
@@ -126,11 +167,12 @@ public sealed class LunetAiProjectTool : ITool
             if (_name == ReadName)
             {
                 var file = _files.Read(Arg("path"));
+                if (file.Content.Length > 24_000)
+                    return ValueTask.FromResult(ToolOutcome.Error("Arquivo maior que 24.000 caracteres: edição por IA bloqueada até haver leitura paginada segura."));
                 return ValueTask.FromResult(ToolOutcome.Ok(JsonSerializer.Serialize(new
                 {
                     path = file.Path, sha256 = file.Sha256,
-                    content = file.Content.Length > 24_000 ? file.Content[..24_000] : file.Content,
-                    truncated = file.Content.Length > 24_000
+                    content = file.Content
                 })));
             }
             var change = _files.Write(Arg("path"), Arg("content"), Arg("expected_sha256"));
