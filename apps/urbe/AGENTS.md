@@ -1,5 +1,7 @@
 # AGENTS.md — Contrato para agentes de IA no repositório Urbe
 
+> **Obrigatório em todo trabalho no Urbe:** seguir o [protocolo universal em seis etapas](../../docs/governance/protocolo-estudo-desenvolvimento.md) e o `AGENTS.md` raiz. **Plano de execução de produto atualizado pelo proprietário:** [Numa Consolidação 2.5 — 01/11/2026](../../docs/product-plans/urbe/Numa_Consolidacao_2.5.md), acima de versões documentais anteriores onde houver conflito, observadas as decisões normativas e o MANIFEST. Auditar código e pendências de outros agentes, estudar referências técnicas/códigos e comunidades, confrontar antes de consolidar/implementar, TDD, regressões e DEVICE. **Editor seguro e dados preservados são gate**; Publicações substitui Páginas e referencia notas reais. Documentos de `docs/v2/` abaixo são históricos quando conflitarem com direção mais recente; não revivem a interface anterior.
+
 Este arquivo vale para qualquer agente (Claude Code, Codex, Copilot etc.) que trabalhe neste repositório. Ele complementa `CONTRIBUTING.md` e não substitui os documentos normativos em `docs/v2/`.
 
 ## 1. Fontes de verdade (em ordem)

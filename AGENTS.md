@@ -7,6 +7,8 @@
 
 ## 1. Protocolo obrigatório de trabalho
 
+**Diretriz geral do proprietário (01/11/2026):** todo trabalho de agentes, em todos os Products, segue o [Protocolo de Estudo, Consolidação e Desenvolvimento](docs/governance/protocolo-estudo-desenvolvimento.md). Antes de implementar, realizar auditoria interna → pesquisa externa com código e documentação → escuta crítica das comunidades (aprovam/rejeitam/desejam) → confronto com o código e a identidade do produto → consolidação em tarefas verificáveis → implementação com TDD, integração e evidência, quando autorizada. Missão somente de estudo não permite modificação do produto. Não pular etapas por urgência; reaproveitar investigações válidas, sem presumir que ainda correspondem à main. **Enquanto algo aguarda CI, revisão ou dispositivo, avançar trabalho independente**, respeitando demais agentes, limites reais de execução e gates da governança. Este protocolo complementa — e não substitui — MANIFEST, NN e decisões vigentes.
+
 Todo agente que trabalhe neste repositório deve, nesta ordem:
 
 1. ler [`MANIFEST.md`](MANIFEST.md);
