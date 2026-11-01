@@ -7,7 +7,7 @@ name: lunet2d-ci
 on:
   push:
     branches: [main]
-    paths: ['apps/lunet2d/**', 'platform/text-inspection/**', 'platform/agent-runtime/**', 'apps/ecosystem-ai/src/AgentRuntime.Core/**', 'apps/ecosystem-ai/src/AgentRuntime.Providers.ChatCompletions/**', '.github/workflows/lunet2d-ci.yml']
+    paths: ['apps/lunet2d/**', 'platform/text-inspection/**', '.github/workflows/lunet2d-ci.yml']
   pull_request:
     paths: ['apps/lunet2d/**', 'platform/text-inspection/**', '.github/workflows/lunet2d-ci.yml']
   workflow_dispatch:

@@ -614,7 +614,7 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Handoff: HO-20261030-lunet-standalone-pause.json. Próximo: checks do PR reduzido e integração governada.
 
 ### 20261101-chatgpt-lunet-ai-shared-runtime — 2026-11-01 (America/Sao_Paulo) — ChatGPT → integrador — verifying
-- Missão explícita do proprietário: estudar IA do editor de notas e Lunet, referências externas, integrar IA e entregar APK. Auditoria de do assistente de notas, Lunet IDE, capacidades e `AgentRuntime.Core` já existente.
+- Missão explícita do proprietário: estudar IA do editor de notas e Lunet, referências externas, integrar IA e entregar APK. Auditoria do assistente de notas, Lunet IDE, capacidades e `AgentRuntime.Core` já existente.
 - PR #880 / branch `feat/lunet-ai-shared-runtime-20261101`, base `main`. Testes de isolamento de projeto, hash CAS e arquivos protegidos registrados ANTES do código. Nenhuma alteração feita no código do editor de notas, motor do jogo ou assinatura.
 - Arquitetura: o agente central usa `AgentRuntime.Core` e o adapter OpenAI-compatible canônicos; projeção **gerada/checável** em `Lunet.Ai/Generated` permite build autocontido, pois o check CHK-ARCH-REFS impediu ProjectReference cruzado. A fonte é única, nenhuma manutenção paralela de cópias permitida: usar `python3 platform/agent-runtime/projection.py --sync` e CI rejeitar divergência.
 - UI Android de agente por projeto, ferramentas de código com permissões e revisão de hash, histórico privado, execução cancelável e modelo escolhido pelo usuário. Não equivale a IA integral do editor de notas: build, arte/áudio, especialistas, multimodal e teste no celular continuam pendentes.
