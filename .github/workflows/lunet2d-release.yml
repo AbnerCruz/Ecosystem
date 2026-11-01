@@ -3,7 +3,7 @@ name: lunet2d-release
 on:
   push:
     branches: [main]
-    paths: ['apps/lunet2d/**', 'platform/text-inspection/**', '.github/workflows/lunet2d-release.yml']
+    paths: ['apps/lunet2d/**', 'platform/text-inspection/**', 'platform/agent-runtime/**', 'apps/ecosystem-ai/src/AgentRuntime.Core/**', 'apps/ecosystem-ai/src/AgentRuntime.Providers.ChatCompletions/**', '.github/workflows/lunet2d-release.yml']
   pull_request:
     paths: ['apps/lunet2d/**', 'platform/text-inspection/**', '.github/workflows/lunet2d-release.yml']
   workflow_dispatch:
@@ -25,6 +25,8 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - name: Check shared Agent Runtime projection
+        run: python3 ../../platform/agent-runtime/projection.py
       - name: Check Text Inspection projections
         run: dotnet run ../../platform/text-inspection/tools/Projection.cs -- --check
       - name: Test Text Inspection Core
