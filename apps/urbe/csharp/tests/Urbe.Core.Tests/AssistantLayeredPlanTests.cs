@@ -46,7 +46,7 @@ public sealed class AssistantLayeredPlanTests
         Assert.False(plan.Concluded);
         Assert.Equal(2, plan.Steps.Count);
         Assert.Equal("done", plan.Steps[0].Status);
-        Assert.Contains("N1", plan.Steps[1].Step);
+        Assert.Contains("N2", plan.Steps[1].Step);
         Assert.Contains("N1", plan.Steps[1].Details);
         Assert.Contains("PDF utilizável", plan.Steps[0].Details);
         Assert.Contains("Abrir o arquivo", plan.Steps[1].Details);
