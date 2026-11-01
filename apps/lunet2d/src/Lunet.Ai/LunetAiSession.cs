@@ -6,7 +6,8 @@ using Lunet.Core;
 namespace Lunet.Ai;
 
 public sealed record LunetAiTurn(string Role, string Text);
-public sealed record LunetAiReply(string Text, IReadOnlyList<string> ChangedFiles, RunStatus Status);
+public sealed record LunetAiReply(string Text, IReadOnlyList<string> ChangedFiles, RunStatus Status,
+    int ModelSteps, int ToolCalls, IReadOnlyList<string> Activity);
 
 /// <summary>Product-specific adapter over the shared Ecosystem Agent Runtime; no note-vault or game-framework dependency.</summary>
 public sealed class LunetAiSession
@@ -36,7 +37,8 @@ public sealed class LunetAiSession
     }
 
     public async Task<LunetAiReply> AskAsync(string prompt, string endpoint, string apiKey, string model,
-        bool enableProjectWrites, CancellationToken cancellationToken = default)
+        bool enableProjectWrites, CancellationToken cancellationToken = default,
+        int maxSteps = LunetAiRunOptions.DefaultMaxSteps, IProgress<string>? progress = null)
     {
         if (string.IsNullOrWhiteSpace(prompt) || prompt.Length > 8_000)
             throw new ArgumentException("A solicitação precisa ter entre 1 e 8.000 caracteres.");
@@ -47,6 +49,7 @@ public sealed class LunetAiSession
         if (apiKey.Length < SecretRedactor.MinimumLength)
             throw new ArgumentException("Chave de API curta demais para garantir ocultação nos logs.");
         var url = LunetAiEndpoint.Validate(endpoint);
+        maxSteps = LunetAiRunOptions.ValidateMaxSteps(maxSteps);
         await _runGate.WaitAsync(cancellationToken);
         try
         {
@@ -80,7 +83,7 @@ public sealed class LunetAiSession
             var scope = new BudgetScope(BudgetScopeKind.Task, runId);
             // Placeholder reservation gate, not a financial cost estimate. Provider tariffs are unknown.
             ledger.SetLimits(scope, new BudgetLimits(Total: new Money(4_000, "USD"), PerOperation: new Money(500, "USD")));
-            var events = new LunetEventLog();
+            var events = new LunetEventLog(progress);
             var agent = new AgentDefinition(
                 new AgentIdentity("lunet.code", "Assistente Lunet", "development"),
                 new ModelProfile(provider.ProviderId, model,
@@ -97,7 +100,7 @@ public sealed class LunetAiSession
                 "Quando o contexto ou uma ferramenta não for suficiente, informe a limitação. " +
                 "Não alegue ter testado, compilado ou instalado algo que não executou. " +
                 "Responda em português, com caminhos e ações verificáveis.",
-                12, grant);
+                maxSteps, grant);
             var task = new TaskSpec(runId, ComposePrompt(prompt), []);
             var request = new RunRequest(runId, task, agent, context, grant, grant, [scope], RunPolicy.Default);
             var redactor = new SecretRedactor();
@@ -115,6 +118,9 @@ public sealed class LunetAiSession
             {
                 var problem = entries.LastOrDefault(e => e.Kind is EventKind.RunBlocked or EventKind.RunFailed)?.Result;
                 response = $"Execução não concluída ({result.State.Status}): {problem ?? "verifique o provider, o orçamento e as permissões"}.\n" + response;
+                if (result.State.Block == BlockReason.StepLimit)
+                    response += "\nO modelo utilizou todas as interações configuradas. Veja as ferramentas executadas abaixo; " +
+                                "se o trabalho estiver progredindo, escolha um orçamento maior para o próximo pedido.";
             }
             if (string.IsNullOrWhiteSpace(response)) response = "O provider não retornou uma resposta de texto.";
             var changed = result.Artifacts.Where(a => a.Kind == "lunet.text-file")
@@ -129,7 +135,8 @@ public sealed class LunetAiSession
                 File.WriteAllText(temporary, JsonSerializer.Serialize(_history));
                 File.Move(temporary, _historyPath, overwrite: true);
             }
-            return new LunetAiReply(response, changed, result.State.Status);
+            return new LunetAiReply(response, changed, result.State.Status,
+                result.State.Steps, result.State.ToolCalls, LunetAiRunActivity.Summarize(entries));
         }
         finally { _runGate.Release(); }
     }
@@ -150,13 +157,15 @@ public sealed class LunetAiSession
         public async ValueTask DelayAsync(TimeSpan delay, CancellationToken ct) => await Task.Delay(delay, ct);
     }
 
-    private sealed class LunetEventLog : IEventLog
+    private sealed class LunetEventLog(IProgress<string>? progress) : IEventLog
     {
         private readonly List<RuntimeEvent> _events = [];
         public ValueTask AppendAsync(RuntimeEvent entry, CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested();
             _events.Add(entry);
+            var safe = LunetAiRunActivity.Describe(entry);
+            if (safe is not null) progress?.Report(safe);
             return ValueTask.CompletedTask;
         }
         public ValueTask<IReadOnlyList<RuntimeEvent>> ReadRunAsync(string runId, CancellationToken ct) =>
