@@ -644,7 +644,22 @@ public sealed partial class MarkdownReader
         {
             var result = MathRenderer.RenderSvg(tex, display, (float)size);
             if (result.Success && MathSvg.TryBuild(result.Svg, UrbeTheme.Text) is { } view)
-                return new Border { HorizontalAlignment = display ? HorizontalAlignment.Center : HorizontalAlignment.Left, Child = view };
+            {
+                // A display equation is an indivisible mathematical layout. Preserve its
+                // scale and height while letting a narrow touch viewport reach both ends.
+                if (display)
+                {
+                    var scroll = new ScrollViewer
+                    {
+                        Content = view,
+                        HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+                        VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
+                    };
+                    Avalonia.Automation.AutomationProperties.SetName(scroll, "Fórmula matemática: " + tex);
+                    return scroll;
+                }
+                return new Border { HorizontalAlignment = HorizontalAlignment.Left, Child = view };
+            }
             return RawMath(atom, result.Diagnostic ?? "", size);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or FormatException or NotSupportedException)

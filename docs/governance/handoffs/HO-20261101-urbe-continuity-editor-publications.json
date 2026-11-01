@@ -10,7 +10,7 @@
   },
   "task_id": "URBE-878",
   "component": "urbe",
-  "state": "verifying",
+  "state": "review",
   "branch": "feat/urbe-publications-native-studio-20261101",
   "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/876",
@@ -28,7 +28,8 @@
     "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationProjectTests.cs",
     "docs/product-plans/urbe/Numa_Consolidacao_2.5.md",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationRecoveryUiTests.cs",
-    "docs/governance/handoffs/HO-20261101-urbe-continuity-editor-publications.json"
+    "docs/governance/handoffs/HO-20261101-urbe-continuity-editor-publications.json",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs"
   ],
   "work_completed": [
     "Continuação autorizada do PR #876, preservando as branches #874 (método obrigatório) e #877 (índice). Plano 2.5 confrontado com código e estado remoto antes de editar.",
@@ -36,7 +37,8 @@
     "CST-142: teste geométrico de não sobreposição e screenshot; correção da consulta de Runs do teste anterior, sem restaurar UI legada no menu.",
     "CST-152/153: drafts de composição vinculados a vault e ID; falhas retêm draft na sessão, reabertura preserva o draft e UI oferece retry; baseline protege edição concorrente.",
     "CST-152/162: exportação só após gravação confirmada; retorno do editor salva e utiliza a nota real atualizada, sem Markdown autoral no projeto.",
-    "CST-162: testes vermelhos de comentários privados e matemática crua no HTML; reuso de NoteMarks e MathRenderer com parser canônico; comentários omitidos, autoria e código mantidos, SVG offline acessível."
+    "CST-162: testes vermelhos de comentários privados e matemática crua no HTML; reuso de NoteMarks e MathRenderer com parser canônico; comentários omitidos, autoria e código mantidos, SVG offline acessível.",
+    "CST-142: dois testes vermelhos demonstraram ausência de navegação para extremos de equações largas em telas 320/412 dp. Fórmulas de bloco agora preservam escala/altura com rolagem horizontal nativa; screenshots inspecionadas e 10 testes focados passaram."
   ],
   "verification": [
     {
@@ -54,14 +56,14 @@
     {
       "check": "UI completa final",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Rodada em execução /tmp/urbe-client-final.log. Rodada anterior 439/439 passou; sete cenários focados finais passaram, incluindo perda de texto, fontes vivas, falha/retry, conflito e matemática."
+      "result": "passed",
+      "evidence": "440/440 testes UI aprovados na rodada completa /tmp/urbe-client-final.log; após ampliar CST-142, 10/10 testes focados passaram (fórmulas largas em 320/412 dp, edição de fórmula, fonte viva, recuperação e conflito)."
     },
     {
       "check": "Consistência Ecosystem",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "22 checks passaram antes do registro final; reexecutar com handoff e plano atualizados."
+      "result": "passed",
+      "evidence": "Todos os 22 checks passaram em /tmp/urbe-consistency-final.log, já incluindo este handoff e o plano atualizado."
     },
     {
       "check": "CI e builds Android/Windows do commit final",

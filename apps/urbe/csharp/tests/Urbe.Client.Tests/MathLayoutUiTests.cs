@@ -4,6 +4,7 @@ using Avalonia.Controls.Documents;
 using Avalonia.Headless;
 using Avalonia.LogicalTree;
 using Avalonia.Threading;
+using Avalonia.Controls.Primitives;
 using Urbe.Client;
 
 namespace Urbe.Client.Tests;
@@ -56,6 +57,36 @@ public sealed partial class HeadlessUiTests
             window.UpdateLayout();
             var paragraph = content.GetLogicalDescendants().OfType<TextBlock>().First(t => t.FontSize == 16);
             Assert.Equal(16 * 1.7, paragraph.LineHeight, 5);
+            return Task.FromResult(true);
+        }
+        finally { window.Close(); }
+    }, CancellationToken.None));
+
+    [Theory]
+    [InlineData(320)]
+    [InlineData(412)]
+    public async Task EditorMath_WideDisplayFormulaCanScrollWithoutShrinkingOrCuttingTheSource(double width) =>
+        Assert.True(await Session.Dispatch<bool>(() =>
+    {
+        const string tex = "a+b+c+d+e+f+g+h+i+j+k+l+m+n+o+p+q+r+s+t+u+v+w+x+y+z";
+        var reader = new MarkdownReader { Size = 24 };
+        var content = reader.BuildMarkdown("$$\n" + tex + "\n$$\n\nDepois da fórmula.");
+        var window = new Window { Width = width, Height = 640, Content = content };
+        window.Show();
+        try
+        {
+            window.UpdateLayout();
+            var scroller = content.GetLogicalDescendants().OfType<ScrollViewer>().Single();
+            Assert.Equal(ScrollBarVisibility.Auto, scroller.HorizontalScrollBarVisibility);
+            Assert.True(scroller.Viewport.Width <= width);
+            Assert.True(scroller.Extent.Width > scroller.Viewport.Width,
+                "A fórmula precisa ser mais larga que a tela para testar a rolagem.");
+            Assert.True(scroller.Viewport.Height >= scroller.Extent.Height - 1,
+                "A fórmula mantém a altura natural, sem corte vertical.");
+            scroller.Offset = new Vector(scroller.Extent.Width, 0);
+            window.UpdateLayout();
+            Assert.True(scroller.Offset.X > 0);
+            Snapshot(window, "native-math-wide-" + width + ".png");
             return Task.FromResult(true);
         }
         finally { window.Close(); }
