@@ -1,4 +1,5 @@
 using UglyToad.PdfPig.Core;
+using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Fonts.Standard14Fonts;
 using UglyToad.PdfPig.Writer;
 using Urbe.Core.Assistant;
@@ -56,11 +57,11 @@ public sealed class AssistantDocumentToolsTests
     public void SearchIsBatchedAndDoesNotInventImageOrMathContent()
     {
         var pdf = Document();
-        var first = AssistantDocumentTools.Search(pdf, "Referencia", count: 1);
+        var first = AssistantDocumentTools.Search(pdf, "Referencia", count: 1, cancellationToken: TestContext.Current.CancellationToken);
         Assert.True(first.Partial);
         Assert.Empty(first.Matches);
         Assert.Equal(2, first.NextPage);
-        var remainder = AssistantDocumentTools.Search(pdf, "Referencia", start: 2);
+        var remainder = AssistantDocumentTools.Search(pdf, "Referencia", start: 2, cancellationToken: TestContext.Current.CancellationToken);
         Assert.Equal(2, Assert.Single(remainder.Matches).Page);
         Assert.Equal(1, remainder.OcrPages);
         Assert.False(remainder.Partial);
@@ -77,6 +78,6 @@ public sealed class AssistantDocumentToolsTests
         Assert.Throws<AiToolException>(() => AssistantDocumentTools.Inspect("not a pdf"u8.ToArray()));
         Assert.Throws<AiToolException>(() => AssistantDocumentTools.Page(pdf, 4));
         Assert.Throws<AiToolException>(() => AssistantDocumentTools.Page(pdf, 1, -1));
-        Assert.Throws<AiToolException>(() => AssistantDocumentTools.Search(pdf, "something", count: 501));
+        Assert.Throws<AiToolException>(() => AssistantDocumentTools.Search(pdf, "something", count: 501, cancellationToken: TestContext.Current.CancellationToken));
     }
 }
