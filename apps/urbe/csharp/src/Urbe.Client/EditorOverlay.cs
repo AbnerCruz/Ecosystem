@@ -930,7 +930,7 @@ public sealed class EditorOverlay : Grid
             var close = new Button
             {
                 Content = UrbeTheme.Icon(UrbeTheme.Icons.CloseUi, 12, active ? UrbeTheme.Text : UrbeTheme.Text3, 2),
-                Width = 36, Height = 36, Padding = new Thickness(7), CornerRadius = new CornerRadius(8), Background = Brushes.Transparent,
+                Width = 40, Height = 40, Padding = new Thickness(7), CornerRadius = new CornerRadius(8), Background = Brushes.Transparent,
                 HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
             };
             ToolTip.SetTip(close, "Fechar aba");
@@ -944,7 +944,7 @@ public sealed class EditorOverlay : Grid
             };
             var capsule = new Border
             {
-                Height = 36, Padding = new Thickness(8, 0, 1, 0), CornerRadius = new CornerRadius(8),
+                Height = 40, Padding = new Thickness(8, 0, 1, 0), CornerRadius = new CornerRadius(8),
                 Background = UrbeTheme.Brush(active ? UrbeTheme.Surface3 : UrbeTheme.Surface2),
                 BorderBrush = UrbeTheme.Brush(active ? UrbeTheme.Accent : UrbeTheme.Line2),
                 BorderThickness = new Thickness(1),
