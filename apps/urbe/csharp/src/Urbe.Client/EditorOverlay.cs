@@ -803,7 +803,8 @@ public sealed class EditorOverlay : Grid
     private readonly List<string> _tabs = [];
     private string? _activeTabPath;
     private readonly Grid _tabStrip = new() { ColumnDefinitions = new ColumnDefinitions("*,Auto"), IsVisible = false };
-    private readonly StackPanel _tabRow = new() { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(12, 6) };
+    // The visible chip stays 36dp tall; the outer button keeps a full 48dp touch surface.
+    private readonly StackPanel _tabRow = new() { Orientation = Orientation.Horizontal, Spacing = 4, Margin = new Thickness(8, 2) };
     private readonly ScrollViewer _tabBar = new()
     {
         HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
@@ -912,8 +913,8 @@ public sealed class EditorOverlay : Grid
             var add = new Button
             {
                 Content = UrbeTheme.Icon(UrbeTheme.Icons.Plus, 18, UrbeTheme.Text2),
-                MinWidth = 48, MinHeight = 48, Padding = new Thickness(10),
-                Margin = new Thickness(0, 6, 8, 6), CornerRadius = new CornerRadius(12),
+                MinWidth = 48, MinHeight = 48, Padding = new Thickness(8),
+                Margin = new Thickness(0, 2, 4, 2), CornerRadius = new CornerRadius(8),
                 Background = Brushes.Transparent, BorderThickness = new Thickness(0)
             };
             AutomationProperties.SetName(add, "Abrir nova aba");
@@ -929,7 +930,7 @@ public sealed class EditorOverlay : Grid
             var close = new Button
             {
                 Content = UrbeTheme.Icon(UrbeTheme.Icons.CloseUi, 12, active ? UrbeTheme.Text : UrbeTheme.Text3, 2),
-                Width = 48, Height = 48, Padding = new Thickness(12), CornerRadius = new CornerRadius(12), Background = Brushes.Transparent,
+                Width = 36, Height = 36, Padding = new Thickness(7), CornerRadius = new CornerRadius(8), Background = Brushes.Transparent,
                 HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
             };
             ToolTip.SetTip(close, "Fechar aba");
@@ -937,16 +938,22 @@ public sealed class EditorOverlay : Grid
             close.Click += async (_, e) => { e.Handled = true; await CloseTabAsync(tab); };
             var label = new TextBlock
             {
-                Text = System.IO.Path.GetFileName(path), FontFamily = UrbeTheme.UiFont, FontSize = 13, MaxWidth = 180,
+                Text = System.IO.Path.GetFileName(path), FontFamily = UrbeTheme.UiFont, FontSize = 12, MaxWidth = 124,
                 FontWeight = active ? FontWeight.SemiBold : FontWeight.Normal, TextTrimming = TextTrimming.CharacterEllipsis,
                 Foreground = UrbeTheme.Brush(active ? UrbeTheme.Text : UrbeTheme.Text2), VerticalAlignment = VerticalAlignment.Center
             };
+            var capsule = new Border
+            {
+                Height = 36, Padding = new Thickness(8, 0, 1, 0), CornerRadius = new CornerRadius(8),
+                Background = UrbeTheme.Brush(active ? UrbeTheme.Surface3 : UrbeTheme.Surface2),
+                BorderBrush = UrbeTheme.Brush(active ? UrbeTheme.Accent : UrbeTheme.Line2),
+                BorderThickness = new Thickness(1),
+                Child = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { label, close } }
+            };
             var button = new Button
             {
-                Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { label, close } },
-                MinHeight = 48, Padding = new Thickness(12, 0, 0, 0), CornerRadius = new CornerRadius(16),
-                Background = UrbeTheme.Brush(active ? UrbeTheme.Surface3 : UrbeTheme.Surface2),
-                BorderBrush = UrbeTheme.Brush(active ? UrbeTheme.Accent : UrbeTheme.Line2), BorderThickness = new Thickness(1),
+                Content = capsule, MinHeight = 48, Padding = new Thickness(0),
+                Background = Brushes.Transparent, BorderThickness = new Thickness(0),
                 VerticalContentAlignment = VerticalAlignment.Center
             };
             Avalonia.Automation.AutomationProperties.SetName(button, "Aba " + System.IO.Path.GetFileName(path));
