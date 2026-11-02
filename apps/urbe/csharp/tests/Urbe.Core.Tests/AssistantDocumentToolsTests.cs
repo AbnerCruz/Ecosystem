@@ -72,6 +72,26 @@ public sealed class AssistantDocumentToolsTests
     }
 
     [Fact]
+    public void InventoryDoesNotMissDiagramsOrClaimBlankPagesAreTranscribed()
+    {
+        var doc = Document();
+        var first = AssistantDocumentTools.Inventory(doc, maxPages: 2);
+        Assert.Equal(3, first.TotalPages);
+        Assert.Equal(3, first.NextPage);
+        Assert.Equal(2, first.Entries.Count);
+        Assert.True(first.Entries[0].VectorPaths > 0);
+        Assert.True(first.Entries[0].NeedsVisualReview);
+
+        var last = AssistantDocumentTools.Inventory(doc, startPage: first.NextPage);
+        var blank = Assert.Single(last.Entries);
+        Assert.Equal(3, blank.Page);
+        Assert.Equal(0, blank.TextChars);
+        Assert.True(blank.NeedsVisualReview);
+        Assert.Equal(4, last.NextPage);
+        Assert.Equal(first.Sha256, last.Sha256);
+    }
+
+    [Fact]
     public void RepeatedHitsResumeWithCharacterCursorInsteadOfLoopingOnTheSamePage()
     {
         var writer = new PdfDocumentBuilder();
