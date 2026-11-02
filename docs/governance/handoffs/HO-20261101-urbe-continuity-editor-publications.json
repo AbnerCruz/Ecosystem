@@ -85,9 +85,10 @@
     {
       "check": "Android: toque/IME/ciclo de vida e salvamento no aparelho",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationRecoveryUiTests.cs",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-02 (Issue https://github.com/AbnerCruz/Ecosystem/issues/888); registro em docs/governance/responses/VAL-HO-20261101-urbe-continuity-editor-publications-4c2d19d80aa0.md."
     }
   ],
   "known_issues": [
