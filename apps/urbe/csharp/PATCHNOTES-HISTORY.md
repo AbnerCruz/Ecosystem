@@ -1,6 +1,11 @@
 # Urbe — Histórico compacto de versões
 
-A descrição detalhada da versão atualmente publicada pertence exclusivamente a PATCHNOTES.md. Ao preparar a próxima versão, transferir a atual para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada.
+A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
+
+## 2.0.0-beta.42 — 02/11/2026
+- Correção de Enter/IME multilinha nos editores; indicadores de progresso nativos, numeração de linhas e operações de undo/redo.
+- Publicações com fontes por título/bloco, HTML de livros/slides, EPUB3 com validação EPUBCheck e ferramentas do Assistente.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.42
 
 ## 2.0.0-beta.41 — 01/11/2026
 - Continuidade do planejamento em camadas, validação de evidências declaradas e abas mais compactas.
