@@ -15,7 +15,7 @@ public interface IAssistantDocumentFiles
 public sealed record DocumentPage(int Page, int Pages, int Start, int Next, string Text, bool More, bool NeedsOcr, string Sha256, int EmbeddedImages = 0, int VectorPaths = 0, bool VisualReviewRequired = false);
 public sealed record DocumentMatch(int Page, int Offset, string Context);
 public sealed record DocumentSearch(int Pages, int LastPage, int NextPage, bool Partial, int OcrPages, string Sha256,
-    IReadOnlyList<DocumentMatch> Matches, int PagesWithVisuals = 0);
+    IReadOnlyList<DocumentMatch> Matches, int PagesWithVisuals = 0, int NextChar = 0);
 
 /// <summary>A user-approved provider vision pass over exactly one original PDF page.</summary>
 public interface IAssistantDocumentVision
@@ -63,16 +63,16 @@ public static class AssistantDocumentTools
     }
 
     public static DocumentSearch Search(byte[] data, string query, int start = 1, int count = 150, int limit = 10,
-        CancellationToken cancellationToken = default)
+        int startChar = 0, CancellationToken cancellationToken = default)
     {
         Validate(data);
-        if (string.IsNullOrWhiteSpace(query) || query.Length > 240 || count is < 1 or > 500 || limit is < 1 or > 20)
+        if (string.IsNullOrWhiteSpace(query) || query.Length > 240 || count is < 1 or > 500 || limit is < 1 or > 20 || startChar < 0)
             throw new AiToolException("Busca inválida ou limites excedidos.");
         using var pdf = PdfDocument.Open(data);
         if (start < 1 || start > pdf.NumberOfPages) throw new AiToolException("Página inicial inválida.");
         var matches = new List<DocumentMatch>();
         var last = Math.Min(pdf.NumberOfPages, start + count - 1);
-        int scanned = start - 1, ocr = 0, visualPages = 0; bool reachedLimit = false;
+        int scanned = start - 1, ocr = 0, visualPages = 0, nextChar = 0; bool reachedLimit = false;
         for (int page = start; page <= last; page++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -80,19 +80,24 @@ public static class AssistantDocumentTools
             var text = Text(parsed); scanned = page;
             if (parsed.NumberOfImages > 0 || parsed.Paths.Count > 0) visualPages++;
             if (text.Length == 0) { ocr++; continue; }
-            int from = 0;
+            int from = page == start ? startChar : 0;
+            if (from > text.Length) throw new AiToolException("start_char fora do texto da página.");
             while (from < text.Length)
             {
                 int pos = text.IndexOf(query, from, StringComparison.OrdinalIgnoreCase);
                 if (pos < 0) break;
                 matches.Add(new(page, pos, text[Math.Max(0, pos - 64)..Math.Min(text.Length, pos + query.Length + 64)]));
-                if (matches.Count == limit) { reachedLimit = true; break; }
+                if (matches.Count == limit) { reachedLimit = true; nextChar = pos + Math.Max(query.Length, 1); break; }
                 from = pos + Math.Max(query.Length, 1);
             }
             if (reachedLimit) break;
         }
-        return new(pdf.NumberOfPages, scanned, reachedLimit ? scanned : scanned + 1,
-            reachedLimit || scanned < pdf.NumberOfPages, ocr, Hash(data), matches, visualPages);
+        // A search hitting max_results must resume after the last matching substring,
+        // not at the start of the same page (which would loop on repeated terms).
+        int nextPage = reachedLimit && nextChar < Text(pdf.GetPage(scanned)).Length ? scanned : scanned + 1;
+        if (nextPage != scanned) nextChar = 0;
+        bool partial = nextPage <= pdf.NumberOfPages;
+        return new(pdf.NumberOfPages, scanned, nextPage, partial, ocr, Hash(data), matches, visualPages, nextChar);
     }
 
     /// <summary>Copies one PDF page, retaining embedded images, vector diagrams and formulas for multimodal inspection.</summary>
@@ -191,19 +196,19 @@ public static class AssistantDocumentTools
         {
             Name = "search_document", Access = "read",
             Description = "Procura texto exato em PDF por lotes de páginas, retornando página, offset, SHA e aviso OCR; use next_page para continuar.",
-            Parameters = (JsonObject)JsonNode.Parse("""{"type":"object","properties":{"path":{"type":"string"},"query":{"type":"string"},"start_page":{"type":"integer","minimum":1},"max_pages":{"type":"integer","minimum":1,"maximum":500},"max_results":{"type":"integer","minimum":1,"maximum":20}},"required":["path","query"],"additionalProperties":false}""")!,
+            Parameters = (JsonObject)JsonNode.Parse("""{"type":"object","properties":{"path":{"type":"string"},"query":{"type":"string"},"start_page":{"type":"integer","minimum":1},"start_char":{"type":"integer","minimum":0},"max_pages":{"type":"integer","minimum":1,"maximum":500},"max_results":{"type":"integer","minimum":1,"maximum":20}},"required":["path","query"],"additionalProperties":false}""")!,
             Label = i => "Buscar texto em PDF",
             Run = (i, h) => Execute(i, h, data =>
             {
-                var r = Search(data, Str(i, "query"), Num(i, "start_page", 1), Num(i, "max_pages", 150), Num(i, "max_results", 10));
+                var r = Search(data, Str(i, "query"), Num(i, "start_page", 1), Num(i, "max_pages", 150), Num(i, "max_results", 10), Num(i, "start_char", 0));
                 var output = new System.Text.StringBuilder("PDF " + Str(i, "path") + " · SHA256 " + r.Sha256 +
                     "\nPáginas: " + r.Pages + "; pesquisadas até " + r.LastPage +
                     "; páginas sem texto: " + r.OcrPages + "; páginas com elementos visuais: " + r.PagesWithVisuals + "\n");
                 foreach (var m in r.Matches) output.Append("p. ").Append(m.Page).Append(" · offset ")
                     .Append(m.Offset).Append(": ").AppendLine(m.Context);
                 if (r.Matches.Count == 0) output.AppendLine("Sem ocorrência no texto pesquisado.");
-                if (r.Partial) output.AppendLine("BUSCA PARCIAL; continue em start_page=" + r.NextPage +
-                    (r.NextPage == r.LastPage ? " (refine a busca: limite atingido no meio da página)." : "."));
+                if (r.Partial) output.AppendLine("BUSCA PARCIAL: continue em start_page=" + r.NextPage +
+                    " e start_char=" + r.NextChar + ".");
                 if (r.OcrPages > 0) output.AppendLine("OCR_REQUIRED: páginas escaneadas não foram pesquisadas.");
                 if (r.PagesWithVisuals > 0) output.AppendLine("VISUAL_REVIEW_REQUIRED: texto em figuras, fórmulas, gráficos e imagens não foi pesquisado.");
                 return new AiToolOutput(output.ToString());
