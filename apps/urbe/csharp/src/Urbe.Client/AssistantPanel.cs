@@ -1284,7 +1284,7 @@ public sealed partial class AssistantPanel : Border
                     "Enviar APENAS a página " + page + " de " + reference + " para o provedor " +
                     (provider.Name ?? provider.Preset) + "? A página pode conter informações privadas. O resultado é reconhecimento visual não verificado.",
                     "Permitir envio", cancel: "Não enviar")
-                : await await Dispatcher.UIThread.InvokeAsync(() => panel._app.Dialogs.ConfirmAsync(
+                : await Dispatcher.UIThread.InvokeAsync(() => panel._app.Dialogs.ConfirmAsync(
                     "Analisar página PDF com IA externa",
                     "Enviar APENAS a página " + page + " de " + reference + " para o provedor " +
                     (provider.Name ?? provider.Preset) + "? A página pode conter informações privadas. O resultado é reconhecimento visual não verificado.",
