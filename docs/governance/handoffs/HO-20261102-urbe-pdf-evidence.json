@@ -1,0 +1,120 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261102-urbe-pdf-evidence",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-02T10:51:50.626Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-212",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-pdf-evidence-cst212",
+  "base_commit": "d49a05ee84a60f0ef1246c9c5135770efa61d76d",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/886",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Urbe.Core.csproj",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDocumentTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantDocumentToolsTests.cs",
+    "docs/governance/handoffs/HO-20261102-urbe-pdf-evidence.json",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ArchitectureTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDocumentImageTools.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantDocumentImageToolsTests.cs"
+  ],
+  "work_completed": [
+    "Auditoria do código: anexos PDF são enviados ao provedor multimodal ou copiados para o vault, mas não havia leitura nativa, paginada e verificável por página.",
+    "PdfPig 0.1.16 Apache-2.0 para extrair a camada textual e classificar imagens incorporadas/caminhos vetoriais em qualquer página, inclusive páginas com texto selecionável.",
+    "Ferramentas de leitura inspect_document/read_document/search_document com limites de paginação e offsets, hash SHA-256 da origem, leitura do PDF do vault ou anexo original da conversa; marca OCR_REQUIRED/VISUAL_REVIEW_REQUIRED conforme caso.",
+    "Testes de regressão propostos com PDF sintético incluindo texto, figura vetorial e página sem texto. Integração com ferramentas gerais e modelos do dispositivo sem duplicar inteligência.",
+    "Merge semântico da main atual: preservada a implementação de Publicações em AssistantPanel.cs da beta.42 e adicionadas somente ferramentas PDF; árvore combinada foi construída a partir da main, sem sobrescrever mudanças concorrentes.",
+    "Páginas com diagramas e fórmulas: SinglePagePdf isola uma página original (incluindo imagens/vetores) para análise visual opcional pelo provedor de IA selecionado; o host exige confirmação explícita para enviar a página e não reenvia o livro inteiro.",
+    "RunHost encaminha DocumentFiles/DocumentVision para os agentes; ArchitectureTests mantém allowlist exata do pacote PdfPig.",
+    "Extração de fotos PNG/JPEG/WebP de anexos da conversa e arquivos do vault com validação de tipo e limites; inspect_document_image verifica bytes e SHA sem rede. analyze_document_image envia mídia adaptada via modelo visual apenas após confirmação explícita do usuário.",
+    "Inventário paginado de livros: inventory_document detecta por página texto, imagens e desenhos vetoriais, inclusive páginas mistas, e possibilita localizar as páginas que precisam de inspeção visual.",
+    "Busca em livros com ocorrências repetidas: retoma com cursor por offset de caractere e não rele o mesmo resultado indefinidamente.",
+    "Pacotes de prévia Android e Windows produzidos pelo workflow do commit 7f26e5ab, validados por build e testes no GitHub; Android instalado, aberto e retomado no emulador. Não é release beta assinada."
+  ],
+  "verification": [
+    {
+      "check": "GitHub CI Urbe Android e Windows",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "GitHub urbe-checks run 41430727020: 6/6 jobs success, including native Android APK build, Android emulator install/launch/resume, Windows publish/tests, portable .NET core/client tests, JavaScript checks and E2E. https://github.com/AbnerCruz/Ecosystem/actions/runs/41430727020. GitHub consistency run 41430727056 success. Physical device still pending.",
+      "tested_commit": "7f26e5ab36cf8971976dc4a2663415d76584d2e6"
+    },
+    {
+      "check": "Inspeção de imagem, OCR e reconhecimento de fórmulas",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Detecção de possíveis elementos visuais implementada, porém OCR/matemática e compreensão de figura ainda não. Precisa inspeção e verificação independentes."
+    },
+    {
+      "check": "Teste físico Android",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDocumentTools.cs",
+      "critical": false,
+      "evidence": "Sem aparelho real conectado; compilação não comprova precisão ou UX do leitor."
+    }
+  ],
+  "known_issues": [
+    "CST-212 ainda parcial: reconhecimento remoto de imagens/páginas PDF existe com consentimento por envio e modelo multimodal compatível, mas não existe OCR local offline ou certificação de exatidão; DOCX/PPTX/XLSX, áudio/vídeo, OCR em massa e QA matemático não estão completos.",
+    "Os offsets se referem à camada textual extraída; PDFs com colunas ou ordem de glifos incomum requerem análise de layout e conferência visual.",
+    "Detecção de path vetorial ou bitmap não prova compreensão semântica e não detecta de forma absoluta todas as figuras; texto incorporado a imagem permanece visual.",
+    "Operações leem até 60 MiB por arquivo na memória; livros maiores precisam stream de acesso aleatório ou cache paginado por SHA."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Somente proprietário aplica label integrar para mudança crítica após o integrador aprovar o estado combinado com main; não executar merge manual.",
+    "Testar em aparelho físico e com PDFs/imagens didáticas reais usando provedor multimodal compatível e autorização por mídia. Validar fórmulas e trechos contra página original antes de tratar como exatos.",
+    "Para concluir o restante de CST-212, implementar OCR local, indexação multimodal escalável, QA semântico e suporte a formatos adicionais."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/integration-policy.json",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.5.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Dados de origem sempre PDF de anexo autorizado ou vault corrente, identificado por SHA."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "OCR e validação em dispositivo humano claramente pendentes."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "CST-212 permanece parcial; não alegar conclusão plena."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Dependência PdfPig apenas no projeto Urbe.Core; sem impacto em outros Products."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "document-evidence-extraction",
+      "status": "possible-candidate",
+      "rationale": "Outro Product poderá demandar a capability, mas ainda sem consumidor concreto; evitar shared premature."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Mudança do csproj do Urbe.Core: política da main exige autorização crítica; não altera certificado ou identidade."
+  }
+}

@@ -273,6 +273,16 @@ public sealed partial class MainView : IAssistantApp
         RefreshNotes();
     }
 
+    async Task<byte[]?> IAssistantApp.ReadDocumentBytesAsync(string path, CancellationToken cancellationToken)
+    {
+        if (_vault is not { IsConnected: true } vault || !_attachments.Contains(path)) return null;
+        var isPdf = path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
+        if (!isPdf && !AssistantDocumentImageTools.AuthorizedReference(path)) return null;
+        var limit = isPdf ? AssistantDocumentTools.MaxFileBytes : AssistantDocumentImageTools.MaxImageBytes;
+        var read = await vault.ReadFileAsync(path, limit, cancellationToken);
+        return read?.Bytes;
+    }
+
     async Task<byte[]?> IAssistantApp.ReadGeneratedImageAsync(string path)
     {
         if (!_attachments.Contains(path) || _vault is not { IsConnected: true } vault) return null;

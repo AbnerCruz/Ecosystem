@@ -649,6 +649,8 @@ public static class AssistantAgent
         public IAssistantDelegation? Delegation => inner.Delegation;
         public IAssistantForms? Forms => inner.Forms;
         public IAssistantAttachmentExtractor? Attachments => inner.Attachments;
+        public IAssistantDocumentFiles? DocumentFiles => inner.DocumentFiles;
+        public IAssistantDocumentVision? DocumentVision => inner.DocumentVision;
         // a member left out here silently disables its tools in the app (list_graphs/read_graph were): a test checks them all
         public IAssistantGraphs? Graphs => inner.Graphs;
         public IAssistantConversations? Conversations => inner.Conversations;
