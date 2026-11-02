@@ -10,16 +10,21 @@ namespace Urbe.Core;
 public static partial class VaultFileKinds
 {
     public const string Image = "image", Audio = "audio", Video = "video", Pdf = "pdf", Html = "html", Zip = "zip", Other = "other";
+    public const string Epub = "epub", Slides = "slides", Document = "document";
 
     /// <summary>classificarArquivo(rel).</summary>
     public static string Classify(string path) =>
         ImageRe().IsMatch(path) ? Image : AudioRe().IsMatch(path) ? Audio : VideoRe().IsMatch(path) ? Video
-        : PdfRe().IsMatch(path) ? Pdf : HtmlRe().IsMatch(path) ? Html : ZipRe().IsMatch(path) ? Zip : Other;
+        : PdfRe().IsMatch(path) ? Pdf : HtmlRe().IsMatch(path) ? Html
+        : EpubRe().IsMatch(path) ? Epub : SlidesRe().IsMatch(path) ? Slides
+        : DocumentRe().IsMatch(path) ? Document : ZipRe().IsMatch(path) ? Zip : Other;
 
     /// <summary>rotuloClasse(c).</summary>
     public static string Label(string kind) => kind switch
     {
-        Image => "Imagem", Audio => "Áudio", Video => "Vídeo", Pdf => "PDF", Html => "HTML", Zip => "Arquivo compactado", _ => "Arquivo"
+        Image => "Imagem", Audio => "Áudio", Video => "Vídeo", Pdf => "PDF", Html => "HTML",
+        Epub => "EPUB", Slides => "Apresentação", Document => "Documento",
+        Zip => "Arquivo compactado", _ => "Arquivo"
     };
 
     /// <summary>formatBytes(n): "812 B", "1.5 KB", "12 MB" (one decimal below 10, from KB up).</summary>
@@ -40,6 +45,11 @@ public static partial class VaultFileKinds
         ".mp3" => "audio/mpeg", ".wav" => "audio/wav", ".ogg" => "audio/ogg", ".m4a" => "audio/mp4", ".aac" => "audio/aac", ".flac" => "audio/flac",
         ".mp4" or ".m4v" => "video/mp4", ".webm" => "video/webm", ".mov" => "video/quicktime", ".mkv" => "video/x-matroska", ".avi" => "video/x-msvideo",
         ".pdf" => "application/pdf", ".html" or ".htm" or ".xhtml" => "text/html", ".zip" => "application/zip",
+        ".epub" => "application/epub+zip",
+        ".pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        ".ppt" => "application/vnd.ms-powerpoint", ".odp" => "application/vnd.oasis.opendocument.presentation",
+        ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ".doc" => "application/msword", ".odt" => "application/vnd.oasis.opendocument.text", ".rtf" => "application/rtf",
         var other when VaultTextFiles.Extensions.Contains(other) => "text/plain",
         _ => "application/octet-stream"
     };
@@ -49,5 +59,8 @@ public static partial class VaultFileKinds
     [GeneratedRegex(@"\.(mp4|webm|mov|mkv|avi|m4v)$", RegexOptions.IgnoreCase)] private static partial Regex VideoRe();
     [GeneratedRegex(@"\.pdf$", RegexOptions.IgnoreCase)] private static partial Regex PdfRe();
     [GeneratedRegex(@"\.(html?|xhtml)$", RegexOptions.IgnoreCase)] private static partial Regex HtmlRe();
+    [GeneratedRegex(@"\.(epub)$", RegexOptions.IgnoreCase)] private static partial Regex EpubRe();
+    [GeneratedRegex(@"\.(ppt|pptx|odp)$", RegexOptions.IgnoreCase)] private static partial Regex SlidesRe();
+    [GeneratedRegex(@"\.(doc|docx|odt|rtf)$", RegexOptions.IgnoreCase)] private static partial Regex DocumentRe();
     [GeneratedRegex(@"\.(zip|7z|rar|tar|gz)$", RegexOptions.IgnoreCase)] private static partial Regex ZipRe();
 }

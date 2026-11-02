@@ -81,9 +81,17 @@ public sealed partial class HeadlessUiTests
                 Assert.True(pages.Drawn.Count < 10, "only the pages near the screen are drawn: " + string.Join(",", pages.Drawn));
                 Snapshot(window, "native-content-pdf.png");
                 Assert.True(pages.Extent.Height > pages.Viewport.Height * 5, $"extent={pages.Extent} viewport={pages.Viewport} bounds={pages.Bounds} vis={pages.IsEffectivelyVisible} arr={pages.IsArrangeValid} pres={pages.Presenter} prev={preview.Bounds} attached={TopLevel.GetTopLevel(pages) is not null}");
+                Assert.Contains(preview.GetLogicalDescendants().OfType<Button>(), b => b.Content as string == "Próxima" && b.IsVisible);
+                // Direct navigation must not render every intervening page.
+                pages.GoToPage(14);
+                for (int i = 0; i < 20; i++) { window.UpdateLayout(); await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
+                Assert.InRange(pages.CurrentPage, 13, 15);
+                Assert.True(pages.Drawn.Count < 10);
                 pages.Offset = new Vector(0, pages.Extent.Height - pages.Viewport.Height);
                 for (int i = 0; i < 20; i++) { window.UpdateLayout(); await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
                 Assert.True(pages.Drawn.Contains(29), $"offset={pages.Offset} viewport={pages.Viewport} extent={pages.Extent} drawn={string.Join(",", pages.Drawn)} rendered={string.Join(",", pdf.Rendered)}");
+                Assert.Equal(30, pages.CurrentPage); // The last page must be reachable despite scroll clamping.
+
                 Assert.DoesNotContain(0, pages.Drawn);
                 preview.Close();
                 Dispatcher.UIThread.RunJobs();

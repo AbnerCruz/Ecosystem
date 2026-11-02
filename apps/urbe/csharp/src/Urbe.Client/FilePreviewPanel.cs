@@ -35,6 +35,19 @@ public sealed class FilePreviewPanel : Grid
     private readonly Button _open = Action("Abrir em outro app", primary: true);
     private readonly StackPanel _htmlMode = new() { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(0, 10, 0, 0), IsVisible = false };
     private bool _htmlSource;
+    private PdfPagesView? _pdfView;
+    private readonly StackPanel _pdfNavigation = new() { Orientation = Orientation.Horizontal, Spacing = 10, IsVisible = false, Margin = new Thickness(0, 6, 0, 0) };
+    private readonly Button _pdfPrevious = new() { Content = "Anterior", MinWidth = 80, Height = 40 };
+    private readonly Button _pdfNext = new() { Content = "Próxima", MinWidth = 80, Height = 40 };
+    private readonly TextBlock _pdfPage = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = 13 };
+    private bool _readerMode;
+    private readonly Grid _actions = new() { Margin = new Thickness(0, 16, 0, 0) };
+    private readonly Button _readerButton = new()
+    {
+        Content = "Tela cheia", Height = 40, MinWidth = 98, FontSize = 13,
+        Padding = new Thickness(10, 0), CornerRadius = new CornerRadius(12),
+        Background = Brushes.Transparent
+    };
     private IReadOnlyList<(string Name, string? Path)> _files = [];
     private int _version;
     private bool _choosing;
@@ -69,9 +82,13 @@ public sealed class FilePreviewPanel : Grid
         var head = new DockPanel();
         DockPanel.SetDock(close, Dock.Right);
         DockPanel.SetDock(more, Dock.Right);
+        DockPanel.SetDock(_readerButton, Dock.Right);
         head.Children.Add(close);
         head.Children.Add(more);
+        head.Children.Add(_readerButton);
         head.Children.Add(_title);
+        Avalonia.Automation.AutomationProperties.SetName(_readerButton, "Expandir ou reduzir o leitor");
+        _readerButton.Click += (_, _) => SetReaderMode(!_readerMode);
         _choose.SelectionChanged += async (_, _) =>
         {
             if (_choosing || _choose.SelectedIndex < 0 || !IsVisible) return;
@@ -90,7 +107,7 @@ public sealed class FilePreviewPanel : Grid
             if (Current is { } path && Storage is { } s && !await s.OpenExternallyAsync(path))
                 _meta.Text += " · não foi possível abrir em outro app";
         };
-        var actions = new Grid { Margin = new Thickness(0, 16, 0, 0) };
+        var actions = _actions;
         actions.Children.Add(_open);
         var layout = new DockPanel();
         // htmlRenderBtn / htmlSourceBtn: the page or its source
@@ -105,7 +122,12 @@ public sealed class FilePreviewPanel : Grid
             };
             _htmlMode.Children.Add(b);
         }
-        var top = new StackPanel { Children = { head, _meta, _choose, _htmlMode } };
+        _pdfNavigation.Children.Add(_pdfPrevious);
+        _pdfNavigation.Children.Add(_pdfPage);
+        _pdfNavigation.Children.Add(_pdfNext);
+        _pdfPrevious.Click += (_, _) => _pdfView?.GoToPage(_pdfView.CurrentPage - 1);
+        _pdfNext.Click += (_, _) => _pdfView?.GoToPage(_pdfView.CurrentPage + 1);
+        var top = new StackPanel { Children = { head, _meta, _choose, _htmlMode, _pdfNavigation } };
         DockPanel.SetDock(top, Dock.Top);
         DockPanel.SetDock(actions, Dock.Bottom);
         layout.Children.Add(top);
@@ -118,7 +140,12 @@ public sealed class FilePreviewPanel : Grid
         _card.Padding = new Thickness(20, 14, 20, 20);
         Children.Add(_card);
         PointerPressed += async (_, e) => { if (e.Source == this) await TryCloseAsync(); };
-        KeyDown += async (_, e) => { if (e.Key == Key.Escape) { await TryCloseAsync(); e.Handled = true; } };
+        KeyDown += async (_, e) =>
+        {
+            if (e.Key != Key.Escape) return;
+            if (!ExitReaderMode()) await TryCloseAsync();
+            e.Handled = true;
+        };
         SizeChanged += (_, _) => Place();
     }
 
@@ -141,6 +168,34 @@ public sealed class FilePreviewPanel : Grid
 
     public int Index { get; private set; }
 
+    /// <summary>Immersive reading expands the existing viewer without recreating its document or WebView.</summary>
+    public bool ReaderMode => _readerMode;
+
+    public void EnterReaderMode() => SetReaderMode(true);
+
+    /// <summary>Consumes Back when reading expanded; the next Back may close the preview.</summary>
+    public bool ExitReaderMode()
+    {
+        if (!_readerMode) return false;
+        SetReaderMode(false);
+        return true;
+    }
+
+    private void SetReaderMode(bool expanded)
+    {
+        if (!IsVisible || _readerMode == expanded) return;
+        _readerMode = expanded;
+        _readerButton.Content = expanded ? "Sair da tela cheia" : "Tela cheia";
+        _meta.IsVisible = !expanded;
+        _choose.IsVisible = !expanded && _files.Count > 1;
+        _htmlMode.IsVisible = !expanded && (_generated is not null ||
+            (Current is { } p && VaultFileKinds.Classify(p) == VaultFileKinds.Html));
+        _actions.IsVisible = !expanded;
+        _more.IsVisible = !expanded && (Current is not null || _generated is not null);
+        _card.Padding = expanded ? new Thickness(8) : new Thickness(20, 14, 20, 20);
+        Place();
+    }
+
     /// <summary>What the body shows now: "image", "text", "zip", "viewer" (a content viewer) or "none" (tests).</summary>
     public string Shown { get; private set; } = "none";
 
@@ -157,6 +212,7 @@ public sealed class FilePreviewPanel : Grid
     public async Task OpenGeneratedAsync(string title, string source, byte[] html)
     {
         if (IsVisible && !await ConfirmMapExitAsync()) return;
+        ExitReaderMode();
         _generated = (source, html);
         _files = [(title, null)];
         _htmlSource = false;
@@ -178,6 +234,7 @@ public sealed class FilePreviewPanel : Grid
     private async Task OpenAsync(IReadOnlyList<(string Name, string? Path)> files, int index)
     {
         if (IsVisible && !await ConfirmMapExitAsync()) return;
+        ExitReaderMode();
         _generated = null;
         _files = files;
         _htmlSource = false;
@@ -245,6 +302,9 @@ public sealed class FilePreviewPanel : Grid
 
     private void CloseCore()
     {
+        ExitReaderMode();
+        _pdfView = null;
+        _pdfNavigation.IsVisible = false;
         _version++;
         IsVisible = false;
         _body.Content = null;
@@ -255,16 +315,33 @@ public sealed class FilePreviewPanel : Grid
     private void Place()
     {
         bool wide = Bounds.Width >= 720;
-        _card.Width = wide ? Math.Min(760, Bounds.Width - 48) : double.NaN;
-        _card.MaxHeight = wide ? Math.Max(320, Bounds.Height - 64) : Math.Max(320, Bounds.Height * .9);
-        _card.HorizontalAlignment = wide ? HorizontalAlignment.Center : HorizontalAlignment.Stretch;
-        _card.VerticalAlignment = wide ? VerticalAlignment.Center : VerticalAlignment.Bottom;
-        _card.CornerRadius = wide ? new CornerRadius(16) : new CornerRadius(20, 20, 0, 0);
+        if (_readerMode)
+        {
+            _card.Width = double.NaN;
+            _card.Height = double.NaN;
+            _card.MaxHeight = double.PositiveInfinity;
+            _card.HorizontalAlignment = HorizontalAlignment.Stretch;
+            _card.VerticalAlignment = VerticalAlignment.Stretch;
+            _card.CornerRadius = new CornerRadius(0);
+        }
+        else
+        {
+            _card.Width = wide ? Math.Min(760, Bounds.Width - 48) : double.NaN;
+            _card.Height = double.NaN;
+            _card.MaxHeight = wide ? Math.Max(320, Bounds.Height - 64) : Math.Max(320, Bounds.Height * .9);
+            _card.HorizontalAlignment = wide ? HorizontalAlignment.Center : HorizontalAlignment.Stretch;
+            _card.VerticalAlignment = wide ? VerticalAlignment.Center : VerticalAlignment.Bottom;
+            _card.CornerRadius = wide ? new CornerRadius(16) : new CornerRadius(20, 20, 0, 0);
+        }
+        if (Shown is "viewer" or "text" && _body.Content is Control shown)
+            shown.Height = ViewerHeight();
     }
 
     private async Task ShowAsync(int index)
     {
         int version = ++_version;
+        _pdfView = null;
+        _pdfNavigation.IsVisible = false;
         Index = index;
         _choosing = true;
         _choose.SelectedIndex = index;
@@ -285,9 +362,12 @@ public sealed class FilePreviewPanel : Grid
         if (_body.Content is NativeControlHost oldNativeViewer) oldNativeViewer.IsVisible = false;
         _body.Content = Empty("Carregando do dispositivo…");
         // audio and video are played from the vault by the platform: only their size is read here
-        bool media = kind is VaultFileKinds.Audio or VaultFileKinds.Video;
+        // Files with no in-app renderer still have metadata and an explicit external fallback.
+        // Do not allocate a giant Office/EPUB container merely to say its preview is unsupported.
+        bool metadataOnly = kind is VaultFileKinds.Audio or VaultFileKinds.Video
+            or VaultFileKinds.Epub or VaultFileKinds.Slides or VaultFileKinds.Document;
         var read = _generated is { } g ? new VaultFileRead(g.Html.Length, g.Html)
-            : path is not null && Storage is { } s ? await s.ReadFileAsync(path, media ? 0 : MaxBytes) : null;
+            : path is not null && Storage is { } s ? await s.ReadFileAsync(path, metadataOnly ? 0 : MaxBytes) : null;
         if (version != _version) return;
         if (read is null)
         {
@@ -328,6 +408,13 @@ public sealed class FilePreviewPanel : Grid
                 viewer.Height = ViewerHeight();
                 _body.Content = viewer;
                 Shown = "viewer";
+                if (viewer is PdfPagesView pdf)
+                {
+                    _pdfView = pdf;
+                    _pdfNavigation.IsVisible = true;
+                    pdf.PageChanged += _ => { if (ReferenceEquals(_pdfView, pdf)) UpdatePdfNavigation(); };
+                    UpdatePdfNavigation();
+                }
                 return;
             }
         }
@@ -344,11 +431,23 @@ public sealed class FilePreviewPanel : Grid
         }
         _body.Content = Empty(name, kind is VaultFileKinds.Pdf or VaultFileKinds.Audio or VaultFileKinds.Video
             ? "Este aparelho ainda não tem o visualizador deste formato dentro do Urbe."
-            : "Sem visualização nativa para este formato.");
+            : kind is VaultFileKinds.Epub or VaultFileKinds.Slides or VaultFileKinds.Document
+                ? "O leitor interno deste formato está em desenvolvimento. Use Abrir em outro app sem modificar o original."
+                : "Sem visualização nativa para este formato.");
+    }
+
+    private void UpdatePdfNavigation()
+    {
+        if (_pdfView is not { } pdf) return;
+        _pdfPage.Text = pdf.CurrentPage + " / " + pdf.PageCount;
+        _pdfPrevious.IsEnabled = pdf.CurrentPage > 1;
+        _pdfNext.IsEnabled = pdf.CurrentPage < pdf.PageCount;
     }
 
     /// <summary>The height of a content viewer: a native view needs one, and it fills what the card leaves.</summary>
-    private double ViewerHeight() => Bounds.Width >= 720 ? Math.Max(260, Bounds.Height - 280) : Math.Max(260, Bounds.Height * .9 - 250);
+    private double ViewerHeight() => _readerMode
+        ? Math.Max(1, Bounds.Height - 96)
+        : Bounds.Width >= 720 ? Math.Max(260, Bounds.Height - 280) : Math.Max(260, Bounds.Height * .9 - 250);
 
     private static Button Chip(string text) => new()
     {
@@ -394,6 +493,7 @@ public sealed class FilePreviewPanel : Grid
         Next();
         _body.Content = new ScrollViewer
         {
+            Height = ViewerHeight(),
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
             Content = new Border { Padding = new Thickness(0, 12), Child = parts },
             Background = UrbeTheme.Brush(UrbeTheme.Bg)
