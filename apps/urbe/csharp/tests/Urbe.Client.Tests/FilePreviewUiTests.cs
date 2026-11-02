@@ -33,6 +33,8 @@ public sealed partial class HeadlessUiTests
                     zip.CreateEntry("pasta/b.png");
                 }
                 File.WriteAllBytes(Path.Combine(vault, "livro.pdf"), [0x25, 0x50, 0x44, 0x46, 0, 1, 2]);
+                File.WriteAllBytes(Path.Combine(vault, "livro.epub"), [0x50, 0x4b, 0x03, 0x04]);
+                File.WriteAllBytes(Path.Combine(vault, "aula.pptx"), [0x50, 0x4b, 0x03, 0x04]);
                 var before = Directory.GetFiles(vault, "*", SearchOption.AllDirectories).Order().Select(f => (f, File.GetLastWriteTimeUtc(f))).ToArray();
                 var preview = view.FilePreview;
 
@@ -55,6 +57,16 @@ public sealed partial class HeadlessUiTests
                 await preview.OpenAsync("livro.pdf");
                 Assert.Equal("none", preview.Shown);
                 Assert.Contains(preview.GetLogicalDescendants().OfType<Button>(), b => b.Content as string == "Abrir em outro app" && b.IsVisible);
+
+                await preview.OpenAsync("livro.epub");
+                Assert.Contains(preview.GetLogicalDescendants().OfType<TextBlock>(),
+                    t => (t.Text ?? "").Contains("O leitor interno deste formato está em desenvolvimento", StringComparison.Ordinal));
+                Assert.Contains(preview.GetLogicalDescendants().OfType<Button>(),
+                    b => b.Content as string == "Abrir em outro app" && b.IsVisible);
+
+                await preview.OpenAsync("aula.pptx");
+                Assert.Contains(preview.GetLogicalDescendants().OfType<TextBlock>(),
+                    t => (t.Text ?? "").Contains("O leitor interno deste formato está em desenvolvimento", StringComparison.Ordinal));
 
                 await preview.OpenAsync("sumiu.png");
                 Assert.Contains(preview.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Arquivo não encontrado");
