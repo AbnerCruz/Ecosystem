@@ -9,21 +9,25 @@
     "CST-231 (partial)",
     "CST-233 (partial)",
     "CST-010 (regression)",
-    "CST-246 (pending)"
+    "CST-246 (pending)",
+    "CST-238 (partial)",
+    "CST-244 (partial)"
   ],
-  "summary": "Native in-app reading mode expands FilePreview without recreating viewer; system Back exits expanded view first; PDF one-based current-page and navigation implemented through existing lazy renderer.",
+  "summary": "Native in-app reading mode expands FilePreview without recreating viewer; system Back exits expanded view first; PDF one-based current-page and navigation implemented through existing lazy renderer. Recognizes Office/EPUB extensions and MIME for explicit fallback without large binary reads.",
   "touched_files": [
     "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
     "apps/urbe/csharp/src/Urbe.Client/ContentViewers.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.AndroidBack.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/FilePreviewUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ContentViewerUiTests.cs",
-    "apps/urbe/docs/csharp/STUDY-READER-INCREMENT-2026-11-02.md"
+    "apps/urbe/docs/csharp/STUDY-READER-INCREMENT-2026-11-02.md",
+    "apps/urbe/csharp/src/Urbe.Core/VaultFileKinds.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultFileKindsTests.cs"
   ],
   "proof": "Tests committed; no local .NET SDK; CI and DEVICE unverified",
   "competing_prs": "PR #893 (beta.43 release metadata) left untouched; PR #886 (PDF extraction) integrated in main, no duplicate ingest.",
   "data_security": "No vault schema, permissions, dependencies, signing identity or release files changed. Existing isolated WebView maintained.",
-  "limits": "Immersive UI and PDF page jumping only; no EPUB, YouTube, browser, annotations, text-layer or full native OS fullscreen. PDF frame allocation and synchronous rendering remain open.",
+  "limits": "Immersive UI and PDF page jumping only; no EPUB, YouTube, browser, annotations, text-layer or full native OS fullscreen. PDF frame allocation and synchronous rendering remain open. EPUB/slides/office readers are not implemented; only correct identification and external fallback.",
   "next": [
     "Run CI Core/Client and Android/Windows",
     "Fix test/build failures before merge",
