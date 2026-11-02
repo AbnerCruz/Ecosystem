@@ -40,6 +40,19 @@ public sealed class AssistantDocumentToolsTests
     }
 
     [Fact]
+    public void VisualPassUsesExactlyOnePageAndKeepsEmbeddedVectorDiagram()
+    {
+        var original = Document();
+        var copy = AssistantDocumentTools.SinglePagePdf(original, 1);
+        Assert.Equal(1, AssistantDocumentTools.Inspect(copy).Pages);
+        var page = AssistantDocumentTools.Page(copy, 1);
+        Assert.Contains("conferivel", page.Text);
+        Assert.True(page.VectorPaths > 0);
+        Assert.True(page.VisualReviewRequired);
+        Assert.Throws<AiToolException>(() => AssistantDocumentTools.SinglePagePdf(original, 4));
+    }
+
+    [Fact]
     public void SearchIsBatchedAndDoesNotInventImageOrMathContent()
     {
         var pdf = Document();
