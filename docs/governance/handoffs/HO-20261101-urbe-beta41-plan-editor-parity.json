@@ -1,0 +1,120 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261101-urbe-beta41-plan-editor-parity",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-02T00:20:05.652Z",
+  "agent": {
+    "id": "gpt-6",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-078",
+  "component": "urbe",
+  "state": "review",
+  "branch": "fix/urbe-beta41-plan-editor-parity-20261101",
+  "base_commit": "e32b6a55ebd0c73afab3ca68c017aa3b8ea2e0f7",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantLayeredPlan.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantLayeredPlanTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTabsUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES-beta.41.md",
+    "apps/urbe/docs/csharp/PARIDADE-CONSOLIDACAO-BETA41.md",
+    "apps/urbe/docs/csharp/PLANEJAMENTO-CAMADAS.md",
+    "docs/governance/handoffs/HO-20261101-urbe-beta41-plan-editor-parity.json"
+  ],
+  "work_completed": [
+    "Reprodução da queda silenciosa de grafo para legado e provas 'Ainda pendente' na conversa beta.40; novos testes antes do código.",
+    "Projeção de contexto do plano na execução (RunHost), isolada entre agentes/chats, com erro explícito se ausente e sem novo banco canônico.",
+    "Abas visualmente compactas de 36dp e alvos primários de 48dp, mantendo semântica de abas explícitas e teste headless.",
+    "Auditoria rastreável contra Consolidação 2.5: CST-016/142/143/144 permanecem bloqueadores de aceitação física; sem declarações falsas.",
+    "Preparada versão 2.0.0-beta.41 e patchnotes no canal oficial; nenhuma assinatura ou identidade de produção modificada."
+  ],
+  "verification": [
+    {
+      "check": "CI de testes C# e builds Android/Windows",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "PR acionará urbe-checks; verificar resultado no commit final."
+    },
+    {
+      "check": "Consistência e simulação do integrador",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "PR acionará consistency, resultado pendente."
+    },
+    {
+      "check": "Release oficial assinada beta.41",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Somente integrador autorizado após owner label 'integrar' no PR crítico."
+    },
+    {
+      "check": "Editor real, Gboard/IME, equações, radial e recuperação de rascunho no moto g32",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "evidence": "Validação no aparelho obrigatória; não marcada como realizada.",
+      "object": "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs"
+    }
+  ],
+  "known_issues": [
+    "A correção do plano é intra-execução, sem checkpoint durável entre reinícios.",
+    "Evidências do agente são relatos, não recibos autenticados.",
+    "CST-016, CST-142, CST-143, CST-144 permanecem bloqueadores de prontidão até validação Android física.",
+    "A consolidação 2.5 excede o escopo deste incremento: não afirmar paridade integral."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verificar CI e resolver regressões no PR.",
+    "Integrar exclusivamente pelo integrador governado, com autorização do proprietário em mudança crítica.",
+    "Disparar workflow oficial beta.41 e conferir APK, hash e tag; testar em aparelho os bloqueadores."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.5.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Plano projetado no host existente, sem duplicação canônica de dados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Teste headless não substitui dispositivo físico."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estados de conclusão segregam prova declarada e aceite humano."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Não extraído componente transversal sem segundo consumidor."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "layered-plan-continuity",
+      "status": "product-specific",
+      "rationale": "Pequeno ajuste no RunHost de Urbe, preserva AgentRuntime independente."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Bump de versão beta.41 em csproj da distribuição existente, com identidade e assinatura inalteradas."
+  }
+}
