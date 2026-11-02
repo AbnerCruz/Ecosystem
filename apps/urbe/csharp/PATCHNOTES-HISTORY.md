@@ -2,6 +2,11 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.43 — 02/11/2026
+- Leitura documental pelo Assistente: inventário de PDFs, busca por página e texto, inspeção visual autorizada de uma página/imagem com multimodal, sem OCR local.
+- Primeira publicação: Android nativo assinado em 02/11/2026; a distribuição Windows utiliza o mesmo tag e fluxo oficial.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.43
+
 ## 2.0.0-beta.42 — 02/11/2026
 - Correção de Enter/IME multilinha nos editores; indicadores de progresso nativos, numeração de linhas e operações de undo/redo.
 - Publicações com fontes por título/bloco, HTML de livros/slides, EPUB3 com validação EPUBCheck e ferramentas do Assistente.
