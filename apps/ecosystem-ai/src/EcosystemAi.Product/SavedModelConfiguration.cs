@@ -38,11 +38,19 @@ public sealed record SavedModelConfiguration(int Version, IReadOnlyList<SavedPro
         if (provider is null || !provider.Models.Any(m => m.Id == ModelId))
             throw new InvalidDataException("O modelo selecionado não pertence ao provedor.");
     }
+    // No cleartext endpoint outside the device. The Android Host additionally
+    // whitelists these two hosts in its Network Security Configuration.
+    public static bool IsLocalHttp(Uri uri) =>
+        uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback
+        && (uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+            || uri.Host == "127.0.0.1");
+
     public static Uri BaseUri(string value)
     {
-        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Scheme != "https"
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttps && !IsLocalHttp(uri))
             || uri.UserInfo.Length != 0 || uri.Query.Length != 0 || uri.Fragment.Length != 0)
-            throw new ArgumentException("Informe a URL base HTTPS da API, sem chave, parâmetros ou fragmento.");
+            throw new ArgumentException("Use HTTPS ou HTTP local (localhost/127.0.0.1), sem credenciais, parâmetros ou fragmento.");
         return new Uri(uri.AbsoluteUri.TrimEnd('/') + "/");
     }
     public static ProductModelSettings Settings(SavedProvider provider, SavedModel model, string? key) => new()
