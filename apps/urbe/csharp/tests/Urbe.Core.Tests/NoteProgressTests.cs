@@ -45,6 +45,7 @@ public sealed class NoteProgressTests
         Assert.False(NoteProgress.Evaluate(directive, "", Resolve).IsValid);
         Assert.Equal(25m, NoteProgress.Evaluate("value: $lidas\ntotal: $paginas", "---\nlidas: 25\npaginas: 100\n---\n").Percent);
         Assert.False(NoteProgress.Evaluate("value: $ausente\ntotal: 100", "").IsValid);
-        Assert.DoesNotContain("50", directive);
+        Assert.DoesNotContain("value:", directive, StringComparison.Ordinal);
+        Assert.DoesNotContain("total:", directive, StringComparison.Ordinal);
     }
 }

@@ -134,15 +134,17 @@ jobs:
             adb logcat -c
             adb shell monkey -p app.urbe.nativepreview -c android.intent.category.LAUNCHER 1
             sleep 10
-            pid=$(adb shell pidof app.urbe.nativepreview | tr -d '\r')
-            test -n "$pid"
+            # android-emulator-runner executa cada linha do script em um shell separado.
+            # Nao persistir pid em variavel entre linhas: validar o processo diretamente.
+            adb logcat -d -v threadtime > apps/urbe/csharp/artifacts/android-smoke/startup-logcat.txt
+            adb shell pidof app.urbe.nativepreview
             adb exec-out screencap -p > apps/urbe/csharp/artifacts/android-smoke/launched.png
             adb shell input keyevent KEYCODE_HOME
             sleep 2
             adb shell monkey -p app.urbe.nativepreview -c android.intent.category.LAUNCHER 1
             sleep 5
-            test -n "$(adb shell pidof app.urbe.nativepreview)"
-            adb logcat -d --pid="$pid" > apps/urbe/csharp/artifacts/android-smoke/logcat.txt
+            adb logcat -d -v threadtime > apps/urbe/csharp/artifacts/android-smoke/logcat.txt
+            adb shell pidof app.urbe.nativepreview
             adb exec-out screencap -p > apps/urbe/csharp/artifacts/android-smoke/resumed.png
             if grep -E 'FATAL EXCEPTION|Fatal signal|ANR in app.urbe' apps/urbe/csharp/artifacts/android-smoke/logcat.txt; then exit 1; fi
       - uses: actions/upload-artifact@v4
