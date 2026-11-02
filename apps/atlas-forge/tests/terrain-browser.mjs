@@ -16,8 +16,13 @@ const candidate = world.state.elevation.findIndex(
   (e, i) =>
     e > 300 &&
     e < 2200 &&
-    [4, 5].includes(derived.biome[i]) &&
-    Math.abs(coord(i, world.definition.grid).lat) < 65,
+    [4, 5, 6].includes(derived.biome[i]) &&
+    Math.abs(coord(i, world.definition.grid).lat) < 65 &&
+    sampleSurface(
+      source,
+      coord(i, world.definition.grid).lat,
+      coord(i, world.definition.grid).lon,
+    ).material === 1,
 );
 assert.ok(
   candidate >= 0,

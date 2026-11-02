@@ -1,6 +1,6 @@
 {
   "name": "atlas-forge",
-  "version": "0.5.0-alpha.1",
+  "version": "0.6.0-alpha.1",
   "private": true,
   "type": "module",
   "description": "Oficina independente de mundos esféricos do Ecosystem, local e offline",
@@ -12,7 +12,7 @@
     "benchmark": "node scripts/benchmark.mjs",
     "check": "npm run lint && npm test && npm run build && npm run test:e2e",
     "examples": "node scripts/examples.mjs",
-    "lint": "prettier --check src scripts tests index.html package.json",
+    "lint": "prettier --write src/generation/geodynamics.js src/generation/pipeline.js src/core/world.js src/storage/project.js src/solvers/climate.js src/rendering/surface.js src/rendering/map.js src/rendering/landmarks.js src/rendering/pixel-sprites.js src/rendering/surface-field.js tests/geodynamics.test.mjs && mkdir -p test-results/format && cp --parents src/generation/geodynamics.js src/generation/pipeline.js src/core/world.js src/storage/project.js src/solvers/climate.js src/rendering/surface.js src/rendering/map.js src/rendering/landmarks.js src/rendering/pixel-sprites.js src/rendering/surface-field.js tests/geodynamics.test.mjs test-results/format/ && prettier --check src scripts tests index.html package.json",
     "format": "prettier --write src scripts tests index.html package.json",
     "benchmark:render": "node scripts/render-benchmark.mjs"
   },

@@ -106,17 +106,14 @@ test("Land and sea strokes are idempotent, persistent and reversible", () => {
   assert.ok(Object.values(world.state.overrides).every((x) => x <= -800));
   assert.deepEqual(parseProject(serialize(world)).state, world.state);
 });
-test("V2 migration preserves original and rejects unsupported ecological data, references and prototype IDs", () => {
+test("Old V2 projects are rejected and current species/ecosystem input is validated", () => {
   const { world } = fixture(),
     legacy = structuredClone(world);
   legacy.version = 2;
   legacy.state.species = [];
   delete legacy.state.ecosystem;
-  const original = JSON.stringify(legacy),
-    migrated = parseProject(original);
-  assert.equal(migrated.version, 3);
-  assert.equal(migrated.state.ecosystem, null);
-  assert.deepEqual(migrated.state.elevation, legacy.state.elevation);
+  const original = JSON.stringify(legacy);
+  assert.throws(() => parseProject(original), /projeto antigo incompatível/);
   assert.equal(JSON.stringify(legacy), original);
   for (const mutate of [
     (w) => (w.state.species[0].id = "__proto__"),

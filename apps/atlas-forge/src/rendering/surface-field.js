@@ -1,6 +1,7 @@
 import { clamp, index, coord, RAD, wrap } from "../geometry/sphere.js";
 export const SURFACE_MODEL = "spherical-detail-1";
 export const TILE_SIZE = 96;
+export const PALETTE_MODEL = "pixel-ramp-2";
 export const MATERIALS = ["Água", "Grama", "Mata", "Areia", "Rocha", "Neve"];
 export function hash32(a, b, c, seed = 0) {
   let h =
@@ -136,6 +137,19 @@ export function sampleSurface(ctx, lat, lon) {
       interpolatedClimate(ctx, ctx.temperature, lat, lon) -
       0.0065 * (elevation - base);
     const rain = interpolatedClimate(ctx, ctx.rain, lat, lon);
+    // Stable 1.2 km moisture mosaics break climate-class straight edges
+    // without inventing new physical cells or per-LOD dice rolls.
+    const phi = lat * RAD;
+    const lambda = lon * RAD;
+    const modulation =
+      170 *
+      noise(
+        (ctx.radius / 1200) * Math.cos(phi) * Math.cos(lambda),
+        (ctx.radius / 1200) * Math.sin(phi),
+        (ctx.radius / 1200) * Math.cos(phi) * Math.sin(lambda),
+        ctx.seed + 19391,
+      );
+    const wet = rain + modulation;
     material =
       elevation <= 0
         ? 0
@@ -143,13 +157,13 @@ export function sampleSurface(ctx, lat, lon) {
           ? 5
           : elevation > 3300
             ? 4
-            : rain < 170
+            : wet < 170
               ? 3
-              : rain < 400
+              : wet < 400
                 ? 1
                 : temperature < 6
                   ? 2
-                  : rain < 850
+                  : wet < 850
                     ? 1
                     : 2;
   } else
@@ -193,13 +207,14 @@ export function generateSurfaceTile(ctx, z, x, y) {
         material[j * size + i] = s.material;
     }
   const topo = new Uint8ClampedArray(size * size * 4);
+  // 4-value material ramps: integer-pixel clusters, no colour interpolation.
   const palette = [
-    [28, 77, 91],
-    [80, 118, 55],
-    [47, 91, 47],
-    [190, 169, 115],
-    [127, 126, 114],
-    [225, 233, 230],
+    [[9, 39, 63], [14, 59, 83], [23, 80, 100], [34, 99, 112]],
+    [[38, 91, 52], [59, 122, 60], [85, 153, 65], [120, 180, 81]],
+    [[17, 64, 47], [25, 83, 55], [36, 109, 65], [56, 138, 75]],
+    [[124, 101, 64], [163, 132, 80], [202, 169, 103], [232, 202, 137]],
+    [[77, 82, 83], [106, 110, 108], [151, 151, 139], [184, 183, 163]],
+    [[155, 171, 173], [200, 210, 203], [231, 235, 225], [247, 248, 239]],
   ];
   const metres = (Math.PI * ctx.radius) / (n * size),
     lat = tileCoordinates(z, x, y, 0.5, 0.5).lat;
@@ -231,13 +246,14 @@ export function generateSurfaceTile(ctx, z, x, y) {
           r * Math.cos(phi) * Math.sin(lambda),
           ctx.seed + 90001,
         );
-      const c = palette[m];
-      for (let a = 0; a < 3; a++)
-        rgba[(j * size + i) * 4 + a] = clamp(
-          c[a] * illumination + grain + (m === 0 ? clamp(h / 800, -18, 0) : 0),
-          0,
-          255,
-        );
+      const pIndex = j * size + i;
+      const shade = clamp(
+        Math.floor((illumination - 0.35) * 3.8 + 1.0 + grain / 12),
+        0,
+        3,
+      );
+      const c = palette[m][shade];
+      for (let a = 0; a < 3; a++) rgba[pIndex * 4 + a] = c[a];
       rgba[(j * size + i) * 4 + 3] = 255;
       const t = clamp((h - 500) / 3000, 0, 1),
         interval = Math.max(1, Math.min(100, metres * 0.8));
