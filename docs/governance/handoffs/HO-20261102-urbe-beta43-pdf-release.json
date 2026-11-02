@@ -17,12 +17,15 @@
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/893",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
-    "docs/governance/handoffs/HO-20261102-urbe-beta43-pdf-release.json"
+    "docs/governance/handoffs/HO-20261102-urbe-beta43-pdf-release.json",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md"
   ],
   "work_completed": [
     "PR #886 já foi integrado em main (e724a14de0a9f756b20be3dc2a53844bdecb4a6a); a última release beta.42 foi publicada antes dele e não o inclui.",
     "Incremento mínimo e monotônico de versão beta.42 -> beta.43, versionCode 2000042 -> 2000043, sem mudança na identidade app.urbe.csharp, certificado beta, dependências ou formato de vault.",
-    "Publicação solicitada pelo proprietário; encaminhada ao workflow oficial urbe-csharp-mobile-release.yml após integração testada. Sem release manual nem reuso de artefato de prévia."
+    "Publicação solicitada pelo proprietário; encaminhada ao workflow oficial urbe-csharp-mobile-release.yml após integração testada. Sem release manual nem reuso de artefato de prévia.",
+    "Corrigido CI Urbe.Client.Tests: PATCHNOTES.md declarava 2.0.0-beta.42 enquanto a fonte canônica Urbe.Android.csproj era beta.43; teste EmbeddedPatchnotesComeFromCanonicalPreparedVersion falhava por desencontro. Agora PATCHNOTES.md declara beta.43, CST-212 e limites; PATCHNOTES-HISTORY.md arquiva beta.42."
   ],
   "verification": [
     {
@@ -36,7 +39,7 @@
       "check": "CI da versão beta.43 e publicação oficial assinada",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Verificar integração e workflow urbe-csharp-mobile-release após merge do PR #893; não alegar release antes do asset no GitHub."
+      "evidence": "O CI anterior do PR #893 falhou em EmbeddedPatchnotesComeFromCanonicalPreparedVersion pela defasagem beta.42 no patchnotes; arquivos corrigidos e novos checks ainda a confirmar antes da integração/publicação."
     },
     {
       "check": "Atualização da beta.42 para .43 e leitura de PDFs didáticos no aparelho real",
@@ -45,6 +48,12 @@
       "object": "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
       "critical": true,
       "evidence": "Teste físico ainda não feito. OCR local e validação matemática certificada não fazem parte da primeira entrega CST-212."
+    },
+    {
+      "check": "Paridade estática de versão entre Urbe.Android.csproj e PATCHNOTES.md",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Em release/urbe-beta43-pdf-cst212, ambos contêm exatamente 2.0.0-beta.43. O teste do CI que falhava está em apps/urbe/csharp/tests/Urbe.Client.Tests/AndroidBackAndPatchnotesUiTests.cs; aguardar rerun completo para validar."
     }
   ],
   "known_issues": [
