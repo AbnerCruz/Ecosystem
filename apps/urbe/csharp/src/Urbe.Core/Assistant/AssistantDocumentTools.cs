@@ -170,7 +170,7 @@ public static class AssistantDocumentTools
             {
                 var path = Str(i, "path");
                 if (!path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ||
-                    path.Contains("..", StringComparison.Ordinal) || path.Contains('\') ||
+                    path.Contains("..", StringComparison.Ordinal) || path.Contains('\\') ||
                     path.Contains(':') || path.StartsWith('/'))
                     throw new AiToolException("Somente PDF anexado ou do vault é permitido.");
                 var reader = host.DocumentFiles ?? throw new AiToolException("PDF inacessível neste host.");
