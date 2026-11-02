@@ -333,7 +333,7 @@ public sealed class FilePreviewPanel : Grid
             _card.VerticalAlignment = wide ? VerticalAlignment.Center : VerticalAlignment.Bottom;
             _card.CornerRadius = wide ? new CornerRadius(16) : new CornerRadius(20, 20, 0, 0);
         }
-        if (Shown is "viewer" or "text" && _body.Content is { } shown)
+        if (Shown is "viewer" or "text" && _body.Content is Control shown)
             shown.Height = ViewerHeight();
     }
 
