@@ -35,6 +35,11 @@ public sealed class FilePreviewPanel : Grid
     private readonly Button _open = Action("Abrir em outro app", primary: true);
     private readonly StackPanel _htmlMode = new() { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(0, 10, 0, 0), IsVisible = false };
     private bool _htmlSource;
+    private PdfPagesView? _pdfView;
+    private readonly StackPanel _pdfNavigation = new() { Orientation = Orientation.Horizontal, Spacing = 10, IsVisible = false, Margin = new Thickness(0, 6, 0, 0) };
+    private readonly Button _pdfPrevious = new() { Content = "Anterior", MinWidth = 80, Height = 40 };
+    private readonly Button _pdfNext = new() { Content = "Próxima", MinWidth = 80, Height = 40 };
+    private readonly TextBlock _pdfPage = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = 13 };
     private bool _readerMode;
     private readonly Grid _actions = new() { Margin = new Thickness(0, 16, 0, 0) };
     private readonly Button _readerButton = new()
@@ -117,7 +122,12 @@ public sealed class FilePreviewPanel : Grid
             };
             _htmlMode.Children.Add(b);
         }
-        var top = new StackPanel { Children = { head, _meta, _choose, _htmlMode } };
+        _pdfNavigation.Children.Add(_pdfPrevious);
+        _pdfNavigation.Children.Add(_pdfPage);
+        _pdfNavigation.Children.Add(_pdfNext);
+        _pdfPrevious.Click += (_, _) => _pdfView?.GoToPage(_pdfView.CurrentPage - 1);
+        _pdfNext.Click += (_, _) => _pdfView?.GoToPage(_pdfView.CurrentPage + 1);
+        var top = new StackPanel { Children = { head, _meta, _choose, _htmlMode, _pdfNavigation } };
         DockPanel.SetDock(top, Dock.Top);
         DockPanel.SetDock(actions, Dock.Bottom);
         layout.Children.Add(top);
@@ -293,6 +303,8 @@ public sealed class FilePreviewPanel : Grid
     private void CloseCore()
     {
         ExitReaderMode();
+        _pdfView = null;
+        _pdfNavigation.IsVisible = false;
         _version++;
         IsVisible = false;
         _body.Content = null;
@@ -328,6 +340,8 @@ public sealed class FilePreviewPanel : Grid
     private async Task ShowAsync(int index)
     {
         int version = ++_version;
+        _pdfView = null;
+        _pdfNavigation.IsVisible = false;
         Index = index;
         _choosing = true;
         _choose.SelectedIndex = index;
@@ -391,6 +405,13 @@ public sealed class FilePreviewPanel : Grid
                 viewer.Height = ViewerHeight();
                 _body.Content = viewer;
                 Shown = "viewer";
+                if (viewer is PdfPagesView pdf)
+                {
+                    _pdfView = pdf;
+                    _pdfNavigation.IsVisible = true;
+                    pdf.PageChanged += _ => { if (ReferenceEquals(_pdfView, pdf)) UpdatePdfNavigation(); };
+                    UpdatePdfNavigation();
+                }
                 return;
             }
         }
@@ -408,6 +429,14 @@ public sealed class FilePreviewPanel : Grid
         _body.Content = Empty(name, kind is VaultFileKinds.Pdf or VaultFileKinds.Audio or VaultFileKinds.Video
             ? "Este aparelho ainda não tem o visualizador deste formato dentro do Urbe."
             : "Sem visualização nativa para este formato.");
+    }
+
+    private void UpdatePdfNavigation()
+    {
+        if (_pdfView is not { } pdf) return;
+        _pdfPage.Text = pdf.CurrentPage + " / " + pdf.PageCount;
+        _pdfPrevious.IsEnabled = pdf.CurrentPage > 1;
+        _pdfNext.IsEnabled = pdf.CurrentPage < pdf.PageCount;
     }
 
     /// <summary>The height of a content viewer: a native view needs one, and it fills what the card leaves.</summary>
