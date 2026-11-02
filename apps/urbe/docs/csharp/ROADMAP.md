@@ -41,6 +41,16 @@
   - editar, gravar e reabrir sem perder nada;
   - conferir que os arquivos da cidade continuam no vault.
 
+### Correção de startup Android — CST-013 / UC-63, issue #899 (02/11/2026)
+
+**Fato:** o proprietário forneceu log de `ForegroundServiceDidNotStartInTimeException` em `AssistantRunService` ao tocar em Enviar, com ou sem anexo. O log prova a expiração da obrigação de promoção; não distingue sozinho bloqueio da main thread, falha de promoção ou corrida de parada. `Publish` armava essa obrigação em cada atualização por `StartForegroundService`, e só promovia no posterior `OnStartCommand`.
+
+**Incremento:** arranque por `StartService` somente quando a Activity está visível, promoção no `OnCreate`, atualizações na instância já existente sem novo start, limpeza de pedido terminal e `NotSticky` preservado. Não inicia serviço novo do background sem exceção autorizada. Mantém notificação, tipo specialUse e permissões existentes. Não altera anexos, modelo, dados do vault ou runtime.
+
+**Evidência e limites:** regressão de arquitetura `AssistantServiceStartupTests` protege o ponto de entrada fatal e o caminho de promoção; verificações equivalentes sobre fonte falham antes e passam depois. Este ambiente não tem SDK .NET/Android: build e suíte ficam no CI do PR. **DEVICE pendente:** enviar texto, imagem e PDF; resposta/erro imediato; notificações concedidas/negadas; minimizar durante execução/aprovação e retornar. Não fecha CST-013 nem prova recuperação após morte do processo.
+
+**Referências estudadas:** [Service.StartForeground](https://developer.android.com/reference/android/app/Service#startForeground(int,%20android.app.Notification)), [inicialização de serviços](https://developer.android.com/develop/background-work/services), [diagnóstico do timeout](https://developer.android.com/develop/background-work/services/fgs/troubleshooting), [código AOSP ActiveServices](https://android.googlesource.com/platform/frameworks/base/+/refs/heads/main/services/core/java/com/android/server/am/ActiveServices.java), [relato externo LAMP #905](https://github.com/BIDMCDigitalPsychiatry/LAMP-platform/issues/905). A documentação autoriza serviço iniciado pela Activity visível e promovido por `startForeground`; o AOSP distingue o temporizador da chamada foreground-start. O relato externo confirma a classe de falha como experiência indesejada, sem provar a causa específica do Urbe. Adaptar o lifecycle local evita trocar o runtime ou remover continuidade.
+
 ## Assistente: segundo plano, descoberta e qualidade (proprietário, 24/10/2026)
 
 **Escopo autorizado; proposta arquitetural no ADR-0037 (ainda sem gate de Android/device).** O Assistente deve continuar a tarefa ao minimizar o Urbe sem depender da Activity, com notificações distintas quando estiver executando, precisar de aprovação, aguardar resposta e concluir ou falhar. A implementação nativa inicial usa Foreground Service de uso especial declarado no Android, sem mover chaves, ferramentas ou estado de vault para outro runtime. O sistema não garante recuperação após force-stop, processo morto ou reinício: salvar checkpoint/journal e retomar de maneira idempotente, inclusive no meio de ferramenta/aprovação, é um **incremento obrigatório ainda aberto** para atender a expectativa completa de durabilidade.

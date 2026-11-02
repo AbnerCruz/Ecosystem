@@ -26,50 +26,84 @@ public sealed class AssistantRunService : Service
     private const int EventId = 8102;
 
     private static AssistantActivity? _latest;
+    private static AssistantRunService? _instance;
 
     public override IBinder? OnBind(Intent? intent) => null;
+
+    private static bool IsActive(AssistantActivity activity) =>
+        activity.Kind is AssistantActivityKind.Running or AssistantActivityKind.ApprovalNeeded;
 
     /// <summary>Called from the assistant's UI-thread execution lifecycle.</summary>
     public static void Publish(AssistantActivity activity)
     {
-        _latest = activity;
         var context = Android.App.Application.Context;
-        if (activity.Kind is AssistantActivityKind.Completed or AssistantActivityKind.Failed or AssistantActivityKind.Cancelled or AssistantActivityKind.QuestionNeeded)
-        {
-            if (!MainActivity.IsVisibleToUser && activity.Kind != AssistantActivityKind.Cancelled)
-                Notify(context, activity);
-            context.StopService(new Intent(context, typeof(AssistantRunService)));
-            return;
-        }
-
-        // A run is started only by a user command while the activity is foreground.
-        // Changes to approval/question state update the existing service without starting another run.
         try
         {
-            if (OperatingSystem.IsAndroidVersionAtLeast(26))
-                context.StartForegroundService(new Intent(context, typeof(AssistantRunService)).SetAction(ActionStart));
-            else
+            if (!IsActive(activity))
+            {
+                _latest = null;
+                context.StopService(new Intent(context, typeof(AssistantRunService)));
+                if (!MainActivity.IsVisibleToUser && activity.Kind != AssistantActivityKind.Cancelled)
+                    Notify(context, activity);
+                return;
+            }
+
+            _latest = activity;
+            if (_instance is { } service)
+            {
+                // An approval updates the existing foreground notification. It must
+                // not create another foreground-start obligation while backgrounded.
+                service.Promote(activity);
+            }
+            else if (MainActivity.IsVisibleToUser)
+            {
+                // This command originates in a visible Activity. StartService is
+                // allowed here; OnCreate promotes it immediately. StartForegroundService
+                // arms a process-fatal deadline while the same main looper is still
+                // preparing the AI request (or the run may already have completed).
                 context.StartService(new Intent(context, typeof(AssistantRunService)).SetAction(ActionStart));
+            }
+            else
+            {
+                // Do not launch a new service from the background without an exemption.
+                CrashLog.Write(new InvalidOperationException(
+                    "O serviço do Assistente não foi iniciado: o aplicativo não está visível."), "assistant-background");
+            }
+            if (!MainActivity.IsVisibleToUser && activity.Kind == AssistantActivityKind.ApprovalNeeded)
+                Notify(context, activity);
         }
         catch (Exception error) when (error is Java.Lang.Exception or System.Security.SecurityException)
         {
             CrashLog.Write(error, "assistant-background");
-            // Never misrepresent background continuity: the in-app task can keep running
-            // while visible, but the OS may suspend it when the app is backgrounded.
+            // The visible task can continue; background continuity is not guaranteed.
         }
-        if (!MainActivity.IsVisibleToUser && activity.Kind == AssistantActivityKind.ApprovalNeeded)
-            Notify(context, activity);
+    }
+
+    public override void OnCreate()
+    {
+        base.OnCreate();
+        _instance = this;
+        if (_latest is { } run) Promote(run);
+        else StopSelf(); // The run finished before Android created the service.
     }
 
     [return: Android.Runtime.GeneratedEnum]
     public override StartCommandResult OnStartCommand(Intent? intent, [Android.Runtime.GeneratedEnum] StartCommandFlags flags, int startId)
     {
-        var run = _latest;
-        if (run is null)
-        {
-            StopSelf();
-            return StartCommandResult.NotSticky;
-        }
+        if (_latest is { } run) Promote(run);
+        else StopSelf();
+        // Never restart an agent without its original in-memory vault and approvals.
+        return StartCommandResult.NotSticky;
+    }
+
+    public override void OnDestroy()
+    {
+        if (ReferenceEquals(_instance, this)) _instance = null;
+        base.OnDestroy();
+    }
+
+    private void Promote(AssistantActivity run)
+    {
         try
         {
             var notification = Build(this, run, ongoing: true);
@@ -83,9 +117,6 @@ public sealed class AssistantRunService : Service
             CrashLog.Write(error, "assistant-foreground");
             StopSelf();
         }
-        // The Android system must not restart an agent without its original in-memory vault,
-        // approvals and provider context. Recovery from process death is a separate task.
-        return StartCommandResult.NotSticky;
     }
 
     private static void Channels(Context context)
