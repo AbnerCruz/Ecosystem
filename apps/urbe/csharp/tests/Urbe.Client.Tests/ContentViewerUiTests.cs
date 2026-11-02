@@ -90,6 +90,8 @@ public sealed partial class HeadlessUiTests
                 pages.Offset = new Vector(0, pages.Extent.Height - pages.Viewport.Height);
                 for (int i = 0; i < 20; i++) { window.UpdateLayout(); await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
                 Assert.True(pages.Drawn.Contains(29), $"offset={pages.Offset} viewport={pages.Viewport} extent={pages.Extent} drawn={string.Join(",", pages.Drawn)} rendered={string.Join(",", pdf.Rendered)}");
+                Assert.Equal(30, pages.CurrentPage); // The last page must be reachable despite scroll clamping.
+
                 Assert.DoesNotContain(0, pages.Drawn);
                 preview.Close();
                 Dispatcher.UIThread.RunJobs();
