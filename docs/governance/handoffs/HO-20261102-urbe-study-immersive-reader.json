@@ -1,0 +1,34 @@
+{
+  "id": "HO-20261102-urbe-study-immersive-reader",
+  "date": "2026-11-02",
+  "product": "urbe",
+  "base_commit": "e724a14de0a9f756b20be3dc2a53844bdecb4a6a",
+  "branch": "feat/urbe-study-immersive-cst231-233-20261102",
+  "criticality": "routine",
+  "requirements": [
+    "CST-231 (partial)",
+    "CST-233 (partial)",
+    "CST-010 (regression)",
+    "CST-246 (pending)"
+  ],
+  "summary": "Native in-app reading mode expands FilePreview without recreating viewer; system Back exits expanded view first; PDF one-based current-page and navigation implemented through existing lazy renderer.",
+  "touched_files": [
+    "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ContentViewers.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.AndroidBack.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FilePreviewUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ContentViewerUiTests.cs",
+    "apps/urbe/docs/csharp/STUDY-READER-INCREMENT-2026-11-02.md"
+  ],
+  "proof": "Tests committed; no local .NET SDK; CI and DEVICE unverified",
+  "competing_prs": "PR #893 (beta.43 release metadata) left untouched; PR #886 (PDF extraction) integrated in main, no duplicate ingest.",
+  "data_security": "No vault schema, permissions, dependencies, signing identity or release files changed. Existing isolated WebView maintained.",
+  "limits": "Immersive UI and PDF page jumping only; no EPUB, YouTube, browser, annotations, text-layer or full native OS fullscreen. PDF frame allocation and synchronous rendering remain open.",
+  "next": [
+    "Run CI Core/Client and Android/Windows",
+    "Fix test/build failures before merge",
+    "Validate physical Android 13 and Windows",
+    "Continue CST-230/233/234/235/239 following architecture/ADR",
+    "Release by official workflow after integration; no manual merge"
+  ]
+}
