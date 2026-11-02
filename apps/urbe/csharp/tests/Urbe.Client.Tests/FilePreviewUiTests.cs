@@ -33,6 +33,8 @@ public sealed partial class HeadlessUiTests
                     zip.CreateEntry("pasta/b.png");
                 }
                 File.WriteAllBytes(Path.Combine(vault, "livro.pdf"), [0x25, 0x50, 0x44, 0x46, 0, 1, 2]);
+                File.WriteAllBytes(Path.Combine(vault, "livro.epub"), [0x50, 0x4b, 0x03, 0x04]);
+                File.WriteAllBytes(Path.Combine(vault, "aula.pptx"), [0x50, 0x4b, 0x03, 0x04]);
                 var before = Directory.GetFiles(vault, "*", SearchOption.AllDirectories).Order().Select(f => (f, File.GetLastWriteTimeUtc(f))).ToArray();
                 var preview = view.FilePreview;
 
@@ -56,6 +58,16 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal("none", preview.Shown);
                 Assert.Contains(preview.GetLogicalDescendants().OfType<Button>(), b => b.Content as string == "Abrir em outro app" && b.IsVisible);
 
+                await preview.OpenAsync("livro.epub");
+                Assert.Contains(preview.GetLogicalDescendants().OfType<TextBlock>(),
+                    t => (t.Text ?? "").Contains("O leitor interno deste formato está em desenvolvimento", StringComparison.Ordinal));
+                Assert.Contains(preview.GetLogicalDescendants().OfType<Button>(),
+                    b => b.Content as string == "Abrir em outro app" && b.IsVisible);
+
+                await preview.OpenAsync("aula.pptx");
+                Assert.Contains(preview.GetLogicalDescendants().OfType<TextBlock>(),
+                    t => (t.Text ?? "").Contains("O leitor interno deste formato está em desenvolvimento", StringComparison.Ordinal));
+
                 await preview.OpenAsync("sumiu.png");
                 Assert.Contains(preview.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Arquivo não encontrado");
                 Assert.DoesNotContain(preview.GetLogicalDescendants().OfType<Button>(), b => b.Content as string == "Abrir" && b.IsVisible);
@@ -68,4 +80,39 @@ public sealed partial class HeadlessUiTests
             }
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
+    [Fact]
+    public async Task FilePreview_ImmersiveMode_RestoresPreviewAndBackInTwoSteps() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var (view, window, vault, dir) = await OpenCreateVault();
+            try
+            {
+                File.WriteAllText(Path.Combine(vault, "estudo.txt"), "Uma fonte de estudo");
+                var reader = view.FilePreview;
+                await reader.OpenAsync("estudo.txt");
+                Assert.False(reader.ReaderMode);
+                Assert.Contains(reader.GetLogicalDescendants().OfType<Button>(),
+                    button => button.Content as string == "Tela cheia");
+
+                reader.EnterReaderMode();
+                Assert.True(reader.ReaderMode);
+                Assert.Contains(reader.GetLogicalDescendants().OfType<Button>(),
+                    button => button.Content as string == "Sair da tela cheia");
+                Assert.True(reader.IsVisible);
+
+                // Back exits reading mode before closing the source, preserving the original document.
+                Assert.True(view.HandleSystemBack());
+                Assert.False(reader.ReaderMode);
+                Assert.True(reader.IsVisible);
+                Assert.Equal("text", reader.Shown);
+                Assert.Equal("Uma fonte de estudo", reader.ShownText);
+
+                Assert.True(view.HandleSystemBack());
+                Assert.False(reader.IsVisible);
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
 }
