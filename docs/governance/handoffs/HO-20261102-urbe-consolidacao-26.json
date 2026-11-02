@@ -1,0 +1,94 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261102-urbe-consolidacao-26",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-02T12:14:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-229",
+  "component": "urbe",
+  "state": "review",
+  "branch": "docs/urbe-consolidacao-2-6-leitura-estudo-20261102",
+  "base_commit": "e724a14de0a9f756b20be3dc2a53844bdecb4a6a",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/895",
+  "files_changed": [
+    "docs/product-plans/urbe/Numa_Consolidacao_2.6.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/handoffs/HO-20261102-urbe-consolidacao-26.json"
+  ],
+  "work_completed": [
+    "Publicada versão 2.6 canônica integral da consolidação Numa, preservando a versão 2.5, com frente CST-229–246 para leitura, navegação e estudo.",
+    "O conteúdo foi recuperado integralmente do documento de origem e conferido em 2.864 linhas e 375.324 bytes.",
+    "Atualizada a referência principal do AGENTS.md do Urbe para a consolidação 2.6; nenhuma regra de produto de implementação foi substituída nem arquivos de usuário alterados."
+  ],
+  "verification": [
+    {
+      "check": "Verificação de tamanho integral do plano",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Documento entregue possui 375.324 bytes UTF-8 e 2.864 linhas conforme a fonte."
+    },
+    {
+      "check": "CI Urbe checks e consistency da documentação",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "urbe-checks 41441567546 e consistency 41441567643 concluídos com success no commit deddc356cee65367cda35602e3b66c26317fa2f0.",
+      "tested_commit": "deddc356cee65367cda35602e3b66c26317fa2f0"
+    },
+    {
+      "check": "Autorização de integração de mudança em AGENTS.md",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/AGENTS.md",
+      "critical": true,
+      "evidence": "Mudança classificada como constitution, integrador requer autorização do proprietário."
+    }
+  ],
+  "known_issues": [
+    "PR #895 ainda aberto; até sua integração, a main pode continuar referenciando a consolidação 2.5.",
+    "PR #894 de implementação do leitor está separado e ainda não integrado; documentação nova não é prova de capacidade entregue."
+  ],
+  "blockers": [
+    "Integrador classifica atualização de apps/urbe/AGENTS.md como crítica e aguarda autorização do proprietário após aprovação dos checks."
+  ],
+  "next_actions": [
+    "Submeter CI combinado no PR #895 após este handoff; corrigir qualquer falha do schema.",
+    "Integrar pelo integrador governado após autorização do proprietário, sem merge manual.",
+    "Priorizar integração do leitor PR #894 antes de publicar beta.44 que alega incluir as novas features."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/integration-policy.json",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.5.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Handoff com schemaVersion 1, rastreabilidade e verificações explícitas."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação em aparelho não é reivindicada por modificação exclusivamente documental."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Nenhum item CST-229–246 marcado como concluído sem execução/verificação."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution"
+    ],
+    "reason": "apps/urbe/AGENTS.md é referência normativa para agentes; requer autorização do proprietário."
+  }
+}
