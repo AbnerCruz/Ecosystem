@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261102-urbe-pdf-evidence",
   "category": "HANDOFF",
-  "timestamp": "2026-11-02T10:10:26.106Z",
+  "timestamp": "2026-11-02T10:17:13.002Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
@@ -22,14 +22,18 @@
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantDocumentToolsTests.cs",
-    "docs/governance/handoffs/HO-20261102-urbe-pdf-evidence.json"
+    "docs/governance/handoffs/HO-20261102-urbe-pdf-evidence.json",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ArchitectureTests.cs"
   ],
   "work_completed": [
     "Auditoria do código: anexos PDF são enviados ao provedor multimodal ou copiados para o vault, mas não havia leitura nativa, paginada e verificável por página.",
     "PdfPig 0.1.16 Apache-2.0 para extrair a camada textual e classificar imagens incorporadas/caminhos vetoriais em qualquer página, inclusive páginas com texto selecionável.",
     "Ferramentas de leitura inspect_document/read_document/search_document com limites de paginação e offsets, hash SHA-256 da origem, leitura do PDF do vault ou anexo original da conversa; marca OCR_REQUIRED/VISUAL_REVIEW_REQUIRED conforme caso.",
     "Testes de regressão propostos com PDF sintético incluindo texto, figura vetorial e página sem texto. Integração com ferramentas gerais e modelos do dispositivo sem duplicar inteligência.",
-    "Merge semântico da main atual: preservada a implementação de Publicações em AssistantPanel.cs da beta.42 e adicionadas somente ferramentas PDF; árvore combinada foi construída a partir da main, sem sobrescrever mudanças concorrentes."
+    "Merge semântico da main atual: preservada a implementação de Publicações em AssistantPanel.cs da beta.42 e adicionadas somente ferramentas PDF; árvore combinada foi construída a partir da main, sem sobrescrever mudanças concorrentes.",
+    "Páginas com diagramas e fórmulas: SinglePagePdf isola uma página original (incluindo imagens/vetores) para análise visual opcional pelo provedor de IA selecionado; o host exige confirmação explícita para enviar a página e não reenvia o livro inteiro.",
+    "RunHost encaminha DocumentFiles/DocumentVision para os agentes; ArchitectureTests mantém allowlist exata do pacote PdfPig."
   ],
   "verification": [
     {
@@ -54,7 +58,7 @@
     }
   ],
   "known_issues": [
-    "CST-212 parcial: sem OCR efetivo em PDF escaneado, PDF misto e imagem, sem transcrição LaTeX de equações em imagem, reconhecimento semântico de gráficos/tabelas, análise DOCX/PPTX/XLSX/áudio/vídeo e QA independente.",
+    "CST-212 parcial: extração textual e análise visual remota opt-in existem; ainda sem OCR local exato, transcrição certificada de fórmulas, indexação visual por região, DOCX/PPTX/XLSX, áudio/vídeo e QA independente.",
     "Os offsets se referem à camada textual extraída; PDFs com colunas ou ordem de glifos incomum requerem análise de layout e conferência visual.",
     "Detecção de path vetorial ou bitmap não prova compreensão semântica e não detecta de forma absoluta todas as figuras; texto incorporado a imagem permanece visual.",
     "Operações leem até 60 MiB por arquivo na memória; livros maiores precisam stream de acesso aleatório ou cache paginado por SHA."
@@ -62,7 +66,7 @@
   "blockers": [],
   "next_actions": [
     "Validar código com CI, corrigir qualquer falha e confirmar na compilação do Android/Windows.",
-    "Implementar render/corte de páginas/regiões para reconhecimento visual e OCR real, com fórmulas em LaTeX somente quando conferidas contra imagem; manter extração textual e inferência separadas.",
+    "OCR local por região de página/imagem e transcrição matemática especializada com precisão auditada: modelos grandes tipo Marker/Surya não serão empacotados no APK sem análise de desempenho/licença; alternativa remota atual é explicitamente opt-in.",
     "Criar corpus de páginas didáticas reais contendo imagens de equações, gráficos, colunas e tabelas, validar offsets e exibir fontes no produto."
   ],
   "decisions_required": [],
