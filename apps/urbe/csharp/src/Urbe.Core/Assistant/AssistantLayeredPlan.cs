@@ -21,12 +21,48 @@ public static class AssistantLayeredPlan
         obj[key] is JsonValue value && value.TryGetValue<string>(out var text)
             ? text?.Trim() ?? "" : "";
 
+    /// <summary>
+    /// Keep the original goal/baseline/target during a single agent run. The provider
+    /// normally resends the whole node list but may omit unchanged metadata.
+    /// This is a projection of the previous validated tool input, not another plan store.
+    /// </summary>
+    public static JsonObject NormalizeUpdate(JsonObject input, JsonObject? previous)
+    {
+        var current = (JsonObject)input.DeepClone();
+        if (!current.ContainsKey("goal") && previous?.ContainsKey("goal") == true)
+            foreach (var key in new[] { "goal", "current_state", "target_state" })
+                current[key] = previous[key]?.DeepClone();
+        return current;
+    }
+
+    private static bool HasLayeredFields(JsonObject input) =>
+        input.ContainsKey("final_plan_review") || input.ContainsKey("final_user_review") ||
+        input["steps"] is JsonArray steps && steps.OfType<JsonObject>().Any(step =>
+            step.ContainsKey("id") || step.ContainsKey("depends_on") ||
+            step.ContainsKey("tests") || step.ContainsKey("test_evidence") ||
+            step.ContainsKey("implementation_evidence") || step.ContainsKey("verification_evidence"));
+
+    /// <summary>Placeholder statements never count as even declared completion evidence.</summary>
+    private static bool IsPending(string text)
+    {
+        var value = text.Trim().ToLowerInvariant();
+        return value.StartsWith("pendente", StringComparison.Ordinal) ||
+            value.StartsWith("ainda pendente", StringComparison.Ordinal) ||
+            value.StartsWith("a conferir", StringComparison.Ordinal) ||
+            value.StartsWith("a verificar", StringComparison.Ordinal) ||
+            value.StartsWith("não verificado", StringComparison.Ordinal) ||
+            value.StartsWith("nao verificado", StringComparison.Ordinal) ||
+            value.StartsWith("será conferid", StringComparison.Ordinal);
+    }
+
     public static Result Build(JsonObject input)
     {
         if (input["steps"] is not JsonArray steps)
             throw new AiToolException("O plano exige uma lista de objetivos.");
         if (!input.ContainsKey("goal"))
         {
+            if (HasLayeredFields(input))
+                throw new AiToolException("Atualização de grafo sem contexto: reenvie goal, current_state e target_state junto aos nós; não converta o plano para modo simples.");
             // Previous update_plan contract is preserved, including step labels, status
             // normalization and lack of artificial depth/step limits.
             var legacy = steps.OfType<JsonObject>()
@@ -89,8 +125,9 @@ public static class AssistantLayeredPlan
             if (status is "in_progress" or "done" && (tests.Length == 0 || acceptance.Length == 0))
                 throw new AiToolException(id + ": defina primeiro os testes e o critério de aceite.");
             if (status == "done" && (testEvidence.Length == 0 || implementationEvidence.Length == 0
-                || verificationEvidence.Length == 0))
-                throw new AiToolException(id + ": conclusão exige evidências distintas para testes, execução e confronto.");
+                || verificationEvidence.Length == 0 ||
+                IsPending(testEvidence) || IsPending(implementationEvidence) || IsPending(verificationEvidence)))
+                throw new AiToolException(id + ": conclusão exige evidências realizadas, não conferências ainda pendentes.");
             nodes.Add(new Node(id, title, status, Get(step, "details"), acceptance.Length == 0 ? null : acceptance,
                 tests, testEvidence, implementationEvidence, verificationEvidence, dependencies));
         }
