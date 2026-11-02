@@ -15,8 +15,8 @@ public static class AssistantDocumentImageTools
     {
         if (bytes.Length < 12 || bytes.Length > MaxImageBytes) return null;
         var ext = Path.GetExtension(path).ToLowerInvariant();
-        var png = bytes.StartsWith([137, 80, 78, 71, 13, 10, 26, 10]);
-        var jpeg = bytes.StartsWith([255, 216, 255]);
+        var png = bytes.StartsWith(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 });
+        var jpeg = bytes.StartsWith(new byte[] { 255, 216, 255 });
         var webp = bytes.StartsWith("RIFF"u8) && bytes[8..12].SequenceEqual("WEBP"u8);
         if (png && ext == ".png") return "image/png";
         if (jpeg && (ext == ".jpeg" || ext == ".jpg")) return "image/jpeg";
