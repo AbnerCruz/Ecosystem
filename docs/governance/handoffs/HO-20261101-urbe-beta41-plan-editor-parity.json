@@ -14,7 +14,7 @@
   "branch": "fix/urbe-beta41-plan-editor-parity-20261101",
   "base_commit": "e32b6a55ebd0c73afab3ca68c017aa3b8ea2e0f7",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/884",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantLayeredPlan.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
