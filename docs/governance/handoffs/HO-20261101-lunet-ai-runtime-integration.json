@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261101-lunet-ai-runtime-integration",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-01T23:26:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-ai-runtime",
+    "kind": "ai-agent"
+  },
+  "task_id": "AI-860",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "feat/lunet-ai-shared-runtime-20261101",
+  "base_commit": "da5f0443ac53b9b14d4185a7961e73151248ab7c",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/880",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSession.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiRunActivity.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiProjectFiles.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Ai.cs",
+    "apps/lunet2d/ROADMAP.md",
+    "platform/agent-runtime/ARCHITECTURE.md",
+    "platform/agent-runtime/projection.py",
+    ".github/workflows/lunet2d-ci.yml",
+    ".github/workflows/lunet2d-release.yml"
+  ],
+  "work_completed": [
+    "PR #880 integra no Lunet o AgentRuntime.Core e provedor existentes por projeção de código canônico verificável; não promove pacote novo nem altera outro produto.",
+    "Agente especializado com ferramentas de projeto, permissões, verificação SHA256, HTTPS, redator de chave, histórico local e execução cancelável.",
+    "Erro StepLimit observado no Android levou ao novo contrato 16/32/64/128 passos (32 por padrão), atividade e diagnóstico; nenhum arquivo de interface foi editado nessa correção.",
+    "Comunicação com o autor do redesign no PR #883, sem disputa por arquivos da interface.",
+    "Revisadas ADR-0033/ADD-0027 e Issue #860: integração de aplicativo autorizada sem tocar no Urbe ou extrair novo runtime."
+  ],
+  "verification": [
+    {
+      "check": "Testes Lunet e Text Inspection da correção StepLimit",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/41360282668",
+      "tested_commit": "9f3e4df6c352fb4ac3d597857549b38d2b682d7d"
+    },
+    {
+      "check": "APK e testes de jornada/emulador Android 13",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/41360282665",
+      "tested_commit": "9f3e4df6c352fb4ac3d597857549b38d2b682d7d"
+    },
+    {
+      "check": "Consistency do Ecosystem",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/41360282612",
+      "tested_commit": "9f3e4df6c352fb4ac3d597857549b38d2b682d7d"
+    },
+    {
+      "check": "Uso real da IA em dispositivo e modelo externo",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/ia-lunet.md"
+    }
+  ],
+  "known_issues": [
+    "A IA histórica do Urbe NÃO foi migrada. Alterar qualquer arquivo do Urbe é expressamente proibido pelo proprietário.",
+    "O controle visual do orçamento e feed de eventos é responsabilidade do redesign PR #883 e depende de integração coordenada.",
+    "Sem validação de provedor real e correção semântica de código em aparelho físico.",
+    "A reconciliação semântica de apps/lunet2d/ROADMAP.md com PR #883 pode ser necessária."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar o integrador automático da main; preservar classificação crítica e pedido de autorização do proprietário se aplicável.",
+    "Reconciliar ROADMAP semanticamente com o agente do PR #883 antes de integrar ambos.",
+    "Validar dispositivo e provedor reais sem declarar equivalência integral entre produtos."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md",
+    "docs/architecture/audits/ai-unification-2026-10-16.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Fonte canônica AgentRuntime.Core e provedor, projeção validada byte a byte."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Sem dependência direta produto→produto e zero arquivos em apps/urbe no PR."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #860, PR #880, testes e este handoff rastreiam a mudança."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas listadas e lidas, com limites de aprovação do ADR-0033 preservados."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "ADR-0033 aceita a direção incremental; a entrada no Lunet foi autorizada na Issue #860. Nenhum novo ADR foi aprovado por agente. Autorização crítica da integração fica com proprietário."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Grants por contexto, leitura por padrão, escrita autorizada por sessão, hash CAS e HTTPS."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e emulador não foram declarados como validação física com provedor real."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Nenhum terceiro runtime nem nova área compartilhada genérica."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Projeção usa o runtime canônico existente sem extração/promoção de API pública."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "APK standalone não requer o Hub."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "agent-runtime-projection",
+      "status": "possible-candidate",
+      "rationale": "Consumo por um segundo aplicativo via projeção, sem extração/publicação de pacote; futuras promoções exigem Extraction Review, contratos e provas."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "architecture",
+      "control-plane",
+      "distribution"
+    ],
+    "reason": "Projeção de runtime, workflow de release e csproj Android classificados pela política da main; preservar o gate de autorização do proprietário."
+  }
+}

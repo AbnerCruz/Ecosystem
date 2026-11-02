@@ -124,23 +124,28 @@ public sealed class SpriteBatch
         var packed = color.PackedRgba;
 
         var i = _quads * 4;
-        Corner(ref _vertices[i], 0, 0, u0, v0);
-        Corner(ref _vertices[i + 1], destination.Width, 0, u1, v0);
-        Corner(ref _vertices[i + 2], destination.Width, destination.Height, u1, v1);
-        Corner(ref _vertices[i + 3], 0, destination.Height, u0, v1);
+        // Explicit arguments eliminate captured local-function state from the hot path.
+        // The JIT must not rely on escape analysis to keep per-quad work allocation-free.
+        Corner(ref _vertices[i], 0, 0, u0, v0, destination, ox, oy, cos, sin, packed, _hasView, _view);
+        Corner(ref _vertices[i + 1], destination.Width, 0, u1, v0, destination, ox, oy, cos, sin, packed, _hasView, _view);
+        Corner(ref _vertices[i + 2], destination.Width, destination.Height, u1, v1, destination, ox, oy, cos, sin, packed, _hasView, _view);
+        Corner(ref _vertices[i + 3], 0, destination.Height, u0, v1, destination, ox, oy, cos, sin, packed, _hasView, _view);
         _quads++;
+    }
 
-        void Corner(ref SpriteVertex vertex, float x, float y, float u, float v)
-        {
-            x -= ox;
-            y -= oy;
-            vertex.Position = new Vector2(
-                destination.X + ox + x * cos - y * sin,
-                destination.Y + oy + x * sin + y * cos);
-            if (_hasView) vertex.Position = Vector2.Transform(vertex.Position, _view);
-            vertex.TexCoord = new Vector2(u, v);
-            vertex.Color = packed;
-        }
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private static void Corner(ref SpriteVertex vertex, float x, float y, float u, float v,
+        RectangleF destination, float ox, float oy, float cos, float sin, uint packed,
+        bool hasView, Matrix3x2 view)
+    {
+        x -= ox;
+        y -= oy;
+        vertex.Position = new Vector2(
+            destination.X + ox + x * cos - y * sin,
+            destination.Y + oy + x * sin + y * cos);
+        if (hasView) vertex.Position = Vector2.Transform(vertex.Position, view);
+        vertex.TexCoord = new Vector2(u, v);
+        vertex.Color = packed;
     }
 
     /// <summary>Desenha um painel nine-slice, sem alocação, no lote atual.</summary>

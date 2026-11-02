@@ -39,6 +39,8 @@ Não ampliar instrumentação de áudio enquanto esses fluxos estiverem ausentes
 - [x] **LUNET-446 — Painel Assets (integrado PR #795, DEVICE aprovado na Issue #800):** workspace com acesso Assets, catálogo de `Content/` e `Assets/`, busca/filtros, preview de PNG/tileset, reprodução WAV/OGG/MP3 via MediaPlayer, código de uso copiável e atalhos Sprite/Tile Studios/JSON. Não cria segundo índice persistente nem modifica binários. Testes de catálogo, CI e validação DEVICE registrados em `HO-20261026-lunet-assets-panel`; isso não encerra F5.\n- [x] **LUNET-447 — Primeiro Audio Studio WAV PCM (PR #801 integrado; DEVICE aprovado na Issue #806):** editor nativo de waveform, recorte, volume, marcadores SMPL de loop, pré-escuta, cópia WAV em Content/Audio sem substituir o original, importação SAF e criação interna de efeitos sonoros. Edição inicial limitada a PCM WAV 8/16 bits mono/estéreo; MP3/OGG seguem reprodução apenas; sem DAW, filtros avançados ou edição multitrack. Evidências em `HO-20261026-lunet-audio-studio`; não conclui o Audio Studio integral de F5.
 - [ ] Em seguida: Assets/Tile/Audio/UI Studios e demais editores de F5, com melhoria contínua da navegação. Física, áudio, A* e todo o restante do roadmap permanecem requisitos.
 
+- [ ] **LUNET-AI-001 — IA especializada no IDE com núcleo único (PR #880, feito, CI/DEVICE pendentes):** painel Android para conversa por projeto; provider OpenAI-compatible; ferramentas `lunet.files.list/read/write` com grants por Context, SHA-256 para impedir sobreposição de edição concorrente, escopo de arquivos do projeto e histórico local privado. O código canônico das políticas do agente permanece centralizado, com projeção verificável em `platform/agent-runtime/projection.py` para builds do Lunet autocontidos (NN-002/NN-023). Sem dependência do Framework nem do Runtime de jogos. Testes unitários, CI Android, provider real e DEVICE precisam de evidências; a evolução para produção de sprite, áudio, tilemap, agentes múltiplos, verificação de build e UI de diff requer itens próprios. Guia: `docs/guides/ia-lunet.md`.
+
 ## Estado atual
 
 | Fase | Estado |
@@ -449,3 +451,17 @@ Registro de escopo futuro; não autoriza avanço além do gate atual.
 | Remote Device Preview local | Investigação pós-1.0 | Pareamento autorizado, transporte e segurança por ADR; sem implementação agora |
 
 Scene Studio e shader tooling são expansões futuras do Lunet Studio, sem criar cenas obrigatórias.
+## IA especializada — runtime único e integração segura (LUNET-AI-002)
+
+- [x] Contratos do runtime/provedor canônicos e projeção byte a byte verificável; sem copiar implementações de outros apps.
+- [x] Ferramentas de busca textual, leitura por trechos grandes e substituição exata com SHA256, em adição a listar/ler/gravar.
+- [x] Testes criados antes do código para pesquisa, limites, edição sem ambiguidades, CAS e endpoint HTTPS.
+- [x] Redação da chave do provider nos eventos do agente; chave somente em memória e host HTTPS validado.
+- [x] Separação entre runtime compartilhado, adaptador do Lunet e runtime dos jogos; governança documentada em `platform/agent-runtime/ARCHITECTURE.md`.
+- [ ] Teste de conexão real a cada provider, em aparelho Android e com projeto de teste, inclusive falhas e cancelamento.
+- [ ] Preview de diff por arquivo, backups e restauração de alterações do agente sem depender de `git` externo.
+- [ ] Compilação, diagnóstico Roslyn e execução de testes invocáveis pelo agente com verificação independente.
+- [ ] Ferramentas nativas versionadas para Sprite Studio, Audio Studio, Tile Studio, cenas e assets.
+- [ ] Memória contextual indexada, orçamento de tokens real e custo de API medido por provider; não confundir histórico simples com memória semântica.
+- [ ] Agentes especialistas, planejamento em camadas, revisão independente e recuperação persistente entre runs.
+- [ ] Verificação de uso generalizado do runtime em outros produtos **somente com autorização explícita dos respectivos proprietários**; o editor de notas está fora do escopo de edição.
