@@ -3,14 +3,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261102-urbe-pdf-evidence",
   "category": "HANDOFF",
-  "timestamp": "2026-11-02T10:39:22.195Z",
+  "timestamp": "2026-11-02T10:51:50.626Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
   },
   "task_id": "CST-212",
   "component": "urbe",
-  "state": "verifying",
+  "state": "review",
   "branch": "feat/urbe-pdf-evidence-cst212",
   "base_commit": "d49a05ee84a60f0ef1246c9c5135770efa61d76d",
   "commit": null,
@@ -38,14 +38,16 @@
     "RunHost encaminha DocumentFiles/DocumentVision para os agentes; ArchitectureTests mantém allowlist exata do pacote PdfPig.",
     "Extração de fotos PNG/JPEG/WebP de anexos da conversa e arquivos do vault com validação de tipo e limites; inspect_document_image verifica bytes e SHA sem rede. analyze_document_image envia mídia adaptada via modelo visual apenas após confirmação explícita do usuário.",
     "Inventário paginado de livros: inventory_document detecta por página texto, imagens e desenhos vetoriais, inclusive páginas mistas, e possibilita localizar as páginas que precisam de inspeção visual.",
-    "Busca em livros com ocorrências repetidas: retoma com cursor por offset de caractere e não rele o mesmo resultado indefinidamente."
+    "Busca em livros com ocorrências repetidas: retoma com cursor por offset de caractere e não rele o mesmo resultado indefinidamente.",
+    "Pacotes de prévia Android e Windows produzidos pelo workflow do commit 7f26e5ab, validados por build e testes no GitHub; Android instalado, aberto e retomado no emulador. Não é release beta assinada."
   ],
   "verification": [
     {
       "check": "GitHub CI Urbe Android e Windows",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "PR ainda não validado pelo CI; status não declarado como sucesso."
+      "result": "passed",
+      "evidence": "GitHub urbe-checks run 41430727020: 6/6 jobs success, including native Android APK build, Android emulator install/launch/resume, Windows publish/tests, portable .NET core/client tests, JavaScript checks and E2E. https://github.com/AbnerCruz/Ecosystem/actions/runs/41430727020. GitHub consistency run 41430727056 success. Physical device still pending.",
+      "tested_commit": "7f26e5ab36cf8971976dc4a2663415d76584d2e6"
     },
     {
       "check": "Inspeção de imagem, OCR e reconhecimento de fórmulas",
@@ -70,9 +72,9 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Validar suite verde Android e Windows no PR, incluindo emulador e CI combinado, antes de publicar prévia.",
-    "Testar OCR de scans e equações em imagem com credenciais do usuário e dispositivo físico. Não afirmar precisão textual/científica sem conferência visual.",
-    "Implantar OCR local opcional e índices textuais por hash de arquivo para milhares de páginas, com revisão das referências e margens de confiança."
+    "Somente proprietário aplica label integrar para mudança crítica após o integrador aprovar o estado combinado com main; não executar merge manual.",
+    "Testar em aparelho físico e com PDFs/imagens didáticas reais usando provedor multimodal compatível e autorização por mídia. Validar fórmulas e trechos contra página original antes de tratar como exatos.",
+    "Para concluir o restante de CST-212, implementar OCR local, indexação multimodal escalável, QA semântico e suporte a formatos adicionais."
   ],
   "decisions_required": [],
   "normative_sources": [
