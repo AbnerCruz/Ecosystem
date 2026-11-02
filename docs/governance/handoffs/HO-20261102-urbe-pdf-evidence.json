@@ -1,0 +1,108 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261102-urbe-pdf-evidence",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-02T10:04:24.247Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-212",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-pdf-evidence-cst212",
+  "base_commit": "d49a05ee84a60f0ef1246c9c5135770efa61d76d",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Urbe.Core.csproj",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDocumentTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantTools.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantDocumentToolsTests.cs",
+    "docs/governance/handoffs/HO-20261102-urbe-pdf-evidence.json"
+  ],
+  "work_completed": [
+    "Auditoria do código: anexos PDF são enviados ao provedor multimodal ou copiados para o vault, mas não havia leitura nativa, paginada e verificável por página.",
+    "PdfPig 0.1.16 Apache-2.0 para extrair a camada textual e classificar imagens incorporadas/caminhos vetoriais em qualquer página, inclusive páginas com texto selecionável.",
+    "Ferramentas de leitura inspect_document/read_document/search_document com limites de paginação e offsets, hash SHA-256 da origem, leitura do PDF do vault ou anexo original da conversa; marca OCR_REQUIRED/VISUAL_REVIEW_REQUIRED conforme caso.",
+    "Testes de regressão propostos com PDF sintético incluindo texto, figura vetorial e página sem texto. Integração com ferramentas gerais e modelos do dispositivo sem duplicar inteligência."
+  ],
+  "verification": [
+    {
+      "check": "GitHub CI Urbe Android e Windows",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "PR ainda não validado pelo CI; status não declarado como sucesso."
+    },
+    {
+      "check": "Inspeção de imagem, OCR e reconhecimento de fórmulas",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Detecção de possíveis elementos visuais implementada, porém OCR/matemática e compreensão de figura ainda não. Precisa inspeção e verificação independentes."
+    },
+    {
+      "check": "Teste físico Android",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDocumentTools.cs",
+      "critical": false,
+      "evidence": "Sem aparelho real conectado; compilação não comprova precisão ou UX do leitor."
+    }
+  ],
+  "known_issues": [
+    "CST-212 parcial: sem OCR efetivo em PDF escaneado, PDF misto e imagem, sem transcrição LaTeX de equações em imagem, reconhecimento semântico de gráficos/tabelas, análise DOCX/PPTX/XLSX/áudio/vídeo e QA independente.",
+    "Os offsets se referem à camada textual extraída; PDFs com colunas ou ordem de glifos incomum requerem análise de layout e conferência visual.",
+    "Detecção de path vetorial ou bitmap não prova compreensão semântica e não detecta de forma absoluta todas as figuras; texto incorporado a imagem permanece visual.",
+    "Operações leem até 60 MiB por arquivo na memória; livros maiores precisam stream de acesso aleatório ou cache paginado por SHA."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar código com CI, corrigir qualquer falha e confirmar na compilação do Android/Windows.",
+    "Implementar render/corte de páginas/regiões para reconhecimento visual e OCR real, com fórmulas em LaTeX somente quando conferidas contra imagem; manter extração textual e inferência separadas.",
+    "Criar corpus de páginas didáticas reais contendo imagens de equações, gráficos, colunas e tabelas, validar offsets e exibir fontes no produto."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/integration-policy.json",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.5.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Dados de origem sempre PDF de anexo autorizado ou vault corrente, identificado por SHA."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "OCR e validação em dispositivo humano claramente pendentes."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "CST-212 permanece parcial; não alegar conclusão plena."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Dependência PdfPig apenas no projeto Urbe.Core; sem impacto em outros Products."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "document-evidence-extraction",
+      "status": "possible-candidate",
+      "rationale": "Outro Product poderá demandar a capability, mas ainda sem consumidor concreto; evitar shared premature."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Mudança do csproj do Urbe.Core: política da main exige autorização crítica; não altera certificado ou identidade."
+  }
+}
