@@ -61,6 +61,7 @@ public sealed class NoteLibraryTests
         var json = library.Serialize();
         Assert.Equal(json, NoteLibrary.Open(Notes(("A.md", "", "doc_a"), ("b/B.md", "", "doc_b")), json, null).Serialize());
         Assert.True(NoteLibrary.IsRecord(json));
+        Assert.DoesNotContain('\r', json); // serialização canônica LF, inclusive no Windows
         Assert.Contains("\"pastas\": [\n  \"Vazia\",\n  \"Vazia/Sub\",\n  \"b\"\n ]", json);
         var ids = NoteLibrary.Ids(["A.md", "b/B.md"], json, Map184);
         Assert.Equal(("doc_a", "doc_b"), (ids["A.md"], ids["b/B.md"]));

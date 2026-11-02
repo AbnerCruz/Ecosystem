@@ -80,7 +80,9 @@ public static partial class DocumentModel
 
     public static IReadOnlyDictionary<string, string> ParseFrontmatter(string? content)
     {
-        var text = content ?? string.Empty;
+        // Aceitar arquivos reais de Windows (CRLF), macOS clássico (CR) e Linux (LF)
+        // sem modificar o conteúdo original salvo no vault.
+        var text = (content ?? string.Empty).Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
         var output = new Dictionary<string, string>(StringComparer.Ordinal);
 
         if (!text.StartsWith("---\n", StringComparison.Ordinal))

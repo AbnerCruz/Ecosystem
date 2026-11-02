@@ -171,7 +171,9 @@ public static partial class MarkdownEngine
     // The default remains byte-compatible with the editor's semantic umath atoms.
     internal static string Render(string? markdown, Func<string, bool, string>? math)
     {
-        var source = markdown ?? string.Empty;
+        // ScanMath e RenderHeadings devem operar sobre o MESMO texto normalizado.
+        // Caso contrário $ pode ser inline em CRLF e bloco em LF.
+        var source = NormalizeNewlines(markdown ?? string.Empty);
         var atoms = ScanMath(source);
         if (atoms.Count == 0)
             return RenderHeadings(source);

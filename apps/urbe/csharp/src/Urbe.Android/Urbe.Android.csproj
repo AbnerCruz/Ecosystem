@@ -15,7 +15,10 @@
     <ApplicationVersion>1</ApplicationVersion>
     <AndroidPackageFormat>apk</AndroidPackageFormat>
     <!-- só arm64: o motor da IA no aparelho pesa ~60 MB por arquitetura, e x86_64 é emulador -->
-    <RuntimeIdentifiers>android-arm64</RuntimeIdentifiers>
+    <!-- O RID do emulador deve ser definido apenas neste host: -p:RuntimeIdentifiers global
+         impunha android-x64 também ao Urbe.Core net10.0 e falhava ao copiar Urbe.Core.dll. -->
+    <RuntimeIdentifiers Condition="'$(UrbeEmulatorBuild)' != 'true'">android-arm64</RuntimeIdentifiers>
+    <RuntimeIdentifiers Condition="'$(UrbeEmulatorBuild)' == 'true'">android-x64</RuntimeIdentifiers>
     <!--
       DEC-0048 / ADD-0025 — canal beta do Urbe C# no Android ("Urbe Beta 2.0"): única fonte da versão publicada.
       urbe-csharp-mobile-release.yml compila com -p:UrbeChannel=beta; sem isso o APK é a prévia acima.
