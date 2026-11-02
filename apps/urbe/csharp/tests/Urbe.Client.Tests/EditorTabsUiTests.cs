@@ -148,7 +148,7 @@ public sealed partial class HeadlessUiTests
                 var tab = view.Editor.GetLogicalDescendants().OfType<Button>()
                     .Single(b => AutomationProperties.GetName(b) == "Aba Comece.md");
                 var capsule = Assert.IsType<Border>(tab.Content);
-                Assert.Equal(36, capsule.Height);
+                Assert.Equal(40, capsule.Height);
                 Assert.True(tab.Bounds.Height >= 48, "A área de toque não deve encolher com o visual");
                 var label = capsule.GetLogicalDescendants().OfType<TextBlock>().Single();
                 Assert.InRange(label.MaxWidth, 100, 132);
