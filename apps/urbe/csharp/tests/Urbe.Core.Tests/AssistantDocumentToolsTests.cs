@@ -72,6 +72,31 @@ public sealed class AssistantDocumentToolsTests
     }
 
     [Fact]
+    public void RepeatedHitsResumeWithCharacterCursorInsteadOfLoopingOnTheSamePage()
+    {
+        var writer = new PdfDocumentBuilder();
+        var font = writer.AddStandard14Font(Standard14Font.Helvetica);
+        writer.AddPage(PageSize.A4).AddText("termo termo termo.", 12, new PdfPoint(30, 700), font);
+        var pdf = writer.Build();
+        var one = AssistantDocumentTools.Search(pdf, "termo", limit: 1,
+            cancellationToken: TestContext.Current.CancellationToken);
+        Assert.True(one.Partial);
+        Assert.Equal(1, one.NextPage);
+        Assert.True(one.NextChar > 0);
+
+        var two = AssistantDocumentTools.Search(pdf, "termo", start: one.NextPage, limit: 1,
+            startChar: one.NextChar, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.True(Assert.Single(two.Matches).Offset > Assert.Single(one.Matches).Offset);
+        Assert.True(two.NextChar > one.NextChar);
+
+        var three = AssistantDocumentTools.Search(pdf, "termo", start: two.NextPage, limit: 1,
+            startChar: two.NextChar, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.True(Assert.Single(three.Matches).Offset > Assert.Single(two.Matches).Offset);
+        Assert.True(three.NextPage > 1);
+        Assert.False(three.Partial);
+    }
+
+    [Fact]
     public void BrokenInputAndOutOfBoundsRangesAreExplicitErrors()
     {
         var pdf = Document();
