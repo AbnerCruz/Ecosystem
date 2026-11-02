@@ -275,10 +275,11 @@ public sealed partial class MainView : IAssistantApp
 
     async Task<byte[]?> IAssistantApp.ReadDocumentBytesAsync(string path, CancellationToken cancellationToken)
     {
-        if (_vault is not { IsConnected: true } vault || !_attachments.Contains(path) ||
-            !path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
-            return null;
-        var read = await vault.ReadFileAsync(path, AssistantDocumentTools.MaxFileBytes, cancellationToken);
+        if (_vault is not { IsConnected: true } vault || !_attachments.Contains(path)) return null;
+        var isPdf = path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
+        if (!isPdf && !AssistantDocumentImageTools.AuthorizedReference(path)) return null;
+        var limit = isPdf ? AssistantDocumentTools.MaxFileBytes : AssistantDocumentImageTools.MaxImageBytes;
+        var read = await vault.ReadFileAsync(path, limit, cancellationToken);
         return read?.Bytes;
     }
 
