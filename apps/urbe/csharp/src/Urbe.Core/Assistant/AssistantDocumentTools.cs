@@ -93,7 +93,7 @@ public static class AssistantDocumentTools
         if (start < 1 || start > pdf.NumberOfPages) throw new AiToolException("Página inicial inválida.");
         var matches = new List<DocumentMatch>();
         var last = Math.Min(pdf.NumberOfPages, start + count - 1);
-        int scanned = start - 1, ocr = 0, visualPages = 0, nextChar = 0; bool reachedLimit = false;
+        int scanned = start - 1, ocr = 0, visualPages = 0, nextChar = 0; bool reachedLimit = false, anotherHitOnPage = false;
         for (int page = start; page <= last; page++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -108,14 +108,14 @@ public static class AssistantDocumentTools
                 int pos = text.IndexOf(query, from, StringComparison.OrdinalIgnoreCase);
                 if (pos < 0) break;
                 matches.Add(new(page, pos, text[Math.Max(0, pos - 64)..Math.Min(text.Length, pos + query.Length + 64)]));
-                if (matches.Count == limit) { reachedLimit = true; nextChar = pos + Math.Max(query.Length, 1); break; }
+                if (matches.Count == limit) { reachedLimit = true; nextChar = pos + Math.Max(query.Length, 1); anotherHitOnPage = text.IndexOf(query, nextChar, StringComparison.OrdinalIgnoreCase) >= 0; break; }
                 from = pos + Math.Max(query.Length, 1);
             }
             if (reachedLimit) break;
         }
         // A search hitting max_results must resume after the last matching substring,
         // not at the start of the same page (which would loop on repeated terms).
-        int nextPage = reachedLimit && nextChar < Text(pdf.GetPage(scanned)).Length ? scanned : scanned + 1;
+        int nextPage = reachedLimit && anotherHitOnPage ? scanned : scanned + 1;
         if (nextPage != scanned) nextChar = 0;
         bool partial = nextPage <= pdf.NumberOfPages;
         return new(pdf.NumberOfPages, scanned, nextPage, partial, ocr, Hash(data), matches, visualPages, nextChar);
