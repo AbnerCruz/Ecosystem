@@ -1,11 +1,13 @@
 # Urbe — Leitura e Estudo: incremento de leitor imersivo (02/11/2026)
 
-**Base:** `main` e consolidação 2.6, CST-229–246. **Escopo implementado:** parte de CST-231 e CST-233, sem fechar esses itens.
+**Base:** `main` e consolidação 2.6, CST-229–246. **Escopo implementado:** parte de CST-231, CST-233, CST-238 e CST-244, sem fechar esses itens.
 
 ## Código atual auditado
 - `Urbe.Client/FilePreviewPanel.cs`: a prévia modal ocupava no máximo 760px em desktop e 90% da altura em telefone; agora alterna para área integral do host, mantendo controle de fechar, tipo original de visualizador e documento aberto.
 - `Urbe.Client/ContentViewers.cs`: `PdfPagesView` usa o `IPdfDocument` existente, expõe página atual e salto direto; renderização continua lazy dos bitmaps próximos à viewport.
 - `Urbe.Client/MainView.AndroidBack.cs`: o primeiro Back sai do modo imersivo; o próximo fecha o arquivo, preservando o fluxo de retorno ao Explorer/editor.
+- `Urbe.Core/VaultFileKinds.cs`: EPUB, PPT/PPTX/ODP e DOC/DOCX/ODT/RTF classificados com MIME adequado ao fallback externo; sem declarar um leitor interno inexistente.
+- `Urbe.Client/FilePreviewPanel.cs`: formatos sem renderer interno consultam apenas metadados, evitando ler um documento de centenas de MB à toa.
 - `Urbe.Android/AndroidContentViewers.cs`: o PdfRenderer nativo permanece responsável pelos pixels e pelo ciclo de vida do PDF; não houve WebView global ou mudança de permissões.
 - `Urbe.Core/Assistant/AssistantDocumentTools.cs`: CST-212 já incorporou PdfPig para extração/análise sob autorização; **não duplicado** neste incremento.
 
@@ -20,6 +22,8 @@
 ## Testes adicionados
 - `FilePreviewUiTests.FilePreview_ImmersiveMode_RestoresPreviewAndBackInTwoSteps`: interação e retomada sem alteração do arquivo.
 - `ContentViewerUiTests.ContentViewer_HtmlAsAPageOrItsSourceAndPdfPagesInsideThePanel`: reforçado com navegação para página intermediária e garantia de não rasterizar todas as páginas.
+
+- `VaultFileKindsTests` e `FilePreviewUiTests`: regressão para rótulos/MIME, aviso de suporte não disponível e abertura externa, sem modificar os bytes do original.
 
 ## Limites e próximos passos
 - Este **não é** um motor PDF completo: seleção textual, OCR, busca visual, anotações, índices, EPUB, navegador, YouTube e slides continuam pendentes.
