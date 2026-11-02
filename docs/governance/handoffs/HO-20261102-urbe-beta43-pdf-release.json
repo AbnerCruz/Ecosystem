@@ -1,0 +1,97 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261102-urbe-beta43-pdf-release",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-02T11:38:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-212",
+  "component": "urbe",
+  "state": "review",
+  "branch": "release/urbe-beta43-pdf-cst212",
+  "base_commit": "e724a14de0a9f756b20be3dc2a53844bdecb4a6a",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/893",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "docs/governance/handoffs/HO-20261102-urbe-beta43-pdf-release.json",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md"
+  ],
+  "work_completed": [
+    "PR #886 já foi integrado em main (e724a14de0a9f756b20be3dc2a53844bdecb4a6a); a última release beta.42 foi publicada antes dele e não o inclui.",
+    "Incremento mínimo e monotônico de versão beta.42 -> beta.43, versionCode 2000042 -> 2000043, sem mudança na identidade app.urbe.csharp, certificado beta, dependências ou formato de vault.",
+    "Publicação solicitada pelo proprietário; encaminhada ao workflow oficial urbe-csharp-mobile-release.yml após integração testada. Sem release manual nem reuso de artefato de prévia.",
+    "Corrigido CI Urbe.Client.Tests: PATCHNOTES.md declarava 2.0.0-beta.42 enquanto a fonte canônica Urbe.Android.csproj era beta.43; teste EmbeddedPatchnotesComeFromCanonicalPreparedVersion falhava por desencontro. Agora PATCHNOTES.md declara beta.43, CST-212 e limites; PATCHNOTES-HISTORY.md arquiva beta.42."
+  ],
+  "verification": [
+    {
+      "check": "CI combinado para CST-212 (PR #886)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Checks Android, Windows, .NET Core/Client, consistência e smoke de emulador passaram no integrador 41437361092; PR #886 merged.",
+      "tested_commit": "7f54c7f900b1fc55e1d1a36e3a90532063b9131d"
+    },
+    {
+      "check": "CI da versão beta.43 e publicação oficial assinada",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "O CI anterior do PR #893 falhou em EmbeddedPatchnotesComeFromCanonicalPreparedVersion pela defasagem beta.42 no patchnotes; arquivos corrigidos e novos checks ainda a confirmar antes da integração/publicação."
+    },
+    {
+      "check": "Atualização da beta.42 para .43 e leitura de PDFs didáticos no aparelho real",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+      "critical": true,
+      "evidence": "Teste físico ainda não feito. OCR local e validação matemática certificada não fazem parte da primeira entrega CST-212."
+    },
+    {
+      "check": "Paridade estática de versão entre Urbe.Android.csproj e PATCHNOTES.md",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Em release/urbe-beta43-pdf-cst212, ambos contêm exatamente 2.0.0-beta.43. O teste do CI que falhava está em apps/urbe/csharp/tests/Urbe.Client.Tests/AndroidBackAndPatchnotesUiTests.cs; aguardar rerun completo para validar."
+    }
+  ],
+  "known_issues": [
+    "CST-212 ainda parcial: OCR local offline, validação matemática certificada e formatos além de PDF/imagem continuam pendentes; análise remota visual requer consentimento por página/imagem e modelo multimodal compatível.",
+    "A liberação da beta.43 depende do CI do PR #893 e do workflow oficial; não reutilizar beta.42 nem confundir preview CI com APK beta assinado."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrador automático deve verificar consistência, Urbe Android/Windows e política de criticalidade antes de integrar; mudança de canal crítica requer autorização do proprietário.",
+    "Após integração, conferir workflow oficial, release publicada, APK assinado e atualização do Windows; testar em dispositivo físico."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/integration-policy.json",
+    ".github/workflows/urbe-csharp-mobile-release.yml",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Declara validação física crítica pendente; não promete resultado não testado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "CST-212 parcial e release não declarada pronta antes de gerar ativos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Somente metadados de versão Android no canal beta existente, preservando certificado e PackageId."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Incremento da versão/código do canal Android publicado; alteração em .csproj de identidade/distribuição, sem mudar identidade ou certificado."
+  }
+}

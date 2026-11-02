@@ -1,31 +1,25 @@
 # Urbe — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.42
+**Versão canônica preparada:** 2.0.0-beta.43
 **Canal:** Urbe 2.0 nativo, Android e Windows
 **Publicação:** pelo workflow oficial, após os gates do repositório; versão preparada não significa publicada
 **Identidade Android:** app.urbe.csharp e certificado beta existente
 
-## Editor
+## Leitura documental e imagens (CST-212, PR #886)
 
-- Enter do teclado: campos do editor Fonte/Visual e compositor da IA declaram IME multilinha e tecla Return. Quebras enviadas como LF/CR/CRLF mantêm o bloco em edição e o foco; checklists continuam sem marcar itens, e código não recebe continuação de lista. Sete regressões headless aprovadas; teclado Android físico ainda não validado.
+- Agentes podem inspecionar PDFs autorizados do vault ou anexos da conversa atual: quantidade de páginas, SHA-256 da fonte e inventário paginado de texto, imagens e desenhos vetoriais.
+- Leitura de trechos com página e cursor de caracteres; busca literal em livros em lotes de até 150 páginas, com retomada da posição para ocorrências repetidas.
+- Análise visual de uma página do PDF por vez (texto dentro de imagens, fórmulas, tabelas e gráficos) usando modelo multimodal configurado **somente com autorização explícita de envio**; a interpretação não é garantia de exatidão.
+- Inspeção local de imagens PNG/JPEG/WebP com validação de assinatura e hash; análise por IA multimodal exige autorização e provedor compatível.
+- Limites atuais: até 60 MiB por PDF, 16 MiB por imagem de origem. **Ainda não existe OCR local offline, ingestão universal de arquivos nem certificação de fórmulas.** Camadas textuais e conteúdo visual exigem tratamento diferente; imagens e fórmulas em páginas mistas podem necessitar revisão visual.
 
-- Progresso nativo: inserir meta numérica ou resumo automático do checklist na barra de formatação. Mostra avanço, percentual e restante; configuração no próprio Markdown.
-- Tarefas aninhadas contam uma vez; exemplos em código, comentários e itens fora da seção escolhida não entram. Sem tarefas não representa 100%.
-- Propriedades numéricas e referências declaradas a outra nota são consultadas sem copiar os totais.
-- Numeração lateral de linhas lógicas no modo Fonte, acompanhando as quebras visuais e a rolagem.
-- Comandos e alterações do Visual usam operações de entrada registráveis no histórico nativo para permitir desfazer/refazer.
+## Funcionalidades herdadas da beta.42
 
-## Publicações
-
-- Fontes podem ser notas inteiras, títulos únicos e blocos com marcador ^id. Vínculo ausente ou ambíguo é informado, sem substituir pelo conteúdo da nota inteira.
-- Peças da mesma nota podem ser removidas e reordenadas independentemente.
-- Histórico de composição por sessão, objetivo/público, layouts artigo/livro/apresentação e temas de saída papel/oceano/tinta.
-- HTML de livro com sumário; HTML de apresentação com navegação por âncoras e perfil de impressão. Prévia nativa mostra conteúdo; paginação/estilo final são do arquivo exportado.
-- EPUB real com capítulos, navegação, imagens locais e SVG matemático. Imagem ausente/remota/incompatível ou fonte alterada durante a exportação geram erro útil. Piloto validado com EPUBCheck 5.4.0 sem erros ou avisos.
-- IA usa publication_schema/write_publication, com prévia e revisão esperada para substituição. O registro vivo não oferece mais criação pelo Editor de Páginas antigo; conteúdo permanece em notas reais.
+- Editor Fonte/Visual e compositor com IME multilinha e Return; progresso nativo de checklists, numeração de linhas e operações de desfazer/refazer.
+- Publicações baseadas em notas, títulos e blocos ^id, composição de artigo/livro/apresentação, HTML, EPUB3 com recursos locais e integração com ferramentas de IA.
 
 ## Limites que permanecem abertos
 
-Esta versão não conclui todas as features dos dois editores. Persistem: validação física de IME/seleção/toque e recuperação após morte do processo; edição bidirecional dentro do estúdio, transações de múltiplas notas, composição livre e retirada física completa dos módulos antigos; PDF editorial direto, DOCX/ODT/PPTX, vídeo/motion/áudio, cursos e aplicações. A saída PDF continua pelo sistema de impressão. EPUB não implementa toda mídia/interação, transclusão genérica ou round-trip com leitores externos.
+O trabalho documental CST-212 é uma primeira implementação auditável, não uma solução integral de extração de livros: OCR local offline, reconhecimento semântico em escala, exatidão matemática certificada e formatos DOCX/PPTX/XLSX continuam pendentes. PDFs digitalizados ou com figuras requerem análise visual e conferência humana. A validação em aparelho físico também permanece pendente.
 
-Testes headless, build, emulador e validação humana são evidências distintas. O plano Numa mantém os itens parciais abertos; consultar o handoff e EDITORS-VERIFICATION-2026-11-02.md para resultados observados.
+No editor e nas Publicações ainda faltam edição bidirecional dentro do estúdio, transações de múltiplas notas, composição livre, PDF editorial direto, DOCX/ODT/PPTX, vídeo/motion/áudio, cursos e aplicações. A saída PDF usa o sistema de impressão. Testes headless, build e emulador não substituem validação no aparelho físico. Consulte o plano Numa 2.5 e os handoffs para pendências.
