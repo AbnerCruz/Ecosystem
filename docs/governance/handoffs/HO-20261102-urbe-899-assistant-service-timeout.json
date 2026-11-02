@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261102-urbe-899-assistant-service-timeout",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-02T13:51:51.462Z",
+  "agent": {
+    "id": "codex-urbe-service-timeout",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-013",
+  "component": "urbe",
+  "state": "review",
+  "branch": "fix/urbe-899-assistant-service-timeout",
+  "commit": null,
+  "pr": null,
+  "base_commit": "237e3f362754f2e6918919798d6d508ea754f989",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/AssistantRunService.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantServiceStartupTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261102-urbe-899-assistant-service-timeout.json"
+  ],
+  "work_completed": [
+    "Auditoria do envio, anexos, bridge e AssistantRunService; log real fornecido pelo proprietário confirma foreground-start timeout (#899).",
+    "Arranque de serviço somente com Activity visível, promoção OnCreate, atualização da instância existente e limpeza terminal sem nova obrigação StartForegroundService.",
+    "Regressão de arquitetura e documentação de pesquisa, confronto e limites no ROADMAP C#."
+  ],
+  "verification": [
+    {
+      "check": "Comparação das invariantes de startup na fonte anterior e posterior",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Script Python local: cinco invariantes falham na base 237e3f3 e passam na alteração. Não executa Android nem substitui xUnit."
+    },
+    {
+      "check": "dotnet tests, Android build e consistency",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "SDK .NET/Android ausente no ambiente; executar no CI do PR."
+    },
+    {
+      "check": "Enviar texto/imagem/PDF, erro imediato, notificações negadas/concedidas e minimizar/retornar",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Android/AssistantRunService.cs"
+    }
+  ],
+  "known_issues": [
+    "Log confirma a classe fatal mas não isola se nesta ocorrência houve bloqueio de looper, falha de promoção ou corrida de parada.",
+    "Testes headless não exercitam watchdog Android; DEVICE pendente.",
+    "Sem garantia de retomada após processo morto; sem alteração do modelo existente de execuções simultâneas."
+  ],
+  "blockers": [
+    "SDK .NET/Android indisponível localmente; build/CI pendentes."
+  ],
+  "next_actions": [
+    "Acompanhar CI e corrigir falhas; integrar pelo integrador governado.",
+    "Validar candidato Android com os cenários registrados antes de afirmar resolução no aparelho."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "ecosystem.json",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/definition-of-done.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.6.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-016",
+      "evidence": "Sem permissões novas; arranque somente na Activity visível, sem tentativa de exceção de background."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Verificação de fonte distinta de CI e DEVICE; nenhum gate físico marcado aprovado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review, build/CI/device explicitamente pendentes."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Correção local do lifecycle existente; não altera identidade, assinatura, permissões, contrato público ou dados."
+  }
+}
