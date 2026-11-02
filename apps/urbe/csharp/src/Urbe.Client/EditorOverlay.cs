@@ -42,6 +42,7 @@ public sealed class EditorOverlay : Grid
     private readonly ScrollViewer _sourceScroll;
     public event Action<string>? ScrollObserved; // opt-in on-device scroll diagnostic
     private readonly StackPanel _sourceColumn;
+    public EditorLineNumbers LineNumbers { get; }
     private readonly Border _properties;
 
     /// <summary>The properties form (aliases, tags and the rest of the frontmatter), above the text in both modes.</summary>
@@ -148,6 +149,7 @@ public sealed class EditorOverlay : Grid
 
     public EditorOverlay()
     {
+        _visual.AskProgress = ConfigureProgressGuardedAsync;
         Background = UrbeTheme.Brush(UrbeTheme.Bg);
         // top bar, find, toolbar (wide), text, footer, toolbar (narrow: on the last row, right above the soft keyboard)
         RowDefinitions = new RowDefinitions("Auto,Auto,Auto,*,Auto,Auto");
@@ -177,6 +179,7 @@ public sealed class EditorOverlay : Grid
         foreach (var key in new[] { "TextControlBorderBrush", "TextControlBorderBrushPointerOver", "TextControlBorderBrushFocused" })
             Editor.Resources[key] = Brushes.Transparent;
         AutomationProperties.SetName(Editor, "Texto da nota");
+        EditorInput.ConfigureMultiline(Editor);
         // The source editor must reject changes to system-owned AI attribution before
         // they render or enter the undo/autosave path. This is separate from the save guard.
         Editor.TextChanging += (_, e) =>
@@ -283,7 +286,7 @@ public sealed class EditorOverlay : Grid
                 return;
             }
             _fromVisual = true;
-            if (!string.Equals(Editor.Text, md, StringComparison.Ordinal)) Editor.Text = md;
+            if (!string.Equals(Editor.Text, md, StringComparison.Ordinal)) ReplaceSourceText(md);
             _fromVisual = false;
         };
         _visual.WikiLinkTapped += name => _ = FollowLinkAsync(name);
@@ -322,7 +325,10 @@ public sealed class EditorOverlay : Grid
         // the text column fills the width up to the column size (the textarea is width:100%)
         // CST-141: the colours of code sit under the text, glyph for glyph (the text itself goes transparent over them)
         var codeText = new Grid { Children = { _highlight, Editor } };
-        _sourceColumn = new StackPanel { Children = { _properties, codeText, _wiki }, HorizontalAlignment = HorizontalAlignment.Stretch };
+        LineNumbers = new EditorLineNumbers(Editor, SourceScroll);
+        var numbered = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), Children = { LineNumbers, codeText } };
+        Grid.SetColumn(codeText, 1);
+        _sourceColumn = new StackPanel { Children = { _properties, numbered, _wiki }, HorizontalAlignment = HorizontalAlignment.Stretch };
         _sourceScroll = Column(_sourceColumn);
         // the properties form is the first thing of the text in either mode, and scrolls away with it
         _visualColumn = new StackPanel { Children = { _visual }, HorizontalAlignment = HorizontalAlignment.Stretch };
@@ -336,6 +342,7 @@ public sealed class EditorOverlay : Grid
         };
         _sourceScroll.ScrollChanged += (_, e) =>
         {
+            LineNumbers.ViewportChanged();
             OnScrolled(_sourceScroll, e);
             ScrollObserved?.Invoke("Fonte y=" + Math.Round(_sourceScroll.Offset.Y) + " viewport=" + Math.Round(_sourceScroll.Viewport.Height));
         };
@@ -386,6 +393,8 @@ public sealed class EditorOverlay : Grid
         ApplyOptions(null, null);
         ShowMode(EditorMode.Visual);
     }
+
+    private ScrollViewer? SourceScroll() => _sourceScroll;
 
     public TextBox Editor { get; }
     public event EventHandler? Closed;
@@ -1555,6 +1564,13 @@ public sealed class EditorOverlay : Grid
             }
             if (id == "|") { _markdownTools.Children.Add(new Border { Width = 1, Height = 24, Margin = new Thickness(UrbeTokens.Space.Xxs, 0), Background = UrbeTheme.Brush(C.BorderStrong), VerticalAlignment = VerticalAlignment.Center }); continue; }
             if (tools.TryGetValue(id, out var tool)) { _markdownTools.Children.Add(ToolButton(tool)); continue; }
+            if (id == "progress")
+            {
+                var progress = ToolButtonView(new TextBlock { Text = "%", FontSize = 19 }, "Inserir progresso");
+                progress.Click += async (_, _) => await InsertProgressAsync();
+                _markdownTools.Children.Add(progress);
+                continue;
+            }
             if (id is not ("math" or "box")) continue;
             // math/editor.js ∑ (mdMath) and the UC-44 Caixa, a `:::tipo` container (not 1.8.4 #mdToolbar buttons)
             var (content, tip, run) = id == "math"
@@ -1583,6 +1599,7 @@ public sealed class EditorOverlay : Grid
         "redo" => "Refazer",
         "math" => "Fórmula",
         "box" => "Caixa",
+        "progress" => "Progresso",
         _ => LegacyEditorTools.Toolbar.FirstOrDefault(t => t.Id == id)?.Title ?? id
     };
 
@@ -1590,7 +1607,7 @@ public sealed class EditorOverlay : Grid
     public static IReadOnlyCollection<string> ToolbarIds => [.. ToolbarOrder.Where(x => x != "|")];
 
     public static readonly string[] ToolbarOrder =
-        ["undo", "redo", "|", "bold", "italic", "list", "task", "|", "h1", "h2", "h3", "quote", "|", "noteLink", "link", "code", "box", "math", "rule"];
+        ["undo", "redo", "|", "bold", "italic", "list", "task", "progress", "|", "h1", "h2", "h3", "quote", "|", "noteLink", "link", "code", "box", "math", "rule"];
 
     // #mdToolbar (Markdown, in Fonte and in Visual, where it acts on the block of the caret) or .v21CodeTools (other text files, Fonte)
     private Control Toolbars()
@@ -1969,9 +1986,66 @@ public sealed class EditorOverlay : Grid
         if (Mode == EditorMode.Visual) _visual.SetText(Editor.Text ?? "");
     }
 
+    public Func<string, string?>? ProgressNoteResolver
+    {
+        get => _visual.ProgressNoteResolver;
+        set => _visual.ProgressNoteResolver = value;
+    }
+
+    public async Task InsertProgressAsync()
+    {
+        if (_note is null || !IsMarkdown || Dialogs is null) return;
+        _visual.FinishEdit();
+        var note = _note;
+        var baseline = Editor.Text;
+        var kind = await Dialogs.ChooseAsync("Inserir progresso", [new DialogItem("Meta numérica", Detail: "Valor atual, meta e quantidade restante"), new DialogItem("Checklist desta nota", Detail: "Contagem automática de todas as tarefas")]);
+        var insert = kind == 0 ? await ConfigureProgressAsync("label: Progresso\nvalue: 0\ntotal: 100")
+            : kind == 1 ? "```progress\nlabel: Tarefas\nsource: tasks\n```" : null;
+        if (insert is null || !ReferenceEquals(note, _note) || Editor.Text != baseline) return;
+        InsertText("\n\n" + insert + "\n");
+    }
+
+    private async Task<string?> ConfigureProgressAsync(string body)
+    {
+        if (Dialogs is null) return null;
+        var fields = body.Split('\n').Where(l => l.Contains(':')).Select(l => (Key: l[..l.IndexOf(':')].Trim(), Value: l[(l.IndexOf(':') + 1)..].Trim())).ToList();
+        string Field(string key, string fallback) => fields.FirstOrDefault(p => p.Key == key).Value ?? fallback;
+        // Property and linked-task directives are edited as Markdown through the same block editor.
+        if (Field("source", "") == "tasks" || body.Contains('$') || fields.Any(f => f.Key == "note"))
+        {
+            var config = await Dialogs.PromptAsync(new PromptOptions("Configurar progresso", "Campos (campo: valor)", Value: body, Confirm: "Aplicar",
+                Validate: v => NoteProgress.Evaluate(v, Editor.Text ?? "", ProgressNoteResolver).Error));
+            return config is null ? null : "```progress\n" + config.Trim() + "\n```";
+        }
+        var label = await Dialogs.PromptAsync(new PromptOptions("Progresso", "Nome", Value: Field("label", "Progresso"), Confirm: "Continuar"));
+        if (label is null) return null;
+        static bool Number(string v, out decimal n) => decimal.TryParse(v.Replace(',', '.'), System.Globalization.NumberStyles.AllowDecimalPoint, System.Globalization.CultureInfo.InvariantCulture, out n);
+        var total = await Dialogs.PromptAsync(new PromptOptions("Progresso", "Meta", Value: Field("total", "100"), Confirm: "Continuar",
+            Validate: v => Number(v, out var n) && n > 0 ? null : "Informe uma meta maior que zero."));
+        if (total is null || !Number(total, out var maximum)) return null;
+        var value = await Dialogs.PromptAsync(new PromptOptions("Progresso", "Valor atual", Value: Field("value", "0"), Confirm: "Aplicar",
+            Validate: v => Number(v, out var n) && n <= maximum ? null : "Informe um valor de zero até a meta."));
+        return value is not null && Number(value, out var current) ? NoteProgress.Manual(label, current, maximum) : null;
+    }
+
+    private async Task<string?> ConfigureProgressGuardedAsync(string body)
+    {
+        var note = _note;
+        var baseline = Editor.Text;
+        var result = await ConfigureProgressAsync(body);
+        return ReferenceEquals(note, _note) && Editor.Text == baseline ? result : null;
+    }
+
+    // Commands and Visual changes enter Avalonia's input/undo path. Assigning Text
+    // directly does not record an input operation and loses the ability to undo it.
+    private void ReplaceSourceText(string next)
+    {
+        EditorInput.Replace(Editor, next);
+    }
+
     private void ApplyEdit(LegacyEditorTools.TextEdit edit)
     {
-        Editor.Text = edit.Text;
+        ReplaceSourceText(edit.Text);
         Editor.SelectionStart = edit.SelectionStart;
         Editor.SelectionEnd = edit.SelectionEnd;
         Editor.CaretIndex = edit.SelectionEnd;

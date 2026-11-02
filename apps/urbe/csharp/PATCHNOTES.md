@@ -1,26 +1,31 @@
 # Urbe — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.41
+**Versão canônica preparada:** 2.0.0-beta.42
 **Canal:** Urbe 2.0 nativo, Android e Windows
-**Publicação:** somente pelo workflow oficial após CI e integração autorizada
-**Identidade Android:** app.urbe.csharp, mesmo certificado da beta.40; atualização direta quando a release oficial existir
+**Publicação:** pelo workflow oficial, após os gates do repositório; versão preparada não significa publicada
+**Identidade Android:** app.urbe.csharp e certificado beta existente
 
-## Planejamento em camadas — correção do defeito reportado
+## Editor
 
-- Corrigido o rebaixamento silencioso do plano estruturado para o modo simples quando a IA omite goal durante as atualizações. O contexto inicial permanece vinculado à mesma execução de agente, sem vazamento entre chats.
-- Tentativas de enviar objetivos, IDs, dependências ou revisões finais sem contexto válido não podem mais contornar o validador do grafo: a ferramenta informa o erro.
-- Textos como "Ainda pendente" e "A conferir" não são aceitos como prova declarada de nó concluído. As provas continuam declarações textuais; a ferramenta NÃO autentica testes externos ou verificação por outro agente.
-- Preservados os testes e critérios, dependências, revisões globais e o caminho simples para pedidos que não ativaram o planejamento.
+- Enter do teclado: campos do editor Fonte/Visual e compositor da IA declaram IME multilinha e tecla Return. Quebras enviadas como LF/CR/CRLF mantêm o bloco em edição e o foco; checklists continuam sem marcar itens, e código não recebe continuação de lista. Sete regressões headless aprovadas; teclado Android físico ainda não validado.
 
-## Editor — abas mais compactas
+- Progresso nativo: inserir meta numérica ou resumo automático do checklist na barra de formatação. Mostra avanço, percentual e restante; configuração no próprio Markdown.
+- Tarefas aninhadas contam uma vez; exemplos em código, comentários e itens fora da seção escolhida não entram. Sem tarefas não representa 100%.
+- Propriedades numéricas e referências declaradas a outra nota são consultadas sem copiar os totais.
+- Numeração lateral de linhas lógicas no modo Fonte, acompanhando as quebras visuais e a rolagem.
+- Comandos e alterações do Visual usam operações de entrada registráveis no histórico nativo para permitir desfazer/refazer.
 
-- Cápsulas de abas de 40dp de altura, títulos até 124dp, tipografia de 12dp, cantos e espaçamentos reduzidos.
-- A área principal de toque mantém ao menos 48dp, sem modificar a semântica de substituição da aba atual e criação explícita pelo +.
-- Adicionada regressão headless para densidade visual, uso em 320dp e controle do botão de nova aba.
+## Publicações
 
-## Paridade e limitações de consolidação
+- Fontes podem ser notas inteiras, títulos únicos e blocos com marcador ^id. Vínculo ausente ou ambíguo é informado, sem substituir pelo conteúdo da nota inteira.
+- Peças da mesma nota podem ser removidas e reordenadas independentemente.
+- Histórico de composição por sessão, objetivo/público, layouts artigo/livro/apresentação e temas de saída papel/oceano/tinta.
+- HTML de livro com sumário; HTML de apresentação com navegação por âncoras e perfil de impressão. Prévia nativa mostra conteúdo; paginação/estilo final são do arquivo exportado.
+- EPUB real com capítulos, navegação, imagens locais e SVG matemático. Imagem ausente/remota/incompatível ou fonte alterada durante a exportação geram erro útil. Piloto validado com EPUBCheck 5.4.0 sem erros ou avisos.
+- IA usa publication_schema/write_publication, com prévia e revisão esperada para substituição. O registro vivo não oferece mais criação pelo Editor de Páginas antigo; conteúdo permanece em notas reais.
 
-- Auditoria contrastada em `apps/urbe/docs/csharp/PARIDADE-CONSOLIDACAO-BETA41.md` com o plano normativo Numa 2.5 e referências open source.
-- Os bloqueadores CST-016 (teclado/foco), CST-142 (equações), CST-143 (menu radial) e CST-144 (perda de texto) continuam ABERTOS até validação física reproduzível; testes headless da beta.39/40 não substituem aceitação no moto g32.
-- Publicações: HTML de três capítulos foi testado pelo usuário; PDF, edição de fontes vivas e formatação final ainda precisam de testes no aparelho. Não foram anunciados nesta beta como novos recursos.
-- Não há executor de grafos durável, recibos de verificação independentes ou retomada automática após morte do processo.
+## Limites que permanecem abertos
+
+Esta versão não conclui todas as features dos dois editores. Persistem: validação física de IME/seleção/toque e recuperação após morte do processo; edição bidirecional dentro do estúdio, transações de múltiplas notas, composição livre e retirada física completa dos módulos antigos; PDF editorial direto, DOCX/ODT/PPTX, vídeo/motion/áudio, cursos e aplicações. A saída PDF continua pelo sistema de impressão. EPUB não implementa toda mídia/interação, transclusão genérica ou round-trip com leitores externos.
+
+Testes headless, build, emulador e validação humana são evidências distintas. O plano Numa mantém os itens parciais abertos; consultar o handoff e EDITORS-VERIFICATION-2026-11-02.md para resultados observados.

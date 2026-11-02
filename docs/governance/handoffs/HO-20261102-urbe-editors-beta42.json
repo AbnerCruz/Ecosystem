@@ -1,0 +1,192 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261102-urbe-editors-beta42",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-02T08:23:13.966416Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-227",
+  "component": "urbe",
+  "state": "working",
+  "branch": "feat/urbe-editors-consolidation",
+  "base_commit": "d49a05ee84a60f0ef1246c9c5135770efa61d76d",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/workflows/urbe-checks.yml",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Activity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorInput.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorLineNumbers.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Publications.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationStudioView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantExecutionEfficiency.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantPublicationTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/NoteProgress.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationEpub.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationProject.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationSources.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorChromeUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorLineNumbersUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorNewlineUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/NoteProgressUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationCompositionTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PublicationStudioUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantPublicationTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteProgressTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationEpubTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationFragmentTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationProjectTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PublicationSourceCatalogTests.cs",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md",
+    "apps/urbe/docs/csharp/EDITORS-VERIFICATION-2026-11-02.md",
+    "docs/governance/handoffs/HO-20261102-urbe-editors-beta42.json",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.5.md"
+  ],
+  "work_completed": [
+    "CST-147: gutter do Fonte usa as posições reais do TextPresenter, sem segundo editor.",
+    "CST-227/228 parciais: progresso declarativo nativo e checklists derivados, com validação, fontes por ID e fallback HTML/EPUB.",
+    "CST-150/151/154/156/158/160/161/167 parciais: fragmentos por títulos únicos/^id, peças independentes, undo/redo, configurações de composição e perfis HTML.",
+    "CST-163/165 parcial: EPUB3 real por seletor nativo, imagens locais, matemática e rejeição de recursos ausentes/conflitos.",
+    "CST-149/177 parcial: ferramentas de publicação substituem as de páginas no registro vivo da IA, com prévia, revisão esperada e writer existente.",
+    "Beta.42 preparada no mecanismo existente; não publicado manualmente.",
+    "CST-016: IME multilinha/Return explícito no Fonte/Visual e compositor; LF/CR/CRLF/tecla física mantêm caixa/foco e listas, sem transformar código. Reprodução anterior: 4 testes vermelhos; 7 regressões aprovadas depois.",
+    "Autorização explícita recebida do proprietário para enviar os commits ao repositório público AbnerCruz/Ecosystem, abrir PR e executar CI. Git HTTPS local sem credencial de escrita; usando conexão GitHub autenticada."
+  ],
+  "verification": [
+    {
+      "check": "Build portátil Release",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": ".NET 10.0.403; builds Release portátil e de testes sem erros/warnings, /tmp/urbe-enter-final-build.log. Android possui avisos preexistentes da dependência LLamaSharp."
+    },
+    {
+      "check": "Core completo",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1268 testes aprovados em /tmp/urbe-core-final.log."
+    },
+    {
+      "check": "UI completa",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "/tmp/urbe-ui-verified.log: 462 testes aprovados, 0 falhas/erros/skips, 201,217 s; inclui Enter e regressões após ajustes de geometria/prompt. Host Linux headless, não Windows/DEVICE."
+    },
+    {
+      "check": "EPUBCheck oficial",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "5.4.0, piloto real com capítulos, acentos, tabela, checklist, progresso, imagem e fórmula SVG: 0 errors / 0 warnings em /tmp/urbe-epubcheck.log."
+    },
+    {
+      "check": "Builds locais Android/Windows",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Compilação local apenas: APK Debug independente em /tmp/urbe-android-enter (arm64, EmbedAssembliesIntoApk=true) com assinatura v2/v3 verificada; Windows x64 autocontido /tmp/urbe-windows-final, Version=2.0.0-beta.42. Logs /tmp/urbe-android-enter-build.log e /tmp/urbe-windows-final-build.log. Não executados em aparelho Android ou Windows real; CI bloqueado pelo git push rejeitado."
+    },
+    {
+      "check": "Dispositivo físico",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/urbe/docs/csharp/EDITORS-VERIFICATION-2026-11-02.md",
+      "critical": false,
+      "evidence": "Nenhum aparelho físico conectado; headless/emulação/build não são DEVICE."
+    },
+    {
+      "check": "Enter e teclado virtual",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "/tmp/urbe-enter-red.log: 4 falhas antes; /tmp/urbe-enter-final.log: 7 testes aprovados depois, sem skips. Contrato IME e continuidade de caixa/foco no host headless Linux; não é DEVICE."
+    },
+    {
+      "check": "Regressão do agente/nome após retirada de Páginas",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "/tmp/urbe-assistant-regression.log: 1 teste aprovado, usando publication_schema no payload real do provedor roteirizado."
+    },
+    {
+      "check": "Consistência final",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "/tmp/urbe-consistency-final.log: todos os 22 checks aprovados."
+    },
+    {
+      "check": "Execução real Windows/Android no CI",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Jobs preparados em .github/workflows/urbe-checks.yml; não executados, pois git push público foi bloqueado pelo auto-review."
+    }
+  ],
+  "known_issues": [
+    "Mandato integral dos editores não concluído; seções 4.3/4.12/4.16 do plano permanecem abertas.",
+    "Faltam matriz física IME/seleção, recuperação após morte de processo, edição bidirecional no estúdio/transações compostas, composição livre e retirada completa dos módulos antigos.",
+    "PDF editorial direto, DOCX/ODT/PPTX, motion/MP4/áudio, cursos/aplicações e revisão multimodal ainda não implementados.",
+    "Fonte vinculada de progresso pode exigir reabrir a nota para invalidar a projeção; localizar tarefas pelo resumo permanece pendente.",
+    "Prévia nativa é de conteúdo e não é prova da paginação final/exportação visual.",
+    "Android compila com avisos preexistentes LLamaSharp sobre Content e alinhamento 16 KB para Android 16; não houve troca dessa dependência."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Publicar commits e abrir PR: usuário autorizou explicitamente o envio público a AbnerCruz/Ecosystem nesta sessão.",
+    "Executar e acompanhar CI de Android/Windows, corrigindo falhas.",
+    "Prosseguir pelas lacunas dos editores e pelo mecanismo governado de release, sem declarar o mandato integral concluído."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.5.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/integration-policy.json",
+    "docs/distribution/direct-releases.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Notas reais continuam fonte autoral, composição contém IDs e writer existente confirma gravação."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE explicitamente pendente e separado de testes automatizados."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "CSTs parciais e critérios registrados no plano canônico; nenhuma declaração de consolidação integral."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem dependência de outro Product ou novo runtime; adaptadores existentes reutilizados."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "native-note-progress-publication-exports",
+      "status": "product-specific",
+      "rationale": "Reusa TextBox, parser, writer e renderer matemático do Urbe; não cria plataforma ou dependência entre Products."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane",
+      "distribution"
+    ],
+    "reason": "CI Android/Windows acrescentado para prova de execução e bump beta.42 no canal existente. Não muda identidade/certificado; integração segue política da main."
+  }
+}

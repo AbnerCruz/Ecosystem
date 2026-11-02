@@ -47,10 +47,13 @@ public sealed record PublicationProject
 
     /// <summary>Idempotent source insertion and a corresponding ordered layout placement.</summary>
     public PublicationProject AddSource(string documentId)
+        => AddSource(new PublicationSourceReference(documentId));
+
+    public PublicationProject AddSource(PublicationSourceReference source)
     {
-        if (string.IsNullOrWhiteSpace(documentId)) throw new ArgumentException("ID da fonte obrigatório.", nameof(documentId));
-        if (Sources.Any(s => s.DocumentId == documentId && string.IsNullOrEmpty(s.Fragment))) return this;
-        var source = new PublicationSourceReference(documentId);
+        ArgumentNullException.ThrowIfNull(source);
+        if (string.IsNullOrWhiteSpace(source.DocumentId)) throw new ArgumentException("ID da fonte obrigatório.", nameof(source));
+        if (Sources.Contains(source)) return this;
         return this with
         {
             Sources = [.. Sources, source],
@@ -63,6 +66,21 @@ public sealed record PublicationProject
         Sources = Sources.Where(s => s.DocumentId != documentId).ToList(),
         Sections = Sections.Where(s => s.Source.DocumentId != documentId).ToList()
     };
+
+    public PublicationProject RemovePlacement(string placementId)
+    {
+        var sections = Sections.Where(s => s.Id != placementId).ToList();
+        return this with { Sections = sections, Sources = Sources.Where(s => sections.Any(p => p.Source == s)).ToList() };
+    }
+
+    public PublicationProject MovePlacement(string placementId, int index)
+    {
+        var sections = Sections.ToList();
+        var piece = sections.FirstOrDefault(s => s.Id == placementId) ?? throw new InvalidOperationException("Peça inexistente.");
+        sections.Remove(piece);
+        sections.Insert(Math.Clamp(index, 0, sections.Count), piece);
+        return this with { Sections = sections };
+    }
 
     /// <summary>Reorder the visible composition without modifying the note or its revisions.</summary>
     public PublicationProject MoveSource(string documentId, int index)
@@ -158,6 +176,9 @@ public static class PublicationHtml
         PublicationProjectCodec.Validate(project);
         ArgumentNullException.ThrowIfNull(catalog);
         var title = MarkdownEngine.EscapeHtml(project.Title);
+        var slides = project.Design.Layout == "slides";
+        var book = project.Design.Layout == "book";
+        var accent = project.Design.Theme switch { "ocean" => "#075985", "ink" => "#312e81", _ => "#6b4f2a" };
         var sb = new StringBuilder();
         sb.Append("<!doctype html>\n<html lang=\"pt-BR\"><head><meta charset=\"utf-8\">")
           .Append("<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">")
@@ -170,7 +191,21 @@ public static class PublicationHtml
           .Append(".umath{display:inline-block;max-width:100%;vertical-align:middle}.umath svg{vertical-align:middle}.umath-block{display:block;overflow-x:auto;text-align:center;margin:1.2rem 0}")
           .Append(".missing{border:1px dashed #a35;padding:1rem}@page{size:A4;margin:18mm}")
           .Append("@media print{main{max-width:none;padding:0}article{break-before:page}article:first-of-type{break-before:auto}h1,h2,h3{break-after:avoid}p{widows:3;orphans:3}pre,table,img{break-inside:avoid}}")
-          .Append("</style></head><body><main><header><h1>").Append(title).Append("</h1></header>");
+          .Append("h1,h2,h3,a{color:").Append(accent).Append("}nav a{display:block;padding:.35em 0}progress{width:100%;accent-color:").Append(accent).Append("}");
+        if (book) sb.Append("body{font-family:Georgia,serif}p{text-align:start}article{counter-increment:chapter}nav{margin:2rem 0}");
+        if (slides) sb.Append("main{max-width:none}article{min-height:80vh;scroll-snap-align:start;padding:clamp(16px,4vw,64px);border:1px solid #ddd;border-radius:12px}html{scroll-snap-type:y proximity}@media print{@page{size:320mm 180mm;margin:12mm}header,nav{display:none}article{min-height:0;border:0;padding:0;break-before:page}article:first-of-type{break-before:auto}}");
+        sb.Append("</style></head><body><main><header><h1>").Append(title).Append("</h1></header>");
+        if (book || slides)
+        {
+            sb.Append("<nav aria-label=\"Sumário\">");
+            foreach (var piece in project.Sections)
+            {
+                var source = catalog.Read(piece.Source);
+                var label = source is null ? "Fonte indisponível" : System.IO.Path.GetFileNameWithoutExtension(source.Path);
+                sb.Append("<a href=\"#").Append(MarkdownEngine.EscapeHtml(piece.Id)).Append("\">").Append(MarkdownEngine.EscapeHtml(label)).Append("</a>");
+            }
+            sb.Append("</nav>");
+        }
         var missing = new List<string>();
         foreach (var placement in project.Sections)
         {
@@ -183,7 +218,9 @@ public static class PublicationHtml
                 continue;
             }
             var body = NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body);
-            sb.Append("<article>").Append(MarkdownEngine.Render(body, RenderMath)).Append("</article>");
+            var rendered = MarkdownEngine.Render(body, RenderMath);
+            sb.Append("<article id=\"").Append(MarkdownEngine.EscapeHtml(placement.Id)).Append("\" tabindex=\"0\">").Append(NoteProgress.RenderHtml(rendered, source.Markdown,
+                id => catalog.Read(new PublicationSourceReference(id))?.Markdown)).Append("</article>");
         }
         sb.Append("</main></body></html>");
         return new PublicationHtmlResult(sb.ToString(), missing.AsReadOnly());

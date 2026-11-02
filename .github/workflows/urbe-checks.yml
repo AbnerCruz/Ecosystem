@@ -96,6 +96,63 @@ jobs:
 
   # DEC-0043 / ADR-0032 (UC-33, gate G-N0): native client without WebView on Android and Windows.
   # Preview artifacts for the owner's device test only; never signed for a channel, never published.
+  android-runtime-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: apps/urbe/csharp
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: dotnet workload install android
+      - name: Build isolated emulator preview (not the signed beta channel)
+        run: dotnet publish src/Urbe.Android/Urbe.Android.csproj -c Debug -p:RuntimeIdentifiers=android-x64 -p:EmbedAssembliesIntoApk=true -o artifacts/emulator
+      - name: Enable KVM for the Android emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install, launch and resume the actual Android application
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: |
+            mkdir -p apps/urbe/csharp/artifacts/android-smoke
+            adb install -r "$(find apps/urbe/csharp/artifacts/emulator -name '*-Signed.apk' | head -1)"
+            adb logcat -c
+            adb shell monkey -p app.urbe.nativepreview -c android.intent.category.LAUNCHER 1
+            sleep 10
+            pid=$(adb shell pidof app.urbe.nativepreview | tr -d '\r')
+            test -n "$pid"
+            adb exec-out screencap -p > apps/urbe/csharp/artifacts/android-smoke/launched.png
+            adb shell input keyevent KEYCODE_HOME
+            sleep 2
+            adb shell monkey -p app.urbe.nativepreview -c android.intent.category.LAUNCHER 1
+            sleep 5
+            test -n "$(adb shell pidof app.urbe.nativepreview)"
+            adb logcat -d --pid="$pid" > apps/urbe/csharp/artifacts/android-smoke/logcat.txt
+            adb exec-out screencap -p > apps/urbe/csharp/artifacts/android-smoke/resumed.png
+            if grep -E 'FATAL EXCEPTION|Fatal signal|ANR in app.urbe' apps/urbe/csharp/artifacts/android-smoke/logcat.txt; then exit 1; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: urbe-android-runtime-smoke
+          path: apps/urbe/csharp/artifacts/android-smoke
+          if-no-files-found: warn
+          retention-days: 14
+
   csharp-client-native:
     strategy:
       fail-fast: false
@@ -146,6 +203,20 @@ jobs:
           dotnet publish src/Urbe.Desktop/Urbe.Desktop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o artifacts/native-windows
           New-Item -ItemType Directory -Force artifacts/native-preview | Out-Null
           Compress-Archive -Path artifacts/native-windows/* -DestinationPath artifacts/native-preview/Urbe-Nativo-Previa-Windows.zip
+      - name: Test editor and publications on Windows
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          dotnet build tests/Urbe.Core.Tests -c Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet tests/Urbe.Core.Tests/bin/Release/net10.0/Urbe.Core.Tests.dll
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet build tests/Urbe.Client.Tests -c Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet tests/Urbe.Client.Tests/bin/Release/net10.0/Urbe.Client.Tests.dll -class '*NoteProgressUiTests' -class '*PublicationCompositionTests' -class '*EditorNewlineUiTests'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet tests/Urbe.Client.Tests/bin/Release/net10.0/Urbe.Client.Tests.dll -method '*EditorLineNumbersFollow*'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@v4
         with:
           name: urbe-native-preview-${{ matrix.target }}
