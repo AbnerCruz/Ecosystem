@@ -150,6 +150,31 @@ public sealed class PdfPagesView : ScrollViewer
 
     public int PageCount => _pages.Count;
 
+    /// <summary>One-based visible page, independent of whether its bitmap is cached.</summary>
+    public int CurrentPage { get; private set; } = 1;
+
+    /// <summary>Navigation updates when a different page becomes visible.</summary>
+    public event Action<int>? PageChanged;
+
+    /// <summary>Jump to a physical page without materializing all its bitmaps.</summary>
+    public void GoToPage(int page)
+    {
+        if (_closed || PageCount == 0) return;
+        int index = Math.Clamp(page - 1, 0, PageCount - 1);
+        double y = 0;
+        for (int i = 0; i < index; i++)
+        {
+            var frame = _stack.Children[i];
+            var height = frame.Bounds.Height;
+            if (height <= 0 && frame is Border border && border.Tag is double ratio)
+                height = Math.Max(1, Bounds.Width) * ratio;
+            y += height + _stack.Spacing;
+        }
+        Offset = new Vector(0, y);
+        // The ScrollViewer will clamp at the end; the visible page is reconciled by DrawVisible.
+        DrawSoon();
+    }
+
     private bool _drawPosted;
 
     /// <summary>Draws after the pages have their place (the layout runs before background work).</summary>
@@ -173,6 +198,16 @@ public sealed class PdfPagesView : ScrollViewer
             y += h;
         }
         if (first < 0) { first = 0; last = 0; }
+        // At the bottom the final page may not align to the viewport top.
+        // Report it as current so "Próxima" doesn't remain enabled forever.
+        bool atEnd = Extent.Height > Viewport.Height + 1 &&
+            Offset.Y + Viewport.Height >= Extent.Height - 2;
+        int page = atEnd ? PageCount : first + 1;
+        if (CurrentPage != page)
+        {
+            CurrentPage = page;
+            PageChanged?.Invoke(page);
+        }
         for (int i = 0; i < _pages.Count; i++)
         {
             bool near = i >= first - 1 && i <= last + 1;
