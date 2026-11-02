@@ -298,7 +298,7 @@ public sealed partial class AssistantPanel : Border
     /// every request and the device reads the request itself, so the others (links, tags, plans, memory, folders…) cost more
     /// waiting than they give; the bigger models in the cloud keep all of them.
     /// </summary>
-    private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "inspect_document", "read_document", "search_document", "inspect_document_image", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note", "recall_memory", "learn_memory", "consult_agent", "request_form", "add_quick_note", AssistantGuideTools.Name];
+    private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "inspect_document", "inventory_document", "read_document", "search_document", "inspect_document_image", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note", "recall_memory", "learn_memory", "consult_agent", "request_form", "add_quick_note", AssistantGuideTools.Name];
 
     private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name)
         ?? AssistantWebTools.All.FirstOrDefault(t => t.Name == name)

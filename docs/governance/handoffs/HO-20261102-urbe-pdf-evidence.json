@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261102-urbe-pdf-evidence",
   "category": "HANDOFF",
-  "timestamp": "2026-11-02T10:17:13.002Z",
+  "timestamp": "2026-11-02T10:39:22.195Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
@@ -24,7 +24,9 @@
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantDocumentToolsTests.cs",
     "docs/governance/handoffs/HO-20261102-urbe-pdf-evidence.json",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
-    "apps/urbe/csharp/tests/Urbe.Core.Tests/ArchitectureTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ArchitectureTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDocumentImageTools.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantDocumentImageToolsTests.cs"
   ],
   "work_completed": [
     "Auditoria do código: anexos PDF são enviados ao provedor multimodal ou copiados para o vault, mas não havia leitura nativa, paginada e verificável por página.",
@@ -33,7 +35,10 @@
     "Testes de regressão propostos com PDF sintético incluindo texto, figura vetorial e página sem texto. Integração com ferramentas gerais e modelos do dispositivo sem duplicar inteligência.",
     "Merge semântico da main atual: preservada a implementação de Publicações em AssistantPanel.cs da beta.42 e adicionadas somente ferramentas PDF; árvore combinada foi construída a partir da main, sem sobrescrever mudanças concorrentes.",
     "Páginas com diagramas e fórmulas: SinglePagePdf isola uma página original (incluindo imagens/vetores) para análise visual opcional pelo provedor de IA selecionado; o host exige confirmação explícita para enviar a página e não reenvia o livro inteiro.",
-    "RunHost encaminha DocumentFiles/DocumentVision para os agentes; ArchitectureTests mantém allowlist exata do pacote PdfPig."
+    "RunHost encaminha DocumentFiles/DocumentVision para os agentes; ArchitectureTests mantém allowlist exata do pacote PdfPig.",
+    "Extração de fotos PNG/JPEG/WebP de anexos da conversa e arquivos do vault com validação de tipo e limites; inspect_document_image verifica bytes e SHA sem rede. analyze_document_image envia mídia adaptada via modelo visual apenas após confirmação explícita do usuário.",
+    "Inventário paginado de livros: inventory_document detecta por página texto, imagens e desenhos vetoriais, inclusive páginas mistas, e possibilita localizar as páginas que precisam de inspeção visual.",
+    "Busca em livros com ocorrências repetidas: retoma com cursor por offset de caractere e não rele o mesmo resultado indefinidamente."
   ],
   "verification": [
     {
@@ -58,16 +63,16 @@
     }
   ],
   "known_issues": [
-    "CST-212 parcial: extração textual e análise visual remota opt-in existem; ainda sem OCR local exato, transcrição certificada de fórmulas, indexação visual por região, DOCX/PPTX/XLSX, áudio/vídeo e QA independente.",
+    "CST-212 ainda parcial: reconhecimento remoto de imagens/páginas PDF existe com consentimento por envio e modelo multimodal compatível, mas não existe OCR local offline ou certificação de exatidão; DOCX/PPTX/XLSX, áudio/vídeo, OCR em massa e QA matemático não estão completos.",
     "Os offsets se referem à camada textual extraída; PDFs com colunas ou ordem de glifos incomum requerem análise de layout e conferência visual.",
     "Detecção de path vetorial ou bitmap não prova compreensão semântica e não detecta de forma absoluta todas as figuras; texto incorporado a imagem permanece visual.",
     "Operações leem até 60 MiB por arquivo na memória; livros maiores precisam stream de acesso aleatório ou cache paginado por SHA."
   ],
   "blockers": [],
   "next_actions": [
-    "Validar código com CI, corrigir qualquer falha e confirmar na compilação do Android/Windows.",
-    "OCR local por região de página/imagem e transcrição matemática especializada com precisão auditada: modelos grandes tipo Marker/Surya não serão empacotados no APK sem análise de desempenho/licença; alternativa remota atual é explicitamente opt-in.",
-    "Criar corpus de páginas didáticas reais contendo imagens de equações, gráficos, colunas e tabelas, validar offsets e exibir fontes no produto."
+    "Validar suite verde Android e Windows no PR, incluindo emulador e CI combinado, antes de publicar prévia.",
+    "Testar OCR de scans e equações em imagem com credenciais do usuário e dispositivo físico. Não afirmar precisão textual/científica sem conferência visual.",
+    "Implantar OCR local opcional e índices textuais por hash de arquivo para milhares de páginas, com revisão das referências e margens de confiança."
   ],
   "decisions_required": [],
   "normative_sources": [
