@@ -1,0 +1,112 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261102-urbe-beta44-reading-release",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-02T12:22:07Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-231",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "release/urbe-beta44-leitura-estudo-20261102",
+  "base_commit": "661b33f3ab207a0f18688aefcb0512dcd4b3324f",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/896",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "docs/governance/handoffs/HO-20261102-urbe-beta44-reading-release.json"
+  ],
+  "work_completed": [
+    "Criado PR draft #896 para beta.44, com incrementos monotônicos em versão e versionCode na fonte canônica; identidade e certificado da beta preservados.",
+    "Notas da beta.44 preparadas com escopo estrito do PR #894: modo de leitura expandido, navegação PDF, identificação EPUB/slides/documentos e fallback explícito. Não anunciados leitores completos ou browser/YouTube inexistentes.",
+    "Histórico de versões acrescentou beta.43, cujo APK Android oficial foi publicado em 02/11/2026.",
+    "Guardas de prontidão explícitas: PR #894 integrado na main, CI combinado verde e release pelo workflow oficial, não por build manual. PR #895 é documentação governada independente, não dependência artificial para APK.",
+    "PRs #894 e #895 integrados na main; branch beta.44 reconciliada com o código efetivo e o plano Numa 2.6."
+  ],
+  "verification": [
+    {
+      "check": "CI combinado PR #894 (incremento de leitor)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "PR #894 integrado via integrador governado, execução combinada 41444562667 com consistency e Urbe success; head testado f518177438c8e232305dec3eb8d3f313b581d06f.",
+      "tested_commit": "f518177438c8e232305dec3eb8d3f313b581d06f"
+    },
+    {
+      "check": "CI final da beta.44 após integração do PR #894",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "PRs #894 e #895 integrados na main. Executar CI final da branch beta.44 reconciliada antes de integrar."
+    },
+    {
+      "check": "Workflow oficial assinado e ativos Android/Windows da beta.44",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Nenhum tag ou release beta.44 foi publicado por esta operação. Somente workflow urbe-csharp-mobile-release.yml após integração."
+    },
+    {
+      "check": "Teste físico de instalação/atualização beta.44 no Android 13",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+      "evidence": "Sem teste físico no moto g32, particularmente modo imersivo, foco/Back, render de PDF longo e segurança de dados."
+    }
+  ],
+  "known_issues": [
+    "Os PRs #894 e #895 estão integrados; a beta.44 somente poderá ser publicada após CI e autorização de distribuição.",
+    "Atualizações de 43 para 44 preservam ID app.urbe.csharp, mas compatibilidade real no dispositivo precisa ser testada.",
+    "Leitores EPUB/PPTX/DOCX internos, navegação web/YouTube, anotações semânticas e OCR local continuam fora da beta.44.",
+    "PDF no Windows usa fallback externo; no Android, layout atual ainda aloca frame por página e renderiza síncrono."
+  ],
+  "blockers": [
+    "CI combinado final do PR #896 sobre a main reconciliada deve passar integralmente.",
+    "Mudança de distribuição classificada crítica: autorização do proprietário para integração governada é obrigatória."
+  ],
+  "next_actions": [
+    "Conferir CI completo da branch reconciliada (consistency, Urbe C# portable, Android, Windows e emulador).",
+    "Somente após checks verdes obter autorização do proprietário para integração crítica via label integrar aplicada por ele.",
+    "Distribuir apenas pelo workflow oficial urbe-csharp-mobile-release.yml; conferir tag, assinatura, SHA-256 e APK/ZIP.",
+    "Validar em Android 13 físico e Windows sem alegar aceite antecipado."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/integration-policy.json",
+    ".github/workflows/urbe-csharp-mobile-release.yml",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.6.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Handoff com schema canônico, links e checks verificáveis."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Release não alegada pronta antes de CI físico e artefatos assinados."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Modo leitor só parcialmente entregue; demais CST-229–246 abertos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Versão do aplicativo alterada sem mudar ID, certificado, runtime ou outros produtos."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj controla versão e versionCode do canal Android assinado; integração depende do proprietário."
+  }
+}

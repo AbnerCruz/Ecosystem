@@ -1,25 +1,36 @@
 # Urbe — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.43
+**Versão canônica preparada:** 2.0.0-beta.44
 **Canal:** Urbe 2.0 nativo, Android e Windows
-**Publicação:** pelo workflow oficial, após os gates do repositório; versão preparada não significa publicada
+**Publicação:** pelo workflow oficial após integração e verificação; versão preparada não significa publicada
 **Identidade Android:** app.urbe.csharp e certificado beta existente
 
-## Leitura documental e imagens (CST-212, PR #886)
+## Leitura imersiva no próprio Urbe (CST-231/233, PR #894)
 
-- Agentes podem inspecionar PDFs autorizados do vault ou anexos da conversa atual: quantidade de páginas, SHA-256 da fonte e inventário paginado de texto, imagens e desenhos vetoriais.
-- Leitura de trechos com página e cursor de caracteres; busca literal em livros em lotes de até 150 páginas, com retomada da posição para ocorrências repetidas.
-- Análise visual de uma página do PDF por vez (texto dentro de imagens, fórmulas, tabelas e gráficos) usando modelo multimodal configurado **somente com autorização explícita de envio**; a interpretação não é garantia de exatidão.
-- Inspeção local de imagens PNG/JPEG/WebP com validação de assinatura e hash; análise por IA multimodal exige autorização e provedor compatível.
-- Limites atuais: até 60 MiB por PDF, 16 MiB por imagem de origem. **Ainda não existe OCR local offline, ingestão universal de arquivos nem certificação de fórmulas.** Camadas textuais e conteúdo visual exigem tratamento diferente; imagens e fórmulas em páginas mistas podem necessitar revisão visual.
+- Visualizador de arquivos com controle **Tela cheia / Sair da tela cheia**: a fonte ocupa a área útil do Urbe sem reabrir o documento, alterá-lo ou substituir a interface nativa.
+- No Android, o primeiro botão **Voltar** sai do modo expandido; o seguinte fecha o visualizador. Tecla Escape segue hierarquia equivalente.
+- PDFs no Android passam a mostrar posição **página atual / total** e comandos **Anterior / Próxima**. Salto a página física reutiliza o renderizador já existente e mantém somente os bitmaps próximos da viewport.
+- Reconhecimento de arquivos **EPUB, PPT/PPTX/ODP, DOC/DOCX/ODT/RTF**, com rótulos corretos e MIME para abertura em aplicativo externo. Arquivos sem leitor interno não são carregados inteiros na memória somente para exibir um aviso.
+- O arquivo original do vault permanece intacto; não houve mudança em esquema de dados, permissões ou motor de IA.
 
-## Funcionalidades herdadas da beta.42
+## Fundamentos já disponíveis desde beta.43
 
-- Editor Fonte/Visual e compositor com IME multilinha e Return; progresso nativo de checklists, numeração de linhas e operações de desfazer/refazer.
-- Publicações baseadas em notas, títulos e blocos ^id, composição de artigo/livro/apresentação, HTML, EPUB3 com recursos locais e integração com ferramentas de IA.
+- Agentes podem inspecionar PDFs autorizados do vault e anexos da conversa: quantidade de páginas, hash SHA-256, inventário paginado de texto, imagens e desenhos vetoriais.
+- Leitura e busca textual por páginas, com cursor e identificação de leitura parcial; análise visual de uma página/imagem requer autorização explícita e modelo multimodal configurado.
+- A análise de imagens, gráficos e fórmulas geradas ou digitalizadas é interpretação assistida: não representa certificação de exatidão.
+- Editor Fonte/Visual, progresso nativo de checklists, numeração de linhas e Publicações com HTML/EPUB3 permanecem disponíveis conforme versões anteriores.
 
-## Limites que permanecem abertos
+## Pendências ainda abertas na consolidação 2.6
 
-O trabalho documental CST-212 é uma primeira implementação auditável, não uma solução integral de extração de livros: OCR local offline, reconhecimento semântico em escala, exatidão matemática certificada e formatos DOCX/PPTX/XLSX continuam pendentes. PDFs digitalizados ou com figuras requerem análise visual e conferência humana. A validação em aparelho físico também permanece pendente.
+- **Ainda não são leitores internos completos:** EPUB, apresentações e DOCX/ODT usam fallback externo. O PDF no Windows ainda precisa de renderizador próprio.
+- O modo expandido ocupa a área do Urbe; não ativa tela cheia do sistema operacional nem oculta suas barras.
+- PDF ainda não tem seleção/destaque textual, anotações e referências universais de trechos no visualizador. Páginas são desenhadas como bitmaps; o componente mantém um frame por página e exige evolução para livros extensos.
+- Ainda não foram implementados o navegador geral, YouTube embutido, integração simultânea Explorer/editor/navegador e estudo assistido contextual para qualquer formato.
+- OCR local offline e verificação matemática independente permanecem pendentes; modelos multimodais precisam de consentimento, revisão e tratamento de mídia.
+- Testes automatizados e emulador não substituem teste de toque, bateria, acessibilidade, desempenho e fluxo real no Android físico.
 
-No editor e nas Publicações ainda faltam edição bidirecional dentro do estúdio, transações de múltiplas notas, composição livre, PDF editorial direto, DOCX/ODT/PPTX, vídeo/motion/áudio, cursos e aplicações. A saída PDF usa o sistema de impressão. Testes headless, build e emulador não substituem validação no aparelho físico. Consulte o plano Numa 2.5 e os handoffs para pendências.
+## Estabilização e distribuição
+
+**Pré-requisitos desta beta.44:** os PRs #894 (leitor) e #895 (consolidação 2.6) já estão integrados à `main`. Ainda são obrigatórios CI combinado aprovado no PR de release, autorização do proprietário para a mudança crítica de distribuição e geração dos pacotes Android/Windows exclusivamente pelo workflow assinado `urbe-csharp-mobile-release.yml`. Uma branch de release ou APK de prévia não comprova publicação.
+
+Consulte a consolidação Numa 2.6 (CST-229–246) e os handoffs para o escopo completo de estudo, navegação e produção.
