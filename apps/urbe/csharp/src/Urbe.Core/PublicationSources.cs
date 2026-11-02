@@ -2,8 +2,8 @@ namespace Urbe.Core;
 
 /// <summary>
 /// A stable note identity, not a path or a pasted copy of its Markdown.
-/// A fragment is reserved for semantic block/heading identities; unsupported
-/// selectors cannot silently resolve to the whole note.
+/// A fragment names a unique heading or an existing ^block marker; missing,
+/// ambiguous and unsupported selectors never silently resolve to the whole note.
 /// </summary>
 public sealed record PublicationSourceReference(string DocumentId, string? Fragment = null);
 
@@ -12,7 +12,7 @@ public sealed record PublicationSourceReference(string DocumentId, string? Fragm
 /// snapshot in a publication manifest: reopen by DocumentId for current content.
 /// </summary>
 public sealed record PublicationSourceView(
-    string DocumentId, string Path, int Revision, string Markdown);
+    string DocumentId, string Path, int Revision, string Markdown, string? Fragment = null);
 
 public enum PublicationSourceChangeKind
 {
@@ -43,7 +43,7 @@ public sealed class PublicationSourceChange : EventArgs
 /// references the same DocumentStore as the editor and the agent tools: reads
 /// resolve on demand and writes continue through the existing verified vault
 /// edit contract. Nothing here saves, duplicates or synchronizes note text.
-/// A future semantic selector must be added only after stable block IDs exist.
+/// Existing Markdown ^id markers provide stable block identity; line offsets are rejected.
 /// </summary>
 public sealed class PublicationSourceCatalog : IDisposable
 {
@@ -64,16 +64,33 @@ public sealed class PublicationSourceCatalog : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         if (string.IsNullOrWhiteSpace(source.DocumentId))
             throw new ArgumentException("A fonte exige o ID persistente de uma nota.", nameof(source));
-        if (!string.IsNullOrEmpty(source.Fragment))
-            throw new NotSupportedException("Seletores de bloco/título exigem identidade semântica estável, ainda pendente.");
-
         var document = _documents.Get(source.DocumentId);
         // DocumentStore.Get also accepts paths. Never allow path-based identity
         // through the PublicationSourceReference contract.
         if (document is null || document.Id != source.DocumentId || !ArtifactModel.IsNote(document.Path))
             return null;
 
-        return new PublicationSourceView(document.Id, document.Path, document.Revision, document.Content);
+        var text = document.Content;
+        if (!string.IsNullOrEmpty(source.Fragment))
+        {
+            var fragment = source.Fragment.Trim().TrimStart('#');
+            if (fragment.StartsWith('^'))
+            {
+                if (EmbedFragments.BlockIds(text).Count(id => id == fragment[1..]) != 1) return null;
+            }
+            else
+            {
+                // Line offsets are not durable source selectors. Named headings are explicit:
+                // removing/renaming them breaks the link instead of resolving the whole note.
+                if (System.Text.RegularExpressions.Regex.IsMatch(fragment, @"^L\d", System.Text.RegularExpressions.RegexOptions.CultureInvariant))
+                    throw new NotSupportedException("Referencie um título ou marcador ^id; números de linha não são identidade persistente.");
+                if (EmbedFragments.Headings(text).Count(h => Assistant.AssistantTools.Fold(h) == Assistant.AssistantTools.Fold(fragment)) != 1) return null;
+            }
+            var part = EmbedFragments.Extract(text, fragment);
+            if (part.Error is not null || part.Text is null) return null;
+            text = part.Text;
+        }
+        return new PublicationSourceView(document.Id, document.Path, document.Revision, text, source.Fragment);
     }
 
     private void OnDocumentsChanged(object? sender, DocumentStoreChangedEventArgs args)

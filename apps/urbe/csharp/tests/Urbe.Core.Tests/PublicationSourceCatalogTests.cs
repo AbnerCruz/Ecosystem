@@ -57,13 +57,13 @@ public sealed class PublicationSourceCatalogTests
     }
 
     [Fact]
-    public void BlockSelectorsFailExplicitlyUntilStableBlockIdentityIsImplemented()
+    public void MissingBlockSelectorsNeverFallBackToWholeNote()
     {
         var store = new DocumentStore();
         var note = store.Upsert(new DocumentInput { Path = "Origem.md", Content = "# Capítulo\nTexto" });
         using var catalog = new PublicationSourceCatalog(store);
-        Assert.Throws<NotSupportedException>(() =>
-            catalog.Read(new PublicationSourceReference(note.Id, "#^bloco-1")));
+        Assert.Null(catalog.Read(new PublicationSourceReference(note.Id, "#^bloco-1")));
+        Assert.Throws<NotSupportedException>(() => catalog.Read(new PublicationSourceReference(note.Id, "L1-L3")));
     }
 
     [Fact]

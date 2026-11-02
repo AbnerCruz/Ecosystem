@@ -2731,3 +2731,25 @@ As referências de **OpenCode #4659/#11314** (compactação), **Cline #4359/#123
 **Pesquisa e confronto das abas:** documentação oficial https://code.visualstudio.com/docs/editing/getting-started/userinterface e código https://github.com/microsoft/vscode/blob/main/src/vs/workbench/common/editor/editorGroupModel.ts foram examinados. O grupo distingue preview/pinned e substitui o preview; o Urbe adapta a ideia ao slot ativo e rejeita pin automático por digitação, porque o proprietário exige aba extra explícita. A issue oficial https://github.com/microsoft/vscode/issues/246058 mostra preferência diferente entre contextos e desconforto com gestos implícitos; é evidência qualitativa, não consenso. Mantidos um seletor já existente e o writer canônico do Urbe, sem importar editor web ou novo domínio.
 
 **Entrega planejada:** beta.39 pelo workflow nativo existente, identidade/certificado preservados. Evidências locais, CI, integração e distribuição ficam no handoff `HO-20261101-urbe-beta39-explicit-tabs-publications`. Nenhum CST é fechado automaticamente com a tag da release.
+
+
+## 19. Execução dos editores — 02/11/2026, beta.42 preparada
+
+Mandato do proprietário: implementar as features da consolidação relativas ao editor de texto e ao editor de produtos, estudar o código antes e testar Android/Windows. Base `d49a05ee84a60f0ef1246c9c5135770efa61d76d`. Esta execução ainda não satisfaz o mandato integral; não há fechamento automático de CSTs.
+
+- **CST-147 parcial:** números de linhas lógicas no Fonte pelo mesmo TextPresenter, com wrap e viewport; notas não são alteradas.
+- **CST-018/020/144/154, caso específico:** comandos e mudanças visuais passam por entrada registrável no undo do TextBox, em vez de substituição externa de Text. Não implica correção de todas as perdas de texto, IME ou recuperação de processo.
+- **CST-227/228 parciais:** bloco declarativo progress/progresso, inserção/configuração nativa, meta numérica e propriedades; derivação de checklists da nota/seção, subitens, código literal excluído, sem tarefas e vínculos por ID. Mesmo cálculo no HTML/EPUB. Faltam localizar pendências pelo resumo, toda a integração semântica, invalidação externa incremental completa e DEVICE.
+- **CST-150/151/156/160 parciais:** títulos únicos e marcadores ^id existentes, sem offsets como identidade; peças independentes, sem cópia de texto. Nota/trecho ausente ou ambíguo não resolve para nota inteira.
+- **CST-154/158/161/167 parciais:** undo/redo de composição por sessão, objetivo/público, layouts artigo/livro/slides e temas de saída; HTML com TOC/navegação/perfil de impressão. Prévia nativa de conteúdo não representa paginação final nem composição livre completa.
+- **CST-163/165 parcial:** arquivo EPUB com OPF/spine/XHTML/TOC, texto semântico, PNG/JPEG/GIF locais, SVG matemático e relatório de erros de recursos/conflitos. Piloto com EPUBCheck oficial 5.4.0: zero erros/avisos. Leitores reais e perfis completos seguem pendentes.
+- **CST-149/177 parcial:** registro vivo da IA troca page_schema/write_page pelas ferramentas de Publicações; spec não pode embutir corpo autoral, revisões/IDs são preservados e a gravação usa o host existente. Instruções e cache reconciliados. Os motores/oráculos antigos continuam isolados para dados históricos; sua retirada física integral não está concluída.
+
+Auditoria, pesquisa primária e confronto: `apps/urbe/docs/csharp/EDITORS-VERIFICATION-2026-11-02.md`. Dados/sintaxe: catálogo C# existente. Resultados e CI no handoff `HO-20261102-urbe-editors-beta42`; sem declaração de aceite humano.
+
+
+### 19.1. Enter e continuidade de escrita — pedido adicional do proprietário
+
+**CST-016/018/144, caso específico:** campos AceitamReturn mas sem contrato IME multilinha foram reproduzidos em teste; código Android do Avalonia mostra que Default/single-line usa Done, fecha IME e em seguida despacha Enter. Aplicado `Multiline=true` e `ReturnKeyType.Return` ao Fonte/Visual e compositor; LF/CR/CRLF e tecla física mantêm caixa e foco. Lista continua pela operação de entrada/undo; código literal não é alterado. Quatro testes falharam antes; sete passaram depois. Não fecha CST-016 nem valida todo teclado/IME físico. Detalhes na auditoria e handoff.
+
+**Bloqueio de entrega observado:** revisão automática rejeitou `git push` ao repositório público por exigir autorização explícita para publicar o payload. Não houve tentativa por outro transporte; commit permanece local. CI real Windows/Android e release oficial pendentes; builds locais e candidatos são distinguíveis da distribuição oficial.

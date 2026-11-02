@@ -328,7 +328,11 @@ public static class AssistantAgent
     /// <summary>toLocaleDateString('pt-BR', {weekday:'long', year:'numeric', month:'long', day:'numeric'}).</summary>
     public static string LongDate(DateTime d) => Weekdays[(int)d.DayOfWeek] + ", " + d.Day + " de " + Months[d.Month - 1] + " de " + d.Year;
 
-    public static string SystemPrompt(AiAgentDef a, string policy, string? vaultName, int noteCount, string? openNote, string? instructions, IReadOnlyList<string>? memory, DateTime now, string? naming = null, string? guidance = null, bool efficient = false)
+    public static string PublicationGuidance =>
+        "- Para livros, apostilas, artigos ou apresentações, consulte publication_schema, escreva o conteúdo nas notas reais e monte referências com write_publication. Não copie conteúdo no projeto e não crie .page.json. Layout/ordem pertencem à publicação; texto pertence às notas. Abra com open_note para revisão. Exportação precisa de arquivo real; informe formatos indisponíveis.\n" +
+        UrbeGuidance[UrbeGuidance.IndexOf("- Para gerar,", StringComparison.Ordinal)..].Replace("não write_page", "não write_publication", StringComparison.Ordinal);
+
+    public static string SystemPrompt(AiAgentDef a, string policy, string? vaultName, int noteCount, string? openNote, string? instructions, IReadOnlyList<string>? memory, DateTime now, string? naming = null, string? guidance = null, bool efficient = false, bool publications = false)
     {
         var lines = new List<string>
         {
@@ -343,7 +347,8 @@ public static class AssistantAgent
             "- Chamadas de leitura independentes podem ir juntas na mesma resposta (elas rodam em paralelo); read_notes lê várias notas de uma vez.",
             efficient ? "- Use update_plan quando houver dependências ou decisões que precisem ser acompanhadas. Atualize somente quando houver progresso ou mudança real; não reenvie o mesmo plano."
                 : "- Em tarefas com 3 ou mais passos, registre o plano com update_plan no começo e atualize conforme avança.",
-            efficient ? "- Páginas são arquivos .page.json no estúdio. Consulte page_schema se ainda não tiver o contrato; reutilize-o depois. Use write_page, templates e blocos note/notes, preservando o conteúdo real das notas."
+            publications ? "- Publicações são composições .publication.json com referências vivas a notas reais. Consulte publication_schema e use write_publication; preserve IDs, revisões e notas-fonte. O Editor de Páginas foi substituído; não crie .page.json."
+                : efficient ? "- Páginas são arquivos .page.json no estúdio. Consulte page_schema se ainda não tiver o contrato; reutilize-o depois. Use write_page, templates e blocos note/notes, preservando o conteúdo real das notas."
                 : "- Páginas HTML (sites, landing pages, portfólios) são arquivos .page.json editados no estúdio de páginas. Para criar ou alterar uma, chame page_schema e depois write_page com o JSON completo (ou um template); não escreva HTML à mão. Use os blocos note/notes para puxar o conteúdo real das notas.",
             "- Leia uma nota (read_note) antes de editá-la. Para mudanças parciais use edit_note copiando o trecho exato; write_note só para reescrever tudo.",
             "- Antes de criar uma nota, busque (search_notes) para não duplicar. Ligue notas relacionadas com [[Título]].",
@@ -692,7 +697,8 @@ public static class AssistantAgent
         foreach (var t in tools) byName[t.Name] = t;
         string SystemWith(IReadOnlyList<string>? memory)
         {
-            var text = SystemPrompt(agent, policy, o.VaultName, o.Host.Documents.List().Count, o.Host.EditorContext().Path, o.Instructions, memory, o.Now ?? DateTime.Now, o.Naming, o.Guidance, o.OptimizeToolUse);
+            var text = SystemPrompt(agent, policy, o.VaultName, o.Host.Documents.List().Count, o.Host.EditorContext().Path, o.Instructions, memory, o.Now ?? DateTime.Now, o.Naming, o.Guidance, o.OptimizeToolUse,
+                o.Tools?.Any(t => t.Name == "publication_schema") == true);
             // Keep the 1.8.4 oracle's base SystemPrompt unchanged. Native runtime
             // sessions receive product-owned constraints without altering legacy parity.
             if (o.MarkAiText)

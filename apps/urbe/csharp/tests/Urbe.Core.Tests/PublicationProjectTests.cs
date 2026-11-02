@@ -7,6 +7,25 @@ namespace Urbe.Core.Tests;
 public sealed class PublicationProjectTests
 {
     [Fact]
+    public void LayoutsUseAccessibleContentsAndPrintProfilesWithoutExposingEditorialBrief()
+    {
+        var store = new DocumentStore();
+        var note = store.Upsert(new DocumentInput { Path = "Capítulo.md", Content = "# Capítulo\n\nTexto" });
+        using var catalog = new PublicationSourceCatalog(store);
+        var book = PublicationProject.Create("Livro", note.Id) with { Objective = "BRIEF PRIVADO", Design = new() { Layout = "book", Theme = "ocean" } };
+        var html = PublicationHtml.Export(book, catalog).Html;
+        Assert.Contains("aria-label=\"Sumário\"", html);
+        Assert.Contains("href=\"#", html);
+        Assert.Contains("#075985", html);
+        Assert.DoesNotContain("BRIEF PRIVADO", html);
+        var slides = PublicationHtml.Export(book with { Design = book.Design with { Layout = "slides" } }, catalog).Html;
+        Assert.Contains("size:320mm 180mm", slides);
+        Assert.Contains("scroll-snap-align", slides);
+        Assert.Contains("tabindex=\"0\"", slides);
+        Assert.Equal("# Capítulo\n\nTexto", store.Get(note.Id)!.Content);
+    }
+
+    [Fact]
     public void ProjectRoundtripRetainsStableIdsOrderAndUnknownMetadata()
     {
         var note = new DocumentStore().Make(new DocumentInput { Path = "Ideias.md", Content = "texto confidencial" });

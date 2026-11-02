@@ -32,8 +32,16 @@ public sealed partial class MainView
         var studio = new PublicationStudioView();
         studio.AddSourceRequested += () => _ = AddPublicationSourceAsync();
         studio.RenameRequested += () => _ = RenamePublicationAsync();
+        studio.ConfigureRequested += () => _ = ConfigurePublicationAsync();
         studio.EditSourceRequested += EditPublicationSource;
+        studio.EditReferenceRequested += reference =>
+        {
+            EditPublicationSource(reference.DocumentId);
+            if (_store?.Get(reference.DocumentId) is { } source && Editor.Current?.Path == source.Path &&
+                reference.Fragment is { Length: > 0 } fragment) Editor.RevealFragment(fragment);
+        };
         studio.ExportRequested += () => _ = ExportPublicationHtmlAsync();
+        studio.EpubRequested += () => _ = ExportPublicationEpubAsync();
         studio.PrintRequested += () => _ = PrintPublicationAsync();
         studio.RetrySaveRequested += () => _ = SavePublicationAsync();
         studio.Closed += () =>
@@ -174,8 +182,7 @@ public sealed partial class MainView
         var draft = _publicationDraft;
         var project = _publicationsStudio?.Project;
         if (project is null || _store is null) return;
-        var existing = project.Sources.Select(s => s.DocumentId).ToHashSet(StringComparer.Ordinal);
-        var notes = _store.List().Where(d => ArtifactModel.IsNote(d.Path) && !existing.Contains(d.Id))
+        var notes = _store.List().Where(d => ArtifactModel.IsNote(d.Path))
             .OrderBy(d => d.Path, StringComparer.OrdinalIgnoreCase).ToList();
         if (notes.Count == 0)
         {
@@ -183,9 +190,22 @@ public sealed partial class MainView
             return;
         }
         var chosen = await Dialogs.ChooseAsync("Selecionar nota de origem", notes.Select(n => new DialogItem(n.Title, Detail: n.Path)).ToList());
-        if (chosen is { } i && ReferenceEquals(_publicationDraft, draft) &&
+        if (chosen is not { } i) return;
+        var note = notes[i];
+        var fragments = new List<string?> { null };
+        fragments.AddRange(EmbedFragments.Headings(note.Content).Distinct(StringComparer.Ordinal));
+        fragments.AddRange(EmbedFragments.BlockIds(note.Content).Distinct(StringComparer.Ordinal).Select(id => "^" + id));
+        int? part = 0;
+        if (fragments.Count > 1)
+            part = await Dialogs.ChooseAsync("Conteúdo de origem", fragments.Select(f => new DialogItem(f is null ? "Nota inteira" : "#" + f)).ToList());
+        if (part is { } index && ReferenceEquals(_publicationDraft, draft) &&
             ReferenceEquals(_store, draft?.Store) && _publicationsStudio?.IsVisible == true)
-            _publicationsStudio.AddSource(notes[i].Id);
+        {
+            var reference = new PublicationSourceReference(note.Id, fragments[index]);
+            if (_publicationsCatalog?.Read(reference) is null)
+            { ShowLifeNotice("A origem mudou. Selecione o trecho novamente.", Ui.ToastKind.Warning); return; }
+            _publicationsStudio.AddSource(reference);
+        }
     }
 
     private void EditPublicationSource(string documentId)
@@ -208,6 +228,33 @@ public sealed partial class MainView
         if (!string.IsNullOrWhiteSpace(name) && ReferenceEquals(_publicationDraft, draft) &&
             ReferenceEquals(_store, draft?.Store) && _publicationsStudio.IsVisible)
             _publicationsStudio.UpdateProject(_publicationsStudio.Project! with { Title = name.Trim() });
+    }
+
+    private async Task ConfigurePublicationAsync()
+    {
+        var draft = _publicationDraft;
+        if (_publicationsStudio?.Project is not { } project) return;
+        var option = await Dialogs.ChooseAsync("Composição", [new DialogItem("Layout", Detail: "Artigo, livro ou apresentação"),
+            new DialogItem("Tema", Detail: "Papel, oceano ou tinta"), new DialogItem("Objetivo", Detail: project.Objective), new DialogItem("Público", Detail: project.Audience)]);
+        PublicationProject? next = null;
+        if (option == 0)
+        {
+            var layout = await Dialogs.ChooseAsync("Layout", [new DialogItem("Artigo"), new DialogItem("Livro com sumário"), new DialogItem("Apresentação (uma nota por slide)")]);
+            if (layout is >= 0 and <= 2) next = project with { Design = project.Design with { Layout = new[] { "article", "book", "slides" }[layout.Value] } };
+        }
+        else if (option == 1)
+        {
+            var theme = await Dialogs.ChooseAsync("Tema", [new DialogItem("Papel"), new DialogItem("Oceano"), new DialogItem("Tinta")]);
+            if (theme is >= 0 and <= 2) next = project with { Design = project.Design with { Theme = new[] { "paper", "ocean", "ink" }[theme.Value] } };
+        }
+        else if (option is 2 or 3)
+        {
+            var text = await Dialogs.PromptAsync(new PromptOptions(option == 2 ? "Objetivo da publicação" : "Público da publicação", Value: option == 2 ? project.Objective : project.Audience, Required: false, Confirm: "Salvar"));
+            if (text is not null) next = option == 2 ? project with { Objective = text } : project with { Audience = text };
+        }
+        if (next is not null && ReferenceEquals(draft, _publicationDraft) && ReferenceEquals(_store, draft?.Store) &&
+            _publicationsStudio.IsVisible && ReferenceEquals(project, _publicationsStudio.Project))
+            _publicationsStudio.UpdateProject(next);
     }
 
     /// <summary>Explicit retry/flush: false means the composition is still only a session draft.</summary>
@@ -292,13 +339,48 @@ public sealed partial class MainView
         if (await PreparePublicationOutputAsync() is not { } output) return;
         try
         {
-            await print(output.Project.Title, output.Render.Html, new PagePrintSettings(false, "a4"));
+            await print(output.Project.Title, output.Render.Html, new PagePrintSettings(output.Project.Design.Layout == "slides", "a4"));
             ShowLifeNotice(OperatingSystem.IsAndroid()
                 ? "Na impressão do sistema, escolha “Salvar como PDF” para gerar o arquivo."
                 : "No navegador aberto, use Imprimir (Ctrl+P) e escolha “Salvar como PDF”.");
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         { ShowLifeNotice("Não consegui preparar a impressão: " + ex.Message, Ui.ToastKind.Warning); }
+    }
+
+    public async Task ExportPublicationEpubAsync()
+    {
+        if (_publicationsCatalog is not { } catalog || _publicationDraft is not { } draft || !await SavePublicationAsync()) return;
+        var vault = _vault;
+        var project = draft.Project;
+        try
+        {
+            var bytes = await PublicationEpub.ExportAsync(project, catalog,
+                async path => vault is null ? null : (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes);
+            if (!ReferenceEquals(draft, _publicationDraft) || !ReferenceEquals(draft.Store, _store) || draft.Dirty) return;
+            var name = ArtifactModel.SafeName(project.Title) + ".epub";
+            var saved = SavePageFile is { } save ? await save(name, bytes) : await SavePublicationFileAsync(name, bytes, "epub", "application/epub+zip");
+            if (saved == true) ShowLifeNotice("Livro EPUB salvo.");
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
+        { await Dialogs.AlertAsync("Não foi possível exportar EPUB", ex.Message); }
+    }
+
+    private async Task<bool?> SavePublicationFileAsync(string name, byte[] bytes, string extension, string mime)
+    {
+        if (Avalonia.Controls.TopLevel.GetTopLevel(this)?.StorageProvider is not { CanSave: true } storage)
+            throw new NotSupportedException("Este aparelho não permite salvar arquivos.");
+        var file = await storage.SaveFilePickerAsync(new Avalonia.Platform.Storage.FilePickerSaveOptions
+        {
+            Title = "Exportar publicação", SuggestedFileName = name, DefaultExtension = extension,
+            FileTypeChoices = [new Avalonia.Platform.Storage.FilePickerFileType(extension.ToUpperInvariant()) { Patterns = ["*." + extension], MimeTypes = [mime] }]
+        });
+        if (file is null) return null;
+        await using var stream = await file.OpenWriteAsync();
+        if (stream.CanSeek) stream.SetLength(0);
+        await stream.WriteAsync(bytes);
+        await stream.FlushAsync();
+        return true;
     }
 
     private async Task ExportPublicationHtmlAsync()

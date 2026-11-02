@@ -5,7 +5,7 @@ namespace Urbe.Core.Assistant;
 public static class AssistantExecutionEfficiency
 {
     public static bool Cacheable(AiTool? tool) => tool?.Access == "read" && tool.Name is
-        "page_schema" or "read_note" or "read_notes" or "list_notes" or "search_notes" or "grep_notes" or "get_links" or "get_tags" or "search_tags";
+        "publication_schema" or "page_schema" or "read_note" or "read_notes" or "list_notes" or "search_notes" or "grep_notes" or "get_links" or "get_tags" or "search_tags";
     public static string Signature(string name, JsonNode? input, long revision) => revision + ":" + name + ":" + Canonical(input)?.ToJsonString();
     private static JsonNode? Canonical(JsonNode? input) => input switch
     {

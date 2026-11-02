@@ -136,6 +136,17 @@ public sealed partial class HeadlessUiTests
             Assert.NotNull(export);
             Assert.Contains("Texto REVISADO", export.Value.Text);
             Assert.DoesNotContain("Texto ORIGINAL", export.Value.Text);
+            (string Name, byte[] Bytes)? epub = null;
+            view.SavePageFile = (name, bytes) => { epub = (name, bytes); return Task.FromResult<bool?>(true); };
+            await view.ExportPublicationEpubAsync();
+            Assert.NotNull(epub);
+            Assert.Equal("Livro vivo.epub", epub.Value.Name);
+            using (var archive = new System.IO.Compression.ZipArchive(new MemoryStream(epub.Value.Bytes)))
+            {
+                Assert.Equal("mimetype", archive.Entries[0].FullName);
+                using var chapter = new StreamReader(archive.GetEntry("EPUB/chapter-1.xhtml")!.Open());
+                Assert.Contains("Texto REVISADO", chapter.ReadToEnd());
+            }
             Snapshot(window, "native-publications-live-source.png");
             window.Close();
             return true;

@@ -46,6 +46,7 @@ public sealed partial class MainView : Grid
         Explorer = new NotesExplorer { State = ExplorerState };
         Editor = new EditorOverlay { IsVisible = false, Dialogs = Dialogs, Notes = () => _contents.Select(n => new CityNote(n.Key, n.Value)) };
         Editor.EmbedFor = BuildEmbed;
+        Editor.ProgressNoteResolver = id => _store?.Get(id) is { } d && d.Id == id && ArtifactModel.IsNote(d.Path) ? d.Content : null;
         // CST-025: each block's last edit, read from the note's "Versões anteriores" (no file of its own)
         Editor.BlockTimesFor = path => _store?.Get(path) is { } doc ? new BlockTimes.Index(_history.List(doc.Id), CreatedMs(doc), createdDayOnly: true) : null;
         // CST-040/041: links and embeds find every file of the vault, and a file link opens the viewer
