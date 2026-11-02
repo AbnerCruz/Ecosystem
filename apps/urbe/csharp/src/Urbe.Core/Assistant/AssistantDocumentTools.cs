@@ -14,6 +14,11 @@ public interface IAssistantDocumentFiles
 
 public sealed record DocumentPage(int Page, int Pages, int Start, int Next, string Text, bool More, bool NeedsOcr, string Sha256, int EmbeddedImages = 0, int VectorPaths = 0, bool VisualReviewRequired = false);
 public sealed record DocumentMatch(int Page, int Offset, string Context);
+public sealed record DocumentPageInventory(int Page, int TextChars, int Images, int VectorPaths)
+{
+    public bool NeedsVisualReview => Images > 0 || VectorPaths > 0 || TextChars == 0;
+}
+public sealed record DocumentInventory(int TotalPages, int NextPage, string Sha256, IReadOnlyList<DocumentPageInventory> Entries);
 public sealed record DocumentSearch(int Pages, int LastPage, int NextPage, bool Partial, int OcrPages, string Sha256,
     IReadOnlyList<DocumentMatch> Matches, int PagesWithVisuals = 0, int NextChar = 0);
 
@@ -42,6 +47,22 @@ public static class AssistantDocumentTools
         Validate(data);
         using var pdf = PdfDocument.Open(data);
         return (pdf.NumberOfPages, Hash(data));
+    }
+
+    public static DocumentInventory Inventory(byte[] data, int startPage = 1, int maxPages = 80)
+    {
+        Validate(data);
+        if (maxPages is < 1 or > 150) throw new AiToolException("Intervalo de inventário inválido.");
+        using var pdf = PdfDocument.Open(data);
+        if (startPage < 1 || startPage > pdf.NumberOfPages) throw new AiToolException("Página inicial inválida.");
+        int end = Math.Min(pdf.NumberOfPages, startPage + maxPages - 1);
+        var pages = new List<DocumentPageInventory>(end - startPage + 1);
+        for (int page = startPage; page <= end; page++)
+        {
+            var parsed = pdf.GetPage(page);
+            pages.Add(new(page, Text(parsed).Length, parsed.NumberOfImages, parsed.Paths.Count));
+        }
+        return new(pdf.NumberOfPages, end + 1, Hash(data), pages);
     }
 
     public static DocumentPage Page(byte[] data, int page, int offset = 0, int take = 8000)
@@ -144,6 +165,28 @@ public static class AssistantDocumentTools
                 var info = Inspect(data);
                 return new AiToolOutput("Fonte: " + Str(i, "path") + "\nPáginas: " + info.Pages +
                     "\nSHA256: " + info.Sha256 + "\nPara páginas digitalizadas sem texto é necessário OCR separado.");
+            })
+        },
+        new()
+        {
+            Name = "inventory_document", Access = "read",
+            Description = "Inventaria por lotes páginas de um livro PDF. Identifica texto selecionável, imagens e elementos vetoriais que podem conter equações. Sem texto não significa necessariamente OCR: pode ser página em branco. Use next_page para continuar.",
+            Parameters = (JsonObject)JsonNode.Parse("""{"type":"object","properties":{"path":{"type":"string"},"start_page":{"type":"integer","minimum":1},"max_pages":{"type":"integer","minimum":1,"maximum":150}},"required":["path"],"additionalProperties":false}""")!,
+            Label = i => "Inventariar páginas PDF",
+            Run = (i, host) => Execute(i, host, pdf =>
+            {
+                var r = Inventory(pdf, Num(i, "start_page", 1), Num(i, "max_pages", 80));
+                var outText = new System.Text.StringBuilder("Fonte: " + Str(i, "path") + "\nSHA256: " + r.Sha256 +
+                    "\nTotal: " + r.TotalPages + " páginas\n");
+                foreach (var p in r.Entries)
+                    outText.Append("p. ").Append(p.Page).Append(": ").Append(p.TextChars)
+                        .Append(" caracteres; ").Append(p.Images).Append(" imagens; ")
+                        .Append(p.VectorPaths).Append(" vetores")
+                        .AppendLine(p.NeedsVisualReview ? " · REVISÃO VISUAL NECESSÁRIA" : " · camada textual disponível");
+                if (r.NextPage <= r.TotalPages)
+                    outText.Append("INVENTÁRIO PARCIAL; continue em start_page=").Append(r.NextPage).AppendLine();
+                outText.AppendLine("Páginas sem texto podem estar em branco ou digitalizadas; conteúdo de figuras não foi interpretado.");
+                return new AiToolOutput(outText.ToString());
             })
         },
         new()
