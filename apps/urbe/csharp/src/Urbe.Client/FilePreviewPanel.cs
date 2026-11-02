@@ -362,9 +362,12 @@ public sealed class FilePreviewPanel : Grid
         if (_body.Content is NativeControlHost oldNativeViewer) oldNativeViewer.IsVisible = false;
         _body.Content = Empty("Carregando do dispositivo…");
         // audio and video are played from the vault by the platform: only their size is read here
-        bool media = kind is VaultFileKinds.Audio or VaultFileKinds.Video;
+        // Files with no in-app renderer still have metadata and an explicit external fallback.
+        // Do not allocate a giant Office/EPUB container merely to say its preview is unsupported.
+        bool metadataOnly = kind is VaultFileKinds.Audio or VaultFileKinds.Video
+            or VaultFileKinds.Epub or VaultFileKinds.Slides or VaultFileKinds.Document;
         var read = _generated is { } g ? new VaultFileRead(g.Html.Length, g.Html)
-            : path is not null && Storage is { } s ? await s.ReadFileAsync(path, media ? 0 : MaxBytes) : null;
+            : path is not null && Storage is { } s ? await s.ReadFileAsync(path, metadataOnly ? 0 : MaxBytes) : null;
         if (version != _version) return;
         if (read is null)
         {
@@ -428,7 +431,9 @@ public sealed class FilePreviewPanel : Grid
         }
         _body.Content = Empty(name, kind is VaultFileKinds.Pdf or VaultFileKinds.Audio or VaultFileKinds.Video
             ? "Este aparelho ainda não tem o visualizador deste formato dentro do Urbe."
-            : "Sem visualização nativa para este formato.");
+            : kind is VaultFileKinds.Epub or VaultFileKinds.Slides or VaultFileKinds.Document
+                ? "O leitor interno deste formato está em desenvolvimento. Use Abrir em outro app sem modificar o original."
+                : "Sem visualização nativa para este formato.");
     }
 
     private void UpdatePdfNavigation()
