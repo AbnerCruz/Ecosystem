@@ -53,6 +53,7 @@ public interface IAssistantApp
     bool FileExists(string path) => false;
     /// <summary>Small, read-only preview of a generated image stored in the current vault.</summary>
     Task<byte[]?> ReadGeneratedImageAsync(string path) => Task.FromResult<byte[]?>(null);
+    Task<byte[]?> ReadDocumentBytesAsync(string path, CancellationToken cancel = default) => Task.FromResult<byte[]?>(null);
     /// <summary>Open the vault's native file viewer, not an external application.</summary>
     Task OpenGeneratedImageAsync(string path) => Task.CompletedTask;
     Task ExportGeneratedImageAsync(string path) => Task.CompletedTask;
@@ -283,7 +284,7 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, pages/ai-tools.js, customize/ai-tools.js, then the vault plugins).</summary>
-    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan" && t.Name != "remember"), AssistantAdaptivePlanTools.Update, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, .. AssistantMemoryTools.All, .. AssistantGraphTools.All, AgentNames.Tool, AssistantAttachmentExtraction.Tool, AssistantImageTools.Tool, AssistantQuestionTools.Ask, AssistantFormTools.Request, AssistantDelegateTools.Consult, AssistantQuickNoteTools.Add,
+    public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan" && t.Name != "remember"), AssistantAdaptivePlanTools.Update, .. AssistantPageTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, .. AssistantMemoryTools.All, .. AssistantGraphTools.All, AgentNames.Tool, AssistantAttachmentExtraction.Tool, .. AssistantDocumentTools.All, AssistantImageTools.Tool, AssistantQuestionTools.Ask, AssistantFormTools.Request, AssistantDelegateTools.Consult, AssistantQuickNoteTools.Add,
         AssistantConversationTools.List, AssistantConversationTools.Read,
         AssistantGuideTools.Create(() => AppDocs.Load().Select(a => (a.Path, a.Content)).ToList())];
 
@@ -296,7 +297,7 @@ public sealed partial class AssistantPanel : Border
     /// every request and the device reads the request itself, so the others (links, tags, plans, memory, folders…) cost more
     /// waiting than they give; the bigger models in the cloud keep all of them.
     /// </summary>
-    private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note", "recall_memory", "learn_memory", "consult_agent", "request_form", "add_quick_note", AssistantGuideTools.Name];
+    private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "inspect_document", "read_document", "search_document", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note", "recall_memory", "learn_memory", "consult_agent", "request_form", "add_quick_note", AssistantGuideTools.Name];
 
     private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name)
         ?? AssistantWebTools.All.FirstOrDefault(t => t.Name == name)
@@ -1249,7 +1250,7 @@ public sealed partial class AssistantPanel : Border
     }
 
     /// <summary>The tools' host: reads from the vault's documents, writes through the app, memory and links through the panel.</summary>
-    private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge, string agentId, string conversationId, AssistantWebSession? web, CancellationToken cancel) : IAssistantHost, IAssistantNames, IAssistantImages, IAssistantDelegation, IAssistantForms, IAssistantAttachmentExtractor, IAssistantConversations
+    private sealed class Host(AssistantPanel panel, DocumentStore documents, KnowledgeIndex knowledge, string agentId, string conversationId, AssistantWebSession? web, CancellationToken cancel) : IAssistantHost, IAssistantNames, IAssistantImages, IAssistantDelegation, IAssistantForms, IAssistantAttachmentExtractor, IAssistantDocumentFiles, IAssistantConversations
     {
         // CST-089: this agent's own earlier conversations in this vault; never another agent's, never this one
         public IAssistantConversations? Conversations => this;
@@ -1263,6 +1264,30 @@ public sealed partial class AssistantPanel : Border
                 if (AssistantAttachmentExtraction.List(message).Any(x => x.Name == fileName))
                     return await panel.ExtractMessageToVaultAsync(message, fileName, open: false);
             throw new AiToolException("Não encontrei este anexo na conversa: " + fileName);
+        }
+        public IAssistantDocumentFiles? DocumentFiles => this;
+        public async Task<byte[]?> ReadAsync(string reference, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (reference == System.IO.Path.GetFileName(reference) &&
+                panel._activeConversations.TryGetValue(conversationId, out var conversation))
+                foreach (var message in conversation.Messages.AsEnumerable().Reverse())
+                {
+                    if (message.Role != "user" || message.Meta?.ToolResults == true) continue;
+                    foreach (var part in message.Content)
+                    {
+                        if (part.Type != "attachment" || part.MimeType != "application/pdf" ||
+                            !string.Equals(part.FileName, reference, StringComparison.Ordinal) ||
+                            part.Content.Length > ((long)AssistantDocumentTools.MaxFileBytes + 2) / 3 * 4 + 8)
+                            continue;
+                        byte[] bytes;
+                        try { bytes = Convert.FromBase64String(part.Content); }
+                        catch (FormatException) { continue; }
+                        if (bytes.Length <= AssistantDocumentTools.MaxFileBytes &&
+                            bytes.AsSpan().StartsWith("%PDF-"u8)) return bytes;
+                    }
+                }
+            return await panel._app.ReadDocumentBytesAsync(reference, cancellationToken);
         }
         public IAssistantForms? Forms => this;
         public FormSession Request(FormDefinition definition) => panel.RequestForm(conversationId, agentId, definition);
