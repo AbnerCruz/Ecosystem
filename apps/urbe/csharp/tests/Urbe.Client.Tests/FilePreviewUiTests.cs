@@ -68,4 +68,39 @@ public sealed partial class HeadlessUiTests
             }
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
+    [Fact]
+    public async Task FilePreview_ImmersiveMode_RestoresPreviewAndBackInTwoSteps() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var (view, window, vault, dir) = await OpenCreateVault();
+            try
+            {
+                File.WriteAllText(Path.Combine(vault, "estudo.txt"), "Uma fonte de estudo");
+                var reader = view.FilePreview;
+                await reader.OpenAsync("estudo.txt");
+                Assert.False(reader.ReaderMode);
+                Assert.Contains(reader.GetLogicalDescendants().OfType<Button>(),
+                    button => button.Content as string == "Tela cheia");
+
+                reader.EnterReaderMode();
+                Assert.True(reader.ReaderMode);
+                Assert.Contains(reader.GetLogicalDescendants().OfType<Button>(),
+                    button => button.Content as string == "Sair da tela cheia");
+                Assert.True(reader.IsVisible);
+
+                // Back exits reading mode before closing the source, preserving the original document.
+                Assert.True(view.HandleSystemBack());
+                Assert.False(reader.ReaderMode);
+                Assert.True(reader.IsVisible);
+                Assert.Equal("text", reader.Shown);
+                Assert.Equal("Uma fonte de estudo", reader.ShownText);
+
+                Assert.True(view.HandleSystemBack());
+                Assert.False(reader.IsVisible);
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
 }
