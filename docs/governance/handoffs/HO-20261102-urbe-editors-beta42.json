@@ -107,10 +107,10 @@
     {
       "check": "Dispositivo físico",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/urbe/docs/csharp/EDITORS-VERIFICATION-2026-11-02.md",
       "critical": false,
-      "evidence": "Nenhum aparelho físico conectado; headless/emulação/build não são DEVICE."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-02 (Issue https://github.com/AbnerCruz/Ecosystem/issues/887); registro em docs/governance/responses/VAL-HO-20261102-urbe-editors-beta42-4dd9a7e9c6b0.md."
     },
     {
       "check": "Enter e teclado virtual",
