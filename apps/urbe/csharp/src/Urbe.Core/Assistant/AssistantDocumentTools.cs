@@ -21,6 +21,7 @@ public sealed record DocumentSearch(int Pages, int LastPage, int NextPage, bool 
 public interface IAssistantDocumentVision
 {
     Task<string> ExaminePageAsync(string reference, byte[] singlePagePdf, int page, CancellationToken cancellationToken = default);
+    Task<string> ExamineImageAsync(string reference, byte[] image, string mimeType, CancellationToken cancellationToken = default);
 }
 
 /// <summary>CST-212 partial: trustworthy PDF text-layer evidence; never claims to OCR scanned pixels.</summary>
