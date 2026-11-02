@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text.Json.Nodes;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
+using UglyToad.PdfPig.Writer;
 
 namespace Urbe.Core.Assistant;
 
@@ -15,6 +16,12 @@ public sealed record DocumentPage(int Page, int Pages, int Start, int Next, stri
 public sealed record DocumentMatch(int Page, int Offset, string Context);
 public sealed record DocumentSearch(int Pages, int LastPage, int NextPage, bool Partial, int OcrPages, string Sha256,
     IReadOnlyList<DocumentMatch> Matches, int PagesWithVisuals = 0);
+
+/// <summary>A user-approved provider vision pass over exactly one original PDF page.</summary>
+public interface IAssistantDocumentVision
+{
+    Task<string> ExaminePageAsync(string reference, byte[] singlePagePdf, int page, CancellationToken cancellationToken = default);
+}
 
 /// <summary>CST-212 partial: trustworthy PDF text-layer evidence; never claims to OCR scanned pixels.</summary>
 public static class AssistantDocumentTools
@@ -87,6 +94,18 @@ public static class AssistantDocumentTools
             reachedLimit || scanned < pdf.NumberOfPages, ocr, Hash(data), matches, visualPages);
     }
 
+    /// <summary>Copies one PDF page, retaining embedded images, vector diagrams and formulas for multimodal inspection.</summary>
+    public static byte[] SinglePagePdf(byte[] source, int page)
+    {
+        Validate(source);
+        using var pdf = PdfDocument.Open(source);
+        if (page < 1 || page > pdf.NumberOfPages)
+            throw new AiToolException("Página inexistente neste documento.");
+        var output = new PdfDocumentBuilder();
+        output.AddPage(pdf, page);
+        return output.Build();
+    }
+
     private static string Str(JsonObject i, string key) => (string?)i[key] ?? "";
     private static int Num(JsonObject i, string key, int fallback) => (int?)i[key] ?? fallback;
     private static async Task<AiToolOutput> Execute(JsonObject i, IAssistantHost host, Func<byte[], AiToolOutput> execute)
@@ -140,6 +159,32 @@ public static class AssistantDocumentTools
                     : head + "Origem: camada textual; caracteres [" + p.Start + "," + p.Next + "):\n" + p.Text +
                       (p.More ? "\nLEITURA PARCIAL: start_char=" + p.Next : "\nFim da página.") + visual);
             })
+        },
+        new()
+        {
+            Name = "analyze_document_page", Access = "network",
+            Description = "Inspeciona visualmente uma página PDF (texto + imagens + gráficos + fórmulas digitalizadas) enviando SOMENTE aquela página ao provedor multimodal configurado, mediante consentimento específico do usuário. O resultado é reconhecimento por IA, NUNCA transcrição exata verificada; pode falhar em equações. OCR local não é presumido.",
+            Parameters = (JsonObject)JsonNode.Parse("""{"type":"object","properties":{"path":{"type":"string"},"page":{"type":"integer","minimum":1}},"required":["path","page"],"additionalProperties":false}""")!,
+            Label = i => "Examinar figuras/fórmulas · página " + Num(i, "page", 1),
+            Run = async (i, host) =>
+            {
+                var path = Str(i, "path");
+                if (!path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ||
+                    path.Contains("..", StringComparison.Ordinal) || path.Contains('\') ||
+                    path.Contains(':') || path.StartsWith('/'))
+                    throw new AiToolException("Somente PDF anexado ou do vault é permitido.");
+                var reader = host.DocumentFiles ?? throw new AiToolException("PDF inacessível neste host.");
+                var vision = host.DocumentVision ?? throw new AiToolException("Modelo visual indisponível neste host.");
+                var bytes = await reader.ReadAsync(path);
+                if (bytes is null) throw new AiToolException("PDF não encontrado ou muito grande.");
+                int page = Num(i, "page", 1);
+                var slice = SinglePagePdf(bytes, page);
+                var result = await vision.ExaminePageAsync(path, slice, page);
+                return new AiToolOutput("Fonte: " + path + "\nSHA256 do documento: " + Hash(bytes) +
+                    "\nPágina: " + page + "\nMétodo: interpretação visual por IA (não OCR exato certificado)" +
+                    "\nVERIFICAÇÃO VISUAL PENDENTE: fórmulas, gráficos, símbolos e tabelas precisam de conferência." +
+                    "\n\n" + result);
+            }
         },
         new()
         {
