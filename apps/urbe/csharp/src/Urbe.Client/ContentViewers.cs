@@ -198,7 +198,11 @@ public sealed class PdfPagesView : ScrollViewer
             y += h;
         }
         if (first < 0) { first = 0; last = 0; }
-        int page = first + 1;
+        // At the bottom the final page may not align to the viewport top.
+        // Report it as current so "Próxima" doesn't remain enabled forever.
+        bool atEnd = Extent.Height > Viewport.Height + 1 &&
+            Offset.Y + Viewport.Height >= Extent.Height - 2;
+        int page = atEnd ? PageCount : first + 1;
         if (CurrentPage != page)
         {
             CurrentPage = page;
