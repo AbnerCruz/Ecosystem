@@ -220,7 +220,7 @@ public sealed partial class AssistantPanel
         "ask_user" => "Preparando uma pergunta",
         "create_note" or "edit_note" or "write_note" or "append_to_note" => "Escrevendo no vault",
         "generate_image" => "Criando uma imagem",
-        "write_page" or "page_schema" => "Preparando uma página",
+        "write_page" or "page_schema" or "write_publication" or "publication_schema" => "Preparando uma publicação",
         "delegate_research" => "Pesquisando com outro agente",
         "consult_agent" => "Consultando especialista",
         "web_search" => "Pesquisando na internet",

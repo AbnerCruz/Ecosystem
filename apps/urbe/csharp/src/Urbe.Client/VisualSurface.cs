@@ -28,6 +28,7 @@ public sealed class VisualSurface : StackPanel
     private bool _normalizingOrphanMark;
     // the edited block as it was when the box opened, seals included: the box shows it without them (UC-51)
     private string _editRaw = "";
+    private string _editKind = "paragraph";
     private bool _prompting;
     private readonly WikiSuggestList _wiki = new();
     private readonly SlashMenu _slash = new();
@@ -401,6 +402,9 @@ public sealed class VisualSurface : StackPanel
         var reader = new MarkdownReader
         {
             Size = TextSize, LineFactor = LineFactor,
+            ProgressContextMarkdown = _text,
+            ProgressNoteResolver = ProgressNoteResolver,
+            ProgressEditRequested = _readOnly || AskProgress is null ? null : body => _ = EditProgressAsync(block, body),
             WikiLinkTapped = name => WikiLinkTapped?.Invoke(name),
             EmbedFor = EmbedFor,
             // a task inside a container: the tap edits the block (its list lines are not the block's lines)
@@ -438,6 +442,21 @@ public sealed class VisualSurface : StackPanel
             });
         }
         return holder;
+    }
+
+    public Func<string, string?>? ProgressNoteResolver { get; set; }
+    public Func<string, Task<string?>>? AskProgress { get; set; }
+
+    private async Task EditProgressAsync(MarkdownBlock block, string body)
+    {
+        if (_readOnly || AskProgress is null) return;
+        var baseline = _text;
+        var replacement = await AskProgress(body);
+        // A dialog never gets to write into a different note/revision opened while it was pending.
+        if (replacement is null || _readOnly || _text != baseline) return;
+        _text = baseline[..block.Start] + replacement + baseline[block.End..];
+        TextEdited?.Invoke(_text);
+        Rebuild();
     }
 
     /// <summary>CST-069: a graph's slider was let go — only that parameter's number changes in the block.</summary>
@@ -589,6 +608,7 @@ public sealed class VisualSurface : StackPanel
 
     private void StartBox(string source, int start, int end, string kind = "paragraph")
     {
+        _editKind = kind;
         _editStart = start;
         _editEnd = end;
         _editRaw = start >= 0 && end >= start && end <= _text.Length ? _text[start..end] : "";
@@ -617,6 +637,7 @@ public sealed class VisualSurface : StackPanel
             SelectionForegroundBrush = UrbeTheme.Brush(UrbeTheme.Text)
         };
         Avalonia.Automation.AutomationProperties.SetName(_box, "Bloco em edição");
+        EditorInput.ConfigureMultiline(_box);
         // the block being written is marked by a soft, warm backdrop that fades in (UX.md P6)
         _backdrop.Margin = _box.Margin;
         _backdrop.CornerRadius = new CornerRadius(UrbeTokens.Radius.M);
@@ -643,6 +664,7 @@ public sealed class VisualSurface : StackPanel
         };
         _box.KeyDown += OnBoxKey;
         _box.AddHandler(KeyDownEvent, OnBoxKey, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        _box.AddHandler(TextInputEvent, OnBoxTextInput, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         _box.PropertyChanged += (_, e) =>
         {
             if (e.Property == TextBox.SelectionStartProperty || e.Property == TextBox.SelectionEndProperty || e.Property == TextBox.CaretIndexProperty) UpdateTools();
@@ -806,17 +828,35 @@ public sealed class VisualSurface : StackPanel
 
     private void OnBoxKey(object? sender, KeyEventArgs e)
     {
-        if (_box is null) return;
+        if (e.Handled || _box is null) return;
         if (_slash.IsOpen && _slash.HandleKey(e.Key)) { e.Handled = true; return; }
         if (_wiki.IsOpen && _wiki.HandleKey(e.Key)) { e.Handled = true; return; }
         if (e.Key == Key.Escape) { e.Handled = true; FinishEdit(); return; }
         if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None && ContinueList()) e.Handled = true;
     }
 
+    private void OnBoxTextInput(object? sender, TextInputEventArgs e)
+    {
+        if (e.Handled || _box is null || e.Text is not ("\n" or "\r" or "\r\n")) return;
+        if (_slash.IsOpen && _slash.HandleKey(Key.Enter) || _wiki.IsOpen && _wiki.HandleKey(Key.Enter))
+        { e.Handled = true; return; }
+        if (ContinueList()) { e.Handled = true; return; }
+        if (e.Text != "\n")
+        {
+            // Some keyboards commit CR/CRLF text instead of a key event. Keep one LF
+            // without ending/recreating the focused block or moving focus elsewhere.
+            _box.SelectedText = "\n";
+            e.Handled = true;
+        }
+    }
+
     // Enter in a list/quote keeps the marker; Enter on an empty item leaves the list (the browser's behaviour in a contenteditable)
     private bool ContinueList()
     {
+        if (_editKind == "code" || _box is null || _box.IsReadOnly) return false;
         var box = _box!;
+        var selection = Range(box);
+        if (selection.A != selection.B) return false;
         var text = box.Text ?? "";
         var caret = Math.Clamp(box.CaretIndex, 0, text.Length);
         var s = caret == 0 ? 0 : text.LastIndexOf('\n', caret - 1) + 1;
@@ -832,12 +872,11 @@ public sealed class VisualSurface : StackPanel
         if (m.Groups[7].Value.Length == 0)
         {
             // empty item: remove the marker (leave the list)
-            box.Text = text[..s] + text[e..];
-            box.CaretIndex = s;
+            Apply(new LegacyEditorTools.TextEdit(text[..s] + text[e..], s, s));
             return true;
         }
-        box.Text = text[..e] + "\n" + marker + text[e..];
-        box.CaretIndex = e + 1 + marker.Length;
+        var at = e + 1 + marker.Length;
+        Apply(new LegacyEditorTools.TextEdit(text[..e] + "\n" + marker + text[e..], at, at));
         return true;
     }
 
@@ -852,7 +891,7 @@ public sealed class VisualSurface : StackPanel
     private void Apply(LegacyEditorTools.TextEdit? edit)
     {
         if (edit is null || _box is null) return;
-        _box.Text = edit.Text;
+        EditorInput.Replace(_box, edit.Text);
         _box.SelectionStart = edit.SelectionStart;
         _box.SelectionEnd = edit.SelectionEnd;
         _box.CaretIndex = edit.SelectionEnd;

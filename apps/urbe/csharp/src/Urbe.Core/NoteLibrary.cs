@@ -175,7 +175,7 @@ public sealed class NoteLibrary
         return root.ToJsonString(new JsonSerializerOptions
         {
             WriteIndented = true, IndentSize = 1, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-        });
+        }).Replace("\r\n", "\n", StringComparison.Ordinal); // formato canônico independente do SO
     }
 
     // ---------------------------------------------------------------- folders

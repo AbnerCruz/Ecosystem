@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261102-urbe-pdf-evidence",
   "category": "HANDOFF",
-  "timestamp": "2026-11-02T10:04:24.247Z",
+  "timestamp": "2026-11-02T10:10:26.106Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
@@ -14,7 +14,7 @@
   "branch": "feat/urbe-pdf-evidence-cst212",
   "base_commit": "d49a05ee84a60f0ef1246c9c5135770efa61d76d",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/886",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/Urbe.Core.csproj",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDocumentTools.cs",
@@ -28,7 +28,8 @@
     "Auditoria do código: anexos PDF são enviados ao provedor multimodal ou copiados para o vault, mas não havia leitura nativa, paginada e verificável por página.",
     "PdfPig 0.1.16 Apache-2.0 para extrair a camada textual e classificar imagens incorporadas/caminhos vetoriais em qualquer página, inclusive páginas com texto selecionável.",
     "Ferramentas de leitura inspect_document/read_document/search_document com limites de paginação e offsets, hash SHA-256 da origem, leitura do PDF do vault ou anexo original da conversa; marca OCR_REQUIRED/VISUAL_REVIEW_REQUIRED conforme caso.",
-    "Testes de regressão propostos com PDF sintético incluindo texto, figura vetorial e página sem texto. Integração com ferramentas gerais e modelos do dispositivo sem duplicar inteligência."
+    "Testes de regressão propostos com PDF sintético incluindo texto, figura vetorial e página sem texto. Integração com ferramentas gerais e modelos do dispositivo sem duplicar inteligência.",
+    "Merge semântico da main atual: preservada a implementação de Publicações em AssistantPanel.cs da beta.42 e adicionadas somente ferramentas PDF; árvore combinada foi construída a partir da main, sem sobrescrever mudanças concorrentes."
   ],
   "verification": [
     {

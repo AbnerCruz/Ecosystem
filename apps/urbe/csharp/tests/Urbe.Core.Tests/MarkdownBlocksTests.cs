@@ -13,7 +13,7 @@ public sealed class MarkdownBlocksTests
 
     private static string RenderedByBlocks(string md)
     {
-        var text = md.Replace("\r\n", "\n");
+        var text = md.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
         var html = new System.Text.StringBuilder();
         foreach (var b in MarkdownEngine.SplitBlocks(text))
             html.Append(MarkdownEngine.Render(text[b.Start..b.End]));
@@ -44,6 +44,18 @@ public sealed class MarkdownBlocksTests
             if (pieces.Length == 0) pieces = "<p><br></p>";
             Assert.Equal(whole, pieces);
         }
+    }
+
+    [Theory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    [InlineData("\r")]
+    public void RenderingAndBlockRangesAgreeAcrossNewlineConventions(string newline)
+    {
+        const string lf = "# Exemplo\n\n$\nx^2\n$\n\nFim";
+        var source = lf.Replace("\n", newline, StringComparison.Ordinal);
+        Assert.Equal(MarkdownEngine.Render(lf), MarkdownEngine.Render(source));
+        Assert.Equal(MarkdownEngine.Render(lf), RenderedByBlocks(source));
     }
 
     [Fact]

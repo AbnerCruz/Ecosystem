@@ -82,3 +82,11 @@ de notas nem alteração de metadados ou conteúdo do vault. Versões anteriores
 ignoram o campo aditivo; o catálogo histórico JavaScript continua congelado.
 Fixtures: `EditorTabs_RestoresLegacyHistoryAsOneTabAndPersistsExplicitClosures`
 e `Parity_CommandsSessionDownloadAndTips`.
+
+## CST-147/150/151/165/227/228 — editor e Publicações (02/11/2026)
+
+Nenhuma migração, arquivo de configuração ou banco de progresso novo. `progress` e `progresso` são blocos de código cercado Markdown. Campos: `label`, `value`, `total`, `source: tasks`, `note` (ID real opcional), `section` (título único opcional). Valores manuais persistem no próprio bloco; `$nome` consulta frontmatter numérico. Tarefas e percentuais são projeções do conteúdo, não são gravados em metadados auxiliares. Versões antigas exibem o código legível, sem apagá-lo. Texto continua pelo mesmo contrato de escrita/autoria/undo. Numeração de linhas é somente visual.
+
+`.publication.json` mantém `schemaVersion=1`, sem novo campo persistido: `design.layout` reconhece `article`, `book`, `slides`; `design.theme` reconhece `paper`, `ocean`, `ink`. `sources[].fragment` já reservado agora resolve títulos únicos e marcadores `^id` existentes; seleção ausente/ambígua é fonte indisponível e números de linha são recusados. Nenhum offset vira ID permanente. Cada `sections[].id` identifica a peça, inclusive quando várias usam a mesma nota. Histórico de composição é transitório por sessão e não substitui o histórico das notas.
+
+EPUB é snapshot de distribuição gerado sob comando, com OPF, navegação, spine, XHTML e recursos locais. Não é nova fonte de verdade nem formato de importação automática. Editar o EPUB externo não edita o vault. O seletor nativo usa `application/epub+zip`; cancelar não anuncia salvamento. Fontes não suportadas ou alteradas durante a exportação geram erro, não sucesso parcial silencioso.

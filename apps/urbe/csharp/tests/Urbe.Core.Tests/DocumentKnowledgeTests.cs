@@ -241,6 +241,21 @@ public sealed class DocumentStoreTests
         Assert.Equal(new[] { "roma", "corpo", "historia" }, tags);
     }
 
+    [Theory]
+    [InlineData("\n")]
+    [InlineData("\r\n")]
+    [InlineData("\r")]
+    public void FrontmatterParsesPlatformNewlinesWithoutChangingOriginalNote(string newline)
+    {
+        var content = string.Join(newline, "---", "tags: [historia]", "owner: Joana", "---", "Texto");
+        var properties = DocumentModel.ParseFrontmatter(content);
+        Assert.Equal("[historia]", properties["tags"]);
+        Assert.Equal("Joana", properties["owner"]);
+        var document = new DocumentStore().Make(new DocumentInput { Path = "Notas/A.md", Content = content });
+        Assert.Equal(content, document.Content);
+        Assert.Contains("historia", document.Tags);
+    }
+
     [Fact]
     public void UpsertReusesPathIdentityAndRecomputesDerivedDataWhenContentChanges()
     {

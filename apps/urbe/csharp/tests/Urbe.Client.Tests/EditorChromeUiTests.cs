@@ -90,8 +90,9 @@ public sealed partial class HeadlessUiTests
             Dispatcher.UIThread.RunJobs();
             var props = Texts().Single(t => t.StartsWith("--- título:", StringComparison.Ordinal));
             Assert.Matches(@"^--- título: Casa categoria: raiz tags: \[\] criado: \d{4}-\d{2}-\d{2} modificado: \d{4}-\d{2}-\d{2} ---$", props);
-            // the text column fills the width (textarea width:100%): 412 - 2·20 of padding
-            Assert.True(editor.Editor.Bounds.Width >= 360, "coluna Fonte " + editor.Editor.Bounds.Width);
+            // CST-147: the same reading column now includes the logical-line gutter.
+            Assert.True(editor.Editor.Bounds.Width + editor.LineNumbers.Bounds.Width >= 360, "coluna Fonte com numeração " + editor.Editor.Bounds.Width);
+            Assert.True(editor.Editor.Bounds.Width >= 320, "texto Fonte " + editor.Editor.Bounds.Width);
             Snapshot(window, "native-editor-source.png");
 
             // an edit: pending, then the autosave writes it and the dot says saved; the words join the count

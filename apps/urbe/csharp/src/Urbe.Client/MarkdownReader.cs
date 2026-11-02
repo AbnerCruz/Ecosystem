@@ -98,6 +98,9 @@ public sealed partial class MarkdownReader
     public Func<string, string?>? CitationFor { get; init; }
 
     private int _listLine;
+    public string? ProgressContextMarkdown { get; set; }
+    public Func<string, string?>? ProgressNoteResolver { get; set; }
+    public Action<string>? ProgressEditRequested { get; set; }
 
     public Control Build(IReadOnlyList<RichNode> nodes)
     {
@@ -112,6 +115,7 @@ public sealed partial class MarkdownReader
     {
         _listLine = 0;
         var source = markdown ?? "";
+        ProgressContextMarkdown ??= source;
         var panel = new StackPanel { Orientation = Orientation.Vertical };
         AddSource(panel, source, 0, source.Length, NoteContainers.Parse(source));
         return panel;
@@ -524,6 +528,24 @@ public sealed partial class MarkdownReader
     private Control Pre(RichNode pre)
     {
         var code = string.Concat(pre.Children.Select(Plain));
+        if (NoteProgress.IsLanguage(pre.Attr("data-lang")))
+        {
+            var result = NoteProgress.Evaluate(code, ProgressContextMarkdown ?? "", ProgressNoteResolver);
+            var panel = new StackPanel { Spacing = 8 };
+            panel.Children.Add(new TextBlock { Text = result.Label, FontSize = Size, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextWrapping = TextWrapping.Wrap });
+            var bar = new ProgressBar { Minimum = 0, Maximum = 100, Value = (double)result.Percent, Height = 8, IsVisible = result.IsValid };
+            Avalonia.Automation.AutomationProperties.SetName(bar, result.Label + ": " + result.Summary);
+            panel.Children.Add(bar);
+            panel.Children.Add(new TextBlock { Text = result.Summary, FontSize = Size * .85, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
+            if (ProgressEditRequested is not null)
+            {
+                var edit = new Button { Content = "Configurar progresso", MinHeight = 44, HorizontalAlignment = HorizontalAlignment.Left };
+                Avalonia.Automation.AutomationProperties.SetName(edit, "Configurar progresso: " + result.Label);
+                edit.Click += (_, e) => { e.Handled = true; ProgressEditRequested?.Invoke(code); };
+                panel.Children.Add(edit);
+            }
+            return new Border { Child = panel, Padding = new Thickness(12), Margin = new Thickness(0, Size * .6), BorderThickness = new Thickness(1), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), CornerRadius = new CornerRadius(10) };
+        }
         // CST-069: a ```grafico block is drawn as its graph; a tap edits its text like any block
         if (FunctionPlot.IsPlotLanguage(pre.Attr("data-lang")))
         {
