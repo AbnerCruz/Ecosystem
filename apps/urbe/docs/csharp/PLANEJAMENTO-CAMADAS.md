@@ -1,10 +1,16 @@
-# Planejamento adaptativo em camadas — beta.40
+# Planejamento adaptativo em camadas — beta.40 / correção beta.41
 
 ## Decisão técnica
 
 Esta é uma evolução incremental da ferramenta nativa `update_plan` do Urbe C#, **não** um executor autônomo de DAG ou segundo runtime. O contrato simples anterior continua aceito. O modo estruturado é acionado pelo campo `goal`, proporcional à tarefa.
 
 Confronto de referências: `AssistantAdaptivePlanTools` (estado atual), `AgentRuntime.Core/Tasks.cs` (teste e verificação independente), `TeamPlan.cs` (dependências acíclicas), Microsoft AutoGen Magentic-One (task/progress ledgers e replanejamento), GitHub Spec Kit (especificação/plano/tarefas e convergência) e LangGraph (checkpoints e reexecução). O contrato atual do host `IAssistantHost.SetPlan` permanece único; não há duplicação de dados do vault nem escrita em notas pelo planejador.
+
+## Correção beta.41, com evidência de uso real
+
+O arquivo exportado da conversa de teste beta.40 demonstrou regressão: o primeiro `update_plan` incluía `goal/current_state/target_state`, mas as atualizações seguintes não. O parser opt-in interpretava isso como plano legado; as revisões finais eram descartadas. A beta.41 mantém esses campos durante **a mesma execução de agente**, isolados em `RunHost`, e impede que campos exclusivos do grafo sejam tratados como legado se o contexto não estiver disponível. Marcadores textuais de verificação pendente não permitem o estado `done`.
+
+**Limite deliberado:** não há checkpoint de plano durável após novo `RunAsync` ou morte do app. Em uma nova execução, o agente deve reenviar os três campos; sem eles o grafo não pode ser aceito. A projeção de estado da execução não é uma nova fonte canônica para o vault nem altera os documentos de trabalho.
 
 ## Fluxo
 

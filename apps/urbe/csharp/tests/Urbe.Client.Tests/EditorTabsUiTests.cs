@@ -134,4 +134,31 @@ public sealed partial class HeadlessUiTests
         }
         finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
     }, CancellationToken.None));
+    [Fact]
+    public async Task EditorTabs_CompactVisualCapsulePreservesAccessibleTapSurface()
+    {
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var (view, window, vault, dir) = await OpenCreateVault();
+            try
+            {
+                window.Width = 320;
+                view.OpenNoteByPath("Comece.md");
+                await Settle(window, view);
+                var tab = view.Editor.GetLogicalDescendants().OfType<Button>()
+                    .Single(b => AutomationProperties.GetName(b) == "Aba Comece.md");
+                var capsule = Assert.IsType<Border>(tab.Content);
+                Assert.Equal(40, capsule.Height);
+                Assert.True(tab.Bounds.Height >= 48, "A área de toque não deve encolher com o visual");
+                var label = capsule.GetLogicalDescendants().OfType<TextBlock>().Single();
+                Assert.InRange(label.MaxWidth, 100, 132);
+                var close = capsule.GetLogicalDescendants().OfType<Button>().Single();
+                Assert.True(close.Width <= 40, "O botão de fechar não deve ocupar o espaço do título");
+                Assert.True(tab.IsEffectivelyVisible);
+                return true;
+            }
+            finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+    }
+
 }

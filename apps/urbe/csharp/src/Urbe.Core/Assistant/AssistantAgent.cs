@@ -266,7 +266,7 @@ public static class AssistantAgent
         "- Descoberta antes da execução: para pedidos significativos, construa entendimento explícito sobre problema, objetivo real, público, contexto, restrições, insumos, prioridades, decisões irreversíveis, padrões de qualidade e critérios de aceitação. Inspecione primeiro o que o vault permite descobrir, inclusive conteúdos e referências relevantes. Não invente respostas que pertencem ao usuário.\\n" +
         "- Faça perguntas com ask_user UMA POR VEZ, cada uma com razão específica e impacto material na solução. Explore alternativas e trade-offs quando necessários; aproveite cada resposta para eliminar outras dúvidas, descobrir dependências e reformular hipóteses. Não fixe número de perguntas: projetos complexos exigem investigação profunda, tarefas claras e simples podem seguir sem perguntas. Não volte a perguntar o que já foi respondido.\\n" +
         "- O planejamento nasce da investigação e a investigação melhora com o planejamento: trace entregáveis, decisões, dependências, riscos, verificações e critérios de pronto. Registre com update_plan etapas específicas, mensuráveis e suficientes; detalhe fases e subtrabalhos conforme necessário, sem teto artificial nem enchimento burocrático. Atualize o plano com evidências reais a cada marco e mude a estrutura quando surgirem descobertas.\\n" +
-        "- Em trabalhos complexos, use update_plan em camadas: descreva goal (pedido original), current_state observado e target_state; confronte a estratégia antes de dividir em nós com IDs e dependências. Para iniciar um nó, defina acceptance e tests primeiro; só declare done após registrar evidências distintas de testes, execução e confronto com os nós anteriores. Feche com final_plan_review e final_user_review. Esses textos são relatos; nunca apresente teste, build, revisão ou validação no aparelho como executado sem prova real das ferramentas. Para tarefas simples, use plano simples ou execução direta. Não peça aprovação para decisões rotineiras já autorizadas. Replaneje quando fatos mudarem e preserve as evidências válidas.\\n" +
+        "- Em trabalhos complexos, use update_plan em camadas: descreva goal (pedido original), current_state observado e target_state; confronte a estratégia antes de dividir em nós com IDs e dependências. Em cada atualização de update_plan, mantenha os mesmos IDs e, se iniciar uma nova execução, reenvie goal/current_state/target_state completos. Para iniciar um nó, defina acceptance e tests primeiro; só declare done após registrar evidências distintas de testes, execução e confronto com os nós anteriores. Feche com final_plan_review e final_user_review. Esses textos são relatos; nunca apresente teste, build, revisão ou validação no aparelho como executado sem prova real das ferramentas. Para tarefas simples, use plano simples ou execução direta. Não peça aprovação para decisões rotineiras já autorizadas. Replaneje quando fatos mudarem e preserve as evidências válidas.\\n" +
         "- Antes de trabalho dispendioso ou irreversível, confirme decisões não dedutíveis e peça as aprovações da ferramenta. Não faça um interrogatório por curiosidades: agrupe dúvidas relacionadas no raciocínio, faça só a próxima pergunta que altera a melhor ação, e execute prontamente quando houver entendimento suficiente.\\n" +
         "- Produção de artefatos: não preencha um documento com campos genéricos por falta de conhecimento. Primeiro pesquise no vault e nos links pertinentes, identifique informações confirmadas, lacunas e possibilidades criativas. Escolha a estrutura e o formato apropriados ao uso final, escreva prosa específica e interessante e trabalhe seção por seção; apresente alternativas para decisões criativas importantes. Não invente fatos como se fossem estabelecidos: diferencie cânone, hipótese, proposta e campo pendente. A qualidade do resultado importa mais que a rapidez da primeira versão.\\n" +
         "- Decida como produzir cada tipo de artefato com base na finalidade e no contexto, sem aplicar formulários, modelos ou seções predefinidos a pedidos diferentes. Antes de escrever, descubra a função do material, o público, a estrutura mais útil e a profundidade necessária; compare alternativas relevantes, desenvolva conteúdo substantivo e específico e só use campos em branco quando o usuário pedir ou quando for impossível avançar sem aquela informação. Verifique documentos relacionados antes de criar, modificar ou vincular conteúdo.\\n" +
@@ -606,6 +606,17 @@ public static class AssistantAgent
     /// <summary>The tools' host for one run: the read budget of the run and the plan reported to the screen.</summary>
     private sealed class RunHost(IAssistantHost inner, int readChars, Action<IReadOnlyList<AiPlanStep>> setPlan, bool managedSeals) : IAssistantHost
     {
+        private JsonObject? _lastLayeredPlan;
+
+        /// <summary>Carry plan metadata only in this agent run; each concurrent chat has its own RunHost.</summary>
+        public async Task<AiToolOutput> RunLayeredPlan(AiTool tool, JsonObject input)
+        {
+            var normalized = AssistantLayeredPlan.NormalizeUpdate(input, _lastLayeredPlan);
+            var output = await tool.Run(normalized, this);
+            _lastLayeredPlan = normalized.ContainsKey("goal") ? (JsonObject)normalized.DeepClone() : null;
+            return output;
+        }
+
         public string Readable(string text) => managedSeals ? AiAuthorship.Strip(text) : inner.Readable(text);
         public DocumentStore Documents => inner.Documents;
         public KnowledgeIndex Knowledge => inner.Knowledge;
@@ -1182,7 +1193,9 @@ public static class AssistantAgent
             if (authored is not null) return await CommitAsync(authored, authored.After, false);
             try
             {
-                var r = await tool.Run(input, host);
+                var r = ReferenceEquals(tool, AssistantAdaptivePlanTools.Update)
+                    ? await host.RunLayeredPlan(tool, input)
+                    : await tool.Run(input, host);
                 return new Out(r.Content, Changes: r.Changes, Reads: r.Reads, Seen: r.Seen);
             }
             catch (AiToolException e) { return new Out(e.Message, true); }

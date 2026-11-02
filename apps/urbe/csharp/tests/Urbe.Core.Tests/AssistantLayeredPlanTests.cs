@@ -125,4 +125,71 @@ public sealed class AssistantLayeredPlanTests
          "steps":[{"id":"a","step":"A","status":"pending"}]}
         """)));
     }
+    [Fact]
+    public void GraphUpdateWithoutGoalMustNeverSilentlyDowngradeToLegacy()
+    {
+        var missing = Input("""
+        {"steps":[{"id":"read","step":"Ler","status":"done","tests":"Ler fonte",
+            "acceptance":"Fonte lida","test_evidence":"Lido","implementation_evidence":"Ação",
+            "verification_evidence":"Conferido"}]}
+        """);
+        Assert.Throws<AiToolException>(() => AssistantLayeredPlan.Build(missing));
+    }
+
+    [Fact]
+    public void FollowingLayeredUpdatesInSameRunInheritOriginalContextAndStillValidate()
+    {
+        var initial = Input("""
+        {"goal":"Criar notas","current_state":"Vault vazio","target_state":"Três notas",
+         "steps":[{"id":"folder","step":"Criar pasta","status":"in_progress",
+             "tests":"Listar","acceptance":"Pasta presente"}]}
+        """);
+        var followUp = Input("""
+        {"steps":[{"id":"folder","step":"Criar pasta","status":"done",
+          "tests":"Listar","acceptance":"Pasta presente",
+          "test_evidence":"list_notes retornou a pasta",
+          "implementation_evidence":"create_folder retornou sucesso",
+          "verification_evidence":"Listagem confirmada"}]}
+        """);
+        var normalized = AssistantLayeredPlan.NormalizeUpdate(followUp, initial);
+        var checkedPlan = AssistantLayeredPlan.Build(normalized);
+        Assert.True(checkedPlan.Layered);
+        Assert.False(checkedPlan.Concluded);
+        Assert.Contains("Criar notas", checkedPlan.Steps[0].Details);
+        Assert.Equal("Criar notas", (string?)normalized["goal"]);
+        Assert.Null(followUp["goal"]);
+    }
+
+    [Fact]
+    public void InheritedGraphCannotAcceptPrematureFinalReview()
+    {
+        var initial = Input("""
+        {"goal":"G","current_state":"A","target_state":"B",
+         "steps":[{"id":"n1","step":"A","status":"pending"}]}
+        """);
+        var incoming = Input("""
+        {"final_plan_review":"Feito","final_user_review":"Feito",
+         "steps":[{"id":"n1","step":"A","status":"pending"}]}
+        """);
+        Assert.Throws<AiToolException>(() =>
+            AssistantLayeredPlan.Build(AssistantLayeredPlan.NormalizeUpdate(incoming, initial)));
+    }
+
+    [Theory]
+    [InlineData("Ainda pendente: reler o arquivo")]
+    [InlineData("Pendente: confirmar criação")]
+    [InlineData("A conferir no final")]
+    public void PendingTestEvidenceIsNotProofOfCompletedNode(string evidence)
+    {
+        var plan = Input("""
+        {"goal":"G","current_state":"A","target_state":"B",
+         "steps":[{"id":"n1","step":"Nota","status":"done","tests":"Reabrir",
+           "acceptance":"Nota correta","test_evidence":"OK",
+           "implementation_evidence":"create_note retornou sucesso",
+           "verification_evidence":"OK"}]}
+        """);
+        ((JsonObject)((JsonArray)plan["steps"]!)[0]!)["test_evidence"] = evidence;
+        Assert.Throws<AiToolException>(() => AssistantLayeredPlan.Build(plan));
+    }
+
 }

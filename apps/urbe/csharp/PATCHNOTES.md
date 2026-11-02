@@ -1,28 +1,26 @@
 # Urbe — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.40
+**Versão canônica preparada:** 2.0.0-beta.41
 **Canal:** Urbe 2.0 nativo, Android e Windows
-**Publicação:** exclusivamente pelo workflow oficial, depois do CI e da integração
-**Identidade Android:** app.urbe.csharp, mesmo certificado e atualização sobre a beta.39
+**Publicação:** somente pelo workflow oficial após CI e integração autorizada
+**Identidade Android:** app.urbe.csharp, mesmo certificado da beta.40; atualização direta quando a release oficial existir
 
-## IA — Planejamento adaptativo em camadas
+## Planejamento em camadas — correção do defeito reportado
 
-- Tarefas complexas podem registrar o pedido original, o ponto de partida e o resultado final esperado em `update_plan`, sem criar um planejador independente.
-- Os objetivos possuem IDs e dependências verificadas contra IDs repetidos, referências ausentes, ciclos e avanço antes das pré-condições.
-- Para iniciar um nó, o agente precisa definir testes e critérios de aceite. Para declará-lo concluído, registra separadamente evidências de testes, implementação e confronto com objetivos anteriores.
-- Uma lista de nós marcados como concluídos não encerra automaticamente o objetivo: há confrontos separados com o plano e o pedido original.
-- O plano simples continua disponível para tarefas pequenas, evitando chamadas desnecessárias. A ferramenta mantém a lista de objetivos na interface atual.
-- Evidência textual fornecida pelo modelo é apresentada como relato, nunca como comprovante automático de CI, teste executado, verificação independente ou validação física.
+- Corrigido o rebaixamento silencioso do plano estruturado para o modo simples quando a IA omite goal durante as atualizações. O contexto inicial permanece vinculado à mesma execução de agente, sem vazamento entre chats.
+- Tentativas de enviar objetivos, IDs, dependências ou revisões finais sem contexto válido não podem mais contornar o validador do grafo: a ferramenta informa o erro.
+- Textos como "Ainda pendente" e "A conferir" não são aceitos como prova declarada de nó concluído. As provas continuam declarações textuais; a ferramenta NÃO autentica testes externos ou verificação por outro agente.
+- Preservados os testes e critérios, dependências, revisões globais e o caminho simples para pedidos que não ativaram o planejamento.
 
-## Recursos mantidos da beta.39
+## Editor — abas mais compactas
 
-- Abas controladas pelo usuário: navegação comum substitui a aba atual, enquanto o botão + abre uma aba adicional sob escolha.
-- Correções de preservação de rascunhos, renderização de fórmulas e previews de imagem.
-- Estúdio de Publicações com referências às notas reais, exportação HTML e impressão/salvamento como PDF pelo diálogo da plataforma.
+- Cápsulas de abas de 40dp de altura, títulos até 124dp, tipografia de 12dp, cantos e espaçamentos reduzidos.
+- A área principal de toque mantém ao menos 48dp, sem modificar a semântica de substituição da aba atual e criação explícita pelo +.
+- Adicionada regressão headless para densidade visual, uso em 320dp e controle do botão de nova aba.
 
-## Limites conhecidos
+## Paridade e limitações de consolidação
 
-- O modelo de planejamento estruturado é opt-in e não substitui os verificadores independentes por formato. Os recibos de CI, testes reais e validação no dispositivo continuam sendo produzidos fora dos campos declarativos do plano.
-- O planejador não é ainda um executor distribuído persistente de grafos; interromper ou encerrar o processo permanece sujeito às capacidades de recuperação existentes do Urbe.
-- Esta versão não conclui todo o plano Numa Consolidação 2.5 nem os formatos editoriais ainda pendentes.
-- Nenhum resultado desta release é declarado validado fisicamente no Android sem evidência correspondente.
+- Auditoria contrastada em `apps/urbe/docs/csharp/PARIDADE-CONSOLIDACAO-BETA41.md` com o plano normativo Numa 2.5 e referências open source.
+- Os bloqueadores CST-016 (teclado/foco), CST-142 (equações), CST-143 (menu radial) e CST-144 (perda de texto) continuam ABERTOS até validação física reproduzível; testes headless da beta.39/40 não substituem aceitação no moto g32.
+- Publicações: HTML de três capítulos foi testado pelo usuário; PDF, edição de fontes vivas e formatação final ainda precisam de testes no aparelho. Não foram anunciados nesta beta como novos recursos.
+- Não há executor de grafos durável, recibos de verificação independentes ou retomada automática após morte do processo.
