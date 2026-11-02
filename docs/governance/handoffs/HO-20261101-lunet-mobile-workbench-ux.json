@@ -59,9 +59,10 @@
     {
       "check": "Device UI: keyboard/Undo/Redo, Run, Explorer, tabs, rotation, TalkBack",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/research/mobile-workbench-ux-2026-11-01.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-02 (Issue https://github.com/AbnerCruz/Ecosystem/issues/891); registro em docs/governance/responses/VAL-HO-20261101-lunet-mobile-workbench-ux-b5f64af089ce.md."
     }
   ],
   "known_issues": [
