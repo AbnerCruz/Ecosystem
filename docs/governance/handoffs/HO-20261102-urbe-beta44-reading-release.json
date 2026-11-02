@@ -25,7 +25,7 @@
     "Criado PR draft #896 para beta.44, com incrementos monotônicos em versão e versionCode na fonte canônica; identidade e certificado da beta preservados.",
     "Notas da beta.44 preparadas com escopo estrito do PR #894: modo de leitura expandido, navegação PDF, identificação EPUB/slides/documentos e fallback explícito. Não anunciados leitores completos ou browser/YouTube inexistentes.",
     "Histórico de versões acrescentou beta.43, cujo APK Android oficial foi publicado em 02/11/2026.",
-    "Guardas de prontidão explícitas: #894 e #895 integrados à main, CI combinado verde e release pelo workflow oficial, não por build manual."
+    "Guardas de prontidão explícitas: PR #894 integrado na main, CI combinado verde e release pelo workflow oficial, não por build manual. PR #895 é documentação governada independente, não dependência artificial para APK."
   ],
   "verification": [
     {
@@ -36,10 +36,10 @@
       "tested_commit": "f518177438c8e232305dec3eb8d3f313b581d06f"
     },
     {
-      "check": "CI final da beta.44 com #894 e #895 integrados",
+      "check": "CI final da beta.44 após integração do PR #894",
       "kind": "automated",
       "result": "pending",
-      "evidence": "PR #896 é draft e seu head não incorpora ainda #894/#895. Não concluir este gate por builds de branch isolada."
+      "evidence": "PR #896 ainda é draft, sem conter o merge do código #894. Documento #895 é independente e não comprova execução."
     },
     {
       "check": "Workflow oficial assinado e ativos Android/Windows da beta.44",
@@ -64,12 +64,11 @@
   ],
   "blockers": [
     "Integrar PR #894 após autorização crítica do proprietário pela label integrar e integrador automático.",
-    "Integrar PR #895 após reconciliar handoff e autorizar atualização crítica de apps/urbe/AGENTS.md.",
     "Reconciliar o PR #896 com a main consolidada e concluir CI antes de transformar draft em release."
   ],
   "next_actions": [
     "Conferir CI da preparação beta.44; corrigir falhas de build e paridade de patchnotes.",
-    "Aguardar integração governada #894 e #895; não usar merge manual ou label integrar pelo agente.",
+    "Aguardar integração governada #894; PR documental #895 segue revisão crítica independente, sem bloquear a entrega binária.",
     "Rebasear/reconciliar branch de release com main após pré-requisitos, revisar diff e CI combinado.",
     "Somente então converter PR draft em pronto e seguir integração governada para publicação pelo workflow oficial.",
     "Verificar assinatura, SHA256 e disponibilidade Android/Windows, reportando a URL exata da release."
