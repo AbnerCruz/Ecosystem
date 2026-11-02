@@ -183,6 +183,7 @@ public interface IAssistantHost
     /// <summary>Only the current conversation may supply a received user attachment for extraction.</summary>
     IAssistantAttachmentExtractor? Attachments => this as IAssistantAttachmentExtractor;
     IAssistantDocumentFiles? DocumentFiles => this as IAssistantDocumentFiles;
+    IAssistantDocumentVision? DocumentVision => this as IAssistantDocumentVision;
 }
 
 /// <summary>A configured public agent profile, without private memory or chat contents.</summary>
