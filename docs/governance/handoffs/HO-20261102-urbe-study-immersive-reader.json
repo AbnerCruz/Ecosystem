@@ -1,20 +1,21 @@
 {
-  "id": "HO-20261102-urbe-study-immersive-reader",
-  "date": "2026-11-02",
-  "product": "urbe",
-  "base_commit": "e724a14de0a9f756b20be3dc2a53844bdecb4a6a",
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261102-urbe-study-immersive-reader",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-02T11:55:03Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-231",
+  "component": "urbe",
+  "state": "verifying",
   "branch": "feat/urbe-study-immersive-cst231-233-20261102",
-  "criticality": "routine",
-  "requirements": [
-    "CST-231 (partial)",
-    "CST-233 (partial)",
-    "CST-010 (regression)",
-    "CST-246 (pending)",
-    "CST-238 (partial)",
-    "CST-244 (partial)"
-  ],
-  "summary": "Native in-app reading mode expands FilePreview without recreating viewer; system Back exits expanded view first; PDF one-based current-page and navigation implemented through existing lazy renderer. Recognizes Office/EPUB extensions and MIME for explicit fallback without large binary reads.",
-  "touched_files": [
+  "base_commit": "e724a14de0a9f756b20be3dc2a53844bdecb4a6a",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/894",
+  "files_changed": [
     "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
     "apps/urbe/csharp/src/Urbe.Client/ContentViewers.cs",
     "apps/urbe/csharp/src/Urbe.Client/MainView.AndroidBack.cs",
@@ -22,17 +23,83 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/ContentViewerUiTests.cs",
     "apps/urbe/docs/csharp/STUDY-READER-INCREMENT-2026-11-02.md",
     "apps/urbe/csharp/src/Urbe.Core/VaultFileKinds.cs",
-    "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultFileKindsTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultFileKindsTests.cs",
+    "docs/governance/handoffs/HO-20261102-urbe-study-immersive-reader.json"
   ],
-  "proof": "Tests committed; no local .NET SDK; CI and DEVICE unverified",
-  "competing_prs": "PR #893 (beta.43 release metadata) left untouched; PR #886 (PDF extraction) integrated in main, no duplicate ingest.",
-  "data_security": "No vault schema, permissions, dependencies, signing identity or release files changed. Existing isolated WebView maintained.",
-  "limits": "Immersive UI and PDF page jumping only; no EPUB, YouTube, browser, annotations, text-layer or full native OS fullscreen. PDF frame allocation and synchronous rendering remain open. EPUB/slides/office readers are not implemented; only correct identification and external fallback.",
-  "next": [
-    "Run CI Core/Client and Android/Windows",
-    "Fix test/build failures before merge",
-    "Validate physical Android 13 and Windows",
-    "Continue CST-230/233/234/235/239 following architecture/ADR",
-    "Release by official workflow after integration; no manual merge"
-  ]
+  "work_completed": [
+    "UI imersiva no próprio FilePreview com alternância reversível sem recriar o viewer, Ctrl/teclado e sistema Back hierárquico.",
+    "PDF: página atual, salto por página física e navegação Anterior/Próxima, com ajuste para clamping no fim do documento; bitmaps fora da viewport continuam sob descarte existente.",
+    "EPUB, slides e documentos de escritório classificados pelo tipo/MIME para fallback externo explícito; arquivos sem renderer não são carregados inteiros na memória.",
+    "Testes headless criados para leitura, Android Back, PDF e fallback de formatos; correção CS1061 aplicada após CI.",
+    "PR #893 de versão beta.43 preservado; PR #886 de extração PDF já integrado e não duplicado."
+  ],
+  "verification": [
+    {
+      "check": "Build e testes .NET no CI",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Execução anterior 41441108669 falhou em CS1061 FilePreviewPanel.cs(337) e foi corrigida no commit 9a6f1628; aguardar nova execução. SDK .NET indisponível no ambiente local."
+    },
+    {
+      "check": "Ecosystem consistency",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Execução anterior 41441108682 falhou CHK-SCHEMA por handoff fora do contrato; registro convertido para handoff.schema.json nesta revisão; aguardar novo CI."
+    },
+    {
+      "check": "Android 13 e Windows físicos: botão Voltar, foco, leitor, livro longo",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
+      "evidence": "Não houve aparelho físico ligado. CI não valida conforto, toque ou consumo real."
+    }
+  ],
+  "known_issues": [
+    "CST-231/233/238/244 parciais. Não há EPUB, PPTX, navegador, YouTube, OCR, busca textual, integração com notas ou reprodução multimodal.",
+    "PdfPagesView mantém controles por página e renderização síncrona: ainda precisa de virtualização profunda e benchmark (CST-244).",
+    "Modo tela cheia expande somente dentro da área Avalonia; não oculta as barras do SO Android.",
+    "PDF ainda não tem renderer no host Windows; arquivo pode ser aberto externamente."
+  ],
+  "blockers": [
+    "CI ainda pendente para último commit; testes Android e Windows físicos pendentes."
+  ],
+  "next_actions": [
+    "Conferir CI combinado PR #894 e corrigir erros até checks verdes.",
+    "Validar preview PDF, HTML, vídeo e imagem no Android real e Windows.",
+    "Integrar somente pelo integrador governado; não fazer merge ou release manual.",
+    "Estudar/implementar CST-230/233/234/235/239/240 e os demais do plano 2.6 por incrementos."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.5.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Leitores de vault continuam read-only; nenhum arquivo original ou schema é regravado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Teste Android físico continua pendente sem alegação de aceite."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Items CST-231/233/238/244 permanecem parciais."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma capability compartilhada ou dependência geral nova; tudo local ao Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Feature autorizada na nova consolidação; não altera formato persistido, confiança da WebView, dependências, licença ou identidade/release."
+  }
 }
