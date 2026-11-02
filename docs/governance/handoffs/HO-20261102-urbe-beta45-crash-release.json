@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261102-urbe-beta45-crash-release",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-02T15:52:31.176Z",
+  "agent": {
+    "id": "codex-urbe-beta45",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-013",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "release/urbe-beta45-assistant-crash",
+  "base_commit": "456bf7eb457690cb97a7853b42b3587d99572c4b",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "docs/governance/handoffs/HO-20261102-urbe-beta45-crash-release.json"
+  ],
+  "work_completed": [
+    "Proprietário solicitou explicitamente a release com a correção do PR #900 já integrado.",
+    "Preparada beta.45/versionCode 2000045 na autoridade canônica, preservando identidade, assinatura e pipeline existentes.",
+    "Patchnotes atuais detalham o crash e os limites da validação; beta.44 movida para histórico compacto."
+  ],
+  "verification": [
+    {
+      "check": "Correção PR #900 no estado combinado",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/41456713028 — 1303 Core e 465 Client, builds Android/Windows, smoke Android e e2e.",
+      "tested_commit": "456bf7eb457690cb97a7853b42b3587d99572c4b"
+    },
+    {
+      "check": "CI do corte beta.45",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Executar CI combinado do PR de release."
+    },
+    {
+      "check": "Publicação oficial Android/Windows e checksums",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Somente após integração e dispatch oficial; nenhum APK publicado por este registro."
+    },
+    {
+      "check": "Envio real e atualização no moto g32",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+      "evidence": "Proprietário receberá a beta para confirmar o envio; não há aceite físico presumido."
+    }
+  ],
+  "known_issues": [
+    "Smoke Android não exercita envio ao provedor.",
+    "Não garante recuperação de execução após morte do processo."
+  ],
+  "blockers": [
+    "CI e integração do corte de release pendentes."
+  ],
+  "next_actions": [
+    "Conferir CI combinado e integração governada.",
+    "Acompanhar workflow oficial até APK e ZIP publicados; conferir versão, origem e checksums.",
+    "Entregar link direto do APK e da release ao proprietário."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "MANIFEST.md",
+    "docs/distribution/direct-releases.md",
+    "docs/governance/integration-policy.json",
+    ".github/workflows/urbe-csharp-mobile-release.yml"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Versão e versionCode somente no csproj canônico."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e DEVICE diferenciados; nenhum aceite inventado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Publicação pendente até existência real de APK/ZIP."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Classificação vigente inclui csproj do canal beta. Publicação expressamente solicitada pelo proprietário; assinatura, ID, canal e workflow preservados."
+  }
+}

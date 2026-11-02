@@ -2,6 +2,12 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.44 — 02/11/2026
+- Leitura imersiva no próprio Urbe, hierarquia de Voltar/Escape e navegação PDF por página no Android.
+- Reconhecimento de EPUB, apresentações e documentos com fallback externo explícito; não são leitores internos completos.
+- Android e Windows publicados pelo workflow oficial.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.44
+
 ## 2.0.0-beta.43 — 02/11/2026
 - Leitura documental pelo Assistente: inventário de PDFs, busca por página e texto, inspeção visual autorizada de uma página/imagem com multimodal, sem OCR local.
 - Primeira publicação: Android nativo assinado em 02/11/2026; a distribuição Windows utiliza o mesmo tag e fluxo oficial.
