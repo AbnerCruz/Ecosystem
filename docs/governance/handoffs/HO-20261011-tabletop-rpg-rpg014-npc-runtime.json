@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-tabletop-rpg-rpg014-npc-runtime",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T19:10:10Z",
+  "agent": {
+    "id": "chatgpt-rpg014",
+    "kind": "ai-agent"
+  },
+  "task_id": "RPG-014",
+  "component": "tabletop-rpg",
+  "state": "review",
+  "branch": "feat/tabletop-rpg-rpg014-npc-runtime",
+  "base_commit": "b40e34099ca3d0d895becf35c216787b4b135ee4",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/521",
+  "files_changed": [
+    "apps/tabletop-rpg/src/TabletopRpg.Npc/TabletopRpg.Npc.csproj",
+    "apps/tabletop-rpg/src/TabletopRpg.Npc/NpcModels.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Npc/NpcRuntime.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/NpcRuntimeTests.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/TabletopRpg.Core.Tests.csproj",
+    "apps/tabletop-rpg/docs/npc-runtime-r1.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "apps/tabletop-rpg/README.md",
+    "docs/governance/handoffs/HO-20261011-tabletop-rpg-rpg014-npc-runtime.json"
+  ],
+  "work_completed": [
+    "Implementada a tarefa literal RPG-014: NPC runtime em C# sem criar Player Agent ou participante automático; NPC vinculado a Character, Scene e GameMaster já existentes.",
+    "NpcProfile define papel, motivação e disposição; NpcRuntime mantém estado local transitório (confiança, alerta e cursor de eventos). Não cria segunda fonte canônica de fatos da campanha.",
+    "Observação por chamada explícita consome eventos canônicos em sequência, respeitando mudanças de cena; fatos e combate fora da cena do NPC não são atribuídos ao seu estado.",
+    "Interações autorizadas Greet/Ask/RequestHelp/Threaten geram diálogo determinístico contextual e alterações propostas; somente chamada host ApplyApproved delega SpeakIntent ao SessionEngine, que autoriza e registra o evento.",
+    "Propostas são únicas e privadas, com proteção contra falsificação, reaproveitamento, revisão obsoleta e mudança de cena; rejeição não altera estado nem publica fala.",
+    "Testes de controle de identidade, cena, humor, replay truncado, event-driven, nenhuma execução automática e não regressão; README, ROADMAP e doc de domínio."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/tabletop-rpg/tests/TabletopRpg.Core.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI tabletop-rpg-ci do PR #521 preliminar passou no head d35915e; verificar execução final no commit de handoff."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Consistency e simulação do integrador ainda em execução na branch #521."
+    },
+    {
+      "check": "DEVICE Android",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "RPG-014 somente headless C#, sem UI/Android/instalação."
+    }
+  ],
+  "known_issues": [
+    "NPCs têm perfil e estado privados transitórios, sem save/schema v2; ainda não existe retomada completa dos agentes.",
+    "Sem modelo real, prompts dinâmicos, testes táticos de NPC, engine do host mobile ou orchestrator; RPG-015 reserva budgets, retry e event routing.",
+    "Observação depende de janela recente de 24 eventos do GM; falha explicitamente quando houve perda e requer checkpoint do host.",
+    "PR #521 em draft depende da integração sequencial dos PRs #511, #517 e #519. Não é release nem foi integrada à main."
+  ],
+  "blockers": [
+    "Integração governada sequencial de #511 (RPG-011), #517 (RPG-012), #519 (RPG-013) antes de liberar #521 (RPG-014); CI final e consistency ainda precisam estar verdes."
+  ],
+  "next_actions": [
+    "Conferir tabletop-rpg-ci e consistency no head de #521 com handoff e corrigir eventuais falhas.",
+    "Após integração dos PRs precedentes, reconciliar #521 com main e retirar draft mediante gates e revisão; não executar merge manual.",
+    "Próxima tarefa do roadmap após RPG-014: RPG-015 orquestração de eventos, budgets, retry/progress guards e observabilidade."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/tabletop-rpg/AGENTS.md",
+    "apps/tabletop-rpg/SPEC.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "docs/adr/0022-tabletop-rpg-product-solo-first.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Campaign permanece fonte canônica de Character, Scene, fatos e eventos; estados NPC são derivados e transitórios, não novos arquivos de verdade."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Novo módulo referencia apenas TabletopRpg.Core, sem dependência direta de outro Product."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Runtime sem dependência de launcher ou serviço compartilhado."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Novo código integral em C#."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #520, branch, PR #521, CI, doc e handoff rastreáveis."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "RPG-014 é o próximo item literal do roadmap; RPG-015 e R2 não foram antecipadas."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Constituição e AGENTS do repositório e Product, SPEC, ROADMAP, ADR e política conferidos."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Sem mudanças na persistência v2, contracts públicos, credenciais nem arquitetura transversal."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "NpcReaction não é GameIntent executado; aprovação usa SessionEngine com controle explícito do assento Mestre."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Somente suíte headless; DEVICE não é aplicável."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "RPG-014 permanece [~], PR draft, resultado do CI final aguardado e integração não reivindicada."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "CharacterId, ParticipantId e SceneId do Core reutilizados sem identidade paralela."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Npc runtime mantém-se Product-local sem extração prematura para plataforma."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Sem dependência de mecanismos de distribuição ou update de outros Products."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Slice headless local planejado no ROADMAP, sem persistência, segurança, distribuição ou contrato transversal."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "tabletop-rpg-npc-runtime",
+      "status": "product-specific",
+      "rationale": "NPCs e interação de mesa são domínios específicos do tabletop RPG, sem segundo consumidor comprovado."
+    }
+  ]
+}
