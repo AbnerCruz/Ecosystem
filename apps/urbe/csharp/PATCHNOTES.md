@@ -14,7 +14,7 @@
 
 ## Editor — abas mais compactas
 
-- Cápsulas de abas de 36dp de altura, títulos até 124dp, tipografia de 12dp, cantos e espaçamentos reduzidos.
+- Cápsulas de abas de 40dp de altura, títulos até 124dp, tipografia de 12dp, cantos e espaçamentos reduzidos.
 - A área principal de toque mantém ao menos 48dp, sem modificar a semântica de substituição da aba atual e criação explícita pelo +.
 - Adicionada regressão headless para densidade visual, uso em 320dp e controle do botão de nova aba.
 
