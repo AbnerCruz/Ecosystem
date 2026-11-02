@@ -31,6 +31,6 @@
 
 ## Estabilização e distribuição
 
-**Pré-requisitos desta beta.44:** integrar o PR #894 com CI combinado aprovado, resolver a consolidação 2.6 no PR #895 e gerar os pacotes Android/Windows apenas pelo workflow assinado `urbe-csharp-mobile-release.yml`. Uma branch de release ou APK de prévia não comprova publicação.
+**Pré-requisitos desta beta.44:** integrar o código do PR #894 na `main`, obter CI combinado aprovado e gerar os pacotes Android/Windows apenas pelo workflow assinado `urbe-csharp-mobile-release.yml`. O PR documental #895 (consolidação 2.6) prossegue pelo fluxo de governança próprio, sem bloquear artificialmente o binário. Uma branch de release ou APK de prévia não comprova publicação.
 
 Consulte a consolidação Numa 2.6 (CST-229–246) e os handoffs para o escopo completo de estudo, navegação e produção.
