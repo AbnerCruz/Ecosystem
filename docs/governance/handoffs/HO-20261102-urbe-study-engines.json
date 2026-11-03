@@ -12,7 +12,7 @@
   "state": "review",
   "branch": "release/urbe-beta46-study-recovery",
   "commit": "b76245168e684898ba51f94b793892b0f4946dd4",
-  "pr": 903,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/903",
   "base_commit": "672b612b9099d38140cedf6c1acb71a471cf642a",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Android/AndroidStudyBrowser.cs",
@@ -207,6 +207,30 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "verify.mjs conferiu 13 recursos empacotados. Chromium local não iniciou: socket Unix bloqueado pelo sandbox; execução real transferida ao CI, sem contornar permissões."
+    },
+    {
+      "check": "Recuperação — Android compile final",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "/tmp/urbe46-android-build.log: Debug arm64, 0 erros. Há 15 avisos de bibliotecas LLamaSharp já existentes (Content e alinhamento 16KB). Não é release assinada nem DEVICE."
+    },
+    {
+      "check": "Recuperação — consistência final",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "/tmp/urbe46-consistency-final.log: 22/22 checks após corrigir tipo de pr e buscar o commit remoto referenciado."
+    },
+    {
+      "check": "Recuperação — cliente final",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "/tmp/urbe46-client-release.log: 487 testes, zero falhas/skips, 196.427s; inclui layout OCR 390x820, texto canônico EPUB e patchnotes beta.46."
+    },
+    {
+      "check": "Recuperação — Windows x64",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet publish -r win-x64 --self-contained true -p:PublishSingleFile=true -p:Version=2.0.0-beta.46; Urbe.exe gerado em /tmp/urbe46-windows-proof, sem erro. Não executado em Windows físico."
     }
   ],
   "known_issues": [

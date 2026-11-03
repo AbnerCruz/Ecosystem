@@ -67,7 +67,8 @@ jobs:
       - run: node tools/run-e2e.mjs app-runtime zip smoke import
 
   csharp-portable:
-    runs-on: ubuntu-latest
+    # The existing Playwright version supports Ubuntu 24.04 (same baseline as the e2e job).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     defaults:
       run:
