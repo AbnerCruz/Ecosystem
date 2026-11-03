@@ -132,7 +132,8 @@
     "ADR-0047 proposto, licenças/proveniência/build de recursos e catálogo do schema privado registrados. Nenhuma release ou publicação.",
     "Recuperação autorizada pelo proprietário em 03/11: snapshot preservado, branch remota e PR #903 criados. Preparação da beta.46/2000046 no canal oficial existente.",
     "Reproduções vermelho→verde para salto/seleção EPUB, identidade de vídeo desatualizada e offsets de busca divergentes do DOM. Layout OCR/toolbar PDF/rodapé corrigido após inspeção de screenshot 390x820; prova de área legível acrescentada.",
-    "CI portátil passa a verificar hashes dos recursos e executar motores EPUB/PPTX/OCR reais em Chromium sem requisições externas."
+    "CI portátil passa a verificar hashes dos recursos e executar motores EPUB/PPTX/OCR reais em Chromium sem requisições externas.",
+    "Rastreabilidade corrigida: handoff cita diretamente ADR-0032 aceito (incluindo emenda ADD-0023), que governa adapters NativeControlHost e conteúdo isolado. ADR-0047 continua proposto para revisão do subescopo; nenhum aceite é fabricado."
   ],
   "verification": [
     {
@@ -261,7 +262,9 @@
     "docs/product-plans/urbe/Numa_Consolidacao_2.6.md",
     "ARCHITECTURE.md",
     "docs/adr/0047-urbe-leitura-estudo-isolados.md",
-    "apps/urbe/docs/csharp/DATA-CATALOG.md"
+    "apps/urbe/docs/csharp/DATA-CATALOG.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/adr/0034-urbe-sem-simulacao-visual.md"
   ],
   "invariants": [
     {
