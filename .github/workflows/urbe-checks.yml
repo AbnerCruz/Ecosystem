@@ -67,7 +67,8 @@ jobs:
       - run: node tools/run-e2e.mjs app-runtime zip smoke import
 
   csharp-portable:
-    runs-on: ubuntu-latest
+    # The existing Playwright version supports Ubuntu 24.04 (same baseline as the e2e job).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     defaults:
       run:
@@ -86,6 +87,22 @@ jobs:
       - run: dotnet test --project tests/Urbe.Client.Tests -c Release --no-build
         env:
           URBE_SNAPSHOT_DIR: ${{ github.workspace }}/apps/urbe/csharp/artifacts/native-snapshots
+          URBE_READER_ENGINE_TEST_DIR: ${{ github.workspace }}/apps/urbe/csharp/artifacts/reader-engines
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Verify packaged reader resources
+        run: node tools/readers-build/verify.mjs
+      - name: Install browser test dependencies
+        working-directory: apps/urbe
+        run: npm ci --ignore-scripts
+      - name: Install content-test Chromium
+        working-directory: apps/urbe
+        run: npx playwright install --with-deps chromium
+      - name: Verify actual EPUB, PPTX and offline OCR engines
+        run: node tests/browser/readers.mjs
+        env:
+          URBE_READER_ENGINE_TEST_DIR: ${{ github.workspace }}/apps/urbe/csharp/artifacts/reader-engines
       - uses: actions/upload-artifact@v4
         if: always()
         with:

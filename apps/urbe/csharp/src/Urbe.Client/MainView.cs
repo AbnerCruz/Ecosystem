@@ -55,7 +55,25 @@ public sealed partial class MainView : Grid
         Editor.LivePane.ReadFile = async path => _vault is { } vault ? (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes : null;
         Editor.Files = () => _attachments.Where(f => !_contents.ContainsKey(f))
             .Concat(_contents.Keys.Where(p => !p.EndsWith(".md", StringComparison.OrdinalIgnoreCase) && !p.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase)));
-        Editor.OpenFile = path => FilePreview.OpenAsync(path);
+        Editor.OpenFile = OpenReaderSourceAsync;
+        Editor.OpenWeb = url => StudyBrowser.Open(url);
+        Editor.Pinned.Storage = _vault;
+        Editor.Pinned.Preview.Dialogs = Dialogs;
+        Editor.Pinned.Files = () => _contents.Keys.Concat(_attachments);
+        Editor.Pinned.NoteText = path => ArtifactModel.IsNote(path) ? _contents.GetValueOrDefault(path) : null;
+        FilePreview.QuoteRequested += quote => _ = InsertReaderQuoteAsync(quote);
+        Editor.Pinned.Preview.QuoteRequested += quote => _ = InsertReaderQuoteAsync(quote);
+        foreach (var reader in new[] { FilePreview, Editor.Pinned.Preview, Editor.Split.Preview })
+        {
+            reader.AnnotationsRequested += path => _ = OpenSourceAnnotationsAsync(path);
+            reader.ReadingState = ReadingState;
+            reader.ExpandRequested += path => _ = FilePreview.OpenAsync(path);
+            reader.VisualQuestionRequested+=question=>_ = PrepareStudyImageQuestionAsync(question);
+            reader.ImageQuoteRequested += quote => _ = InsertImageReaderQuoteAsync(quote);
+            reader.BookQuoteRequested += quote => _ = InsertBookReaderQuoteAsync(quote);
+            reader.QuestionRequested += (source, text) => _ = PrepareStudyQuestionAsync(source, text);
+            reader.WebLinkRequested += url => StudyBrowser.Open(url);
+        }
         Editor.ConfirmEmbeddedAtlasExitAsync = ConfirmEmbeddedAtlasExitAsync;
         Editor.Properties.TagSource = () => _store is null ? [] : _store.List().SelectMany(d => d.Tags).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
         Editor.PropertiesFor = path => _library?.PropertiesText(path, Now);
@@ -146,6 +164,20 @@ public sealed partial class MainView : Grid
         FilePreview.ActionsRequested += path => _ = ShowAttachmentActionsAsync(path);
         FilePreview.PageActionsRequested += path => _ = ShowPageMenuAsync(path);
         _stage.Children.Add(FilePreview);
+        _stage.Children.Add(StudyBrowser);
+        void UpdateReaderVisibility()
+        {
+            Editor.Pinned.Preview.SetSuspended(FilePreview.IsVisible || StudyBrowser.IsVisible || Dialogs.IsOpen || Assistant.IsVisible);
+            Editor.Split.Preview.SetSuspended(FilePreview.IsVisible || StudyBrowser.IsVisible || Dialogs.IsOpen || Assistant.IsVisible);
+            FilePreview.SetSuspended(StudyBrowser.IsVisible || Dialogs.IsOpen || Assistant.IsVisible);
+            ReaderActivity.SetActive(StudyBrowser, !Dialogs.IsOpen && !Assistant.IsVisible);
+        }
+        FilePreview.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateReaderVisibility(); };
+        StudyBrowser.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateReaderVisibility(); };
+        Assistant.PropertyChanged += (_,e)=>{if(e.Property==IsVisibleProperty)UpdateReaderVisibility();};
+        Dialogs.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateReaderVisibility(); };
+        StudyBrowser.QuestionRequested += (source, text) => _ = PrepareStudyQuestionAsync(source, text);
+        StudyBrowser.QuoteRequested += quote => _ = InsertWebReaderQuoteAsync(quote);
         _stage.Children.Add(_notice);
         _stage.Children.Add(_pluginPanels);   // the plugins' panels, over the Explorer and the editor (ADD-0021)
         InstallAssistantLauncher();          // contextual AI lives over the editor, not in a second destination
@@ -336,6 +368,9 @@ public sealed partial class MainView : Grid
     public async Task OpenVaultAsync()
     {
         if (_vault is null) return;
+        if (!await Editor.Pinned.TryUnpinAsync()) return;
+        if (!await Editor.Split.Preview.TryCloseAsync()) return;
+        CloseSplit();
         try
         {
             Explorer.Opening = Workspace.Opening = true;   // only shows while the list is empty
@@ -351,6 +386,7 @@ public sealed partial class MainView : Grid
 
     private async Task ShowVaultAsync(VaultSnapshot snapshot, bool restoreSession = false)
     {
+        if (!await Editor.Pinned.TryUnpinAsync()) return;
         // an import interrupted (app closed, error) left its journal: the vault is put back as it was first
         if (snapshot.Files.ContainsKey(ImportTransaction.JournalPath) && _vault?.ImportStorage is { } importer)
         {
@@ -527,7 +563,11 @@ public sealed partial class MainView : Grid
     public NoteLibrary? Library => _library;
 
     /// <summary>flushPending: write a pending record now (window closing, app going to the background).</summary>
-    public Task FlushPendingAsync() => _notesSave?.FlushAsync() ?? Task.CompletedTask;
+    public async Task FlushPendingAsync()
+    {
+        if (_notesSave is { } notes) await notes.FlushAsync();
+        await ReadingState.FlushAsync();
+    }
 
     // Keep the one-argument signature for Editor.SaveRequested (Func<CityNote, Task>).
     private async Task SaveNoteAsync(CityNote note)
@@ -843,8 +883,8 @@ public sealed partial class MainView : Grid
                 if (!await _vault.ShareAsync(note.Path)) ShowLifeNotice("Não foi possível compartilhar esta nota.", Ui.ToastKind.Warning);
             })] : Array.Empty<DialogItem>()),
             // DEC-0045, UC-39: the selection (or the whole note) stays at the top while writing
-            new DialogItem("Fixar em painel", UrbeTheme.Icons.Pin, "A seleção, ou a nota inteira, fica no topo enquanto você escreve.",
-                Run: () => { editor.PinSelectionOrNote(); return Task.CompletedTask; }),
+            new DialogItem("Fixar em painel", UrbeTheme.Icons.Pin, "Abra o painel e escolha qualquer arquivo para consultar enquanto escreve.",
+                Run: () => { editor.Pinned.Open(); return Task.CompletedTask; }),
             new DialogItem("Mover para a lixeira", UrbeTheme.Icons.Trash, Danger: true, Run: () => DeleteNoteAsync(note.Path))
         ]);
     }

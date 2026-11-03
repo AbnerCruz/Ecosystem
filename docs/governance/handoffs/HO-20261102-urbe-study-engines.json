@@ -1,0 +1,315 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261102-urbe-study-engines",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-03T10:54:44.221306+00:00",
+  "agent": {
+    "id": "codex-urbe-reference-study",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-229",
+  "component": "urbe",
+  "state": "review",
+  "branch": "release/urbe-beta46-study-recovery",
+  "commit": "b76245168e684898ba51f94b793892b0f4946dd4",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/903",
+  "base_commit": "672b612b9099d38140cedf6c1acb71a471cf642a",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/AndroidStudyBrowser.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EpubStudyView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MediaStudyView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/OcrReaderHtml.cs",
+    "apps/urbe/csharp/src/Urbe.Client/OcrStudyView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PdfWordSelection.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PortablePdfDocument.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PresentationReaderHtml.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ReaderActivity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ReaderRangeStream.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ReaderTextLocator.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ReadingStateFile.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/LICENSE",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/Tesseract-core-LICENSE.txt",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/Tesseract-js-LICENSE.txt",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/core.wasm.js",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/eng.traineddata.gz",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/por.traineddata.gz",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/tesseract-notices.txt",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/tesseract.min.js",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/worker-notices.txt",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/worker.min.js",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Web-PPT-LICENSE.txt",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/fflate-LICENSE.txt",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/presentation.js",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/provenance.json",
+    "apps/urbe/csharp/src/Urbe.Client/StudyBrowserPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/StudyWebView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/DocumentNavigation.cs",
+    "apps/urbe/csharp/src/Urbe.Core/EpubReadingDocument.cs",
+    "apps/urbe/csharp/src/Urbe.Core/OfficeReadingDocument.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PartSourceReference.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ReaderArchive.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ReaderByteRange.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ReaderRegion.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ReaderSessions.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ReaderUris.cs",
+    "apps/urbe/csharp/src/Urbe.Desktop/WindowsStudyWebView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PdfSelectionUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PortablePdfTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ReaderEngineTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ReaderRangeStreamTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ReadingStateFileTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/StudyBrowserUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/StudyJourneyUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/EpubReadingTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ReaderByteRangeTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ReaderSessionTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ReaderSourceReferenceTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ReaderUriTests.cs",
+    "apps/urbe/csharp/tests/browser/readers.mjs",
+    "apps/urbe/csharp/tests/fixtures/readers/book-1.pdf",
+    "apps/urbe/csharp/tests/fixtures/readers/book-1001.pdf",
+    "apps/urbe/csharp/tests/fixtures/readers/book-20.pdf",
+    "apps/urbe/csharp/tests/fixtures/readers/book-300.pdf",
+    "apps/urbe/csharp/tests/fixtures/readers/comic.cbz",
+    "apps/urbe/csharp/tests/fixtures/readers/document.docx",
+    "apps/urbe/csharp/tests/fixtures/readers/document.odp",
+    "apps/urbe/csharp/tests/fixtures/readers/document.odt",
+    "apps/urbe/csharp/tests/fixtures/readers/epub2.epub",
+    "apps/urbe/csharp/tests/fixtures/readers/fixed.epub",
+    "apps/urbe/csharp/tests/fixtures/readers/generate.py",
+    "apps/urbe/csharp/tests/fixtures/readers/protected.pdf",
+    "apps/urbe/csharp/tests/fixtures/readers/reflow.epub",
+    "apps/urbe/csharp/tests/fixtures/readers/scan.png",
+    "apps/urbe/csharp/tests/fixtures/readers/scanned.pdf",
+    "apps/urbe/csharp/tests/fixtures/readers/slides.pptx",
+    "apps/urbe/csharp/tools/readers-build/.gitignore",
+    "apps/urbe/csharp/tools/readers-build/README.md",
+    "apps/urbe/csharp/tools/readers-build/build.mjs",
+    "apps/urbe/csharp/tools/readers-build/package-lock.json",
+    "apps/urbe/csharp/tools/readers-build/package.json",
+    "apps/urbe/csharp/tools/readers-build/verify.mjs",
+    "docs/adr/0047-urbe-leitura-estudo-isolados.md",
+    "docs/governance/handoffs/HO-20261102-urbe-study-engines.json",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidContentViewers.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ContentViewers.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.AndroidBack.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Embeds.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Reading.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Relink.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PdfStudyView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PinnedPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/QuickOpen.cs",
+    "apps/urbe/csharp/src/Urbe.Client/SplitPane.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Urbe.Client.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PdfSourceReference.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Urbe.Core.csproj",
+    "apps/urbe/csharp/src/Urbe.Core/VaultFileKinds.cs",
+    "apps/urbe/csharp/src/Urbe.Desktop/Program.cs",
+    "apps/urbe/csharp/src/Urbe.Desktop/Urbe.Desktop.csproj",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ContentViewerUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FilePreviewUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ReferenceStudyUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/Urbe.Client.Tests.csproj",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ArchitectureTests.cs",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md",
+    "apps/urbe/docs/csharp/REFERENCE-STUDY-20261102.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/README.md"
+  ],
+  "work_completed": [
+    "Segunda etapa após recusa explícita de encerramento parcial: PDF Skia/tiles/virtualização, EPUB/Office/CBZ, browser e player por host, OCR WASM/modelos locais, anotações canônicas e metadados privados de posição. Ver matriz de evidência; a solicitação integral continua aberta.",
+    "Corpus original versionado e testes de conteúdo em Chromium sem requisições externas; novas jornadas UI em teste.",
+    "ADR-0047 proposto, licenças/proveniência/build de recursos e catálogo do schema privado registrados. Nenhuma release ou publicação.",
+    "Recuperação autorizada pelo proprietário em 03/11: snapshot preservado, branch remota e PR #903 criados. Preparação da beta.46/2000046 no canal oficial existente.",
+    "Reproduções vermelho→verde para salto/seleção EPUB, identidade de vídeo desatualizada e offsets de busca divergentes do DOM. Layout OCR/toolbar PDF/rodapé corrigido após inspeção de screenshot 390x820; prova de área legível acrescentada.",
+    "CI portátil passa a verificar hashes dos recursos e executar motores EPUB/PPTX/OCR reais em Chromium sem requisições externas.",
+    "Rastreabilidade corrigida: handoff cita diretamente ADR-0032 aceito (incluindo emenda ADD-0023), que governa adapters NativeControlHost e conteúdo isolado. ADR-0047 continua proposto para revisão do subescopo; nenhum aceite é fabricado.",
+    "Concorrência de referências corrigida após duas reproduções vermelhas: trocar capítulo não reatribui seleção pendente; substituir mídia aberta não vincula instante à revisão nova. Nova regressão completa /tmp/urbe46-client-race-final.log em execução."
+  ],
+  "verification": [
+    {
+      "check": "Core regression",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1335 testes, zero falhas/skips em /tmp/urbe-study-core-final.log. Nova dependência managed incluída explicitamente no teste de arquitetura com referência ao ADR; não relaxa proibição de UI/native/Products em Core."
+    },
+    {
+      "check": "PPTX / EPUB locator / OCR offline",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Chromium 156.0.8078.80 + Playwright. PPTX confirma texto/forma/imagem/tabela/navegação; EPUB restaura a seleção após tipografia; OCR por+eng reconhece corpus e word boxes, confiança 94. Sem requisição externa. /tmp/urbe-browser-reader-tests.log. Reexecutar exportação após build final."
+    },
+    {
+      "check": "Client regression",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "484 testes, zero falhas/skips, 197.504 s em /tmp/urbe-study-client-final.log. Baseline da etapa antes de acrescentar seleção sobre raster PDF e retomada de mídia; essas extensões exigem nova verificação, não estão cobertas por essa contagem."
+    },
+    {
+      "check": "Desktop / Android",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Desktop build e Android build/publish Debug de prévia x64 passaram. APK com assemblies incorporados ~66 MiB. Não é canal beta nem release assinada do proprietário; reconstruir após alterações finais."
+    },
+    {
+      "check": "Android 13 emulator execution",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Tentativa real sem /dev/kvm: emulador oficial e imagem Android 13 instalados com checksum. Boot por software não completou em 600 s; nenhuma execução do app foi contada. /tmp/urbe-emulator-smoke-engine.log. Tentativa encerrada por timeout; não existe DEVICE presumido."
+    },
+    {
+      "check": "Android/Windows físico, CI e revisão crítica",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "docs/adr/0047-urbe-leitura-estudo-isolados.md"
+    },
+    {
+      "check": "Novas jornadas nativas de livro/OCR/mídia",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "3/3 testes em /tmp/urbe-study-journeys.log: EPUB→nota/retorno/revisão alterada; OCR explícito/revisão/rotulagem/região em nota; mídia→timestamp verificado/retorno. Motor OCR/WebView nessas jornadas é fake; motor real testado separadamente em Chromium."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks em /tmp/urbe-study-consistency.log após adequar o ADR/index/handoff ao schema canônico."
+    },
+    {
+      "check": "Reprodutibilidade dos recursos",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "build.mjs recompilou Web-PPT a partir do checkout limpo no SHA fixado e copiou os pacotes locais. verify.mjs confirmou os mesmos SHA-256 de todos os 13 recursos, sem atualizar manifesto para aceitar diferenças."
+    },
+    {
+      "check": "Recuperação — núcleo final",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1336 testes, zero falhas/skips em /tmp/urbe46-core-tests-final.log; inclui reprodução de offsets EPUB vs texto DOM."
+    },
+    {
+      "check": "Recuperação — cliente completo",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "487 testes, zero falhas/skips em /tmp/urbe46-client-tests-final.log. Rodada anterior detectou apenas recurso patchnotes antigo durante troca de versão; rebuild com beta.46 passou. Alterações finais de layout/texto têm nova rodada /tmp/urbe46-client-release.log em andamento."
+    },
+    {
+      "check": "Recuperação — recursos de conteúdo",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "verify.mjs conferiu 13 recursos empacotados. Chromium local não iniciou: socket Unix bloqueado pelo sandbox; execução real transferida ao CI, sem contornar permissões."
+    },
+    {
+      "check": "Recuperação — Android compile final",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "/tmp/urbe46-android-build.log: Debug arm64, 0 erros. Há 15 avisos de bibliotecas LLamaSharp já existentes (Content e alinhamento 16KB). Não é release assinada nem DEVICE."
+    },
+    {
+      "check": "Recuperação — consistência final",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "/tmp/urbe46-consistency-final.log: 22/22 checks após corrigir tipo de pr e buscar o commit remoto referenciado."
+    },
+    {
+      "check": "Recuperação — cliente final",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "/tmp/urbe46-client-release.log: 487 testes, zero falhas/skips, 196.427s; inclui layout OCR 390x820, texto canônico EPUB e patchnotes beta.46."
+    },
+    {
+      "check": "Recuperação — Windows x64",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet publish -r win-x64 --self-contained true -p:PublishSingleFile=true -p:Version=2.0.0-beta.46; Urbe.exe gerado em /tmp/urbe46-windows-proof, sem erro. Não executado em Windows físico."
+    },
+    {
+      "check": "Recuperação — self-test de consistência",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "/tmp/urbe46-consistency-selftest-clean.log: todos os checks provaram detectar suas violações. Primeira tentativa local falhou ao copiar um symlink node_modules pendurado; removido somente o symlink local não versionado antes da execução limpa."
+    }
+  ],
+  "known_issues": [
+    "CFI interoperável, RTL/paginação EPUB e fidelidade Office complexa continuam parciais conforme matriz; não são declarados completos.",
+    "Destaques persistidos como Markdown canônico e retorno por âncora/revisão; sobreposição persistente de todos os destaques em todo reader e sessão transversal completa permanecem pendentes.",
+    "Métricas físicas, codecs/YouTube real e identidade Windows exigem evidência do host; nenhuma validação de aparelho é presumida."
+  ],
+  "blockers": [
+    "Integração crítica segue o integrador governado e autorização do proprietário no PR. O pedido explícito desta sessão autoriza publicação; não há bloqueio de consentimento de envio ao repositório.",
+    "Validação física Android/Windows não realizada; não declarar aceite humano. Pipeline remoto deve concluir builds/smoke e motores de conteúdo antes de liberar beta.46."
+  ],
+  "next_actions": [
+    "Concluir rodada final Android/Windows e regressões da árvore final; atualizar evidências no PR.",
+    "Conferir CI combinado, obter a autorização crítica exigida pelo integrador, integrar e publicar beta.46 exclusivamente pelo workflow oficial; verificar ativos e SHA-256."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.6.md",
+    "ARCHITECTURE.md",
+    "docs/adr/0047-urbe-leitura-estudo-isolados.md",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/adr/0034-urbe-sem-simulacao-visual.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Mesmo armazenamento e extrator documental; citação vive na nota Markdown, sem índice paralelo de anotações."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Escolha explícita de fonte e painel sem nota automática registrados no ROADMAP e issue #902."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Leitura local sem envio automático à IA/rede; confirmação de mapas pendentes reutilizada, sem bridge nova."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes/Skia distintos de DEVICE; nenhum aceite físico presumido."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review com limites da frente integral e CI/DEVICE pendentes."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "reference-study-view",
+      "status": "product-specific",
+      "rationale": "Painel reutiliza leitores do próprio Urbe; não existe segundo consumidor aprovado que justifique extrair biblioteca ou runtime."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "architecture",
+      "security",
+      "user-data",
+      "compatibility"
+    ],
+    "reason": "Novos motores/dependências/licenças, WASM/CSP e hosts remotos, streams locais limitados e schema privado versionado. A criticidade da segunda etapa não é herdada como rotina da primeira."
+  }
+}

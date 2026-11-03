@@ -24,6 +24,17 @@ public sealed partial class MainView
             files.AddRange(all.Where(p => p.StartsWith(inside, StringComparison.Ordinal)).Select(p => (from + "/" + p[inside.Length..], p)));
         }
         if (files.Count == 0) return;
+        if (_vault.AtlasVaultSessionKey is { } vaultIdentity)
+        {
+            var vaultKey = ReaderSessionCatalog.VaultKey(vaultIdentity);
+            foreach (var (from, to) in files) ReadingState.Move(vaultKey, from, to);
+        }
+        foreach (var (from, to) in files)
+        {
+            Editor.Pinned.RetargetSource(from, to); Editor.Split.RetargetSource(from, to);
+            foreach (var reader in new[] { FilePreview, Editor.Pinned.Preview, Editor.Split.Preview })
+                await reader.RetargetSourceAsync(from, to);
+        }
         var retarget = LinkRename.Retarget(files, all);
         var cameFrom = files.ToDictionary(f => f.To, f => f.From, StringComparer.Ordinal);
         int changed = 0;

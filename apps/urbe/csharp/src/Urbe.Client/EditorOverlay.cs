@@ -289,6 +289,7 @@ public sealed class EditorOverlay : Grid
             if (!string.Equals(Editor.Text, md, StringComparison.Ordinal)) ReplaceSourceText(md);
             _fromVisual = false;
         };
+        _visual.WebLinkTapped += url => OpenWeb?.Invoke(url);
         _visual.WikiLinkTapped += name => _ = FollowLinkAsync(name);
         _visual.PinRequested += text => { if (_note is not null) Pinned.Pin(text, _note.Path); };
         _visual.BlockTimes = () => _note is { } open ? BlockTimesFor?.Invoke(open.Path) : null;
@@ -1971,13 +1972,13 @@ public sealed class EditorOverlay : Grid
     public StackPanel PluginButtons { get; } = new() { Orientation = Orientation.Horizontal, Spacing = 2 };
 
     /// <summary>A plugin's text at the caret (Fonte) or at the end of the note (Visual); the note saves by itself.</summary>
-    public void InsertText(string insert)
+    public void InsertText(string insert, bool append = false)
     {
         if (_note is null || insert.Length == 0) return;
         _visual.FinishEdit();
         var text = Editor.Text ?? "";
         var (a, b) = VisualSurface.Range(Editor);
-        if (Mode == EditorMode.Visual)
+        if (append || Mode == EditorMode.Visual)
         {
             a = b = text.Length;
             if (text.Length > 0 && !text.EndsWith('\n')) insert = "\n" + insert;
@@ -2187,8 +2188,10 @@ public sealed class EditorOverlay : Grid
             Validate: v => LegacyVisualEdit.IsValidUrl(v) ? null : "Use um endereço começando com https://"));
 
     /// <summary>bindPreviewWikiLinks: open the note a wikilink names (exact path/title, else the single case-insensitive title match).</summary>
+    public Action<string>? OpenWeb { get; set; }
     public async Task FollowLinkAsync(string name)
     {
+        if(ReaderUris.Web(name) is { } web && OpenWeb is { } open){open(web.AbsoluteUri);return;}
         // CST-120: [[Nota#Título]] / [[Nota#^id]] open the note at that part; [[#Título]] is a part of this note
         var (linkTarget, fragment) = EmbedFragments.Split(name);
         if (fragment is not null)
@@ -2215,7 +2218,7 @@ public sealed class EditorOverlay : Grid
         // CST-041: a link to a file that is not a note opens the file, never a new note named after it
         if (Files?.Invoke() is { } files && WikiTargets.ResolveFile(name, files) is { } file)
         {
-            if (OpenFile is not null) await OpenFile(file); else Notify("Arquivo: " + file);
+            if (OpenFile is not null) await OpenFile(file + ((file.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) && PdfSourceReference.Parse(fragment) is not null || PartSourceReference.Parse(fragment) is not null) ? "#" + fragment : "")); else Notify("Arquivo: " + file);
             return;
         }
         // The 1.8.4 only said the note did not exist (owner, DEC-0045): offer to create it, next to this one.

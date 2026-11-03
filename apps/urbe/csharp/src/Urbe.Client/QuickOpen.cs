@@ -346,6 +346,7 @@ public sealed class SearchFeature
         view.Editor.NewTabRequested += OpenNewTabPicker;
 
         Register("ui.quickOpen.open", "Buscar notas", "Navegação", OpenQuickOpen);
+        Register("reader.browser.open", "Navegador de estudo / YouTube", "Leitura", () => view.StudyBrowser.Open());
         Register("ui.commandPalette.open", "Abrir comandos", "Interface", OpenPalette);
         Register("ui.explorer.open", "Abrir notas", "Navegação", view.ShowNotes);
         Register("document.create", "Nova nota", "Documento", () => _ = view.CreateNoteAsync());

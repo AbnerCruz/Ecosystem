@@ -73,3 +73,4 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0043](0043-urbe-exportacao-versionamento-e-protecao-do-vault.md) | Exportação auditável, seleção manual de versões e compatibilidade granular do Urbe | Proposto |
 | [0044](0044-urbe-atlas-map-host.md) | Atlas Map V1 dentro do visualizador nativo do Urbe | Proposto |
 | [0046](0046-urbe-tags-herdadas-por-projeto.md) | Tags herdadas por projeto no Urbe | Aceito |
+| [0047](0047-urbe-leitura-estudo-isolados.md) | Leitores locais, navegador isolado e continuidade de estudo | Proposto |

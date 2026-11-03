@@ -17,6 +17,10 @@ public sealed class SplitPane : Border
 {
     private readonly TextBlock _title = new() { FontSize = 14, FontWeight = FontWeight.Bold, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
     private readonly SelectableTextBlock _article = new() { TextWrapping = TextWrapping.Wrap, FontSize = 15, LineHeight = 22 };
+    private readonly ContentControl _viewport = new();
+    private readonly ScrollViewer _scroll;
+    private readonly Button _swap;
+    public FilePreviewPanel Preview { get; } = new(embedded: true);
 
     public SplitPane()
     {
@@ -27,6 +31,7 @@ public sealed class SplitPane : Border
         _title.Foreground = UrbeTheme.Brush(UrbeTheme.Text);
         _article.Foreground = UrbeTheme.Brush(UrbeTheme.Text);
         var swap = HeadButton("⇄", "Trocar painéis");
+        _swap = swap;
         swap.Click += (_, _) => SwapRequested?.Invoke();
         var close = HeadButton("×", "Fechar");
         close.Click += (_, _) => CloseRequested?.Invoke();
@@ -36,7 +41,7 @@ public sealed class SplitPane : Border
         head.Children.Add(close);
         head.Children.Add(swap);
         head.Children.Add(_title);
-        var scroll = new ScrollViewer
+        _scroll = new ScrollViewer
         {
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Content = new Border { Padding = new Thickness(16, 4, 16, 32), Child = _article }
@@ -44,8 +49,10 @@ public sealed class SplitPane : Border
         var layout = new DockPanel();
         DockPanel.SetDock(head, Dock.Top);
         layout.Children.Add(head);
-        layout.Children.Add(scroll);
+        _viewport.Content = _scroll;
+        layout.Children.Add(_viewport);
         Child = layout;
+        SizeChanged += (_, e) => Preview.Height = Math.Max(1, e.NewSize.Height - 56);
     }
 
     /// <summary>⇄</summary>
@@ -79,6 +86,8 @@ public sealed class SplitPane : Border
     public void Show(string path, string title, string content)
     {
         Path = path;
+        _swap.IsEnabled = true;
+        _viewport.Content = _scroll;
         _title.Text = title;
         var inlines = new InlineCollection();
         var lines = content.Split('\n');
@@ -94,6 +103,17 @@ public sealed class SplitPane : Border
             if (i < lines.Length - 1) inlines.Add(new LineBreak());
         }
         _article.Inlines = inlines;
+        IsVisible = true;
+    }
+
+    public void RetargetSource(string from, string to)
+    { if (Path == from) { Path = to; _title.Text = System.IO.Path.GetFileName(to); } }
+    public void ShowFile(string path)
+    {
+        Path = path;
+        _title.Text = System.IO.Path.GetFileName(path);
+        _swap.IsEnabled = false;
+        _viewport.Content = Preview;
         IsVisible = true;
     }
 

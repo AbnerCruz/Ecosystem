@@ -407,6 +407,15 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public async Task<string?> ReaderRevisionAsync(string path, CancellationToken cancellationToken = default)
+    {
+        var uri=await DocumentOfAsync(path,cancellationToken);if(uri is null)return null;
+        return await Task.Run(async()=>
+        {
+            using var stream=Resolver.OpenInputStream(uri);
+            return stream is null?null:Convert.ToHexString(await System.Security.Cryptography.SHA256.HashDataAsync(stream,cancellationToken)).ToLowerInvariant();
+        },cancellationToken);
+    }
     public async Task<VaultFileRead?> ReadFileAsync(string path, long maxBytes, CancellationToken cancellationToken = default)
     {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);

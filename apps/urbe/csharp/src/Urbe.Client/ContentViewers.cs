@@ -5,6 +5,8 @@ using Avalonia.Media;
 
 namespace Urbe.Client;
 
+public enum ReaderContentEngine { None, Presentation, Ocr, Document }
+
 /// <summary>
 /// What a content viewer is asked to show (ADD-0023/DEC-0046): one file of the vault, by its path and kind
 /// (<see cref="Core.VaultFileKinds"/>), with its bytes when they were read, and the vault it comes from so a platform
@@ -20,6 +22,9 @@ public sealed record ContentRequest(IUrbeVaultStorage? Storage, string Path, str
 
     /// <summary>Only a validated Atlas Map V1 can request opening an existing vault note. No file or vault access is delegated.</summary>
     public Func<string, Task<bool>>? AtlasOpenNote { get; init; }
+    /// <summary>Read-only EPUB/slide navigation. Only the reader's known source parts may be opened.</summary>
+    public Action<string>? ReaderNavigate { get; init; }
+    public ReaderContentEngine ReaderEngine { get; init; }
 }
 
 /// <summary>
@@ -62,6 +67,8 @@ public static class ContentViewers
     {
         if (request.Kind == Core.VaultFileKinds.Pdf && PdfReader is { } reader && await reader(request, cancellationToken) is { } pdf)
             return new PdfPagesView(pdf);
+        if (request.Kind == Core.VaultFileKinds.Pdf && request.Bytes is { } bytes)
+            return new PdfPagesView(await PortablePdfDocument.OpenAsync(bytes, cancellationToken));
         return Factory is { } factory ? await factory(request, cancellationToken) : null;
     }
 }
@@ -96,140 +103,308 @@ public interface IPdfDocument : IDisposable
     (byte[] Rgba, int Width, int Height) Render(int index, int width);
 }
 
+/// <summary>Renders only a region of a scaled page; zoom never allocates a full enlarged page.</summary>
+public interface ITiledPdfDocument : IPdfDocument
+{
+    (byte[] Rgba, int Width, int Height) RenderRegion(int index, int pageWidth, PixelRect region);
+}
+
 /// <summary>
 /// The pages of a PDF one below the other, drawn only near what is on screen (a long PDF does not take the memory of
 /// all its pages); the document is closed when the view leaves the panel.
 /// </summary>
-public sealed class PdfPagesView : ScrollViewer
+public sealed class PdfPagesView : ScrollViewer, IDisposable
 {
-    /// <summary>Pixels a page is drawn with.</summary>
     public const int RenderWidth = 1000;
-    /// <summary>Pages kept drawn around the visible ones.</summary>
     private const int Keep = 4;
-
     private readonly IPdfDocument _doc;
-    private readonly List<Image> _pages = [];
-    private readonly StackPanel _stack = new() { Spacing = 10, Margin = new Thickness(0, 4) };
-    private bool _closed;
+    private readonly object _gate = new();
+    private readonly Canvas _surface = new();
+    private readonly Dictionary<int, Image> _pages = [];
+    private readonly Dictionary<int, int> _resolutions = [];
+    private sealed record Tile(int Page, int PageWidth, PixelRect Region);
+    private readonly Dictionary<Tile, Image> _tiles = [];
+    private readonly HashSet<Tile> _wantedTiles = [], _failedTiles = [];
+    private readonly HashSet<int> _wanted = [], _failed = [];
+    private readonly double[] _ratios, _starts;
+    private volatile bool _closed;
+    private bool _posted, _rendering, _singlePage;
+    private readonly PdfWordSelection _textSelection=new(){ZIndex=200,IsVisible=false};
+    private byte[]? _studyBytes;
+    private string? _studyPath,_studyHash;
+    private int _selectionVersion;
+    private bool _selecting;
+    public string? SelectionStatus {get;private set;}
+    public event Action<ReaderQuote>? QuoteRequested;
+    public event Action<ReaderQuote>? AskRequested;
+    public void ConfigureStudy(string path,byte[] bytes,string hash){_studyPath=path;_studyBytes=bytes;_studyHash=hash;}
+    public async Task EnableSelectionAsync(bool enabled=true)
+    {
+        if(enabled&&!_singlePage)SetSinglePage(true);
+        _selecting=enabled;_textSelection.IsVisible=enabled;
+        if(!_surface.Children.Contains(_textSelection))_surface.Children.Add(_textSelection);
+        LayoutPages();if(enabled)await LoadSelectionWordsAsync();
+    }
+    private async Task LoadSelectionWordsAsync()
+    {
+        int version=++_selectionVersion,page=CurrentPage;
+        _textSelection.SetWords([]);
+        if(_studyBytes is not { } bytes){SelectionStatus="Camada textual indisponível para esta fonte. Use OCR da região.";return;}
+        try
+        {
+            var words=await Task.Run(()=>Urbe.Core.Assistant.DocumentWordGeometry.Read(bytes,page));
+            if(_closed||version!=_selectionVersion)return;
+            _textSelection.SetWords(words);SelectionStatus=words.Count==0?"Sem palavras nesta página. Use OCR da região.":"Arraste sobre as palavras da página; use Seleção para copiar, citar, destacar ou comentar.";
+        }
+        catch(Exception ex)when(ex is not OutOfMemoryException){if(!_closed&&version==_selectionVersion)SelectionStatus="Não foi possível mapear texto desta página; use OCR da região.";}
+    }
+    public ReaderQuote? SelectedQuote(StudyAnnotationKind kind=StudyAnnotationKind.Citation) => _studyPath is { } path&&_studyHash is { } hash&&_textSelection.Selection is { } selection
+        ?new ReaderQuote(path,CurrentPage,selection.Text,hash,kind,Region:selection.Region):null;
+    public void CiteSelection(StudyAnnotationKind kind=StudyAnnotationKind.Citation,bool ask=false)
+    {if(SelectedQuote(kind) is { } quote){if(ask)AskRequested?.Invoke(quote);else QuoteRequested?.Invoke(quote);}}
 
-    /// <summary>The theme's ScrollViewer template (a subclass gets none by itself, and would not scroll).</summary>
+    private readonly Border _focusBox = new() { BorderBrush = Avalonia.Media.Brushes.DodgerBlue, BorderThickness = new Thickness(2), IsHitTestVisible = false, ZIndex = 100, IsVisible = false };
+    private (int Page, Urbe.Core.ReaderRegion Region)? _focus;
+    public Urbe.Core.ReaderRegion? FocusedRegion=>_focus?.Region;
+    public void FocusRegion(int page, Urbe.Core.ReaderRegion region)
+    {
+        page=Math.Clamp(page,1,PageCount); _focus = (page,region);
+        if (!_surface.Children.Contains(_focusBox)) _surface.Children.Add(_focusBox);
+        GoToPage(page); LayoutPages();
+        Offset = new Vector(_pageWidth * region.X, (_singlePage ? 0 : _starts[page-1]) + _pageWidth * _ratios[page-1] * region.Y);
+    }
+    private bool NeedsWork => _wanted.Any(i=>!_failed.Contains(i)&&(!_resolutions.TryGetValue(i,out int old)||old!=PixelWidth)) || _wantedTiles.Any(t=>!_tiles.ContainsKey(t)&&!_failedTiles.Contains(t));
+    private double _pageWidth = 1;
+    public double Zoom { get; private set; } = 1;
+    public int PageCount { get; }
+    public int CurrentPage { get; private set; } = 1;
+    public event Action<int>? PageChanged;
+    public int MaterializedTiles => _tiles.Count;
+    public int MaterializedPages => _pages.Count;
+    public IReadOnlyList<int> Drawn => _pages.Where(p => p.Value.Source is not null).Select(p => p.Key).Order().ToArray();
     protected override Type StyleKeyOverride => typeof(ScrollViewer);
 
     public PdfPagesView(IPdfDocument doc)
     {
         _doc = doc;
-        HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled;
+        PageCount = doc.PageCount;
+        _ratios = Enumerable.Repeat(1.414, PageCount).ToArray();
+        _starts = new double[PageCount + 1];
         Background = UrbeTheme.Brush(UrbeTheme.Bg);
-        for (int i = 0; i < doc.PageCount; i++)
-        {
-            var size = doc.PageSize(i);
-            var image = new Image { Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Center };
-            // the page's place is kept even before it is drawn, so scrolling does not jump
-            var frame = new Border
-            {
-                Background = Brushes.White, Child = image, HorizontalAlignment = HorizontalAlignment.Stretch,
-                Tag = size.Width > 0 ? size.Height / size.Width : 1.414
-            };
-            _pages.Add(image);
-            _stack.Children.Add(frame);
-        }
-        Content = _stack;
+        HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto;
+        Content = _surface;
         ScrollChanged += (_, _) => DrawSoon();
-        SizeChanged += (_, e) =>
-        {
-            foreach (var frame in _stack.Children.OfType<Border>())
-                frame.Height = Math.Max(1, e.NewSize.Width) * (double)frame.Tag!;
-            DrawSoon();
-        };
-        Loaded += (_, _) => DrawSoon();
-        DetachedFromVisualTree += (_, _) => Close();
+        SizeChanged += (_, _) => { LayoutPages(); DrawSoon(); };
+        Loaded += (_, _) => { LayoutPages(); DrawSoon(); };
+        DetachedFromVisualTree += (_, _) => Dispose();
     }
 
-    /// <summary>The pages drawn now (tests).</summary>
-    public IReadOnlyList<int> Drawn => _pages.Select((p, i) => (p, i)).Where(x => x.p.Source is not null).Select(x => x.i).ToList();
+    public bool SinglePage => _singlePage;
+    public void SetSinglePage(bool single)
+    { if(!single){_selecting=false;_textSelection.IsVisible=false;_selectionVersion++;} _singlePage = single; LayoutPages(); GoToPage(CurrentPage); }
+    public void SetZoom(double zoom)
+    {
+        if (_closed || !double.IsFinite(zoom) || zoom < .25 || zoom > 16) return;
+        int page = CurrentPage;
+        Zoom = zoom;
+        _failed.Clear();
+        LayoutPages();
+        GoToPage(page);
+    }
 
-    public int PageCount => _pages.Count;
+    private void LayoutPages()
+    {
+        _pageWidth = Math.Max(1, Viewport.Width > 1 ? Viewport.Width : Bounds.Width) * Zoom;
+        for (int i = 0; i < PageCount; i++) _starts[i + 1] = _starts[i] + _pageWidth * _ratios[i] + 10;
+        _surface.Width = _pageWidth;
+        _surface.Height = Math.Max(1, _singlePage ? _pageWidth * _ratios[Math.Max(0, CurrentPage - 1)] : _starts[^1]);
+        foreach (var (index, image) in _pages) Place(index, image);
+        _textSelection.Width=_pageWidth;_textSelection.Height=_pageWidth*_ratios[Math.Max(0,CurrentPage-1)];Canvas.SetTop(_textSelection,_singlePage?0:_starts[Math.Max(0,CurrentPage-1)]);
+        if (_focus is { } focus)
+        {
+            var r = focus.Region; double height = _pageWidth * _ratios[focus.Page-1];
+            _focusBox.IsVisible = !_singlePage || focus.Page == CurrentPage;
+            Canvas.SetLeft(_focusBox,r.X*_pageWidth);Canvas.SetTop(_focusBox,(_singlePage?0:_starts[focus.Page-1])+r.Y*height);
+            _focusBox.Width=r.Width*_pageWidth;_focusBox.Height=r.Height*height;
+        }
+    }
 
-    /// <summary>One-based visible page, independent of whether its bitmap is cached.</summary>
-    public int CurrentPage { get; private set; } = 1;
+    private void Place(int index, Image image)
+    {
+        image.IsVisible = !_singlePage || index == CurrentPage - 1;
+        Canvas.SetTop(image, _singlePage ? 0 : _starts[index]);
+        image.Width = _pageWidth;
+        image.Height = _pageWidth * _ratios[index];
+    }
 
-    /// <summary>Navigation updates when a different page becomes visible.</summary>
-    public event Action<int>? PageChanged;
-
-    /// <summary>Jump to a physical page without materializing all its bitmaps.</summary>
     public void GoToPage(int page)
     {
         if (_closed || PageCount == 0) return;
         int index = Math.Clamp(page - 1, 0, PageCount - 1);
-        double y = 0;
-        for (int i = 0; i < index; i++)
-        {
-            var frame = _stack.Children[i];
-            var height = frame.Bounds.Height;
-            if (height <= 0 && frame is Border border && border.Tag is double ratio)
-                height = Math.Max(1, Bounds.Width) * ratio;
-            y += height + _stack.Spacing;
-        }
-        Offset = new Vector(0, y);
-        // The ScrollViewer will clamp at the end; the visible page is reconciled by DrawVisible.
+        if (_singlePage) { CurrentPage = index + 1; PageChanged?.Invoke(CurrentPage); LayoutPages(); if(_selecting)_ = LoadSelectionWordsAsync(); }
+        Offset = new Vector(Offset.X, _singlePage ? 0 : _starts[index]);
         DrawSoon();
     }
 
-    private bool _drawPosted;
+    private int PageAt(double y)
+    {
+        int i = Array.BinarySearch(_starts, Math.Max(0, y));
+        if (i < 0) i = ~i - 1;
+        return Math.Clamp(i, 0, PageCount - 1);
+    }
 
-    /// <summary>Draws after the pages have their place (the layout runs before background work).</summary>
     private void DrawSoon()
     {
-        if (_drawPosted) return;
-        _drawPosted = true;
-        Avalonia.Threading.Dispatcher.UIThread.Post(() => { _drawPosted = false; DrawVisible(); }, Avalonia.Threading.DispatcherPriority.Background);
+        if (_posted || _closed) return;
+        _posted = true;
+        Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+        {
+            _posted = false;
+            DrawVisible();
+        }, Avalonia.Threading.DispatcherPriority.Background);
     }
 
     private void DrawVisible()
     {
-        if (_closed || _pages.Count == 0) return;
-        double top = Offset.Y, bottom = top + Math.Max(1, Viewport.Height);
-        int first = -1, last = -1;
-        double y = 0;
-        for (int i = 0; i < _stack.Children.Count; i++)
+        if (_closed || PageCount == 0) return;
+        int first = _singlePage ? CurrentPage - 1 : PageAt(Offset.Y), last = _singlePage ? first : PageAt(Offset.Y + Math.Max(1, Viewport.Height));
+        bool end = !_singlePage && Extent.Height > Viewport.Height + 1 && Offset.Y + Viewport.Height >= Extent.Height - 2;
+        int page = end ? PageCount : first + 1;
+        if (CurrentPage != page) { CurrentPage = page; PageChanged?.Invoke(page); }
+        _wanted.Clear();
+        for (int i = Math.Max(0, first - 1); i <= Math.Min(PageCount - 1, last + 1); i++)
         {
-            double h = _stack.Children[i].Bounds.Height + _stack.Spacing;
-            if (y + h >= top && y <= bottom) { if (first < 0) first = i; last = i; }
-            y += h;
+            _wanted.Add(i);
+            if (_pages.ContainsKey(i)) continue;
+            var image = new Image { Stretch = Stretch.Fill };
+            _pages[i] = image;
+            _surface.Children.Add(image);
+            Place(i, image);
         }
-        if (first < 0) { first = 0; last = 0; }
-        // At the bottom the final page may not align to the viewport top.
-        // Report it as current so "Próxima" doesn't remain enabled forever.
-        bool atEnd = Extent.Height > Viewport.Height + 1 &&
-            Offset.Y + Viewport.Height >= Extent.Height - 2;
-        int page = atEnd ? PageCount : first + 1;
-        if (CurrentPage != page)
+        foreach (int i in _pages.Keys.Where(i => i < first - Keep || i > last + Keep).ToArray())
         {
-            CurrentPage = page;
-            PageChanged?.Invoke(page);
+            var image = _pages[i];
+            _surface.Children.Remove(image);
+            if (image.Source is IDisposable bitmap) { image.Source = null; bitmap.Dispose(); }
+            _pages.Remove(i); _resolutions.Remove(i); _failed.Remove(i);
         }
-        for (int i = 0; i < _pages.Count; i++)
+        UpdateTiles(first, last);
+        if (!_rendering && NeedsWork) _ = RenderAsync();
+    }
+
+    private double DisplayScale => TopLevel.GetTopLevel(this)?.RenderScaling ?? 1;
+    private int FullPixelWidth => Math.Max(RenderWidth, (int)Math.Ceiling(_pageWidth * DisplayScale));
+    private int PixelWidth => Math.Min(1600, FullPixelWidth);
+    private void UpdateTiles(int first, int last)
+    {
+        _wantedTiles.Clear();
+        if (_doc is ITiledPdfDocument && FullPixelWidth > 1600)
         {
-            bool near = i >= first - 1 && i <= last + 1;
-            if (near && _pages[i].Source is null)
+            int full = FullPixelWidth; double scale = full / _pageWidth;
+            for (int page = first; page <= last; page++)
             {
-                var (rgba, w, h) = _doc.Render(i, RenderWidth);
-                _pages[i].Source = Pixels.ToBitmap(rgba, w, h);
+                double top = _singlePage ? 0 : _starts[page];
+                int height = (int)Math.Ceiling(full * _ratios[page]);
+                int x1 = Math.Max(0, (int)(Offset.X * scale) / 1024 * 1024);
+                int y1 = Math.Max(0, (int)((Offset.Y - top) * scale) / 1024 * 1024);
+                int x2 = Math.Min(full, (int)Math.Ceiling((Offset.X + Viewport.Width) * scale));
+                int y2 = Math.Min(height, (int)Math.Ceiling((Offset.Y + Viewport.Height - top) * scale));
+                for (int y = y1; y < y2; y += 1024)
+                    for (int x = x1; x < x2; x += 1024)
+                        _wantedTiles.Add(new Tile(page,full,new PixelRect(x,y,Math.Min(1024,full-x),Math.Min(1024,height-y))));
             }
-            else if (!near && (i < first - Keep || i > last + Keep) && _pages[i].Source is IDisposable old)
+        }
+        foreach (var key in _tiles.Keys.Where(t => !_wantedTiles.Contains(t)).ToArray())
+        { var image = _tiles[key]; _surface.Children.Remove(image); (image.Source as IDisposable)?.Dispose(); _tiles.Remove(key); }
+        _failedTiles.RemoveWhere(t=>!_wantedTiles.Contains(t));
+    }
+
+    private async Task RenderTilesAsync()
+    {
+        if (_doc is not ITiledPdfDocument tiled) return;
+        while (!_closed)
+        {
+            var tile = _wantedTiles.FirstOrDefault(t => !_tiles.ContainsKey(t) && !_failedTiles.Contains(t));
+            if (tile is null) return;
+            try
             {
-                _pages[i].Source = null;
-                old.Dispose();
+                var pixels = await Task.Run(() => { lock (_gate) { ObjectDisposedException.ThrowIf(_closed, this); return tiled.RenderRegion(tile.Page,tile.PageWidth,tile.Region); } });
+                if (_closed) return;
+                if (!_wantedTiles.Contains(tile)) continue;
+                double scale = _pageWidth / tile.PageWidth;
+                var image = new Image { Source = Pixels.ToBitmap(pixels.Rgba,pixels.Width,pixels.Height), Width = tile.Region.Width * scale, Height = tile.Region.Height * scale, Stretch = Stretch.Fill, IsHitTestVisible = false };
+                Canvas.SetLeft(image,tile.Region.X * scale); Canvas.SetTop(image,(_singlePage ? 0 : _starts[tile.Page]) + tile.Region.Y * scale);
+                _tiles[tile] = image; _surface.Children.Add(image);
             }
+            catch (Exception ex) when (ex is not OutOfMemoryException) { _failedTiles.Add(tile); }
         }
     }
 
-    private void Close()
+    private async Task RenderAsync()
+    {
+        _rendering = true;
+        try
+        {
+            while (!_closed)
+            {
+                int width = PixelWidth;
+                int index = _wanted.OrderBy(i => Math.Abs(i - (CurrentPage - 1))).FirstOrDefault(i => !_failed.Contains(i) &&
+                    (!_resolutions.TryGetValue(i, out int old) || old != width), -1);
+                if (index < 0) break;
+                try
+                {
+                    var rendered = await Task.Run(() =>
+                    {
+                        lock (_gate)
+                        {
+                            if (_closed) return ((byte[] Rgba, int Width, int Height)?)null;
+                            return _doc.Render(index, width);
+                        }
+                    });
+                    if (_closed) break;
+                    if (rendered is not { } pixels || !_wanted.Contains(index) || width != PixelWidth) continue;
+                    if (!_pages.TryGetValue(index, out var image)) continue;
+                    double ratio = (double)pixels.Height / pixels.Width;
+                    if (Math.Abs(_ratios[index] - ratio) > .001)
+                    {
+                        var within = Offset.Y - _starts[CurrentPage - 1];
+                        _ratios[index] = ratio;
+                        LayoutPages(); DrawSoon();
+                        Offset = new Vector(Offset.X, _singlePage ? 0 : _starts[CurrentPage - 1] + within);
+                    }
+                    var old = image.Source as IDisposable;
+                    image.Source = Pixels.ToBitmap(pixels.Rgba, pixels.Width, pixels.Height);
+                    old?.Dispose();
+                    _resolutions[index] = width;
+                }
+                catch (Exception ex) when (ex is not OutOfMemoryException)
+                { _failed.Add(index); ToolTip.SetTip(this, "Não foi possível renderizar uma página deste PDF."); }
+            }
+        }
+        finally { try { if (!_closed) await RenderTilesAsync(); } finally { _rendering = false; if (!_closed && NeedsWork) DrawSoon(); } }
+    }
+
+    public Task<byte[]> CapturePageAsync(int page, int width = 2000) => Task.Run(() =>
+    {
+        lock (_gate)
+        {
+            ObjectDisposedException.ThrowIf(_closed, this);
+            var pixels = _doc.Render(Math.Clamp(page - 1, 0, PageCount - 1), width);
+            using var bitmap = Pixels.ToBitmap(pixels.Rgba, pixels.Width, pixels.Height);
+            using var stream = new MemoryStream(); bitmap.Save(stream, Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default); return stream.ToArray();
+        }
+    });
+
+    public void Dispose()
     {
         if (_closed) return;
         _closed = true;
-        foreach (var p in _pages) if (p.Source is IDisposable d) { p.Source = null; d.Dispose(); }
-        _doc.Dispose();
+        foreach (var image in _pages.Values)
+            if (image.Source is IDisposable bitmap) { image.Source = null; bitmap.Dispose(); }
+        foreach (var image in _tiles.Values) (image.Source as IDisposable)?.Dispose();
+        _tiles.Clear(); _wantedTiles.Clear();
+        _pages.Clear(); _wanted.Clear(); _surface.Children.Clear();
+        _ = Task.Run(() => { lock (_gate) _doc.Dispose(); });
     }
 }
 

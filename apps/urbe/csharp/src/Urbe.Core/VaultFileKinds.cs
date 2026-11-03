@@ -11,12 +11,13 @@ public static partial class VaultFileKinds
 {
     public const string Image = "image", Audio = "audio", Video = "video", Pdf = "pdf", Html = "html", Zip = "zip", Other = "other";
     public const string Epub = "epub", Slides = "slides", Document = "document";
+    public const string Comic = "comic";
 
     /// <summary>classificarArquivo(rel).</summary>
     public static string Classify(string path) =>
         ImageRe().IsMatch(path) ? Image : AudioRe().IsMatch(path) ? Audio : VideoRe().IsMatch(path) ? Video
         : PdfRe().IsMatch(path) ? Pdf : HtmlRe().IsMatch(path) ? Html
-        : EpubRe().IsMatch(path) ? Epub : SlidesRe().IsMatch(path) ? Slides
+        : EpubRe().IsMatch(path) ? Epub : ComicRe().IsMatch(path) ? Comic : SlidesRe().IsMatch(path) ? Slides
         : DocumentRe().IsMatch(path) ? Document : ZipRe().IsMatch(path) ? Zip : Other;
 
     /// <summary>rotuloClasse(c).</summary>
@@ -24,6 +25,7 @@ public static partial class VaultFileKinds
     {
         Image => "Imagem", Audio => "Áudio", Video => "Vídeo", Pdf => "PDF", Html => "HTML",
         Epub => "EPUB", Slides => "Apresentação", Document => "Documento",
+        Comic => "Quadrinhos",
         Zip => "Arquivo compactado", _ => "Arquivo"
     };
 
@@ -41,10 +43,10 @@ public static partial class VaultFileKinds
     /// <summary>The MIME type a file of this name is opened with outside the app.</summary>
     public static string Mime(string path) => System.IO.Path.GetExtension(path).ToLowerInvariant() switch
     {
-        ".png" => "image/png", ".jpg" or ".jpeg" => "image/jpeg", ".gif" => "image/gif", ".webp" => "image/webp", ".svg" => "image/svg+xml",
+        ".png" => "image/png", ".jpg" or ".jpeg" => "image/jpeg", ".gif" => "image/gif", ".webp" => "image/webp", ".svg" => "image/svg+xml", ".bmp" => "image/bmp",
         ".mp3" => "audio/mpeg", ".wav" => "audio/wav", ".ogg" => "audio/ogg", ".m4a" => "audio/mp4", ".aac" => "audio/aac", ".flac" => "audio/flac",
         ".mp4" or ".m4v" => "video/mp4", ".webm" => "video/webm", ".mov" => "video/quicktime", ".mkv" => "video/x-matroska", ".avi" => "video/x-msvideo",
-        ".pdf" => "application/pdf", ".html" or ".htm" or ".xhtml" => "text/html", ".zip" => "application/zip",
+        ".pdf" => "application/pdf", ".html" or ".htm" or ".xhtml" => "text/html", ".zip" => "application/zip", ".cbz" => "application/vnd.comicbook+zip",
         ".epub" => "application/epub+zip",
         ".pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
         ".ppt" => "application/vnd.ms-powerpoint", ".odp" => "application/vnd.oasis.opendocument.presentation",
@@ -59,7 +61,8 @@ public static partial class VaultFileKinds
     [GeneratedRegex(@"\.(mp4|webm|mov|mkv|avi|m4v)$", RegexOptions.IgnoreCase)] private static partial Regex VideoRe();
     [GeneratedRegex(@"\.pdf$", RegexOptions.IgnoreCase)] private static partial Regex PdfRe();
     [GeneratedRegex(@"\.(html?|xhtml)$", RegexOptions.IgnoreCase)] private static partial Regex HtmlRe();
-    [GeneratedRegex(@"\.(epub)$", RegexOptions.IgnoreCase)] private static partial Regex EpubRe();
+    [GeneratedRegex(@"\.epub$", RegexOptions.IgnoreCase)] private static partial Regex EpubRe();
+    [GeneratedRegex(@"\.cbz$", RegexOptions.IgnoreCase)] private static partial Regex ComicRe();
     [GeneratedRegex(@"\.(ppt|pptx|odp)$", RegexOptions.IgnoreCase)] private static partial Regex SlidesRe();
     [GeneratedRegex(@"\.(doc|docx|odt|rtf)$", RegexOptions.IgnoreCase)] private static partial Regex DocumentRe();
     [GeneratedRegex(@"\.(zip|7z|rar|tar|gz)$", RegexOptions.IgnoreCase)] private static partial Regex ZipRe();
