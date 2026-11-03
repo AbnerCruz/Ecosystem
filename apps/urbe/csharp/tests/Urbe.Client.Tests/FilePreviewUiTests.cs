@@ -55,18 +55,20 @@ public sealed partial class HeadlessUiTests
                 Assert.Equal("a.md\npasta/b.png", preview.ShownText);
 
                 await preview.OpenAsync("livro.pdf");
-                Assert.Equal("none", preview.Shown);
+                Assert.Equal("text", preview.Shown);
+                Assert.Contains(preview.GetLogicalDescendants().OfType<TextBlock>(), t =>
+                    (t.Text ?? "").Contains("Não foi possível extrair esta página", StringComparison.Ordinal));
                 Assert.Contains(preview.GetLogicalDescendants().OfType<Button>(), b => b.Content as string == "Abrir em outro app" && b.IsVisible);
 
                 await preview.OpenAsync("livro.epub");
                 Assert.Contains(preview.GetLogicalDescendants().OfType<TextBlock>(),
-                    t => (t.Text ?? "").Contains("O leitor interno deste formato está em desenvolvimento", StringComparison.Ordinal));
+                    t => (t.Text ?? "").Contains("Não foi possível abrir o arquivo de leitura", StringComparison.Ordinal));
                 Assert.Contains(preview.GetLogicalDescendants().OfType<Button>(),
                     b => b.Content as string == "Abrir em outro app" && b.IsVisible);
 
                 await preview.OpenAsync("aula.pptx");
                 Assert.Contains(preview.GetLogicalDescendants().OfType<TextBlock>(),
-                    t => (t.Text ?? "").Contains("O leitor interno deste formato está em desenvolvimento", StringComparison.Ordinal));
+                    t => (t.Text ?? "").Contains("Não foi possível abrir o arquivo de leitura", StringComparison.Ordinal));
 
                 await preview.OpenAsync("sumiu.png");
                 Assert.Contains(preview.GetLogicalDescendants().OfType<TextBlock>(), t => t.Text == "Arquivo não encontrado");

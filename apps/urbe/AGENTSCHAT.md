@@ -663,3 +663,11 @@
 - Eficiência na fonte: leituras por revisão, intervalo exato, no-op antes de aprovação/escrita/revisão e evidência repetida referenciada somente com original presente no contexto. Histórico bruto preservado.
 - Validação final local: build Release sem avisos/erros, 841 Core e 246 UI aprovados. CI inicial Android/Windows verde; atualização final e release beta.31 pendentes.
 - Versão beta.31 preparada; integração crítica continua pelo integrador, sem simular autorização do proprietário.
+
+### 2026-11-02 — Codex — CST-023/232/233/239/240 / Issue #902
+- Estado: blocked para publicação na branch `feat/urbe-reference-study-workspace`, base main `672b612b` (beta.45). Revisão automática bloqueou git push por exigir autorização explícita para repositório público; não houve publicação alternativa.
+- Pedido: painel vazio, escolha explícita de qualquer arquivo e conclusão da frente de estudo. Este incremento não declara a solicitação integral concluída.
+- Implementado: seletor universal para painel/split; viewers embutidos; PDF textual offline com busca, seleção, citação em nota e retorno por página/hash, preservando seleção autoral e denunciando revisão alterada.
+- Pesquisa/confronto e pendências integrais: `docs/csharp/REFERENCE-STUDY-20261102.md`; Numa 2.6 permanece canônico.
+- Verificação: 1.310 Core + 467 Client aprovados; builds Client/Desktop sem avisos; 22 checks de consistency passaram. CI remoto não iniciado por bloqueio de publicação; DEVICE pendente. Evidências no handoff.
+- Não houve corte de release, mudança de identidade/assinatura/licença/dependências nem novo índice persistido. Integração somente governada; não fechar #902, que abrange a frente completa.

@@ -135,6 +135,7 @@ public sealed class VisualSurface : StackPanel
     }
     public event Action<string>? TextEdited;
     public event Action<string>? WikiLinkTapped;
+    public event Action<string>? WebLinkTapped;
 
     /// <summary>A card for a <c>![[destino]]</c> line (a note, an image, a file shown in place), or null for the plain link.</summary>
     public Func<string, Control?>? EmbedFor { get; set; }
@@ -406,6 +407,7 @@ public sealed class VisualSurface : StackPanel
             ProgressNoteResolver = ProgressNoteResolver,
             ProgressEditRequested = _readOnly || AskProgress is null ? null : body => _ = EditProgressAsync(block, body),
             WikiLinkTapped = name => WikiLinkTapped?.Invoke(name),
+            WebLinkTapped = url => WebLinkTapped?.Invoke(url),
             EmbedFor = EmbedFor,
             // a task inside a container: the tap edits the block (its list lines are not the block's lines)
             TaskToggled = container ? null : (line, on) => ToggleTask(block, line, on),

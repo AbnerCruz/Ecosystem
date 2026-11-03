@@ -90,3 +90,43 @@ Nenhuma migração, arquivo de configuração ou banco de progresso novo. `progr
 `.publication.json` mantém `schemaVersion=1`, sem novo campo persistido: `design.layout` reconhece `article`, `book`, `slides`; `design.theme` reconhece `paper`, `ocean`, `ink`. `sources[].fragment` já reservado agora resolve títulos únicos e marcadores `^id` existentes; seleção ausente/ambígua é fonte indisponível e números de linha são recusados. Nenhum offset vira ID permanente. Cada `sections[].id` identifica a peça, inclusive quando várias usam a mesma nota. Histórico de composição é transitório por sessão e não substitui o histórico das notas.
 
 EPUB é snapshot de distribuição gerado sob comando, com OPF, navegação, spine, XHTML e recursos locais. Não é nova fonte de verdade nem formato de importação automática. Editar o EPUB externo não edita o vault. O seletor nativo usa `application/epub+zip`; cancelar não anuncia salvamento. Fontes não suportadas ou alteradas durante a exportação geram erro, não sucesso parcial silencioso.
+
+## CST-230/241 — continuidade de leitores (ADR-0047 proposto; implementação local)
+
+Arquivo privado opcional adjacente ao estado local: `<LocalStatePath>.readers.v1.json`.
+Autoridade do schema: `Urbe.Core/ReaderSessions.cs`; IO único compartilhado:
+`ReadingStateFile`. Envelope `{version:1,entries:[...]}`. Entrada: `vaultId`
+(SHA-256 da identidade nativa da pasta/URI, não o nome exibido), `path`,
+`revision` (SHA-256 dos bytes), `format`, `location:{part,offset,scroll}`,
+`preferences:{fontSize,lineHeight,zoom,theme}`, `updated` (Unix ms), `deleted`.
+Partes são positivas; capítulos/slides não são páginas físicas do EPUB refluível.
+Offset refere-se ao texto da revisão exata; scroll é proporção auxiliar.
+
+Não há cópia de notas, OCR, seleção autoral, páginas privadas, credenciais ou
+telemetria nessa projeção. Notas/anotações/citações pertencem ao Markdown real
+e passam pelo editor e writer verificados. Ler nunca grava o original. Ausência
+do arquivo inicia vazio; não migra notas nem metadados de vault. Revisão diferente
+não restaura uma posição como exata. Renomear/mover remapeia entradas e grava um
+tombstone no caminho antigo para não ressuscitá-lo ao mesclar escritores.
+
+IO serial, debounce, lock por arquivo, escrita temporária, rename atômico e
+releitura exata. Mesclagem preserva modificações mais recentes; em empate, o
+snapshot que está sendo gravado prevalece sobre disco, e alterações em memória
+que ocorreram durante IO não são substituídas por esse disco. JSON inválido ou
+versão futura é preservado e bloqueia escrita. Falha não anuncia salvamento da
+posição. `.lock` e `.tmp-*` são artefatos técnicos privados, sem texto autoral.
+Revisão/schema dependem do gate crítico do ADR antes da integração/release.
+
+Citações continuam Markdown interoperável: `page=`, `chapter=`, `slide=`,
+`image=` e `time=` em wikilinks, com `sha256=`; seleção acrescenta `text=` e
+`length=`, região acrescenta `region=x,y,largura,altura` normalizada. OCR tem
+rótulo estimado/revisado, idioma e rotação legíveis na própria nota; não vira
+transcrição certificada. Alteração da fonte bloqueia o retorno exato. Editar ou
+remover uma anotação usa a própria nota/undo/lixeira, sem banco oculto de texto.
+
+Perfis WebView2 privados: `Urbe/reader-local-webview` e
+`Urbe/reader-browser-webview`. Perfil local só recebe conteúdo sem acesso a
+arquivos genéricos; browser remoto não ganha bridge, host objects ou permissões
+do vault. Android usa origem local/CSP para documento e WebView remoto; não se
+afirma multi-profile universal. Cache/cookies remotos pertencem ao WebView do
+sistema; não são exportados nem copiados para notas automaticamente.

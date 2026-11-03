@@ -7,6 +7,18 @@
 > **Estado de um gate:** linha `*Estado do gate:* **aprovado**`, `**aguardando**` ou `**não iniciado**` logo depois de cada `**Gate:**`.
 > **Nenhuma fase escolhe a pilha de UI ou de hosts antes de UC-5**, e nenhum código C# de produto entra antes de UC-7 e do gate G-C0.
 
+### Leitura e estudo — exigência integral do proprietário, 02/11/2026
+
+A frente CST-229–246 do Numa 2.6 §4.17 permanece em implementação local na
+issue #902. O painel abre vazio, com seleção explícita de qualquer tipo de
+arquivo. O proprietário rejeitou encerrar no incremento PDF textual. A segunda
+etapa acrescenta motores de conteúdo, OCR local, browser e continuidade, com
+ADR-0047 proposto e classificação crítica. Escopo, matriz e critérios ainda
+abertos em [REFERENCE-STUDY-20261102.md](REFERENCE-STUDY-20261102.md).
+Nenhum `[x]` ou aceite físico decorre de compilação/teste headless. Publicação
+da branch foi rejeitada por revisão automática; não há PR ou release desse
+conjunto. A implementação autorizada continua sem contornar esse bloqueio.
+
 ## O Urbe sem a simulação visual — proprietário, 22/10/2026 (DEC-0051)
 
 **Esta seção prevalece sobre todas as seções abaixo onde houver conflito.** Fontes: DEC-0051, [ADD-0028](../../../../docs/governance/addenda/ADD-0028-urbe-sem-simulacao-visual.md) e [ADR-0034](../../../../docs/adr/0034-urbe-sem-simulacao-visual.md).
@@ -450,3 +462,15 @@ Issue [#793](https://github.com/AbnerCruz/Ecosystem/issues/793), ADR-0043 (propo
 - [ ] CI Core/Client/consistency/Android/Windows/E2E em estado combinado; teste com notas grandes e teclado/IME/seleção no Android físico.
 - [ ] Publicação beta na sequência canônica via release oficial, identidade/certificado preservados e validação do APK; integração crítica somente por gate autorizado.
 - Referências, implementação e critérios em `apps/urbe/docs/csharp/EDITOR-INTERACTION-STABILITY-20261026.md`; PR #808.
+
+## CST-023 / CST-232–240 — painel escolhido pela pessoa e estudo PDF (02/11/2026)
+
+Issue [#902](https://github.com/AbnerCruz/Ecosystem/issues/902); branch `feat/urbe-reference-study-workspace`. Direção explícita do proprietário: abrir o painel **sem nota automática**, escolher o que permanece fixo **sem filtrar extensão**. Não altera a retomada da nota principal do app; trata da fonte de referência do painel.
+
+- [~] Painel vazio com busca de todos os arquivos; notas por MarkdownReader e demais fontes pelo visualizador embutido, com incompatibilidade explícita quando não há renderer. Navegar no editor preserva a fonte escolhida; troca de vault/desafixar libera o viewer.
+- [~] Split permite arquivos além das notas; seletor pesquisável e mesma fábrica de visualização, sem segunda implementação de renderização.
+- [~] PDF: modo de texto selecionável, página e pesquisa com continuação offline, pelo extrator canônico; citação para nota existente/nova e retorno à página com hash da revisão. Arquivo alterado não é reancorado silenciosamente. Não equivale a OCR nem seleção geométrica sobre o raster.
+- [ ] CI Android/Windows e prova física de toque, teclado, IME, layout, navegação/retorno e descarte dos viewers.
+- [ ] Concluir os demais critérios CST-229–246 (EPUB, navegador/YouTube, slides/documentos, OCR, marcações, persistência de sessão, PDF visual Windows, virtualização/corpus). Nenhum desses itens é fechado por este incremento.
+
+Pesquisa, confronto, fluxo e limitações: [REFERENCE-STUDY-20261102.md](REFERENCE-STUDY-20261102.md). Fonte canônica do escopo integral: Numa 2.6 §4.17; as caixas acima são rastreio do incremento e continuam abertas até suas evidências.

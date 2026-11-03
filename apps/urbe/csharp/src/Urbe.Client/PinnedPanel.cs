@@ -27,10 +27,55 @@ public sealed class PinnedPanel : Border
         HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
         VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto
     };
+    private readonly ContentControl _content = new();
+    public FilePreviewPanel Preview { get; } = new(embedded: true);
+    public Func<IEnumerable<string>>? Files { get; set; }
+    public Func<string, string?>? NoteText { get; set; }
+    public IUrbeVaultStorage? Storage { get => Preview.Storage; set => Preview.Storage = value; }
+    private readonly TextBox _filter = new() { PlaceholderText = "Buscar arquivo pelo nome ou caminho" };
+    private readonly ListBox _choices = new() { MinHeight = 64 };
+    private readonly DockPanel _chooser = new();
+
+    /// <summary>Opening the panel never chooses the current editor note.</summary>
+    public void Open()
+    {
+        IsVisible = true;
+        if (SourcePath is null) ShowChooser();
+    }
+
+    private void ShowChooser()
+    {
+        _choices.SelectedIndex = -1;
+        _from.Text = "Escolha o que deixar fixo";
+        _content.Content = _chooser;
+        FilterFiles();
+    }
+
+    private void FilterFiles() => _choices.ItemsSource = (Files?.Invoke() ?? [])
+        .Distinct(StringComparer.Ordinal).Where(p => p.Contains(_filter.Text ?? "", StringComparison.OrdinalIgnoreCase))
+        .Order(StringComparer.OrdinalIgnoreCase).ToArray();
+
+    public async Task<bool> OpenFileAsync(string path)
+    {
+        if (!await Preview.TryCloseAsync()) return false;
+        if (NoteText?.Invoke(path) is { } markdown) { Pin(markdown, path); return true; }
+        Text = null;
+        _scroll.Content = null;
+        SourcePath = path;
+        IsVisible = true;
+        _from.Text = "Fixado de " + System.IO.Path.GetFileName(path);
+        _content.Content = Preview;
+        await Preview.OpenAsync(path);
+        return true;
+    }
 
     public PinnedPanel()
     {
+        DockPanel.SetDock(_filter, Dock.Top);
+        _chooser.Children.Add(_filter);
+        _chooser.Children.Add(_choices);
         IsVisible = false;
+        ClipToBounds = true;
         Background = UrbeTheme.Brush(UrbeTheme.Surface);
         BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent, .35);
         BorderThickness = new Thickness(0, 0, 0, 2);
@@ -43,7 +88,7 @@ public sealed class PinnedPanel : Border
             HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
         };
         ToolTip.SetTip(close, "Desafixar");
-        close.Click += (_, _) => Unpin();
+        close.Click += async (_, _) => await TryUnpinAsync();
         var pin = UrbeTheme.Icon(UrbeTheme.Icons.Pin, 15, UrbeTheme.Accent, 1.8);
         pin.VerticalAlignment = VerticalAlignment.Center;
         var head = new DockPanel { Margin = new Thickness(0, 0, 0, 4) };
@@ -51,16 +96,37 @@ public sealed class PinnedPanel : Border
         DockPanel.SetDock(pin, Dock.Left);
         head.Children.Add(close);
         head.Children.Add(pin);
+        var choose = new Button { Content = "Escolher arquivo", MinHeight = 36, Padding = new Thickness(8, 0) };
+        DockPanel.SetDock(choose, Dock.Right);
+        head.Children.Add(choose);
+        choose.Click += async (_, _) =>
+        {
+            if (!await Preview.TryCloseAsync()) return;
+            Text = SourcePath = null;
+            _scroll.Content = null;
+            ShowChooser();
+        };
+        _filter.TextChanged += (_, _) => FilterFiles();
+        _choices.SelectionChanged += async (_, _) =>
+        {
+            if (_choices.SelectedItem is string path) await OpenFileAsync(path);
+        };
         _from.Margin = new Thickness(6, 0);
         head.Children.Add(_from);
         _scroll.Padding = new Thickness(0, 0, 8, 0);
         var grid = new Grid { RowDefinitions = new RowDefinitions("Auto,*") };
         grid.Children.Add(head);
-        Grid.SetRow(_scroll, 1);
-        grid.Children.Add(_scroll);
+        Grid.SetRow(_content, 1);
+        grid.Children.Add(_content);
         Child = grid;
+        Height = 250;
     }
 
+    public void RetargetSource(string from, string to)
+    {
+        if (SourcePath != from) return;
+        SourcePath = to; _from.Text = "Fixado de " + System.IO.Path.GetFileName(to);
+    }
     /// <summary>The pinned Markdown, or null when nothing is pinned.</summary>
     public string? Text { get; private set; }
 
@@ -69,18 +135,33 @@ public sealed class PinnedPanel : Border
 
     public void Pin(string markdown, string sourcePath)
     {
+        if (Preview.IsVisible) { _ = PinAfterCloseAsync(markdown, sourcePath); return; }
         Text = markdown;
         SourcePath = sourcePath;
         _from.Text = "Fixado de " + System.IO.Path.GetFileName(sourcePath);
         _scroll.Content = new MarkdownReader().BuildMarkdown(markdown);
+        _content.Content = _scroll;
         _scroll.Offset = default;
         IsVisible = true;
     }
 
+    private async Task PinAfterCloseAsync(string markdown, string sourcePath)
+    {
+        if (await Preview.TryCloseAsync()) Pin(markdown, sourcePath);
+    }
+
     public void Unpin()
     {
+        _ = TryUnpinAsync();
+    }
+
+    public async Task<bool> TryUnpinAsync()
+    {
+        if (!await Preview.TryCloseAsync()) return false;
         Text = SourcePath = null;
         _scroll.Content = null;
+        _content.Content = null;
         IsVisible = false;
+        return true;
     }
 }

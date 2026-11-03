@@ -31,10 +31,43 @@ public sealed class FilePreviewPanel : Grid
     private readonly TextBlock _title = new() { FontSize = 18, FontWeight = FontWeight.Bold, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
     private readonly TextBlock _meta = new() { FontSize = 13, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0) };
     private readonly ComboBox _choose = new() { HorizontalAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 10, 0, 0), IsVisible = false };
-    private readonly ContentControl _body = new() { Margin = new Thickness(0, 14, 0, 0) };
+    private readonly ContentControl _body = new() { HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch, Margin = new Thickness(0, 14, 0, 0) };
     private readonly Button _open = Action("Abrir em outro app", primary: true);
     private readonly StackPanel _htmlMode = new() { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(0, 10, 0, 0), IsVisible = false };
     private bool _htmlSource;
+    private bool _pdfText;
+    private int _pdfPosition = 1;
+    private int? _requestedPage;
+    private string? _expectedHash;
+    private PdfStudyView? _pdfTextView;
+    private EpubStudyView? _epubView;
+    private MediaStudyView? _mediaView;
+    private int? _requestedPart;
+    private int? _requestedTextOffset, _requestedTextLength;
+    private ReaderRegion? _requestedRegion;
+    public event Action<BookReaderQuote>? BookQuoteRequested;
+    public event Action<ImageStudyQuote>? ImageQuoteRequested;
+    public event Action<StudyImageQuestion>? VisualQuestionRequested;
+    private readonly Button _ocr = new() { Content = "Reconhecer região (OCR)", MinHeight = 48 };
+    public event Action<string, string>? QuestionRequested;
+    public event Action<string>? WebLinkRequested;
+    public event Action<string>? AnnotationsRequested;
+    public event Action<string>? ExpandRequested;
+    public void SetSuspended(bool suspended) { ReaderActivity.SetActive(this, !suspended); _body.IsVisible = !suspended; }
+    public async Task RetargetSourceAsync(string from, string to)
+    {
+        if (Current != from) return;
+        if (_readingSession is { } session) _readingSession=session with { Path=to };
+        CaptureReadingPosition();
+        await OpenAsync(to);
+    }
+    public ReadingStateFile? ReadingState { get; set; }
+    private ReaderSession? _readingSession;
+    private VaultFileRead? _cachedRead;
+    private int _cachedIndex = -1;
+    private string? _cachedHash;
+    private readonly WrapPanel _pdfModes = new() { IsVisible = false };
+    public event Action<ReaderQuote>? QuoteRequested;
     private PdfPagesView? _pdfView;
     private readonly StackPanel _pdfNavigation = new() { Orientation = Orientation.Horizontal, Spacing = 10, IsVisible = false, Margin = new Thickness(0, 6, 0, 0) };
     private readonly Button _pdfPrevious = new() { Content = "Anterior", MinWidth = 80, Height = 40 };
@@ -52,8 +85,12 @@ public sealed class FilePreviewPanel : Grid
     private int _version;
     private bool _choosing;
 
-    public FilePreviewPanel()
+    private readonly bool _embedded;
+
+    public FilePreviewPanel(bool embedded = false)
     {
+        _embedded = embedded;
+        ClipToBounds = true;
         IsVisible = false;
         Focusable = true;
         Background = UrbeTheme.Brush("#000000", .55);
@@ -127,7 +164,55 @@ public sealed class FilePreviewPanel : Grid
         _pdfNavigation.Children.Add(_pdfNext);
         _pdfPrevious.Click += (_, _) => _pdfView?.GoToPage(_pdfView.CurrentPage - 1);
         _pdfNext.Click += (_, _) => _pdfView?.GoToPage(_pdfView.CurrentPage + 1);
-        var top = new StackPanel { Children = { head, _meta, _choose, _htmlMode, _pdfNavigation } };
+        foreach (var (label, text) in new[] { ("Páginas", false), ("Texto selecionável", true) })
+        {
+            var mode = new Button { Content = label, MinHeight = 36 };
+            mode.Click += async (_, _) =>
+            {
+                if (_pdfText == text) return;
+                _pdfPosition = _pdfView?.CurrentPage ?? _pdfTextView?.CurrentPage ?? _pdfPosition;
+                _pdfText = text;
+                await ShowAsync(Index);
+            };
+            _pdfModes.Children.Add(mode);
+        }
+        var annotations = new Ui.UrbeButton("Anotações");
+        annotations.Click += (_, _) => { if (Current is { } path) AnnotationsRequested?.Invoke(path); };
+        _actions.Children.Add(annotations);
+        _ocr.Click += async (_, _) => await OpenOcrAsync();
+        var zoomIn = new Ui.UrbeButton("+"); zoomIn.Click += (_, _) => { if (_pdfView is { } pdf) pdf.SetZoom(Math.Min(16, pdf.Zoom * 1.25)); };
+        var zoomOut = new Ui.UrbeButton("−"); zoomOut.Click += (_, _) => { if (_pdfView is { } pdf) pdf.SetZoom(Math.Max(.25, pdf.Zoom / 1.25)); };
+        _pdfNavigation.Children.Add(zoomOut); _pdfNavigation.Children.Add(zoomIn);
+        var single = new Ui.UrbeButton("Página / Rolagem"); single.Click += (_, _) => { if (_pdfView is { } pdf) pdf.SetSinglePage(!pdf.SinglePage); };
+        var outline = new Ui.UrbeButton("Sumário"); outline.Click += async (_, _) => await ShowPdfNavigationAsync(false);
+        var links = new Ui.UrbeButton("Links da página"); links.Click += async (_, _) => await ShowPdfNavigationAsync(true);
+        _pdfModes.Children.Add(single); _pdfModes.Children.Add(outline); _pdfModes.Children.Add(links);
+        var select=new Ui.UrbeButton("Seleção");
+        var enable=new MenuItem{Header="Selecionar na página"};enable.Click+=async(_,_)=>
+        {
+            if(_pdfText){_pdfPosition=_pdfTextView?.CurrentPage??_pdfPosition;_pdfText=false;await ShowAsync(Index);}
+            if(_pdfView is { } pdf){await pdf.EnableSelectionAsync();_meta.Text=pdf.SelectionStatus;}
+        };
+        var copy=new MenuItem{Header="Copiar com fonte"};copy.Click+=async(_,_)=>{if(_pdfView?.SelectedQuote() is { } quote)await Ui.TextActions.CopyAsync(this,quote.Text+"\nFonte: "+quote.Path+", p. "+quote.Page);};
+        var cite=new MenuItem{Header="Adicionar seleção à nota"};cite.Click+=(_,_)=>_pdfView?.CiteSelection();
+        var highlight=new MenuItem{Header="Destacar seleção"};highlight.Click+=(_,_)=>_pdfView?.CiteSelection(StudyAnnotationKind.Highlight);
+        var comment=new MenuItem{Header="Comentar seleção"};comment.Click+=(_,_)=>_pdfView?.CiteSelection(StudyAnnotationKind.Comment);
+        var question=new MenuItem{Header="Perguntar à IA"};question.Click+=(_,_)=>_pdfView?.CiteSelection(ask:true);
+        var selectionMenu=new ContextMenu{ItemsSource=new[]{enable,copy,cite,highlight,comment,question}};
+        select.Click+=(_,_)=>selectionMenu.Open(select);_pdfModes.Children.Add(select);
+        var top = new StackPanel { Children = { head, _meta, _choose, _htmlMode, _pdfModes, _pdfNavigation, _ocr } };
+        if (embedded)
+        {
+            var expand = new Ui.UrbeButton("Abrir leitor");
+            expand.Click += (_, _) => { if (Current is { } path) ExpandRequested?.Invoke(path); };
+            top.Children.Insert(0, expand);
+            _ocr.MinHeight = 36;
+            head.IsVisible = false;
+            _meta.IsVisible = false;
+            actions.IsVisible = false;
+            _body.Margin = default;
+            Background = Brushes.Transparent;
+        }
         DockPanel.SetDock(top, Dock.Top);
         DockPanel.SetDock(actions, Dock.Bottom);
         layout.Children.Add(top);
@@ -147,6 +232,7 @@ public sealed class FilePreviewPanel : Grid
             e.Handled = true;
         };
         SizeChanged += (_, _) => Place();
+        _body.SizeChanged += (_, e) => { if (_body.Content is Control content) content.Height = Math.Max(1, e.NewSize.Height); };
     }
 
     private readonly Button _more;
@@ -203,7 +289,29 @@ public sealed class FilePreviewPanel : Grid
     public string? ShownText { get; private set; }
 
     /// <summary>One file of the vault by its path (the Explorer).</summary>
-    public Task OpenAsync(string path) => OpenAsync([(path[(path.LastIndexOf('/') + 1)..], path)], 0);
+    public Task OpenAsync(string path)
+    {
+        _requestedPage = null;
+        _requestedPart = null; _requestedTextOffset=_requestedTextLength=null; _requestedRegion=null;
+        _expectedHash = null;
+        return OpenAsync([(path[(path.LastIndexOf('/') + 1)..], path)], 0);
+    }
+
+    public async Task OpenPdfReferenceAsync(string path, int page, string? sha256 = null, ReaderRegion? region = null, int? textOffset = null, int? textLength = null)
+    {
+        _requestedPage = page; _requestedRegion = region; _requestedTextOffset=textOffset;_requestedTextLength=textLength;
+        if(textOffset is not null)_pdfText=true;
+        _expectedHash = sha256;
+        await OpenAsync([(path[(path.LastIndexOf('/') + 1)..], path)], 0);
+    }
+
+    public Task OpenPartReferenceAsync(string path, PartSourceReference reference)
+    {
+        _requestedPart = reference.Index; _requestedRegion=reference.Region;
+        _requestedTextOffset = reference.TextOffset; _requestedTextLength = reference.TextLength;
+        _expectedHash = reference.Sha256;
+        return OpenAsync([(path[(path.LastIndexOf('/') + 1)..], path)], 0);
+    }
 
     /// <summary>
     /// A page of the vault (Páginas): the HTML the page engine wrote for <paramref name="source"/> (a .page.json), shown
@@ -213,6 +321,7 @@ public sealed class FilePreviewPanel : Grid
     {
         if (IsVisible && !await ConfirmMapExitAsync()) return;
         ExitReaderMode();
+        _cachedRead = null; _cachedIndex = -1; _cachedHash = null;
         _generated = (source, html);
         _files = [(title, null)];
         _htmlSource = false;
@@ -235,7 +344,10 @@ public sealed class FilePreviewPanel : Grid
     {
         if (IsVisible && !await ConfirmMapExitAsync()) return;
         ExitReaderMode();
+        _cachedRead = null; _cachedIndex = -1; _cachedHash = null;
         _generated = null;
+        _pdfText = _requestedTextOffset is not null && _requestedPage is not null;
+        _pdfPosition = _requestedPage ?? 1;
         _files = files;
         _htmlSource = false;
         _choosing = true;
@@ -289,6 +401,9 @@ public sealed class FilePreviewPanel : Grid
     public async Task<bool> TryCloseAsync()
     {
         if (!await ConfirmMapExitAsync()) return false;
+        if (_epubView is { } reader) await reader.CaptureLocationAsync();
+        CaptureReadingPosition();
+        if (ReadingState is { } state) await state.FlushAsync();
         CloseCore();
         return true;
     }
@@ -302,11 +417,19 @@ public sealed class FilePreviewPanel : Grid
 
     private void CloseCore()
     {
+        CaptureReadingPosition();
         ExitReaderMode();
-        _pdfView = null;
+        _pdfView = null; _mediaView=null;
         _pdfNavigation.IsVisible = false;
+        _pdfTextView?.Dispose();
+        _epubView?.Dispose(); _epubView = null;
+        _pdfTextView = null;
+        _requestedPage = null;
+        _expectedHash = null;
         _version++;
+        _cachedRead = null; _cachedIndex = -1; _cachedHash = null;
         IsVisible = false;
+        if (_body.Content is NativeControlHost native) native.IsVisible = false;
         _body.Content = null;
         Shown = "none";
         ShownText = null;
@@ -314,6 +437,17 @@ public sealed class FilePreviewPanel : Grid
 
     private void Place()
     {
+        if (_embedded)
+        {
+            _card.Width = _card.Height = double.NaN;
+            _card.MaxHeight = double.PositiveInfinity;
+            _card.Padding = default;
+            _card.BorderThickness = default;
+            _card.HorizontalAlignment = HorizontalAlignment.Stretch;
+            _card.VerticalAlignment = VerticalAlignment.Stretch;
+            if (_body.Content is Control content) content.Height = ViewerHeight();
+            return;
+        }
         bool wide = Bounds.Width >= 720;
         if (_readerMode)
         {
@@ -333,21 +467,28 @@ public sealed class FilePreviewPanel : Grid
             _card.VerticalAlignment = wide ? VerticalAlignment.Center : VerticalAlignment.Bottom;
             _card.CornerRadius = wide ? new CornerRadius(16) : new CornerRadius(20, 20, 0, 0);
         }
-        if (Shown is "viewer" or "text" && _body.Content is Control shown)
+        if (Shown is "viewer" or "text" or "image" && _body.Content is Control shown)
             shown.Height = ViewerHeight();
     }
 
     private async Task ShowAsync(int index)
     {
+        CaptureReadingPosition();
         int version = ++_version;
-        _pdfView = null;
+        _mediaView=null;
+        _pdfView = null; _mediaView=null;
         _pdfNavigation.IsVisible = false;
+        _pdfTextView?.Dispose();
+        _epubView?.Dispose(); _epubView = null;
+        _pdfTextView = null;
         Index = index;
         _choosing = true;
         _choose.SelectedIndex = index;
         _choosing = false;
         var (name, path) = _files[index];
         var kind = _generated is not null ? VaultFileKinds.Html : VaultFileKinds.Classify(name);
+        _pdfModes.IsVisible = kind == VaultFileKinds.Pdf;
+        _ocr.IsVisible = kind is VaultFileKinds.Pdf or VaultFileKinds.Image;
         _title.Text = name;
         _meta.Text = VaultFileKinds.Label(kind) + (path is not null ? " · " + path : "");
         _open.IsVisible = false;
@@ -364,11 +505,22 @@ public sealed class FilePreviewPanel : Grid
         // audio and video are played from the vault by the platform: only their size is read here
         // Files with no in-app renderer still have metadata and an explicit external fallback.
         // Do not allocate a giant Office/EPUB container merely to say its preview is unsupported.
-        bool metadataOnly = kind is VaultFileKinds.Audio or VaultFileKinds.Video
-            or VaultFileKinds.Epub or VaultFileKinds.Slides or VaultFileKinds.Document;
-        var read = _generated is { } g ? new VaultFileRead(g.Html.Length, g.Html)
-            : path is not null && Storage is { } s ? await s.ReadFileAsync(path, metadataOnly ? 0 : MaxBytes) : null;
+        bool metadataOnly = kind is VaultFileKinds.Audio or VaultFileKinds.Video ||
+            kind is VaultFileKinds.Slides or VaultFileKinds.Document && Path.GetExtension(name).ToLowerInvariant() is not (".pptx" or ".odp" or ".docx" or ".odt");
+        VaultFileRead? read;
+        try
+        {
+            read = _cachedIndex == index && _cachedRead is not null ? _cachedRead : _generated is { } g ? new VaultFileRead(g.Html.Length, g.Html)
+                : path is not null && Storage is { } s ? await s.ReadFileAsync(path, metadataOnly ? 0 : MaxBytes) : null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or NotSupportedException)
+        {
+            if (version == _version) _body.Content = Empty("Não foi possível ler o arquivo", "Confira se o arquivo continua disponível e se a pasta está acessível.");
+            return;
+        }
         if (version != _version) return;
+        if (_cachedIndex != index) _cachedHash = null;
+        _cachedRead = read; _cachedIndex = index;
         if (read is null)
         {
             _body.Content = Empty("Arquivo não encontrado", "O item aparece no Explorer, mas não foi encontrado na pasta do vault.");
@@ -378,8 +530,76 @@ public sealed class FilePreviewPanel : Grid
             : VaultFileKinds.Label(kind) + " · " + VaultFileKinds.FormatBytes(read.Size) + (path is not null ? " · " + path : ""));
         _open.IsVisible = _generated is null;
         var bytes = read.Bytes;
+        if ((bytes is not null || kind is VaultFileKinds.Audio or VaultFileKinds.Video) && Storage?.AtlasVaultSessionKey is { } vaultIdentity && path is not null && ReadingState is { } state)
+        {
+            string? revision=_cachedHash??(bytes is not null?await Task.Run(()=>Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant()):await Storage.ReaderRevisionAsync(path));
+            if(version!=_version)return;
+            _cachedHash=revision;
+            if(revision is not null)
+            {
+                string vaultKey=ReaderSessionCatalog.VaultKey(vaultIdentity);
+                _readingSession=state.Restore(vaultKey,path,revision)??new ReaderSession(vaultKey,path,revision,kind,new(1),new(),DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+                state.Remember(_readingSession with{Updated=DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()});
+                if(_requestedPage is null)_pdfPosition=_readingSession.Location.Part;
+                if(_requestedPart is null)_requestedPart=kind is VaultFileKinds.Audio or VaultFileKinds.Video?_readingSession.Location.Part-1:_readingSession.Location.Part;
+            }
+            else _readingSession=null;
+        }
+        else _readingSession=null;
+        if (_expectedHash is { } mediaHash && bytes is null && kind is VaultFileKinds.Audio or VaultFileKinds.Video && Storage is { } mediaStorage && path is not null)
+        {
+            string? actual=_cachedHash??await mediaStorage.ReaderRevisionAsync(path);
+            if(version!=_version)return;
+            _expectedHash=null;
+            if(!string.Equals(actual,mediaHash,StringComparison.OrdinalIgnoreCase))
+            {_body.Content=Empty("Fonte alterada","Não foi possível confirmar a versão desta mídia. Confira o arquivo antes de reutilizar o instante.");return;}
+        }
+        if (_expectedHash is { } expected && bytes is not null)
+        {
+            var hash = _cachedHash ?? await Task.Run(() => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)));
+            if (version != _version) return;
+            _expectedHash = null;
+            _requestedPage = null;
+            if (!string.Equals(hash, expected, StringComparison.OrdinalIgnoreCase))
+            {
+                _pdfModes.IsVisible = false;
+                _pdfPosition = 1; _requestedPart = _requestedTextOffset = _requestedTextLength = null; _requestedRegion = null;
+                _body.Content = Empty("Fonte alterada", "Este arquivo mudou desde a citação. Abra-o pelo Explorer para conferir a referência; o trecho não foi associado automaticamente à nova versão.");
+                return;
+            }
+        }
+        _requestedPage = null;
+        if ((kind is VaultFileKinds.Epub or VaultFileKinds.Comic || Path.GetExtension(name).ToLowerInvariant() is ".pptx" or ".odp" or ".docx" or ".odt") && bytes is not null)
+        {
+            try
+            {
+                IReaderPublication book = await Task.Run<IReaderPublication>(() => name.EndsWith(".epub", StringComparison.OrdinalIgnoreCase) ? new EpubReadingDocument(bytes) : new OfficeReadingDocument(name, bytes));
+                if (version != _version) { book.Dispose(); return; }
+                var epub = new EpubStudyView(path ?? name, book, _embedded) { Height = ViewerHeight() };
+                _epubView = epub;
+                epub.QuoteRequested += quote => BookQuoteRequested?.Invoke(quote);
+                epub.AskRequested += quote => QuestionRequested?.Invoke(quote.Path + " · " + quote.Unit + " " + quote.Index, quote.Text);
+                epub.ExternalLinkRequested += url => WebLinkRequested?.Invoke(url);
+                epub.PositionChanged += chapter => RememberReadingPosition(chapter + 1, fontSize: epub.FontSizePreference);
+                _body.Content = epub; Shown = "viewer";
+                if (_readingSession is { } saved) {epub.RestoreAppearance(saved.Preferences.Theme,saved.Preferences.Margin); await epub.SetTypographyAsync(saved.Preferences.FontSize);}
+                epub.RestoreLineHeight(_readingSession?.Preferences.LineHeight ?? 1.6);
+                await epub.GoToChapterAsync((_requestedPart ?? 1) - 1, _requestedTextOffset ?? _readingSession?.Location.Offset ?? 0, _requestedTextLength ?? 0, _readingSession?.Location.Scroll ?? 0);
+                _requestedTextOffset = _requestedTextLength = null;
+                _requestedPart = null;
+            }
+            catch (Exception ex) when (ex is not OutOfMemoryException)
+            { if (version == _version) _body.Content = Empty("Não foi possível abrir o arquivo de leitura", ex.Message); }
+            return;
+        }
         if (kind == VaultFileKinds.Image && bytes is not null && Image(bytes) is { } image)
         {
+            if(_requestedRegion is { } region)
+            {
+                var ocrSource=new OcrStudyView(path??name,null,_cachedHash??Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant(),bytes,region){Height=ViewerHeight()};
+                ocrSource.QuoteRequested+=quote=>ImageQuoteRequested?.Invoke(quote);ocrSource.VisualQuestionRequested+=question=>VisualQuestionRequested?.Invoke(question);ocrSource.CloseRequested+=async()=>await ShowAsync(Index);_body.Content=ocrSource;_requestedRegion=null;Shown="image";return;
+            }
+            image.Height = ViewerHeight();
             _body.Content = image;
             Shown = "image";
             return;
@@ -400,21 +620,44 @@ public sealed class FilePreviewPanel : Grid
         if (kind is VaultFileKinds.Pdf or VaultFileKinds.Audio or VaultFileKinds.Video || (kind == VaultFileKinds.Html && !_htmlSource))
         {
             Control? viewer = null;
-            try { viewer = await ContentViewers.CreateAsync(new ContentRequest(Storage, path ?? _generated?.Source ?? name, name, kind, bytes) { AtlasOpenNote = path is null ? null : AtlasOpenNote }); }
-            catch (Exception ex) when (ex is IOException or InvalidOperationException or NotSupportedException or UnauthorizedAccessException) { viewer = null; }
+            try { if (kind != VaultFileKinds.Pdf || !_pdfText) viewer = await ContentViewers.CreateAsync(new ContentRequest(Storage, path ?? _generated?.Source ?? name, name, kind, bytes) { AtlasOpenNote = path is null ? null : AtlasOpenNote }); }
+            catch (Exception ex) when (ex is not OutOfMemoryException) { viewer = null; }
             if (version != _version) { (viewer as IDisposable)?.Dispose(); return; }
             if (viewer is not null)
             {
+                if (kind is VaultFileKinds.Audio or VaultFileKinds.Video && Storage is { } mediaVault)
+                {
+                    var media=new MediaStudyView(path??name,mediaVault,viewer,_requestedPart);
+                    media.QuoteRequested+=quote=>BookQuoteRequested?.Invoke(quote);media.PositionChanged+=second=>RememberReadingPosition(second+1);_mediaView=media;viewer=media;_requestedPart=null;
+                }
                 viewer.Height = ViewerHeight();
                 _body.Content = viewer;
                 Shown = "viewer";
                 if (viewer is PdfPagesView pdf)
                 {
                     _pdfView = pdf;
+                    if(bytes is not null)pdf.ConfigureStudy(path??name,bytes,_cachedHash??Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant());
+                    pdf.QuoteRequested+=quote=>QuoteRequested?.Invoke(quote);pdf.AskRequested+=quote=>QuestionRequested?.Invoke(quote.Path+" · página "+quote.Page,quote.Text);
                     _pdfNavigation.IsVisible = true;
                     pdf.PageChanged += _ => { if (ReferenceEquals(_pdfView, pdf)) UpdatePdfNavigation(); };
+                    pdf.PageChanged += page => RememberReadingPosition(page);
                     UpdatePdfNavigation();
+                    pdf.Loaded += (_, _) => { pdf.SetZoom(_readingSession?.Preferences.Zoom ?? 1); pdf.GoToPage(_pdfPosition); if (_requestedRegion is { } region) { pdf.FocusRegion(_pdfPosition,region); _requestedRegion=null; } };
                 }
+                return;
+            }
+            if (kind == VaultFileKinds.Pdf && bytes is not null)
+            {
+                var study = new PdfStudyView(path ?? name, bytes) { Height = ViewerHeight() };
+                _pdfTextView = study;
+                study.QuoteRequested += quote => QuoteRequested?.Invoke(quote);
+                study.AskRequested += quote => QuestionRequested?.Invoke(quote.Path + " · página " + quote.Page, quote.Text);
+                study.PageChanged += page => _pdfPosition = page;
+                study.PageChanged += page => RememberReadingPosition(page);
+                _body.Content = study;
+                Shown = "text";
+                if(_requestedTextOffset is { } offset) { await study.GoToTextAsync(_pdfPosition,offset,_requestedTextLength??0);_requestedTextOffset=_requestedTextLength=null; }
+                else await study.GoToPageAsync(_pdfPosition);
                 return;
             }
         }
@@ -444,8 +687,78 @@ public sealed class FilePreviewPanel : Grid
         _pdfNext.IsEnabled = pdf.CurrentPage < pdf.PageCount;
     }
 
+    private async Task ShowPdfNavigationAsync(bool links)
+    {
+        if (_cachedRead?.Bytes is not { } bytes || Dialogs is not { } dialogs || dialogs.IsOpen) return;
+        int version = _version;
+        try
+        {
+            int page = _pdfView?.CurrentPage ?? _pdfTextView?.CurrentPage ?? _pdfPosition;
+            var entries = await Task.Run(() => links ? Urbe.Core.Assistant.DocumentNavigation.Links(bytes, page)
+                : Urbe.Core.Assistant.DocumentNavigation.Outline(bytes).Select(e => new Urbe.Core.Assistant.DocumentNavigationLink(new string(' ', Math.Clamp(e.Level,0,10) * 2) + e.Title,e.Page,null)).ToArray());
+            if (version != _version) return;
+            if (entries.Count == 0) { _meta.Text = links ? "Esta página não possui links navegáveis." : "Este PDF não possui sumário navegável."; return; }
+            var choice = await dialogs.ChooseAsync(links ? "Links da página" : "Sumário do PDF", entries.Select(e => new DialogItem(string.IsNullOrWhiteSpace(e.Text) ? e.Url ?? "Página " + e.Page : e.Text)).ToArray());
+            if (version != _version || choice is not { } index) return;
+            var target = entries[index];
+            if (target.Page is { } destination) { _pdfView?.GoToPage(destination); if (_pdfTextView is { } text) await text.GoToPageAsync(destination); }
+            else if (target.Url is { } url) WebLinkRequested?.Invoke(url);
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException) { _meta.Text = "A navegação deste PDF não pôde ser lida: " + ex.Message; }
+    }
+    private async Task OpenOcrAsync()
+    {
+        int version = _version;
+        if (Current is not { } path || _cachedRead?.Bytes is not { } bytes) return;
+        _ocr.IsEnabled = false;
+        try
+        {
+            CaptureReadingPosition();
+            int? page = path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ? _pdfView?.CurrentPage ?? _pdfTextView?.CurrentPage ?? _pdfPosition : null;
+            byte[] image;
+            if (page is { } number)
+            {
+                if (_pdfView is { } visual) image = await visual.CapturePageAsync(number);
+                else
+                {
+                    using var document = await PortablePdfDocument.OpenAsync(bytes, default);
+                    image = await Task.Run(() => { var p = document.Render(number - 1, 2000); using var bmp = Pixels.ToBitmap(p.Rgba, p.Width, p.Height); using var output = new MemoryStream(); bmp.Save(output, Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default); return output.ToArray(); });
+                }
+            }
+            else image = bytes;
+            string hash = _cachedHash ?? Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant();
+            if (version != _version) return;
+            var ocr = new OcrStudyView(path, page, hash, image) { Height = ViewerHeight() };
+            ocr.VisualQuestionRequested+=question=>VisualQuestionRequested?.Invoke(question);
+            ocr.QuoteRequested += quote => ImageQuoteRequested?.Invoke(quote);
+            ocr.CloseRequested += async () => { ocr.Dispose(); await ShowAsync(Index); };
+            _body.Content = ocr; _pdfView = null; _pdfTextView = null;
+            _ocr.IsVisible = _pdfNavigation.IsVisible = _pdfModes.IsVisible = false;
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException) { _meta.Text = "Não foi possível preparar a região: " + ex.Message; }
+        finally { _ocr.IsEnabled = true; }
+    }
+
+    private void RememberReadingPosition(int part, double? fontSize = null)
+    {
+        if (_readingSession is not { } session || ReadingState is null) return;
+        var location = new ReaderLocation(part, _epubView?.CurrentOffset ?? 0, _epubView?.CurrentScroll ?? 0);
+        var preferences = session.Preferences with { FontSize = fontSize ?? session.Preferences.FontSize, LineHeight = _epubView?.LineHeightPreference ?? session.Preferences.LineHeight, Zoom = _pdfView?.Zoom ?? session.Preferences.Zoom, Theme=_epubView?.ThemePreference??session.Preferences.Theme, Margin=_epubView?.MarginPreference??session.Preferences.Margin };
+        if (session.Location == location && session.Preferences == preferences) return;
+        _readingSession = session with { Location = location, Preferences = preferences, Updated = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() };
+        ReadingState.Remember(_readingSession);
+    }
+
+    private void CaptureReadingPosition()
+    {
+        if (_epubView is { } book) RememberReadingPosition(book.CurrentChapter + 1, book.FontSizePreference);
+        else if (_pdfView is { } pdf) RememberReadingPosition(pdf.CurrentPage);
+        else if (_pdfTextView is { } text) RememberReadingPosition(text.CurrentPage);
+        else if(_mediaView is { } media)RememberReadingPosition(media.CurrentSecond+1);
+    }
+
     /// <summary>The height of a content viewer: a native view needs one, and it fills what the card leaves.</summary>
-    private double ViewerHeight() => _readerMode
+    private double ViewerHeight() => _body.Bounds.Height > 1 ? _body.Bounds.Height : _embedded ? Math.Max(1, Bounds.Height - (_pdfModes.IsVisible ? 40 : 0) - (_pdfNavigation.IsVisible ? 48 : 0) - (_htmlMode.IsVisible ? 44 : 0)) : _readerMode
         ? Math.Max(1, Bounds.Height - 96)
         : Bounds.Width >= 720 ? Math.Max(260, Bounds.Height - 280) : Math.Max(260, Bounds.Height * .9 - 250);
 

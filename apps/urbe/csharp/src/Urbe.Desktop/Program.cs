@@ -11,6 +11,7 @@ public static class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        WindowsStudyWebView.Register();
         // The vault is a folder of the computer, chosen with the system folder picker and
         // remembered in the app data (never a hidden copy of the notes).
         var selection = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Urbe", "native-vault.json");

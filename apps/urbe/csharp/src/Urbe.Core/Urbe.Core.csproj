@@ -4,5 +4,6 @@
     <PackageReference Include="CSharpMath" Version="[1.0.0-pre.2]" />
     <PackageReference Include="CSharpMath.Rendering" Version="[1.0.0-pre.2]" />
     <PackageReference Include="PdfPig" Version="0.1.16" />
+    <PackageReference Include="VersOne.Epub" Version="3.3.6" />
   </ItemGroup>
 </Project>

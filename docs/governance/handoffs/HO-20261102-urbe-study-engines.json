@@ -1,0 +1,261 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261102-urbe-study-engines",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-02T20:56:59.763881Z",
+  "agent": {
+    "id": "codex-urbe-reference-study",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-229",
+  "component": "urbe",
+  "state": "working",
+  "branch": "feat/urbe-reference-study-workspace",
+  "commit": null,
+  "pr": null,
+  "base_commit": "672b612b9099d38140cedf6c1acb71a471cf642a",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Android/AndroidStudyBrowser.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EpubStudyView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MediaStudyView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/OcrReaderHtml.cs",
+    "apps/urbe/csharp/src/Urbe.Client/OcrStudyView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PdfWordSelection.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PortablePdfDocument.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PresentationReaderHtml.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ReaderActivity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ReaderRangeStream.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ReaderTextLocator.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ReadingStateFile.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/LICENSE",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/Tesseract-core-LICENSE.txt",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/Tesseract-js-LICENSE.txt",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/core.wasm.js",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/eng.traineddata.gz",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/por.traineddata.gz",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/tesseract-notices.txt",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/tesseract.min.js",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/worker-notices.txt",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Ocr/worker.min.js",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/Web-PPT-LICENSE.txt",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/fflate-LICENSE.txt",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/presentation.js",
+    "apps/urbe/csharp/src/Urbe.Client/Resources/Readers/provenance.json",
+    "apps/urbe/csharp/src/Urbe.Client/StudyBrowserPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/StudyWebView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/DocumentNavigation.cs",
+    "apps/urbe/csharp/src/Urbe.Core/EpubReadingDocument.cs",
+    "apps/urbe/csharp/src/Urbe.Core/OfficeReadingDocument.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PartSourceReference.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ReaderArchive.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ReaderByteRange.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ReaderRegion.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ReaderSessions.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ReaderUris.cs",
+    "apps/urbe/csharp/src/Urbe.Desktop/WindowsStudyWebView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PdfSelectionUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/PortablePdfTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ReaderEngineTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ReaderRangeStreamTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ReadingStateFileTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/StudyBrowserUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/StudyJourneyUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/EpubReadingTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ReaderByteRangeTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ReaderSessionTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ReaderSourceReferenceTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ReaderUriTests.cs",
+    "apps/urbe/csharp/tests/browser/readers.mjs",
+    "apps/urbe/csharp/tests/fixtures/readers/book-1.pdf",
+    "apps/urbe/csharp/tests/fixtures/readers/book-1001.pdf",
+    "apps/urbe/csharp/tests/fixtures/readers/book-20.pdf",
+    "apps/urbe/csharp/tests/fixtures/readers/book-300.pdf",
+    "apps/urbe/csharp/tests/fixtures/readers/comic.cbz",
+    "apps/urbe/csharp/tests/fixtures/readers/document.docx",
+    "apps/urbe/csharp/tests/fixtures/readers/document.odp",
+    "apps/urbe/csharp/tests/fixtures/readers/document.odt",
+    "apps/urbe/csharp/tests/fixtures/readers/epub2.epub",
+    "apps/urbe/csharp/tests/fixtures/readers/fixed.epub",
+    "apps/urbe/csharp/tests/fixtures/readers/generate.py",
+    "apps/urbe/csharp/tests/fixtures/readers/protected.pdf",
+    "apps/urbe/csharp/tests/fixtures/readers/reflow.epub",
+    "apps/urbe/csharp/tests/fixtures/readers/scan.png",
+    "apps/urbe/csharp/tests/fixtures/readers/scanned.pdf",
+    "apps/urbe/csharp/tests/fixtures/readers/slides.pptx",
+    "apps/urbe/csharp/tools/readers-build/.gitignore",
+    "apps/urbe/csharp/tools/readers-build/README.md",
+    "apps/urbe/csharp/tools/readers-build/build.mjs",
+    "apps/urbe/csharp/tools/readers-build/node_modules",
+    "apps/urbe/csharp/tools/readers-build/package-lock.json",
+    "apps/urbe/csharp/tools/readers-build/package.json",
+    "apps/urbe/csharp/tools/readers-build/verify.mjs",
+    "docs/adr/0047-urbe-leitura-estudo-isolados.md",
+    "docs/governance/handoffs/HO-20261102-urbe-study-engines.json",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidContentViewers.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/ContentViewers.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.AndroidBack.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Embeds.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Reading.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Relink.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PdfStudyView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PinnedPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/QuickOpen.cs",
+    "apps/urbe/csharp/src/Urbe.Client/SplitPane.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Urbe.Client.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PdfSourceReference.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Urbe.Core.csproj",
+    "apps/urbe/csharp/src/Urbe.Core/VaultFileKinds.cs",
+    "apps/urbe/csharp/src/Urbe.Desktop/Program.cs",
+    "apps/urbe/csharp/src/Urbe.Desktop/Urbe.Desktop.csproj",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ContentViewerUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FilePreviewUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ReferenceStudyUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/Urbe.Client.Tests.csproj",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ArchitectureTests.cs",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md",
+    "apps/urbe/docs/csharp/REFERENCE-STUDY-20261102.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/README.md"
+  ],
+  "work_completed": [
+    "Segunda etapa após recusa explícita de encerramento parcial: PDF Skia/tiles/virtualização, EPUB/Office/CBZ, browser e player por host, OCR WASM/modelos locais, anotações canônicas e metadados privados de posição. Ver matriz de evidência; a solicitação integral continua aberta.",
+    "Corpus original versionado e testes de conteúdo em Chromium sem requisições externas; novas jornadas UI em teste.",
+    "ADR-0047 proposto, licenças/proveniência/build de recursos e catálogo do schema privado registrados. Nenhuma release ou publicação."
+  ],
+  "verification": [
+    {
+      "check": "Core regression",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1335 testes, zero falhas/skips em /tmp/urbe-study-core-final.log. Nova dependência managed incluída explicitamente no teste de arquitetura com referência ao ADR; não relaxa proibição de UI/native/Products em Core."
+    },
+    {
+      "check": "PPTX / EPUB locator / OCR offline",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Chromium 156.0.8078.80 + Playwright. PPTX confirma texto/forma/imagem/tabela/navegação; EPUB restaura a seleção após tipografia; OCR por+eng reconhece corpus e word boxes, confiança 94. Sem requisição externa. /tmp/urbe-browser-reader-tests.log. Reexecutar exportação após build final."
+    },
+    {
+      "check": "Client regression",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "484 testes, zero falhas/skips, 197.504 s em /tmp/urbe-study-client-final.log. Baseline da etapa antes de acrescentar seleção sobre raster PDF e retomada de mídia; essas extensões exigem nova verificação, não estão cobertas por essa contagem."
+    },
+    {
+      "check": "Desktop / Android",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Desktop build e Android build/publish Debug de prévia x64 passaram. APK com assemblies incorporados ~66 MiB. Não é canal beta nem release assinada do proprietário; reconstruir após alterações finais."
+    },
+    {
+      "check": "Android 13 emulator execution",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Tentativa real sem /dev/kvm: emulador oficial e imagem Android 13 instalados com checksum. Boot por software não completou em 600 s; nenhuma execução do app foi contada. /tmp/urbe-emulator-smoke-engine.log. Tentativa encerrada por timeout; não existe DEVICE presumido."
+    },
+    {
+      "check": "Android/Windows físico, CI e revisão crítica",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "docs/adr/0047-urbe-leitura-estudo-isolados.md"
+    },
+    {
+      "check": "Novas jornadas nativas de livro/OCR/mídia",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "3/3 testes em /tmp/urbe-study-journeys.log: EPUB→nota/retorno/revisão alterada; OCR explícito/revisão/rotulagem/região em nota; mídia→timestamp verificado/retorno. Motor OCR/WebView nessas jornadas é fake; motor real testado separadamente em Chromium."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks em /tmp/urbe-study-consistency.log após adequar o ADR/index/handoff ao schema canônico."
+    },
+    {
+      "check": "Reprodutibilidade dos recursos",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "build.mjs recompilou Web-PPT a partir do checkout limpo no SHA fixado e copiou os pacotes locais. verify.mjs confirmou os mesmos SHA-256 de todos os 13 recursos, sem atualizar manifesto para aceitar diferenças."
+    }
+  ],
+  "known_issues": [
+    "CST-229–246 não concluídos: matriz e critérios remanescentes no documento REFERENCE-STUDY-20261102; não rebaixar o pedido integral.",
+    "Ainda faltam CFI interoperável, seleção/realce geométrico sobre PDF, sessão transversal completa, prova visual complexa Office, métricas e DEVICE.",
+    "Cookies/YouTube real e identidade de instalação Windows precisam de prova de host; docs explicitam fidelidade parcial Office e web mutável."
+  ],
+  "blockers": [
+    "Revisão automática rejeitou git push por considerar ausente autorização explícita para publicar o código/documentação novos no repositório público. Não houve tentativa alternativa de publicação. Confirmado por git ls-remote: branch remota ausente.",
+    "ADR-0047 ainda proposto; revisão crítica e aceite arquitetural exigidos antes da integração."
+  ],
+  "next_actions": [
+    "Fechar novas jornadas UI e regressões, revisar imagens/layout e rodar consistência. Prosseguir nas lacunas independentes dos gates físicos.",
+    "Revisão crítica do ADR/schema/dependências antes de integrar. CI/PR e DEVICE dependem dos gates descritos; nenhuma autorização para publicar foi inferida de Continue."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.6.md",
+    "ARCHITECTURE.md",
+    "docs/adr/0047-urbe-leitura-estudo-isolados.md",
+    "apps/urbe/docs/csharp/DATA-CATALOG.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Mesmo armazenamento e extrator documental; citação vive na nota Markdown, sem índice paralelo de anotações."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Escolha explícita de fonte e painel sem nota automática registrados no ROADMAP e issue #902."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Leitura local sem envio automático à IA/rede; confirmação de mapas pendentes reutilizada, sem bridge nova."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes/Skia distintos de DEVICE; nenhum aceite físico presumido."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review com limites da frente integral e CI/DEVICE pendentes."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "reference-study-view",
+      "status": "product-specific",
+      "rationale": "Painel reutiliza leitores do próprio Urbe; não existe segundo consumidor aprovado que justifique extrair biblioteca ou runtime."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "architecture",
+      "security",
+      "user-data",
+      "compatibility"
+    ],
+    "reason": "Novos motores/dependências/licenças, WASM/CSP e hosts remotos, streams locais limitados e schema privado versionado. A criticidade da segunda etapa não é herdada como rotina da primeira."
+  }
+}

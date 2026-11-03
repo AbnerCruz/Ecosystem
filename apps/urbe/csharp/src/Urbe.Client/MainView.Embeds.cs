@@ -220,7 +220,7 @@ public sealed partial class MainView
         else if (body.Trim().Length == 0) shown = Message(fragment is null ? "Nota vazia." : "Esta parte está vazia.");
         else
         {
-            var reader = new MarkdownReader { Size = UrbeTheme.EditorSize * .94, LineFactor = 1.55, WikiLinkTapped = name => _ = Editor.FollowLinkAsync(name) };
+            var reader = new MarkdownReader { Size = UrbeTheme.EditorSize * .94, LineFactor = 1.55, WikiLinkTapped = name => _ = Editor.FollowLinkAsync(name), WebLinkTapped = url => StudyBrowser.Open(url) };
             var text = body.Length > 40_000 ? body[..40_000] + "\n\n…" : body;
             var view = reader.BuildMarkdown(NoteMarks.StripComments(AiAuthorship.Canonical(EmbedFragments.HideBlockIds(text))));
             // this text is not the block's own: the caret mapping of a tap must not look into it
@@ -332,16 +332,17 @@ public sealed partial class MainView
         void Update(object? _, AvaloniaPropertyChangedEventArgs changed)
         {
             if (changed.Property == IsVisibleProperty)
-                viewer.IsVisible = !FilePreview.IsVisible;
+                viewer.IsVisible = !FilePreview.IsVisible && !StudyBrowser.IsVisible;
         }
 
         viewer.AttachedToVisualTree += (_, _) =>
         {
             FilePreview.PropertyChanged += Update;
-            viewer.IsVisible = !FilePreview.IsVisible;
+            StudyBrowser.PropertyChanged += Update;
+            viewer.IsVisible = !FilePreview.IsVisible && !StudyBrowser.IsVisible;
         };
-        viewer.DetachedFromVisualTree += (_, _) => FilePreview.PropertyChanged -= Update;
-        viewer.IsVisible = !FilePreview.IsVisible;
+        viewer.DetachedFromVisualTree += (_, _) => { FilePreview.PropertyChanged -= Update; StudyBrowser.PropertyChanged -= Update; };
+        viewer.IsVisible = !FilePreview.IsVisible && !StudyBrowser.IsVisible;
     }
 
     private static bool LooksLikeText(byte[] bytes)

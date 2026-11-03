@@ -15,7 +15,10 @@ public sealed partial class MainView
     /// <summary>openSecondary(idOrPath).</summary>
     public bool OpenSplit(string path)
     {
+        if (_attachments.Contains(path) || _contents.ContainsKey(path) && !Urbe.Core.ArtifactModel.IsNote(path))
+        { _ = OpenSplitFileAsync(path); return true; }
         if (_store?.Get(path) is not { } doc) return false;
+        if (Editor.Split.Preview.IsVisible) { _ = OpenSplitNoteAsync(path); return true; }
         _split = (true, Editor.Current?.Path ?? doc.Path, doc.Path);
         RenderSplit();
         return true;
@@ -24,6 +27,7 @@ public sealed partial class MainView
     /// <summary>close().</summary>
     public void CloseSplit()
     {
+        if (Editor.Split.Preview.IsVisible) { _ = CloseSplitAsync(); return; }
         _split = (false, _split.Primary, null);
         RenderSplit();
     }
@@ -40,6 +44,7 @@ public sealed partial class MainView
     private void RenderSplit()
     {
         if (!_split.Enabled) { Editor.Split.Hide(); return; }
+        if (_split.Secondary is { } file && Editor.Split.Preview.IsVisible && Editor.Split.Preview.Current == file) return;
         if (_split.Secondary is not { } s || _store?.Get(s) is not { } doc) { CloseSplit(); return; }
         Editor.Split.Show(doc.Path, doc.Title, _contents.GetValueOrDefault(doc.Path, doc.Content));
     }
@@ -50,25 +55,52 @@ public sealed partial class MainView
         if (_store is null || Dialogs.IsOpen) return;
         var active = Editor.Current?.Path;
         var list = _store.List()
-            .Where(d => d.Path != active && System.Text.RegularExpressions.Regex.IsMatch(d.Path, @"\.(md|markdown|txt)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            .Where(d => d.Path != active)
             .OrderBy(d => d.Modified ?? "", Comparer<string>.Create((a, b) => string.Compare(b, a, StringComparison.InvariantCulture)))
             .ToList();
-        if (list.Count == 0) return;
+        if (list.Count == 0 && _attachments.Count == 0) return;
         // the 60 most recent at hand; any other through the search of the whole vault (DEC-0059: none is out of reach)
         var recent = list.Take(60).ToList();
         var items = recent.Select(d => new DialogItem(d.Title, UrbeTheme.Icons.Notes, d.Path)).ToList();
+        items.Add(new DialogItem("Escolher qualquer arquivo…", UrbeTheme.Icons.FileOther, "Imagens, PDF, áudio, vídeo, código e outros formatos"));
         if (list.Count > recent.Count) items.Insert(0, new DialogItem("Buscar entre todas as notas…", UrbeTheme.Icons.Search, list.Count + " notas"));
         var pick = await Dialogs.ChooseAsync("Abrir ao lado", items, "Escolha a nota para ver ao lado da que está aberta.");
         if (pick is not { } i) return;
         if (list.Count > recent.Count && i == 0) { Search.PickNote(path => OpenSplit(path)); return; }
+        if (i == items.Count - 1)
+        {
+            if (await Dialogs.ChooseFileAsync(_contents.Keys.Concat(_attachments)) is { } path) OpenSplit(path);
+            return;
+        }
         OpenSplit(recent[list.Count > recent.Count ? i - 1 : i].Path);
     }
 
     private void WireSplit()
     {
+        Editor.Split.Preview.Storage = _vault;
+        Editor.Split.Preview.Dialogs = Dialogs;
+        Editor.Split.Preview.QuoteRequested += quote => _ = InsertReaderQuoteAsync(quote);
         Editor.Split.CloseRequested += CloseSplit;
         Editor.Split.SwapRequested += SwapSplit;
         // document:updated of the secondary redraws the pane
         NoteSaved += path => { if (_split.Enabled && _split.Secondary == path) RenderSplit(); };
+    }
+
+    private async Task OpenSplitFileAsync(string path)
+    {
+        if (!await Editor.Split.Preview.TryCloseAsync()) return;
+        _split = (true, Editor.Current?.Path, path);
+        Editor.Split.ShowFile(path);
+        await Editor.Split.Preview.OpenAsync(path);
+    }
+
+    private async Task OpenSplitNoteAsync(string path)
+    {
+        if (await Editor.Split.Preview.TryCloseAsync()) OpenSplit(path);
+    }
+
+    private async Task CloseSplitAsync()
+    {
+        if (await Editor.Split.Preview.TryCloseAsync()) CloseSplit();
     }
 }

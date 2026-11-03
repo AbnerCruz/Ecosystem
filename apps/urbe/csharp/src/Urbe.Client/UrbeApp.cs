@@ -80,7 +80,7 @@ public sealed class UrbeApp : Application
         window.Closing += async (_, e) =>
         {
             bool typed = view.Editor.Current is not null && view.Editor.HasChanges;
-            if (done || (!typed && view.NotesSave is not { HasPending: true })) return;
+            if (done || (!typed && view.NotesSave is not { HasPending: true } && !view.ReadingState.HasPending)) return;
             e.Cancel = true;
             if (typed && !await view.Editor.SaveAsync() &&
                 !await view.Dialogs.ConfirmAsync("A nota não foi salva",

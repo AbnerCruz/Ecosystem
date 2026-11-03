@@ -7,4 +7,5 @@
     <Using Include="Xunit" />
   </ItemGroup>
   <ItemGroup><ProjectReference Include="../../src/Urbe.Client/Urbe.Client.csproj" /></ItemGroup>
+  <ItemGroup><None Include="../fixtures/readers/*" Exclude="../fixtures/readers/*.py" Link="fixtures/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" /></ItemGroup>
 </Project>
