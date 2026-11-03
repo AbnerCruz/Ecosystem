@@ -18,6 +18,7 @@ public sealed partial class HeadlessUiTests
         results.SelectedIndex = 0;
         await ReaderWait(() => reader.CurrentOffset > 0);
         var text = reader.GetLogicalDescendants().OfType<TextBox>().Single(t => t.IsReadOnly);
+        await ReaderWait(() => text.SelectedText == "Parágrafo 20.");
         Assert.Equal("Parágrafo 20.", text.SelectedText);
         BookReaderQuote? quote = null;
         reader.QuoteRequested += value => quote = value;

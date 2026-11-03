@@ -42,6 +42,18 @@ public sealed class EpubReadingTests
         Assert.Equal(64, book.Sha256.Length);
     }
     [Fact]
+    public void SearchOffsetsUseTheSameBodyTextAsVisualSelections()
+    {
+        using var book = new EpubReadingDocument(Sample());
+        var chapter = book.ReadChapter(0);
+        var body = System.Xml.Linq.XDocument.Parse(chapter.Html).Descendants().Single(e => e.Name.LocalName == "body");
+        var visible = string.Concat(body.DescendantNodes().OfType<System.Xml.Linq.XText>().Select(n => n.Value));
+        Assert.Equal(visible, book.ReadText(0));
+        Assert.Equal(visible, chapter.Text);
+        Assert.DoesNotContain("unsafe", chapter.Text);
+    }
+
+    [Fact]
     public void RejectsArchiveEscapesAndProtectedBooks()
     {
         Assert.Throws<InvalidDataException>(() => new EpubReadingDocument(Sample(escape: true)));

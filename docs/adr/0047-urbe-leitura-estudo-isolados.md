@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — implementação local para revisão, em resposta à exigência do proprietário de concluir CST-229–246 em 02/11/2026. Não presume autorização para publicar, integração crítica nem aceite físico. Complementa ADR-0032/0034/0044 sem converter a interface geral em HTML.
+Proposto — implementação local para revisão, em resposta à exigência do proprietário de concluir CST-229–246 em 02/11/2026. Publicação do código e preparação da beta.46 explicitamente autorizadas pelo proprietário em 03/11/2026. Integração crítica segue o integrador; não presume aceite físico. Complementa ADR-0032/0034/0044 sem converter a interface geral em HTML.
 
 ## Contexto
 

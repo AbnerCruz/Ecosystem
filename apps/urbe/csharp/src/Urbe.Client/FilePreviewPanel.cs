@@ -66,7 +66,7 @@ public sealed class FilePreviewPanel : Grid
     private VaultFileRead? _cachedRead;
     private int _cachedIndex = -1;
     private string? _cachedHash;
-    private readonly WrapPanel _pdfModes = new() { IsVisible = false };
+    private readonly StackPanel _pdfModes = new() { Orientation = Orientation.Horizontal, IsVisible = false };
     public event Action<ReaderQuote>? QuoteRequested;
     private PdfPagesView? _pdfView;
     private readonly StackPanel _pdfNavigation = new() { Orientation = Orientation.Horizontal, Spacing = 10, IsVisible = false, Margin = new Thickness(0, 6, 0, 0) };
@@ -74,7 +74,7 @@ public sealed class FilePreviewPanel : Grid
     private readonly Button _pdfNext = new() { Content = "Próxima", MinWidth = 80, Height = 40 };
     private readonly TextBlock _pdfPage = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = 13 };
     private bool _readerMode;
-    private readonly Grid _actions = new() { Margin = new Thickness(0, 16, 0, 0) };
+    private readonly WrapPanel _actions = new() { Margin = new Thickness(0, 16, 0, 0) };
     private readonly Button _readerButton = new()
     {
         Content = "Tela cheia", Height = 40, MinWidth = 98, FontSize = 13,
@@ -200,7 +200,13 @@ public sealed class FilePreviewPanel : Grid
         var question=new MenuItem{Header="Perguntar à IA"};question.Click+=(_,_)=>_pdfView?.CiteSelection(ask:true);
         var selectionMenu=new ContextMenu{ItemsSource=new[]{enable,copy,cite,highlight,comment,question}};
         select.Click+=(_,_)=>selectionMenu.Open(select);_pdfModes.Children.Add(select);
-        var top = new StackPanel { Children = { head, _meta, _choose, _htmlMode, _pdfModes, _pdfNavigation, _ocr } };
+        static ScrollViewer HorizontalTools(Control tools) => new()
+        {
+            Content = tools,
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
+        };
+        var top = new StackPanel { Children = { head, _meta, _choose, HorizontalTools(_htmlMode), HorizontalTools(_pdfModes), HorizontalTools(_pdfNavigation), _ocr } };
         if (embedded)
         {
             var expand = new Ui.UrbeButton("Abrir leitor");

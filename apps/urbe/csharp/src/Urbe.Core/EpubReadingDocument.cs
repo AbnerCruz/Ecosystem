@@ -120,14 +120,17 @@ public sealed class EpubReadingDocument : IReaderPublication
                 new XAttribute("content", "default-src 'none'; img-src data:; font-src data:; style-src 'unsafe-inline'; script-src 'none'; connect-src 'none'; object-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'")));
             if (!FixedLayout) head.Add(new XElement(html + "style", FormattableString.Invariant($"html{{font-size:{Math.Clamp(fontSize, 10, 48)}px!important}}body{{font-size:1rem!important;line-height:{Math.Clamp(lineHeight, 1, 3)}!important;margin:5%!important}}img,svg{{max-width:100%}}")));
         }
-        return new(document.ToString(SaveOptions.DisableFormatting), WebUtility.HtmlDecode(plain), FixedLayout);
+        return new(document.ToString(SaveOptions.DisableFormatting), plain, FixedLayout);
     }
 
     public string ReadText(int index) => Plain(_archive.Xml(_spine[index].FilePath));
-    private static string Plain(XDocument document) => string.Join("\n", document.Descendants()
-        .Where(e => e.Name.LocalName is "p" or "h1" or "h2" or "h3" or "li" or "td" or "figcaption")
-        .Where(e => !e.Descendants().Any(n => n.Name.LocalName is "p" or "li" or "td"))
-        .Select(e => e.Value));
+    // Search, native fallback and DOM locators must count the same characters.
+    // XElement.Value is already XML-decoded; decoding a second time corrupts literal entities.
+    private static string Plain(XDocument document) => string.Concat(document.Descendants()
+        .FirstOrDefault(e => e.Name.LocalName == "body")?.DescendantNodes().OfType<XText>()
+        .Where(n => !n.Ancestors().Any(e => e.Name.LocalName.ToLowerInvariant() is
+            "script" or "style" or "noscript" or "iframe" or "object" or "embed" or "form" or "input" or "button" or "base"))
+        .Select(n => n.Value) ?? []);
 
     private string RewriteCss(string css, string from)
     {

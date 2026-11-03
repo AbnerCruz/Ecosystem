@@ -129,7 +129,7 @@ public sealed class StudyBrowserPanel : Grid
         var video = ReaderUris.YouTube(_browser.Address);
         _videoId = video?.Id;
         _video.IsVisible = video is not null;
-        if (video is not null) _timestamp.Text = video.Second.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (video is { } currentVideo) _timestamp.Text = currentVideo.Second.ToString(System.Globalization.CultureInfo.InvariantCulture);
         _back.IsEnabled = _browser.CanGoBack; _forward.IsEnabled = _browser.CanGoForward;
         if (_browser.Error is { } error) _status.Text = error;
     }

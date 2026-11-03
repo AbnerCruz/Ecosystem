@@ -2,17 +2,17 @@
   "schemaVersion": 1,
   "message_id": "HO-20261102-urbe-study-engines",
   "category": "HANDOFF",
-  "timestamp": "2026-11-02T20:56:59.763881Z",
+  "timestamp": "2026-11-03T10:54:44.221306+00:00",
   "agent": {
     "id": "codex-urbe-reference-study",
     "kind": "ai-agent"
   },
   "task_id": "CST-229",
   "component": "urbe",
-  "state": "working",
-  "branch": "feat/urbe-reference-study-workspace",
-  "commit": null,
-  "pr": null,
+  "state": "review",
+  "branch": "release/urbe-beta46-study-recovery",
+  "commit": "b76245168e684898ba51f94b793892b0f4946dd4",
+  "pr": 903,
   "base_commit": "672b612b9099d38140cedf6c1acb71a471cf642a",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Android/AndroidStudyBrowser.cs",
@@ -85,7 +85,6 @@
     "apps/urbe/csharp/tools/readers-build/.gitignore",
     "apps/urbe/csharp/tools/readers-build/README.md",
     "apps/urbe/csharp/tools/readers-build/build.mjs",
-    "apps/urbe/csharp/tools/readers-build/node_modules",
     "apps/urbe/csharp/tools/readers-build/package-lock.json",
     "apps/urbe/csharp/tools/readers-build/package.json",
     "apps/urbe/csharp/tools/readers-build/verify.mjs",
@@ -130,7 +129,10 @@
   "work_completed": [
     "Segunda etapa após recusa explícita de encerramento parcial: PDF Skia/tiles/virtualização, EPUB/Office/CBZ, browser e player por host, OCR WASM/modelos locais, anotações canônicas e metadados privados de posição. Ver matriz de evidência; a solicitação integral continua aberta.",
     "Corpus original versionado e testes de conteúdo em Chromium sem requisições externas; novas jornadas UI em teste.",
-    "ADR-0047 proposto, licenças/proveniência/build de recursos e catálogo do schema privado registrados. Nenhuma release ou publicação."
+    "ADR-0047 proposto, licenças/proveniência/build de recursos e catálogo do schema privado registrados. Nenhuma release ou publicação.",
+    "Recuperação autorizada pelo proprietário em 03/11: snapshot preservado, branch remota e PR #903 criados. Preparação da beta.46/2000046 no canal oficial existente.",
+    "Reproduções vermelho→verde para salto/seleção EPUB, identidade de vídeo desatualizada e offsets de busca divergentes do DOM. Layout OCR/toolbar PDF/rodapé corrigido após inspeção de screenshot 390x820; prova de área legível acrescentada.",
+    "CI portátil passa a verificar hashes dos recursos e executar motores EPUB/PPTX/OCR reais em Chromium sem requisições externas."
   ],
   "verification": [
     {
@@ -187,20 +189,38 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "build.mjs recompilou Web-PPT a partir do checkout limpo no SHA fixado e copiou os pacotes locais. verify.mjs confirmou os mesmos SHA-256 de todos os 13 recursos, sem atualizar manifesto para aceitar diferenças."
+    },
+    {
+      "check": "Recuperação — núcleo final",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1336 testes, zero falhas/skips em /tmp/urbe46-core-tests-final.log; inclui reprodução de offsets EPUB vs texto DOM."
+    },
+    {
+      "check": "Recuperação — cliente completo",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "487 testes, zero falhas/skips em /tmp/urbe46-client-tests-final.log. Rodada anterior detectou apenas recurso patchnotes antigo durante troca de versão; rebuild com beta.46 passou. Alterações finais de layout/texto têm nova rodada /tmp/urbe46-client-release.log em andamento."
+    },
+    {
+      "check": "Recuperação — recursos de conteúdo",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "verify.mjs conferiu 13 recursos empacotados. Chromium local não iniciou: socket Unix bloqueado pelo sandbox; execução real transferida ao CI, sem contornar permissões."
     }
   ],
   "known_issues": [
-    "CST-229–246 não concluídos: matriz e critérios remanescentes no documento REFERENCE-STUDY-20261102; não rebaixar o pedido integral.",
-    "Ainda faltam CFI interoperável, seleção/realce geométrico sobre PDF, sessão transversal completa, prova visual complexa Office, métricas e DEVICE.",
-    "Cookies/YouTube real e identidade de instalação Windows precisam de prova de host; docs explicitam fidelidade parcial Office e web mutável."
+    "CFI interoperável, RTL/paginação EPUB e fidelidade Office complexa continuam parciais conforme matriz; não são declarados completos.",
+    "Destaques persistidos como Markdown canônico e retorno por âncora/revisão; sobreposição persistente de todos os destaques em todo reader e sessão transversal completa permanecem pendentes.",
+    "Métricas físicas, codecs/YouTube real e identidade Windows exigem evidência do host; nenhuma validação de aparelho é presumida."
   ],
   "blockers": [
-    "Revisão automática rejeitou git push por considerar ausente autorização explícita para publicar o código/documentação novos no repositório público. Não houve tentativa alternativa de publicação. Confirmado por git ls-remote: branch remota ausente.",
-    "ADR-0047 ainda proposto; revisão crítica e aceite arquitetural exigidos antes da integração."
+    "Integração crítica segue o integrador governado e autorização do proprietário no PR. O pedido explícito desta sessão autoriza publicação; não há bloqueio de consentimento de envio ao repositório.",
+    "Validação física Android/Windows não realizada; não declarar aceite humano. Pipeline remoto deve concluir builds/smoke e motores de conteúdo antes de liberar beta.46."
   ],
   "next_actions": [
-    "Fechar novas jornadas UI e regressões, revisar imagens/layout e rodar consistência. Prosseguir nas lacunas independentes dos gates físicos.",
-    "Revisão crítica do ADR/schema/dependências antes de integrar. CI/PR e DEVICE dependem dos gates descritos; nenhuma autorização para publicar foi inferida de Continue."
+    "Concluir rodada final Android/Windows e regressões da árvore final; atualizar evidências no PR.",
+    "Conferir CI combinado, obter a autorização crítica exigida pelo integrador, integrar e publicar beta.46 exclusivamente pelo workflow oficial; verificar ativos e SHA-256."
   ],
   "decisions_required": [],
   "normative_sources": [

@@ -56,7 +56,9 @@ public sealed partial class HeadlessUiTests
             await ReaderWait(()=>view.Notices.Any(n=>n.StartsWith("Citação salva em",StringComparison.Ordinal)));
             string saved=File.ReadAllText(Path.Combine(vault,"Comece.md"));Assert.Contains("Texto corrigido pelo usuário.",saved);
             Assert.Contains("OCR estimado, ainda não revisado",saved);Assert.Contains("&region=0,0,1,1",saved);Assert.Contains("scan.png#image=1&sha256=",saved);
-            window.Width=390;window.Height=820;await Settle(window,view);Snapshot(window,"native-study-ocr-review.png");
+            window.Width=390;window.Height=820;await Settle(window,view);
+            Assert.True(text.Bounds.Height >= 100, "OCR review must retain a readable text area on a phone.");
+            Snapshot(window,"native-study-ocr-review.png");
             return true;
         }
         finally{ContentViewers.Factory=factory;window.Close();Directory.Delete(dir,true);}

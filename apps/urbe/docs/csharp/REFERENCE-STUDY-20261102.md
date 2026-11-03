@@ -5,7 +5,7 @@ qualquer arquivo escolhido pela pessoa. O proprietário rejeitou encerrar a
 frente em painel/PDF textual e reiterou que precisa dela completa. A implementação
 segue na mesma branch `feat/urbe-reference-study-workspace`; integração, release e
 aceite físico não foram presumidos. ADR-0047 registra dependências, schema e
-trust boundaries novos. Não há mudança de versão/identidade da beta.45.
+trust boundaries novos. A revisão de recuperação prepara beta.46/2000046 pelo mecanismo oficial, preservando identidade e certificado.
 
 ## Auditoria, alternativas e decisões
 
@@ -108,3 +108,15 @@ imutável. Compilar em Linux não prova WebView2/Windows. Não houve release nov
 Comandos de reprodução dos motores: `csharp/tools/readers-build/README.md`.
 Resultados consolidados e bloqueios: novo handoff crítico desta etapa; o handoff
 inicial permanece histórico e não é reescrito como conclusão integral.
+
+## Recuperação e revisão de 03/11/2026
+
+Proprietário autorizou explicitamente revisar o planejamento/código, corrigir e publicar no repositório, com alvo beta.46. O workspace recuperado e os commits originais foram preservados. Não repetir o bloqueio anterior de autorização como se o pedido atual não existisse.
+
+Reproduções UI antes da correção: busca EPUB abria o capítulo sem selecionar a ocorrência; navegação de YouTube para outro site mantinha ações do vídeo anterior. Corrigidos salto com extensão textual, offset de seleção no fallback nativo e atualização da identidade de vídeo ao navegar. Testes em StudyRecoveryUiTests.
+
+Referências reconsultadas: Readium kotlin-toolkit issue #325 (seleção paginada, v2.3.0; correção upstream #502; não prova bug do Urbe); documentação Microsoft CoreWebView2.ExecuteScriptAsync (consultas de host funcionam mesmo com IsScriptEnabled=false). Mantidos localizadores vinculados à revisão; nenhuma permissão de vault é concedida à página.
+
+A revisão também reproduziu a divergência entre offsets de busca EPUB e árvore textual visual: o extrator acrescentava separadores e omitira texto de links. A projeção agora usa o mesmo texto do body, sem script/style/noscript nem dupla decodificação de entidades XML. Screenshots 390x820 expuseram controles OCR consumindo o corpo e rodapé sobreposto; ferramentas passam a rolagem horizontal, preservando área revisável.
+
+PR de recuperação: https://github.com/AbnerCruz/Ecosystem/pull/903. Núcleo 1336/1336, cliente completo 487/487 no checkpoint; árvore final de layout e heads é validada separadamente no PR.

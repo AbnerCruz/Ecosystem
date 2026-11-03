@@ -63,7 +63,13 @@ public sealed class OcrStudyView : Grid, IDisposable
             try{var region=_region;byte[] png=await Task.Run(()=>Crop(_imageBytes,region));if(!_closed)VisualQuestionRequested?.Invoke(new(_path,_hash,RegionText(region),png));}
             finally{ask.IsEnabled=true;}
         };
-        var header = new StackPanel { Children = { _status, new WrapPanel { Children = { back, _run, compare, rotate, _language, ask } } } }; Children.Add(header);
+        var controls = new StackPanel { Orientation = Orientation.Horizontal, Children = { back, _run, compare, rotate, _language, ask } };
+        var header = new StackPanel { Children = { _status, new ScrollViewer
+        {
+            Content = controls,
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
+        } } }; Children.Add(header);
         var source = new Grid { Children = { _image, _selectionCanvas } };
         _selectionCanvas.Children.Add(_rectangle); _rectangle.IsVisible = false;
         _selectionCanvas.PointerPressed += (_, e) =>
