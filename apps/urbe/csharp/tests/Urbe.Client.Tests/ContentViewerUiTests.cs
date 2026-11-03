@@ -95,6 +95,7 @@ public sealed partial class HeadlessUiTests
                 Assert.DoesNotContain(0, pages.Drawn);
                 preview.Close();
                 Dispatcher.UIThread.RunJobs();
+                for(int i=0;i<100&&!pdf.Disposed;i++){await Task.Delay(10);Dispatcher.UIThread.RunJobs();}
                 Assert.True(pdf.Disposed);
                 window.Close();
                 return true;

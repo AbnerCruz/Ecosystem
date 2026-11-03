@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261102-urbe-reference-study",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-03T11:03:28.096611+00:00",
+  "agent": {
+    "id": "codex-urbe-reference-study",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-023",
+  "component": "urbe",
+  "state": "review",
+  "branch": "release/urbe-beta46-study-recovery",
+  "commit": "b76245168e684898ba51f94b793892b0f4946dd4",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/903",
+  "base_commit": "672b612b9099d38140cedf6c1acb71a471cf642a",
+  "files_changed": [
+    "apps/urbe/AGENTSCHAT.md",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Split.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PinnedPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/SplitPane.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Reading.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PdfStudyView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.FilePicker.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PdfSourceReference.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/ReferenceStudyUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PdfSourceReferenceTests.cs",
+    "apps/urbe/docs/csharp/REFERENCE-STUDY-20261102.md",
+    "docs/governance/handoffs/HO-20261102-urbe-reference-study.json",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FilePreviewUiTests.cs"
+  ],
+  "work_completed": [
+    "Auditoria de main beta.45, plano Numa 2.6, PRs recentes, viewers, painel, split e extrator canônico; issue #902 registra a solicitação integral.",
+    "Painel abre sem nota automática, seletor universal pesquisável e viewers embutidos; split admite arquivos e limpa viewers em troca de vault.",
+    "PDF textual offline, pesquisa continuável, seleção/citação em nota real com gravação canônica e retorno por página/hash; revisão alterada é denunciada.",
+    "Texto autoral selecionado é preservado ao acrescentar citação; formatos sem renderer têm fallback explícito. Documentação distingue o incremento do objetivo integral.",
+    "03/11: incremento inicial recuperado e incluído no PR #903 por autorização explícita do proprietário. Estado histórico do bloqueio resolvido; evolução dos leitores/evidências finais em HO-20261102-urbe-study-engines.json."
+  ],
+  "verification": [
+    {
+      "check": "Core regression",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1.310 testes Core, zero falhas, executados com .NET SDK 10.0.403/runtime 10.0.14; log local /tmp/urbe-core-regression.log. Inclui 7 casos PdfSourceReference."
+    },
+    {
+      "check": "Client build and regression",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "467/467 testes Client na regressão final, zero falhas/skips, 197,089 s; build sem avisos/erros. Testes de painel vazio/arquivo desconhecido/imagem/split, busca PDF, página sem texto, seleção/citação com preservação autoral, gravação e retorno por página/hash passaram. Capturas Skia desktop/390 px revisadas. Primeira regressão interrompida após duas falhas: polling de arquivo durante save e expectativa anterior de ausência de leitor PDF; sincronização/oráculo corrigidos. Log /tmp/urbe-client-final-tests.log."
+    },
+    {
+      "check": "Desktop build",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet build src/Urbe.Desktop/Urbe.Desktop.csproj -m:1 -nr:false -p:UseSharedCompilation=false; zero avisos/erros. Build portátil não é execução Windows física."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks passaram no conjunto com o handoff; /tmp/urbe-consistency-final.log."
+    },
+    {
+      "check": "Android/Windows CI e integração governada",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Bloqueio de envio de 02/11 resolvido pelo pedido explícito do proprietário em 03/11; PR #903 e CI iniciados. Não equivale a integração nem release."
+    },
+    {
+      "check": "Android físico: painel, IME, seleção, leitor, retorno e mapas pendentes; Windows físico e desempenho",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/docs/csharp/REFERENCE-STUDY-20261102.md"
+    }
+  ],
+  "known_issues": [
+    "Estado histórico de 02/11, preservado para rastreabilidade; consultar HO-20261102-urbe-study-engines.json para os leitores implementados e pendências atuais.",
+    "Solicitação integral permanece aberta (#902): EPUB, browser/YouTube, apresentações/documentos, OCR, destaques geométricos, persistência/retomada e PDF visual Windows não estão concluídos.",
+    "Modo PDF textual não representa imagens, fórmulas rasterizadas nem diagramação; usa o limite de 60 MiB já existente no extrator e informa falha quando indisponível.",
+    "PdfPagesView gráfico mantém limitações anteriores de frames por página/render síncrono; sem alegação de CST-244 concluído.",
+    "Não há validação física nem release nova. Snapshots Skia não substituem DEVICE."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar CI e integração do PR #903; estado corrente dos motores e beta.46 no handoff HO-20261102-urbe-study-engines.json."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/product-plans/urbe/Numa_Consolidacao_2.6.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Mesmo armazenamento e extrator documental; citação vive na nota Markdown, sem índice paralelo de anotações."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Escolha explícita de fonte e painel sem nota automática registrados no ROADMAP e issue #902."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Leitura local sem envio automático à IA/rede; confirmação de mapas pendentes reutilizada, sem bridge nova."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes/Skia distintos de DEVICE; nenhum aceite físico presumido."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review com limites da frente integral e CI/DEVICE pendentes."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "reference-study-view",
+      "status": "product-specific",
+      "rationale": "Painel reutiliza leitores do próprio Urbe; não existe segundo consumidor aprovado que justifique extrair biblioteca ou runtime."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "UI e capacidades autorizadas CST-023/232/233/239/240; sintaxe de fragmento aditiva em wikilink existente, sem novo schema de vault, índice, migração, dependência, identidade, assinatura ou permissão."
+  }
+}

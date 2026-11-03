@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
     <!-- a IA que responde sem internet: o motor (llama.cpp) para CPU; os arquivos nativos seguem ao lado do executável -->
     <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.30.0" />
   </ItemGroup>
@@ -15,4 +16,9 @@
     <ProjectReference Include="../Urbe.Client/Urbe.Client.csproj" />
     <ProjectReference Include="../Urbe.LocalAi/Urbe.LocalAi.csproj" />
   </ItemGroup>
+  <Target Name="UseWebView2CoreWithoutWpfOrWinForms" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <Reference Remove="@(Reference)" Condition="'%(Reference.Filename)' == 'Microsoft.Web.WebView2.Wpf' Or '%(Reference.Filename)' == 'Microsoft.Web.WebView2.WinForms'" />
+    </ItemGroup>
+  </Target>
 </Project>

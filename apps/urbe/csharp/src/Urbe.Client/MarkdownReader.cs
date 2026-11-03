@@ -39,6 +39,7 @@ public sealed partial class MarkdownReader
 
     /// <summary>A [[wikilink]] was tapped (target note name).</summary>
     public Action<string>? WikiLinkTapped { get; set; }
+    public Action<string>? WebLinkTapped { get; set; }
     /// <summary>A task checkbox was toggled: index of the list line inside the block, new state.</summary>
     public Action<int, bool>? TaskToggled { get; set; }
 
@@ -469,7 +470,8 @@ public sealed partial class MarkdownReader
             if (pos >= s && pos < s + l && Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme is "http" or "https" or "mailto")
             {
                 e.Handled = true;
-                _ = TopLevel.GetTopLevel(tb)?.Launcher.LaunchUriAsync(uri);
+                if(uri.Scheme is "http" or "https" && WebLinkTapped is { } follow)follow(uri.AbsoluteUri);
+                else _ = TopLevel.GetTopLevel(tb)?.Launcher.LaunchUriAsync(uri);
                 return;
             }
     }

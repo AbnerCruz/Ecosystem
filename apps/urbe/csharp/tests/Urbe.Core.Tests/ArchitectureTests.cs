@@ -47,7 +47,9 @@ public sealed class ArchitectureTests
                 new { Name = "CSharpMath", Version = "[1.0.0-pre.2]" },
                 new { Name = "CSharpMath.Rendering", Version = "[1.0.0-pre.2]" },
                 // PdfPig is a managed, Apache-2.0 PDF text/layout dependency (no native OCR runtime).
-                new { Name = "PdfPig", Version = "0.1.16" }
+                new { Name = "PdfPig", Version = "0.1.16" },
+                // ADR-0047: managed, read-only EPUB parser; no UI/native host in Core.
+                new { Name = "VersOne.Epub", Version = "3.3.6" }
             },
             packages);
         Assert.Empty(project.Descendants("FrameworkReference"));

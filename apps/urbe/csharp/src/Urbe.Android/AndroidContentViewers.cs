@@ -27,6 +27,7 @@ internal static class AndroidContentViewers
 {
     public static void Register()
     {
+        StudyWebViews.CreateBrowser = address => new AndroidStudyBrowser(address);
         ContentViewers.Factory = CreateAsync;
         ContentViewers.PdfReader = OpenPdfAsync;
         ContentViewers.Printer = PrintAsync;
@@ -149,7 +150,9 @@ internal static class AndroidContentViewers
             {
                 // Only a validated Atlas Map exported HTML gets a host capability. Studio and arbitrary HTML remain isolated.
                 var atlas = AtlasMapSession.TryCreate(request);
-                return new AndroidHtmlHost(context => Page(context, html, request.Messages, atlas), view =>
+                AndroidHtmlHost? host = null;
+                host = new AndroidHtmlHost(context => Page(context, html, request.Messages, atlas, request.ReaderNavigate, request.ReaderEngine,
+                    web => host?.ReaderReady(web)), view =>
                 {
                     atlas?.Revoke();
                     if (view is WebView web)
@@ -158,6 +161,7 @@ internal static class AndroidContentViewers
                         web.Destroy();
                     }
                 }, request.Messages is not null, atlas);
+                return host;
             }
             case VaultFileKinds.Audio or VaultFileKinds.Video when request.Storage is AndroidVaultStorage vault
                                                                  && await vault.DocumentOfAsync(request.Path, cancellationToken) is { } uri:
@@ -168,12 +172,13 @@ internal static class AndroidContentViewers
     }
 
     /// <summary>A page of HTML from the vault: JavaScript on (the HTML products need it), nothing else reachable.</summary>
-    private static AView Page(Context context, string html, Action<string>? messages = null, AtlasMapSession? atlas = null)
+    private static AView Page(Context context, string html, Action<string>? messages = null, AtlasMapSession? atlas = null, Action<string>? readerNavigate = null,
+        ReaderContentEngine readerEngine = ReaderContentEngine.None, Action<WebView>? readerReady = null)
     {
         var web = new WebView(context);
         web.SetBackgroundColor(Color.White);
         var settings = web.Settings;
-        settings.JavaScriptEnabled = true;
+        settings.JavaScriptEnabled = readerNavigate is null || readerEngine != ReaderContentEngine.None;
         settings.DomStorageEnabled = true;
         settings.AllowFileAccess = false;
         settings.AllowContentAccess = false;
@@ -196,7 +201,7 @@ internal static class AndroidContentViewers
             web.AddJavascriptInterface(bridge, "UrbeAtlas");
             web.SetWebViewClient(new AtlasStayOnPage(bridge));
         }
-        else web.SetWebViewClient(new StayOnPage());
+        else web.SetWebViewClient(new StayOnPage(readerNavigate, readerReady));
         if (messages is not null)
         {
             // the studio's preview: what the page posts to its parent (here, itself) goes out by the console, nothing else
@@ -215,7 +220,7 @@ internal static class AndroidContentViewers
                 e.Handled = false;
             };
         }
-        web.LoadDataWithBaseURL(null, html, "text/html", "utf-8", null);
+        web.LoadDataWithBaseURL(readerEngine is ReaderContentEngine.Ocr or ReaderContentEngine.Presentation ? "https://urbe.reader.invalid/content" : null, html, "text/html", "utf-8", null);
         return web;
     }
 
@@ -249,9 +254,20 @@ internal static class AndroidContentViewers
     }
 
     /// <summary>A link or form of the page does not take the panel away from the file.</summary>
-    private sealed class StayOnPage : WebViewClient
+    private sealed class StayOnPage(Action<string>? readerNavigate = null, Action<WebView>? readerReady = null) : WebViewClient
     {
-        public override bool ShouldOverrideUrlLoading(WebView? view, IWebResourceRequest? request) => true;
+        public override bool ShouldOverrideUrlLoading(WebView? view, IWebResourceRequest? request)
+        {
+            string url = request?.Url?.ToString() ?? "";
+            if (readerNavigate is not null)
+            {
+                if (url.StartsWith("about:blank#", StringComparison.Ordinal)) return false;
+                if (request?.HasGesture == true || Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Host == "urbe.reader.invalid")
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() => readerNavigate(url));
+            }
+            return true;
+        }
+        public override void OnPageFinished(WebView? view, string? url) { if (view is not null) readerReady?.Invoke(view); }
     }
 
     /// <summary>Audio or video of the vault in the system's player, with its controls.</summary>
@@ -293,32 +309,34 @@ internal static class AndroidContentViewers
 }
 
 /// <summary>A PDF read by Android's PdfRenderer; one page is open at a time, as the renderer requires.</summary>
-internal sealed class AndroidPdfDocument : IPdfDocument
+internal sealed class AndroidPdfDocument : ITiledPdfDocument
 {
     private readonly ParcelFileDescriptor _fd;
     private readonly PdfRenderer _renderer;
-    private readonly Avalonia.Size[] _sizes;
+    private readonly Avalonia.Size?[] _sizes;
 
     public AndroidPdfDocument(ParcelFileDescriptor fd)
     {
         _fd = fd;
         _renderer = new PdfRenderer(fd);
-        _sizes = new Avalonia.Size[_renderer.PageCount];
-        for (int i = 0; i < _sizes.Length; i++)
-        {
-            using var page = _renderer.OpenPage(i);
-            _sizes[i] = new Avalonia.Size(page.Width, page.Height);
-            page.Close();
-        }
+        _sizes = new Avalonia.Size?[_renderer.PageCount];
     }
 
     public int PageCount => _sizes.Length;
 
-    public Avalonia.Size PageSize(int index) => _sizes[index];
+    public Avalonia.Size PageSize(int index)
+    {
+        if (_sizes[index] is { } known) return known;
+        using var page = _renderer.OpenPage(index);
+        var size = new Avalonia.Size(page.Width, page.Height);
+        page.Close();
+        _sizes[index] = size;
+        return size;
+    }
 
     public (byte[] Rgba, int Width, int Height) Render(int index, int width)
     {
-        var size = _sizes[index];
+        var size = PageSize(index);
         int height = Math.Max(1, (int)Math.Round(width * size.Height / Math.Max(1, size.Width)));
         using var page = _renderer.OpenPage(index);
         using var bitmap = Bitmap.CreateBitmap(width, height, Bitmap.Config.Argb8888!)!;
@@ -334,6 +352,20 @@ internal sealed class AndroidPdfDocument : IPdfDocument
         return (rgba, width, height);
     }
 
+    public (byte[] Rgba, int Width, int Height) RenderRegion(int index, int pageWidth, Avalonia.PixelRect region)
+    {
+        using var page = _renderer.OpenPage(index);
+        using var bitmap = Bitmap.CreateBitmap(region.Width,region.Height,Bitmap.Config.Argb8888!)!;
+        bitmap.EraseColor(Color.White.ToArgb());
+        using var matrix = new Matrix();
+        matrix.SetScale((float)pageWidth / page.Width,(float)pageWidth / page.Width);
+        matrix.PostTranslate(-region.X,-region.Y);
+        page.Render(bitmap,null,matrix,PdfRenderMode.ForDisplay); page.Close();
+        using var buffer = Java.Nio.ByteBuffer.Allocate(region.Width * region.Height * 4)!;
+        bitmap.CopyPixelsToBuffer(buffer); buffer.Rewind(); var rgba = new byte[region.Width * region.Height * 4]; buffer.Get(rgba);
+        return (rgba,region.Width,region.Height);
+    }
+
     public void Dispose()
     {
         _renderer.Close();
@@ -343,8 +375,40 @@ internal sealed class AndroidPdfDocument : IPdfDocument
 
 /// <summary>An Android view inside an Avalonia panel (NativeControlHost), released when the panel lets it go.</summary>
 /// <summary>An HTML page whose WebView loads new HTML in place (the studio's preview).</summary>
-internal sealed class AndroidHtmlHost(Func<Context, AView> make, Action<AView>? release, bool relay, AtlasMapSession? atlas = null) : AndroidViewHost(make, release), IHtmlReloadable, IAtlasMapPendingEdits
+internal sealed class AndroidHtmlHost(Func<Context, AView> make, Action<AView>? release, bool relay, AtlasMapSession? atlas = null) : AndroidViewHost(make, release), IHtmlReloadable, IAtlasMapPendingEdits, IReaderTextSelection, IReaderSlideRenderer, IReaderComputation, IReaderTextLocation
 {
+    private int? _readerPart;
+    private string? _readerAnchor;
+    private string? _readerAppearance;
+    private (int Offset, int Length, double Scroll)? _readerLocation;
+    internal void ReaderReady(WebView web)
+    {
+        if(_readerAppearance is { } appearance)web.EvaluateJavascript(appearance,null);
+        if (_readerPart is { } index) web.EvaluateJavascript(PresentationReaderHtml.ShowPartScript(index), null);
+        if (_readerLocation is { } p) web.EvaluateJavascript(ReaderTextLocator.RestoreScript(p.Offset, p.Length, p.Scroll), null);
+        if (_readerAnchor is { } anchor) web.EvaluateJavascript(ReaderTextLocator.AnchorScript(anchor), null);
+    }
+    public Task ShowReaderPartAsync(int index)
+    {
+        _readerPart = Math.Max(0, index);
+        if (View is WebView web) ReaderReady(web);
+        return Task.CompletedTask;
+    }
+    public Task ApplyReaderAppearanceAsync(string theme,double margin,bool reflow)
+    {_readerAppearance=ReaderTextLocator.AppearanceScript(theme,margin,reflow);if(View is WebView web)web.EvaluateJavascript(_readerAppearance,null);return Task.CompletedTask;}
+    public Task GoToReaderAnchorAsync(string id)
+    {
+        _readerAnchor=id;if(View is WebView web)web.EvaluateJavascript(ReaderTextLocator.AnchorScript(id),null);return Task.CompletedTask;
+    }
+    public async Task<ReaderTextPosition?> ReadTextPositionAsync(bool selection) => View is WebView web ? ReaderTextLocator.Parse(await AndroidStudyBrowser.ReadStringAsync(web, ReaderTextLocator.ReadScript(selection))) : null;
+    public Task RestoreTextPositionAsync(int offset, int length, double scroll)
+    {
+        _readerLocation = (offset, length, scroll); _readerAnchor=null;
+        if (View is WebView web) web.EvaluateJavascript(ReaderTextLocator.RestoreScript(offset, length, scroll), null);
+        return Task.CompletedTask;
+    }
+    public Task<string> ReadComputationAsync() => View is WebView web ? AndroidStudyBrowser.ReadStringAsync(web, OcrReaderHtml.ResultScript) : Task.FromResult("null");
+    public Task<string> SelectedTextAsync() => View is WebView web ? AndroidStudyBrowser.ReadSelectionAsync(web) : Task.FromResult("");
     // Native close/navigation guard for a pending Atlas Map. No HTML reload: editing, camera and map state remain.
     // The exported runtime is the source of truth for dirty state, never a stale duplicate in the host.
     public async Task<bool> HasPendingEditsAsync()
@@ -422,11 +486,20 @@ internal sealed class AndroidHtmlHost(Func<Context, AView> make, Action<AView>? 
     }
 }
 
-internal class AndroidViewHost(Func<Context, AView> make, Action<AView>? release = null) : NativeControlHost
+internal class AndroidViewHost(Func<Context, AView> make, Action<AView>? release = null) : NativeControlHost, IReaderActivity, IReaderMediaPosition
 {
     private AView? _view;
 
     protected AView? View => _view;
+    public Task<double?> ReadMediaSecondAsync() => Task.FromResult(_view?.FindViewWithTag("player") is VideoView player ? (double?)player.CurrentPosition/1000 : null);
+    public Task SeekMediaAsync(double seconds)
+    {if(_view?.FindViewWithTag("player") is VideoView player)player.SeekTo((int)Math.Clamp(seconds*1000,0,int.MaxValue));return Task.CompletedTask;}
+
+    public void SetReaderActive(bool active)
+    {
+        if (_view is WebView web) { if (active) web.OnResume(); else { web.EvaluateJavascript(ReaderActivity.PauseScript, null); web.OnPause(); } }
+        if (!active && _view?.FindViewWithTag("player") is VideoView player) player.Pause();
+    }
 
     protected override IPlatformHandle CreateNativeControlCore(IPlatformHandle parent)
     {

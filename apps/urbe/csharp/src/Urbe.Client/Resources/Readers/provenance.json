@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Offline read-only document content; no HTML application UI.",
+  "engines": [
+    {
+      "name": "Web-PPT",
+      "version": "0.8.0-beta.1",
+      "revision": "88c8df92ee853fa2dc45a413fa38316527b20025",
+      "source": "https://github.com/unstone/web-ppt",
+      "license": "MIT"
+    },
+    {
+      "name": "fflate",
+      "version": "0.8.2",
+      "license": "MIT"
+    },
+    {
+      "name": "Tesseract.js",
+      "version": "6.0.1",
+      "source": "https://github.com/naptha/tesseract.js",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "tesseract.js-core",
+      "version": "6.1.2",
+      "source": "https://github.com/naptha/tesseract.js-core",
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "tessdata_fast",
+      "revision": "87416418657359cb625c412a48b6e1d6d41c29bd",
+      "languages": [
+        "por",
+        "eng"
+      ],
+      "source": "https://github.com/tesseract-ocr/tessdata_fast",
+      "license": "Apache-2.0"
+    }
+  ],
+  "build": {
+    "esbuild": "0.25.12",
+    "script": "tools/readers-build/build.mjs"
+  },
+  "files": [
+    {
+      "path": "Ocr/LICENSE",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "Ocr/Tesseract-core-LICENSE.txt",
+      "bytes": 11358,
+      "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08"
+    },
+    {
+      "path": "Ocr/Tesseract-js-LICENSE.txt",
+      "bytes": 11357,
+      "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1"
+    },
+    {
+      "path": "Ocr/core.wasm.js",
+      "bytes": 3954181,
+      "sha256": "775a35df6f2ae100e02609443e6bd5cafcd07983dd6175454ca4a432a7730687"
+    },
+    {
+      "path": "Ocr/eng.traineddata.gz",
+      "bytes": 1967599,
+      "sha256": "f1c22599ed6fd3eb821d87fdb43e09f98b61179a4abe38c43cfca2cdcb9f5ec2"
+    },
+    {
+      "path": "Ocr/por.traineddata.gz",
+      "bytes": 1000041,
+      "sha256": "1a2ebd28f3c554447ace056b73516f5e878ddc1518c78911937ea2c314543e6e"
+    },
+    {
+      "path": "Ocr/tesseract-notices.txt",
+      "bytes": 149,
+      "sha256": "cdf963ced7d25a0f98901a547647b4d6e2dbe0197fd78c87a059a87b0e542fe2"
+    },
+    {
+      "path": "Ocr/tesseract.min.js",
+      "bytes": 62961,
+      "sha256": "10fff78484067759c43028a02a72d76d0b90eb17302bb23b58a9ec5410bc928b"
+    },
+    {
+      "path": "Ocr/worker-notices.txt",
+      "bytes": 466,
+      "sha256": "45f54171aeaa1d10c0c1a66f374b7bba1f02472b1487fbe892eec04f840002ac"
+    },
+    {
+      "path": "Ocr/worker.min.js",
+      "bytes": 111162,
+      "sha256": "38645599043239c0eb6db08a6504a92dcdc292200535f3e9339cd77c4443b842"
+    },
+    {
+      "path": "Web-PPT-LICENSE.txt",
+      "bytes": 1064,
+      "sha256": "c85a5da8f41dbf00b70fad33a9cc0b056f00165b086fa7de5e90babc777bc801"
+    },
+    {
+      "path": "fflate-LICENSE.txt",
+      "bytes": 1069,
+      "sha256": "805f6cb28bb8b6d3a0badd83c93bccd9671fa01a3b4b92b7042b0743325ac243"
+    },
+    {
+      "path": "presentation.js",
+      "bytes": 370157,
+      "sha256": "fb6e6412fd81d138b27769c585f3920ad7b21065a86effcb4a04d6e7b3caf4b2"
+    }
+  ]
+}

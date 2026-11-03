@@ -400,6 +400,23 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    /// <summary>One explicitly opened source, resolved through the vault's symlink/traversal checks.</summary>
+    public async Task<string?> ReaderRevisionAsync(string path, CancellationToken cancellationToken = default)
+    {
+        await using var stream=await OpenReaderStreamAsync(path,cancellationToken);
+        return stream is null ? null : Convert.ToHexString(await System.Security.Cryptography.SHA256.HashDataAsync(stream,cancellationToken)).ToLowerInvariant();
+    }
+    public async Task<Stream?> OpenReaderStreamAsync(string path, CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (_root is not { } root || ExistingFile(root, path) is not { } full) return null;
+            return new FileStream(full, FileMode.Open, FileAccess.Read, FileShare.Read, 64 * 1024, FileOptions.Asynchronous | FileOptions.RandomAccess);
+        }
+        finally { _gate.Release(); }
+    }
+
     public async Task<bool> OpenExternallyAsync(string path, CancellationToken cancellationToken = default)
     {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);

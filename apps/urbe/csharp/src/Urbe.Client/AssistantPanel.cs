@@ -604,6 +604,17 @@ public sealed partial class AssistantPanel : Border
     /// request (Anthropic: 32 MB, 100 images; other providers and proxies: from 20 images), so the cap is 20 attachments
     /// within 30 MB, and the message says which one was reached.
     /// </summary>
+    /// <summary>Explicit reader action prepares an ordinary pending attachment; sending remains the user's action.</summary>
+    public async Task<bool> AttachStudyImageAsync(string name,byte[] image)
+    {
+        if(_running is not null||AttachmentsFull())return false;
+        string agent=_cfg.AgentId;
+        var fitted=await Task.Run(()=>AttachmentImages.Fit(image,"image/png"));
+        if(agent!=_cfg.AgentId||fitted is not { } attachment)return false;
+        if(AttachedBytes()+attachment.Bytes.Length*4L/3>MaxAttachmentBytes){_app.Notify("A região excede o tamanho de anexos desta mensagem.");return false;}
+        _pendingAttachments.Add(new AiChatBlock{Type="attachment",FileName=name,MimeType=attachment.Mime,Content=Convert.ToBase64String(attachment.Bytes)});
+        RefreshAttachments();return true;
+    }
     public const int MaxAttachments = 20;
     public const long MaxAttachmentBytes = 30_000_000;
 

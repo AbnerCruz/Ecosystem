@@ -156,6 +156,8 @@ public interface IUrbeVaultStorage
     /// <paramref name="maxBytes"/>, its bytes. Null when the file is not there (the 1.8.4's "Arquivo não encontrado").
     /// Read only; never follows a link out of the folder. A host that cannot read files returns null.
     /// </summary>
+    Task<string?> ReaderRevisionAsync(string path, CancellationToken cancellationToken = default) => Task.FromResult<string?>(null);
+
     Task<VaultFileRead?> ReadFileAsync(string path, long maxBytes, CancellationToken cancellationToken = default) =>
         Task.FromResult<VaultFileRead?>(null);
 
