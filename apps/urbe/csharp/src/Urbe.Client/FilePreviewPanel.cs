@@ -633,7 +633,7 @@ public sealed class FilePreviewPanel : Grid
             {
                 if (kind is VaultFileKinds.Audio or VaultFileKinds.Video && Storage is { } mediaVault)
                 {
-                    var media=new MediaStudyView(path??name,mediaVault,viewer,_requestedPart);
+                    var media=new MediaStudyView(path??name,mediaVault,viewer,_requestedPart,_cachedHash);
                     media.QuoteRequested+=quote=>BookQuoteRequested?.Invoke(quote);media.PositionChanged+=second=>RememberReadingPosition(second+1);_mediaView=media;viewer=media;_requestedPart=null;
                 }
                 viewer.Height = ViewerHeight();

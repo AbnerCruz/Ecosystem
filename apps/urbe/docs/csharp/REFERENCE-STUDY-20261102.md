@@ -120,3 +120,5 @@ Referências reconsultadas: Readium kotlin-toolkit issue #325 (seleção paginad
 A revisão também reproduziu a divergência entre offsets de busca EPUB e árvore textual visual: o extrator acrescentava separadores e omitira texto de links. A projeção agora usa o mesmo texto do body, sem script/style/noscript nem dupla decodificação de entidades XML. Screenshots 390x820 expuseram controles OCR consumindo o corpo e rodapé sobreposto; ferramentas passam a rolagem horizontal, preservando área revisável.
 
 PR de recuperação: https://github.com/AbnerCruz/Ecosystem/pull/903. Núcleo 1336/1336, cliente completo 487/487 no checkpoint; árvore final de layout e heads é validada separadamente no PR.
+
+A revisão de concorrência reproduziu duas referências incorretas: seleção EPUB concluída depois de navegar podia usar o capítulo novo; timestamp da mídia podia usar hash de um arquivo substituído durante a reprodução. Versão da operação é agora conferida após cada await e a revisão da mídia é comparada àquela capturada na abertura. Dois testes de jornada falham na fonte anterior e exigem nova regressão final.

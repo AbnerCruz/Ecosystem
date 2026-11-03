@@ -161,16 +161,17 @@ public sealed class EpubStudyView : Grid, IDisposable
     }
     private async Task WithSelectionAsync(bool ask, StudyAnnotationKind kind = StudyAnnotationKind.Citation)
     {
+        int version = _version, chapter = CurrentChapter;
         try
         {
             string selection = _body.Content == _text ? _text.SelectedText : _selection is null ? "" : await _selection.SelectedTextAsync();
-            if (_closed) return;
+            if (_closed || version != _version) return;
             if (string.IsNullOrWhiteSpace(selection)) { _status.Text = "Selecione o trecho desejado no capítulo."; return; }
             ReaderTextPosition? position = _body.Content == _text
                 ? new ReaderTextPosition(Math.Min(_text.SelectionStart, _text.SelectionEnd), Math.Abs(_text.SelectionEnd - _text.SelectionStart), selection, CurrentScroll)
                 : _body.Content is IReaderTextLocation locator ? await locator.ReadTextPositionAsync(true) : null;
-            if (_closed) return;
-            var quote = new BookReaderQuote(_path, _book.Unit, CurrentChapter + 1, selection, _book.Sha256, position?.Offset, position?.Length, kind);
+            if (_closed || version != _version) return;
+            var quote = new BookReaderQuote(_path, _book.Unit, chapter + 1, selection, _book.Sha256, position?.Offset, position?.Length, kind);
             if (ask) AskRequested?.Invoke(quote); else QuoteRequested?.Invoke(quote);
         }
         catch (Exception ex) when (ex is TimeoutException or InvalidOperationException or ObjectDisposedException) { _status.Text = "A seleção não está disponível agora."; }

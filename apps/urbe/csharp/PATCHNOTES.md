@@ -13,6 +13,7 @@
 - Leitura visual PPTX com motor Web-PPT empacotado; DOCX/ODT/ODP com projeção semântica e aviso de fidelidade; CBZ com imagens em ordem natural. Formatos desconhecidos continuam selecionáveis e oferecem fallback explícito.
 - Navegador de estudo isolado do vault e player oficial YouTube. URLs/seleções e instantes geram referências em notas; sair do vídeo remove as ações de timestamp. Não há download nem transcrição implícita.
 - OCR local português/inglês com modelos empacotados, recorte, rotação, texto revisável e distinção entre resultado estimado e conferido. Não garante exatidão de equações.
+- A troca de capítulo invalida seleções ainda em processamento; mídia substituída depois de abrir o player não recebe um marcador como se fosse a mesma versão.
 - Citações, destaques, comentários e marcadores são gravados nas notas reais pelo editor existente. Referências verificam a revisão antes de voltar à fonte.
 - Posição e preferências de leitura são privadas do app, com gravação atômica/verificada. Mídia usa o player do host e streaming, sem carregar o vídeo inteiro no contexto da prévia.
 - Perguntar sobre trecho ou imagem prepara rascunho/anexo no assistente existente; o envio continua explícito.

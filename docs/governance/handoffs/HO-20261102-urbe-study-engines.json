@@ -133,7 +133,8 @@
     "Recuperação autorizada pelo proprietário em 03/11: snapshot preservado, branch remota e PR #903 criados. Preparação da beta.46/2000046 no canal oficial existente.",
     "Reproduções vermelho→verde para salto/seleção EPUB, identidade de vídeo desatualizada e offsets de busca divergentes do DOM. Layout OCR/toolbar PDF/rodapé corrigido após inspeção de screenshot 390x820; prova de área legível acrescentada.",
     "CI portátil passa a verificar hashes dos recursos e executar motores EPUB/PPTX/OCR reais em Chromium sem requisições externas.",
-    "Rastreabilidade corrigida: handoff cita diretamente ADR-0032 aceito (incluindo emenda ADD-0023), que governa adapters NativeControlHost e conteúdo isolado. ADR-0047 continua proposto para revisão do subescopo; nenhum aceite é fabricado."
+    "Rastreabilidade corrigida: handoff cita diretamente ADR-0032 aceito (incluindo emenda ADD-0023), que governa adapters NativeControlHost e conteúdo isolado. ADR-0047 continua proposto para revisão do subescopo; nenhum aceite é fabricado.",
+    "Concorrência de referências corrigida após duas reproduções vermelhas: trocar capítulo não reatribui seleção pendente; substituir mídia aberta não vincula instante à revisão nova. Nova regressão completa /tmp/urbe46-client-race-final.log em execução."
   ],
   "verification": [
     {
@@ -232,6 +233,12 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "dotnet publish -r win-x64 --self-contained true -p:PublishSingleFile=true -p:Version=2.0.0-beta.46; Urbe.exe gerado em /tmp/urbe46-windows-proof, sem erro. Não executado em Windows físico."
+    },
+    {
+      "check": "Recuperação — self-test de consistência",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "/tmp/urbe46-consistency-selftest-clean.log: todos os checks provaram detectar suas violações. Primeira tentativa local falhou ao copiar um symlink node_modules pendurado; removido somente o symlink local não versionado antes da execução limpa."
     }
   ],
   "known_issues": [

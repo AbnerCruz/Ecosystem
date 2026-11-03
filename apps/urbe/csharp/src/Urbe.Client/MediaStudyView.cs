@@ -22,7 +22,7 @@ public sealed class MediaStudyView : Grid
     public int CurrentSecond {get;private set;}
     public event Action<int>? PositionChanged;
     public event Action<BookReaderQuote>? QuoteRequested;
-    public MediaStudyView(string path,IUrbeVaultStorage storage,Control player,int? initialSecond=null)
+    public MediaStudyView(string path,IUrbeVaultStorage storage,Control player,int? initialSecond=null,string? expectedRevision=null)
     {
         _player=player; CurrentSecond=initialSecond??0; RowDefinitions=new RowDefinitions("*,Auto");Children.Add(player);
         var seek=new Ui.UrbeButton("Ir ao instante");seek.Click+=async(_,_)=>
@@ -37,6 +37,8 @@ public sealed class MediaStudyView : Grid
                 string? hash=await storage.ReaderRevisionAsync(path);
                 if(_closed)return;
                 if(hash is null){_status.Text="Não foi possível verificar a versão deste arquivo.";return;}
+                if(expectedRevision is null || !string.Equals(hash,expectedRevision,StringComparison.OrdinalIgnoreCase))
+                { _status.Text="A mídia mudou ou sua versão inicial não pôde ser confirmada. Reabra a fonte antes de anotar o instante.";return; }
                 int second=(int)Math.Clamp(Math.Floor(current),0,int.MaxValue);_time.Text=second.ToString(System.Globalization.CultureInfo.InvariantCulture);
                 QuoteRequested?.Invoke(new(path,"time",second,"Mídia no instante "+TimeSpan.FromSeconds(second).ToString(),hash,Kind:StudyAnnotationKind.Bookmark));
                 _status.Text="Referência preparada no instante "+second+" s.";
