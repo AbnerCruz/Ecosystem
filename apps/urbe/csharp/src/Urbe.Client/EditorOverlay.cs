@@ -2116,19 +2116,34 @@ public sealed class EditorOverlay : Grid
 
     // ------------------------------------------------------------------ [[ suggestions
 
+    /// <summary>
+    /// The [[ suggestions' index of the vault's notes. It was rebuilt on every note opened (every note parsed and
+    /// indexed, a vault of hundreds of notes per tap); now opening only marks it stale, and it is built the first time
+    /// a [[ list needs it.
+    /// </summary>
     private void RebuildIndex()
     {
         _index?.Dispose();
         _index = null;
         _store = null;
         _currentId = null;
-        if (Notes is null) return;
+        _indexStale = true;
+    }
+
+    private bool _indexStale = true;
+
+    private KnowledgeIndex? Index()
+    {
+        if (!_indexStale) return _index;
+        _indexStale = false;
+        if (Notes is null) return null;
         var store = new DocumentStore();
         foreach (var n in Notes().Where(n => CanVisual(n.Path)))
             store.Upsert(new DocumentInput { Path = n.Path, Content = n.Path == _note?.Path ? _note.Content : n.Content });
         _store = store;
         _currentId = _note is null ? null : store.Get(_note.Path)?.Id;
         _index = new KnowledgeIndex(store);
+        return _index;
     }
 
     /// <summary>
@@ -2155,7 +2170,7 @@ public sealed class EditorOverlay : Grid
                 .Distinct().Select(n => notePart + "#" + n)];
         }
         // DEC-0059: every match (the list scrolls); before, 20 notes and 20 files
-        var notes = _index is null ? [] : _index.Search(query, int.MaxValue).Where(d => d.Id != _currentId).Select(d => d.Title).ToList();
+        var notes = Index() is not { } index ? [] : index.Search(query, int.MaxValue).Where(d => d.Id != _currentId).Select(d => d.Title).ToList();
         var all = Files?.Invoke().ToList() ?? [];
         if (all.Count == 0) return notes;
         var files = WikiTargets.Files(all, query, int.MaxValue).Select(f => WikiTargets.LinkName(f, all)).ToList();

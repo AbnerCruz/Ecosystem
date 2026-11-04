@@ -12,6 +12,11 @@ Esta versão arruma o que piorou entre a beta.38 e a beta.46: o app mais pesado 
 - O app voltava a construir o Assistente inteiro (conversas, agentes) toda vez que abria, mesmo sem usá-lo. Agora ele só é montado quando você o abre.
 - Os motores de leitura de slides e de OCR (cerca de 7 MB) estavam dentro da parte principal do app, que o Android descompacta a cada abertura. Foram para um pacote separado, carregado só quando um desses arquivos é aberto.
 
+## Abrir e trocar de nota mais rápido
+
+- Uma nota longa abre com as primeiras telas desenhadas; o resto aparece conforme você rola. Numa nota de estudo de 14 KB, abrir caiu de ~110 ms para ~34 ms nos testes (no celular, a diferença é proporcional e maior).
+- Abrir qualquer nota reconstruía o índice de sugestões `[[` do vault inteiro. Agora o índice só é montado quando você digita `[[`.
+
 ## Editor
 
 - A faixa de abas aparece só quando há duas ou mais abas abertas. Com uma nota só, o texto ganha essa linha de volta. As abas ficaram planas, com o nome da nota e um traço na aba ativa.

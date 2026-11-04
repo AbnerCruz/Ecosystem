@@ -179,6 +179,15 @@ public sealed partial class HeadlessUiTests
             var note = BenchNote();
             view.Editor.Open(new CityNote("Tutorial/Estudo.md", note));
             await BenchPump(window);
+            if (mode == "open")
+            {
+                var other = new CityNote("Tutorial/Curta.md", "# Curta\n\nTexto.\n");
+                var n0 = int.Parse(Environment.GetEnvironmentVariable("URBE_BENCH_N") ?? "40");
+                var each0 = Time(() => { view.Editor.Open(other); Dispatcher.UIThread.RunJobs(); view.Editor.Open(new CityNote("Tutorial/Estudo.md", note)); Dispatcher.UIThread.RunJobs(); window.UpdateLayout(); }, n0);
+                PerfLog($"PROFILE open {each0:0.00} ms/open");
+                window.Close();
+                return true;
+            }
             if (mode == "fonte")
             {
                 view.Editor.SetMode(EditorMode.Fonte);
