@@ -387,6 +387,9 @@ public sealed class EditorOverlay : Grid
         _visual.HideFrontmatter = true;
         AddRow(bodyHost, 3);
         AddRow(_footer = Footer(), 4);
+        // CST-143: what the bottom of the editor holds (footer, the toolbar over the keyboard), for the floating menu
+        foreach (var bottom in new Control[] { _footer, _toolbarHost })
+            bottom.PropertyChanged += (_, e) => { if (e.Property == BoundsProperty || e.Property == IsVisibleProperty) RaiseBottomChrome(); };
         // saving errors and short notices: a discreet toast over the text, never a dialog (UX.md P3)
         SetRowSpan(_toast, 6);
         Children.Add(_toast);
@@ -396,6 +399,22 @@ public sealed class EditorOverlay : Grid
     }
 
     private ScrollViewer? SourceScroll() => _sourceScroll;
+
+    /// <summary>The height of the controls along the bottom edge (footer and the toolbar when it sits there).</summary>
+    public double BottomChrome =>
+        (_footer is { IsVisible: true } ? _footer.Bounds.Height : 0) +
+        (ToolbarAtBottom && _toolbarHost.IsVisible ? _toolbarHost.Bounds.Height : 0);
+
+    public event Action? BottomChromeChanged;
+    private double _bottomChrome = -1;
+
+    private void RaiseBottomChrome()
+    {
+        var now = BottomChrome;
+        if (Math.Abs(now - _bottomChrome) < .5) return;
+        _bottomChrome = now;
+        BottomChromeChanged?.Invoke();
+    }
 
     public TextBox Editor { get; }
     public event EventHandler? Closed;
@@ -813,8 +832,7 @@ public sealed class EditorOverlay : Grid
     private readonly List<string> _tabs = [];
     private string? _activeTabPath;
     private readonly Grid _tabStrip = new() { ColumnDefinitions = new ColumnDefinitions("*,Auto"), IsVisible = false };
-    // The visible chip stays 36dp tall; the outer button keeps a full 48dp touch surface.
-    private readonly StackPanel _tabRow = new() { Orientation = Orientation.Horizontal, Spacing = 4, Margin = new Thickness(8, 2) };
+    private readonly StackPanel _tabRow = new() { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 0) };
     private readonly ScrollViewer _tabBar = new()
     {
         HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
@@ -913,7 +931,11 @@ public sealed class EditorOverlay : Grid
         RenderTabs();
     }
 
-    /// <summary>One tab is visible by default; the explicit + action stays outside horizontal tab scrolling.</summary>
+    /// <summary>
+    /// The tab strip shows only when there is more than one tab: with a single note it would only take a row of the
+    /// phone's screen. Tabs are flat (name, × on the active one), the active one underlined, like a mobile browser's;
+    /// the whole tab is the touch target. "Nova aba" lives in the editor's menu and at the end of the strip.
+    /// </summary>
     private void RenderTabs()
     {
         _tabBar.Content ??= _tabRow;
@@ -922,56 +944,64 @@ public sealed class EditorOverlay : Grid
             _tabStrip.Children.Add(_tabBar);
             var add = new Button
             {
-                Content = UrbeTheme.Icon(UrbeTheme.Icons.Plus, 18, UrbeTheme.Text2),
-                MinWidth = 48, MinHeight = 48, Padding = new Thickness(8),
-                Margin = new Thickness(0, 2, 4, 2), CornerRadius = new CornerRadius(8),
-                Background = Brushes.Transparent, BorderThickness = new Thickness(0)
+                Content = UrbeTheme.Icon(UrbeTheme.Icons.Plus, 16, UrbeTheme.Text2),
+                MinWidth = 44, MinHeight = TabHeight, Padding = new Thickness(0),
+                HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center,
+                Background = Brushes.Transparent, BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(0)
             };
             AutomationProperties.SetName(add, "Abrir nova aba");
             ToolTip.SetTip(add, "Abrir nova aba");
             add.Click += (_, _) => NewTabRequested?.Invoke();
             SetColumn(add, 1);
             _tabStrip.Children.Add(add);
+            _tabStrip.Children.Add(new Border
+            {
+                Height = 1, VerticalAlignment = VerticalAlignment.Bottom, IsHitTestVisible = false,
+                Background = UrbeTheme.Brush(UrbeTheme.Line), [Grid.ColumnSpanProperty] = 2
+            });
         }
         _tabRow.Children.Clear();
         foreach (var path in _tabs)
         {
             bool active = path == _note?.Path;
-            var close = new Button
-            {
-                Content = UrbeTheme.Icon(UrbeTheme.Icons.CloseUi, 12, active ? UrbeTheme.Text : UrbeTheme.Text3, 2),
-                Width = 40, Height = 40, Padding = new Thickness(7), CornerRadius = new CornerRadius(8), Background = Brushes.Transparent,
-                HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
-            };
-            ToolTip.SetTip(close, "Fechar aba");
             var tab = path;
-            close.Click += async (_, e) => { e.Handled = true; await CloseTabAsync(tab); };
             var label = new TextBlock
             {
-                Text = System.IO.Path.GetFileName(path), FontFamily = UrbeTheme.UiFont, FontSize = 12, MaxWidth = 124,
+                Text = System.IO.Path.GetFileNameWithoutExtension(path), FontFamily = UrbeTheme.UiFont, FontSize = 13, MaxWidth = 140,
                 FontWeight = active ? FontWeight.SemiBold : FontWeight.Normal, TextTrimming = TextTrimming.CharacterEllipsis,
-                Foreground = UrbeTheme.Brush(active ? UrbeTheme.Text : UrbeTheme.Text2), VerticalAlignment = VerticalAlignment.Center
+                Foreground = UrbeTheme.Brush(active ? UrbeTheme.Text : UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center
             };
-            var capsule = new Border
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { label } };
+            if (active)
             {
-                Height = 40, Padding = new Thickness(8, 0, 1, 0), CornerRadius = new CornerRadius(8),
-                Background = UrbeTheme.Brush(active ? UrbeTheme.Surface3 : UrbeTheme.Surface2),
-                BorderBrush = UrbeTheme.Brush(active ? UrbeTheme.Accent : UrbeTheme.Line2),
-                BorderThickness = new Thickness(1),
-                Child = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { label, close } }
-            };
+                var close = new Button
+                {
+                    Content = UrbeTheme.Icon(UrbeTheme.Icons.CloseUi, 11, UrbeTheme.Text2, 2),
+                    Width = 32, Height = TabHeight, Padding = new Thickness(0), Margin = new Thickness(0, 0, -8, 0),
+                    Background = Brushes.Transparent, BorderThickness = new Thickness(0),
+                    HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
+                };
+                ToolTip.SetTip(close, "Fechar aba");
+                AutomationProperties.SetName(close, "Fechar aba " + System.IO.Path.GetFileName(path));
+                close.Click += async (_, e) => { e.Handled = true; await CloseTabAsync(tab); };
+                row.Children.Add(close);
+            }
             var button = new Button
             {
-                Content = capsule, MinHeight = 48, Padding = new Thickness(0),
-                Background = Brushes.Transparent, BorderThickness = new Thickness(0),
+                Content = row, MinHeight = TabHeight, Padding = new Thickness(14, 0, active ? 8 : 14, 0),
+                Background = Brushes.Transparent, CornerRadius = new CornerRadius(0),
+                BorderBrush = UrbeTheme.Brush(active ? UrbeTheme.Accent : UrbeTheme.Line, active ? 1 : 0),
+                BorderThickness = new Thickness(0, 0, 0, active ? 2 : 0),
                 VerticalContentAlignment = VerticalAlignment.Center
             };
             Avalonia.Automation.AutomationProperties.SetName(button, "Aba " + System.IO.Path.GetFileName(path));
             button.Click += async (_, _) => await SwitchTabAsync(tab);
             _tabRow.Children.Add(button);
         }
-        _tabStrip.IsVisible = _tabs.Count > 0;
+        _tabStrip.IsVisible = _tabs.Count > 1;
     }
+
+    private const double TabHeight = 40;
 
     /// <summary>The explicit new-tab action, using the same leave/save/recovery pipeline as navigation.</summary>
     public async Task OpenInNewTabAsync(string path)
@@ -1766,16 +1796,9 @@ public sealed class EditorOverlay : Grid
         _readChip.Click += (_, _) => ReadOnly = !ReadOnly;
         UpdateReadChip();
         var line = new DockPanel { LastChildFill = true };
-        // CST-143: on a phone the floating radial navigation occupies the lower-right corner.
-        // Keep the reading/editing switch reachable on the opposite side of the footer.
-        // On wider layouts retain the original right-aligned control.
-        DockPanel.SetDock(_readChip, Dock.Left);
-        line.PropertyChanged += (_, e) =>
-        {
-            if (e.Property != BoundsProperty) return;
-            var target = line.Bounds.Width < CompactHeaderWidth ? Dock.Left : Dock.Right;
-            if (DockPanel.GetDock(_readChip) != target) DockPanel.SetDock(_readChip, target);
-        };
+        // CST-143: the phone's radial menu floats above the footer and the toolbar (BottomChrome), so the switch keeps
+        // its usual place on the right
+        DockPanel.SetDock(_readChip, Dock.Right);
         line.Children.Add(_readChip);
         line.Children.Add(_status);
         return new Border { Height = 28, Padding = new Thickness(UrbeTokens.Space.M, 0, UrbeTokens.Space.S, 0), Child = line };

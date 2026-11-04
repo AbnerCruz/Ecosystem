@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The study readers' bundled engines (slides, offline OCR): several MB that only a reader opening one of those
+    files needs. They live in their own assembly so the app's start never loads or decompresses them; .NET loads
+    this assembly the first time ReaderAssets is touched.
+  -->
+  <PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Readers/presentation.js" LogicalName="reader/presentation.js" />
+    <EmbeddedResource Include="Readers/Ocr/*" Exclude="Readers/Ocr/*LICENSE*;Readers/Ocr/*notices*" LogicalName="reader/ocr/%(Filename)%(Extension)" />
+    <None Include="Readers/**/*LICENSE*;Readers/**/*notices*;Readers/provenance.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

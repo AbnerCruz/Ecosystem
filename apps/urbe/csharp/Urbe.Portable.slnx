@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="src/Urbe.Core/Urbe.Core.csproj" />
+  <Project Path="src/Urbe.Readers.Assets/Urbe.Readers.Assets.csproj" />
   <Project Path="src/Urbe.Client/Urbe.Client.csproj" />
   <Project Path="src/Urbe.LocalAi/Urbe.LocalAi.csproj" />
   <Project Path="src/Urbe.Desktop/Urbe.Desktop.csproj" />

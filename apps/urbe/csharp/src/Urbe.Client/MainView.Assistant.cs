@@ -78,6 +78,8 @@ public sealed partial class MainView : IAssistantApp
         ]) { ZIndex = 20 };   // over the Notes drawer, like the launcher
         _radial.SetActive(ActiveDestination);
         _stage.Children.Add(_radial);
+        Editor.BottomChromeChanged += UpdateRadialLift;
+        Editor.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateRadialLift(); };
         UpdateFloatingNav();
     }
 
@@ -86,6 +88,13 @@ public sealed partial class MainView : IAssistantApp
     {
         if (Editor.IsVisible) Editor.FinishEditing();
         ToggleAssistant();
+    }
+
+    /// <summary>CST-143: over the editor, the radial menu floats above its footer and toolbar instead of covering them.</summary>
+    private void UpdateRadialLift()
+    {
+        if (_radial is null) return;
+        _radial.Lift = Editor.IsVisible ? Editor.BottomChrome : 0;
     }
 
     /// <summary>A phone shows the radial menu, a wide window its rail and the launcher; neither while the Assistente is open.</summary>

@@ -3,7 +3,7 @@
 A interface do Urbe é nativa. Os bundles daqui renderizam somente slides e OCR,
 sem bridge de escrita, rede de documentos ou UI de aplicação em HTML.
 
-`Resources/Readers/provenance.json` fixa versões, commits, licenças, tamanhos e
+`src/Urbe.Readers.Assets/Readers/provenance.json` fixa versões, commits, licenças, tamanhos e
 SHA-256. Não atualizar hashes para esconder diferença não investigada.
 
 ```bash
