@@ -89,7 +89,7 @@ public sealed partial class HeadlessUiTests
             StudyWebViews.CreateBrowser = address => { browser = new FakeStudyWeb(); browser.Navigate(address); return browser; };
             var panel = new StudyBrowserPanel();
             Assert.True(panel.Open("https://www.youtube.com/watch?v=abcdefghijk&t=42"));
-            var mark = panel.GetLogicalDescendants().OfType<Button>().Single(b => b.Content as string == "Anotar instante");
+            var mark = panel.GetLogicalDescendants().OfType<Button>().Single(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Anotar instante");
             Assert.True(((Control)mark.Parent!).IsVisible);
             browser!.Navigate("https://example.org/article");
             Assert.False(((Control)mark.Parent!).IsVisible);
