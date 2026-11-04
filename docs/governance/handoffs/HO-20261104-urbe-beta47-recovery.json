@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261104-urbe-beta47-recovery",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-04T11:02:52.000Z",
+  "agent": {
+    "id": "claude-code-urbe-recovery",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-114",
+  "component": "urbe",
+  "state": "review",
+  "branch": "claude/urbe-refactor-development-t73hul",
+  "base_commit": "0e2759b",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Readers.Assets/",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/RadialNav.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PdfStudyView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/OcrStudyView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EpubStudyView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/StudyBrowserPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PinnedPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationStudioView.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md"
+  ],
+  "work_completed": [
+    "Proprietário (04/11/2026) relatou piora de desempenho, visual e bugs entre beta.38 e beta.46 e pediu recuperação e continuidade com releases frequentes.",
+    "Medição comparativa headless beta.37 × beta.46 (bench opt-in URBE_BENCH=1): caminhos do editor equivalentes; Fonte ~65 ms/tecla em nota de 14 KB nas duas (custo do TextBox do Avalonia refazendo o layout do texto inteiro, pendência estrutural).",
+    "Regressões de abertura encontradas e corrigidas: o painel do Assistente passou a ser construído em toda abertura (assinatura de visibilidade no construtor do MainView); motores de slides/OCR (~7 MB) embutidos em Urbe.Client.dll, que a store de assemblies do Android descomprime a cada abertura (store 9,7 → 18,1 MB entre os APKs publicados da beta.37 e da beta.46). Assistente volta a ser preguiçoso (teste Startup_TheAssistenteIsBuiltOnlyWhenItOpens); motores movidos para Urbe.Readers.Assets, carregado só ao abrir um desses leitores.",
+    "UX: faixa de abas só com 2+ abas; menu radial acima da barra/rodapé do editor (CST-143) e oculto com leitor aberto; leitores PDF/OCR/EPUB/navegador, painel fixado e estúdio de Publicações com barras de ícones únicas e ações secundárias em ⋯.",
+    "Beta.47 preparada no csproj canônico; patchnotes reescritas em linguagem direta; beta.45/46 no histórico."
+  ],
+  "verification": [
+    {
+      "check": "Urbe.Client.Tests completos (headless Skia)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "492/492 localmente no commit fd2edf3 (.NET SDK 10.0.403)."
+    },
+    {
+      "check": "tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks passaram localmente."
+    },
+    {
+      "check": "CI do PR e publicação oficial Android/Windows",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Após integração; nenhum APK publicado por este registro."
+    },
+    {
+      "check": "Abertura do app, digitação, abas, menu radial e leitores no moto g32",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/PATCHNOTES.md",
+      "evidence": "Validação física pendente (NN-017); headless não mede o aparelho."
+    }
+  ],
+  "known_issues": [
+    "Digitação no modo Fonte em notas grandes continua cara (TextBox do Avalonia relayouta o texto inteiro por tecla); próximo incremento.",
+    "OCR local roda Tesseract via WebView com o pacote inteiro em base64; substituir por OCR nativo por plataforma é item a avaliar."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Abrir PR, acompanhar CI e integração; disparar publicação oficial quando integrado.",
+    "Atacar a digitação no Fonte de notas grandes (editor com layout incremental) e continuar o plano Numa 2.6."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "MANIFEST.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "docs/governance/addenda/ADD-0033-urbe-sem-paridade-com-a-1-8-4-e-sem-limitadores.md",
+    "docs/distribution/direct-releases.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Versão somente no csproj canônico; patchnotes seguem-na (teste)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação física declarada pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Testes e consistência executados; publicação só após CI."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-reader-chrome",
+      "status": "product-specific",
+      "rationale": "Barras dos leitores e do estúdio são UI do Urbe; nenhum segundo consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Corte de release no csproj do canal beta, pedido explicitamente pelo proprietário (releases constantes); identidade, assinatura e workflow preservados."
+  }
+}

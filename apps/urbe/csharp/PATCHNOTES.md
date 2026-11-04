@@ -1,25 +1,38 @@
 # Urbe — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.46
+**Versão canônica preparada:** 2.0.0-beta.47
 **Canal:** Urbe 2.0 nativo, Android e Windows
-**Publicação:** workflow oficial após integração e checks; preparada não significa publicada.
-**Identidade Android:** app.urbe.csharp, certificado beta existente.
+**Publicação:** pelo workflow oficial depois da integração; preparada não significa publicada.
+**Atualização:** por cima da beta instalada (app.urbe.csharp, mesmo certificado). Não precisa desinstalar.
 
-## Painel e área de estudo (CST-023, CST-229–246)
+Esta versão arruma o que piorou entre a beta.38 e a beta.46: o app mais pesado para abrir, telas de leitura amontoadas e partes do editor cobertas.
 
-- Abrir o painel apresenta um seletor vazio. A pessoa escolhe o arquivo fixado, de qualquer extensão, sem abrir automaticamente a nota atual. A fonte tem rolagem independente e permanece ao mudar de nota.
-- PDF com raster nativo Android e fallback Skia no Windows, páginas virtualizadas, zoom por tiles, sumário/links, pesquisa textual, seleção sobre palavras da página e referências por página/região/revisão.
-- EPUB 2/3 com capítulos, recursos locais, busca, tamanho de fonte, entrelinha, margens e temas. A busca abre e seleciona a ocorrência encontrada. Localizadores próprios preservam revisão e posição textual; não são CFI interoperável.
-- Leitura visual PPTX com motor Web-PPT empacotado; DOCX/ODT/ODP com projeção semântica e aviso de fidelidade; CBZ com imagens em ordem natural. Formatos desconhecidos continuam selecionáveis e oferecem fallback explícito.
-- Navegador de estudo isolado do vault e player oficial YouTube. URLs/seleções e instantes geram referências em notas; sair do vídeo remove as ações de timestamp. Não há download nem transcrição implícita.
-- OCR local português/inglês com modelos empacotados, recorte, rotação, texto revisável e distinção entre resultado estimado e conferido. Não garante exatidão de equações.
-- A troca de capítulo invalida seleções ainda em processamento; mídia substituída depois de abrir o player não recebe um marcador como se fosse a mesma versão.
-- Citações, destaques, comentários e marcadores são gravados nas notas reais pelo editor existente. Referências verificam a revisão antes de voltar à fonte.
-- Posição e preferências de leitura são privadas do app, com gravação atômica/verificada. Mídia usa o player do host e streaming, sem carregar o vídeo inteiro no contexto da prévia.
-- Perguntar sobre trecho ou imagem prepara rascunho/anexo no assistente existente; o envio continua explícito.
+## Abrir o app mais leve
 
-## Compatibilidade e limites reais
+- O app voltava a construir o Assistente inteiro (conversas, agentes) toda vez que abria, mesmo sem usá-lo. Agora ele só é montado quando você o abre.
+- Os motores de leitura de slides e de OCR (cerca de 7 MB) estavam dentro da parte principal do app, que o Android descompacta a cada abertura. Foram para um pacote separado, carregado só quando um desses arquivos é aberto.
 
-A frente integral da Consolidação 2.6 permanece rastreada: CFI interoperável, fidelidade Office complexa, realces persistentes sobre todos os leitores e restauração de toda a sessão Fonte↔Nota ainda não têm aceite integral. WebView2 requer o runtime Windows. Codecs e reprodução YouTube dependem do host/rede/permissões da origem. Testes headless e builds não equivalem a validação física no moto g32/Windows.
+## Editor
 
-As correções do serviço da IA da beta.45 permanecem incluídas. A beta atualiza no mesmo canal, sem desinstalar. Evidências da revisão e CI constam no PR/handoff de recuperação; nenhum teste físico é presumido.
+- A faixa de abas aparece só quando há duas ou mais abas abertas. Com uma nota só, o texto ganha essa linha de volta. As abas ficaram planas, com o nome da nota e um traço na aba ativa.
+- **Abrir outra nota em nova aba** está no menu ⋯ do editor.
+- O botão do menu radial no celular fica acima da barra de formatação e do rodapé, em vez de cobrir o último botão da barra e o seletor Leitura/Edição. O seletor voltou para a direita.
+
+## Leitores (PDF, imagem, EPUB, navegador)
+
+- Uma barra só, com ícones: no PDF, página anterior/próxima, número da página, zoom, texto selecionável, seleção e reconhecimento de texto (OCR).
+- Sumário, links da página, página única/rolagem, anotações, abrir em outro app e renomear/mover/excluir ficam no ⋯.
+- **Abrir em outro app** só aparece grande quando o Urbe não consegue mostrar o arquivo.
+- Modo texto do PDF: Enter na caixa de página vai para a página; Enter na busca busca. Resultados em lista, com a página destacada.
+- EPUB: capítulo anterior/próximo e a lista de capítulos numa linha; letra, entrelinha, tema e margens no botão de aparência; a busca abre pelo ícone.
+- Navegador de estudo: endereço, voltar, avançar, recarregar e fechar numa linha. Copiar endereço, salvar referência e abrir no navegador do sistema no ⋯.
+- O menu radial some enquanto um leitor está aberto (cobria os botões do leitor).
+
+## Publicações e painel fixado
+
+- Estúdio de Publicações com uma barra só: desfazer, refazer, composição, exportar HTML e ⋯ (renomear, EPUB, imprimir). Botões desativados não viram mais blocos cinza.
+- No painel fixado, **Escolher arquivo** virou um ícone e não cobre mais o nome do arquivo.
+
+## O que ainda falta conferir no aparelho
+
+Os testes automáticos (492 de interface e os do núcleo) passam, mas não substituem o uso no moto g32: abertura do app, digitação, teclado e toque precisam ser conferidos no aparelho.
