@@ -37,7 +37,8 @@ public sealed partial class KnowledgeIndex : IDisposable
         ArgumentNullException.ThrowIfNull(store);
         _store = store;
         _store.Changed += OnDocumentStoreChanged;
-        Rebuild();
+        // built at the first question (an Assistente run makes one and may never search)
+        _stale = true;
     }
 
     public event EventHandler<KnowledgeIndexedEventArgs>? Indexed;
@@ -50,6 +51,7 @@ public sealed partial class KnowledgeIndex : IDisposable
 
     public void Rebuild()
     {
+        _stale = false;
         _byTitle.Clear();
         _byTag.Clear();
         _outgoing.Clear();
@@ -115,6 +117,7 @@ public sealed partial class KnowledgeIndex : IDisposable
 
     public IReadOnlyList<UrbeDocument> Backlinks(string? idOrPath)
     {
+        Fresh();
         var document = _store.Get(idOrPath);
         if (document is null)
             return Array.Empty<UrbeDocument>();
@@ -124,6 +127,7 @@ public sealed partial class KnowledgeIndex : IDisposable
 
     public IReadOnlyList<UrbeDocument> Links(string? idOrPath)
     {
+        Fresh();
         var document = _store.Get(idOrPath);
         if (document is null)
             return Array.Empty<UrbeDocument>();
@@ -139,21 +143,25 @@ public sealed partial class KnowledgeIndex : IDisposable
     }
 
     /// <summary>The folder notes that give tags to what is inside their folders (DEC-0058).</summary>
-    public ProjectTags Projects => _projects;
+    public ProjectTags Projects { get { Fresh(); return _projects; } }
 
     /// <summary>The tags a note inherits from its project, with where each comes from.</summary>
     public IReadOnlyList<InheritedTag> Inherited(string? idOrPath) =>
-        _store.Get(idOrPath) is { } document ? _projects.For(document.Path, document.Content, document.Tags) : [];
+        _store.Get(idOrPath) is { } document ? Projects.For(document.Path, document.Content, document.Tags) : [];
 
     /// <summary>Own tags and then the inherited ones.</summary>
     public IReadOnlyList<string> EffectiveTags(string? idOrPath) =>
-        _store.Get(idOrPath) is { } document ? _projects.Effective(document) : [];
+        _store.Get(idOrPath) is { } document ? Projects.Effective(document) : [];
 
-    public IReadOnlyList<UrbeDocument> Tagged(string? tag) =>
-        Resolve(_byTag.GetValueOrDefault(Normalize(tag)));
+    public IReadOnlyList<UrbeDocument> Tagged(string? tag)
+    {
+        Fresh();
+        return Resolve(_byTag.GetValueOrDefault(Normalize(tag)));
+    }
 
     public IReadOnlyList<UrbeDocument> Search(string? query, int? limit = null)
     {
+        Fresh();
         var q = Normalize(query);
         var max = limit.GetValueOrDefault(50);
         if (max == 0)
@@ -200,23 +208,40 @@ public sealed partial class KnowledgeIndex : IDisposable
         return SliceLikeJavaScript(ranked, max);
     }
 
-    public KnowledgeIndexStats Stats() =>
-        new(
+    public KnowledgeIndexStats Stats()
+    {
+        Fresh();
+        return new(
             _store.List().Count,
             _outgoing.Values.Sum(set => set.Count),
             _byTag.Count,
             _tokens.Count);
+    }
 
-    public IReadOnlyDictionary<string, IReadOnlyList<string>> Titles =>
-        Snapshot(_byTitle);
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> Titles
+    {
+        get { Fresh(); return Snapshot(_byTitle); }
+    }
 
-    public IReadOnlyDictionary<string, IReadOnlyList<string>> Tags =>
-        Snapshot(_byTag);
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> Tags
+    {
+        get { Fresh(); return Snapshot(_byTag); }
+    }
+
+    // A change only marks the index stale; the next question rebuilds it. Rebuilding on every change ran the whole
+    // vault's indexing on the UI thread at each autosave and each note an agent wrote while a run held an index
+    // (CST-148: "Urbe não está respondendo" during AI work).
+    private bool _stale;
 
     private void OnDocumentStoreChanged(
         object? sender,
         DocumentStoreChangedEventArgs args) =>
-        Rebuild();
+        _stale = true;
+
+    private void Fresh()
+    {
+        if (_stale) Rebuild();
+    }
 
     private IReadOnlyList<UrbeDocument> Resolve(IEnumerable<string>? ids)
     {

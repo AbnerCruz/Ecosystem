@@ -179,6 +179,34 @@ public sealed partial class HeadlessUiTests
             var note = BenchNote();
             view.Editor.Open(new CityNote("Tutorial/Estudo.md", note));
             await BenchPump(window);
+            if (mode == "leave")
+            {
+                var dir = Path.Combine(Path.GetTempPath(), "urbe-bench-" + Guid.NewGuid().ToString("N"));
+                var vault = GenerateVault(Path.Combine(dir, "vault"), 500);
+                File.WriteAllText(Path.Combine(vault, "Estudo.md"), note);
+                var big = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "sel.json")));
+                window.Content = big;
+                await big.OpenVaultAsync();
+                await BenchPump(window);
+                var n2 = int.Parse(Environment.GetEnvironmentVariable("URBE_BENCH_N") ?? "10");
+                double total = 0, ui = 0;
+                for (int i = 0; i < n2; i++)
+                {
+                    big.OpenNoteByPath("Estudo.md");
+                    await BenchPump(window);
+                    big.Editor.Editor.Text = big.Editor.Editor.Text + "x";
+                    Dispatcher.UIThread.RunJobs();
+                    var sw = Stopwatch.StartNew();
+                    var back = big.Editor.BackAsync();
+                    ui += sw.Elapsed.TotalMilliseconds;
+                    await back;
+                    total += sw.Elapsed.TotalMilliseconds;
+                    await BenchPump(window);
+                }
+                PerfLog($"PROFILE leave ui {ui / n2:0.0} ms, saved {total / n2:0.0} ms");
+                window.Close();
+                return true;
+            }
             if (mode == "notes")
             {
                 var dir = Path.Combine(Path.GetTempPath(), "urbe-bench-" + Guid.NewGuid().ToString("N"));

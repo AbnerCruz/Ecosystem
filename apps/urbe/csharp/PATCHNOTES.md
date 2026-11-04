@@ -16,6 +16,12 @@ Esta versão arruma o que piorou entre a beta.38 e a beta.46: o app mais pesado 
 
 - Uma nota longa abre com as primeiras telas desenhadas; o resto aparece conforme você rola. Numa nota de estudo de 14 KB, abrir caiu de ~110 ms para ~34 ms nos testes (no celular, a diferença é proporcional e maior).
 - Abrir qualquer nota reconstruía o índice de sugestões `[[` do vault inteiro. Agora o índice só é montado quando você digita `[[`.
+- Abrir **Notas** não refaz a árvore e a Área de trabalho quando nada mudou (2.000 notas: 134 → 80 ms nos testes).
+- A busca rápida não relê todas as notas a cada letra digitada.
+
+## Menos travamentos com a IA trabalhando
+
+- O índice de ligações e tags era refeito por inteiro a cada gravação no vault enquanto o Assistente trabalhava: cada salvamento automático e cada nota escrita pelo agente. Agora uma sequência de gravações custa uma reconstrução só, quando alguém precisa do índice. É a causa mais provável dos avisos “Urbe não está respondendo” durante o uso da IA (CST-148); conferir no aparelho.
 
 ## Editor
 

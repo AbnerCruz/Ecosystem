@@ -577,6 +577,26 @@ public sealed class KnowledgeIndexTests
         Assert.Equal(59, knowledge.Search(string.Empty, -1).Count);
     }
 
+    /// <summary>CST-148: a burst of saves (autosave, an agent writing notes) costs one rebuild, at the next question.</summary>
+    [Fact]
+    public void ChangesRebuildOnceAtTheNextQuestion()
+    {
+        var store = new DocumentStore();
+        using var knowledge = new KnowledgeIndex(store);
+        var indexed = 0;
+        knowledge.Indexed += (_, _) => indexed++;
+        for (int i = 0; i < 20; i++)
+            store.Upsert(new DocumentInput { Path = $"N{i}.md", Content = "texto [[N0]] #tag" });
+        Assert.Equal(0, indexed);
+        Assert.Equal(19, knowledge.Backlinks("N0.md").Count(d => d.Path != "N0.md"));
+        Assert.Equal(1, indexed);
+        Assert.Equal(20, knowledge.Tagged("tag").Count);
+        Assert.Equal(1, indexed);
+        store.Upsert(new DocumentInput { Path = "N1.md", Content = "sem link" });
+        Assert.Equal(18, knowledge.Backlinks("N0.md").Count(d => d.Path != "N0.md"));
+        Assert.Equal(2, indexed);
+    }
+
     [Fact]
     public void StatsAndIndexedEventTrackAutomaticRebuilds()
     {
