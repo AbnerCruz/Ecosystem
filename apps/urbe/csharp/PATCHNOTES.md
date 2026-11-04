@@ -31,13 +31,17 @@ Esta versão arruma o que piorou entre a beta.38 e a beta.46: o app mais pesado 
 
 ## Leitores (PDF, imagem, EPUB, navegador)
 
-- Uma barra só, com ícones: no PDF, página anterior/próxima, número da página, zoom, texto selecionável, seleção e reconhecimento de texto (OCR).
+Redesenhados no padrão dos leitores consagrados (Kindle, Kobo, Play Books):
+
+- No celular o leitor ocupa a tela inteira, em vez de uma folha por cima da nota. Barra de cima fina: voltar, nome do arquivo com o detalhe pequeno embaixo, e ⋯.
+- A navegação fica embaixo, perto do polegar: página anterior, número da página, próxima, e os modos (texto selecionável, seleção, reconhecer texto).
+- Um toque na página ou na imagem esconde as barras; outro toque, ou Voltar, traz de volta.
+- Zoom do PDF com pinça (no computador, Ctrl + roda ou −/+).
+- Voltar do Android anda um passo de cada vez: sai do OCR para a fonte, mostra as barras, sai da tela cheia e só depois fecha.
+- Modo texto do PDF: busca no topo, texto com margem de leitura, página embaixo. Citar, destacar, comentar e perguntar à IA só aparecem quando há texto selecionado.
 - Sumário, links da página, página única/rolagem, anotações, abrir em outro app e renomear/mover/excluir ficam no ⋯.
-- **Abrir em outro app** só aparece grande quando o Urbe não consegue mostrar o arquivo.
-- Modo texto do PDF: Enter na caixa de página vai para a página; Enter na busca busca. Resultados em lista, com a página destacada.
-- EPUB: capítulo anterior/próximo e a lista de capítulos numa linha; letra, entrelinha, tema e margens no botão de aparência; a busca abre pelo ícone.
-- Navegador de estudo: endereço, voltar, avançar, recarregar e fechar numa linha. Copiar endereço, salvar referência e abrir no navegador do sistema no ⋯.
-- O menu radial some enquanto um leitor está aberto (cobria os botões do leitor).
+- Campos de busca e de endereço com o mesmo visual suave da busca da Área de trabalho.
+- Os avisos curtos (por exemplo, "Citação salva") aparecem embaixo, sem cobrir o título e os botões.
 
 ## Publicações e painel fixado
 

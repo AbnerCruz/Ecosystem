@@ -72,7 +72,7 @@ public sealed class StudyBrowserPanel : Grid
         DockPanel.SetDock(right, Dock.Right);
         header.Children.Add(left);
         header.Children.Add(right);
-        header.Children.Add(_address);
+        header.Children.Add(Ui.SoftField.Style(_address));
         Children.Add(header);
         SetRow(_video, 1); Children.Add(_video);
         _video.Children.Add(new TextBlock { Text = "Instante (s)", VerticalAlignment = VerticalAlignment.Center, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });

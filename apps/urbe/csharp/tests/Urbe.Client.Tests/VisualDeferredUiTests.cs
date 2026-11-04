@@ -56,3 +56,33 @@ public sealed partial class HeadlessUiTests
         finally { window.Close(); }
     }, CancellationToken.None));
 }
+
+public sealed partial class HeadlessUiTests
+{
+    /// <summary>On a phone a reader is the whole screen; a tap on the picture hides the bars and Back brings them back.</summary>
+    [Fact]
+    public async Task Reader_OnAPhoneIsFullScreenAndATapHidesItsBars() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        var (view, window, vault, dir) = await OpenCreateVault();
+        try
+        {
+            window.Width = 390;
+            using (var bmp = new Avalonia.Media.Imaging.RenderTargetBitmap(new PixelSize(400, 300)))
+                bmp.Save(Path.Combine(vault, "foto.png"), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
+            await view.FilePreview.OpenAsync("foto.png");
+            await Settle(window, view);
+            var card = view.FilePreview.Children.OfType<Border>().First();
+            Assert.Equal(window.Bounds.Width, card.Bounds.Width, 1);
+            Assert.Equal(window.Bounds.Height, card.Bounds.Height, 1);
+            view.FilePreview.SetChromeHidden(true);
+            Assert.True(view.FilePreview.ChromeHidden);
+            Assert.True(view.HandleSystemBack());
+            Assert.False(view.FilePreview.ChromeHidden);
+            Assert.True(view.FilePreview.IsVisible);
+            Assert.True(view.HandleSystemBack());
+            Assert.False(view.FilePreview.IsVisible);
+            return true;
+        }
+        finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
+    }, CancellationToken.None));
+}

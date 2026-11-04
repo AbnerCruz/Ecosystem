@@ -32,7 +32,7 @@ public sealed class PinnedPanel : Border
     public Func<IEnumerable<string>>? Files { get; set; }
     public Func<string, string?>? NoteText { get; set; }
     public IUrbeVaultStorage? Storage { get => Preview.Storage; set => Preview.Storage = value; }
-    private readonly TextBox _filter = new() { PlaceholderText = "Buscar arquivo pelo nome ou caminho", MinHeight = 40, Margin = new Thickness(0, 0, 0, 6) };
+    private readonly TextBox _filter = new() { PlaceholderText = "Buscar arquivo pelo nome ou caminho" };
     private readonly ListBox _choices = new() { MinHeight = 64 };
     private readonly DockPanel _chooser = new();
 
@@ -71,8 +71,10 @@ public sealed class PinnedPanel : Border
 
     public PinnedPanel()
     {
-        DockPanel.SetDock(_filter, Dock.Top);
-        _chooser.Children.Add(_filter);
+        var filter = Ui.SoftField.WithIcon(_filter, UrbeTheme.Icons.SearchUi);
+        filter.Margin = new Thickness(0, 0, 0, 6);
+        DockPanel.SetDock(filter, Dock.Top);
+        _chooser.Children.Add(filter);
         _chooser.Children.Add(_choices);
         IsVisible = false;
         ClipToBounds = true;

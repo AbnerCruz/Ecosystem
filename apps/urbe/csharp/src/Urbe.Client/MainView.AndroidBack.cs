@@ -19,7 +19,7 @@ public sealed partial class MainView
         if (StudyBrowser.Back()) return true;
         if (FilePreview.IsVisible)
         {
-            if (!FilePreview.ExitReaderMode()) FilePreview.Close();
+            FilePreview.HandleBack();
             return true;
         }
         if (_sky is { IsVisible: true } sky) { sky.IsVisible = false; return true; }

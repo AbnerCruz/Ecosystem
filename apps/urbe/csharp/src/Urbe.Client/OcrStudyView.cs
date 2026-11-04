@@ -45,6 +45,11 @@ public sealed class OcrStudyView : Grid, IDisposable
     public event Action<ImageStudyQuote>? QuoteRequested;
     public event Action<StudyImageQuestion>? VisualQuestionRequested;
     public event Action? CloseRequested;
+    private readonly Control _innerBack = null!;
+    /// <summary>Its own "Voltar à fonte" (a computer); on a phone the reader's top Back does it.</summary>
+    public bool ShowsBack { get => _innerBack.IsVisible; set => _innerBack.IsVisible = value; }
+    /// <summary>The reader's Back while recognising: back to the source.</summary>
+    public void Back() => CloseRequested?.Invoke();
 
     public OcrStudyView(string path, int? page, string hash, byte[] imageBytes, ReaderRegion? initialRegion=null)
     {
@@ -53,6 +58,7 @@ public sealed class OcrStudyView : Grid, IDisposable
         using var stream = new MemoryStream(imageBytes); _image = new Image { Source = new Bitmap(stream), Stretch = Stretch.Uniform };
         RowDefinitions = new RowDefinitions("Auto,*,Auto");
         var back = new Ui.UrbeIconButton(UrbeTheme.Icons.Back, "Voltar à fonte"); back.Click += (_, _) => CloseRequested?.Invoke();
+        _innerBack = back;
         _run.Click += async (_, _) => await RecognizeAsync();
         var compare = new Ui.UrbeIconButton(UrbeTheme.Icons.Image, "Imagem / Texto", 21);
         compare.Click += (_, _) => { if (_proof is not null && _save.IsEnabled) { _proof.IsVisible = !_proof.IsVisible; _text.IsVisible = !_proof.IsVisible; } };

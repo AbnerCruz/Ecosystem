@@ -90,7 +90,7 @@ public sealed class EpubStudyView : Grid, IDisposable
         nav.Children.Add(_next);
         nav.Children.Add(_chapters);
         Children.Add(nav);
-        search.Children.Add(_query);
+        search.Children.Add(Ui.SoftField.WithIcon(_query, UrbeTheme.Icons.SearchUi));
         SetRow(search, 1); Children.Add(search);
         _results.SelectionChanged += async (_, _) => { if (_results.SelectedItem is SearchHit hit) await GoToChapterAsync(hit.Part, hit.Offset, hit.Length); };
         SetRow(_results, 2); Children.Add(_results);

@@ -17,7 +17,7 @@ public sealed class PdfStudyView : Grid, IDisposable
     private readonly string _path;
     private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap, FontSize = 12, Margin = new Thickness(4, 6, 4, 0) };
     private readonly TextBox _text = new() { IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
-        FontSize = 17, LineHeight = 27, Padding = new Thickness(4, 8), Margin = new Thickness(0, 8, 0, 0), Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
+        FontSize = 17, LineHeight = 27, Padding = new Thickness(16, 8), Margin = new Thickness(0, 4, 0, 0), Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
     private readonly TextBox _page = new() { Width = 52, MinHeight = 40, Text = "1", HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
     private readonly TextBlock _pages = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = 13, Margin = new Thickness(6, 0, 4, 0) };
     private readonly TextBox _query = new() { PlaceholderText = "Buscar", MinHeight = 40, VerticalContentAlignment = VerticalAlignment.Center };
@@ -26,6 +26,11 @@ public sealed class PdfStudyView : Grid, IDisposable
     private readonly Button _moreSearch = new Ui.UrbeButton("Buscar mais", ButtonKind.Ghost) { IsVisible = false };
     private readonly Button _previous = new Ui.UrbeIconButton(UrbeTheme.Icons.Back, "Anterior");
     private readonly Button _next = new Ui.UrbeIconButton(UrbeTheme.Icons.Forward, "Próxima");
+    private readonly Border _selectionBar = new()
+    {
+        IsVisible = false, CornerRadius = new CornerRadius(UrbeTokens.Radius.L), Padding = new Thickness(4, 0),
+        Background = UrbeTheme.Brush(UrbeTheme.Surface2), BoxShadow = UrbeTokens.Elevation.Low, HorizontalAlignment = HorizontalAlignment.Center
+    };
     private CancellationTokenSource _navigation = new(), _search = new();
     private bool _disposed;
     private DocumentPage? _shown;
@@ -45,11 +50,12 @@ public sealed class PdfStudyView : Grid, IDisposable
     {
         _path = path;
         _bytes = bytes;
-        RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto");
+        // search on top · the page's text · page ‹ 3 / 120 › at the bottom; the selection's actions only with a selection
+        RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto,Auto");
         _status.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
+        _status.PropertyChanged += (_, e) => { if (e.Property == TextBlock.TextProperty) _status.IsVisible = !string.IsNullOrEmpty(_status.Text); };
         _pages.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
         _text.Foreground = UrbeTheme.Brush(UrbeTheme.Text);
-        // one row: ‹ [3] / 120 › and the search field (Enter searches)
         _page.KeyDown += async (_, e) => { if (e.Key == Avalonia.Input.Key.Enter && int.TryParse(_page.Text, out int page)) { e.Handled = true; await GoToPageAsync(page); } };
         _page.LostFocus += async (_, _) => { if (int.TryParse(_page.Text, out int page) && page != CurrentPage) await GoToPageAsync(page); };
         _previous.Click += async (_, _) => await GoToPageAsync(CurrentPage - 1);
@@ -57,19 +63,17 @@ public sealed class PdfStudyView : Grid, IDisposable
         _query.KeyDown += async (_, e) => { if (e.Key == Avalonia.Input.Key.Enter) { e.Handled = true; await SearchAsync(_query.Text ?? ""); } };
         Avalonia.Automation.AutomationProperties.SetName(_page, "Página");
         Avalonia.Automation.AutomationProperties.SetName(_query, "Buscar neste PDF");
-        var find = new Ui.UrbeIconButton(UrbeTheme.Icons.SearchUi, "Buscar", 20);
-        find.Click += async (_, _) => await SearchAsync(_query.Text ?? "");
-        var nav = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { _previous, _page, _pages, _next } };
-        var top = new DockPanel { LastChildFill = true };
-        DockPanel.SetDock(nav, Dock.Left);
-        DockPanel.SetDock(find, Dock.Right);
-        top.Children.Add(nav);
-        top.Children.Add(find);
-        top.Children.Add(new Border { Margin = new Thickness(8, 0, 0, 0), Child = _query });
+        _query.PlaceholderText = "Buscar no PDF";
+        var top = new Border { Margin = new Thickness(12, 6, 12, 2), Child = Ui.SoftField.WithIcon(_query, UrbeTheme.Icons.SearchUi) };
+        Ui.SoftField.Style(_page);
+        _page.Padding = new Thickness(6, 4);
+        _page.HorizontalContentAlignment = HorizontalAlignment.Center;
         Children.Add(top);
-        var results = new ScrollViewer { Content = new StackPanel { Children = { _results, _moreSearch } }, MaxHeight = 168 };
+        var results = new ScrollViewer { Content = new StackPanel { Children = { _results, _moreSearch } }, MaxHeight = 168, Margin = new Thickness(8, 0) };
         SetRow(results, 1); Children.Add(results);
         SetRow(_text, 2); Children.Add(_text);
+        var nav = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, HorizontalAlignment = HorizontalAlignment.Center, Children = { _previous, _page, _pages, _next } };
+        SetRow(nav, 4); Children.Add(nav);
         void Emit(StudyAnnotationKind kind)
         {
             if (_shown is not { } source || kind != StudyAnnotationKind.Bookmark && string.IsNullOrWhiteSpace(_text.SelectedText))
@@ -86,7 +90,8 @@ public sealed class PdfStudyView : Grid, IDisposable
         var quote = Chip("Adicionar seleção à nota", UrbeTheme.Icons.Notes, () => Emit(StudyAnnotationKind.Citation));
         var highlight = Chip("Destacar", UrbeTheme.Icons.Pencil, () => Emit(StudyAnnotationKind.Highlight));
         var comment = Chip("Comentar", UrbeTheme.Icons.Edit, () => Emit(StudyAnnotationKind.Comment));
-        var bookmark = Chip("Marcar página", UrbeTheme.Icons.Pin, () => Emit(StudyAnnotationKind.Bookmark));
+        var bookmark = new Ui.UrbeIconButton(UrbeTheme.Icons.Pin, "Marcar página", 20);
+        bookmark.Click += (_, _) => Emit(StudyAnnotationKind.Bookmark);
         var ask = Chip("Perguntar à IA", UrbeTheme.Icons.Assistant, () =>
         {
             if (_shown is { } source && !string.IsNullOrWhiteSpace(_text.SelectedText)) AskRequested?.Invoke(new(_path, source.Page, _text.SelectedText, source.Sha256));
@@ -94,7 +99,15 @@ public sealed class PdfStudyView : Grid, IDisposable
         });
         _moreText.Click += async (_, _) => { if (_shown is { More: true } source) await LoadPageAsync(source.Page, source.Next); };
         _moreSearch.Click += async (_, _) => await SearchAsync(_searchQuery, more: true);
-        var footer = new StackPanel { Children = { _moreText, new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { quote, highlight, comment, bookmark, ask } } }, _status } };
+        _selectionBar.Child = new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { quote, highlight, comment, ask } } };
+        _text.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == TextBox.SelectionStartProperty || e.Property == TextBox.SelectionEndProperty)
+                _selectionBar.IsVisible = _text.SelectionStart != _text.SelectionEnd;
+        };
+        // "Marcar página" needs no selection: it lives with the page navigation
+        nav.Children.Add(bookmark);
+        var footer = new StackPanel { Margin = new Thickness(8, 0), Children = { _moreText, _selectionBar, _status } };
         SetRow(footer, 3); Children.Add(footer);
         DetachedFromVisualTree += (_, _) => Dispose();
     }
@@ -123,7 +136,7 @@ public sealed class PdfStudyView : Grid, IDisposable
             _moreText.IsVisible = result.More;
             _status.Text = result.NeedsOcr
                 ? "Esta página não tem texto, só imagem: use Reconhecer região (OCR) na barra acima."
-                : "Texto do PDF. Figuras, fórmulas e diagramação estão na página original.";
+                : "";
             PageChanged?.Invoke(CurrentPage);
         }
         catch (OperationCanceledException) { }
