@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Controls.Primitives;
 using Urbe.Core;
 
 namespace Urbe.Client;
@@ -29,6 +30,10 @@ public sealed class PinnedPanel : Border
     };
     private readonly ContentControl _content = new();
     public FilePreviewPanel Preview { get; } = new(embedded: true);
+    /// <summary>The web and YouTube beside the note (Estudo): research → sources → writing, on one screen.</summary>
+    public StudyBrowserPanel Web { get; } = new() { Embedded = true };
+    /// <summary>The source shown is the web.</summary>
+    public bool ShowsWeb => ReferenceEquals(_content.Content, Web);
     public Func<IEnumerable<string>>? Files { get; set; }
     public Func<string, string?>? NoteText { get; set; }
     public IUrbeVaultStorage? Storage { get => Preview.Storage; set => Preview.Storage = value; }
@@ -46,7 +51,7 @@ public sealed class PinnedPanel : Border
     private void ShowChooser()
     {
         _choices.SelectedIndex = -1;
-        _from.Text = "Escolha o que deixar fixo";
+        _from.Text = "Fonte: um site, um vídeo ou um arquivo";
         _content.Content = _chooser;
         FilterFiles();
     }
@@ -54,6 +59,20 @@ public sealed class PinnedPanel : Border
     private void FilterFiles() => _choices.ItemsSource = (Files?.Invoke() ?? [])
         .Distinct(StringComparer.Ordinal).Where(p => p.Contains(_filter.Text ?? "", StringComparison.OrdinalIgnoreCase))
         .Order(StringComparer.OrdinalIgnoreCase).ToArray();
+
+    /// <summary>The web in the pane: an address or a search (null: the field waits for one).</summary>
+    public async Task OpenWebAsync(string? address = null, string? placeholder = null)
+    {
+        if (!await Preview.TryCloseAsync()) return;
+        Text = null;
+        _scroll.Content = null;
+        SourcePath = null;
+        IsVisible = true;
+        _from.Text = "Navegador";
+        _content.Content = Web;
+        Web.Open(address);
+        if (address is null) Web.FocusAddress(placeholder);
+    }
 
     public async Task<bool> OpenFileAsync(string path)
     {
@@ -79,8 +98,8 @@ public sealed class PinnedPanel : Border
         IsVisible = false;
         ClipToBounds = true;
         Background = UrbeTheme.Brush(UrbeTheme.Surface);
-        BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent, .35);
-        BorderThickness = new Thickness(0, 0, 0, 2);
+        BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2);
+        BorderThickness = new Thickness(0, 0, 0, 1);
         Padding = new Thickness(16, 8, 8, 10);
         var close = new Button
         {
@@ -113,11 +132,30 @@ public sealed class PinnedPanel : Border
         choose.Click += async (_, _) =>
         {
             if (!await Preview.TryCloseAsync()) return;
+            if (ShowsWeb) { _content.Content = null; Web.Close(); }
             Text = SourcePath = null;
             _scroll.Content = null;
             ShowChooser();
         };
         _filter.TextChanged += (_, _) => FilterFiles();
+        // Estudo: the web and a video come first, then the vault's files
+        Button Source(string icon, string label, Func<Task> run)
+        {
+            var b = new Ui.UrbeButton(label, Ui.ButtonKind.Secondary, icon) { MinHeight = 44, HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left };
+            b.Click += async (_, _) => await run();
+            return b;
+        }
+        var sources = new UniformGrid { Columns = 2, Margin = new Thickness(0, 0, 0, 6),
+            Children =
+            {
+                Source(UrbeTheme.Icons.SearchUi, "Pesquisar na web", () => OpenWebAsync(null, "Pesquisa ou endereço")),
+                Source(UrbeTheme.Icons.Open, "Vídeo do YouTube", () => OpenWebAsync(null, "Cole o link do vídeo"))
+            } };
+        sources.Children[0].Margin = new Thickness(0, 0, 3, 0);
+        sources.Children[1].Margin = new Thickness(3, 0, 0, 0);
+        DockPanel.SetDock(sources, Dock.Top);
+        _chooser.Children.Insert(0, sources);
+        Web.Closed += () => { if (IsVisible) ShowChooser(); };
         _choices.SelectionChanged += async (_, _) =>
         {
             if (_choices.SelectedItem is string path) await OpenFileAsync(path);
@@ -130,7 +168,12 @@ public sealed class PinnedPanel : Border
         Grid.SetRow(_content, 1);
         grid.Children.Add(_content);
         Child = grid;
-        Height = 250;
+    }
+
+    /// <summary>Beside the text (a wide window): the accent line is on its right instead of below.</summary>
+    public bool Beside
+    {
+        set => BorderThickness = value ? new Thickness(0, 0, 1, 0) : new Thickness(0, 0, 0, 1);
     }
 
     public void RetargetSource(string from, string to)
@@ -169,6 +212,7 @@ public sealed class PinnedPanel : Border
     public async Task<bool> TryUnpinAsync()
     {
         if (!await Preview.TryCloseAsync()) return false;
+        if (ShowsWeb) { _content.Content = null; Web.Close(); }
         Text = SourcePath = null;
         _scroll.Content = null;
         _content.Content = null;

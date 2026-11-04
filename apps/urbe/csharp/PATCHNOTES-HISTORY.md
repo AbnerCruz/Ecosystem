@@ -2,6 +2,11 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.47 — 04/11/2026
+- Recuperação das regressões da beta.38–46: abertura do app mais leve (Assistente e motores de leitura só quando usados), abrir e trocar de nota ~3× mais rápido, índice do vault sem reconstrução a cada gravação (avisos de app sem resposta com a IA).
+- Leitores redesenhados para o celular (tela cheia, barra embaixo, toque esconde as barras, pinça no PDF); abas só com duas ou mais; menu radial acima da barra do editor.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.47
+
 ## 2.0.0-beta.46 — 03/11/2026
 - Painel fixado com escolha de arquivo; leitores de PDF, EPUB, slides, OCR local, navegador de estudo e YouTube; posição de leitura guardada.
 - https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.46

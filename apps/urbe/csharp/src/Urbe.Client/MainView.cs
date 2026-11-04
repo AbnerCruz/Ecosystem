@@ -56,7 +56,10 @@ public sealed partial class MainView : Grid
         Editor.Files = () => _attachments.Where(f => !_contents.ContainsKey(f))
             .Concat(_contents.Keys.Where(p => !p.EndsWith(".md", StringComparison.OrdinalIgnoreCase) && !p.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase)));
         Editor.OpenFile = OpenReaderSourceAsync;
-        Editor.OpenWeb = url => StudyBrowser.Open(url);
+        // a link followed while studying opens beside the note; otherwise in the full-screen browser
+        Editor.OpenWeb = url => { if (Editor.Pinned.IsVisible) _ = Editor.Pinned.OpenWebAsync(url); else StudyBrowser.Open(url); };
+        Editor.Pinned.Web.QuestionRequested += (source, text) => _ = PrepareStudyQuestionAsync(source, text);
+        Editor.Pinned.Web.QuoteRequested += quote => _ = InsertWebReaderQuoteAsync(quote);
         Editor.Pinned.Storage = _vault;
         Editor.Pinned.Preview.Dialogs = Dialogs;
         Editor.Pinned.Files = () => _contents.Keys.Concat(_attachments);
@@ -501,6 +504,7 @@ public sealed partial class MainView : Grid
         Editor.Split.Preview.SetSuspended(FilePreview.IsVisible || StudyBrowser.IsVisible || Dialogs.IsOpen || assistant);
         FilePreview.SetSuspended(StudyBrowser.IsVisible || Dialogs.IsOpen || assistant);
         ReaderActivity.SetActive(StudyBrowser, !Dialogs.IsOpen && !assistant);
+        ReaderActivity.SetActive(Editor.Pinned.Web, !Dialogs.IsOpen && !assistant && !FilePreview.IsVisible && !StudyBrowser.IsVisible);
         UpdateFloatingNav();
     }
 
@@ -1805,7 +1809,7 @@ public sealed partial class MainView : Grid
 
     // A wide window: the rail, with the Assistente in its floating launcher. A phone: the radial menu (CST-043).
     private static readonly (string Icon, string Label)[] Destinations =
-        [(UrbeTheme.Icons.Notes, "Notas"), (UrbeTheme.Icons.Layers, "Grafos")];
+        [(UrbeTheme.Icons.Notes, "Notas"), (UrbeTheme.Icons.Book, "Estudo"), (UrbeTheme.Icons.Layers, "Grafos")];
 
     private void BuildRail()
     {
@@ -1820,7 +1824,7 @@ public sealed partial class MainView : Grid
     private readonly List<(string Label, string Icon, Border Ico, TextBlock Text)> _nav = [];
 
     /// <summary>The destination shown as active (.ativo) in the rail and the radial menu: Assistente while it is open, else Notas.</summary>
-    public string ActiveDestination => GraphOpen ? "Grafos" : AssistantOpen ? "Assistente" : "Notas";
+    public string ActiveDestination => GraphOpen ? "Grafos" : AssistantOpen ? "Assistente" : StudyOpen ? "Estudo" : "Notas";
 
     private void UpdateNav()
     {
@@ -1878,6 +1882,11 @@ public sealed partial class MainView : Grid
         {
             ToolTip.SetTip(button, "Notas e pastas do vault");
             button.Click += (_, _) => _ = GoToNotesAsync();
+        }
+        else if (label == "Estudo")
+        {
+            ToolTip.SetTip(button, "Estudo: site, vídeo ou livro ao lado da nota");
+            button.Click += (_, _) => _ = StartStudyAsync();
         }
         else if (label == "Grafos")
         {
