@@ -179,6 +179,20 @@ public sealed partial class HeadlessUiTests
             var note = BenchNote();
             view.Editor.Open(new CityNote("Tutorial/Estudo.md", note));
             await BenchPump(window);
+            if (mode == "notes")
+            {
+                var dir = Path.Combine(Path.GetTempPath(), "urbe-bench-" + Guid.NewGuid().ToString("N"));
+                var vault = GenerateVault(Path.Combine(dir, "vault"), 2000);
+                var big = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "sel.json")));
+                window.Content = big;
+                await big.OpenVaultAsync();
+                await BenchPump(window);
+                var n1 = int.Parse(Environment.GetEnvironmentVariable("URBE_BENCH_N") ?? "20");
+                var each1 = Time(() => { big.ShowNotes(); Dispatcher.UIThread.RunJobs(); window.CaptureRenderedFrame(); big.Explorer.IsVisible = false; Dispatcher.UIThread.RunJobs(); }, n1);
+                PerfLog($"PROFILE notes {each1:0.00} ms/open");
+                window.Close();
+                return true;
+            }
             if (mode == "open")
             {
                 var other = new CityNote("Tutorial/Curta.md", "# Curta\n\nTexto.\n");

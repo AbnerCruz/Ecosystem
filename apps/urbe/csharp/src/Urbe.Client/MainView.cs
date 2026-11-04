@@ -1120,13 +1120,32 @@ public sealed partial class MainView : Grid
     /// <summary>Notas shows the notes, every folder (empty ones too, like model.folders) and the other files.</summary>
     private void RefreshNotes()
     {
-        if (RefreshLastNames()) return;
+        if (RefreshLastNames()) { _notesShown = null; return; }
+        // opening Notas (or any of the many callers) with nothing changed rebuilt the tree and the Área de trabalho's
+        // index of the whole vault; a note's text is an immutable string, so a new reference is a new content
+        var shown = NotesFingerprint();
+        if (shown == _notesShown) return;
+        _notesShown = shown;
         Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value) { Title = _store?.Get(n.Key)?.Title }), _library?.Folders);
         var files = new HashSet<string>(_attachments, StringComparer.Ordinal);
         files.ExceptWith(_contents.Keys);
         Explorer.SetFiles(files);
         RefreshWorkspace();
         RememberNames();
+    }
+
+    private int? _notesShown;
+
+    private int NotesFingerprint()
+    {
+        var h = new HashCode();
+        h.Add(System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(_store));
+        foreach (var (path, text) in _contents) { h.Add(path); h.Add(System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(text)); }
+        foreach (var file in _attachments) h.Add(file);
+        if (_library is { } library) foreach (var folder in library.Folders) h.Add(folder);
+        h.Add(_contents.Count);
+        h.Add(_attachments.Count);
+        return h.ToHashCode();
     }
 
     /// <summary>A file of the Explorer that is not a note (DEC-0045, UC-38): its preview (abrirEntradaTree → openFilePreview).</summary>

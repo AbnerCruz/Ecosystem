@@ -71,9 +71,9 @@ public sealed partial class MainView
 
     private int LinkCount()
     {
+        // only "is there a link at all" matters for the tip: no index of the whole vault for it
         if (_store is null) return 0;
-        using var index = new KnowledgeIndex(_store);
-        return index.Stats().Links;
+        return _store.List().Any(d => d.Content.Contains("[[", StringComparison.Ordinal)) ? 1 : 0;
     }
 
     private void WatchTips()
