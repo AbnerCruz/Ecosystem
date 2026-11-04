@@ -24,15 +24,18 @@ public sealed class UrbeToast : Border
     private Button? _action;
     private DispatcherTimer? _timer;
     private readonly double _shownTop, _hiddenTop;
+    /// <summary>The distance from the bottom while shown: above the editor's toolbar, a reader's bar and the radial menu.</summary>
+    public const double BottomOffset = 152;
     private readonly Transitions _transitions;
     private readonly Border _badge = new();
 
-    /// <param name="top">The distance from the top while shown (it slides 8 dp down into it).</param>
+    /// <param name="top">Kept for the callers; the toast now sits near the bottom (a snackbar: Material), above the bars
+    /// and the floating menu, where it no longer covers a screen's title and its buttons.</param>
     /// <param name="fade">The fade/slide duration (default <see cref="UrbeTokens.Motion.Normal"/>).</param>
     public UrbeToast(double top = 70, TimeSpan? fade = null)
     {
-        _shownTop = top;
-        _hiddenTop = top - 8;
+        _shownTop = BottomOffset;
+        _hiddenTop = BottomOffset - 8;
         _text.Foreground = UrbeTheme.Brush(C.OnToast);
         _text.FontFamily = UrbeTheme.UiFont;
         _text.FontWeight = FontWeight.SemiBold;
@@ -56,8 +59,8 @@ public sealed class UrbeToast : Border
         CornerRadius = new CornerRadius(UrbeTokens.Radius.Xl);
         Padding = new Thickness(14, 7);
         HorizontalAlignment = HorizontalAlignment.Center;
-        VerticalAlignment = VerticalAlignment.Top;
-        Margin = new Thickness(0, _hiddenTop, 0, 0);
+        VerticalAlignment = VerticalAlignment.Bottom;
+        Margin = new Thickness(0, 0, 0, _hiddenTop);
         IsHitTestVisible = false;
         Opacity = 0;
         BoxShadow = UrbeTokens.Elevation.Mid;
@@ -107,7 +110,7 @@ public sealed class UrbeToast : Border
         Transitions = UrbeTokens.Motion.Reduced ? null : _transitions;
         if (Parent is Control host) MaxWidth = Math.Max(120, host.Bounds.Width * .8);
         Opacity = 1;
-        Margin = new Thickness(0, _shownTop, 0, 0);
+        Margin = new Thickness(0, 0, 0, _shownTop);
         IsShown = true;
         _timer?.Stop();
         _timer = new DispatcherTimer { Interval = duration ?? TimeSpan.FromSeconds(4.5) };
@@ -143,7 +146,7 @@ public sealed class UrbeToast : Border
         _timer?.Stop();
         Transitions = UrbeTokens.Motion.Reduced ? null : _transitions;
         Opacity = 0;
-        Margin = new Thickness(0, _hiddenTop, 0, 0);
+        Margin = new Thickness(0, 0, 0, _hiddenTop);
         IsShown = false;
         IsHitTestVisible = false;
     }

@@ -71,8 +71,10 @@ public sealed class PinnedPanel : Border
 
     public PinnedPanel()
     {
-        DockPanel.SetDock(_filter, Dock.Top);
-        _chooser.Children.Add(_filter);
+        var filter = Ui.SoftField.WithIcon(_filter, UrbeTheme.Icons.SearchUi);
+        filter.Margin = new Thickness(0, 0, 0, 6);
+        DockPanel.SetDock(filter, Dock.Top);
+        _chooser.Children.Add(filter);
         _chooser.Children.Add(_choices);
         IsVisible = false;
         ClipToBounds = true;
@@ -96,7 +98,16 @@ public sealed class PinnedPanel : Border
         DockPanel.SetDock(pin, Dock.Left);
         head.Children.Add(close);
         head.Children.Add(pin);
-        var choose = new Button { Content = "Escolher arquivo", MinHeight = 36, Padding = new Thickness(8, 0) };
+        var choose = new Button
+        {
+            Content = UrbeTheme.Icon(UrbeTheme.Icons.File, 16, UrbeTheme.Text2, 1.8),
+            Width = 32, Height = 32, Padding = new Thickness(0), CornerRadius = new CornerRadius(8),
+            Background = Brushes.Transparent, BorderThickness = new Thickness(0),
+            HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
+        };
+        ToolTip.SetTip(choose, "Escolher arquivo");
+        Avalonia.Automation.AutomationProperties.SetName(choose, "Escolher arquivo");
+        Avalonia.Automation.AutomationProperties.SetName(close, "Desafixar");
         DockPanel.SetDock(choose, Dock.Right);
         head.Children.Add(choose);
         choose.Click += async (_, _) =>

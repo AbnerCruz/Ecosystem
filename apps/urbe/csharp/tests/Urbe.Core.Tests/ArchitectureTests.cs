@@ -60,7 +60,9 @@ public sealed class ArchitectureTests
 
     [Theory]
     [InlineData("Urbe.Core", "")]
-    [InlineData("Urbe.Client", "Urbe.Core")]
+    // Urbe.Readers.Assets: the readers' bundled engines (slides, OCR) only, loaded when such a reader opens
+    [InlineData("Urbe.Client", "Urbe.Core,Urbe.Readers.Assets")]
+    [InlineData("Urbe.Readers.Assets", "")]
     [InlineData("Urbe.LocalAi", "Urbe.Core")]
     [InlineData("Urbe.Desktop", "Urbe.Client,Urbe.LocalAi")]
     [InlineData("Urbe.Android", "Urbe.Client,Urbe.LocalAi")]

@@ -202,14 +202,32 @@ public sealed class QuickOpenPanel : SearchPanel
         if (_recent.Count > 30) _recent.RemoveRange(30, _recent.Count - 30);
     }
 
-    protected override void Render(string typed)
+    // every keystroke parsed every note of the vault again (titles, dates); the parsed list is kept while no note
+    // changed (a note's text is an immutable string: a new reference is a new content)
+    private List<LegacySearchDoc>? _docs;
+    private int _docsFor;
+
+    private List<LegacySearchDoc> Docs()
     {
+        var notes = _notes().ToList();
+        var h = new HashCode();
+        foreach (var n in notes) { h.Add(n.Path); h.Add(System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(n.Content)); }
+        h.Add(notes.Count);
+        var key = h.ToHashCode();
+        if (_docs is not null && key == _docsFor) return _docs;
         var store = new DocumentStore();
-        var docs = _notes().Select(n =>
+        _docs = notes.Select(n =>
         {
             var d = store.Upsert(new DocumentInput { Path = n.Path, Content = n.Content });
             return new LegacySearchDoc(n.Path, d.Title, n.Path, n.Content, d.Modified);
         }).ToList();
+        _docsFor = key;
+        return _docs;
+    }
+
+    protected override void Render(string typed)
+    {
+        var docs = Docs();
         var view = LegacyQuickOpen.View(docs, _recent, typed);
         var rows = new List<SearchRow>();
         foreach (var r in view.Rows)

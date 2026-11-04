@@ -11,12 +11,12 @@ public sealed record WebReaderQuote(string Url, string Text, string? VideoId = n
 /// <summary>Native browser chrome around platform web content. No page-to-vault bridge exists.</summary>
 public sealed class StudyBrowserPanel : Grid
 {
-    private readonly TextBox _address = new() { PlaceholderText = "URL do site ou vídeo YouTube", MinHeight = 48 };
+    private readonly TextBox _address = new() { PlaceholderText = "Endereço ou pesquisa", MinHeight = 40, VerticalContentAlignment = VerticalAlignment.Center };
     private readonly ContentControl _content = new();
-    private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap, FontSize = 12 };
-    private readonly Ui.UrbeButton _back = new("←"), _forward = new("→");
-    private readonly TextBox _timestamp = new() { Text = "0", Width = 88, MinHeight = 48 };
-    private readonly WrapPanel _video = new();
+    private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap, FontSize = 12, Margin = new Thickness(12, 4, 12, 0) };
+    private readonly Ui.UrbeIconButton _back = new(UrbeTheme.Icons.Back, "Voltar"), _forward = new(UrbeTheme.Icons.Forward, "Avançar");
+    private readonly TextBox _timestamp = new() { Text = "0", Width = 72, MinHeight = 40, VerticalContentAlignment = VerticalAlignment.Center };
+    private readonly StackPanel _video = new() { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(12, 4) };
     private IStudyWebView? _browser;
     private string? _videoId;
     public event Action<WebReaderQuote>? QuoteRequested;
@@ -28,49 +28,56 @@ public sealed class StudyBrowserPanel : Grid
         IsVisible = false;
         Background = UrbeTheme.Brush(UrbeTheme.Bg);
         RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto");
-        var go = new Ui.UrbeButton("Abrir");
-        Avalonia.Automation.AutomationProperties.SetName(_back, "Voltar"); Avalonia.Automation.AutomationProperties.SetName(_forward, "Avançar");
+        _status.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
+        Avalonia.Automation.AutomationProperties.SetName(_address, "Endereço");
         _address.KeyDown += (_, e) => { if (e.Key == Avalonia.Input.Key.Enter) { Navigate(_address.Text ?? ""); e.Handled = true; } };
-        go.Click += (_, _) => Navigate(_address.Text ?? "");
         _back.Click += (_, _) => _browser?.GoBack();
         _forward.Click += (_, _) => _browser?.GoForward();
-        var reload = new Ui.UrbeButton("↻"); reload.Click += (_, _) => _browser?.ReloadPage();
-        var close = new Ui.UrbeButton("Fechar"); close.Click += (_, _) => Close();
-        var external = new Ui.UrbeButton("Abrir externamente");
-        external.Click += async (_, _) => { if (ReaderUris.Web(Address) is { } uri && TopLevel.GetTopLevel(this)?.Launcher is { } launcher) await launcher.LaunchUriAsync(uri); };
-        var copy = new Ui.UrbeButton("Copiar URL");
-        copy.Click += async (_, _) => { await Ui.TextActions.CopyAsync(this, Address); };
-        var reference = new Ui.UrbeButton("Salvar referência"); reference.Click += (_, _) => { if (ReaderUris.Web(Address) is not null) QuoteRequested?.Invoke(new(Address, "Referência web")); };
-        var ask = new Ui.UrbeButton("Perguntar à IA");
-        ask.Click += async (_, _) =>
+        var reload = new Ui.UrbeIconButton(UrbeTheme.Icons.Restore, "Recarregar", 20); reload.Click += (_, _) => _browser?.ReloadPage();
+        var close = new Ui.UrbeIconButton(UrbeTheme.Icons.Close, "Fechar", 20); close.Click += (_, _) => Close();
+        var go = new Ui.UrbeIconButton(UrbeTheme.Icons.SearchUi, "Abrir", 20); go.Click += (_, _) => Navigate(_address.Text ?? "");
+        async Task<string?> SelectionAsync()
         {
-            if (_browser is not { } browser) return; string address = Address;
-            try { string selected = await browser.SelectedTextAsync(); if (ReferenceEquals(browser, _browser) && Address == address && !string.IsNullOrWhiteSpace(selected)) QuestionRequested?.Invoke(address, selected); }
-            catch (Exception ex) when (ex is TimeoutException or InvalidOperationException or ObjectDisposedException) { _status.Text = "Selecione o trecho após carregar a página."; }
-        };
-        var quote = new Ui.UrbeButton("Adicionar seleção à nota");
-        quote.Click += async (_, _) =>
-        {
-            if (_browser is null) return;
+            if (_browser is not { } browser) return null;
+            string address = Address;
             try
             {
-                var browser = _browser; string sourceAddress = Address;
-                var selection = await browser.SelectedTextAsync();
-                if (!ReferenceEquals(browser, _browser) || sourceAddress != Address) return;
-                if (string.IsNullOrWhiteSpace(selection)) { _status.Text = "Selecione um trecho na página antes de adicionar à nota."; return; }
-                QuoteRequested?.Invoke(new(sourceAddress, selection));
+                var selected = await browser.SelectedTextAsync();
+                if (!ReferenceEquals(browser, _browser) || Address != address) return null;
+                if (string.IsNullOrWhiteSpace(selected)) { _status.Text = "Selecione um trecho na página primeiro."; return null; }
+                return selected;
             }
             catch (Exception ex) when (ex is TimeoutException or InvalidOperationException or ObjectDisposedException)
-            { _status.Text = "A seleção não está disponível. Tente novamente após a página carregar."; }
+            { _status.Text = "A seleção não está disponível. Tente de novo quando a página terminar de carregar."; return null; }
+        }
+        // the page's actions: the two about a selection as chips, the rest in ⋯
+        var quote = new Ui.UrbeButton("Adicionar seleção à nota", Ui.ButtonKind.Ghost, UrbeTheme.Icons.Notes) { MinHeight = 40, Padding = new Thickness(10, 0) };
+        quote.Click += async (_, _) => { var address = Address; if (await SelectionAsync() is { } text) QuoteRequested?.Invoke(new(address, text)); };
+        var ask = new Ui.UrbeButton("Perguntar à IA", Ui.ButtonKind.Ghost, UrbeTheme.Icons.Assistant) { MinHeight = 40, Padding = new Thickness(10, 0) };
+        ask.Click += async (_, _) => { var address = Address; if (await SelectionAsync() is { } text) QuestionRequested?.Invoke(address, text); };
+        var more = new Ui.UrbeIconButton(UrbeTheme.Icons.MoreUi, "Mais ações", 20);
+        more.Click += (_, _) =>
+        {
+            var items = new List<MenuItem>();
+            void Item(string header, Action run) { var i = new MenuItem { Header = header }; i.Click += (_, _) => run(); items.Add(i); }
+            Item("Salvar referência na nota", () => { if (ReaderUris.Web(Address) is not null) QuoteRequested?.Invoke(new(Address, "Referência web")); });
+            Item("Copiar endereço", () => _ = Ui.TextActions.CopyAsync(this, Address));
+            Item("Abrir no navegador do sistema", () => _ = OpenExternallyAsync());
+            new ContextMenu { ItemsSource = items }.Open(more);
         };
-        var header = new DockPanel { Margin = new Thickness(8) };
-        var actions = new WrapPanel { Children = { _back, _forward, reload, go, close } };
-        DockPanel.SetDock(actions, Dock.Right); header.Children.Add(actions); header.Children.Add(_address);
+        var header = new DockPanel { Margin = new Thickness(4, 6, 4, 2), LastChildFill = true };
+        var left = new StackPanel { Orientation = Orientation.Horizontal, Children = { close, _back, _forward } };
+        var right = new StackPanel { Orientation = Orientation.Horizontal, Children = { go, reload } };
+        DockPanel.SetDock(left, Dock.Left);
+        DockPanel.SetDock(right, Dock.Right);
+        header.Children.Add(left);
+        header.Children.Add(right);
+        header.Children.Add(Ui.SoftField.Style(_address));
         Children.Add(header);
         SetRow(_video, 1); Children.Add(_video);
-        _video.Children.Add(new TextBlock { Text = "Instante (segundos)", VerticalAlignment = VerticalAlignment.Center });
+        _video.Children.Add(new TextBlock { Text = "Instante (s)", VerticalAlignment = VerticalAlignment.Center, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
         _video.Children.Add(_timestamp);
-        var mark = new Ui.UrbeButton("Anotar instante");
+        var mark = new Ui.UrbeButton("Anotar instante", Ui.ButtonKind.Ghost, UrbeTheme.Icons.Clock) { MinHeight = 40, Padding = new Thickness(10, 0) };
         mark.Click += (_, _) =>
         {
             if (_videoId is not { } id || !int.TryParse(_timestamp.Text, out int second) || second < 0) return;
@@ -78,13 +85,22 @@ public sealed class StudyBrowserPanel : Grid
         };
         _video.Children.Add(mark);
         SetRow(_content, 2); Children.Add(_content);
-        var bottom = new StackPanel { Margin = new Thickness(8), Children = { _status, new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, Content = new StackPanel { Orientation = Orientation.Horizontal, Children = { quote, reference, ask, copy, external } } } } };
-        SetRow(bottom, 3); Children.Add(bottom);
-        SizeChanged += (_, e) =>
+        var chips = new DockPanel { Margin = new Thickness(4, 0, 4, 4) };
+        DockPanel.SetDock(more, Dock.Right);
+        chips.Children.Add(more);
+        chips.Children.Add(new ScrollViewer
         {
-            bool narrow = e.NewSize.Width < 720;
-            DockPanel.SetDock(actions, narrow ? Dock.Top : Dock.Right);
-        };
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+            Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { quote, ask } }
+        });
+        var bottom = new StackPanel { Children = { _status, chips }, Background = UrbeTheme.Brush(UrbeTheme.Surface) };
+        SetRow(bottom, 3); Children.Add(bottom);
+    }
+
+    private async Task OpenExternallyAsync()
+    {
+        if (ReaderUris.Web(Address) is { } uri && TopLevel.GetTopLevel(this)?.Launcher is { } launcher) await launcher.LaunchUriAsync(uri);
     }
 
     public bool Open(string? address = null)
@@ -110,8 +126,9 @@ public sealed class StudyBrowserPanel : Grid
             uri = new Uri("https://www.youtube.com/embed/" + video.Id + "?start=" + video.Second);
         }
         _address.Text = uri.AbsoluteUri;
-        _status.Text = _videoId is null ? (uri.Scheme == "https" ? "Conexão HTTPS" : "Conexão HTTP")
-            : "Player oficial do YouTube. Reprodução depende da rede e das permissões do vídeo; login ou bloqueio podem exigir abrir no YouTube.";
+        _status.Text = _videoId is null ? (uri.Scheme == "https" ? "" : "Conexão sem criptografia (HTTP).")
+            : "Player oficial do YouTube. Se o vídeo não tocar aqui, use ⋯ → Abrir no navegador do sistema.";
+        _status.IsVisible = _status.Text.Length > 0;
         if (_browser is null)
         {
             if (StudyWebViews.CreateBrowser?.Invoke(uri.AbsoluteUri) is not { } control || control is not IStudyWebView browser)
@@ -131,7 +148,7 @@ public sealed class StudyBrowserPanel : Grid
         _video.IsVisible = video is not null;
         if (video is { } currentVideo) _timestamp.Text = currentVideo.Second.ToString(System.Globalization.CultureInfo.InvariantCulture);
         _back.IsEnabled = _browser.CanGoBack; _forward.IsEnabled = _browser.CanGoForward;
-        if (_browser.Error is { } error) _status.Text = error;
+        if (_browser.Error is { } error) { _status.Text = error; _status.IsVisible = true; }
     }
     public bool Back()
     {

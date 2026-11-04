@@ -48,6 +48,7 @@ public sealed class VisualSurface : StackPanel
     public VisualSurface()
     {
         Spacing = 0;
+        Ui.Deferred.Watch(this);
         _wiki.Chosen += CommitWiki;
         _slash.Chosen += ChooseSlash;
         _bubble = BuildBubble();
@@ -79,13 +80,37 @@ public sealed class VisualSurface : StackPanel
     public TextBox? EditBox => _box;
 
     /// <summary>The drawn block that starts at <paramref name="start"/> in the text, or null (tests, the host).</summary>
-    public Control? BlockView(int start) => _holders.GetValueOrDefault(start);
+    public Control? BlockView(int start) => Made(_holders.GetValueOrDefault(start));
+
+    /// <summary>A block's holder with its controls made (a block far from the screen waits as an empty line).</summary>
+    private static Control? Made(Control? holder)
+    {
+        if (holder is Ui.Deferred waiting) waiting.Make();
+        return holder;
+    }
+
+    /// <summary>The blocks made at once when a note opens: about two phone screens; the rest as they come near.</summary>
+    private const double EagerHeight = 2400;
+
+    /// <summary>A block's height before it is made, from its text (lines wrapped at the column's width).</summary>
+    private double EstimatedHeight(MarkdownBlock block)
+    {
+        double line = TextSize * LineFactor;
+        if (block.Kind is "math") return line * 3;
+        double width = Bounds.Width > 40 ? Bounds.Width : 380;
+        int perLine = Math.Max(12, (int)(width / (TextSize * .52)));
+        int lines = 0;
+        foreach (var part in _text.AsSpan(block.Start, block.End - block.Start).ToString().Split('\n'))
+            lines += Math.Max(1, (part.Length + perLine - 1) / perLine);
+        if (block.Kind is "code") return lines * TextSize * 1.45 + 24;
+        return lines * line + TextSize * .9;
+    }
 
     /// <summary>The block that holds <paramref name="offset"/> of the text comes on screen, at the top.</summary>
     public void RevealOffset(int offset)
     {
         var block = _blocks.LastOrDefault(b => b.Start <= offset) ?? _blocks.FirstOrDefault();
-        if (block is null || _holders.GetValueOrDefault(block.Start) is not { } holder) return;
+        if (block is null || Made(_holders.GetValueOrDefault(block.Start)) is not { } holder) return;
         RevealedBlock = block.Start;
         if (holder.FindAncestorOfType<ScrollViewer>() is { } scroll && holder.TranslatePoint(new Point(0, 0), scroll) is { } at)
             scroll.Offset = new Vector(scroll.Offset.X, Math.Max(0, scroll.Offset.Y + at.Y - 12));
@@ -210,7 +235,7 @@ public sealed class VisualSurface : StackPanel
         }
         _editStart = _editEnd = -1;
         Rebuild();
-        if (kept && _holders.GetValueOrDefault(at) is { } drawn)
+        if (kept && Made(_holders.GetValueOrDefault(at)) is { } drawn)
         {
             if (scroll is not null && before is { } y) KeepAt(drawn, y, scroll);
             Settle(drawn);
@@ -274,6 +299,9 @@ public sealed class VisualSurface : StackPanel
         var suggested = _suggestion is null;
         // the index walks every block in order (copies of a text are told apart by their order)
         var times = _showBlockTimes && !unchanged ? BlockTimes?.Invoke() : null;
+        // a long note opens with its first screens drawn; the blocks further down are made as they come near
+        // (Ui.Deferred), and the one being written always at once
+        double eager = 0;
         foreach (var block in _blocks)
         {
             var time = times?.Next(_text[block.Start..block.End]);
@@ -290,7 +318,15 @@ public sealed class VisualSurface : StackPanel
                 if (!suggested) { suggested = true; Children.Add(SuggestionCard(sg)); }
                 if (block.Start < sg.Change.End) continue;
             }
-            var drawn = reusable.TryGetValue(block.Start, out var old) ? old : WithTime(Rendered(block), time, block.Kind);
+            Control drawn;
+            if (reusable.TryGetValue(block.Start, out var old)) drawn = old;
+            else if (eager > EagerHeight)
+            {
+                var b = block;
+                drawn = new Ui.Deferred(() => WithTime(Rendered(b), time, b.Kind), EstimatedHeight(b));
+            }
+            else drawn = WithTime(Rendered(block), time, block.Kind);
+            eager += EstimatedHeight(block);
             _holders[block.Start] = drawn;
             Children.Add(drawn);
         }

@@ -78,6 +78,8 @@ public sealed partial class MainView : IAssistantApp
         ]) { ZIndex = 20 };   // over the Notes drawer, like the launcher
         _radial.SetActive(ActiveDestination);
         _stage.Children.Add(_radial);
+        Editor.BottomChromeChanged += UpdateRadialLift;
+        Editor.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateRadialLift(); };
         UpdateFloatingNav();
     }
 
@@ -88,11 +90,20 @@ public sealed partial class MainView : IAssistantApp
         ToggleAssistant();
     }
 
+    /// <summary>CST-143: over the editor, the radial menu floats above its footer and toolbar instead of covering them.</summary>
+    private void UpdateRadialLift()
+    {
+        if (_radial is null) return;
+        _radial.Lift = Editor.IsVisible ? Editor.BottomChrome : 0;
+    }
+
     /// <summary>A phone shows the radial menu, a wide window its rail and the launcher; neither while the Assistente is open.</summary>
     private void UpdateFloatingNav()
     {
         bool phone = !(Bounds.Width >= WideBreakpoint);
-        bool free = _assistant is not { IsVisible: true } && _publicationsStudio is not { IsVisible: true };
+        // a reader (file, browser) covers the screen with its own bar and close: the floating menu would cover it
+        bool free = _assistant is not { IsVisible: true } && _publicationsStudio is not { IsVisible: true }
+            && !FilePreview.IsVisible && !StudyBrowser.IsVisible;
         _assistantLauncher.IsVisible = free && !phone;
         if (_radial is null) return;
         _radial.IsVisible = free && phone;
@@ -132,6 +143,9 @@ public sealed partial class MainView : IAssistantApp
 
     }
 
+    /// <summary>Whether the Assistente has been built (it costs the app's start nothing until it opens).</summary>
+    public bool AssistantCreated => _assistant is not null;
+
     /// <summary>The Assistente panel, made the first time it opens (over the Explorer and the editor, under the dialogs).</summary>
     public AssistantPanel Assistant => _assistant ??= MakeAssistant();
 
@@ -143,7 +157,7 @@ public sealed partial class MainView : IAssistantApp
         PlaceAssistant(panel, Bounds.Width);
         panel.PropertyChanged += (_, e) =>
         {
-            if (e.Property == IsVisibleProperty) { UpdateNav(); RefreshAssistantMini(); }
+            if (e.Property == IsVisibleProperty) { UpdateNav(); RefreshAssistantMini(); UpdateReaderVisibility(); }
         };
         panel.CompactChanged += RefreshAssistantMini;
         RefreshAssistantMini();

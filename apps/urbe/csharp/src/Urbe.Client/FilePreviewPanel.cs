@@ -48,7 +48,7 @@ public sealed class FilePreviewPanel : Grid
     public event Action<BookReaderQuote>? BookQuoteRequested;
     public event Action<ImageStudyQuote>? ImageQuoteRequested;
     public event Action<StudyImageQuestion>? VisualQuestionRequested;
-    private readonly Button _ocr = new() { Content = "Reconhecer região (OCR)", MinHeight = 48 };
+    private readonly Button _ocr = new Ui.UrbeIconButton(UrbeTheme.Icons.Scan, "Reconhecer região (OCR)", 21);
     public event Action<string, string>? QuestionRequested;
     public event Action<string>? WebLinkRequested;
     public event Action<string>? AnnotationsRequested;
@@ -66,21 +66,17 @@ public sealed class FilePreviewPanel : Grid
     private VaultFileRead? _cachedRead;
     private int _cachedIndex = -1;
     private string? _cachedHash;
-    private readonly StackPanel _pdfModes = new() { Orientation = Orientation.Horizontal, IsVisible = false };
+    private readonly StackPanel _pdfModes = new() { Orientation = Orientation.Horizontal, Spacing = 2, IsVisible = false };
     public event Action<ReaderQuote>? QuoteRequested;
     private PdfPagesView? _pdfView;
-    private readonly StackPanel _pdfNavigation = new() { Orientation = Orientation.Horizontal, Spacing = 10, IsVisible = false, Margin = new Thickness(0, 6, 0, 0) };
-    private readonly Button _pdfPrevious = new() { Content = "Anterior", MinWidth = 80, Height = 40 };
-    private readonly Button _pdfNext = new() { Content = "Próxima", MinWidth = 80, Height = 40 };
-    private readonly TextBlock _pdfPage = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = 13 };
+    private readonly StackPanel _pdfNavigation = new() { Orientation = Orientation.Horizontal, Spacing = 2, IsVisible = false };
+    private readonly Button _pdfPrevious = new Ui.UrbeIconButton(UrbeTheme.Icons.Back, "Página anterior");
+    private readonly Button _pdfNext = new Ui.UrbeIconButton(UrbeTheme.Icons.Forward, "Próxima página");
+    private readonly TextBlock _pdfPage = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = 13, MinWidth = 52, TextAlignment = TextAlignment.Center };
+    private readonly Button _pdfTextToggle = new Ui.UrbeIconButton(UrbeTheme.Icons.TextLayer, "Texto selecionável", 21);
     private bool _readerMode;
     private readonly WrapPanel _actions = new() { Margin = new Thickness(0, 16, 0, 0) };
-    private readonly Button _readerButton = new()
-    {
-        Content = "Tela cheia", Height = 40, MinWidth = 98, FontSize = 13,
-        Padding = new Thickness(10, 0), CornerRadius = new CornerRadius(12),
-        Background = Brushes.Transparent
-    };
+    private readonly Ui.UrbeIconButton _readerButton = new(UrbeTheme.Icons.Expand, "Tela cheia", 20);
     private IReadOnlyList<(string Name, string? Path)> _files = [];
     private int _version;
     private bool _choosing;
@@ -96,35 +92,36 @@ public sealed class FilePreviewPanel : Grid
         Background = UrbeTheme.Brush("#000000", .55);
         _title.Foreground = UrbeTheme.Brush(UrbeTheme.Text);
         _meta.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
-        var close = new Button
-        {
-            Content = UrbeTheme.Icon(UrbeTheme.Icons.Close, 20, UrbeTheme.Text2), Width = 40, Height = 40, CornerRadius = new CornerRadius(20),
-            Background = Brushes.Transparent, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
-        };
-        ToolTip.SetTip(close, "Fechar");
+        var close = new Ui.UrbeIconButton(UrbeTheme.Icons.Close, "Fechar", 20);
         close.Click += async (_, _) => await TryCloseAsync();
-        // menuEntradaExplorer for an attachment: Renomear, Mover, Excluir
-        var more = new Button
-        {
-            Content = UrbeTheme.Icon(UrbeTheme.Icons.More, 20, UrbeTheme.Text2), Width = 40, Height = 40, CornerRadius = new CornerRadius(20),
-            Background = Brushes.Transparent, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
-        };
-        ToolTip.SetTip(more, "Mais ações");
-        more.Click += (_, _) =>
-        {
-            if (_generated is { } g) PageActionsRequested?.Invoke(g.Source);
-            else if (Current is { } path) ActionsRequested?.Invoke(path);
-        };
+        // "⋯": what the reader can do beyond the bar (Sumário, Anotações, another app) and the file's own actions
+        var more = new Ui.UrbeIconButton(UrbeTheme.Icons.MoreUi, "Mais ações", 20);
+        more.Click += (_, _) => ShowMoreMenu(more);
         _more = more;
-        var head = new DockPanel();
+        // top bar: ‹ back (phone) · title over a small detail line · full screen (wide) · ⋯ · ✕ (wide)
+        _back.Click += async (_, _) =>
+        {
+            if (_body.Content is OcrStudyView ocr) { ocr.Back(); return; }
+            if (!ExitReaderMode()) await TryCloseAsync();
+        };
+        var head = new DockPanel { MinHeight = 52 };
+        _head = head;
+        _close = close;
+        DockPanel.SetDock(_back, Dock.Left);
         DockPanel.SetDock(close, Dock.Right);
         DockPanel.SetDock(more, Dock.Right);
         DockPanel.SetDock(_readerButton, Dock.Right);
+        head.Children.Add(_back);
         head.Children.Add(close);
         head.Children.Add(more);
         head.Children.Add(_readerButton);
-        head.Children.Add(_title);
-        Avalonia.Automation.AutomationProperties.SetName(_readerButton, "Expandir ou reduzir o leitor");
+        _title.FontSize = 16;
+        _title.FontWeight = FontWeight.SemiBold;
+        _meta.FontSize = 12;
+        _meta.Margin = new Thickness(0, 1, 0, 0);
+        _meta.TextWrapping = TextWrapping.NoWrap;
+        _meta.TextTrimming = TextTrimming.CharacterEllipsis;
+        head.Children.Add(new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0), Children = { _title, _meta } });
         _readerButton.Click += (_, _) => SetReaderMode(!_readerMode);
         _choose.SelectionChanged += async (_, _) =>
         {
@@ -139,11 +136,7 @@ public sealed class FilePreviewPanel : Grid
             }
             await ShowAsync(selected);
         };
-        _open.Click += async (_, _) =>
-        {
-            if (Current is { } path && Storage is { } s && !await s.OpenExternallyAsync(path))
-                _meta.Text += " · não foi possível abrir em outro app";
-        };
+        _open.Click += async (_, _) => await OpenExternallyAsync();
         var actions = _actions;
         actions.Children.Add(_open);
         var layout = new DockPanel();
@@ -159,38 +152,28 @@ public sealed class FilePreviewPanel : Grid
             };
             _htmlMode.Children.Add(b);
         }
+        // the PDF's bar, one row of icons: ‹ 3 / 120 › · − + · text layer · selection · OCR
+        var zoomIn = new Ui.UrbeIconButton(UrbeTheme.Icons.ZoomIn, "Aumentar", 21);
+        zoomIn.Click += (_, _) => { if (_pdfView is { } pdf) pdf.SetZoom(Math.Min(16, pdf.Zoom * 1.25)); };
+        var zoomOut = new Ui.UrbeIconButton(UrbeTheme.Icons.ZoomOut, "Diminuir", 21);
+        zoomOut.Click += (_, _) => { if (_pdfView is { } pdf) pdf.SetZoom(Math.Max(.25, pdf.Zoom / 1.25)); };
         _pdfNavigation.Children.Add(_pdfPrevious);
         _pdfNavigation.Children.Add(_pdfPage);
         _pdfNavigation.Children.Add(_pdfNext);
+        var gap = BarGap();
+        _pdfNavigation.Children.Add(gap);
+        _pdfNavigation.Children.Add(zoomOut);
+        _pdfNavigation.Children.Add(zoomIn);
+        _zoomTools.AddRange([gap, zoomOut, zoomIn]);
         _pdfPrevious.Click += (_, _) => _pdfView?.GoToPage(_pdfView.CurrentPage - 1);
         _pdfNext.Click += (_, _) => _pdfView?.GoToPage(_pdfView.CurrentPage + 1);
-        foreach (var (label, text) in new[] { ("Páginas", false), ("Texto selecionável", true) })
-        {
-            var mode = new Button { Content = label, MinHeight = 36 };
-            mode.Click += async (_, _) =>
-            {
-                if (_pdfText == text) return;
-                _pdfPosition = _pdfView?.CurrentPage ?? _pdfTextView?.CurrentPage ?? _pdfPosition;
-                _pdfText = text;
-                await ShowAsync(Index);
-            };
-            _pdfModes.Children.Add(mode);
-        }
-        var annotations = new Ui.UrbeButton("Anotações");
-        annotations.Click += (_, _) => { if (Current is { } path) AnnotationsRequested?.Invoke(path); };
-        _actions.Children.Add(annotations);
-        _ocr.Click += async (_, _) => await OpenOcrAsync();
-        var zoomIn = new Ui.UrbeButton("+"); zoomIn.Click += (_, _) => { if (_pdfView is { } pdf) pdf.SetZoom(Math.Min(16, pdf.Zoom * 1.25)); };
-        var zoomOut = new Ui.UrbeButton("−"); zoomOut.Click += (_, _) => { if (_pdfView is { } pdf) pdf.SetZoom(Math.Max(.25, pdf.Zoom / 1.25)); };
-        _pdfNavigation.Children.Add(zoomOut); _pdfNavigation.Children.Add(zoomIn);
-        var single = new Ui.UrbeButton("Página / Rolagem"); single.Click += (_, _) => { if (_pdfView is { } pdf) pdf.SetSinglePage(!pdf.SinglePage); };
-        var outline = new Ui.UrbeButton("Sumário"); outline.Click += async (_, _) => await ShowPdfNavigationAsync(false);
-        var links = new Ui.UrbeButton("Links da página"); links.Click += async (_, _) => await ShowPdfNavigationAsync(true);
-        _pdfModes.Children.Add(single); _pdfModes.Children.Add(outline); _pdfModes.Children.Add(links);
-        var select=new Ui.UrbeButton("Seleção");
+        // the page's picture or its text layer (selectable, searchable): one button that switches
+        _pdfTextToggle.Click += async (_, _) => await SetPdfTextAsync(!_pdfText);
+        _pdfModes.Children.Add(_pdfTextToggle);
+        var select = new Ui.UrbeIconButton(UrbeTheme.Icons.Select, "Seleção", 21);
         var enable=new MenuItem{Header="Selecionar na página"};enable.Click+=async(_,_)=>
         {
-            if(_pdfText){_pdfPosition=_pdfTextView?.CurrentPage??_pdfPosition;_pdfText=false;await ShowAsync(Index);}
+            if(_pdfText) await SetPdfTextAsync(false);
             if(_pdfView is { } pdf){await pdf.EnableSelectionAsync();_meta.Text=pdf.SelectionStatus;}
         };
         var copy=new MenuItem{Header="Copiar com fonte"};copy.Click+=async(_,_)=>{if(_pdfView?.SelectedQuote() is { } quote)await Ui.TextActions.CopyAsync(this,quote.Text+"\nFonte: "+quote.Path+", p. "+quote.Page);};
@@ -199,31 +182,63 @@ public sealed class FilePreviewPanel : Grid
         var comment=new MenuItem{Header="Comentar seleção"};comment.Click+=(_,_)=>_pdfView?.CiteSelection(StudyAnnotationKind.Comment);
         var question=new MenuItem{Header="Perguntar à IA"};question.Click+=(_,_)=>_pdfView?.CiteSelection(ask:true);
         var selectionMenu=new ContextMenu{ItemsSource=new[]{enable,copy,cite,highlight,comment,question}};
-        select.Click+=(_,_)=>selectionMenu.Open(select);_pdfModes.Children.Add(select);
-        static ScrollViewer HorizontalTools(Control tools) => new()
+        select.Click+=(_,_)=>selectionMenu.Open(select);
+        _pdfModes.Children.Add(select);
+        _ocr.Click += async (_, _) => await OpenOcrAsync();
+        var bar = new StackPanel
         {
-            Content = tools,
-            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
+            Orientation = Orientation.Horizontal, Spacing = 2, HorizontalAlignment = HorizontalAlignment.Center,
+            Children = { _pdfNavigation, _pdfModes, _ocr }
         };
-        var top = new StackPanel { Children = { head, _meta, _choose, HorizontalTools(_htmlMode), HorizontalTools(_pdfModes), HorizontalTools(_pdfNavigation), _ocr } };
+        // the reader's bar sits at the bottom, where the thumb is (Kindle, Kobo, Play Books)
+        _bar = new Border
+        {
+            Child = new ScrollViewer
+            {
+                Content = bar,
+                HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+                VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
+            },
+            Padding = new Thickness(4, 2),
+            BorderBrush = UrbeTheme.Brush(UrbeTheme.Line),
+            BorderThickness = new Thickness(0, 1, 0, 0),
+            Background = UrbeTheme.Brush(UrbeTheme.Surface)
+        };
+        foreach (var part in new Control[] { _pdfNavigation, _pdfModes, _ocr })
+            part.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateBar(); };
+        UpdateBar();
+        var top = new StackPanel { Children = { head, _choose, _htmlMode } };
+        _top = top;
         if (embedded)
         {
-            var expand = new Ui.UrbeButton("Abrir leitor");
+            var expand = new Ui.UrbeIconButton(UrbeTheme.Icons.Expand, "Abrir leitor", 20);
             expand.Click += (_, _) => { if (Current is { } path) ExpandRequested?.Invoke(path); };
-            top.Children.Insert(0, expand);
-            _ocr.MinHeight = 36;
+            bar.Children.Add(expand);
             head.IsVisible = false;
             _meta.IsVisible = false;
             actions.IsVisible = false;
-            _body.Margin = default;
+            _bar.BorderThickness = default;
+            _bar.Background = Brushes.Transparent;
+            _body.Margin = new Thickness(0, 6, 0, 0);
             Background = Brushes.Transparent;
         }
         DockPanel.SetDock(top, Dock.Top);
         DockPanel.SetDock(actions, Dock.Bottom);
+        DockPanel.SetDock(_bar, embedded ? Dock.Top : Dock.Bottom);
         layout.Children.Add(top);
+        layout.Children.Add(_bar);
         layout.Children.Add(actions);
         layout.Children.Add(_body);
+        // immersive reading: a tap on a page or picture hides the bars, the next one brings them back
+        _body.AddHandler(PointerPressedEvent, (_, e) => _tapFrom = (e.GetPosition(this), Environment.TickCount64), Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
+        _body.AddHandler(PointerReleasedEvent, (_, e) =>
+        {
+            if (_tapFrom is not { } from || _embedded || Shown is not ("viewer" or "image") || _pdfView is { } pdf && pdf.Selecting) return;
+            _tapFrom = null;
+            var moved = e.GetPosition(this) - from.At;
+            if (Math.Abs(moved.X) > 8 || Math.Abs(moved.Y) > 8 || Environment.TickCount64 - from.Ms > 300) return;
+            SetChromeHidden(!ChromeHidden);
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
         _card.Child = layout;
         _card.Background = UrbeTheme.Brush(UrbeTheme.Surface);
         _card.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2);
@@ -242,6 +257,87 @@ public sealed class FilePreviewPanel : Grid
     }
 
     private readonly Button _more;
+    private readonly Border _bar;
+    private readonly Ui.UrbeIconButton _back = new(UrbeTheme.Icons.Back, "Voltar", 22);
+    private readonly DockPanel _head = null!;
+    private readonly Button _close = null!;
+    private readonly StackPanel _top = null!;
+    private (Point At, long Ms)? _tapFrom;
+
+    /// <summary>
+    /// Android's Back inside the reader, one step at a time: out of OCR to the source, the hidden bars back, out of full
+    /// screen, and only then the reader closes.
+    /// </summary>
+    public void HandleBack()
+    {
+        if (_body.Content is OcrStudyView ocr) { ocr.Back(); return; }
+        if (ChromeHidden) { SetChromeHidden(false); return; }
+        if (!ExitReaderMode()) Close();
+    }
+
+    /// <summary>The bars are hidden: only the page or picture is on the screen (a tap brings them back).</summary>
+    public bool ChromeHidden { get; private set; }
+
+    public void SetChromeHidden(bool hidden)
+    {
+        ChromeHidden = hidden;
+        _top.IsVisible = !hidden;
+        UpdateBar();
+    }
+
+    private bool Phone => !_embedded && Bounds.Width < 720;
+
+    /// <summary>The reader's bar shows only with something in it (a picture or text file has none).</summary>
+    private void UpdateBar() => _bar.IsVisible = !ChromeHidden && (_pdfNavigation.IsVisible || _pdfModes.IsVisible || _ocr.IsVisible || _embedded);
+
+    private static Control BarGap() => new Border { Width = 1, Height = 22, Margin = new Thickness(6, 0), Background = UrbeTheme.Brush(UrbeTheme.Line2), VerticalAlignment = VerticalAlignment.Center };
+
+    /// <summary>The PDF as page pictures or as its text layer, at the same page.</summary>
+    public async Task SetPdfTextAsync(bool text)
+    {
+        if (_pdfText == text) return;
+        _pdfPosition = _pdfView?.CurrentPage ?? _pdfTextView?.CurrentPage ?? _pdfPosition;
+        _pdfText = text;
+        MarkTextToggle();
+        await ShowAsync(Index);
+    }
+
+    private void MarkTextToggle()
+    {
+        _pdfTextToggle.Background = _pdfText ? UrbeTheme.Brush(UrbeTheme.Accent, .22) : Brushes.Transparent;
+        _pdfTextToggle.Content = UrbeTheme.Icon(UrbeTheme.Icons.TextLayer, 21, _pdfText ? UrbeTheme.Accent : UrbeTokens.Color.TextSecondary, 1.8);
+        var tip = _pdfText ? "Ver as páginas" : "Texto selecionável";
+        ToolTip.SetTip(_pdfTextToggle, tip);
+        Avalonia.Automation.AutomationProperties.SetName(_pdfTextToggle, tip);
+    }
+
+    private async Task OpenExternallyAsync()
+    {
+        if (Current is { } path && Storage is { } s && !await s.OpenExternallyAsync(path))
+            _meta.Text += " · não foi possível abrir em outro app";
+    }
+
+    /// <summary>"⋯": the reader's less frequent actions, then the file's own (Renomear, Mover, Excluir).</summary>
+    private void ShowMoreMenu(Control anchor)
+    {
+        var items = new List<MenuItem>();
+        MenuItem Item(string header, Action run) { var item = new MenuItem { Header = header }; item.Click += (_, _) => run(); items.Add(item); return item; }
+        if (_pdfModes.IsVisible && _pdfView is { } pdf)
+        {
+            Item(pdf.SinglePage ? "Rolagem contínua" : "Uma página por vez", () => pdf.SetSinglePage(!pdf.SinglePage));
+            Item("Sumário", () => _ = ShowPdfNavigationAsync(false));
+            Item("Links da página", () => _ = ShowPdfNavigationAsync(true));
+        }
+        if (Current is { } path && _generated is null)
+        {
+            Item("Anotações desta fonte", () => AnnotationsRequested?.Invoke(path));
+            Item("Abrir em outro app", () => _ = OpenExternallyAsync());
+        }
+        if (_generated is { } g) Item("Ações da página", () => PageActionsRequested?.Invoke(g.Source));
+        else if (Current is { } file) Item("Renomear, mover ou excluir", () => ActionsRequested?.Invoke(file));
+        if (items.Count == 0) return;
+        new ContextMenu { ItemsSource = items }.Open(anchor);
+    }
 
     /// <summary>"⋯": the host shows the attachment's actions (Renomear, Mover, Excluir).</summary>
     public event Action<string>? ActionsRequested;
@@ -277,14 +373,15 @@ public sealed class FilePreviewPanel : Grid
     {
         if (!IsVisible || _readerMode == expanded) return;
         _readerMode = expanded;
-        _readerButton.Content = expanded ? "Sair da tela cheia" : "Tela cheia";
+        _readerButton.Content = UrbeTheme.Icon(expanded ? UrbeTheme.Icons.Shrink : UrbeTheme.Icons.Expand, 20, UrbeTokens.Color.TextSecondary, 1.8);
+        ToolTip.SetTip(_readerButton, expanded ? "Sair da tela cheia" : "Tela cheia");
+        Avalonia.Automation.AutomationProperties.SetName(_readerButton, expanded ? "Sair da tela cheia" : "Tela cheia");
         _meta.IsVisible = !expanded;
         _choose.IsVisible = !expanded && _files.Count > 1;
         _htmlMode.IsVisible = !expanded && (_generated is not null ||
             (Current is { } p && VaultFileKinds.Classify(p) == VaultFileKinds.Html));
         _actions.IsVisible = !expanded;
         _more.IsVisible = !expanded && (Current is not null || _generated is not null);
-        _card.Padding = expanded ? new Thickness(8) : new Thickness(20, 14, 20, 20);
         Place();
     }
 
@@ -455,7 +552,11 @@ public sealed class FilePreviewPanel : Grid
             return;
         }
         bool wide = Bounds.Width >= 720;
-        if (_readerMode)
+        // phone: a reader is the whole screen, never a sheet over the note (the bars are what is thin)
+        _back.IsVisible = !wide;
+        _close.IsVisible = wide;
+        _readerButton.IsVisible = wide;
+        if (_readerMode || !wide)
         {
             _card.Width = double.NaN;
             _card.Height = double.NaN;
@@ -473,12 +574,21 @@ public sealed class FilePreviewPanel : Grid
             _card.VerticalAlignment = wide ? VerticalAlignment.Center : VerticalAlignment.Bottom;
             _card.CornerRadius = wide ? new CornerRadius(16) : new CornerRadius(20, 20, 0, 0);
         }
+        // phone: edge to edge, the page's own colour behind it; zoom is the pinch, so −/+ leave the bar
+        _card.Padding = !wide ? new Thickness(0) : _readerMode ? new Thickness(8) : new Thickness(20, 14, 20, 20);
+        _card.BorderThickness = new Thickness(wide ? 1 : 0);
+        _card.Background = UrbeTheme.Brush(wide ? UrbeTheme.Surface : UrbeTheme.Bg);
+        _head.Margin = wide ? default : new Thickness(4, 0, 4, 0);
+        foreach (var zoom in _zoomTools) zoom.IsVisible = wide;
         if (Shown is "viewer" or "text" or "image" && _body.Content is Control shown)
             shown.Height = ViewerHeight();
     }
 
+    private readonly List<Control> _zoomTools = [];
+
     private async Task ShowAsync(int index)
     {
+        if (ChromeHidden) SetChromeHidden(false);
         CaptureReadingPosition();
         int version = ++_version;
         _mediaView=null;
@@ -494,6 +604,7 @@ public sealed class FilePreviewPanel : Grid
         var (name, path) = _files[index];
         var kind = _generated is not null ? VaultFileKinds.Html : VaultFileKinds.Classify(name);
         _pdfModes.IsVisible = kind == VaultFileKinds.Pdf;
+        MarkTextToggle();
         _ocr.IsVisible = kind is VaultFileKinds.Pdf or VaultFileKinds.Image;
         _title.Text = name;
         _meta.Text = VaultFileKinds.Label(kind) + (path is not null ? " · " + path : "");
@@ -534,7 +645,8 @@ public sealed class FilePreviewPanel : Grid
         }
         _meta.Text = (_generated is { } gen ? "Página · " + VaultFileKinds.FormatBytes(read.Size) + " · " + gen.Source
             : VaultFileKinds.Label(kind) + " · " + VaultFileKinds.FormatBytes(read.Size) + (path is not null ? " · " + path : ""));
-        _open.IsVisible = _generated is null;
+        // "Abrir em outro app" is in "⋯"; the big button only when the Urbe cannot show the file itself
+        _open.IsVisible = false;
         var bytes = read.Bytes;
         if ((bytes is not null || kind is VaultFileKinds.Audio or VaultFileKinds.Video) && Storage?.AtlasVaultSessionKey is { } vaultIdentity && path is not null && ReadingState is { } state)
         {
@@ -595,14 +707,14 @@ public sealed class FilePreviewPanel : Grid
                 _requestedPart = null;
             }
             catch (Exception ex) when (ex is not OutOfMemoryException)
-            { if (version == _version) _body.Content = Empty("Não foi possível abrir o arquivo de leitura", ex.Message); }
+            { if (version == _version) { _body.Content = Empty("Não foi possível abrir o arquivo de leitura", ex.Message); _open.IsVisible = true; } }
             return;
         }
         if (kind == VaultFileKinds.Image && bytes is not null && Image(bytes) is { } image)
         {
             if(_requestedRegion is { } region)
             {
-                var ocrSource=new OcrStudyView(path??name,null,_cachedHash??Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant(),bytes,region){Height=ViewerHeight()};
+                var ocrSource=new OcrStudyView(path??name,null,_cachedHash??Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant(),bytes,region){Height=ViewerHeight(),ShowsBack=!Phone};
                 ocrSource.QuoteRequested+=quote=>ImageQuoteRequested?.Invoke(quote);ocrSource.VisualQuestionRequested+=question=>VisualQuestionRequested?.Invoke(question);ocrSource.CloseRequested+=async()=>await ShowAsync(Index);_body.Content=ocrSource;_requestedRegion=null;Shown="image";return;
             }
             image.Height = ViewerHeight();
@@ -659,6 +771,7 @@ public sealed class FilePreviewPanel : Grid
                 study.QuoteRequested += quote => QuoteRequested?.Invoke(quote);
                 study.AskRequested += quote => QuestionRequested?.Invoke(quote.Path + " · página " + quote.Page, quote.Text);
                 study.PageChanged += page => _pdfPosition = page;
+                study.Failed += () => _open.IsVisible = _generated is null;
                 study.PageChanged += page => RememberReadingPosition(page);
                 _body.Content = study;
                 Shown = "text";
@@ -673,6 +786,7 @@ public sealed class FilePreviewPanel : Grid
             ShowText(source, "text");
             return;
         }
+        _open.IsVisible = _generated is null;
         if (bytes is null && read.Size > MaxBytes)
         {
             _body.Content = Empty(name, "O arquivo tem " + VaultFileKinds.FormatBytes(read.Size) + ", mais do que este aparelho abre aqui de uma vez. Use Abrir em outro app.");
@@ -734,7 +848,7 @@ public sealed class FilePreviewPanel : Grid
             else image = bytes;
             string hash = _cachedHash ?? Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant();
             if (version != _version) return;
-            var ocr = new OcrStudyView(path, page, hash, image) { Height = ViewerHeight() };
+            var ocr = new OcrStudyView(path, page, hash, image) { Height = ViewerHeight(), ShowsBack = !Phone };
             ocr.VisualQuestionRequested+=question=>VisualQuestionRequested?.Invoke(question);
             ocr.QuoteRequested += quote => ImageQuoteRequested?.Invoke(quote);
             ocr.CloseRequested += async () => { ocr.Dispose(); await ShowAsync(Index); };

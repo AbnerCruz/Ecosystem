@@ -8,7 +8,7 @@ public static class PresentationReaderHtml
 {
     private static readonly Lazy<string> Engine = new(() =>
     {
-        using var stream = typeof(PresentationReaderHtml).Assembly.GetManifestResourceStream("reader/presentation.js") ?? throw new InvalidOperationException("Motor de slides não empacotado.");
+        using var stream = Urbe.Readers.Assets.ReaderAssets.Open("reader/presentation.js");
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd().Replace("</script", "<\\/script", StringComparison.OrdinalIgnoreCase);
     });

@@ -9,13 +9,12 @@ public static class OcrReaderHtml
     public const string ResultScript = "JSON.stringify(window.urbeOcrResult||null)";
     private static string Resource(string name)
     {
-        using var stream = typeof(OcrReaderHtml).Assembly.GetManifestResourceStream("reader/ocr/" + name)
-            ?? throw new InvalidOperationException("Recurso OCR não empacotado: " + name);
+        using var stream = Urbe.Readers.Assets.ReaderAssets.Open("reader/ocr/" + name);
         using var reader = new StreamReader(stream); return reader.ReadToEnd();
     }
     private static string Model(string name)
     {
-        using var stream = typeof(OcrReaderHtml).Assembly.GetManifestResourceStream("reader/ocr/" + name + ".traineddata.gz")!;
+        using var stream = Urbe.Readers.Assets.ReaderAssets.Open("reader/ocr/" + name + ".traineddata.gz");
         using var bytes = new MemoryStream(); stream.CopyTo(bytes); return Convert.ToBase64String(bytes.ToArray());
     }
     public static string Build(byte[] png,string language="por+eng")

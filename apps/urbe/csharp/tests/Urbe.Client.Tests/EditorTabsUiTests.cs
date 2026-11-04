@@ -71,7 +71,7 @@ public sealed partial class HeadlessUiTests
         }, CancellationToken.None));
 
     [Fact]
-    public async Task EditorTabs_PlusIsReachableWithOneTabAndUsesTheExistingNotePicker() =>
+    public async Task EditorTabs_ANewTabComesFromTheMenuAndTheStripOnlyShowsWithTwoTabs() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
     {
         var (view, window, vault, dir) = await OpenCreateVault();
@@ -81,27 +81,32 @@ public sealed partial class HeadlessUiTests
             await ((IAssistantApp)view).CreateNoteAsync("Bairro/Dois.md", "# Dois\n");
             view.OpenNoteByPath("Comece.md");
             await Settle(window, view);
+            // one note: no strip taking a row of the phone's screen
             var add = view.Editor.GetLogicalDescendants().OfType<Button>()
                 .Single(b => AutomationProperties.GetName(b) == "Abrir nova aba");
-            Assert.True(add.IsEffectivelyVisible);
-            Assert.True(add.Bounds.Width >= 48 && add.Bounds.Height >= 48);
-            var at = add.TranslatePoint(default, window)!.Value;
-            Assert.InRange(at.X, 0, window.Bounds.Width - add.Bounds.Width);
-            add.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Assert.False(add.IsEffectivelyVisible);
+            // the editor's menu offers the new tab, through the same note picker
+            view.Search.OpenNewTabPicker();
             Assert.True(view.Search.QuickOpen.IsOpen);
             view.Search.QuickOpen.Close();
             Assert.Equal(["Comece.md"], view.Editor.Tabs);
             // Reopening before the prior close callback runs must keep this new selection alive.
-            add.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            view.Search.OpenNewTabPicker();
             view.Search.QuickOpen.Input.Text = "Bairro/Um";
             Dispatcher.UIThread.RunJobs();
             window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
             await Settle(window, view);
             Assert.Equal(["Comece.md", "Bairro/Um.md"], view.Editor.Tabs);
             Assert.Equal("Bairro/Um.md", view.Editor.Current!.Path);
+            // two tabs: the strip shows, with + at its end, inside the screen
+            Assert.True(add.IsEffectivelyVisible);
+            Assert.True(add.Bounds.Height >= 40);
+            var at = add.TranslatePoint(default, window)!.Value;
+            Assert.InRange(at.X, 0, window.Bounds.Width - add.Bounds.Width);
             // The extra slot remains; normal navigation replaces only the active one.
             view.OpenNoteByPath("Bairro/Dois.md");
             Assert.Equal(["Comece.md", "Bairro/Dois.md"], view.Editor.Tabs);
+            await Settle(window, view);
             Snapshot(window, "native-explicit-tabs-320.png");
             return true;
         }
@@ -135,7 +140,7 @@ public sealed partial class HeadlessUiTests
         finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
     }, CancellationToken.None));
     [Fact]
-    public async Task EditorTabs_CompactVisualCapsulePreservesAccessibleTapSurface()
+    public async Task EditorTabs_FlatTabsKeepTheirNamesAndAWholeTabTouchTarget()
     {
         Assert.True(await Session.Dispatch<bool>(async () =>
         {
@@ -144,16 +149,16 @@ public sealed partial class HeadlessUiTests
             {
                 window.Width = 320;
                 view.OpenNoteByPath("Comece.md");
+                await view.Editor.OpenInNewTabAsync("Bairro/Um.md");
                 await Settle(window, view);
                 var tab = view.Editor.GetLogicalDescendants().OfType<Button>()
                     .Single(b => AutomationProperties.GetName(b) == "Aba Comece.md");
-                var capsule = Assert.IsType<Border>(tab.Content);
-                Assert.Equal(40, capsule.Height);
-                Assert.True(tab.Bounds.Height >= 48, "A área de toque não deve encolher com o visual");
-                var label = capsule.GetLogicalDescendants().OfType<TextBlock>().Single();
-                Assert.InRange(label.MaxWidth, 100, 132);
-                var close = capsule.GetLogicalDescendants().OfType<Button>().Single();
-                Assert.True(close.Width <= 40, "O botão de fechar não deve ocupar o espaço do título");
+                Assert.True(tab.Bounds.Height >= 40, "A aba inteira é a área de toque");
+                Assert.Equal("Comece", tab.GetLogicalDescendants().OfType<TextBlock>().First().Text);
+                // only the active tab carries its ×: the others keep their width for the name
+                Assert.Empty(tab.GetLogicalDescendants().OfType<Button>());
+                var active = view.Editor.GetLogicalDescendants().OfType<Button>().Single(b => AutomationProperties.GetName(b) == "Aba Um.md");
+                Assert.Single(active.GetLogicalDescendants().OfType<Button>());
                 Assert.True(tab.IsEffectivelyVisible);
                 return true;
             }

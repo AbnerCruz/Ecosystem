@@ -10,7 +10,7 @@ if(!source)throw Error('URBE_WEB_PPT_SOURCE must be a checkout of https://github
 const revision=execFileSync('git',['-C',source,'rev-parse','HEAD'],{encoding:'utf8'}).trim();
 if(revision!=='88c8df92ee853fa2dc45a413fa38316527b20025')throw Error('Unreviewed Web-PPT revision: '+revision);
 if(execFileSync('git',['-C',source,'status','--porcelain'],{encoding:'utf8'}).trim())throw Error('Web-PPT source must be clean');
-const output=path.resolve(here,'../../src/Urbe.Client/Resources/Readers');
+const output=path.resolve(here,'../../src/Urbe.Readers.Assets/Readers');
 await build({stdin:{contents:'import { parse, slideToSvgFile } from '+JSON.stringify(path.resolve(source,'packages/core/src/index.ts'))+';\nglobalThis.UrbePresentation = { parse, slideToSvgFile };',resolveDir:here,sourcefile:'entry.ts'},bundle:true,format:'iife',platform:'browser',target:'es2020',minify:true,legalComments:'inline',nodePaths:[path.join(here,'node_modules')],outfile:path.join(output,'presentation.js')});
 const modules=path.join(here,'node_modules');
 for(const [src,dest] of Object.entries({'tesseract.js/dist/tesseract.min.js':'tesseract.min.js','tesseract.js/dist/worker.min.js':'worker.min.js','tesseract.js-core/tesseract-core-lstm.wasm.js':'core.wasm.js','tesseract.js/LICENSE.md':'Tesseract-js-LICENSE.txt','tesseract.js-core/LICENSE':'Tesseract-core-LICENSE.txt','tesseract.js/dist/tesseract.min.js.LICENSE.txt':'tesseract-notices.txt','tesseract.js/dist/worker.min.js.LICENSE.txt':'worker-notices.txt'}))await fs.copyFile(path.join(modules,src),path.join(output,'Ocr',dest));

@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 
@@ -135,6 +136,8 @@ public sealed class PdfPagesView : ScrollViewer, IDisposable
     private int _selectionVersion;
     private bool _selecting;
     public string? SelectionStatus {get;private set;}
+    /// <summary>Selecting words on the page: a tap belongs to the selection, not to the reader's bars.</summary>
+    public bool Selecting => _selecting;
     public event Action<ReaderQuote>? QuoteRequested;
     public event Action<ReaderQuote>? AskRequested;
     public void ConfigureStudy(string path,byte[] bytes,string hash){_studyPath=path;_studyBytes=bytes;_studyHash=hash;}
@@ -195,6 +198,26 @@ public sealed class PdfPagesView : ScrollViewer, IDisposable
         Content = _surface;
         ScrollChanged += (_, _) => DrawSoon();
         SizeChanged += (_, _) => { LayoutPages(); DrawSoon(); };
+        // pinch to zoom (the phone's gesture; −/+ stay in the wide bar): the pages scale at once under the fingers,
+        // and are drawn sharp at the new size when the fingers lift
+        GestureRecognizers.Add(new PinchGestureRecognizer());
+        AddHandler(PinchEvent, (_, e) =>
+        {
+            if (_closed) return;
+            _pinchOrigin = e.ScaleOrigin;
+            _pinchScale = Math.Clamp(e.Scale, .25 / Zoom, 16 / Zoom);
+            _surface.RenderTransformOrigin = new RelativePoint(Offset.X + e.ScaleOrigin.X, Offset.Y + e.ScaleOrigin.Y, RelativeUnit.Absolute);
+            _surface.RenderTransform = new ScaleTransform(_pinchScale, _pinchScale);
+            e.Handled = true;
+        });
+        AddHandler(PinchEndedEvent, (_, _) => EndPinch());
+        // Ctrl + wheel on a computer
+        AddHandler(PointerWheelChangedEvent, (_, e) =>
+        {
+            if (!e.KeyModifiers.HasFlag(KeyModifiers.Control) || _closed) return;
+            ZoomAround(Zoom * (e.Delta.Y > 0 ? 1.15 : 1 / 1.15), e.GetPosition(this));
+            e.Handled = true;
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         Loaded += (_, _) => { LayoutPages(); DrawSoon(); };
         DetachedFromVisualTree += (_, _) => Dispose();
     }
@@ -202,6 +225,33 @@ public sealed class PdfPagesView : ScrollViewer, IDisposable
     public bool SinglePage => _singlePage;
     public void SetSinglePage(bool single)
     { if(!single){_selecting=false;_textSelection.IsVisible=false;_selectionVersion++;} _singlePage = single; LayoutPages(); GoToPage(CurrentPage); }
+    private double _pinchScale = 1;
+    private Point _pinchOrigin;
+
+    private void EndPinch()
+    {
+        if (_pinchScale == 1) return;
+        var scale = _pinchScale;
+        _pinchScale = 1;
+        _surface.RenderTransform = null;
+        ZoomAround(Zoom * scale, _pinchOrigin);
+    }
+
+    /// <summary>A new zoom that keeps the point under <paramref name="at"/> (in the viewport) where it was.</summary>
+    public void ZoomAround(double zoom, Point at)
+    {
+        zoom = Math.Clamp(zoom, .25, 16);
+        if (_closed || !double.IsFinite(zoom) || Math.Abs(zoom - Zoom) < .001) return;
+        var factor = zoom / Zoom;
+        var content = new Point(Offset.X + at.X, Offset.Y + at.Y);
+        Zoom = zoom;
+        _failed.Clear();
+        LayoutPages();
+        UpdateLayout();
+        Offset = new Vector(Math.Max(0, content.X * factor - at.X), Math.Max(0, content.Y * factor - at.Y));
+        DrawSoon();
+    }
+
     public void SetZoom(double zoom)
     {
         if (_closed || !double.IsFinite(zoom) || zoom < .25 || zoom > 16) return;

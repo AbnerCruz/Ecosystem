@@ -15,14 +15,15 @@ public sealed class EpubStudyView : Grid, IDisposable
     private readonly IReaderPublication _book;
     private readonly string _path;
     private readonly object _gate = new();
-    private readonly ComboBox _chapters = new() { HorizontalAlignment = HorizontalAlignment.Stretch, MinHeight = 48 };
+    private readonly ComboBox _chapters = new() { HorizontalAlignment = HorizontalAlignment.Stretch, MinHeight = 40, VerticalAlignment = VerticalAlignment.Center };
     private readonly ContentControl _body = new() { HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch };
     private readonly TextBox _text = new() { IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, FontSize = 18 };
-    private readonly TextBox _query = new() { PlaceholderText = "Buscar no livro", MinHeight = 48 };
-    private readonly TextBlock _status = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap };
+    private readonly TextBox _query = new() { PlaceholderText = "Buscar no livro", MinHeight = 40, VerticalContentAlignment = VerticalAlignment.Center };
+    private readonly TextBlock _status = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(4, 4, 4, 0) };
     private readonly ListBox _results = new() { IsVisible = false, MaxHeight = 160 };
     private readonly ProgressBar _progress = new() { Minimum = 0, Height = 4 };
-    private readonly Ui.UrbeButton _previous = new("Anterior"), _next = new("Próximo"), _moreSearch = new("Buscar mais");
+    private readonly Ui.UrbeIconButton _previous = new(UrbeTheme.Icons.Back, "Capítulo anterior"), _next = new(UrbeTheme.Icons.Forward, "Próximo capítulo");
+    private readonly Ui.UrbeButton _moreSearch = new("Buscar mais", Ui.ButtonKind.Ghost);
     private bool _updating, _textMode;
     private volatile bool _closed;
     private int _version;
@@ -54,41 +55,68 @@ public sealed class EpubStudyView : Grid, IDisposable
         _chapters.SelectionChanged += async (_, _) => { if (!_updating && _chapters.SelectedIndex >= 0) await GoToChapterAsync(_chapters.SelectedIndex); };
         _previous.Click += async (_, _) => await GoToChapterAsync(CurrentChapter - 1);
         _next.Click += async (_, _) => await GoToChapterAsync(CurrentChapter + 1);
-        var mode = new Ui.UrbeButton("Visual / Texto");
-        mode.Click += async (_, _) => { _textMode = !_textMode; await ShowChapterAsync(); };
-        var smaller = new Ui.UrbeButton("A−");
-        var larger = new Ui.UrbeButton("A+");
-        smaller.Click += async (_, _) => await SetTypographyAsync(FontSizePreference - 2);
-        larger.Click += async (_, _) => await SetTypographyAsync(FontSizePreference + 2);
-        var spacing = new Ui.UrbeButton("Entrelinha");
-        spacing.Click += async (_, _) => { await CaptureLocationAsync(); LineHeightPreference = LineHeightPreference >= 2 ? 1.2 : LineHeightPreference + .2; await ShowChapterAsync(); };
-        var theme=new Ui.UrbeButton("Tema");theme.Click+=async(_,_)=>{await CaptureLocationAsync();ThemePreference=ThemePreference switch{"system"=>"light","light"=>"sepia","sepia"=>"dark",_=>"system"};await ShowChapterAsync();};
-        var margin=new Ui.UrbeButton("Margens");margin.Click+=async(_,_)=>{await CaptureLocationAsync();MarginPreference=MarginPreference>=10?0:MarginPreference+2.5;await ShowChapterAsync();};
-        var nav = new DockPanel();
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Children = { _previous, _next, mode, smaller, larger, spacing, theme, margin } };
-        var buttonScroll = new ScrollViewer { Content = buttons, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
-        DockPanel.SetDock(buttonScroll, Dock.Top); nav.Children.Add(buttonScroll); nav.Children.Add(_chapters);
+        // one row: ‹ chapter › · Aa (type, spacing, theme, margins, text view) · search
+        var type = new Ui.UrbeIconButton(UrbeTheme.Icons.TextLayer, "Aparência da leitura", 20);
+        type.Click += (_, _) =>
+        {
+            var items = new List<MenuItem>();
+            void Item(string header, Func<Task> run) { var i = new MenuItem { Header = header }; i.Click += async (_, _) => await run(); items.Add(i); }
+            Item("Letra maior", () => SetTypographyAsync(FontSizePreference + 2));
+            Item("Letra menor", () => SetTypographyAsync(FontSizePreference - 2));
+            Item("Entrelinha: " + (LineHeightPreference >= 2 ? "1,2" : (LineHeightPreference + .2).ToString("0.0", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"))),
+                async () => { await CaptureLocationAsync(); LineHeightPreference = LineHeightPreference >= 2 ? 1.2 : LineHeightPreference + .2; await ShowChapterAsync(); });
+            Item("Tema: " + (ThemePreference switch { "system" => "claro", "light" => "sépia", "sepia" => "escuro", _ => "do sistema" }),
+                async () => { await CaptureLocationAsync(); ThemePreference = ThemePreference switch { "system" => "light", "light" => "sepia", "sepia" => "dark", _ => "system" }; await ShowChapterAsync(); });
+            Item(MarginPreference >= 10 ? "Sem margens" : "Margens maiores",
+                async () => { await CaptureLocationAsync(); MarginPreference = MarginPreference >= 10 ? 0 : MarginPreference + 2.5; await ShowChapterAsync(); });
+            Item(_textMode ? "Ver com a formatação do livro" : "Ver só o texto", async () => { _textMode = !_textMode; await ShowChapterAsync(); });
+            new ContextMenu { ItemsSource = items }.Open(type);
+        };
+        var find = new Ui.UrbeIconButton(UrbeTheme.Icons.SearchUi, "Buscar", 20);
+        var search = new DockPanel { IsVisible = false, Margin = new Thickness(0, 4, 0, 0) };
+        find.Click += async (_, _) =>
+        {
+            if (!search.IsVisible) { search.IsVisible = true; _query.Focus(); return; }
+            await SearchAsync(_query.Text ?? "");
+        };
+        _query.KeyDown += async (_, e) => { if (e.Key == Avalonia.Input.Key.Enter) { e.Handled = true; await SearchAsync(_query.Text ?? ""); } };
+        var nav = new DockPanel { LastChildFill = true };
+        var buttonScroll = new StackPanel { Orientation = Orientation.Horizontal, Children = { type, find } };
+        DockPanel.SetDock(_previous, Dock.Left);
+        DockPanel.SetDock(buttonScroll, Dock.Right);
+        DockPanel.SetDock(_next, Dock.Right);
+        nav.Children.Add(_previous);
+        nav.Children.Add(buttonScroll);
+        nav.Children.Add(_next);
+        nav.Children.Add(_chapters);
         Children.Add(nav);
-        var find = new Ui.UrbeButton("Buscar"); find.Click += async (_, _) => await SearchAsync(_query.Text ?? "");
-        var search = new DockPanel(); DockPanel.SetDock(find, Dock.Right); search.Children.Add(find); search.Children.Add(_query);
+        search.Children.Add(Ui.SoftField.WithIcon(_query, UrbeTheme.Icons.SearchUi));
         SetRow(search, 1); Children.Add(search);
         _results.SelectionChanged += async (_, _) => { if (_results.SelectedItem is SearchHit hit) await GoToChapterAsync(hit.Part, hit.Offset, hit.Length); };
         SetRow(_results, 2); Children.Add(_results);
         SetRow(_body, 3); Children.Add(_body);
-        var quote = new Ui.UrbeButton("Adicionar seleção à nota"); quote.Click += async (_, _) => await WithSelectionAsync(false);
-        var ask = new Ui.UrbeButton("Perguntar à IA"); ask.Click += async (_, _) => await WithSelectionAsync(true);
-        var highlight = new Ui.UrbeButton("Destacar"); highlight.Click += async (_, _) => await WithSelectionAsync(false, StudyAnnotationKind.Highlight);
-        var comment = new Ui.UrbeButton("Comentar"); comment.Click += async (_, _) => await WithSelectionAsync(false, StudyAnnotationKind.Comment);
-        var bookmark = new Ui.UrbeButton("Marcar posição"); bookmark.Click += async (_, _) =>
+        Button Chip(string text, string icon, Func<Task> run)
+        {
+            var chip = new Ui.UrbeButton(text, Ui.ButtonKind.Ghost, icon) { MinHeight = 40, Padding = new Thickness(10, 0) };
+            chip.Click += async (_, _) => await run();
+            return chip;
+        }
+        var quote = Chip("Adicionar seleção à nota", UrbeTheme.Icons.Notes, () => WithSelectionAsync(false));
+        var ask = Chip("Perguntar à IA", UrbeTheme.Icons.Assistant, () => WithSelectionAsync(true));
+        var highlight = Chip("Destacar", UrbeTheme.Icons.Pencil, () => WithSelectionAsync(false, StudyAnnotationKind.Highlight));
+        var comment = Chip("Comentar", UrbeTheme.Icons.Edit, () => WithSelectionAsync(false, StudyAnnotationKind.Comment));
+        var bookmark = new Ui.UrbeButton("Marcar posição", Ui.ButtonKind.Ghost, UrbeTheme.Icons.Pin) { MinHeight = 40, Padding = new Thickness(10, 0) };
+        bookmark.Click += async (_, _) =>
         {
             await CaptureLocationAsync();
             QuoteRequested?.Invoke(new(_path, _book.Unit, CurrentChapter + 1, _book.Chapters[CurrentChapter].Title, _book.Sha256, CurrentOffset, 0, StudyAnnotationKind.Bookmark));
         };
         _moreSearch.IsVisible = false; _moreSearch.Click += async (_, _) => await SearchAsync(_searchQuery, true);
-        var footer = new StackPanel { Children = { _progress, _status, new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, Content = new StackPanel { Orientation = Orientation.Horizontal, Children = { quote, highlight, comment, bookmark, ask, _moreSearch } } } } };
+        _status.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
+        var footer = new StackPanel { Children = { _progress, new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { quote, highlight, comment, bookmark, ask, _moreSearch } } }, _status } };
         SetRow(footer, 4); Children.Add(footer);
         _progress.Maximum = book.Chapters.Count;
-        if (compact) { buttonScroll.IsVisible = search.IsVisible = footer.IsVisible = false; _chapters.MinHeight = 40; }
+        if (compact) { buttonScroll.IsVisible = search.IsVisible = footer.IsVisible = false; }
         _body.SizeChanged += (_, e) => { if (_body.Content is Control viewer) viewer.Height = Math.Max(1, e.NewSize.Height); };
         _positionTimer.Tick += async (_, _) => await CaptureLocationAsync();
         Loaded += (_, _) => _positionTimer.Start();

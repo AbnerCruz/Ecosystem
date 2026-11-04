@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261104-urbe-beta47-recovery",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-04T11:32:56.000Z",
+  "agent": {
+    "id": "claude-code-urbe-recovery",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-114",
+  "component": "urbe",
+  "state": "review",
+  "branch": "claude/urbe-refactor-development-t73hul",
+  "base_commit": "0e2759b",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/904",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Readers.Assets/",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/RadialNav.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FilePreviewPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PdfStudyView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/OcrStudyView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EpubStudyView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/StudyBrowserPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PinnedPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationStudioView.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md"
+  ],
+  "work_completed": [
+    "Proprietário (04/11/2026) relatou piora de desempenho, visual e bugs entre beta.38 e beta.46 e pediu recuperação e continuidade com releases frequentes.",
+    "Medição comparativa headless beta.37 × beta.46 (bench opt-in URBE_BENCH=1): caminhos do editor equivalentes; Fonte ~65 ms/tecla em nota de 14 KB nas duas (custo do TextBox do Avalonia refazendo o layout do texto inteiro, pendência estrutural).",
+    "Regressões de abertura encontradas e corrigidas: o painel do Assistente passou a ser construído em toda abertura (assinatura de visibilidade no construtor do MainView); motores de slides/OCR (~7 MB) embutidos em Urbe.Client.dll, que a store de assemblies do Android descomprime a cada abertura (store 9,7 → 18,1 MB entre os APKs publicados da beta.37 e da beta.46). Assistente volta a ser preguiçoso (teste Startup_TheAssistenteIsBuiltOnlyWhenItOpens); motores movidos para Urbe.Readers.Assets, carregado só ao abrir um desses leitores.",
+    "UX: faixa de abas só com 2+ abas; menu radial acima da barra/rodapé do editor (CST-143) e oculto com leitor aberto; leitores PDF/OCR/EPUB/navegador, painel fixado e estúdio de Publicações com barras de ícones únicas e ações secundárias em ⋯.",
+    "Beta.47 preparada no csproj canônico; patchnotes reescritas em linguagem direta; beta.45/46 no histórico.",
+    "Abrir nota: VisualSurface desenha só as primeiras telas e adia os blocos distantes (Ui.Deferred, compensação de rolagem existente); índice [[ do vault montado sob demanda. Bench 14 KB: abrir 109 → 34 ms, trocar de nota 73 → 23 ms, tocar para editar 34 → 24 ms.",
+    "Notas: RefreshNotes pula quando o vault não mudou (impressão digital por identidade dos textos); dica de ligações sem índice completo. 2.000 notas: abrir Notas 134 → 80 ms.",
+    "CST-148: KnowledgeIndex deixava de ser reconstruído a cada mudança do DocumentStore (cada autosave e cada nota gravada por um agente durante uma execução); agora marca obsoleto e reconstrói uma vez na próxima consulta, construtor também preguiçoso. Busca rápida sem reparsear o vault a cada tecla.",
+    "CST-129 medido: salvar e sair de nota de 14 KB, 4,6 ms na interface e 43 ms até gravar (headless; armazenamento do Android a conferir)."
+  ],
+  "verification": [
+    {
+      "check": "Urbe.Client.Tests completos (headless Skia)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "493/493 Client e 1338/1338 Core localmente no commit d4b4fae; CI do estado combinado verde no commit 64c1fa5 (run 41820045717)."
+    },
+    {
+      "check": "tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks passaram localmente."
+    },
+    {
+      "check": "CI do PR e publicação oficial Android/Windows",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI combinado verde em 64c1fa5; integrador aguarda autorização do proprietário (mudança crítica: distribuição). Nenhum APK publicado por este registro."
+    },
+    {
+      "check": "Abertura do app, digitação, abas, menu radial e leitores no moto g32",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/PATCHNOTES.md",
+      "evidence": "Validação física pendente (NN-017); headless não mede o aparelho."
+    }
+  ],
+  "known_issues": [
+    "Digitação no modo Fonte em notas grandes continua cara: o TextBox do Avalonia refaz o layout do texto inteiro por tecla (comunidade: AvaloniaUI/Avalonia#7275). Resolver exige editor com layout incremental e validação de IME no aparelho.",
+    "OCR local roda Tesseract via WebView com o pacote inteiro em base64; avaliar OCR nativo por plataforma."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Abrir PR, acompanhar CI e integração; disparar publicação oficial quando integrado.",
+    "Atacar a digitação no Fonte de notas grandes (editor com layout incremental) e continuar o plano Numa 2.6."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "MANIFEST.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "docs/governance/addenda/ADD-0033-urbe-sem-paridade-com-a-1-8-4-e-sem-limitadores.md",
+    "docs/distribution/direct-releases.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Versão somente no csproj canônico; patchnotes seguem-na (teste)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação física declarada pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Testes e consistência executados; publicação só após CI."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-reader-chrome",
+      "status": "product-specific",
+      "rationale": "Barras dos leitores e do estúdio são UI do Urbe; nenhum segundo consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Corte de release no csproj do canal beta, pedido explicitamente pelo proprietário (releases constantes); identidade, assinatura e workflow preservados."
+  }
+}

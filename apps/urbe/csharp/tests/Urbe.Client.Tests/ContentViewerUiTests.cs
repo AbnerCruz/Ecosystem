@@ -81,7 +81,7 @@ public sealed partial class HeadlessUiTests
                 Assert.True(pages.Drawn.Count < 10, "only the pages near the screen are drawn: " + string.Join(",", pages.Drawn));
                 Snapshot(window, "native-content-pdf.png");
                 Assert.True(pages.Extent.Height > pages.Viewport.Height * 5, $"extent={pages.Extent} viewport={pages.Viewport} bounds={pages.Bounds} vis={pages.IsEffectivelyVisible} arr={pages.IsArrangeValid} pres={pages.Presenter} prev={preview.Bounds} attached={TopLevel.GetTopLevel(pages) is not null}");
-                Assert.Contains(preview.GetLogicalDescendants().OfType<Button>(), b => b.Content as string == "Próxima" && b.IsVisible);
+                Assert.Contains(preview.GetLogicalDescendants().OfType<Button>(), b => Avalonia.Automation.AutomationProperties.GetName(b) == "Próxima página" && b.IsVisible);
                 // Direct navigation must not render every intervening page.
                 pages.GoToPage(14);
                 for (int i = 0; i < 20; i++) { window.UpdateLayout(); await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }

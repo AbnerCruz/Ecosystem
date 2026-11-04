@@ -35,6 +35,28 @@ public sealed class RadialNav : Panel
     public string? Highlighted => _highlighted < 0 ? null : _items[_highlighted].Entry.Label;
     public event Action<bool>? OpenChanged;
 
+    private double _lift;
+
+    /// <summary>
+    /// How far above the bottom edge the menu sits: the editor's toolbar and footer on a phone (CST-143), so the
+    /// trigger never covers a control of the screen under it.
+    /// </summary>
+    public double Lift
+    {
+        get => _lift;
+        set
+        {
+            value = Math.Max(0, Math.Round(value));
+            if (value == _lift) return;
+            _lift = value;
+            Trigger.Margin = new Thickness(0, 0, Gutter, Gutter + _lift);
+            foreach (var (_, button, _, at) in _items) button.Margin = ItemMargin(at);
+        }
+    }
+
+    private Thickness ItemMargin(Point at) =>
+        new(0, 0, Gutter + TriggerSize / 2 - at.X - ItemWidth / 2, Gutter + _lift + TriggerSize / 2 - at.Y - UrbeTokens.MinTouch / 2);
+
     public RadialNav(IReadOnlyList<Entry> entries)
     {
         Scrim.Background = UrbeTheme.Brush(UrbeTheme.Bg, .62);
@@ -115,7 +137,7 @@ public sealed class RadialNav : Panel
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
             IsVisible = false,
             // the circle's centre on the arc: the trigger's centre is Gutter + TriggerSize/2 from the corner
-            Margin = new Thickness(0, 0, Gutter + TriggerSize / 2 - at.X - ItemWidth / 2, Gutter + TriggerSize / 2 - at.Y - UrbeTokens.MinTouch / 2),
+            Margin = ItemMargin(at),
             Content = new StackPanel { Spacing = LabelGap, Children = { label, circle } }
         };
         Avalonia.Automation.AutomationProperties.SetName(button, entry.Label);

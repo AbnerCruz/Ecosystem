@@ -31,35 +31,48 @@ public sealed class PublicationStudioView : Border
     {
         Background = UrbeTheme.Brush(UrbeTheme.Bg);
         IsVisible = false;
-        var bar = new DockPanel { LastChildFill = true, Margin = new Thickness(8, 6, 12, 6), Height = 52 };
+        // one bar: ← title · undo redo · composition · export · ⋯ (rename, EPUB, print)
+        var bar = new DockPanel { LastChildFill = true, Margin = new Thickness(4, 6, 4, 6), Height = 52 };
         var close = ActionButton(UrbeTheme.Icons.Back, "Fechar estúdio");
         close.Click += (_, _) => Close();
         DockPanel.SetDock(close, Dock.Left);
         bar.Children.Add(close);
+        var more = ActionButton(UrbeTheme.Icons.MoreUi, "Mais ações da publicação");
+        DockPanel.SetDock(more, Dock.Right);
+        bar.Children.Add(more);
         var save = ActionButton(UrbeTheme.Icons.Download, "Exportar HTML");
         save.Click += (_, _) => ExportRequested?.Invoke();
         DockPanel.SetDock(save, Dock.Right);
         bar.Children.Add(save);
-        _print = ActionButton(UrbeTheme.Icons.File, "Imprimir ou salvar como PDF");
-        _print.Click += (_, _) => PrintRequested?.Invoke();
-        DockPanel.SetDock(_print, Dock.Right);
-        bar.Children.Add(_print);
-        var rename = ActionButton(UrbeTheme.Icons.Pencil, "Renomear publicação");
-        rename.Click += (_, _) => RenameRequested?.Invoke();
-        DockPanel.SetDock(rename, Dock.Right);
-        bar.Children.Add(rename);
+        var configure = ActionButton(UrbeTheme.Icons.Sliders, "Configurar composição");
+        configure.Click += (_, _) => ConfigureRequested?.Invoke();
+        DockPanel.SetDock(configure, Dock.Right);
+        bar.Children.Add(configure);
+        _redoButton = ActionButton(UrbeTheme.Icons.Redo, "Refazer composição");
+        _undoButton = ActionButton(UrbeTheme.Icons.Undo, "Desfazer composição");
+        _undoButton.Click += (_, _) => UndoComposition();
+        _redoButton.Click += (_, _) => RedoComposition();
+        DockPanel.SetDock(_redoButton, Dock.Right);
+        DockPanel.SetDock(_undoButton, Dock.Right);
+        bar.Children.Add(_redoButton);
+        bar.Children.Add(_undoButton);
+        _print = new Button();   // a menu entry; kept for its visibility (a platform with a printer)
+        more.Click += (_, _) =>
+        {
+            var items = new List<MenuItem>();
+            void Item(string header, Action? run) { var i = new MenuItem { Header = header }; i.Click += (_, _) => run?.Invoke(); items.Add(i); }
+            Item("Renomear publicação", () => RenameRequested?.Invoke());
+            Item("Exportar livro EPUB", () => EpubRequested?.Invoke());
+            if (_print.IsVisible) Item("Imprimir ou salvar como PDF", () => PrintRequested?.Invoke());
+            new ContextMenu { ItemsSource = items }.Open(more);
+        };
         _title.VerticalAlignment = VerticalAlignment.Center;
+        _title.Margin = new Thickness(4, 0);
         _title.Foreground = UrbeTheme.Brush(UrbeTheme.Text);
         _title.TextTrimming = TextTrimming.CharacterEllipsis;
         bar.Children.Add(_title);
 
-        var add = new Button
-        {
-            Content = "Adicionar nota",
-            MinHeight = 44, Padding = new Thickness(16, 0), CornerRadius = new CornerRadius(12),
-            Background = UrbeTheme.Brush(UrbeTheme.Accent),
-            Foreground = UrbeTheme.Brush(UrbeTheme.AccentInk)
-        };
+        var add = new Ui.UrbeButton("Adicionar nota", Ui.ButtonKind.Secondary, UrbeTheme.Icons.Plus) { MinHeight = 40, Padding = new Thickness(12, 0) };
         AutomationProperties.SetName(add, "Adicionar nota à publicação");
         add.Click += (_, _) => AddSourceRequested?.Invoke();
         var sourcesHead = new DockPanel { LastChildFill = true, Margin = new Thickness(16, 12, 16, 4) };
@@ -67,7 +80,7 @@ public sealed class PublicationStudioView : Border
         sourcesHead.Children.Add(add);
         sourcesHead.Children.Add(new TextBlock
         {
-            Text = "Fontes vivas", FontSize = 16, FontWeight = FontWeight.SemiBold,
+            Text = "Notas da publicação", FontSize = 16, FontWeight = FontWeight.SemiBold,
             VerticalAlignment = VerticalAlignment.Center, Foreground = UrbeTheme.Brush(UrbeTheme.Text)
         });
         _saveStatus.Margin = new Thickness(16, 0, 16, 4);
@@ -97,19 +110,6 @@ public sealed class PublicationStudioView : Border
         var root = new DockPanel { LastChildFill = true };
         DockPanel.SetDock(bar, Dock.Top);
         root.Children.Add(bar);
-        _undoButton = ActionButton(UrbeTheme.Icons.Undo, "Desfazer composição");
-        _redoButton = ActionButton(UrbeTheme.Icons.Redo, "Refazer composição");
-        _undoButton.Click += (_, _) => UndoComposition();
-        _redoButton.Click += (_, _) => RedoComposition();
-        var configure = new Button { Content = "Composição", MinHeight = 44, Padding = new Thickness(12, 4) };
-        configure.Click += (_, _) => ConfigureRequested?.Invoke();
-        AutomationProperties.SetName(configure, "Configurar composição");
-        var epub = new Button { Content = "EPUB", MinHeight = 44, Padding = new Thickness(10, 4) };
-        AutomationProperties.SetName(epub, "Exportar livro EPUB");
-        epub.Click += (_, _) => EpubRequested?.Invoke();
-        var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Margin = new Thickness(12, 0), Children = { _undoButton, _redoButton, configure, epub } };
-        DockPanel.SetDock(actions, Dock.Top);
-        root.Children.Add(actions);
         root.Children.Add(body);
         Child = root;
     }
@@ -213,6 +213,10 @@ public sealed class PublicationStudioView : Border
             Background = Brushes.Transparent, BorderThickness = new Thickness(0),
             CornerRadius = new CornerRadius(12)
         };
+        // disabled (nothing to undo): the icon fades, never Fluent's grey block
+        b.Resources["ButtonBackgroundDisabled"] = Brushes.Transparent;
+        b.Resources["ButtonBorderBrushDisabled"] = Brushes.Transparent;
+        b.PropertyChanged += (_, e) => { if (e.Property == IsEnabledProperty) b.Opacity = b.IsEnabled ? 1 : .35; };
         ToolTip.SetTip(b, label);
         AutomationProperties.SetName(b, label);
         return b;
@@ -289,7 +293,7 @@ public sealed class PublicationStudioView : Border
                 _preview.Children.Add(new TextBlock { Text = "Fonte ausente — o arquivo original não será substituído.", Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
         }
         _status.Text = project.Sections.Count == 0 ? "Adicione notas do vault para começar a compor."
-            : project.Sections.Count + " nota(s) • " + (missing == 0 ? "fontes atualizadas" : missing + " fonte(s) indisponível(is)") +
-              " • " + project.Design.Layout + " / " + project.Design.Theme + "\nPrévia do conteúdo; paginação e estilo final no arquivo exportado.";
+            : (project.Sections.Count == 1 ? "1 nota" : project.Sections.Count + " notas") +
+              (missing == 0 ? "" : missing == 1 ? " · 1 não encontrada" : " · " + missing + " não encontradas");
     }
 }

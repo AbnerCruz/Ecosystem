@@ -184,7 +184,10 @@ public sealed partial class HeadlessUiTests
                 await Settle(window, view);
                 Assert.True(view.Navigation.Trigger.IsEffectivelyVisible);
                 Assert.True(chip.IsEffectivelyVisible);
-                Assert.Equal(Dock.Left, DockPanel.GetDock(chip));
+                Assert.Equal(Dock.Right, DockPanel.GetDock(chip));
+                // the menu floats above the editor's bottom controls: the toolbar's last button stays uncovered too
+                var navTop = view.Navigation.Trigger.TranslatePoint(new Point(0, 0), window)!.Value.Y + view.Navigation.Trigger.Bounds.Height;
+                Assert.True(navTop <= window.Bounds.Height - view.Editor.BottomChrome + 1, $"{navTop} / {view.Editor.BottomChrome}");
                 var readOrigin = chip.TranslatePoint(new Point(0, 0), window)!.Value;
                 var navOrigin = view.Navigation.Trigger.TranslatePoint(new Point(0, 0), window)!.Value;
                 var readRect = new Rect(readOrigin, chip.Bounds.Size);

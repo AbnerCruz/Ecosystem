@@ -44,10 +44,10 @@ public sealed partial class HeadlessUiTests
                 { await Task.Delay(10); Dispatcher.UIThread.RunJobs(); }
                 Assert.Contains("First chapter", reader.ShownText);
                 await reader.SearchAsync("Exact quotation");
-                Assert.Contains(reader.GetLogicalDescendants().OfType<TextBlock>(), t => (t.Text ?? "").StartsWith("p. 2", StringComparison.Ordinal));
+                Assert.Contains(reader.GetLogicalDescendants().OfType<TextBlock>(), t => (t.Text ?? t.Inlines?.Text ?? "").StartsWith("p. 2", StringComparison.Ordinal));
                 await reader.GoToPageAsync(3);
                 Assert.Equal("", reader.ShownText);
-                Assert.Contains(reader.GetLogicalDescendants().OfType<TextBlock>(), t => (t.Text ?? "").Contains("Sem camada de texto", StringComparison.Ordinal));
+                Assert.Contains(reader.GetLogicalDescendants().OfType<TextBlock>(), t => (t.Text ?? "").Contains("não tem texto", StringComparison.Ordinal));
                 await reader.GoToPageAsync(2);
                 window.Width = 390;
                 window.Height = 820;

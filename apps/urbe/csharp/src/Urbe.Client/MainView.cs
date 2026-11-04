@@ -165,16 +165,8 @@ public sealed partial class MainView : Grid
         FilePreview.PageActionsRequested += path => _ = ShowPageMenuAsync(path);
         _stage.Children.Add(FilePreview);
         _stage.Children.Add(StudyBrowser);
-        void UpdateReaderVisibility()
-        {
-            Editor.Pinned.Preview.SetSuspended(FilePreview.IsVisible || StudyBrowser.IsVisible || Dialogs.IsOpen || Assistant.IsVisible);
-            Editor.Split.Preview.SetSuspended(FilePreview.IsVisible || StudyBrowser.IsVisible || Dialogs.IsOpen || Assistant.IsVisible);
-            FilePreview.SetSuspended(StudyBrowser.IsVisible || Dialogs.IsOpen || Assistant.IsVisible);
-            ReaderActivity.SetActive(StudyBrowser, !Dialogs.IsOpen && !Assistant.IsVisible);
-        }
         FilePreview.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateReaderVisibility(); };
         StudyBrowser.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateReaderVisibility(); };
-        Assistant.PropertyChanged += (_,e)=>{if(e.Property==IsVisibleProperty)UpdateReaderVisibility();};
         Dialogs.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateReaderVisibility(); };
         StudyBrowser.QuestionRequested += (source, text) => _ = PrepareStudyQuestionAsync(source, text);
         StudyBrowser.QuoteRequested += quote => _ = InsertWebReaderQuoteAsync(quote);
@@ -496,6 +488,20 @@ public sealed partial class MainView : Grid
         foreach (var d in snapshot.Documents)
             if (d.Text is not null && !ids.ContainsKey(d.Path)) ids[d.Path] = used.Add(d.Id) ? d.Id : DocumentModel.CreateDocumentId();
         return ids;
+    }
+
+    /// <summary>
+    /// Readers under something else (a dialog, the Assistente, another reader) pause their native views. The Assistente
+    /// is read only if it exists: asking for it would build it, and it is made the first time it opens.
+    /// </summary>
+    private void UpdateReaderVisibility()
+    {
+        bool assistant = _assistant is { IsVisible: true };
+        Editor.Pinned.Preview.SetSuspended(FilePreview.IsVisible || StudyBrowser.IsVisible || Dialogs.IsOpen || assistant);
+        Editor.Split.Preview.SetSuspended(FilePreview.IsVisible || StudyBrowser.IsVisible || Dialogs.IsOpen || assistant);
+        FilePreview.SetSuspended(StudyBrowser.IsVisible || Dialogs.IsOpen || assistant);
+        ReaderActivity.SetActive(StudyBrowser, !Dialogs.IsOpen && !assistant);
+        UpdateFloatingNav();
     }
 
     /// <summary>The notes of the vault on the screen: the Explorer, the Personalização and the editor's properties.</summary>
@@ -856,6 +862,7 @@ public sealed partial class MainView : Grid
             new DialogItem(editor.ReadOnly ? "Modo edição" : "Modo leitura", editor.ReadOnly ? UrbeTheme.Icons.Pencil : UrbeTheme.Icons.Book,
                 editor.ReadOnly ? "Volta a escrever na nota." : "Só ler: nada é alterado sem querer.", Run: () => { editor.ReadOnly = !editor.ReadOnly; return Task.CompletedTask; }),
             new DialogItem("Nova nota nesta pasta", UrbeTheme.Icons.File, NotesWhere(NoteLibrary.FolderOf(note.Path)), Run: () => editor.NewNoteHereAsync()),
+            new DialogItem("Abrir outra nota em nova aba", UrbeTheme.Icons.Plus, "Esta nota continua aberta na aba dela.", Run: () => { Search.OpenNewTabPicker(); return Task.CompletedTask; }),
             new DialogItem("Criar publicação desta nota", UrbeTheme.Icons.Page,
                 "Composição viva ligada à nota original, sem copiar o conteúdo.", Run: () => CreatePublicationAsync(note.Path)),
             .. (_publicationReturnPath is null ? [] : new[]
@@ -1113,13 +1120,32 @@ public sealed partial class MainView : Grid
     /// <summary>Notas shows the notes, every folder (empty ones too, like model.folders) and the other files.</summary>
     private void RefreshNotes()
     {
-        if (RefreshLastNames()) return;
+        if (RefreshLastNames()) { _notesShown = null; return; }
+        // opening Notas (or any of the many callers) with nothing changed rebuilt the tree and the Área de trabalho's
+        // index of the whole vault; a note's text is an immutable string, so a new reference is a new content
+        var shown = NotesFingerprint();
+        if (shown == _notesShown) return;
+        _notesShown = shown;
         Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value) { Title = _store?.Get(n.Key)?.Title }), _library?.Folders);
         var files = new HashSet<string>(_attachments, StringComparer.Ordinal);
         files.ExceptWith(_contents.Keys);
         Explorer.SetFiles(files);
         RefreshWorkspace();
         RememberNames();
+    }
+
+    private int? _notesShown;
+
+    private int NotesFingerprint()
+    {
+        var h = new HashCode();
+        h.Add(System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(_store));
+        foreach (var (path, text) in _contents) { h.Add(path); h.Add(System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(text)); }
+        foreach (var file in _attachments) h.Add(file);
+        if (_library is { } library) foreach (var folder in library.Folders) h.Add(folder);
+        h.Add(_contents.Count);
+        h.Add(_attachments.Count);
+        return h.ToHashCode();
     }
 
     /// <summary>A file of the Explorer that is not a note (DEC-0045, UC-38): its preview (abrirEntradaTree → openFilePreview).</summary>
