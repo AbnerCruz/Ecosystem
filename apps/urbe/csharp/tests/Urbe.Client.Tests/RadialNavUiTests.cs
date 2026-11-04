@@ -42,7 +42,7 @@ public sealed partial class HeadlessUiTests
             var center = trigger.TranslatePoint(new Point(28, 28), view)!.Value;
             Assert.InRange(center.X, 300, 330);   // the bottom right corner, a 16 dp gutter
             Assert.InRange(center.Y, 690, 720);
-            Assert.Equal("Menu: Assistente, Notas e Grafos", Name(trigger));
+            Assert.Equal("Menu: Assistente, Notas, Estudo e Grafos", Name(trigger));
             Snapshot(window, "native-radial-closed.png");
 
             trigger.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
@@ -50,7 +50,7 @@ public sealed partial class HeadlessUiTests
             Assert.True(nav.IsOpen);
             Assert.Equal("Fechar menu", Name(trigger));
             var items = nav.Items;
-            Assert.Equal(["Assistente", "Notas", "Grafos"], items.Select(Name));
+            Assert.Equal(["Assistente", "Notas", "Estudo", "Grafos"], items.Select(Name));
             var rects = new List<Rect>();
             foreach (var item in items)
             {
@@ -174,7 +174,14 @@ public sealed partial class HeadlessUiTests
         {
             await view.LoadAsync(TutorialNotes.Load());
             view.OpenNoteByPath("Tutorial/Comece aqui.md");
+            // writing in Fonte (focus, keyboard up): the menu leaves the text alone
             view.Editor.SetMode(EditorMode.Fonte);
+            view.Editor.Editor.Focus();
+            await Settle(window, view);
+            Assert.False(view.Navigation.IsVisible);
+            // reading: the menu and the Leitura/Edição switch both on the screen, apart
+            view.Editor.SetMode(EditorMode.Visual);
+            view.Editor.Focus();
             await Settle(window, view);
             var chip = view.Editor.GetLogicalDescendants().OfType<Button>()
                 .Single(b => Name(b).StartsWith("Modo edição:", StringComparison.Ordinal));

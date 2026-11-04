@@ -63,7 +63,8 @@ public sealed class RadialNav : Panel
         Scrim.PointerPressed += (_, e) => { Close(); e.Handled = true; };
         Children.Add(Scrim);
 
-        var places = RadialLayout.Positions(entries.Count, Radius);
+        // four or more places need a wider arc for their labels not to touch (Assistente, Notas, Estudo, Grafos)
+        var places = RadialLayout.Positions(entries.Count, entries.Count > 3 ? 215 : Radius);
         for (int i = 0; i < entries.Count; i++) AddItem(entries[i], places[i]);
 
         Trigger.Width = Trigger.Height = TriggerSize;

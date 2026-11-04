@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261104-urbe-beta48-study",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-04T23:43:37.000Z",
+  "agent": {
+    "id": "claude-code-urbe-recovery",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-232",
+  "component": "urbe",
+  "state": "review",
+  "branch": "claude/urbe-refactor-development-t73hul",
+  "base_commit": "6308d53",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Study.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PinnedPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/StudyBrowserPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDocumentTools.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/RadialNav.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/PATCHNOTES.md"
+  ],
+  "work_completed": [
+    "Pedido do proprietário (04/11/2026): a IA não aceitava livros PDF grandes; fluxo de estudo pesquisa → documentação → produção numa aba com navegador/vídeo/leitor e editor juntos.",
+    "Livros PDF (>90 páginas ou >16 MB) anexados ao chat ficam em Livros/ no vault (sem sobrescrever) e a mensagem leva a referência; o agente usa as ferramentas de documento existentes (inspect/search/inventory/read/analyze) citando páginas. Ferramentas abrem PDFs até 512 MiB. Teste com livro de 300 páginas.",
+    "Aba Estudo (CST-232/235/236 parciais): destino no radial e na barra; o painel de fonte do editor (o de Fixar em painel) ganha navegador embutido (web e YouTube oficial), fica redimensionável por divisória (em cima no celular, à esquerda a partir de 900 dp) e recebe os links da nota. Nenhum segundo editor.",
+    "Celular: radial some ao escrever; descrições de menus quebram linha; cabeçalhos do Explorer e do Assistente cabem; trilha da Área de trabalho mostra a pasta atual; radial com 4 destinos em arco maior.",
+    "Tutorial da 1.8.4 (apps/urbe/tutorial, oráculo congelado de paridade) mantido intocado: a primeira versão do PR o alterava e o e2e recusou; a explicação da aba Estudo e dos livros está nas notas da versão."
+  ],
+  "verification": [
+    {
+      "check": "Urbe.Client.Tests e Urbe.Core.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "496/496 Client e 1338/1338 Core localmente (.NET SDK 10.0.403)."
+    },
+    {
+      "check": "tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks passaram localmente."
+    },
+    {
+      "check": "Navegador/YouTube no painel, divisória por toque e livro grande anexado no moto g32",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/PATCHNOTES.md",
+      "evidence": "Validação física pendente (NN-017)."
+    }
+  ],
+  "known_issues": [
+    "Digitação no Fonte de notas grandes continua cara (layout do TextBox do Avalonia; AvaloniaUI/Avalonia#7275).",
+    "WebView nativo dentro do painel redimensionável precisa de conferência no Android (sobreposição durante diálogos é suspensa pelo ReaderActivity).",
+    "O Tutorial do app nativo é o da 1.8.4 congelado como oráculo; documentar recursos novos nele exige decisão sobre separar o tutorial nativo do oráculo."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Abrir PR da beta.48 e não enviar mais nada até a integração.",
+    "Continuar a consolidação 2.6 (leitura/estudo, editor Fonte)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "MANIFEST.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "docs/adr/0047-urbe-leitura-estudo-isolados.md",
+    "docs/governance/addenda/ADD-0033-urbe-sem-paridade-com-a-1-8-4-e-sem-limitadores.md",
+    "docs/distribution/direct-releases.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Versão só no csproj canônico."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação física declarada pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Testes executados; publicação só após CI e integração."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-study-pane",
+      "status": "product-specific",
+      "rationale": "Painel de fonte e aba Estudo são UI do Urbe; sem segundo consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Corte de release beta.48 no csproj do canal beta, pedido pelo proprietário (releases constantes); identidade, assinatura e workflow preservados."
+  }
+}

@@ -74,12 +74,15 @@ public sealed partial class MainView : IAssistantApp
         [
             new("Assistente", UrbeTheme.Icons.Assistant, "Assistente", OpenAssistantFromLauncher),
             new("Notas", UrbeTheme.Icons.Notes, "Notas e pastas do vault", () => _ = GoToNotesAsync()),
+            new("Estudo", UrbeTheme.Icons.Book, "Site, vídeo ou livro ao lado da nota", () => _ = StartStudyAsync()),
             new("Grafos", UrbeTheme.Icons.Layers, "Grafos: criar, conectar e navegar no vault", () => _ = ShowGraphsHomeAsync())
         ]) { ZIndex = 20 };   // over the Notes drawer, like the launcher
         _radial.SetActive(ActiveDestination);
         _stage.Children.Add(_radial);
         Editor.BottomChromeChanged += UpdateRadialLift;
-        Editor.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateRadialLift(); };
+        Editor.WritingChanged += UpdateFloatingNav;
+        Editor.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) { UpdateRadialLift(); UpdateNav(); } };
+        Editor.Pinned.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateNav(); };
         UpdateFloatingNav();
     }
 
@@ -106,7 +109,8 @@ public sealed partial class MainView : IAssistantApp
             && !FilePreview.IsVisible && !StudyBrowser.IsVisible;
         _assistantLauncher.IsVisible = free && !phone;
         if (_radial is null) return;
-        _radial.IsVisible = free && phone;
+        // while writing (keyboard up) the menu would float over the text: it comes back when the block closes
+        _radial.IsVisible = free && phone && !Editor.Writing;
         if (!_radial.IsVisible) _radial.Close();
     }
 

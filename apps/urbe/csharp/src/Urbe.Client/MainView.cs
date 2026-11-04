@@ -56,7 +56,10 @@ public sealed partial class MainView : Grid
         Editor.Files = () => _attachments.Where(f => !_contents.ContainsKey(f))
             .Concat(_contents.Keys.Where(p => !p.EndsWith(".md", StringComparison.OrdinalIgnoreCase) && !p.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase)));
         Editor.OpenFile = OpenReaderSourceAsync;
-        Editor.OpenWeb = url => StudyBrowser.Open(url);
+        // a link followed while studying opens beside the note; otherwise in the full-screen browser
+        Editor.OpenWeb = url => { if (Editor.Pinned.IsVisible) _ = Editor.Pinned.OpenWebAsync(url); else StudyBrowser.Open(url); };
+        Editor.Pinned.Web.QuestionRequested += (source, text) => _ = PrepareStudyQuestionAsync(source, text);
+        Editor.Pinned.Web.QuoteRequested += quote => _ = InsertWebReaderQuoteAsync(quote);
         Editor.Pinned.Storage = _vault;
         Editor.Pinned.Preview.Dialogs = Dialogs;
         Editor.Pinned.Files = () => _contents.Keys.Concat(_attachments);
@@ -501,6 +504,7 @@ public sealed partial class MainView : Grid
         Editor.Split.Preview.SetSuspended(FilePreview.IsVisible || StudyBrowser.IsVisible || Dialogs.IsOpen || assistant);
         FilePreview.SetSuspended(StudyBrowser.IsVisible || Dialogs.IsOpen || assistant);
         ReaderActivity.SetActive(StudyBrowser, !Dialogs.IsOpen && !assistant);
+        ReaderActivity.SetActive(Editor.Pinned.Web, !Dialogs.IsOpen && !assistant && !FilePreview.IsVisible && !StudyBrowser.IsVisible);
         UpdateFloatingNav();
     }
 
@@ -864,7 +868,7 @@ public sealed partial class MainView : Grid
             new DialogItem("Nova nota nesta pasta", UrbeTheme.Icons.File, NotesWhere(NoteLibrary.FolderOf(note.Path)), Run: () => editor.NewNoteHereAsync()),
             new DialogItem("Abrir outra nota em nova aba", UrbeTheme.Icons.Plus, "Esta nota continua aberta na aba dela.", Run: () => { Search.OpenNewTabPicker(); return Task.CompletedTask; }),
             new DialogItem("Criar publicação desta nota", UrbeTheme.Icons.Page,
-                "Composição viva ligada à nota original, sem copiar o conteúdo.", Run: () => CreatePublicationAsync(note.Path)),
+                "Um livro, artigo ou página feito desta nota.", Run: () => CreatePublicationAsync(note.Path)),
             .. (_publicationReturnPath is null ? [] : new[]
                 {
                     new DialogItem("Voltar à publicação", UrbeTheme.Icons.Back,
@@ -877,7 +881,7 @@ public sealed partial class MainView : Grid
                 if (await ChooseFolderAsync(current: DirOf(note.Path)) is { } folder) await MoveNotesToAsync([note.Path], folder);
             }),
             new DialogItem("Selecionar nota inteira", UrbeTheme.Icons.List,
-                "Seleciona todo o Markdown, além do bloco atual. Pode copiar ou formatar a seleção.",
+                "Todo o texto, para copiar ou formatar.",
                 Run: () => { editor.SelectEntireNote(); return Task.CompletedTask; }),
             new DialogItem("Mostrar nas notas", UrbeTheme.Icons.Notes, Run: () => { ShowNotesOverEditor(); return Task.CompletedTask; }),
             new DialogItem("Versões anteriores", UrbeTheme.Icons.Restore, Run: ShowVersionsAsync),
@@ -890,7 +894,7 @@ public sealed partial class MainView : Grid
                 if (!await _vault.ShareAsync(note.Path)) ShowLifeNotice("Não foi possível compartilhar esta nota.", Ui.ToastKind.Warning);
             })] : Array.Empty<DialogItem>()),
             // DEC-0045, UC-39: the selection (or the whole note) stays at the top while writing
-            new DialogItem("Fixar em painel", UrbeTheme.Icons.Pin, "Abra o painel e escolha qualquer arquivo para consultar enquanto escreve.",
+            new DialogItem("Fixar em painel", UrbeTheme.Icons.Pin, "Um arquivo fica no topo enquanto você escreve.",
                 Run: () => { editor.Pinned.Open(); return Task.CompletedTask; }),
             new DialogItem("Mover para a lixeira", UrbeTheme.Icons.Trash, Danger: true, Run: () => DeleteNoteAsync(note.Path))
         ]);
@@ -914,8 +918,10 @@ public sealed partial class MainView : Grid
             var text = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
             text.Children.Add(new TextBlock { Text = item.Label, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Body.Size, FontWeight = FontWeight.Medium, Foreground = UrbeTheme.Brush(ink) });
             if (item.Detail is not null)
-                text.Children.Add(new TextBlock { Text = item.Detail, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextTertiary), TextTrimming = TextTrimming.CharacterEllipsis });
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = UrbeTokens.Space.M };
+                text.Children.Add(new TextBlock { Text = item.Detail, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextTertiary), TextWrapping = TextWrapping.Wrap, MaxLines = 2, TextTrimming = TextTrimming.CharacterEllipsis });
+            // icon | text in a grid: the detail wraps inside the sheet instead of being cut at its edge
+            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), ColumnSpacing = UrbeTokens.Space.M };
+            Grid.SetColumn(text, 1);
             if (item.Icon is not null)
                 row.Children.Add(new Border
                 {
@@ -928,7 +934,7 @@ public sealed partial class MainView : Grid
             {
                 Content = row, MinHeight = 56, Padding = new Thickness(UrbeTokens.Space.Xs, UrbeTokens.Space.Xxs), CornerRadius = new CornerRadius(UrbeTokens.Radius.M),
                 Background = Brushes.Transparent, BorderThickness = new Thickness(0),
-                HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, VerticalContentAlignment = VerticalAlignment.Center
+                HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Center
             };
             b.Resources["ButtonBackgroundPointerOver"] = UrbeTheme.Brush(UrbeTokens.Color.SurfaceOverlay, .6);
             b.Resources["ButtonBackgroundPressed"] = UrbeTheme.Brush(UrbeTokens.Color.SurfaceOverlay);
@@ -1803,7 +1809,7 @@ public sealed partial class MainView : Grid
 
     // A wide window: the rail, with the Assistente in its floating launcher. A phone: the radial menu (CST-043).
     private static readonly (string Icon, string Label)[] Destinations =
-        [(UrbeTheme.Icons.Notes, "Notas"), (UrbeTheme.Icons.Layers, "Grafos")];
+        [(UrbeTheme.Icons.Notes, "Notas"), (UrbeTheme.Icons.Book, "Estudo"), (UrbeTheme.Icons.Layers, "Grafos")];
 
     private void BuildRail()
     {
@@ -1818,7 +1824,7 @@ public sealed partial class MainView : Grid
     private readonly List<(string Label, string Icon, Border Ico, TextBlock Text)> _nav = [];
 
     /// <summary>The destination shown as active (.ativo) in the rail and the radial menu: Assistente while it is open, else Notas.</summary>
-    public string ActiveDestination => GraphOpen ? "Grafos" : AssistantOpen ? "Assistente" : "Notas";
+    public string ActiveDestination => GraphOpen ? "Grafos" : AssistantOpen ? "Assistente" : StudyOpen ? "Estudo" : "Notas";
 
     private void UpdateNav()
     {
@@ -1876,6 +1882,11 @@ public sealed partial class MainView : Grid
         {
             ToolTip.SetTip(button, "Notas e pastas do vault");
             button.Click += (_, _) => _ = GoToNotesAsync();
+        }
+        else if (label == "Estudo")
+        {
+            ToolTip.SetTip(button, "Estudo: site, vídeo ou livro ao lado da nota");
+            button.Click += (_, _) => _ = StartStudyAsync();
         }
         else if (label == "Grafos")
         {

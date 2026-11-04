@@ -57,7 +57,11 @@ public sealed class WorkspaceView : Grid
         head.Children.Add(_settings);
         head.Children.Add(add);
         head.Children.Add(sky);
-        head.Children.Add(new ScrollViewer { Content = _crumbs, HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled, Margin = new Thickness(4, 0) });
+        // deep inside, the trail shows its end (where you are), not its start cut short
+        var crumbs = new ScrollViewer { Content = _crumbs, HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled, Margin = new Thickness(4, 0) };
+        _crumbs.SizeChanged += (_, _) => crumbs.Offset = new Vector(Math.Max(0, crumbs.Extent.Width - crumbs.Viewport.Width), 0);
+        crumbs.SizeChanged += (_, _) => crumbs.Offset = new Vector(Math.Max(0, crumbs.Extent.Width - crumbs.Viewport.Width), 0);
+        head.Children.Add(crumbs);
         Children.Add(head);
 
         _search = new TextBox

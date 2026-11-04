@@ -294,7 +294,9 @@ public sealed class EditorOverlay : Grid
         _visual.PinRequested += text => { if (_note is not null) Pinned.Pin(text, _note.Path); };
         _visual.BlockTimes = () => _note is { } open ? BlockTimesFor?.Invoke(open.Path) : null;
         _visual.ActiveToolsChanged += on => { if (Mode == EditorMode.Visual) ShowActiveTools(on); };
-        _visual.EditingChanged += _ => UpdateChrome();
+        _visual.EditingChanged += _ => { UpdateChrome(); WritingChanged?.Invoke(); };
+        Editor.GotFocus += (_, _) => WritingChanged?.Invoke();
+        Editor.LostFocus += (_, _) => WritingChanged?.Invoke();
         _visual.WikiCandidates = Candidates;
         _visual.AskUrl = AskUrlAsync;
         _visual.AskBox = AskBoxAsync;
@@ -373,14 +375,20 @@ public sealed class EditorOverlay : Grid
         _highlightSoon.Tick += (_, _) => ColourCode();
         _sourceInk = Editor.Foreground;
         Context.LineChosen += GoToLine;
-        // the pinned reference above the text, up to 40 % of the height, with its own scroll (DEC-0045, UC-39)
-        var bodyHost = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*") };
+        // the source pane (Estudo; DEC-0045, UC-39 "Fixar em painel"): above the text on a phone, beside it on a wide
+        // window, with a grip between them that the finger or the mouse drags
+        var bodyHost = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,Auto,*"), ColumnDefinitions = new ColumnDefinitions("Auto,Auto,*") };
+        _bodyHost = bodyHost;
+        SetColumnSpan(_tabStrip, 3);
         bodyHost.Children.Add(_tabStrip);
-        SetRow(Pinned, 1);
         bodyHost.Children.Add(Pinned);
-        SetRow(body, 2);
+        bodyHost.Children.Add(_sourceGrip);
         bodyHost.Children.Add(body);
-        bodyHost.SizeChanged += (_, e) => { Pinned.MaxHeight = Math.Max(120, e.NewSize.Height * .4); Properties.LimitHeight(e.NewSize.Height); };
+        _sourceBody = body;
+        BuildSourceGrip();
+        Pinned.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) PlaceSource(); };
+        bodyHost.SizeChanged += (_, e) => { PlaceSource(); Properties.LimitHeight(e.NewSize.Height); };
+        PlaceSource();
         // the form reads and writes the note's text: in Visual the block being written is finished first
         Properties.TextSource = () => { if (Mode == EditorMode.Visual) { _visual.FinishEdit(); return _visual.Text; } return Editor.Text ?? ""; };
         Properties.Changed += ApplyPropertyText;
@@ -400,12 +408,94 @@ public sealed class EditorOverlay : Grid
 
     private ScrollViewer? SourceScroll() => _sourceScroll;
 
+    // ------------------------------------------------------------------ source pane (Estudo)
+
+    private Grid _bodyHost = null!;
+    private Control _sourceBody = null!;
+    private readonly Border _sourceGrip = new() { IsVisible = false, Background = Brushes.Transparent };
+    private readonly Border _gripPill = new() { CornerRadius = new CornerRadius(2), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+    /// <summary>The share of the editor the source pane takes (its height on a phone, its width when wide).</summary>
+    public double SourceShare { get; private set; } = .45;
+    /// <summary>The source pane sits beside the text (a wide window) rather than above it.</summary>
+    public bool SourceBeside => _bodyHost.Bounds.Width >= 900;
+    private double? _gripFrom;
+    private double _shareFrom;
+
+    private void BuildSourceGrip()
+    {
+        _gripPill.Background = UrbeTheme.Brush(UrbeTheme.Line2);
+        _sourceGrip.Child = _gripPill;
+        AutomationProperties.SetName(_sourceGrip, "Divisória entre a fonte e a nota");
+        _sourceGrip.PointerPressed += (_, e) =>
+        {
+            _gripFrom = SourceBeside ? e.GetPosition(_bodyHost).X : e.GetPosition(_bodyHost).Y;
+            _shareFrom = SourceShare;
+            e.Pointer.Capture(_sourceGrip);
+            e.Handled = true;
+        };
+        _sourceGrip.PointerMoved += (_, e) =>
+        {
+            if (_gripFrom is not { } from) return;
+            var size = SourceBeside ? _bodyHost.Bounds.Width : _bodyHost.Bounds.Height - _tabStrip.Bounds.Height;
+            if (size <= 0) return;
+            var at = SourceBeside ? e.GetPosition(_bodyHost).X : e.GetPosition(_bodyHost).Y;
+            SetSourceShare(_shareFrom + (at - from) / size);
+        };
+        _sourceGrip.PointerReleased += (_, e) => { _gripFrom = null; e.Pointer.Capture(null); };
+        _sourceGrip.PointerCaptureLost += (_, _) => _gripFrom = null;
+    }
+
+    /// <summary>How much of the editor the source takes, kept between 20 % and 80 % so neither side vanishes.</summary>
+    public void SetSourceShare(double share)
+    {
+        SourceShare = Math.Clamp(share, .2, .8);
+        PlaceSource();
+    }
+
+    private void PlaceSource()
+    {
+        bool shown = Pinned.IsVisible;
+        _sourceGrip.IsVisible = shown;
+        bool beside = SourceBeside;
+        var height = Math.Max(0, _bodyHost.Bounds.Height - _tabStrip.Bounds.Height);
+        var width = _bodyHost.Bounds.Width;
+        Pinned.MaxHeight = double.PositiveInfinity;
+        if (beside)
+        {
+            SetRow(Pinned, 1); SetRowSpan(Pinned, 3); SetColumn(Pinned, 0); SetColumnSpan(Pinned, 1);
+            SetRow(_sourceGrip, 1); SetRowSpan(_sourceGrip, 3); SetColumn(_sourceGrip, 1); SetColumnSpan(_sourceGrip, 1);
+            SetRow(_sourceBody, 1); SetRowSpan(_sourceBody, 3); SetColumn(_sourceBody, 2); SetColumnSpan(_sourceBody, 1);
+            Pinned.Height = double.NaN;
+            Pinned.Width = shown && width > 0 ? Math.Round(width * SourceShare) : double.NaN;
+            _sourceGrip.Width = 12; _sourceGrip.Height = double.NaN;
+            _sourceGrip.Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.SizeWestEast);
+            _gripPill.Width = 4; _gripPill.Height = 40;
+        }
+        else
+        {
+            SetRow(Pinned, 1); SetRowSpan(Pinned, 1); SetColumn(Pinned, 0); SetColumnSpan(Pinned, 3);
+            SetRow(_sourceGrip, 2); SetRowSpan(_sourceGrip, 1); SetColumn(_sourceGrip, 0); SetColumnSpan(_sourceGrip, 3);
+            SetRow(_sourceBody, 3); SetRowSpan(_sourceBody, 1); SetColumn(_sourceBody, 0); SetColumnSpan(_sourceBody, 3);
+            Pinned.Width = double.NaN;
+            Pinned.Height = shown && height > 0 ? Math.Round(height * SourceShare) : double.NaN;
+            // a finger needs room to grab it: 24 dp of touch, a 4 dp pill drawn
+            _sourceGrip.Height = 24; _sourceGrip.Width = double.NaN;
+            _sourceGrip.Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.SizeNorthSouth);
+            _gripPill.Width = 40; _gripPill.Height = 4;
+        }
+        Pinned.Beside = beside;
+    }
+
     /// <summary>The height of the controls along the bottom edge (footer and the toolbar when it sits there).</summary>
     public double BottomChrome =>
         (_footer is { IsVisible: true } ? _footer.Bounds.Height : 0) +
         (ToolbarAtBottom && _toolbarHost.IsVisible ? _toolbarHost.Bounds.Height : 0);
 
     public event Action? BottomChromeChanged;
+
+    /// <summary>Someone is writing: a Visual block is open or the Fonte text has the focus (the keyboard is up).</summary>
+    public bool Writing => IsVisible && (_visual.IsEditing || Mode == EditorMode.Fonte && Editor.IsFocused);
+    public event Action? WritingChanged;
     private double _bottomChrome = -1;
 
     private void RaiseBottomChrome()

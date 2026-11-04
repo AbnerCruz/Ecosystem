@@ -272,8 +272,10 @@ public sealed partial class UrbeDialogs : Grid
             var text = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
             text.Children.Add(new TextBlock { Text = x.Label, FontFamily = UrbeTheme.UiFont, FontSize = 16, FontWeight = FontWeight.Medium, Foreground = UrbeTheme.Brush(x.Danger ? UrbeTheme.Danger : UrbeTheme.Text) });
             if (x.Detail is not null)
-                text.Children.Add(new TextBlock { Text = x.Detail, FontFamily = UrbeTheme.UiFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextTrimming = TextTrimming.CharacterEllipsis });
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 14 };
+                text.Children.Add(new TextBlock { Text = x.Detail, FontFamily = UrbeTheme.UiFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap, MaxLines = 2, TextTrimming = TextTrimming.CharacterEllipsis });
+            // icon | text: a grid (not a horizontal stack), so the detail line wraps within the sheet's width
+            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), ColumnSpacing = 14 };
+            Grid.SetColumn(text, 1);
             if (x.Icon is not null)
                 row.Children.Add(new Border
                 {
@@ -285,7 +287,7 @@ public sealed partial class UrbeDialogs : Grid
             var b = new Button
             {
                 Content = row, MinHeight = UrbeAppearance.DialogOption.MinHeight, Padding = UrbeAppearance.DialogOption.Padding, CornerRadius = new CornerRadius(12), Background = Brushes.Transparent,
-                HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, VerticalContentAlignment = VerticalAlignment.Center
+                HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Center
             };
             b.Click += (_, _) => finish(index);
             b.Tag = Fold(x.Label + " " + x.Detail);

@@ -21,6 +21,13 @@ public sealed class StudyBrowserPanel : Grid
     private string? _videoId;
     public event Action<WebReaderQuote>? QuoteRequested;
     public event Action<string, string>? QuestionRequested;
+    private readonly Control _closeButton = null!;
+
+    /// <summary>Inside the Estudo source pane: the pane's own header closes it, so the browser shows no second ✕.</summary>
+    public bool Embedded { set => _closeButton.IsVisible = !value; }
+
+    /// <summary>Its ✕ was used (inside the Estudo source pane, the pane goes back to choosing a source).</summary>
+    public event Action? Closed;
     public string Address => _browser?.Address ?? _address.Text ?? "";
 
     public StudyBrowserPanel()
@@ -35,6 +42,7 @@ public sealed class StudyBrowserPanel : Grid
         _forward.Click += (_, _) => _browser?.GoForward();
         var reload = new Ui.UrbeIconButton(UrbeTheme.Icons.Restore, "Recarregar", 20); reload.Click += (_, _) => _browser?.ReloadPage();
         var close = new Ui.UrbeIconButton(UrbeTheme.Icons.Close, "Fechar", 20); close.Click += (_, _) => Close();
+        _closeButton = close;
         var go = new Ui.UrbeIconButton(UrbeTheme.Icons.SearchUi, "Abrir", 20); go.Click += (_, _) => Navigate(_address.Text ?? "");
         async Task<string?> SelectionAsync()
         {
@@ -164,5 +172,13 @@ public sealed class StudyBrowserPanel : Grid
         if (_content.Content is Control native) native.IsVisible = false;
         _content.Content = null;
         IsVisible = false;
+        Closed?.Invoke();
+    }
+
+    /// <summary>The address field takes the focus (a new search, a video link to paste).</summary>
+    public void FocusAddress(string? placeholder = null)
+    {
+        if (placeholder is not null) _address.PlaceholderText = placeholder;
+        _address.Focus();
     }
 }

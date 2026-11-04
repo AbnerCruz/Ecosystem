@@ -41,6 +41,7 @@ public sealed class NotesExplorer : Border
     };
     private readonly StackPanel _list = new() { Margin = new Thickness(8, 0, 8, 88) };
     private readonly Border _bar = new();
+    private readonly TextBlock _newLabel = new() { Text = "Nova", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center };
     private readonly TextBlock _count = new() { FontSize = 14, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0) };
     private readonly List<Button> _noteActions = [];
     private Button _renameAction = new();
@@ -77,7 +78,7 @@ public sealed class NotesExplorer : Border
                 Children =
                 {
                     UrbeTheme.Icon(UrbeTheme.Icons.Plus, 18, UrbeTheme.Accent, 1.8),
-                    new TextBlock { Text = "Nova", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Accent), VerticalAlignment = VerticalAlignment.Center }
+                    _newLabel
                 }
             },
             Height = 44,
@@ -89,6 +90,7 @@ public sealed class NotesExplorer : Border
             VerticalContentAlignment = VerticalAlignment.Center
         };
         ToolTip.SetTip(_new, "Nova nota");
+        Avalonia.Automation.AutomationProperties.SetName(_new, "Nova nota");
         Ui.UrbeMotion.Pressable(_new);
         _new.Click += (_, _) => NewRequested?.Invoke();
         _more = HeaderButton(UrbeTheme.Icons.MoreUi, "Mais opções");
@@ -111,6 +113,17 @@ public sealed class NotesExplorer : Border
         header.Children.Add(_mark);
         header.Children.Add(titles);
         header.Children.Add(buttons);
+        // a narrow drawer (a phone): "+ Nova" becomes "+" and the title a size smaller, so the name of the vault and
+        // its status fit instead of "Expl…" / "Nenhuma pa…"
+        header.SizeChanged += (_, e) =>
+        {
+            bool narrow = e.NewSize.Width < 420;
+            _newLabel.IsVisible = !narrow;
+            _new.Padding = narrow ? new Thickness(0) : new Thickness(10, 0, 14, 0);
+            _new.Width = narrow ? 44 : double.NaN;
+            ((StackPanel)_new.Content!).HorizontalAlignment = narrow ? HorizontalAlignment.Center : HorizontalAlignment.Left;
+            _title.FontSize = narrow ? 20 : 24;
+        };
 
         // .ume-search: 12px above (measured in the 1.8.4: the field at y 72 under a 60px header), 16px sides, 8px below; label 44px, padding 0 14px, gap 10px, radius 12, surface-2
         _search.Foreground = UrbeTheme.Brush(UrbeTheme.Text);

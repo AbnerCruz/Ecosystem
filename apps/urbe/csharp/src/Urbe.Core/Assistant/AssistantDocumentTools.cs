@@ -32,12 +32,16 @@ public interface IAssistantDocumentVision
 /// <summary>CST-212 partial: trustworthy PDF text-layer evidence; never claims to OCR scanned pixels.</summary>
 public static class AssistantDocumentTools
 {
-    public const int MaxFileBytes = 60 * 1024 * 1024;
+    /// <summary>
+    /// The largest PDF the tools open (DEC-0059: no limiter below what a phone can hold). A study book read page by page
+    /// never travels whole to the provider; only the pages asked for become text.
+    /// </summary>
+    public const int MaxFileBytes = 512 * 1024 * 1024;
     private static string Hash(byte[] data) => Convert.ToHexString(SHA256.HashData(data)).ToLowerInvariant();
     private static void Validate(byte[] data)
     {
         if (data.Length is < 8 or > MaxFileBytes || !data.AsSpan().StartsWith("%PDF-"u8))
-            throw new AiToolException("PDF inválido ou superior a 60 MiB.");
+            throw new AiToolException("PDF inválido ou superior a 512 MiB.");
     }
     private static string Text(UglyToad.PdfPig.Content.Page p) =>
         (ContentOrderTextExtractor.GetText(p) ?? "").Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
