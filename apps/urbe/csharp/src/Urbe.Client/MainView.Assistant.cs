@@ -79,6 +79,7 @@ public sealed partial class MainView : IAssistantApp
         _radial.SetActive(ActiveDestination);
         _stage.Children.Add(_radial);
         Editor.BottomChromeChanged += UpdateRadialLift;
+        Editor.WritingChanged += UpdateFloatingNav;
         Editor.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateRadialLift(); };
         UpdateFloatingNav();
     }
@@ -106,7 +107,8 @@ public sealed partial class MainView : IAssistantApp
             && !FilePreview.IsVisible && !StudyBrowser.IsVisible;
         _assistantLauncher.IsVisible = free && !phone;
         if (_radial is null) return;
-        _radial.IsVisible = free && phone;
+        // while writing (keyboard up) the menu would float over the text: it comes back when the block closes
+        _radial.IsVisible = free && phone && !Editor.Writing;
         if (!_radial.IsVisible) _radial.Close();
     }
 

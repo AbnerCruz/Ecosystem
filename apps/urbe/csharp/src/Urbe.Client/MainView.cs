@@ -864,7 +864,7 @@ public sealed partial class MainView : Grid
             new DialogItem("Nova nota nesta pasta", UrbeTheme.Icons.File, NotesWhere(NoteLibrary.FolderOf(note.Path)), Run: () => editor.NewNoteHereAsync()),
             new DialogItem("Abrir outra nota em nova aba", UrbeTheme.Icons.Plus, "Esta nota continua aberta na aba dela.", Run: () => { Search.OpenNewTabPicker(); return Task.CompletedTask; }),
             new DialogItem("Criar publicação desta nota", UrbeTheme.Icons.Page,
-                "Composição viva ligada à nota original, sem copiar o conteúdo.", Run: () => CreatePublicationAsync(note.Path)),
+                "Um livro, artigo ou página feito desta nota.", Run: () => CreatePublicationAsync(note.Path)),
             .. (_publicationReturnPath is null ? [] : new[]
                 {
                     new DialogItem("Voltar à publicação", UrbeTheme.Icons.Back,
@@ -877,7 +877,7 @@ public sealed partial class MainView : Grid
                 if (await ChooseFolderAsync(current: DirOf(note.Path)) is { } folder) await MoveNotesToAsync([note.Path], folder);
             }),
             new DialogItem("Selecionar nota inteira", UrbeTheme.Icons.List,
-                "Seleciona todo o Markdown, além do bloco atual. Pode copiar ou formatar a seleção.",
+                "Todo o texto, para copiar ou formatar.",
                 Run: () => { editor.SelectEntireNote(); return Task.CompletedTask; }),
             new DialogItem("Mostrar nas notas", UrbeTheme.Icons.Notes, Run: () => { ShowNotesOverEditor(); return Task.CompletedTask; }),
             new DialogItem("Versões anteriores", UrbeTheme.Icons.Restore, Run: ShowVersionsAsync),
@@ -890,7 +890,7 @@ public sealed partial class MainView : Grid
                 if (!await _vault.ShareAsync(note.Path)) ShowLifeNotice("Não foi possível compartilhar esta nota.", Ui.ToastKind.Warning);
             })] : Array.Empty<DialogItem>()),
             // DEC-0045, UC-39: the selection (or the whole note) stays at the top while writing
-            new DialogItem("Fixar em painel", UrbeTheme.Icons.Pin, "Abra o painel e escolha qualquer arquivo para consultar enquanto escreve.",
+            new DialogItem("Fixar em painel", UrbeTheme.Icons.Pin, "Um arquivo fica no topo enquanto você escreve.",
                 Run: () => { editor.Pinned.Open(); return Task.CompletedTask; }),
             new DialogItem("Mover para a lixeira", UrbeTheme.Icons.Trash, Danger: true, Run: () => DeleteNoteAsync(note.Path))
         ]);
@@ -914,8 +914,10 @@ public sealed partial class MainView : Grid
             var text = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
             text.Children.Add(new TextBlock { Text = item.Label, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Body.Size, FontWeight = FontWeight.Medium, Foreground = UrbeTheme.Brush(ink) });
             if (item.Detail is not null)
-                text.Children.Add(new TextBlock { Text = item.Detail, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextTertiary), TextTrimming = TextTrimming.CharacterEllipsis });
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = UrbeTokens.Space.M };
+                text.Children.Add(new TextBlock { Text = item.Detail, FontFamily = UrbeTheme.UiFont, FontSize = UrbeTokens.Type.Footnote.Size, Foreground = UrbeTheme.Brush(UrbeTokens.Color.TextTertiary), TextWrapping = TextWrapping.Wrap, MaxLines = 2, TextTrimming = TextTrimming.CharacterEllipsis });
+            // icon | text in a grid: the detail wraps inside the sheet instead of being cut at its edge
+            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*"), ColumnSpacing = UrbeTokens.Space.M };
+            Grid.SetColumn(text, 1);
             if (item.Icon is not null)
                 row.Children.Add(new Border
                 {
@@ -928,7 +930,7 @@ public sealed partial class MainView : Grid
             {
                 Content = row, MinHeight = 56, Padding = new Thickness(UrbeTokens.Space.Xs, UrbeTokens.Space.Xxs), CornerRadius = new CornerRadius(UrbeTokens.Radius.M),
                 Background = Brushes.Transparent, BorderThickness = new Thickness(0),
-                HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, VerticalContentAlignment = VerticalAlignment.Center
+                HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Center
             };
             b.Resources["ButtonBackgroundPointerOver"] = UrbeTheme.Brush(UrbeTokens.Color.SurfaceOverlay, .6);
             b.Resources["ButtonBackgroundPressed"] = UrbeTheme.Brush(UrbeTokens.Color.SurfaceOverlay);

@@ -294,7 +294,9 @@ public sealed class EditorOverlay : Grid
         _visual.PinRequested += text => { if (_note is not null) Pinned.Pin(text, _note.Path); };
         _visual.BlockTimes = () => _note is { } open ? BlockTimesFor?.Invoke(open.Path) : null;
         _visual.ActiveToolsChanged += on => { if (Mode == EditorMode.Visual) ShowActiveTools(on); };
-        _visual.EditingChanged += _ => UpdateChrome();
+        _visual.EditingChanged += _ => { UpdateChrome(); WritingChanged?.Invoke(); };
+        Editor.GotFocus += (_, _) => WritingChanged?.Invoke();
+        Editor.LostFocus += (_, _) => WritingChanged?.Invoke();
         _visual.WikiCandidates = Candidates;
         _visual.AskUrl = AskUrlAsync;
         _visual.AskBox = AskBoxAsync;
@@ -406,6 +408,10 @@ public sealed class EditorOverlay : Grid
         (ToolbarAtBottom && _toolbarHost.IsVisible ? _toolbarHost.Bounds.Height : 0);
 
     public event Action? BottomChromeChanged;
+
+    /// <summary>Someone is writing: a Visual block is open or the Fonte text has the focus (the keyboard is up).</summary>
+    public bool Writing => IsVisible && (_visual.IsEditing || Mode == EditorMode.Fonte && Editor.IsFocused);
+    public event Action? WritingChanged;
     private double _bottomChrome = -1;
 
     private void RaiseBottomChrome()
