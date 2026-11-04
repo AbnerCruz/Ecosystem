@@ -147,12 +147,22 @@ public sealed partial class AssistantPanel : Border
         var head = new DockPanel { Margin = new Thickness(8, 0, 6, 0), MinHeight = 48 };
         foreach (var (icon, tip, act) in new (string, string, Action)[]
                  {
-                     (UrbeTheme.Icons.Close, "Fechar", Close), (UrbeTheme.Icons.Download, "Exportar conversa", () => _ = ExportConversationAsync(_conv)), (UrbeTheme.Icons.Settings, "Configurações do Assistente", () => ShowSettings()),
+                     // four on a phone's header: close, ⋯ (settings, export), new conversation, conversations
+                     (UrbeTheme.Icons.Close, "Fechar", Close), (UrbeTheme.Icons.MoreUi, "Mais opções do Assistente", () => { }),
                      (UrbeTheme.Icons.Plus, "Nova conversa", NewConversationClicked), (UrbeTheme.Icons.Clock, "Conversas", ShowHistory)
                  })
         {
             var b = IconButton(icon, tip);
-            b.Click += (_, _) => act();
+            if (icon == UrbeTheme.Icons.MoreUi)
+                b.Click += (_, _) =>
+                {
+                    var settings = new MenuItem { Header = "Configurações do Assistente" };
+                    settings.Click += (_, _) => ShowSettings();
+                    var export = new MenuItem { Header = "Exportar conversa" };
+                    export.Click += (_, _) => _ = ExportConversationAsync(_conv);
+                    new ContextMenu { ItemsSource = new[] { settings, export } }.Open(b);
+                };
+            else b.Click += (_, _) => act();
             DockPanel.SetDock(b, Dock.Right);
             head.Children.Add(b);
         }
