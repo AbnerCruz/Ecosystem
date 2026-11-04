@@ -22,7 +22,6 @@
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDocumentTools.cs",
     "apps/urbe/csharp/src/Urbe.Client/Ui/RadialNav.cs",
-    "apps/urbe/tutorial/",
     "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
     "apps/urbe/csharp/PATCHNOTES.md"
   ],
@@ -31,7 +30,7 @@
     "Livros PDF (>90 páginas ou >16 MB) anexados ao chat ficam em Livros/ no vault (sem sobrescrever) e a mensagem leva a referência; o agente usa as ferramentas de documento existentes (inspect/search/inventory/read/analyze) citando páginas. Ferramentas abrem PDFs até 512 MiB. Teste com livro de 300 páginas.",
     "Aba Estudo (CST-232/235/236 parciais): destino no radial e na barra; o painel de fonte do editor (o de Fixar em painel) ganha navegador embutido (web e YouTube oficial), fica redimensionável por divisória (em cima no celular, à esquerda a partir de 900 dp) e recebe os links da nota. Nenhum segundo editor.",
     "Celular: radial some ao escrever; descrições de menus quebram linha; cabeçalhos do Explorer e do Assistente cabem; trilha da Área de trabalho mostra a pasta atual; radial com 4 destinos em arco maior.",
-    "Tutorial atualizado (Estudo, abas, livros) e content.js regenerado por tools/build-tutorial.mjs; beta.48 preparada."
+    "Tutorial da 1.8.4 (apps/urbe/tutorial, oráculo congelado de paridade) mantido intocado: a primeira versão do PR o alterava e o e2e recusou; a explicação da aba Estudo e dos livros está nas notas da versão."
   ],
   "verification": [
     {
@@ -57,7 +56,8 @@
   ],
   "known_issues": [
     "Digitação no Fonte de notas grandes continua cara (layout do TextBox do Avalonia; AvaloniaUI/Avalonia#7275).",
-    "WebView nativo dentro do painel redimensionável precisa de conferência no Android (sobreposição durante diálogos é suspensa pelo ReaderActivity)."
+    "WebView nativo dentro do painel redimensionável precisa de conferência no Android (sobreposição durante diálogos é suspensa pelo ReaderActivity).",
+    "O Tutorial do app nativo é o da 1.8.4 congelado como oráculo; documentar recursos novos nele exige decisão sobre separar o tutorial nativo do oráculo."
   ],
   "blockers": [],
   "next_actions": [

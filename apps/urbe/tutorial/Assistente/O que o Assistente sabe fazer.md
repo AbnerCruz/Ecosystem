@@ -43,8 +43,3 @@ Plugins também podem ensinar ferramentas novas ao Assistente.
 - Não liga plugins sozinho.
 
 Próximo: [[Tutorial/Assistente/Pedidos que funcionam bem|Pedidos que funcionam bem]]
-
-## Estudar livros em PDF
-
-Anexe um livro em PDF à conversa, mesmo grande, com centenas de páginas. Um PDF curto vai inteiro para o modelo. Um livro (mais de 90 páginas ou 16 MB) fica guardado na pasta **Livros** do vault, e o Assistente o lê por partes: encontra onde um assunto aparece, lê as páginas necessárias, olha figuras e fórmulas de uma página quando você permite, e diz de qual página tirou cada informação. O livro também fica disponível para abrir no leitor e na aba **Estudo**.
-
