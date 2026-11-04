@@ -584,7 +584,8 @@ public sealed partial class HeadlessUiTests : IDisposable
     private static void ClickButtonWithText(Control root, string text)
     {
         var button = root.GetLogicalDescendants().OfType<Button>()
-            .First(b => b.Content as string == text || b.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == text));
+            .First(b => b.Content as string == text || b.GetLogicalDescendants().OfType<TextBlock>().Any(t => t.Text == text)
+                || Avalonia.Automation.AutomationProperties.GetName(b) == text);
         button.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
     }

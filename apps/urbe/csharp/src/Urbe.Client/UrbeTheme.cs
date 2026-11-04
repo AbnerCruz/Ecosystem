@@ -230,6 +230,14 @@ public static class UrbeTheme
         public const string CloseUi = "M6.5 6.5l11 11M17.5 6.5l-11 11";
         // CST-043: the radial menu's button, its three places on the quarter arc around the corner
         public const string Radial = "M17 14.6a2.4 2.4 0 1 0 0 4.8a2.4 2.4 0 1 0 0-4.8z M17 4.4a.9 .9 0 1 0 0 1.8a.9 .9 0 1 0 0-1.8z M8.9 8a.9 .9 0 1 0 0 1.8a.9 .9 0 1 0 0-1.8z M5.4 16.1a.9 .9 0 1 0 0 1.8a.9 .9 0 1 0 0-1.8z";
+        // the readers' bar: full screen in and out, zoom, the text layer, OCR of a region
+        public const string Expand = "M4.5 9V4.5H9 M19.5 9V4.5H15 M4.5 15v4.5H9 M19.5 15v4.5H15";
+        public const string Shrink = "M9 4.5V9H4.5 M15 4.5V9h4.5 M9 19.5V15H4.5 M15 19.5V15h4.5";
+        public const string ZoomIn = "M11 4.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13z M20 20l-4.2-4.2 M8.2 11h5.6 M11 8.2v5.6";
+        public const string ZoomOut = "M11 4.5a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13z M20 20l-4.2-4.2 M8.2 11h5.6";
+        public const string TextLayer = "M5 6.5h14 M5 10.5h14 M5 14.5h14 M5 18.5h9";
+        public const string Scan = "M4.5 8.5v-3a1 1 0 0 1 1-1h3 M15.5 4.5h3a1 1 0 0 1 1 1v3 M19.5 15.5v3a1 1 0 0 1-1 1h-3 M8.5 19.5h-3a1 1 0 0 1-1-1v-3 M8.5 10h7 M8.5 14h4.5";
+        public const string Forward = "M9 18l6-6-6-6";
         public const string MoreUi = "M5.5 10.7a1.3 1.3 0 1 0 0 2.6a1.3 1.3 0 1 0 0-2.6z M12 10.7a1.3 1.3 0 1 0 0 2.6a1.3 1.3 0 1 0 0-2.6z M18.5 10.7a1.3 1.3 0 1 0 0 2.6a1.3 1.3 0 1 0 0-2.6z";
     }
 }

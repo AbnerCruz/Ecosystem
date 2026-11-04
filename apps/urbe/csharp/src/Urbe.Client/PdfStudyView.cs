@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Urbe.Core.Assistant;
+using Urbe.Client.Ui;
 
 namespace Urbe.Client;
 
@@ -14,16 +15,17 @@ public sealed class PdfStudyView : Grid, IDisposable
 {
     private readonly byte[] _bytes;
     private readonly string _path;
-    private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap, FontSize = 12 };
+    private readonly TextBlock _status = new() { TextWrapping = TextWrapping.Wrap, FontSize = 12, Margin = new Thickness(4, 6, 4, 0) };
     private readonly TextBox _text = new() { IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
-        FontSize = 17, Margin = new Thickness(0, 8), Background = Brushes.Transparent };
-    private readonly TextBox _page = new() { Width = 56, MinHeight = 48, Text = "1" };
-    private readonly TextBox _query = new() { PlaceholderText = "Buscar neste PDF", MinWidth = 100, MinHeight = 48 };
-    private readonly StackPanel _results = new() { Spacing = 4 };
-    private readonly Button _moreText = new Ui.UrbeButton("Continuar texto desta página") { IsVisible = false };
-    private readonly Button _moreSearch = new Ui.UrbeButton("Buscar mais") { IsVisible = false };
-    private readonly Button _previous = new Ui.UrbeButton("Anterior") { Padding = new Thickness(10, 0) };
-    private readonly Button _next = new Ui.UrbeButton("Próxima") { Padding = new Thickness(10, 0) };
+        FontSize = 17, LineHeight = 27, Padding = new Thickness(4, 8), Margin = new Thickness(0, 8, 0, 0), Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
+    private readonly TextBox _page = new() { Width = 52, MinHeight = 40, Text = "1", HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
+    private readonly TextBlock _pages = new() { VerticalAlignment = VerticalAlignment.Center, FontSize = 13, Margin = new Thickness(6, 0, 4, 0) };
+    private readonly TextBox _query = new() { PlaceholderText = "Buscar", MinHeight = 40, VerticalContentAlignment = VerticalAlignment.Center };
+    private readonly StackPanel _results = new() { Spacing = 0 };
+    private readonly Button _moreText = new Ui.UrbeButton("Continuar texto desta página", ButtonKind.Ghost) { IsVisible = false };
+    private readonly Button _moreSearch = new Ui.UrbeButton("Buscar mais", ButtonKind.Ghost) { IsVisible = false };
+    private readonly Button _previous = new Ui.UrbeIconButton(UrbeTheme.Icons.Back, "Anterior");
+    private readonly Button _next = new Ui.UrbeIconButton(UrbeTheme.Icons.Forward, "Próxima");
     private CancellationTokenSource _navigation = new(), _search = new();
     private bool _disposed;
     private DocumentPage? _shown;
@@ -36,49 +38,64 @@ public sealed class PdfStudyView : Grid, IDisposable
     public event Action<ReaderQuote>? QuoteRequested;
     public event Action<ReaderQuote>? AskRequested;
     public event Action<int>? PageChanged;
+    /// <summary>The page could not be read: the host offers another app.</summary>
+    public event Action? Failed;
 
     public PdfStudyView(string path, byte[] bytes)
     {
         _path = path;
         _bytes = bytes;
-        RowDefinitions = new RowDefinitions("Auto,Auto,Auto,*,Auto");
-        var go = new Ui.UrbeButton("Ir") { Padding = new Thickness(10, 0) };
-        go.Click += async (_, _) => { if (int.TryParse(_page.Text, out int page)) await GoToPageAsync(page); };
+        RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto");
+        _status.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
+        _pages.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
+        _text.Foreground = UrbeTheme.Brush(UrbeTheme.Text);
+        // one row: ‹ [3] / 120 › and the search field (Enter searches)
+        _page.KeyDown += async (_, e) => { if (e.Key == Avalonia.Input.Key.Enter && int.TryParse(_page.Text, out int page)) { e.Handled = true; await GoToPageAsync(page); } };
+        _page.LostFocus += async (_, _) => { if (int.TryParse(_page.Text, out int page) && page != CurrentPage) await GoToPageAsync(page); };
         _previous.Click += async (_, _) => await GoToPageAsync(CurrentPage - 1);
         _next.Click += async (_, _) => await GoToPageAsync(CurrentPage + 1);
-        var nav = new WrapPanel { Children = { _previous, _page, go, _next } };
-        Children.Add(nav);
-        var find = new Ui.UrbeButton("Buscar");
+        _query.KeyDown += async (_, e) => { if (e.Key == Avalonia.Input.Key.Enter) { e.Handled = true; await SearchAsync(_query.Text ?? ""); } };
+        Avalonia.Automation.AutomationProperties.SetName(_page, "Página");
+        Avalonia.Automation.AutomationProperties.SetName(_query, "Buscar neste PDF");
+        var find = new Ui.UrbeIconButton(UrbeTheme.Icons.SearchUi, "Buscar", 20);
         find.Click += async (_, _) => await SearchAsync(_query.Text ?? "");
-        var searching = new DockPanel();
+        var nav = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { _previous, _page, _pages, _next } };
+        var top = new DockPanel { LastChildFill = true };
+        DockPanel.SetDock(nav, Dock.Left);
         DockPanel.SetDock(find, Dock.Right);
-        searching.Children.Add(find);
-        searching.Children.Add(_query);
-        SetRow(searching, 1); Children.Add(searching);
-        var results = new ScrollViewer { Content = _results, MaxHeight = 150 };
-        SetRow(results, 2); Children.Add(results);
-        SetRow(_text, 3); Children.Add(_text);
-        var quote = new Ui.UrbeButton("Adicionar seleção à nota");
+        top.Children.Add(nav);
+        top.Children.Add(find);
+        top.Children.Add(new Border { Margin = new Thickness(8, 0, 0, 0), Child = _query });
+        Children.Add(top);
+        var results = new ScrollViewer { Content = new StackPanel { Children = { _results, _moreSearch } }, MaxHeight = 168 };
+        SetRow(results, 1); Children.Add(results);
+        SetRow(_text, 2); Children.Add(_text);
         void Emit(StudyAnnotationKind kind)
         {
             if (_shown is not { } source || kind != StudyAnnotationKind.Bookmark && string.IsNullOrWhiteSpace(_text.SelectedText))
             { _status.Text = "Selecione primeiro o trecho que deseja citar."; return; }
             QuoteRequested?.Invoke(new(_path, source.Page, kind == StudyAnnotationKind.Bookmark ? "Marcador da página " + source.Page : _text.SelectedText, source.Sha256, kind, kind == StudyAnnotationKind.Bookmark ? null : source.Start + Math.Min(_text.SelectionStart,_text.SelectionEnd), kind == StudyAnnotationKind.Bookmark ? null : _text.SelectedText.Length));
         }
-        quote.Click += (_, _) => Emit(StudyAnnotationKind.Citation);
-        var highlight = new Ui.UrbeButton("Destacar"); highlight.Click += (_, _) => Emit(StudyAnnotationKind.Highlight);
-        var comment = new Ui.UrbeButton("Comentar"); comment.Click += (_, _) => Emit(StudyAnnotationKind.Comment);
-        var bookmark = new Ui.UrbeButton("Marcar página"); bookmark.Click += (_, _) => Emit(StudyAnnotationKind.Bookmark);
-        var ask = new Ui.UrbeButton("Perguntar à IA");
-        ask.Click += (_, _) =>
+        // the selection's actions: small labelled chips in one scrolling row (the label says what each does)
+        Button Chip(string text, string icon, Action run)
+        {
+            var chip = new Ui.UrbeButton(text, ButtonKind.Ghost, icon) { MinHeight = 40, Padding = new Thickness(10, 0) };
+            chip.Click += (_, _) => run();
+            return chip;
+        }
+        var quote = Chip("Adicionar seleção à nota", UrbeTheme.Icons.Notes, () => Emit(StudyAnnotationKind.Citation));
+        var highlight = Chip("Destacar", UrbeTheme.Icons.Pencil, () => Emit(StudyAnnotationKind.Highlight));
+        var comment = Chip("Comentar", UrbeTheme.Icons.Edit, () => Emit(StudyAnnotationKind.Comment));
+        var bookmark = Chip("Marcar página", UrbeTheme.Icons.Pin, () => Emit(StudyAnnotationKind.Bookmark));
+        var ask = Chip("Perguntar à IA", UrbeTheme.Icons.Assistant, () =>
         {
             if (_shown is { } source && !string.IsNullOrWhiteSpace(_text.SelectedText)) AskRequested?.Invoke(new(_path, source.Page, _text.SelectedText, source.Sha256));
             else _status.Text = "Selecione primeiro o trecho desejado.";
-        };
+        });
         _moreText.Click += async (_, _) => { if (_shown is { More: true } source) await LoadPageAsync(source.Page, source.Next); };
         _moreSearch.Click += async (_, _) => await SearchAsync(_searchQuery, more: true);
-        var footer = new StackPanel { Children = { _status, new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, Content = new StackPanel { Orientation = Orientation.Horizontal, Children = { _moreText, _moreSearch, quote, highlight, comment, bookmark, ask } } } } };
-        SetRow(footer, 4); Children.Add(footer);
+        var footer = new StackPanel { Children = { _moreText, new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { quote, highlight, comment, bookmark, ask } } }, _status } };
+        SetRow(footer, 3); Children.Add(footer);
         DetachedFromVisualTree += (_, _) => Dispose();
     }
 
@@ -100,17 +117,22 @@ public sealed class PdfStudyView : Grid, IDisposable
             _shown = result;
             CurrentPage = result.Page; PageCount = result.Pages;
             _page.Text = CurrentPage.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            _pages.Text = "/ " + PageCount.ToString(System.Globalization.CultureInfo.InvariantCulture);
             _text.Text = result.Text;
             _previous.IsEnabled = CurrentPage > 1; _next.IsEnabled = CurrentPage < PageCount;
             _moreText.IsVisible = result.More;
-            _status.Text = $"Página {CurrentPage} / {PageCount} · " + (result.NeedsOcr
-                ? "Sem camada de texto. Use Reconhecer região (OCR) para ler a imagem da página."
-                : "Texto extraído do PDF. Imagens, fórmulas e layout devem ser conferidos na página original.");
+            _status.Text = result.NeedsOcr
+                ? "Esta página não tem texto, só imagem: use Reconhecer região (OCR) na barra acima."
+                : "Texto do PDF. Figuras, fórmulas e diagramação estão na página original.";
             PageChanged?.Invoke(CurrentPage);
         }
         catch (OperationCanceledException) { }
         catch (Exception ex) when (ex is not OutOfMemoryException)
-        { if (!_disposed && !token.IsCancellationRequested) _status.Text = "Não foi possível extrair esta página. O arquivo original foi preservado."; }
+        {
+            if (_disposed || token.IsCancellationRequested) return;
+            _status.Text = "Não foi possível extrair esta página. O arquivo original foi preservado.";
+            Failed?.Invoke();
+        }
     }
 
     public async Task SearchAsync(string query, bool more = false)
@@ -130,14 +152,22 @@ public sealed class PdfStudyView : Grid, IDisposable
             _lastSearch = result;
             foreach (var hit in result.Matches)
             {
-                var b = new Button { Content = new TextBlock { Text = $"p. {hit.Page} · {hit.Context}", TextWrapping = TextWrapping.Wrap },
-                    HorizontalAlignment = HorizontalAlignment.Stretch };
+                var b = new Button
+                {
+                    Content = new TextBlock
+                    {
+                        Inlines = new Avalonia.Controls.Documents.InlineCollection { new Avalonia.Controls.Documents.Run("p. " + hit.Page + "  ") { FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Accent) }, new Avalonia.Controls.Documents.Run(hit.Context) },
+                        TextWrapping = TextWrapping.Wrap, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text2)
+                    },
+                    HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left,
+                    Background = Brushes.Transparent, Padding = new Thickness(8, 8), CornerRadius = new CornerRadius(UrbeTokens.Radius.S)
+                };
                 b.Click += async (_, _) => await GoToPageAsync(hit.Page);
                 _results.Children.Add(b);
             }
             _moreSearch.IsVisible = result.Partial;
-            _status.Text = $"Busca até a página {result.LastPage} / {result.Pages}. " +
-                (result.Partial ? "Use Buscar mais para continuar." : "Busca concluída.") +
+            _status.Text = (result.Matches.Count == 0 && prior is null ? "Nada encontrado" : result.Matches.Count + " resultado(s)") +
+                (result.Partial ? $" até a página {result.LastPage} de {result.Pages}." : ".") +
                 (result.OcrPages > 0 ? " Páginas sem texto não foram pesquisadas por OCR." : "");
         }
         catch (OperationCanceledException) { }

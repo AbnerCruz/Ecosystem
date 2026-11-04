@@ -94,12 +94,12 @@ public sealed partial class HeadlessUiTests
                 await reader.OpenAsync("estudo.txt");
                 Assert.False(reader.ReaderMode);
                 Assert.Contains(reader.GetLogicalDescendants().OfType<Button>(),
-                    button => button.Content as string == "Tela cheia");
+                    button => Avalonia.Automation.AutomationProperties.GetName(button) == "Tela cheia");
 
                 reader.EnterReaderMode();
                 Assert.True(reader.ReaderMode);
                 Assert.Contains(reader.GetLogicalDescendants().OfType<Button>(),
-                    button => button.Content as string == "Sair da tela cheia");
+                    button => Avalonia.Automation.AutomationProperties.GetName(button) == "Sair da tela cheia");
                 Assert.True(reader.IsVisible);
 
                 // Back exits reading mode before closing the source, preserving the original document.

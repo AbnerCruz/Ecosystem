@@ -165,16 +165,8 @@ public sealed partial class MainView : Grid
         FilePreview.PageActionsRequested += path => _ = ShowPageMenuAsync(path);
         _stage.Children.Add(FilePreview);
         _stage.Children.Add(StudyBrowser);
-        void UpdateReaderVisibility()
-        {
-            Editor.Pinned.Preview.SetSuspended(FilePreview.IsVisible || StudyBrowser.IsVisible || Dialogs.IsOpen || Assistant.IsVisible);
-            Editor.Split.Preview.SetSuspended(FilePreview.IsVisible || StudyBrowser.IsVisible || Dialogs.IsOpen || Assistant.IsVisible);
-            FilePreview.SetSuspended(StudyBrowser.IsVisible || Dialogs.IsOpen || Assistant.IsVisible);
-            ReaderActivity.SetActive(StudyBrowser, !Dialogs.IsOpen && !Assistant.IsVisible);
-        }
         FilePreview.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateReaderVisibility(); };
         StudyBrowser.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateReaderVisibility(); };
-        Assistant.PropertyChanged += (_,e)=>{if(e.Property==IsVisibleProperty)UpdateReaderVisibility();};
         Dialogs.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateReaderVisibility(); };
         StudyBrowser.QuestionRequested += (source, text) => _ = PrepareStudyQuestionAsync(source, text);
         StudyBrowser.QuoteRequested += quote => _ = InsertWebReaderQuoteAsync(quote);
@@ -496,6 +488,20 @@ public sealed partial class MainView : Grid
         foreach (var d in snapshot.Documents)
             if (d.Text is not null && !ids.ContainsKey(d.Path)) ids[d.Path] = used.Add(d.Id) ? d.Id : DocumentModel.CreateDocumentId();
         return ids;
+    }
+
+    /// <summary>
+    /// Readers under something else (a dialog, the Assistente, another reader) pause their native views. The Assistente
+    /// is read only if it exists: asking for it would build it, and it is made the first time it opens.
+    /// </summary>
+    private void UpdateReaderVisibility()
+    {
+        bool assistant = _assistant is { IsVisible: true };
+        Editor.Pinned.Preview.SetSuspended(FilePreview.IsVisible || StudyBrowser.IsVisible || Dialogs.IsOpen || assistant);
+        Editor.Split.Preview.SetSuspended(FilePreview.IsVisible || StudyBrowser.IsVisible || Dialogs.IsOpen || assistant);
+        FilePreview.SetSuspended(StudyBrowser.IsVisible || Dialogs.IsOpen || assistant);
+        ReaderActivity.SetActive(StudyBrowser, !Dialogs.IsOpen && !assistant);
+        UpdateFloatingNav();
     }
 
     /// <summary>The notes of the vault on the screen: the Explorer, the Personalização and the editor's properties.</summary>

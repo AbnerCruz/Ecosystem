@@ -30,7 +30,7 @@ public sealed class OcrStudyView : Grid, IDisposable
     private readonly TextBox _text = new() { AcceptsReturn = true, TextWrapping = TextWrapping.Wrap, MinHeight = 100 };
     private readonly TextBlock _status = new() { Text = "Arraste sobre a imagem para selecionar uma região ou reconheça a página inteira.", TextWrapping = TextWrapping.Wrap };
     private readonly CheckBox _reviewed = new() { Content = "Conferi o texto na imagem original", MinHeight = 48 };
-    private readonly Ui.UrbeButton _run = new("Reconhecer região"), _save = new("Adicionar à nota");
+    private readonly Ui.UrbeButton _run = new("Reconhecer região", Ui.ButtonKind.Primary, UrbeTheme.Icons.Scan), _save = new("Adicionar à nota", Ui.ButtonKind.Primary);
     private readonly DispatcherTimer _poll = new() { Interval = TimeSpan.FromMilliseconds(750) };
     private Point? _start;
     private Rect _region = new(0, 0, 1, 1);
@@ -52,24 +52,42 @@ public sealed class OcrStudyView : Grid, IDisposable
         _path = path; _page = page; _hash = hash; _imageBytes = imageBytes;
         using var stream = new MemoryStream(imageBytes); _image = new Image { Source = new Bitmap(stream), Stretch = Stretch.Uniform };
         RowDefinitions = new RowDefinitions("Auto,*,Auto");
-        var back = new Ui.UrbeButton("Voltar à fonte"); back.Click += (_, _) => CloseRequested?.Invoke();
+        var back = new Ui.UrbeIconButton(UrbeTheme.Icons.Back, "Voltar à fonte"); back.Click += (_, _) => CloseRequested?.Invoke();
         _run.Click += async (_, _) => await RecognizeAsync();
-        var compare = new Ui.UrbeButton("Imagem / Texto");
+        var compare = new Ui.UrbeIconButton(UrbeTheme.Icons.Image, "Imagem / Texto", 21);
         compare.Click += (_, _) => { if (_proof is not null && _save.IsEnabled) { _proof.IsVisible = !_proof.IsVisible; _text.IsVisible = !_proof.IsVisible; } };
-        var rotate=new Ui.UrbeButton("Orientação OCR: 0°");rotate.Click+=(_,_)=>{_rotation=(_rotation+90)%360;rotate.Content="Orientação OCR: "+_rotation+"°";};
-        var ask=new Ui.UrbeButton("Perguntar sobre a imagem");ask.Click+=async(_,_)=>
+        var rotate = new Ui.UrbeIconButton(UrbeTheme.Icons.Restore, "Orientação OCR: 0°", 21);
+        rotate.Click += (_, _) =>
+        {
+            _rotation = (_rotation + 90) % 360;
+            ToolTip.SetTip(rotate, "Orientação OCR: " + _rotation + "°");
+            Avalonia.Automation.AutomationProperties.SetName(rotate, "Orientação OCR: " + _rotation + "°");
+            _status.Text = "O reconhecimento vai ler a imagem girada " + _rotation + "°.";
+        };
+        var ask = new Ui.UrbeIconButton(UrbeTheme.Icons.Assistant, "Perguntar sobre a imagem", 21);
+        ask.Click+=async(_,_)=>
         {
             ask.IsEnabled=false;
             try{var region=_region;byte[] png=await Task.Run(()=>Crop(_imageBytes,region));if(!_closed)VisualQuestionRequested?.Invoke(new(_path,_hash,RegionText(region),png));}
             finally{ask.IsEnabled=true;}
         };
-        var controls = new StackPanel { Orientation = Orientation.Horizontal, Children = { back, _run, compare, rotate, _language, ask } };
-        var header = new StackPanel { Children = { _status, new ScrollViewer
+        _language.MinHeight = 40;
+        _language.VerticalAlignment = VerticalAlignment.Center;
+        _run.MinHeight = 40;
+        var controls = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { back, _run, compare, rotate, ask, _language } };
+        _status.FontSize = 12;
+        _status.Margin = new Thickness(4, 6, 4, 2);
+        _status.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
+        var header = new StackPanel { Children = { new Border
         {
-            Content = controls,
-            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
-        } } }; Children.Add(header);
+            CornerRadius = new CornerRadius(UrbeTokens.Radius.L), Background = UrbeTheme.Brush(UrbeTheme.Surface2), Padding = new Thickness(4, 0),
+            Child = new ScrollViewer
+            {
+                Content = controls,
+                HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+                VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled
+            }
+        }, _status } }; Children.Add(header);
         var source = new Grid { Children = { _image, _selectionCanvas } };
         _selectionCanvas.Children.Add(_rectangle); _rectangle.IsVisible = false;
         _selectionCanvas.PointerPressed += (_, e) =>
