@@ -183,6 +183,8 @@ public interface IAssistantHost
     /// <summary>Only the current conversation may supply a received user attachment for extraction.</summary>
     IAssistantAttachmentExtractor? Attachments => this as IAssistantAttachmentExtractor;
     IAssistantDocumentFiles? DocumentFiles => this as IAssistantDocumentFiles;
+    /// <summary>CST-207: reads a vault data file (CSV, JSON) or note as text, when the app has a vault.</summary>
+    Task<string?> ReadDataAsync(string path) => Task.FromResult(Documents.Get(path)?.Content);
     IAssistantDocumentVision? DocumentVision => this as IAssistantDocumentVision;
 }
 

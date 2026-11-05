@@ -315,7 +315,8 @@ public sealed partial class MainView
         if (!ReferenceEquals(_publicationDraft, draft) || !ReferenceEquals(_store, draft.Store) || draft.Dirty) return null;
         var project = draft.Project;
         PublicationHtmlResult result;
-        try { result = PublicationHtml.Export(project, catalog); }
+        var data = await PublicationDataAsync(project, catalog);
+        try { result = PublicationHtml.Export(project, catalog, data); }
         catch (Exception ex) when (ex is InvalidDataException or NotSupportedException)
         {
             await Dialogs.AlertAsync("Exportação não disponível", ex.Message);
@@ -356,8 +357,9 @@ public sealed partial class MainView
         var project = draft.Project;
         try
         {
+            var data = await PublicationDataAsync(project, catalog);
             var bytes = await PublicationEpub.ExportAsync(project, catalog,
-                async path => vault is null ? null : (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes);
+                async path => vault is null ? null : (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes, data: data);
             if (!ReferenceEquals(draft, _publicationDraft) || !ReferenceEquals(draft.Store, _store) || draft.Dirty) return;
             var name = ArtifactModel.SafeName(project.Title) + ".epub";
             var saved = SavePageFile is { } save ? await save(name, bytes) : await SavePublicationFileAsync(name, bytes, "epub", "application/epub+zip");
@@ -385,11 +387,12 @@ public sealed partial class MainView
         try
         {
             Func<string, Task<byte[]?>> asset = async path => vault is null ? null : (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes;
+            var data = await PublicationDataAsync(project, catalog);
             var result = extension switch
             {
-                "odt" => await PublicationOdt.ExportAsync(project, catalog, asset, rasterize: SvgRaster.ToPng),
-                "pptx" => await PublicationPptx.ExportAsync(project, catalog, asset, rasterize: SvgRaster.ToPng),
-                _ => await PublicationDocx.ExportAsync(project, catalog, asset, rasterize: SvgRaster.ToPng)
+                "odt" => await PublicationOdt.ExportAsync(project, catalog, asset, rasterize: SvgRaster.ToPng, data: data),
+                "pptx" => await PublicationPptx.ExportAsync(project, catalog, asset, rasterize: SvgRaster.ToPng, data: data),
+                _ => await PublicationDocx.ExportAsync(project, catalog, asset, rasterize: SvgRaster.ToPng, data: data)
             };
             if (!ReferenceEquals(draft, _publicationDraft) || !ReferenceEquals(draft.Store, _store) || draft.Dirty) return;
             var name = ArtifactModel.SafeName(project.Title) + "." + extension;

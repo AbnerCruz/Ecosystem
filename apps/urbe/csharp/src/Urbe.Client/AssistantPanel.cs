@@ -54,6 +54,8 @@ public interface IAssistantApp
     /// <summary>Small, read-only preview of a generated image stored in the current vault.</summary>
     Task<byte[]?> ReadGeneratedImageAsync(string path) => Task.FromResult<byte[]?>(null);
     Task<byte[]?> ReadDocumentBytesAsync(string path, CancellationToken cancel = default) => Task.FromResult<byte[]?>(null);
+    /// <summary>CST-207: a vault data file (CSV, JSON) or note as text.</summary>
+    Task<string?> ReadDataTextAsync(string path) => Task.FromResult<string?>(null);
     /// <summary>Open the vault's native file viewer, not an external application.</summary>
     Task OpenGeneratedImageAsync(string path) => Task.CompletedTask;
     Task ExportGeneratedImageAsync(string path) => Task.CompletedTask;
@@ -296,7 +298,7 @@ public sealed partial class AssistantPanel : Border
 
     /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, pages/ai-tools.js, customize/ai-tools.js, then the vault plugins).</summary>
     public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan" && t.Name != "remember"), AssistantAdaptivePlanTools.Update, .. AssistantPublicationTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, .. AssistantMemoryTools.All, .. AssistantGraphTools.All, AgentNames.Tool, AssistantAttachmentExtraction.Tool, .. AssistantDocumentTools.All, .. AssistantDocumentImageTools.All, AssistantImageTools.Tool, AssistantQuestionTools.Ask, AssistantFormTools.Request, AssistantDelegateTools.Consult, AssistantQuickNoteTools.Add,
-        AssistantConversationTools.List, AssistantConversationTools.Read, AssistantCalcTools.Calculate,
+        AssistantConversationTools.List, AssistantConversationTools.Read, AssistantCalcTools.Calculate, AssistantDataTools.Query,
         .. AgentSkills.Tools(host => SkillsOf(host.Documents)),
         AssistantGuideTools.Create(() => AppDocs.Load().Select(a => (a.Path, a.Content)).ToList())];
 
@@ -309,7 +311,7 @@ public sealed partial class AssistantPanel : Border
     /// every request and the device reads the request itself, so the others (links, tags, plans, memory, folders…) cost more
     /// waiting than they give; the bigger models in the cloud keep all of them.
     /// </summary>
-    private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "inspect_document", "inventory_document", "read_document", "search_document", "inspect_document_image", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note", "recall_memory", "learn_memory", "consult_agent", "request_form", "add_quick_note", AssistantGuideTools.Name, AssistantCalcTools.Name, AgentSkills.LoadName, AgentSkills.ReadFileName];
+    private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "inspect_document", "inventory_document", "read_document", "search_document", "inspect_document_image", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note", "recall_memory", "learn_memory", "consult_agent", "request_form", "add_quick_note", AssistantGuideTools.Name, AssistantCalcTools.Name, AssistantDataTools.Name, AgentSkills.LoadName, AgentSkills.ReadFileName];
 
     private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name)
         ?? AssistantWebTools.All.FirstOrDefault(t => t.Name == name)
@@ -1444,6 +1446,7 @@ public sealed partial class AssistantPanel : Border
             }
             return await panel._app.ReadDocumentBytesAsync(reference, cancellationToken);
         }
+        public Task<string?> ReadDataAsync(string path) => panel._app.ReadDataTextAsync(path);
         public IAssistantForms? Forms => this;
         public FormSession Request(FormDefinition definition) => panel.RequestForm(conversationId, agentId, definition);
         public IAssistantImages? Images => this;

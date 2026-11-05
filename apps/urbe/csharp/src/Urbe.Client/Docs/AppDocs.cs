@@ -206,6 +206,23 @@ public static partial class AppDocs
         - **Álgebra**: `derivada de …`, `simplificar …`, `expandir …`, `resolver … = …` (exato até o 2º grau; acima disso, aproximado com ≈) e `integral de …` (com `de a até b`, o valor).
         - Uma linha com `//` é comentário. Uma linha que não dá para calcular diz por quê, em vermelho, e as outras continuam. Nas publicações (HTML, EPUB, Word, ODT, PowerPoint) o bloco sai como tabela de linha e resultado. O Assistente usa o mesmo motor para fazer contas.
 
+        ### Dados
+
+        Um bloco ```` ```dados ```` mostra uma tabela feita de um arquivo do vault (CSV, JSON) ou da tabela de uma nota, depois de passos que você escreve, um por linha (menu `/` → **Dados**). A fonte nunca é alterada e a tabela é refeita sempre que a nota é lida.
+
+        ```
+        fonte: Planilhas/gastos.csv
+        filtrar valor > 10 e categoria = "Mercado"
+        agrupar por categoria: soma(valor) como total, contar
+        ordenar por total desc
+        ```
+
+        - `fonte:` é o caminho no vault. Para a tabela de uma nota, `fonte: Livros.md`, ou `fonte: Livros.md#Lidos` para a tabela sob o título **Lidos**.
+        - Passos: `filtrar` (= != > < >= <=, `contém`, `começa com`, com `e` e `ou`), `colunas a, b`, `ordenar por coluna desc`, `agrupar por coluna: soma(x), media(x), min(x), max(x), mediana(x), contar`, `calcular nova = preco * qtd`, `limitar 10`, `distintos coluna` e `resumo`.
+        - Coluna com espaço vai entre aspas: `"valor total" > 10`. Números brasileiros (1.234,56; R$ 10) e datas (05/11/2026) são reconhecidos.
+        - Um erro num passo aparece no lugar da tabela, dizendo o que corrigir. Tabelas grandes mostram as primeiras 300 linhas e o total.
+        - Nas publicações o bloco sai como tabela com a fonte embaixo. O Assistente usa os mesmos passos para analisar planilhas.
+
         ### Parâmetros e movimentos
 
         Uma linha como `a = 2 em 0..5` cria um **parâmetro**: um controle deslizante embaixo do gráfico. As curvas acompanham enquanto você arrasta, e a nota guarda o valor onde você soltar. Sem `em`, o controle vai de -10 a 10. Nomes juntos se multiplicam: `ax` é `a·x`.

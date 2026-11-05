@@ -291,6 +291,8 @@ public sealed partial class MainView : IAssistantApp
         RefreshNotes();
     }
 
+    Task<string?> IAssistantApp.ReadDataTextAsync(string path) => ReadDataSourceAsync(path);
+
     async Task<byte[]?> IAssistantApp.ReadDocumentBytesAsync(string path, CancellationToken cancellationToken)
     {
         if (_vault is not { IsConnected: true } vault || !_attachments.Contains(path)) return null;

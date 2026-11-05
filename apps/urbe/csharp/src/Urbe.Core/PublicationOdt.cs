@@ -27,8 +27,9 @@ public static class PublicationOdt
     private const double TextWidthCm = 17;
 
     public static async Task<PublicationExport> ExportAsync(PublicationProject project, PublicationSourceCatalog catalog,
-        Func<string, Task<byte[]?>>? readAsset = null, CancellationToken cancellationToken = default, Func<string, int, int, OfficeRaster?>? rasterize = null) =>
-        Write(await PublicationOffice.ReadAsync(project, catalog, readAsset, cancellationToken, rasterize));
+        Func<string, Task<byte[]?>>? readAsset = null, CancellationToken cancellationToken = default, Func<string, int, int, OfficeRaster?>? rasterize = null,
+        Func<string, string?>? data = null) =>
+        Write(await PublicationOffice.ReadAsync(project, catalog, readAsset, cancellationToken, rasterize, data));
 
     public static PublicationExport Write(OfficeDocument doc)
     {

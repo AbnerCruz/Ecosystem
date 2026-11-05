@@ -441,6 +441,7 @@ public sealed class VisualSurface : StackPanel
             Size = TextSize, LineFactor = LineFactor,
             ProgressContextMarkdown = _text,
             ProgressNoteResolver = ProgressNoteResolver,
+            DataReader = DataReader,
             ProgressEditRequested = _readOnly || AskProgress is null ? null : body => _ = EditProgressAsync(block, body),
             WikiLinkTapped = name => WikiLinkTapped?.Invoke(name),
             WebLinkTapped = url => WebLinkTapped?.Invoke(url),
@@ -483,6 +484,7 @@ public sealed class VisualSurface : StackPanel
     }
 
     public Func<string, string?>? ProgressNoteResolver { get; set; }
+    public Func<string, Task<string?>>? DataReader { get; set; }
     public Func<string, Task<string?>>? AskProgress { get; set; }
 
     private async Task EditProgressAsync(MarkdownBlock block, string body)
@@ -1144,6 +1146,7 @@ public sealed class VisualSurface : StackPanel
             case "codeblock": Apply(LegacyVisualEdit.CodeBlock(text, _box.CaretIndex)); break;
             case "plot": Apply(LegacyVisualEdit.Plot(text, _box.CaretIndex)); break;
             case "calc": Apply(LegacyVisualEdit.Calc(text, _box.CaretIndex)); break;
+            case "data": Apply(LegacyVisualEdit.Data(text, _box.CaretIndex)); break;
             case "box": _ = BoxAsync(text, a, b); break;
             case "comment":
                 // from the "/" menu the typed "/query" goes first
@@ -1220,6 +1223,7 @@ public sealed class VisualSurface : StackPanel
         if (act == "codeblock") Run("codeblock");
         if (act == "plot") Run("plot");
         if (act == "calc") Run("calc");
+        if (act == "data") Run("data");
     }
 
     private void InsertRule()

@@ -202,6 +202,22 @@ public static partial class LegacyVisualEdit
         return new(text[..lineStart] + block + text[lineEnd..], from, from + example.Length);
     }
 
+    /// <summary>CST-207: the "/" menu's Dados — a ```dados block naming a source, the caret on the path.</summary>
+    public static LegacyEditorTools.TextEdit Data(string text, int caret)
+    {
+        var at = Math.Clamp(caret, 0, text.Length);
+        int lineStart = at == 0 ? 0 : text.LastIndexOf('\n', Math.Max(0, at - 1)) + 1;
+        int lineEnd = text.IndexOf('\n', at);
+        if (lineEnd < 0) lineEnd = text.Length;
+        var line = text[lineStart..lineEnd];
+        var keep = line.TrimStart().StartsWith('/') ? "" : line;
+        var head = (keep.Length > 0 ? keep + "\n" : "") + "```dados\nfonte: ";
+        const string example = "Planilhas/arquivo.csv";
+        var block = head + example + "\nresumo\n```";
+        int from = lineStart + head.Length;
+        return new(text[..lineStart] + block + text[lineEnd..], from, from + example.Length);
+    }
+
     /// <summary>The bubble's wikilink button: the trimmed selection becomes [[selection]]; null when empty.</summary>
     public static LegacyEditorTools.TextEdit? WikiOfSelection(string text, int selectionStart, int selectionEnd)
     {

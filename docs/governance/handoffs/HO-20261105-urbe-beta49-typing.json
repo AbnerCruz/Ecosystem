@@ -2,12 +2,12 @@
   "schemaVersion": 1,
   "message_id": "HO-20261105-urbe-beta49-typing",
   "category": "HANDOFF",
-  "timestamp": "2026-11-05T00:42:47.000Z",
+  "timestamp": "2026-11-05T11:43:28.000Z",
   "agent": {
     "id": "claude-code-urbe-recovery",
     "kind": "ai-agent"
   },
-  "task_id": "CST-114",
+  "task_id": "CST-166",
   "component": "urbe",
   "state": "review",
   "branch": "claude/urbe-refactor-development-t73hul",
@@ -15,32 +15,61 @@
   "commit": null,
   "pr": null,
   "files_changed": [
-    "apps/urbe/csharp/src/Urbe.Client/QuietSelectionHandles.cs",
-    "apps/urbe/csharp/src/Urbe.Client/EditorInput.cs",
-    "apps/urbe/csharp/tests/Urbe.Client.Tests/QuietSelectionHandlesTests.cs",
-    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
     "apps/urbe/csharp/PATCHNOTES.md",
-    "apps/urbe/csharp/PATCHNOTES-HISTORY.md"
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorInput.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Publications.cs",
+    "apps/urbe/csharp/src/Urbe.Client/QuietSelectionHandles.cs",
+    "apps/urbe/csharp/src/Urbe.Client/SvgRaster.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/CalcBlockView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/DataBlockView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AgentSkills.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantCalcTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDataTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Calculus/Calculator.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Data/DataBlock.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Data/DataQuery.cs",
+    "apps/urbe/csharp/src/Urbe.Core/FunctionPlot.cs",
+    "apps/urbe/csharp/src/Urbe.Core/NoteContainers.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationDocx.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationOdt.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationOffice.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationPptx.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationSlides.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/QuietSelectionHandlesTests.cs"
   ],
   "work_completed": [
     "Pedido do proprietário (05/11/2026): continuar o plano Numa 2.6, avançando etapa a etapa. Escolhida a pendência registrada na beta.47/48 e no gate do editor (§3.1): digitação cara no modo Fonte em notas grandes.",
     "Diagnóstico por amostragem (EventPipe + speedscope) no bench opt-in URBE_BENCH_TYPE=fonte, nota de 14 KB, janela de 412 px: 127 ms/tecla; os handlers do Urbe somam ~2 ms; ~70% do tempo vinha de TextSelectionHandleCanvas.MoveHandlesToSelection (Avalonia 12.1.3), que recalcula as alças de toque escondidas a cada mudança de SelectionStart/SelectionEnd/CaretIndex; cada mudança de seleção invalida o TextLayout, então uma tecla reconstruía o layout do texto inteiro 3-4 vezes.",
     "Correção QuietSelectionHandles (aplicada em EditorInput.ConfigureMultiline: Fonte, blocos do Visual, campo do Assistente): o canvas só ouve seleção/cursor enquanto visível; demais mudanças (texto: esconder alças, fechar menu) continuam chegando. Ao aparecer, o próprio canvas reposiciona as alças. Se a versão do Avalonia não tiver os membros, nada muda e um teste falha.",
     "Bench após: Fonte 127 → 77 ms/tecla; Visual 33 → 23 ms/tecla. O restante do Visual é pintura por software do headless (não representa o aparelho).",
-    "Release 2.0.0-beta.49 (2000049) preparada no csproj canônico; beta.48 arquivada no histórico; patchnotes em linguagem direta."
+    "Release 2.0.0-beta.49 (2000049) preparada no csproj canônico; beta.48 arquivada no histórico; patchnotes em linguagem direta.",
+    "05/11, pedido do proprietário: continuar sem parar pela consolidação 2.6, implementando funcionalidades ausentes.",
+    "CST-166: Publicações exportam DOCX (estilos, numeração, links, imagens, sumário em livros) e ODT (outline, listas aninhadas, tabelas, imagens) por leitura semântica comum; relatório de limitações após salvar. Abertos e renderizados no LibreOffice headless.",
+    "CST-168: PPTX editável — título como placeholder, texto, tópicos, numeração, tabelas e imagens nativas; nota, #/## ou --- iniciam slide; texto excedente continua em slide '(cont.)'; :::notas vira notas do apresentador (notesMaster/notesSlide), lidas pelo LibreOffice.",
+    "CST-167: layout Slides vira apresentação HTML autocontida (16:9 escalável por unidades de contêiner, navegação por teclado/toque, tela cheia, visão geral, notas, aviso de transbordo, PDF de um slide por página). Verificado em Chromium.",
+    "CST-026: contêineres :::tipo saem como caixas em HTML, EPUB, DOCX, ODT e PPTX (antes saíam crus).",
+    "CST-169: ```grafico sai como vetor em HTML/slides/EPUB/ODT e como PNG + SVG original (svgBlip) em DOCX/PPTX, via SvgRaster (SkiaSharp) para os desenhos do próprio Urbe.",
+    "CST-206: motor matemático próprio (Urbe.Core/Calculus): valores, unidades com dimensão, estatística, matrizes, derivada simbólica, simplificar/expandir, equações exatas até grau 2 e numéricas marcadas ≈, primitivas e integrais definidas com erro estimado; bloco ```calculo nativo, nas Publicações e ferramenta calculate do Assistente.",
+    "CST-177/214: Agent Skills — Personalização/Skills/<pasta>/SKILL.md, catálogo por nome/descrição, load_skill e read_skill_file somente leitura e restritos à pasta, allowed-tools ignorado, três skills do app.",
+    "CST-207: pipeline de dados (CSV RFC 4180 com separador detectado e Latin-1, JSON, tabelas de notas) com etapas filtrar/colunas/ordenar/agrupar/calcular/limitar/distintos/resumo e linhas de origem; bloco ```dados nativo, nas Publicações e ferramenta query_data."
   ],
   "verification": [
     {
-      "check": "QuietSelectionHandlesTests (vermelho sem a correção, verde com ela)",
-      "kind": "automated",
-      "result": "passed",
-      "evidence": "Sem Apply: alça escondida se movia a cada tecla (2 falhas). Com Apply: alça escondida parada; mostrada, acompanha o cursor; digitar a esconde."
+      "check": "Digitação no Fonte de nota grande e alças de seleção por toque no moto g32",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/PATCHNOTES.md",
+      "evidence": "Validação física pendente (NN-017): toque, arrastar alças, IME."
     },
     {
-      "check": "Urbe.Client.Tests e Urbe.Core.Tests",
+      "check": "Urbe.Core.Tests e Urbe.Client.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "499/499 Client e 1338/1338 Core localmente (.NET SDK 10.0.403)."
+      "evidence": "1423/1423 Core e 503/503 Client localmente (.NET SDK 10.0.403)."
     },
     {
       "check": "tests/consistency/Check.cs",
@@ -49,17 +78,25 @@
       "evidence": "22 checks passaram localmente."
     },
     {
-      "check": "Digitação no Fonte de nota grande e alças de seleção por toque no moto g32",
+      "check": "DOCX/ODT/PPTX abertos no LibreOffice e deck HTML no Chromium",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Conversões headless para PDF/ODP/TXT sem erro; notas do apresentador reconhecidas; deck com 4 páginas de 320x180 mm."
+    },
+    {
+      "check": "Exportações salvas pelo seletor do Android, blocos ```calculo e ```dados, apresentação HTML e arquivos abertos no Word/PowerPoint",
       "kind": "human",
       "result": "pending",
       "critical": false,
       "object": "apps/urbe/csharp/PATCHNOTES.md",
-      "evidence": "Validação física pendente (NN-017): toque, arrastar alças, IME."
+      "evidence": "Validação física e em Office da Microsoft pendente (NN-017)."
     }
   ],
   "known_issues": [
     "Fonte ainda refaz o layout do texto inteiro duas vezes por tecla (TextPresenter.MoveCaretToTextPosition durante a entrada e MeasureOverride, que sempre descarta o layout). Eliminar exige editor com layout incremental por parágrafo.",
-    "A correção depende de membros internos do Avalonia 12.1.3 (TextSelectionHandleCanvas.TextBox_PropertyChanged, TextPresenter.TextSelectionHandleCanvas); QuietSelectionHandles_FindsTheCanvasOfThisAvalonia sinaliza uma atualização que os mude."
+    "A correção depende de membros internos do Avalonia 12.1.3 (TextSelectionHandleCanvas.TextBox_PropertyChanged, TextPresenter.TextSelectionHandleCanvas); QuietSelectionHandles_FindsTheCanvasOfThisAvalonia sinaliza uma atualização que os mude.",
+    "Fórmulas vão como TeX editável em DOCX/ODT/PPTX (sem OMML).",
+    "Abertura em Microsoft Word/PowerPoint não verificada neste ambiente (só LibreOffice)."
   ],
   "blockers": [],
   "next_actions": [
@@ -93,6 +130,16 @@
       "subject": "urbe-quiet-selection-handles",
       "status": "product-specific",
       "rationale": "Contorno de desempenho do TextBox do Avalonia no editor do Urbe; sem segundo consumidor."
+    },
+    {
+      "subject": "urbe-calculator-engine",
+      "status": "possible-candidate",
+      "rationale": "Motor matemático determinístico pode servir a outro Product; sem segundo consumidor real, permanece no Urbe (NN-022)."
+    },
+    {
+      "subject": "urbe-office-exporters",
+      "status": "product-specific",
+      "rationale": "Adaptadores de Publicações do Urbe."
     }
   ],
   "criticality": {

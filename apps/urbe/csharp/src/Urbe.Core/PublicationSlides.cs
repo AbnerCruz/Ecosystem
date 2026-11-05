@@ -64,7 +64,7 @@ public static partial class PublicationSlides
         return new SlideSegment(markdown, string.Join("\n\n", notes));
     }
 
-    public static PublicationHtmlResult Export(PublicationProject project, PublicationSourceCatalog catalog, Func<string, bool, string> render)
+    public static PublicationHtmlResult Export(PublicationProject project, PublicationSourceCatalog catalog, Func<string, bool, string> render, Func<string, string?>? data = null)
     {
         // formulas are drawn at 18 px; on a slide they follow its text size (em), at any scale of the slide
         string renderMath(string tex, bool display) => SvgSize().Replace(render(tex, display), m =>
@@ -84,7 +84,7 @@ public static partial class PublicationSlides
                 continue;
             }
             var body = NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body);
-            string Render(string md) => NoteProgress.RenderHtml(Calculus.Calculator.RenderHtml(FunctionPlot.RenderHtml(NoteContainers.RenderHtml(md, m => MarkdownEngine.Render(m, renderMath)))), source.Markdown,
+            string Render(string md) => NoteProgress.RenderHtml(Data.DataBlock.RenderHtml(Calculus.Calculator.RenderHtml(FunctionPlot.RenderHtml(NoteContainers.RenderHtml(md, m => MarkdownEngine.Render(m, renderMath)))), data ?? (_ => null)), source.Markdown,
                 id => catalog.Read(new PublicationSourceReference(id))?.Markdown);
             foreach (var segment in Split(body))
                 slides.Add((Render(segment.Markdown), segment.Notes.Trim().Length > 0 ? Render(segment.Notes) : "", Path.GetFileNameWithoutExtension(source.Path)));
@@ -106,7 +106,7 @@ public static partial class PublicationSlides
           .Append(".slide img,.slide video{max-width:100%;max-height:30cqw;height:auto}.slide svg{max-width:100%;vertical-align:middle}.slide table{border-collapse:collapse}.slide td,.slide th{border:1px solid #999;padding:.4cqw .8cqw}")
           .Append(".slide blockquote{border-left:.4cqw solid #999;margin:1cqw 0;padding-left:1.5cqw;color:#555}")
           .Append(".ubox{border-left:.5cqw solid #9c7b45;background:#f6f3ee;padding:.8cqw 1.5cqw;margin:1cqw 0;border-radius:.6cqw}.ubox-title{margin:0 0 .4cqw}")
-          .Append(".umath-block{display:block;text-align:center}.urbe-calc{border-collapse:collapse}.urbe-calc td{padding:.3cqw 1.2cqw;border-bottom:1px solid #e3ded4}.urbe-calc td:last-child{font-weight:600}.urbe-calc-error{color:#a3352f}.urbe-plot{margin:1cqw auto;text-align:center}.urbe-plot svg{width:auto;height:auto;max-height:28cqw;max-width:100%}.missing{border:1px dashed #a35;padding:1cqw}")
+          .Append(".umath-block{display:block;text-align:center}.urbe-data{border-collapse:collapse;font-size:.85em}.urbe-data th,.urbe-data td{border:1px solid #d8d2c6;padding:.2cqw .6cqw}.urbe-data-source{font-size:.7em;color:#777}.urbe-calc{border-collapse:collapse}.urbe-calc td{padding:.3cqw 1.2cqw;border-bottom:1px solid #e3ded4}.urbe-calc td:last-child{font-weight:600}.urbe-calc-error{color:#a3352f}.urbe-plot{margin:1cqw auto;text-align:center}.urbe-plot svg{width:auto;height:auto;max-height:28cqw;max-width:100%}.missing{border:1px dashed #a35;padding:1cqw}")
           .Append(".deck-title{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font-size:5cqw!important;padding:0 6cqw}")
           .Append(".slide-no{position:absolute;right:2cqw;bottom:1.2cqw;font-size:1.2cqw;color:#888}")
           .Append(".overflow-badge{display:none;position:absolute;left:2cqw;bottom:1.2cqw;font-size:1.2cqw;background:#b45309;color:#fff;padding:.2cqw .8cqw;border-radius:.4cqw}.slide.overflow .overflow-badge{display:block}")

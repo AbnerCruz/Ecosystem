@@ -13,7 +13,7 @@ public static class PublicationEpub
     private static readonly XNamespace Epub = "http://www.idpf.org/2007/ops";
 
     public static async Task<byte[]> ExportAsync(PublicationProject project, PublicationSourceCatalog catalog,
-        Func<string, Task<byte[]?>>? readAsset = null, CancellationToken cancellationToken = default)
+        Func<string, Task<byte[]?>>? readAsset = null, CancellationToken cancellationToken = default, Func<string, string?>? data = null)
     {
         PublicationProjectCodec.Validate(project);
         if (project.Sections.Count == 0) throw new InvalidDataException("Adicione capítulos antes de exportar o livro.");
@@ -85,6 +85,17 @@ public static class PublicationEpub
                 var result = NoteProgress.Evaluate(Plain(node), source.Markdown, id => catalog.Read(new(id))?.Markdown);
                 if (!result.IsValid) throw new InvalidDataException(result.Error);
                 return new XElement(Xhtml + "p", result.Label + ": " + result.Summary);
+            }
+            if (node.Tag == "pre" && Data.DataBlock.IsLanguage(node.Attr("data-lang")))
+            {
+                try
+                {
+                    var result = Data.DataBlock.Run(Plain(node), data ?? (_ => null));
+                    return new XElement(Xhtml + "table", new XAttribute("class", "urbe-data"),
+                        new XElement(Xhtml + "tr", result.Table.Columns.Select(c => new XElement(Xhtml + "th", c))),
+                        result.Table.Rows.Select(r => new XElement(Xhtml + "tr", r.Select(v => new XElement(Xhtml + "td", v.Text)))));
+                }
+                catch (InvalidDataException ex) { return new XElement(Xhtml + "p", "Dados indisponíveis: " + ex.Message); }
             }
             if (node.Tag == "pre" && Calculus.Calculator.IsLanguage(node.Attr("data-lang")))
                 return new XElement(Xhtml + "table", new XAttribute("class", "urbe-calc"), Calculus.Calculator.Run(Plain(node)).Where(l => l.Input.Trim().Length > 0).Select(l =>

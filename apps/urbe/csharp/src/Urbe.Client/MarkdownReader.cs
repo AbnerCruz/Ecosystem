@@ -101,6 +101,8 @@ public sealed partial class MarkdownReader
     private int _listLine;
     public string? ProgressContextMarkdown { get; set; }
     public Func<string, string?>? ProgressNoteResolver { get; set; }
+    /// <summary>CST-207: reads a vault file or note as text for ```dados blocks (null without a vault).</summary>
+    public Func<string, Task<string?>>? DataReader { get; set; }
     public Action<string>? ProgressEditRequested { get; set; }
 
     public Control Build(IReadOnlyList<RichNode> nodes)
@@ -548,6 +550,9 @@ public sealed partial class MarkdownReader
             }
             return new Border { Child = panel, Padding = new Thickness(12), Margin = new Thickness(0, Size * .6), BorderThickness = new Thickness(1), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), CornerRadius = new CornerRadius(10) };
         }
+        // CST-207: a ```dados block shows its source after its steps
+        if (Urbe.Core.Data.DataBlock.IsLanguage(pre.Attr("data-lang")))
+            return new Ui.DataBlockView(code, Size, DataReader ?? (_ => Task.FromResult<string?>(null))) { Margin = new Thickness(0, Size * .6) };
         // CST-206: a ```calculo block shows each line with its result
         if (Urbe.Core.Calculus.Calculator.IsLanguage(pre.Attr("data-lang")))
             return new Ui.CalcBlockView(code, Size) { Margin = new Thickness(0, Size * .6) };

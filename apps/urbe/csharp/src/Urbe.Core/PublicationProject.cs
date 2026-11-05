@@ -171,12 +171,13 @@ public sealed record PublicationHtmlResult(string Html, IReadOnlyList<string> Mi
 /// </summary>
 public static class PublicationHtml
 {
-    public static PublicationHtmlResult Export(PublicationProject project, PublicationSourceCatalog catalog)
+    /// <param name="data">CST-207: the text of a ```dados source (preloaded by the app); null leaves those blocks unavailable.</param>
+    public static PublicationHtmlResult Export(PublicationProject project, PublicationSourceCatalog catalog, Func<string, string?>? data = null)
     {
         PublicationProjectCodec.Validate(project);
         ArgumentNullException.ThrowIfNull(catalog);
         // CST-167: slides are a presentation of their own, not a page of scrolled articles
-        if (project.Design.Layout == "slides") return PublicationSlides.Export(project, catalog, RenderMath);
+        if (project.Design.Layout == "slides") return PublicationSlides.Export(project, catalog, RenderMath, data);
         var title = MarkdownEngine.EscapeHtml(project.Title);
         var slides = false;
         var book = project.Design.Layout == "book";
@@ -191,6 +192,7 @@ public static class PublicationHtml
           .Append("img,video,svg{max-width:100%;height:auto}pre{overflow:auto}code{white-space:pre-wrap;overflow-wrap:anywhere}")
           .Append("blockquote{border-left:3px solid #999;padding-left:1rem}table{display:block;overflow-x:auto}")
           .Append(".umath{display:inline-block;max-width:100%;vertical-align:middle}.umath svg{vertical-align:middle}.umath-block{display:block;overflow-x:auto;text-align:center;margin:1.2rem 0}")
+          .Append(".urbe-data{border-collapse:collapse;margin:1rem 0;display:block;overflow-x:auto}.urbe-data th,.urbe-data td{border:1px solid #d8d2c6;padding:.3rem .6rem}.urbe-data th{background:#f3f1ec}.urbe-data-source{font-size:.8em;color:#777;margin-top:-.6rem}")
           .Append(".urbe-calc{border-collapse:collapse;margin:1rem 0}.urbe-calc td{padding:.25rem .8rem;border-bottom:1px solid #e3ded4}.urbe-calc td:last-child{font-weight:600}.urbe-calc-error{color:#a3352f;font-weight:400!important}")
           .Append(".urbe-plot{margin:1.2rem 0;color:#25272c}.urbe-plot svg{max-width:100%;height:auto}")
           .Append(".ubox{border-left:4px solid #9c7b45;background:#f6f3ee;padding:.6rem 1rem;margin:1rem 0;border-radius:6px}.ubox-title{margin:0 0 .4rem}")
@@ -223,7 +225,7 @@ public static class PublicationHtml
                 continue;
             }
             var body = NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body);
-            var rendered = Calculus.Calculator.RenderHtml(FunctionPlot.RenderHtml(NoteContainers.RenderHtml(body, md => MarkdownEngine.Render(md, RenderMath))));
+            var rendered = Data.DataBlock.RenderHtml(Calculus.Calculator.RenderHtml(FunctionPlot.RenderHtml(NoteContainers.RenderHtml(body, md => MarkdownEngine.Render(md, RenderMath)))), data ?? (_ => null));
             sb.Append("<article id=\"").Append(MarkdownEngine.EscapeHtml(placement.Id)).Append("\" tabindex=\"0\">").Append(NoteProgress.RenderHtml(rendered, source.Markdown,
                 id => catalog.Read(new PublicationSourceReference(id))?.Markdown)).Append("</article>");
         }

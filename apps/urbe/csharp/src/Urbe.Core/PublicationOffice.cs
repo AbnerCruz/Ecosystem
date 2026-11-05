@@ -42,7 +42,8 @@ public static class PublicationOffice
     /// so a file never mixes two revisions.
     /// </summary>
     public static async Task<OfficeDocument> ReadAsync(PublicationProject project, PublicationSourceCatalog catalog,
-        Func<string, Task<byte[]?>>? readAsset = null, CancellationToken cancellationToken = default, Func<string, int, int, OfficeRaster?>? rasterize = null)
+        Func<string, Task<byte[]?>>? readAsset = null, CancellationToken cancellationToken = default, Func<string, int, int, OfficeRaster?>? rasterize = null,
+        Func<string, string?>? data = null)
     {
         PublicationProjectCodec.Validate(project);
         ArgumentNullException.ThrowIfNull(catalog);
@@ -94,6 +95,20 @@ public static class PublicationOffice
                         var result = NoteProgress.Evaluate(Plain(node), source.Markdown, id => catalog.Read(new(id))?.Markdown);
                         into.Add(new OfficeParagraph([new OfficeRun(result.Label + ": " + result.Summary, Bold: true)]));
                         limits.Add("Barras de progresso saem como texto com o valor atual (sem a barra gráfica).");
+                        return;
+                    }
+                    if (Data.DataBlock.IsLanguage(node.Attr("data-lang")))
+                    {
+                        // CST-207: the table the block gives now, with its source under it
+                        try
+                        {
+                            var result = Data.DataBlock.Run(Plain(node), data ?? (_ => null));
+                            var tableRows = new List<IReadOnlyList<IReadOnlyList<OfficeRun>>> { result.Table.Columns.Select(c => (IReadOnlyList<OfficeRun>)[new OfficeRun(c)]).ToList() };
+                            tableRows.AddRange(result.Table.Rows.Select(r => (IReadOnlyList<IReadOnlyList<OfficeRun>>)r.Select(v => (IReadOnlyList<OfficeRun>)[new OfficeRun(v.Text)]).ToList()));
+                            into.Add(new OfficeTable(tableRows, true));
+                            into.Add(new OfficeParagraph([new OfficeRun("Fonte: " + result.Table.Source, Italic: true)]));
+                        }
+                        catch (InvalidDataException ex) { into.Add(new OfficeParagraph([new OfficeRun("Dados indisponíveis: " + ex.Message, Italic: true)])); limits.Add("Um bloco de dados não pôde ser lido e saiu como aviso."); }
                         return;
                     }
                     if (Calculus.Calculator.IsLanguage(node.Attr("data-lang")))

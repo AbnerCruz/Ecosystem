@@ -650,6 +650,7 @@ public static class AssistantAgent
         public IAssistantForms? Forms => inner.Forms;
         public IAssistantAttachmentExtractor? Attachments => inner.Attachments;
         public IAssistantDocumentFiles? DocumentFiles => inner.DocumentFiles;
+        public Task<string?> ReadDataAsync(string path) => inner.ReadDataAsync(path);
         public IAssistantDocumentVision? DocumentVision => inner.DocumentVision;
         // a member left out here silently disables its tools in the app (list_graphs/read_graph were): a test checks them all
         public IAssistantGraphs? Graphs => inner.Graphs;

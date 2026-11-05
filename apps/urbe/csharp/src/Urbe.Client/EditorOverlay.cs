@@ -2100,6 +2100,12 @@ public sealed class EditorOverlay : Grid
         if (Mode == EditorMode.Visual) _visual.SetText(Editor.Text ?? "");
     }
 
+    public Func<string, Task<string?>>? DataReader
+    {
+        get => _visual.DataReader;
+        set => _visual.DataReader = value;
+    }
+
     public Func<string, string?>? ProgressNoteResolver
     {
         get => _visual.ProgressNoteResolver;
