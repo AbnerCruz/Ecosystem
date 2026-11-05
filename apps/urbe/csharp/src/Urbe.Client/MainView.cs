@@ -870,6 +870,8 @@ public sealed partial class MainView : Grid
             new DialogItem("Abrir outra nota em nova aba", UrbeTheme.Icons.Plus, "Esta nota continua aberta na aba dela.", Run: () => { Search.OpenNewTabPicker(); return Task.CompletedTask; }),
             new DialogItem("Criar publicação desta nota", UrbeTheme.Icons.Page,
                 "Um livro, artigo ou página feito desta nota.", Run: () => CreatePublicationAsync(note.Path)),
+            new DialogItem("Onde esta nota é usada", UrbeTheme.Icons.Connections,
+                "Publicações, dados, progresso e notas que dependem dela.", Run: () => ShowNoteUsageAsync(note.Path)),
             new DialogItem("Criar publicação de um trecho", UrbeTheme.Icons.Page,
                 "Só um título da nota e o que vem embaixo dele.", Run: () => CreatePublicationFromSectionAsync(note.Path)),
             .. (_publicationReturnPath is null ? [] : new[]
@@ -1343,6 +1345,21 @@ public sealed partial class MainView : Grid
     /// Lixeira, or "Mover para a lixeira?" for notes only); then explorer.deleteFolder for each folder and
     /// explorer.delete for the notes.
     /// </summary>
+    /// <summary>CST-226: the things that depend on a note, each one openable.</summary>
+    public async Task ShowNoteUsageAsync(string notePath)
+    {
+        if (_store?.Get(notePath) is not { } note) return;
+        var usage = NoteUsage.Of(_store, note);
+        if (usage.Count == 0) { await Dialogs.AlertAsync("Onde esta nota é usada", "Nada depende desta nota: nenhuma publicação, bloco de dados, barra de progresso, incorporação ou ligação."); return; }
+        var items = usage.Select(u => new DialogItem(System.IO.Path.GetFileNameWithoutExtension(u.Path).Replace(".publication", ""),
+            u.Kind == NoteUsage.Publication ? UrbeTheme.Icons.Page : UrbeTheme.Icons.File, u.Kind + " · " + u.Detail)).ToList();
+        var choice = await Dialogs.ChooseAsync("Onde esta nota é usada", items, usage.Count + (usage.Count == 1 ? " item depende" : " itens dependem") + " desta nota.");
+        if (choice is not { } k) return;
+        var chosen = usage[k];
+        if (chosen.Kind == NoteUsage.Publication) await OpenPublicationAsync(chosen.Path);
+        else OpenNoteByPath(chosen.Path);
+    }
+
     private async Task DeleteSelectionAsync(IReadOnlyList<string> selection)
     {
         var folders = selection.Where(x => x.StartsWith(NotesExplorer.FolderPrefix, StringComparison.Ordinal))
@@ -1368,6 +1385,13 @@ public sealed partial class MainView : Grid
         {
             title = "Mover para a lixeira?";
             message = notes.Count == 1 ? "A nota poderá ser restaurada pela Lixeira." : notes.Count + " notas poderão ser restauradas pela Lixeira.";
+        }
+        // CST-226: what depends on the notes is said before they go (nothing dependent is changed)
+        if (_store is { } usageStore)
+        {
+            var impact = notes.Select(p => usageStore.Get(p)).OfType<UrbeDocument>()
+                .Select(d => NoteUsage.Summary(NoteUsage.Of(usageStore, d))).OfType<string>().ToList();
+            if (impact.Count > 0) message += "\n\n" + string.Join("\n", impact.Take(3)) + "\nEsses itens vão mostrar a fonte como indisponível até você restaurar a nota.";
         }
         if (!await Dialogs.ConfirmAsync(title, message, folders.Count > 0 ? "Excluir" : "Mover para a lixeira", danger: true)) return;
         await InBatchAsync(notes.Count + folders.Sum(f => NoteLibrary.FolderDocuments(_store!, f).Count), async () =>

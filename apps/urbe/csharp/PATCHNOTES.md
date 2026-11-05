@@ -36,6 +36,10 @@ Novo bloco ` ```dados ` (menu `/` → **Dados**): mostra uma tabela feita de um 
 
 Termine o bloco com `gráfico barras categoria total` (ou `linhas`, `pizza`, `dispersão`) para ver um **gráfico** em vez da tabela. Ele é desenhado dos dados, muda quando eles mudam e sai nítido em todas as publicações.
 
+## Onde uma nota é usada
+
+No menu ⋯ da nota, **Onde esta nota é usada** lista o que depende dela: publicações (inclusive as que usam só um trecho), blocos de dados que leem a tabela dela, barras de progresso que contam as tarefas dela, notas que a incorporam ou ligam para ela. Toque num item para abri-lo. Ao mandar para a lixeira uma nota de que algo depende, o aviso diz o que vai ficar sem a fonte.
+
 ## Skills do Assistente
 
 Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descrição e instruções, no formato aberto Agent Skills) para ensinar o Assistente a fazer um trabalho do seu jeito. Ele vê só o nome e a descrição e carrega o resto quando o pedido combina. Uma skill não dá permissões e nada nela é executado. O Urbe já vem com skills de apresentação, livro e cálculo.

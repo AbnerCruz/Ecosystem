@@ -89,7 +89,8 @@
   ],
   "known_issues": [
     "Fórmulas vão como TeX editável em DOCX/ODT/PPTX (sem OMML).",
-    "Abertura em Microsoft Word/PowerPoint não verificada neste ambiente (só LibreOffice)."
+    "Abertura em Microsoft Word/PowerPoint não verificada neste ambiente (só LibreOffice).",
+    "EditorTests.Source_DraggingAFingerScrolls falhou uma vez na suíte completa local sob carga e passou 3/3 isolado; sensível a tempo, observar no CI."
   ],
   "blockers": [],
   "next_actions": [
