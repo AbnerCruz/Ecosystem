@@ -28,6 +28,7 @@ No estúdio de Publicações, o menu ⋯ ganhou novas saídas, todas feitas a pa
 - **Notas do apresentador**: escreva dentro de uma caixa `:::notas … :::`. No PowerPoint elas vão para a área de notas; nunca aparecem no slide.
 - **Caixas** (`:::tipo título`) saem como caixas em todos os formatos (antes apareciam os `:::` crus).
 - **Gráficos** (` ```grafico `) saem como desenho em todos os formatos: vetor no HTML, EPUB e ODT; no Word e no PowerPoint, imagem com o vetor original junto.
+- **Criar publicações de onde você está**: com várias notas selecionadas no Explorer (botão de publicação na barra), com o resultado de uma busca, com todas as notas de uma tag (busca de comandos → “Nova publicação de uma tag”) ou com só um trecho de uma nota (menu ⋯ → “Criar publicação de um trecho”, escolhendo o título). A publicação sempre aponta para as notas; nada é copiado.
 - Depois de salvar, o Urbe diz o que o formato não guarda igual (por exemplo, fórmulas vão como TeX editável e links entre notas viram texto).
 
 ## Cálculo nas notas

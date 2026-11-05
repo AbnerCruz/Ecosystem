@@ -106,8 +106,13 @@ public sealed partial class MainView
         UpdateFloatingNav();
     }
 
-    /// <summary>First-class creation from the current note, or an empty project chosen in Settings.</summary>
-    public async Task CreatePublicationAsync(string? sourcePath = null, string? sourceFolder = null)
+    /// <summary>
+    /// First-class creation from the current note, a folder, chosen notes (a selection, search results), a tag or one
+    /// section of a note (<paramref name="fragment"/>: a heading). Every source is a reference to a real note, never a
+    /// copy (CST-135).
+    /// </summary>
+    public async Task CreatePublicationAsync(string? sourcePath = null, string? sourceFolder = null, IReadOnlyList<string>? sourcePaths = null,
+        string? tag = null, string? fragment = null)
     {
         if (!VaultWritable || _store is null)
         {
@@ -119,7 +124,7 @@ public sealed partial class MainView
         var originalStore = _store;
         var originalVault = _vault;
         var folder = sourceFolder?.Trim('/');
-        var suggested = source?.Title ?? (folder is { Length: > 0 } ? System.IO.Path.GetFileName(folder) : null);
+        var suggested = fragment ?? source?.Title ?? (folder is { Length: > 0 } ? System.IO.Path.GetFileName(folder) : null) ?? (tag is { Length: > 0 } ? "#" + tag.TrimStart('#') : null);
         var title = await Dialogs.PromptAsync(new PromptOptions("Nova publicação", Label: "Título", Placeholder: suggested ?? "Ex.: Meu livro", Confirm: "Criar"));
         if (string.IsNullOrWhiteSpace(title)) return;
         if (!ReferenceEquals(_store, originalStore) || !ReferenceEquals(_vault, originalVault))
@@ -127,13 +132,29 @@ public sealed partial class MainView
             ShowLifeNotice("O vault mudou. Abra a criação novamente no vault desejado.", Ui.ToastKind.Warning);
             return;
         }
-        var project = PublicationProject.Create(title.Trim(), source?.Id);
+        var project = fragment is { Length: > 0 } && source is not null
+            ? PublicationProject.Create(title.Trim()).AddSource(new PublicationSourceReference(source.Id, fragment))
+            : PublicationProject.Create(title.Trim(), source?.Id);
+        foreach (var p in sourcePaths ?? [])
+            if (_store.Get(p) is { } chosen && ArtifactModel.IsNote(chosen.Path)) project = project.AddSource(chosen.Id);
+        if (tag is { Length: > 0 })
+        {
+            var wanted = tag.TrimStart('#');
+            foreach (var note in _store.List().Where(d => ArtifactModel.IsNote(d.Path) && d.Tags.Any(t => string.Equals(t.TrimStart('#'), wanted, StringComparison.OrdinalIgnoreCase)))
+                .OrderBy(d => d.Path, StringComparer.OrdinalIgnoreCase))
+                project = project.AddSource(note.Id);
+        }
         if (folder is not null)
         {
             var prefix = folder.Length == 0 ? "" : folder + "/";
             foreach (var note in _store.List().Where(d => ArtifactModel.IsNote(d.Path) && d.Path.StartsWith(prefix, StringComparison.Ordinal))
                 .OrderBy(d => d.Path, StringComparer.OrdinalIgnoreCase))
                 project = project.AddSource(note.Id);
+        }
+        if (project.Sections.Count == 0 && (sourcePaths is { Count: > 0 } || tag is { Length: > 0 }))
+        {
+            await Dialogs.AlertAsync("Publicações", tag is { Length: > 0 } ? "Nenhuma nota tem a tag #" + tag.TrimStart('#') + "." : "Nenhuma das escolhidas é uma nota.");
+            return;
         }
         var path = "Publicações/" + ArtifactModel.SafeName(title.Trim()) + ".publication.json";
         if (_store.Get(path) is not null || _attachments.Contains(path))
@@ -152,6 +173,31 @@ public sealed partial class MainView
             return;
         }
         await OpenPublicationAsync(path);
+    }
+
+    /// <summary>CST-135: a publication of the notes with a tag (chosen from the vault's tags).</summary>
+    public async Task CreatePublicationFromTagAsync()
+    {
+        if (_store is null) return;
+        var tags = _store.List().Where(d => ArtifactModel.IsNote(d.Path)).SelectMany(d => d.Tags).Select(t => t.TrimStart('#'))
+            .GroupBy(t => t, StringComparer.OrdinalIgnoreCase).OrderByDescending(g => g.Count()).ThenBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(g => (Tag: g.First(), Count: g.Count())).ToList();
+        if (tags.Count == 0) { await Dialogs.AlertAsync("Publicações", "O vault não tem tags."); return; }
+        var choice = await Dialogs.ChooseAsync("Publicação de uma tag", tags.Select(t => new DialogItem("#" + t.Tag, Detail: t.Count + (t.Count == 1 ? " nota" : " notas"))).ToList());
+        if (choice is not { } k) return;
+        await CreatePublicationAsync(tag: tags[k].Tag);
+    }
+
+    /// <summary>CST-135: a publication of one section of a note (a heading and what is under it), still the note's text.</summary>
+    public async Task CreatePublicationFromSectionAsync(string notePath)
+    {
+        if (_store?.Get(notePath) is not { } note) return;
+        var headings = Urbe.Core.MarkdownEngine.SplitFrontmatter(note.Content).Body.Replace("\r", "").Split('\n')
+            .Where(l => System.Text.RegularExpressions.Regex.IsMatch(l, @"^#{1,6}\s+\S")).Select(l => l.TrimStart('#').Trim()).Distinct().ToList();
+        if (headings.Count == 0) { await Dialogs.AlertAsync("Publicações", "Esta nota não tem títulos para escolher um trecho."); return; }
+        var choice = await Dialogs.ChooseAsync("Publicação de um trecho", headings.Select(h => new DialogItem(h)).ToList(), "O trecho é o título escolhido e o que vem embaixo dele; continua sendo o texto da nota.");
+        if (choice is not { } k) return;
+        await CreatePublicationAsync(sourcePath: notePath, fragment: headings[k]);
     }
 
     /// <summary>The user chooses a project by title, not by raw JSON path.</summary>
