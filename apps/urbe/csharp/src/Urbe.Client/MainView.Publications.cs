@@ -281,13 +281,14 @@ public sealed partial class MainView
     {
         var draft = _publicationDraft;
         if (_publicationsStudio?.Project is not { } project) return;
-        var option = await Dialogs.ChooseAsync("Composição", [new DialogItem("Layout", Detail: "Artigo, livro ou apresentação"),
+        var option = await Dialogs.ChooseAsync("Composição", [new DialogItem("Layout", Detail: "Artigo, livro, apresentação ou curso"),
             new DialogItem("Tema", Detail: "Papel, oceano ou tinta"), new DialogItem("Objetivo", Detail: project.Objective), new DialogItem("Público", Detail: project.Audience)]);
         PublicationProject? next = null;
         if (option == 0)
         {
-            var layout = await Dialogs.ChooseAsync("Layout", [new DialogItem("Artigo"), new DialogItem("Livro com sumário"), new DialogItem("Apresentação (uma nota por slide)")]);
-            if (layout is >= 0 and <= 2) next = project with { Design = project.Design with { Layout = new[] { "article", "book", "slides" }[layout.Value] } };
+            var layout = await Dialogs.ChooseAsync("Layout", [new DialogItem("Artigo"), new DialogItem("Livro com sumário"), new DialogItem("Apresentação (uma nota por slide)"),
+                new DialogItem("Curso", Detail: "Cada nota um módulo, cada ## uma aula, questionários e progresso")]);
+            if (layout is >= 0 and <= 3) next = project with { Design = project.Design with { Layout = new[] { "article", "book", "slides", "course" }[layout.Value] } };
         }
         else if (option == 1)
         {

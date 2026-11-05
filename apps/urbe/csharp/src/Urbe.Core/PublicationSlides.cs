@@ -84,7 +84,7 @@ public static partial class PublicationSlides
                 continue;
             }
             var body = NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body);
-            string Render(string md) => NoteProgress.RenderHtml(Data.DataBlock.RenderHtml(Calculus.Calculator.RenderHtml(FunctionPlot.RenderHtml(NoteContainers.RenderHtml(md, m => MarkdownEngine.Render(m, renderMath)))), data ?? (_ => null)), source.Markdown,
+            string Render(string md) => NoteProgress.RenderHtml(QuizBlock.RenderHtml(Data.DataBlock.RenderHtml(Calculus.Calculator.RenderHtml(FunctionPlot.RenderHtml(NoteContainers.RenderHtml(md, m => MarkdownEngine.Render(m, renderMath)))), data ?? (_ => null)), interactive: true), source.Markdown,
                 id => catalog.Read(new PublicationSourceReference(id))?.Markdown);
             foreach (var segment in Split(body))
                 slides.Add((Render(segment.Markdown), segment.Notes.Trim().Length > 0 ? Render(segment.Notes) : "", Path.GetFileNameWithoutExtension(source.Path)));
@@ -111,7 +111,7 @@ public static partial class PublicationSlides
           .Append(".slide-no{position:absolute;right:2cqw;bottom:1.2cqw;font-size:1.2cqw;color:#888}")
           .Append(".overflow-badge{display:none;position:absolute;left:2cqw;bottom:1.2cqw;font-size:1.2cqw;background:#b45309;color:#fff;padding:.2cqw .8cqw;border-radius:.4cqw}.slide.overflow .overflow-badge{display:block}")
           .Append(".notes{width:min(100%,1280px);background:#fffbe6;border-radius:6px;padding:8px 16px;font-size:15px;margin-top:-16px}.notes::before{content:'Notas do apresentador';display:block;font-weight:600;font-size:12px;color:#7a6a3a}")
-          .Append("progress{width:100%;accent-color:var(--accent)}a{color:var(--accent)}")
+          .Append(QuizBlock.Style).Append("progress{width:100%;accent-color:var(--accent)}a{color:var(--accent)}")
           // presenting (script on): one slide fills the screen; notes only when asked (N)
           .Append(".presenting{background:#000}.presenting .deck{padding:0;height:100vh;justify-content:center}.presenting .slide{display:none;width:min(100vw,177.78vh);border-radius:0;box-shadow:none}")
           .Append(".presenting .slide.current{display:block;animation:fade .25s ease}.presenting .notes{display:none}.presenting.show-notes .notes.current{display:block;position:fixed;left:0;right:0;bottom:0;margin:0;width:auto;max-height:35vh;overflow:auto;border-radius:0}")
@@ -129,7 +129,7 @@ public static partial class PublicationSlides
             if (notes.Length > 0) sb.Append("<aside class=\"notes\" data-for=\"s").Append(i + 1).Append("\">").Append(notes).Append("</aside>");
         }
         sb.Append("</main><div class=\"controls\" hidden><button id=\"prev\" aria-label=\"Slide anterior\">←</button><button id=\"next\" aria-label=\"Próximo slide\">→</button>")
-          .Append("<button id=\"present\" aria-label=\"Apresentar\">Apresentar</button></div><script>").Append(Script).Append("</script></body></html>");
+          .Append("<button id=\"present\" aria-label=\"Apresentar\">Apresentar</button></div><script>").Append(Script).Append(QuizBlock.Script).Append("</script></body></html>");
         return new PublicationHtmlResult(sb.ToString(), missing.AsReadOnly());
     }
 

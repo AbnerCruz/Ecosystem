@@ -550,6 +550,9 @@ public sealed partial class MarkdownReader
             }
             return new Border { Child = panel, Padding = new Thickness(12), Margin = new Thickness(0, Size * .6), BorderThickness = new Thickness(1), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), CornerRadius = new CornerRadius(10) };
         }
+        // CST-174: a ```quiz block is answered by touch
+        if (QuizBlock.IsLanguage(pre.Attr("data-lang")))
+            return new Ui.QuizBlockView(code, Size) { Margin = new Thickness(0, Size * .6) };
         // CST-207: a ```dados block shows its source after its steps
         if (Urbe.Core.Data.DataBlock.IsLanguage(pre.Attr("data-lang")))
             return new Ui.DataBlockView(code, Size, DataReader ?? (_ => Task.FromResult<string?>(null))) { Margin = new Thickness(0, Size * .6) };

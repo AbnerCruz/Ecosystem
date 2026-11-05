@@ -20,6 +20,12 @@ No estúdio de Publicações, o menu ⋯ ganhou novas saídas, todas feitas a pa
 - **Criar publicações de onde você está**: com várias notas selecionadas no Explorer (botão de publicação na barra), com o resultado de uma busca, com todas as notas de uma tag (busca de comandos → “Nova publicação de uma tag”) ou com só um trecho de uma nota (menu ⋯ → “Criar publicação de um trecho”, escolhendo o título). A publicação sempre aponta para as notas; nada é copiado.
 - Depois de salvar, o Urbe diz o que o formato não guarda igual (por exemplo, fórmulas vão como TeX editável e links entre notas viram texto).
 
+## Questionários e cursos
+
+- Novo bloco ` ```quiz ` (menu `/` → **Questionário**): escreva a pergunta com `?`, as alternativas como tarefas e marque com `[x]` as certas. Uma linha `>` traz a explicação. Na nota, você toca numa alternativa e em **Conferir** para ver se acertou e a explicação; a nota guarda só as perguntas.
+- Novo layout de publicação **Curso**: cada nota é um módulo, cada `##` uma aula, e a propriedade `objetivos` aparece no começo do módulo. Sai como um arquivo HTML com o sumário do curso, uma aula por vez, questionários com correção na hora e o progresso (aulas concluídas, questões certas) guardado no navegador de quem estuda, nunca nas suas notas.
+- Em PDF, Word, ODT e EPUB os questionários saem com as questões e o gabarito no fim.
+
 ## Cálculo nas notas
 
 Novo bloco ` ```calculo ` (menu `/` → **Cálculo**): cada linha aparece com o resultado ao lado, e a nota guarda só as linhas.

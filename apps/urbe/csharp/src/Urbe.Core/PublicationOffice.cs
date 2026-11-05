@@ -97,6 +97,22 @@ public static class PublicationOffice
                         limits.Add("Barras de progresso saem como texto com o valor atual (sem a barra gráfica).");
                         return;
                     }
+                    if (QuizBlock.IsLanguage(node.Attr("data-lang")))
+                    {
+                        // CST-174: on paper a quiz is its questions and, after them, the answer key
+                        var questions = QuizBlock.Parse(Plain(node));
+                        for (int q = 0; q < questions.Count; q++)
+                        {
+                            into.Add(new OfficeParagraph([new OfficeRun((q + 1) + ". " + questions[q].Prompt, Bold: true)]));
+                            for (int o = 0; o < questions[q].Options.Count; o++)
+                                into.Add(new OfficeParagraph([new OfficeRun((char)('a' + o) + ") " + questions[q].Options[o].Text)], "quote"));
+                        }
+                        if (questions.Count > 0)
+                            into.Add(new OfficeParagraph([new OfficeRun("Gabarito: ", Bold: true), new OfficeRun(string.Join("; ", questions.Select((q, i) =>
+                                (i + 1) + ") " + string.Join(", ", q.Options.Select((o, k) => (o, k)).Where(x => x.o.Correct).Select(x => (char)('a' + x.k) + ""))
+                                + (q.Explanation is { } e ? " — " + e : ""))))]));
+                        return;
+                    }
                     if (Data.DataBlock.IsLanguage(node.Attr("data-lang")))
                     {
                         // CST-207: the table the block gives now, with its source under it

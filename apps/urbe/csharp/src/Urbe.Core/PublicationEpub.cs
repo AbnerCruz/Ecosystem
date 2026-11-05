@@ -86,6 +86,15 @@ public static class PublicationEpub
                 if (!result.IsValid) throw new InvalidDataException(result.Error);
                 return new XElement(Xhtml + "p", result.Label + ": " + result.Summary);
             }
+            if (node.Tag == "pre" && QuizBlock.IsLanguage(node.Attr("data-lang")))
+            {
+                var questions = QuizBlock.Parse(Plain(node));
+                return new XElement(Xhtml + "section", new XAttribute("class", "urbe-quiz"),
+                    questions.Select((q, i) => new XElement(Xhtml + "div", new XElement(Xhtml + "p", new XElement(Xhtml + "strong", (i + 1) + ". " + q.Prompt)),
+                        new XElement(Xhtml + "ol", new XAttribute("type", "a"), q.Options.Select(o => new XElement(Xhtml + "li", o.Text))))),
+                    new XElement(Xhtml + "p", new XElement(Xhtml + "strong", "Gabarito: "), string.Join("; ", questions.Select((q, i) =>
+                        (i + 1) + ") " + string.Join(", ", q.Options.Select((o, k) => (o, k)).Where(x => x.o.Correct).Select(x => (char)('a' + x.k) + "")) + (q.Explanation is { } e ? " — " + e : "")))));
+            }
             if (node.Tag == "pre" && Data.DataBlock.IsLanguage(node.Attr("data-lang")))
             {
                 try

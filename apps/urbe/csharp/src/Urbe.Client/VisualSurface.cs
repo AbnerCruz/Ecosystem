@@ -1147,6 +1147,7 @@ public sealed class VisualSurface : StackPanel
             case "plot": Apply(LegacyVisualEdit.Plot(text, _box.CaretIndex)); break;
             case "calc": Apply(LegacyVisualEdit.Calc(text, _box.CaretIndex)); break;
             case "data": Apply(LegacyVisualEdit.Data(text, _box.CaretIndex)); break;
+            case "quiz": Apply(LegacyVisualEdit.Quiz(text, _box.CaretIndex)); break;
             case "box": _ = BoxAsync(text, a, b); break;
             case "comment":
                 // from the "/" menu the typed "/query" goes first
@@ -1224,6 +1225,7 @@ public sealed class VisualSurface : StackPanel
         if (act == "plot") Run("plot");
         if (act == "calc") Run("calc");
         if (act == "data") Run("data");
+        if (act == "quiz") Run("quiz");
     }
 
     private void InsertRule()

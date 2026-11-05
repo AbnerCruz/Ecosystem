@@ -283,6 +283,8 @@ public static partial class LegacyEditorTools
         new("calc", "Cálculo", "Contas, unidades, equações e derivadas", "calculo calculadora conta soma media unidade converter resolver derivada integral matriz", "code"),
         // CST-207: a table of the vault's data (CSV, JSON, a note's table) after steps, kept as a ```dados block
         new("data", "Dados", "Tabela de um CSV, JSON ou nota", "dados planilha csv json tabela filtrar agrupar somar relatorio", "code"),
+        // CST-174: self-check questions, kept as a ```quiz block
+        new("quiz", "Questionário", "Questões com correção na hora", "questionario quiz questao exercicio prova teste revisar estudo curso", "code"),
     ];
 
     /// <summary>The menu the app shows: the visual-tools.js items, the math ones and the app's own, with the same filter.</summary>
