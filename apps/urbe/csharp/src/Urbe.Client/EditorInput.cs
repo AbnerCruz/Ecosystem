@@ -13,6 +13,8 @@ public static class EditorInput
         // Android maps single-line/default to ActionDone, which hides the IME before sending Enter.
         TextInputOptions.SetMultiline(box, true);
         TextInputOptions.SetReturnKeyType(box, TextInputReturnKeyType.Return);
+        // long texts: the hidden touch handles must not relay the whole text at every key
+        QuietSelectionHandles.Apply(box);
     }
 
     public static void Replace(TextBox box, string next)
