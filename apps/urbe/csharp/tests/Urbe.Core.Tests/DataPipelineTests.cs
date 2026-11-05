@@ -131,3 +131,36 @@ public sealed class DataToolTests
         Assert.Contains("Fonte: gastos.csv", xml);
     }
 }
+
+/// <summary>CST-208: charts from the block's data, deterministic and accessible, with mistakes told in words.</summary>
+public sealed class DataChartTests
+{
+    private static DataTable T() => DataReaders.Csv("x.csv", "mes;receita;despesa;categoria\nJan;1200;800;Mercado\nFev;1500;950;Transporte\nMar;900;1100;Lazer\n");
+
+    [Theory]
+    [InlineData("gráfico barras mes receita despesa título: Receita", "<rect", "Jan")]
+    [InlineData("grafico linhas mes receita", "<polyline", "Fev")]
+    [InlineData("gráfico pizza categoria despesa", "<path d='M", "Mercado")]
+    [InlineData("gráfico dispersão receita despesa", "<circle", "1200")]
+    public void Chart_IsValidSvg_WithItsMarksAndAnAccessibleLabel(string step, string mark, string label)
+    {
+        var r = DataQuery.Run(T(), [step]);
+        var svg = r.ChartSvg()!;
+        System.Xml.Linq.XDocument.Parse(svg);
+        Assert.Contains(mark, svg);
+        Assert.Contains("aria-label=", svg);
+        Assert.Contains(label, System.Xml.Linq.XElement.Parse(svg).Attribute("aria-label")!.Value);
+        Assert.Equal(svg, DataQuery.Run(T(), [step]).ChartSvg()); // deterministic
+    }
+
+    [Fact]
+    public void Chart_MistakesAreWords_AndItIsTheLastStep()
+    {
+        Assert.Contains("não é numérica", Assert.Throws<InvalidDataException>(() => DataQuery.Run(T(), ["gráfico barras mes categoria"])).Message);
+        Assert.Contains("Não há coluna", Assert.Throws<InvalidDataException>(() => DataQuery.Run(T(), ["gráfico barras mes lucro"])).Message);
+        Assert.Contains("último passo", Assert.Throws<InvalidDataException>(() => DataQuery.Run(T(), ["gráfico barras mes receita", "limitar 2"])).Message);
+        Assert.Contains("Gráfico desconhecido", Assert.Throws<InvalidDataException>(() => DataQuery.Run(T(), ["gráfico radar mes receita"])).Message);
+        var html = DataBlock.RenderHtml("<pre data-lang=\"dados\"><code>fonte: x.csv\ngráfico barras mes receita</code></pre>", p => p == "x.csv" ? "mes;receita\nJan;1\n" : null);
+        Assert.Contains("<figure class=\"urbe-plot urbe-chart\"><svg", html);
+    }
+}

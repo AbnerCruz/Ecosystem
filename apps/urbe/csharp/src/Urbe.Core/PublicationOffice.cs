@@ -103,6 +103,14 @@ public static class PublicationOffice
                         try
                         {
                             var result = Data.DataBlock.Run(Plain(node), data ?? (_ => null));
+                            if (result.ChartSvg() is { } chartSvg)
+                            {
+                                var alt = "Gráfico: " + string.Join(", ", result.Chart!.Values) + " (" + result.Table.Source + ")";
+                                if (rasterize?.Invoke(chartSvg, 1280, 800) is { } chartPng) into.Add(new OfficeImage(chartPng.Png, "image/png", ".png", 640, 400, alt, chartSvg));
+                                else { into.Add(new OfficeImage(System.Text.Encoding.UTF8.GetBytes(chartSvg), "image/svg+xml", ".svg", 640, 400, alt, chartSvg)); limits.Add("Gráficos vão como imagem vetorial (SVG); editores muito antigos podem não mostrá-los."); }
+                                into.Add(new OfficeParagraph([new OfficeRun("Fonte: " + result.Table.Source, Italic: true)]));
+                                return;
+                            }
                             var tableRows = new List<IReadOnlyList<IReadOnlyList<OfficeRun>>> { result.Table.Columns.Select(c => (IReadOnlyList<OfficeRun>)[new OfficeRun(c)]).ToList() };
                             tableRows.AddRange(result.Table.Rows.Select(r => (IReadOnlyList<IReadOnlyList<OfficeRun>>)r.Select(v => (IReadOnlyList<OfficeRun>)[new OfficeRun(v.Text)]).ToList()));
                             into.Add(new OfficeTable(tableRows, true));

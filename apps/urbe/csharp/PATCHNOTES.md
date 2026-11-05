@@ -44,6 +44,8 @@ Novo bloco ` ```calculo ` (menu `/` → **Cálculo**): cada linha aparece com o 
 
 Novo bloco ` ```dados ` (menu `/` → **Dados**): mostra uma tabela feita de um CSV ou JSON do vault, ou da tabela de uma nota, depois de passos que você escreve (filtrar, ordenar, agrupar com soma e média, calcular uma coluna nova, limitar, resumo). A planilha nunca é alterada e a tabela se refaz quando o arquivo muda. Números e datas no formato brasileiro são reconhecidos, e planilhas salvas pelo Excel em português abrem com os acentos certos. O Assistente ganhou a ferramenta **consultar dados**, com os mesmos passos, para analisar planilhas sem lê-las inteiras.
 
+Termine o bloco com `gráfico barras categoria total` (ou `linhas`, `pizza`, `dispersão`) para ver um **gráfico** em vez da tabela. Ele é desenhado dos dados, muda quando eles mudam e sai nítido em todas as publicações.
+
 ## Skills do Assistente
 
 Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descrição e instruções, no formato aberto Agent Skills) para ensinar o Assistente a fazer um trabalho do seu jeito. Ele vê só o nome e a descrição e carrega o resto quando o pedido combina. Uma skill não dá permissões e nada nela é executado. O Urbe já vem com skills de apresentação, livro e cálculo.

@@ -84,8 +84,31 @@ public static class SvgRaster
                         Paint(canvas, path, style);
                     }
                     break;
+                case "circle":
+                    using (var path = new SKPath())
+                    {
+                        path.AddCircle((float)(Num(child, "cx") ?? 0), (float)(Num(child, "cy") ?? 0), (float)(Num(child, "r") ?? 0));
+                        Paint(canvas, path, style);
+                    }
+                    break;
+                case "polyline":
+                case "polygon":
+                    var pts = ((string?)child.Attribute("points") ?? "").Split([' ', ','], StringSplitOptions.RemoveEmptyEntries)
+                        .Select(v => double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? (float)d : float.NaN).ToArray();
+                    if (pts.Length >= 4 && pts.All(float.IsFinite))
+                        using (var path = new SKPath())
+                        {
+                            path.MoveTo(pts[0], pts[1]);
+                            for (int i = 2; i + 1 < pts.Length; i += 2) path.LineTo(pts[i], pts[i + 1]);
+                            if (child.Name.LocalName == "polygon") path.Close();
+                            Paint(canvas, path, style);
+                        }
+                    break;
                 case "text":
+                    canvas.Save();
+                    Transform(canvas, (string?)child.Attribute("transform"));
                     Text(canvas, child, style);
+                    canvas.Restore();
                     break;
             }
         }
@@ -111,11 +134,30 @@ public static class SvgRaster
         using var typeface = SKTypeface.FromFamilyName("sans-serif", style.Bold ? SKFontStyleWeight.SemiBold : SKFontStyleWeight.Normal, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright) ?? SKTypeface.Default;
         using var font = new SKFont(typeface, (float)style.FontSize);
         using var paint = new SKPaint { Color = color, IsAntialias = true };
-        var value = text.Value;
+        // the text of the element itself, not of its <title> (a tooltip, never drawn)
+        var value = string.Concat(text.Nodes().OfType<XText>().Select(n => n.Value));
         var width = font.MeasureText(value);
         double x = Num(text, "x") ?? 0, y = (Num(text, "y") ?? 0) + (Num(text, "dy") ?? 0);
         x -= style.Anchor switch { "middle" => width / 2, "end" => width, _ => 0 };
         canvas.DrawText(value, (float)x, (float)y, font, paint);
+    }
+
+    /// <summary>translate(x y) and rotate(a) of a transform attribute, in order.</summary>
+    private static void Transform(SKCanvas canvas, string? transform)
+    {
+        if (string.IsNullOrWhiteSpace(transform)) return;
+        foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(transform, @"(translate|rotate|scale)\(([^)]*)\)"))
+        {
+            var n = m.Groups[2].Value.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries)
+                .Select(v => double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? (float)d : 0f).ToArray();
+            if (n.Length == 0) continue;
+            switch (m.Groups[1].Value)
+            {
+                case "translate": canvas.Translate(n[0], n.Length > 1 ? n[1] : 0); break;
+                case "rotate": canvas.RotateDegrees(n[0]); break;
+                case "scale": canvas.Scale(n[0], n.Length > 1 ? n[1] : n[0]); break;
+            }
+        }
     }
 
     private static Style Read(XElement e, Style s)

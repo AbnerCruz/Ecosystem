@@ -21,6 +21,8 @@ public sealed class DataBlockView : Border
     private readonly double _size;
     public DataResult? Result { get; private set; }
     public string? Error { get; private set; }
+    /// <summary>The chart shown, when the block ends with a “gráfico …” step.</summary>
+    public Image? Chart { get; private set; }
     public Task Reading { get; }
 
     public DataBlockView(string code, double size, Func<string, Task<string?>> readText)
@@ -66,6 +68,21 @@ public sealed class DataBlockView : Border
             return;
         }
         var t = r.Table;
+        if (r.Chart is not null)
+        {
+            // CST-208: the chart the steps describe, drawn at the screen's density
+            var svg = r.ChartSvg()!;
+            if (SvgRaster.ToPng(svg, 1280, 800) is { } png)
+            {
+                using var stream = new MemoryStream(png.Png);
+                var image = new Image { Source = new Avalonia.Media.Imaging.Bitmap(stream), Stretch = Stretch.Uniform, MaxHeight = 420 };
+                Avalonia.Automation.AutomationProperties.SetName(image, "Gráfico de " + string.Join(", ", r.Chart.Values) + " a partir de " + t.Source);
+                _panel.Children.Add(image);
+                Chart = image;
+            }
+            _panel.Children.Add(Caption(t.Rows.Count + " ponto(s) · fonte: " + t.Source));
+            return;
+        }
         var grid = new Grid();
         foreach (var _ in t.Columns) grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
         grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));

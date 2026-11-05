@@ -222,6 +222,7 @@ public static partial class AppDocs
         - Coluna com espaço vai entre aspas: `"valor total" > 10`. Números brasileiros (1.234,56; R$ 10) e datas (05/11/2026) são reconhecidos.
         - Um erro num passo aparece no lugar da tabela, dizendo o que corrigir. Tabelas grandes mostram as primeiras 300 linhas e o total.
         - Nas publicações o bloco sai como tabela com a fonte embaixo. O Assistente usa os mesmos passos para analisar planilhas.
+        - **Gráfico**: termine com `gráfico barras coluna valor` (ou `linhas`, `pizza`, `dispersão`), com quantas colunas de valor quiser e, se quiser, `título: …`. O gráfico é desenhado dos dados e muda quando eles mudam; nas publicações sai como imagem nítida (vetor).
 
         ### Parâmetros e movimentos
 

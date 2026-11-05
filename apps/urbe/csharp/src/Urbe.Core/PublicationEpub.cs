@@ -91,6 +91,12 @@ public static class PublicationEpub
                 try
                 {
                     var result = Data.DataBlock.Run(Plain(node), data ?? (_ => null));
+                    if (result.ChartSvg() is { } chartSvg)
+                    {
+                        var chartPath = "assets/chart-" + files.Count + ".svg";
+                        files[chartPath] = ("image/svg+xml", Encoding.UTF8.GetBytes(chartSvg));
+                        return new XElement(Xhtml + "img", new XAttribute("src", chartPath), new XAttribute("alt", "Gráfico de " + string.Join(", ", result.Chart!.Values)));
+                    }
                     return new XElement(Xhtml + "table", new XAttribute("class", "urbe-data"),
                         new XElement(Xhtml + "tr", result.Table.Columns.Select(c => new XElement(Xhtml + "th", c))),
                         result.Table.Rows.Select(r => new XElement(Xhtml + "tr", r.Select(v => new XElement(Xhtml + "td", v.Text)))));

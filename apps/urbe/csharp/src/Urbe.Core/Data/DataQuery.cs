@@ -5,7 +5,14 @@ using Urbe.Core.Calculus;
 namespace Urbe.Core.Data;
 
 /// <summary>The result of a query: the table, the steps as understood, and notes the person should read.</summary>
-public sealed record DataResult(DataTable Table, IReadOnlyList<string> Steps, IReadOnlyList<string> Notes);
+public sealed record DataResult(DataTable Table, IReadOnlyList<string> Steps, IReadOnlyList<string> Notes)
+{
+    /// <summary>CST-208: the chart the last step asked for (<c>gráfico barras …</c>), drawn from <see cref="Table"/>.</summary>
+    public ChartSpec? Chart { get; init; }
+
+    /// <summary>The chart as SVG (the table must have the columns it names), or null when there is none.</summary>
+    public string? ChartSvg(int width = 640, int height = 400) => Chart is { } c ? DataChart.ToSvg(Table, c, width, height) : null;
+}
 
 /// <summary>
 /// CST-207: reproducible transformations of a table, written one step per line (in a <c>```dados</c> block or by the
@@ -26,14 +33,19 @@ public static partial class DataQuery
     {
         var done = new List<string>();
         var notes = new List<string>();
+        ChartSpec? chart = null;
         foreach (var raw in steps)
         {
             var step = raw.Trim();
             if (step.Length == 0 || step.StartsWith("//", StringComparison.Ordinal)) continue;
+            if (DataChart.IsChartStep(step)) { chart = DataChart.Parse(step); done.Add(step); continue; }
+            if (chart is not null) throw new InvalidDataException("O gráfico é o último passo: mova “" + step + "” para antes dele.");
             table = Step(table, step, notes);
             done.Add(step);
         }
-        return new DataResult(table, done, notes);
+        var result = new DataResult(table, done, notes) { Chart = chart };
+        if (chart is not null) result.ChartSvg(); // checks the columns now, so a wrong one is told with the other mistakes
+        return result;
     }
 
     private static DataTable Step(DataTable t, string step, List<string> notes)

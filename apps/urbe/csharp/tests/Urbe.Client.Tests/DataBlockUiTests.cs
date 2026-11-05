@@ -43,3 +43,37 @@ public sealed partial class HeadlessUiTests
         finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
     }, CancellationToken.None));
 }
+
+public sealed partial class HeadlessUiTests
+{
+    /// <summary>CST-208: a ```dados block ending with “gráfico …” shows the chart.</summary>
+    [Fact]
+    public async Task DataBlock_EndingWithAChart_ShowsTheChart() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "urbe-chart-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(vault);
+            File.WriteAllText(Path.Combine(vault, "Meses.md"), "# Meses\n\n| mês | receita |\n|---|---:|\n| Jan | 1200 |\n| Fev | 1500 |\n\n```dados\nfonte: Meses.md\ngráfico barras mês receita\n```\n");
+            var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "sel.json")));
+            var window = new Window { Width = 412, Height = 900, Content = view };
+            window.Show();
+            await view.OpenVaultAsync();
+            await Settle(window, view);
+            view.OpenNoteByPath("Meses.md");
+            view.Editor.SetMode(EditorMode.Visual);
+            await BenchPump(window);
+            var block = view.Editor.GetVisualDescendants().OfType<Urbe.Client.Ui.DataBlockView>().Single();
+            await block.Reading;
+            await BenchPump(window);
+            Assert.Null(block.Error);
+            Assert.NotNull(block.Chart);
+            Assert.True(block.Chart!.Bounds.Width > 100);
+            Snapshot(window, "data-chart.png");
+            window.Close();
+            return true;
+        }
+        finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+    }, CancellationToken.None));
+}

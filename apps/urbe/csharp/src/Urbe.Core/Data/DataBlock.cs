@@ -54,6 +54,8 @@ public static partial class DataBlock
         try
         {
             var result = Run(System.Net.WebUtility.HtmlDecode(m.Groups[1].Value), readText);
+            if (result.ChartSvg() is { } chart)
+                return "<figure class=\"urbe-plot urbe-chart\">" + chart + "<figcaption class=\"urbe-data-source\">Fonte: " + MarkdownEngine.EscapeHtml(result.Table.Source) + "</figcaption></figure>";
             var sb = new System.Text.StringBuilder("<table class=\"urbe-data\"><thead><tr>");
             foreach (var c in result.Table.Columns) sb.Append("<th>").Append(MarkdownEngine.EscapeHtml(c)).Append("</th>");
             sb.Append("</tr></thead><tbody>");
