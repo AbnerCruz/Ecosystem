@@ -36,9 +36,15 @@ public static class FormatSupportMatrix
         new("EPUB", [".epub"], SupportLevel.Complete, SupportLevel.Complete, SupportLevel.Complete, true, BothPlatforms, "EPUB sem DRM."),
         new("Documento Word/ODF", [".docx", ".odt"], SupportLevel.Partial, SupportLevel.Partial, SupportLevel.Partial, true, BothPlatforms,
             "Leitura semântica: paginação e objetos complexos podem diferir do aplicativo de origem."),
-        new("Apresentação", [".pptx", ".odp"], SupportLevel.Partial, SupportLevel.Partial, SupportLevel.Partial, true, BothPlatforms,
-            "Texto, formas e imagens comuns; animações e objetos complexos não."),
-        new("Documento legado do Office", [".doc", ".ppt", ".xls", ".xlsx", ".ods"], SupportLevel.External, SupportLevel.External, SupportLevel.External, true, BothPlatforms,
+        new("Apresentação PowerPoint", [".pptx"], SupportLevel.Partial, SupportLevel.Partial, SupportLevel.Partial, true, BothPlatforms,
+            "Leitura, não edição: slides desenhados no aparelho com texto, formas simples, imagens, tabelas e notas do apresentador, na proporção " +
+            "original. Animações, transições, gráficos, SmartArt, equações, vídeo, macros e fontes incorporadas não são reproduzidos; cada slide " +
+            "diz o que ficou de fora. A busca cobre o texto dos slides e das notas, não o de imagens; a seleção é nas notas."),
+        new("Apresentação ODF", [".odp"], SupportLevel.Partial, SupportLevel.Partial, SupportLevel.Partial, true, BothPlatforms,
+            "Leitura semântica: o texto dos slides; o layout e os objetos podem diferir do aplicativo de origem."),
+        new("PowerPoint 97–2003", [".ppt"], SupportLevel.External, SupportLevel.External, SupportLevel.External, true, BothPlatforms,
+            "Formato binário antigo: o Urbe não o lê. Abra em outro app, ou salve como .pptx para ler aqui; o original não é modificado."),
+        new("Documento legado do Office", [".doc", ".xls", ".xlsx", ".ods"], SupportLevel.External, SupportLevel.External, SupportLevel.External, true, BothPlatforms,
             "O Urbe não lê este formato; o original é aberto em outro app sem conversão."),
         new("Quadrinhos CBZ", [".cbz"], SupportLevel.Complete, SupportLevel.External, SupportLevel.External, true, BothPlatforms,
             "Páginas em ordem natural; o texto dos balões não é pesquisável."),

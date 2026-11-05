@@ -15,7 +15,8 @@ namespace Urbe.Client;
 /// pasta/arquivo.png", and the body by
 /// kind, always inside the Urbe (owner, ADD-0023): images drawn here, HTML as a page (or its source), PDF pages, audio
 /// and video in the platform's content viewers (<see cref="ContentViewers"/>); text and code as text, with search
-/// (<see cref="TextReaderView"/>), CSV as a table, CBZ comics page by page (<see cref="ComicReaderView"/>); a .zip lists
+/// (<see cref="TextReaderView"/>), CSV as a table, CBZ comics page by page (<see cref="ComicReaderView"/>), PowerPoint decks slide by slide
+/// (<see cref="PptxReaderView"/>); a .zip lists
 /// its entries; anything else gets its details and the support matrix's honest row (CST-238). "Abrir" in another app
 /// stays as an extra. Read only: nothing is written to the vault.
 /// </summary>
@@ -45,6 +46,7 @@ public sealed class FilePreviewPanel : Grid
     private EpubStudyView? _epubView;
     private MediaStudyView? _mediaView;
     private ComicReaderView? _comicView;
+    private PptxReaderView? _pptxView;
     private int? _requestedPart;
     private int? _requestedTextOffset, _requestedTextLength;
     private ReaderRegion? _requestedRegion;
@@ -276,6 +278,7 @@ public sealed class FilePreviewPanel : Grid
     public void HandleBack()
     {
         if (_body.Content is OcrStudyView ocr) { ocr.Back(); return; }
+        if (_pptxView is { IsPresenting: true } presenting) { presenting.SetPresenting(false); return; }
         if (ChromeHidden) { SetChromeHidden(false); return; }
         if (!ExitReaderMode()) Close();
     }
@@ -288,6 +291,7 @@ public sealed class FilePreviewPanel : Grid
         ChromeHidden = hidden;
         _top.IsVisible = !hidden;
         if (_comicView is { } comic) comic.Bar.IsVisible = !hidden;
+        if (_pptxView is { IsPresenting: false } slides) slides.Bar.IsVisible = !hidden;
         UpdateBar();
     }
 
@@ -392,7 +396,7 @@ public sealed class FilePreviewPanel : Grid
     }
 
     /// <summary>
-    /// What the body shows now: "image", "text", "table" (CSV), "comic", "zip", "viewer" (a content viewer), "info" (the
+    /// What the body shows now: "image", "text", "table" (CSV), "comic", "slides" (a PowerPoint deck), "zip", "viewer" (a content viewer), "info" (the
     /// file's details and "Abrir em outro app") or "none" (tests).
     /// </summary>
     public string Shown { get; private set; } = "none";
@@ -537,6 +541,7 @@ public sealed class FilePreviewPanel : Grid
         _pdfTextView?.Dispose();
         _epubView?.Dispose(); _epubView = null;
         _comicView?.Dispose(); _comicView = null;
+        _pptxView?.Dispose(); _pptxView = null;
         _pdfTextView = null;
         _requestedPage = null;
         _expectedHash = null;
@@ -591,7 +596,7 @@ public sealed class FilePreviewPanel : Grid
         _card.Background = UrbeTheme.Brush(wide ? UrbeTheme.Surface : UrbeTheme.Bg);
         _head.Margin = wide ? default : new Thickness(4, 0, 4, 0);
         foreach (var zoom in _zoomTools) zoom.IsVisible = wide;
-        if (Shown is "viewer" or "text" or "image" or "table" or "comic" && _body.Content is Control shown)
+        if (Shown is "viewer" or "text" or "image" or "table" or "comic" or "slides" && _body.Content is Control shown)
             shown.Height = ViewerHeight();
     }
 
@@ -609,6 +614,7 @@ public sealed class FilePreviewPanel : Grid
         _pdfTextView?.Dispose();
         _epubView?.Dispose(); _epubView = null;
         _comicView?.Dispose(); _comicView = null;
+        _pptxView?.Dispose(); _pptxView = null;
         _pdfTextView = null;
         Index = index;
         _choosing = true;
@@ -711,12 +717,17 @@ public sealed class FilePreviewPanel : Grid
             await ShowComicAsync(path ?? name, name, bytes, read.Size, version);
             return;
         }
+        if (extension == ".pptx" && bytes is not null && _generated is null)
+        {
+            await ShowPresentationAsync(path ?? name, name, bytes, read.Size, version);
+            return;
+        }
         if (TextFamily.Contains(extension) && bytes is not null && _generated is null)
         {
             await ShowTextFamilyAsync(name, extension, bytes, read.Size, version);
             return;
         }
-        if ((kind is VaultFileKinds.Epub || Path.GetExtension(name).ToLowerInvariant() is ".pptx" or ".odp" or ".docx" or ".odt") && bytes is not null)
+        if ((kind is VaultFileKinds.Epub || Path.GetExtension(name).ToLowerInvariant() is ".odp" or ".docx" or ".odt") && bytes is not null)
         {
             try
             {
@@ -916,6 +927,43 @@ public sealed class FilePreviewPanel : Grid
     }
 
     /// <summary>
+    /// A PowerPoint deck in the native slide reader (CST-237); a legacy .ppt inside, an encrypted or broken package say
+    /// why and offer another app. Presenting is the panel's full screen with no bars.
+    /// </summary>
+    private async Task ShowPresentationAsync(string path, string name, byte[] bytes, long size, int version)
+    {
+        PptxDeck deck;
+        try { deck = await Task.Run(() => PptxDeck.Open(bytes)); }
+        catch (Exception ex) when (ex is NotSupportedException or InvalidDataException or IOException or System.Xml.XmlException or OverflowException or ArgumentException)
+        {
+            if (version != _version) return;
+            var signature = FileSignatures.Detect(bytes.AsSpan(0, Math.Min(bytes.Length, 4096)));
+            ShowInfo(name, size, VaultFileKinds.Slides, signature, ex is NotSupportedException ? ex.Message : "Não foi possível abrir o arquivo de leitura: " + ex.Message);
+            return;
+        }
+        if (version != _version) { deck.Dispose(); return; }
+        var slides = new PptxReaderView(path, deck) { Height = ViewerHeight() };
+        _pptxView = slides;
+        bool wasReaderMode = false;
+        slides.CenterTapped += () => { if (!_embedded) SetChromeHidden(!ChromeHidden); };
+        slides.SlideChanged += slide => RememberReadingPosition(slide + 1);
+        slides.OpenExternallyRequested += () => _ = OpenExternallyAsync();
+        slides.PresentingChanged += presenting =>
+        {
+            if (_embedded) return;
+            if (presenting) { wasReaderMode = _readerMode; SetReaderMode(true); SetChromeHidden(true); }
+            else { SetChromeHidden(false); if (!wasReaderMode) SetReaderMode(false); }
+        };
+        _meta.Text += " · " + deck.SlideCount + (deck.SlideCount == 1 ? " slide" : " slides") + " · " + deck.AspectLabel;
+        _body.Content = slides;
+        Shown = "slides";
+        int start = (_requestedPart ?? 1) - 1;
+        _requestedPart = null; _requestedTextOffset = _requestedTextLength = null;
+        await slides.GoToSlideAsync(start);
+        if (version == _version) slides.Focus();
+    }
+
+    /// <summary>
     /// What the Urbe knows about a file it does not show (CST-238): name, size, type, what its bytes look like, and the
     /// support matrix's honest row, with "Abrir em outro app", never an empty screen.
     /// </summary>
@@ -1016,7 +1064,7 @@ public sealed class FilePreviewPanel : Grid
     {
         if (_readingSession is not { } session || ReadingState is null) return;
         // the total is what progress is counted in: PDF pages, spine items; media has none here
-        int? total = _epubView?.PartCount ?? (_pdfView is { PageCount: > 0 } pages ? pages.PageCount : _pdfTextView is { PageCount: > 0 } text ? text.PageCount : null);
+        int? total = _epubView?.PartCount ?? _pptxView?.SlideCount ?? (_pdfView is { PageCount: > 0 } pages ? pages.PageCount : _pdfTextView is { PageCount: > 0 } text ? text.PageCount : null);
         var location = new ReaderLocation(part, _epubView?.CurrentOffset ?? 0, _epubView?.CurrentScroll ?? 0, total is { } t && part <= t ? t : null);
         double zoom = _pdfView is { } pdf && _pdfZoomReady ? pdf.Zoom : session.Preferences.Zoom;
         var preferences = session.Preferences with { FontSize = fontSize ?? session.Preferences.FontSize, LineHeight = _epubView?.LineHeightPreference ?? session.Preferences.LineHeight, Zoom = zoom, Theme=_epubView?.ThemePreference??session.Preferences.Theme, Margin=_epubView?.MarginPreference??session.Preferences.Margin };
@@ -1064,6 +1112,7 @@ public sealed class FilePreviewPanel : Grid
         else if (_pdfTextView is { } text) RememberReadingPosition(text.CurrentPage);
         else if(_mediaView is { } media)RememberReadingPosition(media.CurrentSecond+1);
         else if (_comicView is { } comic) RememberReadingPosition(comic.CurrentPage + 1);
+        else if (_pptxView is { } slides) RememberReadingPosition(slides.CurrentSlide + 1);
     }
 
     /// <summary>The height of a content viewer: a native view needs one, and it fills what the card leaves.</summary>
