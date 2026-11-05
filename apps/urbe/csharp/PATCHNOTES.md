@@ -54,6 +54,13 @@ No menu ⋯ da nota, **Onde esta nota é usada** lista o que depende dela: publi
 
 O Assistente ganhou a ferramenta **editar estrutura**: ele troca, acrescenta, apaga ou insere seções pelo título; muda propriedades; marca e acrescenta tarefas; altera células e acrescenta linhas em tabelas. Não precisa mais copiar o texto exato nem reescrever a nota inteira. Tudo passa pela mesma aprovação, pelo selo de autoria e pelo **Desfazer**. Se algo não existir ou for ambíguo, nada é alterado e ele recebe o motivo.
 
+## O Assistente cita as suas notas
+
+- O Assistente encontra nas suas notas os trechos que sustentam uma pergunta ou afirmação e responde citando a nota, a seção, as linhas e o texto exato. Se as notas não tratam do assunto, ele diz isso em vez de supor.
+- A busca ignora acentos e maiúsculas e entende plurais e variações comuns do português. Ela mostra também as notas ligadas que tratam do mesmo assunto.
+- Antes de reutilizar uma citação, o Assistente confere se o trecho continua igual, foi movido, foi alterado ou sumiu.
+- Comentários %%…%% e a pasta Personalização nunca entram como evidência.
+
 ## Skills do Assistente
 
 Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descrição e instruções, no formato aberto Agent Skills) para ensinar o Assistente a fazer um trabalho do seu jeito. Ele vê só o nome e a descrição e carrega o resto quando o pedido combina. Uma skill não dá permissões e nada nela é executado. O Urbe já vem com skills de apresentação, livro e cálculo.
