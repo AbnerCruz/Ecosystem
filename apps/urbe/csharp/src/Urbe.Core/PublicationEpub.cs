@@ -27,7 +27,7 @@ public static class PublicationEpub
             sources.Add(source);
             var content = NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body);
             var body = new XElement(Xhtml + "body");
-            var roots = NoteMarks.Parse(content);
+            var roots = NoteContainers.ParseRich(content);
             foreach (var node in roots) body.Add(await ConvertNode(node, source));
             var title = Path.GetFileNameWithoutExtension(source.Path);
             chapters.Add(($"chapter-{chapters.Count + 1}.xhtml", title, Document(title, body)));
@@ -69,7 +69,7 @@ public static class PublicationEpub
                 new XElement(container + "rootfiles", new XElement(container + "rootfile", new XAttribute("full-path", "EPUB/package.opf"), new XAttribute("media-type", "application/oebps-package+xml"))))));
             WriteXml(zip, "EPUB/package.opf", package);
             WriteXml(zip, "EPUB/nav.xhtml", Document(project.Title, new XElement(Xhtml + "body", nav)));
-            Write(zip, "EPUB/style.css", Encoding.UTF8.GetBytes("body{font-family:serif;line-height:1.5;margin:5%}img{max-width:100%;height:auto}pre{white-space:pre-wrap;overflow-wrap:anywhere}table{border-collapse:collapse}td,th{border:1px solid;padding:.4em}h1,h2,h3{break-after:avoid}p{orphans:3;widows:3}"));
+            Write(zip, "EPUB/style.css", Encoding.UTF8.GetBytes("body{font-family:serif;line-height:1.5;margin:5%}img{max-width:100%;height:auto}pre{white-space:pre-wrap;overflow-wrap:anywhere}table{border-collapse:collapse}td,th{border:1px solid;padding:.4em}h1,h2,h3{break-after:avoid}p{orphans:3;widows:3}.ubox{border-left:4px solid #9c7b45;background:#f6f3ee;padding:.4em 1em;margin:1em 0}.ubox-title{margin:0 0 .3em}"));
             foreach (var chapter in chapters) WriteXml(zip, "EPUB/" + chapter.File, chapter.Document);
             foreach (var (path, asset) in files) Write(zip, "EPUB/" + path, asset.Bytes);
         }
@@ -105,11 +105,13 @@ public static class PublicationEpub
                 files[packaged] = (mime, bytes);
                 return new XElement(Xhtml + "img", new XAttribute("src", packaged), new XAttribute("alt", node.Attr("alt")));
             }
-            var tag = node.Tag is "p" or "div" or "section" or "h1" or "h2" or "h3" or "h4" or "h5" or "h6" or "strong" or "em" or "s" or "code" or "pre" or "ul" or "ol" or "li" or "table" or "thead" or "tbody" or "tr" or "th" or "td" or "blockquote" or "br" or "hr" or "a" ? node.Tag : "span";
+            var tag = node.Tag is "aside" or "p" or "div" or "section" or "h1" or "h2" or "h3" or "h4" or "h5" or "h6" or "strong" or "em" or "s" or "code" or "pre" or "ul" or "ol" or "li" or "table" or "thead" or "tbody" or "tr" or "th" or "td" or "blockquote" or "br" or "hr" or "a" ? node.Tag : "span";
             var element = new XElement(Xhtml + tag);
             if (tag == "a" && Uri.TryCreate(node.Attr("href"), UriKind.Absolute, out var uri) && uri.Scheme is "https" or "http" or "mailto")
                 element.SetAttributeValue("href", uri.AbsoluteUri);
             if (node.Attr("id") is { Length: > 0 } id) element.SetAttributeValue("id", id);
+            if (tag == "aside" && node.HasClass("ubox")) { element.SetAttributeValue("class", "ubox"); element.SetAttributeValue("data-type", node.Attr("data-type")); }
+            if (tag == "p" && node.HasClass("ubox-title")) element.SetAttributeValue("class", "ubox-title");
             foreach (var child in node.Children) element.Add(await ConvertNode(child, source));
             return element;
         }

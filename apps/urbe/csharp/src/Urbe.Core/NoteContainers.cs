@@ -60,6 +60,36 @@ public static partial class NoteContainers
         return top.AsReadOnly();
     }
 
+    /// <summary>
+    /// The note rendered for an output (publications, EPUB, office files; CST-026): each container becomes
+    /// <c>&lt;aside class="ubox" data-type="tipo"&gt;</c> with its title and its body rendered by
+    /// <paramref name="render"/>, nested ones inside. The editor keeps its own reading of containers.
+    /// </summary>
+    public static string RenderHtml(string markdown, Func<string, string> render)
+    {
+        var boxes = Parse(markdown);
+        if (boxes.Count == 0) return render(markdown);
+        var sb = new System.Text.StringBuilder();
+        int pos = 0;
+        foreach (var box in boxes)
+        {
+            if (box.Start > pos) sb.Append(render(markdown[pos..box.Start]));
+            sb.Append("<aside class=\"ubox\" data-type=\"").Append(MarkdownEngine.EscapeHtml(box.Type)).Append("\">");
+            if (box.Title.Length > 0) sb.Append("<p class=\"ubox-title\"><strong>").Append(MarkdownEngine.EscapeHtml(box.Title)).Append("</strong></p>");
+            sb.Append(RenderHtml(markdown[box.BodyStart..box.BodyEnd], render)).Append("</aside>");
+            pos = Math.Min(markdown.Length, box.End + 1);
+        }
+        if (pos < markdown.Length) sb.Append(render(markdown[pos..]));
+        return sb.ToString();
+    }
+
+    /// <summary>The note's element tree with its containers (see <see cref="RenderHtml"/>) and its marks applied.</summary>
+    public static IReadOnlyList<RichNode> ParseRich(string markdown) =>
+        NoteMarks.Apply(MarkdownTree.FromHtml(RenderHtml(markdown, MarkdownEngine.Render)));
+
+    /// <summary>Speaker notes of a slide are written in a <c>:::notas</c> container (also <c>:::notes</c>).</summary>
+    public static bool IsSpeakerNotes(string type) => type is "notas" or "notes" or "nota-do-apresentador";
+
     /// <summary>Whether <paramref name="type"/> can open a container (letters, digits, _ and -).</summary>
     public static bool IsType(string? type) => type is { Length: > 0 and <= 64 } && TypeRegex().IsMatch(type);
 

@@ -15,6 +15,8 @@ public sealed record OfficeCode(string Text, string? Language) : OfficeBlock;
 public sealed record OfficeTable(IReadOnlyList<IReadOnlyList<IReadOnlyList<OfficeRun>>> Rows, bool HeaderRow) : OfficeBlock;
 public sealed record OfficeImage(byte[] Bytes, string Mime, string Extension, int Width, int Height, string Alt) : OfficeBlock;
 public sealed record OfficeRule : OfficeBlock;
+/// <summary>A <c>:::tipo título</c> container of the note (CST-026), with the blocks inside it.</summary>
+public sealed record OfficeBox(string Type, string Title, IReadOnlyList<OfficeBlock> Blocks) : OfficeBlock;
 /// <summary>One placement of the publication: a live note at one revision.</summary>
 public sealed record OfficeChapter(string Title, string DocumentId, IReadOnlyList<OfficeBlock> Blocks);
 
@@ -51,7 +53,7 @@ public static class PublicationOffice
             sources.Add(source);
             var content = NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body);
             var blocks = new List<OfficeBlock>();
-            foreach (var node in NoteMarks.Parse(content)) await Block(node, blocks, source);
+            foreach (var node in NoteContainers.ParseRich(content)) await Block(node, blocks, source);
             chapters.Add(new OfficeChapter(Path.GetFileNameWithoutExtension(source.Path), source.DocumentId, blocks));
         }
         foreach (var source in sources)
@@ -96,6 +98,16 @@ public static class PublicationOffice
                     return;
                 case "hr":
                     into.Add(new OfficeRule());
+                    return;
+                case "aside" when node.HasClass("ubox"):
+                    var inner = new List<OfficeBlock>();
+                    var boxTitle = "";
+                    foreach (var child in node.Children)
+                    {
+                        if (child.Tag == "p" && child.HasClass("ubox-title")) { boxTitle = Plain(child).Trim(); continue; }
+                        await Block(child, inner, source);
+                    }
+                    into.Add(new OfficeBox(node.Attr("data-type"), boxTitle, inner));
                     return;
                 case "p" or "div" or "section" or "figure":
                     await Paragraph(node, into, source);
@@ -242,9 +254,26 @@ public static class PublicationOffice
         }
     }
 
+    /// <summary>
+    /// Containers as plain blocks for formats without boxes of their own: a title line (the title, else the type) and
+    /// the body's paragraphs in the box style. Speaker notes are left out when <paramref name="dropSpeakerNotes"/>.
+    /// </summary>
+    public static IEnumerable<OfficeBlock> Flatten(IEnumerable<OfficeBlock> blocks, bool dropSpeakerNotes = false)
+    {
+        foreach (var block in blocks)
+        {
+            if (block is not OfficeBox box) { yield return block; continue; }
+            if (dropSpeakerNotes && NoteContainers.IsSpeakerNotes(box.Type)) continue;
+            var label = box.Title.Length > 0 ? box.Title : box.Type.Length > 0 ? char.ToUpperInvariant(box.Type[0]) + box.Type[1..] : "";
+            if (label.Length > 0) yield return new OfficeParagraph([new OfficeRun(label, Bold: true)], "boxtitle");
+            foreach (var inner in Flatten(box.Blocks, dropSpeakerNotes))
+                yield return inner is OfficeParagraph { Style: "body" } p ? p with { Style = "box" } : inner;
+        }
+    }
+
     private readonly record struct Format(bool Bold, bool Italic, bool Strike, bool Code, string? Href);
 
-    private static bool IsBlock(RichNode n) => n.Tag is "p" or "div" or "ul" or "ol" or "pre" or "table" or "blockquote" or "h1" or "h2" or "h3" or "h4" or "h5" or "h6" or "hr" or "section" or "figure";
+    private static bool IsBlock(RichNode n) => n.Tag is "aside" or "p" or "div" or "ul" or "ol" or "pre" or "table" or "blockquote" or "h1" or "h2" or "h3" or "h4" or "h5" or "h6" or "hr" or "section" or "figure";
 
     private static IEnumerable<RichNode> Descendants(RichNode n) => n.Children.SelectMany(c => new[] { c }.Concat(Descendants(c)));
 

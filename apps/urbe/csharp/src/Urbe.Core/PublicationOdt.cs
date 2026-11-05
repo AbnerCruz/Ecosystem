@@ -44,7 +44,7 @@ public static class PublicationOdt
                 new XElement(Text + "index-body", new XElement(Text + "p", "Atualize o sumário: Ferramentas → Atualizar → Tudo."))));
         for (int c = 0; c < doc.Chapters.Count; c++)
         {
-            var blocks = doc.Chapters[c].Blocks;
+            var blocks = PublicationOffice.Flatten(doc.Chapters[c].Blocks).ToList();
             var first = true;
             for (int i = 0; i < blocks.Count; i++)
             {
@@ -95,7 +95,7 @@ public static class PublicationOdt
         {
             OfficeHeading h => new XElement(Text + "h", new XAttribute(Text + "style-name", "Heading_20_" + Math.Clamp(h.Level, 1, 6)),
                 new XAttribute(Text + "outline-level", Math.Clamp(h.Level, 1, 6)), Runs(h.Runs)),
-            OfficeParagraph p => new XElement(Text + "p", new XAttribute(Text + "style-name", p.Style switch { "quote" => "Quotations", "math" => "Formula", _ => "Text_20_body" }), Runs(p.Runs)),
+            OfficeParagraph p => new XElement(Text + "p", new XAttribute(Text + "style-name", p.Style switch { "quote" => "Quotations", "math" => "Formula", "box" => "Box", "boxtitle" => "Box_20_Title", _ => "Text_20_body" }), Runs(p.Runs)),
             OfficeCode code => new XElement(Text + "p", new XAttribute(Text + "style-name", "Preformatted_20_Text"), CodeLines(code.Text)),
             OfficeTable table => TableElement(table),
             OfficeImage image => ImageElement(image),
@@ -277,6 +277,8 @@ public static class PublicationOdt
                 new XElement(Style + "text-properties", new XAttribute(Fo + "font-style", "italic"), new XAttribute(Fo + "color", "#555555"))),
             Para("Preformatted_20_Text", "Preformatted Text", "Standard", new XElement(Style + "paragraph-properties", new XAttribute(Fo + "background-color", "#f3f1ec"), new XAttribute(Fo + "margin-bottom", "0.25cm"), new XAttribute(Fo + "padding", "0.15cm")),
                 new XElement(Style + "text-properties", new XAttribute(Style + "font-name", "Liberation Mono"), new XAttribute(Fo + "font-family", "'Liberation Mono'"), new XAttribute(Fo + "font-size", "9.5pt"))),
+            Para("Box", "Box", "Text_20_body", new XElement(Style + "paragraph-properties", new XAttribute(Fo + "background-color", "#f6f3ee"), new XAttribute(Fo + "border-left", "3pt solid #9c7b45"), new XAttribute(Fo + "padding-left", "0.3cm"), new XAttribute(Fo + "margin-left", "0.3cm"), new XAttribute(Fo + "margin-bottom", "0.1cm"))),
+            Para("Box_20_Title", "Box Title", "Box", textProps: new XElement(Style + "text-properties", new XAttribute(Fo + "font-weight", "bold"), new XAttribute(Fo + "color", "#6b4f2a"))),
             Para("Formula", "Formula", "Text_20_body", new XElement(Style + "paragraph-properties", new XAttribute(Fo + "text-align", "center"))),
             Para("Figure", "Figure", "Text_20_body", new XElement(Style + "paragraph-properties", new XAttribute(Fo + "text-align", "center"))),
             Para("List_20_Contents", "List Contents", "Text_20_body", new XElement(Style + "paragraph-properties", new XAttribute(Fo + "margin-bottom", "0.1cm"))),

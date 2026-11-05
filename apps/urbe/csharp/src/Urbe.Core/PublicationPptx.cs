@@ -5,7 +5,11 @@ using System.Xml.Linq;
 namespace Urbe.Core;
 
 /// <summary>A slide as the deck is split: a title and what goes under it.</summary>
-public sealed record PptxSlide(string Title, IReadOnlyList<OfficeBlock> Text, OfficeImage? Image, OfficeTable? Table, bool Continued);
+public sealed record PptxSlide(string Title, IReadOnlyList<OfficeBlock> Text, OfficeImage? Image, OfficeTable? Table, bool Continued)
+{
+    /// <summary>The speaker notes (a <c>:::notas</c> container of the note, under this slide).</summary>
+    public IReadOnlyList<OfficeBlock> Notes { get; init; } = [];
+}
 
 /// <summary>
 /// CST-168: an editable PowerPoint deck (.pptx) from the publication's live notes. Editability first: titles, text,
@@ -47,16 +51,18 @@ public static class PublicationPptx
             var text = new List<OfficeBlock>();
             OfficeImage? image = null;
             OfficeTable? table = null;
+            var notes = new List<OfficeBlock>();
             int lines = 0;
             void Push(bool keepTitle)
             {
                 if (text.Count > 0 || image is not null || table is not null || titled)
-                    slides.Add(new PptxSlide(title, text.ToArray(), image, table, continued));
-                text.Clear(); image = null; table = null; lines = 0;
+                    slides.Add(new PptxSlide(title, text.ToArray(), image, table, continued) { Notes = notes.ToArray() });
+                else if (notes.Count > 0 && slides.Count > 0) slides[^1] = slides[^1] with { Notes = [.. slides[^1].Notes, .. notes] };
+                text.Clear(); image = null; table = null; lines = 0; notes.Clear();
                 continued = keepTitle;
                 if (!keepTitle) { title = ""; titled = false; }
             }
-            foreach (var block in chapter.Blocks)
+            foreach (var block in chapter.Blocks.SelectMany(b => b is OfficeBox box && !NoteContainers.IsSpeakerNotes(box.Type) ? PublicationOffice.Flatten([b]) : [b]))
             {
                 switch (block)
                 {
@@ -66,6 +72,9 @@ public static class PublicationPptx
                         break;
                     case OfficeRule:
                         Push(false);
+                        break;
+                    case OfficeBox speaker:
+                        notes.AddRange(PublicationOffice.Flatten(speaker.Blocks));
                         break;
                     case OfficeImage img:
                         if (image is not null || table is not null || lines > Capacity / 2) Push(true);
@@ -107,9 +116,15 @@ public static class PublicationPptx
                 Override("/ppt/slideMasters/slideMaster1.xml", "application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"),
                 Override("/ppt/slideLayouts/slideLayout1.xml", "application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"),
                 Override("/ppt/theme/theme1.xml", "application/vnd.openxmlformats-officedocument.theme+xml"),
+                Override("/ppt/theme/theme2.xml", "application/vnd.openxmlformats-officedocument.theme+xml"),
+                Override("/ppt/notesMasters/notesMaster1.xml", "application/vnd.openxmlformats-officedocument.presentationml.notesMaster+xml"),
                 Override("/docProps/core.xml", "application/vnd.openxmlformats-package.core-properties+xml"));
             for (int i = 1; i <= slides.Count; i++)
+            {
                 types.Add(Override($"/ppt/slides/slide{i}.xml", "application/vnd.openxmlformats-officedocument.presentationml.slide+xml"));
+                if (slides[i - 1].Notes.Count > 0)
+                    types.Add(Override($"/ppt/notesSlides/notesSlide{i}.xml", "application/vnd.openxmlformats-officedocument.presentationml.notesSlide+xml"));
+            }
             Xml(zip, "[Content_Types].xml", types);
             Xml(zip, "_rels/.rels", Rels(
                 ("rId1", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument", "ppt/presentation.xml", false),
@@ -121,6 +136,7 @@ public static class PublicationPptx
             {
                 ("rIdMaster", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster", "slideMasters/slideMaster1.xml", false),
                 ("rIdTheme", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme", "theme/theme1.xml", false),
+                ("rIdNotesMaster", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster", "notesMasters/notesMaster1.xml", false),
             };
             var slideIds = new XElement(P + "sldIdLst");
             for (int i = 1; i <= slides.Count; i++)
@@ -130,11 +146,20 @@ public static class PublicationPptx
             }
             Xml(zip, "ppt/presentation.xml", new XElement(P + "presentation", Ns(),
                 new XElement(P + "sldMasterIdLst", new XElement(P + "sldMasterId", new XAttribute("id", 2147483648L), new XAttribute(R + "id", "rIdMaster"))),
+                new XElement(P + "notesMasterIdLst", new XElement(P + "notesMasterId", new XAttribute(R + "id", "rIdNotesMaster"))),
                 slideIds,
                 new XElement(P + "sldSz", new XAttribute("cx", SlideW), new XAttribute("cy", SlideH)),
                 new XElement(P + "notesSz", new XAttribute("cx", 6858000), new XAttribute("cy", 9144000))));
             Xml(zip, "ppt/_rels/presentation.xml.rels", Rels(presentationRels.ToArray()));
             Xml(zip, "ppt/theme/theme1.xml", Theme());
+            Xml(zip, "ppt/theme/theme2.xml", Theme());
+            Xml(zip, "ppt/notesMasters/notesMaster1.xml", new XElement(P + "notesMaster", Ns(),
+                new XElement(P + "cSld", EmptyTree(NotesPlaceholder(2, "sldImg", null, null), NotesPlaceholder(3, "body", 1, null))),
+                new XElement(P + "clrMap", new XAttribute("bg1", "lt1"), new XAttribute("tx1", "dk1"), new XAttribute("bg2", "lt2"), new XAttribute("tx2", "dk2"),
+                    new XAttribute("accent1", "accent1"), new XAttribute("accent2", "accent2"), new XAttribute("accent3", "accent3"), new XAttribute("accent4", "accent4"),
+                    new XAttribute("accent5", "accent5"), new XAttribute("accent6", "accent6"), new XAttribute("hlink", "hlink"), new XAttribute("folHlink", "folHlink"))));
+            Xml(zip, "ppt/notesMasters/_rels/notesMaster1.xml.rels", Rels(
+                ("rId1", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme", "../theme/theme2.xml", false)));
             Xml(zip, "ppt/slideMasters/slideMaster1.xml", Master());
             Xml(zip, "ppt/slideMasters/_rels/slideMaster1.xml.rels", Rels(
                 ("rId1", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout", "../slideLayouts/slideLayout1.xml", false),
@@ -151,6 +176,21 @@ public static class PublicationPptx
                 var rels = new List<(string, string, string, bool)>
                 { ("rId1", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout", "../slideLayouts/slideLayout1.xml", false) };
                 var (xml, pictures) = SlideXml(slides[i], rels, ref media);
+                if (slides[i].Notes.Count > 0)
+                {
+                    rels.Add(("rIdNotes", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide", $"../notesSlides/notesSlide{i + 1}.xml", false));
+                    var notesRels = new List<(string, string, string, bool)>
+                    {
+                        ("rId1", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster", "../notesMasters/notesMaster1.xml", false),
+                        ("rId2", "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide", $"../slides/slide{i + 1}.xml", false),
+                    };
+                    var body = new XElement(P + "txBody", new XElement(A + "bodyPr"), new XElement(A + "lstStyle"));
+                    foreach (var block in slides[i].Notes) foreach (var p in Paragraphs(block, notesRels, 12)) body.Add(p);
+                    Xml(zip, $"ppt/notesSlides/notesSlide{i + 1}.xml", new XElement(P + "notes", Ns(),
+                        new XElement(P + "cSld", EmptyTree(NotesPlaceholder(2, "sldImg", null, null), NotesPlaceholder(3, "body", 1, body))),
+                        new XElement(P + "clrMapOvr", new XElement(A + "masterClrMapping"))));
+                    Xml(zip, $"ppt/notesSlides/_rels/notesSlide{i + 1}.xml.rels", Rels(notesRels.ToArray()));
+                }
                 Xml(zip, $"ppt/slides/slide{i + 1}.xml", xml);
                 Xml(zip, $"ppt/slides/_rels/slide{i + 1}.xml.rels", Rels(rels.ToArray()));
                 foreach (var (path, bytes) in pictures) Bytes(zip, "ppt/" + path, bytes);
@@ -227,28 +267,28 @@ public static class PublicationPptx
         return (xml, pictures);
     }
 
-    private static IEnumerable<XElement> Paragraphs(OfficeBlock block, List<(string, string, string, bool)> rels)
+    private static IEnumerable<XElement> Paragraphs(OfficeBlock block, List<(string, string, string, bool)> rels, int size = BodyPt)
     {
         switch (block)
         {
             case OfficeHeading h:
-                yield return new XElement(A + "p", new XElement(A + "pPr", new XElement(A + "buNone")), Runs(h.Runs.Select(r => r with { Bold = true }).ToList(), BodyPt + 2, rels), EndRun(BodyPt + 2));
+                yield return new XElement(A + "p", new XElement(A + "pPr", new XElement(A + "buNone")), Runs(h.Runs.Select(r => r with { Bold = true }).ToList(), size + 2, rels), EndRun(size + 2));
                 break;
             case OfficeParagraph p:
-                var props = new XElement(A + "pPr", p.Style == "math" ? new XAttribute("algn", "ctr") : null, p.Style == "quote" ? new XAttribute("marL", 457200) : null, new XElement(A + "buNone"));
+                var props = new XElement(A + "pPr", p.Style == "math" ? new XAttribute("algn", "ctr") : null, p.Style is "quote" or "box" or "boxtitle" ? new XAttribute("marL", 457200) : null, new XElement(A + "buNone"));
                 var runs = p.Style == "quote" ? p.Runs.Select(r => r with { Italic = true }).ToList() : p.Runs;
-                yield return new XElement(A + "p", props, Runs(runs, BodyPt, rels, p.Style == "quote" ? "666666" : null), EndRun(BodyPt));
+                yield return new XElement(A + "p", props, Runs(runs, size, rels, p.Style == "quote" ? "666666" : null), EndRun(size));
                 break;
             case OfficeListItem li:
                 var bullet = li.Ordered ? new XElement(A + "buAutoNum", new XAttribute("type", "arabicPeriod")) : new XElement(A + "buChar", new XAttribute("char", li.Level % 2 == 0 ? "•" : "◦"));
                 var items = li.Checked is { } done ? new[] { new OfficeRun(done ? "☑ " : "☐ ") }.Concat(li.Runs).ToList() : li.Runs;
                 yield return new XElement(A + "p", new XElement(A + "pPr", new XAttribute("marL", 342900 * (li.Level + 1)), new XAttribute("lvl", Math.Min(li.Level, 8)), new XAttribute("indent", -342900),
-                    li.Checked is null ? bullet : new XElement(A + "buNone")), Runs(items, BodyPt, rels), EndRun(BodyPt));
+                    li.Checked is null ? bullet : new XElement(A + "buNone")), Runs(items, size, rels), EndRun(size));
                 break;
             case OfficeCode code:
                 foreach (var line in code.Text.Replace("\r", "").Split('\n'))
                     yield return new XElement(A + "p", new XElement(A + "pPr", new XElement(A + "buNone")),
-                        new XElement(A + "r", RunProps(new OfficeRun(line, Code: true), CodePt, null), new XElement(A + "t", PublicationOffice.XmlSafe(line))), EndRun(CodePt));
+                        new XElement(A + "r", RunProps(new OfficeRun(line, Code: true), Math.Min(CodePt, size), null), new XElement(A + "t", PublicationOffice.XmlSafe(line))), EndRun(Math.Min(CodePt, size)));
                 break;
         }
     }
@@ -312,6 +352,16 @@ public static class PublicationPptx
                     new XElement(A + "rPr", new XAttribute("lang", "pt-BR"), new XAttribute("sz", TitlePt * 100), new XAttribute("b", 1), new XAttribute("dirty", 0),
                         new XElement(A + "solidFill", new XElement(A + "srgbClr", new XAttribute("val", "6B4F2A")))),
                     new XElement(A + "t", PublicationOffice.XmlSafe(text))), EndRun(TitlePt))));
+
+    private static XElement NotesPlaceholder(int id, string type, int? idx, XElement? body) =>
+        new(P + "sp",
+            new XElement(P + "nvSpPr", new XElement(P + "cNvPr", new XAttribute("id", id), new XAttribute("name", type + " " + id)),
+                new XElement(P + "cNvSpPr", new XElement(A + "spLocks", new XAttribute("noGrp", 1))),
+                new XElement(P + "nvPr", new XElement(P + "ph", new XAttribute("type", type), idx is { } i ? new XAttribute("idx", i) : null))),
+            type == "sldImg"
+                ? new XElement(P + "spPr", Xfrm(381000, 685800, 6096000, 3429000), Geometry())
+                : new XElement(P + "spPr", Xfrm(685800, 4343400, 5486400, 4114800), Geometry()),
+            type == "body" ? body ?? new XElement(P + "txBody", new XElement(A + "bodyPr"), new XElement(A + "lstStyle"), new XElement(A + "p")) : null);
 
     private static XElement EmptyTree(params XElement[] shapes) => new(P + "spTree",
         new XElement(P + "nvGrpSpPr", new XElement(P + "cNvPr", new XAttribute("id", 1), new XAttribute("name", "")), new XElement(P + "cNvGrpSpPr"), new XElement(P + "nvPr")),

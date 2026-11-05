@@ -64,3 +64,51 @@ public sealed class PublicationPptxTests
         Assert.Contains(limits, l => l.Contains("(cont.)"));
     }
 }
+
+/// <summary>CST-026/167/168: containers kept in every output; :::notas becomes speaker notes in slides.</summary>
+public sealed class PublicationContainersTests
+{
+    private const string Note = "# Tema\n\nTexto\n\n:::aviso Cuidado\nNão **esqueça**\n:::\n\n:::notas\nFalar do exemplo.\n:::\n";
+
+    private static (PublicationSourceCatalog Catalog, PublicationProject Project) One(string layout)
+    {
+        var store = new DocumentStore();
+        var note = store.Upsert(new DocumentInput { Path = "Aula.md", Content = Note });
+        return (new PublicationSourceCatalog(store), PublicationProject.Create("Aula", note.Id) with { Design = new PublicationDesign { Layout = layout } });
+    }
+
+    private static string Entry(ZipArchive zip, string path)
+    { using var r = new StreamReader(zip.GetEntry(path)!.Open(), Encoding.UTF8); return r.ReadToEnd(); }
+
+    [Fact]
+    public async Task Containers_AreBoxesInHtmlEpubAndOffice_NeverRawColons()
+    {
+        var (catalog, project) = One("article");
+        using var _c = catalog;
+        var html = PublicationHtml.Export(project, catalog).Html;
+        Assert.Contains("<aside class=\"ubox\" data-type=\"aviso\">", html);
+        Assert.DoesNotContain(":::", html);
+        var epub = await PublicationEpub.ExportAsync(project, catalog, cancellationToken: TestContext.Current.CancellationToken);
+        using (var zip = new ZipArchive(new MemoryStream(epub))) { var c = Entry(zip, "EPUB/chapter-1.xhtml"); Assert.Contains("class=\"ubox\"", c); Assert.DoesNotContain(":::", c); }
+        var docx = await PublicationDocx.ExportAsync(project, catalog, cancellationToken: TestContext.Current.CancellationToken);
+        using (var zip = new ZipArchive(new MemoryStream(docx.Bytes))) { var d = Entry(zip, "word/document.xml"); Assert.Contains("w:val=\"BoxTitle\"", d); Assert.Contains("Cuidado", d); Assert.DoesNotContain(":::", d); }
+        var odt = await PublicationOdt.ExportAsync(project, catalog, cancellationToken: TestContext.Current.CancellationToken);
+        using (var zip = new ZipArchive(new MemoryStream(odt.Bytes))) Assert.Contains("text:style-name=\"Box\"", Entry(zip, "content.xml"));
+    }
+
+    [Fact]
+    public async Task Pptx_SpeakerNotesGoToTheNotesPane_NotTheSlide()
+    {
+        var (catalog, project) = One("slides");
+        using var _c = catalog;
+        var deck = await PublicationPptx.ExportAsync(project, catalog, cancellationToken: TestContext.Current.CancellationToken);
+        using var zip = new ZipArchive(new MemoryStream(deck.Bytes));
+        foreach (var e in zip.Entries.Where(e => e.FullName.EndsWith(".xml") || e.FullName.EndsWith(".rels"))) System.Xml.Linq.XDocument.Parse(Entry(zip, e.FullName));
+        var slide = Entry(zip, "ppt/slides/slide1.xml");
+        Assert.Contains("Cuidado", slide);
+        Assert.DoesNotContain("Falar do exemplo", slide);
+        Assert.Contains("Falar do exemplo", Entry(zip, "ppt/notesSlides/notesSlide1.xml"));
+        Assert.Contains("notesSlide1.xml", Entry(zip, "ppt/slides/_rels/slide1.xml.rels"));
+        Assert.Contains("notesMasterIdLst", Entry(zip, "ppt/presentation.xml"));
+    }
+}

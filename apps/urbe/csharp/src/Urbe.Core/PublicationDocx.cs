@@ -59,7 +59,7 @@ public static class PublicationDocx
         {
             var chapter = doc.Chapters[c];
             if (c > 0 && book) body.Add(new XElement(W + "p", new XElement(W + "r", new XElement(W + "br", new XAttribute(W + "type", "page")))));
-            foreach (var block in chapter.Blocks) body.Add(Block(block));
+            foreach (var block in PublicationOffice.Flatten(chapter.Blocks)) body.Add(Block(block));
         }
         body.Add(new XElement(W + "sectPr",
             new XElement(W + "pgSz", new XAttribute(W + "w", 11906), new XAttribute(W + "h", 16838)),
@@ -108,7 +108,7 @@ public static class PublicationDocx
             {
                 case OfficeHeading h: yield return Para("Heading" + Math.Clamp(h.Level, 1, 6), Runs(h.Runs)); break;
                 case OfficeParagraph p:
-                    yield return Para(p.Style switch { "quote" => "Quote", "math" => "Formula", _ => null }, Runs(p.Runs));
+                    yield return Para(p.Style switch { "quote" => "Quote", "math" => "Formula", "box" => "Box", "boxtitle" => "BoxTitle", _ => null }, Runs(p.Runs));
                     break;
                 case OfficeListItem li:
                     if (!lists.TryGetValue(li.ListId, out var list)) lists[li.ListId] = list = (lists.Count + 1, li.Ordered);
@@ -243,6 +243,10 @@ public static class PublicationDocx
         styles.Add(Style("Code", "Code", ppr: new XElement(W + "pPr", new XElement(W + "shd", new XAttribute(W + "val", "clear"), new XAttribute(W + "color", "auto"), new XAttribute(W + "fill", "F3F1EC")),
             new XElement(W + "spacing", new XAttribute(W + "after", 160), new XAttribute(W + "line", 240), new XAttribute(W + "lineRule", "auto"))),
             rpr: new XElement(W + "rPr", new XElement(W + "rFonts", new XAttribute(W + "ascii", "Consolas"), new XAttribute(W + "hAnsi", "Consolas"), new XAttribute(W + "cs", "Consolas")), new XElement(W + "sz", new XAttribute(W + "val", 19)))));
+        XElement BoxProps() => new(W + "pPr", new XElement(W + "pBdr", new XElement(W + "left", new XAttribute(W + "val", "single"), new XAttribute(W + "sz", 24), new XAttribute(W + "space", 8), new XAttribute(W + "color", "9C7B45"))),
+            new XElement(W + "shd", new XAttribute(W + "val", "clear"), new XAttribute(W + "color", "auto"), new XAttribute(W + "fill", "F6F3EE")), new XElement(W + "spacing", new XAttribute(W + "after", 60)), new XElement(W + "ind", new XAttribute(W + "left", 284)));
+        styles.Add(Style("Box", "Box", ppr: BoxProps()));
+        styles.Add(Style("BoxTitle", "Box Title", "Box", ppr: BoxProps(), rpr: new XElement(W + "rPr", new XElement(W + "b"), new XElement(W + "color", new XAttribute(W + "val", "6B4F2A")))));
         styles.Add(Style("Formula", "Formula", ppr: new XElement(W + "pPr", new XElement(W + "jc", new XAttribute(W + "val", "center")))));
         styles.Add(Style("ListParagraph", "List Paragraph", ppr: new XElement(W + "pPr", new XElement(W + "spacing", new XAttribute(W + "after", 60)), new XElement(W + "contextualSpacing"))));
         styles.Add(Style("InlineCode", "Inline Code", "character", null, rpr: new XElement(W + "rPr", new XElement(W + "rFonts", new XAttribute(W + "ascii", "Consolas"), new XAttribute(W + "hAnsi", "Consolas")), new XElement(W + "shd", new XAttribute(W + "val", "clear"), new XAttribute(W + "color", "auto"), new XAttribute(W + "fill", "F3F1EC")))));
