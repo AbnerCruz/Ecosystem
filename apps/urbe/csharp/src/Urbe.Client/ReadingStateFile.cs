@@ -24,9 +24,23 @@ public sealed class ReadingStateFile
         _timer.Tick += async (_, _) => { _timer.Stop(); await FlushAsync(); };
     }
     public ReaderSession? Restore(string vault, string path, string revision) => _catalog.Restore(vault, path, revision);
+    public ReaderSession? Latest(string vault, string path) => _catalog.Latest(vault, path);
+    public IReadOnlyList<ReaderSession> Recent(string vault, int max) => _catalog.Recent(vault, max);
+    public ReaderPreferences PreferencesFor(string format) => _catalog.PreferencesFor(format);
+    public ReaderPreferences? DefaultFor(string reader) => _catalog.DefaultFor(reader);
     public void Remember(ReaderSession session)
     {
         if (!_catalog.Record(session)) return;
+        Schedule();
+    }
+    /// <summary>The look last chosen in one kind of reader (<see cref="ReaderKinds"/>), for the next new source.</summary>
+    public void RememberDefault(string reader, ReaderPreferences preferences)
+    {
+        if (!_catalog.RecordDefault(new(reader, preferences, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()))) return;
+        Schedule();
+    }
+    private void Schedule()
+    {
         _generation++; HasPending = true;
         _timer.Stop(); _timer.Start();
     }

@@ -49,6 +49,7 @@ public sealed class FilePreviewPanel : Grid
     public event Action<ImageStudyQuote>? ImageQuoteRequested;
     public event Action<StudyImageQuestion>? VisualQuestionRequested;
     private readonly Button _ocr = new Ui.UrbeIconButton(UrbeTheme.Icons.Scan, "Reconhecer região (OCR)", 21);
+    private readonly Button _textLookButton = new Ui.UrbeIconButton(UrbeTheme.Icons.TextLayer, "Aparência do texto", 21) { IsVisible = false };
     public event Action<string, string>? QuestionRequested;
     public event Action<string>? WebLinkRequested;
     public event Action<string>? AnnotationsRequested;
@@ -154,9 +155,9 @@ public sealed class FilePreviewPanel : Grid
         }
         // the PDF's bar, one row of icons: ‹ 3 / 120 › · − + · text layer · selection · OCR
         var zoomIn = new Ui.UrbeIconButton(UrbeTheme.Icons.ZoomIn, "Aumentar", 21);
-        zoomIn.Click += (_, _) => { if (_pdfView is { } pdf) pdf.SetZoom(Math.Min(16, pdf.Zoom * 1.25)); };
+        zoomIn.Click += (_, _) => { if (_pdfView is { } pdf) { pdf.SetZoom(Math.Min(16, pdf.Zoom * 1.25)); CaptureReadingPosition(); } };
         var zoomOut = new Ui.UrbeIconButton(UrbeTheme.Icons.ZoomOut, "Diminuir", 21);
-        zoomOut.Click += (_, _) => { if (_pdfView is { } pdf) pdf.SetZoom(Math.Max(.25, pdf.Zoom / 1.25)); };
+        zoomOut.Click += (_, _) => { if (_pdfView is { } pdf) { pdf.SetZoom(Math.Max(.25, pdf.Zoom / 1.25)); CaptureReadingPosition(); } };
         _pdfNavigation.Children.Add(_pdfPrevious);
         _pdfNavigation.Children.Add(_pdfPage);
         _pdfNavigation.Children.Add(_pdfNext);
@@ -185,10 +186,11 @@ public sealed class FilePreviewPanel : Grid
         select.Click+=(_,_)=>selectionMenu.Open(select);
         _pdfModes.Children.Add(select);
         _ocr.Click += async (_, _) => await OpenOcrAsync();
+        _textLookButton.Click += (_, _) => OpenTextLookMenu(_textLookButton);
         var bar = new StackPanel
         {
             Orientation = Orientation.Horizontal, Spacing = 2, HorizontalAlignment = HorizontalAlignment.Center,
-            Children = { _pdfNavigation, _pdfModes, _ocr }
+            Children = { _pdfNavigation, _pdfModes, _ocr, _textLookButton }
         };
         // the reader's bar sits at the bottom, where the thumb is (Kindle, Kobo, Play Books)
         _bar = new Border
@@ -204,7 +206,7 @@ public sealed class FilePreviewPanel : Grid
             BorderThickness = new Thickness(0, 1, 0, 0),
             Background = UrbeTheme.Brush(UrbeTheme.Surface)
         };
-        foreach (var part in new Control[] { _pdfNavigation, _pdfModes, _ocr })
+        foreach (var part in new Control[] { _pdfNavigation, _pdfModes, _ocr, _textLookButton })
             part.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateBar(); };
         UpdateBar();
         var top = new StackPanel { Children = { head, _choose, _htmlMode } };
@@ -287,8 +289,8 @@ public sealed class FilePreviewPanel : Grid
 
     private bool Phone => !_embedded && Bounds.Width < 720;
 
-    /// <summary>The reader's bar shows only with something in it (a picture or text file has none).</summary>
-    private void UpdateBar() => _bar.IsVisible = !ChromeHidden && (_pdfNavigation.IsVisible || _pdfModes.IsVisible || _ocr.IsVisible || _embedded);
+    /// <summary>The reader's bar shows only with something in it (a picture has none; a text file, its "Aa").</summary>
+    private void UpdateBar() => _bar.IsVisible = !ChromeHidden && (_pdfNavigation.IsVisible || _pdfModes.IsVisible || _ocr.IsVisible || _textLookButton.IsVisible || _embedded);
 
     private static Control BarGap() => new Border { Width = 1, Height = 22, Margin = new Thickness(6, 0), Background = UrbeTheme.Brush(UrbeTheme.Line2), VerticalAlignment = VerticalAlignment.Center };
 
@@ -522,6 +524,7 @@ public sealed class FilePreviewPanel : Grid
     {
         CaptureReadingPosition();
         ExitReaderMode();
+        HideTextLook();
         _pdfView = null; _mediaView=null;
         _pdfNavigation.IsVisible = false;
         _pdfTextView?.Dispose();
@@ -591,6 +594,7 @@ public sealed class FilePreviewPanel : Grid
         if (ChromeHidden) SetChromeHidden(false);
         CaptureReadingPosition();
         int version = ++_version;
+        HideTextLook();
         _mediaView=null;
         _pdfView = null; _mediaView=null;
         _pdfNavigation.IsVisible = false;
@@ -656,7 +660,12 @@ public sealed class FilePreviewPanel : Grid
             if(revision is not null)
             {
                 string vaultKey=ReaderSessionCatalog.VaultKey(vaultIdentity);
-                _readingSession=state.Restore(vaultKey,path,revision)??new ReaderSession(vaultKey,path,revision,kind,new(1),new(),DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+                var restored=state.Restore(vaultKey,path,revision);
+                // a position saved for another version of the file is not applied: say so instead of jumping to a guess
+                if(restored is null&&state.Latest(vaultKey,path) is { } earlier&&earlier.Revision!=revision&&ReaderProgress.Resumable(kind,path))
+                    _meta.Text+=" · o arquivo mudou desde a última leitura; a posição salva não foi aplicada";
+                // a source opened for the first time starts with the look last chosen in its kind of reader
+                _readingSession=restored??new ReaderSession(vaultKey,path,revision,kind,new(1),state.PreferencesFor(kind),DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
                 state.Remember(_readingSession with{Updated=DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()});
                 if(_requestedPage is null)_pdfPosition=_readingSession.Location.Part;
                 if(_requestedPart is null)_requestedPart=kind is VaultFileKinds.Audio or VaultFileKinds.Video?_readingSession.Location.Part-1:_readingSession.Location.Part;
@@ -700,8 +709,8 @@ public sealed class FilePreviewPanel : Grid
                 epub.ExternalLinkRequested += url => WebLinkRequested?.Invoke(url);
                 epub.PositionChanged += chapter => RememberReadingPosition(chapter + 1, fontSize: epub.FontSizePreference);
                 _body.Content = epub; Shown = "viewer";
-                if (_readingSession is { } saved) {epub.RestoreAppearance(saved.Preferences.Theme,saved.Preferences.Margin); await epub.SetTypographyAsync(saved.Preferences.FontSize);}
                 epub.RestoreLineHeight(_readingSession?.Preferences.LineHeight ?? 1.6);
+                if (_readingSession is { } saved) {epub.RestoreAppearance(saved.Preferences.Theme,saved.Preferences.Margin); await epub.SetTypographyAsync(saved.Preferences.FontSize);}
                 await epub.GoToChapterAsync((_requestedPart ?? 1) - 1, _requestedTextOffset ?? _readingSession?.Location.Offset ?? 0, _requestedTextLength ?? 0, _readingSession?.Location.Scroll ?? 0);
                 _requestedTextOffset = _requestedTextLength = null;
                 _requestedPart = null;
@@ -760,7 +769,8 @@ public sealed class FilePreviewPanel : Grid
                     pdf.PageChanged += _ => { if (ReferenceEquals(_pdfView, pdf)) UpdatePdfNavigation(); };
                     pdf.PageChanged += page => RememberReadingPosition(page);
                     UpdatePdfNavigation();
-                    pdf.Loaded += (_, _) => { pdf.SetZoom(_readingSession?.Preferences.Zoom ?? 1); pdf.GoToPage(_pdfPosition); if (_requestedRegion is { } region) { pdf.FocusRegion(_pdfPosition,region); _requestedRegion=null; } };
+                    _pdfZoomReady = false;
+                    pdf.Loaded += (_, _) => { pdf.SetZoom(_readingSession?.Preferences.Zoom ?? 1); _pdfZoomReady = ReferenceEquals(_pdfView, pdf); pdf.GoToPage(_pdfPosition); if (_requestedRegion is { } region) { pdf.FocusRegion(_pdfPosition,region); _requestedRegion=null; } };
                 }
                 return;
             }
@@ -775,6 +785,7 @@ public sealed class FilePreviewPanel : Grid
                 study.PageChanged += page => RememberReadingPosition(page);
                 _body.Content = study;
                 Shown = "text";
+                ShowTextLook(TextLook(PdfStudyView.DefaultFontSize, PdfStudyView.DefaultLineHeight), study.ApplyLook);
                 if(_requestedTextOffset is { } offset) { await study.GoToTextAsync(_pdfPosition,offset,_requestedTextLength??0);_requestedTextOffset=_requestedTextLength=null; }
                 else await study.GoToPageAsync(_pdfPosition);
                 return;
@@ -862,11 +873,46 @@ public sealed class FilePreviewPanel : Grid
     private void RememberReadingPosition(int part, double? fontSize = null)
     {
         if (_readingSession is not { } session || ReadingState is null) return;
-        var location = new ReaderLocation(part, _epubView?.CurrentOffset ?? 0, _epubView?.CurrentScroll ?? 0);
-        var preferences = session.Preferences with { FontSize = fontSize ?? session.Preferences.FontSize, LineHeight = _epubView?.LineHeightPreference ?? session.Preferences.LineHeight, Zoom = _pdfView?.Zoom ?? session.Preferences.Zoom, Theme=_epubView?.ThemePreference??session.Preferences.Theme, Margin=_epubView?.MarginPreference??session.Preferences.Margin };
+        // the total is what progress is counted in: PDF pages, spine items; media has none here
+        int? total = _epubView?.PartCount ?? (_pdfView is { PageCount: > 0 } pages ? pages.PageCount : _pdfTextView is { PageCount: > 0 } text ? text.PageCount : null);
+        var location = new ReaderLocation(part, _epubView?.CurrentOffset ?? 0, _epubView?.CurrentScroll ?? 0, total is { } t && part <= t ? t : null);
+        double zoom = _pdfView is { } pdf && _pdfZoomReady ? pdf.Zoom : session.Preferences.Zoom;
+        var preferences = session.Preferences with { FontSize = fontSize ?? session.Preferences.FontSize, LineHeight = _epubView?.LineHeightPreference ?? session.Preferences.LineHeight, Zoom = zoom, Theme=_epubView?.ThemePreference??session.Preferences.Theme, Margin=_epubView?.MarginPreference??session.Preferences.Margin };
         if (session.Location == location && session.Preferences == preferences) return;
+        // a look changed here becomes the start of the next new source in the same kind of reader
+        if (_epubView is not null && preferences with { Zoom = 0 } != session.Preferences with { Zoom = 0 }) ReadingState.RememberDefault(ReaderKinds.Book, preferences with { Zoom = 1 });
+        if (_pdfView is not null && preferences.Zoom != session.Preferences.Zoom) ReadingState.RememberDefault(ReaderKinds.Pdf, new ReaderPreferences(Zoom: preferences.Zoom));
         _readingSession = session with { Location = location, Preferences = preferences, Updated = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() };
         ReadingState.Remember(_readingSession);
+    }
+
+    private bool _pdfZoomReady;
+    private TextReaderLook? _textLook;
+    private Action<TextReaderLook>? _applyTextLook;
+    /// <summary>"Aa" of a text reader: the look last chosen for text readers, or the view's own one.</summary>
+    private TextReaderLook TextLook(double fontSize, double lineHeight) => TextReaderLook.From(ReadingState?.DefaultFor(ReaderKinds.Text), fontSize, lineHeight);
+    private void ShowTextLook(TextReaderLook look, Action<TextReaderLook> apply)
+    {
+        _textLook = look; _applyTextLook = apply;
+        apply(look);
+        _textLookButton.IsVisible = true;
+    }
+    /// <summary>Changes the text readers' look: here at once, and for every text file opened next.</summary>
+    public void SetTextLook(TextReaderLook look)
+    {
+        if (_applyTextLook is not { } apply) return;
+        _textLook = look;
+        apply(look);
+        ReadingState?.RememberDefault(ReaderKinds.Text, look.ToPreferences());
+    }
+    /// <summary>The text reader's current look, or null when no text reader is shown.</summary>
+    public TextReaderLook? CurrentTextLook => _textLook;
+    private void HideTextLook() { _textLook = null; _applyTextLook = null; _textLookButton.IsVisible = false; }
+    private void OpenTextLookMenu(Control anchor)
+    {
+        if (_textLook is not { } look) return;
+        var items = look.Choices().Select(choice => { var item = new MenuItem { Header = choice.Label }; item.Click += (_, _) => SetTextLook(choice.Next); return item; }).ToArray();
+        new ContextMenu { ItemsSource = items }.Open(anchor);
     }
 
     private void CaptureReadingPosition()
@@ -895,14 +941,25 @@ public sealed class FilePreviewPanel : Grid
         chip.BorderBrush = UrbeTheme.Brush(on ? UrbeTheme.Accent : UrbeTheme.Line2);
     }
 
+    /// <summary>The plain text reader's built-in look.</summary>
+    public const double TextFontSize = 13, TextLineHeight = 19.0 / 13;
+
     private void ShowText(string text, string shown)
     {
         var parts = new StackPanel();
-        SelectableTextBlock Part(string piece) => new()
+        // the text reader's look: the one last chosen for text readers, else 13 px monospace on 19 px lines
+        var look = TextLook(TextFontSize, TextLineHeight);
+        void Style(SelectableTextBlock block)
         {
-            Text = piece, FontFamily = new FontFamily("Consolas, Menlo, monospace"), FontSize = 13, LineHeight = 19,
-            Foreground = UrbeTheme.Brush(UrbeTheme.Text2), Padding = new Thickness(12, 0)
-        };
+            block.FontSize = look.FontSize; block.LineHeight = look.LinePixels;
+            block.Foreground = look.Colors?.Foreground ?? UrbeTheme.Brush(UrbeTheme.Text2);
+        }
+        SelectableTextBlock Part(string piece)
+        {
+            var block = new SelectableTextBlock { Text = piece, FontFamily = new FontFamily("Consolas, Menlo, monospace"), Padding = new Thickness(12, 0) };
+            Style(block);
+            return block;
+        }
         // a long text is laid out in parts, each one ending at a line, so opening it never freezes the screen
         int shownUpTo = 0;
         Button? more = null;
@@ -924,15 +981,22 @@ public sealed class FilePreviewPanel : Grid
             more.Content = "Mostrar mais (" + VaultFileKinds.FormatBytes(Encoding.UTF8.GetByteCount(text.AsSpan(shownUpTo))) + " restantes)";
         }
         Next();
-        _body.Content = new ScrollViewer
+        var scroll = new ScrollViewer
         {
             Height = ViewerHeight(),
             HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
             Content = new Border { Padding = new Thickness(0, 12), Child = parts },
             Background = UrbeTheme.Brush(UrbeTheme.Bg)
         };
+        _body.Content = scroll;
         Shown = shown;
         ShownText = text;
+        ShowTextLook(look, next =>
+        {
+            look = next;
+            scroll.Background = next.Colors?.Background ?? UrbeTheme.Brush(UrbeTheme.Bg);
+            foreach (var block in parts.Children.OfType<SelectableTextBlock>()) Style(block);
+        });
     }
 
     /// <summary>The widest a picture is decoded for the preview (it zooms in from there): an 8000-pixel scan would take hundreds of MB.</summary>
