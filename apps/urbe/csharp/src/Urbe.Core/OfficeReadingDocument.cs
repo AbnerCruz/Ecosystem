@@ -65,8 +65,7 @@ public sealed class OfficeReadingDocument : IReaderPublication
                 FidelityWarning = "Leitura semântica DOCX; paginação e objetos complexos podem diferir do Word.";
             }
             else if (_extension == ".cbz")
-                _parts.AddRange(_archive.Paths.Where(p => Regex.IsMatch(p, @"\.(png|jpe?g|webp|gif|bmp)$", RegexOptions.IgnoreCase))
-                    .OrderBy(p => Regex.Replace(p, @"\d+", m => m.Value.PadLeft(20, '0')), StringComparer.OrdinalIgnoreCase));
+                _parts.AddRange(_archive.Paths.Where(ComicBook.IsPage).Order(NaturalOrder.Instance));
             else if (_extension is ".odt" or ".odp")
             {
                 var document = _archive.Xml("content.xml");
