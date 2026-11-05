@@ -934,6 +934,8 @@ public sealed partial class AssistantPanel
         body.Children.Add(Section("Modelo padrão", Wrap(ModelId(), 13, UrbeTheme.Text),
             Wrap(ModelPriceFor(null), 12, UrbeTheme.Text2), TextButton("Selecionar modelo e preço", () => _ = PickModelAsync())));
         body.Children.Add(Section("Geração de imagens", Hint("Escolha o modelo de imagem nas configurações de cada agente. Sem seleção, nenhuma imagem é gerada.")));
+        body.Children.Add(Section("O que cada modelo faz", Hint("Texto, ferramentas, imagens, PDF, OCR, contexto, preço, cache e onde cada modelo roda; vídeo e voz."),
+            TextButton("Ver capacidades dos modelos", ShowModelCapabilities)));
 
         }
 

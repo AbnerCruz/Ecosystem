@@ -26,6 +26,19 @@ sua propriedade inferida e não é apagado por suposição.
 
 Fixtures/testes: `AgentWorkspaceTests` e `AgentWorkspaceUiTests`.
 
+## CST-220 — modalidades no cache de modelos (05/11/2026)
+
+`config.json` → `modelCache.{providerId}.list[]` acrescenta três campos opcionais,
+escritos só quando o provedor os informa (caches antigos mantêm o JSON idêntico):
+- `inputModalities` / `outputModalities`: arrays de texto (`text`, `image`, `file`,
+  `audio`, `video`), como a OpenRouter os informa; ausente = não informado, nunca "não".
+- `cachedInput`: preço da entrada em cache em US$/1M tokens.
+
+É cache (fonte de verdade: o catálogo do provedor, renovado ao escolher modelo). As
+capacidades tipadas (`AiModelCatalog`) são derivadas em memória dele, dos modelos do
+aparelho e de uma tabela curta de fatos publicados; não há outro catálogo persistido.
+Sem migração. Teste: `AiModelSelectorTests.Store_KeepsReportedModalitiesAndOldCachesByteForByte`.
+
 ## UC-89 — escopo de ferramentas e delegação (25/10/2026)
 
 `config.json` acrescenta dois campos opcionais, com as mesmas regras de escrita

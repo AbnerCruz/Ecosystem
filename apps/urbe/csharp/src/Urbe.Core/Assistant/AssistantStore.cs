@@ -358,11 +358,18 @@ public sealed class AssistantStore(IAssistantStorage storage)
     {
         var o = new JsonObject { ["id"] = m.Id, ["name"] = m.Name, ["context"] = m.Context, ["tools"] = m.Tools };
         o["price"] = m.Price is { } p ? new JsonObject { ["input"] = p.Input, ["output"] = p.Output } : null;
+        // CST-220: written only when the provider reported them, so older caches keep their exact JSON
+        if (m.InputModalities is { } input) o["inputModalities"] = new JsonArray(input.Select(x => (JsonNode?)x).ToArray());
+        if (m.OutputModalities is { } output) o["outputModalities"] = new JsonArray(output.Select(x => (JsonNode?)x).ToArray());
+        if (m.CachedInputPrice is { } cached) o["cachedInput"] = cached;
         return o;
     }
 
     private static AiModelInfo ModelFromJson(JsonNode n) => new(Str(n["id"]), Str(n["name"]), n["context"] is null ? null : Num(n["context"]),
-        n["price"] is JsonObject p ? (LegacyCustomize.JsToNumber(p["input"]), LegacyCustomize.JsToNumber(p["output"])) : null, (bool?)n["tools"]);
+        n["price"] is JsonObject p ? (LegacyCustomize.JsToNumber(p["input"]), LegacyCustomize.JsToNumber(p["output"])) : null, (bool?)n["tools"],
+        n["inputModalities"] is JsonArray input ? input.Select(x => LegacyCustomize.JsToString(x)).ToList() : null,
+        n["outputModalities"] is JsonArray output ? output.Select(x => LegacyCustomize.JsToString(x)).ToList() : null,
+        n["cachedInput"] is null ? null : LegacyCustomize.JsToNumber(n["cachedInput"]));
 
     public static JsonObject ConfigToJson(AiConfig c)
     {

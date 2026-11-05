@@ -499,6 +499,13 @@ public sealed partial class AssistantPanel : Border
         var text = (_input.Text ?? "").Trim();
         if (text.Length == 0 && _pendingAttachments.Count == 0) return;
         _input.Text = "";
+        // CST-220: images/PDFs for a model known not to read them — say so and offer a capable one, never switch silently
+        if (_loaded && _cfg.Providers.Count > 0 && ModelId().Length > 0 && AttachmentSelection() is
+            { Outcome: AiSelectionOutcome.Fallback or AiSelectionOutcome.NeedsConsent or AiSelectionOutcome.Missing } review)
+        {
+            _ = SubmitReviewedAsync(text, review);
+            return;
+        }
         Send(text.Length > 0 ? text : "Analise os arquivos anexados.");
     }
 
@@ -1373,8 +1380,13 @@ public sealed partial class AssistantPanel : Border
             var choice = panel._cfg.ModelFor(conversation);
             var provider = panel._cfg.Providers.FirstOrDefault(p => p.Id == choice.ProviderId)
                 ?? throw new AiToolException("Modelo de visão não configurado.");
-            if (AssistantProviders.Resolve(provider).Kind == "local")
-                throw new AiToolException("O modelo local selecionado não lê este tipo de mídia. Configure um provedor multimodal compatível.");
+            // CST-220: a model known not to read this media is never sent it; the capable fallback is named, not switched to
+            var needs = new AiTaskNeeds(AiModalities.Text | (mimeType == "application/pdf" ? AiModalities.Pdf : AiModalities.Image));
+            var selection = AiModelSelector.Select(needs, panel.Candidates(choice), choice);
+            if (selection.Outcome is AiSelectionOutcome.Fallback or AiSelectionOutcome.NeedsConsent or AiSelectionOutcome.Missing)
+                throw new AiToolException(selection.Reason + (selection.Fallback is { } capable
+                    ? " Para ler esta mídia, peça à pessoa que escolha " + capable.Label + " como modelo deste agente."
+                    : " Configure um provedor multimodal compatível.") + " Nenhum dado foi transmitido.");
             if (bytes.Length > 8 * 1024 * 1024)
                 throw new AiToolException("Mídia acima do limite de 8 MiB para análise. Reduza ou recorte a origem.");
 
@@ -1459,6 +1471,7 @@ public sealed partial class AssistantPanel : Border
         private AiProviderConfig? ImageProvider => panel._cfg.AgentImages.TryGetValue(agentId, out var choice)
             ? panel._cfg.Providers.FirstOrDefault(p => p.Id == choice.ProviderId) : null;
         public bool CanDraw => ImageProvider is not null;
+        public string Unavailable => panel.ImagesUnavailable();
         public Task<byte[]> DrawAsync(string prompt, string size, CancellationToken cancel) =>
             panel.Providers.GenerateImageAsync(ImageProvider ?? throw new AiProviderException("Configure um provedor de imagens."),
                 prompt, panel._cfg.AgentImages.GetValueOrDefault(agentId)?.Model, size, cancel);
@@ -1629,7 +1642,17 @@ public sealed partial class AssistantPanel : Border
 
     private static string FmtTokens(long n) => n >= 1_000_000 ? (n / 1_000_000.0).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "M tokens" : n >= 1000 ? (n / 1000.0).ToString(n >= 100000 ? "0" : "0.0", System.Globalization.CultureInfo.InvariantCulture) + "k tokens" : n + " tokens";
 
-    private double? Estimate(AiUsage u) => ModelMeta()?.Price is { } price ? (u.Input * price.Input + u.Output * price.Output) / 1e6 : null;
+    /// <summary>
+    /// CST-220: the spend estimated from the catalog's rate for the current model (provider-reported or the published table).
+    /// Cache reads use their own rate when it is known; cache creation has no rate here, so it leaves the estimate unknown.
+    /// </summary>
+    private double? Estimate(AiUsage u)
+    {
+        if (CurrentModelCapabilities?.Price is not { } price || (u.CacheCreationInput ?? 0) > 0) return null;
+        long cached = u.CacheReadInput ?? 0;
+        if (cached > 0 && price.CachedInput is null) return null;
+        return ((u.Input - cached) * price.Input + cached * (price.CachedInput ?? 0) + u.Output * price.Output) / 1e6;
+    }
 
     /// <summary>
     /// The log, light however long the conversation (observation of 22/10/2026: after 11 requests it froze the app).

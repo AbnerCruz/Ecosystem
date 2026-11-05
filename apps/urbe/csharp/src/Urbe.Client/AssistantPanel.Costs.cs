@@ -12,13 +12,9 @@ public sealed partial class AssistantPanel
             price.Output.ToString("0.######", CultureInfo.InvariantCulture) + " saída / 1M tokens"
         : "Preço indisponível · não significa gratuito";
 
-    private string ModelPriceFor(AiModelChoice? choice)
-    {
-        var providerId = choice?.ProviderId ?? Provider()?.Id;
-        var model = choice?.Model ?? ModelId();
-        return ModelPrice(providerId is not null && _cfg.ModelCache.TryGetValue(providerId, out var cache)
-            ? cache.List.FirstOrDefault(m => m.Id == model) : null);
-    }
+    /// <summary>CST-220: the rate from the one model catalog (provider-reported, else the published table).</summary>
+    private string ModelPriceFor(AiModelChoice? choice) =>
+        AiModelCatalog.Find(_cfg, choice ?? _cfg.ModelFor(_conv)) is { } model ? AiModelCatalog.PriceText(model) : ModelPrice(null);
 
     private string UsageSummary()
     {
@@ -38,7 +34,7 @@ public sealed partial class AssistantPanel
         body.Children.Add(Hint("*Cobranças ausentes nunca equivalem a zero. Totais mistos são parciais; tarifas de cache e de imagens podem não estar disponíveis."));
         body.Children.Add(Hint("Categorias de cache são subdivisões dos tokens de entrada e não entram novamente na soma."));
         body.Children.Add(Section("Tarifa do modelo selecionado", Wrap(ModelPriceFor(null), 13, UrbeTheme.Text2),
-            Hint("Fonte: catálogo do provedor salvo no aparelho; consulta renovada ao selecionar modelos. Cache e outras unidades só podem ser discriminados quando o provedor os informa.")));
+            Hint("Fonte: catálogo do provedor salvo no aparelho (renovado ao selecionar modelos) ou, quando o provedor não informa, a tabela publicada pelo fabricante. Cache e outras unidades só podem ser discriminados quando o provedor os informa.")));
         foreach (var message in _conv.Messages.Where(m => m.Role == "assistant" && m.Meta?.Usage is not null))
         {
             var u = message.Meta!.Usage!;
@@ -49,7 +45,7 @@ public sealed partial class AssistantPanel
                 (u.ReasoningOutput is { } thought ? FmtTokens(thought) + " raciocínio (parte da saída)" : "");
             var cost = u.Cost is { } value ? "US$ " + value.ToString("0.000000", CultureInfo.InvariantCulture) +
                 (u.CostSource == "estimated" ? " estimado" : u.CostSource == "partial" ? " parcial" : " informado pelo provedor")
-                : model == ModelId() && Estimate(u) is { } estimate && (u.CacheReadInput ?? 0) == 0 && (u.CacheCreationInput ?? 0) == 0
+                : model == ModelId() && Estimate(u) is { } estimate
                     ? "US$ " + estimate.ToString("0.000000", CultureInfo.InvariantCulture) + " estimado pela tarifa cadastrada (não cobrado/confirmado)"
                     : "Custo desconhecido (tarifa de cache ou preço não informado)";
             body.Children.Add(Section(model, Wrap(usage, 12, UrbeTheme.Text2),
