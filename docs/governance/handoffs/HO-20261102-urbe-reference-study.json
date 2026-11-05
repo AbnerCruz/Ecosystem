@@ -74,9 +74,10 @@
     {
       "check": "Android físico: painel, IME, seleção, leitor, retorno e mapas pendentes; Windows físico e desempenho",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/urbe/docs/csharp/REFERENCE-STUDY-20261102.md"
+      "object": "apps/urbe/docs/csharp/REFERENCE-STUDY-20261102.md",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-05 (Issue https://github.com/AbnerCruz/Ecosystem/issues/911); registro em docs/governance/responses/VAL-HO-20261102-urbe-reference-study-448aa17dd388.md."
     }
   ],
   "known_issues": [
