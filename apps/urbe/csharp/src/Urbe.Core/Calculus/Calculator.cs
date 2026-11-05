@@ -24,6 +24,30 @@ public sealed record CalcLine(string Input, string? Result, string? Error = null
 /// </summary>
 public static partial class Calculator
 {
+    /// <summary>The code-block languages that are calculations (<c>```calculo</c>).</summary>
+    public static bool IsLanguage(string? lang) => lang is not null && lang.Trim().ToLowerInvariant() is "calculo" or "cálculo" or "calc" or "calculadora";
+
+    /// <summary>
+    /// Every <c>```calculo</c> block of rendered HTML as a table of its lines and their results (publications,
+    /// exports): the note keeps only the lines; results are computed again on every render, never stored.
+    /// </summary>
+    public static string RenderHtml(string html) => CalcBlock().Replace(html, m =>
+    {
+        var sb = new System.Text.StringBuilder("<table class=\"urbe-calc\"><tbody>");
+        foreach (var line in Run(System.Net.WebUtility.HtmlDecode(m.Groups[1].Value)))
+        {
+            if (line.Input.Trim().Length == 0) continue;
+            var comment = line.Result is null && line.Error is null;
+            sb.Append("<tr><td><code>").Append(MarkdownEngine.EscapeHtml(line.Input.Trim())).Append("</code></td><td")
+              .Append(line.Ok ? "" : " class=\"urbe-calc-error\"").Append('>')
+              .Append(MarkdownEngine.EscapeHtml(comment ? "" : line.Result ?? line.Error ?? "")).Append("</td></tr>");
+        }
+        return sb.Append("</tbody></table>").ToString();
+    });
+
+    [GeneratedRegex("<pre data-lang=\"(?:calculo|cálculo|calc|calculadora)\"><code>(.*?)</code></pre>", RegexOptions.Singleline | RegexOptions.IgnoreCase)]
+    private static partial Regex CalcBlock();
+
     public sealed class Scope
     {
         public Dictionary<string, MathValue> Values { get; } = new(StringComparer.Ordinal);

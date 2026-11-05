@@ -135,3 +135,36 @@ public sealed class CalculatorTests
     [InlineData("det([[1; 2; 3]; [4; 5; 6]])", "A operação precisa de uma matriz quadrada.")]
     public void Errors_AreWords(string line, string message) => Assert.Equal(message, Calculator.Evaluate(line).Error);
 }
+
+/// <summary>CST-206: the calculator in publications and for the agents.</summary>
+public sealed class CalculatorIntegrationTests
+{
+    [Fact]
+    public void AgentTool_AnswersEachLine_MarksApproximateAndErrors()
+    {
+        var answer = Urbe.Core.Assistant.AssistantCalcTools.Answer("a = 3\n2a + 1\nresolver cos(x) = x\nln(-1)");
+        Assert.Contains("2a + 1  →  7", answer);
+        Assert.Contains("[aproximado]", answer);
+        Assert.Contains("ERRO: ln recebe números maiores que zero.", answer);
+    }
+
+    [Fact]
+    public async Task Publications_ShowTheCalculationTable_ComputedFromTheNote()
+    {
+        var store = new DocumentStore();
+        var note = store.Upsert(new DocumentInput { Path = "Conta.md", Content = "# Conta\n\n```calculo\npreco = 12,5\npreco * 4\n```\n" });
+        using var catalog = new PublicationSourceCatalog(store);
+        var project = PublicationProject.Create("Conta", note.Id);
+        var html = PublicationHtml.Export(project, catalog).Html;
+        Assert.Contains("<table class=\"urbe-calc\">", html);
+        Assert.Contains("<td>50</td>", html);
+        var docx = await PublicationDocx.ExportAsync(project, catalog, cancellationToken: TestContext.Current.CancellationToken);
+        using var zip = new System.IO.Compression.ZipArchive(new MemoryStream(docx.Bytes));
+        using var reader = new StreamReader(zip.GetEntry("word/document.xml")!.Open());
+        var xml = reader.ReadToEnd();
+        Assert.Contains("<w:tbl>", xml);
+        Assert.Contains(">50<", xml);
+        // the note keeps only its lines
+        Assert.DoesNotContain("50", store.Get(note.Id)!.Content.Replace("12,5", ""));
+    }
+}

@@ -186,6 +186,22 @@ public static partial class LegacyVisualEdit
         return new(text[..lineStart] + block + text[lineEnd..], from, from + example.Length);
     }
 
+    /// <summary>CST-206: the "/" menu's Cálculo — a ```calculo block with an example, the caret on its first line.</summary>
+    public static LegacyEditorTools.TextEdit Calc(string text, int caret)
+    {
+        var at = Math.Clamp(caret, 0, text.Length);
+        int lineStart = at == 0 ? 0 : text.LastIndexOf('\n', Math.Max(0, at - 1)) + 1;
+        int lineEnd = text.IndexOf('\n', at);
+        if (lineEnd < 0) lineEnd = text.Length;
+        var line = text[lineStart..lineEnd];
+        var keep = line.TrimStart().StartsWith('/') ? "" : line;
+        var head = (keep.Length > 0 ? keep + "\n" : "") + "```calculo\n";
+        const string example = "preco = 12,5";
+        var block = head + example + "\npreco * 4\n```";
+        int from = lineStart + head.Length;
+        return new(text[..lineStart] + block + text[lineEnd..], from, from + example.Length);
+    }
+
     /// <summary>The bubble's wikilink button: the trimmed selection becomes [[selection]]; null when empty.</summary>
     public static LegacyEditorTools.TextEdit? WikiOfSelection(string text, int selectionStart, int selectionEnd)
     {

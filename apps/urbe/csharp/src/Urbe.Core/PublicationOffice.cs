@@ -96,6 +96,14 @@ public static class PublicationOffice
                         limits.Add("Barras de progresso saem como texto com o valor atual (sem a barra gráfica).");
                         return;
                     }
+                    if (Calculus.Calculator.IsLanguage(node.Attr("data-lang")))
+                    {
+                        // CST-206: a calculation is its lines and their results, computed now from the note
+                        var rows = Calculus.Calculator.Run(Plain(node)).Where(l => l.Input.Trim().Length > 0)
+                            .Select(l => (IReadOnlyList<IReadOnlyList<OfficeRun>>)[[new OfficeRun(l.Input.Trim(), Code: true)], [new OfficeRun(l.Result ?? l.Error ?? "", Bold: l.Ok)]]).ToList();
+                        if (rows.Count > 0) into.Add(new OfficeTable(rows, false));
+                        return;
+                    }
                     if (FunctionPlot.IsPlotLanguage(node.Attr("data-lang")))
                     {
                         // CST-169: a graph is a drawing in every output, vector where the format holds it

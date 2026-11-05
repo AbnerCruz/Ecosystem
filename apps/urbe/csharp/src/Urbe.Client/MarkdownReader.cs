@@ -548,6 +548,9 @@ public sealed partial class MarkdownReader
             }
             return new Border { Child = panel, Padding = new Thickness(12), Margin = new Thickness(0, Size * .6), BorderThickness = new Thickness(1), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), CornerRadius = new CornerRadius(10) };
         }
+        // CST-206: a ```calculo block shows each line with its result
+        if (Urbe.Core.Calculus.Calculator.IsLanguage(pre.Attr("data-lang")))
+            return new Ui.CalcBlockView(code, Size) { Margin = new Thickness(0, Size * .6) };
         // CST-069: a ```grafico block is drawn as its graph; a tap edits its text like any block
         if (FunctionPlot.IsPlotLanguage(pre.Attr("data-lang")))
         {

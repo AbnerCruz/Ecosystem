@@ -86,6 +86,9 @@ public static class PublicationEpub
                 if (!result.IsValid) throw new InvalidDataException(result.Error);
                 return new XElement(Xhtml + "p", result.Label + ": " + result.Summary);
             }
+            if (node.Tag == "pre" && Calculus.Calculator.IsLanguage(node.Attr("data-lang")))
+                return new XElement(Xhtml + "table", new XAttribute("class", "urbe-calc"), Calculus.Calculator.Run(Plain(node)).Where(l => l.Input.Trim().Length > 0).Select(l =>
+                    new XElement(Xhtml + "tr", new XElement(Xhtml + "td", new XElement(Xhtml + "code", l.Input.Trim())), new XElement(Xhtml + "td", l.Result ?? l.Error ?? ""))));
             if (node.Tag == "pre" && FunctionPlot.IsPlotLanguage(node.Attr("data-lang")))
             {
                 var plotPath = "assets/plot-" + files.Count + ".svg";

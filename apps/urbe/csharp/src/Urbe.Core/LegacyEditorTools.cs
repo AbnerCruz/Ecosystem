@@ -279,6 +279,8 @@ public static partial class LegacyEditorTools
         new("box", "Caixa", "Bloco :::tipo com título", "caixa box conteiner container ficha componente", "box"),
         // CST-069: a graph of functions of x, kept as a ```grafico block
         new("plot", "Gráfico de função", "Desenha y = f(x) na nota", "grafico funcao plot curva equacao fisica cartesiano", "code"),
+        // CST-206: lines computed beside their results, kept as a ```calculo block
+        new("calc", "Cálculo", "Contas, unidades, equações e derivadas", "calculo calculadora conta soma media unidade converter resolver derivada integral matriz", "code"),
     ];
 
     /// <summary>The menu the app shows: the visual-tools.js items, the math ones and the app's own, with the same filter.</summary>

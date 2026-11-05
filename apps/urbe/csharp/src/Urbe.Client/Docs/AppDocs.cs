@@ -183,6 +183,29 @@ public static partial class AppDocs
 
         Vale `+ - * / ^`, parênteses, `2x` e `3(x+1)`, `pi` e `e`, e as funções `sin` (ou `sen`), `cos`, `tan`, `sqrt` (ou `raiz`), `abs`, `ln`, `log`, `exp`, entre outras. Sem a linha `y:`, a altura se ajusta às curvas. Uma linha que não dá para ler aparece em vermelho embaixo do gráfico, e as outras continuam desenhadas. Toque no gráfico para editar o texto. Nas páginas, ele sai como imagem.
 
+        ### Cálculo
+
+        Um bloco ```` ```calculo ```` faz contas: cada linha aparece com o resultado ao lado, refeito sempre que a nota é lida (menu `/` → **Cálculo**). A nota guarda só as linhas.
+
+        ```
+        preco = 12,5
+        qtd = 4
+        preco * qtd
+        f(x) = x^2 + 1
+        f(3)
+        100 km/h em m/s
+        resolver x^2 - 5x + 6 = 0
+        derivada de x^3 + 2x
+        integral de sen(x) de 0 até pi
+        ```
+
+        - **Valores**: `+ - * / ^`, `%`, `5!`, `√`, `π`, vírgula decimal (`1,5`); funções como `sen`, `cos`, `ln`, `log`, `raiz`, `arred`, `media`, `mediana`, `desvio`, `soma`, `mdc`, `mmc`, `comb`. Separe argumentos com `;`: `media(3; 5; 8)`.
+        - **Definições**: `a = 3` e `f(x) = …` valem para as linhas de baixo.
+        - **Unidades**: escreva o número com a unidade e converta com `em` (`37 °C em °F`, `2 h + 30 min em min`). Somar metros com segundos dá erro, nunca um número errado.
+        - **Matrizes e listas**: `[[1; 2]; [3; 4]]`, com `det`, `inv`, `transposta` e produto.
+        - **Álgebra**: `derivada de …`, `simplificar …`, `expandir …`, `resolver … = …` (exato até o 2º grau; acima disso, aproximado com ≈) e `integral de …` (com `de a até b`, o valor).
+        - Uma linha com `//` é comentário. Uma linha que não dá para calcular diz por quê, em vermelho, e as outras continuam. Nas publicações (HTML, EPUB, Word, ODT, PowerPoint) o bloco sai como tabela de linha e resultado. O Assistente usa o mesmo motor para fazer contas.
+
         ### Parâmetros e movimentos
 
         Uma linha como `a = 2 em 0..5` cria um **parâmetro**: um controle deslizante embaixo do gráfico. As curvas acompanham enquanto você arrasta, e a nota guarda o valor onde você soltar. Sem `em`, o controle vai de -10 a 10. Nomes juntos se multiplicam: `ax` é `a·x`.
