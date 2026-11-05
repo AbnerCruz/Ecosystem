@@ -65,6 +65,22 @@ O Assistente ganhou a ferramenta **editar estrutura**: ele troca, acrescenta, ap
 
 Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descrição e instruções, no formato aberto Agent Skills) para ensinar o Assistente a fazer um trabalho do seu jeito. Ele vê só o nome e a descrição e carrega o resto quando o pedido combina. Uma skill não dá permissões e nada nela é executado. O Urbe já vem com skills de apresentação, livro e cálculo.
 
+## Continuar lendo
+
+- No painel de fontes do Estudo e no comando **Continuar lendo** aparecem os PDFs, livros, documentos, apresentações e mídias lidos por último, com onde você parou e quando ("há 2 h"); tocar abre direto ali.
+- O progresso é dito do jeito que cada formato permite: "página 12 de 240" no PDF, "capítulo 3 de 12" no EPUB (sem inventar páginas num livro que se reorganiza), o tempo em áudio e vídeo.
+- Se o arquivo mudou desde a última leitura, o leitor avisa que a posição salva não foi aplicada, em vez de pular para um lugar aproximado.
+- **Aa** nos leitores de texto (arquivos de texto e a camada de texto do PDF): tamanho da letra, entrelinha e tema claro, sépia ou escuro.
+- Um livro ou PDF aberto pela primeira vez começa com a última aparência escolhida naquele tipo de leitor. Tudo fica no estado privado do app, nada vai para o vault.
+
+## Novos leitores
+
+- Quadrinhos **CBZ** abrem num leitor próprio: páginas na ordem certa (1, 2, 10), toque nas bordas, setas ou deslize para virar, zoom e ajuste à tela ou à largura, e o Urbe lembra onde você parou. Só a página aberta e as vizinhas ficam na memória; um arquivo corrompido ou malicioso é recusado com o motivo na tela.
+- **TXT, LOG, RTF e JSON** abrem com busca no texto inteiro, sem diferenciar maiúsculas nem acentos; arquivos enormes abrem sem travar e o Urbe diz quanto está mostrando. RTF mostra o texto e avisa que a formatação não aparece; JSON aparece formatado.
+- **CSV** aparece como tabela, com cabeçalho e busca por linha, mesmo com milhões de linhas.
+- Arquivos desconhecidos ou sem suporte (CBR, DOC, XLSX…) não abrem mais uma tela vazia: aparecem nome, tamanho, tipo, o que o arquivo realmente contém, o que o Urbe consegue fazer com ele e **Abrir em outro app**.
+- Um arquivo com a extensão errada não derruba o app: uma imagem renomeada é mostrada e um "PNG" que na verdade é PDF é identificado.
+
 ## Segurança do Assistente
 
 - Uma ação que precisa da sua aprovação nunca é aprovada sozinha: se a execução não tiver como perguntar a você, a ação não é feita.
