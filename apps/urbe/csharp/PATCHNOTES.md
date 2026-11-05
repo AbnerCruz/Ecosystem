@@ -36,6 +36,10 @@ Novo bloco ` ```dados ` (menu `/` → **Dados**): mostra uma tabela feita de um 
 
 Termine o bloco com `gráfico barras categoria total` (ou `linhas`, `pizza`, `dispersão`) para ver um **gráfico** em vez da tabela. Ele é desenhado dos dados, muda quando eles mudam e sai nítido em todas as publicações.
 
+## Legendas das gravações
+
+Uma transcrição de áudio, depois de revisada, vira **legendas**: no menu ⋯ da nota de transcrição, **Exportar legendas** salva SRT (players e editores de vídeo) ou WebVTT (páginas web). As legendas seguem os horários de cada trecho, têm no máximo duas linhas e saem com o texto que você corrigiu na nota.
+
 ## Onde uma nota é usada
 
 No menu ⋯ da nota, **Onde esta nota é usada** lista o que depende dela: publicações (inclusive as que usam só um trecho), blocos de dados que leem a tabela dela, barras de progresso que contam as tarefas dela, notas que a incorporam ou ligam para ela. Toque num item para abri-lo. Ao mandar para a lixeira uma nota de que algo depende, o aviso diz o que vai ficar sem a fonte.

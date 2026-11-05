@@ -870,6 +870,11 @@ public sealed partial class MainView : Grid
             new DialogItem("Abrir outra nota em nova aba", UrbeTheme.Icons.Plus, "Esta nota continua aberta na aba dela.", Run: () => { Search.OpenNewTabPicker(); return Task.CompletedTask; }),
             new DialogItem("Criar publicação desta nota", UrbeTheme.Icons.Page,
                 "Um livro, artigo ou página feito desta nota.", Run: () => CreatePublicationAsync(note.Path)),
+            .. (!Subtitles.HasTimedParts(editor.Editor.Text ?? "") ? [] : new[]
+                {
+                    new DialogItem("Exportar legendas", UrbeTheme.Icons.Download,
+                        "SRT ou WebVTT feitos desta transcrição revisada.", Run: () => ExportSubtitlesAsync(note.Path, editor.Editor.Text ?? ""))
+                }),
             new DialogItem("Onde esta nota é usada", UrbeTheme.Icons.Connections,
                 "Publicações, dados, progresso e notas que dependem dela.", Run: () => ShowNoteUsageAsync(note.Path)),
             new DialogItem("Criar publicação de um trecho", UrbeTheme.Icons.Page,
@@ -1345,6 +1350,25 @@ public sealed partial class MainView : Grid
     /// Lixeira, or "Mover para a lixeira?" for notes only); then explorer.deleteFolder for each folder and
     /// explorer.delete for the notes.
     /// </summary>
+    /// <summary>CST-210: subtitles of a transcription note, as the person reviewed it (SRT or WebVTT).</summary>
+    public async Task ExportSubtitlesAsync(string notePath, string markdown)
+    {
+        var cues = Subtitles.FromTranscript(markdown);
+        if (cues.Count == 0) { await Dialogs.AlertAsync("Exportar legendas", "A nota não tem trechos com horário e texto."); return; }
+        var choice = await Dialogs.ChooseAsync("Exportar legendas", [new DialogItem("SRT", Detail: "O formato mais aceito por players e editores de vídeo."), new DialogItem("WebVTT", Detail: "O formato das páginas web (tag <track>).")]);
+        if (choice is not { } k) return;
+        var vtt = k == 1;
+        var name = System.IO.Path.GetFileNameWithoutExtension(notePath).Replace(" — transcrição", "") + (vtt ? ".vtt" : ".srt");
+        var bytes = System.Text.Encoding.UTF8.GetBytes(vtt ? Subtitles.ToVtt(cues) : Subtitles.ToSrt(cues));
+        try
+        {
+            var saved = SavePageFile is { } save ? await save(name, bytes) : await SavePublicationFileAsync(name, bytes, vtt ? "vtt" : "srt", vtt ? "text/vtt" : "application/x-subrip");
+            if (saved == true) ShowLifeNotice(cues.Count + " legendas salvas.");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        { await Dialogs.AlertAsync("Não foi possível salvar as legendas", StorageProblems.Explain(ex)); }
+    }
+
     /// <summary>CST-226: the things that depend on a note, each one openable.</summary>
     public async Task ShowNoteUsageAsync(string notePath)
     {
