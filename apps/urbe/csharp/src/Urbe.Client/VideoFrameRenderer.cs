@@ -168,7 +168,7 @@ public sealed class VideoFrameRenderer : IDisposable
     }
 
     /// <summary>The formula as one filled Skia path, from the SVG subset (path, line) the Core's math canvas writes.</summary>
-    internal static (SKPath Path, float W, float H)? MathPath(string tex)
+    public static (SKPath Path, float W, float H)? MathPath(string tex)
     {
         var result = MathRenderer.RenderSvg(tex, true, 48);
         if (!result.Success) return null;
