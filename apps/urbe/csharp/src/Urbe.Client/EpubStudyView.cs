@@ -32,6 +32,8 @@ public sealed class EpubStudyView : Grid, IDisposable
     private string _searchQuery = "";
     private int _searchPart, _searchOffset;
     public int CurrentChapter { get; private set; }
+    /// <summary>The spine items (chapters, sections, slides): what reading progress is counted in.</summary>
+    public int PartCount => _book.Chapters.Count;
     private readonly Avalonia.Threading.DispatcherTimer _positionTimer = new() { Interval = TimeSpan.FromSeconds(3) };
     private bool _capturing;
     public int CurrentOffset { get; private set; }

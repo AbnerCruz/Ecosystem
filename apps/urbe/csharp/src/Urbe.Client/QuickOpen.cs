@@ -365,6 +365,7 @@ public sealed class SearchFeature
 
         Register("ui.quickOpen.open", "Buscar notas", "Navegação", OpenQuickOpen);
         Register("reader.browser.open", "Navegador de estudo / YouTube", "Leitura", () => view.StudyBrowser.Open());
+        Register("reader.continue", "Continuar lendo", "Leitura", () => _ = view.ChooseContinueReadingAsync());
         Register("ui.commandPalette.open", "Abrir comandos", "Interface", OpenPalette);
         Register("ui.explorer.open", "Abrir notas", "Navegação", view.ShowNotes);
         Register("document.create", "Nova nota", "Documento", () => _ = view.CreateNoteAsync());

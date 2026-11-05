@@ -63,6 +63,7 @@ public sealed partial class MainView : Grid
         Editor.Pinned.Storage = _vault;
         Editor.Pinned.Preview.Dialogs = Dialogs;
         Editor.Pinned.Files = () => _contents.Keys.Concat(_attachments);
+        Editor.Pinned.ContinueReading = () => ContinueReading();
         Editor.Pinned.NoteText = path => ArtifactModel.IsNote(path) ? _contents.GetValueOrDefault(path) : null;
         FilePreview.QuoteRequested += quote => _ = InsertReaderQuoteAsync(quote);
         Editor.Pinned.Preview.QuoteRequested += quote => _ = InsertReaderQuoteAsync(quote);

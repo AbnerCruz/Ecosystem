@@ -2,10 +2,43 @@ using Urbe.Core;
 
 namespace Urbe.Client;
 
+/// <summary>A "Continuar lendo" entry: a source, where it was left (in its format's terms) and when.</summary>
+public sealed record ContinueReadingItem(string Path, string Format, ReaderProgressInfo Progress, string LastRead)
+{
+    public string Detail => VaultFileKinds.Label(Format) + " · " + Progress.Position + " · " + LastRead +
+        (System.IO.Path.GetDirectoryName(Path) is { Length: > 0 } folder ? " · " + folder.Replace('\\', '/') : "");
+}
+
 public sealed partial class MainView
 {
     public StudyBrowserPanel StudyBrowser { get; } = new();
     public ReadingStateFile ReadingState { get; } = new(UrbeApp.LocalStatePath is { } statePath ? statePath + ".readers.v1.json" : null);
+    /// <summary>
+    /// CST-241 "Continuar lendo": the sources of this vault read most recently that still exist, with where they were
+    /// left. Read from the private reading state only: nothing is written to the vault for reading.
+    /// </summary>
+    public IReadOnlyList<ContinueReadingItem> ContinueReading(int max = 5)
+    {
+        if (_vault?.AtlasVaultSessionKey is not { } identity) return [];
+        var files = new HashSet<string>(_attachments.Concat(_contents.Keys), StringComparer.Ordinal);
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        return ReadingState.Recent(ReaderSessionCatalog.VaultKey(identity), 64).Where(s => files.Contains(s.Path)).Take(max)
+            .Select(s => new ContinueReadingItem(s.Path, s.Format, ReaderProgress.Describe(s), ReaderProgress.LastRead(s.Updated, now))).ToArray();
+    }
+
+    /// <summary>The command: choose a source and open it where it was left (beside the note while studying).</summary>
+    public async Task ChooseContinueReadingAsync()
+    {
+        if (Dialogs.IsOpen) return;
+        var items = ContinueReading(12);
+        if (items.Count == 0) { ShowLifeNotice("Nenhuma leitura para continuar. Abra um PDF, EPUB ou outro documento do vault."); return; }
+        var choice = await Dialogs.ChooseAsync("Continuar lendo", items.Select(i => new DialogItem(System.IO.Path.GetFileName(i.Path), UrbeTheme.Icons.File, i.Detail)).ToArray());
+        if (choice is not { } index || index >= items.Count) return;
+        await OpenContinueReadingAsync(items[index].Path);
+    }
+
+    public Task OpenContinueReadingAsync(string path) => StudyOpen ? Editor.Pinned.OpenFileAsync(path) : FilePreview.OpenAsync(path);
+
     private Task OpenReaderSourceAsync(string target)
     {
         var (path, fragment) = EmbedFragments.Split(target);
