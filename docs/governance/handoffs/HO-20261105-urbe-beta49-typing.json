@@ -51,10 +51,10 @@
     {
       "check": "Digitação no Fonte de nota grande e alças de seleção por toque no moto g32",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/urbe/csharp/PATCHNOTES.md",
-      "evidence": "Validação física pendente (NN-017): toque, arrastar alças, IME."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-05 (Issue https://github.com/AbnerCruz/Ecosystem/issues/910); registro em docs/governance/responses/VAL-HO-20261105-urbe-beta49-typing-0008560facc0.md."
     }
   ],
   "known_issues": [
