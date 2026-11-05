@@ -44,6 +44,10 @@ Uma transcrição de áudio, depois de revisada, vira **legendas**: no menu ⋯ 
 
 No menu ⋯ da nota, **Onde esta nota é usada** lista o que depende dela: publicações (inclusive as que usam só um trecho), blocos de dados que leem a tabela dela, barras de progresso que contam as tarefas dela, notas que a incorporam ou ligam para ela. Toque num item para abri-lo. Ao mandar para a lixeira uma nota de que algo depende, o aviso diz o que vai ficar sem a fonte.
 
+## O Assistente edita pela estrutura da nota
+
+O Assistente ganhou a ferramenta **editar estrutura**: ele troca, acrescenta, apaga ou insere seções pelo título; muda propriedades; marca e acrescenta tarefas; altera células e acrescenta linhas em tabelas. Não precisa mais copiar o texto exato nem reescrever a nota inteira. Tudo passa pela mesma aprovação, pelo selo de autoria e pelo **Desfazer**. Se algo não existir ou for ambíguo, nada é alterado e ele recebe o motivo.
+
 ## Skills do Assistente
 
 Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descrição e instruções, no formato aberto Agent Skills) para ensinar o Assistente a fazer um trabalho do seu jeito. Ele vê só o nome e a descrição e carrega o resto quando o pedido combina. Uma skill não dá permissões e nada nela é executado. O Urbe já vem com skills de apresentação, livro e cálculo.

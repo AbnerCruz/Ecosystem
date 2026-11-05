@@ -34,7 +34,7 @@ public sealed record AiAuthoredWrite(string Tool, string Path, UrbeDocument? Doc
 public static partial class AssistantTools
 {
     /// <summary>The note tools whose text the Assistente authors: the Urbe seals what they write (AiAuthorship).</summary>
-    public static bool IsAuthoredWrite(string name) => name is "create_note" or "edit_note" or "write_note" or "append_to_note" or "add_quick_note";
+    public static bool IsAuthoredWrite(string name) => name is "create_note" or "edit_note" or "write_note" or "append_to_note" or "add_quick_note" or "edit_note_structure";
 
     /// <summary>
     /// UC-51 / CST-028: what an authored write will store — the tool's change applied to the seal-free text the agent
@@ -84,6 +84,10 @@ public static partial class AssistantTools
             case "append_to_note":
                 next = AppendText(current, Plain("content"), Has(input, "heading") ? Str(input, "heading") : null);
                 break;
+            case "edit_note_structure":
+                // CST-224: the operations act on the seal-free text; the seals are given again below
+                next = StructureEdit(current, input, seals);
+                break;
             default:
                 throw new AiToolException("Ferramenta sem escrita de nota: " + tool.Name);
         }
@@ -113,6 +117,7 @@ public static partial class AssistantTools
             "edit_note" => new AiToolOutput("Editada: " + u.Path + ".", change),
             "write_note" => new AiToolOutput("Reescrita: " + u.Path + " (" + Words(AiAuthorship.Strip(u.Content)) + " palavras).", change),
             "add_quick_note" => new AiToolOutput("Nota rápida registrada em " + u.Path + ".", change),
+            "edit_note_structure" => new AiToolOutput("Estrutura editada: " + u.Path + ".", change),
             _ => new AiToolOutput("Texto acrescentado em " + u.Path + ".", change)
         };
     }
@@ -429,6 +434,44 @@ public static partial class AssistantTools
     private static readonly Regex HeadingRe = new(@"^(#{1,6})\s+(.*)$");
 
     /// <summary>appendText(content, text, heading): at the end, or at the end of a section.</summary>
+    /// <summary>CST-224: edits by structure (sections, properties, tasks, tables), on the authored path like edit_note.
+    /// Kept out of <see cref="All"/>, which mirrors the 1.8.4's tools.</summary>
+    public static AiTool StructureTool { get; } = new AiTool
+    {
+        Name = "edit_note_structure", Access = "write",
+        Description = "Edita uma nota pela estrutura, sem copiar texto exato: seções (pelo título), propriedades, tarefas e tabelas. Todas as operações valem ou nenhuma vale; " +
+                      "algo ausente ou ambíguo volta como erro explicando. Operações (campo op): replace_section {heading, content}, append_to_section {heading, content}, " +
+                      "delete_section {heading}, insert_section {title, content, level?, after?}, rename_heading {heading, title}, set_property {name, value}, " +
+                      "remove_property {name}, set_task {text, done}, add_task {text, heading?}, table_set_cell {row, column, value, heading?} (row = valor da 1ª coluna), " +
+                      "table_add_row {values (lista ou objeto coluna→valor), heading?}. heading é o texto do título; use '## Título' para dizer o nível. Prefira a edit_note para mudanças pequenas de texto.",
+        Parameters = Schema("""{"type":"object","properties":{"path":{"type":"string"},"ops":{"type":"array","items":{"type":"object"}}},"required":["path","ops"],"additionalProperties":false}"""),
+        Label = i => "Editar a estrutura de " + Norm(Str(i, "path")),
+        Preview = (i, host) =>
+        {
+            var d = ResolveDoc(host, Str(i, "path"))!;
+            return new AiPreview(d.Path, d.Content, StructureEdit(d.Content, i, false));
+        },
+        Run = async (i, host) =>
+        {
+            var d = ResolveDoc(host, Str(i, "path"))!;
+            var u = await host.SaveNoteAsync(d, StructureEdit(d.Content, i, false));
+            return new AiToolOutput("Estrutura editada: " + u.Path + ".", [new AiChange(d.Id, Snap(d), Snap(u))]);
+        }
+    };
+
+    /// <summary>CST-224: the structural operations of edit_note_structure over a note's text (seals the agent sent are dropped).</summary>
+    public static string StructureEdit(string content, JsonObject input, bool seals)
+    {
+        if (input["ops"] is not JsonArray ops || ops.Count == 0) throw new AiToolException("Envie ops: uma lista de operações (ex.: [{\"op\":\"set_task\",\"text\":\"comprar pão\",\"done\":true}]).");
+        var clean = (JsonArray)ops.DeepClone();
+        if (seals)
+            foreach (var op in clean.OfType<JsonObject>())
+                foreach (var key in new[] { "content", "title", "text" })
+                    if (op[key] is JsonValue v && v.TryGetValue<string>(out var str)) op[key] = AiAuthorship.Strip(str);
+        try { return SemanticEdits.Apply(content, clean); }
+        catch (SemanticEdits.EditError ex) { throw new AiToolException(ex.Message); }
+    }
+
     public static string AppendText(string content, string text, string? heading)
     {
         if (string.IsNullOrEmpty(heading)) return Regex.Replace(content, @"\s*$", "") + (LegacyCustomize.JsTrim(content).Length > 0 ? "\n\n" : "") + text + "\n";
