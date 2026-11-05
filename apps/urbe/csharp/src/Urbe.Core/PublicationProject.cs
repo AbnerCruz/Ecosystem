@@ -34,6 +34,8 @@ public sealed record PublicationProject
     public List<PublicationPlacement> Sections { get; init; } = [];
     public PublicationDesign Design { get; init; } = new();
     public List<string> Formats { get; init; } = ["html"];
+    /// <summary>CST-170: the timeline of a "video" layout (scenes, objects, keyframes, audio). Null for other layouts.</summary>
+    public VideoComposition? Video { get; init; }
 
     // Do not drop future non-authoring metadata on a load/edit/save round trip.
     [JsonExtensionData]
@@ -156,6 +158,7 @@ public static class PublicationProjectCodec
             throw new InvalidDataException("Seções sem identidade ou fonte cadastrada.");
         if (project.Formats.Count == 0 || project.Formats.Any(s => string.IsNullOrWhiteSpace(s)))
             throw new InvalidDataException("A publicação precisa declarar os formatos de destino.");
+        if (project.Video is { } video) VideoCompositionRules.Validate(video);
     }
 }
 
