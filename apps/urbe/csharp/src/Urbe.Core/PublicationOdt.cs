@@ -27,8 +27,8 @@ public static class PublicationOdt
     private const double TextWidthCm = 17;
 
     public static async Task<PublicationExport> ExportAsync(PublicationProject project, PublicationSourceCatalog catalog,
-        Func<string, Task<byte[]?>>? readAsset = null, CancellationToken cancellationToken = default) =>
-        Write(await PublicationOffice.ReadAsync(project, catalog, readAsset, cancellationToken));
+        Func<string, Task<byte[]?>>? readAsset = null, CancellationToken cancellationToken = default, Func<string, int, int, OfficeRaster?>? rasterize = null) =>
+        Write(await PublicationOffice.ReadAsync(project, catalog, readAsset, cancellationToken, rasterize));
 
     public static PublicationExport Write(OfficeDocument doc)
     {
@@ -122,8 +122,10 @@ public static class PublicationOdt
 
         XElement ImageElement(OfficeImage image)
         {
-            var path = "Pictures/image" + (pictures.Count + 1) + image.Extension;
-            pictures.Add((path, image.Mime, image.Bytes));
+            // ODF holds SVG: a drawing of the Urbe goes as its vector original
+            var vector = image.Svg is not null;
+            var path = "Pictures/image" + (pictures.Count + 1) + (vector ? ".svg" : image.Extension);
+            pictures.Add((path, vector ? "image/svg+xml" : image.Mime, vector ? Encoding.UTF8.GetBytes(image.Svg!) : image.Bytes));
             // 96 px per inch, never wider than the text
             double w = image.Width / 96.0 * 2.54, h = image.Height / 96.0 * 2.54;
             if (w > TextWidthCm) { h = h * TextWidthCm / w; w = TextWidthCm; }

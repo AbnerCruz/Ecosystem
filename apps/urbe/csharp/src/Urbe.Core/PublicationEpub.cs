@@ -86,6 +86,12 @@ public static class PublicationEpub
                 if (!result.IsValid) throw new InvalidDataException(result.Error);
                 return new XElement(Xhtml + "p", result.Label + ": " + result.Summary);
             }
+            if (node.Tag == "pre" && FunctionPlot.IsPlotLanguage(node.Attr("data-lang")))
+            {
+                var plotPath = "assets/plot-" + files.Count + ".svg";
+                files[plotPath] = ("image/svg+xml", Encoding.UTF8.GetBytes(FunctionPlot.Parse(Plain(node)).ToSvg()));
+                return new XElement(Xhtml + "img", new XAttribute("src", plotPath), new XAttribute("alt", "Gráfico: " + Plain(node).Replace('\n', ' ')));
+            }
             if (node.Attr("data-tex") is { Length: > 0 } tex)
             {
                 var math = MathRenderer.RenderSvg(tex, node.Tag == "div", 18);

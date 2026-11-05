@@ -13,7 +13,12 @@ public sealed record OfficeParagraph(IReadOnlyList<OfficeRun> Runs, string Style
 public sealed record OfficeListItem(int ListId, int Level, bool Ordered, bool? Checked, IReadOnlyList<OfficeRun> Runs) : OfficeBlock;
 public sealed record OfficeCode(string Text, string? Language) : OfficeBlock;
 public sealed record OfficeTable(IReadOnlyList<IReadOnlyList<IReadOnlyList<OfficeRun>>> Rows, bool HeaderRow) : OfficeBlock;
-public sealed record OfficeImage(byte[] Bytes, string Mime, string Extension, int Width, int Height, string Alt) : OfficeBlock;
+/// <summary>A picture. <see cref="Svg"/> is the vector original of a drawing made by the Urbe (a graph), kept beside
+/// <see cref="Bytes"/> (PNG then) for formats that hold both.</summary>
+public sealed record OfficeImage(byte[] Bytes, string Mime, string Extension, int Width, int Height, string Alt, string? Svg = null) : OfficeBlock;
+
+/// <summary>A drawing turned into pixels by the platform (the core draws no pixels).</summary>
+public sealed record OfficeRaster(byte[] Png, int Width, int Height);
 public sealed record OfficeRule : OfficeBlock;
 /// <summary>A <c>:::tipo título</c> container of the note (CST-026), with the blocks inside it.</summary>
 public sealed record OfficeBox(string Type, string Title, IReadOnlyList<OfficeBlock> Blocks) : OfficeBlock;
@@ -37,7 +42,7 @@ public static class PublicationOffice
     /// so a file never mixes two revisions.
     /// </summary>
     public static async Task<OfficeDocument> ReadAsync(PublicationProject project, PublicationSourceCatalog catalog,
-        Func<string, Task<byte[]?>>? readAsset = null, CancellationToken cancellationToken = default)
+        Func<string, Task<byte[]?>>? readAsset = null, CancellationToken cancellationToken = default, Func<string, int, int, OfficeRaster?>? rasterize = null)
     {
         PublicationProjectCodec.Validate(project);
         ArgumentNullException.ThrowIfNull(catalog);
@@ -89,6 +94,22 @@ public static class PublicationOffice
                         var result = NoteProgress.Evaluate(Plain(node), source.Markdown, id => catalog.Read(new(id))?.Markdown);
                         into.Add(new OfficeParagraph([new OfficeRun(result.Label + ": " + result.Summary, Bold: true)]));
                         limits.Add("Barras de progresso saem como texto com o valor atual (sem a barra gráfica).");
+                        return;
+                    }
+                    if (FunctionPlot.IsPlotLanguage(node.Attr("data-lang")))
+                    {
+                        // CST-169: a graph is a drawing in every output, vector where the format holds it
+                        const int w = 640, h = 400;
+                        var plotText = Plain(node);
+                        var svg = PlotSvg(FunctionPlot.Parse(plotText).ToSvg(w, h), w, h);
+                        var alt = "Gráfico: " + plotText.Replace('\n', ' ').Trim();
+                        if (rasterize?.Invoke(svg, w * 2, h * 2) is { } png)
+                            into.Add(new OfficeImage(png.Png, "image/png", ".png", w, h, alt, svg));
+                        else
+                        {
+                            into.Add(new OfficeImage(System.Text.Encoding.UTF8.GetBytes(svg), "image/svg+xml", ".svg", w, h, alt, svg));
+                            limits.Add("Gráficos vão como imagem vetorial (SVG); editores muito antigos podem não mostrá-los.");
+                        }
                         return;
                     }
                     into.Add(new OfficeCode(Plain(node).TrimEnd('\n'), node.Attr("data-lang") is { Length: > 0 } lang ? lang : null));
@@ -270,6 +291,10 @@ public static class PublicationOffice
                 yield return inner is OfficeParagraph { Style: "body" } p ? p with { Style = "box" } : inner;
         }
     }
+
+    /// <summary>A standalone SVG file: fixed size and black ink where the page would give its colour.</summary>
+    internal static string PlotSvg(string svg, int width, int height) =>
+        svg.Replace("width='100%'", "width='" + width + "' height='" + height + "'").Replace("currentColor", "#25272c");
 
     private readonly record struct Format(bool Bold, bool Italic, bool Strike, bool Code, string? Href);
 

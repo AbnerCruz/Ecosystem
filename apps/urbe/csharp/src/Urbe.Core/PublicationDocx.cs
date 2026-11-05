@@ -22,14 +22,15 @@ public static class PublicationDocx
     private static readonly XNamespace DC = "http://purl.org/dc/elements/1.1/";
     private static readonly XNamespace DCTerms = "http://purl.org/dc/terms/";
     private static readonly XNamespace Xsi = "http://www.w3.org/2001/XMLSchema-instance";
+    private static readonly XNamespace Asvg = "http://schemas.microsoft.com/office/drawing/2016/SVG/main";
 
     /// <summary>A4 text width with 2 cm margins, in EMU (an image never runs past the margin).</summary>
     private const long TextWidthEmu = 6120000;
     private const long EmuPerPixel = 9525;
 
     public static async Task<PublicationExport> ExportAsync(PublicationProject project, PublicationSourceCatalog catalog,
-        Func<string, Task<byte[]?>>? readAsset = null, CancellationToken cancellationToken = default) =>
-        Write(await PublicationOffice.ReadAsync(project, catalog, readAsset, cancellationToken));
+        Func<string, Task<byte[]?>>? readAsset = null, CancellationToken cancellationToken = default, Func<string, int, int, OfficeRaster?>? rasterize = null) =>
+        Write(await PublicationOffice.ReadAsync(project, catalog, readAsset, cancellationToken, rasterize));
 
     public static PublicationExport Write(OfficeDocument doc)
     {
@@ -78,6 +79,7 @@ public static class PublicationDocx
                 new XElement(CT + "Default", new XAttribute("Extension", "png"), new XAttribute("ContentType", "image/png")),
                 new XElement(CT + "Default", new XAttribute("Extension", "jpg"), new XAttribute("ContentType", "image/jpeg")),
                 new XElement(CT + "Default", new XAttribute("Extension", "gif"), new XAttribute("ContentType", "image/gif")),
+                new XElement(CT + "Default", new XAttribute("Extension", "svg"), new XAttribute("ContentType", "image/svg+xml")),
                 Override("/word/document.xml", "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"),
                 Override("/word/styles.xml", "application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"),
                 Override("/word/numbering.xml", "application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"),
@@ -162,6 +164,16 @@ public static class PublicationDocx
             var path = "media/image" + drawing + image.Extension;
             media.Add((path, image.Bytes));
             rels.Add(Relationship(id, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", path));
+            // a drawing of the Urbe keeps its vector original beside the PNG (Office 2016+ shows the SVG)
+            XElement? svgExt = null;
+            if (image.Svg is { } svg && image.Mime != "image/svg+xml")
+            {
+                var svgId = "rIdSvg" + drawing;
+                media.Add(("media/image" + drawing + ".svg", Encoding.UTF8.GetBytes(svg)));
+                rels.Add(Relationship(svgId, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", "media/image" + drawing + ".svg"));
+                svgExt = new XElement(A + "extLst", new XElement(A + "ext", new XAttribute("uri", "{96DAC541-7B7A-43D3-8B79-37D633B846F1}"),
+                    new XElement(Asvg + "svgBlip", new XAttribute(XNamespace.Xmlns + "asvg", Asvg), new XAttribute(R + "embed", svgId))));
+            }
             long cx = image.Width * EmuPerPixel, cy = image.Height * EmuPerPixel;
             if (cx > TextWidthEmu) { cy = cy * TextWidthEmu / cx; cx = TextWidthEmu; }
             var alt = PublicationOffice.XmlSafe(image.Alt);
@@ -172,7 +184,7 @@ public static class PublicationDocx
                     new XElement(A + "graphic", new XElement(A + "graphicData", new XAttribute("uri", "http://schemas.openxmlformats.org/drawingml/2006/picture"),
                         new XElement(Pic + "pic",
                             new XElement(Pic + "nvPicPr", new XElement(Pic + "cNvPr", new XAttribute("id", drawing), new XAttribute("name", "Imagem " + drawing), new XAttribute("descr", alt)), new XElement(Pic + "cNvPicPr")),
-                            new XElement(Pic + "blipFill", new XElement(A + "blip", new XAttribute(R + "embed", id)), new XElement(A + "stretch", new XElement(A + "fillRect"))),
+                            new XElement(Pic + "blipFill", new XElement(A + "blip", new XAttribute(R + "embed", id), svgExt), new XElement(A + "stretch", new XElement(A + "fillRect"))),
                             new XElement(Pic + "spPr", new XElement(A + "xfrm", new XElement(A + "off", new XAttribute("x", 0), new XAttribute("y", 0)), new XElement(A + "ext", new XAttribute("cx", cx), new XAttribute("cy", cy))),
                                 new XElement(A + "prstGeom", new XAttribute("prst", "rect"), new XElement(A + "avLst"))))))))));
         }

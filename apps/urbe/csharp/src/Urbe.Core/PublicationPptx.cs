@@ -27,6 +27,7 @@ public static class PublicationPptx
     private static readonly XNamespace CT = "http://schemas.openxmlformats.org/package/2006/content-types";
     private static readonly XNamespace CP = "http://schemas.openxmlformats.org/package/2006/metadata/core-properties";
     private static readonly XNamespace DC = "http://purl.org/dc/elements/1.1/";
+    private static readonly XNamespace Asvg = "http://schemas.microsoft.com/office/drawing/2016/SVG/main";
 
     private const long Inch = 914400;
     private const long SlideW = 12192000, SlideH = 6858000; // 16:9
@@ -37,8 +38,8 @@ public static class PublicationPptx
     private static readonly int Capacity = (int)(BodyH / (double)Inch * 72 / (BodyPt * 1.5));
 
     public static async Task<PublicationExport> ExportAsync(PublicationProject project, PublicationSourceCatalog catalog,
-        Func<string, Task<byte[]?>>? readAsset = null, CancellationToken cancellationToken = default) =>
-        Write(await PublicationOffice.ReadAsync(project, catalog, readAsset, cancellationToken));
+        Func<string, Task<byte[]?>>? readAsset = null, CancellationToken cancellationToken = default, Func<string, int, int, OfficeRaster?>? rasterize = null) =>
+        Write(await PublicationOffice.ReadAsync(project, catalog, readAsset, cancellationToken, rasterize));
 
     /// <summary>The slides the deck will have (also what the studio previews and the tests read).</summary>
     public static IReadOnlyList<PptxSlide> Slides(OfficeDocument doc, ICollection<string>? limitations = null)
@@ -111,7 +112,7 @@ public static class PublicationPptx
         {
             var types = new XElement(CT + "Types",
                 Default("rels", "application/vnd.openxmlformats-package.relationships+xml"), Default("xml", "application/xml"),
-                Default("png", "image/png"), Default("jpg", "image/jpeg"), Default("gif", "image/gif"),
+                Default("png", "image/png"), Default("jpg", "image/jpeg"), Default("gif", "image/gif"), Default("svg", "image/svg+xml"),
                 Override("/ppt/presentation.xml", "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"),
                 Override("/ppt/slideMasters/slideMaster1.xml", "application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"),
                 Override("/ppt/slideLayouts/slideLayout1.xml", "application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"),
@@ -250,6 +251,15 @@ public static class PublicationPptx
             pictures.Add((path, image.Bytes));
             var rid = "rIdImg" + media;
             rels.Add((rid, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", "../" + path, false));
+            XElement? svgExt = null;
+            if (image.Svg is { } svg && image.Mime != "image/svg+xml")
+            {
+                var svgPath = "media/image" + media + ".svg";
+                pictures.Add((svgPath, Encoding.UTF8.GetBytes(svg)));
+                rels.Add(("rIdSvg" + media, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image", "../" + svgPath, false));
+                svgExt = new XElement(A + "extLst", new XElement(A + "ext", new XAttribute("uri", "{96DAC541-7B7A-43D3-8B79-37D633B846F1}"),
+                    new XElement(Asvg + "svgBlip", new XAttribute(XNamespace.Xmlns + "asvg", Asvg), new XAttribute(R + "embed", "rIdSvg" + media))));
+            }
             long boxX = slide.Text.Count > 0 ? (long)(6.9 * Inch) : Margin, boxW = slide.Text.Count > 0 ? SlideW - boxX - Margin : SlideW - 2 * Margin;
             long boxY = title.Length > 0 ? BodyTop : Margin, boxH = SlideH - boxY - (long)(0.4 * Inch);
             double scale = Math.Min(boxW / (double)image.Width, boxH / (double)image.Height);
@@ -260,7 +270,7 @@ public static class PublicationPptx
             shapes.Add(new XElement(P + "pic",
                 new XElement(P + "nvPicPr", new XElement(P + "cNvPr", new XAttribute("id", id), new XAttribute("name", "Imagem " + id++), new XAttribute("descr", PublicationOffice.XmlSafe(image.Alt))),
                     new XElement(P + "cNvPicPr", new XElement(A + "picLocks", new XAttribute("noChangeAspect", 1))), new XElement(P + "nvPr")),
-                new XElement(P + "blipFill", new XElement(A + "blip", new XAttribute(R + "embed", rid)), new XElement(A + "stretch", new XElement(A + "fillRect"))),
+                new XElement(P + "blipFill", new XElement(A + "blip", new XAttribute(R + "embed", rid), svgExt), new XElement(A + "stretch", new XElement(A + "fillRect"))),
                 new XElement(P + "spPr", Xfrm(x, top, w, h), Geometry())));
         }
         var xml = new XElement(P + "sld", Ns(), new XElement(P + "cSld", EmptyTree(shapes.ToArray())), new XElement(P + "clrMapOvr", new XElement(A + "masterClrMapping")));

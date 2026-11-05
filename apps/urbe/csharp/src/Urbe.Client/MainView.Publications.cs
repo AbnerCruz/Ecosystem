@@ -387,9 +387,9 @@ public sealed partial class MainView
             Func<string, Task<byte[]?>> asset = async path => vault is null ? null : (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes;
             var result = extension switch
             {
-                "odt" => await PublicationOdt.ExportAsync(project, catalog, asset),
-                "pptx" => await PublicationPptx.ExportAsync(project, catalog, asset),
-                _ => await PublicationDocx.ExportAsync(project, catalog, asset)
+                "odt" => await PublicationOdt.ExportAsync(project, catalog, asset, rasterize: SvgRaster.ToPng),
+                "pptx" => await PublicationPptx.ExportAsync(project, catalog, asset, rasterize: SvgRaster.ToPng),
+                _ => await PublicationDocx.ExportAsync(project, catalog, asset, rasterize: SvgRaster.ToPng)
             };
             if (!ReferenceEquals(draft, _publicationDraft) || !ReferenceEquals(draft.Store, _store) || draft.Dirty) return;
             var name = ArtifactModel.SafeName(project.Title) + "." + extension;
