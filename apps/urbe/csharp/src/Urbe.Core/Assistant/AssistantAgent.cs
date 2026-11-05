@@ -1158,7 +1158,10 @@ public static class AssistantAgent
             {
                 emit(new AiAgentEvent("tool_status", Call: call, Status: "waiting"));
                 long asked = clock.ElapsedMilliseconds;
-                var ans = o.Approve is not null ? await o.Approve(new AiApprovalRequest(call, tool, tool.Label(input), preview, tool.Access), cancel) : AiApproval.Approve;
+                // CST-219: with nobody to ask, an action that needs approval is not done (fail closed, never self-approved)
+                if (o.Approve is null)
+                    return new Out("Esta ação precisa da aprovação do usuário e esta execução não tem como pedi-la: nada foi feito. Mostre a sugestão em texto.", true, "rejected");
+                var ans = await o.Approve(new AiApprovalRequest(call, tool, tool.Label(input), preview, tool.Access), cancel);
                 lock (gate) metrics.ApprovalMs += clock.ElapsedMilliseconds - asked;
                 if (cancel.IsCancellationRequested) return new Out("Interrompido pelo usuário.", true, "aborted");
                 if (ans.Kind == "approve_all") runAllow = true;

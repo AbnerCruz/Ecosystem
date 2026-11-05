@@ -1464,9 +1464,10 @@ public sealed partial class AssistantPanel : Border
         private AiProviderConfig? ImageProvider => panel._cfg.AgentImages.TryGetValue(agentId, out var choice)
             ? panel._cfg.Providers.FirstOrDefault(p => p.Id == choice.ProviderId) : null;
         public bool CanDraw => ImageProvider is not null;
-        public Task<byte[]> DrawAsync(string prompt, string size, CancellationToken cancel) =>
+        // CST-219: the run's cancellation reaches the image provider (the tool has no token of its own to give)
+        public Task<byte[]> DrawAsync(string prompt, string size, CancellationToken token) =>
             panel.Providers.GenerateImageAsync(ImageProvider ?? throw new AiProviderException("Configure um provedor de imagens."),
-                prompt, panel._cfg.AgentImages.GetValueOrDefault(agentId)?.Model, size, cancel);
+                prompt, panel._cfg.AgentImages.GetValueOrDefault(agentId)?.Model, size, token.CanBeCanceled ? token : cancel);
         public Task SaveAsync(string path, byte[] bytes) => panel._app.CreateBinaryFileAsync(path, bytes);
         public bool Exists(string path) => panel._app.FileExists(path);
         public IAssistantNames? Names => this;

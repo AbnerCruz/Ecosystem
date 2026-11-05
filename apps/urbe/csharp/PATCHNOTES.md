@@ -65,6 +65,11 @@ O Assistente ganhou a ferramenta **editar estrutura**: ele troca, acrescenta, ap
 
 Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descrição e instruções, no formato aberto Agent Skills) para ensinar o Assistente a fazer um trabalho do seu jeito. Ele vê só o nome e a descrição e carrega o resto quando o pedido combina. Uma skill não dá permissões e nada nela é executado. O Urbe já vem com skills de apresentação, livro e cálculo.
 
+## Segurança do Assistente
+
+- Uma ação que precisa da sua aprovação nunca é aprovada sozinha: se a execução não tiver como perguntar a você, a ação não é feita.
+- **Parar** agora interrompe também a geração de uma imagem em andamento (antes ela continuava e podia ser cobrada).
+
 ## O que ainda falta conferir no aparelho
 
 Os testes automáticos (507 de interface e 1.428 do núcleo) passam. Os arquivos Word, ODT e PowerPoint foram abertos no LibreOffice, a apresentação HTML foi testada num navegador e o PDF foi lido de volta para conferir páginas, sumário e links. Ainda precisam ser conferidos no moto g32:
