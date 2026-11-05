@@ -175,8 +175,10 @@ public static class PublicationHtml
     {
         PublicationProjectCodec.Validate(project);
         ArgumentNullException.ThrowIfNull(catalog);
+        // CST-167: slides are a presentation of their own, not a page of scrolled articles
+        if (project.Design.Layout == "slides") return PublicationSlides.Export(project, catalog, RenderMath);
         var title = MarkdownEngine.EscapeHtml(project.Title);
-        var slides = project.Design.Layout == "slides";
+        var slides = false;
         var book = project.Design.Layout == "book";
         var accent = project.Design.Theme switch { "ocean" => "#075985", "ink" => "#312e81", _ => "#6b4f2a" };
         var sb = new StringBuilder();
