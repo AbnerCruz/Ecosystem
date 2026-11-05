@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261105-urbe-beta50-publications",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-05T12:08:10.000Z",
+  "agent": {
+    "id": "claude-code-urbe-recovery",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-166",
+  "component": "urbe",
+  "state": "review",
+  "branch": "claude/urbe-refactor-development-t73hul",
+  "base_commit": "ee8a6be",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/Docs/AppDocs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Publications.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PublicationPdf.cs",
+    "apps/urbe/csharp/src/Urbe.Client/SvgRaster.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/CalcBlockView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Ui/DataBlockView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AgentSkills.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantCalcTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantDataTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Calculus/Calculator.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Data/DataBlock.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Data/DataChart.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Data/DataQuery.cs",
+    "apps/urbe/csharp/src/Urbe.Core/FunctionPlot.cs",
+    "apps/urbe/csharp/src/Urbe.Core/NoteContainers.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationDocx.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationOdt.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationOffice.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationPptx.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PublicationSlides.cs",
+    "docs/adr/0048-urbe-cliente-mcp.md",
+    "docs/governance/decisions.json"
+  ],
+  "work_completed": [
+    "05/11, pedido do proprietário: continuar sem parar pela consolidação 2.6, implementando funcionalidades ausentes.",
+    "CST-166: Publicações exportam DOCX (estilos, numeração, links, imagens, sumário em livros) e ODT (outline, listas aninhadas, tabelas, imagens) por leitura semântica comum; relatório de limitações após salvar. Abertos e renderizados no LibreOffice headless.",
+    "CST-168: PPTX editável — título como placeholder, texto, tópicos, numeração, tabelas e imagens nativas; nota, #/## ou --- iniciam slide; texto excedente continua em slide '(cont.)'; :::notas vira notas do apresentador (notesMaster/notesSlide), lidas pelo LibreOffice.",
+    "CST-167: layout Slides vira apresentação HTML autocontida (16:9 escalável por unidades de contêiner, navegação por teclado/toque, tela cheia, visão geral, notas, aviso de transbordo, PDF de um slide por página). Verificado em Chromium.",
+    "CST-026: contêineres :::tipo saem como caixas em HTML, EPUB, DOCX, ODT e PPTX (antes saíam crus).",
+    "CST-169: ```grafico sai como vetor em HTML/slides/EPUB/ODT e como PNG + SVG original (svgBlip) em DOCX/PPTX, via SvgRaster (SkiaSharp) para os desenhos do próprio Urbe.",
+    "CST-206: motor matemático próprio (Urbe.Core/Calculus): valores, unidades com dimensão, estatística, matrizes, derivada simbólica, simplificar/expandir, equações exatas até grau 2 e numéricas marcadas ≈, primitivas e integrais definidas com erro estimado; bloco ```calculo nativo, nas Publicações e ferramenta calculate do Assistente.",
+    "CST-177/214: Agent Skills — Personalização/Skills/<pasta>/SKILL.md, catálogo por nome/descrição, load_skill e read_skill_file somente leitura e restritos à pasta, allowed-tools ignorado, três skills do app.",
+    "CST-207: pipeline de dados (CSV RFC 4180 com separador detectado e Latin-1, JSON, tabelas de notas) com etapas filtrar/colunas/ordenar/agrupar/calcular/limitar/distintos/resumo e linhas de origem; bloco ```dados nativo, nas Publicações e ferramenta query_data.",
+    "CST-208: passo final 'gráfico barras|linhas|pizza|dispersão' do bloco ```dados gera SVG determinístico e acessível (sem recortes conferidos no rasterizado), exibido no editor e em todas as saídas.",
+    "CST-135: criar Publicação a partir de seleção do Explorer, resultados de busca, tag (busca de comandos) e trecho de nota (título como fragmento); sempre referências.",
+    "CST-164: PDF editorial real com SkiaSharp (capa, sumário com páginas, capítulos em página nova, rodapé numerado, órfãs/viúvas, tabelas com cabeçalho repetido, fórmulas e gráficos vetoriais, links clicáveis), lido de volta com PdfPig nos testes.",
+    "CST-215: cliente MCP não implementado — fronteira de confiança nova; ADR-0048 Proposto e DEC-0061 pendente no portal.",
+    "Rebase sobre a main após a integração do PR #906 (beta.49 só com a digitação); estas entregas formam a beta.50 (2000050)."
+  ],
+  "verification": [
+    {
+      "check": "DOCX/ODT/PPTX abertos no LibreOffice e deck HTML no Chromium",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Conversões headless para PDF/ODP/TXT sem erro; notas do apresentador reconhecidas; deck com 4 páginas de 320x180 mm."
+    },
+    {
+      "check": "Exportações salvas pelo seletor do Android, blocos ```calculo e ```dados, apresentação HTML e arquivos abertos no Word/PowerPoint",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/PATCHNOTES.md",
+      "evidence": "Validação física e em Office da Microsoft pendente (NN-017)."
+    },
+    {
+      "check": "Urbe.Core.Tests e Urbe.Client.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1428/1428 Core e 507/507 Client localmente (.NET SDK 10.0.403), após o rebase."
+    },
+    {
+      "check": "tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks passaram localmente."
+    }
+  ],
+  "known_issues": [
+    "Fórmulas vão como TeX editável em DOCX/ODT/PPTX (sem OMML).",
+    "Abertura em Microsoft Word/PowerPoint não verificada neste ambiente (só LibreOffice)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Abrir PR da beta.50 e acompanhar CI e integração.",
+    "Seguir a consolidação Numa 2.6; MCP aguarda DEC-0061."
+  ],
+  "decisions_required": [
+    "DEC-0061"
+  ],
+  "normative_sources": [
+    "AGENTS.md",
+    "MANIFEST.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "docs/governance/addenda/ADD-0033-urbe-sem-paridade-com-a-1-8-4-e-sem-limitadores.md",
+    "docs/distribution/direct-releases.md",
+    "docs/adr/0048-urbe-cliente-mcp.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Versão só no csproj canônico."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação física declarada pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Teste vermelho→verde, suítes completas e bench registrados; publicação só após CI e integração."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "MCP (fronteira de confiança nova) levado a ADR-0048 Proposto e DEC-0061, sem código."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-calculator-engine",
+      "status": "possible-candidate",
+      "rationale": "Motor matemático determinístico pode servir a outro Product; sem segundo consumidor real, permanece no Urbe (NN-022)."
+    },
+    {
+      "subject": "urbe-office-exporters",
+      "status": "product-specific",
+      "rationale": "Adaptadores de Publicações do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Corte de release beta.50 no csproj do canal beta (releases constantes pedidas pelo proprietário); identidade, assinatura e workflow preservados."
+  }
+}
