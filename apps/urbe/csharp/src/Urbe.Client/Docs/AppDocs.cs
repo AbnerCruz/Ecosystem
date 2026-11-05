@@ -403,6 +403,24 @@ public static partial class AppDocs
 
         **Prévia de imagem no chat:** quando `generate_image` termina, a imagem salva no vault aparece diretamente no cartão da conversa, com o botão **Abrir** para a visualização nativa em tamanho maior. Não é uma nova cópia nem uma URL externa. Nas conversas anteriores, imagens concluídas continuam à vista mesmo com os passos do agente recolhidos.
 
+        ## Skills
+
+        Uma **skill** ensina o Assistente a fazer um tipo de trabalho do seu jeito (o formato aberto Agent Skills). Crie uma pasta em `Personalização/Skills/` com um arquivo `SKILL.md`:
+
+        ```
+        ---
+        name: revisar-livro
+        description: Revisar capítulos com o meu checklist editorial.
+        ---
+        # Revisão
+        Leia checklist.md e aponte cada problema com a frase.
+        ```
+
+        - O Assistente vê só o **nome e a descrição** de cada skill e carrega as instruções quando o pedido combina com ela; arquivos da pasta (como `checklist.md`) são lidos quando a skill manda.
+        - O `name` usa letras minúsculas, números e hífens, igual ao nome da pasta. Uma skill com problema no cabeçalho não aparece.
+        - Uma skill **não dá permissões** e **nada nela é executado**: scripts são só texto. As aprovações continuam as mesmas.
+        - O Urbe já traz skills de apresentação, livro e cálculo; uma sua com o mesmo nome toma o lugar da do app.
+
         ## Ajustar
 
         - **Instruções para todos os agentes**, **Memória** (fatos para lembrar), **Agentes personalizados** e **Limite de passos por resposta**.

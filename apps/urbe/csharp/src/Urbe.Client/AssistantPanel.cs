@@ -297,6 +297,7 @@ public sealed partial class AssistantPanel : Border
     /// <summary>The agents' tools in the order the 1.8.4 registers them (tools.js, pages/ai-tools.js, customize/ai-tools.js, then the vault plugins).</summary>
     public static IReadOnlyList<AiTool> Tools { get; } = [.. AssistantTools.All.Where(t => t.Name != "update_plan" && t.Name != "remember"), AssistantAdaptivePlanTools.Update, .. AssistantPublicationTools.All, .. AssistantCustomizeTools.All, .. AssistantPluginTools.All, .. AssistantMemoryTools.All, .. AssistantGraphTools.All, AgentNames.Tool, AssistantAttachmentExtraction.Tool, .. AssistantDocumentTools.All, .. AssistantDocumentImageTools.All, AssistantImageTools.Tool, AssistantQuestionTools.Ask, AssistantFormTools.Request, AssistantDelegateTools.Consult, AssistantQuickNoteTools.Add,
         AssistantConversationTools.List, AssistantConversationTools.Read, AssistantCalcTools.Calculate,
+        .. AgentSkills.Tools(host => SkillsOf(host.Documents)),
         AssistantGuideTools.Create(() => AppDocs.Load().Select(a => (a.Path, a.Content)).ToList())];
 
     /// <summary>UC-63: the image tool is always visible to the chat agent, independently of its provider.</summary>
@@ -308,7 +309,7 @@ public sealed partial class AssistantPanel : Border
     /// every request and the device reads the request itself, so the others (links, tags, plans, memory, folders…) cost more
     /// waiting than they give; the bigger models in the cloud keep all of them.
     /// </summary>
-    private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "inspect_document", "inventory_document", "read_document", "search_document", "inspect_document_image", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note", "recall_memory", "learn_memory", "consult_agent", "request_form", "add_quick_note", AssistantGuideTools.Name, AssistantCalcTools.Name];
+    private static readonly HashSet<string> LocalToolNames = ["workspace_overview", "list_notes", "search_notes", "read_note", "inspect_document", "inventory_document", "read_document", "search_document", "inspect_document_image", "get_editor_context", "create_note", "edit_note", "write_note", "append_to_note", "open_note", "recall_memory", "learn_memory", "consult_agent", "request_form", "add_quick_note", AssistantGuideTools.Name, AssistantCalcTools.Name, AgentSkills.LoadName, AgentSkills.ReadFileName];
 
     private static AiTool? ToolByName(string name) => Tools.FirstOrDefault(t => t.Name == name)
         ?? AssistantWebTools.All.FirstOrDefault(t => t.Name == name)
@@ -1883,10 +1884,17 @@ public sealed partial class AssistantPanel : Border
         return b;
     }
 
+    /// <summary>The skills of the app and of the vault's Personalização/Skills (CST-177).</summary>
+    internal static IReadOnlyList<AgentSkill> SkillsOf(DocumentStore documents) =>
+        AgentSkills.Discover(documents.List().Where(d => d.Path.StartsWith(AgentSkills.Folder, StringComparison.OrdinalIgnoreCase)).Select(d => (d.Path, d.Content)));
+
     /// <summary>UC-50: the person's Personalização/AGENTS.md (the general part and the part for this model) after the
     /// Assistente's own instructions, read again at every conversation.</summary>
     private string? WithUserAgents(string? instructions, DocumentStore documents, string model)
     {
+        // CST-177: the skills' catalog (names and descriptions only; the agent loads one when the task calls for it)
+        if (AgentSkills.Catalog(SkillsOf(documents)) is { Length: > 0 } catalog)
+            instructions = string.IsNullOrWhiteSpace(instructions) ? catalog : instructions + "\n\n" + catalog;
         var own = UserAgentsFile.For(documents.Get(UserAgentsFile.Path)?.Content, model);
         if (own.Length == 0) return instructions;
         var block = "Instruções do usuário (" + UserAgentsFile.Path + "):\n" + own;

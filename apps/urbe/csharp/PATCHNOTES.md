@@ -40,6 +40,10 @@ Novo bloco ` ```calculo ` (menu `/` → **Cálculo**): cada linha aparece com o 
 - Matrizes (determinante, inversa, produto), `derivada de …`, `simplificar`, `expandir`, `resolver … = …` (exato até o 2º grau; acima disso aproximado, marcado com ≈) e `integral de …` (com `de a até b`, o valor).
 - O Assistente ganhou a ferramenta **calcular**, com o mesmo motor: faz as contas em vez de estimar.
 
+## Skills do Assistente
+
+Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descrição e instruções, no formato aberto Agent Skills) para ensinar o Assistente a fazer um trabalho do seu jeito. Ele vê só o nome e a descrição e carrega o resto quando o pedido combina. Uma skill não dá permissões e nada nela é executado. O Urbe já vem com skills de apresentação, livro e cálculo.
+
 ## O que ainda falta conferir no aparelho
 
 Os testes automáticos (502 de interface e 1.414 do núcleo) passam, e os arquivos Word, ODT e PowerPoint foram abertos no LibreOffice. Precisam ser conferidos no moto g32: a digitação no Fonte de uma nota grande, as alças de seleção por toque, salvar cada formato pelo seletor de arquivos do Android, o bloco de cálculo e a apresentação HTML. Abrir os arquivos no Word e no PowerPoint também fica para conferir.
