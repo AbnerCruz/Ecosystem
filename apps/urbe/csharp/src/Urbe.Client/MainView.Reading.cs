@@ -48,14 +48,106 @@ public sealed partial class MainView
             : FilePreview.OpenAsync(path);
     }
 
+    /// <summary>
+    /// CST-239: the annotations of a source read back from the notes that hold them (the notes are the only store),
+    /// each with whether its anchor is still exact for the source as it is now.
+    /// </summary>
+    public async Task<IReadOnlyList<(SourceAnnotation Annotation, SourceAnnotationStatus Status)>> SourceAnnotationsAsync(string path)
+    {
+        if (_store is null) return [];
+        var found = SourceAnnotations.ForSource(_store.List().Select(n => (n.Path, _contents.GetValueOrDefault(n.Path, n.Content))), path);
+        if (found.Count == 0) return [];
+        bool exists = _attachments.Contains(path) || _contents.ContainsKey(path);
+        string? revision = exists && found.Any(a => a.Sha256 is not null) ? await SourceRevisionAsync(path) : null;
+        return found.Select(a => (a, SourceAnnotations.Status(a, revision, exists))).ToArray();
+    }
+
+    private async Task<string?> SourceRevisionAsync(string path)
+    {
+        var vault = _vault;
+        if (vault is null) return null;
+        try
+        {
+            string? actual = await vault.ReaderRevisionAsync(path);
+            if (actual is null && await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes) is { Bytes: { } bytes })
+                actual = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant();
+            return actual;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return null; }
+    }
+
     private async Task OpenSourceAnnotationsAsync(string path)
     {
         if (_store is null || Dialogs.IsOpen) return;
+        var annotations = await SourceAnnotationsAsync(path);
         var notes = _store.List().Where(n => DocumentModel.ParseLinks(_contents.GetValueOrDefault(n.Path, n.Content)).Contains(path, StringComparer.Ordinal)).ToArray();
-        if (notes.Length == 0) { ShowLifeNotice("Esta fonte ainda não tem anotações em notas do vault."); return; }
-        var choice = await Dialogs.ChooseAsync("Notas vinculadas à fonte", notes.Select(n => new DialogItem(n.Path)).ToArray(), path);
-        if (choice is { } index && index < notes.Length) { await FilePreview.TryCloseAsync(); OpenNoteByPath(notes[index].Path); }
+        if (annotations.Count == 0 && notes.Length == 0) { ShowLifeNotice("Esta fonte ainda não tem anotações em notas do vault."); return; }
+        var items = annotations.Select(x => new DialogItem(x.Annotation.KindLabel + (x.Annotation.Place is { Length: > 0 } place ? " · " + place : ""),
+            UrbeTheme.Icons.Notes, Snippet(x.Annotation) + " · " + x.Annotation.NotePath + " · " + SourceAnnotations.StatusLabel(x.Status))).ToList();
+        int exportAt = -1, notesAt = -1;
+        if (annotations.Count > 0) { exportAt = items.Count; items.Add(new DialogItem("Exportar anotações (Web Annotation)", UrbeTheme.Icons.File, "JSON interoperável; a fonte e as notas não mudam")); }
+        if (notes.Length > 0) { notesAt = items.Count; items.Add(new DialogItem("Notas vinculadas à fonte", UrbeTheme.Icons.Notes, notes.Length + (notes.Length == 1 ? " nota" : " notas"))); }
+        int outdated = annotations.Count(x => x.Status == SourceAnnotationStatus.Outdated);
+        var choice = await Dialogs.ChooseAsync("Anotações desta fonte", items, path + (outdated > 0 ? " · " + outdated + (outdated == 1 ? " anotação feita" : " anotações feitas") + " numa versão anterior: revise antes de confiar no trecho." : ""));
+        if (choice is not { } index) return;
+        if (index == exportAt) { await ExportSourceAnnotationsAsync(path, annotations.Select(x => x.Annotation).ToArray()); return; }
+        if (index == notesAt)
+        {
+            var pick = await Dialogs.ChooseAsync("Notas vinculadas à fonte", notes.Select(n => new DialogItem(n.Path)).ToArray(), path);
+            if (pick is { } at && at < notes.Length) { await FilePreview.TryCloseAsync(); OpenNoteByPath(notes[at].Path); }
+            return;
+        }
+        if (index >= annotations.Count) return;
+        var (annotation, status) = annotations[index];
+        var actions = new List<DialogItem> { new("Abrir na nota", UrbeTheme.Icons.Notes, annotation.NotePath + ", linha " + annotation.Line) };
+        if (status != SourceAnnotationStatus.Missing) actions.Add(new("Ir à fonte", UrbeTheme.Icons.File, status == SourceAnnotationStatus.Outdated ? "A fonte mudou: o trecho não é procurado numa frase parecida." : annotation.Place));
+        var action = await Dialogs.ChooseAsync(annotation.KindLabel, actions, Snippet(annotation));
+        if (action == 0) await OpenAnnotationInNoteAsync(annotation);
+        else if (action == 1) await OpenReaderSourceAsync(annotation.Fragment is { } fragment ? annotation.Source + "#" + fragment : annotation.Source);
     }
+
+    /// <summary>The note of an annotation, at its line.</summary>
+    public async Task OpenAnnotationInNoteAsync(SourceAnnotation annotation)
+    {
+        await FilePreview.TryCloseAsync();
+        OpenNoteByPath(annotation.NotePath);
+        Editor.RevealLine(annotation.Line);
+    }
+
+    private static string Snippet(SourceAnnotation annotation)
+    {
+        var text = (annotation.Comment ?? annotation.Quote).Replace('\n', ' ');
+        return text.Length > 90 ? text[..89] + "…" : text;
+    }
+
+    /// <summary>The source's annotations as a W3C Web Annotation collection, with the quote's context taken from the source when it is unchanged.</summary>
+    public async Task<string> SourceAnnotationsJsonAsync(string path, IReadOnlyList<SourceAnnotation> annotations)
+    {
+        byte[]? pdf = null;
+        string? revision = await SourceRevisionAsync(path);
+        if (path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) && _vault is { } vault && revision is not null && annotations.Any(a => a.Sha256 == revision && a.TextOffset is not null))
+            try { pdf = (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes; } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        return await Task.Run(() => SourceAnnotations.ToWebAnnotations(annotations, a =>
+        {
+            if (pdf is null || a.Sha256 != revision || a.Unit != "page" || a.Index is not { } page || a.TextOffset is not { } offset) return null;
+            try { return Urbe.Core.Assistant.AssistantDocumentTools.Page(pdf, page, 0, offset + a.Quote.Length + 64).Text; }
+            catch (Exception ex) when (ex is not OutOfMemoryException) { return null; }
+        }, "Anotações de " + System.IO.Path.GetFileName(path)));
+    }
+
+    private async Task ExportSourceAnnotationsAsync(string path, IReadOnlyList<SourceAnnotation> annotations)
+    {
+        try
+        {
+            var json = await SourceAnnotationsJsonAsync(path, annotations);
+            var name = System.IO.Path.GetFileNameWithoutExtension(path) + ".anotacoes.jsonld";
+            if (await SavePublicationFileAsync(name, System.Text.Encoding.UTF8.GetBytes(json), "jsonld", "application/ld+json") == true)
+                ShowLifeNotice(annotations.Count + (annotations.Count == 1 ? " anotação exportada." : " anotações exportadas."));
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
+        { await Dialogs.AlertAsync("Não consegui exportar as anotações", StorageProblems.Explain(ex)); }
+    }
+
     private bool _insertingReaderQuote;
     private async Task InsertReaderQuoteAsync(ReaderQuote quote)
     {

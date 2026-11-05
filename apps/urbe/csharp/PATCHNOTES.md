@@ -73,6 +73,12 @@ Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descriçã
 - **Aa** nos leitores de texto (arquivos de texto e a camada de texto do PDF): tamanho da letra, entrelinha e tema claro, sépia ou escuro.
 - Um livro ou PDF aberto pela primeira vez começa com a última aparência escolhida naquele tipo de leitor. Tudo fica no estado privado do app, nada vai para o vault.
 
+## Anotações das fontes
+
+- **⋯ → Anotações desta fonte** agora mostra cada destaque, comentário, citação e marcador do arquivo, com a página ou capítulo, o trecho e a nota onde está. Tocar abre a nota na linha certa ou leva à fonte.
+- Uma anotação feita numa versão anterior do arquivo aparece como **fonte mudou: revise**, em vez de ser colocada numa frase parecida.
+- **Exportar anotações** salva tudo no padrão W3C Web Annotation (trecho, contexto, página), para levar a outros apps.
+
 ## Novos leitores
 
 - Quadrinhos **CBZ** abrem num leitor próprio: páginas na ordem certa (1, 2, 10), toque nas bordas, setas ou deslize para virar, zoom e ajuste à tela ou à largura, e o Urbe lembra onde você parou. Só a página aberta e as vizinhas ficam na memória; um arquivo corrompido ou malicioso é recusado com o motivo na tela.

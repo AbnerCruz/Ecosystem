@@ -316,6 +316,13 @@ public static partial class AppDocs
 
         Os demais arquivos (imagens, PDFs, áudio, vídeo) são abertos no visualizador.
 
+        ## Destaques, marcadores e comentários
+
+        No leitor de PDF, livro ou documento, selecione um trecho e escolha **Destacar**, **Comentar**, **Adicionar seleção à nota** ou **Marcador**. O trecho vai para uma nota de verdade, com o link de volta ao lugar exato da fonte e à versão do arquivo.
+        - **⋯ → Anotações desta fonte** lista tudo o que as notas guardam sobre o arquivo: tipo, página ou capítulo, o trecho e a nota. Toque para **abrir na nota** (na linha certa) ou **ir à fonte**.
+        - Se o arquivo mudou depois da anotação, ela aparece como **fonte mudou: revise**. O Urbe não procura uma frase parecida para colocar o destaque no lugar: você confere.
+        - **Exportar anotações** salva um JSON no padrão W3C Web Annotation, com o trecho, o contexto antes e depois e a página. Nem o arquivo nem as notas mudam.
+
         ## Escrever código
 
         Num arquivo de código, o editor cuida da indentação, com o passo do próprio arquivo (tab, 2 ou 4 espaços):

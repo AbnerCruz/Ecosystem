@@ -574,6 +574,9 @@ public sealed class EditorOverlay : Grid
         return true;
     }
 
+    /// <summary>The caret at a line of the note open (and, in Visual, its block on screen).</summary>
+    public void RevealLine(int line) => GoToLine(line);
+
     private void GoToLine(int line)
     {
         var text = Editor.Text ?? "";
