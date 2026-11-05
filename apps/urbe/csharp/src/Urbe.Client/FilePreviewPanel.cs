@@ -14,8 +14,10 @@ namespace Urbe.Client;
 /// app.js openFilePreview / renderFilePreview natively: a file of the Explorer with its title, "Imagem · 120 KB ·
 /// pasta/arquivo.png", and the body by
 /// kind, always inside the Urbe (owner, ADD-0023): images drawn here, HTML as a page (or its source), PDF pages, audio
-/// and video in the platform's content viewers (<see cref="ContentViewers"/>); text and code as text; a .zip lists
-/// its entries. "Abrir" in another app stays as an extra. Read only: nothing is written to the vault.
+/// and video in the platform's content viewers (<see cref="ContentViewers"/>); text and code as text, with search
+/// (<see cref="TextReaderView"/>), CSV as a table, CBZ comics page by page (<see cref="ComicReaderView"/>); a .zip lists
+/// its entries; anything else gets its details and the support matrix's honest row (CST-238). "Abrir" in another app
+/// stays as an extra. Read only: nothing is written to the vault.
 /// </summary>
 public sealed class FilePreviewPanel : Grid
 {
@@ -42,6 +44,7 @@ public sealed class FilePreviewPanel : Grid
     private PdfStudyView? _pdfTextView;
     private EpubStudyView? _epubView;
     private MediaStudyView? _mediaView;
+    private ComicReaderView? _comicView;
     private int? _requestedPart;
     private int? _requestedTextOffset, _requestedTextLength;
     private ReaderRegion? _requestedRegion;
@@ -282,6 +285,7 @@ public sealed class FilePreviewPanel : Grid
     {
         ChromeHidden = hidden;
         _top.IsVisible = !hidden;
+        if (_comicView is { } comic) comic.Bar.IsVisible = !hidden;
         UpdateBar();
     }
 
@@ -385,7 +389,10 @@ public sealed class FilePreviewPanel : Grid
         Place();
     }
 
-    /// <summary>What the body shows now: "image", "text", "zip", "viewer" (a content viewer) or "none" (tests).</summary>
+    /// <summary>
+    /// What the body shows now: "image", "text", "table" (CSV), "comic", "zip", "viewer" (a content viewer), "info" (the
+    /// file's details and "Abrir em outro app") or "none" (tests).
+    /// </summary>
     public string Shown { get; private set; } = "none";
 
     /// <summary>The text of the body when it is text or a listing (tests).</summary>
@@ -526,6 +533,7 @@ public sealed class FilePreviewPanel : Grid
         _pdfNavigation.IsVisible = false;
         _pdfTextView?.Dispose();
         _epubView?.Dispose(); _epubView = null;
+        _comicView?.Dispose(); _comicView = null;
         _pdfTextView = null;
         _requestedPage = null;
         _expectedHash = null;
@@ -580,7 +588,7 @@ public sealed class FilePreviewPanel : Grid
         _card.Background = UrbeTheme.Brush(wide ? UrbeTheme.Surface : UrbeTheme.Bg);
         _head.Margin = wide ? default : new Thickness(4, 0, 4, 0);
         foreach (var zoom in _zoomTools) zoom.IsVisible = wide;
-        if (Shown is "viewer" or "text" or "image" && _body.Content is Control shown)
+        if (Shown is "viewer" or "text" or "image" or "table" or "comic" && _body.Content is Control shown)
             shown.Height = ViewerHeight();
     }
 
@@ -596,6 +604,7 @@ public sealed class FilePreviewPanel : Grid
         _pdfNavigation.IsVisible = false;
         _pdfTextView?.Dispose();
         _epubView?.Dispose(); _epubView = null;
+        _comicView?.Dispose(); _comicView = null;
         _pdfTextView = null;
         Index = index;
         _choosing = true;
@@ -607,7 +616,7 @@ public sealed class FilePreviewPanel : Grid
         MarkTextToggle();
         _ocr.IsVisible = kind is VaultFileKinds.Pdf or VaultFileKinds.Image;
         _title.Text = name;
-        _meta.Text = VaultFileKinds.Label(kind) + (path is not null ? " · " + path : "");
+        _meta.Text = KindLabel(kind, name) + (path is not null ? " · " + path : "");
         _open.IsVisible = false;
         _more.IsVisible = path is not null || _generated is not null;
         _htmlMode.IsVisible = kind == VaultFileKinds.Html;
@@ -623,7 +632,7 @@ public sealed class FilePreviewPanel : Grid
         // Files with no in-app renderer still have metadata and an explicit external fallback.
         // Do not allocate a giant Office/EPUB container merely to say its preview is unsupported.
         bool metadataOnly = kind is VaultFileKinds.Audio or VaultFileKinds.Video ||
-            kind is VaultFileKinds.Slides or VaultFileKinds.Document && Path.GetExtension(name).ToLowerInvariant() is not (".pptx" or ".odp" or ".docx" or ".odt");
+            kind is VaultFileKinds.Slides or VaultFileKinds.Document && Path.GetExtension(name).ToLowerInvariant() is not (".pptx" or ".odp" or ".docx" or ".odt" or ".rtf");
         VaultFileRead? read;
         try
         {
@@ -644,7 +653,7 @@ public sealed class FilePreviewPanel : Grid
             return;
         }
         _meta.Text = (_generated is { } gen ? "Página · " + VaultFileKinds.FormatBytes(read.Size) + " · " + gen.Source
-            : VaultFileKinds.Label(kind) + " · " + VaultFileKinds.FormatBytes(read.Size) + (path is not null ? " · " + path : ""));
+            : KindLabel(kind, name) + " · " + VaultFileKinds.FormatBytes(read.Size) + (path is not null ? " · " + path : ""));
         // "Abrir em outro app" is in "⋯"; the big button only when the Urbe cannot show the file itself
         _open.IsVisible = false;
         var bytes = read.Bytes;
@@ -687,7 +696,18 @@ public sealed class FilePreviewPanel : Grid
             }
         }
         _requestedPage = null;
-        if ((kind is VaultFileKinds.Epub or VaultFileKinds.Comic || Path.GetExtension(name).ToLowerInvariant() is ".pptx" or ".odp" or ".docx" or ".odt") && bytes is not null)
+        string extension = Path.GetExtension(name).ToLowerInvariant();
+        if (kind == VaultFileKinds.Comic && bytes is not null && _generated is null)
+        {
+            await ShowComicAsync(path ?? name, name, bytes, read.Size, version);
+            return;
+        }
+        if (TextFamily.Contains(extension) && bytes is not null && _generated is null)
+        {
+            await ShowTextFamilyAsync(name, extension, bytes, read.Size, version);
+            return;
+        }
+        if ((kind is VaultFileKinds.Epub || Path.GetExtension(name).ToLowerInvariant() is ".pptx" or ".odp" or ".docx" or ".odt") && bytes is not null)
         {
             try
             {
@@ -710,8 +730,14 @@ public sealed class FilePreviewPanel : Grid
             { if (version == _version) { _body.Content = Empty("Não foi possível abrir o arquivo de leitura", ex.Message); _open.IsVisible = true; } }
             return;
         }
-        if (kind == VaultFileKinds.Image && bytes is not null && Image(bytes) is { } image)
+        var signature = bytes is null ? FileSignature.Unknown : FileSignatures.Detect(bytes.AsSpan(0, Math.Min(bytes.Length, 64 * 1024)));
+        // a picture with another name (foto.dat) is still drawn; a file named .png that is not a picture never reaches the decoder
+        bool picture = bytes is not null && (kind == VaultFileKinds.Image && !name.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)
+            ? FileSignatures.IsImage(signature)
+            : kind == VaultFileKinds.Other && FileSignatures.IsImage(signature));
+        if (picture && bytes is not null && Image(bytes) is { } image)
         {
+            if (kind == VaultFileKinds.Other) _meta.Text += " · conteúdo: " + FileSignatures.Describe(signature);
             if(_requestedRegion is { } region)
             {
                 var ocrSource=new OcrStudyView(path??name,null,_cachedHash??Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant(),bytes,region){Height=ViewerHeight(),ShowsBack=!Phone};
@@ -731,7 +757,7 @@ public sealed class FilePreviewPanel : Grid
                 var text = names.Count > 0 ? string.Join("\n", names) : "Arquivo compactado vazio";
                 ShowText(text, "zip");
             }
-            catch (InvalidDataException) { _body.Content = Empty("Arquivo compactado", name); }
+            catch (InvalidDataException) { ShowInfo(name, read.Size, kind, signature, "O arquivo não pôde ser lido como ZIP."); }
             return;
         }
         // HTML as a page, PDF, audio and video: the content viewer of the platform, inside the panel (ADD-0023)
@@ -781,23 +807,139 @@ public sealed class FilePreviewPanel : Grid
             }
         }
         bool textual = kind is VaultFileKinds.Html or VaultFileKinds.Other || name.EndsWith(".svg", StringComparison.OrdinalIgnoreCase);
-        if (textual && bytes is not null && Text(bytes) is { } source)
+        if (textual && bytes is not null && signature is FileSignature.Text or FileSignature.Rtf or FileSignature.Unknown && await Task.Run(() => TextDecoding.Decode(bytes)) is { } source)
         {
-            ShowText(source, "text");
+            if (version != _version) return;
+            ShowText(source.Text, "text", source.Notice is { } notice ? [notice] : null);
             return;
         }
-        _open.IsVisible = _generated is null;
         if (bytes is null && read.Size > MaxBytes)
         {
-            _body.Content = Empty(name, "O arquivo tem " + VaultFileKinds.FormatBytes(read.Size) + ", mais do que este aparelho abre aqui de uma vez. Use Abrir em outro app.");
+            ShowInfo(name, read.Size, kind, signature, "O arquivo tem " + VaultFileKinds.FormatBytes(read.Size) + ", mais do que este aparelho abre aqui de uma vez. Use Abrir em outro app.");
             return;
         }
-        _body.Content = Empty(name, kind is VaultFileKinds.Pdf or VaultFileKinds.Audio or VaultFileKinds.Video
+        ShowInfo(name, read.Size, kind, signature, kind is VaultFileKinds.Pdf or VaultFileKinds.Audio or VaultFileKinds.Video
             ? "Este aparelho ainda não tem o visualizador deste formato dentro do Urbe."
-            : kind is VaultFileKinds.Epub or VaultFileKinds.Slides or VaultFileKinds.Document
-                ? "O leitor interno deste formato está em desenvolvimento. Use Abrir em outro app sem modificar o original."
-                : "Sem visualização nativa para este formato.");
+            : FormatSupportMatrix.For(name) is { Open: SupportLevel.External }
+                ? "O Urbe não abre este formato. Use Abrir em outro app; o original não é modificado."
+                : kind == VaultFileKinds.Image
+                    ? "O conteúdo não é uma imagem que o Urbe consiga desenhar."
+                    : "Sem visualização nativa para este formato.");
     }
+
+    /// <summary>"Arquivo" says nothing: a file the support matrix knows (CSV, JSON, RTF) is called by its format.</summary>
+    private static string KindLabel(string kind, string name) =>
+        kind == VaultFileKinds.Other && FormatSupportMatrix.For(name) is { } format ? format.Name : VaultFileKinds.Label(kind);
+
+    /// <summary>The plain text family read by <see cref="TextReaderView"/> or <see cref="CsvTableView"/> (CST-238).</summary>
+    public static readonly IReadOnlySet<string> TextFamily = new HashSet<string>(StringComparer.Ordinal)
+        { ".txt", ".text", ".log", ".rtf", ".csv", ".tsv", ".json", ".jsonc" };
+
+    private sealed record PreparedText(string Text, CsvTable? Table, IReadOnlyList<string> Notices);
+
+    /// <summary>TXT/LOG as text, RTF's text, CSV/TSV as a table, JSON formatted: decoded off the UI thread.</summary>
+    private async Task ShowTextFamilyAsync(string name, string extension, byte[] bytes, long size, int version)
+    {
+        PreparedText? prepared;
+        try { prepared = await Task.Run(() => PrepareText(extension, bytes)); }
+        catch (Exception ex) when (ex is InvalidDataException or ArgumentException) { prepared = null; }
+        if (version != _version) return;
+        if (prepared is null)
+        {
+            var signature = FileSignatures.Detect(bytes.AsSpan(0, Math.Min(bytes.Length, 64 * 1024)));
+            ShowInfo(name, size, VaultFileKinds.Classify(name), signature, "O conteúdo não é texto legível: parece ser " + FileSignatures.Describe(signature) + ".");
+            return;
+        }
+        if (prepared.Table is { } table)
+        {
+            _body.Content = new CsvTableView(prepared.Text, table, prepared.Notices) { Height = ViewerHeight() };
+            Shown = "table";
+            ShownText = prepared.Text;
+            return;
+        }
+        ShowText(prepared.Text, "text", prepared.Notices);
+    }
+
+    private static PreparedText? PrepareText(string extension, byte[] bytes)
+    {
+        if (extension == ".rtf")
+            return bytes.AsSpan().StartsWith("{\\rtf"u8) ? new PreparedText(RtfText.Convert(bytes), null, [RtfText.Notice]) : null;
+        if (TextDecoding.Decode(bytes) is not { } decoded) return null;
+        var notices = decoded.Notice is { } n ? new List<string> { n } : [];
+        if (extension is ".csv" or ".tsv") return new PreparedText(decoded.Text, new CsvTable(decoded.Text, extension == ".tsv" ? '\t' : null), notices);
+        if (extension is ".json" or ".jsonc")
+        {
+            var pretty = JsonPretty.Format(decoded.Text);
+            if (pretty.Notice is { } p) notices.Add(p);
+            return new PreparedText(pretty.Text, null, notices);
+        }
+        return new PreparedText(decoded.Text, null, notices);
+    }
+
+    /// <summary>A CBZ in the native comics reader; CBR/CB7 and a broken archive say so and offer another app.</summary>
+    private async Task ShowComicAsync(string path, string name, byte[] bytes, long size, int version)
+    {
+        ComicBook book;
+        try { book = await Task.Run(() => ComicBook.Open(bytes)); }
+        catch (Exception ex) when (ex is NotSupportedException or InvalidDataException or IOException or OverflowException or ArgumentException)
+        {
+            if (version != _version) return;
+            var signature = FileSignatures.Detect(bytes.AsSpan(0, Math.Min(bytes.Length, 4096)));
+            ShowInfo(name, size, VaultFileKinds.Comic, signature, ex is NotSupportedException
+                ? "Formato não suportado. " + ex.Message
+                : "Não foi possível abrir este quadrinho: " + ex.Message);
+            return;
+        }
+        if (version != _version) { book.Dispose(); return; }
+        var comic = new ComicReaderView(path, book) { Height = ViewerHeight() };
+        _comicView = comic;
+        comic.CenterTapped += () => { if (!_embedded) SetChromeHidden(!ChromeHidden); };
+        comic.PageChanged += page => RememberReadingPosition(page + 1);
+        _meta.Text += " · " + book.PageCount + (book.PageCount == 1 ? " página" : " páginas");
+        _body.Content = comic;
+        Shown = "comic";
+        int start = (_requestedPart ?? 1) - 1;
+        _requestedPart = null;
+        await comic.GoToPageAsync(start);
+        if (version == _version) comic.Focus();
+    }
+
+    /// <summary>
+    /// What the Urbe knows about a file it does not show (CST-238): name, size, type, what its bytes look like, and the
+    /// support matrix's honest row, with "Abrir em outro app", never an empty screen.
+    /// </summary>
+    private void ShowInfo(string name, long size, string kind, FileSignature signature, string message)
+    {
+        _open.IsVisible = _generated is null;
+        var box = new StackPanel { Spacing = 6, Margin = new Thickness(0, 24), HorizontalAlignment = HorizontalAlignment.Center, MaxWidth = 460 };
+        TextBlock Line(string text, double fontSize = 13, string color = UrbeTheme.Text3, bool bold = false) => new()
+        {
+            Text = text, FontSize = fontSize, FontWeight = bold ? FontWeight.Bold : FontWeight.Normal, Foreground = UrbeTheme.Brush(color),
+            HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap
+        };
+        box.Children.Add(Line(name, 15, UrbeTheme.Text, bold: true));
+        box.Children.Add(Line(message));
+        var support = FormatSupportMatrix.For(name);
+        box.Children.Add(Line("Tipo: " + (support?.Name ?? VaultFileKinds.Label(kind)) + " · " + VaultFileKinds.Mime(name)));
+        box.Children.Add(Line("Tamanho: " + VaultFileKinds.FormatBytes(size)));
+        if (signature != FileSignature.Unknown) box.Children.Add(Line("Conteúdo: " + FileSignatures.Describe(signature)));
+        if (support is not null)
+        {
+            box.Children.Add(Line("Abrir: " + FormatSupportMatrix.Label(support.Open) + " · Busca: " + FormatSupportMatrix.Label(support.Search)
+                + " · Seleção: " + FormatSupportMatrix.Label(support.Selection) + " · Offline: " + (support.Offline ? "sim" : "não") + " · " + support.Platforms));
+            box.Children.Add(Line(support.Note));
+        }
+        if (_embedded && _generated is null)
+        {
+            var open = Action("Abrir em outro app", primary: true);
+            open.Margin = new Thickness(0, 10, 0, 0);
+            open.Click += async (_, _) => await OpenExternallyAsync();
+            box.Children.Add(open);
+        }
+        _body.Content = new ScrollViewer { Content = box };
+        Shown = "info";
+    }
+
 
     private void UpdatePdfNavigation()
     {
@@ -875,6 +1017,7 @@ public sealed class FilePreviewPanel : Grid
         else if (_pdfView is { } pdf) RememberReadingPosition(pdf.CurrentPage);
         else if (_pdfTextView is { } text) RememberReadingPosition(text.CurrentPage);
         else if(_mediaView is { } media)RememberReadingPosition(media.CurrentSecond+1);
+        else if (_comicView is { } comic) RememberReadingPosition(comic.CurrentPage + 1);
     }
 
     /// <summary>The height of a content viewer: a native view needs one, and it fills what the card leaves.</summary>
@@ -895,42 +1038,9 @@ public sealed class FilePreviewPanel : Grid
         chip.BorderBrush = UrbeTheme.Brush(on ? UrbeTheme.Accent : UrbeTheme.Line2);
     }
 
-    private void ShowText(string text, string shown)
+    private void ShowText(string text, string shown, IReadOnlyList<string>? notices = null)
     {
-        var parts = new StackPanel();
-        SelectableTextBlock Part(string piece) => new()
-        {
-            Text = piece, FontFamily = new FontFamily("Consolas, Menlo, monospace"), FontSize = 13, LineHeight = 19,
-            Foreground = UrbeTheme.Brush(UrbeTheme.Text2), Padding = new Thickness(12, 0)
-        };
-        // a long text is laid out in parts, each one ending at a line, so opening it never freezes the screen
-        int shownUpTo = 0;
-        Button? more = null;
-        void Next()
-        {
-            int end = Math.Min(text.Length, shownUpTo + TextPart);
-            if (end < text.Length && text.LastIndexOf('\n', end - 1, end - shownUpTo) is var nl and >= 0 && nl + 1 > shownUpTo) end = nl + 1;
-            if (end < text.Length && char.IsHighSurrogate(text[end - 1])) end++;
-            parts.Children.Insert(more is null ? parts.Children.Count : parts.Children.Count - 1, Part(text[shownUpTo..end]));
-            shownUpTo = end;
-            var left = text.Length - shownUpTo;
-            if (left == 0) { if (more is not null) parts.Children.Remove(more); return; }
-            if (more is null)
-            {
-                more = new Button { Margin = new Thickness(12, 8), HorizontalAlignment = HorizontalAlignment.Left };
-                more.Click += (_, _) => Next();
-                parts.Children.Add(more);
-            }
-            more.Content = "Mostrar mais (" + VaultFileKinds.FormatBytes(Encoding.UTF8.GetByteCount(text.AsSpan(shownUpTo))) + " restantes)";
-        }
-        Next();
-        _body.Content = new ScrollViewer
-        {
-            Height = ViewerHeight(),
-            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-            Content = new Border { Padding = new Thickness(0, 12), Child = parts },
-            Background = UrbeTheme.Brush(UrbeTheme.Bg)
-        };
+        _body.Content = new TextReaderView(text, notices) { Height = ViewerHeight() };
         Shown = shown;
         ShownText = text;
     }
@@ -943,14 +1053,10 @@ public sealed class FilePreviewPanel : Grid
         try
         {
             // a very large picture (a panorama, a scan) is decoded at a size the screen can still zoom into, never refused
-            Bitmap Decode()
-            {
-                using var input = new MemoryStream(bytes, writable: false);
-                return ImageHeader.Width(bytes) is > MaxPictureWidth ? Bitmap.DecodeToWidth(input, MaxPictureWidth) : new Bitmap(input);
-            }
-            return new Ui.ZoomImageView(Decode);
+            return new Ui.ZoomImageView(() => ComicReaderView.DecodePicture(bytes, MaxPictureWidth, ComicReaderView.MaxPagePixels));
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or NotSupportedException or IOException) { return null; }
+        // a picture that lies about itself (a renamed file, a broken header) is never a crash
+        catch (Exception ex) when (ex is not OutOfMemoryException) { return null; }
     }
 
     /// <summary>The file as text: UTF-8 (with or without BOM); null when it has NUL bytes or is not valid UTF-8.</summary>
