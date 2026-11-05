@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261105-urbe-beta49-typing",
   "category": "HANDOFF",
-  "timestamp": "2026-11-05T01:30:00.000Z",
+  "timestamp": "2026-11-05T00:42:47.000Z",
   "agent": {
     "id": "claude-code-urbe-recovery",
     "kind": "ai-agent"
