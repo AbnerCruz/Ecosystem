@@ -48,10 +48,10 @@
     {
       "check": "Navegador/YouTube no painel, divisória por toque e livro grande anexado no moto g32",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/urbe/csharp/PATCHNOTES.md",
-      "evidence": "Validação física pendente (NN-017)."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-05 (Issue https://github.com/AbnerCruz/Ecosystem/issues/908); registro em docs/governance/responses/VAL-HO-20261104-urbe-beta48-study-5db103a8a1b3.md."
     }
   ],
   "known_issues": [
