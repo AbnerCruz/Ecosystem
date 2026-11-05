@@ -63,6 +63,8 @@ public sealed class PublicationStudioView : Border
             void Item(string header, Action? run) { var i = new MenuItem { Header = header }; i.Click += (_, _) => run?.Invoke(); items.Add(i); }
             Item("Renomear publicação", () => RenameRequested?.Invoke());
             Item("Exportar livro EPUB", () => EpubRequested?.Invoke());
+            Item("Exportar documento Word (DOCX)", () => OfficeRequested?.Invoke("docx"));
+            Item("Exportar documento OpenDocument (ODT)", () => OfficeRequested?.Invoke("odt"));
             if (_print.IsVisible) Item("Imprimir ou salvar como PDF", () => PrintRequested?.Invoke());
             new ContextMenu { ItemsSource = items }.Open(more);
         };
@@ -122,6 +124,8 @@ public sealed class PublicationStudioView : Border
     public event Action? AddSourceRequested;
     public event Action? ExportRequested;
     public event Action? EpubRequested;
+    /// <summary>CST-166: an office document of the publication ("docx" or "odt").</summary>
+    public event Action<string>? OfficeRequested;
     public event Action? PrintRequested;
     public event Action? RenameRequested;
     public event Action? ConfigureRequested;

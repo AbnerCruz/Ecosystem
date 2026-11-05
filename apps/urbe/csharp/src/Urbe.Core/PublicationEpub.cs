@@ -124,7 +124,7 @@ public static class PublicationEpub
     private static void Write(ZipArchive zip, string name, byte[] bytes, CompressionLevel compression = CompressionLevel.Optimal)
     { using var target = zip.CreateEntry(name, compression).Open(); target.Write(bytes); }
 
-    private static string ResolveAsset(string source, string relative)
+    internal static string ResolveAsset(string source, string relative)
     {
         if (relative.Contains(':') || relative.StartsWith('/') || relative.Contains('\\'))
             throw new InvalidDataException("EPUB requer imagens locais relativas ao vault; importe a imagem antes de exportar.");
@@ -139,7 +139,7 @@ public static class PublicationEpub
         return string.Join('/', parts);
     }
 
-    private static (string Extension, string Mime) ImageType(byte[] bytes)
+    internal static (string Extension, string Mime) ImageType(byte[] bytes)
     {
         if (bytes.Length >= 8 && bytes.AsSpan(0, 8).SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 })) return (".png", "image/png");
         if (bytes.Length >= 3 && bytes[0] == 255 && bytes[1] == 216 && bytes[2] == 255) return (".jpg", "image/jpeg");

@@ -42,6 +42,7 @@ public sealed partial class MainView
         };
         studio.ExportRequested += () => _ = ExportPublicationHtmlAsync();
         studio.EpubRequested += () => _ = ExportPublicationEpubAsync();
+        studio.OfficeRequested += format => _ = ExportPublicationOfficeAsync(format);
         studio.PrintRequested += () => _ = PrintPublicationAsync();
         studio.RetrySaveRequested += () => _ = SavePublicationAsync();
         studio.Closed += () =>
@@ -365,6 +366,38 @@ public sealed partial class MainView
         catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
         { await Dialogs.AlertAsync("Não foi possível exportar EPUB", ex.Message); }
     }
+
+    /// <summary>
+    /// CST-166: the publication as an editable office document (Word or OpenDocument), from the live notes. What the
+    /// format could not keep is told after saving, never silently flattened.
+    /// </summary>
+    public async Task ExportPublicationOfficeAsync(string format)
+    {
+        if (_publicationsCatalog is not { } catalog || _publicationDraft is not { } draft || !await SavePublicationAsync()) return;
+        var vault = _vault;
+        var project = draft.Project;
+        var odt = format == "odt";
+        try
+        {
+            Func<string, Task<byte[]?>> asset = async path => vault is null ? null : (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes;
+            var result = odt ? await PublicationOdt.ExportAsync(project, catalog, asset) : await PublicationDocx.ExportAsync(project, catalog, asset);
+            if (!ReferenceEquals(draft, _publicationDraft) || !ReferenceEquals(draft.Store, _store) || draft.Dirty) return;
+            var extension = odt ? "odt" : "docx";
+            var mime = odt ? "application/vnd.oasis.opendocument.text" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            var name = ArtifactModel.SafeName(project.Title) + "." + extension;
+            var saved = SavePageFile is { } save ? await save(name, result.Bytes) : await SavePublicationFileAsync(name, result.Bytes, extension, mime);
+            if (saved != true) return;
+            LastOfficeLimitations = result.Limitations;
+            if (result.Limitations.Count == 0) ShowLifeNotice(odt ? "Documento ODT salvo." : "Documento Word salvo.");
+            else await Dialogs.AlertAsync(odt ? "Documento ODT salvo" : "Documento Word salvo",
+                "O arquivo é editável. O que o formato não guarda como no Urbe:\n\n• " + string.Join("\n• ", result.Limitations));
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
+        { await Dialogs.AlertAsync(odt ? "Não foi possível exportar ODT" : "Não foi possível exportar o documento Word", ex.Message); }
+    }
+
+    /// <summary>What the last office export could not keep (shown to the person; read by tests).</summary>
+    public IReadOnlyList<string> LastOfficeLimitations { get; private set; } = [];
 
     private async Task<bool?> SavePublicationFileAsync(string name, byte[] bytes, string extension, string mime)
     {

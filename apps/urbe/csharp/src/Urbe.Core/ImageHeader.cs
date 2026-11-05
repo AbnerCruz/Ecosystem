@@ -37,4 +37,30 @@ public static class ImageHeader
         }
         return null;
     }
+
+    /// <summary>The pixel height of a PNG, GIF or JPEG read from its header; null when unknown.</summary>
+    public static int? Height(ReadOnlySpan<byte> b)
+    {
+        if (b.Length >= 24 && b[0] == 0x89 && b[1] == 'P' && b[2] == 'N' && b[3] == 'G')
+            return (b[20] << 24) | (b[21] << 16) | (b[22] << 8) | b[23];
+        if (b.Length >= 10 && b[0] == 'G' && b[1] == 'I' && b[2] == 'F')
+            return b[8] | (b[9] << 8);
+        if (b.Length >= 4 && b[0] == 0xFF && b[1] == 0xD8)
+        {
+            int i = 2;
+            while (i + 9 < b.Length)
+            {
+                if (b[i] != 0xFF) { i++; continue; }
+                byte marker = b[i + 1];
+                if (marker == 0xFF) { i++; continue; }
+                if (marker is 0xD8 or 0x01 || (marker >= 0xD0 && marker <= 0xD7)) { i += 2; continue; }
+                int length = (b[i + 2] << 8) | b[i + 3];
+                if (marker >= 0xC0 && marker <= 0xCF && marker is not (0xC4 or 0xC8 or 0xCC))
+                    return (b[i + 5] << 8) | b[i + 6];
+                if (length < 2) return null;
+                i += 2 + length;
+            }
+        }
+        return null;
+    }
 }
