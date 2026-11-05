@@ -69,8 +69,13 @@ public sealed record AiStreamEvent(string Type, string? Delta = null, int? Index
 /// <summary>A provider as the person configured it (store.js providers[]).</summary>
 public sealed record AiProviderConfig(string Id, string Preset, string? Name = null, string? ApiKey = null, string? BaseUrl = null, string? Kind = null, bool? StreamUsage = null);
 
-/// <summary>A model a provider offers.</summary>
-public sealed record AiModelInfo(string Id, string Name, long? Context, (double Input, double Output)? Price, bool? Tools);
+/// <summary>
+/// A model a provider offers, as the provider reported it. CST-220: the modalities (OpenRouter's architecture
+/// input/output_modalities: text, image, file, audio, video) and the cached-input price per 1M tokens are kept when
+/// reported; null means "not reported", never "no". <see cref="AiModelCatalog"/> turns this into typed capabilities.
+/// </summary>
+public sealed record AiModelInfo(string Id, string Name, long? Context, (double Input, double Output)? Price, bool? Tools,
+    IReadOnlyList<string>? InputModalities = null, IReadOnlyList<string>? OutputModalities = null, double? CachedInputPrice = null);
 
 /// <summary>ProviderError: a message the person can act on, with the HTTP status when there was one.</summary>
 public sealed class AiProviderException(string message, int? status = null, bool network = false) : Exception(message)
@@ -470,7 +475,11 @@ public sealed class AssistantProviders
             var id = Truthy(m["id"]) ? LegacyCustomize.JsToString(m["id"]) : LegacyCustomize.JsToString(m["name"]);
             var name = Truthy(m["name"]) ? LegacyCustomize.JsToString(m["name"]) : LegacyCustomize.JsToString(m["id"]);
             long? context = Truthy(m["context_length"]) ? (long)LegacyCustomize.JsToNumber(m["context_length"]) : Truthy(m["context_window"]) ? (long)LegacyCustomize.JsToNumber(m["context_window"]) : null;
-            return new AiModelInfo(id, name, context, price, tools);
+            static IReadOnlyList<string>? Modalities(JsonNode? n) => n is JsonArray a
+                ? a.Select(x => LegacyCustomize.JsToString(x).ToLowerInvariant()).Where(x => x.Length > 0).ToList() : null;
+            double? cached = m["pricing"] is JsonObject pc && Truthy(pc["input_cache_read"]) ? LegacyCustomize.JsToNumber(pc["input_cache_read"]) * 1e6 : null;
+            return new AiModelInfo(id, name, context, price, tools,
+                Modalities(m["architecture"]?["input_modalities"]), Modalities(m["architecture"]?["output_modalities"]), cached);
         }).ToList();
     }
 
@@ -663,7 +672,7 @@ public sealed class AssistantProviders
         var p = Resolve(cfg);
         if (p.Kind != "openai") throw new AiProviderException("Este provedor não tem API de imagens compatível.");
         if (p.Preset == "gemini")
-            return new[] { "gemini-nano-banana-2.1", "gemini-3.1-flash-lite-image", "gemini-3.1-flash-image", "gemini-3-pro-image", "gemini-2.5-flash-image" }
+            return AiModelCatalog.GeminiImageModels
                 .Select(m => new AiModelInfo(m, m, null, null, null)).ToList();
         if (p.Preset == "openrouter")
         {

@@ -89,6 +89,14 @@ Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descriçã
 - Arquivos desconhecidos ou sem suporte (CBR, DOC, XLSX…) não abrem mais uma tela vazia: aparecem nome, tamanho, tipo, o que o arquivo realmente contém, o que o Urbe consegue fazer com ele e **Abrir em outro app**.
 - Um arquivo com a extensão errada não derruba o app: uma imagem renomeada é mostrada e um "PNG" que na verdade é PDF é identificado.
 
+## Modelos do Assistente
+
+- O Assistente sabe o que cada modelo faz (texto, ferramentas, imagem, PDF, contexto, preço, onde roda) e mostra isso em **Configurações → Modelos → O que cada modelo faz**. O que o provedor não informa aparece como "não informado".
+- Ao anexar imagem ou PDF para um modelo que não os lê, o Urbe avisa antes de enviar e sugere um modelo que lê, com o custo e se os arquivos sairão do aparelho; nada é trocado sem você escolher.
+- A leitura visual de páginas e imagens não envia nada a um modelo que não as lê.
+- Sem modelo de imagem escolhido, o Assistente mostra quais modelos de imagem os seus provedores oferecem e o preço.
+- Estimativa de custo também para modelos Claude, com a tabela publicada e o preço do cache.
+
 ## Segurança do Assistente
 
 - Uma ação que precisa da sua aprovação nunca é aprovada sozinha: se a execução não tiver como perguntar a você, a ação não é feita.

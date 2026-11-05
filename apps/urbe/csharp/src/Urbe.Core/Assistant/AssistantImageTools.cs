@@ -9,6 +9,9 @@ public interface IAssistantImages
     /// <summary>True when the run's provider draws pictures.</summary>
     bool CanDraw { get; }
 
+    /// <summary>CST-220: why nothing can be drawn now, naming the configured image models when there are any.</summary>
+    string Unavailable => "Nenhum provedor de imagens configurado. Adicione uma chave OpenRouter, OpenAI ou Google Gemini nas configurações do Assistente; não é necessário trocar o modelo do chat.";
+
     /// <summary>The picture drawn by the run's provider (PNG, JPEG or WebP bytes).</summary>
     Task<byte[]> DrawAsync(string prompt, string size, CancellationToken cancel);
 
@@ -98,7 +101,7 @@ public static class AssistantImageTools
         Run = async (i, host) =>
         {
             var images = I(host);
-            if (!images.CanDraw) throw new AiToolException("Nenhum provedor de imagens configurado. Adicione uma chave OpenRouter, OpenAI ou Google Gemini nas configurações do Assistente; não é necessário trocar o modelo do chat.");
+            if (!images.CanDraw) throw new AiToolException(images.Unavailable);
             var prompt = Str(i, "prompt");
             if (prompt.Length == 0) throw new AiToolException("Descreva a imagem em prompt.");
             var size = Str(i, "size") is { Length: > 0 } s ? s : Sizes[0];
