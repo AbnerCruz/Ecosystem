@@ -2184,6 +2184,37 @@
       "decidedAt": "2026-10-30",
       "record": "docs/governance/responses/DEC-0060.md",
       "consequencesApplied": false
+    },
+    {
+      "id": "DEC-0061",
+      "status": "pending",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Urbe: ligar o Assistente a servidores MCP (CST-215)",
+      "context": "O plano Numa 2.6 pede um cliente MCP para usar ferramentas externas opcionais no Assistente. Isso abre uma fronteira de confiança nova: conteúdo de terceiros, rede para destinos escolhidos pela pessoa, credenciais guardadas pelo app e ferramentas que podem agir fora do vault. As opções, com custos e riscos, estão no ADR-0048 (Proposto). Nenhum código de MCP foi escrito.",
+      "question": "O Assistente do Urbe deve poder usar servidores MCP, e com qual alcance no primeiro incremento?",
+      "alternatives": [
+        {
+          "option": "A — Não agora",
+          "consequences": "O Assistente continua só com as ferramentas do Urbe. As skills cobrem instruções especializadas. CST-215 fica registrado como não adotado."
+        },
+        {
+          "option": "B — Só servidores remotos (HTTP), no computador primeiro (recomendada)",
+          "consequences": "Usa o SDK oficial (MIT). A pessoa cadastra cada servidor na Personalização e libera ferramenta por ferramenta, e cada chamada passa pela aprovação atual. Sem servidores locais e sem Android neste incremento."
+        },
+        {
+          "option": "C — Remotos no celular e no computador, e locais no computador",
+          "consequences": "Maior alcance logo de início, com mais trabalho de empacotamento e segurança: um servidor local executa um programa no computador."
+        }
+      ],
+      "consequences": "Enquanto pendente, nada de MCP entra no app; o resto da consolidação segue.",
+      "manifestCompatibility": "NN-011 e NN-016: fronteira de confiança e permissões novas exigem decisão. NN-002/NN-003: o cliente fica no Urbe, sem dependência do Hub. NN-020/022: sem extração para a plataforma enquanto não houver segundo consumidor.",
+      "recommendation": "B: entrega o uso mais comum (serviços remotos) com o menor risco, reaproveitando aprovações e grants; o Android e os servidores locais vêm depois, se fizerem falta.",
+      "related": [
+        "docs/adr/0048-urbe-cliente-mcp.md"
+      ],
+      "raisedBy": "claude-code-urbe-recovery",
+      "raisedAt": "2026-11-05"
     }
   ]
 }
