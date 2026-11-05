@@ -22,6 +22,8 @@ O celular é mais lento que o computador, então a diferença lá deve ser maior
 
 No estúdio de Publicações, o menu ⋯ ganhou novas saídas, todas feitas a partir das notas como estão agora:
 
+- **PDF de verdade**, salvo direto como arquivo (antes só pela impressão do sistema): páginas A4 com margens e números. Livros ganham capa, sumário com as páginas e cada capítulo começa numa página nova. Títulos não ficam sozinhos no fim da página, tabelas longas continuam com o cabeçalho repetido, e fórmulas e gráficos saem nítidos (vetor). Os links são clicáveis.
+
 - **Documento Word (DOCX)** e **OpenDocument (ODT)**: títulos de verdade (aparecem na navegação e no sumário), listas e listas numeradas, tarefas, citações, código, tabelas, imagens do vault e links. Livros ganham sumário e cada nota começa numa página nova.
 - **Apresentação PowerPoint (PPTX)** editável: cada nota, cada título # ou ## e cada linha `---` começa um slide. Texto, tópicos, tabelas e imagens são objetos do PowerPoint, não fotos. Texto que não cabe continua no slide seguinte, marcado “(cont.)”, em vez de ser cortado.
 - **Apresentação HTML**: o layout Slides agora gera uma apresentação de verdade. Setas, espaço ou deslizar trocam de slide; **F** tela cheia; **O** visão geral; **N** notas do apresentador. Um slide cujo conteúdo não cabe é avisado, e a impressão em PDF sai com um slide por página.

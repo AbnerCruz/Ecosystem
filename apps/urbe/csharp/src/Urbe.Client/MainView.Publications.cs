@@ -428,6 +428,7 @@ public sealed partial class MainView
         {
             "odt" => ("odt", "application/vnd.oasis.opendocument.text", "Documento ODT"),
             "pptx" => ("pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation", "Apresentação PowerPoint"),
+            "pdf" => ("pdf", "application/pdf", "PDF"),
             _ => ("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "Documento Word")
         };
         try
@@ -438,6 +439,7 @@ public sealed partial class MainView
             {
                 "odt" => await PublicationOdt.ExportAsync(project, catalog, asset, rasterize: SvgRaster.ToPng, data: data),
                 "pptx" => await PublicationPptx.ExportAsync(project, catalog, asset, rasterize: SvgRaster.ToPng, data: data),
+                "pdf" => await PublicationPdf.ExportAsync(project, catalog, asset, data),
                 _ => await PublicationDocx.ExportAsync(project, catalog, asset, rasterize: SvgRaster.ToPng, data: data)
             };
             if (!ReferenceEquals(draft, _publicationDraft) || !ReferenceEquals(draft.Store, _store) || draft.Dirty) return;

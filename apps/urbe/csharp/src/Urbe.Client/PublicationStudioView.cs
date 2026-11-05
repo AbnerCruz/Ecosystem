@@ -62,6 +62,7 @@ public sealed class PublicationStudioView : Border
             var items = new List<MenuItem>();
             void Item(string header, Action? run) { var i = new MenuItem { Header = header }; i.Click += (_, _) => run?.Invoke(); items.Add(i); }
             Item("Renomear publicação", () => RenameRequested?.Invoke());
+            Item("Exportar PDF", () => OfficeRequested?.Invoke("pdf"));
             Item("Exportar livro EPUB", () => EpubRequested?.Invoke());
             Item("Exportar documento Word (DOCX)", () => OfficeRequested?.Invoke("docx"));
             Item("Exportar documento OpenDocument (ODT)", () => OfficeRequested?.Invoke("odt"));

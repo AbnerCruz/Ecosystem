@@ -33,6 +33,39 @@ public static class SvgRaster
         return new OfficeRaster(data.ToArray(), width, height);
     }
 
+    /// <summary>
+    /// Draws <paramref name="svg"/> into <paramref name="box"/> of any canvas (a PDF page keeps it as vectors), keeping
+    /// its proportions. False when the SVG cannot be read.
+    /// </summary>
+    public static bool DrawInto(SKCanvas canvas, string svg, SKRect box)
+    {
+        XElement root;
+        try { root = XElement.Parse(svg); }
+        catch (System.Xml.XmlException) { return false; }
+        var (vx, vy, vw, vh) = ViewBox(root) ?? (0, 0, Num(root, "width") ?? box.Width, Num(root, "height") ?? box.Height);
+        var scale = (float)Math.Min(box.Width / vw, box.Height / vh);
+        canvas.Save();
+        canvas.Translate(box.Left + (box.Width - (float)(vw * scale)) / 2, box.Top + (box.Height - (float)(vh * scale)) / 2);
+        canvas.ClipRect(new SKRect(0, 0, (float)(vw * scale), (float)(vh * scale)));
+        canvas.Scale(scale);
+        canvas.Translate((float)-vx, (float)-vy);
+        Draw(canvas, root, Style.Default);
+        canvas.Restore();
+        return true;
+    }
+
+    /// <summary>The SVG's own size (viewBox or width/height), for laying it out.</summary>
+    public static (double Width, double Height)? SizeOf(string svg)
+    {
+        try
+        {
+            var root = XElement.Parse(svg);
+            var vb = ViewBox(root);
+            return vb is { } v ? (v.W, v.H) : Num(root, "width") is { } w && Num(root, "height") is { } h ? (w, h) : null;
+        }
+        catch (System.Xml.XmlException) { return null; }
+    }
+
     private sealed record Style(string Fill, string Stroke, double StrokeWidth, double FillOpacity, double StrokeOpacity, double FontSize, bool Bold, string Anchor)
     {
         public static readonly Style Default = new("#000000", "none", 1, 1, 1, 16, false, "start");

@@ -160,6 +160,12 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains("Texto REVISADO", body.ReadToEnd());
                 Assert.Empty(view.LastOfficeLimitations);
             }
+            (string Name, byte[] Bytes)? pdfFile = null;
+            view.SavePageFile = (name, bytes) => { pdfFile = (name, bytes); return Task.FromResult<bool?>(true); };
+            await view.ExportPublicationOfficeAsync("pdf");
+            Assert.Equal("Livro vivo.pdf", pdfFile!.Value.Name);
+            using (var pdf = UglyToad.PdfPig.PdfDocument.Open(pdfFile.Value.Bytes))
+                Assert.Contains("REVISADO", string.Join(" ", pdf.GetPages().SelectMany(pg => pg.GetWords()).Select(w => w.Text)));
             Snapshot(window, "native-publications-live-source.png");
             window.Close();
             return true;
