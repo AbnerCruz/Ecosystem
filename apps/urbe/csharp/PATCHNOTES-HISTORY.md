@@ -2,6 +2,11 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.48 — 04/11/2026
+- Aba Estudo: navegador, YouTube oficial e arquivos do vault no painel de fonte ao lado da nota, com divisória arrastável.
+- Livros PDF grandes ficam em Livros/ no vault e o Assistente os lê por partes, citando páginas.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.48
+
 ## 2.0.0-beta.47 — 04/11/2026
 - Recuperação das regressões da beta.38–46: abertura do app mais leve (Assistente e motores de leitura só quando usados), abrir e trocar de nota ~3× mais rápido, índice do vault sem reconstrução a cada gravação (avisos de app sem resposta com a IA).
 - Leitores redesenhados para o celular (tela cheia, barra embaixo, toque esconde as barras, pinça no PDF); abas só com duas ou mais; menu radial acima da barra do editor.

@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261105-urbe-beta49-typing",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-05T00:42:47.000Z",
+  "agent": {
+    "id": "claude-code-urbe-recovery",
+    "kind": "ai-agent"
+  },
+  "task_id": "CST-114",
+  "component": "urbe",
+  "state": "review",
+  "branch": "claude/urbe-refactor-development-t73hul",
+  "base_commit": "0e176d0",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/QuietSelectionHandles.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorInput.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/QuietSelectionHandlesTests.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md"
+  ],
+  "work_completed": [
+    "Pedido do proprietário (05/11/2026): continuar o plano Numa 2.6, avançando etapa a etapa. Escolhida a pendência registrada na beta.47/48 e no gate do editor (§3.1): digitação cara no modo Fonte em notas grandes.",
+    "Diagnóstico por amostragem (EventPipe + speedscope) no bench opt-in URBE_BENCH_TYPE=fonte, nota de 14 KB, janela de 412 px: 127 ms/tecla; os handlers do Urbe somam ~2 ms; ~70% do tempo vinha de TextSelectionHandleCanvas.MoveHandlesToSelection (Avalonia 12.1.3), que recalcula as alças de toque escondidas a cada mudança de SelectionStart/SelectionEnd/CaretIndex; cada mudança de seleção invalida o TextLayout, então uma tecla reconstruía o layout do texto inteiro 3-4 vezes.",
+    "Correção QuietSelectionHandles (aplicada em EditorInput.ConfigureMultiline: Fonte, blocos do Visual, campo do Assistente): o canvas só ouve seleção/cursor enquanto visível; demais mudanças (texto: esconder alças, fechar menu) continuam chegando. Ao aparecer, o próprio canvas reposiciona as alças. Se a versão do Avalonia não tiver os membros, nada muda e um teste falha.",
+    "Bench após: Fonte 127 → 77 ms/tecla; Visual 33 → 23 ms/tecla. O restante do Visual é pintura por software do headless (não representa o aparelho).",
+    "Release 2.0.0-beta.49 (2000049) preparada no csproj canônico; beta.48 arquivada no histórico; patchnotes em linguagem direta."
+  ],
+  "verification": [
+    {
+      "check": "QuietSelectionHandlesTests (vermelho sem a correção, verde com ela)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Sem Apply: alça escondida se movia a cada tecla (2 falhas). Com Apply: alça escondida parada; mostrada, acompanha o cursor; digitar a esconde."
+    },
+    {
+      "check": "Urbe.Client.Tests e Urbe.Core.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "499/499 Client e 1338/1338 Core localmente (.NET SDK 10.0.403)."
+    },
+    {
+      "check": "tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks passaram localmente."
+    },
+    {
+      "check": "Digitação no Fonte de nota grande e alças de seleção por toque no moto g32",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/urbe/csharp/PATCHNOTES.md",
+      "evidence": "Validação física pendente (NN-017): toque, arrastar alças, IME."
+    }
+  ],
+  "known_issues": [
+    "Fonte ainda refaz o layout do texto inteiro duas vezes por tecla (TextPresenter.MoveCaretToTextPosition durante a entrada e MeasureOverride, que sempre descarta o layout). Eliminar exige editor com layout incremental por parágrafo.",
+    "A correção depende de membros internos do Avalonia 12.1.3 (TextSelectionHandleCanvas.TextBox_PropertyChanged, TextPresenter.TextSelectionHandleCanvas); QuietSelectionHandles_FindsTheCanvasOfThisAvalonia sinaliza uma atualização que os mude."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Abrir PR da beta.49 e acompanhar CI e integração.",
+    "Avaliar editor Fonte com layout incremental por parágrafo (IME Android é o risco principal) e seguir o plano Numa 2.6."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "MANIFEST.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "docs/governance/addenda/ADD-0033-urbe-sem-paridade-com-a-1-8-4-e-sem-limitadores.md",
+    "docs/distribution/direct-releases.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Versão só no csproj canônico."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação física declarada pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Teste vermelho→verde, suítes completas e bench registrados; publicação só após CI e integração."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-quiet-selection-handles",
+      "status": "product-specific",
+      "rationale": "Contorno de desempenho do TextBox do Avalonia no editor do Urbe; sem segundo consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Corte de release beta.49 no csproj do canal beta (releases constantes pedidas pelo proprietário); identidade, assinatura e workflow preservados."
+  }
+}
