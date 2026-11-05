@@ -1,3 +1,4 @@
+using Avalonia.Input.Platform;
 using Urbe.Core;
 
 namespace Urbe.Client;
@@ -215,6 +216,28 @@ public sealed partial class MainView
             string.Join("\n", text.Split('\n').Select(line => "> " + line)) + "\n";
     }
 
+    /// <summary>"Adicionar em outra nota…": the notes edited most recently, or the ones whose name has the text typed.</summary>
+    private async Task<string?> ChooseCitationNoteAsync(string? except)
+    {
+        if (_store is null) return null;
+        var notes = _store.List().Where(n => ArtifactModel.IsNote(n.Path) && n.Path != except).ToArray();
+        if (notes.Length == 0) { ShowLifeNotice("Não há outra nota no vault."); return null; }
+        var recent = notes.OrderByDescending(n => n.Modified ?? "", StringComparer.Ordinal).ThenBy(n => n.Path, StringComparer.Ordinal).Take(8).ToArray();
+        var items = recent.Select(n => new DialogItem(n.Title, UrbeTheme.Icons.Notes, n.Path)).Append(new DialogItem("Buscar nota pelo nome…", UrbeTheme.Icons.Search)).ToArray();
+        var pick = await Dialogs.ChooseAsync("Adicionar em outra nota", items);
+        if (pick is not { } index) return null;
+        if (index < recent.Length) return recent[index].Path;
+        var query = await Dialogs.PromptAsync(new PromptOptions("Buscar nota", Label: "Nome da nota", Confirm: "Buscar"));
+        if (string.IsNullOrWhiteSpace(query)) return null;
+        string Fold(string value) => LegacyQuickOpen.Fold(value);
+        var folded = Fold(query.Trim());
+        var matches = notes.Where(n => Fold(n.Title).Contains(folded, StringComparison.Ordinal) || Fold(n.Path).Contains(folded, StringComparison.Ordinal))
+            .OrderBy(n => n.Path.Length).ThenBy(n => n.Path, StringComparer.Ordinal).Take(30).ToArray();
+        if (matches.Length == 0) { ShowLifeNotice("Nenhuma nota com “" + query.Trim() + "” no nome."); return null; }
+        var found = await Dialogs.ChooseAsync("Notas com “" + query.Trim() + "”", matches.Select(n => new DialogItem(n.Title, UrbeTheme.Icons.Notes, n.Path)).ToArray());
+        return found is { } at && at < matches.Length ? matches[at].Path : null;
+    }
+
     private async Task InsertStudyCitationAsync(string source, string text, string link, StudyAnnotationKind kind = StudyAnnotationKind.Citation)
     {
         if (_insertingReaderQuote || Dialogs.IsOpen) return;
@@ -230,22 +253,42 @@ public sealed partial class MainView
             }
             var current = Editor.Current;
             bool usable = current is not null && ArtifactModel.IsNote(current.Path);
+            string quoted = string.Join("\n", text.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n').Select(line => "> " + line));
+            string label = kind switch { StudyAnnotationKind.Highlight => "**Destaque**\n\n", StudyAnnotationKind.Bookmark => "**Marcador**\n\n", StudyAnnotationKind.Comment => "**Anotação**\n\n", _ => "" };
+            string block = label + quoted + (comment is null ? "" : "\n\nComentário: " + comment) + "\n\nFonte: " + link + "\n";
+            // CST-240: one gesture, a visible destination: this note, another existing note, a new note, or the clipboard
             var choices = new List<DialogItem>();
-            if (usable) choices.Add(new DialogItem("Adicionar em " + current!.Path));
-            choices.Add(new DialogItem("Criar nota para esta citação"));
-            var choice = await Dialogs.ChooseAsync("Destino da citação", choices,
-                source);
-            if (choice is null) return;
-            if (!ReferenceEquals(sourceStore, _store)) return;
-            if (!usable || choice == 1)
+            int here = -1, other, create, copy;
+            if (usable) { here = choices.Count; choices.Add(new DialogItem("Adicionar em " + current!.Path, UrbeTheme.Icons.Notes)); }
+            other = choices.Count; choices.Add(new DialogItem("Adicionar em outra nota…", UrbeTheme.Icons.Search));
+            create = choices.Count; choices.Add(new DialogItem("Criar nota para esta citação", UrbeTheme.Icons.Plus));
+            copy = choices.Count; choices.Add(new DialogItem("Copiar com a referência", UrbeTheme.Icons.Copy, "Trecho e link de volta à fonte"));
+            var choice = await Dialogs.ChooseAsync("Destino da citação", choices, source);
+            if (choice is null || !ReferenceEquals(sourceStore, _store)) return;
+            if (choice == copy)
+            {
+                if (Avalonia.Controls.TopLevel.GetTopLevel(this)?.Clipboard is not { } clipboard) { ShowLifeNotice("Este aparelho não deixou copiar."); return; }
+                await clipboard.SetTextAsync(block);
+                CopiedText = block;
+                ShowLifeNotice("Trecho copiado com a referência.");
+                return;
+            }
+            if (choice == other)
+            {
+                if (await ChooseCitationNoteAsync(current?.Path) is not { } target || !ReferenceEquals(sourceStore, _store)) return;
+                if (Editor.Current?.Path != target) OpenNoteByPath(target);
+                if (Editor.Current?.Path != target) { ShowLifeNotice("Não consegui abrir " + target + "."); return; }
+            }
+            else if (choice == create)
             {
                 if (await CreateNoteAsync() is not { } created || !ReferenceEquals(sourceStore, _store) || Editor.Current?.Path != created.Path) return;
             }
-            else if (Editor.Current?.Path != current!.Path)
+            else if (choice != here || Editor.Current?.Path != current!.Path)
             { ShowLifeNotice("A nota de destino mudou. Selecione o destino novamente."); return; }
-            string quoted = string.Join("\n", text.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n').Select(line => "> " + line));
-            string label = kind switch { StudyAnnotationKind.Highlight => "**Destaque**\n\n", StudyAnnotationKind.Bookmark => "**Marcador**\n\n", StudyAnnotationKind.Comment => "**Anotação**\n\n", _ => "" };
-            Editor.InsertText("\n\n" + label + quoted + (comment is null ? "" : "\n\nComentário: " + comment) + "\n\nFonte: " + link + "\n", append: true);
+            // the same selection sent twice (a repeated tap) is not written twice
+            if ((Editor.Editor.Text ?? "").Contains(block.TrimEnd('\n'), StringComparison.Ordinal))
+            { ShowLifeNotice("Este trecho já está em " + Editor.Current?.Path + "."); return; }
+            Editor.InsertText("\n\n" + block, append: true);
             if (await Editor.SaveAsync()) ShowLifeNotice("Citação salva em " + Editor.Current?.Path);
             else ShowLifeNotice("A citação está no editor, mas a gravação não foi confirmada.");
         }

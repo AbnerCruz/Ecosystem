@@ -77,6 +77,8 @@ Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descriçã
 
 - **⋯ → Anotações desta fonte** agora mostra cada destaque, comentário, citação e marcador do arquivo, com a página ou capítulo, o trecho e a nota onde está. Tocar abre a nota na linha certa ou leva à fonte.
 - Uma anotação feita numa versão anterior do arquivo aparece como **fonte mudou: revise**, em vez de ser colocada numa frase parecida.
+- Ao enviar um trecho de PDF, livro, documento ou site, o destino agora pode ser **outra nota** (as recentes ou pela busca do nome), além da nota aberta e de uma nota nova. **Copiar com a referência** leva o trecho e o link de volta à fonte para a área de transferência.
+- Tocar de novo no mesmo trecho não o escreve duas vezes na nota.
 - **Exportar anotações** salva tudo no padrão W3C Web Annotation (trecho, contexto, página), para levar a outros apps.
 
 ## Novos leitores
