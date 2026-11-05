@@ -44,6 +44,7 @@ public sealed partial class MainView
         studio.EpubRequested += () => _ = ExportPublicationEpubAsync();
         studio.PrintRequested += () => _ = PrintPublicationAsync();
         studio.RetrySaveRequested += () => _ = SavePublicationAsync();
+        WirePublicationVideo(studio);
         studio.Closed += () =>
         {
             ReleaseSavedPublicationDraft(_publicationDraft);
@@ -103,6 +104,7 @@ public sealed partial class MainView
         PublicationsStudio.Open(path, draft.Project, _publicationsCatalog!);
         PublicationsStudio.SetSaveState(draft.Dirty, draft.Error);
         UpdateFloatingNav();
+        await LoadPublicationVideoFilesAsync();
     }
 
     /// <summary>First-class creation from the current note, or an empty project chosen in Settings.</summary>
@@ -234,13 +236,17 @@ public sealed partial class MainView
     {
         var draft = _publicationDraft;
         if (_publicationsStudio?.Project is not { } project) return;
-        var option = await Dialogs.ChooseAsync("Composição", [new DialogItem("Layout", Detail: "Artigo, livro ou apresentação"),
-            new DialogItem("Tema", Detail: "Papel, oceano ou tinta"), new DialogItem("Objetivo", Detail: project.Objective), new DialogItem("Público", Detail: project.Audience)]);
+        var option = await Dialogs.ChooseAsync("Composição", [new DialogItem("Layout", Detail: "Artigo, livro, apresentação ou vídeo"),
+            new DialogItem("Tema", Detail: "Papel, oceano ou tinta"), new DialogItem("Objetivo", Detail: project.Objective), new DialogItem("Público", Detail: project.Audience),
+            .. project.Design.Layout == "video" && project.Video is { } v
+                ? new[] { new DialogItem("Formato do vídeo", Detail: v.Aspect + " · " + v.FrameSize.Width + "×" + v.FrameSize.Height + " · " + v.Fps + " qps" + (v.Subtitles ? " · legendas" : "")) }
+                : []]);
         PublicationProject? next = null;
         if (option == 0)
         {
-            var layout = await Dialogs.ChooseAsync("Layout", [new DialogItem("Artigo"), new DialogItem("Livro com sumário"), new DialogItem("Apresentação (uma nota por slide)")]);
-            if (layout is >= 0 and <= 2) next = project with { Design = project.Design with { Layout = new[] { "article", "book", "slides" }[layout.Value] } };
+            var layout = await Dialogs.ChooseAsync("Layout", [new DialogItem("Artigo"), new DialogItem("Livro com sumário"), new DialogItem("Apresentação (uma nota por slide)"),
+                new DialogItem("Vídeo (uma nota por cena)", Detail: "O texto da nota é o roteiro e a legenda; o tempo fica na publicação")]);
+            if (layout is >= 0 and <= 3) next = project with { Design = project.Design with { Layout = new[] { "article", "book", "slides", "video" }[layout.Value] } };
         }
         else if (option == 1)
         {
@@ -251,6 +257,19 @@ public sealed partial class MainView
         {
             var text = await Dialogs.PromptAsync(new PromptOptions(option == 2 ? "Objetivo da publicação" : "Público da publicação", Value: option == 2 ? project.Objective : project.Audience, Required: false, Confirm: "Salvar"));
             if (text is not null) next = option == 2 ? project with { Objective = text } : project with { Audience = text };
+        }
+        else if (option == 4 && project.Video is { } video)
+        {
+            var choice = await Dialogs.ChooseAsync("Formato do vídeo", [
+                new DialogItem("Horizontal 16:9"), new DialogItem("Vertical 9:16"), new DialogItem("Quadrado 1:1"),
+                new DialogItem("Resolução", Detail: video.Resolution + "p"), new DialogItem("Quadros por segundo", Detail: video.Fps.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                new DialogItem(video.Subtitles ? "Tirar as legendas do vídeo" : "Pôr as legendas no vídeo")]);
+            if (choice is >= 0 and <= 2) next = project with { Video = video with { Aspect = VideoComposition.Aspects[choice.Value] } };
+            else if (choice == 3 && await Dialogs.ChooseAsync("Resolução", [new DialogItem("480p"), new DialogItem("720p"), new DialogItem("1080p")]) is { } r)
+                next = project with { Video = video with { Resolution = new[] { 480, 720, 1080 }[r] } };
+            else if (choice == 4 && await Dialogs.ChooseAsync("Quadros por segundo", [new DialogItem("24"), new DialogItem("30"), new DialogItem("60")]) is { } f)
+                next = project with { Video = video with { Fps = new[] { 24, 30, 60 }[f] } };
+            else if (choice == 5) next = project with { Video = video with { Subtitles = !video.Subtitles } };
         }
         if (next is not null && ReferenceEquals(draft, _publicationDraft) && ReferenceEquals(_store, draft?.Store) &&
             _publicationsStudio.IsVisible && ReferenceEquals(project, _publicationsStudio.Project))
