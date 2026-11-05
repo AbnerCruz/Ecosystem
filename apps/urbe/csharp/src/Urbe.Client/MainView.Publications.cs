@@ -376,24 +376,32 @@ public sealed partial class MainView
         if (_publicationsCatalog is not { } catalog || _publicationDraft is not { } draft || !await SavePublicationAsync()) return;
         var vault = _vault;
         var project = draft.Project;
-        var odt = format == "odt";
+        var (extension, mime, kind) = format switch
+        {
+            "odt" => ("odt", "application/vnd.oasis.opendocument.text", "Documento ODT"),
+            "pptx" => ("pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation", "Apresentação PowerPoint"),
+            _ => ("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "Documento Word")
+        };
         try
         {
             Func<string, Task<byte[]?>> asset = async path => vault is null ? null : (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes;
-            var result = odt ? await PublicationOdt.ExportAsync(project, catalog, asset) : await PublicationDocx.ExportAsync(project, catalog, asset);
+            var result = extension switch
+            {
+                "odt" => await PublicationOdt.ExportAsync(project, catalog, asset),
+                "pptx" => await PublicationPptx.ExportAsync(project, catalog, asset),
+                _ => await PublicationDocx.ExportAsync(project, catalog, asset)
+            };
             if (!ReferenceEquals(draft, _publicationDraft) || !ReferenceEquals(draft.Store, _store) || draft.Dirty) return;
-            var extension = odt ? "odt" : "docx";
-            var mime = odt ? "application/vnd.oasis.opendocument.text" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
             var name = ArtifactModel.SafeName(project.Title) + "." + extension;
             var saved = SavePageFile is { } save ? await save(name, result.Bytes) : await SavePublicationFileAsync(name, result.Bytes, extension, mime);
             if (saved != true) return;
             LastOfficeLimitations = result.Limitations;
-            if (result.Limitations.Count == 0) ShowLifeNotice(odt ? "Documento ODT salvo." : "Documento Word salvo.");
-            else await Dialogs.AlertAsync(odt ? "Documento ODT salvo" : "Documento Word salvo",
+            if (result.Limitations.Count == 0) ShowLifeNotice(kind + (extension == "pptx" ? " salva." : " salvo."));
+            else await Dialogs.AlertAsync(kind + (extension == "pptx" ? " salva" : " salvo"),
                 "O arquivo é editável. O que o formato não guarda como no Urbe:\n\n• " + string.Join("\n• ", result.Limitations));
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
-        { await Dialogs.AlertAsync(odt ? "Não foi possível exportar ODT" : "Não foi possível exportar o documento Word", ex.Message); }
+        { await Dialogs.AlertAsync("Não foi possível exportar: " + kind, ex.Message); }
     }
 
     /// <summary>What the last office export could not keep (shown to the person; read by tests).</summary>

@@ -148,7 +148,7 @@ public sealed partial class HeadlessUiTests
                 Assert.Contains("Texto REVISADO", chapter.ReadToEnd());
             }
             // CST-166: the same live notes as Word and OpenDocument files
-            foreach (var (format, part) in new[] { ("docx", "word/document.xml"), ("odt", "content.xml") })
+            foreach (var (format, part) in new[] { ("docx", "word/document.xml"), ("odt", "content.xml"), ("pptx", "ppt/slides/slide1.xml") })
             {
                 (string Name, byte[] Bytes)? office = null;
                 view.SavePageFile = (name, bytes) => { office = (name, bytes); return Task.FromResult<bool?>(true); };
