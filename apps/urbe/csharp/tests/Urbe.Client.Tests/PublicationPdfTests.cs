@@ -17,7 +17,7 @@ public sealed class PublicationPdfTests
         using var catalog = new PublicationSourceCatalog(store);
         var project = PublicationProject.Create("Livro de teste", a.Id).AddSource(b.Id) with { Design = new PublicationDesign { Layout = "book" } };
         var result = await PublicationPdf.ExportAsync(project, catalog, cancellationToken: TestContext.Current.CancellationToken);
-        if (Environment.GetEnvironmentVariable("URBE_SNAPSHOT_DIR") is { Length: > 0 } dir) File.WriteAllBytes(Path.Combine(dir, "publication-book.pdf"), result.Bytes);
+        if (Environment.GetEnvironmentVariable("URBE_SNAPSHOT_DIR") is { Length: > 0 } dir) { Directory.CreateDirectory(dir); File.WriteAllBytes(Path.Combine(dir, "publication-book.pdf"), result.Bytes); }
         Assert.StartsWith("%PDF-", System.Text.Encoding.ASCII.GetString(result.Bytes, 0, 5));
         using var pdf = PdfDocument.Open(result.Bytes);
         Assert.True(pdf.NumberOfPages >= 5, "pages: " + pdf.NumberOfPages); // cover, contents, chapter one over pages, chapter two
