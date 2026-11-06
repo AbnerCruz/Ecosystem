@@ -39,6 +39,34 @@ capacidades tipadas (`AiModelCatalog`) são derivadas em memória dele, dos mode
 aparelho e de uma tabela curta de fatos publicados; não há outro catálogo persistido.
 Sem migração. Teste: `AiModelSelectorTests.Store_KeepsReportedModalitiesAndOldCachesByteForByte`.
 
+## CST-216 — diário de execução (06/11/2026)
+
+Arquivo privado novo, no mesmo `AssistantStorage` das conversas (nunca no vault):
+`execucao-<runId>.jsonl`, uma linha JSON por evento, só acrescentada (append com
+flush em disco). Autoridade: `Urbe.Core/Assistant/AssistantRunJournal.cs`. Cada linha
+traz `v` (versão do schema, 1), `seg` (execução 1, e +1 a cada Retomar) e `t`:
+`begin` (run, conversa, vault, agente, modelo, objetivo, `base` = mensagens da conversa
+no início, `request`, `sources:[{path,sha}]`, `scope`/`expected`/`origin` opcionais),
+`request`/`response` (etapa do modelo; a resposta com seus tool_use e `usage`),
+`approval` (call, decisão), `intent` (call, tool, hash da entrada, `path`, `before`/
+`after` = SHA-256 do texto da nota, `target` em movimentos, `after:"absent"` em
+exclusões), `result` (recibo: conteúdo — leituras cortadas em 4000 caracteres —, erro,
+status, `changes:[{path, sha antes/depois}]`, `image`, `seen:[{path,sha}]`),
+`resume` (a nota de retomada), `finished` (como o laço terminou) e `end` (fechado:
+`ended`, `reopened` ou `discarded`). É a autoridade do **estado do run e dos efeitos**;
+a conversa continua a autoridade da transcrição (salva no início do run para servir de
+base). Linha cortada pela morte do processo é ignorada; `v` maior que 1 não é lido nem
+reescrito. Mantêm-se os abertos e os 30 fechados mais recentes; excluir um agente exclui
+os diários dele com verificação. Sem migração: conversas antigas não têm diário.
+
+## CST-217 — brief de delegação (06/11/2026)
+
+`conversa-*.json` ganha o campo opcional `brief:{task, scope[], sources[], expected
+("note"|"text"), artifact, maxSteps, role ("delegate"|"reviewer"), reviewSha?}` nas
+conversas criadas por `delegate_to_agent`. Ausente nas demais (JSON idêntico ao de
+antes). Escopo de escrita é aplicado pelo `AssistantScopedHost` antes de gravar. Testes:
+`AssistantDelegationTests`, `AssistantRunJournalTests`, `RunRecoveryDelegationUiTests`.
+
 ## UC-89 — escopo de ferramentas e delegação (25/10/2026)
 
 `config.json` acrescenta dois campos opcionais, com as mesmas regras de escrita
