@@ -252,3 +252,25 @@ public sealed partial class HeadlessUiTests
             finally { window.Close(); try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
 }
+
+public sealed partial class HeadlessUiTests
+{
+    /// <summary>CST-237: an .odp written by LibreOffice opens in the same native slide reader, drawn like LibreOffice draws it.</summary>
+    [Fact]
+    public void Odp_FromLibreOfficeIsDrawnWithItsShapesTableAndText()
+    {
+        using var deck = PptxDeck.OpenOdp(File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "fixtures", "slides-libreoffice.odp")));
+        Assert.Equal((2, "16:9"), (deck.SlideCount, deck.AspectLabel));
+        Assert.Contains("Estudo de apresentações", deck.Slide(0).Text);
+        Assert.Contains("Segundo slide: trecho exato.", deck.Slide(1).Text);
+        Assert.Empty(deck.Slide(0).NotRendered);
+        using var bitmap = PptxSlideRenderer.Render(deck, 0, 960);
+        Assert.Equal((960, 540), (bitmap.Width, bitmap.Height));
+        // the teal rounded shape, the table's blue header and its light body row (as LibreOffice draws them)
+        Assert.True(Near(PixelAt(bitmap, 120, 160), 0x16, 0x83, 0x83));
+        Assert.True(Near(PixelAt(bitmap, 270, 380), 0x4F, 0x81, 0xBD));
+        Assert.True(Near(PixelAt(bitmap, 270, 420), 0xD0, 0xD8, 0xE7));
+        // the title is one line: nothing of it below the first line
+        Assert.True(Near(PixelAt(bitmap, 600, 95), 255, 255, 255));
+    }
+}

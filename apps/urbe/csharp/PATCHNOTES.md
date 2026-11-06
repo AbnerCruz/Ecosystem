@@ -85,6 +85,7 @@ Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descriçã
 
 - Apresentações **PowerPoint (.pptx)** abrem no próprio Urbe: slides na proporção original, miniaturas, toque, setas ou deslize para navegar, zoom e **modo apresentação** em tela cheia. A busca cobre slides e notas do apresentador, que aparecem embaixo de cada slide; o Urbe lembra o slide em que você parou.
 - Cada slide diz o que não foi reproduzido (animações, transições, gráficos, SmartArt, equações, vídeo, macros, fontes incorporadas) e oferece **Abrir em outro app**. Arquivos .ppt antigos ou protegidos por senha explicam por que não abrem.
+- Apresentações **OpenDocument (.odp)**, do LibreOffice, abrem no mesmo leitor de slides, com formas, tabelas, imagens, decorações do slide mestre e notas, em vez de só o texto.
 - Quadrinhos **CBZ** abrem num leitor próprio: páginas na ordem certa (1, 2, 10), toque nas bordas, setas ou deslize para virar, zoom e ajuste à tela ou à largura, e o Urbe lembra onde você parou. Só a página aberta e as vizinhas ficam na memória; um arquivo corrompido ou malicioso é recusado com o motivo na tela.
 - **TXT, LOG, RTF e JSON** abrem com busca no texto inteiro, sem diferenciar maiúsculas nem acentos; arquivos enormes abrem sem travar e o Urbe diz quanto está mostrando. RTF mostra o texto e avisa que a formatação não aparece; JSON aparece formatado.
 - **CSV** aparece como tabela, com cabeçalho e busca por linha, mesmo com milhões de linhas.

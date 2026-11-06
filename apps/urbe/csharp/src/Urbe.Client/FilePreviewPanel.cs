@@ -717,7 +717,7 @@ public sealed class FilePreviewPanel : Grid
             await ShowComicAsync(path ?? name, name, bytes, read.Size, version);
             return;
         }
-        if (extension == ".pptx" && bytes is not null && _generated is null)
+        if (extension is ".pptx" or ".odp" && bytes is not null && _generated is null)
         {
             await ShowPresentationAsync(path ?? name, name, bytes, read.Size, version);
             return;
@@ -727,7 +727,7 @@ public sealed class FilePreviewPanel : Grid
             await ShowTextFamilyAsync(name, extension, bytes, read.Size, version);
             return;
         }
-        if ((kind is VaultFileKinds.Epub || Path.GetExtension(name).ToLowerInvariant() is ".odp" or ".docx" or ".odt") && bytes is not null)
+        if ((kind is VaultFileKinds.Epub || Path.GetExtension(name).ToLowerInvariant() is ".docx" or ".odt") && bytes is not null)
         {
             try
             {
@@ -933,7 +933,8 @@ public sealed class FilePreviewPanel : Grid
     private async Task ShowPresentationAsync(string path, string name, byte[] bytes, long size, int version)
     {
         PptxDeck deck;
-        try { deck = await Task.Run(() => PptxDeck.Open(bytes)); }
+        bool odp = name.EndsWith(".odp", StringComparison.OrdinalIgnoreCase);
+        try { deck = await Task.Run(() => odp ? PptxDeck.OpenOdp(bytes) : PptxDeck.Open(bytes)); }
         catch (Exception ex) when (ex is NotSupportedException or InvalidDataException or IOException or System.Xml.XmlException or OverflowException or ArgumentException)
         {
             if (version != _version) return;

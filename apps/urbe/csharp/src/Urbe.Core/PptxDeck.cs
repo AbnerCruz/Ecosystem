@@ -112,6 +112,16 @@ public sealed class PptxDeck : IDisposable
         AspectLabel = Aspect(width, height);
     }
 
+    /// <summary>A deck read by another reader (an OpenDocument presentation, <see cref="OdpSlides"/>): its slides are given whole.</summary>
+    internal PptxDeck(ReaderArchive archive, long width, long height, PptxReadSlide[] slides, IReadOnlyList<string> notices)
+        : this(archive, width, height, slides.Select((_, i) => "\0read:" + i).ToArray(), null, notices)
+    {
+        slides.CopyTo(_slides, 0);
+    }
+
+    /// <summary>An OpenDocument presentation (.odp) for the same reader.</summary>
+    public static PptxDeck OpenOdp(byte[] bytes) => OdpSlides.Open(bytes);
+
     public static string Aspect(long width, long height)
     {
         double ratio = width / (double)Math.Max(1, height);

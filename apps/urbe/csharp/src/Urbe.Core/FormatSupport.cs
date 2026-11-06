@@ -41,7 +41,8 @@ public static class FormatSupportMatrix
             "original. Animações, transições, gráficos, SmartArt, equações, vídeo, macros e fontes incorporadas não são reproduzidos; cada slide " +
             "diz o que ficou de fora. A busca cobre o texto dos slides e das notas, não o de imagens; a seleção é nas notas."),
         new("Apresentação ODF", [".odp"], SupportLevel.Partial, SupportLevel.Partial, SupportLevel.Partial, true, BothPlatforms,
-            "Leitura semântica: o texto dos slides; o layout e os objetos podem diferir do aplicativo de origem."),
+            "Leitura, não edição: slides desenhados no aparelho com texto, retângulos, elipses, linhas, imagens, tabelas e notas do apresentador, " +
+            "com as decorações do slide mestre. Animações, transições, gráficos, equações, formas livres e mídia não são reproduzidos; cada slide diz o que ficou de fora."),
         new("PowerPoint 97–2003", [".ppt"], SupportLevel.External, SupportLevel.External, SupportLevel.External, true, BothPlatforms,
             "Formato binário antigo: o Urbe não o lê. Abra em outro app, ou salve como .pptx para ler aqui; o original não é modificado."),
         new("Documento legado do Office", [".doc", ".xls", ".xlsx", ".ods"], SupportLevel.External, SupportLevel.External, SupportLevel.External, true, BothPlatforms,
