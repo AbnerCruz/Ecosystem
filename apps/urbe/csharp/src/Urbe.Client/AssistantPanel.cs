@@ -282,7 +282,7 @@ public sealed partial class AssistantPanel : Border
         row.Children.Add(_attach);
         row.Children.Add(_input);
         var compose = new StackPanel { Margin = new Thickness(12, 6, 12, 12), Spacing = 2,
-            Children = { _contextRow, _attachmentMenu, _attachmentsRow, row } };
+            Children = { _freshness, _contextRow, _attachmentMenu, _attachmentsRow, row } };
         BuildAttachmentMenu();
         RefreshAttachments();
 
@@ -1652,6 +1652,7 @@ public sealed partial class AssistantPanel : Border
             _contextRow.IsVisible = true;
         }
         else _contextRow.IsVisible = false;
+        UpdateFreshness();   // CST-145
     }
 
     private static string FmtTokens(long n) => n >= 1_000_000 ? (n / 1_000_000.0).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "M tokens" : n >= 1000 ? (n / 1000.0).ToString(n >= 100000 ? "0" : "0.0", System.Globalization.CultureInfo.InvariantCulture) + "k tokens" : n + " tokens";

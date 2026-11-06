@@ -118,9 +118,8 @@ public sealed partial class MainView
         if (Editor.IsVisible && Editor.Current is { } current && moves.TryGetValue(current.Path, out var renamed)) Editor.Renamed(renamed);
         NotesChanged();
         RefreshNotes();
-        await RelinkAsync([(folder, target)]);
+        await RelinkAsync([(folder, target)], "Pasta renomeada para “" + name + "”.");
         await RetargetGraphsAsync([(folder, target)]);
-        ShowLifeNotice("Pasta renomeada para “" + name + "”.");
         return true;
     }
 
@@ -226,7 +225,8 @@ public sealed partial class MainView
         NotesChanged();
         RefreshNotes();
         // the graphs follow what moved: the whole folder, or the files that went before a failure
-        await RelinkAsync(failure is null ? [(folder, target)] : [.. moved.Select(m => (m.From, m.To))]);
+        await RelinkAsync(failure is null ? [(folder, target)] : [.. moved.Select(m => (m.From, m.To))],
+            failure is null ? "Pasta movida para " + (parent.Length > 0 ? "“" + parent + "”" : "a raiz") + "." : null);
         await RetargetGraphsAsync(failure is null ? [(folder, target)] : [.. moved.Select(m => (m.From, m.To))]);
         if (FilePreview.IsVisible && FilePreview.Current is { } shown && moved.Find(m => m.From == shown) is { To: { } shownTo })
             await FilePreview.OpenAsync(shownTo);
@@ -237,7 +237,6 @@ public sealed partial class MainView
                 + " arquivos já estão em “" + target + "”; os outros continuam em “" + folder + "”. Nenhum arquivo foi perdido.");
             return false;
         }
-        ShowLifeNotice("Pasta movida para " + (parent.Length > 0 ? "“" + parent + "”" : "a raiz") + ".");
         return true;
     }
 

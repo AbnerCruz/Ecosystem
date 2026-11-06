@@ -119,9 +119,8 @@ public sealed partial class MainView
         NotesChanged();
         RefreshNotes();
         if (FilePreview.IsVisible && FilePreview.Current == from) await FilePreview.OpenAsync(to);
-        await RelinkAsync([(from, to)]);
+        await RelinkAsync([(from, to)], notice);
         await RetargetGraphsAsync([(from, to)]);   // CST-066: the graphs' file cards follow
-        ShowLifeNotice(notice);
     }
 
     /// <summary>removerAsset: confirmed, the file is deleted from the vault, then its entry.</summary>
