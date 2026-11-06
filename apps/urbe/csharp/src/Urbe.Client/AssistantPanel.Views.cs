@@ -512,7 +512,7 @@ public sealed partial class AssistantPanel
             };
             if (!r.Reverted) head.Children.Add(LinkButton("Desfazer", () => _ = UndoLastAsync()));
             var list = new WrapPanel();
-            foreach (var f in files.Take(8)) list.Children.Add(LinkButton(f, () => OpenRef(f)));
+            foreach (var f in files) list.Children.Add(LinkButton(f, () => OpenRef(f)));
             tail.Children.Add(Card(new StackPanel { Spacing = 4, Children = { head, list } }));
         }
         if (_conv.WebSources.Count > 0)
@@ -1686,7 +1686,7 @@ public sealed partial class AssistantPanel
             list.Children.Clear();
             var q = (search.Text ?? "").Trim().ToLowerInvariant();
             var hits = models.Where(m => q.Length == 0 || (m.Id + " " + m.Name).Contains(q, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(m => m.Tools == true ? 0 : 1).ThenBy(m => Rank(m.Id)).ThenBy(m => m.Name, StringComparer.CurrentCulture).Take(200).ToList();
+                .OrderBy(m => m.Tools == true ? 0 : 1).ThenBy(m => Rank(m.Id)).ThenBy(m => m.Name, StringComparer.CurrentCulture).ToList();
             if (hits.Count == 0) { list.Children.Add(Hint("Nenhum modelo.")); return; }
             foreach (var m in hits)
             {
