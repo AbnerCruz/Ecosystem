@@ -668,6 +668,7 @@ public sealed partial class MarkdownReader
         int index = _math++;
         if (MathTapped is not { } tapped) return view;
         var holder = new Border { Background = Brushes.Transparent, Child = view, HorizontalAlignment = view.HorizontalAlignment, Cursor = new Avalonia.Input.Cursor(Avalonia.Input.StandardCursorType.Hand) };
+        TextBlock.SetBaselineOffset(holder, TextBlock.GetBaselineOffset(view));
         holder.Tapped += (_, e) => { e.Handled = true; if (TouchIntent.IsIntended(holder)) tapped(index); };
         return holder;
     }
@@ -678,7 +679,7 @@ public sealed partial class MarkdownReader
         try
         {
             var result = MathRenderer.RenderSvg(tex, display, (float)size);
-            if (result.Success && MathSvg.TryBuild(result.Svg, UrbeTheme.Text) is { } view)
+            if (result.Success && MathSvg.TryBuild(result.Svg, UrbeTheme.Text, out var grown) is { } view)
             {
                 // A display equation is an indivisible mathematical layout. Preserve its
                 // scale and height while letting a narrow touch viewport reach both ends.
@@ -694,7 +695,11 @@ public sealed partial class MarkdownReader
                     Avalonia.Automation.AutomationProperties.SetName(scroll, "Fórmula matemática: " + tex);
                     return scroll;
                 }
-                return new Border { HorizontalAlignment = HorizontalAlignment.Left, Child = view };
+                // CST-142: inline, the formula sits on the text's baseline (its denominator or descender below it), not
+                // with its whole height standing on the line
+                var inline = new Border { HorizontalAlignment = HorizontalAlignment.Left, Child = view };
+                TextBlock.SetBaselineOffset(inline, grown + result.Height - result.Depth);
+                return inline;
             }
             return RawMath(atom, result.Diagnostic ?? "", size);
         }
@@ -721,8 +726,12 @@ public sealed partial class MarkdownReader
 /// <summary>The SVG subset SvgMathCanvas writes (path, line) drawn as native shapes in the text colour.</summary>
 internal static class MathSvg
 {
-    public static Control? TryBuild(string svg, string color)
+    public static Control? TryBuild(string svg, string color) => TryBuild(svg, color, out _);
+
+    /// <summary><paramref name="top"/>: how far the canvas grew above the SVG's own top (ink above its box).</summary>
+    public static Control? TryBuild(string svg, string color, out double top)
     {
+        top = 0;
         try
         {
             var root = XDocument.Parse(svg).Root;
@@ -730,8 +739,17 @@ internal static class MathSvg
             var w = double.Parse(root.Attribute("width")?.Value ?? "0", CultureInfo.InvariantCulture);
             var h = double.Parse(root.Attribute("height")?.Value ?? "0", CultureInfo.InvariantCulture);
             if (w <= 0 || h <= 0) return null;
-            var canvas = new Canvas { Width = w, Height = h };
             var brush = UrbeTheme.Brush(color);
+            var shapes = new List<Control>();
+            // CST-142: CSharpMath measures the box by the glyphs' advances, but the ink of an italic f, a hat, a brace
+            // or a radical's index can go past it; the canvas grows to every painted shape so nothing is cut (inside a
+            // scroll) or drawn over the next line (inline)
+            double left = 0, up = 0, right = w, bottom = h;
+            void Ink(Rect b)
+            {
+                left = System.Math.Min(left, b.Left); up = System.Math.Min(up, b.Top);
+                right = System.Math.Max(right, b.Right); bottom = System.Math.Max(bottom, b.Bottom);
+            }
             foreach (var e in root.Elements())
             {
                 var name = e.Name.LocalName;
@@ -739,19 +757,27 @@ internal static class MathSvg
                 var fill = e.Attribute("fill")?.Value;
                 var width = double.Parse(e.Attribute("stroke-width")?.Value ?? "1", CultureInfo.InvariantCulture);
                 if (name == "path" && e.Attribute("d")?.Value is { } d)
-                    canvas.Children.Add(new Path
-                    {
-                        Data = Geometry.Parse(d),
-                        Fill = Painted(fill) ? brush : null,
-                        Stroke = Painted(stroke) ? brush : null,
-                        StrokeThickness = width
-                    });
+                {
+                    var geometry = Geometry.Parse(d);
+                    bool filled = Painted(fill), stroked = Painted(stroke);
+                    shapes.Add(new Path { Data = geometry, Fill = filled ? brush : null, Stroke = stroked ? brush : null, StrokeThickness = width });
+                    if (filled || stroked) Ink(geometry.Bounds.Inflate(stroked ? width / 2 : 0));
+                }
                 else if (name == "line")
-                    canvas.Children.Add(new Avalonia.Controls.Shapes.Line
-                    {
-                        StartPoint = new Point(D(e, "x1"), D(e, "y1")), EndPoint = new Point(D(e, "x2"), D(e, "y2")), Stroke = brush, StrokeThickness = width
-                    });
+                {
+                    Point a = new(D(e, "x1"), D(e, "y1")), b = new(D(e, "x2"), D(e, "y2"));
+                    shapes.Add(new Avalonia.Controls.Shapes.Line { StartPoint = a, EndPoint = b, Stroke = brush, StrokeThickness = width });
+                    Ink(new Rect(a, b).Inflate(width / 2));
+                }
             }
+            var canvas = new Canvas { Width = System.Math.Ceiling(right - left), Height = System.Math.Ceiling(bottom - up) };
+            foreach (var shape in shapes)
+            {
+                Canvas.SetLeft(shape, -left);
+                Canvas.SetTop(shape, -up);
+                canvas.Children.Add(shape);
+            }
+            top = -up;
             return canvas;
         }
         catch (Exception ex) when (ex is System.Xml.XmlException or FormatException or InvalidOperationException)

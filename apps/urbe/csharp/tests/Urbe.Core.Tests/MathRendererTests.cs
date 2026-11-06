@@ -5,6 +5,19 @@ namespace Urbe.Core.Tests;
 
 public sealed class MathRendererTests
 {
+    [Fact]
+    public void DepthIsHowFarTheFormulaGoesBelowItsBaseline()
+    {
+        // CST-142: inline math sits on the text baseline only if the renderer says where it is
+        var x = MathRenderer.RenderSvg("x", false, 18);
+        var y = MathRenderer.RenderSvg("y", false, 18);
+        var frac = MathRenderer.RenderSvg(@"\frac{a}{b}", false, 18);
+        Assert.InRange(x.Depth, 0, .5);
+        Assert.InRange(y.Depth, 2, y.Height / 2);
+        // a fraction hangs its denominator below the baseline: a good part of its height, never all of it
+        Assert.InRange(frac.Depth, frac.Height * .25, frac.Height * .75);
+    }
+
     [Theory]
     [InlineData(@"E=mc^2", false)]
     [InlineData(@"x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}", true)]
