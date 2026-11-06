@@ -15,6 +15,13 @@ public sealed record MathRenderResult(
 {
     public IReadOnlyList<MathCompatibilityDiagnostic> CompatibilityDiagnostics { get; init; } =
         Array.Empty<MathCompatibilityDiagnostic>();
+
+    /// <summary>
+    /// CST-142: how far the formula goes below its baseline (the bottom of the
+    /// image is <see cref="Height"/>; the baseline is <c>Height - Depth</c> from
+    /// the top), so inline math can sit on the text's baseline.
+    /// </summary>
+    public float Depth { get; init; }
 }
 
 /// <summary>
@@ -127,7 +134,8 @@ public static class MathRenderer
                     width,
                     height)
                 {
-                    CompatibilityDiagnostics = compatibility
+                    CompatibilityDiagnostics = compatibility,
+                    Depth = Math.Clamp(height + bounds.Y, 0, height)
                 };
             }
         }

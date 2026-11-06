@@ -147,6 +147,25 @@ public sealed partial class HeadlessUiTests
                 using var chapter = new StreamReader(archive.GetEntry("EPUB/chapter-1.xhtml")!.Open());
                 Assert.Contains("Texto REVISADO", chapter.ReadToEnd());
             }
+            // CST-166: the same live notes as Word and OpenDocument files
+            foreach (var (format, part) in new[] { ("docx", "word/document.xml"), ("odt", "content.xml"), ("pptx", "ppt/slides/slide1.xml") })
+            {
+                (string Name, byte[] Bytes)? office = null;
+                view.SavePageFile = (name, bytes) => { office = (name, bytes); return Task.FromResult<bool?>(true); };
+                await view.ExportPublicationOfficeAsync(format);
+                Assert.NotNull(office);
+                Assert.Equal("Livro vivo." + format, office.Value.Name);
+                using var archive = new System.IO.Compression.ZipArchive(new MemoryStream(office.Value.Bytes));
+                using var body = new StreamReader(archive.GetEntry(part)!.Open());
+                Assert.Contains("Texto REVISADO", body.ReadToEnd());
+                Assert.Empty(view.LastOfficeLimitations);
+            }
+            (string Name, byte[] Bytes)? pdfFile = null;
+            view.SavePageFile = (name, bytes) => { pdfFile = (name, bytes); return Task.FromResult<bool?>(true); };
+            await view.ExportPublicationOfficeAsync("pdf");
+            Assert.Equal("Livro vivo.pdf", pdfFile!.Value.Name);
+            using (var pdf = UglyToad.PdfPig.PdfDocument.Open(pdfFile.Value.Bytes))
+                Assert.Contains("REVISADO", string.Join(" ", pdf.GetPages().SelectMany(pg => pg.GetWords()).Select(w => w.Text)));
             Snapshot(window, "native-publications-live-source.png");
             window.Close();
             return true;

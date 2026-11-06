@@ -12,8 +12,8 @@
   "state": "review",
   "branch": "claude/urbe-refactor-development-t73hul",
   "base_commit": "0e176d0",
-  "commit": null,
-  "pr": null,
+  "commit": "ee8a6be",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/906",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Client/QuietSelectionHandles.cs",
     "apps/urbe/csharp/src/Urbe.Client/EditorInput.cs",
@@ -63,8 +63,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Abrir PR da beta.49 e acompanhar CI e integração.",
-    "Avaliar editor Fonte com layout incremental por parágrafo (IME Android é o risco principal) e seguir o plano Numa 2.6."
+    "Integrado pelo PR #906 (ee8a6be); publicação pelo workflow oficial e validação física no moto g32 pendentes (NN-017)."
   ],
   "decisions_required": [],
   "normative_sources": [

@@ -46,6 +46,7 @@ public sealed partial class MainView : Grid
         Explorer = new NotesExplorer { State = ExplorerState };
         Editor = new EditorOverlay { IsVisible = false, Dialogs = Dialogs, Notes = () => _contents.Select(n => new CityNote(n.Key, n.Value)) };
         Editor.EmbedFor = BuildEmbed;
+        Editor.DataReader = ReadDataSourceAsync;
         Editor.ProgressNoteResolver = id => _store?.Get(id) is { } d && d.Id == id && ArtifactModel.IsNote(d.Path) ? d.Content : null;
         // CST-025: each block's last edit, read from the note's "Versões anteriores" (no file of its own)
         Editor.BlockTimesFor = path => _store?.Get(path) is { } doc ? new BlockTimes.Index(_history.List(doc.Id), CreatedMs(doc), createdDayOnly: true) : null;
@@ -63,6 +64,7 @@ public sealed partial class MainView : Grid
         Editor.Pinned.Storage = _vault;
         Editor.Pinned.Preview.Dialogs = Dialogs;
         Editor.Pinned.Files = () => _contents.Keys.Concat(_attachments);
+        Editor.Pinned.ContinueReading = () => ContinueReading();
         Editor.Pinned.NoteText = path => ArtifactModel.IsNote(path) ? _contents.GetValueOrDefault(path) : null;
         FilePreview.QuoteRequested += quote => _ = InsertReaderQuoteAsync(quote);
         Editor.Pinned.Preview.QuoteRequested += quote => _ = InsertReaderQuoteAsync(quote);
@@ -781,6 +783,7 @@ public sealed partial class MainView : Grid
     {
         UrbeAppearance.Apply(this);   // Personalização: tema, texto, forma e editor
         if (Customization.Config["editor"] is System.Text.Json.Nodes.JsonObject ed) Editor.ApplyOptions((string?)ed["largura"], (string?)ed["modoInicial"], Customization.BlockTimes);
+        Editor.LineNumbersMode = Customization.LineNumbers;
         ApplyEditorLayout();
         if (Editor.IsVisible) Editor.RefreshVisual();   // tag colours (DEC-0045, UC-43)
     }
@@ -869,6 +872,15 @@ public sealed partial class MainView : Grid
             new DialogItem("Abrir outra nota em nova aba", UrbeTheme.Icons.Plus, "Esta nota continua aberta na aba dela.", Run: () => { Search.OpenNewTabPicker(); return Task.CompletedTask; }),
             new DialogItem("Criar publicação desta nota", UrbeTheme.Icons.Page,
                 "Um livro, artigo ou página feito desta nota.", Run: () => CreatePublicationAsync(note.Path)),
+            .. (!Subtitles.HasTimedParts(editor.Editor.Text ?? "") ? [] : new[]
+                {
+                    new DialogItem("Exportar legendas", UrbeTheme.Icons.Download,
+                        "SRT ou WebVTT feitos desta transcrição revisada.", Run: () => ExportSubtitlesAsync(note.Path, editor.Editor.Text ?? ""))
+                }),
+            new DialogItem("Onde esta nota é usada", UrbeTheme.Icons.Connections,
+                "Publicações, dados, progresso e notas que dependem dela.", Run: () => ShowNoteUsageAsync(note.Path)),
+            new DialogItem("Criar publicação de um trecho", UrbeTheme.Icons.Page,
+                "Só um título da nota e o que vem embaixo dele.", Run: () => CreatePublicationFromSectionAsync(note.Path)),
             .. (_publicationReturnPath is null ? [] : new[]
                 {
                     new DialogItem("Voltar à publicação", UrbeTheme.Icons.Back,
@@ -1340,6 +1352,40 @@ public sealed partial class MainView : Grid
     /// Lixeira, or "Mover para a lixeira?" for notes only); then explorer.deleteFolder for each folder and
     /// explorer.delete for the notes.
     /// </summary>
+    /// <summary>CST-210: subtitles of a transcription note, as the person reviewed it (SRT or WebVTT).</summary>
+    public async Task ExportSubtitlesAsync(string notePath, string markdown)
+    {
+        var cues = Subtitles.FromTranscript(markdown);
+        if (cues.Count == 0) { await Dialogs.AlertAsync("Exportar legendas", "A nota não tem trechos com horário e texto."); return; }
+        var choice = await Dialogs.ChooseAsync("Exportar legendas", [new DialogItem("SRT", Detail: "O formato mais aceito por players e editores de vídeo."), new DialogItem("WebVTT", Detail: "O formato das páginas web (tag <track>).")]);
+        if (choice is not { } k) return;
+        var vtt = k == 1;
+        var name = System.IO.Path.GetFileNameWithoutExtension(notePath).Replace(" — transcrição", "") + (vtt ? ".vtt" : ".srt");
+        var bytes = System.Text.Encoding.UTF8.GetBytes(vtt ? Subtitles.ToVtt(cues) : Subtitles.ToSrt(cues));
+        try
+        {
+            var saved = SavePageFile is { } save ? await save(name, bytes) : await SavePublicationFileAsync(name, bytes, vtt ? "vtt" : "srt", vtt ? "text/vtt" : "application/x-subrip");
+            if (saved == true) ShowLifeNotice(cues.Count + " legendas salvas.");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+        { await Dialogs.AlertAsync("Não foi possível salvar as legendas", StorageProblems.Explain(ex)); }
+    }
+
+    /// <summary>CST-226: the things that depend on a note, each one openable.</summary>
+    public async Task ShowNoteUsageAsync(string notePath)
+    {
+        if (_store?.Get(notePath) is not { } note) return;
+        var usage = NoteUsage.Of(_store, note);
+        if (usage.Count == 0) { await Dialogs.AlertAsync("Onde esta nota é usada", "Nada depende desta nota: nenhuma publicação, bloco de dados, barra de progresso, incorporação ou ligação."); return; }
+        var items = usage.Select(u => new DialogItem(System.IO.Path.GetFileNameWithoutExtension(u.Path).Replace(".publication", ""),
+            u.Kind == NoteUsage.Publication ? UrbeTheme.Icons.Page : UrbeTheme.Icons.File, u.Kind + " · " + u.Detail)).ToList();
+        var choice = await Dialogs.ChooseAsync("Onde esta nota é usada", items, usage.Count + (usage.Count == 1 ? " item depende" : " itens dependem") + " desta nota.");
+        if (choice is not { } k) return;
+        var chosen = usage[k];
+        if (chosen.Kind == NoteUsage.Publication) await OpenPublicationAsync(chosen.Path);
+        else OpenNoteByPath(chosen.Path);
+    }
+
     private async Task DeleteSelectionAsync(IReadOnlyList<string> selection)
     {
         var folders = selection.Where(x => x.StartsWith(NotesExplorer.FolderPrefix, StringComparison.Ordinal))
@@ -1365,6 +1411,13 @@ public sealed partial class MainView : Grid
         {
             title = "Mover para a lixeira?";
             message = notes.Count == 1 ? "A nota poderá ser restaurada pela Lixeira." : notes.Count + " notas poderão ser restauradas pela Lixeira.";
+        }
+        // CST-226: what depends on the notes is said before they go (nothing dependent is changed)
+        if (_store is { } usageStore)
+        {
+            var impact = notes.Select(p => usageStore.Get(p)).OfType<UrbeDocument>()
+                .Select(d => NoteUsage.Summary(NoteUsage.Of(usageStore, d))).OfType<string>().ToList();
+            if (impact.Count > 0) message += "\n\n" + string.Join("\n", impact.Take(3)) + "\nEsses itens vão mostrar a fonte como indisponível até você restaurar a nota.";
         }
         if (!await Dialogs.ConfirmAsync(title, message, folders.Count > 0 ? "Excluir" : "Mover para a lixeira", danger: true)) return;
         await InBatchAsync(notes.Count + folders.Sum(f => NoteLibrary.FolderDocuments(_store!, f).Count), async () =>
@@ -1505,6 +1558,10 @@ public sealed partial class MainView : Grid
                 return;
             case "duplicate":
                 await DuplicateNotesAsync(paths);
+                return;
+            case "publication":
+                Explorer.ClearSelection();
+                await CreatePublicationAsync(sourcePaths: paths);
                 return;
             case "group":
                 await GroupIntoFolderAsync(paths);

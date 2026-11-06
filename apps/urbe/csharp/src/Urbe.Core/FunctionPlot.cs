@@ -16,7 +16,7 @@ public sealed record PlotDrawing(string? Title, double XMin, double XMax, double
 /// Parameters (<c>a = 2 em 0..5</c>) are numbers the editor shows as sliders, read by the curves as they move (Desmos
 /// does the same); <c>(cos(t), sin(t))</c> is a parametric curve over <c>t: 0..2pi</c>, for movements and other physics.
 /// </summary>
-public sealed class FunctionPlot
+public sealed partial class FunctionPlot
 {
     /// <param name="ParametricX">x(t) for a parametric curve, whose <paramref name="Expression"/> is y(t).</param>
     public sealed record Function(string Source, Expression Expression, string Label, Expression? ParametricX = null);
@@ -252,6 +252,19 @@ public sealed class FunctionPlot
 
     /// <summary>The colours of the curves, in order (they read on light and dark pages).</summary>
     public static readonly string[] Colors = ["#4f8cff", "#e5484d", "#30a46c", "#f5a524", "#8e4ec6", "#12a594"];
+
+    /// <summary>
+    /// CST-069/169: every <c>```grafico</c> block of rendered HTML as its vector drawing (a figure with the SVG), for
+    /// publications and exports; the note keeps the text of the graph.
+    /// </summary>
+    public static string RenderHtml(string html) => PlotBlock().Replace(html, m =>
+    {
+        var plot = Parse(System.Net.WebUtility.HtmlDecode(m.Groups[1].Value));
+        return "<figure class=\"urbe-plot\">" + plot.ToSvg() + "</figure>";
+    });
+
+    [System.Text.RegularExpressions.GeneratedRegex("<pre data-lang=\"(?:grafico|gráfico|plot)\"><code>(.*?)</code></pre>", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase)]
+    private static partial System.Text.RegularExpressions.Regex PlotBlock();
 
     /// <summary>The graph as an SVG for pages and exports: axes, grid, the curves and their legend.</summary>
     public string ToSvg(double width = 560, double height = 340)

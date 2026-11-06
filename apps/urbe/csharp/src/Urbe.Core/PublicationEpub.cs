@@ -12,9 +12,23 @@ public static class PublicationEpub
     private static readonly XNamespace Dc = "http://purl.org/dc/elements/1.1/";
     private static readonly XNamespace Epub = "http://www.idpf.org/2007/ops";
 
+    /// <summary>The package and what the person should know about its accessibility (images without a description).</summary>
+    public sealed record Result(byte[] Bytes, IReadOnlyList<string> Warnings);
+
     public static async Task<byte[]> ExportAsync(PublicationProject project, PublicationSourceCatalog catalog,
-        Func<string, Task<byte[]?>>? readAsset = null, CancellationToken cancellationToken = default)
+        Func<string, Task<byte[]?>>? readAsset = null, CancellationToken cancellationToken = default, Func<string, string?>? data = null) =>
+        (await ExportWithReportAsync(project, catalog, readAsset, cancellationToken, data)).Bytes;
+
+    /// <summary>
+    /// CST-165/183: the EPUB 3 with its accessibility said in the package (schema.org access modes, features, hazards and
+    /// a summary, EPUB Accessibility 1.1 vocabulary), landmarks and chapters titled by their heading. A feature is declared
+    /// only when it holds: "alternativeText" only if every picture has a description; the ones without are reported.
+    /// </summary>
+    public static async Task<Result> ExportWithReportAsync(PublicationProject project, PublicationSourceCatalog catalog,
+        Func<string, Task<byte[]?>>? readAsset = null, CancellationToken cancellationToken = default, Func<string, string?>? data = null)
     {
+        int pictures = 0;
+        var undescribed = new List<string>();
         PublicationProjectCodec.Validate(project);
         if (project.Sections.Count == 0) throw new InvalidDataException("Adicione capítulos antes de exportar o livro.");
         var files = new Dictionary<string, (string Mime, byte[] Bytes)>(StringComparer.Ordinal);
@@ -26,11 +40,19 @@ public static class PublicationEpub
             var source = catalog.Read(piece.Source) ?? throw new InvalidDataException("Nota de origem indisponível: " + piece.Source.DocumentId);
             sources.Add(source);
             var content = NoteMarks.StripComments(MarkdownEngine.SplitFrontmatter(source.Markdown).Body);
-            var body = new XElement(Xhtml + "body");
-            var roots = NoteMarks.Parse(content);
-            foreach (var node in roots) body.Add(await ConvertNode(node, source));
-            var title = Path.GetFileNameWithoutExtension(source.Path);
-            chapters.Add(($"chapter-{chapters.Count + 1}.xhtml", title, Document(title, body)));
+            var section = new XElement(Xhtml + "section", new XAttribute(Epub + "type", "chapter"), new XAttribute("role", "doc-chapter"));
+            var roots = NoteContainers.ParseRich(content);
+            foreach (var node in roots) section.Add(await ConvertNode(node, source));
+            // a chapter is named by its first heading (what a reader announces), else by its note
+            var title = section.Descendants().FirstOrDefault(e => e.Name.LocalName is "h1" or "h2" or "h3")?.Value.Trim() is { Length: > 0 } heading
+                ? heading : Path.GetFileNameWithoutExtension(source.Path);
+            if (section.Descendants().FirstOrDefault(e => e.Name.LocalName is "h1" or "h2" or "h3") is { } first)
+            {
+                first.SetAttributeValue("id", (string?)first.Attribute("id") ?? "chapter-title-" + (chapters.Count + 1));
+                section.SetAttributeValue("aria-labelledby", (string?)first.Attribute("id"));
+            }
+            else section.SetAttributeValue("aria-label", title);
+            chapters.Add(($"chapter-{chapters.Count + 1}.xhtml", title, Document(title, new XElement(Xhtml + "body", section))));
         }
 
         // Asset reads can suspend. Never combine chapters from an obsolete revision with newly saved sources.
@@ -43,6 +65,24 @@ public static class PublicationEpub
         var nav = new XElement(Xhtml + "nav", new XAttribute(Epub + "type", "toc"), new XAttribute("id", "toc"),
             new XElement(Xhtml + "h1", "Sumário"), new XElement(Xhtml + "ol", chapters.Select(c =>
                 new XElement(Xhtml + "li", new XElement(Xhtml + "a", new XAttribute("href", c.File), c.Title)))));
+        var landmarks = new XElement(Xhtml + "nav", new XAttribute(Epub + "type", "landmarks"), new XAttribute("hidden", "hidden"),
+            new XElement(Xhtml + "h2", "Marcos"), new XElement(Xhtml + "ol",
+                new XElement(Xhtml + "li", new XElement(Xhtml + "a", new XAttribute(Epub + "type", "toc"), new XAttribute("href", "nav.xhtml#toc"), "Sumário")),
+                new XElement(Xhtml + "li", new XElement(Xhtml + "a", new XAttribute(Epub + "type", "bodymatter"), new XAttribute("href", chapters[0].File), "Início do texto"))));
+        bool described = undescribed.Count == 0;
+        var features = new List<string> { "structuralNavigation", "tableOfContents", "readingOrder", "displayTransformability" };
+        if (pictures > 0 && described) features.Add("alternativeText");
+        var accessibility = new List<XElement>
+        {
+            new(Opf + "meta", new XAttribute("property", "schema:accessMode"), "textual")
+        };
+        if (pictures > 0) accessibility.Add(new(Opf + "meta", new XAttribute("property", "schema:accessMode"), "visual"));
+        accessibility.Add(new(Opf + "meta", new XAttribute("property", "schema:accessModeSufficient"), pictures == 0 || described ? "textual" : "textual,visual"));
+        accessibility.AddRange(features.Select(f => new XElement(Opf + "meta", new XAttribute("property", "schema:accessibilityFeature"), f)));
+        accessibility.Add(new(Opf + "meta", new XAttribute("property", "schema:accessibilityHazard"), "none"));
+        accessibility.Add(new(Opf + "meta", new XAttribute("property", "schema:accessibilitySummary"),
+            "Livro gerado pelo Urbe a partir de notas: capítulos com títulos, sumário e marcos de navegação, texto que se reorganiza conforme a tela" +
+            (pictures == 0 ? "." : described ? "; todas as imagens, gráficos e fórmulas têm descrição em texto." : "; " + undescribed.Count + " de " + pictures + " imagens não têm descrição em texto.")));
         var manifest = new XElement(Opf + "manifest",
             new XElement(Opf + "item", new XAttribute("id", "nav"), new XAttribute("href", "nav.xhtml"), new XAttribute("media-type", "application/xhtml+xml"), new XAttribute("properties", "nav")),
             new XElement(Opf + "item", new XAttribute("id", "style"), new XAttribute("href", "style.css"), new XAttribute("media-type", "text/css")));
@@ -59,7 +99,8 @@ public static class PublicationEpub
             new XElement(Opf + "metadata", new XAttribute(XNamespace.Xmlns + "dc", Dc),
                 new XElement(Dc + "identifier", new XAttribute("id", "pub-id"), project.PublicationId),
                 new XElement(Dc + "title", project.Title), new XElement(Dc + "language", "pt-BR"),
-                new XElement(Opf + "meta", new XAttribute("property", "dcterms:modified"), DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture))), manifest, spine));
+                new XElement(Opf + "meta", new XAttribute("property", "dcterms:modified"), DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture)),
+                accessibility), manifest, spine));
         using var stream = new MemoryStream();
         using (var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen: true))
         {
@@ -68,12 +109,13 @@ public static class PublicationEpub
             WriteXml(zip, "META-INF/container.xml", new XDocument(new XElement(container + "container", new XAttribute("version", "1.0"),
                 new XElement(container + "rootfiles", new XElement(container + "rootfile", new XAttribute("full-path", "EPUB/package.opf"), new XAttribute("media-type", "application/oebps-package+xml"))))));
             WriteXml(zip, "EPUB/package.opf", package);
-            WriteXml(zip, "EPUB/nav.xhtml", Document(project.Title, new XElement(Xhtml + "body", nav)));
-            Write(zip, "EPUB/style.css", Encoding.UTF8.GetBytes("body{font-family:serif;line-height:1.5;margin:5%}img{max-width:100%;height:auto}pre{white-space:pre-wrap;overflow-wrap:anywhere}table{border-collapse:collapse}td,th{border:1px solid;padding:.4em}h1,h2,h3{break-after:avoid}p{orphans:3;widows:3}"));
+            WriteXml(zip, "EPUB/nav.xhtml", Document(project.Title, new XElement(Xhtml + "body", nav, landmarks)));
+            Write(zip, "EPUB/style.css", Encoding.UTF8.GetBytes("body{font-family:serif;line-height:1.5;margin:5%}img{max-width:100%;height:auto}pre{white-space:pre-wrap;overflow-wrap:anywhere}table{border-collapse:collapse}td,th{border:1px solid;padding:.4em}h1,h2,h3{break-after:avoid}p{orphans:3;widows:3}.ubox{border-left:4px solid #9c7b45;background:#f6f3ee;padding:.4em 1em;margin:1em 0}.ubox-title{margin:0 0 .3em}"));
             foreach (var chapter in chapters) WriteXml(zip, "EPUB/" + chapter.File, chapter.Document);
             foreach (var (path, asset) in files) Write(zip, "EPUB/" + path, asset.Bytes);
         }
-        return stream.ToArray();
+        var warnings = undescribed.Select(path => "Imagem sem descrição em texto (alt): " + path + ". Escreva a descrição entre os colchetes: ![descrição](" + path + ").").ToList();
+        return new Result(stream.ToArray(), warnings);
 
         async Task<XNode> ConvertNode(RichNode node, PublicationSourceView source)
         {
@@ -86,12 +128,50 @@ public static class PublicationEpub
                 if (!result.IsValid) throw new InvalidDataException(result.Error);
                 return new XElement(Xhtml + "p", result.Label + ": " + result.Summary);
             }
+            if (node.Tag == "pre" && QuizBlock.IsLanguage(node.Attr("data-lang")))
+            {
+                var questions = QuizBlock.Parse(Plain(node));
+                return new XElement(Xhtml + "section", new XAttribute("class", "urbe-quiz"),
+                    questions.Select((q, i) => new XElement(Xhtml + "div", new XElement(Xhtml + "p", new XElement(Xhtml + "strong", (i + 1) + ". " + q.Prompt)),
+                        new XElement(Xhtml + "ol", new XAttribute("type", "a"), q.Options.Select(o => new XElement(Xhtml + "li", o.Text))))),
+                    new XElement(Xhtml + "p", new XElement(Xhtml + "strong", "Gabarito: "), string.Join("; ", questions.Select((q, i) =>
+                        (i + 1) + ") " + string.Join(", ", q.Options.Select((o, k) => (o, k)).Where(x => x.o.Correct).Select(x => (char)('a' + x.k) + "")) + (q.Explanation is { } e ? " — " + e : "")))));
+            }
+            if (node.Tag == "pre" && Data.DataBlock.IsLanguage(node.Attr("data-lang")))
+            {
+                try
+                {
+                    var result = Data.DataBlock.Run(Plain(node), data ?? (_ => null));
+                    if (result.ChartSvg() is { } chartSvg)
+                    {
+                        var chartPath = "assets/chart-" + files.Count + ".svg";
+                        files[chartPath] = ("image/svg+xml", Encoding.UTF8.GetBytes(chartSvg));
+                        pictures++;
+                        return new XElement(Xhtml + "img", new XAttribute("src", chartPath), new XAttribute("alt", "Gráfico de " + string.Join(", ", result.Chart!.Values)));
+                    }
+                    return new XElement(Xhtml + "table", new XAttribute("class", "urbe-data"),
+                        new XElement(Xhtml + "tr", result.Table.Columns.Select(c => new XElement(Xhtml + "th", c))),
+                        result.Table.Rows.Select(r => new XElement(Xhtml + "tr", r.Select(v => new XElement(Xhtml + "td", v.Text)))));
+                }
+                catch (InvalidDataException ex) { return new XElement(Xhtml + "p", "Dados indisponíveis: " + ex.Message); }
+            }
+            if (node.Tag == "pre" && Calculus.Calculator.IsLanguage(node.Attr("data-lang")))
+                return new XElement(Xhtml + "table", new XAttribute("class", "urbe-calc"), Calculus.Calculator.Run(Plain(node)).Where(l => l.Input.Trim().Length > 0).Select(l =>
+                    new XElement(Xhtml + "tr", new XElement(Xhtml + "td", new XElement(Xhtml + "code", l.Input.Trim())), new XElement(Xhtml + "td", l.Result ?? l.Error ?? ""))));
+            if (node.Tag == "pre" && FunctionPlot.IsPlotLanguage(node.Attr("data-lang")))
+            {
+                var plotPath = "assets/plot-" + files.Count + ".svg";
+                files[plotPath] = ("image/svg+xml", Encoding.UTF8.GetBytes(FunctionPlot.Parse(Plain(node)).ToSvg()));
+                pictures++;
+                return new XElement(Xhtml + "img", new XAttribute("src", plotPath), new XAttribute("alt", "Gráfico: " + Plain(node).Replace('\n', ' ')));
+            }
             if (node.Attr("data-tex") is { Length: > 0 } tex)
             {
                 var math = MathRenderer.RenderSvg(tex, node.Tag == "div", 18);
                 if (!math.Success) throw new InvalidDataException("Fórmula não renderizada: " + math.Diagnostic);
                 var path = "assets/math-" + files.Count + ".svg";
                 files[path] = ("image/svg+xml", Encoding.UTF8.GetBytes(math.Svg ?? ""));
+                pictures++;
                 return new XElement(Xhtml + "img", new XAttribute("src", path), new XAttribute("alt", tex));
             }
             if (node.Tag == "img")
@@ -103,13 +183,17 @@ public static class PublicationEpub
                 var (extension, mime) = ImageType(bytes);
                 var packaged = "assets/image-" + files.Count + extension;
                 files[packaged] = (mime, bytes);
+                pictures++;
+                if (string.IsNullOrWhiteSpace(node.Attr("alt")) && !undescribed.Contains(path)) undescribed.Add(path);
                 return new XElement(Xhtml + "img", new XAttribute("src", packaged), new XAttribute("alt", node.Attr("alt")));
             }
-            var tag = node.Tag is "p" or "div" or "section" or "h1" or "h2" or "h3" or "h4" or "h5" or "h6" or "strong" or "em" or "s" or "code" or "pre" or "ul" or "ol" or "li" or "table" or "thead" or "tbody" or "tr" or "th" or "td" or "blockquote" or "br" or "hr" or "a" ? node.Tag : "span";
+            var tag = node.Tag is "aside" or "p" or "div" or "section" or "h1" or "h2" or "h3" or "h4" or "h5" or "h6" or "strong" or "em" or "s" or "code" or "pre" or "ul" or "ol" or "li" or "table" or "thead" or "tbody" or "tr" or "th" or "td" or "blockquote" or "br" or "hr" or "a" ? node.Tag : "span";
             var element = new XElement(Xhtml + tag);
             if (tag == "a" && Uri.TryCreate(node.Attr("href"), UriKind.Absolute, out var uri) && uri.Scheme is "https" or "http" or "mailto")
                 element.SetAttributeValue("href", uri.AbsoluteUri);
             if (node.Attr("id") is { Length: > 0 } id) element.SetAttributeValue("id", id);
+            if (tag == "aside" && node.HasClass("ubox")) { element.SetAttributeValue("class", "ubox"); element.SetAttributeValue("data-type", node.Attr("data-type")); }
+            if (tag == "p" && node.HasClass("ubox-title")) element.SetAttributeValue("class", "ubox-title");
             foreach (var child in node.Children) element.Add(await ConvertNode(child, source));
             return element;
         }
@@ -124,7 +208,7 @@ public static class PublicationEpub
     private static void Write(ZipArchive zip, string name, byte[] bytes, CompressionLevel compression = CompressionLevel.Optimal)
     { using var target = zip.CreateEntry(name, compression).Open(); target.Write(bytes); }
 
-    private static string ResolveAsset(string source, string relative)
+    internal static string ResolveAsset(string source, string relative)
     {
         if (relative.Contains(':') || relative.StartsWith('/') || relative.Contains('\\'))
             throw new InvalidDataException("EPUB requer imagens locais relativas ao vault; importe a imagem antes de exportar.");
@@ -139,7 +223,7 @@ public static class PublicationEpub
         return string.Join('/', parts);
     }
 
-    private static (string Extension, string Mime) ImageType(byte[] bytes)
+    internal static (string Extension, string Mime) ImageType(byte[] bytes)
     {
         if (bytes.Length >= 8 && bytes.AsSpan(0, 8).SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 })) return (".png", "image/png");
         if (bytes.Length >= 3 && bytes[0] == 255 && bytes[1] == 216 && bytes[2] == 255) return (".jpg", "image/jpeg");

@@ -271,4 +271,27 @@ public sealed class AssistantAgentOracleTests
         var toolResult = messages.SelectMany(m => m.Content).First(b => b.Type == "tool_result");
         Assert.Contains("editou o texto antes de aprovar", toolResult.Content);
     }
+
+    [Fact]
+    public async Task NoApprover_AnActionThatNeedsApprovalFailsClosed()
+    {
+        // CST-219: a run with nobody to ask never approves on its own
+        var host = new Host(new JsonArray(new JsonObject { ["path"] = "Comece.md", ["content"] = "# Comece\n\nTexto antigo.\n" }));
+        var replies = new Queue<AiResult>(
+        [
+            new AiResult([AiBlock.ToolUse("t1", "edit_note", new JsonObject { ["path"] = "Comece.md", ["old_text"] = "Texto antigo.", ["new_text"] = "Texto da IA." })], "", "tool_use", new AiUsage(1, 1, null), "m-1"),
+            new AiResult([AiBlock.TextBlock("Não consegui.")], "", "end", new AiUsage(1, 1, null), "m-1")
+        ]);
+        var messages = new List<AiChatMessage> { new() { Id = "u1", Role = "user", Content = [AiChatBlock.TextBlock("Melhore")] } };
+        var result = await AssistantAgent.RunAsync(new AiAgentRun
+        {
+            Agent = AssistantAgent.AgentById("geral"), Policy = "ask", Messages = messages, Host = host, Cancel = CancellationToken.None,
+            Provider = new AiProviderConfig("p1", ""), Model = "m-1", VaultName = "Cofre", Now = new DateTime(2025, 10, 9, 15, 0, 0),
+            Stream = (cfg, req, onEvent, cancel) => Task.FromResult(replies.Dequeue()),
+            Approve = null
+        });
+        Assert.Equal("# Comece\n\nTexto antigo.\n", host.Documents.Get("Comece.md")!.Content);
+        Assert.Empty(result.Changes);
+        Assert.Contains(messages.SelectMany(m => m.Content), b => b.Type == "tool_result" && b.Content.Contains("nada foi feito"));
+    }
 }

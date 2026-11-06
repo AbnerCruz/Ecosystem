@@ -26,6 +26,7 @@ public sealed class PublicationStudioView : Border
     private PublicationProject? _project;
     private readonly Stack<PublicationProject> _undo = new(), _redo = new();
     private readonly Button _undoButton, _redoButton;
+    private PublicationVideoPanel? _video;
 
     public PublicationStudioView()
     {
@@ -62,7 +63,18 @@ public sealed class PublicationStudioView : Border
             var items = new List<MenuItem>();
             void Item(string header, Action? run) { var i = new MenuItem { Header = header }; i.Click += (_, _) => run?.Invoke(); items.Add(i); }
             Item("Renomear publicação", () => RenameRequested?.Invoke());
+            Item("Verificar publicação", () => ReviewRequested?.Invoke());
+            Item("Exportar PDF", () => OfficeRequested?.Invoke("pdf"));
+            if (IsVideo)
+            {
+                Item("Exportar vídeo MP4", () => VideoExportRequested?.Invoke());
+                Item("Exportar legendas (SRT)", () => SubtitlesRequested?.Invoke());
+                Item("Adicionar áudio (voz, música, efeito)", () => AddAudioRequested?.Invoke());
+            }
             Item("Exportar livro EPUB", () => EpubRequested?.Invoke());
+            Item("Exportar documento Word (DOCX)", () => OfficeRequested?.Invoke("docx"));
+            Item("Exportar documento OpenDocument (ODT)", () => OfficeRequested?.Invoke("odt"));
+            Item("Exportar apresentação PowerPoint (PPTX)", () => OfficeRequested?.Invoke("pptx"));
             if (_print.IsVisible) Item("Imprimir ou salvar como PDF", () => PrintRequested?.Invoke());
             new ContextMenu { ItemsSource = items }.Open(more);
         };
@@ -122,13 +134,49 @@ public sealed class PublicationStudioView : Border
     public event Action? AddSourceRequested;
     public event Action? ExportRequested;
     public event Action? EpubRequested;
+    /// <summary>CST-166/168: an office file of the publication ("docx", "odt" or "pptx").</summary>
+    public event Action<string>? OfficeRequested;
     public event Action? PrintRequested;
     public event Action? RenameRequested;
+    /// <summary>CST-179/180: "Verificar publicação" — what to fix before exporting.</summary>
+    public event Action? ReviewRequested;
     public event Action? ConfigureRequested;
     public event Action? Closed;
     public event Action<string>? EditSourceRequested;
     public event Action<PublicationSourceReference>? EditReferenceRequested;
     public event Action<PublicationProject>? ProjectChanged;
+    public event Action? VideoExportRequested;
+    public event Action? VideoCancelRequested;
+    public event Action? SubtitlesRequested;
+    public event Action? AddAudioRequested;
+    public event Action<string>? AddVideoElementRequested;
+
+    /// <summary>CST-170: a publication laid out as a video (one note per scene).</summary>
+    public bool IsVideo => _project?.Design.Layout == "video";
+    /// <summary>The vault files the video's elements show (images), read by the host before drawing.</summary>
+    public IReadOnlyDictionary<string, byte[]> VideoFiles { get; set; } = new Dictionary<string, byte[]>();
+    public PublicationVideoPanel VideoPanel => _video ??= MakeVideoPanel();
+
+    private PublicationVideoPanel MakeVideoPanel()
+    {
+        var panel = new PublicationVideoPanel();
+        panel.ExportRequested += () => VideoExportRequested?.Invoke();
+        panel.CancelRequested += () => VideoCancelRequested?.Invoke();
+        panel.AddElementRequested += id => AddVideoElementRequested?.Invoke(id);
+        panel.SceneChanged += scene =>
+        {
+            if (_project is not { } p) return;
+            var synced = VideoComposition.Synced(p, ReadScript);
+            UpdateProject(synced with { Video = synced.Video!.WithScene(scene) });
+        };
+        return panel;
+    }
+
+    private string? ReadScript(PublicationSourceReference reference)
+    {
+        try { return _catalog?.Read(reference)?.Markdown; }
+        catch (NotSupportedException) { return null; }
+    }
 
     public void SetSaveState(bool dirty, string? error = null)
     {
@@ -156,6 +204,7 @@ public sealed class PublicationStudioView : Border
 
     public void Close()
     {
+        _video?.Release();
         IsVisible = false;
         if (_catalog is not null) _catalog.SourceChanged -= SourceChanged;
         _catalog = null;
@@ -165,6 +214,8 @@ public sealed class PublicationStudioView : Border
     public void UpdateProject(PublicationProject project)
     {
         if (_project is null) return;
+        // a video keeps one scene per note: new notes get a scene, removed ones take theirs along
+        if (project.Design.Layout == "video") project = VideoComposition.Synced(project, ReadScript);
         PublicationProjectCodec.Validate(project);
         if (PublicationProjectCodec.Serialize(project) == PublicationProjectCodec.Serialize(_project)) return;
         _undo.Push(_project);
@@ -236,6 +287,26 @@ public sealed class PublicationStudioView : Border
             TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text)
         });
         var missing = 0;
+        var video = IsVideo;
+        if (video)
+        {
+            try
+            {
+                var timeline = VideoTimeline.Build(project, catalog, PublicationVideoPanel.PreviewResolution);
+                VideoPanel.Show(timeline, VideoFiles, id =>
+                {
+                    var piece = project.Sections.FirstOrDefault(s => s.Id == id);
+                    PublicationSourceView? view = null;
+                    try { view = piece is null ? null : catalog.Read(piece.Source); } catch (NotSupportedException) { }
+                    return view is null ? "Fonte indisponível" : System.IO.Path.GetFileNameWithoutExtension(view.Path);
+                });
+                _preview.Children.Add(VideoPanel);
+            }
+            catch (Exception e) when (e is InvalidDataException or NotSupportedException or InvalidOperationException)
+            {
+                _preview.Children.Add(new TextBlock { Text = "Não foi possível montar o vídeo: " + e.Message, TextWrapping = TextWrapping.Wrap, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
+            }
+        }
         for (int i = 0; i < project.Sections.Count; i++)
         {
             var piece = project.Sections[i];
@@ -271,6 +342,7 @@ public sealed class PublicationStudioView : Border
             };
             item.Children.Add(edit);
             _sources.Children.Add(item);
+            if (video) continue;   // the video panel is the preview; each note is a scene there
             if (source is not null)
             {
                 var text = MarkdownEngine.SplitFrontmatter(source.Markdown).Body;

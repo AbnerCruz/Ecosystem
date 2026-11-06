@@ -14,7 +14,7 @@ using Urbe.Core;
 
 namespace Urbe.Client;
 
-public sealed record ImageStudyQuote(string Path, int? Page, string Text, string Sha256, string Region, bool Reviewed, int Rotation=0, string Language="por+eng");
+public sealed record ImageStudyQuote(string Path, int? Page, string Text, string Sha256, string Region, bool Reviewed, int Rotation=0, string Language="por+eng", PartSourceReference? Part=null);
 public sealed record StudyImageQuestion(string Path,string Sha256,string Region,byte[] Png);
 
 /// <summary>Native region selection, explicit local recognition and editable review before an ordinary note citation.</summary>
@@ -50,6 +50,9 @@ public sealed class OcrStudyView : Grid, IDisposable
     public bool ShowsBack { get => _innerBack.IsVisible; set => _innerBack.IsVisible = value; }
     /// <summary>The reader's Back while recognising: back to the source.</summary>
     public void Back() => CloseRequested?.Invoke();
+
+    /// <summary>CST-242: a picture inside a part of a book (its chapter), cited by that part instead of a page.</summary>
+    public PartSourceReference? Part { get; init; }
 
     public OcrStudyView(string path, int? page, string hash, byte[] imageBytes, ReaderRegion? initialRegion=null)
     {
@@ -114,7 +117,7 @@ public sealed class OcrStudyView : Grid, IDisposable
         _save.Click += (_, _) =>
         {
             if (string.IsNullOrWhiteSpace(_text.Text)) return;
-            QuoteRequested?.Invoke(new(_path, _page, _text.Text!, _hash, _usedRegion, _reviewed.IsChecked == true,_usedRotation,_usedLanguage));
+            QuoteRequested?.Invoke(new(_path, _page, _text.Text!, _hash, _usedRegion, _reviewed.IsChecked == true,_usedRotation,_usedLanguage,Part));
         };
         var footer = new StackPanel { Children = { _reviewed, _save } }; SetRow(footer, 2); Children.Add(footer);
         _poll.Tick += async (_, _) => await PollAsync();

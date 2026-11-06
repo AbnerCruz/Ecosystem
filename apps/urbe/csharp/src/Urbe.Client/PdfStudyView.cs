@@ -112,6 +112,18 @@ public sealed class PdfStudyView : Grid, IDisposable
         DetachedFromVisualTree += (_, _) => Dispose();
     }
 
+    /// <summary>The text layer's built-in look (17 px, 27 px lines), for a reader with no saved text preference.</summary>
+    public const double DefaultFontSize = 17, DefaultLineHeight = 27.0 / 17;
+    public TextReaderLook Look { get; private set; } = new(DefaultFontSize, DefaultLineHeight, "system");
+    public void ApplyLook(TextReaderLook look)
+    {
+        Look = look;
+        _text.FontSize = look.FontSize;
+        _text.LineHeight = look.LinePixels;
+        _text.Background = look.Colors?.Background ?? Brushes.Transparent;
+        _text.Foreground = look.Colors?.Foreground ?? UrbeTheme.Brush(UrbeTheme.Text);
+    }
+
     public Task GoToPageAsync(int page) => LoadPageAsync(PageCount > 0 ? Math.Clamp(page, 1, PageCount) : Math.Max(1, page), 0);
 
     public async Task GoToTextAsync(int page,int offset,int length)

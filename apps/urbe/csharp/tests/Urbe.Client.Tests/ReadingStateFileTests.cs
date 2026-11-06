@@ -37,4 +37,36 @@ public sealed partial class HeadlessUiTests
         }
         finally { Directory.Delete(dir, true); }
     }, CancellationToken.None));
+
+    [Fact]
+    public async Task ReadingState_KeepsReaderDefaultsAndTotalsAcrossWritersAndReadsOlderFiles() => Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "urbe-reader-defaults-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        string path = Path.Combine(dir, "readers.json"), vault = new('a', 64), hash = new('b', 64);
+        try
+        {
+            // a file of the earlier schema: no totals, no reader defaults
+            File.WriteAllText(path, "{\"version\":1,\"entries\":[{\"vaultId\":\"" + vault + "\",\"path\":\"a.pdf\",\"revision\":\"" + hash +
+                "\",\"format\":\"pdf\",\"location\":{\"part\":7,\"offset\":0,\"scroll\":0},\"preferences\":{\"fontSize\":18,\"lineHeight\":1.6,\"zoom\":2,\"theme\":\"system\",\"margin\":5},\"updated\":10,\"deleted\":false}]}");
+            var one = new ReadingStateFile(path);
+            Assert.False(one.ReadOnly);
+            Assert.Equal(7, one.Restore(vault, "a.pdf", hash)!.Location.Part);
+            var two = new ReadingStateFile(path);
+            one.RememberDefault(ReaderKinds.Book, new(26, 2, Theme: "dark"));
+            two.RememberDefault(ReaderKinds.Pdf, new(Zoom: 1.5));
+            two.Remember(new(vault, "b.epub", hash, "epub", new(3, Total: 9), new(26), 20));
+            Assert.True(await one.FlushAsync());
+            Assert.True(await two.FlushAsync());
+            var reopened = new ReadingStateFile(path);
+            Assert.Equal(26, reopened.DefaultFor(ReaderKinds.Book)!.FontSize);
+            Assert.Equal(1.5, reopened.PreferencesFor(VaultFileKinds.Pdf).Zoom);
+            Assert.Equal("dark", reopened.PreferencesFor(VaultFileKinds.Epub).Theme);
+            Assert.Null(reopened.DefaultFor(ReaderKinds.Text));
+            Assert.Equal(9, reopened.Restore(vault, "b.epub", hash)!.Location.Total);
+            Assert.Equal(["b.epub", "a.pdf"], reopened.Recent(vault, 5).Select(s => s.Path));
+            return true;
+        }
+        finally { Directory.Delete(dir, true); }
+    }, CancellationToken.None));
 }

@@ -74,3 +74,4 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0044](0044-urbe-atlas-map-host.md) | Atlas Map V1 dentro do visualizador nativo do Urbe | Proposto |
 | [0046](0046-urbe-tags-herdadas-por-projeto.md) | Tags herdadas por projeto no Urbe | Aceito |
 | [0047](0047-urbe-leitura-estudo-isolados.md) | Leitores locais, navegador isolado e continuidade de estudo | Proposto |
+| [0048](0048-urbe-cliente-mcp.md) | Urbe: cliente MCP para ferramentas externas opcionais | Proposto |

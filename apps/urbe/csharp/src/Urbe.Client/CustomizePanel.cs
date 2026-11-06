@@ -449,7 +449,11 @@ public sealed partial class CustomizePanel : Grid
     }
 
     /// <summary>seg(nome, valor, opções): a segmented control.</summary>
-    private Border Seg(string path, string value, (string Value, string Label)[] options)
+    private Border Seg(string path, string value, (string Value, string Label)[] options) =>
+        Seg(value, options, v => Customization.SetAsync(Patch(path, JsonValue.Create(v))));
+
+    /// <summary>A segmented control whose choice goes to <paramref name="change"/> (a preference of this device).</summary>
+    private Border Seg(string value, (string Value, string Label)[] options, Func<string, Task> change)
     {
         var grid = new UniformGrid { Rows = 1 };
         var stack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
@@ -464,7 +468,7 @@ public sealed partial class CustomizePanel : Grid
                 VerticalContentAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Stretch
             };
             if (on) b.Classes.Add("on");
-            b.Click += async (_, _) => await Customization.SetAsync(Patch(path, JsonValue.Create(v)));
+            b.Click += async (_, _) => await change(v);
             if (_narrow) grid.Children.Add(b); else stack.Children.Add(b);
         }
         return new Border

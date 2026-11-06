@@ -183,6 +183,47 @@ public static partial class AppDocs
 
         Vale `+ - * / ^`, parênteses, `2x` e `3(x+1)`, `pi` e `e`, e as funções `sin` (ou `sen`), `cos`, `tan`, `sqrt` (ou `raiz`), `abs`, `ln`, `log`, `exp`, entre outras. Sem a linha `y:`, a altura se ajusta às curvas. Uma linha que não dá para ler aparece em vermelho embaixo do gráfico, e as outras continuam desenhadas. Toque no gráfico para editar o texto. Nas páginas, ele sai como imagem.
 
+        ### Cálculo
+
+        Um bloco ```` ```calculo ```` faz contas: cada linha aparece com o resultado ao lado, refeito sempre que a nota é lida (menu `/` → **Cálculo**). A nota guarda só as linhas.
+
+        ```
+        preco = 12,5
+        qtd = 4
+        preco * qtd
+        f(x) = x^2 + 1
+        f(3)
+        100 km/h em m/s
+        resolver x^2 - 5x + 6 = 0
+        derivada de x^3 + 2x
+        integral de sen(x) de 0 até pi
+        ```
+
+        - **Valores**: `+ - * / ^`, `%`, `5!`, `√`, `π`, vírgula decimal (`1,5`); funções como `sen`, `cos`, `ln`, `log`, `raiz`, `arred`, `media`, `mediana`, `desvio`, `soma`, `mdc`, `mmc`, `comb`. Separe argumentos com `;`: `media(3; 5; 8)`.
+        - **Definições**: `a = 3` e `f(x) = …` valem para as linhas de baixo.
+        - **Unidades**: escreva o número com a unidade e converta com `em` (`37 °C em °F`, `2 h + 30 min em min`). Somar metros com segundos dá erro, nunca um número errado.
+        - **Matrizes e listas**: `[[1; 2]; [3; 4]]`, com `det`, `inv`, `transposta` e produto.
+        - **Álgebra**: `derivada de …`, `simplificar …`, `expandir …`, `resolver … = …` (exato até o 2º grau; acima disso, aproximado com ≈) e `integral de …` (com `de a até b`, o valor).
+        - Uma linha com `//` é comentário. Uma linha que não dá para calcular diz por quê, em vermelho, e as outras continuam. Nas publicações (HTML, EPUB, Word, ODT, PowerPoint) o bloco sai como tabela de linha e resultado. O Assistente usa o mesmo motor para fazer contas.
+
+        ### Dados
+
+        Um bloco ```` ```dados ```` mostra uma tabela feita de um arquivo do vault (CSV, JSON) ou da tabela de uma nota, depois de passos que você escreve, um por linha (menu `/` → **Dados**). A fonte nunca é alterada e a tabela é refeita sempre que a nota é lida.
+
+        ```
+        fonte: Planilhas/gastos.csv
+        filtrar valor > 10 e categoria = "Mercado"
+        agrupar por categoria: soma(valor) como total, contar
+        ordenar por total desc
+        ```
+
+        - `fonte:` é o caminho no vault. Para a tabela de uma nota, `fonte: Livros.md`, ou `fonte: Livros.md#Lidos` para a tabela sob o título **Lidos**.
+        - Passos: `filtrar` (= != > < >= <=, `contém`, `começa com`, com `e` e `ou`), `colunas a, b`, `ordenar por coluna desc`, `agrupar por coluna: soma(x), media(x), min(x), max(x), mediana(x), contar`, `calcular nova = preco * qtd`, `limitar 10`, `distintos coluna` e `resumo`.
+        - Coluna com espaço vai entre aspas: `"valor total" > 10`. Números brasileiros (1.234,56; R$ 10) e datas (05/11/2026) são reconhecidos.
+        - Um erro num passo aparece no lugar da tabela, dizendo o que corrigir. Tabelas grandes mostram as primeiras 300 linhas e o total.
+        - Nas publicações o bloco sai como tabela com a fonte embaixo. O Assistente usa os mesmos passos para analisar planilhas.
+        - **Gráfico**: termine com `gráfico barras coluna valor` (ou `linhas`, `pizza`, `dispersão`), com quantas colunas de valor quiser e, se quiser, `título: …`. O gráfico é desenhado dos dados e muda quando eles mudam; nas publicações sai como imagem nítida (vetor).
+
         ### Parâmetros e movimentos
 
         Uma linha como `a = 2 em 0..5` cria um **parâmetro**: um controle deslizante embaixo do gráfico. As curvas acompanham enquanto você arrasta, e a nota guarda o valor onde você soltar. Sem `em`, o controle vai de -10 a 10. Nomes juntos se multiplicam: `ax` é `a·x`.
@@ -274,6 +315,13 @@ public static partial class AppDocs
         - **Dados:** JSON, YAML, TOML, INI, XML, CSV e TSV.
 
         Os demais arquivos (imagens, PDFs, áudio, vídeo) são abertos no visualizador.
+
+        ## Destaques, marcadores e comentários
+
+        No leitor de PDF, livro ou documento, selecione um trecho e escolha **Destacar**, **Comentar**, **Adicionar seleção à nota** ou **Marcador**. O trecho vai para uma nota de verdade, com o link de volta ao lugar exato da fonte e à versão do arquivo. O destino aparece antes: **esta nota**, **outra nota** (as recentes ou pela busca do nome), **uma nota nova** ou **Copiar com a referência**. Mandar o mesmo trecho de novo para a mesma nota não o duplica.
+        - **⋯ → Anotações desta fonte** lista tudo o que as notas guardam sobre o arquivo: tipo, página ou capítulo, o trecho e a nota. Toque para **abrir na nota** (na linha certa) ou **ir à fonte**.
+        - Se o arquivo mudou depois da anotação, ela aparece como **fonte mudou: revise**. O Urbe não procura uma frase parecida para colocar o destaque no lugar: você confere.
+        - **Exportar anotações** salva um JSON no padrão W3C Web Annotation, com o trecho, o contexto antes e depois e a página. Nem o arquivo nem as notas mudam.
 
         ## Escrever código
 
@@ -379,6 +427,24 @@ public static partial class AppDocs
         **Preços de imagens:** a lista de modelos mostra valores em dólares **por imagem, por megapixel ou por 1 milhão de tokens**, com fonte consultável. Para OpenRouter, a consulta utiliza o endpoint de preços do modelo escolhido; para modelos específicos OpenAI e Gemini, são exibidas referências públicas com data de verificação. Preço ausente aparece como **não informado**, nunca como gratuito. Os valores são referências ou mínimos, não previsão exata de cobrança: entrada, qualidade, resolução e rota podem alterar a fatura.
 
         **Prévia de imagem no chat:** quando `generate_image` termina, a imagem salva no vault aparece diretamente no cartão da conversa, com o botão **Abrir** para a visualização nativa em tamanho maior. Não é uma nova cópia nem uma URL externa. Nas conversas anteriores, imagens concluídas continuam à vista mesmo com os passos do agente recolhidos.
+
+        ## Skills
+
+        Uma **skill** ensina o Assistente a fazer um tipo de trabalho do seu jeito (o formato aberto Agent Skills). Crie uma pasta em `Personalização/Skills/` com um arquivo `SKILL.md`:
+
+        ```
+        ---
+        name: revisar-livro
+        description: Revisar capítulos com o meu checklist editorial.
+        ---
+        # Revisão
+        Leia checklist.md e aponte cada problema com a frase.
+        ```
+
+        - O Assistente vê só o **nome e a descrição** de cada skill e carrega as instruções quando o pedido combina com ela; arquivos da pasta (como `checklist.md`) são lidos quando a skill manda.
+        - O `name` usa letras minúsculas, números e hífens, igual ao nome da pasta. Uma skill com problema no cabeçalho não aparece.
+        - Uma skill **não dá permissões** e **nada nela é executado**: scripts são só texto. As aprovações continuam as mesmas.
+        - O Urbe já traz skills de apresentação, livro e cálculo; uma sua com o mesmo nome toma o lugar da do app.
 
         ## Ajustar
 

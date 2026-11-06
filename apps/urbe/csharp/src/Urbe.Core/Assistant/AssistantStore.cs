@@ -10,6 +10,16 @@ public interface IAssistantStorage
     void Write(string name, string text);
     void Delete(string name);
     IEnumerable<string> List();
+    /// <summary>
+    /// CST-216: adds <paramref name="text"/> at the end of the file (a run's journal line). True when it was kept; the
+    /// default rewrites the file, a folder appends and flushes to the disk.
+    /// </summary>
+    bool Append(string name, string text)
+    {
+        var before = Read(name) ?? "";
+        Write(name, before + text);
+        return Read(name) == before + text;
+    }
 }
 
 /// <summary>In memory (tests; and what the original does without IndexedDB).</summary>
@@ -43,6 +53,20 @@ public sealed class FolderAssistantStorage(string folder) : IAssistantStorage
             File.Move(tmp, PathOf(name), overwrite: true);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+    }
+
+    public bool Append(string name, string text)
+    {
+        try
+        {
+            Directory.CreateDirectory(folder);
+            using var file = new FileStream(PathOf(name), FileMode.Append, FileAccess.Write, FileShare.Read);
+            var bytes = System.Text.Encoding.UTF8.GetBytes(text);
+            file.Write(bytes);
+            file.Flush(flushToDisk: true);
+            return true;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return false; }
     }
 
     public void Delete(string name)
@@ -85,6 +109,8 @@ public sealed class AiConversation
     /// <summary>Delegation provenance: only the origin chat may address this specialist dialogue.</summary>
     public string? OriginConversationId { get; set; }
     public string? OriginAgentId { get; set; }
+    /// <summary>CST-217: the scoped brief of a delegated work or review (null: an ordinary conversation or consultation).</summary>
+    public AiDelegationBrief? Brief { get; set; }
     public List<AiChatMessage> Messages { get; set; } = [];
     public List<AiRunRecord> Runs { get; set; } = [];
     public AiUsage Usage { get; set; } = new(0, 0, null);
@@ -317,6 +343,8 @@ public sealed class AssistantStore(IAssistantStorage storage)
             if (storage.Read(file) is not null || storage.List().Contains(file, StringComparer.Ordinal))
                 throw new IOException("Não foi possível excluir o histórico do agente: " + conversation.Id);
         }
+        // CST-216: the agent's run journals go with its conversations
+        AssistantRunJournal.DeleteFor(storage, agentId);
         return owned.Count;
     }
 
@@ -358,11 +386,18 @@ public sealed class AssistantStore(IAssistantStorage storage)
     {
         var o = new JsonObject { ["id"] = m.Id, ["name"] = m.Name, ["context"] = m.Context, ["tools"] = m.Tools };
         o["price"] = m.Price is { } p ? new JsonObject { ["input"] = p.Input, ["output"] = p.Output } : null;
+        // CST-220: written only when the provider reported them, so older caches keep their exact JSON
+        if (m.InputModalities is { } input) o["inputModalities"] = new JsonArray(input.Select(x => (JsonNode?)x).ToArray());
+        if (m.OutputModalities is { } output) o["outputModalities"] = new JsonArray(output.Select(x => (JsonNode?)x).ToArray());
+        if (m.CachedInputPrice is { } cached) o["cachedInput"] = cached;
         return o;
     }
 
     private static AiModelInfo ModelFromJson(JsonNode n) => new(Str(n["id"]), Str(n["name"]), n["context"] is null ? null : Num(n["context"]),
-        n["price"] is JsonObject p ? (LegacyCustomize.JsToNumber(p["input"]), LegacyCustomize.JsToNumber(p["output"])) : null, (bool?)n["tools"]);
+        n["price"] is JsonObject p ? (LegacyCustomize.JsToNumber(p["input"]), LegacyCustomize.JsToNumber(p["output"])) : null, (bool?)n["tools"],
+        n["inputModalities"] is JsonArray input ? input.Select(x => LegacyCustomize.JsToString(x)).ToList() : null,
+        n["outputModalities"] is JsonArray output ? output.Select(x => LegacyCustomize.JsToString(x)).ToList() : null,
+        n["cachedInput"] is null ? null : LegacyCustomize.JsToNumber(n["cachedInput"]));
 
     public static JsonObject ConfigToJson(AiConfig c)
     {
@@ -476,7 +511,14 @@ public sealed class AssistantStore(IAssistantStorage storage)
     private static JsonNode? SnapToJson(AiNoteSnap? s) => s is null ? null : new JsonObject { ["path"] = s.Path, ["content"] = s.Content };
     private static AiNoteSnap? SnapFromJson(JsonNode? n) => n is JsonObject o ? new AiNoteSnap(Str(o["path"]), Str(o["content"])) : null;
 
-    public static JsonObject ConversationToJson(AiConversation c) => new()
+    public static JsonObject ConversationToJson(AiConversation c)
+    {
+        var o = ConversationJson(c);
+        if (c.Brief is not null) o["brief"] = c.Brief.ToJson();
+        return o;
+    }
+
+    private static JsonObject ConversationJson(AiConversation c) => new()
     {
         ["id"] = c.Id, ["title"] = c.Title, ["created"] = c.Created, ["updated"] = c.Updated, ["agentId"] = c.AgentId, ["providerId"] = c.ProviderId,
         ["model"] = c.Model, ["policy"] = c.Policy, ["vault"] = c.Vault,
@@ -509,6 +551,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
         ProviderId = o["providerId"] is JsonValue pv && pv.TryGetValue<string>(out var ps) ? ps : null, Model = Str(o["model"]), Policy = Str(o["policy"], "ask"), Vault = Str(o["vault"]),
         OriginConversationId = o["originConversationId"] is null ? null : Str(o["originConversationId"]),
         OriginAgentId = o["originAgentId"] is null ? null : Str(o["originAgentId"]),
+        Brief = AiDelegationBrief.FromJson(o["brief"]),
         Forms = o["forms"]?.Deserialize<List<FormSession>>(FormDefinition.Json) ?? [],
         QueuedMessages = (o["queuedMessages"] as JsonArray ?? []).OfType<JsonObject>().Select(AiChatMessage.FromJson).ToList(),
         Messages = (o["messages"] as JsonArray ?? []).OfType<JsonObject>().Select(m => AiChatMessage.FromJson(m)).ToList(),

@@ -46,7 +46,7 @@ public static partial class VaultFileKinds
         ".png" => "image/png", ".jpg" or ".jpeg" => "image/jpeg", ".gif" => "image/gif", ".webp" => "image/webp", ".svg" => "image/svg+xml", ".bmp" => "image/bmp",
         ".mp3" => "audio/mpeg", ".wav" => "audio/wav", ".ogg" => "audio/ogg", ".m4a" => "audio/mp4", ".aac" => "audio/aac", ".flac" => "audio/flac",
         ".mp4" or ".m4v" => "video/mp4", ".webm" => "video/webm", ".mov" => "video/quicktime", ".mkv" => "video/x-matroska", ".avi" => "video/x-msvideo",
-        ".pdf" => "application/pdf", ".html" or ".htm" or ".xhtml" => "text/html", ".zip" => "application/zip", ".cbz" => "application/vnd.comicbook+zip",
+        ".pdf" => "application/pdf", ".html" or ".htm" or ".xhtml" => "text/html", ".zip" => "application/zip", ".cbz" => "application/vnd.comicbook+zip", ".cbr" => "application/vnd.comicbook-rar",
         ".epub" => "application/epub+zip",
         ".pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
         ".ppt" => "application/vnd.ms-powerpoint", ".odp" => "application/vnd.oasis.opendocument.presentation",
@@ -62,7 +62,7 @@ public static partial class VaultFileKinds
     [GeneratedRegex(@"\.pdf$", RegexOptions.IgnoreCase)] private static partial Regex PdfRe();
     [GeneratedRegex(@"\.(html?|xhtml)$", RegexOptions.IgnoreCase)] private static partial Regex HtmlRe();
     [GeneratedRegex(@"\.epub$", RegexOptions.IgnoreCase)] private static partial Regex EpubRe();
-    [GeneratedRegex(@"\.cbz$", RegexOptions.IgnoreCase)] private static partial Regex ComicRe();
+    [GeneratedRegex(@"\.(cbz|cbr|cb7|cbt)$", RegexOptions.IgnoreCase)] private static partial Regex ComicRe();
     [GeneratedRegex(@"\.(ppt|pptx|odp)$", RegexOptions.IgnoreCase)] private static partial Regex SlidesRe();
     [GeneratedRegex(@"\.(doc|docx|odt|rtf)$", RegexOptions.IgnoreCase)] private static partial Regex DocumentRe();
     [GeneratedRegex(@"\.(zip|7z|rar|tar|gz)$", RegexOptions.IgnoreCase)] private static partial Regex ZipRe();

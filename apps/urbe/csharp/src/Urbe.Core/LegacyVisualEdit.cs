@@ -186,6 +186,54 @@ public static partial class LegacyVisualEdit
         return new(text[..lineStart] + block + text[lineEnd..], from, from + example.Length);
     }
 
+    /// <summary>CST-206: the "/" menu's Cálculo — a ```calculo block with an example, the caret on its first line.</summary>
+    public static LegacyEditorTools.TextEdit Calc(string text, int caret)
+    {
+        var at = Math.Clamp(caret, 0, text.Length);
+        int lineStart = at == 0 ? 0 : text.LastIndexOf('\n', Math.Max(0, at - 1)) + 1;
+        int lineEnd = text.IndexOf('\n', at);
+        if (lineEnd < 0) lineEnd = text.Length;
+        var line = text[lineStart..lineEnd];
+        var keep = line.TrimStart().StartsWith('/') ? "" : line;
+        var head = (keep.Length > 0 ? keep + "\n" : "") + "```calculo\n";
+        const string example = "preco = 12,5";
+        var block = head + example + "\npreco * 4\n```";
+        int from = lineStart + head.Length;
+        return new(text[..lineStart] + block + text[lineEnd..], from, from + example.Length);
+    }
+
+    /// <summary>CST-207: the "/" menu's Dados — a ```dados block naming a source, the caret on the path.</summary>
+    public static LegacyEditorTools.TextEdit Data(string text, int caret)
+    {
+        var at = Math.Clamp(caret, 0, text.Length);
+        int lineStart = at == 0 ? 0 : text.LastIndexOf('\n', Math.Max(0, at - 1)) + 1;
+        int lineEnd = text.IndexOf('\n', at);
+        if (lineEnd < 0) lineEnd = text.Length;
+        var line = text[lineStart..lineEnd];
+        var keep = line.TrimStart().StartsWith('/') ? "" : line;
+        var head = (keep.Length > 0 ? keep + "\n" : "") + "```dados\nfonte: ";
+        const string example = "Planilhas/arquivo.csv";
+        var block = head + example + "\nresumo\n```";
+        int from = lineStart + head.Length;
+        return new(text[..lineStart] + block + text[lineEnd..], from, from + example.Length);
+    }
+
+    /// <summary>CST-174: the "/" menu's Questionário — a ```quiz block with one example question.</summary>
+    public static LegacyEditorTools.TextEdit Quiz(string text, int caret)
+    {
+        var at = Math.Clamp(caret, 0, text.Length);
+        int lineStart = at == 0 ? 0 : text.LastIndexOf('\n', Math.Max(0, at - 1)) + 1;
+        int lineEnd = text.IndexOf('\n', at);
+        if (lineEnd < 0) lineEnd = text.Length;
+        var line = text[lineStart..lineEnd];
+        var keep = line.TrimStart().StartsWith('/') ? "" : line;
+        var head = (keep.Length > 0 ? keep + "\n" : "") + "```quiz\n? ";
+        const string example = "Escreva a pergunta";
+        var block = head + example + "\n- [x] alternativa certa\n- [ ] alternativa errada\n> Explicação da resposta.\n```";
+        int from = lineStart + head.Length;
+        return new(text[..lineStart] + block + text[lineEnd..], from, from + example.Length);
+    }
+
     /// <summary>The bubble's wikilink button: the trimmed selection becomes [[selection]]; null when empty.</summary>
     public static LegacyEditorTools.TextEdit? WikiOfSelection(string text, int selectionStart, int selectionEnd)
     {

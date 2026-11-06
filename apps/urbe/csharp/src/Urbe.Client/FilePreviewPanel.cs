@@ -14,8 +14,11 @@ namespace Urbe.Client;
 /// app.js openFilePreview / renderFilePreview natively: a file of the Explorer with its title, "Imagem · 120 KB ·
 /// pasta/arquivo.png", and the body by
 /// kind, always inside the Urbe (owner, ADD-0023): images drawn here, HTML as a page (or its source), PDF pages, audio
-/// and video in the platform's content viewers (<see cref="ContentViewers"/>); text and code as text; a .zip lists
-/// its entries. "Abrir" in another app stays as an extra. Read only: nothing is written to the vault.
+/// and video in the platform's content viewers (<see cref="ContentViewers"/>); text and code as text, with search
+/// (<see cref="TextReaderView"/>), CSV as a table, CBZ comics page by page (<see cref="ComicReaderView"/>), PowerPoint decks slide by slide
+/// (<see cref="PptxReaderView"/>); a .zip lists
+/// its entries; anything else gets its details and the support matrix's honest row (CST-238). "Abrir" in another app
+/// stays as an extra. Read only: nothing is written to the vault.
 /// </summary>
 public sealed class FilePreviewPanel : Grid
 {
@@ -42,6 +45,8 @@ public sealed class FilePreviewPanel : Grid
     private PdfStudyView? _pdfTextView;
     private EpubStudyView? _epubView;
     private MediaStudyView? _mediaView;
+    private ComicReaderView? _comicView;
+    private PptxReaderView? _pptxView;
     private int? _requestedPart;
     private int? _requestedTextOffset, _requestedTextLength;
     private ReaderRegion? _requestedRegion;
@@ -49,6 +54,7 @@ public sealed class FilePreviewPanel : Grid
     public event Action<ImageStudyQuote>? ImageQuoteRequested;
     public event Action<StudyImageQuestion>? VisualQuestionRequested;
     private readonly Button _ocr = new Ui.UrbeIconButton(UrbeTheme.Icons.Scan, "Reconhecer região (OCR)", 21);
+    private readonly Button _textLookButton = new Ui.UrbeIconButton(UrbeTheme.Icons.TextLayer, "Aparência do texto", 21) { IsVisible = false };
     public event Action<string, string>? QuestionRequested;
     public event Action<string>? WebLinkRequested;
     public event Action<string>? AnnotationsRequested;
@@ -154,9 +160,9 @@ public sealed class FilePreviewPanel : Grid
         }
         // the PDF's bar, one row of icons: ‹ 3 / 120 › · − + · text layer · selection · OCR
         var zoomIn = new Ui.UrbeIconButton(UrbeTheme.Icons.ZoomIn, "Aumentar", 21);
-        zoomIn.Click += (_, _) => { if (_pdfView is { } pdf) pdf.SetZoom(Math.Min(16, pdf.Zoom * 1.25)); };
+        zoomIn.Click += (_, _) => { if (_pdfView is { } pdf) { pdf.SetZoom(Math.Min(16, pdf.Zoom * 1.25)); CaptureReadingPosition(); } };
         var zoomOut = new Ui.UrbeIconButton(UrbeTheme.Icons.ZoomOut, "Diminuir", 21);
-        zoomOut.Click += (_, _) => { if (_pdfView is { } pdf) pdf.SetZoom(Math.Max(.25, pdf.Zoom / 1.25)); };
+        zoomOut.Click += (_, _) => { if (_pdfView is { } pdf) { pdf.SetZoom(Math.Max(.25, pdf.Zoom / 1.25)); CaptureReadingPosition(); } };
         _pdfNavigation.Children.Add(_pdfPrevious);
         _pdfNavigation.Children.Add(_pdfPage);
         _pdfNavigation.Children.Add(_pdfNext);
@@ -185,10 +191,11 @@ public sealed class FilePreviewPanel : Grid
         select.Click+=(_,_)=>selectionMenu.Open(select);
         _pdfModes.Children.Add(select);
         _ocr.Click += async (_, _) => await OpenOcrAsync();
+        _textLookButton.Click += (_, _) => OpenTextLookMenu(_textLookButton);
         var bar = new StackPanel
         {
             Orientation = Orientation.Horizontal, Spacing = 2, HorizontalAlignment = HorizontalAlignment.Center,
-            Children = { _pdfNavigation, _pdfModes, _ocr }
+            Children = { _pdfNavigation, _pdfModes, _ocr, _textLookButton }
         };
         // the reader's bar sits at the bottom, where the thumb is (Kindle, Kobo, Play Books)
         _bar = new Border
@@ -204,7 +211,7 @@ public sealed class FilePreviewPanel : Grid
             BorderThickness = new Thickness(0, 1, 0, 0),
             Background = UrbeTheme.Brush(UrbeTheme.Surface)
         };
-        foreach (var part in new Control[] { _pdfNavigation, _pdfModes, _ocr })
+        foreach (var part in new Control[] { _pdfNavigation, _pdfModes, _ocr, _textLookButton })
             part.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateBar(); };
         UpdateBar();
         var top = new StackPanel { Children = { head, _choose, _htmlMode } };
@@ -271,6 +278,7 @@ public sealed class FilePreviewPanel : Grid
     public void HandleBack()
     {
         if (_body.Content is OcrStudyView ocr) { ocr.Back(); return; }
+        if (_pptxView is { IsPresenting: true } presenting) { presenting.SetPresenting(false); return; }
         if (ChromeHidden) { SetChromeHidden(false); return; }
         if (!ExitReaderMode()) Close();
     }
@@ -282,13 +290,15 @@ public sealed class FilePreviewPanel : Grid
     {
         ChromeHidden = hidden;
         _top.IsVisible = !hidden;
+        if (_comicView is { } comic) comic.Bar.IsVisible = !hidden;
+        if (_pptxView is { IsPresenting: false } slides) slides.Bar.IsVisible = !hidden;
         UpdateBar();
     }
 
     private bool Phone => !_embedded && Bounds.Width < 720;
 
-    /// <summary>The reader's bar shows only with something in it (a picture or text file has none).</summary>
-    private void UpdateBar() => _bar.IsVisible = !ChromeHidden && (_pdfNavigation.IsVisible || _pdfModes.IsVisible || _ocr.IsVisible || _embedded);
+    /// <summary>The reader's bar shows only with something in it (a picture has none; a text file, its "Aa").</summary>
+    private void UpdateBar() => _bar.IsVisible = !ChromeHidden && (_pdfNavigation.IsVisible || _pdfModes.IsVisible || _ocr.IsVisible || _textLookButton.IsVisible || _embedded);
 
     private static Control BarGap() => new Border { Width = 1, Height = 22, Margin = new Thickness(6, 0), Background = UrbeTheme.Brush(UrbeTheme.Line2), VerticalAlignment = VerticalAlignment.Center };
 
@@ -385,7 +395,10 @@ public sealed class FilePreviewPanel : Grid
         Place();
     }
 
-    /// <summary>What the body shows now: "image", "text", "zip", "viewer" (a content viewer) or "none" (tests).</summary>
+    /// <summary>
+    /// What the body shows now: "image", "text", "table" (CSV), "comic", "slides" (a PowerPoint deck), "zip", "viewer" (a content viewer), "info" (the
+    /// file's details and "Abrir em outro app") or "none" (tests).
+    /// </summary>
     public string Shown { get; private set; } = "none";
 
     /// <summary>The text of the body when it is text or a listing (tests).</summary>
@@ -522,10 +535,13 @@ public sealed class FilePreviewPanel : Grid
     {
         CaptureReadingPosition();
         ExitReaderMode();
+        HideTextLook();
         _pdfView = null; _mediaView=null;
         _pdfNavigation.IsVisible = false;
         _pdfTextView?.Dispose();
         _epubView?.Dispose(); _epubView = null;
+        _comicView?.Dispose(); _comicView = null;
+        _pptxView?.Dispose(); _pptxView = null;
         _pdfTextView = null;
         _requestedPage = null;
         _expectedHash = null;
@@ -580,7 +596,7 @@ public sealed class FilePreviewPanel : Grid
         _card.Background = UrbeTheme.Brush(wide ? UrbeTheme.Surface : UrbeTheme.Bg);
         _head.Margin = wide ? default : new Thickness(4, 0, 4, 0);
         foreach (var zoom in _zoomTools) zoom.IsVisible = wide;
-        if (Shown is "viewer" or "text" or "image" && _body.Content is Control shown)
+        if (Shown is "viewer" or "text" or "image" or "table" or "comic" or "slides" && _body.Content is Control shown)
             shown.Height = ViewerHeight();
     }
 
@@ -591,11 +607,14 @@ public sealed class FilePreviewPanel : Grid
         if (ChromeHidden) SetChromeHidden(false);
         CaptureReadingPosition();
         int version = ++_version;
+        HideTextLook();
         _mediaView=null;
         _pdfView = null; _mediaView=null;
         _pdfNavigation.IsVisible = false;
         _pdfTextView?.Dispose();
         _epubView?.Dispose(); _epubView = null;
+        _comicView?.Dispose(); _comicView = null;
+        _pptxView?.Dispose(); _pptxView = null;
         _pdfTextView = null;
         Index = index;
         _choosing = true;
@@ -607,7 +626,7 @@ public sealed class FilePreviewPanel : Grid
         MarkTextToggle();
         _ocr.IsVisible = kind is VaultFileKinds.Pdf or VaultFileKinds.Image;
         _title.Text = name;
-        _meta.Text = VaultFileKinds.Label(kind) + (path is not null ? " · " + path : "");
+        _meta.Text = KindLabel(kind, name) + (path is not null ? " · " + path : "");
         _open.IsVisible = false;
         _more.IsVisible = path is not null || _generated is not null;
         _htmlMode.IsVisible = kind == VaultFileKinds.Html;
@@ -623,7 +642,7 @@ public sealed class FilePreviewPanel : Grid
         // Files with no in-app renderer still have metadata and an explicit external fallback.
         // Do not allocate a giant Office/EPUB container merely to say its preview is unsupported.
         bool metadataOnly = kind is VaultFileKinds.Audio or VaultFileKinds.Video ||
-            kind is VaultFileKinds.Slides or VaultFileKinds.Document && Path.GetExtension(name).ToLowerInvariant() is not (".pptx" or ".odp" or ".docx" or ".odt");
+            kind is VaultFileKinds.Slides or VaultFileKinds.Document && Path.GetExtension(name).ToLowerInvariant() is not (".pptx" or ".odp" or ".docx" or ".odt" or ".rtf");
         VaultFileRead? read;
         try
         {
@@ -644,7 +663,7 @@ public sealed class FilePreviewPanel : Grid
             return;
         }
         _meta.Text = (_generated is { } gen ? "Página · " + VaultFileKinds.FormatBytes(read.Size) + " · " + gen.Source
-            : VaultFileKinds.Label(kind) + " · " + VaultFileKinds.FormatBytes(read.Size) + (path is not null ? " · " + path : ""));
+            : KindLabel(kind, name) + " · " + VaultFileKinds.FormatBytes(read.Size) + (path is not null ? " · " + path : ""));
         // "Abrir em outro app" is in "⋯"; the big button only when the Urbe cannot show the file itself
         _open.IsVisible = false;
         var bytes = read.Bytes;
@@ -656,7 +675,12 @@ public sealed class FilePreviewPanel : Grid
             if(revision is not null)
             {
                 string vaultKey=ReaderSessionCatalog.VaultKey(vaultIdentity);
-                _readingSession=state.Restore(vaultKey,path,revision)??new ReaderSession(vaultKey,path,revision,kind,new(1),new(),DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+                var restored=state.Restore(vaultKey,path,revision);
+                // a position saved for another version of the file is not applied: say so instead of jumping to a guess
+                if(restored is null&&state.Latest(vaultKey,path) is { } earlier&&earlier.Revision!=revision&&ReaderProgress.Resumable(kind,path))
+                    _meta.Text+=" · o arquivo mudou desde a última leitura; a posição salva não foi aplicada";
+                // a source opened for the first time starts with the look last chosen in its kind of reader
+                _readingSession=restored??new ReaderSession(vaultKey,path,revision,kind,new(1),state.PreferencesFor(kind),DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
                 state.Remember(_readingSession with{Updated=DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()});
                 if(_requestedPage is null)_pdfPosition=_readingSession.Location.Part;
                 if(_requestedPart is null)_requestedPart=kind is VaultFileKinds.Audio or VaultFileKinds.Video?_readingSession.Location.Part-1:_readingSession.Location.Part;
@@ -687,7 +711,23 @@ public sealed class FilePreviewPanel : Grid
             }
         }
         _requestedPage = null;
-        if ((kind is VaultFileKinds.Epub or VaultFileKinds.Comic || Path.GetExtension(name).ToLowerInvariant() is ".pptx" or ".odp" or ".docx" or ".odt") && bytes is not null)
+        string extension = Path.GetExtension(name).ToLowerInvariant();
+        if (kind == VaultFileKinds.Comic && bytes is not null && _generated is null)
+        {
+            await ShowComicAsync(path ?? name, name, bytes, read.Size, version);
+            return;
+        }
+        if (extension is ".pptx" or ".odp" && bytes is not null && _generated is null)
+        {
+            await ShowPresentationAsync(path ?? name, name, bytes, read.Size, version);
+            return;
+        }
+        if (TextFamily.Contains(extension) && bytes is not null && _generated is null)
+        {
+            await ShowTextFamilyAsync(name, extension, bytes, read.Size, version);
+            return;
+        }
+        if ((kind is VaultFileKinds.Epub || Path.GetExtension(name).ToLowerInvariant() is ".docx" or ".odt") && bytes is not null)
         {
             try
             {
@@ -698,10 +738,12 @@ public sealed class FilePreviewPanel : Grid
                 epub.QuoteRequested += quote => BookQuoteRequested?.Invoke(quote);
                 epub.AskRequested += quote => QuestionRequested?.Invoke(quote.Path + " · " + quote.Unit + " " + quote.Index, quote.Text);
                 epub.ExternalLinkRequested += url => WebLinkRequested?.Invoke(url);
+                epub.ImageQuoteRequested += quote => ImageQuoteRequested?.Invoke(quote);
+                epub.VisualQuestionRequested += question => VisualQuestionRequested?.Invoke(question);
                 epub.PositionChanged += chapter => RememberReadingPosition(chapter + 1, fontSize: epub.FontSizePreference);
                 _body.Content = epub; Shown = "viewer";
-                if (_readingSession is { } saved) {epub.RestoreAppearance(saved.Preferences.Theme,saved.Preferences.Margin); await epub.SetTypographyAsync(saved.Preferences.FontSize);}
                 epub.RestoreLineHeight(_readingSession?.Preferences.LineHeight ?? 1.6);
+                if (_readingSession is { } saved) {epub.RestoreAppearance(saved.Preferences.Theme,saved.Preferences.Margin); await epub.SetTypographyAsync(saved.Preferences.FontSize);}
                 await epub.GoToChapterAsync((_requestedPart ?? 1) - 1, _requestedTextOffset ?? _readingSession?.Location.Offset ?? 0, _requestedTextLength ?? 0, _readingSession?.Location.Scroll ?? 0);
                 _requestedTextOffset = _requestedTextLength = null;
                 _requestedPart = null;
@@ -710,8 +752,14 @@ public sealed class FilePreviewPanel : Grid
             { if (version == _version) { _body.Content = Empty("Não foi possível abrir o arquivo de leitura", ex.Message); _open.IsVisible = true; } }
             return;
         }
-        if (kind == VaultFileKinds.Image && bytes is not null && Image(bytes) is { } image)
+        var signature = bytes is null ? FileSignature.Unknown : FileSignatures.Detect(bytes.AsSpan(0, Math.Min(bytes.Length, 64 * 1024)));
+        // a picture with another name (foto.dat) is still drawn; a file named .png that is not a picture never reaches the decoder
+        bool picture = bytes is not null && (kind == VaultFileKinds.Image && !name.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)
+            ? FileSignatures.IsImage(signature)
+            : kind == VaultFileKinds.Other && FileSignatures.IsImage(signature));
+        if (picture && bytes is not null && Image(bytes) is { } image)
         {
+            if (kind == VaultFileKinds.Other) _meta.Text += " · conteúdo: " + FileSignatures.Describe(signature);
             if(_requestedRegion is { } region)
             {
                 var ocrSource=new OcrStudyView(path??name,null,_cachedHash??Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant(),bytes,region){Height=ViewerHeight(),ShowsBack=!Phone};
@@ -731,7 +779,7 @@ public sealed class FilePreviewPanel : Grid
                 var text = names.Count > 0 ? string.Join("\n", names) : "Arquivo compactado vazio";
                 ShowText(text, "zip");
             }
-            catch (InvalidDataException) { _body.Content = Empty("Arquivo compactado", name); }
+            catch (InvalidDataException) { ShowInfo(name, read.Size, kind, signature, "O arquivo não pôde ser lido como ZIP."); }
             return;
         }
         // HTML as a page, PDF, audio and video: the content viewer of the platform, inside the panel (ADD-0023)
@@ -760,7 +808,8 @@ public sealed class FilePreviewPanel : Grid
                     pdf.PageChanged += _ => { if (ReferenceEquals(_pdfView, pdf)) UpdatePdfNavigation(); };
                     pdf.PageChanged += page => RememberReadingPosition(page);
                     UpdatePdfNavigation();
-                    pdf.Loaded += (_, _) => { pdf.SetZoom(_readingSession?.Preferences.Zoom ?? 1); pdf.GoToPage(_pdfPosition); if (_requestedRegion is { } region) { pdf.FocusRegion(_pdfPosition,region); _requestedRegion=null; } };
+                    _pdfZoomReady = false;
+                    pdf.Loaded += (_, _) => { pdf.SetZoom(_readingSession?.Preferences.Zoom ?? 1); _pdfZoomReady = ReferenceEquals(_pdfView, pdf); pdf.GoToPage(_pdfPosition); if (_requestedRegion is { } region) { pdf.FocusRegion(_pdfPosition,region); _requestedRegion=null; } };
                 }
                 return;
             }
@@ -775,29 +824,184 @@ public sealed class FilePreviewPanel : Grid
                 study.PageChanged += page => RememberReadingPosition(page);
                 _body.Content = study;
                 Shown = "text";
+                ShowTextLook(TextLook(PdfStudyView.DefaultFontSize, PdfStudyView.DefaultLineHeight), study.ApplyLook);
                 if(_requestedTextOffset is { } offset) { await study.GoToTextAsync(_pdfPosition,offset,_requestedTextLength??0);_requestedTextOffset=_requestedTextLength=null; }
                 else await study.GoToPageAsync(_pdfPosition);
                 return;
             }
         }
         bool textual = kind is VaultFileKinds.Html or VaultFileKinds.Other || name.EndsWith(".svg", StringComparison.OrdinalIgnoreCase);
-        if (textual && bytes is not null && Text(bytes) is { } source)
+        if (textual && bytes is not null && signature is FileSignature.Text or FileSignature.Rtf or FileSignature.Unknown && await Task.Run(() => TextDecoding.Decode(bytes)) is { } source)
         {
-            ShowText(source, "text");
+            if (version != _version) return;
+            ShowText(source.Text, "text", source.Notice is { } notice ? [notice] : null);
             return;
         }
-        _open.IsVisible = _generated is null;
         if (bytes is null && read.Size > MaxBytes)
         {
-            _body.Content = Empty(name, "O arquivo tem " + VaultFileKinds.FormatBytes(read.Size) + ", mais do que este aparelho abre aqui de uma vez. Use Abrir em outro app.");
+            ShowInfo(name, read.Size, kind, signature, "O arquivo tem " + VaultFileKinds.FormatBytes(read.Size) + ", mais do que este aparelho abre aqui de uma vez. Use Abrir em outro app.");
             return;
         }
-        _body.Content = Empty(name, kind is VaultFileKinds.Pdf or VaultFileKinds.Audio or VaultFileKinds.Video
+        ShowInfo(name, read.Size, kind, signature, kind is VaultFileKinds.Pdf or VaultFileKinds.Audio or VaultFileKinds.Video
             ? "Este aparelho ainda não tem o visualizador deste formato dentro do Urbe."
-            : kind is VaultFileKinds.Epub or VaultFileKinds.Slides or VaultFileKinds.Document
-                ? "O leitor interno deste formato está em desenvolvimento. Use Abrir em outro app sem modificar o original."
-                : "Sem visualização nativa para este formato.");
+            : FormatSupportMatrix.For(name) is { Open: SupportLevel.External }
+                ? "O Urbe não abre este formato. Use Abrir em outro app; o original não é modificado."
+                : kind == VaultFileKinds.Image
+                    ? "O conteúdo não é uma imagem que o Urbe consiga desenhar."
+                    : "Sem visualização nativa para este formato.");
     }
+
+    /// <summary>"Arquivo" says nothing: a file the support matrix knows (CSV, JSON, RTF) is called by its format.</summary>
+    private static string KindLabel(string kind, string name) =>
+        kind == VaultFileKinds.Other && FormatSupportMatrix.For(name) is { } format ? format.Name : VaultFileKinds.Label(kind);
+
+    /// <summary>The plain text family read by <see cref="TextReaderView"/> or <see cref="CsvTableView"/> (CST-238).</summary>
+    public static readonly IReadOnlySet<string> TextFamily = new HashSet<string>(StringComparer.Ordinal)
+        { ".txt", ".text", ".log", ".rtf", ".csv", ".tsv", ".json", ".jsonc" };
+
+    private sealed record PreparedText(string Text, CsvTable? Table, IReadOnlyList<string> Notices);
+
+    /// <summary>TXT/LOG as text, RTF's text, CSV/TSV as a table, JSON formatted: decoded off the UI thread.</summary>
+    private async Task ShowTextFamilyAsync(string name, string extension, byte[] bytes, long size, int version)
+    {
+        PreparedText? prepared;
+        try { prepared = await Task.Run(() => PrepareText(extension, bytes)); }
+        catch (Exception ex) when (ex is InvalidDataException or ArgumentException) { prepared = null; }
+        if (version != _version) return;
+        if (prepared is null)
+        {
+            var signature = FileSignatures.Detect(bytes.AsSpan(0, Math.Min(bytes.Length, 64 * 1024)));
+            ShowInfo(name, size, VaultFileKinds.Classify(name), signature, "O conteúdo não é texto legível: parece ser " + FileSignatures.Describe(signature) + ".");
+            return;
+        }
+        if (prepared.Table is { } table)
+        {
+            _body.Content = new CsvTableView(prepared.Text, table, prepared.Notices) { Height = ViewerHeight() };
+            Shown = "table";
+            ShownText = prepared.Text;
+            return;
+        }
+        ShowText(prepared.Text, "text", prepared.Notices);
+    }
+
+    private static PreparedText? PrepareText(string extension, byte[] bytes)
+    {
+        if (extension == ".rtf")
+            return bytes.AsSpan().StartsWith("{\\rtf"u8) ? new PreparedText(RtfText.Convert(bytes), null, [RtfText.Notice]) : null;
+        if (TextDecoding.Decode(bytes) is not { } decoded) return null;
+        var notices = decoded.Notice is { } n ? new List<string> { n } : [];
+        if (extension is ".csv" or ".tsv") return new PreparedText(decoded.Text, new CsvTable(decoded.Text, extension == ".tsv" ? '\t' : null), notices);
+        if (extension is ".json" or ".jsonc")
+        {
+            var pretty = JsonPretty.Format(decoded.Text);
+            if (pretty.Notice is { } p) notices.Add(p);
+            return new PreparedText(pretty.Text, null, notices);
+        }
+        return new PreparedText(decoded.Text, null, notices);
+    }
+
+    /// <summary>A CBZ in the native comics reader; CBR/CB7 and a broken archive say so and offer another app.</summary>
+    private async Task ShowComicAsync(string path, string name, byte[] bytes, long size, int version)
+    {
+        ComicBook book;
+        try { book = await Task.Run(() => ComicBook.Open(bytes)); }
+        catch (Exception ex) when (ex is NotSupportedException or InvalidDataException or IOException or OverflowException or ArgumentException)
+        {
+            if (version != _version) return;
+            var signature = FileSignatures.Detect(bytes.AsSpan(0, Math.Min(bytes.Length, 4096)));
+            ShowInfo(name, size, VaultFileKinds.Comic, signature, ex is NotSupportedException
+                ? "Formato não suportado. " + ex.Message
+                : "Não foi possível abrir este quadrinho: " + ex.Message);
+            return;
+        }
+        if (version != _version) { book.Dispose(); return; }
+        var comic = new ComicReaderView(path, book) { Height = ViewerHeight() };
+        _comicView = comic;
+        comic.CenterTapped += () => { if (!_embedded) SetChromeHidden(!ChromeHidden); };
+        comic.PageChanged += page => RememberReadingPosition(page + 1);
+        _meta.Text += " · " + book.PageCount + (book.PageCount == 1 ? " página" : " páginas");
+        _body.Content = comic;
+        Shown = "comic";
+        int start = (_requestedPart ?? 1) - 1;
+        _requestedPart = null;
+        await comic.GoToPageAsync(start);
+        if (version == _version) comic.Focus();
+    }
+
+    /// <summary>
+    /// A PowerPoint deck in the native slide reader (CST-237); a legacy .ppt inside, an encrypted or broken package say
+    /// why and offer another app. Presenting is the panel's full screen with no bars.
+    /// </summary>
+    private async Task ShowPresentationAsync(string path, string name, byte[] bytes, long size, int version)
+    {
+        PptxDeck deck;
+        bool odp = name.EndsWith(".odp", StringComparison.OrdinalIgnoreCase);
+        try { deck = await Task.Run(() => odp ? PptxDeck.OpenOdp(bytes) : PptxDeck.Open(bytes)); }
+        catch (Exception ex) when (ex is NotSupportedException or InvalidDataException or IOException or System.Xml.XmlException or OverflowException or ArgumentException)
+        {
+            if (version != _version) return;
+            var signature = FileSignatures.Detect(bytes.AsSpan(0, Math.Min(bytes.Length, 4096)));
+            ShowInfo(name, size, VaultFileKinds.Slides, signature, ex is NotSupportedException ? ex.Message : "Não foi possível abrir o arquivo de leitura: " + ex.Message);
+            return;
+        }
+        if (version != _version) { deck.Dispose(); return; }
+        var slides = new PptxReaderView(path, deck) { Height = ViewerHeight() };
+        _pptxView = slides;
+        bool wasReaderMode = false;
+        slides.CenterTapped += () => { if (!_embedded) SetChromeHidden(!ChromeHidden); };
+        slides.SlideChanged += slide => RememberReadingPosition(slide + 1);
+        slides.OpenExternallyRequested += () => _ = OpenExternallyAsync();
+        slides.PresentingChanged += presenting =>
+        {
+            if (_embedded) return;
+            if (presenting) { wasReaderMode = _readerMode; SetReaderMode(true); SetChromeHidden(true); }
+            else { SetChromeHidden(false); if (!wasReaderMode) SetReaderMode(false); }
+        };
+        _meta.Text += " · " + deck.SlideCount + (deck.SlideCount == 1 ? " slide" : " slides") + " · " + deck.AspectLabel;
+        _body.Content = slides;
+        Shown = "slides";
+        int start = (_requestedPart ?? 1) - 1;
+        _requestedPart = null; _requestedTextOffset = _requestedTextLength = null;
+        await slides.GoToSlideAsync(start);
+        if (version == _version) slides.Focus();
+    }
+
+    /// <summary>
+    /// What the Urbe knows about a file it does not show (CST-238): name, size, type, what its bytes look like, and the
+    /// support matrix's honest row, with "Abrir em outro app", never an empty screen.
+    /// </summary>
+    private void ShowInfo(string name, long size, string kind, FileSignature signature, string message)
+    {
+        _open.IsVisible = _generated is null;
+        var box = new StackPanel { Spacing = 6, Margin = new Thickness(0, 24), HorizontalAlignment = HorizontalAlignment.Center, MaxWidth = 460 };
+        TextBlock Line(string text, double fontSize = 13, string color = UrbeTheme.Text3, bool bold = false) => new()
+        {
+            Text = text, FontSize = fontSize, FontWeight = bold ? FontWeight.Bold : FontWeight.Normal, Foreground = UrbeTheme.Brush(color),
+            HorizontalAlignment = HorizontalAlignment.Center, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap
+        };
+        box.Children.Add(Line(name, 15, UrbeTheme.Text, bold: true));
+        box.Children.Add(Line(message));
+        var support = FormatSupportMatrix.For(name);
+        box.Children.Add(Line("Tipo: " + (support?.Name ?? VaultFileKinds.Label(kind)) + " · " + VaultFileKinds.Mime(name)));
+        box.Children.Add(Line("Tamanho: " + VaultFileKinds.FormatBytes(size)));
+        if (signature != FileSignature.Unknown) box.Children.Add(Line("Conteúdo: " + FileSignatures.Describe(signature)));
+        if (support is not null)
+        {
+            box.Children.Add(Line("Abrir: " + FormatSupportMatrix.Label(support.Open) + " · Busca: " + FormatSupportMatrix.Label(support.Search)
+                + " · Seleção: " + FormatSupportMatrix.Label(support.Selection) + " · Offline: " + (support.Offline ? "sim" : "não") + " · " + support.Platforms));
+            box.Children.Add(Line(support.Note));
+        }
+        if (_embedded && _generated is null)
+        {
+            var open = Action("Abrir em outro app", primary: true);
+            open.Margin = new Thickness(0, 10, 0, 0);
+            open.Click += async (_, _) => await OpenExternallyAsync();
+            box.Children.Add(open);
+        }
+        _body.Content = new ScrollViewer { Content = box };
+        Shown = "info";
+    }
+
 
     private void UpdatePdfNavigation()
     {
@@ -859,14 +1063,52 @@ public sealed class FilePreviewPanel : Grid
         finally { _ocr.IsEnabled = true; }
     }
 
+    /// <summary>CST-243: the source shown now (path, revision, format, where), or null; read by the Assistente's context.</summary>
+    public ReaderSession? CurrentReading => IsVisible ? _readingSession : null;
+
     private void RememberReadingPosition(int part, double? fontSize = null)
     {
         if (_readingSession is not { } session || ReadingState is null) return;
-        var location = new ReaderLocation(part, _epubView?.CurrentOffset ?? 0, _epubView?.CurrentScroll ?? 0);
-        var preferences = session.Preferences with { FontSize = fontSize ?? session.Preferences.FontSize, LineHeight = _epubView?.LineHeightPreference ?? session.Preferences.LineHeight, Zoom = _pdfView?.Zoom ?? session.Preferences.Zoom, Theme=_epubView?.ThemePreference??session.Preferences.Theme, Margin=_epubView?.MarginPreference??session.Preferences.Margin };
+        // the total is what progress is counted in: PDF pages, spine items; media has none here
+        int? total = _epubView?.PartCount ?? _pptxView?.SlideCount ?? (_pdfView is { PageCount: > 0 } pages ? pages.PageCount : _pdfTextView is { PageCount: > 0 } text ? text.PageCount : null);
+        var location = new ReaderLocation(part, _epubView?.CurrentOffset ?? 0, _epubView?.CurrentScroll ?? 0, total is { } t && part <= t ? t : null);
+        double zoom = _pdfView is { } pdf && _pdfZoomReady ? pdf.Zoom : session.Preferences.Zoom;
+        var preferences = session.Preferences with { FontSize = fontSize ?? session.Preferences.FontSize, LineHeight = _epubView?.LineHeightPreference ?? session.Preferences.LineHeight, Zoom = zoom, Theme=_epubView?.ThemePreference??session.Preferences.Theme, Margin=_epubView?.MarginPreference??session.Preferences.Margin };
         if (session.Location == location && session.Preferences == preferences) return;
+        // a look changed here becomes the start of the next new source in the same kind of reader
+        if (_epubView is not null && preferences with { Zoom = 0 } != session.Preferences with { Zoom = 0 }) ReadingState.RememberDefault(ReaderKinds.Book, preferences with { Zoom = 1 });
+        if (_pdfView is not null && preferences.Zoom != session.Preferences.Zoom) ReadingState.RememberDefault(ReaderKinds.Pdf, new ReaderPreferences(Zoom: preferences.Zoom));
         _readingSession = session with { Location = location, Preferences = preferences, Updated = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() };
         ReadingState.Remember(_readingSession);
+    }
+
+    private bool _pdfZoomReady;
+    private TextReaderLook? _textLook;
+    private Action<TextReaderLook>? _applyTextLook;
+    /// <summary>"Aa" of a text reader: the look last chosen for text readers, or the view's own one.</summary>
+    private TextReaderLook TextLook(double fontSize, double lineHeight) => TextReaderLook.From(ReadingState?.DefaultFor(ReaderKinds.Text), fontSize, lineHeight);
+    private void ShowTextLook(TextReaderLook look, Action<TextReaderLook> apply)
+    {
+        _textLook = look; _applyTextLook = apply;
+        apply(look);
+        _textLookButton.IsVisible = true;
+    }
+    /// <summary>Changes the text readers' look: here at once, and for every text file opened next.</summary>
+    public void SetTextLook(TextReaderLook look)
+    {
+        if (_applyTextLook is not { } apply) return;
+        _textLook = look;
+        apply(look);
+        ReadingState?.RememberDefault(ReaderKinds.Text, look.ToPreferences());
+    }
+    /// <summary>The text reader's current look, or null when no text reader is shown.</summary>
+    public TextReaderLook? CurrentTextLook => _textLook;
+    private void HideTextLook() { _textLook = null; _applyTextLook = null; _textLookButton.IsVisible = false; }
+    private void OpenTextLookMenu(Control anchor)
+    {
+        if (_textLook is not { } look) return;
+        var items = look.Choices().Select(choice => { var item = new MenuItem { Header = choice.Label }; item.Click += (_, _) => SetTextLook(choice.Next); return item; }).ToArray();
+        new ContextMenu { ItemsSource = items }.Open(anchor);
     }
 
     private void CaptureReadingPosition()
@@ -875,6 +1117,8 @@ public sealed class FilePreviewPanel : Grid
         else if (_pdfView is { } pdf) RememberReadingPosition(pdf.CurrentPage);
         else if (_pdfTextView is { } text) RememberReadingPosition(text.CurrentPage);
         else if(_mediaView is { } media)RememberReadingPosition(media.CurrentSecond+1);
+        else if (_comicView is { } comic) RememberReadingPosition(comic.CurrentPage + 1);
+        else if (_pptxView is { } slides) RememberReadingPosition(slides.CurrentSlide + 1);
     }
 
     /// <summary>The height of a content viewer: a native view needs one, and it fills what the card leaves.</summary>
@@ -895,44 +1139,19 @@ public sealed class FilePreviewPanel : Grid
         chip.BorderBrush = UrbeTheme.Brush(on ? UrbeTheme.Accent : UrbeTheme.Line2);
     }
 
-    private void ShowText(string text, string shown)
+    /// <summary>The plain text reader's built-in look.</summary>
+    public const double TextFontSize = 13, TextLineHeight = 19.0 / 13;
+
+    private void ShowText(string text, string shown, IReadOnlyList<string>? notices = null)
     {
-        var parts = new StackPanel();
-        SelectableTextBlock Part(string piece) => new()
-        {
-            Text = piece, FontFamily = new FontFamily("Consolas, Menlo, monospace"), FontSize = 13, LineHeight = 19,
-            Foreground = UrbeTheme.Brush(UrbeTheme.Text2), Padding = new Thickness(12, 0)
-        };
-        // a long text is laid out in parts, each one ending at a line, so opening it never freezes the screen
-        int shownUpTo = 0;
-        Button? more = null;
-        void Next()
-        {
-            int end = Math.Min(text.Length, shownUpTo + TextPart);
-            if (end < text.Length && text.LastIndexOf('\n', end - 1, end - shownUpTo) is var nl and >= 0 && nl + 1 > shownUpTo) end = nl + 1;
-            if (end < text.Length && char.IsHighSurrogate(text[end - 1])) end++;
-            parts.Children.Insert(more is null ? parts.Children.Count : parts.Children.Count - 1, Part(text[shownUpTo..end]));
-            shownUpTo = end;
-            var left = text.Length - shownUpTo;
-            if (left == 0) { if (more is not null) parts.Children.Remove(more); return; }
-            if (more is null)
-            {
-                more = new Button { Margin = new Thickness(12, 8), HorizontalAlignment = HorizontalAlignment.Left };
-                more.Click += (_, _) => Next();
-                parts.Children.Add(more);
-            }
-            more.Content = "Mostrar mais (" + VaultFileKinds.FormatBytes(Encoding.UTF8.GetByteCount(text.AsSpan(shownUpTo))) + " restantes)";
-        }
-        Next();
-        _body.Content = new ScrollViewer
-        {
-            Height = ViewerHeight(),
-            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
-            Content = new Border { Padding = new Thickness(0, 12), Child = parts },
-            Background = UrbeTheme.Brush(UrbeTheme.Bg)
-        };
+        // the text reader's look: the one last chosen for text readers, else 13 px monospace on 19 px lines
+        var reader = new TextReaderView(text, notices) { Height = ViewerHeight() };
+        var look = TextLook(TextFontSize, TextLineHeight);
+        reader.ApplyLook(look);
+        _body.Content = reader;
         Shown = shown;
         ShownText = text;
+        ShowTextLook(look, reader.ApplyLook);
     }
 
     /// <summary>The widest a picture is decoded for the preview (it zooms in from there): an 8000-pixel scan would take hundreds of MB.</summary>
@@ -943,14 +1162,10 @@ public sealed class FilePreviewPanel : Grid
         try
         {
             // a very large picture (a panorama, a scan) is decoded at a size the screen can still zoom into, never refused
-            Bitmap Decode()
-            {
-                using var input = new MemoryStream(bytes, writable: false);
-                return ImageHeader.Width(bytes) is > MaxPictureWidth ? Bitmap.DecodeToWidth(input, MaxPictureWidth) : new Bitmap(input);
-            }
-            return new Ui.ZoomImageView(Decode);
+            return new Ui.ZoomImageView(() => ComicReaderView.DecodePicture(bytes, MaxPictureWidth, ComicReaderView.MaxPagePixels));
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or NotSupportedException or IOException) { return null; }
+        // a picture that lies about itself (a renamed file, a broken header) is never a crash
+        catch (Exception ex) when (ex is not OutOfMemoryException) { return null; }
     }
 
     /// <summary>The file as text: UTF-8 (with or without BOM); null when it has NUL bytes or is not valid UTF-8.</summary>
