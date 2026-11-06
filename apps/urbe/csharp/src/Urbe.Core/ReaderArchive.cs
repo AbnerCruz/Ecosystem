@@ -36,10 +36,12 @@ public sealed class ReaderArchive : IDisposable
     {
         if (!_entries.TryGetValue(path, out var entry)) throw new InvalidDataException("Recurso ausente no pacote: " + path);
         using var stream = entry.Open();
-        using var output = new MemoryStream(checked((int)entry.Length));
-        stream.CopyTo(output);
-        if (output.Length != entry.Length) throw new InvalidDataException("Recurso incompleto no pacote.");
-        return output.ToArray();
+        // never trust the declared size: read exactly it, and a member that inflates past it is refused
+        var output = new byte[checked((int)entry.Length)];
+        try { stream.ReadExactly(output); }
+        catch (EndOfStreamException) { throw new InvalidDataException("Recurso incompleto no pacote."); }
+        if (stream.ReadByte() != -1) throw new InvalidDataException("O pacote declara um tamanho menor do que o conteúdo descompactado.");
+        return output;
     }
     public string Text(string path) => new UTF8Encoding(false, true).GetString(Bytes(path)).TrimStart('\ufeff');
     public XDocument Xml(string path)

@@ -222,6 +222,11 @@ public sealed class AiAgentRun
     public int? MaxTokens { get; init; }
     public double? Temperature { get; init; }
     public bool IsSubagent { get; init; }
+    /// <summary>
+    /// CST-216: the run's journal on the device (steps, calls, decisions, effects). With it, an action that changed
+    /// something in an earlier execution of the same run (before the app was ended) is never repeated.
+    /// </summary>
+    public AssistantRunJournal? Journal { get; init; }
     public DateTime? Now { get; init; }
     public Func<string, string>? Uid { get; init; }
 }
@@ -650,6 +655,7 @@ public static class AssistantAgent
         public IAssistantForms? Forms => inner.Forms;
         public IAssistantAttachmentExtractor? Attachments => inner.Attachments;
         public IAssistantDocumentFiles? DocumentFiles => inner.DocumentFiles;
+        public Task<string?> ReadDataAsync(string path) => inner.ReadDataAsync(path);
         public IAssistantDocumentVision? DocumentVision => inner.DocumentVision;
         // a member left out here silently disables its tools in the app (list_graphs/read_graph were): a test checks them all
         public IAssistantGraphs? Graphs => inner.Graphs;
@@ -755,6 +761,7 @@ public static class AssistantAgent
                     }, system, schemas, source, result.Efficiency, o.CountInputTokens)
                     : new AiRequest(o.Model, Prepare(SettlePast(source), budget, false), system, schemas,
                         o.MaxTokens is null or 0 ? 8192 : o.MaxTokens, o.Temperature);
+                o.Journal?.Request(result.Steps);
                 res = await TimedStream(o.Provider, req, e =>
                 {
                     switch (e.Type)
@@ -798,6 +805,7 @@ public static class AssistantAgent
             live.Meta.Usage = res.Usage;
             if (res.Reasoning.Length > 0) live.Meta.Reasoning = res.Reasoning;
             result.Usage = AddUsage(result.Usage, res.Usage);
+            o.Journal?.Response(result.Steps, live, res.Usage);
             emit(new AiAgentEvent("final", live, Usage: result.Usage));
             if (live.Content.Count == 0) { messages.RemoveAt(messages.Count - 1); emit(new AiAgentEvent("removed", live)); }
             var calls = live.Content.Where(b => b.Type == "tool_use").ToList();
@@ -967,6 +975,10 @@ public static class AssistantAgent
                     if (insertAt < 0) answer.Content.Add(block);
                     else answer.Content.Insert(insertAt, block);
                     emit(new AiAgentEvent("tool", Call: call, Result: block));
+                    if (o.Journal is { } journal)
+                        journal.Result(call.Id, call.Name, byName.TryGetValue(call.Name, out var known) ? known.Access : "read", AssistantRunJournal.InputHash(call.Input),
+                            block.Content, block.IsError, block.Status, output.IsError ? null : output.Changes,
+                            output.Seen?.Select(s => (s.Path, AssistantRunJournal.Sha(host.Documents.Get(s.Path)?.Content))));
                     if (output.Changes is not null) result.Changes.AddRange(output.Changes);
                     foreach (var r in output.Reads ?? [])
                     {
@@ -983,6 +995,7 @@ public static class AssistantAgent
         metrics.Repeats = repeats;
         metrics.Verified = checkedFiles.Count;
         metrics.Completed = result.Stopped == "end" && result.Error is null;
+        o.Journal?.Finish(result.Stopped, result.Error);
         return result;
 
         async Task<AiResult> TimedStream(AiProviderConfig provider, AiRequest request, Action<AiStreamEvent> on, CancellationToken token)
@@ -991,6 +1004,8 @@ public static class AssistantAgent
             try { return await o.Stream(provider, request, on, token); }
             finally { lock (gate) { metrics.ProviderMs += clock.ElapsedMilliseconds - start; metrics.ModelCalls++; } }
         }
+
+        static bool Effectful(AiTool tool) => !Read.Contains(tool.Access) || tool.Name is "consult_agent" or "delegate_to_agent";
 
         bool ParallelOk(AiChatBlock call) => byName.TryGetValue(call.Name, out var t) && t != Delegate && t.Access == "read";
 
@@ -1079,6 +1094,12 @@ public static class AssistantAgent
             var errs = AssistantTools.Validate(tool, call.Input);
             if (errs.Count > 0) return new Out("Argumentos inválidos para " + tool.Name + ": " + string.Join("; ", errs) + ".", true);
             var input = (JsonObject)call.Input!;
+            // CST-216: what an earlier execution of this run already did (before the app was ended) is not done again
+            if (o.Journal is { } journal && Effectful(tool) &&
+                journal.EarlierEffect(tool.Name, AssistantRunJournal.InputHash(call.Input), host.Documents) is { } earlier)
+                return earlier.State == AiRunEffect.Done
+                    ? new Out("Já feita antes de o app ser encerrado (" + Slice(earlier.Detail, 400) + "). Não foi repetida.", Status: "reused")
+                    : new Out("Precisa do usuário: esta mesma ação foi interrompida quando o app foi encerrado e o resultado não pôde ser verificado (" + earlier.Detail + "). Nada foi repetido; pergunte ao usuário antes de tentar de novo.", true, "needs_you");
             emit(new AiAgentEvent("tool_status", Call: call, Status: "running"));
             if (tool == Delegate) return await DelegateAsync(call, input);
             AiPreview? preview = null;
@@ -1157,8 +1178,12 @@ public static class AssistantAgent
             {
                 emit(new AiAgentEvent("tool_status", Call: call, Status: "waiting"));
                 long asked = clock.ElapsedMilliseconds;
-                var ans = o.Approve is not null ? await o.Approve(new AiApprovalRequest(call, tool, tool.Label(input), preview, tool.Access), cancel) : AiApproval.Approve;
+                // CST-219: with nobody to ask, an action that needs approval is not done (fail closed, never self-approved)
+                if (o.Approve is null)
+                    return new Out("Esta ação precisa da aprovação do usuário e esta execução não tem como pedi-la: nada foi feito. Mostre a sugestão em texto.", true, "rejected");
+                var ans = await o.Approve(new AiApprovalRequest(call, tool, tool.Label(input), preview, tool.Access), cancel);
                 lock (gate) metrics.ApprovalMs += clock.ElapsedMilliseconds - asked;
+                o.Journal?.Approval(call.Id, cancel.IsCancellationRequested ? "cancelled" : ans.Kind);
                 if (cancel.IsCancellationRequested) return new Out("Interrompido pelo usuário.", true, "aborted");
                 if (ans.Kind == "approve_all") runAllow = true;
                 else if (ans.Kind != "approve")
@@ -1177,6 +1202,7 @@ public static class AssistantAgent
                         result.Efficiency.NoOpWrites++;
                         return new Out("O texto aprovado já é o atual; nenhuma gravação foi necessária.", Status: "noop");
                     }
+                    Intent(call, tool, input, authored.Path, text);
                     return await CommitAsync(authored, text, text != authored.After);
                 }
                 if (o.OptimizeToolUse && noteWrite && ans.EditedText is { } unchanged && unchanged == preview?.Before)
@@ -1189,6 +1215,7 @@ public static class AssistantAgent
                     return new Out("A edição proposta remove ou altera uma marca de autoria protegida; nada foi gravado.", true, "protected");
                 if (ans.EditedText is { } edited && AssistantTools.EditedRun(tool, input, preview, edited) is { } own)
                 {
+                    Intent(call, tool, input, preview?.Path, edited);
                     try
                     {
                         var r0 = await own.Tool.Run(own.Input, host);
@@ -1198,7 +1225,12 @@ public static class AssistantAgent
                     catch (Exception e) { return new Out("Falha na ferramenta: " + e.Message, true); }
                 }
             }
-            if (authored is not null) return await CommitAsync(authored, authored.After, false);
+            if (authored is not null)
+            {
+                Intent(call, tool, input, authored.Path, authored.After);
+                return await CommitAsync(authored, authored.After, false);
+            }
+            Intent(call, tool, input, noteWrite || tool.Name == "create_note" ? preview?.Path : null, noteWrite || tool.Name == "create_note" ? preview?.After : null);
             try
             {
                 var r = ReferenceEquals(tool, AssistantAdaptivePlanTools.Update)
@@ -1208,6 +1240,53 @@ public static class AssistantAgent
             }
             catch (AiToolException e) { return new Out(e.Message, true); }
             catch (Exception e) { return new Out("Falha na ferramenta: " + e.Message, true); }
+        }
+
+        // CST-216: an action that changes something is written to the journal right before it starts, with the note's
+        // revision now and the one it will have, so a restart can tell done from not done from uncertain
+        void Intent(AiChatBlock call, AiTool tool, JsonObject input, string? path, string? afterText)
+        {
+            if (o.Journal is not { } journal || !Effectful(tool)) return;
+            string? target = null, before, after;
+            UrbeDocument? Doc(string? reference)
+            {
+                if (string.IsNullOrWhiteSpace(reference)) return null;
+                try { return AssistantTools.ResolveDoc(host, reference, must: false); }
+                catch (AiToolException) { return null; }
+            }
+            var asked = input["path"] is JsonValue v && v.TryGetValue<string>(out var text) ? text : null;
+            switch (tool.Name)
+            {
+                case "rename_note":
+                {
+                    var doc = Doc(asked);
+                    path = doc?.Path ?? asked;
+                    try { target = AssistantTools.ValidPath(LegacyCustomize.JsToString(input["new_path"])); } catch (AiToolException) { }
+                    before = AssistantRunJournal.Sha(doc?.Content);
+                    after = input["update_links"] is JsonValue links && links.TryGetValue<bool>(out var update) && update ? null : before;
+                    break;
+                }
+                case "delete_note":
+                {
+                    var doc = Doc(asked);
+                    path = doc?.Path ?? asked;
+                    before = AssistantRunJournal.Sha(doc?.Content);
+                    after = AssistantRunJournal.Absent;
+                    break;
+                }
+                case "generate_image":
+                    path = asked; before = null; after = null;
+                    break;
+                default:
+                {
+                    if (path is null && asked is not null) path = Doc(asked)?.Path ?? asked;
+                    if (path is not null && path.Contains(" → ", StringComparison.Ordinal)) path = null;
+                    before = path is null ? null : AssistantRunJournal.Sha(host.Documents.Get(path)?.Content);
+                    after = path is null ? null : AssistantRunJournal.Sha(afterText);
+                    break;
+                }
+            }
+            journal.Intent(call.Id, tool.Name, AssistantRunJournal.InputHash(call.Input), path, before, target, after);
         }
 
         async Task<Out> CommitAsync(AiAuthoredWrite plan, string text, bool editedByPerson)

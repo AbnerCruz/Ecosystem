@@ -48,12 +48,51 @@ public sealed class PinnedPanel : Border
         if (SourcePath is null) ShowChooser();
     }
 
+    /// <summary>CST-241: the sources read most recently, opened where they were left.</summary>
+    public Func<IReadOnlyList<ContinueReadingItem>>? ContinueReading { get; set; }
+    private readonly StackPanel _continue = new() { Spacing = 2, Margin = new Thickness(0, 0, 0, 6) };
+    /// <summary>The "Continuar lendo" rows shown (for tests and automation).</summary>
+    public IReadOnlyList<Button> ContinueRows => _continue.Children.OfType<Button>().ToArray();
+
     private void ShowChooser()
     {
         _choices.SelectedIndex = -1;
         _from.Text = "Fonte: um site, um vídeo ou um arquivo";
         _content.Content = _chooser;
+        ShowContinueReading();
         FilterFiles();
+    }
+
+    private void ShowContinueReading()
+    {
+        _continue.Children.Clear();
+        var items = ContinueReading?.Invoke() ?? [];
+        _continue.IsVisible = items.Count > 0;
+        if (items.Count == 0) return;
+        _continue.Children.Add(new TextBlock { Text = "Continuar lendo", FontSize = 12, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), Margin = new Thickness(2, 0, 0, 2) });
+        foreach (var item in items)
+        {
+            string name = System.IO.Path.GetFileName(item.Path);
+            var text = new StackPanel { Spacing = 3 };
+            text.Children.Add(new TextBlock { Text = name, FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text), TextTrimming = TextTrimming.CharacterEllipsis });
+            text.Children.Add(new TextBlock { Text = item.Progress.Position + " · " + item.LastRead, FontSize = 12, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextTrimming = TextTrimming.CharacterEllipsis });
+            // the bar only when the format has a known total; it is reading progress, not a checklist
+            if (item.Progress.Fraction is { } fraction)
+            {
+                var bar = new ProgressBar { Minimum = 0, Maximum = 100, Value = fraction * 100, Height = 4, MinHeight = 4 };
+                Avalonia.Automation.AutomationProperties.SetName(bar, "Progresso de leitura: " + item.Progress.Position);
+                text.Children.Add(bar);
+            }
+            var row = new Button
+            {
+                Content = text, MinHeight = 48, Padding = new Thickness(8, 6), CornerRadius = new CornerRadius(8),
+                HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                Background = UrbeTheme.Brush(UrbeTheme.Surface2), BorderThickness = new Thickness(0)
+            };
+            Avalonia.Automation.AutomationProperties.SetName(row, "Continuar lendo " + name + ": " + item.Progress.Position + ", " + item.LastRead);
+            row.Click += async (_, _) => await OpenFileAsync(item.Path);
+            _continue.Children.Add(row);
+        }
     }
 
     private void FilterFiles() => _choices.ItemsSource = (Files?.Invoke() ?? [])
@@ -155,6 +194,8 @@ public sealed class PinnedPanel : Border
         sources.Children[1].Margin = new Thickness(3, 0, 0, 0);
         DockPanel.SetDock(sources, Dock.Top);
         _chooser.Children.Insert(0, sources);
+        DockPanel.SetDock(_continue, Dock.Top);
+        _chooser.Children.Insert(1, _continue);
         Web.Closed += () => { if (IsVisible) ShowChooser(); };
         _choices.SelectionChanged += async (_, _) =>
         {

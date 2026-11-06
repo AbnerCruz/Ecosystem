@@ -161,6 +161,7 @@ public sealed partial class AssistantPanel
         head.Children.Add(lbl);
         var card = new StackPanel { Spacing = 6, Children = { head } };
         if (_progress.TryGetValue(b.Id, out var prog) && r is null) card.Children.Add(Label(prog, 12, UrbeTheme.Text3));
+        if (NestedView(b.Id) is { } nested) card.Children.Add(nested);
         // Image output is shown in the conversation itself, not just as an expandable tool log.
         // The file remains authoritative in the vault. Older beta.20 results are supported too.
         if (b.Name == "generate_image" && r is { IsError: false } &&
@@ -511,7 +512,7 @@ public sealed partial class AssistantPanel
             };
             if (!r.Reverted) head.Children.Add(LinkButton("Desfazer", () => _ = UndoLastAsync()));
             var list = new WrapPanel();
-            foreach (var f in files.Take(8)) list.Children.Add(LinkButton(f, () => OpenRef(f)));
+            foreach (var f in files) list.Children.Add(LinkButton(f, () => OpenRef(f)));
             tail.Children.Add(Card(new StackPanel { Spacing = 4, Children = { head, list } }));
         }
         if (_conv.WebSources.Count > 0)
@@ -934,6 +935,8 @@ public sealed partial class AssistantPanel
         body.Children.Add(Section("Modelo padrão", Wrap(ModelId(), 13, UrbeTheme.Text),
             Wrap(ModelPriceFor(null), 12, UrbeTheme.Text2), TextButton("Selecionar modelo e preço", () => _ = PickModelAsync())));
         body.Children.Add(Section("Geração de imagens", Hint("Escolha o modelo de imagem nas configurações de cada agente. Sem seleção, nenhuma imagem é gerada.")));
+        body.Children.Add(Section("O que cada modelo faz", Hint("Texto, ferramentas, imagens, PDF, OCR, contexto, preço, cache e onde cada modelo roda; vídeo e voz."),
+            TextButton("Ver capacidades dos modelos", ShowModelCapabilities)));
 
         }
 
@@ -1683,7 +1686,7 @@ public sealed partial class AssistantPanel
             list.Children.Clear();
             var q = (search.Text ?? "").Trim().ToLowerInvariant();
             var hits = models.Where(m => q.Length == 0 || (m.Id + " " + m.Name).Contains(q, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(m => m.Tools == true ? 0 : 1).ThenBy(m => Rank(m.Id)).ThenBy(m => m.Name, StringComparer.CurrentCulture).Take(200).ToList();
+                .OrderBy(m => m.Tools == true ? 0 : 1).ThenBy(m => Rank(m.Id)).ThenBy(m => m.Name, StringComparer.CurrentCulture).ToList();
             if (hits.Count == 0) { list.Children.Add(Hint("Nenhum modelo.")); return; }
             foreach (var m in hits)
             {

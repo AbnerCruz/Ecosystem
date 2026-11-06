@@ -725,3 +725,53 @@ public sealed partial class HeadlessUiTests
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
 }
+
+public sealed partial class HeadlessUiTests
+{
+    /// <summary>CST-197: a tag at the root shows a few per project and leads to all of them, filter kept; nothing is cut off.</summary>
+    [Fact]
+    public async Task Workspace_ATagAtTheRootLeadsToEveryMatchNoneCutOff() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-area-alltags-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(Path.Combine(vault, "Projeto"));
+            for (int i = 1; i <= 75; i++) File.WriteAllText(Path.Combine(vault, "Projeto", $"Nota {i:00}.md"), $"# Nota {i:00}\n\nTexto #estudo\n");
+            File.WriteAllText(Path.Combine(vault, "Projeto", "Fora.md"), "# Fora\n\nsem a tag\n");
+            for (int i = 1; i <= 14; i++) File.WriteAllText(Path.Combine(vault, $"Solta {i:00}.md"), $"# Solta {i:00}\n\n#estudo\n");
+            var previous = UrbeApp.LocalStatePath;
+            UrbeApp.LocalStatePath = Path.Combine(dir, "app", "notes-state.json");
+            try
+            {
+                var view = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json")));
+                var window = new Window { Width = 412, Height = 860, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                var w = view.Workspace;
+                int Cards(string prefix) => w.GetLogicalDescendants().OfType<Button>().Count(b => AutomationProperties.GetName(b)?.StartsWith(prefix, StringComparison.Ordinal) == true);
+                w.TagFilter = "estudo";
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal(12, Cards("Nota "));
+                ClickButtonWithText(w, "Ver todos os 75 em Projeto");
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal("Projeto", w.Folder);
+                Assert.Equal("estudo", w.TagFilter);
+                Assert.Equal(WorkspaceView.Page, Cards("Nota "));
+                Assert.Equal(0, Cards("Fora"));
+                ClickButtonWithText(w, "Mostrar mais (" + (75 - WorkspaceView.Page) + ")");
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal(75, Cards("Nota "));
+
+                w.Open("");
+                w.TagFilter = "estudo";
+                Dispatcher.UIThread.RunJobs();
+                ClickButtonWithText(w, "Ver todos os 14 soltos");
+                Dispatcher.UIThread.RunJobs();
+                Assert.Equal(14, Cards("Solta "));
+                window.Close();
+                return true;
+            }
+            finally { UrbeApp.LocalStatePath = previous; try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+}

@@ -218,6 +218,56 @@ public sealed partial class HeadlessUiTests
     }, CancellationToken.None));
 
     [Fact]
+    public async Task FloatingButtons_NeverCoverTheEditorsBottomControlsAtAnySizeOrOrientation() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+    {
+        // CST-143: the radial menu (phone) and the Assistente launcher (wide window, a phone on its side) share the
+        // bottom right corner with the Leitura/Edição switch and the editor's bar
+        var view = new MainView();
+        var window = new Window { Width = 360, Height = 760, Content = view };
+        window.Show();
+        try
+        {
+            await view.LoadAsync(TutorialNotes.Load());
+            view.OpenNoteByPath("Tutorial/Comece aqui.md");
+            await Settle(window, view);
+            var chip = view.Editor.GetLogicalDescendants().OfType<Button>().Single(b => Name(b).StartsWith("Modo edição:", StringComparison.Ordinal));
+            Rect At(Control c) => new(c.TranslatePoint(default, window)!.Value, c.Bounds.Size);
+            var sizes = new (double W, double H)[] { (320, 640), (360, 760), (412, 900), (640, 360), (760, 412), (900, 412), (1100, 800), (1280, 720), (1920, 1080) };
+            foreach (var mode in new[] { EditorMode.Visual, EditorMode.Fonte })
+                foreach (var (w, h) in sizes)
+                {
+                    window.Width = w;
+                    window.Height = h;
+                    view.Editor.SetMode(mode);
+                    view.Editor.Focus();   // reading, not writing: the floating menu is on the screen
+                    await Settle(window, view);
+                    var floating = view.GetVisualDescendants().OfType<Button>()
+                        .Where(b => b.IsEffectivelyVisible && !view.Editor.IsVisualAncestorOf(b)
+                            && (ReferenceEquals(b, view.Navigation.Trigger) || Name(b) is "Abrir Assistente" or "Assistente: aguardando sua resposta"))
+                        .ToList();
+                    // only a phone where someone is writing hides the menu (it comes back when the writing ends)
+                    if (floating.Count == 0) { Assert.True(view.Editor.Writing && w < 760, $"{mode} {w}x{h}: sem botão flutuante"); continue; }
+                    // every control of the editor's bottom edge: the switch, the footer and the bar along the bottom
+                    var bottom = view.Editor.GetVisualDescendants().OfType<Button>()
+                        .Where(b => b.IsEffectivelyVisible && b.Bounds.Width > 0 && At(b).Bottom > h - view.Editor.BottomChrome - 8)
+                        .ToList();
+                    Assert.Contains(chip, bottom);
+                    foreach (var f in floating)
+                    {
+                        var fr = At(f);
+                        Assert.True(fr.Right <= w + .5 && fr.Bottom <= h + .5, $"{w}x{h}: {Name(f)} fora da janela {fr}");
+                        foreach (var b in bottom)
+                            Assert.False(fr.Intersects(At(b)), $"CST-143 {mode} {w}x{h}: {Name(f)} {fr} cobre {Name(b)} {At(b)}");
+                    }
+                }
+            Snapshot(window, "native-floating-buttons-1920.png");
+            return true;
+        }
+        finally { window.Close(); }
+    }, CancellationToken.None));
+
+    [Fact]
     public async Task RadialNav_WorksOverTheEditorAndStaysOffWideWindows() => Assert.True(await Session.Dispatch<bool>(async () =>
     {
         var view = new MainView();

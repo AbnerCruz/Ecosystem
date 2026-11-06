@@ -20,7 +20,7 @@ public sealed class PublicationProjectTests
         Assert.DoesNotContain("BRIEF PRIVADO", html);
         var slides = PublicationHtml.Export(book with { Design = book.Design with { Layout = "slides" } }, catalog).Html;
         Assert.Contains("size:320mm 180mm", slides);
-        Assert.Contains("scroll-snap-align", slides);
+        Assert.Contains("aria-roledescription=\"slide\"", slides);
         Assert.Contains("tabindex=\"0\"", slides);
         Assert.Equal("# Capítulo\n\nTexto", store.Get(note.Id)!.Content);
     }

@@ -32,6 +32,7 @@ public sealed partial class MainView
         var studio = new PublicationStudioView();
         studio.AddSourceRequested += () => _ = AddPublicationSourceAsync();
         studio.RenameRequested += () => _ = RenamePublicationAsync();
+        studio.ReviewRequested += () => _ = ReviewPublicationAsync();
         studio.ConfigureRequested += () => _ = ConfigurePublicationAsync();
         studio.EditSourceRequested += EditPublicationSource;
         studio.EditReferenceRequested += reference =>
@@ -42,8 +43,10 @@ public sealed partial class MainView
         };
         studio.ExportRequested += () => _ = ExportPublicationHtmlAsync();
         studio.EpubRequested += () => _ = ExportPublicationEpubAsync();
+        studio.OfficeRequested += format => _ = ExportPublicationOfficeAsync(format);
         studio.PrintRequested += () => _ = PrintPublicationAsync();
         studio.RetrySaveRequested += () => _ = SavePublicationAsync();
+        WirePublicationVideo(studio);
         studio.Closed += () =>
         {
             ReleaseSavedPublicationDraft(_publicationDraft);
@@ -103,10 +106,16 @@ public sealed partial class MainView
         PublicationsStudio.Open(path, draft.Project, _publicationsCatalog!);
         PublicationsStudio.SetSaveState(draft.Dirty, draft.Error);
         UpdateFloatingNav();
+        await LoadPublicationVideoFilesAsync();
     }
 
-    /// <summary>First-class creation from the current note, or an empty project chosen in Settings.</summary>
-    public async Task CreatePublicationAsync(string? sourcePath = null, string? sourceFolder = null)
+    /// <summary>
+    /// First-class creation from the current note, a folder, chosen notes (a selection, search results), a tag or one
+    /// section of a note (<paramref name="fragment"/>: a heading). Every source is a reference to a real note, never a
+    /// copy (CST-135).
+    /// </summary>
+    public async Task CreatePublicationAsync(string? sourcePath = null, string? sourceFolder = null, IReadOnlyList<string>? sourcePaths = null,
+        string? tag = null, string? fragment = null)
     {
         if (!VaultWritable || _store is null)
         {
@@ -118,7 +127,7 @@ public sealed partial class MainView
         var originalStore = _store;
         var originalVault = _vault;
         var folder = sourceFolder?.Trim('/');
-        var suggested = source?.Title ?? (folder is { Length: > 0 } ? System.IO.Path.GetFileName(folder) : null);
+        var suggested = fragment ?? source?.Title ?? (folder is { Length: > 0 } ? System.IO.Path.GetFileName(folder) : null) ?? (tag is { Length: > 0 } ? "#" + tag.TrimStart('#') : null);
         var title = await Dialogs.PromptAsync(new PromptOptions("Nova publicação", Label: "Título", Placeholder: suggested ?? "Ex.: Meu livro", Confirm: "Criar"));
         if (string.IsNullOrWhiteSpace(title)) return;
         if (!ReferenceEquals(_store, originalStore) || !ReferenceEquals(_vault, originalVault))
@@ -126,13 +135,29 @@ public sealed partial class MainView
             ShowLifeNotice("O vault mudou. Abra a criação novamente no vault desejado.", Ui.ToastKind.Warning);
             return;
         }
-        var project = PublicationProject.Create(title.Trim(), source?.Id);
+        var project = fragment is { Length: > 0 } && source is not null
+            ? PublicationProject.Create(title.Trim()).AddSource(new PublicationSourceReference(source.Id, fragment))
+            : PublicationProject.Create(title.Trim(), source?.Id);
+        foreach (var p in sourcePaths ?? [])
+            if (_store.Get(p) is { } chosen && ArtifactModel.IsNote(chosen.Path)) project = project.AddSource(chosen.Id);
+        if (tag is { Length: > 0 })
+        {
+            var wanted = tag.TrimStart('#');
+            foreach (var note in _store.List().Where(d => ArtifactModel.IsNote(d.Path) && d.Tags.Any(t => string.Equals(t.TrimStart('#'), wanted, StringComparison.OrdinalIgnoreCase)))
+                .OrderBy(d => d.Path, StringComparer.OrdinalIgnoreCase))
+                project = project.AddSource(note.Id);
+        }
         if (folder is not null)
         {
             var prefix = folder.Length == 0 ? "" : folder + "/";
             foreach (var note in _store.List().Where(d => ArtifactModel.IsNote(d.Path) && d.Path.StartsWith(prefix, StringComparison.Ordinal))
                 .OrderBy(d => d.Path, StringComparer.OrdinalIgnoreCase))
                 project = project.AddSource(note.Id);
+        }
+        if (project.Sections.Count == 0 && (sourcePaths is { Count: > 0 } || tag is { Length: > 0 }))
+        {
+            await Dialogs.AlertAsync("Publicações", tag is { Length: > 0 } ? "Nenhuma nota tem a tag #" + tag.TrimStart('#') + "." : "Nenhuma das escolhidas é uma nota.");
+            return;
         }
         var path = "Publicações/" + ArtifactModel.SafeName(title.Trim()) + ".publication.json";
         if (_store.Get(path) is not null || _attachments.Contains(path))
@@ -151,6 +176,31 @@ public sealed partial class MainView
             return;
         }
         await OpenPublicationAsync(path);
+    }
+
+    /// <summary>CST-135: a publication of the notes with a tag (chosen from the vault's tags).</summary>
+    public async Task CreatePublicationFromTagAsync()
+    {
+        if (_store is null) return;
+        var tags = _store.List().Where(d => ArtifactModel.IsNote(d.Path)).SelectMany(d => d.Tags).Select(t => t.TrimStart('#'))
+            .GroupBy(t => t, StringComparer.OrdinalIgnoreCase).OrderByDescending(g => g.Count()).ThenBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(g => (Tag: g.First(), Count: g.Count())).ToList();
+        if (tags.Count == 0) { await Dialogs.AlertAsync("Publicações", "O vault não tem tags."); return; }
+        var choice = await Dialogs.ChooseAsync("Publicação de uma tag", tags.Select(t => new DialogItem("#" + t.Tag, Detail: t.Count + (t.Count == 1 ? " nota" : " notas"))).ToList());
+        if (choice is not { } k) return;
+        await CreatePublicationAsync(tag: tags[k].Tag);
+    }
+
+    /// <summary>CST-135: a publication of one section of a note (a heading and what is under it), still the note's text.</summary>
+    public async Task CreatePublicationFromSectionAsync(string notePath)
+    {
+        if (_store?.Get(notePath) is not { } note) return;
+        var headings = Urbe.Core.MarkdownEngine.SplitFrontmatter(note.Content).Body.Replace("\r", "").Split('\n')
+            .Where(l => System.Text.RegularExpressions.Regex.IsMatch(l, @"^#{1,6}\s+\S")).Select(l => l.TrimStart('#').Trim()).Distinct().ToList();
+        if (headings.Count == 0) { await Dialogs.AlertAsync("Publicações", "Esta nota não tem títulos para escolher um trecho."); return; }
+        var choice = await Dialogs.ChooseAsync("Publicação de um trecho", headings.Select(h => new DialogItem(h)).ToList(), "O trecho é o título escolhido e o que vem embaixo dele; continua sendo o texto da nota.");
+        if (choice is not { } k) return;
+        await CreatePublicationAsync(sourcePath: notePath, fragment: headings[k]);
     }
 
     /// <summary>The user chooses a project by title, not by raw JSON path.</summary>
@@ -234,13 +284,18 @@ public sealed partial class MainView
     {
         var draft = _publicationDraft;
         if (_publicationsStudio?.Project is not { } project) return;
-        var option = await Dialogs.ChooseAsync("Composição", [new DialogItem("Layout", Detail: "Artigo, livro ou apresentação"),
-            new DialogItem("Tema", Detail: "Papel, oceano ou tinta"), new DialogItem("Objetivo", Detail: project.Objective), new DialogItem("Público", Detail: project.Audience)]);
+        var option = await Dialogs.ChooseAsync("Composição", [new DialogItem("Layout", Detail: "Artigo, livro, apresentação, curso ou vídeo"),
+            new DialogItem("Tema", Detail: "Papel, oceano ou tinta"), new DialogItem("Objetivo", Detail: project.Objective), new DialogItem("Público", Detail: project.Audience),
+            .. project.Design.Layout == "video" && project.Video is { } v
+                ? new[] { new DialogItem("Formato do vídeo", Detail: v.Aspect + " · " + v.FrameSize.Width + "×" + v.FrameSize.Height + " · " + v.Fps + " qps" + (v.Subtitles ? " · legendas" : "")) }
+                : []]);
         PublicationProject? next = null;
         if (option == 0)
         {
-            var layout = await Dialogs.ChooseAsync("Layout", [new DialogItem("Artigo"), new DialogItem("Livro com sumário"), new DialogItem("Apresentação (uma nota por slide)")]);
-            if (layout is >= 0 and <= 2) next = project with { Design = project.Design with { Layout = new[] { "article", "book", "slides" }[layout.Value] } };
+            var layout = await Dialogs.ChooseAsync("Layout", [new DialogItem("Artigo"), new DialogItem("Livro com sumário"), new DialogItem("Apresentação (uma nota por slide)"),
+                new DialogItem("Curso", Detail: "Cada nota um módulo, cada ## uma aula, questionários e progresso"),
+                new DialogItem("Vídeo (uma nota por cena)", Detail: "O texto da nota é o roteiro e a legenda; o tempo fica na publicação")]);
+            if (layout is >= 0 and <= 4) next = project with { Design = project.Design with { Layout = new[] { "article", "book", "slides", "course", "video" }[layout.Value] } };
         }
         else if (option == 1)
         {
@@ -251,6 +306,19 @@ public sealed partial class MainView
         {
             var text = await Dialogs.PromptAsync(new PromptOptions(option == 2 ? "Objetivo da publicação" : "Público da publicação", Value: option == 2 ? project.Objective : project.Audience, Required: false, Confirm: "Salvar"));
             if (text is not null) next = option == 2 ? project with { Objective = text } : project with { Audience = text };
+        }
+        else if (option == 4 && project.Video is { } video)
+        {
+            var choice = await Dialogs.ChooseAsync("Formato do vídeo", [
+                new DialogItem("Horizontal 16:9"), new DialogItem("Vertical 9:16"), new DialogItem("Quadrado 1:1"),
+                new DialogItem("Resolução", Detail: video.Resolution + "p"), new DialogItem("Quadros por segundo", Detail: video.Fps.ToString(System.Globalization.CultureInfo.InvariantCulture)),
+                new DialogItem(video.Subtitles ? "Tirar as legendas do vídeo" : "Pôr as legendas no vídeo")]);
+            if (choice is >= 0 and <= 2) next = project with { Video = video with { Aspect = VideoComposition.Aspects[choice.Value] } };
+            else if (choice == 3 && await Dialogs.ChooseAsync("Resolução", [new DialogItem("480p"), new DialogItem("720p"), new DialogItem("1080p")]) is { } r)
+                next = project with { Video = video with { Resolution = new[] { 480, 720, 1080 }[r] } };
+            else if (choice == 4 && await Dialogs.ChooseAsync("Quadros por segundo", [new DialogItem("24"), new DialogItem("30"), new DialogItem("60")]) is { } f)
+                next = project with { Video = video with { Fps = new[] { 24, 30, 60 }[f] } };
+            else if (choice == 5) next = project with { Video = video with { Subtitles = !video.Subtitles } };
         }
         if (next is not null && ReferenceEquals(draft, _publicationDraft) && ReferenceEquals(_store, draft?.Store) &&
             _publicationsStudio.IsVisible && ReferenceEquals(project, _publicationsStudio.Project))
@@ -314,7 +382,8 @@ public sealed partial class MainView
         if (!ReferenceEquals(_publicationDraft, draft) || !ReferenceEquals(_store, draft.Store) || draft.Dirty) return null;
         var project = draft.Project;
         PublicationHtmlResult result;
-        try { result = PublicationHtml.Export(project, catalog); }
+        var data = await PublicationDataAsync(project, catalog);
+        try { result = PublicationHtml.Export(project, catalog, data); }
         catch (Exception ex) when (ex is InvalidDataException or NotSupportedException)
         {
             await Dialogs.AlertAsync("Exportação não disponível", ex.Message);
@@ -355,16 +424,101 @@ public sealed partial class MainView
         var project = draft.Project;
         try
         {
-            var bytes = await PublicationEpub.ExportAsync(project, catalog,
-                async path => vault is null ? null : (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes);
+            var data = await PublicationDataAsync(project, catalog);
+            var result = await PublicationEpub.ExportWithReportAsync(project, catalog,
+                async path => vault is null ? null : (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes, data: data);
             if (!ReferenceEquals(draft, _publicationDraft) || !ReferenceEquals(draft.Store, _store) || draft.Dirty) return;
             var name = ArtifactModel.SafeName(project.Title) + ".epub";
-            var saved = SavePageFile is { } save ? await save(name, bytes) : await SavePublicationFileAsync(name, bytes, "epub", "application/epub+zip");
-            if (saved == true) ShowLifeNotice("Livro EPUB salvo.");
+            LastEpubWarnings = result.Warnings;
+            var saved = SavePageFile is { } save ? await save(name, result.Bytes) : await SavePublicationFileAsync(name, result.Bytes, "epub", "application/epub+zip");
+            if (saved != true) return;
+            // CST-183: what keeps the book from being fully accessible is said, with how to fix it in the note
+            if (result.Warnings.Count > 0)
+                await Dialogs.AlertAsync("Livro EPUB salvo", "Acessibilidade: " + result.Warnings.Count + (result.Warnings.Count == 1 ? " imagem está" : " imagens estão") +
+                    " sem descrição para quem usa leitor de tela.\n\n" + string.Join("\n", result.Warnings.Take(8)) + (result.Warnings.Count > 8 ? "\n…\n\nTodas estão em ⋯ → Verificar publicação." : ""));
+            else ShowLifeNotice("Livro EPUB salvo.");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
         { await Dialogs.AlertAsync("Não foi possível exportar EPUB", ex.Message); }
     }
+
+    /// <summary>
+    /// CST-166: the publication as an editable office document (Word or OpenDocument), from the live notes. What the
+    /// format could not keep is told after saving, never silently flattened.
+    /// </summary>
+    public async Task ExportPublicationOfficeAsync(string format)
+    {
+        if (_publicationsCatalog is not { } catalog || _publicationDraft is not { } draft || !await SavePublicationAsync()) return;
+        var vault = _vault;
+        var project = draft.Project;
+        var (extension, mime, kind) = format switch
+        {
+            "odt" => ("odt", "application/vnd.oasis.opendocument.text", "Documento ODT"),
+            "pptx" => ("pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation", "Apresentação PowerPoint"),
+            "pdf" => ("pdf", "application/pdf", "PDF"),
+            _ => ("docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "Documento Word")
+        };
+        try
+        {
+            Func<string, Task<byte[]?>> asset = async path => vault is null ? null : (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes;
+            var data = await PublicationDataAsync(project, catalog);
+            var result = extension switch
+            {
+                "odt" => await PublicationOdt.ExportAsync(project, catalog, asset, rasterize: SvgRaster.ToPng, data: data),
+                "pptx" => await PublicationPptx.ExportAsync(project, catalog, asset, rasterize: SvgRaster.ToPng, data: data),
+                "pdf" => await PublicationPdf.ExportAsync(project, catalog, asset, data),
+                _ => await PublicationDocx.ExportAsync(project, catalog, asset, rasterize: SvgRaster.ToPng, data: data)
+            };
+            if (!ReferenceEquals(draft, _publicationDraft) || !ReferenceEquals(draft.Store, _store) || draft.Dirty) return;
+            var name = ArtifactModel.SafeName(project.Title) + "." + extension;
+            var saved = SavePageFile is { } save ? await save(name, result.Bytes) : await SavePublicationFileAsync(name, result.Bytes, extension, mime);
+            if (saved != true) return;
+            LastOfficeLimitations = result.Limitations;
+            if (result.Limitations.Count == 0) ShowLifeNotice(kind + (extension == "pptx" ? " salva." : " salvo."));
+            else await Dialogs.AlertAsync(kind + (extension == "pptx" ? " salva" : " salvo"),
+                "O arquivo é editável. O que o formato não guarda como no Urbe:\n\n• " + string.Join("\n• ", result.Limitations));
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
+        { await Dialogs.AlertAsync("Não foi possível exportar: " + kind, ex.Message); }
+    }
+
+    /// <summary>The issues of the last review (read by tests).</summary>
+    public IReadOnlyList<ReviewIssue> LastPublicationReview { get; private set; } = [];
+
+    /// <summary>
+    /// CST-179/180: "Verificar publicação" — the live notes read the way every output reads them; each issue names the
+    /// note and line, says how to fix it and opens there. Nothing is changed by the review.
+    /// </summary>
+    public async Task ReviewPublicationAsync()
+    {
+        if (_publicationsCatalog is not { } catalog || _publicationDraft is not { } draft || Dialogs.IsOpen) return;
+        var project = draft.Project;
+        var data = await PublicationDataAsync(project, catalog);
+        var files = new HashSet<string>(_attachments.Concat(_contents.Keys), StringComparer.Ordinal);
+        var notes = _contents.Keys.Select(p => new CityNote(p, "")).ToList();
+        bool NoteExists(string name) => files.Contains(name) || files.Contains(name + ".md") ||
+            notes.Any(n => string.Equals(System.IO.Path.GetFileNameWithoutExtension(n.Path), System.IO.Path.GetFileName(name), StringComparison.OrdinalIgnoreCase));
+        var issues = await Task.Run(() => PublicationReview.Run(project, catalog, files.Contains, NoteExists, data));
+        LastPublicationReview = issues;
+        if (!ReferenceEquals(draft, _publicationDraft)) return;
+        if (issues.Count == 0) { ShowLifeNotice("Nada a corrigir: a publicação está pronta para exportar."); return; }
+        int errors = issues.Count(i => i.Severity == ReviewSeverity.Error);
+        var shown = issues.ToArray();
+        var choice = await Dialogs.ChooseAsync("Verificar publicação",
+            shown.Select(i => new DialogItem((i.Severity == ReviewSeverity.Error ? "Erro · " : "Aviso · ") + i.Message, i.NotePath is null ? UrbeTheme.Icons.File : UrbeTheme.Icons.Notes,
+                i.Place + " — " + i.Fix, Danger: i.Severity == ReviewSeverity.Error)).ToArray(),
+            (errors > 0 ? errors + (errors == 1 ? " erro" : " erros") + " e " : "") + (issues.Count - errors) + (issues.Count - errors == 1 ? " aviso" : " avisos") +
+            ". Toque para abrir a nota no lugar.");
+        if (choice is not { } index || index >= shown.Length || shown[index].NotePath is not { } path) return;
+        OpenNoteByPath(path);
+        if (shown[index].Line is { } line) Editor.RevealLine(line);
+    }
+
+    /// <summary>The accessibility warnings of the last EPUB export (read by tests).</summary>
+    public IReadOnlyList<string> LastEpubWarnings { get; private set; } = [];
+
+    /// <summary>What the last office export could not keep (shown to the person; read by tests).</summary>
+    public IReadOnlyList<string> LastOfficeLimitations { get; private set; } = [];
 
     private async Task<bool?> SavePublicationFileAsync(string name, byte[] bytes, string extension, string mime)
     {

@@ -207,7 +207,7 @@ public sealed partial class AssistantPanel
         sb.Append(block.Pending).Append('|').Append(block.Name).Append('|').Append(block.Partial?.Length ?? 0).Append('|')
             .Append(result?.Status).Append('|').Append(result?.IsError).Append('|').Append(result?.Content.Length ?? -1).Append('|')
             .Append(_pending?.Request.Call.Id == block.Id).Append('|').Append(message.Meta?.Streaming).Append('|').Append(_running is null).Append('|')
-            .Append(_progress.GetValueOrDefault(block.Id)).Append('|').Append(_toolElapsed.GetValueOrDefault(block.Id)).Append('|')
+            .Append(_progress.GetValueOrDefault(block.Id)).Append('|').Append(_nested.GetValueOrDefault(block.Id)?.Count).Append('|').Append(_toolElapsed.GetValueOrDefault(block.Id)).Append('|')
             .Append(block.Name == "update_plan" && block.Id == LatestPlanId());
         return sb.ToString();
     }
@@ -223,6 +223,7 @@ public sealed partial class AssistantPanel
         "write_page" or "page_schema" or "write_publication" or "publication_schema" => "Preparando uma publicação",
         "delegate_research" => "Pesquisando com outro agente",
         "consult_agent" => "Consultando especialista",
+        "delegate_to_agent" => "Delegando a um especialista",
         "web_search" => "Pesquisando na internet",
         "web_fetch" => "Analisando fontes públicas",
         _ => "Executando uma etapa"
@@ -254,6 +255,8 @@ public sealed partial class AssistantPanel
         {
             var details = new StackPanel { Spacing = 8, Margin = new Thickness(4, 4, 4, 8) };
             if (_progress.TryGetValue(block.Id, out var progress)) details.Children.Add(Wrap(progress, 12, UrbeTheme.Text2));
+            if (_nested.TryGetValue(block.Id, out var nested))
+                foreach (var step in nested) details.Children.Add(Wrap("↳ " + step, 12, UrbeTheme.Text2));
             if (block.Name == "update_plan" && (block.Input as JsonObject)?["steps"] is JsonArray steps && block.Id == LatestPlanId())
                 details.Children.Add(Plan(steps));
             if (block.Name == "ask_user" && (block.Input as JsonObject)?["question"] is JsonValue question)

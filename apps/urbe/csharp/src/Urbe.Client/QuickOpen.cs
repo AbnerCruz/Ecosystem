@@ -365,6 +365,7 @@ public sealed class SearchFeature
 
         Register("ui.quickOpen.open", "Buscar notas", "Navegação", OpenQuickOpen);
         Register("reader.browser.open", "Navegador de estudo / YouTube", "Leitura", () => view.StudyBrowser.Open());
+        Register("reader.continue", "Continuar lendo", "Leitura", () => _ = view.ChooseContinueReadingAsync());
         Register("ui.commandPalette.open", "Abrir comandos", "Interface", OpenPalette);
         Register("ui.explorer.open", "Abrir notas", "Navegação", view.ShowNotes);
         Register("document.create", "Nova nota", "Documento", () => _ = view.CreateNoteAsync());
@@ -398,6 +399,7 @@ public sealed class SearchFeature
         Register("editor.find", "Localizar no documento", "Editor", view.Editor.FindBar.Open, () => view.Editor.IsVisible);
         Register("editor.replace", "Substituir no documento", "Editor", view.Editor.FindBar.Open, () => view.Editor.IsVisible);
         Register("publications.new", "Nova publicação", "Publicações", () => _ = view.CreatePublicationAsync());
+        Register("publications.fromTag", "Nova publicação de uma tag", "Publicações", () => _ = view.CreatePublicationFromTagAsync());
         Register("workspace.backups", "Backups do vault", "Workspace", () => _ = view.ShowBackupsAsync());
         Register("workspace.cleanOrphans", "Limpar referências órfãs", "Workspace", () => _ = view.CleanOrphansAsync());
         Register("workspace.diagnostics", "Diagnóstico do workspace", "Workspace", () => _ = view.ShowDiagnosticsAsync());

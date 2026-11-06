@@ -268,7 +268,8 @@ public static class LegacyCommandPalette
         return text.Contains(q, StringComparison.Ordinal) ? 2 : 0;
     }
 
-    /// <summary>render(): enabled commands that match, best first, one per "category|title" (the last registered wins), 40 at most.</summary>
+    /// <summary>render(): enabled commands that match, best first, one per "category|title" (the last registered wins). Every
+    /// match is listed (DEC-0059: the 1.8.4's cut at 40 hid commands that could not be reached by scrolling).</summary>
     public static IReadOnlyList<LegacyCommand> Filter(IEnumerable<LegacyCommand> commands, string typed)
     {
         var q = JsText.Lower(JsText.Trim(typed ?? ""));
@@ -282,7 +283,7 @@ public static class LegacyCommandPalette
                 var key = c.Category + "|" + c.Title;
                 return !sorted.Skip(i + 1).Any(o => o.Category + "|" + o.Title == key);
             })
-            .Take(40).ToList();
+            .ToList();
     }
 }
 

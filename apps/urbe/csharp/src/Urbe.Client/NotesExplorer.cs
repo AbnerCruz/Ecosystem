@@ -779,6 +779,14 @@ public sealed class NotesExplorer : Border
         foreach (var f in _files.Where(f => f.ToLowerInvariant().Contains(q, StringComparison.Ordinal)))
             AddFileRow(f, 0, withPath: true);
         if (_list.Children.Count == 0) _list.Children.Add(Empty("Nada encontrado", "Nenhum arquivo com “" + query + "”."));
+        else if (_visibleNotes.Count > 1 && SelectionAction is not null)
+        {
+            // CST-135: the notes found, as a publication (they stay where they are; the publication points to them)
+            var found = _visibleNotes.ToList();
+            var make = new Button { Content = "Criar publicação com as " + found.Count + " notas encontradas", MinHeight = 44, Margin = new Thickness(8, 8, 8, 4), HorizontalAlignment = HorizontalAlignment.Stretch };
+            make.Click += (_, _) => SelectionAction?.Invoke("publication", found);
+            _list.Children.Add(make);
+        }
     }
 
     private void RenderCollection(Collection c)
@@ -1201,6 +1209,8 @@ public sealed class NotesExplorer : Border
                 Act(UrbeTheme.Icons.Move, "Mover para pasta", "move", UrbeTheme.Text2),
                 Act(UrbeTheme.Icons.Copy, "Duplicar", "duplicate", UrbeTheme.Text2),
                 Act(UrbeTheme.Icons.Folder, "Agrupar em nova pasta", "group", UrbeTheme.Text2),
+                // CST-135: a publication of the selected notes, in the order they were chosen (references, not copies)
+                Act(UrbeTheme.Icons.Page, "Criar publicação com estas notas", "publication", UrbeTheme.Text2),
                 Act(UrbeTheme.Icons.Trash, "Mover para a lixeira", "delete", UrbeTheme.Danger)
             }
         };

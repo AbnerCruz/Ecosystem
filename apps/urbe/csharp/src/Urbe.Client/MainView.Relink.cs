@@ -10,9 +10,11 @@ namespace Urbe.Client;
 /// </summary>
 public sealed partial class MainView
 {
-    private async Task RelinkAsync(IReadOnlyList<(string From, string To)> moves)
+    /// <param name="done">What the move itself tells ("Pasta renomeada…"): shown together with the count of notes whose
+    /// links were updated, so neither notice hides the other (CST-196).</param>
+    private async Task RelinkAsync(IReadOnlyList<(string From, string To)> moves, string? done = null)
     {
-        if (_store is null || _vault is null || !VaultWritable || moves.Count == 0) return;
+        if (_store is null || _vault is null || !VaultWritable || moves.Count == 0) { Tell(done); return; }
         var all = _store.List().Select(d => d.Path).Concat(_attachments).Distinct(StringComparer.Ordinal).ToList();
         var known = all.ToHashSet(StringComparer.Ordinal);
         // a folder that moved: each file inside it
@@ -23,7 +25,7 @@ public sealed partial class MainView
             var inside = to + "/";
             files.AddRange(all.Where(p => p.StartsWith(inside, StringComparison.Ordinal)).Select(p => (from + "/" + p[inside.Length..], p)));
         }
-        if (files.Count == 0) return;
+        if (files.Count == 0) { Tell(done); return; }
         if (_vault.AtlasVaultSessionKey is { } vaultIdentity)
         {
             var vaultKey = ReaderSessionCatalog.VaultKey(vaultIdentity);
@@ -60,10 +62,14 @@ public sealed partial class MainView
             }
             catch (Exception) { failed.Add(NoteLibrary.FullNoteName(doc.Path)); }
         }
+        var lead = done is null ? "" : done + " ";
         if (failed.Count > 0)
-            ShowLifeNotice("Os links não foram atualizados em " + string.Join(", ", failed.Select(n => "“" + n + "”")) + ": a nota não pôde ser salva.", Ui.ToastKind.Warning);
+            ShowLifeNotice(lead + "Os links não foram atualizados em " + string.Join(", ", failed.Select(n => "“" + n + "”")) + ": a nota não pôde ser salva.", Ui.ToastKind.Warning);
         else if (changed > 0)
-            ShowLifeNotice(changed == 1 ? "Links atualizados em 1 nota." : "Links atualizados em " + changed + " notas.");
+            ShowLifeNotice(lead + (changed == 1 ? "Links atualizados em 1 nota." : "Links atualizados em " + changed + " notas."));
+        else Tell(done);
         if (changed > 0) NotesChanged();
     }
+
+    private void Tell(string? done) { if (done is not null) ShowLifeNotice(done); }
 }
