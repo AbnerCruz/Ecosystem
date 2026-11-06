@@ -22,6 +22,8 @@ public interface IAssistantApp
     string VaultName { get; }
     /// <summary>The note open in the editor and the text selected in it.</summary>
     (string? Path, string? Selection) EditorNote();
+    /// <summary>CST-243: the source open in a reader now (PDF, book, slides, media): path, revision, format and place; null when none.</summary>
+    ReaderSession? VisibleSource() => null;
     Task<UrbeDocument> CreateNoteAsync(string path, string content);
     Task<UrbeDocument> SaveNoteAsync(UrbeDocument doc, string content);
     Task<UrbeDocument> RenameNoteAsync(UrbeDocument doc, string newPath);
@@ -598,6 +600,12 @@ public sealed partial class AssistantPanel : Border
                 Type = "text", Hidden = true,
                 Text = "[Contexto automático: nota aberta no editor = " + path + (sel.Length > 0 ? "; texto selecionado pelo usuário:\n\"\"\"\n" + (sel.Length > 4000 ? sel[..4000] : sel) + "\n\"\"\"" : "") + "]"
             });
+        }
+        // CST-243: the source open beside the note, so answers about "this page" read it and cite it exactly
+        if (inNote is null && _useOpen && _app.VisibleSource() is { } source && SourceContext.Describe(source) is { } described)
+        {
+            msg.Meta.Context = (msg.Meta.Context is { Length: > 0 } before ? before + " · " : "") + described.Label;
+            msg.Content.Add(new AiChatBlock { Type = "text", Hidden = true, Text = described.Context });
         }
         if (_conv.Title.Length == 0) _conv.Title = AssistantAgent.TitleFrom(text);
         if (ConversationBusy(_conv.Id) || _conv.QueuedMessages.Count > 0)

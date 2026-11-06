@@ -92,6 +92,11 @@ Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descriçã
 - Arquivos desconhecidos ou sem suporte (CBR, DOC, XLSX…) não abrem mais uma tela vazia: aparecem nome, tamanho, tipo, o que o arquivo realmente contém, o que o Urbe consegue fazer com ele e **Abrir em outro app**.
 - Um arquivo com a extensão errada não derruba o app: uma imagem renomeada é mostrada e um "PNG" que na verdade é PDF é identificado.
 
+## Assistente e a fonte aberta
+
+- Com um PDF, livro ou apresentação aberto no leitor, a pergunta ao Assistente leva junto qual arquivo, qual página e qual versão: ele lê a página certa antes de responder e cita com o link exato de volta à fonte.
+- Quando o formato não pode ser lido pelas ferramentas do Assistente, ele diz isso e pede que você selecione o trecho, em vez de inventar o conteúdo.
+
 ## Modelos do Assistente
 
 - O Assistente sabe o que cada modelo faz (texto, ferramentas, imagem, PDF, contexto, preço, onde roda) e mostra isso em **Configurações → Modelos → O que cada modelo faz**. O que o provedor não informa aparece como "não informado".

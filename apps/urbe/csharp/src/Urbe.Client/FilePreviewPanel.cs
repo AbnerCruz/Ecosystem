@@ -1061,6 +1061,9 @@ public sealed class FilePreviewPanel : Grid
         finally { _ocr.IsEnabled = true; }
     }
 
+    /// <summary>CST-243: the source shown now (path, revision, format, where), or null; read by the Assistente's context.</summary>
+    public ReaderSession? CurrentReading => IsVisible ? _readingSession : null;
+
     private void RememberReadingPosition(int part, double? fontSize = null)
     {
         if (_readingSession is not { } session || ReadingState is null) return;

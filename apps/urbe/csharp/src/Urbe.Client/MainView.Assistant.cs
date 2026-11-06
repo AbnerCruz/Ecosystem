@@ -217,6 +217,8 @@ public sealed partial class MainView : IAssistantApp
         return (note.Path, Editor.SelectedText);
     }
 
+    ReaderSession? IAssistantApp.VisibleSource() => FilePreview.CurrentReading ?? (StudyOpen ? Editor.Pinned.Preview.CurrentReading : null);
+
     UrbeDialogs IAssistantApp.Dialogs => Dialogs;
 
     IAssistantAppearance? IAssistantApp.Appearance => new AppearanceAdapter(Customization);
