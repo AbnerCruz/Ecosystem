@@ -230,8 +230,16 @@ public sealed class ComicReaderView : DockPanel, IDisposable
         return width is { } scaled ? Bitmap.DecodeToWidth(input, scaled) : new Bitmap(input);
     }
 
-    private static void Free(Task<DecodedPage> task) =>
-        _ = task.ContinueWith(t => { if (t.IsCompletedSuccessfully) t.Result.Bitmap?.Dispose(); }, TaskScheduler.Default);
+    /// <summary>
+    /// A page leaving the neighbours: its bitmap is released on the UI thread, after the frames that may still draw it,
+    /// and never while it is the picture shown (a native bitmap freed under the renderer crashes the process).
+    /// </summary>
+    private void Free(Task<DecodedPage> task) =>
+        _ = task.ContinueWith(t =>
+        {
+            if (!t.IsCompletedSuccessfully || t.Result.Bitmap is not { } bitmap) return;
+            Avalonia.Threading.Dispatcher.UIThread.Post(() => { if (!ReferenceEquals(_image.Source, bitmap)) bitmap.Dispose(); }, Avalonia.Threading.DispatcherPriority.Background);
+        }, TaskScheduler.Default);
 
     public void SetZoom(double zoom)
     {

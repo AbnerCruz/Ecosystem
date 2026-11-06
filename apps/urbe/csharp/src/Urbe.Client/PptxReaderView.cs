@@ -334,7 +334,7 @@ public sealed class PptxReaderView : DockPanel, IDisposable
     private void Free(Task<Rendered> task, int index)
     {
         if (index == _shownIndex && task.IsCompletedSuccessfully && ReferenceEquals(task.Result, _shown)) return;
-        _ = task.ContinueWith(t => { if (t.IsCompletedSuccessfully) Dispatcher.UIThread.Post(() => { if (!ReferenceEquals(_image.Source, t.Result.Bitmap)) t.Result.Bitmap?.Dispose(); }); }, TaskScheduler.Default);
+        _ = task.ContinueWith(t => { if (t.IsCompletedSuccessfully) Dispatcher.UIThread.Post(() => { if (!ReferenceEquals(_image.Source, t.Result.Bitmap)) t.Result.Bitmap?.Dispose(); }, DispatcherPriority.Background); }, TaskScheduler.Default);
     }
 
     private void UpdateSlideInfo(Rendered? rendered)
@@ -543,7 +543,9 @@ public sealed class PptxReaderView : DockPanel, IDisposable
         if (_disposed) return;
         _disposed = true;
         _image.Source = null;
-        foreach (var (_, task) in _slides.Values) _ = task.ContinueWith(t => { if (t.IsCompletedSuccessfully) t.Result.Bitmap?.Dispose(); }, TaskScheduler.Default);
+        // released on the UI thread after the frames that may still draw them (see Free)
+        foreach (var (_, task) in _slides.Values)
+            _ = task.ContinueWith(t => { if (t.IsCompletedSuccessfully && t.Result.Bitmap is { } bitmap) Dispatcher.UIThread.Post(bitmap.Dispose, DispatcherPriority.Background); }, TaskScheduler.Default);
         _slides.Clear();
         foreach (var image in _thumbs.GetRealizedContainers().SelectMany(c => c.GetVisualDescendantsOfType<Image>())) image.Source = null;
         foreach (var bitmap in _thumbnails.Values) bitmap.Dispose();
