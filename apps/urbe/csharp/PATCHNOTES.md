@@ -65,6 +65,11 @@ O Assistente ganhou a ferramenta **editar estrutura**: ele troca, acrescenta, ap
 
 Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descrição e instruções, no formato aberto Agent Skills) para ensinar o Assistente a fazer um trabalho do seu jeito. Ele vê só o nome e a descrição e carrega o resto quando o pedido combina. Uma skill não dá permissões e nada nela é executado. O Urbe já vem com skills de apresentação, livro e cálculo.
 
+## Livros acessíveis
+
+- O EPUB exportado diz, dentro do próprio arquivo, como é acessível (modos de leitura, sumário, navegação, descrição das imagens), no vocabulário que leitores e lojas reconhecem. Os capítulos levam o título da nota e há marcos de navegação.
+- Se alguma imagem não tem descrição, o Urbe avisa depois de salvar e mostra como escrever: `![descrição](imagem.png)`. O livro nunca afirma ter descrições que não tem.
+
 ## Vídeo a partir das notas
 
 - Publicações ganharam o layout **Vídeo**: cada nota vira uma cena, e o texto dela é o roteiro e a legenda. Editar o roteiro edita a nota; o tempo fica na publicação.

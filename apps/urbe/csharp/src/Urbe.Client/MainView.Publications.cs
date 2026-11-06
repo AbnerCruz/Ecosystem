@@ -424,12 +424,18 @@ public sealed partial class MainView
         try
         {
             var data = await PublicationDataAsync(project, catalog);
-            var bytes = await PublicationEpub.ExportAsync(project, catalog,
+            var result = await PublicationEpub.ExportWithReportAsync(project, catalog,
                 async path => vault is null ? null : (await vault.ReadFileAsync(path, FilePreviewPanel.MaxBytes))?.Bytes, data: data);
             if (!ReferenceEquals(draft, _publicationDraft) || !ReferenceEquals(draft.Store, _store) || draft.Dirty) return;
             var name = ArtifactModel.SafeName(project.Title) + ".epub";
-            var saved = SavePageFile is { } save ? await save(name, bytes) : await SavePublicationFileAsync(name, bytes, "epub", "application/epub+zip");
-            if (saved == true) ShowLifeNotice("Livro EPUB salvo.");
+            LastEpubWarnings = result.Warnings;
+            var saved = SavePageFile is { } save ? await save(name, result.Bytes) : await SavePublicationFileAsync(name, result.Bytes, "epub", "application/epub+zip");
+            if (saved != true) return;
+            // CST-183: what keeps the book from being fully accessible is said, with how to fix it in the note
+            if (result.Warnings.Count > 0)
+                await Dialogs.AlertAsync("Livro EPUB salvo", "Acessibilidade: " + result.Warnings.Count + (result.Warnings.Count == 1 ? " imagem está" : " imagens estão") +
+                    " sem descrição para quem usa leitor de tela.\n\n" + string.Join("\n", result.Warnings.Take(8)) + (result.Warnings.Count > 8 ? "\n…" : ""));
+            else ShowLifeNotice("Livro EPUB salvo.");
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
         { await Dialogs.AlertAsync("Não foi possível exportar EPUB", ex.Message); }
@@ -474,6 +480,9 @@ public sealed partial class MainView
         catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
         { await Dialogs.AlertAsync("Não foi possível exportar: " + kind, ex.Message); }
     }
+
+    /// <summary>The accessibility warnings of the last EPUB export (read by tests).</summary>
+    public IReadOnlyList<string> LastEpubWarnings { get; private set; } = [];
 
     /// <summary>What the last office export could not keep (shown to the person; read by tests).</summary>
     public IReadOnlyList<string> LastOfficeLimitations { get; private set; } = [];
