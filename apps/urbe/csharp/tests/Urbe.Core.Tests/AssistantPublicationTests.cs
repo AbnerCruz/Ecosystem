@@ -50,4 +50,41 @@ public sealed class AssistantPublicationTests
         input["path"] = "../Livro.publication.json";
         Assert.Throws<AiToolException>(() => tool.Preview(input, host));
     }
+
+    /// <summary>CST-171/176: an agent writes a video publication through the same contract: short on-screen labels, the script stays in the note.</summary>
+    [Fact]
+    public async Task VideoPublication_AllowsShortLabelsKeepsTheScriptInTheNoteAndValidates()
+    {
+        var host = new Host();
+        var note = host.Documents.Upsert(new() { Path = "Cena.md", Content = "# Ciclo da água\n\nA água evapora e condensa." });
+        var project = VideoComposition.Synced(PublicationProject.Create("Explicação", note.Id) with { Design = new PublicationDesign { Layout = "video" } });
+        var spec = JsonNode.Parse(PublicationProjectCodec.Serialize(project))!.AsObject();
+        var elements = spec["video"]!["scenes"]![0]!["elements"]!.AsArray();
+        elements.Add(new JsonObject { ["kind"] = "text", ["text"] = "Passo 1", ["x"] = 0.5, ["y"] = 0.8 });
+        var tool = AssistantPublicationTools.All.Single(t => t.Name == "write_publication");
+        var input = new JsonObject { ["path"] = "Publicações/Água.publication.json", ["spec"] = spec };
+        var preview = tool.Preview!(input, host);
+        Assert.Contains("Passo 1", preview.After!);
+        Assert.DoesNotContain("evapora", preview.After!);
+        await tool.Run(input, host);
+        var saved = PublicationProjectCodec.Parse(host.Documents.Get("Publicações/Água.publication.json")!.Content);
+        Assert.Equal("video", saved.Design.Layout);
+        Assert.Contains(saved.Video!.Scenes[0].Elements, e => e.Text == "Passo 1");
+        // a whole script pasted as a label is refused: it belongs in the note
+        var copied = JsonNode.Parse(PublicationProjectCodec.Serialize(project))!.AsObject();
+        copied["video"]!["scenes"]![0]!["elements"]!.AsArray().Add(new JsonObject { ["kind"] = "text", ["text"] = new string('x', AssistantPublicationTools.MaxOverlay + 1) });
+        var error = Assert.Throws<AiToolException>(() => tool.Preview(new JsonObject { ["path"] = "Publicações/B.publication.json", ["spec"] = copied }, host));
+        Assert.Contains("roteiro pertence à nota", error.Message);
+        // "text" outside a video element is still authored text
+        var outside = JsonNode.Parse(PublicationProjectCodec.Serialize(project))!.AsObject();
+        outside["text"] = "curto";
+        Assert.Throws<AiToolException>(() => tool.Preview(new JsonObject { ["path"] = "Publicações/C.publication.json", ["spec"] = outside }, host));
+        // an invalid video (fps 0) is refused by the same rules as the studio
+        var bad = JsonNode.Parse(PublicationProjectCodec.Serialize(project))!.AsObject();
+        bad["video"]!["fps"] = 0;
+        Assert.Throws<AiToolException>(() => tool.Preview(new JsonObject { ["path"] = "Publicações/D.publication.json", ["spec"] = bad }, host));
+        var schema = (await AssistantPublicationTools.All.Single(t => t.Name == "publication_schema").Run(new JsonObject(), host)).Content;
+        Assert.Contains("layout:article|book|slides|course|video", schema);
+        Assert.Contains("placementId", schema);
+    }
 }
