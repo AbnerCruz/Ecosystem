@@ -39,6 +39,69 @@ public sealed class SavedModelConfigurationTests
         foreach (var value in new[] { "http://provider.test/v1", "https://key@provider.test/v1", "https://provider.test/v1?api_key=hidden", "https://provider.test/v1#secret" })
             Assert.Throws<ArgumentException>(() => SavedModelConfiguration.BaseUri(value));
     }
+
+    [Theory]
+    [InlineData("http://localhost:11434/v1")]
+    [InlineData("http://127.0.0.1:11434/v1")]
+    [InlineData("http://LOCALHOST:11434/v1/")]
+    public void Local_loopback_permits_keyless_model_without_changing_budgets(string baseUrl)
+    {
+        var provider = Provider() with { BaseUrl = baseUrl };
+        var configuration = new SavedModelConfiguration(1, [provider], provider.Id, provider.Models[0].Id);
+        configuration.Validate();
+        var reopened = JsonSerializer.Deserialize<SavedModelConfiguration>(JsonSerializer.Serialize(configuration))!;
+        var selected = reopened.Selected(_ => null)!;
+        Assert.Null(selected.ApiKey);
+        Assert.Equal("http", new Uri(selected.Endpoint).Scheme);
+        Assert.EndsWith("/chat/completions", selected.Endpoint, StringComparison.Ordinal);
+        Assert.Equal(20, selected.RunBudgetCents);
+        Assert.Equal(5, selected.MaxCallCents);
+        Assert.True(SavedModelConfiguration.IsLocalHttp(SavedModelConfiguration.BaseUri(baseUrl)));
+    }
+
+    [Theory]
+    [InlineData("http://provider.test/v1")]
+    [InlineData("http://localhost.evil.example/v1")]
+    [InlineData("http://127.0.0.2:11434/v1")]
+    [InlineData("http://[::1]:11434/v1")]
+    [InlineData("http://user@localhost:11434/v1")]
+    [InlineData("http://localhost:11434/v1?api_key=hidden")]
+    [InlineData("http://localhost:11434/v1#secret")]
+    public void Cleartext_does_not_escape_explicit_loopback_hosts(string baseUrl)
+    {
+        Assert.Throws<ArgumentException>(() => SavedModelConfiguration.BaseUri(baseUrl));
+    }
+
+    [Fact]
+    public void Remote_https_selection_still_fails_without_saved_credential()
+    {
+        var provider = Provider();
+        var config = new SavedModelConfiguration(1, [provider], provider.Id, provider.Models[0].Id);
+        Assert.Throws<ArgumentException>(() => config.Selected(_ => null));
+        Assert.Throws<ArgumentException>(() => config.Selected(_ => "short"));
+        Assert.Equal("sentinel-secret", config.Selected(_ => "sentinel-secret")!.ApiKey);
+    }
+
+    [Fact]
+    public async Task Keyless_local_discovery_sends_no_authorization_header()
+    {
+        var provider = Provider() with { BaseUrl = "http://localhost:11434/v1" };
+        var count = 0;
+        using var client = new HttpClient(new Handler(request =>
+        {
+            count++;
+            Assert.Equal("http://localhost:11434/v1/models", request.RequestUri!.AbsoluteUri);
+            Assert.Null(request.Headers.Authorization);
+            return new(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"data":[{"id":"local-model"}]}""")
+            };
+        }));
+        var models = await ProviderModelDiscovery.ListAsync(client, provider, null);
+        Assert.Equal(["local-model"], models);
+        Assert.Equal(1, count);
+    }
+
     private sealed class Handler(Func<HttpRequestMessage, HttpResponseMessage> answer) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token) => Task.FromResult(answer(request));
