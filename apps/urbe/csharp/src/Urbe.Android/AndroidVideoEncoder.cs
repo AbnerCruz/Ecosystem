@@ -42,8 +42,8 @@ internal sealed class AndroidVideoEncoder : IVideoEncoder
         format.SetInteger(MediaFormat.KeyFrameRate, settings.Fps);
         format.SetInteger(MediaFormat.KeyIFrameInterval, 1);
         _video = MediaCodec.CreateEncoderByType("video/avc");
-        var caps = _video.CodecInfo.GetCapabilitiesForType("video/avc");
-        if (caps.ColorFormats is not { } formats || !formats.Contains(ColorFormatYuv420Flexible))
+        var caps = _video.CodecInfo?.GetCapabilitiesForType("video/avc");
+        if (caps?.ColorFormats is not { } formats || !formats.Contains(ColorFormatYuv420Flexible))
             throw new NotSupportedException("O codificador H.264 deste aparelho não aceita quadros YUV 4:2:0.");
         _video.Configure(format, null, null, MediaCodecConfigFlags.Encode);
         _video.Start();
