@@ -126,6 +126,12 @@ Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descriçã
 - Arquivos desconhecidos ou sem suporte (CBR, DOC, XLSX…) não abrem mais uma tela vazia: aparecem nome, tamanho, tipo, o que o arquivo realmente contém, o que o Urbe consegue fazer com ele e **Abrir em outro app**.
 - Um arquivo com a extensão errada não derruba o app: uma imagem renomeada é mostrada e um "PNG" que na verdade é PDF é identificado.
 
+## Trabalho do Assistente que não se perde
+
+- Se o app for fechado no meio de um trabalho do Assistente, ao voltar ele mostra o que já foi feito e conferido, o que não foi feito e o que precisa de você, e oferece **Retomar**, **Abrir conversa** ou **Descartar**.
+- Ao retomar, nada já feito se repete: gravações, imagens e etapas já pagas não são refeitas; o que não pôde ser conferido espera você.
+- Os agentes podem **delegar** uma parte do trabalho a outro agente seu, com tarefa, fontes, onde ele pode gravar e o resultado esperado; gravações fora desse escopo são recusadas. O resultado é conferido no próprio vault, e a revisão de outro agente só vale se ele leu o arquivo de verdade. Os passos do especialista aparecem dentro do cartão de quem pediu.
+
 ## Assistente e a fonte aberta
 
 - Com um PDF, livro ou apresentação aberto no leitor, a pergunta ao Assistente leva junto qual arquivo, qual página e qual versão: ele lê a página certa antes de responder e cita com o link exato de volta à fonte.
