@@ -96,8 +96,13 @@ public sealed partial class MainView : IAssistantApp
     /// <summary>CST-143: over the editor, the radial menu floats above its footer and toolbar instead of covering them.</summary>
     private void UpdateRadialLift()
     {
+        var lift = Editor.IsVisible ? Math.Round(Editor.BottomChrome) : 0;
+        // a wide window (a tablet, a phone on its side) has the launcher in the same corner: it floats above the
+        // footer's Leitura/Edição switch too, and the contextual card above the launcher
+        _assistantLauncher.Margin = new Thickness(0, 0, 16, 16 + lift);
+        _assistantMini.Margin = new Thickness(12, 0, 12, 76 + lift);
         if (_radial is null) return;
-        _radial.Lift = Editor.IsVisible ? Editor.BottomChrome : 0;
+        _radial.Lift = lift;
     }
 
     /// <summary>A phone shows the radial menu, a wide window its rail and the launcher; neither while the Assistente is open.</summary>

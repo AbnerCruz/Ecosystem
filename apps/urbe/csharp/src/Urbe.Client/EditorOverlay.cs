@@ -1164,6 +1164,28 @@ public sealed class EditorOverlay : Grid
         StartInVisual = initialMode != "texto";
     }
 
+    private string _lineNumbers = EditorLineNumbers.Always;
+
+    /// <summary>
+    /// CST-147: Personalização → "Números das linhas" (sempre, codigo, nunca). Only Fonte has them: a Visual block is a
+    /// rendered paragraph, table or formula whose source lines are not where it is drawn, so numbers there would point
+    /// at nothing; the references go to the source, where the line is.
+    /// </summary>
+    public string LineNumbersMode
+    {
+        get => _lineNumbers;
+        set
+        {
+            _lineNumbers = value is EditorLineNumbers.CodeOnly or EditorLineNumbers.Never ? value : EditorLineNumbers.Always;
+            PlaceLineNumbers();
+        }
+    }
+
+    private void PlaceLineNumbers()
+    {
+        if (LineNumbers is { } gutter) gutter.IsVisible = _lineNumbers == EditorLineNumbers.Always || _lineNumbers == EditorLineNumbers.CodeOnly && IsCode;
+    }
+
     private string _columnWidth = "media";
     private double _columnMax = 720;
 
@@ -1191,6 +1213,7 @@ public sealed class EditorOverlay : Grid
     /// <summary>The two-way switch only where there are two ways to see the file: Visual | Fonte of a note, Prévia | Código of an HTML (a phone shows one button).</summary>
     private void PlaceSwitch()
     {
+        PlaceLineNumbers();
         bool two = _note is not null && (CanVisual(_note.Path) || IsHtml);
         _segment.IsVisible = two && !_compactHeader;
         if (_modeToggle is not null) _modeToggle.IsVisible = two && _compactHeader;
