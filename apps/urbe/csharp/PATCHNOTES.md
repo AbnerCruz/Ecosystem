@@ -65,6 +65,18 @@ O Assistente ganhou a ferramenta **editar estrutura**: ele troca, acrescenta, ap
 
 Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descrição e instruções, no formato aberto Agent Skills) para ensinar o Assistente a fazer um trabalho do seu jeito. Ele vê só o nome e a descrição e carrega o resto quando o pedido combina. Uma skill não dá permissões e nada nela é executado. O Urbe já vem com skills de apresentação, livro e cálculo.
 
+## Editor
+
+- **Números das linhas** ao lado do texto no modo Fonte, com a linha do cursor destacada. Em Personalização → Editor escolha Sempre, Só código ou Nunca.
+- Fórmulas não ficam mais cortadas nem por cima do texto, e as fórmulas no meio da frase se alinham à linha.
+- O botão do Assistente não cobre mais o botão Leitura/Edição em telas largas e com o celular deitado.
+
+## Links e conversas
+
+- Links Markdown comuns (`[texto](pasta/nota.md)`, imagens, referências `[id]: caminho`) acompanham notas, arquivos e pastas movidos ou renomeados; links dentro de código e endereços da web ficam como estão.
+- Ao renomear ou mover uma pasta, o aviso também diz em quantas notas os links foram atualizados.
+- O Assistente sugere, sem trocar sozinho, começar uma nova conversa com um resumo quando a atual fica longa ou quando você volta depois de um tempo com outro assunto; a conversa antiga continua em Conversas.
+
 ## Livros acessíveis
 
 - O EPUB exportado diz, dentro do próprio arquivo, como é acessível (modos de leitura, sumário, navegação, descrição das imagens), no vocabulário que leitores e lojas reconhecem. Os capítulos levam o título da nota e há marcos de navegação.
