@@ -858,6 +858,7 @@ public sealed class WorkspaceView : Grid
         {
             if (e.Pointer.Type != Avalonia.Input.PointerType.Mouse || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
             _pressed = b;
+            _dragged = false;   // a new press starts a new gesture: a drag that ended without a click is forgotten here
             _dragFrom = e.GetPosition(this);
         }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
         b.AddHandler(Avalonia.Input.InputElement.PointerMovedEvent, (_, e) =>
@@ -874,8 +875,9 @@ public sealed class WorkspaceView : Grid
             if (!ReferenceEquals(_dragging, b)) return;
             var folder = DropTargetAt(e.GetPosition(this))?.Tag as string;
             EndDrag();
+            // the click this release may raise is not an "open": it is consumed by the click handler, or forgotten at the
+            // next press (never cleared by a timed post, which could run before the click under load)
             _dragged = true;
-            Dispatcher.UIThread.Post(() => _dragged = false);   // a release elsewhere raises no click to clear it
             if (folder is not null) drop(folder);
         }, Avalonia.Interactivity.RoutingStrategies.Tunnel, handledEventsToo: true);
     }
