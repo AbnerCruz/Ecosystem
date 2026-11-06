@@ -65,6 +65,14 @@ O Assistente ganhou a ferramenta **editar estrutura**: ele troca, acrescenta, ap
 
 Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descrição e instruções, no formato aberto Agent Skills) para ensinar o Assistente a fazer um trabalho do seu jeito. Ele vê só o nome e a descrição e carrega o resto quando o pedido combina. Uma skill não dá permissões e nada nela é executado. O Urbe já vem com skills de apresentação, livro e cálculo.
 
+## Vídeo a partir das notas
+
+- Publicações ganharam o layout **Vídeo**: cada nota vira uma cena, e o texto dela é o roteiro e a legenda. Editar o roteiro edita a nota; o tempo fica na publicação.
+- Prévia no estúdio, com reprodução e barra de tempo; duração e transição (corte ou fade) de cada cena.
+- Objetos nas cenas: texto, roteiro, forma, imagem do vault, gráfico traçado ao longo da cena e fórmula, com animação suave.
+- Áudio do vault na trilha (voz, música, efeito), com início e volume; formato 16:9, 9:16 ou 1:1, de 480p a 1080p, 24, 30 ou 60 quadros por segundo.
+- **Exportar MP4** (H.264) com progresso e cancelamento: o arquivo só é oferecido depois de verificado. **Exportar legendas (SRT)** do roteiro.
+
 ## Continuar lendo
 
 - No painel de fontes do Estudo e no comando **Continuar lendo** aparecem os PDFs, livros, documentos, apresentações e mídias lidos por último, com onde você parou e quando ("há 2 h"); tocar abre direto ali.
