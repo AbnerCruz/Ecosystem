@@ -233,6 +233,16 @@ public sealed class WorkspaceView : Grid
         _scroll.Offset = default;
     }
 
+    /// <summary>A project opened keeping the search, kind and tag the root was filtered by (CST-197).</summary>
+    public void OpenFiltered(string folder, string query)
+    {
+        var (kind, tag) = (_kind, _tag);
+        Open(folder);
+        _kind = kind; _tag = tag;
+        _search.Text = query;
+        Render();
+    }
+
     private bool Exists(string folder) =>
         _index.Children(NoteLibrary.FolderOf(folder)).Contains(folder) || _index.Items(folder).Count > 0;
 
@@ -504,6 +514,23 @@ public sealed class WorkspaceView : Grid
         _body.Children.Add(Cards(_index.Loose, CardColumns()));
     }
 
+    /// <summary>Every loose note matching the root's search and filters (CST-197), not only the first ones.</summary>
+    private void ShowLooseMatches(string query)
+    {
+        IEnumerable<WorkspaceItem> pool = query.Length > 0 ? _index.Search(query, null) : _index.Recent("", int.MaxValue);
+        var loose = WorkspaceIndex.Arrange(pool, _kind, _tag, _order).Where(i => WorkspaceIndex.ProjectOf(i.Path).Length == 0).ToList();
+        _body.Children.Clear();
+        _body.Children.Add(new TextBlock { Text = "Soltas · " + loose.Count, FontSize = 17, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text) });
+        _body.Children.Add(ItemsView(loose.Take(_shown).ToList(), CardColumns()));
+        if (loose.Count > _shown)
+        {
+            var more = Plain(new TextBlock { Text = "Mostrar mais (" + (loose.Count - _shown) + ")", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
+            more.HorizontalAlignment = HorizontalAlignment.Center;
+            more.Click += (_, _) => { _shown += Page; ShowLooseMatches(query); };
+            _body.Children.Add(Ui.UrbeMotion.Pressable(more));
+        }
+    }
+
     private void RenderFolder()
     {
         var box = _index.Box(Folder);
@@ -547,7 +574,15 @@ public sealed class WorkspaceView : Grid
         if (all.Count == 0) { _body.Children.Add(Nothing(query)); return; }
         if (Folder.Length > 0)
         {
-            _body.Children.Add(ItemsView(all.Take(Math.Max(_shown, 200)).ToList(), CardColumns()));
+            // CST-197: every match is reachable, a page at a time, never cut off silently
+            _body.Children.Add(ItemsView(all.Take(_shown).ToList(), CardColumns()));
+            if (all.Count > _shown)
+            {
+                var more = Plain(new TextBlock { Text = "Mostrar mais (" + (all.Count - _shown) + ")", FontSize = 14, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(PaletteHex(ColorOf(Folder))) });
+                more.HorizontalAlignment = HorizontalAlignment.Center;
+                more.Click += (_, _) => { _shown += Page; Render(); };
+                _body.Children.Add(Ui.UrbeMotion.Pressable(more));
+            }
             return;
         }
         // the root: grouped by project, the loose ones last
@@ -560,7 +595,15 @@ public sealed class WorkspaceView : Grid
             if (group.Key.Length == 0) content.Children.Add(new TextBlock { Text = "Soltas", FontSize = 15, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.Text2) });
             else content.Children.Add(BoxHead(_index.Box(group.Key), open: true, count: list.Count));
             content.Children.Add(ItemsView(list.Take(12).ToList(), cardCols));
-            if (list.Count > 12) content.Children.Add(new TextBlock { Text = "e mais " + (list.Count - 12), FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3) });
+            if (list.Count > 12)
+            {
+                // the rest of this project's matches: the project opened with the same search and filters
+                string project = group.Key;
+                var rest = Plain(new TextBlock { Text = "Ver todos os " + list.Count + (project.Length == 0 ? " soltos" : " em " + _index.Box(project).Name), FontSize = 14, FontWeight = FontWeight.SemiBold,
+                    Foreground = UrbeTheme.Brush(project.Length == 0 ? UrbeTheme.Text2 : PaletteHex(ColorOf(project))) });
+                rest.Click += (_, _) => { if (project.Length == 0) { _shown = Page; ShowLooseMatches(query); } else OpenFiltered(project, query); };
+                content.Children.Add(Ui.UrbeMotion.Pressable(rest));
+            }
             boxes.Add(group.Key.Length == 0
                 ? new Border { Child = content, Padding = new Thickness(14), CornerRadius = new CornerRadius(18), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), Background = UrbeTheme.Brush(UrbeTheme.Surface, .6) }
                 : Glass(group.Key, content));

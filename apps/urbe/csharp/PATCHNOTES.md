@@ -71,6 +71,10 @@ Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descriçã
 - Fórmulas não ficam mais cortadas nem por cima do texto, e as fórmulas no meio da frase se alinham à linha.
 - O botão do Assistente não cobre mais o botão Leitura/Edição em telas largas e com o celular deitado.
 
+## Filtros sem cortes
+
+- Buscar ou filtrar por tag na Área de trabalho mostra alguns resultados de cada projeto e o botão **Ver todos** abre o projeto com o mesmo filtro; as notas soltas também. Dentro de uma caixa filtrada, **Mostrar mais** leva até o último resultado: nenhum resultado fica escondido.
+
 ## Links e conversas
 
 - Links Markdown comuns (`[texto](pasta/nota.md)`, imagens, referências `[id]: caminho`) acompanham notas, arquivos e pastas movidos ou renomeados; links dentro de código e endereços da web ficam como estão.
