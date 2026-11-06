@@ -32,6 +32,7 @@ public sealed partial class MainView
         var studio = new PublicationStudioView();
         studio.AddSourceRequested += () => _ = AddPublicationSourceAsync();
         studio.RenameRequested += () => _ = RenamePublicationAsync();
+        studio.ReviewRequested += () => _ = ReviewPublicationAsync();
         studio.ConfigureRequested += () => _ = ConfigurePublicationAsync();
         studio.EditSourceRequested += EditPublicationSource;
         studio.EditReferenceRequested += reference =>
@@ -479,6 +480,38 @@ public sealed partial class MainView
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or UnauthorizedAccessException or NotSupportedException)
         { await Dialogs.AlertAsync("Não foi possível exportar: " + kind, ex.Message); }
+    }
+
+    /// <summary>The issues of the last review (read by tests).</summary>
+    public IReadOnlyList<ReviewIssue> LastPublicationReview { get; private set; } = [];
+
+    /// <summary>
+    /// CST-179/180: "Verificar publicação" — the live notes read the way every output reads them; each issue names the
+    /// note and line, says how to fix it and opens there. Nothing is changed by the review.
+    /// </summary>
+    public async Task ReviewPublicationAsync()
+    {
+        if (_publicationsCatalog is not { } catalog || _publicationDraft is not { } draft || Dialogs.IsOpen) return;
+        var project = draft.Project;
+        var data = await PublicationDataAsync(project, catalog);
+        var files = new HashSet<string>(_attachments.Concat(_contents.Keys), StringComparer.Ordinal);
+        var notes = _contents.Keys.Select(p => new CityNote(p, "")).ToList();
+        bool NoteExists(string name) => files.Contains(name) || files.Contains(name + ".md") ||
+            notes.Any(n => string.Equals(System.IO.Path.GetFileNameWithoutExtension(n.Path), System.IO.Path.GetFileName(name), StringComparison.OrdinalIgnoreCase));
+        var issues = await Task.Run(() => PublicationReview.Run(project, catalog, files.Contains, NoteExists, data));
+        LastPublicationReview = issues;
+        if (!ReferenceEquals(draft, _publicationDraft)) return;
+        if (issues.Count == 0) { ShowLifeNotice("Nada a corrigir: a publicação está pronta para exportar."); return; }
+        int errors = issues.Count(i => i.Severity == ReviewSeverity.Error);
+        var shown = issues.Take(40).ToArray();
+        var choice = await Dialogs.ChooseAsync("Verificar publicação",
+            shown.Select(i => new DialogItem((i.Severity == ReviewSeverity.Error ? "Erro · " : "Aviso · ") + i.Message, i.NotePath is null ? UrbeTheme.Icons.File : UrbeTheme.Icons.Notes,
+                i.Place + " — " + i.Fix, Danger: i.Severity == ReviewSeverity.Error)).ToArray(),
+            (errors > 0 ? errors + (errors == 1 ? " erro" : " erros") + " e " : "") + (issues.Count - errors) + (issues.Count - errors == 1 ? " aviso" : " avisos") +
+            (issues.Count > shown.Length ? " (mostrando os primeiros " + shown.Length + ")" : "") + ". Toque para abrir a nota no lugar.");
+        if (choice is not { } index || index >= shown.Length || shown[index].NotePath is not { } path) return;
+        OpenNoteByPath(path);
+        if (shown[index].Line is { } line) Editor.RevealLine(line);
     }
 
     /// <summary>The accessibility warnings of the last EPUB export (read by tests).</summary>

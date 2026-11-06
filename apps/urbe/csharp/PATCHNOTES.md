@@ -77,6 +77,10 @@ Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descriçã
 - Ao renomear ou mover uma pasta, o aviso também diz em quantas notas os links foram atualizados.
 - O Assistente sugere, sem trocar sozinho, começar uma nova conversa com um resumo quando a atual fica longa ou quando você volta depois de um tempo com outro assunto; a conversa antiga continua em Conversas.
 
+## Verificar publicação
+
+- **⋯ → Verificar publicação** lista o que corrigir antes de exportar: notas que sumiram ou estão vazias, títulos que pulam de nível, imagens sem descrição ou que não estão no vault, imagens da web, links para notas inexistentes, questionários, cálculos e dados com erro, blocos de código não fechados, slides com texto demais e legendas de vídeo rápidas demais. Cada item diz como corrigir e abre a nota na linha certa.
+
 ## Livros acessíveis
 
 - O EPUB exportado diz, dentro do próprio arquivo, como é acessível (modos de leitura, sumário, navegação, descrição das imagens), no vocabulário que leitores e lojas reconhecem. Os capítulos levam o título da nota e há marcos de navegação.

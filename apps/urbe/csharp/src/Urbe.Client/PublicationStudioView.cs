@@ -63,6 +63,7 @@ public sealed class PublicationStudioView : Border
             var items = new List<MenuItem>();
             void Item(string header, Action? run) { var i = new MenuItem { Header = header }; i.Click += (_, _) => run?.Invoke(); items.Add(i); }
             Item("Renomear publicação", () => RenameRequested?.Invoke());
+            Item("Verificar publicação", () => ReviewRequested?.Invoke());
             Item("Exportar PDF", () => OfficeRequested?.Invoke("pdf"));
             if (IsVideo)
             {
@@ -137,6 +138,8 @@ public sealed class PublicationStudioView : Border
     public event Action<string>? OfficeRequested;
     public event Action? PrintRequested;
     public event Action? RenameRequested;
+    /// <summary>CST-179/180: "Verificar publicação" — what to fix before exporting.</summary>
+    public event Action? ReviewRequested;
     public event Action? ConfigureRequested;
     public event Action? Closed;
     public event Action<string>? EditSourceRequested;
