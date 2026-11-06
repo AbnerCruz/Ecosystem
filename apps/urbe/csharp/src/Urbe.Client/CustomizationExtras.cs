@@ -138,6 +138,18 @@ public sealed partial class Customization
 
     private const string BlockTimesKey = "urbe.editor.horarios";
 
+    /// <summary>
+    /// CST-147: Personalização → Editor → "Números das linhas" in Fonte: <c>sempre</c> (the default), <c>codigo</c> (only
+    /// code files) or <c>nunca</c>. A display preference of this device, like the block times.
+    /// </summary>
+    public string LineNumbers
+    {
+        get => Device.Get(LineNumbersKey) is (EditorLineNumbers.CodeOnly or EditorLineNumbers.Never) and var v ? v : EditorLineNumbers.Always;
+        set { Device.Set(LineNumbersKey, value is EditorLineNumbers.CodeOnly or EditorLineNumbers.Never ? value : null); Applied?.Invoke(); }
+    }
+
+    private const string LineNumbersKey = "urbe.editor.numeracao";
+
     public bool SafeMode
     {
         get => Device.Get(SafeKey) == "1";

@@ -783,6 +783,7 @@ public sealed partial class MainView : Grid
     {
         UrbeAppearance.Apply(this);   // Personalização: tema, texto, forma e editor
         if (Customization.Config["editor"] is System.Text.Json.Nodes.JsonObject ed) Editor.ApplyOptions((string?)ed["largura"], (string?)ed["modoInicial"], Customization.BlockTimes);
+        Editor.LineNumbersMode = Customization.LineNumbers;
         ApplyEditorLayout();
         if (Editor.IsVisible) Editor.RefreshVisual();   // tag colours (DEC-0045, UC-43)
     }
