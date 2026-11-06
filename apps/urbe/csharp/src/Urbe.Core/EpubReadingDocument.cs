@@ -8,6 +8,8 @@ namespace Urbe.Core;
 
 public sealed record ReaderChapter(string Key, string Title);
 public sealed record ReaderChapterContent(string Html, string Text, bool FixedLayout);
+/// <summary>CST-242: a picture of a chapter (figure, diagram, equation as image) with what the book says about it.</summary>
+public sealed record ReaderImage(int Number, string Path, string Description, byte[] Bytes);
 public interface IReaderPublication : IDisposable
 {
     string Title { get; }
@@ -18,6 +20,8 @@ public interface IReaderPublication : IDisposable
     IReadOnlyList<ReaderChapter> Chapters { get; }
     ReaderChapterContent ReadChapter(int index, double fontSize = 18, double lineHeight = 1.6);
     string ReadText(int index);
+    /// <summary>The raster pictures of a chapter, in reading order, that can be examined (OCR, a question to the AI) and cited.</summary>
+    IReadOnlyList<ReaderImage> ChapterImages(int index) => [];
 }
 
 /// <summary>Lazy EPUB spine reader. Scripts, remote assets, archive escapes and DRM never gain host access.</summary>
@@ -124,6 +128,36 @@ public sealed class EpubReadingDocument : IReaderPublication
     }
 
     public string ReadText(int index) => Plain(_archive.Xml(_spine[index].FilePath));
+
+    /// <summary>
+    /// The chapter's raster pictures (img, and SVG image elements) that are really pictures by their bytes, with their
+    /// alt text, title or figure caption; repeated pictures once. SVG drawings are not offered: OCR needs pixels.
+    /// </summary>
+    public IReadOnlyList<ReaderImage> ChapterImages(int index)
+    {
+        if (index < 0 || index >= _spine.Count) throw new ArgumentOutOfRangeException(nameof(index));
+        string from = _spine[index].FilePath;
+        var images = new List<ReaderImage>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var element in _archive.Xml(from).Descendants())
+        {
+            string name = element.Name.LocalName.ToLowerInvariant();
+            string? href = name == "img" ? (string?)element.Attribute("src")
+                : name == "image" ? (string?)element.Attributes().FirstOrDefault(a => a.Name.LocalName == "href")
+                : null;
+            if (href is null || ReaderArchive.Resolve(from, href) is not { } path || !_archive.Contains(path) || !seen.Add(path)) continue;
+            byte[] bytes;
+            try { bytes = _archive.Bytes(path); }
+            catch (InvalidDataException) { continue; }
+            if (!FileSignatures.IsImage(FileSignatures.Detect(bytes))) continue;
+            string caption = element.Ancestors().FirstOrDefault(a => a.Name.LocalName == "figure")?.Descendants().FirstOrDefault(d => d.Name.LocalName == "figcaption")?.Value.Trim() ?? "";
+            string description = new[] { (string?)element.Attribute("alt"), (string?)element.Attribute("title"), caption }
+                .FirstOrDefault(t => !string.IsNullOrWhiteSpace(t))?.Trim() ?? "";
+            images.Add(new ReaderImage(images.Count + 1, path, description, bytes));
+            if (images.Count >= 500) break;
+        }
+        return images;
+    }
     // Search, native fallback and DOM locators must count the same characters.
     // XElement.Value is already XML-decoded; decoding a second time corrupts literal entities.
     private static string Plain(XDocument document) => string.Concat(document.Descendants()

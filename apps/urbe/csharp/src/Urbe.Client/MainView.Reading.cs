@@ -161,10 +161,13 @@ public sealed partial class MainView
     private async Task InsertImageReaderQuoteAsync(ImageStudyQuote quote)
     {
         if(!await VerifyStudySourceAsync(quote.Path,quote.Sha256))return;
-        string fragment = quote.Page is { } page ? new PdfSourceReference(page, quote.Sha256, ReaderRegion.Parse(quote.Region)).Fragment : new PartSourceReference("image", 1, quote.Sha256,Region:ReaderRegion.Parse(quote.Region)).Fragment;
+        // CST-242: a figure inside a book is cited by its chapter (and the region of the picture)
+        string fragment = quote.Part is { } part ? (part with { Region = ReaderRegion.Parse(quote.Region) }).Fragment
+            : quote.Page is { } page ? new PdfSourceReference(page, quote.Sha256, ReaderRegion.Parse(quote.Region)).Fragment
+            : new PartSourceReference("image", 1, quote.Sha256,Region:ReaderRegion.Parse(quote.Region)).Fragment;
         string description = "OCR " + (quote.Reviewed ? "revisado pelo usuário" : "estimado, ainda não revisado") + " · OCR " + quote.Language + " / " + quote.Rotation + "° · região normalizada (x,y,largura,altura): " + quote.Region;
         await InsertStudyCitationAsync(quote.Path + " · " + description, quote.Text,
-            "[[" + quote.Path + "#" + fragment + "|" + System.IO.Path.GetFileName(quote.Path) + (quote.Page is { } p ? ", p. " + p : "") + "]] · " + description);
+            "[[" + quote.Path + "#" + fragment + "|" + System.IO.Path.GetFileName(quote.Path) + (quote.Part is { } inPart ? ", " + inPart.Unit + " " + inPart.Index + ", figura" : quote.Page is { } p ? ", p. " + p : "") + "]] · " + description);
     }
 
     private Task InsertWebReaderQuoteAsync(WebReaderQuote quote)

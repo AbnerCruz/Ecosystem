@@ -98,6 +98,11 @@ Crie uma pasta em `Personalização/Skills/` com um `SKILL.md` (nome, descriçã
 - **Aa** nos leitores de texto (arquivos de texto e a camada de texto do PDF): tamanho da letra, entrelinha e tema claro, sépia ou escuro.
 - Um livro ou PDF aberto pela primeira vez começa com a última aparência escolhida naquele tipo de leitor. Tudo fica no estado privado do app, nada vai para o vault.
 
+## Figuras dos livros
+
+- No leitor de EPUB, o botão **Imagens do capítulo** lista as figuras com a descrição que o livro dá. Uma figura abre ampliada: selecione uma região para reconhecer o texto (OCR) ou perguntar à IA, e a citação volta para o capítulo certo do livro.
+- Uma figura danificada dentro do livro é avisada no leitor, sem fechar o app.
+
 ## Anotações das fontes
 
 - **⋯ → Anotações desta fonte** agora mostra cada destaque, comentário, citação e marcador do arquivo, com a página ou capítulo, o trecho e a nota onde está. Tocar abre a nota na linha certa ou leva à fonte.

@@ -47,6 +47,13 @@ public sealed class EpubStudyView : Grid, IDisposable
     public event Action<BookReaderQuote>? AskRequested;
     public event Action<int>? PositionChanged;
     public event Action<string>? ExternalLinkRequested;
+    /// <summary>CST-242: a text recognised in a picture of the book, to cite (by its chapter and region).</summary>
+    public event Action<ImageStudyQuote>? ImageQuoteRequested;
+    /// <summary>CST-242: a region of a picture of the book, to ask the AI about.</summary>
+    public event Action<StudyImageQuestion>? VisualQuestionRequested;
+    /// <summary>The pictures of the chapter shown now (read by tests).</summary>
+    public IReadOnlyList<ReaderImage> ChapterPictures { get; private set; } = [];
+    public OcrStudyView? FigureView { get; private set; }
     public string ShownText => _chapter?.Text ?? "";
 
     public EpubStudyView(string path, IReaderPublication book, bool compact = false)
@@ -83,7 +90,10 @@ public sealed class EpubStudyView : Grid, IDisposable
         };
         _query.KeyDown += async (_, e) => { if (e.Key == Avalonia.Input.Key.Enter) { e.Handled = true; await SearchAsync(_query.Text ?? ""); } };
         var nav = new DockPanel { LastChildFill = true };
-        var buttonScroll = new StackPanel { Orientation = Orientation.Horizontal, Children = { type, find } };
+        // CST-242: the chapter's figures (diagrams, equations as images, scans) opened to read, recognise and ask about
+        var figures = new Ui.UrbeIconButton(UrbeTheme.Icons.Image, "Imagens do capítulo", 20);
+        figures.Click += async (_, _) => await ShowFiguresMenuAsync(figures);
+        var buttonScroll = new StackPanel { Orientation = Orientation.Horizontal, Children = { type, figures, find } };
         DockPanel.SetDock(_previous, Dock.Left);
         DockPanel.SetDock(buttonScroll, Dock.Right);
         DockPanel.SetDock(_next, Dock.Right);
@@ -139,6 +149,53 @@ public sealed class EpubStudyView : Grid, IDisposable
 
     public async Task SetTypographyAsync(double size)
     { await CaptureLocationAsync(); FontSizePreference = Math.Clamp(size, 10, 48); await ShowChapterAsync(); }
+
+    /// <summary>The pictures of the current chapter; read off the UI thread.</summary>
+    public async Task<IReadOnlyList<ReaderImage>> LoadChapterPicturesAsync()
+    {
+        int chapter = CurrentChapter;
+        var pictures = await Task.Run(() => { lock (_gate) return _closed ? [] : _book.ChapterImages(chapter); });
+        if (chapter == CurrentChapter) ChapterPictures = pictures;
+        return pictures;
+    }
+
+    private async Task ShowFiguresMenuAsync(Control anchor)
+    {
+        var pictures = await LoadChapterPicturesAsync();
+        if (pictures.Count == 0) { _status.Text = "Este capítulo não tem imagens que possam ser examinadas (desenhos SVG não entram: o reconhecimento precisa de pixels)."; return; }
+        var items = pictures.Select(picture =>
+        {
+            var item = new MenuItem { Header = "Imagem " + picture.Number + (picture.Description.Length > 0 ? " — " + (picture.Description.Length > 60 ? picture.Description[..59] + "…" : picture.Description) : " — sem descrição no livro") };
+            item.Click += (_, _) => OpenFigure(picture);
+            return item;
+        }).ToList();
+        new ContextMenu { ItemsSource = items }.Open(anchor);
+    }
+
+    /// <summary>A picture of the chapter in the region/recognition view, cited by its chapter; ‹ returns to the text.</summary>
+    public void OpenFigure(ReaderImage picture)
+    {
+        OcrStudyView view;
+        try
+        {
+            view = new OcrStudyView(_path, null, _book.Sha256, picture.Bytes)
+            {
+                Part = new PartSourceReference(_book.Unit, CurrentChapter + 1, _book.Sha256),
+                ShowsBack = true
+            };
+        }
+        // a picture whose bytes look right but do not decode (a damaged file inside the book) is said, never a crash
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or NotSupportedException)
+        { _status.Text = "A imagem " + picture.Number + " não pôde ser aberta: o arquivo dela no livro está danificado ou num formato que o aparelho não decodifica."; return; }
+        view.QuoteRequested += quote => ImageQuoteRequested?.Invoke(quote);
+        view.VisualQuestionRequested += question => VisualQuestionRequested?.Invoke(question with { Path = _path });
+        view.CloseRequested += async () => { FigureView = null; view.Dispose(); await ShowChapterAsync(); };
+        FigureView?.Dispose();
+        FigureView = view;
+        _body.Content = view;
+        _status.Text = "Imagem " + picture.Number + " do " + _book.PartLabel.ToLowerInvariant() + " " + (CurrentChapter + 1) +
+            (picture.Description.Length > 0 ? ": " + picture.Description : "") + ". Selecione uma região para reconhecer o texto ou perguntar à IA.";
+    }
 
     private async Task ShowChapterAsync()
     {

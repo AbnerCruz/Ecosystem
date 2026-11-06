@@ -738,6 +738,8 @@ public sealed class FilePreviewPanel : Grid
                 epub.QuoteRequested += quote => BookQuoteRequested?.Invoke(quote);
                 epub.AskRequested += quote => QuestionRequested?.Invoke(quote.Path + " · " + quote.Unit + " " + quote.Index, quote.Text);
                 epub.ExternalLinkRequested += url => WebLinkRequested?.Invoke(url);
+                epub.ImageQuoteRequested += quote => ImageQuoteRequested?.Invoke(quote);
+                epub.VisualQuestionRequested += question => VisualQuestionRequested?.Invoke(question);
                 epub.PositionChanged += chapter => RememberReadingPosition(chapter + 1, fontSize: epub.FontSizePreference);
                 _body.Content = epub; Shown = "viewer";
                 epub.RestoreLineHeight(_readingSession?.Preferences.LineHeight ?? 1.6);
