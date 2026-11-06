@@ -161,6 +161,7 @@ public sealed partial class AssistantPanel
         head.Children.Add(lbl);
         var card = new StackPanel { Spacing = 6, Children = { head } };
         if (_progress.TryGetValue(b.Id, out var prog) && r is null) card.Children.Add(Label(prog, 12, UrbeTheme.Text3));
+        if (NestedView(b.Id) is { } nested) card.Children.Add(nested);
         // Image output is shown in the conversation itself, not just as an expandable tool log.
         // The file remains authoritative in the vault. Older beta.20 results are supported too.
         if (b.Name == "generate_image" && r is { IsError: false } &&

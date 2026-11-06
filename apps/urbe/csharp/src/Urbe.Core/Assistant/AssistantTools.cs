@@ -200,6 +200,9 @@ public interface IAssistantDelegation
 {
     IReadOnlyList<AiDelegateTarget> Targets { get; }
     Task<string> ConsultAsync(string agentId, string task, string? conversationId = null);
+    /// <summary>CST-217: a scoped work (or review) in a new conversation of the specialist, its outcome and transcript.</summary>
+    Task<AiDelegationOutcome> DelegateAsync(string agentId, AiDelegationBrief brief) =>
+        throw new AiToolException("Delegação com escopo indisponível neste ambiente.");
 }
 
 /// <summary>A tool the agents use (tools.js def): name, description, JSON Schema, access, label, preview and run.</summary>
