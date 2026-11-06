@@ -1140,9 +1140,14 @@ public sealed partial class AssistantPanel : Border
             if (conv.Runs.Count > 20) conv.Runs.RemoveRange(0, conv.Runs.Count - 20);
             if (web is not null) conv.WebSources = web.Sources.ToList();
             if (ReferenceEquals(conv, _conv)) RenderAll(); else RenderChrome();
-            if (conv.Messages.Count > 0) _store.SaveConversation(conv);
-            // the conversation now has the run: the journal is closed (it stays on the device as the run's log)
-            if (_store.GetConversation(conv.Id)?.Runs.Any(r => r.Id == run.Id) == true) journal.Close("ended");
+            // the conversation now has the run: once the saved text is read back identical, the journal is closed (it
+            // stays on the device as the run's log). A verified write replaces a full re-read and parse of the
+            // conversation on the UI thread (megabytes with attachments: CST-148)
+            bool saved = false;
+            if (conv.Messages.Count > 0)
+                try { conv.Updated = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(); _store.SaveConversationVerified(conv); saved = true; }
+                catch (IOException) { _app.Notify("A conversa não pôde ser gravada no aparelho: o resultado está na tela, mas pode se perder se o app fechar."); }
+            if (saved && conv.Runs.Any(r => r.Id == run.Id)) journal.Close("ended");
             _liveRuns.Remove(run.Id);
             if (!journal.Healthy) _app.Notify("O registro desta execução não pôde ser gravado por completo no aparelho; se o app fechar durante um trabalho, a retomada pode ficar incompleta.");
             var kind = run.Stopped switch
