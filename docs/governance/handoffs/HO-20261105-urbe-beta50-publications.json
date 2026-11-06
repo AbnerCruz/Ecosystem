@@ -12,7 +12,7 @@
   "state": "review",
   "branch": "claude/urbe-refactor-development-t73hul",
   "base_commit": "ee8a6be",
-  "commit": null,
+  "commit": "037a55c8",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/907",
   "files_changed": [
     "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
@@ -102,6 +102,7 @@
     "apps/urbe/csharp/src/Urbe.Core/FunctionPlot.cs",
     "apps/urbe/csharp/src/Urbe.Core/ImageHeader.cs",
     "apps/urbe/csharp/src/Urbe.Core/LegacyEditorTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacySearch.cs",
     "apps/urbe/csharp/src/Urbe.Core/LegacyVisualEdit.cs",
     "apps/urbe/csharp/src/Urbe.Core/LinkRename.cs",
     "apps/urbe/csharp/src/Urbe.Core/MathRenderer.cs",
@@ -159,6 +160,7 @@
     "apps/urbe/csharp/tests/Urbe.Client.Tests/TestIsolation.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/Urbe.Client.Tests.csproj",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/VideoRenderTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/WorkspaceUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AgentSkillsTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AiModelSelectorTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantAgentOracleTests.cs",
@@ -248,7 +250,10 @@
     "CST-179/180: 'Verificar publicação' revisa as notas vivas (fontes ausentes/vazias, títulos que pulam nível, imagens sem descrição/ausentes/da web, links inexistentes, quiz/cálculo/dados com erro, bloco não fechado, slides com texto demais, legendas rápidas) com nota, linha e correção; nada é alterado.",
     "CST-216: diário de execução por run no aparelho (intenção antes do efeito, recibos com SHA), classificação após reinício (feito/não feito/precisa de você) e Retomar sem repetir gravações, imagens ou etapas pagas; aprovações nunca atravessam o reinício.",
     "CST-217: delegate_to_agent só para agentes configurados, com escopo de escrita imposto pelo host, artefato conferido no vault e revisor válido só se leu o arquivo; passos aninhados no cartão; profundidade 1; AssistantTools.All inalterado.",
-    "Correções: bitmaps de páginas dos leitores CBZ/PPTX liberados na thread de UI após os quadros que os desenham (crash nativo 139 no CI não se repetiu); arrastar cartão para outra caixa não abre mais a nota (flag sem reset temporizado)."
+    "Correções: bitmaps de páginas dos leitores CBZ/PPTX liberados na thread de UI após os quadros que os desenham (crash nativo 139 no CI não se repetiu); arrastar cartão para outra caixa não abre mais a nota (flag sem reset temporizado).",
+    "CST-197 e DEC-0059: filtros da Área de trabalho chegam a todos os resultados (Ver todos com o filtro mantido, Mostrar mais), paleta de comandos sem corte em 40, lista de modelos sem corte em 200, resumo de execução com todas as notas e revisão da publicação com todos os itens.",
+    "CST-148: fim de execução do Assistente grava com verificação textual em vez de reler e reinterpretar a conversa inteira na thread de UI.",
+    "06/11, pedido do proprietário (limite de uso): o que está pronto fica nesta beta.50; frentes inacabadas descartadas sem integração: desempenho do Fonte em notas grandes, CST-244 (fontes grandes sem ANR), CST-161 (identidade visual das Publicações) e CST-146 (plugins chamando agentes)."
   ],
   "verification": [
     {
@@ -269,7 +274,7 @@
       "check": "Urbe.Core.Tests e Urbe.Client.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "1577/1577 Core e 553/553 Client localmente (.NET SDK 10.0.403). CI: Android compilado e smoke no emulador verdes desde 1c971d96."
+      "evidence": "1577/1577 Core e 554/554 Client localmente (.NET SDK 10.0.403) no commit final; CI do Urbe verde em 57a147e9 (inclusive Android e emulador)."
     },
     {
       "check": "tests/consistency/Check.cs",
@@ -290,8 +295,9 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Abrir PR da beta.50 e acompanhar CI e integração.",
-    "Seguir a consolidação Numa 2.6; MCP aguarda DEC-0061."
+    "Integração da beta.50 pelo integrador governado após a autorização do proprietário (mudança crítica de distribuição).",
+    "Validação no aparelho dos itens listados em verification (NN-017).",
+    "Retomar como itens novos: desempenho do Fonte em notas grandes, CST-244, CST-161, CST-146; MCP aguarda DEC-0061."
   ],
   "decisions_required": [
     "DEC-0061"
