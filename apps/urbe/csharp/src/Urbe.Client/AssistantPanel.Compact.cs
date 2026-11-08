@@ -59,6 +59,7 @@ public sealed partial class AssistantPanel
     {
         Load();
         if (!_loaded) return;
+        _everOpened = true; // Expanding the popup must resume this conversation, not the agent picker.
         IsVisible = false;
         ActivateCompact();
     }
