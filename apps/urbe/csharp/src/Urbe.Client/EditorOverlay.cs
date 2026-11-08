@@ -875,7 +875,6 @@ public sealed class EditorOverlay : Grid
     public event Func<EditorOverlay, Task>? MoreRequested;
 
     /// <summary>The Assistente button of the top bar (owner, UC-48: "não está com o botão da IA").</summary>
-    public event Action? AssistantRequested;
 
     /// <summary>UC-80: an agent's suggestion shown in the note (in Visual), or null to take it away.</summary>
     public void ShowSuggestion(VisualSurface.Suggestion? suggestion)
@@ -1654,17 +1653,10 @@ public sealed class EditorOverlay : Grid
             _visual.FinishEdit();
             if (MoreRequested is not null && _note is not null) await MoreRequested(this);
         };
-        var assistant = new UrbeIconButton(UrbeTheme.Icons.Assistant, "Assistente");
-        assistant.Click += (_, _) =>
-        {
-            // the block being written is kept in the text, so the Assistente sees it and the selection
-            _visual.FinishEdit();
-            AssistantRequested?.Invoke();
-        };
         // CST-105/106: on a phone the two-word switch left the title no room; there Visual/Fonte is one button
         _modeToggle = new UrbeIconButton(UrbeTheme.Icons.FileCode, "Mudar para Fonte") { IsVisible = false };
         _modeToggle.Click += (_, _) => { if (IsHtml) SetLive(!_live); else SetMode(Mode == EditorMode.Visual ? EditorMode.Fonte : EditorMode.Visual); };
-        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { PluginButtons, assistant, _segment, _modeToggle, more } };
+        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Children = { PluginButtons, _segment, _modeToggle, more } };
         var bar = new DockPanel { Margin = new Thickness(UrbeTokens.Space.Xxs, 0), LastChildFill = true };
         bar.PropertyChanged += (_, e) =>
         {

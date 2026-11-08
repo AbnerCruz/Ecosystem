@@ -10,6 +10,12 @@ public interface IAssistantStorage
     void Write(string name, string text);
     void Delete(string name);
     IEnumerable<string> List();
+    /// <summary>A small beginning of a file for history metadata; older adapters can use Read.</summary>
+    string? ReadPrefix(string name, int maxChars)
+    {
+        var text = Read(name);
+        return text is null ? null : text[..Math.Min(text.Length, maxChars)];
+    }
     /// <summary>
     /// CST-216: adds <paramref name="text"/> at the end of the file (a run's journal line). True when it was kept; the
     /// default rewrites the file, a folder appends and flushes to the disk.
@@ -40,6 +46,19 @@ public sealed class FolderAssistantStorage(string folder) : IAssistantStorage
     public string? Read(string name)
     {
         try { return File.Exists(PathOf(name)) ? File.ReadAllText(PathOf(name)) : null; }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return null; }
+    }
+
+    /// <summary>Do not read megabytes of messages to show a chat title/date.</summary>
+    public string? ReadPrefix(string name, int maxChars)
+    {
+        try
+        {
+            using var reader = new StreamReader(PathOf(name));
+            var buffer = new char[maxChars];
+            var length = reader.Read(buffer, 0, buffer.Length);
+            return new string(buffer, 0, length);
+        }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return null; }
     }
 
@@ -118,6 +137,9 @@ public sealed class AiConversation
     public List<FormSession> Forms { get; set; } = [];
     public List<AiChatMessage> QueuedMessages { get; set; } = [];
 }
+
+/// <summary>Lightweight view of an existing chat file; never a second conversation authority.</summary>
+public sealed record AiConversationSummary(string Id, string Title, long Updated, string AgentId, string Vault);
 
 /// <summary>The models a provider listed, and when.</summary>
 public sealed record AiModelCache(long At, IReadOnlyList<AiModelInfo> List);
@@ -200,6 +222,66 @@ public sealed class AssistantStore(IAssistantStorage storage)
 {
     private const string ConfigFile = "config.json";
     private const string Prefix = "conversa-";
+    private readonly Dictionary<string, AiConversationSummary> _historySummaries = new(StringComparer.Ordinal);
+    private readonly object _summaryGate = new();
+
+    private AiConversationSummary? SummaryOfFile(string name)
+    {
+        // Top-level identity, title, agent, vault and date precede the enormous messages array.
+        // Utf8JsonReader accepts a partial buffer; no chat messages, tool results or image
+        // attachments are ever hydrated just to draw the list.
+        var prefix = storage.ReadPrefix(name, 8192);
+        if (prefix is null) return null;
+        string id = "", title = "", agentId = "geral", vault = "", property = "";
+        long updated = 0;
+        try
+        {
+            var reader = new Utf8JsonReader(System.Text.Encoding.UTF8.GetBytes(prefix), isFinalBlock: false, state: default);
+            while (reader.Read())
+            {
+                if (reader.CurrentDepth != 1) continue;
+                if (reader.TokenType == JsonTokenType.PropertyName) { property = reader.GetString() ?? ""; continue; }
+                if (reader.TokenType == JsonTokenType.String)
+                {
+                    var value = reader.GetString() ?? "";
+                    switch (property)
+                    {
+                        case "id": id = value; break;
+                        case "title": title = value; break;
+                        case "agentId": agentId = value; break;
+                        case "vault": vault = value; break;
+                    }
+                }
+                else if (property == "updated" && reader.TokenType == JsonTokenType.Number)
+                    reader.TryGetInt64(out updated);
+                if (property == "vault" && reader.TokenType == JsonTokenType.String) break;
+            }
+        }
+        catch (JsonException) { return null; }
+        return id.Length == 0 ? null : new AiConversationSummary(id, title, updated, agentId, vault);
+    }
+
+    /// <summary>Fast history listing: read only each file's first bytes, cache by filename,
+    /// and open the full payload only after the user selects a chat.</summary>
+    public IReadOnlyList<AiConversationSummary> ConversationSummariesFor(string agentId, string vault)
+    {
+        lock (_summaryGate)
+        {
+            var files = storage.List().Where(n => n.StartsWith(Prefix, StringComparison.Ordinal) &&
+                n.EndsWith(".json", StringComparison.Ordinal)).ToHashSet(StringComparer.Ordinal);
+            foreach (var old in _historySummaries.Keys.Where(n => !files.Contains(n)).ToArray()) _historySummaries.Remove(old);
+            foreach (var name in files)
+                if (!_historySummaries.ContainsKey(name) && SummaryOfFile(name) is { } summary)
+                    _historySummaries[name] = summary;
+            return _historySummaries.Values.Where(c => c.AgentId == agentId && c.Vault == vault)
+                .OrderByDescending(c => c.Updated).ToList();
+        }
+    }
+
+    private void InvalidateSummary(string id)
+    {
+        lock (_summaryGate) _historySummaries.Remove(FileOf(id));
+    }
 
     public AiConfig GetConfig()
     {
@@ -319,6 +401,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
     {
         c.Updated = now ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         storage.Write(FileOf(c.Id), ConversationToJson(c).ToJsonString());
+        InvalidateSummary(c.Id);
     }
 
     public void SaveConversationVerified(AiConversation c)
@@ -326,9 +409,14 @@ public sealed class AssistantStore(IAssistantStorage storage)
         var text = ConversationToJson(c).ToJsonString();
         storage.Write(FileOf(c.Id), text);
         if (storage.Read(FileOf(c.Id)) != text) throw new IOException("Não foi possível salvar o formulário/conversa.");
+        InvalidateSummary(c.Id);
     }
 
-    public void DeleteConversation(string id) => storage.Delete(FileOf(id));
+    public void DeleteConversation(string id)
+    {
+        storage.Delete(FileOf(id));
+        InvalidateSummary(id);
+    }
 
     /// <summary>Delete all readable conversations owned by one agent across every vault, verifying each deletion.
     /// A silent filesystem failure leaves agent settings intact so the user can retry.</summary>
@@ -342,6 +430,7 @@ public sealed class AssistantStore(IAssistantStorage storage)
             storage.Delete(file);
             if (storage.Read(file) is not null || storage.List().Contains(file, StringComparer.Ordinal))
                 throw new IOException("Não foi possível excluir o histórico do agente: " + conversation.Id);
+            InvalidateSummary(conversation.Id);
         }
         // CST-216: the agent's run journals go with its conversations
         AssistantRunJournal.DeleteFor(storage, agentId);

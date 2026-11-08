@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261108-urbe-beta51-ai-session",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-08T13:41:00.000Z",
+  "agent": {
+    "id": "gpt6-urbe-ai",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-89",
+  "component": "urbe",
+  "state": "review",
+  "branch": "fix/urbe-beta51-ai-continuity-history-popup-effort",
+  "base_commit": "578753cb070fc640d8a48ba94afac1b1728c5a20",
+  "commit": "83a7b210cbbcbc70d92e9502959977216ccd6eea",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/915",
+  "files_changed": [
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Compact.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Views.cs",
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.Assistant.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantAgent.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantContextBudget.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantProviders.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AgentWorkspaceUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantContextualUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantContinuityUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorPendingUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantHistoryEffortTests.cs",
+    "docs/governance/handoffs/HO-20261108-urbe-beta51-ai-session.json"
+  ],
+  "work_completed": [
+    "Auditoria do ciclo da IA: Open() retornava a ShowAgents a cada reabertura e SelectAgent() instanciava uma conversa; agora o picker surge apenas no primeiro uso e uma conversa é preservada por agente/vault na sessão até Nova conversa explícita.",
+    "Histórico: antes ListConversations() desserializava todos os chats inteiros e bloqueava a UI. Agora cabeçalhos de 8192 caracteres são lidos em worker, cache por arquivo e carregamento integral apenas ao selecionar. Exibe linhas progressivamente sem limite de resultados.",
+    "Editor: abrir Assistente mostra composer não-modal no topo, resposta resumida, aprovações/contexto e Expandir; fora do editor abre painel completo. Removido botão duplicado do cabeçalho sem retirar atalho de navegação.",
+    "Se o usuário tentar enviar pelo popup sem modelo configurado, o draft permanece e abre o fluxo completo visível de conexão/modelo.",
+    "Esforço real low/medium/high no ciclo de requisição e contexto, roteado para OpenRouter reasoning.effort, OpenAI reasoning_effort e Claude output_config.effort nas versões suportadas. Provedores sem parâmetro mostram indisponibilidade.",
+    "Pesquisa cruzada: docs oficiais Avalonia Popup e biblioteca de interface, documentações Claude/OpenRouter/OpenAI e relatos de foco roubado / janelas flutuantes / teclado Android das comunidades VS Code e Avalonia.",
+    "Teste de regressão incluído para conversa por agente, reabertura, popup com envio real, índice sem hidratar corpos e contratos de esforço. Notas e versão beta.51 atualizadas.",
+    "Referências externas consultadas para UX e protocolos: https://docs.avaloniaui.net/controls/feedback/popup ; https://platform.claude.com/docs/en/build-with-claude/effort ; https://openrouter.ai/docs/guides/best-practices/reasoning-tokens ; relatos https://github.com/microsoft/vscode/issues/312575 e https://github.com/AvaloniaUI/Avalonia/issues/13319. Essas fontes são pesquisa, não documentos normativos do repositório.",
+    "Alinhados dois testes legados que aguardavam botão Voltar ao reabrir conversa e botão Assistente duplicado no editor. Novas expectativas verificam diretamente a conversa corrente e a ausência intencional do botão redundante."
+  ],
+  "verification": [
+    {
+      "check": "dotnet build Urbe.Portable.slnx -c Release --no-restore",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "CI PR #915 (urbe-checks, run 42485726551): build no .NET 10 passou com 0 warnings, 0 errors."
+    },
+    {
+      "check": "Urbe.Core.Tests — regressão do reconhecimento de modelos Claude",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Após encontrar e corrigir falsa compatibilidade no primeiro CI, a execução seguinte avançou aos testes do cliente; core passou no run 42485726551."
+    },
+    {
+      "check": "Urbe.Client.Tests — reabertura e multichat e popup real",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI do integrador no estado combinado para head c208584 reportou apenas 2 testes legados com expectativas removidas; ambos foram atualizados em commits 426576d e 83a7b21. Nova execução pendente."
+    },
+    {
+      "check": "GitHub Actions urbe-checks, consistency, Android/Windows",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Gates reexecutados na revisão atual do PR; dependem da conclusão do CI."
+    },
+    {
+      "check": "Instalar/usar beta.51 em aparelho Android físico",
+      "kind": "human",
+      "result": "pending",
+      "evidence": "Não realizado nesta sessão. Android emulator smoke e build não equivalem a DEVICE.",
+      "object": "apps/urbe/csharp/PATCHNOTES.md",
+      "critical": true
+    }
+  ],
+  "known_issues": [
+    "Compatibilidade de esforço varia com modelo e provedor: controles sem suporte são desabilitados; a plataforma pode mudar seus contratos.",
+    "A conversa ativa é preservada durante a sessão em execução; o app não passa a retomar automaticamente o chat após encerramento total do processo.",
+    "Validação física NN-017 e publicação assinada dependem do workflow de release após integração."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Concluir CI de PR #915 com testes de núcleo e cliente e snapshots nativos.",
+    "Integrar pela política governada com autorização do proprietário se exigida pela classificação de caminhos críticos (Store/csproj).",
+    "Despachar o workflow oficial urbe-csharp-mobile-release.yml para APK Android + Windows ZIP de 2.0.0-beta.51 após merge; não fabricar artefatos manualmente.",
+    "Validar no dispositivo real ciclo da IA, IME do popup e histórico volumoso."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/distribution/direct-releases.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Versão beta.51 mantida no único csproj canônico; sem alteração de pacote/assinatura ou storage schema."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff rastreia implementação, referências, verificações e pendências sem dizer que preview é release."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Android físico não validado; CI headless/emulador distinguido."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Primeiro CI identificou duas regressões de testes antigos e um bug de detecção Claude; correções documentadas, novo CI pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-assistant-companion",
+      "status": "product-specific",
+      "rationale": "O overlay e o vínculo com a conversa, o editor e as permissões são particulares do Urbe; não foi criado componente transversal."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data",
+      "distribution"
+    ],
+    "reason": "Leitura/caching de metadados em AssistantStore.cs, classificado por caminho user-data, preservando formatos; avanço padrão da versão do csproj beta.51, classificado distribution. Nenhum contrato de arquivo ou assinatura foi modificado."
+  }
+}

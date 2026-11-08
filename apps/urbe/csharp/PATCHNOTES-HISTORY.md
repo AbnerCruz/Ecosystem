@@ -2,6 +2,10 @@
 
 A descrição detalhada da versão preparada para publicação fica em PATCHNOTES.md. Ao preparar uma nova versão, transferir a anterior para este histórico em forma compacta. Não confundir PR, build de prévia e release publicada; uma versão preparada pode ainda não estar publicada.
 
+## 2.0.0-beta.50 — 06/11/2026
+- Publicações com DOCX, ODT, PPTX, slides HTML, quizzes, cálculo e dados; IA com ferramentas de documentos e evidências.
+- https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.50
+
 ## 2.0.0-beta.49 — 05/11/2026
 - Digitação em notas longas mais leve: as alças de seleção de toque escondidas não refazem mais o texto inteiro a cada letra (Fonte ~40% mais rápido).
 - https://github.com/AbnerCruz/Ecosystem/releases/tag/urbe-csharp-v2.0.0-beta.49

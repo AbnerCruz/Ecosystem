@@ -26,7 +26,7 @@ public sealed record AiMessage(string Role, IReadOnlyList<AiBlock> Content);
 public sealed record AiToolSchema(string Name, string Description, JsonObject Parameters);
 
 /// <summary>What the agent asks a provider.</summary>
-public sealed record AiRequest(string Model, IReadOnlyList<AiMessage> Messages, string? System = null, IReadOnlyList<AiToolSchema>? Tools = null, int? MaxTokens = null, double? Temperature = null);
+public sealed record AiRequest(string Model, IReadOnlyList<AiMessage> Messages, string? System = null, IReadOnlyList<AiToolSchema>? Tools = null, int? MaxTokens = null, double? Temperature = null, string? ReasoningEffort = null);
 
 /// <summary>Tokens and cost of one answer.</summary>
 public sealed record AiUsage(long Input, long Output, double? Cost,
@@ -130,6 +130,21 @@ public sealed class AssistantProviders
     }
 
     private static string Trim(string s) => LegacyCustomize.JsTrim(s);
+
+    /// <summary>Only expose effort when the provider/model has a documented compatible wire parameter.</summary>
+    public static bool SupportsEffort(AiProviderConfig provider, string model)
+    {
+        if (provider.Preset == "openrouter") return model.Length > 0;
+        if (provider.Preset == "openai")
+            return model.StartsWith("gpt-5", StringComparison.OrdinalIgnoreCase) ||
+                model.StartsWith("gpt-6", StringComparison.OrdinalIgnoreCase) ||
+                System.Text.RegularExpressions.Regex.IsMatch(model, "^o[134](?:-|$)", RegexOptions.IgnoreCase);
+        if (Resolve(provider).Kind == "anthropic")
+            return Regex.IsMatch(model,
+                "^claude-(?:opus|sonnet|haiku|fable|mythos)-(?:5|4-(?:6|7|8))(?:-|$)",
+                RegexOptions.IgnoreCase);
+        return false;
+    }
 
     // ---------------------------------------------------------------- errors
 
@@ -348,6 +363,14 @@ public sealed class AssistantProviders
         }
         if (req.MaxTokens is { } mt && mt != 0) body["max_tokens"] = mt;
         if (req.Temperature is { } temp) body["temperature"] = temp;
+        if (req.ReasoningEffort is "low" or "medium" or "high")
+        {
+            if (provider.Preset == "openrouter")
+                body["reasoning"] = new JsonObject { ["effort"] = req.ReasoningEffort };
+            else if (provider.Preset == "openai" && SupportsEffort(
+                new AiProviderConfig(provider.Id, provider.Preset), req.Model))
+                body["reasoning_effort"] = req.ReasoningEffort;
+        }
         if (provider.StreamUsage) body["stream_options"] = new JsonObject { ["include_usage"] = true };
         if (provider.Extra is { } extra) foreach (var (k, v) in extra) body[k] = v?.DeepClone();
         return body;
@@ -513,6 +536,9 @@ public sealed class AssistantProviders
         if (req.Tools is { Count: > 0 } tools)
             body["tools"] = new JsonArray(tools.Select(t => (JsonNode)new JsonObject { ["name"] = t.Name, ["description"] = t.Description, ["input_schema"] = t.Parameters.DeepClone() }).ToArray());
         if (req.Temperature is { } temp) body["temperature"] = temp;
+        if (req.ReasoningEffort is "low" or "medium" or "high" &&
+            SupportsEffort(new AiProviderConfig("anthropic", "anthropic"), req.Model))
+            body["output_config"] = new JsonObject { ["effort"] = req.ReasoningEffort };
         return body;
     }
 

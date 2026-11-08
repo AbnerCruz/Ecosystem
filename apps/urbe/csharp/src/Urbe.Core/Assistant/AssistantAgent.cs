@@ -221,6 +221,7 @@ public sealed class AiAgentRun
     public bool OptimizeToolUse { get; init; }
     public int? MaxTokens { get; init; }
     public double? Temperature { get; init; }
+    public string? ReasoningEffort { get; init; }
     public bool IsSubagent { get; init; }
     /// <summary>
     /// CST-216: the run's journal on the device (steps, calls, decisions, effects). With it, an action that changed
@@ -755,12 +756,13 @@ public static class AssistantAgent
                     {
                         Host = o.Host, Provider = o.Provider, Model = o.Model, Messages = messages,
                         Stream = o.Stream, ContextTokens = o.ContextTokens, MaxTokens = o.MaxTokens,
-                        Temperature = o.Temperature, OptimizeToolUse = true, Memory = o.Memory,
+                        Temperature = o.Temperature, ReasoningEffort = o.ReasoningEffort,
+                        OptimizeToolUse = true, Memory = o.Memory,
                         RecallMemory = o.RecallMemory, CountInputTokens = o.CountInputTokens,
                         BuildSystemWithMemory = SystemWith
                     }, system, schemas, source, result.Efficiency, o.CountInputTokens)
                     : new AiRequest(o.Model, Prepare(SettlePast(source), budget, false), system, schemas,
-                        o.MaxTokens is null or 0 ? 8192 : o.MaxTokens, o.Temperature);
+                        o.MaxTokens is null or 0 ? 8192 : o.MaxTokens, o.Temperature, o.ReasoningEffort);
                 o.Journal?.Request(result.Steps);
                 res = await TimedStream(o.Provider, req, e =>
                 {
