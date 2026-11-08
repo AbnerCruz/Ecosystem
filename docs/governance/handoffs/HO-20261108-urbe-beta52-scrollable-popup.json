@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261108-urbe-beta52-scrollable-popup",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-08T14:31:30.000Z",
+  "agent": {
+    "id": "gpt6-urbe-ai",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-89",
+  "component": "urbe",
+  "state": "review",
+  "branch": "fix/urbe-beta52-scrollable-ai-popup",
+  "base_commit": "1af884df822b546585c4a0157add490dad16daba",
+  "commit": "09f6e55c8be0458d7fcb5f4bec0109934a305042",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/916",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Compact.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantContinuityUiTests.cs",
+    "apps/urbe/csharp/src/Urbe.Android/Urbe.Android.csproj",
+    "apps/urbe/csharp/PATCHNOTES.md",
+    "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
+    "docs/governance/handoffs/HO-20261108-urbe-beta52-scrollable-popup.json"
+  ],
+  "work_completed": [
+    "O proprietário esclareceu que a intenção é ler toda a conversa dentro do popup, não apenas a última resposta.",
+    "Auditoria do beta.51: CompactContent exibia apenas a última resposta e cortava após 320 caracteres; o ScrollViewer externo não tornava mensagens anteriores disponíveis.",
+    "Implementação beta.52: transcript textual integral da conversa selecionada, na ordem original, incluindo perguntas do usuário, todas as respostas da IA e nomes de anexos; dados ocultos, resultados internos de ferramentas e raciocínio privado não se tornam mensagens visíveis.",
+    "O transcript tem ScrollViewer de rolagem vertical com altura delimitada pelo layout Grid (260 px), com campo Enviar e comandos Abrir conversa/Fechar fora da região rolável, acessíveis sem sair do editor.",
+    "Preserva a posição de leitura quando a superfície é atualizada; o popup segue a última mensagem apenas se o usuário estava no final. Não reconstrói o compositor a cada token de streaming para não perder foco ou seleção durante a digitação.",
+    "Teste headless com 4 turnos de chat e resposta de 90 linhas; verifica ordem, integridade de todo texto, gesto simulado de rolagem, composer separado e editor aberto.",
+    "Versão 2.0.0-beta.52 / versionCode 2000052 no csproj canônico, patchnotes atualizados, mesma assinatura e workflows Android/Windows da beta.51."
+  ],
+  "verification": [
+    {
+      "check": "Urbe.Core.Tests e Urbe.Client.Tests / CI do PR #916",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI do PR #916 reexecutado após correção do requisito para conversa completa; sem resultado afirmado antes da conclusão."
+    },
+    {
+      "check": "Android e Windows compilações / smoke do emulador",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Workflow urbe-checks deverá executar os builds, sem substituir validação física."
+    },
+    {
+      "check": "Rolagem e toque real no popup sobre o editor no Android",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/PATCHNOTES.md",
+      "evidence": "Validação física de gesto de rolagem, teclado e layout no aparelho ainda não executada."
+    }
+  ],
+  "known_issues": [
+    "Preview textual da conversa compacta não duplica os controles de execução detalhados do painel completo; abrir conversa mantém acesso aos tool cards e conteúdos enriquecidos.",
+    "Validação física no Android do gesto de rolagem com teclado aberto segue pendente (NN-017)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Observar status dos checks e corrigir eventuais falhas sem ampliar o escopo.",
+    "Após checks verdes, o integrador classificará o version bump no csproj como distribution crítica; exige label integrar aposta pelo proprietário.",
+    "Após merge autorizado à main, usar exclusivamente workflow urbe-csharp-mobile-release.yml para publicar Android APK assinado e Windows ZIP 2.0.0-beta.52.",
+    "Registrar feedback da rolagem em Android real."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "MANIFEST.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/distribution/direct-releases.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Resposta permanece a mesma mensagem da conversa existente; só há uma versão no csproj canônico."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Este handoff registra PR, commits, escopo, verificações e próximos passos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Rolagem validável via headless; gesto no aparelho permanece pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Critérios verificáveis: leitura integral, overflow rolável e composer preservado, sem declaração prematura de release."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-assistant-popup-response-scroll",
+      "status": "product-specific",
+      "rationale": "Implementação de UI específica do popup do Assistente Urbe; mantém arquitetura atual."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Alteração do version code no csproj do canal beta classificada por caminho como distribuição crítica; não modifica workflow, assinatura nem identidade. O proprietário autorizou uma nova versão, mas a label de merge segue o mecanismo de autenticação da política."
+  }
+}

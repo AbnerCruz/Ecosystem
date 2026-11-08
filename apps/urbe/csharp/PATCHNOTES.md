@@ -1,9 +1,15 @@
 # Urbe — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.51
+**Versão canônica preparada:** 2.0.0-beta.52
 **Canal:** Urbe 2.0 nativo, Android e Windows
 **Publicação:** pelo workflow oficial depois da integração; preparada não significa publicada.
 **Atualização:** por cima da beta instalada (app.urbe.csharp, mesmo certificado). Não precisa desinstalar.
+
+## Assistente: conversa completa no popup (beta.52)
+
+- O popup mostra o histórico textual completo da conversa atual: perguntas do usuário e respostas anteriores da IA, na ordem, sem cortar o texto após 320 caracteres.
+- A conversa tem rolagem vertical independente, do início ao fim, com o campo de escrita e os botões Enviar, Abrir conversa e Fechar sempre acessíveis.
+- Ao receber mais conteúdo, o popup acompanha as últimas mensagens somente se a leitura estiver no fim; se o usuário estiver lendo mensagens antigas, preserva a posição. O popup permanece acima do editor.
 
 ## Assistente: continuidade, histórico e esforço (beta.51)
 
