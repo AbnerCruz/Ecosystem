@@ -40,7 +40,8 @@
     "Se o usuário tentar enviar pelo popup sem modelo configurado, o draft permanece e abre o fluxo completo visível de conexão/modelo.",
     "Esforço real low/medium/high no ciclo de requisição e contexto, roteado para OpenRouter reasoning.effort, OpenAI reasoning_effort e Claude output_config.effort nas versões suportadas. Provedores sem parâmetro mostram indisponibilidade.",
     "Pesquisa cruzada: docs oficiais Avalonia Popup e biblioteca de interface, documentações Claude/OpenRouter/OpenAI e relatos de foco roubado / janelas flutuantes / teclado Android das comunidades VS Code e Avalonia.",
-    "Teste de regressão incluído para conversa por agente, reabertura, popup com envio real, índice sem hidratar corpos e contratos de esforço. Notas e versão beta.51 atualizadas."
+    "Teste de regressão incluído para conversa por agente, reabertura, popup com envio real, índice sem hidratar corpos e contratos de esforço. Notas e versão beta.51 atualizadas.",
+    "Referências externas consultadas para UX e protocolos: https://docs.avaloniaui.net/controls/feedback/popup ; https://platform.claude.com/docs/en/build-with-claude/effort ; https://openrouter.ai/docs/guides/best-practices/reasoning-tokens ; relatos https://github.com/microsoft/vscode/issues/312575 e https://github.com/AvaloniaUI/Avalonia/issues/13319. Essas fontes são pesquisa, não documentos normativos do repositório."
   ],
   "verification": [
     {
@@ -71,7 +72,9 @@
       "check": "Instalar/usar beta.51 em aparelho Android físico",
       "kind": "human",
       "result": "pending",
-      "evidence": "Não realizado nesta sessão. Android emulator smoke e build não equivalem a DEVICE."
+      "evidence": "Não realizado nesta sessão. Android emulator smoke e build não equivalem a DEVICE.",
+      "object": "apps/urbe/csharp/PATCHNOTES.md",
+      "critical": true
     }
   ],
   "known_issues": [
@@ -92,12 +95,7 @@
     "apps/urbe/AGENTS.md",
     "docs/governance/integration-policy.json",
     "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
-    "docs/distribution/direct-releases.md",
-    "https://docs.avaloniaui.net/controls/feedback/popup",
-    "https://platform.claude.com/docs/en/build-with-claude/effort",
-    "https://openrouter.ai/docs/guides/best-practices/reasoning-tokens",
-    "https://github.com/microsoft/vscode/issues/312575",
-    "https://github.com/AvaloniaUI/Avalonia/issues/13319"
+    "docs/distribution/direct-releases.md"
   ],
   "invariants": [
     {
