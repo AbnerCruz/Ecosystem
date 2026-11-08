@@ -63,8 +63,9 @@ public sealed partial class HeadlessUiTests
             var secondRun = panel.CurrentRun!;
             await model.BothStarted.Task.WaitAsync(TimeSpan.FromSeconds(10));
             Assert.True(panel.Running);
-            panel.SelectAgent("one"); // New blank chat; old runs are still alive.
-            Assert.False(panel.Running);
+            panel.SelectAgent("one"); // Return to the original active chat instead of creating a blank one.
+            Assert.Equal(firstId, panel.Conversation.Id);
+            Assert.True(panel.Running);
             Assert.False(firstRun.IsCompleted);
             Assert.False(secondRun.IsCompleted);
             model.Release.TrySetResult(true);
