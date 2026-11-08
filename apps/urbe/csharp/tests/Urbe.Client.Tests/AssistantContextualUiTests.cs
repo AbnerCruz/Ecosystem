@@ -155,7 +155,8 @@ public sealed partial class HeadlessUiTests
                 input.Text = "Leitores iniciantes, mas com interesse em";
                 panel.Close();
                 panel.Open();
-                ClickNamed(panel, "Voltar"); // Resume the current chat, not an agent selection.
+                Assert.Null(panel.ViewTitle); // Reopening must return straight to the same chat.
+                // Its pending clarification draft must still be on screen.
                 Assert.Contains(panel.GetLogicalDescendants().OfType<TextBox>(), t => t.Text == "Leitores iniciantes, mas com interesse em");
                 return true;
             }
