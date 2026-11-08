@@ -71,8 +71,28 @@ public sealed partial class HeadlessUiTests
                 Assert.False(panel.IsVisible);
                 Assert.True(view.AssistantMini.IsVisible);
                 Assert.Equal(Avalonia.Layout.VerticalAlignment.Top, view.AssistantMini.VerticalAlignment);
-                Assert.Contains(view.AssistantMini.GetLogicalDescendants().OfType<TextBox>(),
-                    b => Avalonia.Automation.AutomationProperties.GetName(b) == "Mensagem rápida ao Assistente");
+                var composer = view.AssistantMini.GetLogicalDescendants().OfType<TextBox>()
+                    .Single(b => Avalonia.Automation.AutomationProperties.GetName(b) == "Mensagem rápida ao Assistente");
+                var model = new ScriptedModel();
+                panel.Providers = new AssistantProviders(model, (_, _) => Task.CompletedTask);
+                panel.Config.Providers.Add(new AiProviderConfig("openrouter", "openrouter", ApiKey: "test"));
+                panel.Config.ProviderId = "openrouter";
+                panel.Config.Model = "org/modelo";
+                model.Chats.Enqueue(Sse(
+                    """{"choices":[{"delta":{"content":"Mensagem rápida respondida."}}]}""",
+                    """{"choices":[{"delta":{},"finish_reason":"stop"}]}"""));
+                composer.Text = "Pergunta enviada pelo popup";
+                var send = view.AssistantMini.GetLogicalDescendants().OfType<Button>()
+                    .Single(b => b.Content is string text && text == "Enviar");
+                send.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                await panel.CurrentRun!;
+                Dispatcher.UIThread.RunJobs();
+                Assert.True(view.Editor.IsVisible);
+                Assert.False(panel.IsVisible);
+                Assert.Contains(panel.Conversation.Messages, m => m.Role == "user" &&
+                    m.Content.Any(b => b.Text == "Pergunta enviada pelo popup"));
+                Assert.Contains(panel.Conversation.Messages, m => m.Role == "assistant" &&
+                    m.Content.Any(b => b.Text == "Mensagem rápida respondida."));
                 view.ToggleAssistant();
                 Assert.False(view.AssistantMini.IsVisible);
                 view.ToggleAssistant();
