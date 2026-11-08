@@ -13,7 +13,7 @@ namespace Urbe.Client.Tests;
 /// <summary>
 /// UC-55: the editor's open points of the owner's notes. Inline code wraps in backticks instead of taking a line; a
 /// tapped [[nova nota]] in Visual offers to create the note and opens it; the lit buttons follow the text and a lit
-/// button turns off; the Assistente and the Relógio are in the editor's top bar.
+/// button turns off; the Relógio remains in the editor top bar while the redundant IA button is absent.
 /// </summary>
 public sealed partial class HeadlessUiTests
 {
@@ -41,12 +41,14 @@ public sealed partial class HeadlessUiTests
             await Settle(window, view);
             Assert.Equal(EditorMode.Visual, editor.Mode);
 
-            // the Assistente and the Relógio are in the editor's top bar, on screen on a phone and on a wide window
+            // The Relógio remains on the editor's top bar; the duplicate Assistente shortcut is intentionally removed.
             foreach (var width in new[] { 412.0, 1280.0 })
             {
                 window.Width = width;
                 await Settle(window, view);
-                foreach (var name in new[] { "Assistente", "Relógio" })
+                Assert.DoesNotContain(editor.GetLogicalDescendants().OfType<Button>(),
+                    b => ToolTip.GetTip(b) as string == "Assistente" && !b.GetLogicalAncestors().Contains(editor.Surface));
+                foreach (var name in new[] { "Relógio" })
                 {
                     var b = TopBarButton(editor, name);
                     Assert.True(b.IsEffectivelyVisible, name + " @" + width);

@@ -150,7 +150,6 @@ public sealed partial class MainView : Grid
         // UC-69: a tap on the title renames the note; a save that failed after leaving the editor is told here
         Editor.RenameRequested += () => { if (Editor.Current is { } open) _ = RenameNoteAsync(open.Path); };
         Editor.SaveFailed += message => _notice.Show(message, TimeSpan.FromSeconds(8), "Tentar de novo", () => _ = Editor.RetrySavesAsync(), Ui.ToastKind.Warning);
-        Editor.AssistantRequested += ToggleAssistant;
         Editor.AgentAsked += call => _ = AskAgentInNoteAsync(call);
         Editor.Shown += path => { ApplyEditorCompatibility(path); NoteOpened?.Invoke(path); };   // plugins: "nota:aberta"
         Editor.ReadOnlyChanged += PreventUnsafeEditorToggle;

@@ -60,11 +60,12 @@ public sealed partial class MainView : IAssistantApp
         _assistantMini.CornerRadius = new CornerRadius(UrbeTokens.Radius.L);
         _assistantMini.BoxShadow = UrbeTokens.Elevation.Low;
         _assistantMini.Padding = new Thickness(UrbeTokens.Space.M);
-        _assistantMini.Margin = new Thickness(12, 0, 12, 76);
+        // An upper-right, bounded companion avoids the keyboard and the note's writing area.
+        _assistantMini.Margin = new Thickness(12, 64, 12, 0);
         _assistantMini.MaxWidth = 440;
         _assistantMini.ZIndex = 19; // Explorer drawer uses ZIndex=1; contextual UI must be above it.
         _assistantMini.HorizontalAlignment = HorizontalAlignment.Right;
-        _assistantMini.VerticalAlignment = VerticalAlignment.Bottom;
+        _assistantMini.VerticalAlignment = VerticalAlignment.Top;
         Avalonia.Automation.AutomationProperties.SetName(_assistantMini, "Assistente contextual");
         _stage.Children.Add(_assistantMini);
         _stage.Children.Add(Ui.UrbeMotion.Pressable(_assistantLauncher));
@@ -81,17 +82,13 @@ public sealed partial class MainView : IAssistantApp
         _stage.Children.Add(_radial);
         Editor.BottomChromeChanged += UpdateRadialLift;
         Editor.WritingChanged += UpdateFloatingNav;
-        Editor.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) { UpdateRadialLift(); UpdateNav(); } };
+        Editor.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) { UpdateRadialLift(); UpdateNav(); RefreshAssistantMini(); } };
         Editor.Pinned.PropertyChanged += (_, e) => { if (e.Property == IsVisibleProperty) UpdateNav(); };
         UpdateFloatingNav();
     }
 
     // like the editor's own button: the block being written is in the text the Assistente sees
-    private void OpenAssistantFromLauncher()
-    {
-        if (Editor.IsVisible) Editor.FinishEditing();
-        ToggleAssistant();
-    }
+    private void OpenAssistantFromLauncher() => ToggleAssistant();
 
     /// <summary>CST-143: over the editor, the radial menu floats above its footer and toolbar instead of covering them.</summary>
     private void UpdateRadialLift()
@@ -100,7 +97,8 @@ public sealed partial class MainView : IAssistantApp
         // a wide window (a tablet, a phone on its side) has the launcher in the same corner: it floats above the
         // footer's Leitura/Edição switch too, and the contextual card above the launcher
         _assistantLauncher.Margin = new Thickness(0, 0, 16, 16 + lift);
-        _assistantMini.Margin = new Thickness(12, 0, 12, 76 + lift);
+        // Do not lower the companion with the keyboard: its safe anchor is at the top.
+        _assistantMini.Margin = new Thickness(12, 64, 12, 0);
         if (_radial is null) return;
         _radial.Lift = lift;
     }
@@ -122,6 +120,8 @@ public sealed partial class MainView : IAssistantApp
     private void RefreshAssistantMini()
     {
         var panel = _assistant;
+        // Contextual requests from notes also use this companion, even when their
+        // editor is not currently the selected destination.
         bool showing = panel is { CompactActive: true, IsVisible: false };
         _assistantMini.IsVisible = showing;
         UpdateFloatingNav();
@@ -144,7 +144,7 @@ public sealed partial class MainView : IAssistantApp
         // Keep the editor alive under this non-modal, bounded surface. Never move keyboard focus.
         _assistantMini.Child = new ScrollViewer
         {
-            MaxHeight = 380,
+            MaxHeight = 300,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             Content = panel!.CompactContent()
@@ -202,11 +202,18 @@ public sealed partial class MainView : IAssistantApp
     /// <summary>True while the Assistente panel is open.</summary>
     private bool AssistantOpen => _assistant is { IsVisible: true };
 
-    /// <summary>The rail/dock "Assistente": opens (or closes) the panel.</summary>
+    /// <summary>Over a note, toggle the quick companion; elsewhere, show the full assistant.</summary>
     public void ToggleAssistant()
     {
         if (Dialogs.IsOpen) return;
         if (_assistant is { IsVisible: true }) { _assistant.Close(); return; }
+        if (Editor.IsVisible)
+        {
+            if (_assistant is { CompactActive: true }) _assistant.DismissCompact();
+            else Assistant.ShowCompact();
+            return;
+        }
+        if (_assistant is { CompactActive: true }) _assistant.DismissCompact();
         Assistant.Open();
     }
 

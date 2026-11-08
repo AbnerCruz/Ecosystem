@@ -1,9 +1,17 @@
 # Urbe — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.50
+**Versão canônica preparada:** 2.0.0-beta.51
 **Canal:** Urbe 2.0 nativo, Android e Windows
 **Publicação:** pelo workflow oficial depois da integração; preparada não significa publicada.
 **Atualização:** por cima da beta instalada (app.urbe.csharp, mesmo certificado). Não precisa desinstalar.
+
+## Assistente: continuidade, histórico e esforço (beta.51)
+
+- Fechar/reabrir a aba do Assistente mantém a mesma conversa durante a sessão, inclusive ao alternar entre agentes. Nova conversa só quando solicitada; histórico anterior continua disponível.
+- O histórico abre sem bloquear a interface: lê apenas os cabeçalhos dos chats, carrega itens progressivamente e só abre as mensagens completas ao selecionar uma conversa.
+- Com uma nota no editor, abrir a IA mostra um painel compacto na parte superior: campo de mensagem, prévia da última resposta, ações de acompanhamento e botão para expandir a conversa inteira. Fora do editor, a IA ocupa sua tela normal.
+- O botão duplicado de Assistente foi removido do cabeçalho do editor; o atalho da navegação permanece.
+- Esforço selecionável **Instantâneo, Médio e Alto** nos provedores/modelos compatíveis (OpenAI, OpenRouter e Claude recente). A escolha altera o parâmetro enviado à API, não só a aparência. Modelos sem suporte mostram essa indisponibilidade. Um nível maior pode aumentar tempo e custo.
 
 ## Publicações: Word, OpenDocument, PowerPoint e apresentação
 

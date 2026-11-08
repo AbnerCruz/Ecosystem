@@ -30,7 +30,8 @@ public static class AssistantContextBudget
     private static byte[] GenericBytes(AiRequest request) => JsonSerializer.SerializeToUtf8Bytes(new
     {
         model = request.Model, system = request.System, tools = request.Tools,
-        messages = request.Messages, max_tokens = request.MaxTokens, temperature = request.Temperature
+        messages = request.Messages, max_tokens = request.MaxTokens, temperature = request.Temperature,
+        reasoning_effort = request.ReasoningEffort
     });
 
     /// <summary>Preserve the last substantive user instruction if a short continuation lost it to window trimming.</summary>
@@ -62,7 +63,7 @@ public static class AssistantContextBudget
         if (window <= reserved + 128) throw new InvalidOperationException("A janela configurada não comporta instruções e resposta.");
         long usable = window - reserved;
         var settled = AssistantAgent.SettlePast(messages);
-        var baseline = new AiRequest(run.Model, [], plainSystem, tools, reserved, run.Temperature);
+        var baseline = new AiRequest(run.Model, [], plainSystem, tools, reserved, run.Temperature, run.ReasoningEffort);
         long BaseCost() => Count(baseline);
         long Count(AiRequest r) => Math.Max(0, exactCounter?.Invoke(r) ?? ConservativeTokens(r, run.Provider));
         if (BaseCost() >= usable)
@@ -77,7 +78,7 @@ public static class AssistantContextBudget
             var passMetrics = new AiExecutionMetrics();
             var history = AssistantAgent.Prepare(settled, (int)Math.Min(int.MaxValue, Math.Max(0, historyChars)),
                 run.OptimizeToolUse, passMetrics);
-            var withoutMemory = new AiRequest(run.Model, history, plainSystem, tools, reserved, run.Temperature);
+            var withoutMemory = new AiRequest(run.Model, history, plainSystem, tools, reserved, run.Temperature, run.ReasoningEffort);
             long remaining = Math.Max(0, usable - Count(withoutMemory));
             // Conservative byte-to-char transport allowance; the final count below is authoritative.
             if (run.RecallMemory is not null)
@@ -85,7 +86,7 @@ public static class AssistantContextBudget
             var system = run.BuildSystemWithMemory is not null
                 ? run.BuildSystemWithMemory(memory) : plainSystem;
             system += MissingTaskAnchor(messages, history);
-            var final = new AiRequest(run.Model, history, system, tools, reserved, run.Temperature);
+            var final = new AiRequest(run.Model, history, system, tools, reserved, run.Temperature, run.ReasoningEffort);
             if (Count(final) <= usable)
             {
                 if (metrics is not null) metrics.ContextCharsSaved += passMetrics.ContextCharsSaved;
