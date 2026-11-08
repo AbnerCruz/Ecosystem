@@ -49,11 +49,10 @@ public sealed partial class AssistantPanel
             var tool = _conv.Messages.AsEnumerable().Reverse()
                 .SelectMany(m => m.Content.Where(b => b.Type == "tool_use"))
                 .FirstOrDefault();
-            // Streaming updates text without changing the message count.
-            var visibleLength = _conv.Messages.Sum(m => m.Content.Where(b => b.Type == "text" && !b.Hidden)
-                .Sum(b => b.Text?.Length ?? 0));
+            // Never remount the input on every streamed token: that would steal focus
+            // and the caret from someone writing while the assistant is answering.
             return _conv.Id + ":" + CompactStatus + ":" + (_pending?.Request.Call.Id ?? "") + ":" +
-                (tool?.Id ?? "") + ":" + _conv.Runs.Count + ":" + _conv.Messages.Count + ":" + visibleLength;
+                (tool?.Id ?? "") + ":" + _conv.Runs.Count + ":" + _conv.Messages.Count;
         }
     }
 
