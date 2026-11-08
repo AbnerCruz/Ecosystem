@@ -120,7 +120,9 @@ public sealed partial class MainView : IAssistantApp
     private void RefreshAssistantMini()
     {
         var panel = _assistant;
-        bool showing = Editor.IsVisible && panel is { CompactActive: true, IsVisible: false };
+        // Contextual requests from notes also use this companion, even when their
+        // editor is not currently the selected destination.
+        bool showing = panel is { CompactActive: true, IsVisible: false };
         _assistantMini.IsVisible = showing;
         UpdateFloatingNav();
         var attention = panel?.PendingApproval is not null || panel?.SpecialistWaiting == true || panel?.Conversation.Runs.LastOrDefault()?.Stopped == "needs_input";
