@@ -12,7 +12,7 @@
   "state": "review",
   "branch": "fix/urbe-beta52-scrollable-ai-popup",
   "base_commit": "1af884df822b546585c4a0157add490dad16daba",
-  "commit": "0c1d5cc718d3ffc54349d2d22d201c5e9b52013b",
+  "commit": "09f6e55c8be0458d7fcb5f4bec0109934a305042",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/916",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Compact.cs",
@@ -27,7 +27,7 @@
     "Auditoria do beta.51: CompactContent exibia apenas a última resposta e cortava após 320 caracteres; o ScrollViewer externo não tornava mensagens anteriores disponíveis.",
     "Implementação beta.52: transcript textual integral da conversa selecionada, na ordem original, incluindo perguntas do usuário, todas as respostas da IA e nomes de anexos; dados ocultos, resultados internos de ferramentas e raciocínio privado não se tornam mensagens visíveis.",
     "O transcript tem ScrollViewer de rolagem vertical com altura delimitada pelo layout Grid (260 px), com campo Enviar e comandos Abrir conversa/Fechar fora da região rolável, acessíveis sem sair do editor.",
-    "Atualização da chave de renderização para conteúdo em streaming e conservação da posição de rolagem quando a conversa muda: segue o fim só se usuário já estava lendo no fim, preservando leitura de mensagens antigas.",
+    "Preserva a posição de leitura quando a superfície é atualizada; o popup segue a última mensagem apenas se o usuário estava no final. Não reconstrói o compositor a cada token de streaming para não perder foco ou seleção durante a digitação.",
     "Teste headless com 4 turnos de chat e resposta de 90 linhas; verifica ordem, integridade de todo texto, gesto simulado de rolagem, composer separado e editor aberto.",
     "Versão 2.0.0-beta.52 / versionCode 2000052 no csproj canônico, patchnotes atualizados, mesma assinatura e workflows Android/Windows da beta.51."
   ],
