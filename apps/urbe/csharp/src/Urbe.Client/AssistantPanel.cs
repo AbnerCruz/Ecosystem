@@ -358,6 +358,7 @@ public sealed partial class AssistantPanel : Border
     public Panel Log => _log;
 
     private bool _loaded;
+    private bool _everOpened;
 
     /// <summary>opened(): the panel shown, the configuration and the last conversation of this vault (if recent) loaded once.</summary>
     public void Open()
@@ -368,7 +369,9 @@ public sealed partial class AssistantPanel : Border
         InterruptedChanged();
         IsVisible = true;
         RenderAll();
-        // Reopening the panel is navigation, not the "choose an agent/new chat" action.
+        // First-use onboarding remains; reopening or expanding resumes the chat.
+        if (!_everOpened && InterruptedRuns().Count == 0) ShowAgents();
+        _everOpened = true;
     }
 
     public void Close()
@@ -511,7 +514,7 @@ public sealed partial class AssistantPanel : Border
             new DialogItem("Alto", UrbeTheme.Icons.Check, "Maior profundidade; pode aumentar tempo e custo.")
         };
         var selected = await _app.Dialogs.ChooseAsync("Esforço do Assistente", modes);
-        if (selected is not >= 0 and <= 2) return;
+        if (selected is null || selected.Value < 0 || selected.Value > 2) return;
         _effortMode = selected.Value switch { 0 => "low", 1 => "medium", _ => "high" };
         RenderChrome();
     }
