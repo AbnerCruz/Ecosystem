@@ -12,7 +12,7 @@
   "state": "review",
   "branch": "fix/urbe-beta52-scrollable-ai-popup",
   "base_commit": "1af884df822b546585c4a0157add490dad16daba",
-  "commit": "90ba62efb0a1fa9b888d19b408dbf1dc849cd598",
+  "commit": "0c1d5cc718d3ffc54349d2d22d201c5e9b52013b",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/916",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Client/AssistantPanel.Compact.cs",
@@ -23,18 +23,20 @@
     "docs/governance/handoffs/HO-20261108-urbe-beta52-scrollable-popup.json"
   ],
   "work_completed": [
-    "Escopo único solicitado pelo proprietário em 08/11: a resposta do Assistente no popup superior sobre o editor deve ser rolável integralmente.",
-    "Auditoria: CompactContent aplicava corte explícito answer[..320] + reticências; MainView.Assistant já contém ScrollViewer externo com MaxHeight=300, mas o texto acima de 320 caracteres não existia na UI e portanto não podia ser lido rolando.",
-    "Substituído o recorte por ScrollViewer vertical independente para a resposta inteira, MaxHeight=144, barra vertical Auto e rolagem horizontal desabilitada; composer, ações e status permanecem fora da área de leitura, sem mudar estado/conversa/foco.",
-    "Teste automatizado headless de resposta longa com 90 linhas, verificando texto íntegro, viewport com overflow, deslocamento vertical, composer, botão Enviar e permanência do editor.",
-    "Versão canônica preparada como 2.0.0-beta.52 / versionCode 2000052; canal Android app.urbe.csharp, keystore e workflow oficial inalterados; Windows será distribuído no mesmo release."
+    "O proprietário esclareceu que a intenção é ler toda a conversa dentro do popup, não apenas a última resposta.",
+    "Auditoria do beta.51: CompactContent exibia apenas a última resposta e cortava após 320 caracteres; o ScrollViewer externo não tornava mensagens anteriores disponíveis.",
+    "Implementação beta.52: transcript textual integral da conversa selecionada, na ordem original, incluindo perguntas do usuário, todas as respostas da IA e nomes de anexos; dados ocultos, resultados internos de ferramentas e raciocínio privado não se tornam mensagens visíveis.",
+    "O transcript tem ScrollViewer de rolagem vertical com altura delimitada pelo layout Grid (260 px), com campo Enviar e comandos Abrir conversa/Fechar fora da região rolável, acessíveis sem sair do editor.",
+    "Atualização da chave de renderização para conteúdo em streaming e conservação da posição de rolagem quando a conversa muda: segue o fim só se usuário já estava lendo no fim, preservando leitura de mensagens antigas.",
+    "Teste headless com 4 turnos de chat e resposta de 90 linhas; verifica ordem, integridade de todo texto, gesto simulado de rolagem, composer separado e editor aberto.",
+    "Versão 2.0.0-beta.52 / versionCode 2000052 no csproj canônico, patchnotes atualizados, mesma assinatura e workflows Android/Windows da beta.51."
   ],
   "verification": [
     {
       "check": "Urbe.Core.Tests e Urbe.Client.Tests / CI do PR #916",
       "kind": "automated",
       "result": "pending",
-      "evidence": "CI acionado na revisão de código do PR; não assumir conclusão antes do resultado."
+      "evidence": "CI do PR #916 reexecutado após correção do requisito para conversa completa; sem resultado afirmado antes da conclusão."
     },
     {
       "check": "Android e Windows compilações / smoke do emulador",
@@ -52,7 +54,8 @@
     }
   ],
   "known_issues": [
-    "Validação no dispositivo físico permanece pendente (NN-017); screenshot headless não implica gesto de toque real."
+    "Preview textual da conversa compacta não duplica os controles de execução detalhados do painel completo; abrir conversa mantém acesso aos tool cards e conteúdos enriquecidos.",
+    "Validação física no Android do gesto de rolagem com teclado aberto segue pendente (NN-017)."
   ],
   "blockers": [],
   "next_actions": [
