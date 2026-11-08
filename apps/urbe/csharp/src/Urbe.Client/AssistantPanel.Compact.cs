@@ -139,12 +139,29 @@ public sealed partial class AssistantPanel
                 var reply = _conv.Messages.LastOrDefault(m => m.Role == "assistant"
                     && m.Content.Any(b => b.Type == "text" && !b.Hidden && !string.IsNullOrWhiteSpace(b.Text)));
                 var answer = reply?.Content.LastOrDefault(b => b.Type == "text" && !b.Hidden)?.Text;
-                body.Children.Add(Wrap(!string.IsNullOrWhiteSpace(answer)
-                    ? (answer.Length > 320 ? answer[..320] + "…" : answer)
-                    : run?.Changes.Count > 0 ? "A alteração está registrada na nota."
-                    : _conv.Runs.Count == 0 ? "Faça uma pergunta. A conversa continuará aberta quando voltar."
-                    : "Consulte os detalhes da execução na conversa.",
-                    13, UrbeTheme.Text2));
+                if (!string.IsNullOrWhiteSpace(answer))
+                {
+                    // The popup is a reading surface, not a 320-character teaser.
+                    // Keep the entire answer in a bounded, independently scrollable area.
+                    // Scrolling it must not push the composer or "Abrir conversa" off-screen.
+                    var replyScroll = new ScrollViewer
+                    {
+                        MaxHeight = 144,
+                        HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                        VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                        Content = Wrap(answer, 13, UrbeTheme.Text2)
+                    };
+                    Avalonia.Automation.AutomationProperties.SetName(replyScroll, "Resposta da IA — role para ler");
+                    body.Children.Add(replyScroll);
+                }
+                else
+                {
+                    body.Children.Add(Wrap(
+                        run?.Changes.Count > 0 ? "A alteração está registrada na nota."
+                        : _conv.Runs.Count == 0 ? "Faça uma pergunta. A conversa continuará aberta quando voltar."
+                        : "Consulte os detalhes da execução na conversa.",
+                        13, UrbeTheme.Text2));
+                }
             }
         }
 
