@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -15,6 +16,11 @@ namespace Urbe.Client;
 public sealed partial class AssistantPanel
 {
     public event Action? CompactChanged;
+
+    private ScrollViewer? _compactChatScroll;
+    private string? _compactChatScrollId;
+    private double _compactChatScrollOffset;
+    private bool _compactChatFollowTail = true;
 
     /// <summary>Only calls initiated from a note opt in to contextual presentation.</summary>
     public bool CompactActive { get; private set; }
@@ -43,7 +49,9 @@ public sealed partial class AssistantPanel
             var tool = _conv.Messages.AsEnumerable().Reverse()
                 .SelectMany(m => m.Content.Where(b => b.Type == "tool_use"))
                 .FirstOrDefault();
-            return CompactStatus + ":" + (_pending?.Request.Call.Id ?? "") + ":" +
+            // Never remount the input on every streamed token: that would steal focus
+            // and the caret from someone writing while the assistant is answering.
+            return _conv.Id + ":" + CompactStatus + ":" + (_pending?.Request.Call.Id ?? "") + ":" +
                 (tool?.Id ?? "") + ":" + _conv.Runs.Count + ":" + _conv.Messages.Count;
         }
     }
@@ -100,53 +108,123 @@ public sealed partial class AssistantPanel
             _ => "Trabalho concluído"
         };
 
-        var body = new StackPanel { Spacing = UrbeTokens.Space.S };
-        var heading = new StackPanel { Spacing = 2 };
+        // Fixed-height popup: only the transcript scrolls, never the composer.
+        var body = new Grid { Height = 260, RowDefinitions = new RowDefinitions("Auto,*,Auto,Auto") };
+        var heading = new StackPanel { Spacing = 2, Margin = new Thickness(0, 0, 0, 5) };
         heading.Children.Add(Label(agent, 11, UrbeTheme.Text3, FontWeight.SemiBold));
         heading.Children.Add(Wrap(title, 15, UrbeTheme.Text, FontWeight.SemiBold));
+        Grid.SetRow(heading, 0);
         body.Children.Add(heading);
+
+        var transcript = new StackPanel { Spacing = UrbeTokens.Space.S };
 
         if (status == "approval" && _pending is { } pending)
         {
             // Same diff, 'Edit', Approve / Reject / Approve All. No second permission path.
-            body.Children.Add(Approval(pending.Request));
+            transcript.Children.Add(Approval(pending.Request));
         }
         else if (status == "question" && _conv.Forms.Any(f => f.State == "pending"))
         {
-            body.Children.Add(Wrap("Preencha o formulário para o agente continuar. Seus valores ficam salvos ao sair.", 13, UrbeTheme.Text2));
-            body.Children.Add(TextButton("Preencher formulário", Open));
+            transcript.Children.Add(Wrap("Preencha o formulário para o agente continuar. Seus valores ficam salvos ao sair.", 13, UrbeTheme.Text2));
+            transcript.Children.Add(TextButton("Preencher formulário", Open));
         }
         else if (status == "question" && calls.LastOrDefault(b => b.Name == "ask_user") is { } question)
         {
-            body.Children.Add(Clarification(question));
+            transcript.Children.Add(Clarification(question));
         }
         else if (status == "thinking")
         {
             if (last is not null && _progress.TryGetValue(last.Id, out var progress))
-                body.Children.Add(Wrap(progress, 12, UrbeTheme.Text2));
+                transcript.Children.Add(Wrap(progress, 12, UrbeTheme.Text2));
             if (!UrbeTokens.Motion.Reduced)
-                body.Children.Add(new ProgressBar { Height = 2, IsIndeterminate = true,
+                transcript.Children.Add(new ProgressBar { Height = 2, IsIndeterminate = true,
                     Foreground = UrbeTheme.Brush(UrbeTheme.Accent),
                     Background = UrbeTheme.Brush(UrbeTheme.Line2) });
         }
+        else if (status == "error" && _conv.Runs.LastOrDefault()?.Error is { Length: > 0 } error)
+        {
+            transcript.Children.Add(Wrap(error, 12, UrbeTheme.Text2));
+        }
+
+        // Complete user-visible thread. Hidden instructions and internal tool
+        // results do not appear as human conversation messages.
+        foreach (var message in _conv.Messages)
+        {
+            if (message.Role is not ("user" or "assistant") ||
+                (message.Role == "user" && message.Meta?.ToolResults == true))
+                continue;
+
+            var text = string.Join("\n\n", message.Content
+                .Where(b => b.Type == "text" && !b.Hidden && !string.IsNullOrWhiteSpace(b.Text))
+                .Select(b => b.Text));
+            var files = message.Content.Where(b => b.Type == "attachment" && !string.IsNullOrWhiteSpace(b.FileName))
+                .Select(b => b.FileName!);
+            var attachments = string.Join(", ", files);
+            if (text.Length == 0 && attachments.Length == 0) continue;
+
+            var user = message.Role == "user";
+            var bubble = new StackPanel
+            {
+                Spacing = 3, Margin = new Thickness(0, 3),
+                HorizontalAlignment = user ? HorizontalAlignment.Right : HorizontalAlignment.Stretch
+            };
+            bubble.Children.Add(Label(user ? "Você" : agent, 11, UrbeTheme.Text3, FontWeight.SemiBold));
+            var content = new StackPanel { Spacing = 4 };
+            if (text.Length > 0)
+            {
+                var textBlock = new SelectableTextBlock
+                {
+                    Text = text, FontSize = 13, TextWrapping = TextWrapping.Wrap,
+                    Foreground = UrbeTheme.Brush(UrbeTheme.Text)
+                };
+                Ui.TextActions.Attach(textBlock);
+                content.Children.Add(textBlock);
+            }
+            if (attachments.Length > 0)
+                content.Children.Add(Wrap("Anexos: " + attachments, 11, UrbeTheme.Text2));
+            bubble.Children.Add(new Border
+            {
+                Child = content, Padding = new Thickness(10, 8),
+                CornerRadius = new CornerRadius(12),
+                Background = UrbeTheme.Brush(user ? UrbeTheme.Accent : UrbeTheme.Surface, user ? .14 : 1)
+            });
+            transcript.Children.Add(bubble);
+        }
+        if (transcript.Children.Count == 0)
+            transcript.Children.Add(Wrap("Envie uma mensagem para começar a conversa.", 13, UrbeTheme.Text2));
+
+        // Preserve the reader's position during streaming. Auto-follow only if
+        // the person was already at the end of the conversation.
+        if (_compactChatScrollId == _conv.Id && _compactChatScroll is { } old)
+        {
+            _compactChatScrollOffset = old.Offset.Y;
+            _compactChatFollowTail = old.Extent.Height - old.Viewport.Height - old.Offset.Y <= 24;
+        }
         else
         {
-            var run = _conv.Runs.LastOrDefault();
-            if (status == "error" && run?.Error is { Length: > 0 } error)
-                body.Children.Add(Wrap(error, 12, UrbeTheme.Text2));
-            else
-            {
-                var reply = _conv.Messages.LastOrDefault(m => m.Role == "assistant"
-                    && m.Content.Any(b => b.Type == "text" && !b.Hidden && !string.IsNullOrWhiteSpace(b.Text)));
-                var answer = reply?.Content.LastOrDefault(b => b.Type == "text" && !b.Hidden)?.Text;
-                body.Children.Add(Wrap(!string.IsNullOrWhiteSpace(answer)
-                    ? (answer.Length > 320 ? answer[..320] + "…" : answer)
-                    : run?.Changes.Count > 0 ? "A alteração está registrada na nota."
-                    : _conv.Runs.Count == 0 ? "Faça uma pergunta. A conversa continuará aberta quando voltar."
-                    : "Consulte os detalhes da execução na conversa.",
-                    13, UrbeTheme.Text2));
-            }
+            _compactChatScrollOffset = 0;
+            _compactChatFollowTail = true;
         }
+        var chatScroll = new ScrollViewer
+        {
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            Content = transcript, Margin = new Thickness(0, 0, 0, 4)
+        };
+        Avalonia.Automation.AutomationProperties.SetName(chatScroll, "Conversa completa da IA — role para ler");
+        _compactChatScroll = chatScroll;
+        _compactChatScrollId = _conv.Id;
+        var restored = false;
+        chatScroll.LayoutUpdated += (_, _) =>
+        {
+            if (restored || !ReferenceEquals(_compactChatScroll, chatScroll) || chatScroll.Viewport.Height <= 0) return;
+            restored = true;
+            chatScroll.Offset = new Vector(0, _compactChatFollowTail
+                ? Math.Max(0, chatScroll.Extent.Height - chatScroll.Viewport.Height)
+                : Math.Min(_compactChatScrollOffset, Math.Max(0, chatScroll.Extent.Height - chatScroll.Viewport.Height)));
+        };
+        Grid.SetRow(chatScroll, 1);
+        body.Children.Add(chatScroll);
 
         // A separate lightweight composer projects into the SAME underlying input and conversation.
         // Reconstruct only on a state transition: no duplicated chat, tool or storage authority.
@@ -196,6 +274,7 @@ public sealed partial class AssistantPanel
         DockPanel.SetDock(send, Dock.Right);
         composer.Children.Add(send);
         composer.Children.Add(compactInput);
+        Grid.SetRow(composer, 2);
         body.Children.Add(composer);
 
         var actions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right };
@@ -203,6 +282,7 @@ public sealed partial class AssistantPanel
             actions.Children.Add(TextButton("Parar", StopCompact));
         actions.Children.Add(LinkButton("Abrir conversa", Open));
         actions.Children.Add(LinkButton("Fechar", DismissCompact));
+        Grid.SetRow(actions, 3);
         body.Children.Add(actions);
         return body;
     }
