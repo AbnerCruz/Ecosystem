@@ -112,7 +112,7 @@ public sealed partial class HeadlessUiTests
         }, CancellationToken.None));
 
     [Fact]
-    public async Task EditorAssistantCompanionScrollsTheEntireReplyWithoutMovingComposer()
+    public async Task EditorAssistantCompanionScrollsEntireConversationWithoutMovingComposer()
         => Assert.True(await Session.Dispatch<bool>(async () =>
         {
             var view = new MainView();
@@ -128,6 +128,18 @@ public sealed partial class HeadlessUiTests
                     .Select(n => $"Linha {n}: a mensagem continua disponível para leitura."));
                 panel.Conversation.Messages.Add(new AiChatMessage
                 {
+                    Role = "user", Content = [AiChatBlock.TextBlock("Primeira pergunta na conversa")]
+                });
+                panel.Conversation.Messages.Add(new AiChatMessage
+                {
+                    Role = "assistant", Content = [AiChatBlock.TextBlock("Primeira resposta da IA")]
+                });
+                panel.Conversation.Messages.Add(new AiChatMessage
+                {
+                    Role = "user", Content = [AiChatBlock.TextBlock("Segunda pergunta, com contexto")]
+                });
+                panel.Conversation.Messages.Add(new AiChatMessage
+                {
                     Role = "assistant", Content = [AiChatBlock.TextBlock(fullAnswer)]
                 });
                 panel.Conversation.Runs.Add(new AiRunRecord { Stopped = "end" });
@@ -135,23 +147,35 @@ public sealed partial class HeadlessUiTests
                 Dispatcher.UIThread.RunJobs();
                 window.UpdateLayout();
 
-                var replyScroll = view.AssistantMini.GetLogicalDescendants().OfType<ScrollViewer>()
-                    .Single(s => Avalonia.Automation.AutomationProperties.GetName(s) == "Resposta da IA — role para ler");
-                Assert.Equal(Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, replyScroll.VerticalScrollBarVisibility);
-                Assert.Equal(Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, replyScroll.HorizontalScrollBarVisibility);
-                Assert.Equal(144, replyScroll.MaxHeight);
-                Assert.Contains(replyScroll.GetLogicalDescendants().OfType<TextBlock>(),
-                    text => text.Text == fullAnswer); // No old 320-character truncation.
-                Assert.True(replyScroll.Extent.Height > replyScroll.Viewport.Height,
-                    "A full long reply must overflow its own reading viewport.");
-                replyScroll.Offset = new Avalonia.Vector(0, replyScroll.Extent.Height);
+                var conversationScroll = view.AssistantMini.GetLogicalDescendants().OfType<ScrollViewer>()
+                    .Single(s => Avalonia.Automation.AutomationProperties.GetName(s) == "Conversa completa da IA — role para ler");
+                Assert.Equal(Avalonia.Controls.Primitives.ScrollBarVisibility.Auto,
+                    conversationScroll.VerticalScrollBarVisibility);
+                Assert.Equal(Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+                    conversationScroll.HorizontalScrollBarVisibility);
+                var bubbles = conversationScroll.GetLogicalDescendants().OfType<SelectableTextBlock>()
+                    .Select(t => t.Text).ToList();
+                Assert.Equal(4, bubbles.Count);
+                Assert.Equal("Primeira pergunta na conversa", bubbles[0]);
+                Assert.Equal("Primeira resposta da IA", bubbles[1]);
+                Assert.Equal("Segunda pergunta, com contexto", bubbles[2]);
+                Assert.Equal(fullAnswer, bubbles[3]); // No truncation, all turns remain accessible.
+                Assert.True(conversationScroll.Extent.Height > conversationScroll.Viewport.Height,
+                    "A conversa completa deve exceder o viewport de leitura.");
+                conversationScroll.Offset = new Avalonia.Vector(0, 0);
                 window.UpdateLayout();
-                Assert.True(replyScroll.Offset.Y > 0, "The user can scroll the response itself.");
+                Assert.Equal(0, conversationScroll.Offset.Y);
+                conversationScroll.Offset = new Avalonia.Vector(0, conversationScroll.Extent.Height);
+                window.UpdateLayout();
+                Assert.True(conversationScroll.Offset.Y > 0,
+                    "O usuário deve conseguir rolar até o fim do histórico.");
 
                 Assert.Contains(view.AssistantMini.GetLogicalDescendants().OfType<TextBox>(),
                     input => Avalonia.Automation.AutomationProperties.GetName(input) == "Mensagem rápida ao Assistente");
                 Assert.Contains(view.AssistantMini.GetLogicalDescendants().OfType<Button>(),
                     button => button.Content is string text && text == "Enviar");
+                Assert.DoesNotContain(conversationScroll.GetLogicalDescendants().OfType<TextBox>(),
+                    t => Avalonia.Automation.AutomationProperties.GetName(t) == "Mensagem rápida ao Assistente");
                 Assert.True(view.Editor.IsVisible);
                 Assert.False(panel.IsVisible);
                 return true;
