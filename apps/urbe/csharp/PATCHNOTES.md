@@ -5,11 +5,11 @@
 **Publicação:** pelo workflow oficial depois da integração; preparada não significa publicada.
 **Atualização:** por cima da beta instalada (app.urbe.csharp, mesmo certificado). Não precisa desinstalar.
 
-## Assistente: rolagem da resposta no popup (beta.52)
+## Assistente: conversa completa no popup (beta.52)
 
-- Respostas longas não são mais cortadas após 320 caracteres: o popup exibe todo o texto enviado pela IA.
-- A área da resposta tem rolagem vertical independente, permitindo ler até o fim sem ocultar o campo para enviar mensagens nem os comandos de expandir ou fechar.
-- O popup permanece acima do editor, e o restante do Assistente funciona como na beta.51.
+- O popup mostra o histórico textual completo da conversa atual: perguntas do usuário e respostas anteriores da IA, na ordem, sem cortar o texto após 320 caracteres.
+- A conversa tem rolagem vertical independente, do início ao fim, com o campo de escrita e os botões Enviar, Abrir conversa e Fechar sempre acessíveis.
+- Ao receber mais conteúdo, o popup acompanha as últimas mensagens somente se a leitura estiver no fim; se o usuário estiver lendo mensagens antigas, preserva a posição. O popup permanece acima do editor.
 
 ## Assistente: continuidade, histórico e esforço (beta.51)
 
