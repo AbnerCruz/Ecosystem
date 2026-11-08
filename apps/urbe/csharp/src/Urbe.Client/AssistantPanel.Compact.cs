@@ -166,7 +166,20 @@ public sealed partial class AssistantPanel
         void SendCompact()
         {
             _input.Text = compactInput.Text ?? "";
+            if (_cfg.Providers.Count == 0 || ModelId().Length == 0)
+            {
+                // A first-time setup needs the full settings/model picker; never hide it under the editor.
+                // Keep the draft intact rather than discarding the user's message.
+                Open();
+                if (_cfg.Providers.Count == 0)
+                {
+                    if (HasDeviceAi) ShowDevice(); else ShowSettings("openrouter");
+                }
+                else _ = PickModelAsync();
+                return;
+            }
             Submit();
+            compactInput.Text = _input.Text;
         }
         compactInput.KeyDown += (_, e) =>
         {
