@@ -140,10 +140,9 @@ public sealed class AssistantProviders
                 model.StartsWith("gpt-6", StringComparison.OrdinalIgnoreCase) ||
                 System.Text.RegularExpressions.Regex.IsMatch(model, "^o[134](?:-|$)", RegexOptions.IgnoreCase);
         if (Resolve(provider).Kind == "anthropic")
-            return model.Contains("-5", StringComparison.OrdinalIgnoreCase) ||
-                model.Contains("-4-6", StringComparison.OrdinalIgnoreCase) ||
-                model.Contains("-4-7", StringComparison.OrdinalIgnoreCase) ||
-                model.Contains("-4-8", StringComparison.OrdinalIgnoreCase);
+            return Regex.IsMatch(model,
+                "^claude-(?:opus|sonnet|haiku|fable|mythos)-(?:5|4-(?:6|7|8))(?:-|$)",
+                RegexOptions.IgnoreCase);
         return false;
     }
 
@@ -538,10 +537,7 @@ public sealed class AssistantProviders
             body["tools"] = new JsonArray(tools.Select(t => (JsonNode)new JsonObject { ["name"] = t.Name, ["description"] = t.Description, ["input_schema"] = t.Parameters.DeepClone() }).ToArray());
         if (req.Temperature is { } temp) body["temperature"] = temp;
         if (req.ReasoningEffort is "low" or "medium" or "high" &&
-            (req.Model.Contains("-5", StringComparison.OrdinalIgnoreCase) ||
-             req.Model.Contains("-4-6", StringComparison.OrdinalIgnoreCase) ||
-             req.Model.Contains("-4-7", StringComparison.OrdinalIgnoreCase) ||
-             req.Model.Contains("-4-8", StringComparison.OrdinalIgnoreCase)))
+            SupportsEffort(new AiProviderConfig("anthropic", "anthropic"), req.Model))
             body["output_config"] = new JsonObject { ["effort"] = req.ReasoningEffort };
         return body;
     }
