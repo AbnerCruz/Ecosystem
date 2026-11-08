@@ -782,41 +782,70 @@ public sealed partial class AssistantPanel
     /// <summary>The view open over the chat (tests): its title, or null.</summary>
     public string? ViewTitle => _view.IsVisible && _view.Child is DockPanel { Children: [DockPanel head, ..] } && head.Children.OfType<TextBlock>().FirstOrDefault() is { } t ? t.Text : null;
 
-    private void ShowHistory()
+    private async void ShowHistory()
     {
-        var list = _store.ConversationsFor(_conv.AgentId, _app.VaultName);
         var body = OpenView("Conversas");
-        body.Children.Add(Hint("Histórico deste agente. Conversas antigas mantêm o agente registrado na última gravação; podem conter participações anteriores de outros agentes."));
+        body.Children.Add(Hint("Carregando histórico…"));
+
+        // Read only small file headers off the UI thread; load full messages on selection.
+        IReadOnlyList<AiConversationSummary> list;
+        try { list = await Task.Run(() => _store.ConversationSummariesFor(_conv.AgentId, _app.VaultName)); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        {
+            if (ViewTitle == "Conversas") body.Children.Add(Wrap("Não foi possível ler o histórico: " + error.Message, 13, UrbeTheme.Text2));
+            return;
+        }
+        if (ViewTitle != "Conversas") return;
+        body.Children.Clear();
+        body.Children.Add(Hint("Histórico deste agente. Conversas completas são lidas quando você as abre."));
         if (list.Count == 0) { body.Children.Add(Wrap("Nenhuma conversa ainda.", 14, UrbeTheme.Text3)); return; }
+        int shown = 0;
         foreach (var c in list)
         {
-            int n = c.Messages.Count(m => m.Role == "user" && m.Meta?.ToolResults != true);
             var a = AgentNames.Named(AssistantAgent.AgentById(c.AgentId, _cfg.CustomAgents), _cfg);
-            var when = DateTimeOffset.FromUnixTimeMilliseconds(c.Updated).LocalDateTime.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture);
+            var when = DateTimeOffset.FromUnixTimeMilliseconds(Math.Max(0, c.Updated)).LocalDateTime.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture);
             var open = new Button
             {
-                HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, Padding = new Thickness(12, 8), CornerRadius = new CornerRadius(12),
-                Background = UrbeTheme.Brush(c.Id == _conv.Id ? UrbeTheme.Accent : UrbeTheme.Surface, c.Id == _conv.Id ? .12 : 1), BorderThickness = new Thickness(0),
+                HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left,
+                Padding = new Thickness(12, 8), CornerRadius = new CornerRadius(12),
+                Background = UrbeTheme.Brush(c.Id == _conv.Id ? UrbeTheme.Accent : UrbeTheme.Surface, c.Id == _conv.Id ? .12 : 1),
+                BorderThickness = new Thickness(0),
                 Content = new StackPanel
                 {
                     Spacing = 2,
                     Children = { Label(c.Title.Length > 0 ? c.Title : "Conversa", 14, UrbeTheme.Text, FontWeight.SemiBold),
-                        Label(a.Name + " · " + n + " pedido" + (n == 1 ? "" : "s") + " · " + when + (c.Vault.Length > 0 && c.Vault != _app.VaultName ? " · " + c.Vault : ""), 12, UrbeTheme.Text3) }
+                        Label(a.Name + " · " + when, 12, UrbeTheme.Text3) }
                 }
             };
-            open.Click += (_, _) =>
+            open.Click += async (_, _) =>
             {
-                OpenConversation(_activeConversations.GetValueOrDefault(c.Id) ?? _store.GetConversation(c.Id) ?? c);
+                open.IsEnabled = false;
+                var selected = _activeConversations.GetValueOrDefault(c.Id) ??
+                    await Task.Run(() => _store.GetConversation(c.Id));
+                if (selected is not null) OpenConversation(selected);
+                else _app.Notify("Esta conversa não está mais disponível.");
+                open.IsEnabled = true;
             };
             var export = IconButton(UrbeTheme.Icons.Download, "Exportar esta conversa");
-            export.Click += (_, _) => _ = ExportConversationAsync(c);
+            export.Click += async (_, _) =>
+            {
+                var selected = _activeConversations.GetValueOrDefault(c.Id) ??
+                    await Task.Run(() => _store.GetConversation(c.Id));
+                if (selected is not null) await ExportConversationAsync(selected);
+            };
             var del = IconButton(UrbeTheme.Icons.Trash, "Excluir conversa");
             del.Click += async (_, _) =>
             {
                 if (!await _app.Dialogs.ConfirmAsync("Excluir esta conversa?", null, "Excluir", danger: true)) return;
-                if (_activeRuns.ContainsKey(c.Id)) { await _app.Dialogs.AlertAsync("Conversa em andamento", "Interrompa a execução antes de excluir esta conversa."); return; }
+                if (_activeRuns.ContainsKey(c.Id))
+                {
+                    await _app.Dialogs.AlertAsync("Conversa em andamento", "Interrompa a execução antes de excluir esta conversa.");
+                    return;
+                }
                 _store.DeleteConversation(c.Id);
-                if (_conv.Id == c.Id) { _conv = NewConversation(); SyncActiveConversation(); }
+                if (_sessionChats.TryGetValue(ChatSlot(c.AgentId), out var active) && active.Id == c.Id)
+                    _sessionChats.Remove(ChatSlot(c.AgentId));
+                if (_conv.Id == c.Id) { _conv = NewConversation(); RememberCurrentChat(); SyncActiveConversation(); }
                 ShowHistory();
                 RenderAll();
             };
@@ -827,6 +856,12 @@ public sealed partial class AssistantPanel
             row.Children.Add(export);
             row.Children.Add(open);
             body.Children.Add(row);
+            // Progressive rendering keeps the UI responsive even for very large histories.
+            if (++shown % 35 == 0)
+            {
+                await Task.Yield();
+                if (ViewTitle != "Conversas") return;
+            }
         }
     }
 
