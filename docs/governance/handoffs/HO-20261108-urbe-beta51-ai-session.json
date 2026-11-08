@@ -12,7 +12,7 @@
   "state": "review",
   "branch": "fix/urbe-beta51-ai-continuity-history-popup-effort",
   "base_commit": "578753cb070fc640d8a48ba94afac1b1728c5a20",
-  "commit": "3cde123bbf88031af914334acbad495b7874a244",
+  "commit": "83a7b210cbbcbc70d92e9502959977216ccd6eea",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/915",
   "files_changed": [
     "apps/urbe/csharp/PATCHNOTES-HISTORY.md",
@@ -29,7 +29,9 @@
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantProviders.cs",
     "apps/urbe/csharp/src/Urbe.Core/Assistant/AssistantStore.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AgentWorkspaceUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantContextualUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/AssistantContinuityUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorPendingUiTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/AssistantHistoryEffortTests.cs",
     "docs/governance/handoffs/HO-20261108-urbe-beta51-ai-session.json"
   ],
@@ -41,7 +43,8 @@
     "Esforço real low/medium/high no ciclo de requisição e contexto, roteado para OpenRouter reasoning.effort, OpenAI reasoning_effort e Claude output_config.effort nas versões suportadas. Provedores sem parâmetro mostram indisponibilidade.",
     "Pesquisa cruzada: docs oficiais Avalonia Popup e biblioteca de interface, documentações Claude/OpenRouter/OpenAI e relatos de foco roubado / janelas flutuantes / teclado Android das comunidades VS Code e Avalonia.",
     "Teste de regressão incluído para conversa por agente, reabertura, popup com envio real, índice sem hidratar corpos e contratos de esforço. Notas e versão beta.51 atualizadas.",
-    "Referências externas consultadas para UX e protocolos: https://docs.avaloniaui.net/controls/feedback/popup ; https://platform.claude.com/docs/en/build-with-claude/effort ; https://openrouter.ai/docs/guides/best-practices/reasoning-tokens ; relatos https://github.com/microsoft/vscode/issues/312575 e https://github.com/AvaloniaUI/Avalonia/issues/13319. Essas fontes são pesquisa, não documentos normativos do repositório."
+    "Referências externas consultadas para UX e protocolos: https://docs.avaloniaui.net/controls/feedback/popup ; https://platform.claude.com/docs/en/build-with-claude/effort ; https://openrouter.ai/docs/guides/best-practices/reasoning-tokens ; relatos https://github.com/microsoft/vscode/issues/312575 e https://github.com/AvaloniaUI/Avalonia/issues/13319. Essas fontes são pesquisa, não documentos normativos do repositório.",
+    "Alinhados dois testes legados que aguardavam botão Voltar ao reabrir conversa e botão Assistente duplicado no editor. Novas expectativas verificam diretamente a conversa corrente e a ausência intencional do botão redundante."
   ],
   "verification": [
     {
@@ -60,7 +63,7 @@
       "check": "Urbe.Client.Tests — reabertura e multichat e popup real",
       "kind": "automated",
       "result": "pending",
-      "evidence": "CI PR #915 atual incluindo atualização dos dois testes antigos e envio efetivo do popup; aguardando execução completa na última revisão."
+      "evidence": "CI do integrador no estado combinado para head c208584 reportou apenas 2 testes legados com expectativas removidas; ambos foram atualizados em commits 426576d e 83a7b21. Nova execução pendente."
     },
     {
       "check": "GitHub Actions urbe-checks, consistency, Android/Windows",
