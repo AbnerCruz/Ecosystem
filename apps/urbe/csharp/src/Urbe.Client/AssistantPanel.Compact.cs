@@ -54,6 +54,15 @@ public sealed partial class AssistantPanel
         NotifyCompactChanged();
     }
 
+    /// <summary>Open the current conversation over the editor without changing destination or creating a chat.</summary>
+    public void ShowCompact()
+    {
+        Load();
+        if (!_loaded) return;
+        IsVisible = false;
+        ActivateCompact();
+    }
+
     public void DismissCompact()
     {
         CompactActive = false;
@@ -82,10 +91,11 @@ public sealed partial class AssistantPanel
             "approval" => "Precisa da sua aprovação",
             "question" => "O agente tem uma pergunta",
             "thinking" when last is not null => ActivityVerb(last.Name),
-            "thinking" => "Analisando a nota",
+            "thinking" => "Analisando o pedido",
             "error" => "Não foi possível concluir",
             "cancelled" => "Execução interrompida",
             "paused" => "Pausado: operações sem progresso",
+            _ when _conv.Runs.Count == 0 => "Converse sem sair do editor",
             _ => "Trabalho concluído"
         };
 
@@ -130,10 +140,49 @@ public sealed partial class AssistantPanel
                 var answer = reply?.Content.LastOrDefault(b => b.Type == "text" && !b.Hidden)?.Text;
                 body.Children.Add(Wrap(!string.IsNullOrWhiteSpace(answer)
                     ? (answer.Length > 320 ? answer[..320] + "…" : answer)
-                    : run?.Changes.Count > 0 ? "A alteração está registrada na nota." : "Consulte os detalhes da execução na conversa.",
+                    : run?.Changes.Count > 0 ? "A alteração está registrada na nota."
+                    : _conv.Runs.Count == 0 ? "Faça uma pergunta. A conversa continuará aberta quando voltar."
+                    : "Consulte os detalhes da execução na conversa.",
                     13, UrbeTheme.Text2));
             }
         }
+
+        // A separate lightweight composer projects into the SAME underlying input and conversation.
+        // Reconstruct only on a state transition: no duplicated chat, tool or storage authority.
+        var compactInput = new TextBox
+        {
+            Text = _input.Text ?? "", AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
+            MinHeight = 44, MaxHeight = 104, FontSize = 14,
+            PlaceholderText = "Pergunte ao Assistente…",
+            CornerRadius = new CornerRadius(12), Padding = new Thickness(10, 8)
+        };
+        EditorInput.ConfigureMultiline(compactInput);
+        Avalonia.Automation.AutomationProperties.SetName(compactInput, "Mensagem rápida ao Assistente");
+        compactInput.TextChanged += (_, _) =>
+        {
+            if (_input.Text != compactInput.Text) _input.Text = compactInput.Text;
+        };
+        void SendCompact()
+        {
+            _input.Text = compactInput.Text ?? "";
+            Submit();
+        }
+        compactInput.KeyDown += (_, e) =>
+        {
+            if (e.Key == Avalonia.Input.Key.Enter && !e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Shift)
+                && !OperatingSystem.IsAndroid())
+            {
+                e.Handled = true;
+                SendCompact();
+            }
+        };
+        var send = TextButton("Enviar", SendCompact);
+        send.MinHeight = UrbeTokens.MinTouch;
+        var composer = new DockPanel { Margin = new Thickness(0, 6, 0, 4) };
+        DockPanel.SetDock(send, Dock.Right);
+        composer.Children.Add(send);
+        composer.Children.Add(compactInput);
+        body.Children.Add(composer);
 
         var actions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right };
         if (status == "thinking")
