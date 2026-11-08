@@ -640,8 +640,11 @@ public sealed partial class AssistantPanel
         RefreshAttachments();
         _restoringDraft = false;
         SaveDrafts();
+        RememberCurrentChat();
         _cfg.AgentId = agentId;
-        _conv = NewConversation(); // Opening an agent starts a fresh chat; old conversations remain in its history.
+        // Switching agents returns to that agent's selected chat; "Nova conversa" is the only reset.
+        _conv = _sessionChats.TryGetValue(ChatSlot(agentId), out var active) ? active : NewConversation();
+        RememberCurrentChat();
         SyncActiveConversation();
         _views.Clear();
         SaveConfig();
