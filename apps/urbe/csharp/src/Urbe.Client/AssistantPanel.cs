@@ -78,6 +78,11 @@ public sealed partial class AssistantPanel : Border
     private readonly IAssistantStorage _storage;
     private AiConfig _cfg = new();
     private AiConversation _conv = new();
+    // One selected chat per agent and vault for the lifetime of this app session.
+    // Closing the panel never changes the conversation identity.
+    private readonly Dictionary<string, AiConversation> _sessionChats = new(StringComparer.Ordinal);
+    private string ChatSlot(string agentId) => _app.VaultName + "\u001f" + agentId;
+    private void RememberCurrentChat() => _sessionChats[ChatSlot(_conv.AgentId)] = _conv;
     private CancellationTokenSource? _running;
     // The selected conversation is a view. Runs are owned by conversation ID.
     private readonly Dictionary<string, CancellationTokenSource> _activeRuns = new(StringComparer.Ordinal);
@@ -93,8 +98,10 @@ public sealed partial class AssistantPanel : Border
     private void OpenConversation(AiConversation conversation)
     {
         Persist();
+        RememberCurrentChat();
         _conv = conversation;
         _cfg.AgentId = conversation.AgentId;
+        RememberCurrentChat();
         SaveConfig();
         SyncActiveConversation();
         _views.Clear();
@@ -350,12 +357,11 @@ public sealed partial class AssistantPanel : Border
     {
         Load();
         if (!_loaded) return;
-        var showAgents = !CompactActive;
         CompactActive = false;
         InterruptedChanged();
         IsVisible = true;
         RenderAll();
-        if (showAgents && InterruptedRuns().Count == 0) ShowAgents();
+        // Reopening the panel is navigation, not the "choose an agent/new chat" action.
     }
 
     public void Close()
@@ -373,7 +379,8 @@ public sealed partial class AssistantPanel : Border
         catch (IOException e) { _app.Notify(e.Message); return; }
         _loaded = true;
         if (!AgentNames.All(_cfg).Any(a => a.Id == _cfg.AgentId)) _cfg.AgentId = "geral";
-        _conv = NewConversation(); // Opening the assistant never silently resumes history; choose it explicitly.
+        _conv = NewConversation();
+        RememberCurrentChat();
         SyncActiveConversation();
         // CST-122: what was being written to each agent comes back, even after Android ended the app
         foreach (var (agent, draft) in _store.LoadDrafts()) _agentDrafts[agent] = draft;
@@ -495,6 +502,7 @@ public sealed partial class AssistantPanel : Border
         if (_running is not null) return;
         Persist();
         _conv = NewConversation();
+        RememberCurrentChat();
         SyncActiveConversation();
         _views.Clear();
         RenderAll();
