@@ -1,9 +1,15 @@
 # Urbe — Notas da versão atual
 
-**Versão canônica preparada:** 2.0.0-beta.51
+**Versão canônica preparada:** 2.0.0-beta.52
 **Canal:** Urbe 2.0 nativo, Android e Windows
 **Publicação:** pelo workflow oficial depois da integração; preparada não significa publicada.
 **Atualização:** por cima da beta instalada (app.urbe.csharp, mesmo certificado). Não precisa desinstalar.
+
+## Assistente: rolagem da resposta no popup (beta.52)
+
+- Respostas longas não são mais cortadas após 320 caracteres: o popup exibe todo o texto enviado pela IA.
+- A área da resposta tem rolagem vertical independente, permitindo ler até o fim sem ocultar o campo para enviar mensagens nem os comandos de expandir ou fechar.
+- O popup permanece acima do editor, e o restante do Assistente funciona como na beta.51.
 
 ## Assistente: continuidade, histórico e esforço (beta.51)
 
