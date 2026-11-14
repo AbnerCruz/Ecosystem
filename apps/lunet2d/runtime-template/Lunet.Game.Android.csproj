@@ -31,6 +31,7 @@
     <Compile Include="../src/Lunet.Android/Gles/PreviewRenderer.cs" Link="Gles/PreviewRenderer.cs" />
     <Compile Include="../src/Lunet.Android/AndroidAudioBackend.cs" Link="AndroidAudioBackend.cs" />
     <Compile Include="../src/Lunet.Android/AndroidHaptics.cs" Link="AndroidHaptics.cs" />
+    <Compile Include="../src/Lunet.Android/AndroidGameImagePicker.cs" Link="AndroidGameImagePicker.cs" />
     <Compile Include="../src/Lunet.Android/Audio/*.cs" Link="Audio/%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup>
