@@ -41,16 +41,6 @@ jobs:
           target: google_apis
           profile: pixel_6
           script: bash apps/lunet2d/tools/ci-ui-screens.sh
-      - name: Print reduced screens (for review from logs)
-        if: always()
-        run: |
-          cd apps/lunet2d/dist/ui-screens || exit 0
-          for f in *.png; do
-            convert "$f" -resize 360x -quality 62 "${f%.png}.jpg"
-            echo "=====BEGIN ${f%.png}====="
-            base64 -w 0 "${f%.png}.jpg"; echo
-            echo "=====END ${f%.png}====="
-          done
       - uses: actions/upload-artifact@v6
         if: always()
         with:

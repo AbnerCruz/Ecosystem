@@ -11,17 +11,29 @@ adb install -r "$apk"
 aapt="$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -n1)"
 activity="$("$aapt" dump badging "$apk" | sed -n "s/^launchable-activity: name='\\([^']*\\)'.*/\\1/p" | head -n1)"
 package=io.lunet.studio
+# Wait for a settled system: boot completed, launcher idle, no ANR dialogs over the app.
+adb wait-for-device
+until [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1" ]; do sleep 2; done
+sleep 20
+adb shell input keyevent KEYCODE_WAKEUP || true
+adb shell wm dismiss-keyguard || true
+adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null || true
 adb shell settings put global window_animation_scale 0 || true
 adb shell settings put global transition_animation_scale 0 || true
 
 shoot() {
     local name="$1" demo="$2" wait="${3:-8}"
     adb shell am force-stop "$package"
+    adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null || true
     adb shell am start -W -n "$package/$activity" --es lunet.demo "$demo" >/dev/null
     sleep "$wait"
     adb shell screencap -p "/sdcard/$name.png"
     adb pull "/sdcard/$name.png" "$out/$name.png" >/dev/null
 }
+
+# Warm-up: first start extracts assemblies and JITs Roslyn; not captured.
+adb shell am start -W -n "$package/$activity" --es lunet.demo projects >/dev/null
+sleep 25
 
 # Portrait phone
 shoot 01-projects projects 10

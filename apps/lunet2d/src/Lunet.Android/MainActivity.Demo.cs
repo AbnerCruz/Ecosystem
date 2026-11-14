@@ -15,10 +15,10 @@ public sealed partial class MainActivity
     {
         var screen = intent?.GetStringExtra("lunet.demo");
         if (string.IsNullOrEmpty(screen)) return;
-        foreach (var name in new[] { "Bosque Lumi", "Nave Estelar" })
+        foreach (var name in new[] { "BosqueLumi", "NaveEstelar" })
             if (!_store.List().Contains(name)) _store.Create(name, ProjectTemplate.CoinCatcher);
         if (screen == "projects") { ShowProjects(); return; }
-        OpenProject("Bosque Lumi");
+        OpenProject("BosqueLumi");
         switch (screen)
         {
             case "palette": Post(ShowCommandPalette); break;
