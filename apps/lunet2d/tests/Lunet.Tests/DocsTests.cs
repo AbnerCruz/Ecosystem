@@ -164,6 +164,11 @@ public class DocumentationBrowserTests
         var json = DocsTests.Generate().ToJson();
         if (Environment.GetEnvironmentVariable("LUNET_UPDATE_DOCS") == "1") File.WriteAllText(path, json);
         Assert.True(File.Exists(path), "Rode com LUNET_UPDATE_DOCS=1 para gerar docs/api/lunet-framework.json");
+        // Temporary CI diagnostic: print exact JSON for the two new reflected public types.
+        using (var doc = System.Text.Json.JsonDocument.Parse(json))
+            foreach (var item in doc.RootElement.GetProperty("types").EnumerateArray())
+                if (item.GetProperty("name").GetString() is "IGameImagePicker" or "PickedGameImage")
+                    System.Console.Error.WriteLine("GENERATED_PICKER_DOC_START " + item.GetRawText() + " GENERATED_PICKER_DOC_END");
         Assert.Equal(json.ReplaceLineEndings(), File.ReadAllText(path).ReplaceLineEndings());
     }
 
