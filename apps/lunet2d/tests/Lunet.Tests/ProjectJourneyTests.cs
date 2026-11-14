@@ -69,17 +69,40 @@ public sealed class ProjectJourneyTests
             // Modify the *created* Game.cs: the preview must use the edited
             // code and the imported asset, never a hard-coded sample assembly.
             string original = project.ReadText("Game.cs");
-            const string fromBall = "ball = Texture2D.CreateCircle(GraphicsDevice, 48, Color.Yellow);";
-            const string fromLog = "Log.Info(\"Jogo iniciado. Toque na tela.\");";
-            Assert.Contains(fromBall, original);
-            Assert.Contains(fromLog, original);
-            Assert.Contains("GraphicsDevice.Clear(Color.CornflowerBlue);", original);
-            string edited = original
-                .Replace(fromBall, "ball = Content.LoadTexture(\"Textures/hero.png\", TextureFilter.Point);")
-                .Replace(fromLog,
-                    "if (Content.LoadTileMap(\"Data/level.tilemap.json\").Width != 2) throw new System.Exception(\"Mapa não carregado\"); " +
-                    "Log.Info(\"Jornada editada iniciou\");")
-                .Replace("GraphicsDevice.Clear(Color.CornflowerBlue);", "GraphicsDevice.Clear(Color.Green);");
+            Assert.Equal(ProjectTemplates.BlankGameSource("JourneyPortrait"), original);
+            Assert.DoesNotContain("Texture2D", original);
+            Assert.DoesNotContain("SpriteBatch", original);
+            Assert.DoesNotContain("Draw(", original);
+
+            // A jornada passa a adicionar explicitamente o código e os recursos que usa.
+            const string edited = """
+                using System.Numerics;
+                using Lunet;
+                using Lunet.Graphics;
+
+                public sealed class JourneyPortrait : Game
+                {
+                    SpriteBatch batch = null!;
+                    Texture2D hero = null!;
+
+                    protected override void LoadContent()
+                    {
+                        batch = new SpriteBatch(GraphicsDevice);
+                        hero = Content.LoadTexture("Textures/hero.png", TextureFilter.Point);
+                        if (Content.LoadTileMap("Data/level.tilemap.json").Width != 2)
+                            throw new System.Exception("Mapa não carregado");
+                        Log.Info("Jornada editada iniciou");
+                    }
+
+                    protected override void Draw(GameTime time)
+                    {
+                        GraphicsDevice.Clear(Color.Green);
+                        batch.Begin();
+                        batch.Draw(hero, Vector2.Zero, Color.White);
+                        batch.End();
+                    }
+                }
+                """;
             project.WriteText("Game.cs", edited);
             Assert.Equal(edited, project.ReadText("Game.cs"));
 
