@@ -2099,8 +2099,34 @@ public sealed class EditorOverlay : Grid
 
     private Task? _saveRun;
 
+    /// <summary>
+    /// The seals of <paramref name="content"/> as the save accepts them after <paramref name="previous"/> (the last saved
+    /// text). Visual composes seals block by block as the person writes; across several blocks and saves they can come
+    /// out different from what the save's guard reads from the last saved text, which then refused the save. Only the
+    /// seals are read again from the saved text (by the same AiAuthorship rule); the person's text never changes and no
+    /// seal can be made up (AiAuthorship only carries seals that were already there).
+    /// </summary>
+    public static string SealsForSave(string previous, string content)
+    {
+        if (!content.Contains("{ia:", StringComparison.Ordinal) && !previous.Contains("{ia:", StringComparison.Ordinal)) return content;
+        if (NoteMarks.PreservesAiAuthorship(previous, content) || content == AiAuthorship.Attribute(previous, content, null)) return content;
+        return AiAuthorship.Attribute(previous, content, null);
+    }
+
     private async Task<bool> SaveNowAsync(CityNote note)
     {
+        if (note.Path == _note?.Path && IsMarkdown && SealsForSave(_savedContent, note.Content) is var sealed_ && !string.Equals(sealed_, note.Content, StringComparison.Ordinal))
+        {
+            note = note with { Content = sealed_ };
+            // the open text takes the same seals now, unless a block is being written (it takes them when it is left)
+            if (Mode == EditorMode.Fonte || !_visual.IsEditing)
+            {
+                _fromVisual = true;
+                try { ReplaceSourceText(sealed_); }
+                finally { _fromVisual = false; }
+                if (Mode == EditorMode.Visual) _visual.SetText(sealed_);
+            }
+        }
         if (SaveRequested is null)
         {
             UpdateSaveDot();

@@ -630,6 +630,8 @@ public sealed class VisualSurface : StackPanel
                 e.Handled = true;
                 // a touch that scrolled the note, or only stopped it, does not open the block (22/10/2026)
                 if (!TouchIntent.IsIntended(holder)) return;
+                // Shift+click while writing: the selection goes from where it was to the letter clicked
+                if (e.KeyModifiers.HasFlag(KeyModifiers.Shift) && _box is not null && ExtendTo(r.Block, holder, e.Source as Visual, e.GetPosition(holder))) return;
                 TapBlock(r.Block.Start, holder, e.Source as Visual, e.GetPosition(holder), select: false);
             };
             // a long press selects the word under the finger, with the bubble and a haptic tick (UX.md P7, P8)
@@ -1081,6 +1083,12 @@ public sealed class VisualSurface : StackPanel
         if (_wiki.IsOpen && _wiki.HandleKey(e.Key)) { e.Handled = true; return; }
         if (e.Key == Key.Escape) { e.Handled = true; FinishEdit(); return; }
         var mod = e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.KeyModifiers.HasFlag(KeyModifiers.Meta);
+        // Ctrl+A once selects the block, again the whole note (in one box, as in one text)
+        if (mod && e.Key == Key.A && !e.KeyModifiers.HasFlag(KeyModifiers.Shift))
+        {
+            var (a, b) = Range(_box);
+            if (a == 0 && b == (_box.Text ?? "").Length && SelectWholeNote()) { e.Handled = true; return; }
+        }
         if (mod && UndoRequested is not null && (e.Key == Key.Z || e.Key == Key.Y))
         {
             e.Handled = true;
@@ -1089,6 +1097,86 @@ public sealed class VisualSurface : StackPanel
         }
         if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None && ContinueList()) { e.Handled = true; return; }
         if (e.KeyModifiers == KeyModifiers.None && CrossBlock(e.Key)) e.Handled = true;
+        else if (e.KeyModifiers == KeyModifiers.Shift && ExtendSelection(e.Key)) e.Handled = true;
+    }
+
+    /// <summary>
+    /// Shift with an arrow at the edge of the box: the selection goes on into the next block, as in one text. The box
+    /// then holds both blocks (the selection keeps its anchor), so copying, deleting or formatting acts on all of it.
+    /// </summary>
+    private bool ExtendSelection(Key key)
+    {
+        if (_box is not { } box || _editStart < 0) return false;
+        var text = box.Text ?? "";
+        int anchor = Math.Clamp(box.SelectionStart, 0, text.Length), active = Math.Clamp(box.SelectionEnd, 0, text.Length);
+        int line = 0, lines = 1;
+        if (box.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.TextPresenter>().FirstOrDefault() is { } presenter)
+        {
+            line = presenter.TextLayout.GetLineIndexFromCharacterIndex(active, false);
+            lines = presenter.TextLayout.TextLines.Count;
+        }
+        var list = _blocks.ToList();
+        var first = list.FindIndex(x => x.Start == _editStart);
+        var last = list.FindLastIndex(x => x.Start < Math.Max(_editEnd, _editStart + 1));
+        if (first < 0 || last < first) return false;
+        bool up = key == Key.Up && line == 0 || key == Key.Left && active == 0;
+        bool down = key == Key.Down && line >= lines - 1 || key == Key.Right && active == text.Length;
+        if (up && first > 0 && !(_hideFrontmatter && list[first - 1].Kind == "frontmatter"))
+        {
+            var prev = list[first - 1];
+            var start = prev.Start;
+            var end = Math.Max(_editEnd, list[last].End);
+            var shift = AiAuthorship.Strip(_text[start.._editStart]).Length;
+            return Widen(start, end, anchor + shift, AiAuthorship.Strip(_text[start..prev.End]).Length);
+        }
+        if (down && last < list.Count - 1)
+        {
+            var next = list[last + 1];
+            var start = _editStart;
+            var end = next.End;
+            return Widen(start, end, anchor, AiAuthorship.Strip(_text[start..next.Start]).Length);
+        }
+        return false;
+    }
+
+    /// <summary>The whole note (its properties block aside, when hidden) in the box, all of it selected.</summary>
+    public bool SelectWholeNote()
+    {
+        if (_readOnly || _blocks.Count == 0) return false;
+        var visible = _blocks.Where(x => !_hideFrontmatter || x.Kind != "frontmatter").ToList();
+        if (visible.Count == 0) return false;
+        int start = visible[0].Start, end = visible[^1].End;
+        if (_box is not null && _editStart == start && _editEnd >= end) { _box.SelectAll(); return true; }
+        if (_box is null) { _caretAt = null; }
+        var len = AiAuthorship.Strip(_text[start..end]).Length;
+        return Widen(start, end, 0, len);
+    }
+
+    private bool ExtendTo(MarkdownBlock block, Control holder, Visual? hit, Point at)
+    {
+        if (_box is not { } box || _editStart < 0 || _readOnly) return false;
+        var source = AiAuthorship.Strip(_text[block.Start..block.End]);
+        var inBlock = RenderedIndex(holder, hit, at) is { } r ? SourceIndex(source, PlainText(holder), r) : source.Length;
+        var anchorOld = Math.Clamp(box.SelectionStart, 0, (box.Text ?? "").Length);
+        int start = Math.Min(block.Start, _editStart), end = Math.Max(block.End, _editEnd);
+        var anchor = AiAuthorship.Strip(_text[start.._editStart]).Length + anchorOld;
+        var active = AiAuthorship.Strip(_text[start..block.Start]).Length + inBlock;
+        return Widen(start, end, anchor, active);
+    }
+
+    private bool Widen(int start, int end, int anchor, int active)
+    {
+        var focused = _box?.IsFocused == true;
+        _box = null;
+        _editStart = _editEnd = -1;
+        _lastRebuiltText = null;
+        StartBox(AiAuthorship.Strip(_text[start..end]), start, end, "paragraph");
+        if (_box is not { } box) return false;
+        var len = box.Text?.Length ?? 0;
+        box.SelectionStart = Math.Clamp(anchor, 0, len);
+        box.SelectionEnd = Math.Clamp(active, 0, len);
+        if (focused) box.Focus();
+        return true;
     }
 
     // ------------------------------------------------------------------ the note as one text (between blocks)
@@ -1128,7 +1216,8 @@ public sealed class VisualSurface : StackPanel
         return false;
     }
 
-    private static bool Joinable(MarkdownBlock b) => b.Kind is not ("frontmatter" or "container");
+    // text blocks join; a code block, formula, table or box keeps its own lines (a fence must start its line)
+    private static bool Joinable(MarkdownBlock b) => b.Kind is "paragraph" or "heading" or "list";
 
     /// <summary>Writes the block at <paramref name="index"/>; the caret at its end or start, or at the column given.</summary>
     private bool MoveTo(int index, double? column, bool last)
@@ -1170,7 +1259,9 @@ public sealed class VisualSurface : StackPanel
             if (focused) _box?.Focus();
             return _box is not null;
         }
-        if (!Joinable(_blocks[upper]) || !Joinable(_blocks[lower])) return false;
+        // blocks that do not join: the key only takes the caret over to the other block
+        if (!Joinable(_blocks[upper]) || !Joinable(_blocks[lower]))
+            return forward ? MoveTo(lower, column: null, last: false) : MoveTo(upper, column: null, last: true);
         var upperStart = _blocks[upper].Start;
         var lowerStart = _blocks[lower].Start;
         // the box being written is folded into the text first (its length may have changed)

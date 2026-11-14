@@ -497,4 +497,89 @@ public sealed class EditorFlowUiTests
             window.Close();
             return true;
         }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task ShiftArrowsSelectAcrossBlocks() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var (editor, window) = Open("Um dois.\n\nTrês quatro.\n\nCinco.\n");
+            var box = Edit(editor, 1);
+            box.Focus();
+            box.SelectionStart = box.SelectionEnd = box.CaretIndex = 4;   // "Três| quatro"
+            void Shift(Avalonia.Input.Key k, PhysicalKey p)
+            {
+                window.KeyPress(k, RawInputModifiers.Shift, p, null);
+                window.KeyRelease(k, RawInputModifiers.Shift, p, null);
+                Dispatcher.UIThread.RunJobs();
+            }
+            Shift(Avalonia.Input.Key.Up, PhysicalKey.ArrowUp);
+            box = editor.Surface.EditBox!;
+            Assert.Equal("Um dois.\n\nTrês quatro.", box.Text);
+            Assert.Equal("\n\nTrês", box.SelectedText);
+            Shift(Avalonia.Input.Key.Left, PhysicalKey.ArrowLeft);
+            Assert.Equal(".\n\nTrês", editor.Surface.EditBox!.SelectedText);
+            window.KeyTextInput("X");
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal("Um doisX quatro.\n\nCinco.\n", Source(editor));
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task ShiftClickSelectsFromTheCaretToTheLetterClicked() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var (editor, window) = Open("Um dois.\n\nTrês quatro.\n\nCinco seis.\n");
+            var box = Edit(editor, 0);
+            box.Focus();
+            box.SelectionStart = box.SelectionEnd = box.CaretIndex = 3;   // "Um |dois"
+            var holder = editor.Surface.BlockView(editor.Surface.BlockStarts[2])!;
+            var p = PointOf(window, holder, "seis", 0);
+            window.MouseDown(p, MouseButton.Left, RawInputModifiers.Shift);
+            window.MouseUp(p, MouseButton.Left, RawInputModifiers.Shift);
+            Dispatcher.UIThread.RunJobs();
+            box = editor.Surface.EditBox!;
+            Assert.Equal("Um dois.\n\nTrês quatro.\n\nCinco seis.", box.Text);
+            Assert.Equal("dois.\n\nTrês quatro.\n\nCinco ", box.SelectedText);
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task CtrlATwiceSelectsTheWholeNoteInVisual() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var (editor, window) = Open("Um.\n\nDois.\n\nTrês.\n");
+            var box = Edit(editor, 1);
+            box.Focus();
+            void CtrlA()
+            {
+                window.KeyPress(Avalonia.Input.Key.A, RawInputModifiers.Control, PhysicalKey.A, "a");
+                window.KeyRelease(Avalonia.Input.Key.A, RawInputModifiers.Control, PhysicalKey.A, "a");
+                Dispatcher.UIThread.RunJobs();
+            }
+            CtrlA();
+            Assert.Equal("Dois.", editor.Surface.EditBox!.SelectedText);
+            CtrlA();
+            Assert.Equal("Um.\n\nDois.\n\nTrês.", editor.Surface.EditBox!.SelectedText);
+            Assert.Equal(EditorMode.Visual, editor.Mode);
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task BackspaceAtTheStartOfACodeBlockMovesUpWithoutBreakingTheFence() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            const string note = "Texto.\n\n```csharp\nvar x = 1;\n```\n";
+            var (editor, window) = Open(note);
+            var box = Edit(editor, 1);
+            box.SelectionStart = box.SelectionEnd = box.CaretIndex = 0;
+            Key(window, Avalonia.Input.Key.Back, PhysicalKey.Backspace);
+            Assert.Equal("Texto.", editor.Surface.EditBox!.Text);
+            Assert.Equal(6, editor.Surface.EditBox!.CaretIndex);
+            Assert.Equal(note, Source(editor));
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
 }
