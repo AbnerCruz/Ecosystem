@@ -1,6 +1,7 @@
 using Android.App;
 using Android.Content;
 using Android.Graphics;
+using Android.OS;
 using Android.Views;
 using Android.Widget;
 using Lunet.Studio;
@@ -8,15 +9,24 @@ using AColor = Android.Graphics.Color;
 
 namespace Lunet.Android;
 
-/// <summary>Touch-first tilemap editor using the exact JSON v1 consumed by the game runtime.</summary>
+/// <summary>
+/// Touch-first tilemap editor (LUNET-486) using the exact JSON v1 consumed by the game runtime.
+/// The map takes the screen; tiles are picked from a strip below it; layers live in one chip.
+/// </summary>
 internal sealed class TileStudioView : LinearLayout
 {
     private readonly TileStudioSession _edit;
     private readonly Bitmap _tileset;
     private readonly Action<string> _save;
     private readonly Action _editTileset;
-    private readonly TextView _status;
+    private readonly Action _close;
+    private readonly TextView _title;
+    private readonly TextView _saveState;
     private readonly MapCanvas _canvas;
+    private readonly LinearLayout _tiles;
+    private readonly TextView _layerChip;
+    private readonly Handler _handler = new(Looper.MainLooper!);
+    private readonly Java.Lang.Runnable _saveLater;
     private int _lastTile = 1;
     private bool _drawing;
     private bool _changed;
@@ -24,136 +34,155 @@ internal sealed class TileStudioView : LinearLayout
 
     public TileStudioView(Context context, TileStudioSession edit, Bitmap tileset, Action<string> save, Action editTileset, Action close) : base(context)
     {
-        _edit = edit; _tileset = tileset; _save = save; _editTileset = editTileset;
+        _edit = edit; _tileset = tileset; _save = save; _editTileset = editTileset; _close = close;
         Orientation = Orientation.Vertical;
-        SetBackgroundColor(AColor.Rgb(17, 20, 29));
-        SetPadding(10, 8, 10, 8);
-        _status = new TextView(context) { TextSize = 13 };
-        _status.SetTextColor(AColor.White);
-        _canvas = new MapCanvas(context, this);
+        SetBackgroundColor(LunetUi.Background);
+        _saveLater = new Java.Lang.Runnable(Save);
 
-        Row(("← Código", () => { Suspend(); close(); }), ("Salvar", Save), ("Escolher tile", ShowPalette),
-            ("Editar tileset", _editTileset), ("Borracha", () => { if (_edit.Tile == 0) _edit.Tile = _lastTile; else { _lastTile = _edit.Tile; _edit.Tile = 0; } Refresh(); }));
-        Row(("Camada", PickLayer), ("+ Camada", AddLayer), ("Colisão", () => Edit(() => _edit.ToggleCollision())),
-            ("Visível", () => Edit(() => _edit.ToggleVisibility())), ("↑", () => Edit(() => _edit.MoveLayer(-1))),
-            ("↓", () => Edit(() => _edit.MoveLayer(1))), ("Renomear", RenameLayer),
-            ("Excluir", DeleteLayer), ("Desfazer", () => Edit(() => _edit.Undo())),
-            ("Refazer", () => Edit(() => _edit.Redo())));
-        AddView(_status);
+        var bar = LunetUi.Row(context, 4);
+        bar.SetPadding(Dp(4), Dp(6), Dp(6), Dp(6));
+        bar.AddView(LunetUi.Icon(context, "‹", "Voltar ao código", () => { Suspend(); _close(); }), Square(44));
+        var titles = new LinearLayout(context) { Orientation = Orientation.Vertical };
+        _title = LunetUi.Label(context, "", LunetUi.TextLabel, LunetUi.Text, bold: true);
+        _title.SetSingleLine(true);
+        _saveState = LunetUi.Label(context, "Salvo", LunetUi.TextCaption, LunetUi.TextMuted);
+        titles.AddView(_title);
+        titles.AddView(_saveState);
+        bar.AddView(titles, LunetUi.Weight());
+        bar.AddView(LunetUi.Icon(context, "↶", "Desfazer (toque com dois dedos)", Undo), Square(44));
+        bar.AddView(LunetUi.Icon(context, "↷", "Refazer (toque com três dedos)", Redo), Square(44));
+        bar.AddView(LunetUi.Button(context, "✎ Tileset", () => { Suspend(); _editTileset(); }), new LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(40)));
+        AddView(bar);
+        AddView(LunetUi.Divider(context));
+
+        _canvas = new MapCanvas(context, this);
         AddView(_canvas, new LayoutParams(ViewGroup.LayoutParams.MatchParent, 0, 1));
+
+        var layerRow = LunetUi.Row(context, 6);
+        layerRow.SetPadding(Dp(8), Dp(6), Dp(8), Dp(2));
+        _layerChip = LunetUi.Chip(context, "", ShowLayers);
+        layerRow.AddView(_layerChip, LunetUi.Weight());
+        layerRow.AddView(LunetUi.Chip(context, "＋ Camada", AddLayer));
+        layerRow.AddView(LunetUi.Chip(context, "Ajustar", () => _canvas.Gestures.Reset()));
+        AddView(layerRow);
+
+        var tileRow = LunetUi.Row(context, 4);
+        tileRow.SetPadding(Dp(8), Dp(4), Dp(8), Dp(8));
+        var tileScroll = new HorizontalScrollView(context) { HorizontalScrollBarEnabled = false };
+        _tiles = LunetUi.Row(context, 4);
+        tileScroll.AddView(_tiles);
+        tileRow.AddView(tileScroll, LunetUi.Weight());
+        AddView(tileRow);
+
+        BuildTileStrip();
         Refresh();
     }
 
-    private void Row(params (string text, Action action)[] items)
+    private LayoutParams Square(int dp) => new(Dp(dp), Dp(dp));
+    private int Dp(float value) => LunetUi.Dp(Context!, value);
+
+    private void BuildTileStrip()
     {
-        var line = new LinearLayout(Context) { Orientation = Orientation.Horizontal };
-        foreach (var (text, action) in items)
+        _tiles.RemoveAllViews();
+        var eraser = new TileSwatch(Context!, this, 0) { ContentDescription = "Borracha" };
+        eraser.Click += (_, _) => { _edit.Tile = 0; Refresh(); };
+        _tiles.AddView(eraser, Square(46));
+        for (int id = 1; id <= _edit.MaxTileId; id++)
         {
-            var button = new Button(Context) { Text = text, TextSize = 12 };
-            button.SetAllCaps(false);
-            button.Click += (_, _) => { try { action(); } catch (Exception ex) { Error(ex); } };
-            line.AddView(button);
+            int captured = id;
+            var swatch = new TileSwatch(Context!, this, id) { ContentDescription = "Tile " + id };
+            swatch.Click += (_, _) => { _edit.Tile = captured; _lastTile = captured; Refresh(); };
+            _tiles.AddView(swatch, Square(46));
         }
-        var scroll = new HorizontalScrollView(Context) { HorizontalScrollBarEnabled = false };
-        scroll.AddView(line);
-        AddView(scroll);
     }
+
+    private void Undo() { EndGesture(); if (_edit.Undo()) AfterEdit(); }
+    private void Redo() { EndGesture(); if (_edit.Redo()) AfterEdit(); }
 
     private void Edit(Action edit)
     {
         EndGesture();
-        edit();
-        Refresh();
-        Save();
+        try { edit(); } catch (Exception ex) { _saveState.Text = "Falha: " + ex.Message; return; }
+        AfterEdit();
     }
 
-    private void PickLayer()
+    private void AfterEdit()
     {
-        var labels = Enumerable.Range(0, _edit.Map.LayerCount)
-            .Select(i => $"{i + 1}. {_edit.Map.GetLayerName(i)}{(_edit.Map.IsCollisionLayer(i) ? " · colisão" : "")}").ToArray();
-        new AlertDialog.Builder(Context)!.SetTitle("Camadas · ordem de desenho")!
-            .SetItems(labels, (_, e) => { EndGesture(); _edit.SelectLayer(e.Which); Refresh(); })!
-            .SetNegativeButton("Cancelar", (_, _) => { })!.Show();
+        _saveState.Text = "Alterações não salvas…";
+        _handler.RemoveCallbacks(_saveLater);
+        _handler.PostDelayed(_saveLater, 900);
+        Refresh();
+    }
+
+    private void ShowLayers()
+    {
+        var map = _edit.Map;
+        var items = new List<(string Label, Action Run)>();
+        for (int i = 0; i < map.LayerCount; i++)
+        {
+            int index = i;
+            items.Add(((i == _edit.Layer ? "● " : "○ ") + map.GetLayerName(i) +
+                (map.IsCollisionLayer(i) ? " · colisão" : "") + (map.IsLayerVisible(i) ? "" : " · oculta"),
+                () => { EndGesture(); _edit.SelectLayer(index); Refresh(); }));
+        }
+        items.Add(("— " + (map.IsCollisionLayer(_edit.Layer) ? "Tornar camada comum" : "Tornar camada de colisão"), () => Edit(() => _edit.ToggleCollision())));
+        items.Add(("— " + (map.IsLayerVisible(_edit.Layer) ? "Ocultar camada" : "Mostrar camada"), () => Edit(() => _edit.ToggleVisibility())));
+        items.Add(("— Subir camada", () => Edit(() => _edit.MoveLayer(-1))));
+        items.Add(("— Descer camada", () => Edit(() => _edit.MoveLayer(1))));
+        items.Add(("— Renomear camada…", RenameLayer));
+        items.Add(("— Excluir camada…", DeleteLayer));
+        new AlertDialog.Builder(Context, global::Android.Resource.Style.ThemeDeviceDefaultDialogAlert)!
+            .SetTitle("Camadas · ordem de desenho")!
+            .SetItems(items.Select(i => i.Label).ToArray(), (_, e) => items[e.Which].Run())!
+            .Show();
     }
 
     private void AddLayer()
     {
-        var input = new EditText(Context) { Hint = "Nome da nova camada" };
-        input.SetSingleLine(true);
-        input.Text = $"camada{_edit.Map.LayerCount + 1}";
-        new AlertDialog.Builder(Context)!.SetTitle("Nova camada")!.SetView(input)!
+        var input = LunetUi.Input(Context!, "Nome da nova camada", $"camada{_edit.Map.LayerCount + 1}");
+        var box = new FrameLayout(Context); box.SetPadding(Dp(20), Dp(8), Dp(20), 0); box.AddView(input);
+        new AlertDialog.Builder(Context, global::Android.Resource.Style.ThemeDeviceDefaultDialogAlert)!.SetTitle("Nova camada")!.SetView(box)!
             .SetNegativeButton("Cancelar", (_, _) => { })!
-            .SetPositiveButton("Criar", (_, _) =>
-            {
-                try { Edit(() => _edit.AddLayer((input.Text ?? "").Trim())); }
-                catch (Exception ex) { Error(ex); }
-            })!.Show();
+            .SetPositiveButton("Criar", (_, _) => Edit(() => _edit.AddLayer((input.Text ?? "").Trim())))!.Show();
     }
 
     private void RenameLayer()
     {
-        var input = new EditText(Context) { Text = _edit.Map.GetLayerName(_edit.Layer) };
-        input.SetSingleLine(true);
-        new AlertDialog.Builder(Context)!.SetTitle("Renomear camada")!.SetView(input)!
+        var input = LunetUi.Input(Context!, "Nome", _edit.Map.GetLayerName(_edit.Layer));
+        var box = new FrameLayout(Context); box.SetPadding(Dp(20), Dp(8), Dp(20), 0); box.AddView(input);
+        new AlertDialog.Builder(Context, global::Android.Resource.Style.ThemeDeviceDefaultDialogAlert)!.SetTitle("Renomear camada")!.SetView(box)!
             .SetNegativeButton("Cancelar", (_, _) => { })!
-            .SetPositiveButton("Salvar", (_, _) =>
-            {
-                try { Edit(() => _edit.RenameLayer((input.Text ?? "").Trim())); }
-                catch (Exception ex) { Error(ex); }
-            })!.Show();
+            .SetPositiveButton("Salvar", (_, _) => Edit(() => _edit.RenameLayer((input.Text ?? "").Trim())))!.Show();
     }
 
     private void DeleteLayer()
     {
-        if (_edit.Map.LayerCount == 1) { _status.Text = "O mapa precisa de pelo menos uma camada."; return; }
-        new AlertDialog.Builder(Context)!.SetTitle("Excluir camada e seus tiles?")!
+        if (_edit.Map.LayerCount == 1) { _saveState.Text = "O mapa precisa de pelo menos uma camada."; return; }
+        new AlertDialog.Builder(Context, global::Android.Resource.Style.ThemeDeviceDefaultDialogAlert)!.SetTitle("Excluir camada e seus tiles?")!
             .SetMessage(_edit.Map.GetLayerName(_edit.Layer))!
             .SetNegativeButton("Cancelar", (_, _) => { })!
-            .SetPositiveButton("Excluir", (_, _) => { try { Edit(_edit.RemoveLayer); } catch (Exception ex) { Error(ex); } })!
-            .Show();
-    }
-
-    private void ShowPalette()
-    {
-        var palette = new PaletteCanvas(Context, this);
-        var horizontal = new HorizontalScrollView(Context);
-        horizontal.AddView(palette);
-        var vertical = new ScrollView(Context);
-        vertical.AddView(horizontal);
-        var dialog = new Dialog(Context);
-        palette.Picked = id =>
-        {
-            _edit.Tile = id;
-            _lastTile = id;
-            dialog.Dismiss();
-            Refresh();
-        };
-        dialog.SetTitle("Escolher tile");
-        dialog.SetContentView(vertical);
-        dialog.Show();
-        dialog.Window?.SetLayout(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
+            .SetPositiveButton("Excluir", (_, _) => Edit(_edit.RemoveLayer))!.Show();
     }
 
     private void Refresh()
     {
         var map = _edit.Map;
-        _status.Text = $"Mapa {map.Width}×{map.Height} · Camada: {map.GetLayerName(_edit.Layer)}" +
-            $"{(map.IsCollisionLayer(_edit.Layer) ? " [colisão]" : "")} · Tile {_edit.Tile}" +
-            (_edit.CanUndo ? " · ↶" : "");
+        _title.Text = $"Mapa {map.Width}×{map.Height} · " + (_edit.Tile == 0 ? "borracha" : "tile " + _edit.Tile);
+        _layerChip.Text = "Camada: " + map.GetLayerName(_edit.Layer) + (map.IsCollisionLayer(_edit.Layer) ? " · colisão" : "") + "  ▾";
+        for (int i = 0; i < _tiles.ChildCount; i++) _tiles.GetChildAt(i)?.Invalidate();
         _canvas.Invalidate();
     }
 
-    private void Error(Exception ex) => _status.Text = "Falha: " + ex.Message;
-
     public void Save()
     {
+        _handler.RemoveCallbacks(_saveLater);
         EndGesture();
         try
         {
             _save(_edit.Map.ToJson());
-            _status.Text = $"Salvo · {_edit.Map.Width}×{_edit.Map.Height} · {_edit.Map.GetLayerName(_edit.Layer)} · tile {_edit.Tile}";
+            _saveState.Text = "Salvo · JSON do mapa";
         }
-        catch (Exception ex) { _status.Text = "Não salvo: " + ex.Message; }
+        catch (Exception ex) { _saveState.Text = "Não salvo: " + ex.Message; }
     }
 
     public void Suspend() => Save();
@@ -172,7 +201,7 @@ internal sealed class TileStudioView : LinearLayout
         _lastX = x;
         _lastY = y;
         try { _changed |= _edit.Paint(x, y); }
-        catch (Exception ex) { Error(ex); }
+        catch (Exception ex) { _saveState.Text = "Falha: " + ex.Message; }
         _canvas.Invalidate();
     }
 
@@ -181,116 +210,124 @@ internal sealed class TileStudioView : LinearLayout
         if (!_drawing) return;
         _drawing = false;
         _edit.EndStroke();
-        if (_changed)
-        {
-            _changed = false;
-            try { _save(_edit.Map.ToJson()); Refresh(); }
-            catch (Exception ex) { _status.Text = "Não salvo: " + ex.Message; }
-        }
+        if (_changed) { _changed = false; AfterEdit(); }
     }
 
-    private sealed class MapCanvas(Context context, TileStudioView owner) : View(context)
+    private void CancelGesture()
     {
-        private readonly Paint _paint = new() { AntiAlias = false };
-        private float _cell, _left, _top;
+        if (!_drawing) return;
+        bool changed = _changed;
+        _drawing = false;
+        _changed = false;
+        _edit.EndStroke();
+        if (changed) _edit.Undo();
+        _canvas.Invalidate();
+    }
+
+    private void DrawTile(Canvas canvas, int id, RectF dest, Paint paint)
+    {
+        var map = _edit.Map;
+        int columns = Math.Max(1, _tileset.Width / map.TileWidth);
+        int index = id - 1;
+        var src = new Rect((index % columns) * map.TileWidth, (index / columns) * map.TileHeight,
+            (index % columns + 1) * map.TileWidth, (index / columns + 1) * map.TileHeight);
+        canvas.DrawBitmap(_tileset, src, dest, paint);
+    }
+
+    private sealed class TileSwatch(Context context, TileStudioView owner, int id) : View(context)
+    {
+        private readonly Paint _paint = new() { FilterBitmap = false };
 
         protected override void OnDraw(Canvas canvas)
         {
-            base.OnDraw(canvas);
-            var map = owner._edit.Map;
-            _cell = Math.Min(Width / (float)map.Width, Height / (float)map.Height);
-            if (_cell <= 0) return;
-            _left = (Width - map.Width * _cell) / 2;
-            _top = (Height - map.Height * _cell) / 2;
-            int columns = owner._tileset.Width / map.TileWidth;
-            for (int y = 0; y < map.Height; y++)
-            for (int x = 0; x < map.Width; x++)
+            bool selected = owner._edit.Tile == id;
+            canvas.DrawColor(selected ? LunetUi.AccentSoft : LunetUi.Surface);
+            float pad = 5 * Resources!.DisplayMetrics!.Density;
+            var dest = new RectF(pad, pad, Width - pad, Height - pad);
+            if (id == 0)
             {
-                float left = _left + x * _cell, top = _top + y * _cell;
-                _paint.Color = (x + y) % 2 == 0 ? AColor.Rgb(42, 46, 55) : AColor.Rgb(49, 53, 63);
-                canvas.DrawRect(left, top, left + _cell, top + _cell, _paint);
-                for (int l = 0; l < map.LayerCount; l++)
-                {
-                    if (!map.IsLayerVisible(l)) continue;
-                    int id = map.GetTile(l, new Lunet.Pathfinding.GridPoint(x, y));
-                    if (id == 0) continue;
-                    int index = id - 1;
-                    var src = new Rect((index % columns) * map.TileWidth, (index / columns) * map.TileHeight,
-                        (index % columns + 1) * map.TileWidth, (index / columns + 1) * map.TileHeight);
-                    _paint.Color = AColor.White;
-                    canvas.DrawBitmap(owner._tileset, src, new RectF(left, top, left + _cell, top + _cell), _paint);
-                }
+                var text = new Paint(PaintFlags.AntiAlias) { Color = LunetUi.TextMuted, TextSize = 18 * Resources.DisplayMetrics.Density, TextAlign = Paint.Align.Center };
+                canvas.DrawText("⌫", Width / 2f, Height / 2f + text.TextSize / 3, text);
             }
-            if (_cell >= 10)
-            {
-                _paint.StrokeWidth = 1;
-                _paint.Color = AColor.Argb(50, 255, 255, 255);
-                for (int x = 0; x <= map.Width; x++)
-                    canvas.DrawLine(_left + x * _cell, _top, _left + x * _cell, _top + map.Height * _cell, _paint);
-                for (int y = 0; y <= map.Height; y++)
-                    canvas.DrawLine(_left, _top + y * _cell, _left + map.Width * _cell, _top + y * _cell, _paint);
-            }
+            else owner.DrawTile(canvas, id, dest, _paint);
+            var border = new Paint { Color = selected ? LunetUi.Accent : LunetUi.Border, StrokeWidth = selected ? 3 : 1 };
+            border.SetStyle(Paint.Style.Stroke);
+            canvas.DrawRect(1, 1, Width - 1, Height - 1, border);
         }
-
-        public override bool OnTouchEvent(MotionEvent? e)
-        {
-            if (e is null || _cell <= 0) return false;
-            if (e.ActionMasked is MotionEventActions.Up or MotionEventActions.Cancel)
-            {
-                owner.EndGesture();
-                return true;
-            }
-            if (e.ActionMasked == MotionEventActions.Down) owner.BeginGesture();
-            if (e.ActionMasked is MotionEventActions.Down or MotionEventActions.Move)
-                owner.PaintCell((int)Math.Floor((e.GetX() - _left) / _cell), (int)Math.Floor((e.GetY() - _top) / _cell));
-            return true;
-        }
-
-        protected override void Dispose(bool disposing) { if (disposing) _paint.Dispose(); base.Dispose(disposing); }
     }
 
-    private sealed class PaletteCanvas : View
+    private sealed class MapCanvas : View
     {
         private readonly TileStudioView _owner;
-        private readonly int _cols, _rows, _size;
-        private readonly Paint _paint = new();
-        public Action<int>? Picked { get; set; }
+        private readonly Paint _paint = new() { FilterBitmap = false };
+        private readonly Paint _grid = new() { StrokeWidth = 1, Color = AColor.Argb(46, 255, 255, 255) };
+        private float _cell, _left, _top;
+        public CanvasGestures Gestures { get; }
 
-        public PaletteCanvas(Context context, TileStudioView owner) : base(context)
+        public MapCanvas(Context context, TileStudioView owner) : base(context)
         {
             _owner = owner;
-            _cols = owner._tileset.Width / owner._edit.Map.TileWidth;
-            _rows = owner._tileset.Height / owner._edit.Map.TileHeight;
-            _size = (int)(48 * context.Resources!.DisplayMetrics!.Density);
-            LayoutParameters = new ViewGroup.LayoutParams(_cols * _size, _rows * _size);
+            Gestures = new CanvasGestures(context, this) { MinZoom = 0.5f, MaxZoom = 12f };
+            Gestures.CancelTool += owner.CancelGesture;
+            Gestures.Undo += owner.Undo;
+            Gestures.Redo += owner.Redo;
+            ContentDescription = "Mapa de tiles";
         }
 
         protected override void OnDraw(Canvas canvas)
         {
             base.OnDraw(canvas);
             var map = _owner._edit.Map;
-            for (int y = 0; y < _rows; y++)
-            for (int x = 0; x < _cols; x++)
+            float margin = 10 * Resources!.DisplayMetrics!.Density;
+            _cell = Math.Min((Width - 2 * margin) / map.Width, (Height - 2 * margin) / map.Height) * Gestures.Zoom;
+            if (_cell <= 0) return;
+            _left = (Width - map.Width * _cell) / 2 + Gestures.PanX;
+            _top = (Height - map.Height * _cell) / 2 + Gestures.PanY;
+            // Only the visible cells are drawn: big maps stay fluid while zoomed in.
+            int x0 = Math.Max(0, (int)Math.Floor(-_left / _cell)), y0 = Math.Max(0, (int)Math.Floor(-_top / _cell));
+            int x1 = Math.Min(map.Width - 1, (int)Math.Ceiling((Width - _left) / _cell)), y1 = Math.Min(map.Height - 1, (int)Math.Ceiling((Height - _top) / _cell));
+            for (int y = y0; y <= y1; y++)
+            for (int x = x0; x <= x1; x++)
             {
-                var src = new Rect(x * map.TileWidth, y * map.TileHeight, (x + 1) * map.TileWidth, (y + 1) * map.TileHeight);
-                var dst = new RectF(x * _size, y * _size, (x + 1) * _size, (y + 1) * _size);
-                _paint.Color = AColor.White;
-                canvas.DrawBitmap(_owner._tileset, src, dst, _paint);
-                _paint.Color = AColor.Argb(90, 0, 0, 0);
-                _paint.SetStyle(Paint.Style.Stroke);
-                canvas.DrawRect(dst, _paint);
-                _paint.SetStyle(Paint.Style.Fill);
+                float left = _left + x * _cell, top = _top + y * _cell;
+                _paint.Color = (x + y) % 2 == 0 ? AColor.Rgb(30, 35, 46) : AColor.Rgb(36, 41, 53);
+                canvas.DrawRect(left, top, left + _cell, top + _cell, _paint);
+                for (int l = 0; l < map.LayerCount; l++)
+                {
+                    if (!map.IsLayerVisible(l)) continue;
+                    int id = map.GetTile(l, new Lunet.Pathfinding.GridPoint(x, y));
+                    if (id == 0) continue;
+                    _paint.Color = AColor.White;
+                    _paint.Alpha = map.IsCollisionLayer(l) && l != _owner._edit.Layer ? 120 : 255;
+                    _owner.DrawTile(canvas, id, new RectF(left, top, left + _cell, top + _cell), _paint);
+                    _paint.Alpha = 255;
+                }
+                if (map.IsCollisionLayer(_owner._edit.Layer) && map.GetTile(_owner._edit.Layer, new Lunet.Pathfinding.GridPoint(x, y)) != 0)
+                {
+                    _paint.Color = AColor.Argb(70, 248, 81, 73);
+                    canvas.DrawRect(left, top, left + _cell, top + _cell, _paint);
+                }
+            }
+            if (_cell >= 10)
+            {
+                for (int x = x0; x <= x1 + 1; x++) canvas.DrawLine(_left + x * _cell, _top + y0 * _cell, _left + x * _cell, _top + (y1 + 1) * _cell, _grid);
+                for (int y = y0; y <= y1 + 1; y++) canvas.DrawLine(_left + x0 * _cell, _top + y * _cell, _left + (x1 + 1) * _cell, _top + y * _cell, _grid);
             }
         }
 
         public override bool OnTouchEvent(MotionEvent? e)
         {
-            if (e?.ActionMasked != MotionEventActions.Up) return true;
-            int x = (int)(e.GetX() / _size), y = (int)(e.GetY() / _size);
-            if ((uint)x < (uint)_cols && (uint)y < (uint)_rows) Picked?.Invoke(y * _cols + x + 1);
+            if (e is null || _cell <= 0) return false;
+            if (Gestures.Handle(e)) return true;
+            if (e.ActionMasked is MotionEventActions.Up or MotionEventActions.Cancel)
+            {
+                _owner.EndGesture();
+                return true;
+            }
+            if (e.ActionMasked == MotionEventActions.Down) _owner.BeginGesture();
+            if (e.ActionMasked is MotionEventActions.Down or MotionEventActions.Move)
+                _owner.PaintCell((int)Math.Floor((e.GetX() - _left) / _cell), (int)Math.Floor((e.GetY() - _top) / _cell));
             return true;
         }
-
-        protected override void Dispose(bool disposing) { if (disposing) _paint.Dispose(); base.Dispose(disposing); }
     }
 }
