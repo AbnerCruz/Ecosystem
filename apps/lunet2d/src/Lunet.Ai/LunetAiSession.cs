@@ -23,8 +23,6 @@ public sealed class LunetAiSession
     private readonly List<LunetAiTurn> _history;
     private readonly SemaphoreSlim _runGate = new(1, 1);
     private readonly object _historyLock = new();
-    private const int MaxStoredTurns = 200;
-    private const int MaxHistoryBytes = 4_000_000;
     private const string PendingText = "⏳ A IA está trabalhando. As alterações serão salvas no projeto.";
 
     public IReadOnlyList<LunetAiTurn> History { get { lock (_historyLock) return _history.ToArray(); } }
@@ -65,7 +63,7 @@ public sealed class LunetAiSession
         _historyPath = privateHistoryPath;
         try
         {
-            _history = File.Exists(privateHistoryPath) && new FileInfo(privateHistoryPath).Length <= MaxHistoryBytes
+            _history = File.Exists(privateHistoryPath)
                 ? JsonSerializer.Deserialize<List<LunetAiTurn>>(File.ReadAllText(privateHistoryPath)) ?? []
                 : [];
         }
@@ -73,7 +71,6 @@ public sealed class LunetAiSession
         {
             _history = [];
         }
-        if (_history.Count > MaxStoredTurns) _history.RemoveRange(0, _history.Count - MaxStoredTurns);
     }
 
     /// <summary>Forgets the conversation of this project (the files are not touched).</summary>
@@ -97,7 +94,6 @@ public sealed class LunetAiSession
             var text = prompt.Trim() + (attachments is { Count: > 0 } ? "\n📎 " + string.Join(", ", attachments) : "");
             _history.Add(new LunetAiTurn("Você", text));
             _history.Add(new LunetAiTurn("Lunet", PendingText));
-            if (_history.Count > MaxStoredTurns) _history.RemoveRange(0, _history.Count - MaxStoredTurns);
             SaveHistory();
             return _history.Count - 1;
         }
@@ -120,13 +116,7 @@ public sealed class LunetAiSession
         {
             Directory.CreateDirectory(Path.GetDirectoryName(_historyPath)!);
             var temporary = _historyPath + ".tmp";
-            var serialized = JsonSerializer.Serialize(_history);
-            while (System.Text.Encoding.UTF8.GetByteCount(serialized) > MaxHistoryBytes && _history.Count > 2)
-            {
-                _history.RemoveRange(0, 2);
-                serialized = JsonSerializer.Serialize(_history);
-            }
-            File.WriteAllText(temporary, serialized);
+            File.WriteAllText(temporary, JsonSerializer.Serialize(_history));
             File.Move(temporary, _historyPath, overwrite: true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }

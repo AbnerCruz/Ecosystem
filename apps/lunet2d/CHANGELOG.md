@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-497 / PR #932: histórico local integral e persistido desde o pedido; IA continua em foreground service Android fora do chat; painel exibe a tarefa e o progresso ao retornar. Caminhos de sprite corrigidos e compatíveis com `Content/` legado; verificação da existência e assinatura PNG na compilação da IA. 886 testes e CI Android verdes; teste físico do proprietário pendente.
+
 - Fixed / Novo projeto (14/11, revisão solicitada): `Game.cs` volta a incluir `Initialize`, `LoadContent`, `Update`, `Draw`, `UnloadContent`, `SpriteBatch.Begin/End` e fundo básico, mas sem a bola, textura ou movimento por toque. O launcher não exibe modelos demo/protótipos: formulário único para nome, orientação, resolução, updates/s, Fit/Fill, versão e ID Android opcional. Configurações persistidas no `lunet.json` e refletidas no código inicial; demos continuam disponíveis apenas para testes internos.
 
 - LUNET-491 (feito, sem validação em aparelho): Sprite Studio ganha seleção por retângulo, laço e varinha, com mover, redimensionar, girar, espelhar, duplicar e apagar sobre camada flutuante (grava só ao aplicar; cancelar e desfazer). Áudio: prévia com cursor, toque na onda, repetir e ajuste ao vivo, inclusive ao criar efeitos. Assets: prévia real de sprite animado, imagem, som, fonte e dados, também a partir do Explorer. Ícones: catálogo vetorial de contorno substitui caracteres Unicode em toda a interface. Roteiro: `docs/guides/validacao-studios-icones.md`.
