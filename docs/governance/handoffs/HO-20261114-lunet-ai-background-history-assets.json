@@ -62,9 +62,10 @@
     {
       "check": "Validação física de chat persistente, background, cancelamento e preview do Cells.png",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/ia-lunet.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-14 (Issue https://github.com/AbnerCruz/Ecosystem/issues/941); registro em docs/governance/responses/VAL-HO-20261114-lunet-ai-background-history-assets-8f3de606d7f9.md."
     }
   ],
   "known_issues": [
