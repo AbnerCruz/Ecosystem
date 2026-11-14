@@ -136,6 +136,10 @@ public sealed class LunetAiProjectFiles(LunetProject project)
         var current = Read(relativePath);
         if (!string.Equals(current.Sha256, expectedSha256, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Arquivo mudou desde a leitura. Leia novamente.");
+        if (oldText == current.Content)
+            throw new InvalidOperationException("A IA não pode substituir o arquivo inteiro. Edite trechos menores e preserve o restante.");
+        if (oldText.Length >= 500 && oldText.Count(c => c == '\n') >= 8 && newText.Length * 5 < oldText.Length)
+            throw new InvalidOperationException("Remoção extensa bloqueada para proteger o documento. Divida em alterações verificáveis e peça aprovação para exclusões grandes.");
         int first = current.Content.IndexOf(oldText, StringComparison.Ordinal);
         if (first < 0 || current.Content.IndexOf(oldText, first + oldText.Length, StringComparison.Ordinal) >= 0)
             throw new InvalidOperationException("Trecho não encontrado ou ambíguo; especifique um trecho único.");
@@ -220,7 +224,7 @@ public sealed class LunetAiProjectTool : ITool
                 SearchName => "Search text within allowed project source files, returning grounded line numbers.",
                 ExcerptName => "Read an exact bounded line range, returning whole-file SHA256 and truncation metadata.",
                 ReplaceName => "Replace a unique exact text span in an existing file, guarded by full-file SHA256.",
-                _ => "Create or atomically replace one project text file using the SHA256 from read. Never overwrite stale content."
+                _ => "CREATE a new text file only. Existing files MUST use lunet.files.replace with an exact unique old_text span. Whole-file replacements are forbidden."
             }, schema,
             new HashSet<string> { Permissions.AgentAct, write ? Permissions.FsWrite : Permissions.FsRead },
             write ? RiskClass.Write : RiskClass.Read,
@@ -261,6 +265,9 @@ public sealed class LunetAiProjectTool : ITool
                     content = file.Content
                 })));
             }
+            if (_name == WriteName && _files.List().Contains(Arg("path"), StringComparer.Ordinal))
+                return ValueTask.FromResult(ToolOutcome.Error(
+                    "Arquivo existente: lunet.files.write NÃO pode sobrescrevê-lo. Use lunet.files.replace com old_text exato e expected_sha256, preservando o restante do arquivo."));
             var change = _name == ReplaceName
                 ? _files.Replace(Arg("path"), Arg("old_text"), Arg("new_text"), Arg("expected_sha256"))
                 : _files.Write(Arg("path"), Arg("content"), Arg("expected_sha256"));
