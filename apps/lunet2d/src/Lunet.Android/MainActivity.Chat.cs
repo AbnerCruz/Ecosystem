@@ -460,7 +460,7 @@ public sealed partial class MainActivity
                             break;
                         case ChatBlockKind.Quote:
                             AppendSpans(builder, block.Text);
-                            builder.SetSpan(new QuoteSpan(LunetUi.Accent), 0, builder.Length(), SpanTypes.ExclusiveExclusive);
+                            builder.SetSpan(new QuoteSpan(LunetUi.Accent, Dp(3), Dp(12)), 0, builder.Length(), SpanTypes.ExclusiveExclusive);
                             view.SetTextColor(LunetUi.TextMuted);
                             break;
                         default:

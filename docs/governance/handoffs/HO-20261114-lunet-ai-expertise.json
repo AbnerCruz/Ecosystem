@@ -3,14 +3,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261114-lunet-ai-expertise",
   "category": "HANDOFF",
-  "timestamp": "2026-11-14T09:30:00Z",
+  "timestamp": "2026-11-14T09:45:00Z",
   "agent": {
     "id": "claude-lunet-cowork-redesign",
     "kind": "ai-agent"
   },
   "task_id": "LUNET-488",
   "component": "lunet2d",
-  "state": "working",
+  "state": "review",
   "branch": "claude/lunet2d-analysis-redesign-4ljh4e",
   "base_commit": "088bb66",
   "commit": null,
@@ -34,27 +34,39 @@
     "apps/lunet2d/tests/Lunet.Tests/ProjectNotesTests.cs",
     "apps/lunet2d/docs/guides/ia-lunet.md",
     "apps/lunet2d/ROADMAP.md",
-    "docs/governance/handoffs/HO-20261114-lunet-ai-expertise.json"
+    "docs/governance/handoffs/HO-20261114-lunet-ai-expertise.json",
+    "apps/lunet2d/src/Lunet.Ai/ChatMarkdown.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSteps.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Chat.cs",
+    "apps/lunet2d/src/Lunet.Android/Editor/CodeEditText.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiChatTests.cs"
   ],
   "work_completed": [
     "TDD: LunetAiExpertiseTests (conhecimento real da API/guias, percepção de imagem, estilo, coerência, fluxo completo desenho→sprite) e importação em ProjectNotesTests",
     "Base de conhecimento offline: API do Framework, guias e documento de capacidades (existe / ainda não existe)",
     "Percepção de imagem por grade quantizada com remoção de fundo e paleta do projeto",
     "Estilo do projeto e avisos de coerência na criação de sprites; prompt de sistema especialista",
-    "Anexos na conversa e importação de arquivos em Notas com visualizador e 'Virar sprite'"
+    "Anexos na conversa e importação de arquivos em Notas com visualizador e 'Virar sprite'",
+    "LUNET-490: chat redesenhado após estudo de Claude/ChatGPT mobile, agentes de código e guias de UX — conversa em tela cheia, respostas em Markdown sem balão, cartões de código com realce C#, linha do tempo ao vivo de passos, ações por mensagem, pílulas de contexto removíveis, estado vazio com sugestões"
   ],
   "verification": [
     {
       "check": "dotnet test tests/Lunet.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "Execução local: 824 testes, 0 falhas."
+      "evidence": "Execução local: 829 testes, 0 falhas."
     },
     {
       "check": "Build APK Android local (com e sem harness de demonstração)",
       "kind": "automated",
       "result": "passed",
       "evidence": "0 erros."
+    },
+    {
+      "check": "Capturas do chat no emulador (Android 13, Pixel 6)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/43580364121 — 14 telas, sem exceção fatal."
     },
     {
       "check": "Validação no aparelho: anexar foto de desenho e gerar sprite coerente; importar arquivos em Notas; IA respondendo sobre recursos inexistentes",
@@ -70,7 +82,9 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Capturas no emulador, remover o workflow do PR para mantê-lo como rotina, integração e release"
+    "Integração governada e release de desenvolvimento",
+    "Reapresentar o workflow de capturas em PR próprio (zona crítica)",
+    "Validação no aparelho pelo proprietário"
   ],
   "decisions_required": [],
   "normative_sources": [

@@ -644,3 +644,9 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Entregue: IA configurada uma vez (Keystore, presets), contexto do editor, compilação como verificação com reparo, checkpoint/diff/desfazer, IA criando sprites; painel de IA não modal e "Pedir à IA" na seleção; workbench redesenhado (tokens LunetUi, barra única, teclas de código, navegação oculta ao digitar, palette com arquivos); notas e esboços em Notes/; Sprite/Tile Studio com gestos e canvas eficiente; realce incremental no editor.
 - Capturas reais por emulador (`lunet2d-ui-screens`, harness compilado só com LunetUiDemo). O workflow é zona crítica e sairá deste PR antes de ele ficar pronto.
 - DEVICE pendente para tudo. Handoff `HO-20261114-lunet-cowork-redesign.json`.
+
+### 20261114-claude-lunet-ai-expertise-chat — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
+- Ordens do proprietário: IA especialista no Lunet (o que existe e o que não existe), importar arquivos, IA recebendo imagens/arquivos (desenho → sprite), coerência artística e contextual; depois "o chat ainda está ruim: estuda primeiro, implementa depois, inspire-se no topo do mercado".
+- Entregue (LUNET-488/489/490): base de conhecimento offline (API, guias, capacidades), estilo do projeto e avisos de coerência, percepção de imagem por grade quantizada, anexos e importação em Notas, chat redesenhado (tela de conversa, Markdown, cartões de código, linha do tempo de passos, ações por mensagem, pílulas de contexto).
+- Limite declarado: o runtime compartilhado só envia texto (sem visão nativa e sem streaming); a IA vê imagens pela grade e o progresso aparece pela linha do tempo. Mudar isso exige alterar o contrato do runtime em outro Product.
+- Evidência: 829 testes locais, 22/22 checks, capturas no emulador (execução 43580364121). DEVICE pendente. Handoff `HO-20261114-lunet-ai-expertise.json`.
