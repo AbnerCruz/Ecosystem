@@ -39,7 +39,8 @@ public sealed partial class MainActivity
     private void ApplyEditorSettings()
     {
         _editor?.ApplySettings(_settings.FontSize, _settings.ShowLineNumbers);
-        if (_minimap is not null) _minimap.Visibility = _settings.ShowMinimap ? ViewStates.Visible : ViewStates.Gone;
+        // On phones the minimap would take ~11% of the code width; it appears from 600dp up.
+        if (_minimap is not null) _minimap.Visibility = _settings.ShowMinimap && LunetUi.WidthDp(this) >= 600 ? ViewStates.Visible : ViewStates.Gone;
     }
 
     private View BuildEditorHost()
@@ -47,6 +48,7 @@ public sealed partial class MainActivity
         var editor = new CodeEditText(this);
         editor.Settled += OnEditorSettled;
         editor.CommandRequested += HandleCommand;
+        editor.CustomSelectionActionModeCallback = new AiSelectionCallback(this);
         _editor = editor;
         _minimap = new MinimapView(this, editor);
         var frame = new FrameLayout(this);

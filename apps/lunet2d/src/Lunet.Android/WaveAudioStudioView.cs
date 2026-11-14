@@ -37,17 +37,16 @@ internal sealed class WaveAudioStudioView : LinearLayout, IDisposable
         _cacheDirectory = cacheDirectory;
         Orientation = Orientation.Vertical;
         SetPadding(Dp(12), Dp(10), Dp(12), Dp(10));
-        SetBackgroundColor(AColor.Rgb(17, 20, 29));
+        SetBackgroundColor(LunetUi.Background);
 
         var head = new LinearLayout(context) { Orientation = Orientation.Horizontal };
-        var title = new TextView(context) { Text = "Audio Studio", TextSize = 21 };
-        title.SetTextColor(AColor.White);
+        var title = LunetUi.Label(context, "∿ Áudio", LunetUi.TextTitle + 2, LunetUi.Text, bold: true);
         head.AddView(title, new LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1f));
         head.AddView(Button("Fechar", () => { Stop(); _close(); }));
         AddView(head);
 
         _details = new TextView(context) { TextSize = 13 };
-        _details.SetTextColor(AColor.Rgb(190, 205, 220));
+        _details.SetTextColor(LunetUi.TextMuted);
         AddView(_details);
 
         _canvas = new WaveformCanvas(context, audio.GetPeaks(320));
@@ -68,6 +67,7 @@ internal sealed class WaveAudioStudioView : LinearLayout, IDisposable
         _end = Slider(settings, "Fim do recorte", 1000);
         _gain = Slider(settings, "Volume (0–200%)", 100, maximum: 200);
         _loop = new CheckBox(context) { Text = "Gravar pontos de loop no WAV (SMPL)", Checked = false };
+        _loop.SetTextColor(LunetUi.Text);
         settings.AddView(_loop);
         _loopStart = Slider(settings, "Início do loop", 0);
         _loopEnd = Slider(settings, "Fim do loop", 1000);
@@ -89,8 +89,8 @@ internal sealed class WaveAudioStudioView : LinearLayout, IDisposable
     private int Dp(int value) => (int)(value * Context!.Resources!.DisplayMetrics!.Density);
     private Button Button(string label, Action action)
     {
-        var result = new Button(Context) { Text = label, TextSize = 12 };
-        result.SetAllCaps(false);
+        Button? result = null;
+        result = LunetUi.Button(Context!, label, () => { }, label.StartsWith("Salvar", StringComparison.Ordinal) ? ButtonStyle.Primary : ButtonStyle.Secondary);
         result.Click += (_, _) =>
         {
             try { action(); }
@@ -102,7 +102,9 @@ internal sealed class WaveAudioStudioView : LinearLayout, IDisposable
 
     private SeekBar Slider(LinearLayout parent, string name, int progress, int maximum = 1000)
     {
-        parent.AddView(new TextView(Context) { Text = name, TextSize = 13 });
+        var label = LunetUi.Label(Context!, name, LunetUi.TextLabel, LunetUi.TextMuted);
+        label.SetPadding(0, Dp(10), 0, 0);
+        parent.AddView(label);
         var slider = new SeekBar(Context) { Max = maximum, Progress = progress };
         parent.AddView(slider);
         return slider;

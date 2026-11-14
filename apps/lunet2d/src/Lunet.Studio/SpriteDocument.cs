@@ -49,6 +49,25 @@ public sealed class SpriteDocument
             if (twice <= dx) { error += dx; y0 += sy; }
         }
     }
+    /// <summary>Square brush of <paramref name="size"/> pixels along a Bresenham line (size 1 equals <see cref="Stroke"/>).</summary>
+    public void Brush(int frame, int x0, int y0, int x1, int y1, uint color, int size)
+    {
+        size = Math.Clamp(size, 1, 16);
+        if (size == 1) { Stroke(frame, x0, y0, x1, y1, color); return; }
+        int dx = Math.Abs(x1 - x0), sx = x0 < x1 ? 1 : -1, dy = -Math.Abs(y1 - y0), sy = y0 < y1 ? 1 : -1, error = dx + dy;
+        int offset = (size - 1) / 2;
+        var pixels = Frames[frame];
+        while (true)
+        {
+            for (int by = y0 - offset; by < y0 - offset + size; by++)
+            for (int bx = x0 - offset; bx < x0 - offset + size; bx++)
+                if ((uint)bx < Width && (uint)by < Height) pixels[by * Width + bx] = color;
+            if (x0 == x1 && y0 == y1) break;
+            int twice = 2 * error;
+            if (twice >= dy) { error += dy; x0 += sx; }
+            if (twice <= dx) { error += dx; y0 += sy; }
+        }
+    }
     public void Fill(int frame, int x, int y, uint color)
     {
         var pixels = Frames[frame]; uint old = pixels[y * Width + x];

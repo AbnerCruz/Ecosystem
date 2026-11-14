@@ -1,0 +1,95 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261114-lunet-diagnostico-geral",
+  "category": "RESULT",
+  "timestamp": "2026-11-14T07:30:00Z",
+  "agent": {
+    "id": "claude-lunet-diagnostico-geral",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-480",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "claude/lunet2d-analysis-redesign-4ljh4e",
+  "base_commit": "86db344",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/architecture/audits/lunet-diagnostico-geral-2026-11-14.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261114-lunet-diagnostico-geral.json"
+  ],
+  "work_completed": [
+    "Missão de estudo (etapas 0-4 do protocolo): nenhum código do produto alterado",
+    "Auditoria da camada Android (MainActivity e partials, Workbench, IA, Sprite/Tile/Audio Studio, CodeEditText) com caminho:linha",
+    "Comparação somente leitura com a UX de IA do Urbe nativo (painel, companheiro compacto, contexto de seleção, presets de provider)",
+    "Pesquisa externa: Godot Android editor, TIC-80/PICO-8, apps mobile de pixel art, Pixelorama, Aseprite, LDtk, Sora Editor/AndroidIDE, Zed/Cursor, plugins de IA do Godot, Material 3 adaptativo, Keystore, Avalonia 12",
+    "Síntese de comunidades (aprovam/rejeitam/desejam), matriz de confronto e proposta de direção com sequência LUNET-481..488 e decisões necessárias"
+  ],
+  "verification": [
+    {
+      "check": "Ecosystem consistency (dotnet run tests/consistency/Check.cs)",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": ".NET SDK indisponível nesta sessão; o CI do PR é a autoridade."
+    },
+    {
+      "check": "Alinhamento do proprietário com o diagnóstico e as decisões de §8",
+      "kind": "human",
+      "result": "pending",
+      "object": "docs/architecture/audits/lunet-diagnostico-geral-2026-11-14.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Sem build, testes, screenshots ou medições nesta sessão; estimativas de espaço vertical e de memória do undo estão marcadas como INFERÊNCIA",
+    "Fontes comunitárias parcialmente de fornecedores; marcadas como indício"
+  ],
+  "blockers": [
+    "Escolha da tecnologia da casca e atualização de SPEC §2/§3/§11 exigem decisão do proprietário (NN-011)"
+  ],
+  "next_actions": [
+    "Após alinhamento: registrar decisões pendentes no portal com ADR Proposto e consolidar LUNET-481..488 no ROADMAP",
+    "LUNET-481 (IA: Keystore, presets, contexto, compile/diagnostics, checkpoint) pode iniciar sem depender da casca",
+    "Spike LUNET-482 da opção Avalonia com critérios mensuráveis"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/adr/0003-editor-baseado-em-edittext.md",
+    "apps/lunet2d/docs/adr/0007-framework-ide-studio-code-first.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Urbe lido somente como referência; nenhuma dependência proposta entre Products."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Diagnóstico persistido em apps/lunet2d/docs/research antes de sustentar implementação."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Mudança de tecnologia de UI e de SPEC apenas proposta; listada como decisão do proprietário."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação de aparelho alegada; critérios de UX com DEVICE propostos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Reuso de padrões de IA do Urbe condicionado a Extraction Review."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

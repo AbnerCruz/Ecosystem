@@ -630,3 +630,17 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Referências: Microsoft Agent Framework .NET (tools/approvals/persistence), Aider (codebase context + edit), Continue (IDE agent integration). Nenhum pacote extra introduzido.
 - Verificação: CI e build APK pela Actions exigidos; sem dotnet/SDK/Android de aparelho no ambiente deste agente. Não alegar compilação, teste de provider nem APK validado até evidência; DEVICE somente após distribuição.
 - Próximo: observar `lunet2d-ci`, `lunet2d-release` e `consistency`, corrigir qualquer falha, obter artefato `lunet-apk`, submeter ao integrador e usuário para DEVICE.
+
+### 20261114-claude-lunet-diagnostico-geral — 2026-11-14 (America/Sao_Paulo) — Claude → proprietário — review
+- Item: LUNET-480, missão de **estudo** ordenada pelo proprietário (assumir o Lunet; diagnóstico geral + pesquisa externa confrontada com o código). Nenhum código do produto alterado.
+- Base: Ecosystem main `86db344`; branch `claude/lunet2d-analysis-redesign-4ljh4e`.
+- Resultado: `docs/architecture/audits/lunet-diagnostico-geral-2026-11-14.md` (no nível do Ecosystem, pois compara Products) — motor/bibliotecas preservar; camada visual Android (Views imperativas, 81 AlertDialogs, sem design system) e IA (chave só em memória, 3 níveis de menu, sem contexto/compilação/diff) são os gargalos; Studios com UI de fileiras de botões e undo por snapshot JSON integral.
+- Proposta: IA utilizável já (LUNET-481), spike de casca multiplataforma (LUNET-482) e sequência 483–488; decisões C1–C4 listadas para o proprietário.
+- Verificação: sem .NET/aparelho nesta sessão; nada de build/tela alegado. Handoff `HO-20261114-lunet-diagnostico-geral.json`.
+
+### 20261114-claude-lunet-cowork-redesign — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — working
+- Ordem do proprietário: autoridade total para desenvolver até entregar release funcional. Itens LUNET-481, 483, 484, 485, 486, 487 no ROADMAP; PR #918 (rascunho enquanto as capturas são revisadas).
+- Ambiente desta sessão: .NET 10 + workload Android + Android SDK 36 instalados; testes e APK compilados localmente (diferente das sessões anteriores, que só tinham CI).
+- Entregue: IA configurada uma vez (Keystore, presets), contexto do editor, compilação como verificação com reparo, checkpoint/diff/desfazer, IA criando sprites; painel de IA não modal e "Pedir à IA" na seleção; workbench redesenhado (tokens LunetUi, barra única, teclas de código, navegação oculta ao digitar, palette com arquivos); notas e esboços em Notes/; Sprite/Tile Studio com gestos e canvas eficiente; realce incremental no editor.
+- Capturas reais por emulador (`lunet2d-ui-screens`, harness compilado só com LunetUiDemo). O workflow é zona crítica e sairá deste PR antes de ele ficar pronto.
+- DEVICE pendente para tudo. Handoff `HO-20261114-lunet-cowork-redesign.json`.
