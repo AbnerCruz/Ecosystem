@@ -134,71 +134,104 @@ public sealed partial class MainActivity : Activity
         _workbenchNavButtons.Clear();
 
         var root = Vertical();
-        root.SetPadding(Dp(16), Dp(16), Dp(16), Dp(10));
-        root.SetBackgroundColor(WorkbenchBackground);
+        root.SetPadding(Dp(20), Dp(22), Dp(20), Dp(10));
+        root.SetBackgroundColor(LunetUi.Background);
 
-        root.AddView(WorkbenchLabel("LUNET  /  WORKSPACE", 12, true));
-        var title = WorkbenchLabel("Seus projetos", 28, true);
-        title.SetPadding(0, Dp(10), 0, 0);
+        var brand = LunetUi.Row(this, 8);
+        brand.AddView(LunetUi.Label(this, "☾", 22, LunetUi.AccentText));
+        brand.AddView(LunetUi.Label(this, "Lunet", 15, LunetUi.TextMuted, bold: true), LunetUi.Weight());
+        brand.AddView(LunetUi.Icon(this, "⚙", "Configurações", ShowSettings), new LinearLayout.LayoutParams(Dp(44), Dp(44)));
+        root.AddView(brand);
+        var title = LunetUi.Label(this, "Seus jogos", LunetUi.TextHero, LunetUi.Text, bold: true);
+        title.SetPadding(0, Dp(14), 0, Dp(2));
         root.AddView(title);
-        var subtitle = WorkbenchLabel("Crie, programe, teste e publique no próprio Android.", 14);
+        var subtitle = LunetUi.Label(this, "Programe em C#, desenhe, teste e gere o APK, tudo no celular.", LunetUi.TextBody, LunetUi.TextMuted);
         subtitle.SetPadding(0, 0, 0, Dp(18));
         root.AddView(subtitle);
 
-        root.AddView(WorkbenchButton("+  Novo projeto", AskForProjectName, emphasized: true),
-            new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(56)));
-
-        var actions = new LinearLayout(this) { Orientation = Orientation.Horizontal };
-        actions.SetPadding(0, Dp(8), 0, Dp(12));
-        void AddAction(string label, Action run)
-        {
-            var button = WorkbenchButton(label, run);
-            var p = new LinearLayout.LayoutParams(0, Dp(52), 1f);
-            p.SetMargins(Dp(2), 0, Dp(2), 0);
-            actions.AddView(button, p);
-        }
-        AddAction("Importar ZIP", ImportProject);
-        AddAction("Clonar Git", AskClone);
-        AddAction("Ajustes", ShowSettings);
+        var primary = LunetUi.Button(this, "＋  Novo jogo", AskForProjectName, ButtonStyle.Primary);
+        primary.TextSize = 16;
+        root.AddView(primary, LunetUi.FillWidth(Dp(54)));
+        var actions = LunetUi.Row(this, 8);
+        actions.SetPadding(0, Dp(10), 0, Dp(18));
+        actions.AddView(LunetUi.Button(this, "Importar ZIP", ImportProject), new LinearLayout.LayoutParams(0, Dp(46), 1f));
+        actions.AddView(LunetUi.Button(this, "Clonar do Git", AskClone), new LinearLayout.LayoutParams(0, Dp(46), 1f));
         root.AddView(actions);
 
-        var section = WorkbenchLabel("PROJETOS LOCAIS", 12, true);
-        section.SetPadding(0, Dp(8), 0, Dp(8));
+        var names = _store.List();
+        var section = LunetUi.Label(this, names.Count == 0 ? "" : $"RECENTES · {names.Count}", LunetUi.TextCaption, LunetUi.TextFaint, bold: true);
+        section.LetterSpacing = 0.08f;
+        section.SetPadding(Dp(2), 0, 0, Dp(8));
         root.AddView(section);
 
-        var list = Vertical();
-        foreach (var name in _store.List())
+        var list = LunetUi.Column(this, 8);
+        foreach (var name in names.OrderByDescending(n => ProjectTouched(n)))
         {
             var captured = name;
-            var row = WorkbenchButton("◫  " + captured, () => OpenProject(captured));
-            row.Gravity = GravityFlags.CenterVertical | GravityFlags.Left;
-            row.TextSize = 16;
-            row.SetPadding(Dp(16), 0, Dp(12), 0);
-            row.ContentDescription = "Abrir projeto " + captured + ". Toque longo para opções.";
-            row.LongClick += (_, e) =>
-            {
-                ShowProjectMenu(captured);
-                e.Handled = true;
-            };
-            var margin = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(60));
-            margin.SetMargins(0, 0, 0, Dp(8));
-            list.AddView(row, margin);
+            var card = LunetUi.Row(this, 14);
+            card.SetPadding(Dp(14), Dp(12), Dp(8), Dp(12));
+            card.Background = LunetUi.Pressable(this, LunetUi.Surface, LunetUi.Radius, LunetUi.Border);
+            card.Clickable = true;
+            card.ContentDescription = "Abrir " + captured + ". Toque longo para opções.";
+            card.Click += (_, _) => OpenProject(captured);
+            card.LongClick += (_, e) => { ShowProjectMenu(captured); e.Handled = true; };
+            var badge = LunetUi.Label(this, captured.Length > 0 ? captured[..1].ToUpperInvariant() : "?", 18, LunetUi.AccentText, bold: true);
+            badge.Gravity = GravityFlags.Center;
+            badge.Background = LunetUi.Shape(this, LunetUi.AccentSoft, LunetUi.Radius);
+            card.AddView(badge, new LinearLayout.LayoutParams(Dp(44), Dp(44)));
+            var text = LunetUi.Column(this, 2);
+            var nameLabel = LunetUi.Label(this, captured, 16, LunetUi.Text, bold: true);
+            nameLabel.SetSingleLine(true);
+            nameLabel.Ellipsize = TextUtils.TruncateAt.End;
+            text.AddView(nameLabel);
+            text.AddView(LunetUi.Label(this, DescribeProject(captured), LunetUi.TextCaption, LunetUi.TextMuted));
+            card.AddView(text, LunetUi.Weight());
+            card.AddView(LunetUi.Icon(this, "⋮", "Opções de " + captured, () => ShowProjectMenu(captured)), new LinearLayout.LayoutParams(Dp(40), Dp(44)));
+            list.AddView(card, LunetUi.FillWidth());
         }
-        if (list.ChildCount == 0)
+        if (names.Count == 0)
         {
-            var empty = WorkbenchLabel("Nenhum projeto ainda. Crie um projeto ou importe uma pasta ZIP.", 15);
-            empty.SetPadding(Dp(8), Dp(20), Dp(8), Dp(20));
-            list.AddView(empty);
+            var empty = LunetUi.Column(this, 6);
+            empty.SetPadding(Dp(18), Dp(22), Dp(18), Dp(22));
+            empty.Background = LunetUi.Shape(this, LunetUi.Surface, LunetUi.Radius, LunetUi.Border);
+            empty.AddView(LunetUi.Label(this, "Comece seu primeiro jogo", LunetUi.TextBody, LunetUi.Text, bold: true));
+            empty.AddView(LunetUi.Label(this, "Toque em “Novo jogo” para criar a partir de um modelo pronto para rodar. A IA pode ajudar a construir as mecânicas.", LunetUi.TextLabel, LunetUi.TextMuted));
+            list.AddView(empty, LunetUi.FillWidth());
         }
         var scroll = new ScrollView(this);
         scroll.AddView(list);
         root.AddView(scroll, Fill(1));
 
-        root.AddView(WorkbenchButton("Conexões do Ecosystem", ShowEcosystemConnection));
-        var footer = WorkbenchLabel($"v{BuildInfo.Version}  ·  Projetos locais. Exporte ZIP para fazer backup.", 11);
-        footer.SetPadding(Dp(4), Dp(10), Dp(4), Dp(2));
+        var footer = LunetUi.Row(this, 8);
+        footer.SetPadding(Dp(2), Dp(8), 0, 0);
+        footer.AddView(LunetUi.Label(this, $"v{BuildInfo.Version} · projetos neste aparelho · exporte ZIP para backup", LunetUi.TextCaption, LunetUi.TextFaint), LunetUi.Weight());
+        footer.AddView(LunetUi.Button(this, "Conexões", ShowEcosystemConnection, ButtonStyle.Quiet), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(36)));
         root.AddView(footer);
         SetContentView(root);
+    }
+
+    private DateTime ProjectTouched(string name)
+    {
+        try { return Directory.GetLastWriteTimeUtc(System.IO.Path.Combine(_store.RootDirectory, name)); }
+        catch (IOException) { return DateTime.MinValue; }
+    }
+
+    private string DescribeProject(string name)
+    {
+        try
+        {
+            var directory = System.IO.Path.Combine(_store.RootDirectory, name);
+            var files = Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
+                .Where(f => !f.Contains(System.IO.Path.DirectorySeparatorChar + ".")).ToArray();
+            int code = files.Count(f => f.EndsWith(".cs", StringComparison.OrdinalIgnoreCase));
+            int art = files.Count(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase));
+            var when = ProjectTouched(name).ToLocalTime();
+            var age = DateTime.Now - when;
+            var ago = age.TotalMinutes < 2 ? "agora" : age.TotalHours < 1 ? $"há {(int)age.TotalMinutes} min"
+                : age.TotalDays < 1 ? $"há {(int)age.TotalHours} h" : when.ToString("dd/MM");
+            return $"{code} arquivo(s) C# · {art} imagem(ns) · {ago}";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return "projeto local"; }
     }
 
     private void ShowProjectMenu(string name)
