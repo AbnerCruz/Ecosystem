@@ -706,3 +706,6 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - LUNET-502 (Fase 7, "servidor .NET headless"; parte da multiplataforma que não depende de DEC-0062): `HeadlessGraphicsBackend` e `Game.IsHeadless` (Framework, aditivo, documentado; API JSON regenerada), `HeadlessGameRunner` (Runtime), executável `src/Lunet.Server` (`lunet-server <projeto> [--check] [--seconds N] [--saves pasta]`).
 - Teste ponta a ponta: pasta de projeto → compilação → servidor dedicado headless → cliente UDP real recebe a replicação. 999 testes locais.
 - DEC-0062 (tecnologia da casca desktop/navegador/iOS) segue pendente no portal; nenhum host de UI novo criado. Handoff `HO-20261114-lunet-headless-server.json`.
+
+### 20261114-claude-lunet-local-multiplayer — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
+- LUNET-503 (Fase 7, multiplayer local): `SplitScreen`, `SpriteBatch.Begin(Camera2D, RectangleF)`, `TurnOrder` (Framework, aditivo, documentado com exemplo compilado; API JSON regenerada). 1010 testes locais. Limite: um gamepad por vez (backend Android). Handoff `HO-20261114-lunet-local-multiplayer.json`.

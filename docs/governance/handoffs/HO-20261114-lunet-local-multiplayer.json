@@ -1,0 +1,89 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261114-lunet-local-multiplayer",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-14T14:33:46Z",
+  "agent": {
+    "id": "claude-lunet-local-multiplayer",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-503",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-8229d3db-dmnw7l",
+  "base_commit": "ef9f4ba",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/multiplayer.md",
+    "apps/lunet2d/src/Lunet.Ai/Knowledge/capacidades.md",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiQuickReference.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/SpriteBatch.cs",
+    "apps/lunet2d/src/Lunet.Framework/Multiplayer/",
+    "apps/lunet2d/tests/Lunet.Tests/LocalMultiplayerTests.cs",
+    "docs/governance/handoffs/HO-20261114-lunet-local-multiplayer.json"
+  ],
+  "work_completed": [
+    "Tela dividida com regiões e toques por jogador.",
+    "Câmera por jogador desenhando com recorte na região.",
+    "Ordem de turnos com rodadas, eliminação, versão contra jogadas concorrentes e JSON validado."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project tests/Lunet.Tests (local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1010 testes; LocalMultiplayerTests (13 casos); cobertura de documentação e exemplos compilados"
+    },
+    {
+      "check": "Dois jogadores no mesmo celular em tela dividida e hot-seat",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/multiplayer.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Um gamepad por vez no backend Android.",
+    "Troca assíncrona do estado entre aparelhos não implementada (só o estado e a proteção de versão)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI; DEVICE."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/adr/0011-networking-first-slice.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-005",
+      "evidence": "Somente APIs aditivas no Framework; backend inalterado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-local-multiplayer",
+      "status": "product-specific",
+      "rationale": "API do framework de jogos."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

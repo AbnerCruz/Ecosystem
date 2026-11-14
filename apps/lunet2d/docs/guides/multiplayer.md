@@ -117,6 +117,38 @@ public sealed class Arena : Game
 }
 ```
 
+## Vários jogadores no mesmo aparelho
+
+**Tela dividida** (até 4): cada jogador tem uma região, uma câmera e os toques que começam na região dele.
+
+```csharp
+var regioes = SplitScreen.Layout(2, GraphicsDevice.VirtualWidth, GraphicsDevice.VirtualHeight);
+// Update: cada jogador lê só os próprios toques
+for (int j = 0; j < regioes.Length; j++)
+    foreach (var toque in SplitScreen.TouchesOf(j, Input.Touches, regioes))
+        _jogadores[j].Mirar(SplitScreen.ToRegion(toque.Position, regioes[j]));
+// Draw: cada câmera desenha dentro da sua região, sem vazar para a outra
+for (int j = 0; j < regioes.Length; j++)
+{
+    _cameras[j].Follow(_jogadores[j].Posicao, 8, dt);
+    _batch.Begin(_cameras[j], regioes[j]);
+    DesenharMundo(_batch);
+    _batch.End();
+}
+```
+
+**Por vez (hot-seat) e partidas assíncronas:** `TurnOrder` controla de quem é a vez, rodadas e eliminados. Cada jogada usa a versão que o jogador viu; se o estado mudou nesse meio tempo, a jogada é recusada (nada se corrompe).
+
+```csharp
+var turnos = new TurnOrder(new[] { "Ana", "Bia" });
+var versaoVista = turnos.Version;
+// ...o jogador da vez joga...
+if (!turnos.EndTurn(versaoVista)) Log.Warning("O estado mudou; recarregue antes de jogar.");
+Save.Save("partida", turnos.ToJson());      // continuar depois, ou enviar para o outro aparelho
+```
+
+**Rede no mesmo aparelho:** a mesma lógica de `NetworkSession` funciona com `LoopbackNetwork` (vários jogadores num processo), útil para testar e para modos locais que reaproveitam o código online.
+
 ## Regras que evitam trapaça e dessincronização
 
 - **O servidor decide.** Clientes mandam intenções (direção, botão); o servidor valida (limites, tempo) e muda as `NetworkVariable`.

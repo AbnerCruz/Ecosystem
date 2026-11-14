@@ -37,6 +37,7 @@ Caminhos de conteúdo no código: `Content.LoadTexture("Assets/heroi.png")` ou r
 - Objetos: classe `: NetworkObject` com campos `NetworkVariable<T>` (int, float, double, bool, byte, uint, string, Vector2 ou `INetSerializable`) listados em `protected override IEnumerable<NetworkVariableBase> Variables => [Posicao, Vida];`; `session.Replication.Register("tipo", () => new Tipo())` em todos; o servidor faz `Spawn<Tipo>("tipo", donoPeerId, o => …)` e `Despawn`; clientes desenham remotos com `variavel.Interpolated` e o próprio com `ClientPrediction<TInput,TState>` (`Apply` + `Reconcile(ultimoInputProcessado, estadoDoServidor)`).
 - Testes e mesmo aparelho: `new LoopbackNetwork()` + `CreateTransport()` (porta virtual; endereço "loopback"); `new NetworkSimulator(transporte, NetworkConditions.Presets[i].Conditions)` simula rede ruim.
 - Descoberta LAN: `new LanDiscovery()`, `Announce(new LobbyInfo(...))`, `Update()`, `Lobbies`; `new DirectoryMatchmaker(descoberta).Find(gameId, versao)`.
+- Mesmo aparelho: `SplitScreen.Layout(n, w, h)` (1–4 regiões), `SplitScreen.TouchesOf(jogador, Input.Touches, regioes)`, `batch.Begin(camera, regiao)` para uma câmera por jogador; `TurnOrder` para hot-seat/assíncrono (`Current`, `EndTurn(versao)`, `Eliminate`, `ToJson`/`FromJson`). Só um gamepad por vez.
 - Servidor dedicado: `Game.IsHeadless` é true quando o jogo roda no `lunet-server` (PC, sem tela); use `NetworkSession.Host(..., dedicated: true)` nesse caso.
 - Guia: `docs/guides/multiplayer.md`.
 

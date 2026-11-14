@@ -3848,6 +3848,150 @@
       ]
     },
     {
+      "id": "T:Lunet.SplitScreen",
+      "name": "SplitScreen",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public static class SplitScreen",
+      "summary": "Multijogador local no mesmo aparelho: divide a tela em regi\u00F5es por jogador e atribui cada toque ao jogador da regi\u00E3o onde ele come\u00E7ou. Desenhe cada jogador com \u0060batch.Begin(camera, regiao)\u0060.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar regioes = SplitScreen.Layout(2, GraphicsDevice.VirtualWidth, GraphicsDevice.VirtualHeight);\nvar batch = new Lunet.Graphics.SpriteBatch(GraphicsDevice);\nvar camera = new Lunet.Graphics.Camera2D();\nfor (int jogador = 0; jogador \u003C regioes.Length; jogador\u002B\u002B)\n{\n    batch.Begin(camera, regioes[jogador]);\n    batch.End();\n    foreach (var toque in SplitScreen.TouchesOf(jogador, Input.Touches, regioes)) Log.Info(\u0022jogador \u0022 \u002B jogador \u002B \u0022: \u0022 \u002B toque.Position);\n}\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "F:Lunet.SplitScreen.MaxPlayers",
+          "name": "MaxPlayers",
+          "kind": "field",
+          "signature": "public const int MaxPlayers = 4",
+          "summary": "M\u00E1ximo de jogadores numa tela.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.SplitScreen.Layout(System.Int32,System.Single,System.Single,System.Single)",
+          "name": "Layout",
+          "kind": "method",
+          "signature": "public static RectangleF[] Layout(int players, float width, float height, float gap = 2f)",
+          "summary": "Regi\u00F5es para \u0060players\u0060 jogadores (1 a 4): duas lado a lado na horizontal e empilhadas na vertical, tr\u00EAs com o primeiro maior, quatro em grade. Ficam separadas por \u0060gap\u0060.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "players",
+              "type": "int",
+              "description": "Quantidade de jogadores, de 1 a 4."
+            },
+            {
+              "name": "width",
+              "type": "float",
+              "description": "Largura da tela virtual."
+            },
+            {
+              "name": "height",
+              "type": "float",
+              "description": "Altura da tela virtual."
+            },
+            {
+              "name": "gap",
+              "type": "float",
+              "description": "Espa\u00E7o entre as regi\u00F5es."
+            }
+          ],
+          "returns": "Uma regi\u00E3o por jogador, na ordem dos jogadores.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.SplitScreen.PlayerAt(System.Numerics.Vector2,System.ReadOnlySpan{Lunet.RectangleF})",
+          "name": "PlayerAt",
+          "kind": "method",
+          "signature": "public static int PlayerAt(Vector2 point, ReadOnlySpan\u003CRectangleF\u003E regions)",
+          "summary": "O jogador dono do ponto (\u00EDndice da regi\u00E3o que o cont\u00E9m), ou -1 no espa\u00E7o entre regi\u00F5es.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "point",
+              "type": "Vector2",
+              "description": "Ponto em coordenadas virtuais."
+            },
+            {
+              "name": "regions",
+              "type": "ReadOnlySpan\u003CRectangleF\u003E",
+              "description": "Regi\u00F5es de \u0060SplitScreen.Layout\u0060."
+            }
+          ],
+          "returns": "\u00CDndice do jogador ou -1.",
+          "examples": [],
+          "related": [
+            "M:Lunet.SplitScreen.Layout(System.Int32,System.Single,System.Single,System.Single)"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.SplitScreen.ToRegion(System.Numerics.Vector2,Lunet.RectangleF)",
+          "name": "ToRegion",
+          "kind": "method",
+          "signature": "public static Vector2 ToRegion(Vector2 point, RectangleF region)",
+          "summary": "Converte um ponto da tela para coordenadas locais da regi\u00E3o (0,0 no canto da regi\u00E3o).",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "point",
+              "type": "Vector2",
+              "description": "Ponto em coordenadas virtuais da tela."
+            },
+            {
+              "name": "region",
+              "type": "RectangleF",
+              "description": "Regi\u00E3o do jogador."
+            }
+          ],
+          "returns": "O ponto relativo \u00E0 regi\u00E3o.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.SplitScreen.TouchesOf(System.Int32,System.ReadOnlySpan{Lunet.Input.TouchPoint},System.ReadOnlySpan{Lunet.RectangleF})",
+          "name": "TouchesOf",
+          "kind": "method",
+          "signature": "public static List\u003CTouchPoint\u003E TouchesOf(int player, ReadOnlySpan\u003CTouchPoint\u003E touches, ReadOnlySpan\u003CRectangleF\u003E regions)",
+          "summary": "Os toques que est\u00E3o na regi\u00E3o do jogador.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "player",
+              "type": "int",
+              "description": "\u00CDndice do jogador."
+            },
+            {
+              "name": "touches",
+              "type": "ReadOnlySpan\u003CTouchPoint\u003E",
+              "description": "Toques do quadro (\u0060Input.Touches\u0060)."
+            },
+            {
+              "name": "regions",
+              "type": "ReadOnlySpan\u003CRectangleF\u003E",
+              "description": "Regi\u00F5es de \u0060SplitScreen.Layout\u0060."
+            }
+          ],
+          "returns": "Os toques do jogador, em ordem.",
+          "examples": [],
+          "related": [
+            "M:Lunet.SplitScreen.Layout(System.Int32,System.Single,System.Single,System.Single)"
+          ],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.TimerHandle",
       "name": "TimerHandle",
       "namespace": "Lunet",
@@ -4196,6 +4340,210 @@
             }
           ],
           "returns": "Falso se a transforma\u00E7\u00E3o n\u00E3o pode ser invertida (escala zero).",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.TurnOrder",
+      "name": "TurnOrder",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public sealed class TurnOrder",
+      "summary": "Ordem de turnos para multijogador por vez: hot-seat (passar o aparelho) e partidas ass\u00EDncronas em que o estado vai e volta (arquivo, save, mensagem). Cada jogada aumenta \u0060TurnOrder.Version\u0060; uma jogada feita sobre uma vers\u00E3o antiga \u00E9 recusada, ent\u00E3o duas pessoas jogando ao mesmo tempo no mesmo turno nunca corrompem a partida.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar turnos = new TurnOrder(new[] { \u0022Ana\u0022, \u0022Bia\u0022, \u0022Caio\u0022 });\nLog.Info(\u0022vez de \u0022 \u002B turnos.Current);\nturnos.EndTurn(turnos.Version);\nturnos.Eliminate(\u0022Bia\u0022);\nSave.Save(\u0022turnos\u0022, turnos.ToJson());\nvar depois = TurnOrder.FromJson(Save.Load(\u0022turnos\u0022, \u0022\u0022));\n\u0060\u0060\u0060"
+      ],
+      "related": [
+        "P:Lunet.TurnOrder.Version"
+      ],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.TurnOrder.#ctor(System.Collections.Generic.IEnumerable{System.String})",
+          "name": "TurnOrder",
+          "kind": "constructor",
+          "signature": "public TurnOrder(IEnumerable\u003Cstring\u003E players)",
+          "summary": "Cria a ordem com os jogadores na ordem em que jogam.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "players",
+              "type": "IEnumerable\u003Cstring\u003E",
+              "description": "Nomes \u00FAnicos, de 1 a 64 jogadores."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.TurnOrder.Active",
+          "name": "Active",
+          "kind": "property",
+          "signature": "public IEnumerable\u003Cstring\u003E Active { get; }",
+          "summary": "Jogadores ainda na partida.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.TurnOrder.Current",
+          "name": "Current",
+          "kind": "property",
+          "signature": "public string Current { get; }",
+          "summary": "Jogador da vez.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.TurnOrder.CurrentIndex",
+          "name": "CurrentIndex",
+          "kind": "property",
+          "signature": "public int CurrentIndex { get; }",
+          "summary": "\u00CDndice do jogador da vez em \u0060TurnOrder.Players\u0060.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "P:Lunet.TurnOrder.Players"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.TurnOrder.IsOver",
+          "name": "IsOver",
+          "kind": "property",
+          "signature": "public bool IsOver { get; }",
+          "summary": "Verdadeiro quando sobra um jogador ou nenhum.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.TurnOrder.Players",
+          "name": "Players",
+          "kind": "property",
+          "signature": "public IReadOnlyList\u003Cstring\u003E Players { get; }",
+          "summary": "Todos os jogadores, na ordem.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.TurnOrder.Round",
+          "name": "Round",
+          "kind": "property",
+          "signature": "public int Round { get; }",
+          "summary": "Rodada atual (come\u00E7a em 1 e sobe quando a vez volta ao primeiro jogador ativo).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.TurnOrder.Version",
+          "name": "Version",
+          "kind": "property",
+          "signature": "public int Version { get; }",
+          "summary": "Muda a cada jogada; use para detectar estados antigos.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.TurnOrder.Eliminate(System.String)",
+          "name": "Eliminate",
+          "kind": "method",
+          "signature": "public void Eliminate(string player)",
+          "summary": "Tira um jogador da partida; se era a vez dele, passa ao pr\u00F3ximo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "player",
+              "type": "string",
+              "description": "Nome do jogador."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.TurnOrder.EndTurn(System.Int32)",
+          "name": "EndTurn",
+          "kind": "method",
+          "signature": "public bool EndTurn(int expectedVersion)",
+          "summary": "Passa a vez ao pr\u00F3ximo jogador ativo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "expectedVersion",
+              "type": "int",
+              "description": "A \u0060TurnOrder.Version\u0060 que quem jogou viu; se mudou, a jogada \u00E9 recusada."
+            }
+          ],
+          "returns": "Verdadeiro se a vez passou; falso se o estado j\u00E1 tinha mudado (jogada sobre vers\u00E3o antiga).",
+          "examples": [],
+          "related": [
+            "P:Lunet.TurnOrder.Version"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.TurnOrder.FromJson(System.String)",
+          "name": "FromJson",
+          "kind": "method",
+          "signature": "public static TurnOrder FromJson(string json)",
+          "summary": "Recria a ordem a partir de \u0060TurnOrder.ToJson\u0060, validando o conte\u00FAdo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "json",
+              "type": "string",
+              "description": "Texto de \u0060TurnOrder.ToJson\u0060."
+            }
+          ],
+          "returns": "A ordem de turnos.",
+          "examples": [],
+          "related": [
+            "M:Lunet.TurnOrder.ToJson"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.TurnOrder.ToJson",
+          "name": "ToJson",
+          "kind": "method",
+          "signature": "public string ToJson()",
+          "summary": "Estado em JSON para salvar ou enviar.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "Texto JSON.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -10673,6 +11021,48 @@
           "returns": "",
           "examples": [],
           "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteBatch.Begin(Lunet.Graphics.Camera2D,Lunet.RectangleF,Lunet.Graphics.BlendState,Lunet.Graphics.SamplerState,Lunet.Graphics.Shader)",
+          "name": "Begin",
+          "kind": "method",
+          "signature": "public void Begin(Camera2D camera, RectangleF region, BlendState? blend = null, SamplerState? sampler = null, Shader? shader = null)",
+          "summary": "Come\u00E7a um lote que desenha a vista da c\u00E2mera dentro de uma regi\u00E3o da tela (tela dividida): a c\u00E2mera centraliza o mundo no meio de \u0060region\u0060 e nada sai dela. Use uma c\u00E2mera por jogador com \u0060SplitScreen\u0060.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "camera",
+              "type": "Camera2D",
+              "description": "C\u00E2mera do jogador."
+            },
+            {
+              "name": "region",
+              "type": "RectangleF",
+              "description": "Regi\u00E3o da vista em coordenadas virtuais (por exemplo, de \u0060SplitScreen.Layout\u0060)."
+            },
+            {
+              "name": "blend",
+              "type": "BlendState",
+              "description": "Mistura; nulo usa Alpha."
+            },
+            {
+              "name": "sampler",
+              "type": "SamplerState",
+              "description": "Filtro e repeti\u00E7\u00E3o; nulo usa o estado da textura."
+            },
+            {
+              "name": "shader",
+              "type": "Shader",
+              "description": "Shader de fragmento; nulo usa o padr\u00E3o."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "T:Lunet.SplitScreen",
+            "M:Lunet.SplitScreen.Layout(System.Int32,System.Single,System.Single,System.Single)"
+          ],
           "since": "0.0.1"
         },
         {

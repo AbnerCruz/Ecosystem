@@ -104,6 +104,8 @@ public static class LunetAiQuickReference
           s.Replication.Register("jogador", () => new Jogador()); s.Replication.Spawn<Jogador>("jogador", peer.Id)
           remoto.Pos.Interpolated · new ClientPrediction<TInput,TState>(inicial, simular).Apply / Reconcile
           new LoopbackNetwork() (mesmo aparelho/testes) · new NetworkSimulator(t, NetworkConditions.Presets[2].Conditions)
+          Tela dividida: var r = SplitScreen.Layout(2, w, h); batch.Begin(camera[j], r[j]); SplitScreen.TouchesOf(j, Input.Touches, r)
+          Por vez: var t = new TurnOrder(new[]{"Ana","Bia"}); t.Current; t.EndTurn(t.Version); t.ToJson()
 
         Cores: Color.White, Black, Red, Green, Blue, Yellow, CornflowerBlue, new Color(r,g,b,a)
         Matemática: System.Numerics (Vector2, Matrix3x2...) e RectangleF

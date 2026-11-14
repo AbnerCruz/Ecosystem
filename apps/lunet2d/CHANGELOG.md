@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-503: multijogador no mesmo aparelho — tela dividida para até 4 jogadores com toques por região e uma câmera por jogador (`SpriteBatch.Begin(camera, região)`), e `TurnOrder` para jogos por vez (hot-seat) e partidas assíncronas com proteção contra jogadas sobre um estado antigo.
+
 - LUNET-502: servidor dedicado headless — `lunet-server` compila a pasta de um projeto e roda o jogo sem tela no Windows, Linux ou macOS; `Game.IsHeadless` diz ao jogo que ele é o servidor; `HeadlessGraphicsBackend` e `HeadlessGameRunner` também servem para testes automatizados.
 
 - LUNET-501: multiplayer realtime no Lunet.Networking — transporte UDP (LiteNetLib interno), transporte em memória para jogar no mesmo aparelho e simulador de rede ruim; sessões com host, servidor dedicado e clientes (versão e jogo conferidos, lista de jogadores, mensagens tipadas, proteção contra flood), relógio sincronizado, objetos e variáveis de rede com interpolação, predição com reconciliação e descoberta de partidas na rede local. O cenário do gate da Fase 7 (dois clientes em tempo real com latência, jitter e perda simulados) passa nos testes; falta validar com dois aparelhos.
