@@ -2219,6 +2219,38 @@
       "decidedAt": "2026-11-14",
       "record": "docs/governance/responses/DEC-0061.md",
       "consequencesApplied": false
+    },
+    {
+      "id": "DEC-0062",
+      "status": "pending",
+      "component": "lunet2d",
+      "blocking": false,
+      "title": "Lunet2D: expansão para desktop, navegador e iOS — qual tecnologia de interface estudar primeiro?",
+      "context": "O proprietário trouxe uma avaliação de viabilidade (14/11/2026): Framework, Runtime, Compiler e bibliotecas de dados já são net10.0 sem APIs de plataforma; a interface, o backend OpenGL ES, o Preview, os segredos e o empacotamento são Android. O SPEC §2 ainda diz \"Android only\" (conflito C1 do diagnóstico de 14/11). O estudo e a fiscalização de portabilidade estão feitos; nenhuma UI nova foi criada. O ADR 0012 (Proposto) descreve fases, riscos e o gargalo do iOS (compilação dinâmica).",
+      "question": "Podemos fazer um spike mensurável (LUNET-482) de uma casca compartilhada em Avalonia para desktop primeiro, mantendo o Android nativo como referência, e depois decidir navegador e iOS?",
+      "alternatives": [
+        {
+          "option": "A — Spike Avalonia, desktop primeiro (recomendada)",
+          "consequences": "Uma casca C# para Windows/Linux/macOS, com caminho para Android, iOS e WebAssembly. Reaproveita a experiência do Urbe sem dependência entre Products. Custo: o spike (partida, rolagem, toque, Preview GL) antes de qualquer migração; Android nativo não muda agora."
+        },
+        {
+          "option": "B — UI nativa por plataforma, compartilhando só as bibliotecas",
+          "consequences": "Melhor encaixe visual em cada sistema e sem nova tecnologia de UI; porém uma interface por plataforma para manter, o que multiplica o trabalho dos Studios."
+        },
+        {
+          "option": "C — Não expandir agora",
+          "consequences": "Foco total no Android; o estudo e a fiscalização de portabilidade permanecem como referência. SPEC §2 continua válido."
+        }
+      ],
+      "consequences": "Enquanto pendente: nada além do estudo, da fiscalização de portabilidade e das melhorias do Android é implementado; o SPEC não muda.",
+      "manifestCompatibility": "NN-011: mudança de lifecycle e de responsabilidade de componente exige decisão. NN-002/NN-003/NN-023: nenhum host novo depende de outro Product ou do Hub. NN-005: sem reescrita do Framework. NN-020/NN-022: contratos de plataforma só quando o segundo host os exigir.",
+      "recommendation": "A: confirma custo e viabilidade com números antes de comprometer a UI, e preserva o Android.",
+      "related": [
+        "apps/lunet2d/docs/adr/0012-expansao-multiplataforma.md",
+        "apps/lunet2d/docs/architecture/multiplataforma-viabilidade-2026-11-14.md"
+      ],
+      "raisedBy": "claude-lunet-studios-icons-multiplatform",
+      "raisedAt": "2026-11-14"
     }
   ]
 }

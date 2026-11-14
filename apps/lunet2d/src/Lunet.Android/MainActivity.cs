@@ -15,6 +15,7 @@ using Lunet.Core;
 using Lunet.Editor;
 using Lunet.Input;
 using Lunet.Storage;
+using Lunet.Studio;
 using AndroidColor = Android.Graphics.Color;
 using AndroidUri = Android.Net.Uri;
 
@@ -92,10 +93,7 @@ public sealed partial class MainActivity : Activity
 
     private Button MakeButton(string label, Action action)
     {
-        var button = new Button(this) { Text = label };
-        button.SetAllCaps(false);
-        button.Click += (_, _) => action();
-        return button;
+        return LunetUi.Button(this, label, action);
     }
 
     /// <summary>Botão compacto para barras: divide a largura com os vizinhos em vez de sair da tela.</summary>
@@ -512,14 +510,14 @@ public sealed partial class MainActivity : Activity
         var header = new LinearLayout(this) { Orientation = Orientation.Horizontal };
         header.SetPadding(Dp(8), Dp(8), Dp(8), Dp(4));
         header.AddView(WorkbenchLabel("ARQUIVOS", 14, true), new LinearLayout.LayoutParams(0, Dp(48), 1));
-        var newItem = WorkbenchButton("+", () => ShowActionMenu("Criar no projeto",
+        var newItem = WorkbenchButton("＋", () => ShowActionMenu("Criar no projeto",
         [
             ("Novo arquivo", () => AskForNewEntry("", isDirectory: false)),
             ("Nova pasta", () => AskForNewEntry("", isDirectory: true)),
         ]));
         newItem.ContentDescription = "Criar arquivo ou pasta";
         header.AddView(newItem, new LinearLayout.LayoutParams(Dp(48), Dp(48)));
-        var closeDrawer = WorkbenchButton("×", ToggleExplorer);
+        var closeDrawer = WorkbenchButton("✕", ToggleExplorer);
         closeDrawer.ContentDescription = "Fechar explorador de arquivos";
         header.AddView(closeDrawer, new LinearLayout.LayoutParams(Dp(48), Dp(48)));
         _drawer.AddView(header);
@@ -549,12 +547,7 @@ public sealed partial class MainActivity : Activity
         {
             if (HasCollapsedAncestor(entry.Path)) continue;
             var captured = entry;
-            var glyph = entry.IsDirectory ? (_collapsed.Contains(entry.Path) ? "▸  " : "▾  ")
-                : entry.Path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ? "{ }  "
-                : entry.Path.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? "▦  "
-                : entry.Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ? "¶  "
-                : entry.Path.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) ? "∿  " : "·  ";
-            var row = new TextView(this) { Text = glyph + entry.Name, TextSize = 14 };
+            var row = new TextView(this) { Text = entry.Name, TextSize = 14 };
             row.SetPadding(Dp(12 + entry.Depth * 14), Dp(12), Dp(8), Dp(12));
             row.SetMinHeight(Dp(46));
             row.SetSingleLine(true);
@@ -563,10 +556,27 @@ public sealed partial class MainActivity : Activity
             row.Background = LunetUi.Pressable(this, entry.Path == _openFile ? LunetUi.AccentSoft : LunetUi.Surface, LunetUi.RadiusSmall);
             row.SetTextColor(entry.IsDirectory ? LunetUi.AccentText : IsTextFile(entry.Path) ? LunetUi.Text : LunetUi.TextMuted);
             if (entry.IsDirectory) row.SetTypeface(LunetUi.Mono, TypefaceStyle.Bold);
+            LunetUi.SetLeadingIcon(row, LunetIcons.Get(ExplorerIcon(entry)), 14);
             row.Click += (_, _) => OnExplorerTap(captured);
             row.LongClick += (_, _) => ShowEntryMenu(captured);
             _drawerList.AddView(row);
         }
+    }
+
+    /// <summary>Ícone de um item do Explorer: o tipo do arquivo, não um caractere decorativo.</summary>
+    private string ExplorerIcon(ExplorerEntry entry)
+    {
+        if (entry.IsDirectory) return _collapsed.Contains(entry.Path) ? "chevron-right" : "chevron-down";
+        string path = entry.Path.ToLowerInvariant();
+        if (path.EndsWith(".sprite.json")) return "sprite";
+        if (path.EndsWith(".tilemap.json")) return "tilemap";
+        if (path.EndsWith(".cs")) return "code";
+        if (path.EndsWith(".png") || path.EndsWith(".jpg") || path.EndsWith(".jpeg")) return "image";
+        if (path.EndsWith(".md") || path.EndsWith(".txt")) return "note";
+        if (path.EndsWith(".wav") || path.EndsWith(".ogg") || path.EndsWith(".mp3")) return "waveform";
+        if (path.EndsWith(".ttf") || path.EndsWith(".otf")) return "font";
+        if (path.EndsWith(".json")) return "data";
+        return "file";
     }
 
     private bool HasCollapsedAncestor(string path)
@@ -589,9 +599,10 @@ public sealed partial class MainActivity : Activity
             RefreshExplorer();
             return;
         }
-        if (!IsTextFile(entry.Path))
+        if (!IsTextFile(entry.Path) || entry.Path.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase))
         {
-            Toast.MakeText(this, "Arquivo binário: use-o pelo código (ex.: Content.LoadTexture).", ToastLength.Short)?.Show();
+            if (!ShowAssetPreview(entry.Path))
+                Toast.MakeText(this, "Sem prévia para este arquivo. Use-o pelo código (ex.: Content.LoadTexture).", ToastLength.Short)?.Show();
             return;
         }
         OpenFile(entry.Path);
@@ -613,6 +624,19 @@ public sealed partial class MainActivity : Activity
                 case "Excluir": AskToDelete(entry); break;
             }
         })!.Show();
+    }
+
+    /// <summary>Abre a prévia de um arquivo de Content/ ou Assets/ tocado no Explorer (sprite, imagem, som, fonte…).</summary>
+    private bool ShowAssetPreview(string path)
+    {
+        if (_project is null) return false;
+        var assets = ProjectAssetCatalog.Build(_project.ListFiles());
+        var asset = assets.FirstOrDefault(a => string.Equals(a.Path, path, StringComparison.OrdinalIgnoreCase))
+            ?? assets.FirstOrDefault(a => string.Equals(a.PreviewPath, path, StringComparison.OrdinalIgnoreCase));
+        if (asset is null) return false;
+        _explorerOpenForPreview = true;
+        ShowAssetDetails(asset, null);
+        return true;
     }
 
     private static bool IsTextFile(string path) =>

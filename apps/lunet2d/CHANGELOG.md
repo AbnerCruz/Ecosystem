@@ -1,5 +1,8 @@
 # Changelog
 
+- LUNET-491 (feito, sem validação em aparelho): Sprite Studio ganha seleção por retângulo, laço e varinha, com mover, redimensionar, girar, espelhar, duplicar e apagar sobre camada flutuante (grava só ao aplicar; cancelar e desfazer). Áudio: prévia com cursor, toque na onda, repetir e ajuste ao vivo, inclusive ao criar efeitos. Assets: prévia real de sprite animado, imagem, som, fonte e dados, também a partir do Explorer. Ícones: catálogo vetorial de contorno substitui caracteres Unicode em toda a interface. Roteiro: `docs/guides/validacao-studios-icones.md`.
+- LUNET-492 (Fase A, estudo): viabilidade de desktop/navegador/iOS conferida contra o código; `PlatformPortabilityTests` fiscaliza que as bibliotecas portáteis não usam APIs de plataforma. ADR 0012 Proposto e DEC-0062 pendente; nenhum host novo.
+
 - LUNET-470 / Workbench mobile-first (em revisão, CI/DEVICE pendentes): nova entrada de projetos, workspace de código em foco com navegação Código/Arquivos/Erros/Console/Ações, command palette em português com busca sem distinção de caixa/acentos, drawer modal com scrim, alvos de toque de 48dp, toolbar sem captura de foco e Back contextual. Testes de contrato registrados antes da implementação, pesquisa rastreável em `docs/research/mobile-workbench-ux-2026-11-01.md`. Não afirma redesign dos Studios, compilação verificada nem release publicada.
 
 - Fixed / host standalone: entrega Game.OnPause na thread GL antes de suspendê-la, usando o mesmo PauseForBackground do PreviewHost. Regressão provada por smoke Android que falhou antes e passou após a correção; JSON privado e restore após force-stop conferidos.

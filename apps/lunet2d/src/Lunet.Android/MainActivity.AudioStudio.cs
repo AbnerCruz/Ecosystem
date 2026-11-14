@@ -36,6 +36,8 @@ public sealed partial class MainActivity
     {
         var content = Vertical();
         content.SetPadding(Dp(16), Dp(8), Dp(16), Dp(6));
+        WaveShape selected = WaveShape.Sine;
+        AudioPreviewView? preview = null;
         var frequencyLabel = new TextView(this) { TextSize = 13 };
         var frequency = new SeekBar(this) { Max = 4960, Progress = 400 };
         void RefreshFrequency() => frequencyLabel.Text = $"Frequência: {40 + frequency.Progress} Hz";
@@ -48,23 +50,39 @@ public sealed partial class MainActivity
         var duration = new SeekBar(this) { Max = 495, Progress = 45 };
         void RefreshDuration() => durationLabel.Text = $"Duração: {(5 + duration.Progress) / 100.0:0.00} s";
         duration.ProgressChanged += (_, _) => RefreshDuration();
+
+        WaveAudioDocument Make() => WaveAudioDocument.CreateEffect(40 + frequency.Progress, (5 + duration.Progress) / 100.0, selected);
+        void UpdatePreview()
+        {
+            if (preview is null) return;
+            var effect = Make();
+            preview.SetPeaks(effect.GetPeaks(240));
+            preview.SetWindow(0, 1, effect.DurationSeconds);
+            preview.ContentChanged();
+        }
+        // O efeito se ouve antes de criar: a onda e o som seguem cada ajuste.
+        var first = Make();
+        preview = new AudioPreviewView(this, first.GetPeaks(240), first.DurationSeconds,
+            Path.Combine(CacheDir!.AbsolutePath, "audio-studio"), () => { var effect = Make(); return effect.Render(0, effect.DurationSeconds); }, waveHeightDp: 96);
+        content.AddView(preview, 0);
+        frequency.ProgressChanged += (_, _) => UpdatePreview();
+        duration.ProgressChanged += (_, _) => UpdatePreview();
         RefreshDuration();
         content.AddView(durationLabel);
         content.AddView(duration);
 
         var waves = new RadioGroup(this) { Orientation = Orientation.Vertical };
         var values = new[] { (WaveShape.Sine, "Senoidal"), (WaveShape.Square, "Quadrada"), (WaveShape.Triangle, "Triangular"), (WaveShape.Noise, "Ruído") };
-        WaveShape selected = WaveShape.Sine;
         foreach (var (wave, label) in values)
         {
             var control = new RadioButton(this) { Text = label, Id = View.GenerateViewId(), Checked = wave == selected };
-            control.Click += (_, _) => selected = wave;
+            control.Click += (_, _) => { selected = wave; UpdatePreview(); };
             waves.AddView(control);
         }
         content.AddView(waves);
         var scroll = new ScrollView(this);
         scroll.AddView(content);
-        new AlertDialog.Builder(this)!.SetTitle("Criar efeito no Lunet")!
+        var dialog = new AlertDialog.Builder(this)!.SetTitle("Criar efeito no Lunet")!
             .SetView(scroll)!
             .SetNegativeButton("Cancelar", (_, _) => { })!
             .SetPositiveButton("Criar", (_, _) =>
@@ -79,7 +97,9 @@ public sealed partial class MainActivity
                 {
                     Toast.MakeText(this, ex.Message, ToastLength.Long)?.Show();
                 }
-            })!.Show();
+            })!.Create();
+        dialog.DismissEvent += (_, _) => preview.Dispose();
+        dialog.Show();
     }
 
     private void OpenWaveAudio(string path)
