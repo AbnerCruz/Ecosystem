@@ -27,6 +27,26 @@ public sealed class LunetAiSession
     private const string PendingText = "⏳ A IA está trabalhando. As alterações serão salvas no projeto.";
 
     public IReadOnlyList<LunetAiTurn> History { get { lock (_historyLock) return _history.ToArray(); } }
+    public IReadOnlyList<string> LastRolledBackFiles { get; private set; } = [];
+    public string LastRollbackMessage { get; private set; } = "";
+
+    private string RollBackInterruptedRun(LunetAiCheckpoint? checkpoint)
+    {
+        if (checkpoint is null || checkpoint.IsEmpty) return "Nenhum arquivo foi alterado.";
+        try
+        {
+            var affected = checkpoint.Changes().Select(change => change.Path).ToArray();
+            checkpoint.Revert();
+            LastRolledBackFiles = affected;
+            return affected.Length == 0 ? "Nenhuma alteração pendente." :
+                "Alterações da IA revertidas: " + string.Join(", ", affected) + ". Versões salvas no histórico de recuperação.";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or ArgumentException)
+        {
+            return "Rollback automático bloqueado para proteger edições posteriores: " + ex.Message +
+                   " Abra Conversa → Versões da IA para recuperar uma cópia.";
+        }
+    }
 
 
     /// <summary>
@@ -63,7 +83,8 @@ public sealed class LunetAiSession
         "Para imagens em Assets/, use Assets/nome.png. Confirme que o arquivo PNG existe e foi criado corretamente. " +
         "Compilar não demonstra que o jogo rodou; só afirme que ele roda após um teste de execução.\n\n" +
         LunetAiArchitecture.Guidance + "\n\n" +
-        "CÓDIGO. Investigue com lunet.code.outline/files.search/excerpt; prefira lunet.files.replace para mudanças pontuais e leia antes de escrever " +
+        "CÓDIGO. Investigue com lunet.code.outline/files.search/excerpt; use lunet.files.replace em arquivos existentes, SEMPRE alterando somente trechos pequenos. " +
+        "lunet.files.write serve APENAS para criar arquivos novos; nunca tente substituir um documento inteiro ou eliminar blocos grandes. Leia antes de editar " +
         "(envie o hash exato). Depois de alterar código, rode lunet.build.compile e corrija todos os erros: a tarefa só é aceita quando o projeto " +
         "compila. O código do jogo é a fonte da verdade.\n\n" +
         "HONESTIDADE. Não alegue ter testado, rodado ou instalado algo que não executou. Quando uma ferramenta não bastar, diga a limitação. " +
@@ -160,6 +181,9 @@ public sealed class LunetAiSession
         var maxSteps = LunetAiRunOptions.ValidateMaxSteps(settings.MaxSteps);
         await _runGate.WaitAsync(cancellationToken);
         int pendingTurn = -1;
+        LunetAiCheckpoint? checkpoint = null;
+        LastRolledBackFiles = [];
+        LastRollbackMessage = "";
         try
         {
             var runId = Guid.NewGuid().ToString("N");
@@ -167,7 +191,7 @@ public sealed class LunetAiSession
                 new ContextStep(ContextLevel.Ecosystem, "ecosystem"),
                 new ContextStep(ContextLevel.Product, "lunet2d"),
                 new ContextStep(ContextLevel.Project, _project.Manifest.GameId));
-            var checkpoint = new LunetAiCheckpoint(_project);
+            checkpoint = new LunetAiCheckpoint(_project, runId);
             var mode = LunetAiIntent.Resolve(request.Mode, prompt);
             if (mode == LunetAiMode.Do && !enableProjectWrites) mode = LunetAiMode.Teach; // writes off: explain instead
             enableProjectWrites = enableProjectWrites && mode == LunetAiMode.Do;
@@ -253,6 +277,11 @@ public sealed class LunetAiSession
             if (string.IsNullOrWhiteSpace(response)) response = "O provider não retornou uma resposta de texto.";
             var changed = result.Artifacts.Where(a => a.Kind == "lunet.text-file")
                 .Select(a => a.Location).Distinct(StringComparer.Ordinal).ToArray();
+            if (result.State.Status != RunStatus.Succeeded)
+            {
+                LastRollbackMessage = RollBackInterruptedRun(checkpoint);
+                response += "\n" + LastRollbackMessage;
+            }
             CompleteTurn(pendingTurn, response);
             var changes = checkpoint.Changes();
             return new LunetAiReply(response, changes.Select(c => c.Path).ToArray(), result.State.Status,
@@ -261,12 +290,14 @@ public sealed class LunetAiSession
         }
         catch (OperationCanceledException)
         {
-            CompleteTurn(pendingTurn, "Execução cancelada. Alterações já gravadas permanecem no projeto.");
+            LastRollbackMessage = RollBackInterruptedRun(checkpoint);
+            CompleteTurn(pendingTurn, "Execução cancelada. " + LastRollbackMessage);
             throw;
         }
         catch (Exception)
         {
-            CompleteTurn(pendingTurn, "Falha na execução. Confira o projeto antes de tentar novamente.");
+            LastRollbackMessage = RollBackInterruptedRun(checkpoint);
+            CompleteTurn(pendingTurn, "Falha na execução. " + LastRollbackMessage);
             throw;
         }
         finally { _runGate.Release(); }
