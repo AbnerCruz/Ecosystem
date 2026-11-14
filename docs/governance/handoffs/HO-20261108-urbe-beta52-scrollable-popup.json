@@ -47,10 +47,10 @@
     {
       "check": "Rolagem e toque real no popup sobre o editor no Android",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "apps/urbe/csharp/PATCHNOTES.md",
-      "evidence": "Validação física de gesto de rolagem, teclado e layout no aparelho ainda não executada."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-14 (Issue https://github.com/AbnerCruz/Ecosystem/issues/921); registro em docs/governance/responses/VAL-HO-20261108-urbe-beta52-scrollable-popup-0244d50c0357.md."
     }
   ],
   "known_issues": [
