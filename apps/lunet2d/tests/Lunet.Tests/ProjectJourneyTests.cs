@@ -71,38 +71,23 @@ public sealed class ProjectJourneyTests
             string original = project.ReadText("Game.cs");
             Assert.Equal(ProjectTemplates.BlankGameSource("JourneyPortrait"), original);
             Assert.DoesNotContain("Texture2D", original);
-            Assert.DoesNotContain("SpriteBatch", original);
-            Assert.DoesNotContain("Draw(", original);
+            Assert.Contains("SpriteBatch batch", original);
+            Assert.Contains("protected override void Update(GameTime time)", original);
+            Assert.Contains("protected override void Draw(GameTime time)", original);
 
-            // A jornada passa a adicionar explicitamente o código e os recursos que usa.
-            const string edited = """
-                using System.Numerics;
-                using Lunet;
-                using Lunet.Graphics;
-
-                public sealed class JourneyPortrait : Game
-                {
-                    SpriteBatch batch = null!;
-                    Texture2D hero = null!;
-
-                    protected override void LoadContent()
-                    {
-                        batch = new SpriteBatch(GraphicsDevice);
-                        hero = Content.LoadTexture("Textures/hero.png", TextureFilter.Point);
-                        if (Content.LoadTileMap("Data/level.tilemap.json").Width != 2)
-                            throw new System.Exception("Mapa não carregado");
-                        Log.Info("Jornada editada iniciou");
-                    }
-
-                    protected override void Draw(GameTime time)
-                    {
-                        GraphicsDevice.Clear(Color.Green);
-                        batch.Begin();
-                        batch.Draw(hero, Vector2.Zero, Color.White);
-                        batch.End();
-                    }
-                }
-                """;
+            // Edita o esqueleto existente em vez de substituí-lo por uma demo inteira.
+            string edited = original
+                .Replace("private SpriteBatch batch = null!;",
+                    "private SpriteBatch batch = null!;\\n    private Texture2D hero = null!;")
+                .Replace("// Carregue texturas, fontes e áudio quando precisar.",
+                    "hero = Content.LoadTexture(\\\"Textures/hero.png\\\", TextureFilter.Point);\\n        " +
+                    "if (Content.LoadTileMap(\\\"Data/level.tilemap.json\\\").Width != 2) " +
+                    "throw new System.Exception(\\\"Mapa não carregado\\\");\\n        " +
+                    "Log.Info(\\\"Jornada editada iniciou\\\");")
+                .Replace("GraphicsDevice.Clear(Color.CornflowerBlue);", "GraphicsDevice.Clear(Color.Green);")
+                .Replace("// Desenhe o conteúdo do jogo aqui.",
+                    "batch.Draw(hero, System.Numerics.Vector2.Zero, Color.White);");
+            Assert.NotEqual(original, edited);
             project.WriteText("Game.cs", edited);
             Assert.Equal(edited, project.ReadText("Game.cs"));
 
