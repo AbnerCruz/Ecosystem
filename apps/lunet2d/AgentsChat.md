@@ -690,3 +690,8 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Pedido do proprietário: ferramenta de paletas de cores para consistência visual. LUNET-499 na mesma branch/PR #933.
 - `ProjectPalette` (Lunet.Studio): arquivo canônico `Assets/palette.json` (NN-001: a análise de cores dos sprites vira só fallback quando não há paleta oficial), rampas com hue shifting, harmonias, extração k-means, remapear, contraste WCAG, `.gpl`/hex, exportação `Data/GamePalette.cs` (compila — teste). Palette Studio Android; Sprite Studio e IA usam a paleta.
 - Verificação local: 951 testes; build Android sem erros. DEVICE pendente (`docs/guides/paleta-de-cores.md`). Handoff `HO-20261114-lunet-palette-studio.json`.
+
+### 20261114-claude-lunet-music — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
+- PRs #932 e #933 integrados (release lunet2d-v0.0.1-dev.1000550). Branch `ccr-8229d3db-dmnw7l` reiniciada sobre a main; LUNET-499 (paleta) e LUNET-500 (música) seguem juntos no próximo PR.
+- LUNET-500: `Lunet.Studio.Music` (teoria musical, `MusicSong`, `Instrument`, `MusicRenderer` com polyBLEP/FM/ADSR/filtro/bateria/eco/reverb/limitador, `SoundDesigner`, `WavEncoder`), `MusicStudioView` e diálogo de efeitos no Android. Fontes `.song.json`/`.sfx.json` em `Content/Audio/` (autoridade: a fonte; o WAV é derivado, como a spritesheet).
+- Verificação local: 23 testes de música, build Android sem erros. DEVICE pendente (`docs/guides/estudio-de-musica.md`). Handoff `HO-20261114-lunet-music-studio.json`.

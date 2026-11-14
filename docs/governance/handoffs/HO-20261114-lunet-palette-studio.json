@@ -12,9 +12,9 @@
   "component": "lunet2d",
   "state": "review",
   "branch": "ccr-8229d3db-dmnw7l",
-  "base_commit": "bbc849e8f06a4f896976e857b0afb1b0b1ad1f62",
+  "base_commit": "e78e673",
   "commit": null,
-  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/933",
+  "pr": null,
   "files_changed": [
     "apps/lunet2d/src/Lunet.Studio/ProjectPalette.cs",
     "apps/lunet2d/src/Lunet.Studio/Icons/LunetIcons.cs",

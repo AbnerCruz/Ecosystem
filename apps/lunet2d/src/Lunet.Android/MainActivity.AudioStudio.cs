@@ -4,6 +4,7 @@ using Android.Views;
 using Android.Widget;
 using Lunet.Core;
 using Lunet.Studio;
+using Lunet.Studio.Music;
 using AndroidUri = global::Android.Net.Uri;
 using Path = System.IO.Path;
 
@@ -22,13 +23,22 @@ public sealed partial class MainActivity
             .Where(p => (p.StartsWith("Content/", StringComparison.OrdinalIgnoreCase) ||
                          p.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase)) &&
                         p.EndsWith(".wav", StringComparison.OrdinalIgnoreCase)).ToArray();
-        var options = new[] { "+ Criar efeito sonoro", "Importar WAV do aparelho" }.Concat(sounds).ToArray();
-        new AlertDialog.Builder(this)!.SetTitle("Audio Studio — WAV PCM")!
+        var songs = _project.ListFiles().Where(p => p.EndsWith(MusicSongExtension, StringComparison.OrdinalIgnoreCase)).ToArray();
+        var designed = _project.ListFiles().Where(p => p.EndsWith(SoundEffectExtension, StringComparison.OrdinalIgnoreCase)).ToArray();
+        var fixedOptions = new[] { "♪ Compor música (faixas, padrões, instrumentos)", "✦ Desenhar efeito sonoro (moeda, laser, explosão…)",
+            "+ Tom simples", "Importar WAV do aparelho" };
+        var options = fixedOptions.Concat(songs.Select(s => "♪ " + s)).Concat(designed.Select(s => "✦ " + s)).Concat(sounds).ToArray();
+        new AlertDialog.Builder(this)!.SetTitle("Audio Studio")!
             .SetItems(options, (_, e) =>
             {
-                if (e.Which == 0) AskNewSound();
-                else if (e.Which == 1) ImportAudioFromDevice();
-                else OpenWaveAudio(sounds[e.Which - 2]);
+                int i = e.Which;
+                if (i == 0) NewSong();
+                else if (i == 1) OpenSoundDesigner(null, SoundDesigner.Generate("coin", System.Environment.TickCount));
+                else if (i == 2) AskNewSound();
+                else if (i == 3) ImportAudioFromDevice();
+                else if ((i -= fixedOptions.Length) < songs.Length) OpenSong(songs[i]);
+                else if ((i -= songs.Length) < designed.Length) OpenDesignedSound(designed[i]);
+                else OpenWaveAudio(sounds[i - designed.Length]);
             })!.SetNegativeButton("Fechar", (_, _) => { })!.Show();
     }
 
