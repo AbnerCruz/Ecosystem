@@ -45,6 +45,14 @@ Depois de uma explicação aparece **⚒ Fazer por mim**: a IA implementa exatam
 4. Compare o tempo até a primeira resposta com a versão anterior num pedido simples.
 5. Peça uma técnica (ex.: "pulo com coyote time") e veja na linha do tempo a pesquisa e a leitura de páginas.
 
+### Edições seguras (DEVICE)
+
+1. Abra um arquivo grande (mais de 100 linhas) e peça uma mudança pequena ("mude a velocidade do herói para 200"). Confira no **Ver** do cartão que só as linhas certas mudaram.
+2. Peça algo maior e toque em parar no meio da execução: a resposta diz "Execução cancelada" e mostra o cartão com os arquivos já alterados; **Desfazer tudo** volta exatamente ao estado anterior.
+3. Repita o passo 2, feche o Lunet pelo multitarefa, reabra o projeto e confira que o cartão e o **Desfazer tudo** continuam lá.
+4. Com o arquivo aberto, pergunte "o que este arquivo faz?": a resposta cita métodos e linhas que existem de verdade.
+5. Enquanto a IA altera o arquivo aberto, não digite: o editor deve mostrar a versão nova sozinho. Depois repita digitando algo durante a execução: ao sair do arquivo, o Lunet pergunta qual versão manter.
+
 ## O que ela sabe
 
 - **O próprio Lunet:** pesquisa a referência da API do Framework, os guias offline e a lista do que existe e do que ainda não existe. Se você pedir algo que o Lunet não tem, ela diz e propõe a melhor alternativa.
@@ -77,7 +85,10 @@ Antes de criar arte ou mecânicas, a IA lê o estilo do projeto e segue a paleta
 ## Segurança e revisão
 
 - Escrever no projeto é opcional (configurações da IA).
-- Toda alteração entra num checkpoint: o cartão de mudanças mostra os arquivos, o diff, **Manter** ou **Desfazer tudo**.
+- Toda alteração entra num checkpoint salvo no aparelho antes de cada arquivo mudar: o cartão de mudanças mostra os arquivos, o diff, **Manter** ou **Desfazer tudo**. O cartão aparece em toda resposta que mudou algo, inclusive quando você cancela, quando a execução falha ou depois de reabrir o app (os 40 pedidos mais recentes guardam o desfazer; *Limpar conversa* apaga esse histórico, não os arquivos).
+- A IA edita por trechos (`lunet.files.replace`). Ela não consegue regravar um arquivo existente apagando a maior parte dele, deixando-o vazio ou com "// ... resto do código": a ferramenta recusa e ela precisa editar o trecho certo.
+- Cada pedido leva o conteúdo real do arquivo aberto no editor, com números de linha; a IA é instruída a ler o código antes de falar dele e a citar arquivo e linha.
+- Se a IA mudar o arquivo que está aberto, o editor recarrega sozinho (sem perder o cursor). Se você também tiver editado, o Lunet pergunta qual versão manter; a outra vai para a área de transferência ou pode ser refeita pela conversa.
 - Quando altera código, a IA compila e verifica texturas referenciadas literalmente. Somente o Preview comprova a execução.
 - A IA só acessa arquivos dentro do projeto aberto.
 

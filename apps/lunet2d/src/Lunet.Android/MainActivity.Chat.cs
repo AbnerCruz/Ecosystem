@@ -365,14 +365,18 @@ public sealed partial class MainActivity
         for (int i = 0; i < history.Count; i++)
         {
             var turn = history[i];
-            if (turn.Role == "Você") AddUserMessage(turn.Text);
-            else AddAssistantMessage(turn.Text, retryPrompt: i > 0 && history[i - 1].Role == "Você"
-                ? StripAttachments(history[i - 1].Text) : null, taught: turn.Mode == LunetAiMode.Teach);
+            if (turn.Role == "Você") { AddUserMessage(turn.Text); continue; }
+            // A pending turn of the live run shows its progress below; its changes appear when it ends.
+            bool live = belongs && work!.IsRunning && i == history.Count - 1;
+            if (live) continue;
+            AddAssistantMessage(turn.Text, retryPrompt: i > 0 && history[i - 1].Role == "Você"
+                ? StripAttachments(history[i - 1].Text) : null, taught: turn.Mode == LunetAiMode.Teach,
+                checkpoint: _aiSession.CheckpointFor(turn), verified: turn.Verified);
         }
         if (belongs && work!.IsRunning)
         {
             // During the few milliseconds before the service persists the pending turn, show the request.
-            if (history.Count == 0) AddUserMessage(work.Prompt);
+            if (history.Count == 0 || history[^1].Role != "Lunet") AddUserMessage(work.Prompt);
             AddAiWorkStatus(work);
         }
         else if (belongs && work!.Error is { } error)
@@ -488,14 +492,15 @@ public sealed partial class MainActivity
 
     /// <summary>An answer: header, Markdown blocks, optional work summary and changes, then actions.</summary>
     private LinearLayout AddAssistantMessage(string text, string? retryPrompt, IReadOnlyList<LunetAiStep>? steps = null,
-        LunetAiReply? reply = null, bool taught = false)
+        bool taught = false, LunetAiCheckpoint? checkpoint = null, bool? verified = null)
     {
         var message = new LinearLayout(this) { Orientation = Orientation.Vertical };
         message.AddView(LunetUi.Label(this, taught ? "✦ Lunet · explicando (nada foi alterado)" : "✦ Lunet",
             LunetUi.TextCaption, LunetUi.AccentText, bold: true));
         if (steps is { Count: > 0 }) message.AddView(WorkSummary(steps), Spaced(LunetUi.FillWidth(), 6));
         RenderMarkdown(message, text);
-        if (reply is { Changes.Count: > 0 }) message.AddView(BuildChangesCard(reply), Spaced(LunetUi.FillWidth(), 10));
+        if (checkpoint is not null && (checkpoint.IsReverted || checkpoint.Changes().Count > 0))
+            message.AddView(BuildChangesCard(checkpoint, verified), Spaced(LunetUi.FillWidth(), 10));
         var actions = LunetUi.Row(this, 2);
         void Action(string label, string description, Action run)
         {
@@ -823,17 +828,14 @@ public sealed partial class MainActivity
             var work = LunetAiRuns.Current;
             if (work is null || work.ProjectId != _project.Manifest.GameId) return;
 
-            if (!work.IsRunning && work.Reply is { } reply && !ReferenceEquals(_aiLastAppliedWork, work))
+            // Keep the editor in step with the AI, while it works and after it ends (success, cancel or failure).
+            SyncEditorWithDisk();
+            if (!work.IsRunning && !ReferenceEquals(_aiLastAppliedWork, work))
             {
                 _aiLastAppliedWork = work;
-                if (reply.Changes.Count > 0)
-                {
-                    if (_preview is not null) _session.Unload(); // do not write stale editor contents over AI changes
-                    else ReloadOpenFileIfChanged(reply.Changes.Select(change => change.Path));
-                    RefreshExplorer();
-                    if (work.Request.Build is AndroidAiBuild build && build.LastErrors.Count == 0)
-                        _problems = [];
-                }
+                RefreshExplorer();
+                if (work.Reply is { Changes.Count: > 0 } && work.Request.Build is AndroidAiBuild build && build.LastErrors.Count == 0)
+                    _problems = [];
             }
 
             if (AiPanelOpen) RenderConversation();
@@ -868,6 +870,29 @@ public sealed partial class MainActivity
             _openFile = null;
             OpenFile(opened);
         }
+    }
+
+    /// <summary>
+    /// The AI wrote the open file: reload it in place when the person has no unsaved edits. With edits, nothing is
+    /// overwritten either way; the next save asks which version to keep (see <see cref="ShowEditorConflict"/>).
+    /// </summary>
+    private void SyncEditorWithDisk()
+    {
+        if (_project is null || _editor is null || _openFile is null || _openNote is not null) return;
+        if (_preview is not null) return; // the editor view is not shown; it reloads when the workspace returns
+        if (!_session.ChangedOnDisk(_project) || _session.IsDirty(_editor.Text ?? "")) return;
+        try
+        {
+            var text = _project.ReadText(_openFile);
+            int caret = Math.Min(_editor.SelectionStart, text.Length);
+            int scroll = _editor.ScrollY;
+            _editor.LoadText(text);
+            _session.Load(_openFile, text);
+            if (caret >= 0) _editor.SetSelection(caret);
+            _editor.Post(() => _editor?.ScrollTo(0, scroll));
+            try { _assistant?.SetFile(_openFile, text); } catch (IOException) { }
+        }
+        catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException) { }
     }
 
     private void ScrollAiToEnd() => _aiScroll?.Post(() => _aiScroll?.FullScroll(FocusSearchDirection.Down));

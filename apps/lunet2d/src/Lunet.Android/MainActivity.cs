@@ -817,10 +817,48 @@ public sealed partial class MainActivity : Activity
         {
             _session.TrySave(_project, _editor.Text ?? "", _journal);
         }
+        catch (EditorConflictException conflict)
+        {
+            ShowEditorConflict(conflict);
+        }
         catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
         {
             Toast.MakeText(this, "Não foi possível salvar: " + ex.Message, ToastLength.Long)?.Show();
         }
+    }
+
+    private bool _conflictShown;
+
+    /// <summary>
+    /// The open file changed on disk (usually the AI) while the person was also editing it. Nothing is lost: the
+    /// person's text is already in the autosave journal, and they choose which version stays in the file.
+    /// </summary>
+    private void ShowEditorConflict(EditorConflictException conflict)
+    {
+        if (_conflictShown || IsFinishing || IsDestroyed) return;
+        _conflictShown = true;
+        new AlertDialog.Builder(this)!
+            .SetTitle("O arquivo mudou enquanto você editava")!
+            .SetMessage($"{conflict.FilePath} foi alterado fora do editor (provavelmente pela IA) e você também tem edições não salvas.\n\n" +
+                        "Escolha qual versão fica no arquivo. Se escolher a do disco, a sua é copiada para a área de transferência; " +
+                        "se escolher a sua, as mudanças da IA podem ser refeitas pela conversa.")!
+            .SetCancelable(false)!
+            .SetPositiveButton("Manter a minha", (_, _) =>
+            {
+                _conflictShown = false;
+                try { if (_project is not null && _editor is not null) _session.ForceSave(_project, _editor.Text ?? "", _journal); }
+                catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
+                { Toast.MakeText(this, "Não foi possível salvar: " + ex.Message, ToastLength.Long)?.Show(); }
+            })!
+            .SetNegativeButton("Usar a do disco", (_, _) =>
+            {
+                _conflictShown = false;
+                if (_openFile is not { } path || _editor is null || _project is null) return;
+                CopyToClipboard(_editor.Text ?? "");
+                _editor.LoadText(conflict.DiskText);
+                _session.Load(path, conflict.DiskText);
+                Toast.MakeText(this, "Sua versão foi copiada para a área de transferência.", ToastLength.Long)?.Show();
+            })!.Show();
     }
 
     private void ShowReference()

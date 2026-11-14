@@ -1,0 +1,112 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261114-lunet-ai-safe-edits",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-14T18:45:00Z",
+  "agent": {
+    "id": "claude-lunet-ai-safe-edits",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-507",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-f93d5ab0-3eri49",
+  "base_commit": "2439fdd",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/guides/ia-lunet.md",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiCowork.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiEditSafety.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiProjectFiles.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSession.cs",
+    "apps/lunet2d/src/Lunet.Android/AiRunCoordinator.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Ai.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Chat.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Core/EditorSession.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiCapabilitiesTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiEditSafetyTests.cs",
+    "docs/governance/handoffs/HO-20261114-lunet-ai-safe-edits.json"
+  ],
+  "work_completed": [
+    "Estudo: o cartão Desfazer tudo nunca era desenhado (RenderConversation não passava a resposta) e o checkpoint vivia só em memória; cancelar perdia o caminho de volta.",
+    "Estudo: lunet.files.write aceitava regravar o arquivo inteiro com o conteúdo de um excerpt (hash do arquivo todo) ou com marcadores '...'; replace exigia espaços idênticos.",
+    "Estudo: o pedido levava só o nome do arquivo aberto; o prompt desestimulava leituras; EditorSession gravava por cima de mudanças em disco.",
+    "Checkpoint persistido antes de cada escrita e ligado à resposta (RunId); cartão de mudanças e Desfazer tudo em toda resposta, também cancelada, com falha, interrompida ou após reiniciar.",
+    "LunetAiWriteGuard: recusa esvaziar, apagar a maior parte ou inserir marcadores de código omitido; write falha se não puder guardar o original.",
+    "replace tolerante a recuo, CRLF e prefixos de número de linha, com mensagens de linha; leituras numeradas; excerpt até 400 linhas; read até 48.000 caracteres.",
+    "Conteúdo real do arquivo aberto (numerado, sha256) no pedido; prompt exige ler antes de falar do código e editar por trechos.",
+    "EditorSession detecta mudança em disco: não grava texto desatualizado, recarrega o editor durante/após a execução e pergunta qual versão manter em conflito."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project tests/Lunet.Tests (local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "1050/1050; LunetAiEditSafetyTests 13 testes novos"
+    },
+    {
+      "check": "dotnet build src/Lunet.Android -c Debug (local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "0 erros"
+    },
+    {
+      "check": "Edições seguras, cancelar e desfazer, reinício e conflito do editor no aparelho",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/ia-lunet.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Desfazer tudo também desfaz edições que a pessoa fez depois nesses arquivos (o diálogo avisa).",
+    "O guard de regravação é heurístico (menos de 60% das linhas com código em arquivos de 15+ linhas); exclusões grandes legítimas passam por replace."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI e release do APK pelo pipeline; DEVICE pelo roteiro §Edições seguras."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O checkpoint persistido é a única fonte do desfazer de cada resposta; o histórico só guarda o RunId."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Escrita continua por SHA256 e deny-by-default; nenhuma permissão nova."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nada extraído para o Runtime compartilhado; arquivo gerado do AgentRuntime intocado."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-ai-write-guard",
+      "status": "possible-candidate",
+      "rationale": "Urbe também deixa a IA editar arquivos; sem extração sem Extraction Review (NN-022)."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
