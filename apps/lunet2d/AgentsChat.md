@@ -657,3 +657,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - LUNET-492 (Fase A): estudo conferido contra o código (`docs/architecture/multiplataforma-viabilidade-2026-11-14.md`), ADR 0012 **Proposto**, DEC-0062 **pendente** no portal, `PlatformPortabilityTests` (fatos que já valiam passaram de primeira; não há "vermelho" a mostrar). Itens 482/493–496 no ROADMAP. Nenhum host novo; SPEC §2 não alterado até a decisão.
 - Verificação local: 857 testes passando, build Android Debug sem erros. Sem emulador/aparelho nesta sessão: nada visual foi visto; DEVICE pendente (`docs/guides/validacao-studios-icones.md`).
 - Limites: seleção sem camadas e sem copiar/colar entre frames; varinha sem "adicionar à seleção"; ícones de diálogos de lista (AlertDialog) ainda usam texto; "Preview isolado" e Tile Studio herdam os ícones novos mas não ganharam seleção de tiles.
+
+
+### 20261114-fix-blank-project-template — 2026-11-14 — correção solicitada pelo proprietário
+- Diagnóstico: `ProjectTemplates.BlankGameSource` criava explicitamente um círculo amarelo de 48px, fundo CornflowerBlue e movimento por toque. O template chamado “Em branco” era, na prática, uma demo.
+- Correção: o template agora gera apenas uma classe vazia derivada de `Game`; nenhum objeto, recurso, entrada ou desenho é criado automaticamente.
+- Testes: contrato do projeto verifica ausência de SpriteBatch/Texture2D/Draw/CreateCircle; jornada E2E confirma o template limpo e escreve seu próprio jogo para continuar validando assets, tilemap, preview e exportação.
+- Estado: CI e build APK pendentes nesta branch; não houve validação visual em aparelho.
