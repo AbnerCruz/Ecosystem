@@ -265,10 +265,10 @@
     {
       "check": "Exportações salvas pelo seletor do Android, blocos ```calculo e ```dados, apresentação HTML e arquivos abertos no Word/PowerPoint; leitor CBZ (toque/deslize/pinça), 'Aa' e Continuar lendo no Android; leitor PPTX (deslize, pinça, modo apresentação com Voltar) e aviso de anexos ao modelo; exportar MP4 no Android (codificador MediaCodec, cores, áudio em sincronia, cancelamento, seletor .mp4) e leitor ODP; números de linha com IME, fórmulas no Visual e botões flutuantes em paisagem; matar o app no meio de uma gravação/imagem do Assistente e Retomar; delegação com provedor real; figuras de EPUB com OCR",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/urbe/csharp/PATCHNOTES.md",
-      "evidence": "Validação física e em Office da Microsoft pendente (NN-017)."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-14 (Issue https://github.com/AbnerCruz/Ecosystem/issues/922); registro em docs/governance/responses/VAL-HO-20261105-urbe-beta50-publications-a674a289cd93.md."
     },
     {
       "check": "Urbe.Core.Tests e Urbe.Client.Tests",
