@@ -25,7 +25,7 @@ Não ampliar instrumentação de áudio enquanto esses fluxos estiverem ausentes
 
 ### Ordem do proprietário em 14/11/2026 — IA como colega de trabalho e redesenho da experiência
 
-- [ ] **LUNET-502 — Seletor de fotos dentro dos jogos (implementado em branch, CI e DEVICE pendentes):** solicitação de 14/11/2026 para FotoPuzzle com imagens importadas durante a partida. Contrato portátil `IGameImagePicker` em `Lunet.Content`, Android SAF sem acesso geral à galeria, redução de dimensões e entrega RGBA segura ao Update. Host do Preview rápido integra o serviço. Validação necessária em moto g32 e no APK standalone; Preview isolado ainda sem integração. Projeto completo entregue como ZIP separado para importação.
+- [ ] **LUNET-502 — Seletor de fotos dentro dos jogos (implementado em branch, CI e DEVICE pendentes):** solicitação de 14/11/2026 para FotoPuzzle com imagens importadas durante a partida. Contrato portátil `IGameImagePicker` em `Lunet.Content`, Android SAF sem acesso geral à galeria, redução de dimensões e entrega RGBA segura ao Update. Host de Preview rápido **e APK standalone** integram o serviço; Preview isolado ainda não. Projeto FotoPuzzle entregue separadamente como ZIP importável. Falta validação no moto g32 Android 13 e CI verde no PR #944.
 
 
 Diagnóstico: `docs/architecture/audits/lunet-diagnostico-geral-2026-11-14.md` (nível do Ecosystem). O proprietário deu autorização total para desenvolver até uma release funcional. A camada visual é refeita sobre os módulos existentes; Framework, Compiler, serviços do Editor e Build ficam preservados.
