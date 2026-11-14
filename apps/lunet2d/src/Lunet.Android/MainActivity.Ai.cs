@@ -197,7 +197,7 @@ public sealed partial class MainActivity
         else OpenAiPanel(null);
     }
 
-    private void OpenAiPanel(string? prefill)
+    private void OpenAiPanel(string? prefill, bool autoSend = false)
     {
         if (_project is null || _workspaceFrame is null)
         {
@@ -215,7 +215,8 @@ public sealed partial class MainActivity
             _aiInput.Text = prefill;
             _aiInput.SetSelection(_aiInput.Text?.Length ?? 0);
         }
-        if (!Ai.IsConfigured) ShowAiSettings();
+        if (!Ai.IsConfigured) ShowAiSettings(autoSend ? SendAi : null);
+        else if (autoSend && !string.IsNullOrWhiteSpace(prefill)) SendAi();
         else _aiInput?.RequestFocus();
     }
 

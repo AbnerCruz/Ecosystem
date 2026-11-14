@@ -495,7 +495,9 @@ public sealed partial class MainActivity : Activity
         frame.AddView(_drawerScrim, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent));
 
         _drawer = Vertical();
-        _drawer.SetBackgroundColor(WorkbenchSurface);
+        _drawer.SetBackgroundColor(LunetUi.Surface);
+        _drawer.SetPadding(Dp(6), 0, Dp(6), Dp(6));
+        _drawer.Elevation = Dp(16);
         _drawer.Visibility = ViewStates.Gone;
         _drawer.Clickable = true; // não deixa toques passarem para o editor
 
@@ -539,13 +541,20 @@ public sealed partial class MainActivity : Activity
         {
             if (HasCollapsedAncestor(entry.Path)) continue;
             var captured = entry;
-            var label = (entry.IsDirectory ? (_collapsed.Contains(entry.Path) ? "▸ " : "▾ ") : "") + entry.Name;
-            var row = new TextView(this) { Text = label, TextSize = 15 };
-            row.SetPadding(Dp(12 + entry.Depth * 16), Dp(14), Dp(8), Dp(14));
-            row.SetMinHeight(Dp(48));
+            var glyph = entry.IsDirectory ? (_collapsed.Contains(entry.Path) ? "▸  " : "▾  ")
+                : entry.Path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ? "{ }  "
+                : entry.Path.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? "▦  "
+                : entry.Path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ? "¶  "
+                : entry.Path.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) ? "∿  " : "·  ";
+            var row = new TextView(this) { Text = glyph + entry.Name, TextSize = 14 };
+            row.SetPadding(Dp(12 + entry.Depth * 14), Dp(12), Dp(8), Dp(12));
+            row.SetMinHeight(Dp(46));
+            row.SetSingleLine(true);
+            row.Ellipsize = TextUtils.TruncateAt.Middle;
             row.ContentDescription = entry.IsDirectory ? "Pasta " + entry.Path : "Arquivo " + entry.Path;
-            if (entry.Path == _openFile) row.SetBackgroundColor(AndroidColor.Rgb(50, 56, 70));
-            row.SetTextColor(entry.IsDirectory ? AndroidColor.Rgb(170, 200, 255) : IsTextFile(entry.Path) ? AndroidColor.Rgb(230, 230, 230) : AndroidColor.Rgb(140, 140, 140));
+            row.Background = LunetUi.Pressable(this, entry.Path == _openFile ? LunetUi.AccentSoft : LunetUi.Surface, LunetUi.RadiusSmall);
+            row.SetTextColor(entry.IsDirectory ? LunetUi.AccentText : IsTextFile(entry.Path) ? LunetUi.Text : LunetUi.TextMuted);
+            if (entry.IsDirectory) row.SetTypeface(LunetUi.Mono, TypefaceStyle.Bold);
             row.Click += (_, _) => OnExplorerTap(captured);
             row.LongClick += (_, _) => ShowEntryMenu(captured);
             _drawerList.AddView(row);
@@ -755,22 +764,44 @@ public sealed partial class MainActivity : Activity
         if (console)
         {
             foreach (var line in _console)
-                _panelList.AddView(new TextView(this) { Text = line, TextSize = 12 });
-            if (_console.Count == 0) _panelList.AddView(new TextView(this) { Text = "Sem mensagens do jogo.", TextSize = 12 });
+            {
+                var view = LunetUi.Label(this, line, 12, line.StartsWith("[Error]", StringComparison.Ordinal) ? LunetUi.Danger : LunetUi.Text);
+                view.SetTypeface(LunetUi.Mono, TypefaceStyle.Normal);
+                view.SetTextIsSelectable(true);
+                _panelList.AddView(view);
+            }
+            if (_console.Count == 0) _panelList.AddView(LunetUi.Label(this, "Sem mensagens do jogo. Rode o jogo para ver o console.", 13, LunetUi.TextMuted));
+            else _panelList.AddView(LunetUi.Chip(this, "✦ Perguntar à IA sobre o console", () => OpenAiPanel("Analise o console do jogo e explique o que está acontecendo: ")));
         }
         else
         {
+            int errors = _problems.Count(p => p.Severity == DiagnosticSeverity.Error);
+            if (errors > 0)
+            {
+                var fix = LunetUi.Button(this, $"✦ Corrigir {errors} erro(s) com a IA", () =>
+                {
+                    OpenAiPanel("Corrija os erros de compilação do projeto e confirme que compila.", autoSend: true);
+                }, ButtonStyle.Selected);
+                _panelList.AddView(fix, LunetUi.FillWidth(Dp(42)));
+            }
             foreach (var problem in _problems)
             {
                 var captured = problem;
-                var view = new TextView(this) { Text = problem.ToString(), TextSize = 12 };
-                view.SetTextColor(problem.Severity == DiagnosticSeverity.Error ? AndroidColor.Rgb(255, 120, 120) : AndroidColor.Rgb(255, 210, 120));
-                view.SetPadding(Dp(8), Dp(4), Dp(8), Dp(4));
-                view.Click += (_, _) => GoTo(captured);
-                _panelList.AddView(view);
+                bool error = problem.Severity == DiagnosticSeverity.Error;
+                var card = LunetUi.Column(this, 2);
+                card.SetPadding(Dp(10), Dp(8), Dp(10), Dp(8));
+                card.Background = LunetUi.Pressable(this, error ? LunetUi.DangerSoft : LunetUi.SurfaceRaised, LunetUi.RadiusSmall);
+                card.Clickable = true;
+                card.Click += (_, _) => GoTo(captured);
+                card.AddView(LunetUi.Label(this, (error ? "✕ " : "! ") + problem.Message, 13, error ? LunetUi.Danger : LunetUi.Warning));
+                card.AddView(LunetUi.Label(this, $"{problem.FilePath ?? "projeto"}:{problem.Line} · {problem.Id} · toque para ir", 11, LunetUi.TextMuted));
+                _panelList.AddView(card, LunetUi.FillWidth());
+                var spacer = new View(this);
+                _panelList.AddView(spacer, LunetUi.FillWidth(Dp(6)));
             }
-            if (_problems.Count == 0) _panelList.AddView(new TextView(this) { Text = "Nenhum problema.", TextSize = 12 });
+            if (_problems.Count == 0) _panelList.AddView(LunetUi.Label(this, "✓ Nenhum problema. Toque em ▶ Rodar para compilar.", 13, LunetUi.Success));
         }
+        RefreshWorkbenchNavigation();
         if (_problemsTab is not null)
             _problemsTab.Text = _problems.Count == 0 ? "Problemas" : $"Problemas ({_problems.Count})";
     }
