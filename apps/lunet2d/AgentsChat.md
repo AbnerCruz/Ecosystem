@@ -728,3 +728,9 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Ordem do proprietário: assumir a correção da IA (cancelar não desfazia; "apagou o documento inteiro"; "não lê o código"). Nenhum PR aberto de outro agente sobre o tema na hora de assumir. LUNET-507, branch `ccr-f93d5ab0-3eri49`, base `2439fdd`.
 - Causas e correções: ROADMAP LUNET-507. Checkpoint persistido e cartão *Desfazer tudo* em toda resposta; `LunetAiWriteGuard`; `replace` tolerante; conteúdo do arquivo aberto no pedido; `EditorSession` com detecção de conflito.
 - Verificação local: 1050 testes; build Android Debug sem erros. DEVICE pendente (`docs/guides/ia-lunet.md` §Edições seguras). Handoff `HO-20261114-lunet-ai-safe-edits.json`.
+
+### 20261114-claude-lunet-photo-picker — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
+- Ordem do proprietário: assumir e corrigir o PR #944 (seletor de fotos do FotoPuzzle, aberto por outro agente). Trabalho do outro agente preservado; commits adicionados na mesma branch `feat/lunet-photopuzzle-gallery-picker`.
+- Revisão: código do seletor correto (SAF, redução, thread fora da UI/GL, request code sem colisão), mas fotos da câmera chegavam deitadas (EXIF ignorado), o item reutilizava o ID LUNET-502 (servidor dedicado; NN-019), faltavam handoff, testes e guia, e o PR estava em rascunho (o integrador não roda).
+- Correções: `ImageOrientation` (8 orientações EXIF) aplicada no `AndroidGameImagePicker`; ID novo LUNET-508; `GameImagePickerTests` (orientação, contrato, exemplo do guia compila); `docs/guides/fotos-no-jogo.md`; `capacidades.md` para a IA; handoff `HO-20261114-lunet-photo-picker.json`.
+- Verificação local: 1063 testes; build Android Debug sem erros; template standalone compila o C# (empacotamento exige jogo compilado, coberto pelo CI). DEVICE pendente.

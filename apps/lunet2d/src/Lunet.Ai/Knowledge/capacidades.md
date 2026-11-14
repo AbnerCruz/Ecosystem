@@ -23,6 +23,7 @@ Caminhos de conteúdo no código: `Content.LoadTexture("Assets/heroi.png")` ou r
 - Gráficos: `SpriteBatch`, `Texture2D`, `Color`, `Camera2D`, `Viewport`/escala, `SpriteSheet`, `SpriteAnimationClip`, `SpriteAnimator`, `TextureAtlas`, `NineSlice`, `RenderTarget2D`, `Shader`/`Material`, `BlendState`, `DebugDraw`, partículas (`ParticleEmitter`, `ParticleSettings`), `TileMap` (JSON v1, camadas, colisão, culling).
 - Texto: `SpriteFont` (bitmap, `CreateDefault`) e `TrueTypeFont`.
 - Entrada: toque (`TouchCollection`, `Pointer`), gestos (`GestureRecognizer`: tap, swipe, pinça…), teclado (`Keys`), gamepad, controles virtuais (`VirtualStick`, `VirtualButton`), vibração (`IHaptics`).
+- Fotos da galeria no jogo: `Services.TryGet<IGameImagePicker>(out var picker)` (`using Lunet.Content;`), `picker.Pick()` e, em cada `Update`, `picker.TryReceive(out var foto)` → `Texture2D.FromPixels(GraphicsDevice, foto.Width, foto.Height, foto.Rgba)` (Rgba nulo = cancelado/erro). Só Preview rápido e APK do jogo; não há no Preview isolado. Guia `docs/guides/fotos-no-jogo.md`.
 - Áudio: `SoundEffect`, `Music`, `AudioMixer`/`AudioBus` (WAV/OGG/MP3 conforme o aparelho).
 - Física: Box2D gerenciado (`PhysicsWorld`, `RigidBody2D`, `Collider2D`, `Fixture2D`, `Joint2D`, contatos, raycast).
 - Cenas: `Scene2D`, `Entity2D`, `Component2D`, `Transform2D`.

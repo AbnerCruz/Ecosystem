@@ -1,6 +1,7 @@
 using Android.App;
 using Android.Content;
 using Android.Graphics;
+using Android.Media;
 using AndroidUri = Android.Net.Uri;
 using Lunet.Content;
 
@@ -77,7 +78,17 @@ internal sealed class AndroidGameImagePicker(Activity activity) : IGameImagePick
                     rgba[p + 2] = (byte)color;
                     rgba[p + 3] = (byte)(color >> 24);
                 }
-                Publish(new PickedGameImage(width, height, rgba));
+                // BitmapFactory ignores EXIF: camera photos would arrive sideways without this.
+                int orientation = 1;
+                try
+                {
+                    using var exifStream = activity.ContentResolver?.OpenInputStream(uri);
+                    if (exifStream is not null)
+                        orientation = new ExifInterface(exifStream).GetAttributeInt(ExifInterface.TagOrientation, 1);
+                }
+                catch (Exception ex) when (ex is IOException or Java.Lang.Exception) { /* no EXIF: keep as decoded */ }
+                var upright = ImageOrientation.Apply(width, height, rgba, orientation);
+                Publish(new PickedGameImage(upright.Width, upright.Height, upright.Rgba));
             }
             catch (Exception ex) when (ex is IOException or InvalidDataException or OutOfMemoryException or
                                        Java.Lang.Exception or UnauthorizedAccessException or ArgumentException)
