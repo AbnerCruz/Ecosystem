@@ -78,12 +78,12 @@ public sealed class ProjectJourneyTests
             // Edita o esqueleto existente em vez de substituí-lo por uma demo inteira.
             string edited = original
                 .Replace("private SpriteBatch batch = null!;",
-                    "private SpriteBatch batch = null!;\\n    private Texture2D hero = null!;")
+                    "private SpriteBatch batch = null!;\n    private Texture2D hero = null!;")
                 .Replace("// Carregue texturas, fontes e áudio quando precisar.",
-                    "hero = Content.LoadTexture(\\\"Textures/hero.png\\\", TextureFilter.Point);\\n        " +
-                    "if (Content.LoadTileMap(\\\"Data/level.tilemap.json\\\").Width != 2) " +
-                    "throw new System.Exception(\\\"Mapa não carregado\\\");\\n        " +
-                    "Log.Info(\\\"Jornada editada iniciou\\\");")
+                    "hero = Content.LoadTexture(\"Textures/hero.png\", TextureFilter.Point);\n        " +
+                    "if (Content.LoadTileMap(\"Data/level.tilemap.json\").Width != 2) " +
+                    "throw new System.Exception(\"Mapa não carregado\");\n        " +
+                    "Log.Info(\"Jornada editada iniciou\");")
                 .Replace("GraphicsDevice.Clear(Color.CornflowerBlue);", "GraphicsDevice.Clear(Color.Green);")
                 .Replace("// Desenhe o conteúdo do jogo aqui.",
                     "batch.Draw(hero, System.Numerics.Vector2.Zero, Color.White);");
