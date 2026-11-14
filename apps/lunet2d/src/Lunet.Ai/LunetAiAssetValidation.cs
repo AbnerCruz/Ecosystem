@@ -46,9 +46,9 @@ public static class LunetAiAssetValidation
                 {
                     using var stream = File.OpenRead(Path.Combine(project.Directory,
                         located.Replace('/', Path.DirectorySeparatorChar)));
-                    Span<byte> signature = stackalloc byte[8];
+                    var signature = new byte[8];
                     if (stream.Read(signature) != signature.Length ||
-                        !signature.SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }))
+                        !signature.AsSpan().SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }))
                         errors.Add(source.Path + ": o arquivo não tem assinatura PNG: " + located);
                 }
             }
