@@ -1308,6 +1308,7 @@ public sealed partial class MainActivity : Activity
     protected override void OnActivityResult(int requestCode, Result resultCode, Intent? data)
     {
         base.OnActivityResult(requestCode, resultCode, data);
+        if (HandleAttachmentResult(requestCode, resultCode, data)) return;
         if (requestCode == ImportProjectRequestCode)
         {
             if (resultCode == Result.Ok && data?.Data is AndroidUri projectUri) CompleteProjectImport(projectUri);

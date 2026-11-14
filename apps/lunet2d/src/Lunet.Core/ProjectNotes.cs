@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Lunet.Core;
 
-public enum NoteKind { Text, Sketch }
+public enum NoteKind { Text, Sketch, Image, File }
 
 public sealed record ProjectNote(string Path, string Title, NoteKind Kind, DateTime ModifiedUtc);
 
@@ -30,8 +30,32 @@ public static class ProjectNotes
             }
             else if (path.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
                 result.Add(new ProjectNote(path, System.IO.Path.GetFileNameWithoutExtension(path), NoteKind.Sketch, modified));
+            else if (ImageExtensions.Contains(System.IO.Path.GetExtension(path)))
+                result.Add(new ProjectNote(path, System.IO.Path.GetFileNameWithoutExtension(path), NoteKind.Image, modified));
+            else
+                result.Add(new ProjectNote(path, System.IO.Path.GetFileName(path), NoteKind.File, modified));
         }
         return result.OrderByDescending(n => n.ModifiedUtc).ThenBy(n => n.Path, StringComparer.Ordinal).ToArray();
+    }
+
+    private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".webp", ".gif", ".bmp" };
+    public const long MaxImportBytes = 64L * 1024 * 1024;
+
+    public static bool IsImage(string path) =>
+        path.EndsWith(".png", StringComparison.OrdinalIgnoreCase) || ImageExtensions.Contains(System.IO.Path.GetExtension(path));
+
+    /// <summary>
+    /// Unique, safe destination in Notes/ for an imported file, keeping a sanitized name and its extension
+    /// (e.g. "Meu Desenho (1).JPG" → "Notes/meu-desenho-1.jpg").
+    /// </summary>
+    public static string ImportPath(LunetProject project, string? originalName)
+    {
+        var name = System.IO.Path.GetFileName(originalName ?? "") ?? "";
+        var extension = System.IO.Path.GetExtension(name).ToLowerInvariant();
+        if (extension.Length > 8 || extension.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '.')) extension = "";
+        var stem = Slug(System.IO.Path.GetFileNameWithoutExtension(name));
+        if (stem == "nota") stem = "anexo";
+        return Unique(project, stem, extension.Length == 0 ? ".bin" : extension);
     }
 
     public static string CreateNote(LunetProject project, string title)

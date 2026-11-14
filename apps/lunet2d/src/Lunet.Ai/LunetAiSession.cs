@@ -25,6 +25,32 @@ public sealed class LunetAiSession
 
     public IReadOnlyList<LunetAiTurn> History => _history.AsReadOnly();
 
+    /// <summary>
+    /// The Lunet specialist (LUNET-488): studies the app and the Framework before acting, keeps artistic and contextual
+    /// coherence with the project, and is honest about what Lunet does not have yet.
+    /// </summary>
+    public const string SystemPrompt =
+        "Você é a IA especialista do Lunet: um ambiente code-first para criar jogos 2D em C# no Android (Framework, IDE e Studios). " +
+        "Você trabalha dentro do projeto aberto, junto com a pessoa, para construir e para consultar.\n\n" +
+        "CONHECIMENTO. Não adivinhe APIs: antes de usar um tipo ou método do Framework que você não confirmou, pesquise com " +
+        "lunet.docs.search e leia com lunet.docs.read (API com assinaturas, guias offline e 'lunet:capacidades'). " +
+        "Se a pessoa pedir algo que o Lunet ainda não tem, diga com clareza que não existe (consulte lunet:capacidades) e ofereça " +
+        "a melhor alternativa possível com o que existe; nunca finja um recurso.\n\n" +
+        "COERÊNCIA ARTÍSTICA E CONTEXTUAL. Antes de criar arte, mecânicas ou arquivos novos, chame lunet.project.style e leia o código " +
+        "relacionado. Use a paleta do projeto (cores existentes), o tamanho de sprite predominante, a mesma direção de luz, contorno e " +
+        "proporção, os nomes e pastas no padrão já usado, o mesmo estilo de código (classes, nomes, APIs) e o tom do jogo descrito nas notas. " +
+        "Só fuja do padrão quando a pessoa pedir; nesse caso, diga o que mudou. Ao definir um estilo novo, registre-o em Notes/estilo-visual.md. " +
+        "Se lunet.assets.sprite avisar de incoerência, corrija antes de concluir ou explique por quê.\n\n" +
+        "IMAGENS E ANEXOS. A pessoa pode anexar imagens (desenhos à mão, fotos, referências) e arquivos; eles ficam em Notes/. " +
+        "Para ver uma imagem use lunet.image.inspect (grade de pixels com legenda; palette='project' aproxima às cores do projeto). " +
+        "Para transformar um desenho em sprite: inspecione, interprete as formas, redesenhe limpo no tamanho do projeto com lunet.assets.sprite " +
+        "(contorno legível, poucas cores, silhueta clara) e use o código de uso retornado. Arquivos de texto anexados leia com lunet.files.read.\n\n" +
+        "CÓDIGO. Investigue com lunet.files.list/search/read/excerpt; prefira lunet.files.replace para mudanças pontuais e leia antes de escrever " +
+        "(envie o hash exato). Depois de alterar código, rode lunet.build.compile e corrija todos os erros: a tarefa só é aceita quando o projeto " +
+        "compila. O código do jogo é a fonte da verdade.\n\n" +
+        "HONESTIDADE. Não alegue ter testado, rodado ou instalado algo que não executou. Quando uma ferramenta não bastar, diga a limitação. " +
+        "Responda em português, de forma direta, com caminhos de arquivos e o que a pessoa deve fazer a seguir.";
+
     public LunetAiSession(LunetProject project, string privateHistoryPath)
     {
         _project = project;
@@ -91,7 +117,9 @@ public sealed class LunetAiSession
                 new ContextStep(ContextLevel.Project, _project.Manifest.GameId));
             var checkpoint = new LunetAiCheckpoint(_project);
             var readNames = new List<string> { LunetAiProjectTool.ListName, LunetAiProjectTool.ReadName,
-                LunetAiProjectTool.SearchName, LunetAiProjectTool.ExcerptName };
+                LunetAiProjectTool.SearchName, LunetAiProjectTool.ExcerptName, LunetAiStyleTool.Name };
+            if (request.Knowledge is not null) readNames.AddRange([LunetAiDocsTool.SearchName, LunetAiDocsTool.ReadName]);
+            if (request.Images is not null) readNames.Add(LunetAiImageTool.Name);
             if (request.Build is not null) readNames.Add(LunetAiBuildTool.Name);
             var names = enableProjectWrites
                 ? readNames.Concat(new[] { LunetAiProjectTool.WriteName, LunetAiProjectTool.ReplaceName, LunetAiSpriteTool.Name }).ToArray()
@@ -108,6 +136,11 @@ public sealed class LunetAiSession
                 .Register(new LunetAiProjectTool(_project, LunetAiProjectTool.ExcerptName))
                 .Register(new CheckpointedTool(new LunetAiProjectTool(_project, LunetAiProjectTool.ReplaceName), checkpoint));
             host.Register(new LunetAiSpriteTool(_project, checkpoint));
+            host.Register(new LunetAiStyleTool(_project));
+            if (request.Knowledge is not null)
+                host.Register(new LunetAiDocsTool(request.Knowledge, LunetAiDocsTool.SearchName))
+                    .Register(new LunetAiDocsTool(request.Knowledge, LunetAiDocsTool.ReadName));
+            if (request.Images is not null) host.Register(new LunetAiImageTool(_project, request.Images));
             if (request.Build is not null) host.Register(new LunetAiBuildTool(_project, request.Build));
 
             using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(3) };
@@ -122,25 +155,10 @@ public sealed class LunetAiSession
             var agent = new AgentDefinition(
                 new AgentIdentity("lunet.code", "Assistente Lunet", "development"),
                 new ModelProfile(provider.ProviderId, model,
-                    new ModelCapabilities(true, false, true, false, false, 32_000), new Money(500, "USD")),
-                "Você é a IA especializada do Lunet2D (Framework, IDE e Studio). " +
-                "Trabalhe somente no projeto Lunet atual. Investigue com lunet.files.list/search/read/excerpt. " +
-                "Para arquivos longos, use excerpt, que fornece o hash do arquivo inteiro. " +
-                "Prefira lunet.files.replace para alterar um único trecho sem substituir o arquivo todo. " +
-                "Depois de alterar código, rode lunet.build.compile e corrija todos os erros antes de concluir; " +
-                "a tarefa só é aceita quando o projeto compila. " +
-                "Para arte, use lunet.assets.sprite (pixel art por linhas de caracteres + paleta), que cria a fonte editável no Sprite Studio e a spritesheet PNG; depois use o código de uso retornado. " +
-                "API principal do Framework: classe Game com LoadContent/Update(GameTime)/Draw(GameTime), SpriteBatch, Content.LoadTexture, Input. " +
-                "Leia os arquivos reais e nunca invente APIs do Framework. " +
-                "O código do jogo é a fonte da verdade. " +
-                "Se escrever, leia primeiro, envie o hash exato e preserve o restante do arquivo. " +
-                "Antes de mudanças complexas, descreva o objetivo, os testes e a verificação possível; " +
-                "não confunda planejamento com resultado executado. " +
-                "Quando o contexto ou uma ferramenta não for suficiente, informe a limitação. " +
-                "Não alegue ter testado, compilado ou instalado algo que não executou. " +
-                "Responda em português, com caminhos e ações verificáveis.",
+                    new ModelCapabilities(true, false, true, false, false, 64_000), new Money(500, "USD")),
+                SystemPrompt,
                 maxSteps, grant);
-            var task = new TaskSpec(runId, ComposePrompt(prompt, request.Context), []);
+            var task = new TaskSpec(runId, ComposePrompt(prompt, request.Context, request.Attachments), []);
             var runRequest = new RunRequest(runId, task, agent, context, grant, grant, [scope], RunPolicy.Default);
             var redactor = new SecretRedactor();
             redactor.Register(apiKey);
@@ -166,14 +184,14 @@ public sealed class LunetAiSession
                 .Select(a => a.Location).Distinct(StringComparer.Ordinal).ToArray();
             if (result.State.Status == RunStatus.Succeeded)
             {
-                _history.Add(new LunetAiTurn("Você", prompt.Trim()));
+                _history.Add(new LunetAiTurn("Você", prompt.Trim() + (request.Attachments is { Count: > 0 } att ? "\n📎 " + string.Join(", ", att) : "")));
                 _history.Add(new LunetAiTurn("Lunet", response));
                 if (_history.Count > 40) _history.RemoveRange(0, _history.Count - 40);
                 SaveHistory();
             }
             if (result.State.Status != RunStatus.Succeeded)
             {
-                _history.Add(new LunetAiTurn("Você", prompt.Trim()));
+                _history.Add(new LunetAiTurn("Você", prompt.Trim() + (request.Attachments is { Count: > 0 } att ? "\n📎 " + string.Join(", ", att) : "")));
                 _history.Add(new LunetAiTurn("Lunet", response));
                 if (_history.Count > 40) _history.RemoveRange(0, _history.Count - 40);
                 SaveHistory();
@@ -186,9 +204,12 @@ public sealed class LunetAiSession
         finally { _runGate.Release(); }
     }
 
-    private string ComposePrompt(string userMessage, LunetAiEditorContext editor)
+    private string ComposePrompt(string userMessage, LunetAiEditorContext editor, IReadOnlyList<string>? attachments = null)
     {
         var situation = editor.Describe();
+        if (attachments is { Count: > 0 })
+            situation += "Anexos enviados pela pessoa nesta mensagem (arquivos do projeto; imagens: use lunet.image.inspect; texto: lunet.files.read):\n" +
+                         string.Join("\n", attachments.Select(a => "- " + a)) + "\n";
         var recent = _history.TakeLast(10).Select(t => $"{t.Role}: {t.Text}");
         var buffer = string.Join("\n", recent);
         if (buffer.Length > 7_000) buffer = buffer[^7_000..];

@@ -1,0 +1,107 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261114-lunet-ai-expertise",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-14T09:30:00Z",
+  "agent": {
+    "id": "claude-lunet-cowork-redesign",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-488",
+  "component": "lunet2d",
+  "state": "working",
+  "branch": "claude/lunet2d-analysis-redesign-4ljh4e",
+  "base_commit": "088bb66",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/919",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Ai/LunetAiKnowledge.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiPerception.cs",
+    "apps/lunet2d/src/Lunet.Ai/Knowledge/capacidades.md",
+    "apps/lunet2d/src/Lunet.Ai/Lunet.Ai.csproj",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSession.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiCowork.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSpriteTool.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectNotes.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Attachments.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Ai.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Notes.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Demo.cs",
+    "apps/lunet2d/tools/ci-ui-screens.sh",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiExpertiseTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ProjectNotesTests.cs",
+    "apps/lunet2d/docs/guides/ia-lunet.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261114-lunet-ai-expertise.json"
+  ],
+  "work_completed": [
+    "TDD: LunetAiExpertiseTests (conhecimento real da API/guias, percepção de imagem, estilo, coerência, fluxo completo desenho→sprite) e importação em ProjectNotesTests",
+    "Base de conhecimento offline: API do Framework, guias e documento de capacidades (existe / ainda não existe)",
+    "Percepção de imagem por grade quantizada com remoção de fundo e paleta do projeto",
+    "Estilo do projeto e avisos de coerência na criação de sprites; prompt de sistema especialista",
+    "Anexos na conversa e importação de arquivos em Notas com visualizador e 'Virar sprite'"
+  ],
+  "verification": [
+    {
+      "check": "dotnet test tests/Lunet.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Execução local: 824 testes, 0 falhas."
+    },
+    {
+      "check": "Build APK Android local (com e sem harness de demonstração)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "0 erros."
+    },
+    {
+      "check": "Validação no aparelho: anexar foto de desenho e gerar sprite coerente; importar arquivos em Notas; IA respondendo sobre recursos inexistentes",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/ia-lunet.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Visão nativa do modelo não disponível: o runtime compartilhado (apps/ecosystem-ai) só envia texto; a IA vê imagens pela grade de pixels de lunet.image.inspect",
+    "PDF e outros binários são importados e guardados, mas a IA não os lê"
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Capturas no emulador, remover o workflow do PR para mantê-lo como rotina, integração e release"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Nenhuma alteração em apps/ecosystem-ai nem dependência entre Products; percepção implementada no Lunet."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Ferramentas novas só leem o projeto (ou a documentação); caminhos confinados à pasta do projeto; importação limitada a 64 MB."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Itens marcados como feito sem validação em aparelho."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-ai-image-grid",
+      "status": "possible-candidate",
+      "rationale": "Percepção de imagem por grade pode servir a outros Products sem visão nativa; sem segundo consumidor real hoje, permanece no Lunet."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

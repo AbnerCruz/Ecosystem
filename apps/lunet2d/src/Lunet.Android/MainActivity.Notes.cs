@@ -75,6 +75,7 @@ public sealed partial class MainActivity
         var root = OverlayScaffold("Notas e esboços", out var actions);
         actions.AddView(LunetUi.Button(this, "＋ Nota", AskNewNote, ButtonStyle.Primary), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(40)));
         actions.AddView(LunetUi.Button(this, "✎ Esboço", () => OpenSketch(null)), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(40)));
+        actions.AddView(LunetUi.Icon(this, "⇩", "Importar imagens ou arquivos para Notes/", () => PickFileForImport(NotesImportRequestCode)), new LinearLayout.LayoutParams(Dp(44), Dp(44)));
 
         var list = LunetUi.Column(this, 8);
         list.SetPadding(Dp(12), Dp(12), Dp(12), Dp(12));
@@ -82,7 +83,7 @@ public sealed partial class MainActivity
         if (notes.Count == 0)
         {
             var empty = LunetUi.Label(this,
-                "Guarde aqui ideias, roteiros, listas de tarefas e esboços do jogo.\n\n" +
+                "Guarde aqui ideias, roteiros, listas de tarefas, esboços e referências importadas (⇩).\n\n" +
                 "As notas são arquivos Markdown em Notes/ do projeto: vão junto no ZIP e no Git, e a IA consegue lê-las.",
                 LunetUi.TextBody, LunetUi.TextMuted);
             empty.SetPadding(Dp(8), Dp(24), Dp(8), Dp(24));
@@ -95,12 +96,21 @@ public sealed partial class MainActivity
             card.Background = LunetUi.Pressable(this, LunetUi.Surface, LunetUi.Radius, LunetUi.Border);
             card.Clickable = true;
             var captured = note;
-            card.Click += (_, _) => { if (captured.Kind == NoteKind.Sketch) OpenSketch(captured.Path); else OpenNote(captured.Path); };
+            card.Click += (_, _) =>
+            {
+                switch (captured.Kind)
+                {
+                    case NoteKind.Sketch: OpenSketch(captured.Path); break;
+                    case NoteKind.Image: OpenImageNote(captured.Path); break;
+                    case NoteKind.File: OpenOtherNote(captured); break;
+                    default: OpenNote(captured.Path); break;
+                }
+            };
             card.LongClick += (_, e) => { ConfirmDeleteNote(captured); e.Handled = true; };
-            card.AddView(LunetUi.Label(this, note.Kind == NoteKind.Sketch ? "✎" : "¶", 22, LunetUi.AccentText));
+            card.AddView(LunetUi.Label(this, note.Kind switch { NoteKind.Sketch => "✎", NoteKind.Image => "▦", NoteKind.File => "📎", _ => "¶" }, 22, LunetUi.AccentText));
             var text = LunetUi.Column(this, 2);
             text.AddView(LunetUi.Label(this, note.Title, LunetUi.TextBody, LunetUi.Text, bold: true));
-            text.AddView(LunetUi.Label(this, (note.Kind == NoteKind.Sketch ? "Esboço · " : "Nota · ") +
+            text.AddView(LunetUi.Label(this, (note.Kind switch { NoteKind.Sketch => "Esboço · ", NoteKind.Image => "Imagem · ", NoteKind.File => "Arquivo · ", _ => "Nota · " }) +
                 note.ModifiedUtc.ToLocalTime().ToString("dd/MM HH:mm"), LunetUi.TextCaption, LunetUi.TextMuted));
             card.AddView(text, LunetUi.Weight());
             list.AddView(card, LunetUi.FillWidth());

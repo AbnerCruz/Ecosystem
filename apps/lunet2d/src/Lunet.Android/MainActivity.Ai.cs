@@ -238,6 +238,7 @@ public sealed partial class MainActivity
         var identifier = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(project.Manifest.GameId))).ToLowerInvariant();
         _aiSession = new LunetAiSession(project, System.IO.Path.Combine(FilesDir!.AbsolutePath, "ai", identifier + ".json"));
         _aiSessionProject = project.Manifest.GameId;
+        _aiAttachments.Clear();
     }
 
     private void BuildAiPanel(FrameLayout host)
@@ -286,6 +287,8 @@ public sealed partial class MainActivity
             ("Melhorar seleção", "Melhore o trecho selecionado mantendo o comportamento; mostre o que mudou."),
             ("Criar mecânica…", "Implemente no jogo: "),
             ("Revisar o projeto", "Revise o projeto e aponte bugs, riscos e melhorias, sem alterar arquivos."),
+            ("Desenho → sprite", "Crie um sprite a partir do desenho anexado, coerente com o estilo do projeto."),
+            ("O Lunet consegue…?", "O Lunet consegue "),
         })
             quickRow.AddView(LunetUi.Chip(this, label, () =>
             {
@@ -298,7 +301,14 @@ public sealed partial class MainActivity
         quick.AddView(quickRow);
         panel.AddView(quick);
 
-        var composer = LunetUi.Row(this, 8);
+        var attachmentScroll = new HorizontalScrollView(this) { HorizontalScrollBarEnabled = false, Visibility = ViewStates.Gone };
+        _aiAttachmentRow = LunetUi.Row(this, 6);
+        _aiAttachmentRow.SetPadding(0, 0, 0, Dp(6));
+        attachmentScroll.AddView(_aiAttachmentRow);
+        panel.AddView(attachmentScroll);
+
+        var composer = LunetUi.Row(this, 6);
+        composer.AddView(LunetUi.Icon(this, "📎", "Anexar imagem ou arquivo", ShowAttachMenu), new LinearLayout.LayoutParams(Dp(44), Dp(48)));
         _aiInput = LunetUi.Input(this, "Peça para construir, corrigir ou explicar…", singleLine: false);
         _aiInput.SetMinLines(1);
         _aiInput.SetMaxLines(5);
@@ -323,6 +333,7 @@ public sealed partial class MainActivity
         host.AddView(panel, layout);
         panel.Visibility = ViewStates.Gone;
         _aiPanel = panel;
+        RefreshAttachmentRow();
     }
 
     private void RefreshAiHeader()
@@ -373,6 +384,7 @@ public sealed partial class MainActivity
     {
         if (_aiRunCancellation is not null) { _aiRunCancellation.Cancel(); return; }
         var request = (_aiInput?.Text ?? "").Trim();
+        if (request.Length == 0 && _aiAttachments.Count > 0) request = "Veja o anexo e me diga como podemos usá-lo no jogo.";
         if (request.Length == 0 || _project is null || _aiSession is null) return;
         var ai = Ai;
         if (!ai.IsConfigured) { ShowAiSettings(SendAi); return; }
@@ -381,7 +393,10 @@ public sealed partial class MainActivity
         var context = CurrentAiContext();
         _aiPendingSelection = null;
         _aiInput!.Text = "";
-        AddAiBubble("Você", request);
+        var attachments = _aiAttachments.ToArray();
+        _aiAttachments.Clear();
+        RefreshAttachmentRow();
+        AddAiBubble("Você", request + (attachments.Length > 0 ? "\n📎 " + string.Join(", ", attachments) : ""));
         var thinking = AddAiBubble("Lunet", "Pensando…");
         _aiActivity!.Visibility = ViewStates.Visible;
         _aiActivity.Text = "Lendo o projeto…";
@@ -400,8 +415,9 @@ public sealed partial class MainActivity
         {
             try
             {
+                var knowledge = AiKnowledge();
                 var reply = await session.AskAsync(request, new LunetAiRequest(ai.Settings, ai.ApiKey!, context, build,
-                    Progress: progress), cts.Token);
+                    Progress: progress, Knowledge: knowledge, Images: new AndroidAiImages(), Attachments: attachments), cts.Token);
                 RunOnUiThread(() => OnAiReply(project, thinking, reply, build.LastErrors));
             }
             catch (OperationCanceledException)
@@ -429,6 +445,10 @@ public sealed partial class MainActivity
         line.Contains("lunet.build.compile", StringComparison.Ordinal) ? "Compilando o projeto…"
         : line.Contains("lunet.files.write", StringComparison.Ordinal) || line.Contains("lunet.files.replace", StringComparison.Ordinal) ? "Editando arquivos…"
         : line.Contains("lunet.files.search", StringComparison.Ordinal) ? "Procurando no projeto…"
+        : line.Contains("lunet.docs", StringComparison.Ordinal) ? "Estudando a documentação do Lunet…"
+        : line.Contains("lunet.image", StringComparison.Ordinal) ? "Olhando a imagem…"
+        : line.Contains("lunet.project.style", StringComparison.Ordinal) ? "Lendo o estilo do projeto…"
+        : line.Contains("lunet.assets.sprite", StringComparison.Ordinal) ? "Desenhando o sprite…"
         : line.Contains("lunet.files", StringComparison.Ordinal) ? "Lendo arquivos…"
         : line.Contains("Verification", StringComparison.OrdinalIgnoreCase) ? "Verificando…"
         : line;
