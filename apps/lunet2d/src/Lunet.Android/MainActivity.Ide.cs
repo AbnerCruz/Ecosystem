@@ -47,6 +47,7 @@ public sealed partial class MainActivity
         var editor = new CodeEditText(this);
         editor.Settled += OnEditorSettled;
         editor.CommandRequested += HandleCommand;
+        editor.CustomSelectionActionModeCallback = new AiSelectionCallback(this);
         _editor = editor;
         _minimap = new MinimapView(this, editor);
         var frame = new FrameLayout(this);

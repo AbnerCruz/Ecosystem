@@ -66,6 +66,7 @@ public sealed partial class MainActivity : Activity
     private string? _pendingGameApkName;
 
     private PreviewHost? _preview;
+    private FrameLayout? _workspaceFrame;
     private bool _isolatedRunning;
 
     protected override void OnCreate(Bundle? savedInstanceState)
@@ -124,6 +125,8 @@ public sealed partial class MainActivity : Activity
         _minimap = null;
         _drawer = null;
         _drawerScrim = null;
+        _workspaceFrame = null;
+        _aiPanel = null;
         _workbenchNavButtons.Clear();
 
         var root = Vertical();
@@ -386,6 +389,7 @@ public sealed partial class MainActivity : Activity
         projectTitle.Ellipsize = TextUtils.TruncateAt.End;
         projectTitle.SetPadding(Dp(8), 0, Dp(4), 0);
         bar.AddView(projectTitle, new LinearLayout.LayoutParams(0, Dp(50), 1f));
+        AddTopButton("✦ IA", ToggleAiPanel, 64);
         AddTopButton("▶ Run", Run, 82, primary: true);
         AddTopButton("⋯", ShowCommandPalette, 48);
         root.AddView(bar);
@@ -453,6 +457,8 @@ public sealed partial class MainActivity : Activity
         var frame = new FrameLayout(this);
         frame.AddView(root, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent));
         BuildDrawer(frame);
+        _workspaceFrame = frame;
+        _aiPanel = null;
         SetContentView(frame);
         if (_layoutStore.Current.PanelTab == "profiler") SetProfilerPanel();
         else SetPanel(_showConsole);
@@ -1315,6 +1321,7 @@ public sealed partial class MainActivity : Activity
     public override void OnBackPressed()
     {
         if (_preview is not null) StopPreview();
+        else if (AiPanelOpen) CloseAiPanel();
         else if (_drawer?.Visibility == ViewStates.Visible) ToggleExplorer();
         else if (_project is not null && _layoutStore.Current.ShowPanel) FocusWorkbenchCode();
         else if (_project is not null) ShowProjects();

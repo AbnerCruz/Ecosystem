@@ -119,6 +119,8 @@ public sealed partial class MainActivity
     {
         var commands = new (string Label, Action Execute)[]
         {
+            ("IA · conversar sobre o código", () => OpenAiPanel(null)),
+            ("IA · configurar provedor, modelo e chave", () => ShowAiSettings()),
             ("Abrir arquivos", ToggleExplorer),
             ("Buscar no projeto", ShowProjectSearch),
             ("Localizar e substituir", ShowFind),
