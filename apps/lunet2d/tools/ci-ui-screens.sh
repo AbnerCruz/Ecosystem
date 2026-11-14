@@ -39,6 +39,7 @@ sleep 25
 shoot 01-projects projects 10
 shoot 02-workspace workspace 12
 shoot 03-ai ai 12
+shoot 03b-ai-empty ai-empty 12
 shoot 04-palette palette 12
 shoot 05-studio studio 12
 shoot 06-notes notes 12

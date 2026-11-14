@@ -176,6 +176,7 @@ public sealed partial class MainActivity
         }
         if (_aiAttachmentRow.Parent is View scroller)
             scroller.Visibility = _aiAttachments.Count == 0 ? ViewStates.Gone : ViewStates.Visible;
+        RefreshSendButton();
     }
 
     // ---------- Viewing imported images and files ----------

@@ -246,4 +246,5 @@ public sealed record LunetAiRequest(
     IProgress<string>? Progress = null,
     LunetAiKnowledge? Knowledge = null,
     ILunetAiImages? Images = null,
-    IReadOnlyList<string>? Attachments = null);
+    IReadOnlyList<string>? Attachments = null,
+    IProgress<LunetAiStep>? Steps = null);

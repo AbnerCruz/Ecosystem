@@ -128,20 +128,26 @@ public sealed class LunetAiSession
                 ? new[] { Permissions.AgentAct, Permissions.FsRead, Permissions.FsWrite }
                 : new[] { Permissions.AgentAct, Permissions.FsRead };
             var grant = ToolGrant.Of(names, permissions);
-            var host = new ToolHost()
-                .Register(new LunetAiProjectTool(_project, LunetAiProjectTool.ListName))
-                .Register(new LunetAiProjectTool(_project, LunetAiProjectTool.ReadName))
-                .Register(new CheckpointedTool(new LunetAiProjectTool(_project, LunetAiProjectTool.WriteName), checkpoint))
-                .Register(new LunetAiProjectTool(_project, LunetAiProjectTool.SearchName))
-                .Register(new LunetAiProjectTool(_project, LunetAiProjectTool.ExcerptName))
-                .Register(new CheckpointedTool(new LunetAiProjectTool(_project, LunetAiProjectTool.ReplaceName), checkpoint));
-            host.Register(new LunetAiSpriteTool(_project, checkpoint));
-            host.Register(new LunetAiStyleTool(_project));
+            var tools = new List<ITool>
+            {
+                new LunetAiProjectTool(_project, LunetAiProjectTool.ListName),
+                new LunetAiProjectTool(_project, LunetAiProjectTool.ReadName),
+                new CheckpointedTool(new LunetAiProjectTool(_project, LunetAiProjectTool.WriteName), checkpoint),
+                new LunetAiProjectTool(_project, LunetAiProjectTool.SearchName),
+                new LunetAiProjectTool(_project, LunetAiProjectTool.ExcerptName),
+                new CheckpointedTool(new LunetAiProjectTool(_project, LunetAiProjectTool.ReplaceName), checkpoint),
+                new LunetAiSpriteTool(_project, checkpoint),
+                new LunetAiStyleTool(_project),
+            };
             if (request.Knowledge is not null)
-                host.Register(new LunetAiDocsTool(request.Knowledge, LunetAiDocsTool.SearchName))
-                    .Register(new LunetAiDocsTool(request.Knowledge, LunetAiDocsTool.ReadName));
-            if (request.Images is not null) host.Register(new LunetAiImageTool(_project, request.Images));
-            if (request.Build is not null) host.Register(new LunetAiBuildTool(_project, request.Build));
+            {
+                tools.Add(new LunetAiDocsTool(request.Knowledge, LunetAiDocsTool.SearchName));
+                tools.Add(new LunetAiDocsTool(request.Knowledge, LunetAiDocsTool.ReadName));
+            }
+            if (request.Images is not null) tools.Add(new LunetAiImageTool(_project, request.Images));
+            if (request.Build is not null) tools.Add(new LunetAiBuildTool(_project, request.Build));
+            var host = new ToolHost();
+            foreach (var tool in tools) host.Register(request.Steps is null ? tool : new ReportingTool(tool, request.Steps));
 
             using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(3) };
             IModelProvider provider = request.Provider ?? new ChatCompletionsProvider(http, url!, apiKey, 0, 0);

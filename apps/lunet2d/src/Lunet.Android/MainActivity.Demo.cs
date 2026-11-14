@@ -42,6 +42,11 @@ public sealed partial class MainActivity
                 Post(() => OpenSpriteStudio("Assets/demo.sprite.json", SpriteDocument.Create(32)));
                 break;
             case "files": Post(ToggleExplorer); break;
+            case "ai-empty":
+                AiStore.Save(Lunet.Ai.LunetAiSettings.Default with { Model = "anthropic/claude-sonnet-5" }, "demo-key-not-a-real-secret-0000");
+                _ai = null;
+                Post(() => OpenAiPanel(null));
+                break;
             case "image":
                 {
                     using var bitmap = global::Android.Graphics.Bitmap.CreateBitmap(600, 600, global::Android.Graphics.Bitmap.Config.Argb8888!)!;
@@ -69,8 +74,7 @@ public sealed partial class MainActivity
                 Post(() =>
                 {
                     OpenAiPanel(null);
-                    AddAiBubble("Você", "Faça o herói pular quando tocar na tela.");
-                    AddAiBubble("Lunet", "Pronto. Adicionei gravidade e um impulso ao tocar:\n\n```csharp\nif (Input.Touch.Pressed && _onGround)\n    _velocity.Y = -JumpSpeed;\n_velocity.Y += Gravity * dt;\n```\n\nCompilei o projeto e não há erros.");
+                    DemoConversation();
                 });
                 break;
             case "problems": Post(() => OpenWorkbenchPanel(false)); break;
