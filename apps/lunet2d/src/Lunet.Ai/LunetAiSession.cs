@@ -22,8 +22,13 @@ public sealed class LunetAiSession
     private readonly string _historyPath;
     private readonly List<LunetAiTurn> _history;
     private readonly SemaphoreSlim _runGate = new(1, 1);
+    private readonly object _historyLock = new();
+    private const int MaxStoredTurns = 200;
+    private const int MaxHistoryBytes = 4_000_000;
+    private const string PendingText = "⏳ A IA está trabalhando. As alterações serão salvas no projeto.";
 
-    public IReadOnlyList<LunetAiTurn> History => _history.AsReadOnly();
+    public IReadOnlyList<LunetAiTurn> History { get { lock (_historyLock) return _history.ToArray(); } }
+
 
     /// <summary>
     /// The Lunet specialist (LUNET-488): studies the app and the Framework before acting, keeps artistic and contextual
@@ -45,6 +50,9 @@ public sealed class LunetAiSession
         "Para ver uma imagem use lunet.image.inspect (grade de pixels com legenda; palette='project' aproxima às cores do projeto). " +
         "Para transformar um desenho em sprite: inspecione, interprete as formas, redesenhe limpo no tamanho do projeto com lunet.assets.sprite " +
         "(contorno legível, poucas cores, silhueta clara) e use o código de uso retornado. Arquivos de texto anexados leia com lunet.files.read.\n\n" +
+        "RECURSOS. Content.LoadTexture espera um caminho relativo à pasta Content/, como Textures/Cells.png (não Content/Textures/Cells.png). " +
+        "Para imagens em Assets/, use Assets/nome.png. Confirme que o arquivo PNG existe e foi criado corretamente. " +
+        "Compilar não demonstra que o jogo rodou; só afirme que ele roda após um teste de execução.\\n\\n" +
         "CÓDIGO. Investigue com lunet.files.list/search/read/excerpt; prefira lunet.files.replace para mudanças pontuais e leia antes de escrever " +
         "(envie o hash exato). Depois de alterar código, rode lunet.build.compile e corrija todos os erros: a tarefa só é aceita quando o projeto " +
         "compila. O código do jogo é a fonte da verdade.\n\n" +
@@ -57,7 +65,7 @@ public sealed class LunetAiSession
         _historyPath = privateHistoryPath;
         try
         {
-            _history = File.Exists(privateHistoryPath) && new FileInfo(privateHistoryPath).Length <= 100_000
+            _history = File.Exists(privateHistoryPath) && new FileInfo(privateHistoryPath).Length <= MaxHistoryBytes
                 ? JsonSerializer.Deserialize<List<LunetAiTurn>>(File.ReadAllText(privateHistoryPath)) ?? []
                 : [];
         }
@@ -65,11 +73,46 @@ public sealed class LunetAiSession
         {
             _history = [];
         }
-        if (_history.Count > 40) _history.RemoveRange(0, _history.Count - 40);
+        if (_history.Count > MaxStoredTurns) _history.RemoveRange(0, _history.Count - MaxStoredTurns);
     }
 
     /// <summary>Forgets the conversation of this project (the files are not touched).</summary>
-    public void ClearHistory() { _history.Clear(); SaveHistory(); }
+    public void ClearHistory() { lock (_historyLock) { _history.Clear(); SaveHistory(); } }
+
+    /// <summary>Only called after a cold start when no live job exists for this project.</summary>
+    public void MarkInterruptedIfPending()
+    {
+        lock (_historyLock)
+        {
+            if (_history.Count == 0 || _history[^1].Text != PendingText) return;
+            _history[^1] = new LunetAiTurn("Lunet", "⚠️ Execução interrompida. O Android pode ter encerrado o processo; confira as alterações antes de tentar novamente.");
+            SaveHistory();
+        }
+    }
+
+    private int BeginTurn(string prompt, IReadOnlyList<string>? attachments)
+    {
+        lock (_historyLock)
+        {
+            var text = prompt.Trim() + (attachments is { Count: > 0 } ? "\n📎 " + string.Join(", ", attachments) : "");
+            _history.Add(new LunetAiTurn("Você", text));
+            _history.Add(new LunetAiTurn("Lunet", PendingText));
+            if (_history.Count > MaxStoredTurns) _history.RemoveRange(0, _history.Count - MaxStoredTurns);
+            SaveHistory();
+            return _history.Count - 1;
+        }
+    }
+
+    private void CompleteTurn(int index, string text)
+    {
+        if (index < 0) return;
+        lock (_historyLock)
+        {
+            if (index < _history.Count && _history[index].Role == "Lunet" && _history[index].Text == PendingText)
+                _history[index] = new LunetAiTurn("Lunet", text);
+            SaveHistory();
+        }
+    }
 
     private void SaveHistory()
     {
@@ -77,7 +120,13 @@ public sealed class LunetAiSession
         {
             Directory.CreateDirectory(Path.GetDirectoryName(_historyPath)!);
             var temporary = _historyPath + ".tmp";
-            File.WriteAllText(temporary, JsonSerializer.Serialize(_history));
+            var serialized = JsonSerializer.Serialize(_history);
+            while (System.Text.Encoding.UTF8.GetByteCount(serialized) > MaxHistoryBytes && _history.Count > 2)
+            {
+                _history.RemoveRange(0, 2);
+                serialized = JsonSerializer.Serialize(_history);
+            }
+            File.WriteAllText(temporary, serialized);
             File.Move(temporary, _historyPath, overwrite: true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
@@ -108,6 +157,7 @@ public sealed class LunetAiSession
         var url = request.Provider is null ? LunetAiEndpoint.Validate(settings.Endpoint) : null;
         var maxSteps = LunetAiRunOptions.ValidateMaxSteps(settings.MaxSteps);
         await _runGate.WaitAsync(cancellationToken);
+        int pendingTurn = -1;
         try
         {
             var runId = Guid.NewGuid().ToString("N");
@@ -165,6 +215,7 @@ public sealed class LunetAiSession
                 SystemPrompt,
                 maxSteps, grant);
             var task = new TaskSpec(runId, ComposePrompt(prompt, request.Context, request.Attachments), []);
+            pendingTurn = BeginTurn(prompt, request.Attachments);
             var runRequest = new RunRequest(runId, task, agent, context, grant, grant, [scope], RunPolicy.Default);
             var redactor = new SecretRedactor();
             redactor.Register(apiKey);
@@ -188,24 +239,21 @@ public sealed class LunetAiSession
             if (string.IsNullOrWhiteSpace(response)) response = "O provider não retornou uma resposta de texto.";
             var changed = result.Artifacts.Where(a => a.Kind == "lunet.text-file")
                 .Select(a => a.Location).Distinct(StringComparer.Ordinal).ToArray();
-            if (result.State.Status == RunStatus.Succeeded)
-            {
-                _history.Add(new LunetAiTurn("Você", prompt.Trim() + (request.Attachments is { Count: > 0 } att ? "\n📎 " + string.Join(", ", att) : "")));
-                _history.Add(new LunetAiTurn("Lunet", response));
-                if (_history.Count > 40) _history.RemoveRange(0, _history.Count - 40);
-                SaveHistory();
-            }
-            if (result.State.Status != RunStatus.Succeeded)
-            {
-                _history.Add(new LunetAiTurn("Você", prompt.Trim() + (request.Attachments is { Count: > 0 } att ? "\n📎 " + string.Join(", ", att) : "")));
-                _history.Add(new LunetAiTurn("Lunet", response));
-                if (_history.Count > 40) _history.RemoveRange(0, _history.Count - 40);
-                SaveHistory();
-            }
+            CompleteTurn(pendingTurn, response);
             var changes = checkpoint.Changes();
             return new LunetAiReply(response, changes.Select(c => c.Path).ToArray(), result.State.Status,
                 result.State.Steps, result.State.ToolCalls, LunetAiRunActivity.Summarize(entries))
             { Changes = changes, Checkpoint = checkpoint };
+        }
+        catch (OperationCanceledException)
+        {
+            CompleteTurn(pendingTurn, "Execução cancelada. Alterações já gravadas permanecem no projeto.");
+            throw;
+        }
+        catch (Exception)
+        {
+            CompleteTurn(pendingTurn, "Falha na execução. Confira o projeto antes de tentar novamente.");
+            throw;
         }
         finally { _runGate.Release(); }
     }
@@ -216,7 +264,7 @@ public sealed class LunetAiSession
         if (attachments is { Count: > 0 })
             situation += "Anexos enviados pela pessoa nesta mensagem (arquivos do projeto; imagens: use lunet.image.inspect; texto: lunet.files.read):\n" +
                          string.Join("\n", attachments.Select(a => "- " + a)) + "\n";
-        var recent = _history.TakeLast(10).Select(t => $"{t.Role}: {t.Text}");
+        var recent = History.TakeLast(10).Select(t => $"{t.Role}: {t.Text}");
         var buffer = string.Join("\n", recent);
         if (buffer.Length > 7_000) buffer = buffer[^7_000..];
         return $"Projeto aberto: {_project.Name}. Arquivo inicial: {_project.Manifest.EntryPoint}. " +
