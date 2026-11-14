@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261114-lunet-cowork-redesign",
   "category": "HANDOFF",
-  "timestamp": "2026-11-14T08:10:00Z",
+  "timestamp": "2026-11-14T08:40:00Z",
   "agent": {
     "id": "claude-lunet-cowork-redesign",
     "kind": "ai-agent"
@@ -14,7 +14,7 @@
   "branch": "claude/lunet2d-analysis-redesign-4ljh4e",
   "base_commit": "86db344",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/918",
   "files_changed": [
     "apps/lunet2d/src/Lunet.Ai/LunetAiSettings.cs",
     "apps/lunet2d/src/Lunet.Ai/LunetAiCowork.cs",
@@ -35,7 +35,21 @@
     ".github/workflows/lunet2d-ui-screens.yml",
     "apps/lunet2d/ROADMAP.md",
     "apps/lunet2d/AgentsChat.md",
-    "docs/governance/handoffs/HO-20261114-lunet-cowork-redesign.json"
+    "docs/governance/handoffs/HO-20261114-lunet-cowork-redesign.json",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSpriteTool.cs",
+    "apps/lunet2d/src/Lunet.Core/PngWriter.cs",
+    "apps/lunet2d/src/Lunet.Studio/SpriteHistory.cs",
+    "apps/lunet2d/src/Lunet.Studio/SpriteColor.cs",
+    "apps/lunet2d/src/Lunet.Studio/SpriteDocument.cs",
+    "apps/lunet2d/src/Lunet.Editor/HighlightDelta.cs",
+    "apps/lunet2d/src/Lunet.Android/SpriteStudioView.cs",
+    "apps/lunet2d/src/Lunet.Android/TileStudioView.cs",
+    "apps/lunet2d/src/Lunet.Android/CanvasGestures.cs",
+    "apps/lunet2d/src/Lunet.Android/WaveAudioStudioView.cs",
+    "apps/lunet2d/src/Lunet.Android/Editor/CodeEditText.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiAssetsTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/SpriteCanvasTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/HighlightDeltaTests.cs"
   ],
   "work_completed": [
     "TDD: LunetAiCoworkTests e ProjectNotesTests escritos antes da implementação",
@@ -43,14 +57,19 @@
     "Android: painel de IA não modal com Pedir à IA na seleção, cartão de mudanças e diff",
     "Workbench: tokens LunetUi, barra única, teclas de código, navegação inferior oculta ao digitar, palette com arquivos, hub de Studio",
     "Notas Markdown e esboços PNG em Notes/ do projeto",
-    "Harness de capturas de tela por emulador (lunet2d-ui-screens), compilado apenas com LunetUiDemo"
+    "Harness de capturas de tela por emulador (lunet2d-ui-screens), compilado apenas com LunetUiDemo",
+    "Sprite Studio: canvas por bitmap, gestos (pinça, pan, 2/3 dedos), barra única, HSV, undo binário por frame, gravação com debounce",
+    "Tile Studio: gestos compartilhados (CanvasGestures), faixa de tiles na tela, folha de camadas, desenho só das células visíveis",
+    "Editor: realce incremental (HighlightDelta) e paleta Lunet Night; minimapa só em telas largas",
+    "IA cria sprites (lunet.assets.sprite) com PngWriter; checkpoint byte a byte confinado ao projeto",
+    "Erros com 'Corrigir com IA' e console com pergunta à IA"
   ],
   "verification": [
     {
-      "check": "dotnet test tests/Lunet.Tests (793 testes)",
+      "check": "dotnet test tests/Lunet.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "Execução local nesta sessão: 793/793."
+      "evidence": "Execução local: 813 testes, 0 falhas."
     },
     {
       "check": "Build APK Android local (net10.0-android, arm64)",
@@ -76,9 +95,9 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Sprite Studio LUNET-486",
     "Revisar capturas do emulador e corrigir o visual",
-    "PR pronto, CI verde, integração e release"
+    "Separar o workflow de capturas (zona crítica) em PR próprio",
+    "Marcar PR pronto, CI verde, integração e release"
   ],
   "decisions_required": [],
   "normative_sources": [
