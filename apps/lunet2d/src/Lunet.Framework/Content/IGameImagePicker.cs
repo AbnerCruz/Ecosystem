@@ -1,22 +1,35 @@
 namespace Lunet.Content;
 
-/// <summary>Image selection supplied by the platform host. Games never request broad filesystem permissions.</summary>
-/// <remarks>The call does not block the game loop. Poll TryReceive on Update; null pixels and error means cancellation.</remarks>
+/// <summary>Escolha de imagens dentro do jogo fornecida pelo host, sem permissões gerais de armazenamento.</summary>
+/// <remarks>O seletor não bloqueia o jogo; consulte TryReceive em Update para obter a imagem.</remarks>
+/// <example>
+/// <code>
+/// if (Services.TryGet&lt;IGameImagePicker&gt;(out var picker) &amp;&amp; picker.CanPick)
+///     picker.Pick();
+/// </code>
+/// </example>
 public interface IGameImagePicker
 {
-    /// <summary>Whether this host can open a native image picker.</summary>
+    /// <summary>Indica se o host oferece um seletor nativo de imagens.</summary>
     bool CanPick { get; }
 
-    /// <summary>Opens the platform image picker. A request already running is ignored.</summary>
+    /// <summary>Abre o seletor. Chamadas repetidas enquanto já estiver aberto são ignoradas.</summary>
     void Pick();
 
-    /// <summary>Consumes at most one pending result, including cancellation and error.</summary>
+    /// <summary>Consome um resultado pendente, incluindo cancelamento e falha.</summary>
+    /// <param name="result">Resultado selecionado, ou cancelamento/falha com Rgba nulo.</param>
+    /// <returns>Verdadeiro quando existe um resultado novo para consumir.</returns>
     bool TryReceive(out PickedGameImage result);
 }
 
-/// <summary>Decoded, bounded RGBA image; the GL thread creates the texture with Texture2D.FromPixels.</summary>
-/// <param name="Width">Width in pixels.</param>
-/// <param name="Height">Height in pixels.</param>
-/// <param name="Rgba">R,G,B,A bytes, scanline order; null for cancellation/error.</param>
-/// <param name="Error">User-facing error description, or null for success/cancellation.</param>
+/// <summary>Imagem RGBA decodificada e limitada; crie a textura na thread gráfica usando Texture2D.FromPixels.</summary>
+/// <param name="Width">Largura, em pixels.</param>
+/// <param name="Height">Altura, em pixels.</param>
+/// <param name="Rgba">Bytes R,G,B,A em ordem de linhas; nulo em cancelamento/falha.</param>
+/// <param name="Error">Erro de leitura, ou nulo para sucesso/cancelamento.</param>
+/// <example>
+/// <code>
+/// var result = new PickedGameImage(1, 1, new byte[] { 255, 255, 255, 255 });
+/// </code>
+/// </example>
 public sealed record PickedGameImage(int Width, int Height, byte[]? Rgba, string? Error = null);
