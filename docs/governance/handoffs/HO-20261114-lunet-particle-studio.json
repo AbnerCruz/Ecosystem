@@ -20,7 +20,7 @@
     "apps/lunet2d/CHANGELOG.md",
     "apps/lunet2d/ROADMAP.md",
     "apps/lunet2d/docs/api/lunet-framework.json",
-    "apps/lunet2d/docs/guides/particulas.md",
+    "apps/lunet2d/docs/guides/particle-studio.md",
     "apps/lunet2d/src/Lunet.Ai/Knowledge/capacidades.md",
     "apps/lunet2d/src/Lunet.Ai/LunetAiQuickReference.cs",
     "apps/lunet2d/src/Lunet.Android/MainActivity.Particles.cs",
@@ -57,7 +57,7 @@
       "check": "Prévia fluida, ajustes ao vivo, salvar/reabrir e uso no jogo",
       "kind": "human",
       "result": "pending",
-      "object": "apps/lunet2d/docs/guides/particulas.md",
+      "object": "apps/lunet2d/docs/guides/particle-studio.md",
       "critical": false
     }
   ],

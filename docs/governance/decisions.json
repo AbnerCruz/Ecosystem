@@ -2254,7 +2254,7 @@
       "decision": "Alternativa A — A — Spike Avalonia, desktop primeiro (recomendada) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/942).",
       "decidedAt": "2026-11-14",
       "record": "docs/governance/responses/DEC-0062.md",
-      "consequencesApplied": false
+      "consequencesApplied": true
     }
   ]
 }

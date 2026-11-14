@@ -25,13 +25,14 @@ public sealed class HeadlessGameRunner : IDisposable
     public Game Game => _loaded.Game;
     public HeadlessGraphicsBackend Graphics { get; }
 
-    /// <param name="contentDirectory">The project's <c>Content/</c> folder (missing = no content).</param>
+    /// <param name="contentDirectory">The project's <c>Content/</c> folder (missing = no content). Paths starting with
+    /// <c>Assets/</c> also resolve to the project's <c>Assets/</c> folder, like on Android.</param>
     /// <param name="saveDirectory">Where <c>Save</c> writes (null = memory only).</param>
     public static HeadlessGameRunner Load(byte[] assembly, byte[]? symbols, string? contentDirectory, string? saveDirectory = null)
     {
         var loaded = GameLoader.Load(assembly, symbols);
         var graphics = new HeadlessGraphicsBackend();
-        IContentSource? content = contentDirectory is not null && Directory.Exists(contentDirectory) ? new DirectoryContentSource(contentDirectory) : null;
+        IContentSource? content = contentDirectory is null ? null : new ProjectContentSource(Path.GetDirectoryName(Path.GetFullPath(contentDirectory))!);
         ISaveStore saves = saveDirectory is null ? new MemorySaveStore() : new DirectorySaveStore(saveDirectory);
         var host = new GameHost(loaded.Game, graphics, content, audio: null, saveStore: saves);
         return new HeadlessGameRunner(loaded, host, graphics);
