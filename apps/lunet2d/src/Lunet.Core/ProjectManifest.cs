@@ -18,6 +18,8 @@ public sealed class ProjectManifest
     public string Orientation { get; set; } = "portrait";
     public int VirtualWidth { get; set; } = 360;
     public int VirtualHeight { get; set; } = 640;
+    public int UpdatesPerSecond { get; set; } = 60;
+    public string ViewportScaling { get; set; } = "Fit";
 
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; set; }

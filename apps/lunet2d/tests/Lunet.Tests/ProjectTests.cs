@@ -20,9 +20,17 @@ public class ProjectTests : IDisposable
         var source = project.ReadText("Game.cs");
         Assert.Contains("class SpaceShooter : Game", source);
         Assert.DoesNotContain("Texture2D", source);
-        Assert.DoesNotContain("SpriteBatch", source);
-        Assert.DoesNotContain("Draw(", source);
+        Assert.Contains("SpriteBatch batch", source);
+        Assert.Contains("protected override void Initialize()", source);
+        Assert.Contains("protected override void LoadContent()", source);
+        Assert.Contains("protected override void Update(GameTime time)", source);
+        Assert.Contains("protected override void Draw(GameTime time)", source);
+        Assert.Contains("protected override void UnloadContent()", source);
+        Assert.Contains("batch.Begin()", source);
+        Assert.Contains("batch.End()", source);
         Assert.DoesNotContain("CreateCircle", source);
+        Assert.DoesNotContain("TryGetPointer", source);
+        Assert.DoesNotContain("ball", source, StringComparison.OrdinalIgnoreCase);
         Assert.StartsWith("com.lunet.games.spaceshooter.g", project.Manifest.PackageId);
         Assert.True(OfflineGameApkBuilder.ValidPackage(project.Manifest.PackageId));
         Assert.True(Guid.TryParse(project.Manifest.GameId, out _));
@@ -49,6 +57,61 @@ public class ProjectTests : IDisposable
         Assert.Equal("landscape", game.Manifest.Orientation);
         Assert.True(game.Manifest.VirtualWidth > game.Manifest.VirtualHeight);
         Assert.Equal("landscape", store.Open(game.Name).Manifest.Orientation);
+    }
+
+    [Fact]
+    public void Create_FullSettingsRoundTripAndGenerateMatchingGameConfiguration()
+    {
+        var store = new ProjectStore(_root);
+        var settings = new ProjectCreationSettings("MeuJogo", "landscape", 800, 450, 120, "Fill",
+            "1.2.0-beta", "com.exemplo.meujogo");
+        var project = store.Create(settings);
+        var reopened = store.Open("MeuJogo");
+        Assert.Equal("landscape", reopened.Manifest.Orientation);
+        Assert.Equal(800, reopened.Manifest.VirtualWidth);
+        Assert.Equal(450, reopened.Manifest.VirtualHeight);
+        Assert.Equal(120, reopened.Manifest.UpdatesPerSecond);
+        Assert.Equal("Fill", reopened.Manifest.ViewportScaling);
+        Assert.Equal("1.2.0-beta", reopened.Manifest.Version);
+        Assert.Equal("com.exemplo.meujogo", reopened.Manifest.PackageId);
+        Assert.True(Guid.TryParse(reopened.Manifest.GameId, out _));
+        string source = reopened.ReadText("Game.cs");
+        Assert.Contains("Configuration.VirtualWidth = 800;", source);
+        Assert.Contains("Configuration.VirtualHeight = 450;", source);
+        Assert.Contains("Configuration.UpdatesPerSecond = 120;", source);
+        Assert.Contains("Configuration.ViewportScaling = ViewportScalingMode.Fill;", source);
+        Assert.DoesNotContain("CreateCircle", source);
+    }
+
+    [Fact]
+    public void Create_CustomPackageCollisionIsRejectedWithoutCreatingDirectory()
+    {
+        var store = new ProjectStore(_root);
+        store.Create(new ProjectCreationSettings("Primeiro", PackageId: "com.exemplo.jogo"));
+        Assert.Throws<ProjectException>(() => store.Create(
+            new ProjectCreationSettings("Segundo", PackageId: "com.exemplo.jogo")));
+        Assert.False(Directory.Exists(Path.Combine(_root, "Segundo")));
+    }
+
+    [Fact]
+    public void Create_InvalidFullSettingsNeverLeavePartialProjects()
+    {
+        var store = new ProjectStore(_root);
+        var invalid = new[]
+        {
+            new ProjectCreationSettings("BrokenWidth", VirtualWidth: 0),
+            new ProjectCreationSettings("BrokenHeight", VirtualHeight: 99999),
+            new ProjectCreationSettings("BrokenUps", UpdatesPerSecond: 0),
+            new ProjectCreationSettings("BrokenScaling", ViewportScaling: "Stretch"),
+            new ProjectCreationSettings("BrokenVersion", Version: "../"),
+            new ProjectCreationSettings("BrokenPackage", PackageId: "bad-id"),
+            new ProjectCreationSettings("BrokenOrientation", Orientation: "diagonal")
+        };
+        foreach (var settings in invalid)
+        {
+            Assert.Throws<ProjectException>(() => store.Create(settings));
+            Assert.DoesNotContain(settings.Name, store.List());
+        }
     }
 
     [Theory]

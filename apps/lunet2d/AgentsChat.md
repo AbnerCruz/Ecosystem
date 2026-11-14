@@ -664,3 +664,12 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Correção: o template agora gera apenas uma classe vazia derivada de `Game`; nenhum objeto, recurso, entrada ou desenho é criado automaticamente.
 - Testes: contrato do projeto verifica ausência de SpriteBatch/Texture2D/Draw/CreateCircle; jornada E2E confirma o template limpo e escreve seu próprio jogo para continuar validando assets, tilemap, preview e exportação.
 - Estado: CI e build APK pendentes nesta branch; não houve validação visual em aparelho.
+
+
+### 20261114-starter-config-revision — 2026-11-14 — ajuste explícito do proprietário
+- Responde a: 20261114-fix-blank-project-template.
+- Objetivo: manter a estrutura inicial programável de Game.cs e remover **apenas a bola e sua lógica**, não o ciclo de vida nem SpriteBatch. No menu inicial, retirar a seleção de demos e expor configuração completa de novo projeto.
+- Branch: `fix/lunet-starter-and-project-setup`. Arquivos: `ProjectTemplates.cs`, `ProjectStore.cs`, `ProjectManifest.cs`, `MainActivity.cs`, testes de projeto/demo/E2E/jornada, ROADMAP e CHANGELOG.
+- Implementação: bootstrap code-first com Initialize/LoadContent/Update/Draw/UnloadContent, SpriteBatch.Begin/End e Clear CornflowerBlue, sem sprite ou input de demonstração; criação customizada com validação de nome, orientação, dimensões, updates/s, Fit/Fill, versão e PackageId opcional estável com detecção de duplicatas. UI única de configuração no launcher; nenhuma opção demo. Demos de teste continuam internas.
+- Verificação: testes de contrato, integridade do manifesto, segurança do ID Android e jornada E2E revisados. Aguardar execução real no CI e validação da interface em Android físico.
+- Importante: versão inicial fica em lunet.json; não declarar versionCode/versionName do APK com base nela sem conferir o empacotador.
