@@ -111,13 +111,15 @@ public sealed class LunetAiBuildTool : ITool
 {
     public const string Name = "lunet.build.compile";
     private readonly ILunetAiBuild _build;
+    private readonly LunetProject _project;
     public ToolDescriptor Descriptor { get; }
 
     public LunetAiBuildTool(LunetProject project, ILunetAiBuild build)
     {
         _build = build;
+        _project = project;
         Descriptor = new ToolDescriptor(Name, "1.0.0",
-            "Compile the whole Lunet project with Roslyn (same compiler as Run). Returns success and compiler errors with file(line,col).",
+            "Compile the whole Lunet project with Roslyn (same compiler as Run). Returns success, compiler errors with file(line,col) and architecture warnings (files too big, many classes in one file) to fix.",
             """{"type":"object","properties":{},"additionalProperties":false}""",
             new HashSet<string> { Permissions.AgentAct, Permissions.FsRead }, RiskClass.Read,
             ContextPath.Create(
@@ -129,7 +131,15 @@ public sealed class LunetAiBuildTool : ITool
     public async ValueTask<ToolOutcome> InvokeAsync(ToolInvocation invocation, ToolContext context, CancellationToken cancellationToken)
     {
         var report = await _build.CompileAsync(cancellationToken);
-        return ToolOutcome.Ok(JsonSerializer.Serialize(new { success = report.Succeeded, errors = report.Errors.Take(60) }));
+        var map = new LunetAiProjectMap(_project);
+        var symbols = map.Symbols();
+        var lines = symbols.Select(s => s.File).Distinct().ToDictionary(f => f, f =>
+        {
+            try { return _project.ReadText(f).Count(c => c == '\n') + 1; }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ProjectException) { return 0; }
+        }, StringComparer.Ordinal);
+        var architecture = LunetAiArchitecture.Review(symbols, lines);
+        return ToolOutcome.Ok(JsonSerializer.Serialize(new { success = report.Succeeded, errors = report.Errors.Take(60), architecture }));
     }
 }
 
@@ -247,4 +257,6 @@ public sealed record LunetAiRequest(
     LunetAiKnowledge? Knowledge = null,
     ILunetAiImages? Images = null,
     IReadOnlyList<string>? Attachments = null,
-    IProgress<LunetAiStep>? Steps = null);
+    IProgress<LunetAiStep>? Steps = null,
+    LunetAiMode Mode = LunetAiMode.Auto,
+    ILunetAiWeb? Web = null);

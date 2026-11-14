@@ -6,6 +6,11 @@ A IA trabalha junto com você dentro do projeto: constrói, corrige, explica e c
 
 Toque em **✦ IA** e escolha o provedor (OpenRouter, Anthropic, OpenAI, Google Gemini, DeepSeek, Groq ou um endpoint compatível), o modelo e a chave da API. A chave fica cifrada no Android Keystore deste aparelho; nunca vai para o projeto, o Git ou o APK do jogo. O provedor pode cobrar pelo uso.
 
+- Cada provedor guarda a **sua** chave: trocar de provedor não apaga a outra ("✓ salva neste aparelho" aparece ao lado).
+- **Ver modelos do provedor** lista os modelos que o provedor realmente oferece (os que aceitam ferramentas aparecem primeiro) — não precisa digitar o id de memória.
+- **Testar conexão** faz um pedido mínimo e diz se a chave, o endereço e o modelo funcionam, e em quanto tempo responderam.
+- **Pesquisar código de referência na internet** (ligado por padrão) e **Modo inicial do chat** (Auto, Ensinar ou Fazer).
+
 ## Usar
 
 - **✦ IA** na barra superior abre o painel ao lado do código (folha inferior no celular, painel lateral em telas largas).
@@ -14,6 +19,31 @@ Toque em **✦ IA** e escolha o provedor (OpenRouter, Anthropic, OpenAI, Google 
 - **📎** anexa imagens e arquivos (do aparelho ou das suas Notas). Anexos são copiados para `Notes/`.
 
 A IA recebe automaticamente o arquivo aberto, a linha do cursor, a seleção, os erros e o console.
+
+## Ensinar e fazer
+
+Acima da caixa de texto há três modos:
+
+- **✦ Auto** (padrão): a IA entende pelo pedido. "Como faço para o personagem pular?", "me explica o SpriteBatch", "o que é GameTime?" → ela **explica** sem mexer no projeto. "Crie um inimigo", "adicione um placar", "como faço X? faz pra mim" → ela **implementa**.
+- **📖 Ensinar**: sempre explica, em passos, no seu projeto (quais arquivos e classes mexer, trechos curtos comentados, por quê, como testar). Nenhum arquivo é alterado.
+- **⚒ Fazer**: sempre implementa, compila e corrige.
+
+Depois de uma explicação aparece **⚒ Fazer por mim**: a IA implementa exatamente o que explicou.
+
+## Rapidez e organização do código
+
+- Cada pedido já leva o **mapa do projeto** (pastas, imagens e sons, classes, campos, propriedades e métodos com linhas) e a **referência rápida da API**. A IA não gasta rodadas só para descobrir onde as coisas estão.
+- A IA organiza o código como um projeto profissional: **um tipo por arquivo**, pastas por responsabilidade (`Scenes/`, `Entities/`, `Components/`, `Systems/`, `UI/`, `Data/`, `Util/`, ou as que seu projeto já usa), e reutiliza suas classes e variáveis pelos nomes reais. O `Game.cs` só orquestra.
+- Ao compilar, ela recebe avisos quando um arquivo passa de ~350 linhas ou junta várias classes, e divide.
+- Com a internet ligada, ela pesquisa código de referência (técnicas de plataforma, câmera, IA de inimigos, pathfinding…) e adapta para a API do Lunet. Consultas nunca levam chaves nem trechos do seu código; só endereços públicos são abertos.
+
+### Validação no aparelho (DEVICE)
+
+1. Configurações da IA: salve chaves em dois provedores, troque entre eles e confira que as duas continuam salvas; use **Ver modelos do provedor** e **Testar conexão** (com chave certa e errada).
+2. No modo **Auto**, pergunte "Como faço para o personagem pular?": a resposta explica em passos, o cabeçalho diz "explicando (nada foi alterado)" e nenhum arquivo muda. Toque **Fazer por mim**: agora ela implementa.
+3. Peça "crie um inimigo que persegue o jogador": confira que surgem arquivos separados (ex.: `Entities/Enemy.cs`) e que o `Game.cs` só os usa.
+4. Compare o tempo até a primeira resposta com a versão anterior num pedido simples.
+5. Peça uma técnica (ex.: "pulo com coyote time") e veja na linha do tempo a pesquisa e a leitura de páginas.
 
 ## O que ela sabe
 

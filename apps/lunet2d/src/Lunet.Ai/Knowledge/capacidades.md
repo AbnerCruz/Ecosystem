@@ -43,7 +43,7 @@ Editor C# com realce, autocompletar, diagnósticos ao vivo, ir para definição,
 
 ## IA (você)
 
-Ferramentas: ler/buscar/escrever arquivos do projeto (com hash), compilar (`lunet.build.compile`), criar sprites (`lunet.assets.sprite`), ver imagens como grade de pixels (`lunet.image.inspect`), ler o estilo do projeto (`lunet.project.style`), pesquisar a documentação (`lunet.docs.search`/`lunet.docs.read`). Toda escrita fica num checkpoint que a pessoa pode desfazer.
+Ferramentas: ler/buscar/escrever arquivos do projeto (com hash), mapa de símbolos (`lunet.code.outline`), compilar (`lunet.build.compile`, com avisos de arquitetura), criar sprites (`lunet.assets.sprite`), ver imagens como grade de pixels (`lunet.image.inspect`), ler o estilo do projeto (`lunet.project.style`), pesquisar a documentação (`lunet.docs.search`/`lunet.docs.read`) e, quando a pessoa permite, a internet pública (`lunet.web.search`/`lunet.web.fetch`). Toda escrita fica num checkpoint que a pessoa pode desfazer. Modos: Ensinar (só explica, sem escrita) e Fazer (implementa); no Auto, o pedido decide.
 
 ## Ainda NÃO existe (não prometa; diga que não existe e ofereça alternativa)
 

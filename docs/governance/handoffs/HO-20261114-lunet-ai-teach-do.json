@@ -1,0 +1,121 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261114-lunet-ai-teach-do",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-14T13:49:06Z",
+  "agent": {
+    "id": "claude-lunet-ai-teach-do",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-498",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-8229d3db-dmnw7l",
+  "base_commit": "bbc849e8f06a4f896976e857b0afb1b0b1ad1f62",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Ai/LunetAiIntent.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiProjectMap.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiWeb.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiModelCatalog.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiQuickReference.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSession.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiCowork.cs",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiSettings.cs",
+    "apps/lunet2d/src/Lunet.Ai/Lunet.Ai.csproj",
+    "apps/lunet2d/src/Lunet.Ai/Knowledge/capacidades.md",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Chat.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Ai.cs",
+    "apps/lunet2d/src/Lunet.Android/QuickReference.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetAiIntentTests.cs",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/guides/ia-lunet.md",
+    "docs/governance/handoffs/HO-20261114-lunet-ai-teach-do.json"
+  ],
+  "work_completed": [
+    "Assumida a correção do PR #932 (LUNET-497): testes e checks conferidos localmente; trabalho novo parte dela.",
+    "Modos Auto/Ensinar/Fazer com classificador de intenção; Ensinar remove ferramentas de escrita, limita passos e oferece Fazer por mim.",
+    "Mapa do projeto (arquivos, mídia, símbolos por Roslyn sintático) e referência rápida da API enviados em cada pedido para reduzir rodadas.",
+    "Regras de arquitetura (um tipo por arquivo, pastas por responsabilidade), ferramenta lunet.code.outline e avisos de arquitetura na compilação.",
+    "Pesquisa na internet local ao Lunet com validação de endereço público, DNS, limites e bloqueio de segredos/cópia do código.",
+    "Configurações: chave por provedor (lendo a chave antiga), lista de modelos do provedor, testar conexão, pesquisa ligável e modo inicial."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project tests/Lunet.Tests (local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "931 testes, 0 falhas (inclui 45 casos novos em LunetAiIntentTests)"
+    },
+    {
+      "check": "dotnet build src/Lunet.Android -c Debug (local, Android SDK 36)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "0 erros"
+    },
+    {
+      "check": "Validação no aparelho: modos Ensinar/Fazer, configurações, arquivos separados, rapidez, pesquisa",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/ia-lunet.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Busca sem chave usa a visão RSS pública do Bing (melhor esforço, sem contrato); pode falhar ou mudar.",
+    "A classificação de intenção é heurística em português; o modo explícito (Ensinar/Fazer) sempre vence.",
+    "O runtime compartilhado não faz streaming; a rapidez vem de menos rodadas, não de texto parcial."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI e APK no PR; integração governada após #932.",
+    "Roteiro DEVICE do guia da IA."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "docs/adr/0033-unificacao-incremental-da-ia.md",
+    "docs/governance/addenda/ADD-0027-unificacao-da-ia-do-ecosystem.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/lunet2d/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Pesquisa web reescrita dentro do Lunet.Ai; nenhuma referência ao código do editor de notas."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Modo Ensinar sem permissão de escrita; internet só quando a pessoa liga; endereços privados e segredos bloqueados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente declarado no ROADMAP e no handoff."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Pesquisa web e catálogo de modelos ficam no Product (possible-candidate), sem extração."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-ai-web-research",
+      "status": "possible-candidate",
+      "rationale": "O editor de notas tem gateway equivalente; sem contrato comum nem Extraction Review, permanece local (NN-022)."
+    },
+    {
+      "subject": "lunet-ai-intent-modes",
+      "status": "product-specific",
+      "rationale": "Heurística e instruções específicas do fluxo de jogo do Lunet."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

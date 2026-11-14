@@ -145,6 +145,18 @@ public sealed partial class MainActivity
         // Composer: context pills + attachments + input box
         var composerArea = new LinearLayout(this) { Orientation = Orientation.Vertical };
         composerArea.SetPadding(Dp(10), Dp(6), Dp(10), Dp(10));
+        _aiMode = Ai.Settings.DefaultMode;
+        var modeRow = LunetUi.Row(this, 6);
+        modeRow.SetPadding(Dp(2), 0, Dp(2), Dp(6));
+        foreach (var (mode, label, description) in AiModes)
+        {
+            var chip = LunetUi.Chip(this, label, () => { _aiMode = mode; PaintAiModes(); });
+            chip.ContentDescription = description;
+            _aiModeChips.Add((mode, chip));
+            modeRow.AddView(chip);
+        }
+        PaintAiModes();
+        composerArea.AddView(modeRow);
         var pillScroll = new HorizontalScrollView(this) { HorizontalScrollBarEnabled = false };
         _aiPills = LunetUi.Row(this, 6);
         _aiPills.SetPadding(Dp(2), 0, Dp(2), Dp(6));
@@ -176,6 +188,7 @@ public sealed partial class MainActivity
         _aiInput.SetMaxLines(6);
         _aiInput.InputType = InputTypes.ClassText | InputTypes.TextFlagMultiLine | InputTypes.TextFlagCapSentences;
         _aiInput.TextChanged += (_, _) => RefreshSendButton();
+        PaintAiModes();
         box.AddView(_aiInput, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1f));
         _aiSend = LunetUi.Icon(this, "↑", "Enviar", SendAi, accent: true);
         _aiSend.Background = LunetUi.Pressable(this, LunetUi.Accent, 99);
@@ -195,6 +208,36 @@ public sealed partial class MainActivity
         _aiPanel = panel;
         RefreshAttachmentRow();
         RefreshSendButton();
+    }
+
+    // ---------- Teach / Do (LUNET-498) ----------
+
+    private static readonly (LunetAiMode Mode, string Label, string Description)[] AiModes =
+    [
+        (LunetAiMode.Auto, "✦ Auto", "A IA entende pelo pedido se deve explicar ou fazer"),
+        (LunetAiMode.Teach, "📖 Ensinar", "Explica como você mesmo faz, sem alterar o projeto"),
+        (LunetAiMode.Do, "⚒ Fazer", "A IA implementa no projeto, com checkpoint para desfazer"),
+    ];
+
+    private LunetAiMode _aiMode = LunetAiMode.Auto;
+    private LunetAiMode? _aiModeOnce;
+    private readonly List<(LunetAiMode Mode, TextView Chip)> _aiModeChips = [];
+
+    private void PaintAiModes()
+    {
+        foreach (var (mode, chip) in _aiModeChips)
+        {
+            bool on = mode == _aiMode;
+            chip.Background = LunetUi.Pressable(this, on ? LunetUi.AccentSoft : LunetUi.SurfaceRaised, 99, on ? LunetUi.Accent : LunetUi.Border);
+            chip.SetTextColor(on ? LunetUi.AccentText : LunetUi.TextMuted);
+        }
+        if (_aiInput is not null)
+            _aiInput.Hint = _aiMode switch
+            {
+                LunetAiMode.Teach => "Pergunte como fazer algo; eu explico passo a passo…",
+                LunetAiMode.Do => "Diga o que construir, corrigir ou desenhar…",
+                _ => "Peça para construir ou pergunte como fazer…",
+            };
     }
 
     private void RefreshSendButton()
@@ -324,7 +367,7 @@ public sealed partial class MainActivity
             var turn = history[i];
             if (turn.Role == "Você") AddUserMessage(turn.Text);
             else AddAssistantMessage(turn.Text, retryPrompt: i > 0 && history[i - 1].Role == "Você"
-                ? StripAttachments(history[i - 1].Text) : null);
+                ? StripAttachments(history[i - 1].Text) : null, taught: turn.Mode == LunetAiMode.Teach);
         }
         if (belongs && work!.IsRunning)
         {
@@ -444,10 +487,12 @@ public sealed partial class MainActivity
     }
 
     /// <summary>An answer: header, Markdown blocks, optional work summary and changes, then actions.</summary>
-    private LinearLayout AddAssistantMessage(string text, string? retryPrompt, IReadOnlyList<LunetAiStep>? steps = null, LunetAiReply? reply = null)
+    private LinearLayout AddAssistantMessage(string text, string? retryPrompt, IReadOnlyList<LunetAiStep>? steps = null,
+        LunetAiReply? reply = null, bool taught = false)
     {
         var message = new LinearLayout(this) { Orientation = Orientation.Vertical };
-        message.AddView(LunetUi.Label(this, "✦ Lunet", LunetUi.TextCaption, LunetUi.AccentText, bold: true));
+        message.AddView(LunetUi.Label(this, taught ? "✦ Lunet · explicando (nada foi alterado)" : "✦ Lunet",
+            LunetUi.TextCaption, LunetUi.AccentText, bold: true));
         if (steps is { Count: > 0 }) message.AddView(WorkSummary(steps), Spaced(LunetUi.FillWidth(), 6));
         RenderMarkdown(message, text);
         if (reply is { Changes.Count: > 0 }) message.AddView(BuildChangesCard(reply), Spaced(LunetUi.FillWidth(), 10));
@@ -460,6 +505,13 @@ public sealed partial class MainActivity
             actions.AddView(b, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(34)));
         }
         Action("⧉ Copiar", "Copiar a resposta", () => CopyToClipboard(text));
+        if (taught && retryPrompt is not null)
+            Action("⚒ Fazer por mim", "A IA implementa o que explicou", () =>
+            {
+                _aiInput!.Text = retryPrompt;
+                _aiModeOnce = LunetAiMode.Do;
+                SendAi();
+            });
         if (retryPrompt is not null) Action("↻ Refazer", "Pedir de novo", () => { _aiInput!.Text = retryPrompt; SendAi(); });
         message.AddView(actions);
         _aiLog!.AddView(message, Spaced(LunetUi.FillWidth(), 14));
@@ -711,6 +763,10 @@ public sealed partial class MainActivity
 
     // ---------- Sending ----------
 
+    private LunetAiWebSession? _aiWeb;
+    /// <summary>One research gateway for the app's life (its HTTP client is reused by every request).</summary>
+    private LunetAiWebSession AiWeb => _aiWeb ??= new LunetAiWebSession();
+
     private LunetAiWork? _aiLastAppliedWork;
     private int _aiUiRefreshQueued;
 
@@ -735,8 +791,11 @@ public sealed partial class MainActivity
         var context = CurrentAiContext();
         var attachments = _aiAttachments.ToArray();
         var project = _project;
+        var mode = _aiModeOnce ?? _aiMode;
+        _aiModeOnce = null;
         var request = new LunetAiRequest(ai.Settings, ai.ApiKey!, context, new AndroidAiBuild(project),
-            Knowledge: AiKnowledge(), Images: new AndroidAiImages(), Attachments: attachments);
+            Knowledge: AiKnowledge(), Images: new AndroidAiImages(), Attachments: attachments, Mode: mode,
+            Web: ai.Settings.WebResearch ? AiWeb : null);
         var work = new LunetAiWork(project, _aiSession, prompt, request);
         if (!LunetAiRuns.TryStart(this, work, out var error))
         {
