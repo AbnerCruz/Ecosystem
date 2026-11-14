@@ -68,9 +68,10 @@
     {
       "check": "Validação no aparelho: seleção/transformação de pixels, prévias de áudio e assets, legibilidade dos ícones",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/validacao-studios-icones.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-14 (Issue https://github.com/AbnerCruz/Ecosystem/issues/937); registro em docs/governance/responses/VAL-HO-20261114-lunet-studios-icons-multiplatform-87d304b039ab.md."
     }
   ],
   "known_issues": [
