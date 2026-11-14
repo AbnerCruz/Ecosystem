@@ -108,8 +108,8 @@ public sealed class LunetAiChatTests
             var model = new WaitingProvider();
             var run = session.AskAsync("Faça um teste", new LunetAiRequest(
                 LunetAiSettings.Default with { Model = "m" }, "chave-de-teste-123456789",
-                LunetAiEditorContext.Empty, Provider: model));
-            await model.Entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+                LunetAiEditorContext.Empty, Provider: model), TestContext.Current.CancellationToken);
+            await model.Entered.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
             var during = new LunetAiSession(project, historyPath);
             Assert.Equal(2, during.History.Count);
             Assert.Contains("trabalhando", during.History[^1].Text);
