@@ -41,7 +41,11 @@ public sealed partial class MainActivity
             case "sprite":
                 Post(() => OpenSpriteStudio("Assets/demo.sprite.json", SpriteDocument.Create(32)));
                 break;
+            case "files": Post(ToggleExplorer); break;
+            case "run": Post(Run); break;
             case "ai":
+                AiStore.Save(Lunet.Ai.LunetAiSettings.Default with { Model = "anthropic/claude-sonnet-5" }, "demo-key-not-a-real-secret-0000");
+                _ai = null;
                 Post(() =>
                 {
                     OpenAiPanel(null);

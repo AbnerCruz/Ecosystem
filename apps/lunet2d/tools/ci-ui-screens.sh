@@ -46,6 +46,8 @@ shoot 07-note note 12
 shoot 08-sprite sprite 12
 shoot 09-ai-settings ai-settings 12
 shoot 10-problems problems 12
+shoot 11-files files 12
+shoot 12-run run 25
 
 adb logcat -d > "$out/logcat.txt" || true
 grep -E "FATAL EXCEPTION|AndroidRuntime" -A20 "$out/logcat.txt" | head -80 || true

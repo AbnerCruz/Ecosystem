@@ -142,22 +142,23 @@ public sealed partial class MainActivity
             providerRow.AddView(chip);
         }
         SelectProvider(selected, fillEndpoint: string.IsNullOrWhiteSpace(current.Settings.Endpoint));
+        if (string.IsNullOrWhiteSpace(model.Text) && selected.SuggestedModels.Count > 0) model.Text = selected.SuggestedModels[0];
 
         var scroll = new ScrollView(this);
         scroll.AddView(form);
         var dialog = new AlertDialog.Builder(this, global::Android.Resource.Style.ThemeDeviceDefaultDialogAlert)!
             .SetTitle("IA do Lunet")!
             .SetView(scroll)!
-            .SetNeutralButton(current.ApiKey is null ? "Cancelar" : "Esquecer chave", (_, _) =>
-            {
-                if (current.ApiKey is null) return;
-                AiStore.ClearKey();
-                _ai = null;
-                RefreshAiHeader();
-            })!
             .SetNegativeButton("Cancelar", (_, _) => { })!
             .SetPositiveButton("Salvar", (_, _) => { })!
             .Create();
+        if (current.ApiKey is not null)
+            dialog.SetButton((int)DialogButtonType.Neutral, "Esquecer chave", (_, _) =>
+            {
+                AiStore.ClearKey();
+                _ai = null;
+                RefreshAiHeader();
+            });
         dialog.Show();
         dialog.GetButton((int)DialogButtonType.Positive)!.Click += (_, _) =>
         {

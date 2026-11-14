@@ -256,7 +256,7 @@ public sealed partial class MainActivity
         search.ContentDescription = "Buscar ações e arquivos do Lunet";
         content.AddView(search);
         var list = new ListView(this) { Divider = null };
-        var adapter = new ArrayAdapter<string>(this, global::Android.Resource.Layout.SimpleListItem1, names.Take(60).ToList());
+        var adapter = new ThemedListAdapter(this, names.Take(60).ToList());
         list.Adapter = adapter;
         content.AddView(list, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, (int)(Resources!.DisplayMetrics!.HeightPixels * 0.5f)));
         var dialog = new AlertDialog.Builder(this, global::Android.Resource.Style.ThemeDeviceDefaultDialogAlert)!
@@ -298,5 +298,22 @@ public sealed partial class MainActivity
             else OpenFile(path);
         }
         else OnExplorerTap(new ExplorerEntry(path, System.IO.Path.GetFileName(path), 0, false));
+    }
+
+    /// <summary>List rows that follow LunetUi tokens (the stock row uses the light theme's dark text).</summary>
+    private sealed class ThemedListAdapter(MainActivity owner, List<string> items) : ArrayAdapter<string>(owner, 0, items)
+    {
+        public override View GetView(int position, View? convertView, ViewGroup parent)
+        {
+            var label = convertView as TextView ?? new TextView(owner) { TextSize = LunetUi.TextBody };
+            var text = GetItem(position) ?? "";
+            label.Text = text;
+            label.SetTextColor(text.StartsWith("▤", StringComparison.Ordinal) ? LunetUi.TextMuted : LunetUi.Text);
+            label.SetPadding(owner.Dp(12), owner.Dp(13), owner.Dp(12), owner.Dp(13));
+            label.SetSingleLine(true);
+            label.Ellipsize = TextUtils.TruncateAt.Middle;
+            label.Background = LunetUi.Pressable(owner, AndroidColor.Transparent, LunetUi.RadiusSmall);
+            return label;
+        }
     }
 }

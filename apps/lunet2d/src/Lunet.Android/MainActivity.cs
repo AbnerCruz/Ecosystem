@@ -20,7 +20,7 @@ using AndroidUri = Android.Net.Uri;
 
 namespace Lunet.Android;
 
-[Activity(Label = "Lunet", MainLauncher = true, Exported = true,
+[Activity(Label = "Lunet", MainLauncher = true, Exported = true, Theme = "@android:style/Theme.DeviceDefault.NoActionBar",
     ConfigurationChanges = global::Android.Content.PM.ConfigChanges.Orientation | global::Android.Content.PM.ConfigChanges.ScreenSize |
                            global::Android.Content.PM.ConfigChanges.KeyboardHidden | global::Android.Content.PM.ConfigChanges.ScreenLayout,
     WindowSoftInputMode = SoftInput.AdjustResize)]
@@ -72,6 +72,9 @@ public sealed partial class MainActivity : Activity
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
+        // Edge colors follow the app instead of the system default (LUNET-483).
+        Window?.SetStatusBarColor(LunetUi.Background);
+        Window?.SetNavigationBarColor(LunetUi.Background);
         _store = new ProjectStore(System.IO.Path.Combine(FilesDir!.AbsolutePath, "Projects"));
         _pendingExport = savedInstanceState?.GetString("pendingExport");
         _pendingGameApkPath = savedInstanceState?.GetString("pendingGameApkPath");
@@ -444,10 +447,14 @@ public sealed partial class MainActivity : Activity
 
         var tabs = new LinearLayout(this) { Orientation = Orientation.Horizontal };
         tabs.SetBackgroundColor(WorkbenchBackground);
+        tabs.SetPadding(Dp(6), Dp(2), Dp(6), Dp(2));
         void AddPanelTab(Button tab)
         {
-            var parameters = new LinearLayout.LayoutParams(0, Dp(48), 1f);
-            parameters.SetMargins(Dp(3), 0, Dp(3), 0);
+            LunetUi.Style(this, tab, ButtonStyle.Quiet);
+            tab.TextSize = 12;
+            tab.SetMinHeight(Dp(34)); tab.SetMinimumHeight(Dp(34));
+            var parameters = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, Dp(36));
+            parameters.SetMargins(Dp(2), 0, Dp(2), 0);
             tabs.AddView(tab, parameters);
         }
         _problemsTab = WorkbenchButton("Problemas", () => OpenWorkbenchPanel(false));
