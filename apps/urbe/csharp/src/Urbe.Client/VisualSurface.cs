@@ -400,6 +400,27 @@ public sealed class VisualSurface : StackPanel
         _lastRebuiltText = _text;
     }
 
+    /// <summary>
+    /// Typing in the box moves every block below it in the text: their places (and those the drawn blocks act on) follow
+    /// at each keystroke. Without this a tap on a block below, after typing, opened the block above it, or the one being
+    /// written again, and a task ticked below changed a line of another block.
+    /// </summary>
+    private void ShiftBlocksAfter(int editStart, int delta)
+    {
+        var moved = new List<MarkdownBlock>(_blocks.Count);
+        foreach (var b in _blocks)
+            moved.Add(b.Start > editStart ? b with { Start = b.Start + delta, End = b.End + delta } : b.Start == editStart ? b with { End = Math.Max(b.Start, b.End + delta) } : b);
+        _blocks = moved;
+        foreach (var d in _drawn)
+            if (d.Ref.Block.Start > editStart) d.Ref.Block = d.Ref.Block with { Start = d.Ref.Block.Start + delta, End = d.Ref.Block.End + delta };
+        if (_holders.Count > 0)
+        {
+            var keys = _holders.Where(h => h.Key > editStart).OrderBy(h => delta > 0 ? -h.Key : h.Key).ToList();
+            foreach (var (k, _) in keys) _holders.Remove(k);
+            foreach (var (k, v) in keys) _holders[k + delta] = v;
+        }
+    }
+
     private Border? _tail, _empty;
     private bool _emptyWired;
 
@@ -958,7 +979,9 @@ public sealed class VisualSurface : StackPanel
             }
         }
         _text = candidate;
+        var delta = _editStart + source.Length - _editEnd;
         _editEnd = _editStart + source.Length;
+        if (delta != 0) ShiftBlocksAfter(_editStart, delta);
         // the box shows no seals and its seals are only the ones AiAuthorship composes: the host takes this text as it is
         Composing = true;
         try { TextEdited?.Invoke(_text); }

@@ -278,4 +278,53 @@ public sealed class EditorFlowUiTests
             window.Close();
             return true;
         }, TestContext.Current.CancellationToken));
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ASingleTapOnAnotherBlockWhileWritingEditsIt(bool slowRelease) =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(async () =>
+        {
+            var (editor, window) = Open("Primeiro parágrafo com texto.\n\nSegundo parágrafo com texto.\n\nTerceiro.\n");
+            var box = Edit(editor, 0);
+            box.Focus();
+            box.CaretIndex = box.Text!.Length;
+            window.KeyTextInput(" mais");
+            Dispatcher.UIThread.RunJobs();
+            var holder = editor.Surface.BlockView(editor.Surface.BlockStarts[1])!;
+            var p = PointOf(window, holder, "parágrafo", 3);
+            var hit = window.InputHitTest(p) as Visual;
+            Assert.True(hit is not null && hit.GetSelfAndVisualAncestors().Contains(holder), "hit " + string.Join(" < ", hit?.GetSelfAndVisualAncestors().Take(6).Select(v => v.GetType().Name) ?? []));
+            window.MouseDown(p, MouseButton.Left);
+            // the finger stays down a moment: whatever runs in between must not take the tap away
+            Dispatcher.UIThread.RunJobs();
+            if (slowRelease) { await Task.Delay(150); Dispatcher.UIThread.RunJobs(); }
+            window.MouseUp(p, MouseButton.Left);
+            Dispatcher.UIThread.RunJobs();
+            var now = editor.Surface.EditBox;
+            Assert.NotNull(now);
+            Assert.StartsWith("Segundo", now!.Text);
+            Assert.True(now.IsFocused);
+            Assert.InRange(now.CaretIndex, "Segundo pa".Length - 1, "Segundo par".Length + 1);
+            Assert.StartsWith("Primeiro parágrafo com texto. mais", Source(editor));
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task ATaskTickedBelowAfterTypingChangesItsOwnLine() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var (editor, window) = Open("Texto.\n\n- [ ] primeira\n- [ ] segunda\n");
+            var box = Edit(editor, 0);
+            box.Focus();
+            box.CaretIndex = box.Text!.Length;
+            window.KeyTextInput(" Mais coisas escritas aqui");
+            Dispatcher.UIThread.RunJobs();
+            var tasks = editor.Surface.BlockView(editor.Surface.BlockStarts[1])!.GetVisualDescendants().OfType<Border>().Where(b => b.Width == 18 && b.Height == 18).ToList();
+            Click(window, tasks[1].TranslatePoint(new Point(9, 9), window)!.Value);
+            Assert.Equal("Texto. Mais coisas escritas aqui\n\n- [ ] primeira\n- [x] segunda\n", Source(editor));
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
 }
