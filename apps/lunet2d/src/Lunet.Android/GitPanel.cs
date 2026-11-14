@@ -87,10 +87,7 @@ internal sealed class GitPanel
 
     private Button Button(string label, Action action)
     {
-        var button = new Button(_activity) { Text = label };
-        button.SetAllCaps(false);
-        button.Click += (_, _) => action();
-        return button;
+        return LunetUi.Button(_activity, label, action);
     }
 
     private TextView Text(string text, int size = 13, bool bold = false, int? color = null)

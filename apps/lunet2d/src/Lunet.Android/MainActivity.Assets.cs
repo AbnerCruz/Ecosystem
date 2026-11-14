@@ -1,6 +1,7 @@
 using Android.App;
 using Android.Content;
 using Android.Graphics;
+using Android.Text;
 using Android.Views;
 using Android.Widget;
 using Lunet.Core;
@@ -35,7 +36,7 @@ public sealed partial class MainActivity
         var header = new LinearLayout(this) { Orientation = Orientation.Horizontal };
         header.AddView(new TextView(this) { Text = "Assets", TextSize = 22 },
             new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1));
-        header.AddView(MakeButton("+ Criar", () => { dialog.Dismiss(); ShowArtTools(); }));
+        header.AddView(MakeButton("＋ Criar", () => { dialog.Dismiss(); ShowArtTools(); }));
         header.AddView(MakeButton("Fechar", () => dialog.Dismiss()));
         root.AddView(header);
 
@@ -74,12 +75,17 @@ public sealed partial class MainActivity
             foreach (var asset in filtered.Take(250))
             {
                 var captured = asset;
-                var row = new LinearLayout(this) { Orientation = Orientation.Vertical };
+                var row = new LinearLayout(this) { Orientation = Orientation.Horizontal };
+                row.SetGravity(GravityFlags.CenterVertical);
                 row.SetPadding(Dp(12), Dp(10), Dp(12), Dp(10));
-                row.AddView(new TextView(this) { Text = Path.GetFileName(asset.Path), TextSize = 16 });
+                row.AddView(LunetUi.IconImage(this, AssetIcon(asset.Kind), 22, LunetUi.AccentText), new LinearLayout.LayoutParams(Dp(36), Dp(36)));
+                var texts = Vertical();
+                texts.AddView(new TextView(this) { Text = Path.GetFileName(asset.Path), TextSize = 16 });
                 var detail = new TextView(this) { Text = $"{AssetCategoryName(asset.Kind)} · {asset.Path}", TextSize = 11 };
                 detail.SetTextColor(AndroidColor.Rgb(165, 180, 200));
-                row.AddView(detail);
+                texts.AddView(detail);
+                row.AddView(texts, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1));
+                row.AddView(LunetUi.IconImage(this, "chevron-right", 20, LunetUi.TextFaint), new LinearLayout.LayoutParams(Dp(24), Dp(24)));
                 row.Clickable = true;
                 row.Click += (_, _) => ShowAssetDetails(captured, dialog);
                 items.AddView(row);
@@ -126,136 +132,215 @@ public sealed partial class MainActivity
         dialog.Window?.SetLayout(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
     }
 
-    private void ShowAssetDetails(ProjectAsset asset, Dialog catalog)
+    /// <summary>Painel de um recurso: prévia real (sprite animado, imagem, onda com reprodução, fonte, dados) e ações.</summary>
+    private void ShowAssetDetails(ProjectAsset asset, Dialog? catalog)
     {
         if (_project is null) return;
         var project = _project;
         var dialog = new Dialog(this);
-        var root = Vertical();
-        root.SetPadding(Dp(18), Dp(16), Dp(18), Dp(12));
-        root.AddView(new TextView(this) { Text = Path.GetFileName(asset.Path), TextSize = 20 });
-        root.AddView(new TextView(this) { Text = $"{AssetCategoryName(asset.Kind)}\n{asset.Path}", TextSize = 13 });
+        dialog.RequestWindowFeature((int)WindowFeatures.NoTitle);
+        var root = LunetUi.Column(this, 10);
+        root.SetPadding(Dp(16), Dp(14), Dp(16), Dp(14));
+        var disposables = new List<Action>();
 
-        Bitmap? bitmap = null;
-        AndroidMediaPlayer? player = null;
-        string? preview = asset.PreviewPath;
-        if (asset.Kind == ProjectAssetKind.TileMap)
+        var head = LunetUi.Row(this, 8);
+        head.AddView(LunetUi.IconImage(this, AssetIcon(asset.Kind), 24, LunetUi.AccentText), new LinearLayout.LayoutParams(Dp(30), Dp(30)));
+        var name = LunetUi.Label(this, Path.GetFileName(asset.Path), LunetUi.TextTitle, LunetUi.Text, bold: true);
+        name.SetSingleLine(true);
+        name.Ellipsize = TextUtils.TruncateAt.Middle;
+        head.AddView(name, LunetUi.Weight());
+        head.AddView(LunetUi.IconByName(this, "close", "Fechar", () => dialog.Dismiss()), new LinearLayout.LayoutParams(Dp(44), Dp(44)));
+        root.AddView(head);
+
+        string? fullPath = null;
+        try { fullPath = SafeAssetFilePath(project, asset.Path); }
+        catch (IOException) { /* arquivo some entre a lista e o toque */ }
+        var info = new List<string> { AssetCategoryName(asset.Kind) };
+        if (fullPath is not null) info.Add(FormatSize(new FileInfo(fullPath).Length));
+        var details = LunetUi.Label(this, "", LunetUi.TextCaption, LunetUi.TextMuted);
+        root.AddView(details);
+
+        void AddPreview(View view, int heightDp) => root.AddView(view, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(heightDp)));
+        void Note(string text) => root.AddView(LunetUi.Label(this, text, LunetUi.TextLabel, LunetUi.TextMuted));
+
+        try
         {
-            try
+            switch (asset.Kind)
             {
-                var map = TileMap.Parse(project.ReadText(asset.Path));
-                preview = "Content/" + map.TexturePath;
-                root.AddView(new TextView(this) { Text = $"Mapa: {map.Width}×{map.Height} · {map.LayerCount} camadas", TextSize = 13 });
-            }
-            catch (Exception ex) when (ex is IOException or InvalidDataException or ProjectException)
-            {
-                root.AddView(new TextView(this) { Text = "Mapa inválido: " + ex.Message, TextSize = 12 });
-            }
-        }
-        if (preview is not null)
-        {
-            try
-            {
-                var fullPath = SafeAssetFilePath(project, preview);
-                if (new FileInfo(fullPath).Length <= 24L * 1024 * 1024)
+                case ProjectAssetKind.Sprite:
                 {
-                    using var bounds = new BitmapFactory.Options { InJustDecodeBounds = true };
-                    BitmapFactory.DecodeFile(fullPath, bounds)?.Dispose();
-                    if (bounds.OutWidth is > 0 and <= 8192 && bounds.OutHeight is > 0 and <= 8192)
+                    var sprite = SpriteDocument.Parse(project.ReadText(asset.Path));
+                    var view = FramePreviewView.FromSprite(this, sprite);
+                    disposables.Add(view.Release);
+                    info.Add($"{sprite.Width}×{sprite.Height} px");
+                    info.Add(sprite.Frames.Count == 1 ? "1 frame" : $"{sprite.Frames.Count} frames · {sprite.Fps} FPS");
+                    AddPreview(view, 240);
+                    break;
+                }
+                case ProjectAssetKind.Image or ProjectAssetKind.TileMap:
+                {
+                    string? source = asset.PreviewPath;
+                    if (asset.Kind == ProjectAssetKind.TileMap)
                     {
-                        var sample = 1;
-                        while (Math.Max(bounds.OutWidth, bounds.OutHeight) / sample > 360) sample *= 2;
-                        using var opts = new BitmapFactory.Options { InSampleSize = sample };
-                        bitmap = BitmapFactory.DecodeFile(fullPath, opts);
-                        if (bitmap is not null)
+                        var map = TileMap.Parse(project.ReadText(asset.Path));
+                        source = "Content/" + map.TexturePath;
+                        info.Add($"{map.Width}×{map.Height} células · {map.LayerCount} camada(s)");
+                    }
+                    if (source is null) { Note("Sem imagem para mostrar."); break; }
+                    var bitmap = DecodeForPreview(SafeAssetFilePath(project, source), out int w, out int h);
+                    if (bitmap is null) { Note("Imagem grande demais ou ilegível para a prévia."); break; }
+                    var view = new FramePreviewView(this, [bitmap]);
+                    disposables.Add(view.Release);
+                    if (asset.Kind == ProjectAssetKind.Image) info.Add($"{w}×{h} px");
+                    AddPreview(view, 240);
+                    break;
+                }
+                case ProjectAssetKind.Audio when fullPath is not null:
+                {
+                    WavePeak[]? peaks = null;
+                    double seconds = 0;
+                    if (asset.Path.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) && new FileInfo(fullPath).Length <= 24L * 1024 * 1024)
+                    {
+                        try
                         {
-                            var view = new ImageView(this);
-                            view.SetImageBitmap(bitmap);
-                            view.SetAdjustViewBounds(true);
-                            view.SetMaxHeight(Dp(200));
-                            root.AddView(view, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, Dp(200)));
+                            var wave = WaveAudioDocument.Parse(File.ReadAllBytes(fullPath));
+                            peaks = wave.GetPeaks(320);
+                            seconds = wave.DurationSeconds;
+                            info.Add($"{wave.SampleRate} Hz · {(wave.Channels == 1 ? "mono" : "estéreo")} · {TimeSpan.FromSeconds(seconds):m\\:ss\\.f}");
+                        }
+                        catch (Exception ex) when (ex is InvalidDataException or NotSupportedException or IOException)
+                        {
+                            Note("Não foi possível desenhar a onda (" + ex.Message + "), mas dá para ouvir.");
                         }
                     }
+                    var preview = new AudioPreviewView(this, peaks, seconds, Path.Combine(CacheDir!.AbsolutePath, "audio-studio"), file: fullPath);
+                    disposables.Add(preview.Dispose);
+                    root.AddView(preview);
+                    break;
+                }
+                case ProjectAssetKind.Font when fullPath is not null:
+                {
+                    var sample = LunetUi.Label(this, "Aa Bb Cc 0123\nO rato roeu a roupa do rei", 26, LunetUi.Text);
+                    sample.SetTypeface(Typeface.CreateFromFile(fullPath), TypefaceStyle.Normal);
+                    sample.SetPadding(Dp(14), Dp(14), Dp(14), Dp(14));
+                    sample.Background = LunetUi.Shape(this, LunetUi.Surface, LunetUi.Radius, LunetUi.Border);
+                    root.AddView(sample);
+                    break;
+                }
+                case ProjectAssetKind.Data when fullPath is not null:
+                {
+                    var text = File.ReadAllText(fullPath);
+                    var snippet = LunetUi.Label(this, text.Length > 1400 ? text[..1400] + "\n…" : text, 11, LunetUi.TextMuted);
+                    snippet.SetTypeface(LunetUi.Mono, TypefaceStyle.Normal);
+                    snippet.SetPadding(Dp(12), Dp(10), Dp(12), Dp(10));
+                    snippet.Background = LunetUi.Shape(this, LunetUi.Surface, LunetUi.Radius, LunetUi.Border);
+                    var scroller = new ScrollView(this);
+                    scroller.AddView(snippet);
+                    AddPreview(scroller, 160);
+                    break;
                 }
             }
-            catch (Exception ex) when (ex is IOException or ArgumentException or UnauthorizedAccessException)
-            {
-                root.AddView(new TextView(this) { Text = "Não foi possível abrir a imagem: " + ex.Message, TextSize = 12 });
-            }
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or ProjectException or ArgumentException or UnauthorizedAccessException)
+        {
+            Note("Não foi possível mostrar a prévia: " + ex.Message);
+        }
+        details.Text = string.Join(" · ", info) + "\n" + asset.Path;
+
+        if (asset.UsageCode.StartsWith("//", StringComparison.Ordinal) is false)
+        {
+            var code = LunetUi.Label(this, asset.UsageCode, 12, LunetUi.AccentText);
+            code.SetTypeface(LunetUi.Mono, TypefaceStyle.Normal);
+            code.SetPadding(Dp(12), Dp(10), Dp(12), Dp(10));
+            code.Background = LunetUi.Shape(this, LunetUi.Surface, LunetUi.RadiusSmall, LunetUi.Border);
+            root.AddView(code);
         }
 
-        if (asset.Kind == ProjectAssetKind.Audio)
-        {
-            root.AddView(MakeButton("▶ Ouvir áudio", () =>
+        var actions = LunetUi.Row(this, 8);
+        if (asset.UsageCode.StartsWith("//", StringComparison.Ordinal) is false)
+            actions.AddView(LunetUi.Button(this, "⧉ Copiar uso", () =>
             {
-                try
-                {
-                    player?.Release();
-                    player?.Dispose();
-                    player = new AndroidMediaPlayer();
-                    player.SetDataSource(SafeAssetFilePath(project, asset.Path));
-                    player.Prepared += (_, _) => { if (dialog.IsShowing) player?.Start(); };
-                    player.PrepareAsync();
-                }
-                catch (Exception ex) when (ex is IOException or ArgumentException or InvalidOperationException or global::Java.Lang.Exception)
-                {
-                    Toast.MakeText(this, "Não foi possível reproduzir: " + ex.Message, ToastLength.Long)?.Show();
-                }
-            }));
-        }
-
-        var code = new TextView(this) { Text = asset.UsageCode, TextSize = 12 };
-        code.SetTypeface(Typeface.Monospace, TypefaceStyle.Normal);
-        code.SetPadding(0, Dp(12), 0, Dp(12));
-        root.AddView(code);
-        root.AddView(MakeButton("Copiar uso em C#", () =>
+                if (GetSystemService(ClipboardService) is global::Android.Content.ClipboardManager clipboard)
+                    clipboard.PrimaryClip = ClipData.NewPlainText("Código Lunet", asset.UsageCode);
+                Toast.MakeText(this, "Código copiado", ToastLength.Short)?.Show();
+            }), LunetUi.Weight());
+        string? editLabel = asset.Kind switch
         {
-            var clipboard = GetSystemService(ClipboardService) as ClipboardManager;
-            if (clipboard is not null) clipboard.PrimaryClip = ClipData.NewPlainText("Código Lunet", asset.UsageCode);
-            Toast.MakeText(this, "Código copiado", ToastLength.Short)?.Show();
-        }));
-
-        if (asset.Kind == ProjectAssetKind.Audio && asset.Path.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
-        {
-            root.AddView(MakeButton("Editar no Audio Studio", () =>
+            ProjectAssetKind.Sprite => "✎ Editar sprite",
+            ProjectAssetKind.TileMap => "▦ Editar mapa",
+            ProjectAssetKind.Audio when asset.Path.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) => "∿ Editar áudio",
+            ProjectAssetKind.Data => "⌨ Abrir no editor",
+            _ => null,
+        };
+        if (editLabel is not null)
+            actions.AddView(LunetUi.Button(this, editLabel, () =>
             {
                 dialog.Dismiss();
-                catalog.Dismiss();
-                OpenWaveAudio(asset.Path);
-            }));
-        }
-
-        if (asset.Kind is ProjectAssetKind.Sprite or ProjectAssetKind.TileMap or ProjectAssetKind.Data)
-        {
-            root.AddView(MakeButton(asset.Kind == ProjectAssetKind.Data ? "Abrir no editor" : "Editar no Studio", () =>
-            {
-                dialog.Dismiss();
-                catalog.Dismiss();
+                catalog?.Dismiss();
+                if (_explorerOpenForPreview) { _explorerOpenForPreview = false; if (_drawer?.Visibility == ViewStates.Visible) ToggleExplorer(); }
                 try
                 {
-                    if (asset.Kind == ProjectAssetKind.Sprite)
-                        OpenSpriteStudio(asset.Path, SpriteDocument.Parse(project.ReadText(asset.Path)));
-                    else if (asset.Kind == ProjectAssetKind.TileMap)
-                        OpenTileMap(asset.Path, TileMap.Parse(project.ReadText(asset.Path)));
+                    if (asset.Kind == ProjectAssetKind.Sprite) OpenSpriteStudio(asset.Path, SpriteDocument.Parse(project.ReadText(asset.Path)));
+                    else if (asset.Kind == ProjectAssetKind.TileMap) OpenTileMap(asset.Path, TileMap.Parse(project.ReadText(asset.Path)));
+                    else if (asset.Kind == ProjectAssetKind.Audio) OpenWaveAudio(asset.Path);
                     else OpenFile(asset.Path);
                 }
                 catch (Exception ex) when (ex is IOException or InvalidDataException or ProjectException or ArgumentException)
                 {
                     Toast.MakeText(this, "Não foi possível abrir: " + ex.Message, ToastLength.Long)?.Show();
                 }
-            }));
-        }
-        root.AddView(MakeButton("Fechar", () => dialog.Dismiss()));
+            }, ButtonStyle.Primary), LunetUi.Weight());
+        root.AddView(actions);
+        if (asset.Kind is ProjectAssetKind.Sprite or ProjectAssetKind.TileMap)
+            root.AddView(LunetUi.Button(this, "{ } Ver o arquivo como código", () =>
+            {
+                dialog.Dismiss();
+                catalog?.Dismiss();
+                if (_drawer?.Visibility == ViewStates.Visible) ToggleExplorer();
+                OpenFile(asset.Path);
+            }, ButtonStyle.Quiet));
+
         var scroll = new ScrollView(this);
         scroll.AddView(root);
         dialog.SetContentView(scroll);
-        dialog.DismissEvent += (_, _) =>
-        {
-            if (player is not null) { player.Release(); player.Dispose(); player = null; }
-            bitmap?.Dispose();
-        };
+        dialog.DismissEvent += (_, _) => { foreach (var dispose in disposables) dispose(); };
         dialog.Show();
-        dialog.Window?.SetLayout(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent);
+        dialog.Window?.SetBackgroundDrawable(LunetUi.Shape(this, LunetUi.SurfaceRaised, LunetUi.RadiusLarge));
+        dialog.Window?.SetLayout((int)(Resources!.DisplayMetrics!.WidthPixels * 0.94), ViewGroup.LayoutParams.WrapContent);
+    }
+
+    private bool _explorerOpenForPreview;
+
+    private static string AssetIcon(ProjectAssetKind kind) => kind switch
+    {
+        ProjectAssetKind.Sprite => "sprite",
+        ProjectAssetKind.TileMap => "tilemap",
+        ProjectAssetKind.Image => "image",
+        ProjectAssetKind.Audio => "waveform",
+        ProjectAssetKind.Font => "font",
+        _ => "data",
+    };
+
+    private static string FormatSize(long bytes) => bytes switch
+    {
+        < 1024 => bytes + " B",
+        < 1024 * 1024 => $"{bytes / 1024.0:0.#} KB",
+        _ => $"{bytes / 1024.0 / 1024.0:0.#} MB",
+    };
+
+    /// <summary>Decodifica com amostragem para caber na memória; devolve null se for grande demais.</summary>
+    private static Bitmap? DecodeForPreview(string path, out int width, out int height)
+    {
+        width = height = 0;
+        if (new FileInfo(path).Length > 24L * 1024 * 1024) return null;
+        using var bounds = new BitmapFactory.Options { InJustDecodeBounds = true };
+        BitmapFactory.DecodeFile(path, bounds)?.Dispose();
+        width = bounds.OutWidth; height = bounds.OutHeight;
+        if (width is <= 0 or > 8192 || height is <= 0 or > 8192) return null;
+        int sample = 1;
+        while (Math.Max(width, height) / sample > 1024) sample *= 2;
+        using var options = new BitmapFactory.Options { InSampleSize = sample };
+        return BitmapFactory.DecodeFile(path, options);
     }
 
     private static string AssetCategoryName(ProjectAssetKind kind) => kind switch

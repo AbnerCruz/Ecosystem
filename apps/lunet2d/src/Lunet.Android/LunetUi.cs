@@ -4,6 +4,7 @@ using Android.Graphics.Drawables;
 using Android.Text;
 using Android.Views;
 using Android.Widget;
+using Lunet.Studio;
 using AColor = Android.Graphics.Color;
 
 namespace Lunet.Android;
@@ -64,24 +65,51 @@ internal static class LunetUi
     {
         var label = new TextView(context) { Text = text, TextSize = size };
         label.SetTextColor(color ?? Text);
+        WithLeadingIcon(label, size);
         if (bold) label.SetTypeface(Typeface.Create("sans-serif-medium", TypefaceStyle.Normal), TypefaceStyle.Normal);
         label.SetLineSpacing(0, 1.15f);
         return label;
+    }
+
+    /// <summary>Troca um caractere inicial conhecido ("✦ Lunet IA", "⚠ 2 erros") por ícone vetorial desenhado à esquerda do texto.</summary>
+    public static void WithLeadingIcon(TextView view, float textSizeSp)
+    {
+        var text = view.Text ?? "";
+        if (!LunetIcons.TrySplitLabel(text, out var icon, out var rest, out _) || rest.Length == 0) return;
+        view.Text = rest;
+        SetLeadingIcon(view, icon, textSizeSp);
+    }
+
+    public static void SetLeadingIcon(TextView view, VectorIcon icon, float textSizeSp)
+    {
+        var drawable = new IconDrawable(view.Context!, icon, Math.Max(14, textSizeSp + 3), new AColor(view.CurrentTextColor));
+        view.CompoundDrawablePadding = Dp(view.Context!, 6);
+        view.SetCompoundDrawablesRelativeWithIntrinsicBounds(drawable, null, null, null);
+    }
+
+    /// <summary>Ícone vetorial solto (não clicável), pelo nome do catálogo.</summary>
+    public static ImageView IconImage(Context context, string icon, float sizeDp = 24, AColor? color = null)
+    {
+        var view = new ImageView(context);
+        view.SetImageDrawable(new IconDrawable(context, LunetIcons.Get(icon), sizeDp, color ?? TextMuted));
+        view.SetScaleType(ImageView.ScaleType.Center);
+        return view;
     }
 
     /// <summary>Primary / secondary / quiet buttons. <paramref name="keepsKeyboard"/> prevents stealing the IME focus.</summary>
     public static Button Button(Context context, string text, Action action, ButtonStyle style = ButtonStyle.Secondary,
         bool keepsKeyboard = false, string? description = null)
     {
-        var button = new Button(context) { Text = text, TextSize = TextLabel };
+        var button = new IconButton(context) { TextSize = TextLabel };
         button.SetAllCaps(false);
         button.SetMinWidth(0); button.SetMinimumWidth(0);
         button.SetMinHeight(Dp(context, 40)); button.SetMinimumHeight(Dp(context, 40));
         button.SetPadding(Dp(context, 14), 0, Dp(context, 14), 0);
         button.StateListAnimator = null;
         button.Elevation = 0;
-        button.ContentDescription = description ?? text;
+        button.ContentDescription = description ?? text.Replace('\n', ' ');
         Style(context, button, style);
+        button.SetLabel(text);
         if (keepsKeyboard) { button.Focusable = false; button.FocusableInTouchMode = false; }
         button.Click += (_, _) => action();
         return button;
@@ -99,6 +127,14 @@ internal static class LunetUi
         };
         button.Background = Pressable(context, fill, Radius, stroke);
         button.SetTextColor(text);
+        (button as IconButton)?.SyncIconColor();
+    }
+
+    /// <summary>Troca texto e ícone de um botão criado por <see cref="Button"/> (ex.: "▶" → "■").</summary>
+    public static void SetLabel(Button button, string text)
+    {
+        if (button is IconButton icon) icon.SetLabel(text);
+        else button.Text = text;
     }
 
     /// <summary>Square icon button (≥ 44dp touch target) with an accessible name.</summary>
@@ -111,9 +147,29 @@ internal static class LunetUi
         return button;
     }
 
+    /// <summary>Botão quadrado com ícone vetorial pelo nome do catálogo (sem depender de caracteres Unicode).</summary>
+    public static Button IconByName(Context context, string icon, string description, Action action, bool keepsKeyboard = false,
+        bool accent = false, ButtonStyle? style = null)
+    {
+        var button = new IconButton(context) { TextSize = TextLabel };
+        button.SetAllCaps(false);
+        button.SetMinWidth(0); button.SetMinimumWidth(0);
+        button.SetMinHeight(Dp(context, 40)); button.SetMinimumHeight(Dp(context, 40));
+        button.SetPadding(0, 0, 0, 0);
+        button.StateListAnimator = null;
+        button.Elevation = 0;
+        button.ContentDescription = description;
+        Style(context, button, style ?? (accent ? ButtonStyle.Primary : ButtonStyle.Quiet));
+        button.SetIcon(LunetIcons.Get(icon), IconSlot.Center);
+        if (keepsKeyboard) { button.Focusable = false; button.FocusableInTouchMode = false; }
+        button.Click += (_, _) => action();
+        return button;
+    }
+
     public static TextView Chip(Context context, string text, Action action, bool selected = false)
     {
         var chip = Label(context, text, TextLabel, selected ? AccentText : Text);
+        WithLeadingIcon(chip, TextLabel);
         chip.SetPadding(Dp(context, 12), Dp(context, 7), Dp(context, 12), Dp(context, 7));
         chip.Background = Pressable(context, selected ? AccentSoft : SurfaceRaised, 99, selected ? Accent : Border);
         chip.Clickable = true;

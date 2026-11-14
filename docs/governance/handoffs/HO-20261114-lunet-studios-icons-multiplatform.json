@@ -1,0 +1,126 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261114-lunet-studios-icons-multiplatform",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-14T10:30:00Z",
+  "agent": {
+    "id": "claude-lunet-studios-icons-multiplatform",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-491",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "claude/lunet2d-analysis-redesign-4ljh4e",
+  "base_commit": "938aacd",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Studio/SpriteSelection.cs",
+    "apps/lunet2d/src/Lunet.Studio/Icons/VectorIcon.cs",
+    "apps/lunet2d/src/Lunet.Studio/Icons/LunetIcons.cs",
+    "apps/lunet2d/src/Lunet.Android/IconDrawable.cs",
+    "apps/lunet2d/src/Lunet.Android/AudioPreviewView.cs",
+    "apps/lunet2d/src/Lunet.Android/FramePreviewView.cs",
+    "apps/lunet2d/src/Lunet.Android/SpriteStudioView.cs",
+    "apps/lunet2d/src/Lunet.Android/WaveAudioStudioView.cs",
+    "apps/lunet2d/src/Lunet.Android/LunetUi.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Assets.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.AudioStudio.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Workbench.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Chat.cs",
+    "apps/lunet2d/src/Lunet.Android/PreviewHost.cs",
+    "apps/lunet2d/src/Lunet.Android/GitPanel.cs",
+    "apps/lunet2d/src/Lunet.Android/DocumentationPanel.cs",
+    "apps/lunet2d/tests/Lunet.Tests/SpriteSelectionTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetIconsTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/PlatformPortabilityTests.cs",
+    "apps/lunet2d/docs/architecture/multiplataforma-viabilidade-2026-11-14.md",
+    "apps/lunet2d/docs/adr/0012-expansao-multiplataforma.md",
+    "apps/lunet2d/docs/guides/validacao-studios-icones.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261114-lunet-studios-icons-multiplatform.json"
+  ],
+  "work_completed": [
+    "LUNET-491: seleção de pixels (retângulo, laço, varinha) com mover/redimensionar/girar/espelhar/duplicar/apagar sobre camada flutuante no Sprite Studio, com testes antes da lógica",
+    "LUNET-491: prévia de áudio com cursor, toque na onda e ajuste ao vivo no Audio Studio, na criação de efeitos e nos Assets",
+    "LUNET-491: prévia real de sprite animado, imagem, som, fonte e dados nos Assets e ao tocar arquivos no Explorer",
+    "LUNET-491: catálogo vetorial de ícones substituindo caracteres Unicode em toda a interface Android",
+    "LUNET-492 (Fase A): estudo de viabilidade multiplataforma conferido contra o código, ADR 0012 Proposto, DEC-0062 pendente, fiscalização de portabilidade das bibliotecas, itens 482 e 493–496 no ROADMAP"
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project tests/Lunet.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Execução local: 857 testes, 0 falhas (inclui SpriteSelectionTests, LunetIconsTests, PlatformPortabilityTests)."
+    },
+    {
+      "check": "dotnet build src/Lunet.Android -c Debug",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Build local com Android SDK 36: 0 erros."
+    },
+    {
+      "check": "Validação no aparelho: seleção/transformação de pixels, prévias de áudio e assets, legibilidade dos ícones",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/validacao-studios-icones.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Nenhuma captura de tela ou execução em emulador/aparelho nesta sessão: o aspecto visual dos ícones, das alças de seleção e das prévias não foi visto",
+    "Seleção sem camadas, sem copiar/colar entre frames e sem adicionar à seleção",
+    "Menus em AlertDialog de lista ainda usam texto simples (sem ícones)"
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integração governada e release de desenvolvimento",
+    "Validação no aparelho pelo proprietário",
+    "Proprietário decidir DEC-0062 no portal; só então spike LUNET-482"
+  ],
+  "decisions_required": [
+    "DEC-0062"
+  ],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "docs/architecture/audits/lunet-diagnostico-geral-2026-11-14.md",
+    "docs/governance/protocolo-estudo-desenvolvimento.md",
+    "docs/governance/communication.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Nenhuma dependência entre Products; novos tipos ficam em Lunet.Studio e Lunet.Android do Lunet."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Expansão multiplataforma é mudança de lifecycle/responsabilidade: registrada como ADR 0012 Proposto e DEC-0062 pendente; nenhum código de produto de outra plataforma foi criado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Itens marcados como feito sem validação em aparelho; roteiro DEVICE entregue."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Contratos de plataforma não foram extraídos; propostos apenas quando o segundo host os exigir."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-vector-icon-catalog",
+      "status": "possible-candidate",
+      "rationale": "Catálogo de ícones vetoriais independente de plataforma poderia servir a outros Products; sem segundo consumidor real hoje, permanece no Lunet."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
