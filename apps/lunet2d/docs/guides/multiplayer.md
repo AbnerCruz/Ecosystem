@@ -149,7 +149,27 @@ var cliente = NetworkSession.Join(new NetworkSimulator(rede.CreateTransport(), r
 
 ## Servidor dedicado
 
-`NetworkSession.Host(transporte, porta, opcoes, dedicated: true)` roda sem jogador local (por exemplo, num .NET headless num PC ou servidor), com a mesma lógica do host.
+`NetworkSession.Host(transporte, porta, opcoes, dedicated: true)` roda sem jogador local, com a mesma lógica do host. Para rodar o **mesmo projeto** como servidor num PC (Windows, Linux ou macOS) com .NET 10:
+
+```bash
+# na pasta do Lunet (código-fonte), apontando para a pasta do projeto exportado (ZIP descompactado)
+dotnet run --project src/Lunet.Server -- /caminho/MeuJogo            # roda até Ctrl+C
+dotnet run --project src/Lunet.Server -- /caminho/MeuJogo --check    # só compila
+```
+
+O servidor não tem tela: `Game.IsHeadless` é `true`. Use isso para decidir o papel:
+
+```csharp
+protected override void Initialize()
+{
+    var opcoes = new NetworkSessionOptions { GameId = "arena" };
+    _rede = IsHeadless
+        ? NetworkSession.Host(new UdpTransport("arena"), 7777, opcoes, dedicated: true)
+        : NetworkSession.Join(new UdpTransport("arena"), "meu-servidor.local", 7777, opcoes);
+}
+```
+
+Saves do servidor ficam em `.lunet/server-saves/` (ou `--saves pasta`).
 
 ## Limites atuais
 

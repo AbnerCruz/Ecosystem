@@ -701,3 +701,8 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - `Lunet.Networking`: `INetworkTransport` (`UdpTransport` com LiteNetLib 2.1.5 interno, `LoopbackTransport`, `NetworkSimulator`), `NetWriter`/`NetReader`, `NetworkSession` (+ `NetworkClock`), replicação (`NetworkObject`, `NetworkVariable<T>`, snapshots, interpolação), `ClientPrediction`, `LanDiscovery`/`ILobbyDirectory`/`IMatchmaker`. `TcpGameHost/Client` mantidos.
 - Gate da Fase 7 automatizado (servidor + 2 clientes, latência 80±30 ms, 8% perda): converge. UDP real e descoberta LAN testados em loopback (5 rodadas sem falha). LiteNetLib presente no APK do Lunet e no template standalone (build local). Exemplo do guia compila (teste).
 - Verificação local: 996 testes. DEVICE pendente (dois aparelhos; `docs/guides/multiplayer.md`). Handoff `HO-20261114-lunet-multiplayer-realtime.json`.
+
+### 20261114-claude-lunet-headless-server — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
+- LUNET-502 (Fase 7, "servidor .NET headless"; parte da multiplataforma que não depende de DEC-0062): `HeadlessGraphicsBackend` e `Game.IsHeadless` (Framework, aditivo, documentado; API JSON regenerada), `HeadlessGameRunner` (Runtime), executável `src/Lunet.Server` (`lunet-server <projeto> [--check] [--seconds N] [--saves pasta]`).
+- Teste ponta a ponta: pasta de projeto → compilação → servidor dedicado headless → cliente UDP real recebe a replicação. 999 testes locais.
+- DEC-0062 (tecnologia da casca desktop/navegador/iOS) segue pendente no portal; nenhum host de UI novo criado. Handoff `HO-20261114-lunet-headless-server.json`.

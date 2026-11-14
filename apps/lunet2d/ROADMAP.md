@@ -317,7 +317,7 @@ Gate: dois clientes jogam demonstração realtime com latência simulada.
 - [ ] `NetworkIdentity`, `NetworkObject`, `NetworkVariable`. LUNET-501 entrega (identidade = `NetworkId` + dono); DEVICE pendente.
 - [ ] Snapshots, replicação, interpolação, predição, reconciliação. LUNET-501 entrega; delta compression e lag compensation ainda não; DEVICE pendente.
 - [ ] Abstrações de lobby e matchmaking; diagnósticos. LUNET-501 entrega `ILobbyDirectory`, `IMatchmaker`, `LanDiscovery` e `TransportStatistics`; sem diretório online nem overlay visual.
-- [ ] Client-hosted, dedicated server e backend-integrated; servidor .NET headless; projetos `Shared/`, `Client/`, `Server/`.
+- [ ] Client-hosted, dedicated server e backend-integrated; servidor .NET headless; projetos `Shared/`, `Client/`, `Server/`. LUNET-502 entrega client-hosted e dedicado (`NetworkSession.Host(..., dedicated: true)`), `HeadlessGraphicsBackend`, `Game.IsHeadless`, `HeadlessGameRunner` e o executável `lunet-server` (Windows/Linux/macOS: compila a pasta do projeto e roda sem tela; teste ponta a ponta com cliente UDP real). Falta: backend-integrated, separação `Shared/Client/Server` em template e binário publicado na release.
 - [ ] Network Simulator: latência, jitter, perda, duplicação, limite de banda. LUNET-501 entrega (`NetworkSimulator`, presets); falta painel no Preview.
 - [ ] Testes de rede (serialização, reconexão, perda de pacotes). LUNET-501: serialização, perda, duplicação, ordem, banda, handshake, flood, UDP real e descoberta LAN; reconexão automática ainda não.
 - [ ] Multiplayer local no mesmo aparelho, tela compartilhada, split-screen, hot-seat, turnos, entradas e câmeras independentes.

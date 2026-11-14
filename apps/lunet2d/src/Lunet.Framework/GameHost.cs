@@ -103,7 +103,7 @@ public sealed class GameHost
             var configuration = _game.Configuration;
             var device = new GraphicsDevice(_backend, configuration.VirtualWidth, configuration.VirtualHeight);
             _content = new ContentManager(_contentSource, device, _audio);
-            _game.Attach(device, Input, _content, new SaveData(_saveStore), _haptics);
+            _game.Attach(device, Input, _content, new SaveData(_saveStore), _haptics, _backend is HeadlessGraphicsBackend);
             GraphicsDevice = device;
             GraphicsDevice.SetDisplay(_display.Density, _display.Left, _display.Top, _display.Right, _display.Bottom);
             GraphicsDevice.Resize(surfaceWidth, surfaceHeight);

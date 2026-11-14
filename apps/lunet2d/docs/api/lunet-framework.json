@@ -669,6 +669,19 @@
           "since": "0.0.1"
         },
         {
+          "id": "P:Lunet.Game.IsHeadless",
+          "name": "IsHeadless",
+          "kind": "property",
+          "signature": "public bool IsHeadless { get; }",
+          "summary": "True when the game runs without a screen \u2014 on a dedicated multiplayer server (\u0060Lunet.Server\u0060) or in automated tests. Use it to host instead of joining, or to skip effects nobody will see.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "P:Lunet.Game.Localization",
           "name": "Localization",
           "kind": "property",
@@ -8115,6 +8128,342 @@
             }
           ],
           "returns": "O mesmo ponto em pixels da superf\u00EDcie.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Graphics.HeadlessGraphicsBackend",
+      "name": "HeadlessGraphicsBackend",
+      "namespace": "Lunet.Graphics",
+      "kind": "class",
+      "signature": "public sealed class HeadlessGraphicsBackend : IGraphicsBackend",
+      "summary": "Backend gr\u00E1fico sem tela nem GPU: texturas, alvos e shaders recebem identificadores v\u00E1lidos e o desenho \u00E9 s\u00F3 contado. Serve ao servidor dedicado (\u0060lunet-server\u0060) e a testes autom\u00E1ticos; o jogo roda o mesmo c\u00F3digo e pode consultar \u0060Game.IsHeadless\u0060 para pular o que s\u00F3 importa na tela.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\n// No jogo: o mesmo c\u00F3digo roda no aparelho e no servidor sem tela.\nif (IsHeadless) Log.Info(\u0022rodando como servidor\u0022);\n// Num teste ou ferramenta: new GameHost(jogo, new HeadlessGraphicsBackend()) roda sem GPU.\nvar semTela = new HeadlessGraphicsBackend();\nLog.Info(\u0022quads desenhados: \u0022 \u002B semTela.QuadsDrawn);\n\u0060\u0060\u0060"
+      ],
+      "related": [
+        "P:Lunet.Game.IsHeadless"
+      ],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "P:Lunet.Graphics.HeadlessGraphicsBackend.DrawCalls",
+          "name": "DrawCalls",
+          "kind": "property",
+          "signature": "public long DrawCalls { get; }",
+          "summary": "Quantas chamadas de desenho o jogo fez desde o in\u00EDcio.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.HeadlessGraphicsBackend.LiveTextures",
+          "name": "LiveTextures",
+          "kind": "property",
+          "signature": "public int LiveTextures { get; }",
+          "summary": "Texturas criadas e ainda n\u00E3o liberadas.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.HeadlessGraphicsBackend.QuadsDrawn",
+          "name": "QuadsDrawn",
+          "kind": "property",
+          "signature": "public long QuadsDrawn { get; }",
+          "summary": "Quantos quads o jogo pediu para desenhar desde o in\u00EDcio (sinal de vida barato nos logs do servidor).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.Clear(Lunet.Graphics.Color)",
+          "name": "Clear",
+          "kind": "method",
+          "signature": "public void Clear(Color color)",
+          "summary": "N\u00E3o faz nada: n\u00E3o h\u00E1 tela.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "color",
+              "type": "Color",
+              "description": "Cor de fundo (ignorada)."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.CreateRenderTarget(System.Int32,System.Int32,Lunet.Graphics.TextureFilter,System.Int32@)",
+          "name": "CreateRenderTarget",
+          "kind": "method",
+          "signature": "public int CreateRenderTarget(int width, int height, TextureFilter filter, out int textureHandle)",
+          "summary": "Registra um alvo de desenho e sua textura.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "int",
+              "description": "Largura, em pixels."
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "description": "Altura, em pixels."
+            },
+            {
+              "name": "filter",
+              "type": "TextureFilter",
+              "description": "Filtro (ignorado)."
+            },
+            {
+              "name": "textureHandle",
+              "type": "int",
+              "description": "Recebe o identificador da textura do alvo."
+            }
+          ],
+          "returns": "Identificador do alvo.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.CreateShader(System.String)",
+          "name": "CreateShader",
+          "kind": "method",
+          "signature": "public int CreateShader(string fragmentSource)",
+          "summary": "Registra um shader sem compil\u00E1-lo (n\u00E3o h\u00E1 GPU para validar o c\u00F3digo).",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "fragmentSource",
+              "type": "string",
+              "description": "C\u00F3digo GLSL do fragment shader (ignorado)."
+            }
+          ],
+          "returns": "Identificador do shader.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.CreateTexture(System.Int32,System.Int32,System.ReadOnlySpan{System.Byte},Lunet.Graphics.TextureFilter)",
+          "name": "CreateTexture",
+          "kind": "method",
+          "signature": "public int CreateTexture(int width, int height, ReadOnlySpan\u003Cbyte\u003E rgba, TextureFilter filter)",
+          "summary": "Registra uma textura sem enviar pixels a uma GPU.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "int",
+              "description": "Largura."
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "description": "Altura."
+            },
+            {
+              "name": "rgba",
+              "type": "ReadOnlySpan\u003Cbyte\u003E",
+              "description": "Pixels RGBA (ignorados)."
+            },
+            {
+              "name": "filter",
+              "type": "TextureFilter",
+              "description": "Filtro (ignorado)."
+            }
+          ],
+          "returns": "Identificador da textura.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.DeleteRenderTarget(System.Int32)",
+          "name": "DeleteRenderTarget",
+          "kind": "method",
+          "signature": "public void DeleteRenderTarget(int handle)",
+          "summary": "Libera um alvo de desenho.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "handle",
+              "type": "int",
+              "description": "Identificador do alvo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.DeleteShader(System.Int32)",
+          "name": "DeleteShader",
+          "kind": "method",
+          "signature": "public void DeleteShader(int handle)",
+          "summary": "Libera um shader.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "handle",
+              "type": "int",
+              "description": "Identificador do shader."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.DeleteTexture(System.Int32)",
+          "name": "DeleteTexture",
+          "kind": "method",
+          "signature": "public void DeleteTexture(int handle)",
+          "summary": "Libera uma textura.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "handle",
+              "type": "int",
+              "description": "Identificador da textura."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.DrawQuads(System.Int32,System.ReadOnlySpan{Lunet.Graphics.SpriteVertex},System.Int32,System.Numerics.Matrix4x4@)",
+          "name": "DrawQuads",
+          "kind": "method",
+          "signature": "public void DrawQuads(int textureHandle, ReadOnlySpan\u003CSpriteVertex\u003E vertices, int quadCount, in Matrix4x4 projection)",
+          "summary": "Conta o desenho sem rasterizar nada.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "textureHandle",
+              "type": "int",
+              "description": "Textura usada."
+            },
+            {
+              "name": "vertices",
+              "type": "ReadOnlySpan\u003CSpriteVertex\u003E",
+              "description": "V\u00E9rtices (ignorados)."
+            },
+            {
+              "name": "quadCount",
+              "type": "int",
+              "description": "Quantos quads."
+            },
+            {
+              "name": "projection",
+              "type": "Matrix4x4",
+              "description": "Proje\u00E7\u00E3o (ignorada)."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.SetDrawState(Lunet.Graphics.DrawState)",
+          "name": "SetDrawState",
+          "kind": "method",
+          "signature": "public void SetDrawState(DrawState state)",
+          "summary": "N\u00E3o faz nada: n\u00E3o h\u00E1 tela.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "state",
+              "type": "DrawState",
+              "description": "Estado de desenho (ignorado)."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.SetRenderTarget(System.Int32,System.Int32,System.Int32)",
+          "name": "SetRenderTarget",
+          "kind": "method",
+          "signature": "public void SetRenderTarget(int handle, int width, int height)",
+          "summary": "N\u00E3o faz nada: n\u00E3o h\u00E1 tela.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "handle",
+              "type": "int",
+              "description": "Identificador do alvo (0 \u00E9 a tela)."
+            },
+            {
+              "name": "width",
+              "type": "int",
+              "description": "Largura, em pixels."
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "description": "Altura, em pixels."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.HeadlessGraphicsBackend.SetViewport(System.Int32,System.Int32,System.Int32,System.Int32)",
+          "name": "SetViewport",
+          "kind": "method",
+          "signature": "public void SetViewport(int x, int y, int width, int height)",
+          "summary": "N\u00E3o faz nada: n\u00E3o h\u00E1 tela.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "x",
+              "type": "int",
+              "description": "Esquerda."
+            },
+            {
+              "name": "y",
+              "type": "int",
+              "description": "Base."
+            },
+            {
+              "name": "width",
+              "type": "int",
+              "description": "Largura."
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "description": "Altura."
+            }
+          ],
+          "returns": "",
           "examples": [],
           "related": [],
           "since": "0.0.1"
