@@ -63,7 +63,7 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
         {
             _paused = !_paused;
             renderer.SetPaused(_paused);
-            pause!.Text = _paused ? "▶" : "⏸";
+            LunetUi.SetLabel(pause!, _paused ? "▶" : "⏸");
             pause.ContentDescription = _paused ? "Continuar" : "Pausar";
         }, "Pausar");
         controls.AddView(pause);
@@ -105,6 +105,7 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
     {
         var button = LunetUi.Icon(_activity, label, description, action);
         button.SetTextColor(LunetUi.Text);
+        (button as IconButton)?.SyncIconColor();
         button.LayoutParameters = new LinearLayout.LayoutParams(LunetUi.Dp(_activity, 46), LunetUi.Dp(_activity, 44));
         return button;
     }

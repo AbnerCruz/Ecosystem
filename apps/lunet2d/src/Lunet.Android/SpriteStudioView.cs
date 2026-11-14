@@ -7,6 +7,7 @@ using Android.Views;
 using Android.Widget;
 using Lunet.Studio;
 using AColor = Android.Graphics.Color;
+using APath = Android.Graphics.Path;
 
 namespace Lunet.Android;
 
@@ -49,6 +50,12 @@ internal sealed class SpriteStudioView : LinearLayout
     private bool _playing, _onion, _grid = true;
     private Button? _play;
     private readonly int _tileSize;
+    private SpriteSelection? _selection;
+    private SpriteFloating? _floating;
+    private float[] _selectionLines = [];
+    private int _wandTolerance;
+    private LinearLayout _selectionBar = null!;
+    private Button _confirmButton = null!;
 
     public SpriteStudioView(Context context, SpriteDocument document, Action<SpriteDocument> save,
         Action<SpriteDocument> export, Action close, int tilesetTileSize = 0) : base(context)
@@ -111,29 +118,51 @@ internal sealed class SpriteStudioView : LinearLayout
         paletteRow.AddView(paletteScroll, LunetUi.Weight());
         AddView(paletteRow);
 
-        // Tools: one compact row.
+        // Selection actions: appear only while something is selected or floating.
+        _selectionBar = LunetUi.Row(context, 2);
+        _selectionBar.SetPadding(Dp(8), Dp(2), Dp(8), Dp(2));
+        _selectionBar.SetBackgroundColor(LunetUi.SurfaceRaised);
+        _selectionBar.Visibility = ViewStates.Gone;
+        _confirmButton = LunetUi.IconByName(context, "confirm", "Aplicar a seleção", CommitFloating, accent: true);
+        _selectionBar.AddView(_confirmButton, Square(44));
+        _selectionBar.AddView(LunetUi.IconByName(context, "cancel", "Cancelar (desfaz o movimento) ou limpar a seleção", CancelSelection), Square(44));
+        _selectionBar.AddView(new View(context), LunetUi.Weight());
+        _selectionBar.AddView(LunetUi.IconByName(context, "rotate-90", "Girar 90°", () => OnFloating(f => f.Rotate90(true))), Square(44));
+        _selectionBar.AddView(LunetUi.IconByName(context, "flip-horizontal", "Espelhar horizontalmente", () => OnFloating(f => f.FlipHorizontal())), Square(44));
+        _selectionBar.AddView(LunetUi.IconByName(context, "flip-vertical", "Espelhar verticalmente", () => OnFloating(f => f.FlipVertical())), Square(44));
+        _selectionBar.AddView(LunetUi.IconByName(context, "duplicate", "Duplicar (carimbar uma cópia)", DuplicateSelection), Square(44));
+        _selectionBar.AddView(LunetUi.IconByName(context, "trash", "Apagar os pixels selecionados", DeleteSelection), Square(44));
+        AddView(_selectionBar);
+
+        // Tools: one scrolling row, plus "more" pinned at the end.
+        var toolRow = LunetUi.Row(context, 0);
+        toolRow.SetPadding(Dp(4), Dp(2), Dp(4), Dp(8));
+        var toolScroll = new HorizontalScrollView(context) { HorizontalScrollBarEnabled = false };
         var tools = LunetUi.Row(context, 2);
-        tools.SetPadding(Dp(4), Dp(2), Dp(4), Dp(8));
-        void ToolButton(string id, string glyph, string name)
+        toolScroll.AddView(tools);
+        void ToolButton(string id, string icon, string name)
         {
-            var button = LunetUi.Icon(context, glyph, name, () => Tool(id));
-            button.TextSize = 19;
-            tools.AddView(button, new LayoutParams(0, Dp(46), 1));
+            var button = LunetUi.IconByName(context, icon, name, () => Tool(id));
+            tools.AddView(button, new LayoutParams(Dp(48), Dp(46)));
             _toolButtons.Add((id, button));
         }
-        ToolButton("pencil", "✎", "Lápis");
-        ToolButton("eraser", "⌫", "Borracha");
-        ToolButton("fill", "◍", "Balde");
-        ToolButton("picker", "⊙", "Conta-gotas");
-        ToolButton("line", "╱", "Linha");
-        ToolButton("rect", "▭", "Retângulo");
-        ToolButton("rectfill", "■", "Retângulo cheio");
+        ToolButton("pencil", "pencil", "Lápis");
+        ToolButton("eraser", "eraser", "Borracha");
+        ToolButton("fill", "bucket", "Balde de tinta");
+        ToolButton("picker", "picker", "Conta-gotas");
+        ToolButton("line", "line", "Linha");
+        ToolButton("rect", "rect", "Retângulo");
+        ToolButton("rectfill", "rect-filled", "Retângulo cheio");
+        ToolButton("select", "select", "Selecionar área (mover, girar, redimensionar)");
+        ToolButton("lasso", "lasso", "Laço: selecionar à mão livre");
+        ToolButton("wand", "wand", "Varinha: selecionar por cor");
         var brush = LunetUi.Icon(context, "1px", "Tamanho do pincel", () => { });
         brush.TextSize = 12;
         brush.Click += (_, _) => { _brush = _brush switch { 1 => 2, 2 => 3, 3 => 5, _ => 1 }; brush.Text = _brush + "px"; Refresh(); };
-        tools.AddView(brush, new LayoutParams(0, Dp(46), 1));
-        tools.AddView(LunetUi.Icon(context, "⋮", "Mais ferramentas", ShowMoreMenu), new LayoutParams(0, Dp(46), 1));
-        AddView(tools);
+        tools.AddView(brush, new LayoutParams(Dp(48), Dp(46)));
+        toolRow.AddView(toolScroll, LunetUi.Weight());
+        toolRow.AddView(LunetUi.IconByName(context, "more-vertical", "Mais ferramentas", ShowMoreMenu), new LayoutParams(Dp(48), Dp(46)));
+        AddView(toolRow);
 
         Refresh();
         RefreshPalette();
@@ -153,8 +182,8 @@ internal sealed class SpriteStudioView : LinearLayout
 
     private void Tool(string value) { Stop(); _tool = value; Refresh(); }
 
-    private void Undo() { Stop(); if (!_history.CanUndo) return; _document = _history.Undo(_document); AfterEdit(); }
-    private void Redo() { Stop(); if (!_history.CanRedo) return; _document = _history.Redo(_document); AfterEdit(); }
+    private void Undo() { if (_floating is not null) { CancelFloating(); return; } Stop(); if (!_history.CanUndo) return; _document = _history.Undo(_document); AfterEdit(); }
+    private void Redo() { if (_floating is not null) return; Stop(); if (!_history.CanRedo) return; _document = _history.Redo(_document); AfterEdit(); }
 
     private void Structural(Action mutation)
     {
@@ -175,16 +204,97 @@ internal sealed class SpriteStudioView : LinearLayout
 
     private void Stop()
     {
+        CommitFloating();
+        _selection = null;
         _playing = false;
         _handler.RemoveCallbacks(_tick);
-        if (_play is not null) _play.Text = "▶";
+        if (_play is not null) LunetUi.SetLabel(_play, "▶");
     }
+
+    // ---------- Selection ----------
+
+    internal bool IsSelectionTool => _tool is "select" or "lasso" or "wand";
+
+    private void SetSelection(SpriteSelection? selection)
+    {
+        _selection = selection is { IsEmpty: false } ? selection : null;
+        _selectionLines = _selection is null ? [] : _selection.OutlineSegments()
+            .SelectMany(e => new float[] { e.X0, e.Y0, e.X1, e.Y1 }).ToArray();
+        Refresh();
+    }
+
+    /// <summary>Levanta os pixels selecionados para a camada flutuante. Um ponto de desfazer por levantamento.</summary>
+    private void EnsureFloating(bool copy = false)
+    {
+        if (_floating is not null || _selection is null) return;
+        _history.CheckpointFrame(_document, _frame);
+        _floating = SpriteFloating.Lift(_document, _frame, _selection, copy);
+        _selection = null;
+        _selectionLines = [];
+        Refresh();
+    }
+
+    /// <summary>Redesenha só a tela durante um arrasto; evita recriar paleta e linha do tempo a cada movimento.</summary>
+    internal void RefreshFloatingOnly() => _canvas.Invalidate();
+
+    private void OnFloating(Action<SpriteFloating> change)
+    {
+        EnsureFloating();
+        if (_floating is null) return;
+        change(_floating);
+        Refresh();
+    }
+
+    private void CommitFloating()
+    {
+        if (_floating is not { } floating) return;
+        _floating = null;
+        floating.Commit(_document, _frame);
+        _selection = null;
+        AfterEdit();
+    }
+
+    private void CancelFloating()
+    {
+        if (_floating is null) return;
+        _floating = null;
+        _document = _history.Rollback(_document);
+        Refresh();
+    }
+
+    private void CancelSelection()
+    {
+        if (_floating is not null) CancelFloating();
+        else SetSelection(null);
+    }
+
+    private void DuplicateSelection()
+    {
+        if (_floating is { } floating) { floating.Stamp(_document, _frame); Refresh(); return; }
+        EnsureFloating(copy: true);
+        _floating?.MoveBy(2, 2);
+        Refresh();
+    }
+
+    private void DeleteSelection()
+    {
+        if (_floating is not null) { CancelFloating(); _selection = null; _selectionLines = []; }
+        else if (_selection is { } selection)
+        {
+            FrameEdit(() => selection.Erase(_document, _frame));
+            return;
+        }
+        Refresh();
+    }
+
+    private void SelectAll() { Stop(); Tool("select"); SetSelection(SpriteSelection.All(_document.Width, _document.Height)); }
 
     private void TogglePlay()
     {
         if (_playing) { Stop(); Refresh(); return; }
+        Stop();
         _playing = true;
-        if (_play is not null) _play.Text = "■";
+        if (_play is not null) LunetUi.SetLabel(_play, "■");
         _handler.Post(_tick);
     }
 
@@ -246,10 +356,17 @@ internal sealed class SpriteStudioView : LinearLayout
         var name = _tool switch
         {
             "pencil" => "Lápis", "eraser" => "Borracha", "fill" => "Balde", "picker" => "Conta-gotas",
-            "line" => "Linha", "rect" => "Retângulo", _ => "Retângulo cheio",
+            "line" => "Linha", "rect" => "Retângulo", "select" => "Seleção", "lasso" => "Laço", "wand" => "Varinha",
+            _ => "Retângulo cheio",
         };
         _title.Text = $"{_document.Width}×{_document.Height} · frame {_frame + 1}/{_document.Frames.Count} · {name}" +
                       (_tool is "pencil" or "eraser" or "line" ? $" {_brush}px" : "");
+        if (_floating is not null)
+            _title.Text = "Arraste para mover · cantos e bordas redimensionam · círculo gira";
+        else if (_selection is not null)
+            _title.Text = $"{_selection.Count} pixel(s) selecionado(s) · arraste para mover";
+        _selectionBar.Visibility = _floating is not null || _selection is not null ? ViewStates.Visible : ViewStates.Gone;
+        _confirmButton.Visibility = _floating is not null ? ViewStates.Visible : ViewStates.Gone;
         foreach (var (tool, button) in _toolButtons)
             LunetUi.Style(Context!, button, tool == _tool ? ButtonStyle.Selected : ButtonStyle.Quiet);
         _currentColor.Background = Swatch(_color, true);
@@ -320,8 +437,10 @@ internal sealed class SpriteStudioView : LinearLayout
 
     private void ShowMoreMenu() => ShowMenu("Ferramentas",
     [
-        ("Espelhar horizontalmente", () => FrameEdit(() => _document.FlipHorizontal(_frame))),
-        ("Espelhar verticalmente", () => FrameEdit(() => _document.FlipVertical(_frame))),
+        ("Selecionar tudo", SelectAll),
+        ($"Varinha: tolerância {_wandTolerance} (alternar 0 / 24 / 64)", () => { _wandTolerance = _wandTolerance switch { 0 => 24, 24 => 64, _ => 0 }; Refresh(); }),
+        ("Espelhar imagem horizontalmente", () => FrameEdit(() => _document.FlipHorizontal(_frame))),
+        ("Espelhar imagem verticalmente", () => FrameEdit(() => _document.FlipVertical(_frame))),
         ("Limpar frame", () => FrameEdit(() => Array.Clear(_document.Frames[_frame]))),
         ((_grid ? "Esconder" : "Mostrar") + " grade", () => { _grid = !_grid; Refresh(); }),
         ("Centralizar e ajustar à tela", () => { _canvas.ResetView(); }),
@@ -433,6 +552,15 @@ internal sealed class SpriteStudioView : LinearLayout
         private int _lastX, _lastY, _startX, _startY, _previewX, _previewY, _maxPointers;
         private long _downTime;
         private float _midX, _midY, _travel;
+        // Selection gestures
+        private enum Grab { None, Move, Corner, EdgeX, EdgeY, Rotate }
+        private Grab _grab;
+        private bool _selecting;
+        private readonly List<(int X, int Y)> _lasso = [];
+        private float _grabFx, _grabFy, _startScaleX = 1, _startScaleY = 1;
+        private int _appliedDx, _appliedDy;
+        private readonly Paint _ants = new() { StrokeWidth = 2 };
+        private readonly Paint _handlePaint = new(PaintFlags.AntiAlias);
 
         public PixelCanvas(Context context, SpriteStudioView owner) : base(context)
         {
@@ -475,7 +603,7 @@ internal sealed class SpriteStudioView : LinearLayout
                 Blit(_onionBitmap!, doc.Frames[frame - 1], _buffer);
                 canvas.DrawBitmap(_onionBitmap!, null, dest, _onionPaint);
             }
-            Blit(_frameBitmap!, doc.Frames[frame], _buffer);
+            Blit(_frameBitmap!, _owner._floating?.Compose() ?? doc.Frames[frame], _buffer);
             canvas.DrawBitmap(_frameBitmap!, null, dest, _pixels);
 
             if (_owner._grid && _cell >= 8)
@@ -508,6 +636,88 @@ internal sealed class SpriteStudioView : LinearLayout
                 else canvas.DrawRect(Math.Min(x0, x1), Math.Min(y0, y1), Math.Max(x0, x1), Math.Max(y0, y1), _line);
             }
             _line.SetStyle(Paint.Style.Fill);
+            DrawSelectionOverlay(canvas);
+        }
+
+        private float ScreenX(float x) => _left + x * _cell;
+        private float ScreenY(float y) => _top + y * _cell;
+
+        private void DrawSelectionOverlay(Canvas canvas)
+        {
+            float dp = Resources!.DisplayMetrics!.Density;
+            _ants.SetStyle(Paint.Style.Stroke);
+            if (_owner._selection is not null && _owner._selectionLines.Length > 0)
+            {
+                var lines = _owner._selectionLines;
+                var screen = new float[lines.Length];
+                for (int i = 0; i < lines.Length; i += 2) { screen[i] = ScreenX(lines[i]); screen[i + 1] = ScreenY(lines[i + 1]); }
+                _ants.SetPathEffect(null); _ants.Color = AColor.Argb(200, 0, 0, 0); _ants.StrokeWidth = 4;
+                canvas.DrawLines(screen, _ants);
+                _ants.SetPathEffect(new DashPathEffect([8 * dp, 6 * dp], 0)); _ants.Color = AColor.White; _ants.StrokeWidth = 2;
+                canvas.DrawLines(screen, _ants);
+                _ants.SetPathEffect(null);
+            }
+            if (_owner._floating is { } floating)
+            {
+                var corners = floating.Corners();
+                var outline = new APath();
+                outline.MoveTo(ScreenX(corners[0].X), ScreenY(corners[0].Y));
+                for (int i = 1; i < 4; i++) outline.LineTo(ScreenX(corners[i].X), ScreenY(corners[i].Y));
+                outline.Close();
+                _ants.Color = LunetUi.Accent; _ants.StrokeWidth = 2 * dp;
+                canvas.DrawPath(outline, _ants);
+                foreach (var (hx, hy, _, _) in Handles(floating))
+                {
+                    _handlePaint.SetStyle(Paint.Style.Fill); _handlePaint.Color = AColor.White;
+                    canvas.DrawCircle(hx, hy, 6 * dp, _handlePaint);
+                    _handlePaint.SetStyle(Paint.Style.Stroke); _handlePaint.Color = LunetUi.Accent; _handlePaint.StrokeWidth = 2 * dp;
+                    canvas.DrawCircle(hx, hy, 6 * dp, _handlePaint);
+                }
+                var rot = Handles(floating).First(h => h.Grab == Grab.Rotate);
+                var topMid = Handles(floating).First(h => h.Grab == Grab.EdgeY && h.Index == 0);
+                _ants.StrokeWidth = 1.5f * dp;
+                canvas.DrawLine(topMid.X, topMid.Y, rot.X, rot.Y, _ants);
+            }
+            if (_selecting && _owner._tool == "select")
+            {
+                _ants.Color = AColor.White; _ants.StrokeWidth = 2;
+                float x0 = ScreenX(Math.Min(_startX, _previewX)), y0 = ScreenY(Math.Min(_startY, _previewY));
+                float x1 = ScreenX(Math.Max(_startX, _previewX) + 1), y1 = ScreenY(Math.Max(_startY, _previewY) + 1);
+                _ants.SetPathEffect(new DashPathEffect([8 * dp, 6 * dp], 0));
+                canvas.DrawRect(x0, y0, x1, y1, _ants);
+                _ants.SetPathEffect(null);
+            }
+            if (_selecting && _owner._tool == "lasso" && _lasso.Count > 1)
+            {
+                _ants.Color = AColor.White; _ants.StrokeWidth = 2;
+                var path = new APath();
+                path.MoveTo(ScreenX(_lasso[0].X + .5f), ScreenY(_lasso[0].Y + .5f));
+                foreach (var (lx, ly) in _lasso.Skip(1)) path.LineTo(ScreenX(lx + .5f), ScreenY(ly + .5f));
+                path.Close();
+                _ants.SetPathEffect(new DashPathEffect([8 * dp, 6 * dp], 0));
+                canvas.DrawPath(path, _ants);
+                _ants.SetPathEffect(null);
+            }
+            _ants.SetStyle(Paint.Style.Fill);
+        }
+
+        /// <summary>Alças do objeto flutuante em coordenadas de tela: 4 cantos, 4 meios de borda e o círculo de rotação.</summary>
+        private List<(float X, float Y, Grab Grab, int Index)> Handles(SpriteFloating floating)
+        {
+            var c = floating.Corners();
+            var list = new List<(float, float, Grab, int)>();
+            for (int i = 0; i < 4; i++) list.Add((ScreenX(c[i].X), ScreenY(c[i].Y), Grab.Corner, i));
+            // Edge midpoints: 0 = top, 1 = right, 2 = bottom, 3 = left.
+            for (int i = 0; i < 4; i++)
+            {
+                var a = c[i]; var b = c[(i + 1) % 4];
+                list.Add((ScreenX((a.X + b.X) / 2), ScreenY((a.Y + b.Y) / 2), i % 2 == 0 ? Grab.EdgeY : Grab.EdgeX, i));
+            }
+            double rad = floating.RotationDegrees * Math.PI / 180.0;
+            float offset = 30 * Resources!.DisplayMetrics!.Density;
+            var top = list.First(h => h.Item3 == Grab.EdgeY && h.Item4 == 0);
+            list.Add((top.Item1 + (float)Math.Sin(rad) * offset, top.Item2 - (float)Math.Cos(rad) * offset, Grab.Rotate, 0));
+            return list;
         }
 
         public override bool OnTouchEvent(MotionEvent? e)
@@ -528,6 +738,7 @@ internal sealed class SpriteStudioView : LinearLayout
                 {
                     _multiTouch = true;
                     if (_drawing) { _owner._document = _owner._history.Rollback(_owner._document); _drawing = false; }
+                    _selecting = false; _grab = Grab.None;
                 }
                 Midpoint(e, out _midX, out _midY);
                 return true;
@@ -568,6 +779,7 @@ internal sealed class SpriteStudioView : LinearLayout
             int x = (int)Math.Floor((e.GetX() - _left) / _cell);
             int y = (int)Math.Floor((e.GetY() - _top) / _cell);
             var tool = _owner._tool;
+            if (_owner.IsSelectionTool) return SelectionTouch(e, doc);
             switch (e.ActionMasked)
             {
                 case MotionEventActions.Down:
@@ -611,6 +823,143 @@ internal sealed class SpriteStudioView : LinearLayout
             }
             return true;
         }
+
+        private bool SelectionTouch(MotionEvent e, SpriteDocument doc)
+        {
+            float fx = (e.GetX() - _left) / _cell, fy = (e.GetY() - _top) / _cell;
+            int x = Math.Clamp((int)Math.Floor(fx), 0, doc.Width - 1), y = Math.Clamp((int)Math.Floor(fy), 0, doc.Height - 1);
+            var tool = _owner._tool;
+            switch (e.ActionMasked)
+            {
+                case MotionEventActions.Down:
+                    _grab = Grab.None; _selecting = false;
+                    if (_owner._floating is { } active)
+                    {
+                        _grab = HitHandle(active, e.GetX(), e.GetY());
+                        if (_grab == Grab.None && InsideFloating(active, fx, fy)) _grab = Grab.Move;
+                        if (_grab != Grab.None) { BeginGrab(active, fx, fy, e.GetX(), e.GetY()); return true; }
+                        _owner.CommitFloating();
+                    }
+                    if (_owner._selection is { } selection && selection.Contains((int)Math.Floor(fx), (int)Math.Floor(fy)))
+                    {
+                        _owner.EnsureFloating();
+                        if (_owner._floating is { } lifted) { _grab = Grab.Move; BeginGrab(lifted, fx, fy, e.GetX(), e.GetY()); }
+                        return true;
+                    }
+                    _owner._selection = null;
+                    _startX = _previewX = x; _startY = _previewY = y;
+                    _lasso.Clear(); _lasso.Add((x, y));
+                    _selecting = true;
+                    Invalidate();
+                    return true;
+                case MotionEventActions.Move when _grab != Grab.None && _owner._floating is { } dragged:
+                    DragGrab(dragged, fx, fy);
+                    _owner.RefreshFloatingOnly();
+                    return true;
+                case MotionEventActions.Move when _selecting:
+                    _previewX = x; _previewY = y;
+                    if (tool == "lasso" && (_lasso[^1].X != x || _lasso[^1].Y != y)) _lasso.Add((x, y));
+                    Invalidate();
+                    return true;
+                case MotionEventActions.Up when _grab != Grab.None:
+                    _grab = Grab.None;
+                    return true;
+                case MotionEventActions.Up when _selecting:
+                    _selecting = false;
+                    SpriteSelection? result = tool switch
+                    {
+                        "select" when _startX == x && _startY == y => null, // a plain tap clears
+                        "select" => SpriteSelection.FromRectangle(doc.Width, doc.Height, _startX, _startY, x, y),
+                        "lasso" => SpriteSelection.FromPolygon(doc.Width, doc.Height, _lasso),
+                        _ => SpriteSelection.FromColor(doc, _owner._frame, x, y, _owner._wandTolerance),
+                    };
+                    _owner.SetSelection(result);
+                    return true;
+                case MotionEventActions.Cancel:
+                    _grab = Grab.None; _selecting = false; Invalidate();
+                    return true;
+            }
+            return true;
+        }
+
+        private Grab HitHandle(SpriteFloating floating, float px, float py)
+        {
+            float radius = 26 * Resources!.DisplayMetrics!.Density;
+            Grab best = Grab.None; float bestDistance = radius;
+            _gripIndex = 0;
+            foreach (var (hx, hy, grab, index) in Handles(floating))
+            {
+                float d = MathF.Sqrt((hx - px) * (hx - px) + (hy - py) * (hy - py));
+                if (d >= bestDistance) continue;
+                bestDistance = d; best = grab; _gripIndex = index;
+            }
+            return best;
+        }
+
+        private int _gripIndex;
+
+        private static bool InsideFloating(SpriteFloating floating, float fx, float fy)
+        {
+            var (lx, ly) = ToLocal(floating, fx, fy);
+            return Math.Abs(lx) <= floating.Width * floating.ScaleX / 2f && Math.Abs(ly) <= floating.Height * floating.ScaleY / 2f;
+        }
+
+        private static (float X, float Y) ToLocal(SpriteFloating floating, float fx, float fy)
+        {
+            double rad = floating.RotationDegrees * Math.PI / 180.0;
+            float cos = (float)Math.Cos(rad), sin = (float)Math.Sin(rad);
+            float dx = fx - floating.CenterX, dy = fy - floating.CenterY;
+            return (dx * cos + dy * sin, -dx * sin + dy * cos);
+        }
+
+        private void BeginGrab(SpriteFloating floating, float fx, float fy, float px, float py)
+        {
+            _grabFx = fx; _grabFy = fy;
+            _appliedDx = _appliedDy = 0;
+            _startScaleX = floating.ScaleX; _startScaleY = floating.ScaleY;
+        }
+
+        private void DragGrab(SpriteFloating floating, float fx, float fy)
+        {
+            switch (_grab)
+            {
+                case Grab.Move:
+                    // Whole pixels only, so moved art never blurs between pixel cells.
+                    int dx = (int)Math.Round(fx - _grabFx), dy = (int)Math.Round(fy - _grabFy);
+                    floating.MoveBy(dx - _appliedDx, dy - _appliedDy);
+                    _appliedDx = dx; _appliedDy = dy;
+                    break;
+                case Grab.Corner:
+                {
+                    var (lx, ly) = ToLocal(floating, fx, fy);
+                    float k = (Math.Abs(lx) / (floating.Width * _startScaleX / 2f) + Math.Abs(ly) / (floating.Height * _startScaleY / 2f)) / 2f;
+                    floating.SetScale(SnapScale(floating.Width, _startScaleX * k), SnapScale(floating.Height, _startScaleY * k));
+                    break;
+                }
+                case Grab.EdgeX:
+                {
+                    var (lx, _) = ToLocal(floating, fx, fy);
+                    floating.SetScale(SnapScale(floating.Width, Math.Abs(lx) * 2f / floating.Width), floating.ScaleY);
+                    break;
+                }
+                case Grab.EdgeY:
+                {
+                    var (_, ly) = ToLocal(floating, fx, fy);
+                    floating.SetScale(floating.ScaleX, SnapScale(floating.Height, Math.Abs(ly) * 2f / floating.Height));
+                    break;
+                }
+                case Grab.Rotate:
+                {
+                    double degrees = Math.Atan2(fy - floating.CenterY, fx - floating.CenterX) * 180.0 / Math.PI + 90.0;
+                    double snapped = Math.Round(degrees / 15.0) * 15.0;
+                    floating.RotationDegrees = (float)(Math.Abs(degrees - snapped) < 4 ? snapped : degrees);
+                    break;
+                }
+            }
+        }
+
+        /// <summary>Escala que resulta num tamanho inteiro de pixels (mínimo 1), mantendo a arte nítida.</summary>
+        private static float SnapScale(int size, float scale) => Math.Max(1, MathF.Round(size * scale)) / size;
 
         private void PaintAt(SpriteDocument doc, int x, int y)
         {

@@ -152,7 +152,7 @@ public sealed partial class MainActivity
         box.SetGravity(GravityFlags.Bottom);
         box.SetPadding(Dp(4), Dp(4), Dp(4), Dp(4));
         box.Background = LunetUi.Shape(this, LunetUi.Surface, 24, LunetUi.Border);
-        var attach = LunetUi.Icon(this, "+", "Anexar imagem ou arquivo", ShowAttachMenu);
+        var attach = LunetUi.Icon(this, "＋", "Anexar imagem ou arquivo", ShowAttachMenu);
         attach.TextSize = 22;
         box.AddView(attach, new LinearLayout.LayoutParams(Dp(44), Dp(44)));
         _aiInput = new EditText(this)
@@ -194,7 +194,7 @@ public sealed partial class MainActivity
         if (_aiSend is null) return;
         bool running = _aiRunCancellation is not null;
         bool hasText = !string.IsNullOrWhiteSpace(_aiInput?.Text) || _aiAttachments.Count > 0;
-        _aiSend.Text = running ? "■" : "↑";
+        LunetUi.SetLabel(_aiSend, running ? "■" : "↑");
         _aiSend.ContentDescription = running ? "Parar a IA" : "Enviar";
         _aiSend.Alpha = running || hasText ? 1f : 0.45f;
     }

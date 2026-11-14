@@ -54,9 +54,9 @@ public sealed partial class MainActivity
         void Add(string key, string label, string description, Action action)
         {
             var button = LunetUi.Button(this, label, action, ButtonStyle.Quiet, description: description);
-            button.TextSize = 12;
-            button.SetLines(2);
-            button.SetPadding(Dp(2), Dp(2), Dp(2), Dp(2));
+            button.TextSize = 11;
+            button.SetSingleLine(true);
+            button.SetPadding(Dp(2), Dp(4), Dp(2), Dp(2));
             var p = new LinearLayout.LayoutParams(0, Dp(52), 1f);
             p.SetMargins(Dp(2), 0, Dp(2), 0);
             nav.AddView(button, p);
@@ -83,7 +83,7 @@ public sealed partial class MainActivity
         foreach (var (key, button) in _workbenchNavButtons)
         {
             StyleWorkbenchButton(button, key == active);
-            if (key == "problems") button.Text = errors > 0 ? $"⚠ {errors}\nErros" : "⚠\nErros";
+            if (key == "problems") LunetUi.SetLabel(button, errors > 0 ? $"⚠\nErros {errors}" : "⚠\nErros");
         }
     }
 
@@ -192,7 +192,7 @@ public sealed partial class MainActivity
             card.Background = LunetUi.Pressable(this, LunetUi.SurfaceRaised, LunetUi.Radius, LunetUi.Border);
             card.Clickable = true;
             card.Click += (_, _) => { dialog?.Dismiss(); open(); };
-            card.AddView(LunetUi.Label(this, glyph, 24, LunetUi.AccentText));
+            card.AddView(LunetUi.IconImage(this, glyph, 26, LunetUi.AccentText), new LinearLayout.LayoutParams(Dp(34), Dp(34)));
             var text = LunetUi.Column(this, 2);
             text.AddView(LunetUi.Label(this, title, LunetUi.TextBody, LunetUi.Text, bold: true));
             text.AddView(LunetUi.Label(this, subtitle, LunetUi.TextCaption, LunetUi.TextMuted));
@@ -200,11 +200,11 @@ public sealed partial class MainActivity
             sheet.AddView(card, LunetUi.FillWidth());
         }
         var count = _project.ListFiles();
-        Card("▦", "Sprites e animação", $"{count.Count(f => f.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase))} sprite(s) · pixel art, frames, onion skin", ShowSpriteAssets);
-        Card("▩", "Tilemaps", $"{count.Count(f => f.EndsWith(".tilemap.json", StringComparison.OrdinalIgnoreCase))} mapa(s) · camadas, colisão, pincel", ShowArtTools);
-        Card("∿", "Áudio", "WAV: forma de onda, corte, loop, efeitos", ShowAudioStudio);
-        Card("▣", "Assets do projeto", "Imagens, sons e dados com prévia e uso no código", ShowAssets);
-        Card("✎", "Notas e esboços", "Ideias, roteiros e esquemas dentro do projeto", ShowNotes);
+        Card("sprite", "Sprites e animação", $"{count.Count(f => f.EndsWith(".sprite.json", StringComparison.OrdinalIgnoreCase))} sprite(s) · pixel art, frames, onion skin", ShowSpriteAssets);
+        Card("tilemap", "Tilemaps", $"{count.Count(f => f.EndsWith(".tilemap.json", StringComparison.OrdinalIgnoreCase))} mapa(s) · camadas, colisão, pincel", ShowArtTools);
+        Card("waveform", "Áudio", "WAV: forma de onda, corte, loop, efeitos", ShowAudioStudio);
+        Card("folder", "Assets do projeto", "Imagens, sons e dados com prévia e uso no código", ShowAssets);
+        Card("note", "Notas e esboços", "Ideias, roteiros e esquemas dentro do projeto", ShowNotes);
         var scroll = new ScrollView(this);
         scroll.AddView(sheet);
         dialog = new AlertDialog.Builder(this, global::Android.Resource.Style.ThemeDeviceDefaultDialogAlert)!

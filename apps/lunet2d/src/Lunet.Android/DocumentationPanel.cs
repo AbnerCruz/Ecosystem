@@ -127,9 +127,7 @@ internal sealed class DocumentationPanel
 
     private Button MakeButton(string label, Action action)
     {
-        var button = new Button(_activity) { Text = label };
-        button.Click += (_, _) => action();
-        return button;
+        return LunetUi.Button(_activity, label, action);
     }
 
     private void GoBack()
