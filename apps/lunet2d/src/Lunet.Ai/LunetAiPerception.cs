@@ -223,6 +223,10 @@ public sealed class LunetAiImageTool : ITool
 public sealed class LunetAiProjectStyle
 {
     public IReadOnlyList<uint> Palette { get; init; } = [];
+    /// <summary>The official palette of the game (Assets/palette.json, LUNET-499); when present it IS <see cref="Palette"/>.</summary>
+    public IReadOnlyList<(string Name, uint Argb)> OfficialPalette { get; init; } = [];
+    public bool PaletteInCode { get; init; }
+    public const string PaletteFile = "Assets/palette.json";
     public (int Width, int Height)? CommonSpriteSize { get; init; }
     public IReadOnlyList<string> SpriteNames { get; init; } = [];
     public IReadOnlyList<string> OtherImages { get; init; } = [];
@@ -277,9 +281,13 @@ public sealed class LunetAiProjectStyle
             if (notes.Length > 6000) break;
         }
         var sheetNames = sprites.Select(s => s + ".png").ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var official = ReadOfficialPalette(project);
         return new LunetAiProjectStyle
         {
-            Palette = colorCounts.OrderByDescending(c => c.Value).ThenBy(c => c.Key).Take(32).Select(c => c.Key).ToArray(),
+            Palette = official.Count > 0 ? official.Select(c => c.Argb).ToArray()
+                : colorCounts.OrderByDescending(c => c.Value).ThenBy(c => c.Key).Take(32).Select(c => c.Key).ToArray(),
+            OfficialPalette = official,
+            PaletteInCode = files.Contains("Data/GamePalette.cs"),
             CommonSpriteSize = sizes.Count == 0 ? null : sizes.OrderByDescending(s => s.Value).First().Key,
             SpriteNames = sprites,
             OtherImages = files.Where(f => (f.EndsWith(".png", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase))
@@ -291,12 +299,30 @@ public sealed class LunetAiProjectStyle
         };
     }
 
+    private static IReadOnlyList<(string Name, uint Argb)> ReadOfficialPalette(LunetProject project)
+    {
+        try
+        {
+            var full = Path.Combine(project.Directory, PaletteFile);
+            if (!File.Exists(full) || new FileInfo(full).Length > 1_000_000) return [];
+            using var json = JsonDocument.Parse(File.ReadAllText(full));
+            return json.RootElement.GetProperty("Colors").EnumerateArray()
+                .Select(c => (c.TryGetProperty("Name", out var n) ? n.GetString() ?? "" : "", c.GetProperty("Argb").GetUInt32()))
+                .Take(256).ToArray();
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or KeyNotFoundException or InvalidOperationException or FormatException) { return []; }
+    }
+
     public string Describe()
     {
         var text = new StringBuilder();
         text.AppendLine($"Orientação do jogo: {Orientation}.");
-        text.AppendLine(Palette.Count == 0
-            ? "Paleta do projeto: ainda não há sprites; escolha uma paleta pequena e coerente e registre-a em Notes/estilo-visual.md."
+        if (OfficialPalette.Count > 0)
+            text.AppendLine($"PALETA OFICIAL do jogo ({PaletteFile}) — use somente estas cores em sprites, tiles, UI e código: " +
+                            string.Join(", ", OfficialPalette.Select(c => $"{c.Name}={LunetAiImageGrid.Hex(c.Argb)}")) +
+                            (PaletteInCode ? ". No código, use GamePalette.<Nome> (Data/GamePalette.cs) em vez de new Color(...)." : "."));
+        else text.AppendLine(Palette.Count == 0
+            ? "Paleta do projeto: ainda não há sprites nem paleta oficial; escolha uma paleta pequena e coerente e grave-a em " + PaletteFile + " ({\"Version\":1,\"Name\":\"…\",\"Colors\":[{\"Name\":\"Ceu\",\"Argb\":4283392680}]}, ARGB decimal)."
             : "Paleta do projeto (mais usadas primeiro): " + string.Join(" ", Palette.Select(LunetAiImageGrid.Hex)));
         text.AppendLine(CommonSpriteSize is { } size
             ? $"Tamanho de sprite predominante: {size.Width}×{size.Height}."

@@ -1,0 +1,102 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261114-lunet-music-studio",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-14T14:06:20Z",
+  "agent": {
+    "id": "claude-lunet-music-studio",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-500",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-8229d3db-dmnw7l",
+  "base_commit": "e78e673",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Studio/Music/MusicTheory.cs",
+    "apps/lunet2d/src/Lunet.Studio/Music/MusicSong.cs",
+    "apps/lunet2d/src/Lunet.Studio/Music/MusicRenderer.cs",
+    "apps/lunet2d/src/Lunet.Studio/Music/SoundDesigner.cs",
+    "apps/lunet2d/src/Lunet.Android/MusicStudioView.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Music.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.AudioStudio.cs",
+    "apps/lunet2d/src/Lunet.Ai/Knowledge/capacidades.md",
+    "apps/lunet2d/tests/Lunet.Tests/MusicStudioTests.cs",
+    "apps/lunet2d/docs/guides/estudio-de-musica.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261114-lunet-music-studio.json"
+  ],
+  "work_completed": [
+    "Núcleo de música puro C#: teoria (escalas, acordes, progressões, melodia, baixo, arpejo, batidas), documento de música com validação e limites, renderizador determinístico estéreo com instrumentos sintetizados, bateria, eco, reverb e loop sem emenda.",
+    "Desenho paramétrico de efeitos com categorias geradoras e variações.",
+    "Music Studio Android (grade de passos, faixas, padrões, arranjo, mixer, geradores, reprodução e exportação) e diálogo de efeitos.",
+    "IA conhece os formatos .song.json e .sfx.json."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test MusicStudioTests (local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "23 testes, 0 falhas"
+    },
+    {
+      "check": "dotnet build src/Lunet.Android -c Debug (local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "0 erros"
+    },
+    {
+      "check": "Validação no aparelho de composição, reprodução, exportação e efeitos",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/estudio-de-musica.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Reprodução renderiza antes de tocar (instantes de espera em músicas longas); sem gravação por microfone nem MIDI externo.",
+    "Sem amostras (samples) importadas como instrumento."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI do PR; DEVICE pelo guia."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A fonte .song.json/.sfx.json é a autoridade; o WAV é derivado e regravado na exportação."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Núcleo em Lunet.Studio, sem extração."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-music-studio",
+      "status": "product-specific",
+      "rationale": "Composição e efeitos para jogos do Lunet; sem consumidor externo."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

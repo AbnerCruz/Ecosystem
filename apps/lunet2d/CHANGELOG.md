@@ -1,5 +1,9 @@
 # Changelog
 
+- LUNET-500: o Audio Studio compõe músicas (faixas, padrões, arranjo, instrumentos sintetizados com filtro e envelope, bateria, eco e reverb, escalas, swing) com geradores de melodia, acordes, arpejo, baixo e batida, e desenha efeitos sonoros complexos (moeda, laser, explosão, power-up, pulo, magia…) com variações. Exporta WAV para `Content/Audio/` mantendo a fonte editável (`.song.json`/`.sfx.json`).
+
+- LUNET-499: Palette Studio — a paleta oficial do jogo (`Assets/palette.json`): começar de uma paleta inicial, das artes do projeto ou vazia; rampas de tons (sombras mais frias, luzes mais quentes), harmonias, contraste para texto/HUD, importar/exportar `.gpl` e hex, e exportar `Data/GamePalette.cs` para o código usar as mesmas cores. O Sprite Studio mostra as cores do projeto primeiro e ajusta um sprite à paleta; a IA usa a paleta oficial.
+
 - LUNET-498: a IA entende se você quer aprender ou que ela faça (modos Auto/Ensinar/Fazer, botão *Fazer por mim*), começa cada pedido conhecendo o projeto (mapa de arquivos, classes e membros + referência rápida da API), organiza código em arquivos e pastas por responsabilidade e avisa quando um arquivo cresce demais, pesquisa código de referência na internet com proteções, e as configurações ganharam chave por provedor, lista de modelos do provedor e *Testar conexão*. Validação no aparelho pendente.
 
 - LUNET-497 / PR #932: histórico local integral e persistido desde o pedido; IA continua em foreground service Android fora do chat; painel exibe a tarefa e o progresso ao retornar. Caminhos de sprite corrigidos e compatíveis com `Content/` legado; verificação da existência e assinatura PNG na compilação da IA. 886 testes e CI Android verdes; teste físico do proprietário pendente.

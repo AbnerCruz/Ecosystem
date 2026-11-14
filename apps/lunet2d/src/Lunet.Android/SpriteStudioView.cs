@@ -43,6 +43,10 @@ internal sealed class SpriteStudioView : LinearLayout
     private readonly Java.Lang.Runnable _saveLater;
     private readonly Java.Lang.Runnable _tick;
     private readonly List<uint> _recent = [];
+    /// <summary>The project's palette (LUNET-499); its colors come first in the palette row.</summary>
+    public ProjectPalette? ProjectPalette { get; set; }
+    /// <summary>Called when the person adds the sprite's colors to the project palette.</summary>
+    public Action<ProjectPalette>? SaveProjectPalette { get; set; }
     private int _frame;
     private uint _color = 0xff7c6cff;
     private string _tool = "pencil";
@@ -385,9 +389,17 @@ internal sealed class SpriteStudioView : LinearLayout
     private void RefreshPalette()
     {
         _palette.RemoveAllViews();
-        var colors = _recent.Concat(SpriteColor.Extract(_document, 12)).Concat(DefaultPalette).Distinct().Take(40);
-        foreach (var color in colors)
+        var project = ProjectPalette?.Argb ?? [];
+        var colors = project.Concat(_recent).Concat(SpriteColor.Extract(_document, 12))
+            .Concat(project.Count > 0 ? [] : DefaultPalette).Distinct().Take(Math.Max(40, project.Count + 16)).ToArray();
+        for (int index = 0; index < colors.Length; index++)
         {
+            var color = colors[index];
+            if (index == project.Count && project.Count > 0)
+            {
+                var gap = new View(Context) { Background = LunetUi.Shape(Context!, LunetUi.Border, 1) };
+                _palette.AddView(gap, new LayoutParams(Dp(2), Dp(24)) { LeftMargin = Dp(4), RightMargin = Dp(4), Gravity = GravityFlags.CenterVertical });
+            }
             var swatch = new View(Context) { Clickable = true, ContentDescription = "Cor " + SpriteColor.ToHex(color) };
             swatch.Background = Swatch(color, color == _color);
             var captured = color;
@@ -445,6 +457,8 @@ internal sealed class SpriteStudioView : LinearLayout
         ((_grid ? "Esconder" : "Mostrar") + " grade", () => { _grid = !_grid; Refresh(); }),
         ("Centralizar e ajustar à tela", () => { _canvas.ResetView(); }),
         ("Escolher cor…", ShowColorPicker),
+        ("Ajustar o sprite à paleta do projeto", FitToProjectPalette),
+        ("Adicionar as cores do sprite à paleta do projeto", AddColorsToProjectPalette),
         ("Gestos: pinça = zoom · 2 dedos = mover · toque com 2 = desfazer · com 3 = refazer", () => { }),
     ]);
 
@@ -454,6 +468,33 @@ internal sealed class SpriteStudioView : LinearLayout
             .SetTitle(title)!
             .SetItems(items.Select(i => i.Label).ToArray(), (_, e) => items[e.Which].Run())!
             .Show();
+    }
+
+    private void FitToProjectPalette()
+    {
+        if (ProjectPalette is not { Colors.Count: > 0 } palette)
+        {
+            Toast.MakeText(Context, "O projeto ainda não tem paleta. Crie uma no Palette Studio.", ToastLength.Long)?.Show();
+            return;
+        }
+        var outside = palette.ColorsOutside(_document.Frames.SelectMany(f => f)).Count;
+        if (outside == 0) { Toast.MakeText(Context, "O sprite já usa só cores da paleta.", ToastLength.Short)?.Show(); return; }
+        Structural(() =>
+        {
+            for (int i = 0; i < _document.Frames.Count; i++) _document.Frames[i] = palette.Remap(_document.Frames[i]);
+        });
+        RefreshPalette();
+        Toast.MakeText(Context, $"{outside} cor(es) fora da paleta trocadas pela mais próxima. Desfazer volta.", ToastLength.Long)?.Show();
+    }
+
+    private void AddColorsToProjectPalette()
+    {
+        var palette = ProjectPalette ?? new ProjectPalette();
+        int added = palette.AddRange(SpriteColor.Extract(_document, 64));
+        ProjectPalette = palette;
+        SaveProjectPalette?.Invoke(palette);
+        RefreshPalette();
+        Toast.MakeText(Context, added == 0 ? "Todas as cores já estavam na paleta." : $"{added} cor(es) adicionadas à paleta do projeto.", ToastLength.Short)?.Show();
     }
 
     private void ShowColorPicker()

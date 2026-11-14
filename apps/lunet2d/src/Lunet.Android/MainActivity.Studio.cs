@@ -72,6 +72,8 @@ public sealed partial class MainActivity
             },
             doc => ShowSpriteUsage(path, doc),
             () => { _spriteStudio?.Save(); if (!saved) return; dialog.Dismiss(); _spriteStudio = null; RefreshExplorer(); afterClose?.Invoke(); }, tilesetTileSize);
+        view.ProjectPalette = LoadProjectPalette();
+        view.SaveProjectPalette = SaveProjectPalette;
         _spriteStudio = view;
         dialog.SetContentView(view); dialog.SetCancelable(false); dialog.Show();
         dialog.Window?.SetLayout(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent);
@@ -121,11 +123,12 @@ public sealed partial class MainActivity
     private void ShowArtTools()
     {
         new AlertDialog.Builder(this)!.SetTitle("Ferramentas visuais")!
-            .SetItems(new[] { "Sprites e animação", "Tilemaps", "Áudio" }, (_, e) =>
+            .SetItems(new[] { "Sprites e animação", "Tilemaps", "Áudio", "Paleta de cores" }, (_, e) =>
             {
                 if (e.Which == 0) ShowSpriteAssets();
                 else if (e.Which == 1) ShowTileMaps();
-                else ShowAudioStudio();
+                else if (e.Which == 2) ShowAudioStudio();
+                else ShowPaletteStudio();
             })!.SetNegativeButton("Fechar", (_, _) => { })!.Show();
     }
 
