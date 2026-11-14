@@ -33,7 +33,8 @@ public static class LunetAiProviders
 }
 
 /// <summary>Non-secret AI preferences. The API key never lives here.</summary>
-public sealed record LunetAiSettings(string ProviderId, string Endpoint, string Model, int MaxSteps, bool AllowWrites)
+public sealed record LunetAiSettings(string ProviderId, string Endpoint, string Model, int MaxSteps, bool AllowWrites,
+    bool WebResearch = true, LunetAiMode DefaultMode = LunetAiMode.Auto)
 {
     public static LunetAiSettings Default { get; } =
         new("openrouter", LunetAiProviders.All[0].Endpoint, "", LunetAiRunOptions.DefaultMaxSteps, true);
@@ -58,6 +59,9 @@ public sealed class LunetAiSettingsStore(string path, ISecretVault vault)
 {
     public const string SecretName = "lunet.ai.apiKey";
 
+    /// <summary>Each provider keeps its own key (like the notes product), so switching provider never loses a key.</summary>
+    public static string SecretFor(string providerId) => SecretName + "." + providerId;
+
     public LunetAiLoadedSettings Load()
     {
         var settings = LunetAiSettings.Default;
@@ -74,10 +78,21 @@ public sealed class LunetAiSettingsStore(string path, ISecretVault vault)
             Endpoint = settings.Endpoint ?? "",
             Model = settings.Model ?? "",
         };
-        string? key = null;
-        try { key = vault.Get(SecretName); }
-        catch (Exception) { key = null; } // a broken keystore entry means "not configured", never a crash
+        var key = KeyFor(settings.ProviderId);
         return new LunetAiLoadedSettings(settings, key);
+    }
+
+    /// <summary>The key saved for <paramref name="providerId"/>; keys saved before LUNET-498 (one shared key) still work.</summary>
+    public string? KeyFor(string providerId)
+    {
+        try { return vault.Get(SecretFor(providerId)) ?? vault.Get(SecretName); }
+        catch (Exception) { return null; } // a broken keystore entry means "not configured", never a crash
+    }
+
+    public bool HasKey(string providerId)
+    {
+        try { return vault.Get(SecretFor(providerId)) is not null; }
+        catch (Exception) { return false; }
     }
 
     public void Save(LunetAiSettings settings, string? apiKey)
@@ -86,10 +101,21 @@ public sealed class LunetAiSettingsStore(string path, ISecretVault vault)
         var temporary = path + ".tmp";
         File.WriteAllText(temporary, JsonSerializer.Serialize(settings));
         File.Move(temporary, path, overwrite: true);
-        if (!string.IsNullOrWhiteSpace(apiKey)) vault.Set(SecretName, apiKey.Trim());
+        if (!string.IsNullOrWhiteSpace(apiKey)) vault.Set(SecretFor(settings.ProviderId), apiKey.Trim());
     }
 
-    public void ClearKey() => vault.Delete(SecretName);
+    public void ClearKey(string providerId)
+    {
+        vault.Delete(SecretFor(providerId));
+        vault.Delete(SecretName);
+    }
+
+    /// <summary>Forgets every saved key (all providers and the pre-LUNET-498 shared key).</summary>
+    public void ClearKey()
+    {
+        foreach (var provider in LunetAiProviders.All) vault.Delete(SecretFor(provider.Id));
+        vault.Delete(SecretName);
+    }
 
     private static bool IsValidSteps(int steps)
     {

@@ -65,9 +65,57 @@ public sealed partial class MainActivity
 
         var keyLabel = LunetUi.Label(this, "", LunetUi.TextLabel, LunetUi.TextMuted);
         form.AddView(keyLabel);
-        var key = LunetUi.Input(this, current.ApiKey is null ? "Cole a chave da API" : "•••• chave salva (deixe vazio para manter)");
+        var key = LunetUi.Input(this, "Cole a chave da API");
         key.InputType = InputTypes.ClassText | InputTypes.TextVariationPassword;
         form.AddView(key);
+        string? SavedKey() => AiStore.KeyFor(selected.Id);
+
+        // Models the provider really serves + a connection check (LUNET-498).
+        var checkRow = LunetUi.Row(this, 6);
+        var status = LunetUi.Label(this, "", LunetUi.TextCaption, LunetUi.TextMuted);
+        var catalog = new LunetAiModelCatalog(new HttpClient { Timeout = TimeSpan.FromSeconds(25) });
+        string CurrentEndpoint() => selected.Id == "custom" ? (endpoint.Text ?? "").Trim() : selected.Endpoint;
+        string? KeyForCheck() => (key.Text ?? "").Trim() is { Length: > 0 } typed ? typed : SavedKey();
+        checkRow.AddView(LunetUi.Button(this, "Ver modelos do provedor", async () =>
+        {
+            if (KeyForCheck() is not { } k) { key.Error = "Cole a chave para listar os modelos"; return; }
+            status.Text = "Carregando modelos…";
+            try
+            {
+                var models = await catalog.ListAsync(selected.Id, CurrentEndpoint(), k, CancellationToken.None);
+                if (models.Count == 0) { status.Text = "O provedor não listou modelos; digite o id."; return; }
+                status.Text = models.Count + " modelos disponíveis.";
+                var labels = models.Select(m => m.Id + (m.Tools == false ? "  (sem ferramentas)" : "") +
+                                                (m.Context is { } c ? $"  · {c / 1000}k" : "")).ToArray();
+                new AlertDialog.Builder(this, global::Android.Resource.Style.ThemeDeviceDefaultDialogAlert)!
+                    .SetTitle("Modelos de " + selected.Name)!
+                    .SetItems(labels, (_, e) => model.Text = models[e.Which].Id)!
+                    .SetNegativeButton("Fechar", (_, _) => { })!
+                    .Show();
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or ArgumentException)
+            {
+                status.Text = ex is TaskCanceledException ? "Tempo esgotado ao listar modelos." : ex.Message;
+            }
+        }, ButtonStyle.Secondary));
+        checkRow.AddView(LunetUi.Button(this, "Testar conexão", async () =>
+        {
+            if (KeyForCheck() is not { } k) { key.Error = "Cole a chave para testar"; return; }
+            var modelText = (model.Text ?? "").Trim();
+            if (modelText.Length == 0) { model.Error = "Escolha um modelo"; return; }
+            status.Text = "Testando…";
+            try
+            {
+                var check = await catalog.TestAsync(selected.Id, CurrentEndpoint(), k, modelText, CancellationToken.None);
+                status.Text = (check.Ok ? "✓ " : "✕ ") + check.Message;
+                status.SetTextColor(check.Ok ? LunetUi.Success : LunetUi.Danger);
+            }
+            catch (ArgumentException ex) { status.Text = "✕ " + ex.Message; status.SetTextColor(LunetUi.Danger); }
+        }, ButtonStyle.Secondary));
+        var checkScroll = new HorizontalScrollView(this) { HorizontalScrollBarEnabled = false };
+        checkScroll.AddView(checkRow);
+        form.AddView(checkScroll);
+        form.AddView(status);
         var getKey = LunetUi.Button(this, "Criar chave no site do provedor ↗", () =>
         {
             if (selected.KeyUrl.Length > 0) StartActivity(new Intent(Intent.ActionView, AndroidUri.Parse(selected.KeyUrl)));
@@ -77,6 +125,33 @@ public sealed partial class MainActivity
         var writes = new Switch(this) { Text = "A IA pode criar e alterar arquivos (com checkpoint para desfazer)", Checked = current.Settings.AllowWrites };
         writes.SetTextColor(LunetUi.Text);
         form.AddView(writes);
+        var web = new Switch(this) { Text = "Pesquisar código de referência na internet", Checked = current.Settings.WebResearch };
+        web.SetTextColor(LunetUi.Text);
+        form.AddView(web);
+
+        form.AddView(LunetUi.Label(this, "Modo inicial do chat", LunetUi.TextLabel, LunetUi.TextMuted));
+        var modeRow = LunetUi.Row(this, 6);
+        var defaultMode = current.Settings.DefaultMode;
+        var modeChips = new List<(LunetAiMode Mode, TextView Chip)>();
+        void PaintModes()
+        {
+            foreach (var (m, chip) in modeChips)
+            {
+                chip.Background = LunetUi.Pressable(this, m == defaultMode ? LunetUi.AccentSoft : LunetUi.SurfaceRaised, 99,
+                    m == defaultMode ? LunetUi.Accent : LunetUi.Border);
+                chip.SetTextColor(m == defaultMode ? LunetUi.AccentText : LunetUi.Text);
+            }
+        }
+        foreach (var (m, label, _) in AiModes)
+        {
+            var chip = LunetUi.Chip(this, label, () => { defaultMode = m; PaintModes(); });
+            modeChips.Add((m, chip));
+            modeRow.AddView(chip);
+        }
+        PaintModes();
+        form.AddView(modeRow);
+        form.AddView(LunetUi.Label(this, "Auto: perguntas (\"como faço…?\") são explicadas sem mexer no projeto; pedidos (\"crie…\") são implementados.",
+            LunetUi.TextCaption, LunetUi.TextFaint));
 
         form.AddView(LunetUi.Label(this, "Limite de passos por pedido", LunetUi.TextLabel, LunetUi.TextMuted));
         var stepsRow = LunetUi.Row(this, 6);
@@ -117,7 +192,10 @@ public sealed partial class MainActivity
             endpointLabel.Visibility = endpoint.Visibility = custom ? ViewStates.Visible : ViewStates.Gone;
             if (fillEndpoint && !custom) endpoint.Text = provider.Endpoint;
             getKey.Visibility = provider.KeyUrl.Length > 0 ? ViewStates.Visible : ViewStates.Gone;
-            keyLabel.Text = "Chave da API (" + provider.KeyHint + ")";
+            bool saved = AiStore.KeyFor(provider.Id) is not null;
+            keyLabel.Text = "Chave da API (" + provider.KeyHint + ")" + (saved ? " · ✓ salva neste aparelho" : "");
+            key.Hint = saved ? "•••• chave salva (deixe vazio para manter)" : "Cole a chave da API";
+            status.Text = "";
             suggestionRow.RemoveAllViews();
             foreach (var m in provider.SuggestedModels)
                 suggestionRow.AddView(LunetUi.Chip(this, m, () => model.Text = m));
@@ -141,10 +219,10 @@ public sealed partial class MainActivity
             .SetNegativeButton("Cancelar", (_, _) => { })!
             .SetPositiveButton("Salvar", (_, _) => { })!
             .Create();
-        if (current.ApiKey is not null)
+        if (SavedKey() is not null)
             dialog.SetButton((int)DialogButtonType.Neutral, "Esquecer chave", (_, _) =>
             {
-                AiStore.ClearKey();
+                AiStore.ClearKey(selected.Id);
                 _ai = null;
                 RefreshAiHeader();
             });
@@ -157,11 +235,11 @@ public sealed partial class MainActivity
             var modelText = (model.Text ?? "").Trim();
             if (modelText.Length == 0) { model.Error = "Escolha um modelo"; return; }
             var keyText = (key.Text ?? "").Trim();
-            if (keyText.Length == 0 && current.ApiKey is null) { key.Error = "Cole a chave da API"; return; }
+            if (keyText.Length == 0 && SavedKey() is null) { key.Error = "Cole a chave da API"; return; }
             if (keyText.Length is > 0 and < 12) { key.Error = "Chave curta demais"; return; }
             try
             {
-                AiStore.Save(new LunetAiSettings(selected.Id, endpointText, modelText, steps, writes.Checked),
+                AiStore.Save(new LunetAiSettings(selected.Id, endpointText, modelText, steps, writes.Checked, web.Checked, defaultMode),
                     keyText.Length > 0 ? keyText : null);
             }
             catch (Exception ex)
@@ -170,6 +248,8 @@ public sealed partial class MainActivity
                 return;
             }
             _ai = null;
+            _aiMode = defaultMode;
+            PaintAiModes();
             dialog.Dismiss();
             RefreshAiHeader();
             afterSave?.Invoke();

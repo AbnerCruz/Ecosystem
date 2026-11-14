@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-498: a IA entende se você quer aprender ou que ela faça (modos Auto/Ensinar/Fazer, botão *Fazer por mim*), começa cada pedido conhecendo o projeto (mapa de arquivos, classes e membros + referência rápida da API), organiza código em arquivos e pastas por responsabilidade e avisa quando um arquivo cresce demais, pesquisa código de referência na internet com proteções, e as configurações ganharam chave por provedor, lista de modelos do provedor e *Testar conexão*. Validação no aparelho pendente.
+
 - LUNET-497 / PR #932: histórico local integral e persistido desde o pedido; IA continua em foreground service Android fora do chat; painel exibe a tarefa e o progresso ao retornar. Caminhos de sprite corrigidos e compatíveis com `Content/` legado; verificação da existência e assinatura PNG na compilação da IA. 886 testes e CI Android verdes; teste físico do proprietário pendente.
 
 - Fixed / Novo projeto (14/11, revisão solicitada): `Game.cs` volta a incluir `Initialize`, `LoadContent`, `Update`, `Draw`, `UnloadContent`, `SpriteBatch.Begin/End` e fundo básico, mas sem a bola, textura ou movimento por toque. O launcher não exibe modelos demo/protótipos: formulário único para nome, orientação, resolução, updates/s, Fit/Fill, versão e ID Android opcional. Configurações persistidas no `lunet.json` e refletidas no código inicial; demos continuam disponíveis apenas para testes internos.
