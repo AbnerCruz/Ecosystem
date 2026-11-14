@@ -1,5 +1,17 @@
 namespace Lunet.Core;
 
+/// <summary>Opções reais da criação: dimensões e execução são refletidas também no Game.cs.</summary>
+public sealed record ProjectCreationSettings(
+    string Name,
+    string Orientation = "portrait",
+    int VirtualWidth = 360,
+    int VirtualHeight = 640,
+    int UpdatesPerSecond = 60,
+    string ViewportScaling = "Fit",
+    string Version = "0.1.0",
+    string? PackageId = null);
+
+
 /// <summary>Pasta que contém os projetos do usuário (uma subpasta por projeto).</summary>
 public sealed class ProjectStore
 {
@@ -27,27 +39,59 @@ public sealed class ProjectStore
         .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
         .ToList();
 
+    /// <summary>Compatibilidade com amostras internas: projetos do launcher usam Create(ProjectCreationSettings).</summary>
     public LunetProject Create(string rawName, ProjectTemplate template = ProjectTemplate.Blank, string orientation = "portrait")
     {
-        if (orientation is not ("portrait" or "landscape"))
-            throw new ProjectException("Orientação do projeto inválida: use portrait ou landscape.");
-        var name = ValidateName(rawName);
+        var width = orientation == "landscape" ? 640 : 360;
+        var height = orientation == "landscape" ? 360 : 640;
+        return CreateCore(new ProjectCreationSettings(rawName, orientation, width, height), template);
+    }
+
+    /// <summary>Cria um projeto novo configurado, sem incluir protótipos ou demos.</summary>
+    public LunetProject Create(ProjectCreationSettings settings) => CreateCore(settings, ProjectTemplate.Blank);
+
+    private LunetProject CreateCore(ProjectCreationSettings settings, ProjectTemplate template)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        var name = ValidateName(settings.Name);
+        if (settings.Orientation is not ("portrait" or "landscape"))
+            throw new ProjectException("Orientação inválida: use portrait ou landscape.");
+        if (settings.VirtualWidth is < 1 or > 8192 || settings.VirtualHeight is < 1 or > 8192)
+            throw new ProjectException("Resolução virtual: largura e altura entre 1 e 8192.");
+        if (settings.UpdatesPerSecond is < 1 or > 1000)
+            throw new ProjectException("Atualizações por segundo: escolha de 1 a 1000.");
+        if (settings.ViewportScaling is not ("Fit" or "Fill"))
+            throw new ProjectException("Ajuste de tela inválido: use Fit ou Fill.");
+        if (string.IsNullOrWhiteSpace(settings.Version) || settings.Version.Length > 40 ||
+            settings.Version.Any(c => !(char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '+')))
+            throw new ProjectException("Versão inválida: use algo como 0.1.0 ou 1.0.0-beta.");
+
         var directory = Path.Combine(RootDirectory, name);
         if (Directory.Exists(directory)) throw new ProjectException("Esse projeto já existe.");
+
+        var manifest = new ProjectManifest
+        {
+            Name = name,
+            Orientation = settings.Orientation,
+            VirtualWidth = settings.VirtualWidth,
+            VirtualHeight = settings.VirtualHeight,
+            UpdatesPerSecond = settings.UpdatesPerSecond,
+            ViewportScaling = settings.ViewportScaling,
+            Version = settings.Version,
+        };
+        // Cada novo projeto possui uma identidade única; não altere IDs existentes.
+        manifest.PackageId = string.IsNullOrWhiteSpace(settings.PackageId)
+            ? PackageIdFor(name, manifest.GameId)
+            : settings.PackageId.Trim();
+        if (!OfflineGameApkBuilder.ValidPackage(manifest.PackageId))
+            throw new ProjectException("ID Android inválido: use algo como com.exemplo.meujogo.");
+        string? conflict = FindIdentityConflict(manifest);
+        if (conflict is not null)
+            throw new ProjectException($"O ID Android já pertence ao projeto \"{conflict}\".");
 
         Directory.CreateDirectory(directory);
         try
         {
-            var manifest = new ProjectManifest
-            {
-                Name = name,
-                Orientation = orientation,
-                VirtualWidth = orientation == "landscape" ? 640 : 360,
-                VirtualHeight = orientation == "landscape" ? 360 : 640,
-            };
-            // Distinct projects must never share an Android package even when names
-            // normalize to the same slug (Bosque-Lumi and BosqueLumi).
-            manifest.PackageId = PackageIdFor(name, manifest.GameId);
             AtomicFile.WriteAllText(Path.Combine(directory, ManifestFileName), manifest.ToJson());
             var className = ClassName(name);
             AtomicFile.WriteAllText(Path.Combine(directory, manifest.EntryPoint),
@@ -57,7 +101,8 @@ public sealed class ProjectStore
                     ProjectTemplate.Lab => ProjectTemplates.LabSource(className),
                     ProjectTemplate.Animation => ProjectTemplates.AnimationSource(className),
                     ProjectTemplate.Particles => ProjectTemplates.ParticlesSource(className),
-                    _ => ProjectTemplates.BlankGameSource(className),
+                    _ => ProjectTemplates.BlankGameSource(className, manifest.VirtualWidth, manifest.VirtualHeight,
+                        manifest.UpdatesPerSecond, manifest.ViewportScaling),
                 });
             Directory.CreateDirectory(Path.Combine(directory, "Content"));
             if (template is ProjectTemplate.CoinCatcher or ProjectTemplate.Lab)
