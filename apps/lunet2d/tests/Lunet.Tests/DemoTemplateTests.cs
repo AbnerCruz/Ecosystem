@@ -105,8 +105,9 @@ public class DemoTemplateTests : IDisposable
         var source = project.ReadText("Game.cs");
         Assert.DoesNotContain("SpriteFont", source);
         Assert.DoesNotContain("Texture2D", source);
-        Assert.DoesNotContain("SpriteBatch", source);
-        Assert.DoesNotContain("Draw(", source);
+        Assert.Contains("SpriteBatch batch", source);
+        Assert.Contains("protected override void Update(GameTime time)", source);
+        Assert.Contains("protected override void Draw(GameTime time)", source);
         Assert.DoesNotContain("CreateCircle", source);
         Assert.False(Directory.Exists(Path.Combine(_root, "Vazio", "Content", "Audio")));
     }
