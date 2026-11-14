@@ -34,9 +34,10 @@
     {
       "check": "Autorização do proprietário para workflow novo (zona control-plane)",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": ".github/workflows/lunet2d-ui-screens.yml",
-      "critical": true
+      "critical": true,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-14 (Issue https://github.com/AbnerCruz/Ecosystem/issues/927); registro em docs/governance/responses/VAL-HO-20261114-lunet-ui-screens-ci-7f1dfda8a769.md."
     }
   ],
   "known_issues": [
