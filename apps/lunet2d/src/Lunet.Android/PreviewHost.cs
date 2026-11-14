@@ -53,22 +53,25 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
         _glView.Touch += OnTouch;
         AddView(_glView, new LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent));
 
-        var controls = new LinearLayout(activity) { Orientation = Orientation.Horizontal };
-        controls.SetBackgroundColor(AndroidColor.Argb(140, 0, 0, 0));
-        controls.AddView(MakeButton("■ Stop", onStop));
-        controls.AddView(MakeButton("↻", renderer.RequestRestart));
+        var controls = new LinearLayout(activity) { Orientation = Orientation.Horizontal, Elevation = 8 * density };
+        controls.Background = LunetUi.Shape(activity, AndroidColor.Argb(214, 21, 26, 35), 99, LunetUi.Border);
+        controls.SetPadding((int)(4 * density), (int)(2 * density), (int)(4 * density), (int)(2 * density));
+        controls.AddView(MakeButton("■", onStop, "Parar e voltar ao código"));
+        controls.AddView(MakeButton("↻", renderer.RequestRestart, "Reiniciar o jogo"));
         Button? pause = null;
         pause = MakeButton("⏸", () =>
         {
             _paused = !_paused;
             renderer.SetPaused(_paused);
             pause!.Text = _paused ? "▶" : "⏸";
-        });
+            pause.ContentDescription = _paused ? "Continuar" : "Pausar";
+        }, "Pausar");
         controls.AddView(pause);
-        controls.AddView(MakeButton("⏭", renderer.RequestStep));
-        controls.AddView(MakeButton("🔍", ToggleInspector));
-        controls.AddView(MakeButton("▥ Perf", ToggleProfiler));
-        AddView(controls, new LayoutParams(ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent, GravityFlags.Top | GravityFlags.Left));
+        controls.AddView(MakeButton("⏭", renderer.RequestStep, "Avançar um quadro"));
+        controls.AddView(MakeButton("🔍", ToggleInspector, "Inspecionar objetos do jogo"));
+        controls.AddView(MakeButton("▥", ToggleProfiler, "Desempenho"));
+        AddView(controls, new LayoutParams(ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent, GravityFlags.Top | GravityFlags.CenterHorizontal)
+        { TopMargin = (int)(10 * density) });
 
         _inspector = new InspectorPanel(activity, () => renderer.CurrentGame, projectFiles) { Visibility = ViewStates.Gone };
         AddView(_inspector, new LayoutParams((int)(320 * density), ViewGroup.LayoutParams.MatchParent, GravityFlags.Right));
@@ -98,11 +101,11 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
         StartSensors();
     }
 
-    private Button MakeButton(string label, Action action)
+    private Button MakeButton(string label, Action action, string description)
     {
-        var button = new Button(_activity) { Text = label };
-        button.SetAllCaps(false);
-        button.Click += (_, _) => action();
+        var button = LunetUi.Icon(_activity, label, description, action);
+        button.SetTextColor(LunetUi.Text);
+        button.LayoutParameters = new LinearLayout.LayoutParams(LunetUi.Dp(_activity, 46), LunetUi.Dp(_activity, 44));
         return button;
     }
 
