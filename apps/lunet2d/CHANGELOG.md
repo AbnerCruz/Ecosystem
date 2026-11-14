@@ -1,5 +1,7 @@
 # Changelog
 
+- LUNET-506: autotile no Tile Studio — Terreno → escolha 16 ou 47 tiles a partir do tile selecionado; pintar e apagar ajustam bordas e cantos sozinhos.
+
 - LUNET-505: Data Studio — dados do jogo (inimigos, itens, fases, diálogos) como tabelas: colunas com tipo e regras, opções, referências entre tabelas, validação com destaque, ordenar, CSV e classe C# gerada para o jogo ler os dados tipados.
 
 - LUNET-482 (DEC-0062, alternativa A): primeira versão do Lunet para desktop (Windows, Linux, macOS) em Avalonia — abre projetos, edita, compila e roda o jogo com prévia, mouse e teclado. Rasterizador em CPU com o mesmo resultado do Android (2000 sprites em 4 ms). Ainda é um spike: falta medir num computador com tela real. O Android não mudou.

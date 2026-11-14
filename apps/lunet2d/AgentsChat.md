@@ -720,3 +720,6 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 
 ### 20261114-claude-lunet-data-studio — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
 - LUNET-505 (Fase 5, Data Studio): `Lunet.Studio.Data.DataTable` (inferência, tipos, validação, referências, CSV, classe C# que compila e desserializa — teste), `DataStudioView` e entrada no Studio. 7 testes novos; build Android sem erros. DEVICE pendente (`docs/guides/data-studio.md`). Handoff `HO-20261114-lunet-data-studio.json`.
+
+### 20261114-claude-lunet-autotile — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
+- LUNET-506 (Fase 5, Tile Studio): `AutotileSet` (16 lados / 47 blob) e pincel de terreno no `TileStudioSession` e na tela. 5 testes; build Android sem erros. Handoff no `HO-20261114-lunet-data-studio.json` (mesma rodada).

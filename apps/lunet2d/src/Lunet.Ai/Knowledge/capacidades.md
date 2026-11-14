@@ -48,7 +48,7 @@ Editor C# com realce, autocompletar, diagnósticos ao vivo, ir para definição,
 ## Studios (existe)
 
 - Sprite Studio: pixel art até 128×128, até 64 frames, FPS, onion skin, lápis/borracha/balde/conta-gotas/linha/retângulos, pincel 1–5 px, espelhar, paleta. Fonte `.sprite.json` (ARGB por frame) + spritesheet `.png` horizontal. **Sem camadas** por enquanto.
-- Tile Studio: mapas TileMap JSON v1 com camadas, camada de colisão, visibilidade, pintura/borracha com tileset PNG. **Sem autotile** por enquanto.
+- Tile Studio: mapas TileMap JSON v1 com camadas, camada de colisão, visibilidade, pintura/borracha com tileset PNG. Autotile: pincel de terreno com 16 tiles (máscara N=1, E=2, S=4, W=8 somada ao tile base) ou 47 tiles (blob com cantos).
 - Audio Studio: WAV PCM (recorte, ganho, loop SMPL, síntese simples).
 - Music Studio (Audio Studio → Compor música): músicas multifaixa em `Content/Audio/<nome>.song.json` (fonte) exportadas para `<nome>.wav` (o jogo carrega com `Content.LoadMusic("Audio/<nome>.wav")` e `Audio.PlayMusic(musica, loop: true)`). Formato: `{"Version":1,"Name":"…","Bpm":120,"StepsPerBeat":4,"Swing":0,"Root":60,"Scale":"major","Loop":true,"MasterVolume":0.9,"Tracks":[{"Name":"Melodia","Instrument":{"Name":"Lead","Wave":"Square","Attack":0.005,"Decay":0.1,"Sustain":0.7,"Release":0.1,"Cutoff":20000,"Gain":0.5,"Drums":false},"Volume":0.8,"Pan":0,"Echo":0,"Reverb":0}],"Patterns":[{"Name":"A","Steps":16,"Notes":[{"Track":0,"Step":0,"Pitch":60,"Length":2,"Velocity":0.8}]}],"Order":[0]}`. Pitch é MIDI (60 = Dó central); em faixa com `"Drums":true`, 36 bumbo, 38 caixa, 39 palmas, 42 chimbal fechado, 46 aberto, 49 prato, 45 tom. Ondas: Sine, Square, Pulse25, Pulse12, Triangle, Saw, Noise, Fm. Escalas: major, minor, harmonic-minor, dorian, mixolydian, phrygian, lydian, major-pentatonic, minor-pentatonic, blues, chromatic. Depois de escrever um `.song.json`, peça à pessoa para abrir no Music Studio e exportar o WAV.
 - Efeitos sonoros desenhados (Audio Studio → Desenhar efeito): `Content/Audio/<nome>.sfx.json` + `<nome>.wav` (`Content.LoadSound("Audio/<nome>.wav").Play()`); parâmetros StartHz, Slide, ArpeggioSemitones, VibratoDepth, Duty, Attack, Sustain, Punch, Decay, LowPass, HighPass, Repeat, Crush, Volume.
@@ -64,7 +64,7 @@ Ferramentas: ler/buscar/escrever arquivos do projeto (com hash), mapa de símbol
 ## Ainda NÃO existe (não prometa; diga que não existe e ofereça alternativa)
 
 - Camadas no Sprite Studio, seleção/laço, transformações livres; Animation Studio com eventos e estados.
-- Autotile, pincéis múltiplos e propriedades por tile no Tile Studio.
+- Pincéis múltiplos e propriedades por tile no Tile Studio.
 - Atlas, UI e Physics Studios.
 - Plugins (`Lunet.Editor.SDK`, `*.lunetplugin`).
 - Multiplayer pela internet pública com segurança: não há autenticação, criptografia, relay/NAT traversal nem diretório online de partidas; use LAN ou um servidor dedicado próprio. Não há delta compression nem compensação de lag.

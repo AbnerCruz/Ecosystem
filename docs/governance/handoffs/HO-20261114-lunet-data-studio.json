@@ -25,21 +25,26 @@
     "apps/lunet2d/src/Lunet.Android/MainActivity.Data.cs",
     "apps/lunet2d/src/Lunet.Android/MainActivity.Studio.cs",
     "apps/lunet2d/src/Lunet.Android/MainActivity.Workbench.cs",
+    "apps/lunet2d/src/Lunet.Android/TileStudioView.cs",
+    "apps/lunet2d/src/Lunet.Studio/Autotile.cs",
     "apps/lunet2d/src/Lunet.Studio/Data/",
+    "apps/lunet2d/src/Lunet.Studio/TileStudioSession.cs",
+    "apps/lunet2d/tests/Lunet.Tests/AutotileTests.cs",
     "apps/lunet2d/tests/Lunet.Tests/DataStudioTests.cs",
     "docs/governance/handoffs/HO-20261114-lunet-data-studio.json"
   ],
   "work_completed": [
     "Modelo de tabela de dados com esquema tipado, validação, referências e CSV.",
     "Classe C# gerada que compila e desserializa os dados.",
-    "Data Studio Android."
+    "Data Studio Android.",
+    "LUNET-506: autotile (16 lados e 47 blob) no Tile Studio, num passo de desfazer."
   ],
   "verification": [
     {
       "check": "dotnet test DataStudioTests (local)",
       "kind": "automated",
       "result": "passed",
-      "evidence": "7 testes"
+      "evidence": "7 testes; AutotileTests 5 testes"
     },
     {
       "check": "dotnet build src/Lunet.Android -c Debug (local)",
