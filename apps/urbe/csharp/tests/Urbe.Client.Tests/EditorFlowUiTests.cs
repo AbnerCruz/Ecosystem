@@ -428,4 +428,36 @@ public sealed class EditorFlowUiTests
             window.Close();
             return true;
         }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task TheBlockBeingWrittenShowsItsMarkdownFormatted() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var (editor, window) = Open("# Estudo\n\nTexto com **negrito**, *itálico*, `código`, [[Outra nota|apelido]], #tag e $x^2$ no meio, ~~riscado~~ e %%nota%%.\n\n- [ ] tarefa aberta\n- item com [link](https://exemplo.com)\n\nDepois.\n", width: 390, height: 640);
+            var box = Edit(editor, 1, new Point(30, 10));
+            window.UpdateLayout();
+            var presenter = box.GetVisualDescendants().OfType<MarkdownTextPresenter>().Single();
+            Assert.True(presenter.Formatted);
+            // the bold word is drawn bold, the stars around it dimmed: different runs in the layout
+            var runs = presenter.TextLayout.TextLines.SelectMany(l => l.TextRuns).OfType<Avalonia.Media.TextFormatting.ShapedTextRun>().ToList();
+            Assert.Contains(runs, r => r.Properties.Typeface.Weight == Avalonia.Media.FontWeight.Bold);
+            Assert.Contains(runs, r => r.Properties.Typeface.Style == Avalonia.Media.FontStyle.Italic);
+            Shot(window, "editor-box-formatted.png");
+            // a code block is written as it is
+            editor.Surface.FinishEdit();
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
+    internal static void Shot(Window window, string name)
+    {
+        var dir = Environment.GetEnvironmentVariable("URBE_SNAPSHOT_DIR");
+        Avalonia.Headless.AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+        Dispatcher.UIThread.RunJobs();
+        var frame = window.CaptureRenderedFrame();
+        Assert.NotNull(frame);
+        if (string.IsNullOrEmpty(dir)) return;
+        Directory.CreateDirectory(dir);
+        frame!.Save(Path.Combine(dir, name), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
+    }
 }

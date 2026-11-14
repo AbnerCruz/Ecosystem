@@ -820,6 +820,9 @@ public sealed class VisualSurface : StackPanel
             SelectionForegroundBrush = UrbeTheme.Brush(UrbeTheme.Text)
         };
         Avalonia.Automation.AutomationProperties.SetName(_box, "Bloco em edição");
+        // the block's Markdown drawn formatted while it is written (bold stays bold, links stay links, marks dimmed)
+        var formatted = kind is not ("code" or "math" or "frontmatter");
+        _box.Template = MarkdownTextPresenter.Template(() => formatted);
         EditorInput.ConfigureMultiline(_box);
         // the block being written is marked by a soft, warm backdrop that fades in (UX.md P6)
         _backdrop.Margin = _box.Margin;
