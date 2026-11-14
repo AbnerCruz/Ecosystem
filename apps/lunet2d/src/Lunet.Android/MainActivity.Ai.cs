@@ -25,7 +25,7 @@ public sealed partial class MainActivity
 {
     private LunetAiSettingsStore? _aiStore;
     private LunetAiLoadedSettings? _ai;
-    private CancellationTokenSource? _aiRunCancellation;
+
 
     private LunetAiSettingsStore AiStore => _aiStore ??= new LunetAiSettingsStore(
         System.IO.Path.Combine(FilesDir!.AbsolutePath, "ai", "settings.json"),

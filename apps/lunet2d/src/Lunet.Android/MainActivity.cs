@@ -73,6 +73,7 @@ public sealed partial class MainActivity : Activity
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
+        LunetAiRuns.Changed += OnAiRunChanged;
         // Edge colors follow the app instead of the system default (LUNET-483).
         Window?.SetStatusBarColor(LunetUi.Background);
         Window?.SetNavigationBarColor(LunetUi.Background);
@@ -1449,6 +1450,7 @@ public sealed partial class MainActivity : Activity
 
     protected override void OnDestroy()
     {
+        LunetAiRuns.Changed -= OnAiRunChanged;
         _audioStudio?.Dispose();
         DisposeEcosystemConnection();
         DisposePreview();
