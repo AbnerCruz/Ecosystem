@@ -17,7 +17,12 @@ public class ProjectTests : IDisposable
     {
         var project = new ProjectStore(_root).Create("Space_Shooter");
         Assert.True(File.Exists(Path.Combine(_root, "Space_Shooter", "lunet.json")));
-        Assert.Contains("class SpaceShooter : Game", project.ReadText("Game.cs"));
+        var source = project.ReadText("Game.cs");
+        Assert.Contains("class SpaceShooter : Game", source);
+        Assert.DoesNotContain("Texture2D", source);
+        Assert.DoesNotContain("SpriteBatch", source);
+        Assert.DoesNotContain("Draw(", source);
+        Assert.DoesNotContain("CreateCircle", source);
         Assert.StartsWith("com.lunet.games.spaceshooter.g", project.Manifest.PackageId);
         Assert.True(OfflineGameApkBuilder.ValidPackage(project.Manifest.PackageId));
         Assert.True(Guid.TryParse(project.Manifest.GameId, out _));
