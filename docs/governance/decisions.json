@@ -2222,7 +2222,7 @@
     },
     {
       "id": "DEC-0062",
-      "status": "pending",
+      "status": "decided",
       "component": "lunet2d",
       "blocking": false,
       "title": "Lunet2D: expansão para desktop, navegador e iOS — qual tecnologia de interface estudar primeiro?",
@@ -2250,7 +2250,11 @@
         "apps/lunet2d/docs/architecture/multiplataforma-viabilidade-2026-11-14.md"
       ],
       "raisedBy": "claude-lunet-studios-icons-multiplatform",
-      "raisedAt": "2026-11-14"
+      "raisedAt": "2026-11-14",
+      "decision": "Alternativa A — A — Spike Avalonia, desktop primeiro (recomendada) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/942).",
+      "decidedAt": "2026-11-14",
+      "record": "docs/governance/responses/DEC-0062.md",
+      "consequencesApplied": false
     }
   ]
 }
