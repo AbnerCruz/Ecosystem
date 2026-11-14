@@ -36,6 +36,12 @@ public sealed class VisualSurface : StackPanel
     /// <summary>UC-61: the "/" menu's items in the person's order (null: all, as they are).</summary>
     public IReadOnlyList<string>? SlashOrder { get => _slash.Order; set => _slash.Order = value; }
     private readonly Border _bubble;
+    // "Abrir": the link under the caret while writing (a tap on a link of the note places the caret, never leaves it)
+    private readonly Button _openChip;
+    private EditorLinks.Link? _caretLink;
+
+    /// <summary>The "Abrir" chip for the link under the caret (tests).</summary>
+    public Button OpenLinkChip => _openChip;
     private readonly Canvas _bubbleLayer = new() { Height = 0, VerticalAlignment = VerticalAlignment.Top };
     private readonly Border _backdrop = new() { IsHitTestVisible = false };
     private readonly Dictionary<int, Control> _holders = [];
@@ -53,6 +59,8 @@ public sealed class VisualSurface : StackPanel
         _slash.Chosen += ChooseSlash;
         _bubble = BuildBubble();
         _bubbleLayer.Children.Add(_bubble);
+        _openChip = BuildOpenChip();
+        _bubbleLayer.Children.Add(_openChip);
         Rebuild();
     }
 
@@ -69,7 +77,7 @@ public sealed class VisualSurface : StackPanel
         TextSize = size;
         LineFactor = lineFactor;
         FinishEdit();
-        _lastRebuiltText = null;
+        InvalidateDrawings();
         Rebuild();
     }
 
@@ -145,7 +153,7 @@ public sealed class VisualSurface : StackPanel
             if (_readOnly == value) return;
             _readOnly = value;
             if (value) FinishEdit();
-            _lastRebuiltText = null;
+            InvalidateDrawings();
             Rebuild();
         }
     }
@@ -156,7 +164,7 @@ public sealed class VisualSurface : StackPanel
     public bool HideFrontmatter
     {
         get => _hideFrontmatter;
-        set { if (_hideFrontmatter == value) return; _hideFrontmatter = value; _lastRebuiltText = null; Rebuild(); }
+        set { if (_hideFrontmatter == value) return; _hideFrontmatter = value; InvalidateDrawings(); Rebuild(); }
     }
     public event Action<string>? TextEdited;
     public event Action<string>? WikiLinkTapped;
@@ -174,7 +182,7 @@ public sealed class VisualSurface : StackPanel
     public bool ShowBlockTimes
     {
         get => _showBlockTimes;
-        set { if (_showBlockTimes == value) return; _showBlockTimes = value; _lastRebuiltText = null; if (_box is null) Rebuild(); }
+        set { if (_showBlockTimes == value) return; _showBlockTimes = value; InvalidateDrawings(); if (_box is null) Rebuild(); }
     }
 
     /// <summary>The bubble's "Fixar em painel": the selected text of the block (DEC-0045, UC-39).</summary>
@@ -200,8 +208,11 @@ public sealed class VisualSurface : StackPanel
 
     public void SetText(string markdown)
     {
-        _text = markdown.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
-        _lastRebuiltText = null; // Reapply theme/markup when the host explicitly refreshes.
+        var next = markdown.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
+        // the same text again is the host asking to draw it again (tag colours, a mode switch); a new text redraws only
+        // the blocks that changed
+        if (next == _text) InvalidateDrawings(); else _lastRebuiltText = null;
+        _text = next;
         // the block being edited goes: its buttons must not stay lit (UC-55)
         var was = _box is not null;
         if (was) ActiveToolsChanged?.Invoke(new HashSet<string>());
@@ -228,6 +239,7 @@ public sealed class VisualSurface : StackPanel
         _wiki.Hide();
         _slash.Hide();
         _bubble.IsVisible = false;
+        _openChip.IsVisible = false;
         if (_editStart >= 0)
         {
             // an emptied block leaves no trace (the original drops empty paragraphs when serialising)
@@ -278,12 +290,42 @@ public sealed class VisualSurface : StackPanel
 
     // ------------------------------------------------------------------ drawing
 
+    /// <summary>A drawn block's place in the text, kept current when the drawing is reused after an edit elsewhere.</summary>
+    private sealed class BlockRef(MarkdownBlock block) { public MarkdownBlock Block = block; }
+
+    // the drawings of the last build, in order, with their source: a block whose source did not change keeps its
+    // drawing (and its place in memory) when another block is edited, so leaving a block redraws that block only
+    private List<(string Source, string Kind, Control Drawn, BlockRef Ref)> _drawn = [];
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<Control, BlockRef> _refs = new();
+    private bool _drawingsValid;
+
+    /// <summary>How many blocks were drawn anew by the last build (tests: leaving a block redraws only what changed).</summary>
+    public int LastBuildDrawn { get; private set; }
+
+    /// <summary>The drawings are out of date (theme, size, read-only, tags): the next build draws every block again.</summary>
+    private void InvalidateDrawings() { _drawingsValid = false; _lastRebuiltText = null; }
+
+    // a block that reads the rest of the note (a progress summary counts its tasks) is drawn again whenever the note changes
+    private static bool ReadsTheNote(string source) =>
+        source.Contains("```progress", StringComparison.Ordinal) || source.Contains("```progresso", StringComparison.Ordinal) ||
+        source.Contains("~~~progress", StringComparison.Ordinal);
+
     private void Rebuild()
     {
         var unchanged = _lastRebuiltText == _text;
-        var reusable = unchanged ? new Dictionary<int, Control>(_holders) : new Dictionary<int, Control>();
+        // the drawings of the previous build, by their source, in order (copies of a block are taken in order)
+        var reusable = new Dictionary<(string, string), Queue<(Control Drawn, BlockRef Ref)>>();
+        if (_drawingsValid)
+            foreach (var d in _drawn)
+            {
+                if (!unchanged && ReadsTheNote(d.Source)) continue;
+                if (!reusable.TryGetValue((d.Source, d.Kind), out var q)) reusable[(d.Source, d.Kind)] = q = new();
+                q.Enqueue((d.Drawn, d.Ref));
+            }
         Children.Clear();
         _holders.Clear();
+        var drawn = new List<(string Source, string Kind, Control Drawn, BlockRef Ref)>();
+        LastBuildDrawn = 0;
         if (!unchanged) _blocks = AiAuthorship.WithSealLines(WithContainers(MarkdownEngine.SplitBlocks(_text), NoteContainers.Parse(_text)), _text);
         if (_blocks.Count == 0 && _box is null)
         {
@@ -304,7 +346,8 @@ public sealed class VisualSurface : StackPanel
         double eager = 0;
         foreach (var block in _blocks)
         {
-            var time = times?.Next(_text[block.Start..block.End]);
+            var source = _text[block.Start..block.End];
+            var time = times?.Next(source);
             if (_hideFrontmatter && block.Kind == "frontmatter") continue;
             if (_box is not null && !editorAdded && block.Start >= _editStart)
             {
@@ -318,23 +361,36 @@ public sealed class VisualSurface : StackPanel
                 if (!suggested) { suggested = true; Children.Add(SuggestionCard(sg)); }
                 if (block.Start < sg.Change.End) continue;
             }
-            Control drawn;
-            if (reusable.TryGetValue(block.Start, out var old)) drawn = old;
-            else if (eager > EagerHeight)
+            Control made;
+            BlockRef r;
+            if (reusable.TryGetValue((source, block.Kind), out var q) && q.Count > 0)
             {
-                var b = block;
-                drawn = new Ui.Deferred(() => WithTime(Rendered(b), time, b.Kind), EstimatedHeight(b));
+                (made, r) = q.Dequeue();
+                r.Block = block;
             }
-            else drawn = WithTime(Rendered(block), time, block.Kind);
+            else
+            {
+                r = new BlockRef(block);
+                LastBuildDrawn++;
+                if (eager > EagerHeight)
+                {
+                    var br = r;
+                    made = new Ui.Deferred(() => WithTime(Rendered(br), time, br.Block.Kind), EstimatedHeight(block));
+                }
+                else made = WithTime(Rendered(r), time, block.Kind);
+            }
             eager += EstimatedHeight(block);
-            _holders[block.Start] = drawn;
-            Children.Add(drawn);
+            _holders[block.Start] = made;
+            drawn.Add((source, block.Kind, made, r));
+            Children.Add(made);
         }
         if (!suggested) Children.Add(SuggestionCard(_suggestion!));
         if (_box is not null && !editorAdded) Children.Add(EditorFor());
         var tail = new Border { Background = Brushes.Transparent, MinHeight = 160 };
         tail.Tapped += (_, e) => { e.Handled = true; if (TouchIntent.IsIntended(tail)) AppendBlock(fromTouch: true); };
         Children.Add(tail);
+        _drawn = drawn;
+        _drawingsValid = true;
         _lastRebuiltText = _text;
     }
 
@@ -432,8 +488,9 @@ public sealed class VisualSurface : StackPanel
         return grid;
     }
 
-    private Control Rendered(MarkdownBlock block)
+    private Control Rendered(BlockRef r)
     {
+        var block = r.Block;
         var source = _text[block.Start..block.End];
         var container = block.Kind == "container";
         var reader = new MarkdownReader
@@ -442,16 +499,18 @@ public sealed class VisualSurface : StackPanel
             ProgressContextMarkdown = _text,
             ProgressNoteResolver = ProgressNoteResolver,
             DataReader = DataReader,
-            ProgressEditRequested = _readOnly || AskProgress is null ? null : body => _ = EditProgressAsync(block, body),
+            ProgressEditRequested = _readOnly || AskProgress is null ? null : body => _ = EditProgressAsync(r.Block, body),
             WikiLinkTapped = name => WikiLinkTapped?.Invoke(name),
             WebLinkTapped = url => WebLinkTapped?.Invoke(url),
+            // while a block is being written, a link of the note is a place for the caret like any other text
+            LinksFollow = () => _box is null,
             EmbedFor = EmbedFor,
             // a task inside a container: the tap edits the block (its list lines are not the block's lines)
-            TaskToggled = container ? null : (line, on) => ToggleTask(block, line, on),
-            PlotParameterChanged = container ? null : (name, value) => SetPlotParameter(block, name, value),
-            MathTapped = index => _ = EditFormulaAsync(block.Start, index),
-            CommentsTapped = index => _ = CommentsAsync(block.Start, index),
-            AgentAsked = AgentAsked is null ? null : index => AskAgent(block.Start, index)
+            TaskToggled = container ? null : (line, on) => ToggleTask(r.Block, line, on),
+            PlotParameterChanged = container ? null : (name, value) => SetPlotParameter(r.Block, name, value),
+            MathTapped = index => _ = EditFormulaAsync(r.Block.Start, index),
+            CommentsTapped = index => _ = CommentsAsync(r.Block.Start, index),
+            AgentAsked = AgentAsked is null ? null : index => AskAgent(r.Block.Start, index)
         };
         // seals drawn where they belong (one per block, after its text), whatever an older version left in the file (UC-51)
         var shown = AiAuthorship.Canonical(source);
@@ -467,7 +526,7 @@ public sealed class VisualSurface : StackPanel
                 e.Handled = true;
                 // a touch that scrolled the note, or only stopped it, does not open the block (22/10/2026)
                 if (!TouchIntent.IsIntended(holder)) return;
-                TapBlock(block.Start, holder, e.Source as Visual, e.GetPosition(holder), select: false);
+                TapBlock(r.Block.Start, holder, e.Source as Visual, e.GetPosition(holder), select: false);
             };
             // a long press selects the word under the finger, with the bubble and a haptic tick (UX.md P7, P8)
             holder.AddHandler(InputElement.HoldingEvent, (object? _, HoldingRoutedEventArgs e) =>
@@ -477,9 +536,10 @@ public sealed class VisualSurface : StackPanel
                 // note, even slowly, never selects nor opens the keyboard (22/10/2026)
                 if (!TouchIntent.IsIntended(holder)) return;
                 e.Handled = true;
-                TapBlock(block.Start, holder, holder.InputHitTest(e.Position) as Visual, e.Position, select: true);
+                TapBlock(r.Block.Start, holder, holder.InputHitTest(e.Position) as Visual, e.Position, select: true);
             });
         }
+        _refs.Add(holder, r);
         return holder;
     }
 
@@ -857,6 +917,8 @@ public sealed class VisualSurface : StackPanel
         var (a, b) = Range(_box);
         var bubbleOn = b > a && text[a..b].Trim().Length > 0;
         if (bubbleOn) ShowBubble(a); else _bubble.IsVisible = false;
+        _caretLink = !bubbleOn && a == b ? EditorLinks.At(text, a) : null;
+        if (_caretLink is { } link) ShowOpenChip(link); else _openChip.IsVisible = false;
         ActiveToolsChanged?.Invoke(LegacyEditorTools.ActiveTools(text, a, b));
 
         var slash = LegacyEditorTools.SlashQuery(text);
@@ -1284,6 +1346,52 @@ public sealed class VisualSurface : StackPanel
         ];
         _bubble.Opacity = 1;
         _bubble.RenderTransform = Avalonia.Media.Transformation.TransformOperations.Parse("scale(1)");
+    }
+
+    private Button BuildOpenChip()
+    {
+        var chip = new Button
+        {
+            Content = new StackPanel
+            {
+                Orientation = Orientation.Horizontal, Spacing = 6,
+                Children =
+                {
+                    UrbeTheme.Icon(SlashMenu.Icons["link"], 15),
+                    new TextBlock { Text = "Abrir", FontSize = 13, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center }
+                }
+            },
+            Padding = new Thickness(12, 0), MinHeight = 36, CornerRadius = new CornerRadius(18), Focusable = false, IsVisible = false,
+            Background = UrbeTheme.Brush(UrbeTheme.Surface2), Foreground = UrbeTheme.Brush(UrbeTheme.Accent),
+            BorderBrush = UrbeTheme.Brush(UrbeTheme.Accent, .35), BorderThickness = new Thickness(1)
+        };
+        Avalonia.Automation.AutomationProperties.SetName(chip, "Abrir link");
+        ToolTip.SetTip(chip, "Abrir link");
+        chip.Click += (_, e) =>
+        {
+            e.Handled = true;
+            if (_caretLink is not { } link) return;
+            FinishEdit();
+            if (link.Note) WikiLinkTapped?.Invoke(link.Target); else WebLinkTapped?.Invoke(link.Target);
+        };
+        return chip;
+    }
+
+    /// <summary>The chip sits just under the line of the caret, at the link's start, over the text (it never pushes it).</summary>
+    private void ShowOpenChip(EditorLinks.Link link)
+    {
+        if (_box is null) return;
+        _openChip.IsVisible = true;
+        var presenter = _box.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.TextPresenter>().FirstOrDefault();
+        if (presenter is null) return;
+        var r = presenter.TextLayout.HitTestTextPosition(Math.Clamp(link.End, 0, (_box.Text ?? "").Length));
+        var s = presenter.TextLayout.HitTestTextPosition(Math.Clamp(link.Start, 0, (_box.Text ?? "").Length));
+        if (presenter.TranslatePoint(new Point(s.X, r.Bottom), _bubbleLayer) is { } p)
+        {
+            _openChip.Measure(Size.Infinity);
+            Canvas.SetLeft(_openChip, Math.Clamp(p.X, 0, Math.Max(0, Bounds.Width - _openChip.DesiredSize.Width)));
+            Canvas.SetTop(_openChip, p.Y + 4);
+        }
     }
 
     private Border BuildBubble()

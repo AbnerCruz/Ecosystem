@@ -40,6 +40,10 @@ public sealed partial class MarkdownReader
     /// <summary>A [[wikilink]] was tapped (target note name).</summary>
     public Action<string>? WikiLinkTapped { get; set; }
     public Action<string>? WebLinkTapped { get; set; }
+
+    /// <summary>Whether a tap on a link follows it now (null: always). While a block is being written, a tap on a link
+    /// of another block places the caret there instead of leaving the note mid-sentence (the box offers "Abrir").</summary>
+    public Func<bool>? LinksFollow { get; set; }
     /// <summary>A task checkbox was toggled: index of the list line inside the block, new state.</summary>
     public Action<int, bool>? TaskToggled { get; set; }
 
@@ -466,6 +470,7 @@ public sealed partial class MarkdownReader
         var pos = hit.TextPosition;
         foreach (var (s, l, index) in State(tb).Comments)
             if (pos >= s && pos < s + l) { e.Handled = true; State(tb).CommentsTapped?.Invoke(index); return; }
+        if (LinksFollow?.Invoke() == false) return;
         foreach (var (s, l, name) in State(tb).Wiki)
             if (pos >= s && pos < s + l) { e.Handled = true; WikiLinkTapped?.Invoke(name); return; }
         foreach (var (s, l, url) in State(tb).Links)
