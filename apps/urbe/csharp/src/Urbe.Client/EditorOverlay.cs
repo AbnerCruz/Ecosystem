@@ -275,6 +275,7 @@ public sealed class EditorOverlay : Grid
         _wiki.Chosen += CommitWiki;
 
         _visual.UserNavigating = () => UserScrolling;
+        _visual.UndoRequested += undo => { if (undo) Undo(); else Redo(); };
         _visual.TextEdited += md =>
         {
             // the Visual box never shows seals and composes them with AiAuthorship; this only catches a route that did not
@@ -288,6 +289,7 @@ public sealed class EditorOverlay : Grid
             _fromVisual = true;
             if (!string.Equals(Editor.Text, md, StringComparison.Ordinal)) ReplaceSourceText(md);
             _fromVisual = false;
+            if (!_restoringHistory) _history.Record(md, Environment.TickCount64);
         };
         _visual.WebLinkTapped += url => OpenWeb?.Invoke(url);
         _visual.WikiLinkTapped += name => _ = FollowLinkAsync(name);
@@ -726,15 +728,38 @@ public sealed class EditorOverlay : Grid
     public void Undo()
     {
         if (Mode == EditorMode.Fonte) Editor.Undo();
-        else if (_visual.IsEditing) _visual.Undo();
-        else { Editor.Undo(); _visual.SetText(Editor.Text ?? ""); }
+        else HistoryStep(undo: true);
     }
 
     public void Redo()
     {
         if (Mode == EditorMode.Fonte) Editor.Redo();
-        else if (_visual.IsEditing) _visual.Redo();
-        else { Editor.Redo(); _visual.SetText(Editor.Text ?? ""); }
+        else HistoryStep(undo: false);
+    }
+
+    // Visual's undo is the note's, across blocks (a block's box only knew its own edits since it opened)
+    private readonly EditHistory _history = new();
+    private bool _restoringHistory;
+
+    /// <summary>Whether Visual has something to undo / redo (tests, the bar).</summary>
+    public bool CanUndoVisual => _history.CanUndo;
+    public bool CanRedoVisual => _history.CanRedo;
+
+    private void HistoryStep(bool undo)
+    {
+        if (ReadOnly || _note is null) return;
+        // the note may have changed outside Visual (Fonte, a form): that is a step of its own first
+        _history.Record((Editor.Text ?? "").Replace("\r\n", "\n"), Environment.TickCount64, group: false);
+        if ((undo ? _history.Undo() : _history.Redo()) is not { } step) return;
+        _restoringHistory = true;
+        try
+        {
+            _fromVisual = true;
+            ReplaceSourceText(step.Text);
+            _fromVisual = false;
+            _visual.Restore(step.Text, step.Caret);
+        }
+        finally { _fromVisual = false; _restoringHistory = false; }
     }
 
     private void Go(CityNote target)
@@ -861,6 +886,7 @@ public sealed class EditorOverlay : Grid
         TouchTab(note.Path);
         Shown?.Invoke(note.Path);
         Editor.Text = note.Content;
+        _history.Reset(note.Content.Replace("\r\n", "\n"));
         _opening = false;
         RebuildIndex();
         var canVisual = CanVisual(note.Path);

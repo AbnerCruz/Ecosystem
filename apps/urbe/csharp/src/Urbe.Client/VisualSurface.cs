@@ -230,6 +230,27 @@ public sealed class VisualSurface : StackPanel
     public void Undo() => _box?.Undo();
     public void Redo() => _box?.Redo();
 
+    /// <summary>Ctrl+Z / Ctrl+Y (Ctrl+Shift+Z) in the box: the note's undo, across blocks (the host's history).</summary>
+    public event Action<bool>? UndoRequested;
+
+    /// <summary>
+    /// The note's text after an undo or redo: drawn again and, when a block was being written, the block of
+    /// <paramref name="caret"/> is written with the caret there (the keyboard stays).
+    /// </summary>
+    public void Restore(string text, int caret)
+    {
+        var writing = _box is not null;
+        var focused = _box?.IsFocused == true;
+        SetText(text);
+        if (!writing || _readOnly) return;
+        caret = Math.Clamp(caret, 0, _text.Length);
+        var block = _blocks.LastOrDefault(b => b.Start <= caret && (!_hideFrontmatter || b.Kind != "frontmatter")) ?? _blocks.FirstOrDefault(b => !_hideFrontmatter || b.Kind != "frontmatter");
+        if (block is null) return;
+        _tapCaret = AiAuthorship.Strip(_text[block.Start..Math.Clamp(caret, block.Start, block.End)]).Length;
+        StartBox(AiAuthorship.Strip(_text[block.Start..block.End]), block.Start, block.End, block.Kind);
+        if (focused) _box?.Focus();
+    }
+
     public void FinishEdit()
     {
         if (_box is null) return;
@@ -1059,6 +1080,13 @@ public sealed class VisualSurface : StackPanel
         if (_slash.IsOpen && _slash.HandleKey(e.Key)) { e.Handled = true; return; }
         if (_wiki.IsOpen && _wiki.HandleKey(e.Key)) { e.Handled = true; return; }
         if (e.Key == Key.Escape) { e.Handled = true; FinishEdit(); return; }
+        var mod = e.KeyModifiers.HasFlag(KeyModifiers.Control) || e.KeyModifiers.HasFlag(KeyModifiers.Meta);
+        if (mod && UndoRequested is not null && (e.Key == Key.Z || e.Key == Key.Y))
+        {
+            e.Handled = true;
+            UndoRequested(e.Key == Key.Z && !e.KeyModifiers.HasFlag(KeyModifiers.Shift));
+            return;
+        }
         if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None && ContinueList()) { e.Handled = true; return; }
         if (e.KeyModifiers == KeyModifiers.None && CrossBlock(e.Key)) e.Handled = true;
     }

@@ -460,4 +460,41 @@ public sealed class EditorFlowUiTests
         Directory.CreateDirectory(dir);
         frame!.Save(Path.Combine(dir, name), Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
     }
+
+    [Fact]
+    public async Task UndoInVisualGoesBackAcrossBlocksAndReopensWhereTheChangeWas() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var (editor, window) = Open("Um.\n\nDois.\n");
+            var box = Edit(editor, 0);
+            box.Focus();
+            box.CaretIndex = box.Text!.Length;
+            foreach (var c in " abc") window.KeyTextInput(c.ToString());
+            Dispatcher.UIThread.RunJobs();
+            box = Edit(editor, 1);
+            box.Focus();
+            box.CaretIndex = box.Text!.Length;
+            foreach (var c in " xyz") window.KeyTextInput(c.ToString());
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal("Um. abc\n\nDois. xyz\n", Source(editor));
+            // Ctrl+Z in the box: the note's undo
+            window.KeyPress(Avalonia.Input.Key.Z, RawInputModifiers.Control, PhysicalKey.Z, "z");
+            window.KeyRelease(Avalonia.Input.Key.Z, RawInputModifiers.Control, PhysicalKey.Z, "z");
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal("Um. abc\n\nDois.\n", Source(editor));
+            editor.Undo();
+            Assert.Equal("Um.\n\nDois.\n", Source(editor));
+            editor.Undo();
+            Assert.Equal("Um.\n\nDois.\n", Source(editor));
+            // the block where the last change was undone is written, caret there, keyboard kept
+            Assert.Equal("Um.", editor.Surface.EditBox!.Text);
+            Assert.Equal(3, editor.Surface.EditBox!.CaretIndex);
+            Assert.True(editor.Surface.EditBox!.IsFocused);
+            editor.Redo();
+            Assert.Equal("Um. abc\n\nDois.\n", Source(editor));
+            window.KeyTextInput("!");
+            Assert.False(editor.CanRedoVisual);
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
 }
