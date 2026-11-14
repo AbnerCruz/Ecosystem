@@ -21,8 +21,17 @@ public sealed class EditorFuzzUiTests
         "> Uma citação com *ênfase*.\n\nTexto do agente que foi escrito com ajuda {ia:\"modelo\"}\n\n```csharp\nvar x = 1;\n```\n\n" +
         "Fórmula $x^2 + 1$ no texto e %%comentário%% escondido.\n\n$$\n\\int_0^1 x\\,dx\n$$\n\n## Seção dois\n\nÚltimo parágrafo.\n";
 
+    /// <summary>Ten seeds by default; URBE_FUZZ_SEEDS=n runs n of them (a longer local run).</summary>
+    public static TheoryData<int> Seeds()
+    {
+        var n = int.TryParse(Environment.GetEnvironmentVariable("URBE_FUZZ_SEEDS"), out var v) ? v : 10;
+        var data = new TheoryData<int>();
+        for (int i = 1; i <= n; i++) data.Add(i);
+        return data;
+    }
+
     [Theory]
-    [InlineData(1)] [InlineData(2)] [InlineData(3)] [InlineData(4)] [InlineData(5)] [InlineData(6)]
+    [MemberData(nameof(Seeds))]
     public async Task Visual_RandomEditingNeverLosesTypedText(int seed) =>
         Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
         {
@@ -39,9 +48,9 @@ public sealed class EditorFuzzUiTests
                 var source = (editor.Editor.Text ?? "").Replace("\r\n", "\n");
                 Assert.True(source == editor.Surface.Text, $"seed {seed}: Fonte and Visual differ after {what}\n{string.Join("\n", log)}");
             }
-            for (int step = 0; step < 120; step++)
+            for (int step = 0; step < 200; step++)
             {
-                var op = rnd.Next(10);
+                var op = rnd.Next(11);
                 var box = editor.Surface.EditBox;
                 if (box is null || op < 2)
                 {
@@ -66,7 +75,7 @@ public sealed class EditorFuzzUiTests
                     window.KeyTextInput(s);
                     Dispatcher.UIThread.RunJobs();
                     log.Add($"type {s} at {a}-{b}");
-                    Assert.True(ReferenceEquals(box, editor.Surface.EditBox), $"seed {seed}: typing ended the block\n{string.Join("\n", log)}");
+                    Assert.True(ReferenceEquals(box, editor.Surface.EditBox), $"seed {seed}: typing ended the block; box before [{text}] now [{editor.Surface.EditBox?.Text}]\nNOTE[{editor.Surface.Text}]\n{string.Join("\n", log.TakeLast(6))}");
                     Assert.Equal(beforeBox - (b - a) + 1, (box.Text ?? "").Length);
                     Assert.Equal(s, box.Text![a..(a + 1)]);
                     Assert.True(editor.Surface.Text.Length >= beforeNote - (b - a) + 1, $"seed {seed}: note lost text\n{string.Join("\n", log)}");
@@ -76,6 +85,14 @@ public sealed class EditorFuzzUiTests
                     window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null);
                     window.KeyRelease(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null);
                     log.Add("backspace");
+                }
+                else if (op == 10)
+                {
+                    var keys = new[] { (Key.Up, PhysicalKey.ArrowUp), (Key.Down, PhysicalKey.ArrowDown), (Key.Left, PhysicalKey.ArrowLeft), (Key.Right, PhysicalKey.ArrowRight), (Key.Delete, PhysicalKey.Delete) };
+                    var (k, pk) = keys[rnd.Next(keys.Length)];
+                    window.KeyPress(k, RawInputModifiers.None, pk, null);
+                    window.KeyRelease(k, RawInputModifiers.None, pk, null);
+                    log.Add("key " + k);
                 }
                 else if (op == 8)
                 {
@@ -93,6 +110,10 @@ public sealed class EditorFuzzUiTests
             }
             editor.Surface.FinishEdit();
             Check("finish");
+            // what MainView's last defense asks before writing (the person's route): the file would be saved
+            var final = editor.Editor.Text!;
+            Assert.True(NoteMarks.PreservesAiAuthorship(Note, final) || final == AiAuthorship.Attribute(Note, final, null),
+                $"seed {seed}: the save would be refused\n{final}");
             window.Close();
             return true;
         }, TestContext.Current.CancellationToken));

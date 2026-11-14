@@ -142,6 +142,10 @@ public sealed class VisualSurface : StackPanel
     public string Text => _text;
     public bool IsEditing => _box is not null;
 
+    /// <summary>The text being reported comes from typing in the box, its seals composed by <see cref="AiAuthorship"/>
+    /// (no seal can be typed or edited there): the host must never undo it nor close the box over it.</summary>
+    public bool Composing { get; private set; }
+
     private bool _readOnly;
 
     /// <summary>Only reading (24/10/2026): no block turns into an edit box, nothing is toggled or written; links, comments to read and cards still work.</summary>
@@ -284,7 +288,8 @@ public sealed class VisualSurface : StackPanel
         var end = at;
         while (end < _text.Length && _text[end] == '\n') end++;
         // keep one blank line between the neighbours
-        var keep = start > 0 && end < _text.Length ? "\n\n" : "";
+        // (the note keeps the line break it ends with)
+        var keep = start > 0 && end < _text.Length ? "\n\n" : start > 0 && end == _text.Length && end > at ? "\n" : "";
         _text = _text[..start] + keep + _text[end..];
     }
 
@@ -355,6 +360,8 @@ public sealed class VisualSurface : StackPanel
                 list.Add(EditorFor());
                 if (block.Start == _editStart) continue;   // the block being edited
             }
+            // a box can hold several blocks (two joined by Backspace): none of them is drawn under it
+            if (_box is not null && block.Start > _editStart && block.Start < _editEnd) continue;
             // UC-80: the agent's suggestion takes the place of the lines it changes (or comes before the next block)
             if (_suggestion is { } sg && (block.End > sg.Change.Start && block.Start < sg.Change.End || block.Start >= sg.Change.End))
             {
@@ -835,7 +842,7 @@ public sealed class VisualSurface : StackPanel
         var directTouch = tap is not null;
         if (KeyboardFocusPolicy.FocusEditableOnTouch(OperatingSystem.IsAndroid(), directTouch)) box.Focus();
         var len = box.Text?.Length ?? 0;
-        var at = caret is { } c ? Math.Clamp(c, 0, len) : CaretFromTap(box, tap) ?? len;
+        var at = caret is { } c ? Math.Clamp(c, 0, len) : _caretAt?.Invoke(box) ?? CaretFromTap(box, tap) ?? len;
         box.SelectionStart = box.SelectionEnd = box.CaretIndex = at;
         if (select)
         {
@@ -933,9 +940,29 @@ public sealed class VisualSurface : StackPanel
         var source = AiAuthorship.Attribute(_editRaw, block, null);
         _editStart = Math.Clamp(_editStart, 0, _text.Length);
         _editEnd = Math.Clamp(_editEnd, _editStart, _text.Length);
-        _text = _text[.._editStart] + source + _text[_editEnd..];
+        var candidate = _text[.._editStart] + source + _text[_editEnd..];
+        // The seals read from the block as it was opened must also be a change the note accepts from this keystroke
+        // (EditorOverlay checks every change against the note as it is now). When the two readings disagree (a block of
+        // several parts, a fence broken while typing), the seals are read again from the note as it is now: the letter
+        // typed always stays and the block keeps being written (a refusal there undid the letter and closed the block).
+        var suffix = _text.Length - _editEnd;
+        if ((_editRaw.Contains("{ia:", StringComparison.Ordinal) || _text.AsSpan(_editStart, _editEnd - _editStart).Contains("{ia:", StringComparison.Ordinal)) &&
+            !NoteMarks.AllowsUserAuthorshipEdit(_text, candidate))
+        {
+            var again = AiAuthorship.Attribute(_text, candidate, null);
+            if (again.Length - suffix >= _editStart && again.EndsWith(_text[_editEnd..], StringComparison.Ordinal) &&
+                again.StartsWith(_text[.._editStart], StringComparison.Ordinal))
+            {
+                candidate = again;
+                source = again[_editStart..(again.Length - suffix)];
+            }
+        }
+        _text = candidate;
         _editEnd = _editStart + source.Length;
-        TextEdited?.Invoke(_text);
+        // the box shows no seals and its seals are only the ones AiAuthorship composes: the host takes this text as it is
+        Composing = true;
+        try { TextEdited?.Invoke(_text); }
+        finally { Composing = false; }
         UpdateTools();
         KeepCaretSoon(typing: true);
     }
@@ -965,8 +992,117 @@ public sealed class VisualSurface : StackPanel
         if (_slash.IsOpen && _slash.HandleKey(e.Key)) { e.Handled = true; return; }
         if (_wiki.IsOpen && _wiki.HandleKey(e.Key)) { e.Handled = true; return; }
         if (e.Key == Key.Escape) { e.Handled = true; FinishEdit(); return; }
-        if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None && ContinueList()) e.Handled = true;
+        if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None && ContinueList()) { e.Handled = true; return; }
+        if (e.KeyModifiers == KeyModifiers.None && CrossBlock(e.Key)) e.Handled = true;
     }
+
+    // ------------------------------------------------------------------ the note as one text (between blocks)
+
+    /// <summary>
+    /// The keys that reach past the block being written, as in one continuous text: ↑ on its first line and ← at its
+    /// start go to the block above (↑ keeps the caret's column), ↓ on its last line and → at its end go to the block
+    /// below; Backspace at its start takes away the line break before it and Delete at its end the one after it, so the
+    /// two blocks are written together in one box (the Markdown changes by exactly that character, as in Fonte).
+    /// </summary>
+    private bool CrossBlock(Key key)
+    {
+        if (_box is not { } box || _editStart < 0) return false;
+        var text = box.Text ?? "";
+        var (a, b) = Range(box);
+        if (a != b) return false;
+        var index = _blocks.ToList().FindIndex(x => x.Start == _editStart);
+        if (index < 0) return false;
+        int line = 0, lines = 1;
+        double x = 0;
+        if (box.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.TextPresenter>().FirstOrDefault() is { } presenter)
+        {
+            var layout = presenter.TextLayout;
+            line = layout.GetLineIndexFromCharacterIndex(a, false);
+            lines = layout.TextLines.Count;
+            x = layout.HitTestTextPosition(a).X;
+        }
+        switch (key)
+        {
+            case Key.Up when line == 0 && index > 0: return MoveTo(index - 1, column: x, last: true);
+            case Key.Down when line >= lines - 1 && index < _blocks.Count - 1: return MoveTo(index + 1, column: x, last: false);
+            case Key.Left when a == 0 && index > 0: return MoveTo(index - 1, column: null, last: true);
+            case Key.Right when a == text.Length && index < _blocks.Count - 1: return MoveTo(index + 1, column: null, last: false);
+            case Key.Back when a == 0 && index > 0 && !_box.IsReadOnly: return Join(index - 1, index, forward: false);
+            case Key.Delete when a == text.Length && index < _blocks.Count - 1 && !_box.IsReadOnly: return Join(index, index + 1, forward: true);
+        }
+        return false;
+    }
+
+    private static bool Joinable(MarkdownBlock b) => b.Kind is not ("frontmatter" or "container");
+
+    /// <summary>Writes the block at <paramref name="index"/>; the caret at its end or start, or at the column given.</summary>
+    private bool MoveTo(int index, double? column, bool last)
+    {
+        if (_hideFrontmatter && _blocks[index].Kind == "frontmatter") return false;
+        var focused = _box?.IsFocused == true;
+        var target = _blocks[index].Start;
+        _caretAt = box =>
+        {
+            var len = box.Text?.Length ?? 0;
+            if (column is { } cx && box.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.TextPresenter>().FirstOrDefault() is { } p)
+            {
+                var lines = p.TextLayout.TextLines;
+                var y = last ? p.TextLayout.Height - lines[^1].Height / 2 : lines[0].Height / 2;
+                var hit = p.TextLayout.HitTestPoint(new Point(cx, Math.Max(0, y)));
+                return Math.Clamp(hit.TextPosition + (hit.IsTrailing ? 1 : 0), 0, len);
+            }
+            return last ? len : 0;
+        };
+        Edit(target);
+        _caretAt = null;
+        if (focused) _box?.Focus();
+        return _box is not null;
+    }
+
+    /// <summary>The line break between two blocks goes: they become one box, the caret where they met.</summary>
+    private bool Join(int upper, int lower, bool forward)
+    {
+        if (_hideFrontmatter && _blocks[upper].Kind == "frontmatter") return false;
+        var focused = _box?.IsFocused == true;
+        // an empty block (a new line, or all its text deleted) just goes, and the block above is written at its end
+        if (_blocks[lower].Start == _editStart && (_box?.Text ?? "x").Length == 0)
+        {
+            var up = _blocks[upper].Start;
+            FinishEdit();
+            _caretAt = box => box.Text?.Length ?? 0;
+            Edit(up);
+            _caretAt = null;
+            if (focused) _box?.Focus();
+            return _box is not null;
+        }
+        if (!Joinable(_blocks[upper]) || !Joinable(_blocks[lower])) return false;
+        var upperStart = _blocks[upper].Start;
+        var lowerStart = _blocks[lower].Start;
+        // the box being written is folded into the text first (its length may have changed)
+        var before = _text.Length;
+        var editing = _editStart;
+        FinishEdit();
+        var shift = _text.Length - before;
+        if (editing >= 0 && lowerStart > editing) lowerStart += shift;
+        if (editing >= 0 && upperStart > editing) upperStart += shift;
+        var lowerBlock = _blocks.FirstOrDefault(x => x.Start == lowerStart);
+        var upperBlock = _blocks.FirstOrDefault(x => x.Start == upperStart);
+        if (lowerBlock is null || upperBlock is null || lowerStart == 0 || _text[lowerStart - 1] != '\n') return false;
+        _text = _text[..(lowerStart - 1)] + _text[lowerStart..];
+        var end = lowerBlock.End - 1;
+        var raw = _text[upperBlock.Start..end];
+        // Backspace leaves the caret after the line break that stays, Delete before it
+        var joint = forward && lowerStart - 2 >= upperBlock.Start && _text[lowerStart - 2] == '\n' ? lowerStart - 2 : lowerStart - 1;
+        var caret = AiAuthorship.Strip(_text[upperBlock.Start..joint]).Length;
+        _lastRebuiltText = null;
+        TextEdited?.Invoke(_text);
+        _tapCaret = caret;
+        StartBox(AiAuthorship.Strip(raw), upperBlock.Start, end, upperBlock.Kind == "code" || lowerBlock.Kind == "code" ? "code" : "paragraph");
+        if (focused) _box?.Focus();
+        return true;
+    }
+
+    private Func<TextBox, int>? _caretAt;
 
     private void OnBoxTextInput(object? sender, TextInputEventArgs e)
     {

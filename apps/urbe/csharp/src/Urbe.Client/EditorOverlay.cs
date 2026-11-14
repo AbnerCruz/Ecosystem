@@ -279,7 +279,7 @@ public sealed class EditorOverlay : Grid
         {
             // the Visual box never shows seals and composes them with AiAuthorship; this only catches a route that did not
             var current = Editor.Text ?? "";
-            if (!NoteMarks.AllowsUserAuthorshipEdit(current, md) && md != AiAuthorship.Attribute(current, md, null))
+            if (!_visual.Composing && !NoteMarks.AllowsUserAuthorshipEdit(current, md) && md != AiAuthorship.Attribute(current, md, null))
             {
                 _visual.SetText(current);
                 _toast.Show("A marca de autoria da IA não pode ser editada ou removida.", TimeSpan.FromSeconds(3));

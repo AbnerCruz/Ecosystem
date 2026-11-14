@@ -155,4 +155,127 @@ public sealed class EditorFlowUiTests
             window.Close();
             return true;
         }, TestContext.Current.CancellationToken));
+
+    private static void Key(Window window, Avalonia.Input.Key key, PhysicalKey physical)
+    {
+        window.KeyPress(key, RawInputModifiers.None, physical, null);
+        window.KeyRelease(key, RawInputModifiers.None, physical, null);
+        Dispatcher.UIThread.RunJobs();
+    }
+
+    private static string Source(EditorOverlay editor) => editor.Editor.Text!.Replace("\r\n", "\n");
+
+    [Fact]
+    public async Task BackspaceAtTheStartOfABlockJoinsItToTheOneAbove() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var (editor, window) = Open("Um.\n\nDois.\n");
+            var box = Edit(editor, 1);
+            box.SelectionStart = box.SelectionEnd = box.CaretIndex = 0;
+            Key(window, Avalonia.Input.Key.Back, PhysicalKey.Backspace);
+            box = editor.Surface.EditBox!;
+            Assert.Equal("Um.\nDois.", box.Text);
+            Assert.Equal(4, box.CaretIndex);
+            Assert.True(box.IsFocused);
+            Assert.Equal("Um.\nDois.\n", Source(editor));
+            Key(window, Avalonia.Input.Key.Back, PhysicalKey.Backspace);
+            Assert.Equal("Um.Dois.\n", Source(editor));
+            editor.Surface.FinishEdit();
+            Assert.Single(editor.Surface.BlockStarts);
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task DeleteAtTheEndOfABlockJoinsTheOneBelow() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var (editor, window) = Open("# Título\n\nTexto.\n");
+            var box = Edit(editor, 0);
+            box.SelectionStart = box.SelectionEnd = box.CaretIndex = box.Text!.Length;
+            Key(window, Avalonia.Input.Key.Delete, PhysicalKey.Delete);
+            box = editor.Surface.EditBox!;
+            Assert.Equal("# Título\nTexto.", box.Text);
+            Assert.Equal("# Título".Length, box.CaretIndex);
+            Assert.Equal("# Título\nTexto.\n", Source(editor));
+            // the joined box holds both blocks: neither is drawn again under it
+            Assert.Single(editor.Surface.GetVisualDescendants().OfType<TextBox>(), t => t == box);
+            Assert.DoesNotContain(editor.Surface.GetVisualDescendants().OfType<TextBlock>(), t => t.Classes.Contains(MarkdownReader.TextClass) && (t.Text ?? "").Contains("Texto"));
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task BackspaceOnAnEmptyNewBlockReturnsToTheEndOfTheOneAbove() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var (editor, window) = Open("Um.\n\nDois.\n");
+            var box = Edit(editor, 1);
+            box.SelectAll();
+            Key(window, Avalonia.Input.Key.Back, PhysicalKey.Backspace);
+            Assert.Equal("", editor.Surface.EditBox!.Text);
+            Key(window, Avalonia.Input.Key.Back, PhysicalKey.Backspace);
+            box = editor.Surface.EditBox!;
+            Assert.Equal("Um.", box.Text);
+            Assert.Equal(3, box.CaretIndex);
+            Assert.Equal("Um.\n", Source(editor));
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task ArrowsCrossBlocksAsInOneText() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var (editor, window) = Open("Primeiro bloco.\n\nSegundo bloco.\n\nTerceiro.\n");
+            var box = Edit(editor, 1);
+            box.SelectionStart = box.SelectionEnd = box.CaretIndex = 4;
+            Key(window, Avalonia.Input.Key.Up, PhysicalKey.ArrowUp);
+            box = editor.Surface.EditBox!;
+            Assert.Equal("Primeiro bloco.", box.Text);
+            Assert.InRange(box.CaretIndex, 3, 5);   // the same column
+            Assert.True(box.IsFocused);
+            box.SelectionStart = box.SelectionEnd = box.CaretIndex = box.Text!.Length;
+            Key(window, Avalonia.Input.Key.Right, PhysicalKey.ArrowRight);
+            box = editor.Surface.EditBox!;
+            Assert.Equal("Segundo bloco.", box.Text);
+            Assert.Equal(0, box.CaretIndex);
+            Key(window, Avalonia.Input.Key.Left, PhysicalKey.ArrowLeft);
+            Assert.Equal("Primeiro bloco.", editor.Surface.EditBox!.Text);
+            Assert.Equal("Primeiro bloco.".Length, editor.Surface.EditBox!.CaretIndex);
+            Key(window, Avalonia.Input.Key.Down, PhysicalKey.ArrowDown);
+            Key(window, Avalonia.Input.Key.Down, PhysicalKey.ArrowDown);
+            Assert.Equal("Terceiro.", editor.Surface.EditBox!.Text);
+            // nothing changed in the text by moving around
+            Assert.Equal("Primeiro bloco.\n\nSegundo bloco.\n\nTerceiro.\n", Source(editor));
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
+    [Theory]
+    [InlineData("Texto do agente {ia:\"m\"}\n\nMeu texto.\n", 0, true)]
+    [InlineData("Texto do agente {ia:\"m\"}\n\n```csharp\nvar x = 1;\n```\n", 0, true)]
+    [InlineData("Meu texto.\n\nTexto do agente {ia:\"m\"}\n", 0, true)]
+    public async Task TypingInBlocksJoinedWithAuthoredTextKeepsWriting(string note, int block, bool forward) =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var (editor, window) = Open(note);
+            var box = Edit(editor, block);
+            box.SelectionStart = box.SelectionEnd = box.CaretIndex = forward ? box.Text!.Length : 0;
+            Key(window, forward ? Avalonia.Input.Key.Delete : Avalonia.Input.Key.Back, forward ? PhysicalKey.Delete : PhysicalKey.Backspace);
+            box = editor.Surface.EditBox!;
+            var joined = box.Text!;
+            foreach (var at in new[] { joined.Length, joined.IndexOf('\n') + 1, joined.IndexOf('\n'), 3 })
+            {
+                box.SelectionStart = box.SelectionEnd = box.CaretIndex = at;
+                Assert.True(box.IsFocused, "not focused before typing at " + at);
+                window.KeyTextInput("Z");
+                Dispatcher.UIThread.RunJobs();
+                Assert.True(ReferenceEquals(box, editor.Surface.EditBox), $"ended at {at}: [{joined}] now [{editor.Surface.EditBox?.Text}] note [{Source(editor)}]");
+                Assert.Equal('Z', box.Text![at]);
+                Assert.Contains("Z", Source(editor));
+            }
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
 }
