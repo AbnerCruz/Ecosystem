@@ -327,4 +327,85 @@ public sealed class EditorFlowUiTests
             window.Close();
             return true;
         }, TestContext.Current.CancellationToken));
+
+    [Theory]
+    [InlineData("Texto com **negrito** aqui.", "negrito", 3)]
+    [InlineData("Um [[Outra nota|apelido]] no fim.", "apelido", 2)]
+    [InlineData("Um [site bom](https://exemplo.com) no fim.", "bom", 1)]
+    [InlineData("# Título grande", "grande", 2)]
+    [InlineData("## Seção do texto", "texto", 2)]
+    [InlineData("- item da lista", "lista", 2)]
+    [InlineData("- [ ] tarefa aberta", "aberta", 2)]
+    [InlineData("> citação longa", "longa", 2)]
+    [InlineData("Código `inline` aqui.", "inline", 2)]
+    [InlineData("1. primeiro item", "item", 2)]
+    [InlineData("Texto ~~riscado~~ fim.", "fim", 1)]
+    [InlineData("Um parágrafo bem comprido que quebra em várias linhas na tela estreita do celular, para que o toque caia numa linha do meio e depois noutra mais abaixo, onde está a palavra escondida.", "escondida", 4)]
+    public async Task ATapPutsTheCaretOnTheLetterTappedWithoutMovingTheLine(string line, string word, int offset) =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var (editor, window) = Open("Antes.\n\n" + line + "\n\nDepois.\n", width: 360);
+            // while writing (a link is then a place for the caret too)
+            Edit(editor, 0);
+            window.UpdateLayout();
+            var holder = editor.Surface.BlockView(editor.Surface.BlockStarts[1])!;
+            var p = PointOf(window, holder, word, offset);
+            Click(window, p);
+            var box = editor.Surface.EditBox!;
+            Assert.NotNull(box);
+            var expected = box.Text!.IndexOf(word, StringComparison.Ordinal) + offset;
+            Assert.InRange(box.CaretIndex, expected - 1, expected + 1);
+            // the letter is still under the finger: the line did not jump when the block became a box
+            window.UpdateLayout();
+            var presenter = box.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.TextPresenter>().First();
+            var r = presenter.TextLayout.HitTestTextPosition(box.CaretIndex);
+            var at = presenter.TranslatePoint(new Point(r.X, r.Y + r.Height / 2), window)!.Value;
+            Assert.True(Math.Abs(at.Y - p.Y) < r.Height * .75, $"line moved {at.Y - p.Y:0.0}px (line {r.Height:0.0})");
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task OpeningTheSameNoteAgainKeepsTheBlockBeingWritten() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(async () =>
+        {
+            var (editor, window) = Open("Um.\n\nDois.\n");
+            editor.SaveRequested += _ => Task.CompletedTask;
+            var box = Edit(editor, 1);
+            box.Focus();
+            box.CaretIndex = box.Text!.Length;
+            window.KeyTextInput(" e três");
+            await editor.SaveAsync();
+            Dispatcher.UIThread.RunJobs();
+            editor.Open(new CityNote("Fluxo.md", editor.Editor.Text!));
+            Dispatcher.UIThread.RunJobs();
+            Assert.Same(box, editor.Surface.EditBox);
+            Assert.True(box.IsFocused);
+            window.KeyTextInput("!");
+            Assert.Equal("Um.\n\nDois. e três!\n", Source(editor));
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
+
+    [Fact]
+    public async Task ANoteChangedElsewhereKeepsTheBlockBeingWrittenWhenItIsStillThere() =>
+        Assert.True(await HeadlessUiTests.Session.Dispatch<bool>(() =>
+        {
+            var (editor, window) = Open("Um.\n\nDois.\n");
+            var box = Edit(editor, 1);
+            box.Focus();
+            box.SelectionStart = box.SelectionEnd = box.CaretIndex = 2;
+            // saved (nothing pending): the Assistente adds a paragraph at the top
+            editor.Open(new CityNote("Fluxo.md", "Novo começo.\n\nUm.\n\nDois.\n"));
+            Dispatcher.UIThread.RunJobs();
+            var now = editor.Surface.EditBox;
+            Assert.NotNull(now);
+            Assert.Equal("Dois.", now!.Text);
+            Assert.Equal(2, now.CaretIndex);
+            Assert.True(now.IsFocused);
+            window.KeyTextInput("X");
+            Assert.Equal("Novo começo.\n\nUm.\n\nDoXis.\n", Source(editor));
+            window.Close();
+            return true;
+        }, TestContext.Current.CancellationToken));
 }

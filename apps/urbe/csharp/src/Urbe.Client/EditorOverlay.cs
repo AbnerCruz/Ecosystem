@@ -631,6 +631,23 @@ public sealed class EditorOverlay : Grid
         {
             // A stale list/search snapshot of the same file must not overwrite a draft.
             if (current.Path == note.Path && HasChanges) return;
+            // the same note with the same text (a list, a search, a refresh after a write elsewhere): the person keeps
+            // writing where they are; nothing is drawn again, the box and the keyboard stay
+            if (current.Path == note.Path && string.Equals(note.Content.Replace("\r\n", "\n"), (Editor.Text ?? "").Replace("\r\n", "\n"), StringComparison.Ordinal)) return;
+            // the same note changed elsewhere (the Assistente wrote it, links were renamed): shown again, with the block
+            // being written still written and the Fonte caret where it was, when their text is still there
+            if (current.Path == note.Path && IsVisible)
+            {
+                var resume = _visual.Snapshot();
+                var caret = Editor.CaretIndex;
+                var wasFonte = Mode == EditorMode.Fonte && Editor.IsFocused;
+                var offset = (Mode == EditorMode.Visual ? _visualScroll : _sourceScroll).Offset;
+                Show(note);
+                (Mode == EditorMode.Visual ? _visualScroll : _sourceScroll).Offset = offset;
+                if (Mode == EditorMode.Visual && resume is not null) _visual.Resume(resume);
+                else if (wasFonte) { Editor.CaretIndex = Math.Clamp(caret, 0, (Editor.Text ?? "").Length); Editor.Focus(); }
+                return;
+            }
             _ = LeaveCurrentAsync();
         }
         _trail.Clear();

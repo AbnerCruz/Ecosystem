@@ -421,6 +421,30 @@ public sealed class VisualSurface : StackPanel
         }
     }
 
+    /// <summary>What is being written now: the block's text and the caret in it (null when no block is written).</summary>
+    public sealed record WritingSnapshot(string Block, int Selection, int Caret, bool Focused);
+
+    public WritingSnapshot? Snapshot() =>
+        _box is { } box && _editStart >= 0 ? new WritingSnapshot(_text[_editStart.._editEnd], box.SelectionStart, box.CaretIndex, box.IsFocused) : null;
+
+    /// <summary>After the note was shown again: the same block (found by its text) is written again, caret where it was.</summary>
+    public bool Resume(WritingSnapshot snapshot)
+    {
+        if (_readOnly) return false;
+        var block = _blocks.FirstOrDefault(b => b.End <= _text.Length && string.Equals(_text[b.Start..b.End], snapshot.Block, StringComparison.Ordinal));
+        if (block is null) return false;
+        _tapCaret = snapshot.Caret;
+        StartBox(AiAuthorship.Strip(snapshot.Block), block.Start, block.End, block.Kind);
+        if (_box is { } box)
+        {
+            var len = box.Text?.Length ?? 0;
+            box.SelectionStart = Math.Clamp(snapshot.Selection, 0, len);
+            box.SelectionEnd = box.CaretIndex = Math.Clamp(snapshot.Caret, 0, len);
+            if (snapshot.Focused) box.Focus();
+        }
+        return _box is not null;
+    }
+
     private Border? _tail, _empty;
     private bool _emptyWired;
 
