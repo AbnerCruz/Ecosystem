@@ -28,8 +28,6 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- Avisos de anotação de nulidade dos bindings Android não devem quebrar o build. -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <!-- UI screenshot builds only (lunet2d-ui-screens): never set for releases. -->
-    <DefineConstants Condition="'$(LunetUiDemo)' == 'true'">$(DefineConstants);LUNET_UI_DEMO</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <!-- Baked standalone Android host, compiled only when producing the IDE release; never fetched on the phone. -->

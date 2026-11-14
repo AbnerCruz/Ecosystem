@@ -9,4 +9,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
   </PropertyGroup>
+  <!-- UI screenshot builds only (tools/ci-ui-screens.sh, -p:LunetUiDemo=true); never set for releases. -->
+  <PropertyGroup Condition="'$(LunetUiDemo)' == 'true'">
+    <DefineConstants>$(DefineConstants);LUNET_UI_DEMO</DefineConstants>
+  </PropertyGroup>
 </Project>

@@ -28,7 +28,7 @@
     "apps/lunet2d/src/Lunet.Android/MainActivity.Demo.cs",
     "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
     "apps/lunet2d/src/Lunet.Android/MainActivity.Ide.cs",
-    "apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj",
+    "apps/lunet2d/Directory.Build.props",
     "apps/lunet2d/tests/Lunet.Tests/LunetAiCoworkTests.cs",
     "apps/lunet2d/tests/Lunet.Tests/ProjectNotesTests.cs",
     "apps/lunet2d/tools/ci-ui-screens.sh",
