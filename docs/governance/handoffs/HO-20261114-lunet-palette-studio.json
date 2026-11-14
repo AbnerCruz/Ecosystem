@@ -52,9 +52,10 @@
     {
       "check": "Validação no aparelho do Palette Studio, Sprite Studio e IA com paleta",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/paleta-de-cores.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-11-14 (Issue https://github.com/AbnerCruz/Ecosystem/issues/938); registro em docs/governance/responses/VAL-HO-20261114-lunet-palette-studio-abc43f9098c3.md."
     }
   ],
   "known_issues": [
