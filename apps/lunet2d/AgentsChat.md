@@ -717,3 +717,6 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - O proprietário escolheu DEC-0062 alternativa A no portal (Issue #942) e aprovou validações de 480, 481, 483, 488, 491, 497, 498, 499 e 500. Consequências do DEC-0062 aplicadas (SPEC §2/§3, ADR 0012 Aceito, `consequencesApplied`). A marcação `[x]` dos itens validados no ROADMAP não foi feita nesta sessão (bloqueada pela política de permissões do ambiente do agente); fica para o proprietário ou para o fluxo de validação.
 - Corrigido erro meu: `docs/guides/particulas.md` (guia do modelo de partículas, compilado por testes) tinha sido sobrescrito no commit do Particle Studio; restaurado, e o guia novo está em `particle-studio.md`.
 - LUNET-482: `SoftwareGraphicsBackend`, `Lunet.Host`, `Lunet.Desktop` com `--measure`; relatório `docs/architecture/spike-avalonia-desktop-2026-11-14.md`. 1025 testes. Handoff `HO-20261114-lunet-desktop-spike.json`.
+
+### 20261114-claude-lunet-data-studio — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
+- LUNET-505 (Fase 5, Data Studio): `Lunet.Studio.Data.DataTable` (inferência, tipos, validação, referências, CSV, classe C# que compila e desserializa — teste), `DataStudioView` e entrada no Studio. 7 testes novos; build Android sem erros. DEVICE pendente (`docs/guides/data-studio.md`). Handoff `HO-20261114-lunet-data-studio.json`.

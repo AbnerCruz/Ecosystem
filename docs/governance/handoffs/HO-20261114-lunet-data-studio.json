@@ -1,0 +1,96 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261114-lunet-data-studio",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-14T15:37:41Z",
+  "agent": {
+    "id": "claude-lunet-data-studio",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-505",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-8229d3db-dmnw7l",
+  "base_commit": "5fced65f",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/guides/data-studio.md",
+    "apps/lunet2d/src/Lunet.Ai/Knowledge/capacidades.md",
+    "apps/lunet2d/src/Lunet.Android/DataStudioView.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Data.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Studio.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Workbench.cs",
+    "apps/lunet2d/src/Lunet.Studio/Data/",
+    "apps/lunet2d/tests/Lunet.Tests/DataStudioTests.cs",
+    "docs/governance/handoffs/HO-20261114-lunet-data-studio.json"
+  ],
+  "work_completed": [
+    "Modelo de tabela de dados com esquema tipado, validação, referências e CSV.",
+    "Classe C# gerada que compila e desserializa os dados.",
+    "Data Studio Android."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test DataStudioTests (local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "7 testes"
+    },
+    {
+      "check": "dotnet build src/Lunet.Android -c Debug (local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "0 erros"
+    },
+    {
+      "check": "Criar, editar, validar e usar uma tabela no jogo",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/data-studio.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Grade sem virtualização (tabelas muito grandes ficam lentas).",
+    "Objetos aninhados são editados como JSON livre."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI; DEVICE."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/adr/0011-networking-first-slice.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O JSON dos dados é a autoridade; o esquema só descreve e a classe é derivada."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-data-studio",
+      "status": "product-specific",
+      "rationale": "Dados de jogo do Lunet."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
