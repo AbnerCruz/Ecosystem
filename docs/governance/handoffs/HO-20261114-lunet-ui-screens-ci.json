@@ -1,0 +1,73 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261114-lunet-ui-screens-ci",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-14T09:50:00Z",
+  "agent": {
+    "id": "claude-lunet-cowork-redesign",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-483",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "claude/lunet2d-analysis-redesign-4ljh4e",
+  "base_commit": "f176c14",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/workflows/lunet2d-ui-screens.yml",
+    "docs/governance/handoffs/HO-20261114-lunet-ui-screens-ci.json"
+  ],
+  "work_completed": [
+    "Workflow lunet2d-ui-screens: compila a IDE x86_64 com -p:LunetUiDemo=true, sobe emulador Android 13 (Pixel 6), executa tools/ci-ui-screens.sh e publica as capturas como artefato",
+    "Já exercitado no PR #918 (execução 43575944025): revelou barra de título do sistema, palette ilegível e botão duplicado, todos corrigidos antes da integração",
+    "Usado também na revisão visual do chat (LUNET-490): execução https://github.com/AbnerCruz/Ecosystem/actions/runs/43580364121"
+  ],
+  "verification": [
+    {
+      "check": "Execução do workflow no PR #918",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/43575944025"
+    },
+    {
+      "check": "Autorização do proprietário para workflow novo (zona control-plane)",
+      "kind": "human",
+      "result": "pending",
+      "object": ".github/workflows/lunet2d-ui-screens.yml",
+      "critical": true
+    }
+  ],
+  "known_issues": [
+    "O workflow só lê o repositório (permissions: contents: read) e não publica nada; roda em PRs que tocam a interface Android do Lunet"
+  ],
+  "blockers": [
+    "Zona control-plane: integração depende da autorização do proprietário (label integrar)"
+  ],
+  "next_actions": [
+    "Proprietário autoriza ou recusa; o agente não aplica a label"
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/integration-policy.json",
+    "docs/adr/0015-integrador-automatico.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Capturas de emulador são evidência automatizada adicional; não substituem DEVICE."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Workflow com permissão somente de leitura."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ]
+  }
+}
