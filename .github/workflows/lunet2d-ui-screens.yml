@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: lunet2d-ui-screens-${{ github.ref }}
-  cancel-in-progress: true
+  group: lunet2d-ui-screens-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: false
 
 jobs:
   screens:

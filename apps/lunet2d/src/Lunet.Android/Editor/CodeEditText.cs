@@ -31,7 +31,10 @@ internal sealed partial class CodeEditText : EditText
     private const int SettleDelayMilliseconds = 250;
 
     private readonly UndoHistory _history = new();
-    private readonly List<ForegroundColorSpan> _spans = new();
+    private List<ForegroundColorSpan> _spans = new();
+    private IReadOnlyList<TokenSpan> _appliedTokens = [];
+    private int _appliedLength;
+    private int _dirtyStart = int.MaxValue, _dirtyFromEnd = int.MaxValue;
     private readonly Handler _handler = new(Looper.MainLooper!);
     private readonly Paint _gutterPaint = new(PaintFlags.AntiAlias);
     private readonly Paint _gutterBackground = new() { Color = AndroidColor.Rgb(18, 20, 24) };
@@ -76,6 +79,8 @@ internal sealed partial class CodeEditText : EditText
         _applying = true;
         SetText(text, BufferType.Editable);
         _applying = false;
+        _spans.Clear();
+        _appliedTokens = [];
         _history.Clear();
         _version++;
         UpdateGutter();
@@ -118,7 +123,11 @@ internal sealed partial class CodeEditText : EditText
     private sealed class Watcher(CodeEditText owner) : Java.Lang.Object, ITextWatcher
     {
         public void BeforeTextChanged(Java.Lang.ICharSequence? s, int start, int count, int after) => owner.BeforeChange(s, start, count);
-        public void OnTextChanged(Java.Lang.ICharSequence? s, int start, int before, int count) => owner.OnChange(s, start, count);
+        public void OnTextChanged(Java.Lang.ICharSequence? s, int start, int before, int count)
+        {
+            owner.TrackDirty(s, start, count);
+            owner.OnChange(s, start, count);
+        }
         public void AfterTextChanged(IEditable? s) => owner.AfterChange(s);
     }
 
@@ -198,20 +207,45 @@ internal sealed partial class CodeEditText : EditText
         });
     }
 
-    private void ApplyHighlight(IReadOnlyList<TokenSpan> spans)
+    /// <summary>Every text change, programmatic or typed, widens the region that needs new colors.</summary>
+    private void TrackDirty(Java.Lang.ICharSequence? s, int start, int count)
+    {
+        if (s is null) return;
+        _dirtyStart = System.Math.Min(_dirtyStart, start);
+        _dirtyFromEnd = System.Math.Min(_dirtyFromEnd, s.Length() - (start + count));
+    }
+
+    /// <summary>Re-spans only the tokens inside the edited region (LUNET-483); the rest keep their spans.</summary>
+    private void ApplyHighlight(IReadOnlyList<TokenSpan> tokens)
     {
         var editable = EditableText;
         if (editable is null) return;
-        foreach (var old in _spans) editable.RemoveSpan(old);
-        _spans.Clear();
         var length = editable.Length();
-        foreach (var span in spans)
+        tokens = tokens.Where(t => Palette.ContainsKey(t.Kind) && t.Start >= 0 && t.Start + t.Length <= length).ToList();
+        int prefix = 0, suffix = 0;
+        if (_appliedTokens.Count > 0 && _spans.Count == _appliedTokens.Count)
+            (prefix, suffix) = HighlightDelta.Compute(_appliedTokens, tokens, _dirtyStart, _dirtyFromEnd, length, length - _appliedLength);
+        for (int i = prefix; i < _spans.Count - suffix; i++) editable.RemoveSpan(_spans[i]);
+        var rebuilt = new List<ForegroundColorSpan>(tokens.Count);
+        rebuilt.AddRange(_spans.Take(prefix));
+        var kept = new List<TokenSpan>(tokens.Count);
+        kept.AddRange(tokens.Take(prefix));
+        for (int i = prefix; i < tokens.Count - suffix; i++)
         {
+            var span = tokens[i];
             if (span.Start < 0 || span.Start + span.Length > length || !Palette.TryGetValue(span.Kind, out var color)) continue;
             var colored = new ForegroundColorSpan(color);
             editable.SetSpan(colored, span.Start, span.Start + span.Length, SpanTypes.ExclusiveExclusive);
-            _spans.Add(colored);
+            rebuilt.Add(colored);
+            kept.Add(span);
         }
+        rebuilt.AddRange(_spans.Skip(_spans.Count - suffix));
+        kept.AddRange(tokens.Skip(tokens.Count - suffix));
+        _spans = rebuilt;
+        _appliedTokens = kept;
+        _appliedLength = length;
+        _dirtyStart = int.MaxValue;
+        _dirtyFromEnd = int.MaxValue;
     }
 
     // ---------- Line numbers ----------
