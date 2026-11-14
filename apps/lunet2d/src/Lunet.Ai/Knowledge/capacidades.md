@@ -30,6 +30,15 @@ Caminhos de conteúdo no código: `Content.LoadTexture("Assets/heroi.png")` ou r
 - Utilidades: `Tween`/`Ease`, `Timers`, `RandomSource`, `ObjectPool`, `MathEx`, `Geometry`, `GridPathfinder` (A*), saves (`Save`, `ISaveStore`), `Localization`, `GameLog` (`Log.Info`).
 - Inspector: atributos `[Inspect]`, `[Range]`, `[Tooltip]`, `[Color]`, `[Asset]`, `[Group]`, `[ReadOnly]`, `[Hidden]`, `[Multiline]`.
 
+## Multiplayer (existe, `using Lunet.Networking;`)
+
+- Sessão: `NetworkSession.Host(new UdpTransport("<GameId>"), porta, new NetworkSessionOptions { GameId = "<GameId>", PlayerName = "Ana" })` (host com jogador; `dedicated: true` para servidor sem jogador) ou `NetworkSession.Join(new UdpTransport("<GameId>"), "192.168.0.10", porta, opções)`. Chame `session.Update()` em todo `Update`. Eventos `PeerJoined`, `PeerLeft`, `Connected`, `Disconnected`; `session.Peers`, `LocalPeerId`, `IsServer`, `Clock.ServerTime`, `Clock.RoundTripTime`.
+- Mensagens: classe que implementa `INetSerializable` (`Serialize(NetWriter)`/`Deserialize(NetReader)`), `session.Register<T>(id)` com o MESMO id em todos os aparelhos, `session.On<T>((peer, msg) => …)`, `SendToServer`, `SendTo(peerId, …)`, `Broadcast`, com `DeliveryMode` (`Unreliable`, `Sequenced`, `Reliable`, `ReliableOrdered`). O servidor decide; o cliente envia intenções (input), nunca o resultado.
+- Objetos: classe `: NetworkObject` com campos `NetworkVariable<T>` (int, float, double, bool, byte, uint, string, Vector2 ou `INetSerializable`) listados em `protected override IEnumerable<NetworkVariableBase> Variables => [Posicao, Vida];`; `session.Replication.Register("tipo", () => new Tipo())` em todos; o servidor faz `Spawn<Tipo>("tipo", donoPeerId, o => …)` e `Despawn`; clientes desenham remotos com `variavel.Interpolated` e o próprio com `ClientPrediction<TInput,TState>` (`Apply` + `Reconcile(ultimoInputProcessado, estadoDoServidor)`).
+- Testes e mesmo aparelho: `new LoopbackNetwork()` + `CreateTransport()` (porta virtual; endereço "loopback"); `new NetworkSimulator(transporte, NetworkConditions.Presets[i].Conditions)` simula rede ruim.
+- Descoberta LAN: `new LanDiscovery()`, `Announce(new LobbyInfo(...))`, `Update()`, `Lobbies`; `new DirectoryMatchmaker(descoberta).Find(gameId, versao)`.
+- Guia: `docs/guides/multiplayer.md`.
+
 ## IDE (existe)
 
 Editor C# com realce, autocompletar, diagnósticos ao vivo, ir para definição, referências, renomear, formatar, localizar/substituir, multi-cursor, dobrar código; Run com Preview (pausa, passo, reinício, Inspector, Profiler); Git em C#; exportar/importar ZIP; gerar APK do jogo offline no próprio aparelho; documentação offline.
@@ -54,7 +63,7 @@ Ferramentas: ler/buscar/escrever arquivos do projeto (com hash), mapa de símbol
 - Autotile, pincéis múltiplos e propriedades por tile no Tile Studio.
 - Atlas, UI, Physics, Particle e Data Studios.
 - Plugins (`Lunet.Editor.SDK`, `*.lunetplugin`).
-- Multiplayer em tempo real: só existe uma base experimental TCP/LAN (`Lunet.Networking`); não há UDP, lobby, replicação ou servidor dedicado.
+- Multiplayer pela internet pública com segurança: não há autenticação, criptografia, relay/NAT traversal nem diretório online de partidas; use LAN ou um servidor dedicado próprio. Não há delta compression nem compensação de lag.
 - Depurador com breakpoints.
 - Publicação em lojas, assinatura de release com chave do usuário e AAB (o APK gerado é de desenvolvimento).
 - Versão desktop do Lunet.

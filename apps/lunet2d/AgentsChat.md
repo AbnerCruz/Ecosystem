@@ -695,3 +695,9 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - PRs #932 e #933 integrados (release lunet2d-v0.0.1-dev.1000550). Branch `ccr-8229d3db-dmnw7l` reiniciada sobre a main; LUNET-499 (paleta) e LUNET-500 (música) seguem juntos no próximo PR.
 - LUNET-500: `Lunet.Studio.Music` (teoria musical, `MusicSong`, `Instrument`, `MusicRenderer` com polyBLEP/FM/ADSR/filtro/bateria/eco/reverb/limitador, `SoundDesigner`, `WavEncoder`), `MusicStudioView` e diálogo de efeitos no Android. Fontes `.song.json`/`.sfx.json` em `Content/Audio/` (autoridade: a fonte; o WAV é derivado, como a spritesheet).
 - Verificação local: 23 testes de música, build Android sem erros. DEVICE pendente (`docs/guides/estudio-de-musica.md`). Handoff `HO-20261114-lunet-music-studio.json`.
+
+### 20261114-claude-lunet-multiplayer — 2026-11-14 (America/Sao_Paulo) — Claude → integrador — review
+- PR #934 (paleta + música) integrado. Prioridade do proprietário: multiplayer. LUNET-501 executa o passo 5 do ADR 0011.
+- `Lunet.Networking`: `INetworkTransport` (`UdpTransport` com LiteNetLib 2.1.5 interno, `LoopbackTransport`, `NetworkSimulator`), `NetWriter`/`NetReader`, `NetworkSession` (+ `NetworkClock`), replicação (`NetworkObject`, `NetworkVariable<T>`, snapshots, interpolação), `ClientPrediction`, `LanDiscovery`/`ILobbyDirectory`/`IMatchmaker`. `TcpGameHost/Client` mantidos.
+- Gate da Fase 7 automatizado (servidor + 2 clientes, latência 80±30 ms, 8% perda): converge. UDP real e descoberta LAN testados em loopback (5 rodadas sem falha). LiteNetLib presente no APK do Lunet e no template standalone (build local). Exemplo do guia compila (teste).
+- Verificação local: 996 testes. DEVICE pendente (dois aparelhos; `docs/guides/multiplayer.md`). Handoff `HO-20261114-lunet-multiplayer-realtime.json`.

@@ -7,4 +7,8 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Lunet.Tests" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- SPEC §8 / ADR 0011: first realtime transport; used only inside LiteNetTransport, never in the public API. -->
+    <PackageReference Include="LiteNetLib" Version="2.1.5" />
+  </ItemGroup>
 </Project>

@@ -1,0 +1,110 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261114-lunet-multiplayer-realtime",
+  "category": "HANDOFF",
+  "timestamp": "2026-11-14T14:24:52Z",
+  "agent": {
+    "id": "claude-lunet-multiplayer",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-501",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "ccr-8229d3db-dmnw7l",
+  "base_commit": "ef9f4ba",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/adr/0011-networking-first-slice.md",
+    "apps/lunet2d/docs/guides/multiplayer.md",
+    "apps/lunet2d/docs/guides/networking-foundation.md",
+    "apps/lunet2d/src/Lunet.Ai/Knowledge/capacidades.md",
+    "apps/lunet2d/src/Lunet.Ai/LunetAiQuickReference.cs",
+    "apps/lunet2d/src/Lunet.Networking/Discovery/",
+    "apps/lunet2d/src/Lunet.Networking/Lunet.Networking.csproj",
+    "apps/lunet2d/src/Lunet.Networking/Replication/",
+    "apps/lunet2d/src/Lunet.Networking/Serialization/",
+    "apps/lunet2d/src/Lunet.Networking/Sessions/",
+    "apps/lunet2d/src/Lunet.Networking/Transport/",
+    "apps/lunet2d/tests/Lunet.Tests/NetworkingRealtimeTests.cs",
+    "docs/governance/handoffs/HO-20261114-lunet-multiplayer-realtime.json"
+  ],
+  "work_completed": [
+    "Transporte substituível INetworkTransport com UDP (LiteNetLib interno), loopback em memória e simulador de rede.",
+    "Sessão com handshake (GameId/versão), lista de jogadores, mensagens tipadas, limite de taxa, expulsão por dados inválidos, relógio sincronizado.",
+    "Replicação servidor-autoritativa com NetworkObject/NetworkVariable, snapshots sequenciados completos, interpolação e predição com reconciliação.",
+    "Descoberta LAN e abstrações de lobby/matchmaking; guia com exemplo completo compilado em teste; ADR 0011 atualizado."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project tests/Lunet.Tests (local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "996 testes; NetworkingRealtimeTests 22 casos incluindo o cenário do gate; 5 rodadas da suíte de rede sem falha"
+    },
+    {
+      "check": "dotnet build Lunet.Android e runtime-template (local, Android SDK 36)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "0 erros; lib_LiteNetLib.dll.so presente nos dois APKs"
+    },
+    {
+      "check": "Dois aparelhos na mesma rede jogando o exemplo do guia (host/cliente, LAN, versões, sinal fraco, APK exportado)",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/multiplayer.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Sem autenticação, criptografia, relay/NAT traversal nem diretório online; não expor host à internet pública.",
+    "Snapshots completos (sem delta compression); sem compensação de lag e sem reconexão automática.",
+    "Broadcast LAN pode ser bloqueado por roteadores; IP direto continua funcionando."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI do PR; validação com dois aparelhos; depois multiplayer local (tela dividida) e painel do simulador no Preview."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/adr/0011-networking-first-slice.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Só Lunet2D alterado."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Executa o passo 5 já decidido no ADR 0011 (LiteNetLib interno sem tipos expostos); ADR atualizado."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Chave de conexão por jogo, validação de versão, limite de mensagens, expulsão por dados inválidos; limites de tamanho em todo decoder."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Gate automatizado não marca a fase como concluída; DEVICE pendente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-networking-realtime",
+      "status": "product-specific",
+      "rationale": "Netcode do framework de jogos; sem outro consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
