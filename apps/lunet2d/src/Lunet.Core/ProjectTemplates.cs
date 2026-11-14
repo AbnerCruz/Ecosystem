@@ -192,14 +192,15 @@ public static class ProjectTemplates
         """;
 
     /// <summary>Projeto realmente vazio: ponto de partida sem entidades, assets ou desenho.</summary>
-    public static string BlankGameSource(string className) => $"""
+    public static string BlankGameSource(string className) => """
         using Lunet;
 
         // Projeto vazio. Implemente Initialize, LoadContent, Update e Draw conforme necessário.
-        public sealed class {{className}} : Game
+        public sealed class __CLASS_NAME__ : Game
         {
         }
-        """.Replace("\r\n", "\n") + "\n";
+        """.Replace("__CLASS_NAME__", className, StringComparison.Ordinal)
+           .Replace("\r\n", "\n") + "\n";
 
     public static string CoinCatcherSource(string className) => $$"""
         using System.Collections.Generic;
