@@ -13,6 +13,8 @@ public sealed class LunetAiSpriteTool : ITool
 {
     public const string Name = "lunet.assets.sprite";
     private const int MaxSize = 128, MaxFrames = 64;
+    /// <summary>Tool output is read by the model: keep accents and symbols readable instead of \uXXXX escapes.</summary>
+    internal static readonly JsonSerializerOptions ReadableJson = new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
     private readonly LunetProject _project;
     private readonly LunetAiCheckpoint _checkpoint;
     public ToolDescriptor Descriptor { get; }
@@ -62,6 +64,7 @@ public sealed class LunetAiSpriteTool : ITool
                         sheet[i++] = (byte)(c >> 16); sheet[i++] = (byte)(c >> 8); sheet[i++] = (byte)c; sheet[i++] = (byte)(c >> 24);
                     }
             var png = PngWriter.Encode(width * pixels.Count, height, sheet);
+            var coherence = Coherence(path, width, height, palette.Values);
 
             _checkpoint.Capture(path + ".sprite.json");
             _checkpoint.Capture(path + ".png");
@@ -75,15 +78,36 @@ public sealed class LunetAiSpriteTool : ITool
                 source = path + ".sprite.json",
                 sheet = path + ".png",
                 width, height, frames = pixels.Count, fps,
+                coerencia = coherence,
                 usage = $"var sheet = new SpriteSheet(Content.LoadTexture(\"{path}.png\"), {width}, {height}); " +
                         $"var clip = SpriteAnimationClip.FromSheet(sheet, new[] {{ {frameList} }}, 1.0 / {fps}); var animator = new SpriteAnimator(clip);",
-            }), new ArtifactRef(path, "lunet.asset", path + ".png")));
+            }, ReadableJson), new ArtifactRef(path, "lunet.asset", path + ".png")));
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or IOException or ProjectException
                                    or KeyNotFoundException or JsonException or UnauthorizedAccessException)
         {
             return ValueTask.FromResult(ToolOutcome.Error(ex.Message));
         }
+    }
+
+    /// <summary>Compares the new art with the project's established palette and sprite size (other sprites only).</summary>
+    private string Coherence(string path, int width, int height, IEnumerable<uint> colors)
+    {
+        var style = LunetAiProjectStyle.Analyze(_project);
+        var others = style.SpriteNames.Where(n => !string.Equals(n, path, StringComparison.OrdinalIgnoreCase)).ToArray();
+        if (others.Length == 0) return "primeiro sprite do projeto: ele define o estilo; registre paleta e tamanho em Notes/estilo-visual.md";
+        var notes = new List<string>();
+        var outside = colors.Where(c => c >> 24 != 0)
+            .Where(c => style.Palette.Count > 0 && style.Palette.Min(p => LunetAiImageGrid.Distance(p, c)) > 28)
+            .Distinct().ToArray();
+        if (outside.Length > 0)
+            notes.Add("cores fora da paleta do projeto: " + string.Join(" ", outside.Select(LunetAiImageGrid.Hex)) +
+                      " (mais próximas: " + string.Join(" ", outside.Select(c => LunetAiImageGrid.Hex(style.Palette.MinBy(p => LunetAiImageGrid.Distance(p, c))))) + ")");
+        if (style.CommonSpriteSize is { } size && (size.Width != width || size.Height != height))
+            notes.Add($"tamanho {width}×{height} difere do padrão do projeto {size.Width}×{size.Height}");
+        return notes.Count == 0
+            ? "coerente com a paleta e o tamanho do projeto"
+            : "ATENÇÃO, coerência: " + string.Join("; ", notes) + ". Ajuste, ou explique à pessoa por que diverge.";
     }
 
     private static (string Path, int Fps, Dictionary<char, uint> Palette, string[][] Frames) Parse(JsonElement input)

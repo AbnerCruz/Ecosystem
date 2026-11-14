@@ -4,6 +4,9 @@
     <RootNamespace>Lunet.Ai</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Knowledge\*.md" LogicalName="Lunet.Ai.Knowledge.%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="../Lunet.Core/Lunet.Core.csproj" />
   </ItemGroup>
 </Project>

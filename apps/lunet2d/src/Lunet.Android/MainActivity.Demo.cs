@@ -42,6 +42,31 @@ public sealed partial class MainActivity
                 Post(() => OpenSpriteStudio("Assets/demo.sprite.json", SpriteDocument.Create(32)));
                 break;
             case "files": Post(ToggleExplorer); break;
+            case "ai-empty":
+                AiStore.Save(Lunet.Ai.LunetAiSettings.Default with { Model = "anthropic/claude-sonnet-5" }, "demo-key-not-a-real-secret-0000");
+                _ai = null;
+                Post(() => OpenAiPanel(null));
+                break;
+            case "image":
+                {
+                    using var bitmap = global::Android.Graphics.Bitmap.CreateBitmap(600, 600, global::Android.Graphics.Bitmap.Config.Argb8888!)!;
+                    var canvas = new global::Android.Graphics.Canvas(bitmap);
+                    canvas.DrawColor(global::Android.Graphics.Color.Rgb(242, 238, 228));
+                    var pen = new global::Android.Graphics.Paint(global::Android.Graphics.PaintFlags.AntiAlias) { StrokeWidth = 14, Color = global::Android.Graphics.Color.Rgb(30, 30, 40) };
+                    pen.SetStyle(global::Android.Graphics.Paint.Style.Stroke);
+                    canvas.DrawCircle(300, 260, 150, pen);
+                    canvas.DrawLine(240, 420, 200, 560, pen);
+                    canvas.DrawLine(360, 420, 400, 560, pen);
+                    pen.SetStyle(global::Android.Graphics.Paint.Style.Fill);
+                    canvas.DrawCircle(250, 230, 18, pen);
+                    canvas.DrawCircle(350, 230, 18, pen);
+                    using var stream = new MemoryStream();
+                    bitmap.Compress(global::Android.Graphics.Bitmap.CompressFormat.Jpeg!, 88, stream);
+                    stream.Position = 0;
+                    _project!.Import(ProjectNotes.Folder, "desenho-do-heroi.jpg", stream);
+                    Post(() => OpenImageNote("Notes/desenho-do-heroi.jpg"));
+                }
+                break;
             case "run": Post(Run); break;
             case "ai":
                 AiStore.Save(Lunet.Ai.LunetAiSettings.Default with { Model = "anthropic/claude-sonnet-5" }, "demo-key-not-a-real-secret-0000");
@@ -49,8 +74,7 @@ public sealed partial class MainActivity
                 Post(() =>
                 {
                     OpenAiPanel(null);
-                    AddAiBubble("Você", "Faça o herói pular quando tocar na tela.");
-                    AddAiBubble("Lunet", "Pronto. Adicionei gravidade e um impulso ao tocar:\n\n```csharp\nif (Input.Touch.Pressed && _onGround)\n    _velocity.Y = -JumpSpeed;\n_velocity.Y += Gravity * dt;\n```\n\nCompilei o projeto e não há erros.");
+                    DemoConversation();
                 });
                 break;
             case "problems": Post(() => OpenWorkbenchPanel(false)); break;

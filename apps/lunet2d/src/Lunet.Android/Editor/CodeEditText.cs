@@ -29,6 +29,9 @@ internal sealed partial class CodeEditText : EditText
         [TokenKind.Method] = AndroidColor.Rgb(0x8C, 0xC8, 0xFF),
     };
 
+    /// <summary>Syntax color of a token kind, shared with code shown in the AI chat.</summary>
+    internal static AndroidColor? ColorOf(TokenKind kind) => Palette.TryGetValue(kind, out var color) ? color : null;
+
     private const int SettleDelayMilliseconds = 250;
 
     private readonly UndoHistory _history = new();

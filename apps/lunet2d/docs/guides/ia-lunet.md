@@ -1,100 +1,43 @@
-# IA do Lunet — integração ao Agent Runtime compartilhado
+# IA do Lunet
 
-## Estado e escopo (01/11/2026)
+A IA trabalha junto com você dentro do projeto: constrói, corrige, explica e cria arte, sem sair do editor.
 
-Esta implementação inicial habilita um agente de código no **Lunet IDE Android**. O
-**Lunet Framework** e os jogos gerados não dependem de IA: nenhuma dependência
-de IA foi adicionada ao Framework/Runtime do jogo.
+## Configurar (uma vez)
 
-A IA do editor de notas possui funcionalidades próprias de vault, porém os seus
-contratos de ferramentas de notas não devem ser exportados diretamente. Copiá-los duplicaria
-manutenção e transportaria contratos incorretos para o Lunet. Por isso o
-núcleo compartilhado selecionado é o **AgentRuntime.Core** canônico,
-com o provider **`AgentRuntime.Providers.ChatCompletions`**. O produto Lunet
-implementa somente as ferramentas específicas do projeto em `Lunet.Ai`.
+Toque em **✦ IA** e escolha o provedor (OpenRouter, Anthropic, OpenAI, Google Gemini, DeepSeek, Groq ou um endpoint compatível), o modelo e a chave da API. A chave fica cifrada no Android Keystore deste aparelho; nunca vai para o projeto, o Git ou o APK do jogo. O provedor pode cobrar pelo uso.
 
-## Funções desta versão
+## Usar
 
-- Abrir projeto → **⋯ → Ferramentas → IA · Assistente de código**.
-- Configurar endpoint completo OpenAI-compatible terminando em
-  `/chat/completions`, ID do modelo e chave do provider. **HTTPS obrigatório**,
-  sem parâmetros de URL, fragmentos ou credenciais embutidas. Padrão: endpoint
-  OpenRouter. Outros provedores que realmente ofereçam esse protocolo também
-  funcionam; não confundir compatibilidade de rede com capacidades do modelo.
-- Conversar sobre arquivos C# e dados de projeto. As seis capacidades são:
-  `lunet.files.list`, `lunet.files.read` (texto e SHA256),
-  `lunet.files.search` (busca limitada e posições verificáveis),
-  `lunet.files.excerpt` (linhas paginadas de arquivo grande, SHA256 do arquivo inteiro),
-  `lunet.files.write` (gravação atômica condicionada ao hash) e
-  `lunet.files.replace` (substituição de um trecho exato único sob o mesmo hash).
-  Arquivos de configuração C# em texto como `.csproj`, `.props` e `.slnx`
-  também são elegíveis, preservadas as regras de permissões e isolamento.
-- **Somente leitura por padrão**; autorizar escrita por caixa de seleção
-  em cada abertura do painel.
-- Escrita de textos usa gravação atômica, limita tamanho e recusa caminhos
-  absolutos, `..`, pastas ocultas, binários e alteração do manifesto do jogo.
-  Se outro processo alterar arquivo depois da leitura, a IA não o sobrescreve.
-- Histórico textual por projeto gravado em área privada do app, separada
-  da pasta do jogo. A chave **não é persistida**; precisa ser informada
-  ao reiniciar o processo. A chave é registrada no redator de segredos do
-  runtime e a interface avisa que trechos lidos podem ser transmitidos
-  ao serviço externo de IA escolhido.
-- Cancelar execução. A UI não presume compilação nem prova correção de
-  programa a partir de uma resposta textual: verificação atual somente
-  confirma a resposta e o hash dos arquivos gravados.
+- **✦ IA** na barra superior abre o painel ao lado do código (folha inferior no celular, painel lateral em telas largas).
+- Selecione um trecho e toque em **✦ Pedir à IA**.
+- Em **Erros**, toque em **✦ Corrigir com a IA**; no **Console**, pergunte o que está acontecendo.
+- **📎** anexa imagens e arquivos (do aparelho ou das suas Notas). Anexos são copiados para `Notes/`.
 
-## Limites declarados
+A IA recebe automaticamente o arquivo aberto, a linha do cursor, a seleção, os erros e o console.
 
-Não foram transferidos para o Lunet o painel inteiro do editor de notas, a memória
-semântica, pesquisa web, geração de imagens/vídeos, agentes especialistas,
-edição de sprite por IA, testes automatizados executados pelo agente, nem
-ferramentas de build. A edição é inicialmente de arquivos de texto. O
-provider precisa estar acessível; esta versão não integra execução de
-modelo no dispositivo. Não foi implementado catálogo de preços do provider:
-não interpretar os valores internos do ledger como custo real de API.
-A aprovação atual protege a habilitação de escrita por sessão, não oferece
-um diff visual de cada alteração. **Usar somente em projetos com backup**.
-A substituição por trecho não cria um commit Git automaticamente e a
-verificação de hash não substitui compilação, testes, revisão humana ou
-controle de versão.
+## O que ela sabe
 
-## Limite de autoridade e unificação
+- **O próprio Lunet:** pesquisa a referência da API do Framework, os guias offline e a lista do que existe e do que ainda não existe. Se você pedir algo que o Lunet não tem, ela diz e propõe a melhor alternativa.
+- **O seu projeto:** lê e busca arquivos, conhece a paleta, o tamanho predominante dos sprites, os nomes, as classes e as suas notas de estilo.
 
-**Proibição do proprietário em 01/11/2026:** nenhum arquivo, configuração,
-workflow ou comportamento do editor de notas pode ser alterado nesta iniciativa. A integração
-usa os contratos do runtime genérico existentes; extensões especializadas vivem
-exclusivamente no Lunet. A cópia compilada do núcleo é **uma projeção validada
-byte a byte** do fonte canônico, e não uma segunda implementação independente.
-O CI bloqueia divergências entre projeção e origem.
+## Coerência artística e contextual
 
-Isso **não** significa que toda a IA do editor de notas agora utiliza o mesmo núcleo:
-componentes históricos continuam separados. Migrá-los ou alterá-los exige
-autorização futura explícita. Fora do editor de notas, a arquitetura deve priorizar
-capabilities compartilháveis no runtime canônico, mantendo só adapters
-e ferramentas de projeto dentro dos aplicativos.
-Dependências externas não são embutidas nos APKs dos jogos.
+Antes de criar arte ou mecânicas, a IA lê o estilo do projeto e segue a paleta, os tamanhos, o contorno, os nomes e o estilo de código já usados. Ao criar um sprite, ela é avisada se uma cor ou tamanho foge do padrão. Escreva suas preferências em uma nota com "estilo" no nome (por exemplo `Notes/estilo-visual.md`): a IA segue essa nota.
 
-## Referências analisadas
+## Desenho → sprite
 
-- [Microsoft Agent Framework: samples C#](https://github.com/microsoft/agent-framework/tree/main/dotnet/samples):
-  desacoplar o agente de provider, capacidades e UI; aprovações e persistência.
-- [Aider](https://github.com/Aider-AI/aider): inventário de código, leitura
-  contextual, edição rastreável e validação; não copiar sua arquitetura Python.
-- [Continue](https://github.com/continuedev/continue): separação do editor e
-  ferramentas do agente (repositório read-only em 2026); não copiar UI/web.
-- AgentRuntime compartilhado (gerado automaticamente e validado por projeção):
-  políticas de execução, permissões e verificação existentes, portanto
-  reutilizados diretamente.
+1. Em **Notas e esboços**, importe a foto do desenho (⇩) ou desenhe um esboço.
+2. Abra a imagem e toque em **✦ Virar sprite** (ou anexe a imagem na conversa).
+3. A IA enxerga a imagem como uma grade de pixels (fundo do papel removido), redesenha limpa no estilo do projeto e salva `Assets/<nome>.sprite.json` (editável no Sprite Studio) e `Assets/<nome>.png` (para o jogo), com o código de uso.
 
-## Plano de verificação
+## Segurança e revisão
 
-1. `dotnet test --project tests/Lunet.Tests`: testes de caminhos, comparação
-   de SHA256, alterações concorrentes e arquitetura.
-2. Workflow de PR `lunet2d-release`: compila APK e executa os testes e
-   os gates existentes de exportação no emulador.
-3. DEVICE: instalar a build no celular, abrir um projeto, conversar com
-   provider de teste, confirmar leitura sem escrita, criar/alterar código
-   com autorização, testar cancelamento e memória após reiniciar app,
-   verificar reabertura do editor e execução de jogo.
+- Escrever no projeto é opcional (configurações da IA).
+- Toda alteração entra num checkpoint: o cartão de mudanças mostra os arquivos, o diff, **Manter** ou **Desfazer tudo**.
+- Quando altera código, a IA compila e só conclui quando o projeto compila sem erros.
+- A IA só acessa arquivos dentro do projeto aberto.
 
-CI verde não equivale a teste do provider real ou validação DEVICE.
+## Limites atuais
+
+- A IA vê imagens pela grade de pixels (até 64×64 células), não como uma foto em alta resolução.
+- Arquivos binários que não são imagem (PDF, por exemplo) ficam guardados em `Notes/`, mas a IA não os lê.

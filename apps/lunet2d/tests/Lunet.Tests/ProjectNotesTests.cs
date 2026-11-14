@@ -54,4 +54,27 @@ public sealed class ProjectNotesTests
         Assert.Equal("ideia", ProjectNotes.Slug("  Idéia!! "));
         Assert.Equal("nota", ProjectNotes.Slug("!!!"));
     }
+
+    [Fact]
+    public void Imports_GetSafeUniqueNamesAndAreClassified()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "lunet-notes-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var project = new ProjectStore(root).Create("Importados");
+            var photo = ProjectNotes.ImportPath(project, "Meu Desenho (1).JPG");
+            Assert.Equal("Notes/meu-desenho-1.jpg", photo);
+            using (var s = new MemoryStream([1, 2, 3])) project.Import("Notes", Path.GetFileName(photo), s);
+            Assert.Equal("Notes/meu-desenho-1-2.jpg", ProjectNotes.ImportPath(project, "meu desenho 1.jpg"));
+            Assert.Equal("Notes/anexo.bin", ProjectNotes.ImportPath(project, "???"));
+            Assert.Equal("Notes/roteiro.pdf", ProjectNotes.ImportPath(project, "../../Roteiro.pdf"));
+            using (var s = new MemoryStream([1])) project.Import("Notes", "roteiro.pdf", s);
+            var listed = ProjectNotes.List(project);
+            Assert.Contains(listed, n => n.Path == photo && n.Kind == NoteKind.Image);
+            Assert.Contains(listed, n => n.Path == "Notes/roteiro.pdf" && n.Kind == NoteKind.File);
+            Assert.True(ProjectNotes.IsImage(photo));
+            Assert.False(ProjectNotes.IsImage("Notes/roteiro.pdf"));
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
 }
