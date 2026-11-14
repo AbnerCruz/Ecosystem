@@ -48,37 +48,36 @@ public class EndToEndTests : IDisposable
     }
 
     [Fact]
-    public void Template_CompilesLoadsRunsAndFollowsTouch()
+    public void BlankTemplate_CompilesStartsAndRemainsVisuallyEmptyWhenTouched()
     {
         var store = new ProjectStore(_root);
         var project = store.Create("My-Game");
-        var sources = project.LoadSources().Select(s => new SourceFile(s.Path, s.Text)).ToList();
+        var source = project.ReadText("Game.cs");
+        Assert.DoesNotContain("Texture2D", source);
+        Assert.DoesNotContain("SpriteBatch", source);
+        Assert.DoesNotContain("Draw(", source);
+        Assert.DoesNotContain("CreateCircle", source);
 
-        var result = NewCompiler().Compile("game_template", sources);
+        var sources = project.LoadSources().Select(s => new SourceFile(s.Path, s.Text)).ToList();
+        var result = NewCompiler().Compile("blank_template", sources);
         Assert.True(result.Success, string.Join("\n", result.Diagnostics));
         Assert.DoesNotContain(result.Diagnostics, d => d.Severity == DiagnosticSeverity.Warning);
 
         using var loaded = GameLoader.Load(result.Assembly!, result.Symbols);
         var backend = new RecordingBackend();
         var host = new GameHost(loaded.Game, backend);
-        var logs = new List<string>();
-        loaded.Game.Log.Written += (_, m) => logs.Add(m);
 
         Assert.True(host.Start(360, 640));
         host.Tick(0.016);
-        Assert.Contains(backend.Clears, c => c == Color.CornflowerBlue);
-        Assert.Equal(new Vector2(180, 320), backend.LastQuadCenter());
-
         for (var i = 0; i < 120; i++)
         {
             host.SetSurfaceTouches([new TouchPoint(0, TouchPhase.Moved, new Vector2(60, 100))]);
             host.Tick(1.0 / 60);
         }
-        var center = backend.LastQuadCenter();
-        Assert.Equal(60, center.X, 1);
-        Assert.Equal(100, center.Y, 1);
+
+        Assert.Empty(backend.Clears);
+        Assert.Empty(backend.Batches);
         Assert.False(host.IsFaulted);
-        Assert.Contains(logs, l => l.Contains("Jogo iniciado"));
     }
 
     [Fact]
