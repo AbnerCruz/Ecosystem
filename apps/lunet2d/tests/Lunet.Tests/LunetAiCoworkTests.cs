@@ -150,14 +150,16 @@ public sealed class LunetAiCoworkTests
             var entry = project.Manifest.EntryPoint;
             var original = project.ReadText(entry);
             var sha = LunetAiProjectFiles.Hash(original);
+            const string anchor = "// Atualize a lógica do jogo aqui.";
+            var broken = original.Replace(anchor, anchor + "\nBROKEN", StringComparison.Ordinal);
             var build = new FakeBuild(project);
             var provider = new ScriptedProvider(
-                Tool("lunet.files.write", new { path = entry, content = original + "\nBROKEN", expected_sha256 = sha }),
+                Tool("lunet.files.replace", new { path = entry, old_text = anchor, new_text = anchor + "\nBROKEN", expected_sha256 = sha }),
                 Text("Pronto."),
                 // After verification fails with the build error the agent must fix it.
                 Tool("lunet.build.compile", new { }),
-                Tool("lunet.files.write", new { path = entry, content = original + "\n// corrigido\n",
-                    expected_sha256 = LunetAiProjectFiles.Hash(original + "\nBROKEN") }),
+                Tool("lunet.files.replace", new { path = entry, old_text = anchor + "\nBROKEN", new_text = anchor + "\n// corrigido",
+                    expected_sha256 = LunetAiProjectFiles.Hash(broken) }),
                 Text("Corrigido e compilado."));
             var session = new LunetAiSession(project, Path.Combine(root, "history.json"));
             var reply = await session.AskAsync("adicione um comentário", new LunetAiRequest(
